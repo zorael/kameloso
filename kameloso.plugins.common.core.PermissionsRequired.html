@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>PermissionsRequired (kameloso.plugins.common.core.PermissionsRequired)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>PermissionsRequired</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.plugins.html">plugins</a> <a class="breadcrumb" href="kameloso.plugins.common.html">common</a> <a class="breadcrumb" href="kameloso.plugins.common.core.html">core</a> </div><div><div class="documentation-comment synopsis"><div><p>What level of permissions is needed to trigger an event handler.</p><p>In any event handler context, the triggering user has a *level of privilege*.
+    This decides whether or not they are allowed to trigger the function.
+    Put simply this is the &quot;barrier of entry&quot; for event handlers.</p><p>Permissions are set on a per-channel basis and are stored in the &quot;users.json&quot;
+    file in the resource directory.</p></div></div></div><div class="annotated-prototype"></div><h2 id="values"><a class="header-anchor" href="#values">Values</a></h2><table class="enum-members"><tr><th>Value</th><th>Meaning</th></tr><tr class="enum-member" id="ignore"><td><a class="enum-member-name" href="#ignore">ignore</a><span class="enum-member-value"><tt class="highlighted"><span class="num">0</span></tt></span><div class="enum-attributes"></div></td><td><div><p>Override privilege checks, allowing anyone to trigger the annotated function.</p></div></td></tr><tr class="enum-member" id="anyone"><td><a class="enum-member-name" href="#anyone">anyone</a><span class="enum-member-value"><tt class="highlighted"><span class="num">10</span></tt></span><div class="enum-attributes"></div></td><td><div><p>Anyone not explicitly blacklisted (with a <a class="xref" href="dialect.defs.IRCClient.Class.blacklist.html">dialect.defs.IRCClient.Class.blacklist</a>
+        classifier) may trigger the annotated function. As such, to know if they're
+        blacklisted, unknown users will first be looked up with a WHOIS query
+        before allowing the function to trigger.</p></div></td></tr><tr class="enum-member" id="registered"><td><a class="enum-member-name" href="#registered">registered</a><span class="enum-member-value"><tt class="highlighted"><span class="num">20</span></tt></span><div class="enum-attributes"></div></td><td><div><p>Anyone logged onto services may trigger the annotated function.</p></div></td></tr><tr class="enum-member" id="whitelist"><td><a class="enum-member-name" href="#whitelist">whitelist</a><span class="enum-member-value"><tt class="highlighted"><span class="num">30</span></tt></span><div class="enum-attributes"></div></td><td><div><p>Only users with a <a class="xref" href="dialect.defs.IRCClient.Class.whitelist.html">dialect.defs.IRCClient.Class.whitelist</a> classifier
+        may trigger the annotated function.</p></div></td></tr><tr class="enum-member" id="operator"><td><a class="enum-member-name" href="#operator">operator</a><span class="enum-member-value"><tt class="highlighted"><span class="num">40</span></tt></span><div class="enum-attributes"></div></td><td><div><p>Only users with a <a class="xref" href="dialect.defs.IRCClient.Class.operator.html">dialect.defs.IRCClient.Class.operator</a> classifier
+        may trigger the annotated function.</p><p>Note: this does not mean IRC &quot;+o&quot; operators.</p></div></td></tr><tr class="enum-member" id="staff"><td><a class="enum-member-name" href="#staff">staff</a><span class="enum-member-value"><tt class="highlighted"><span class="num">50</span></tt></span><div class="enum-attributes"></div></td><td><div><p>Only users with a <a class="xref" href="dialect.defs.IRCClient.Class.staff.html">dialect.defs.IRCClient.Class.staff</a> classifier may
+        trigger the annotated function. These are channel owners.</p></div></td></tr><tr class="enum-member" id="admin"><td><a class="enum-member-name" href="#admin">admin</a><span class="enum-member-value"><tt class="highlighted"><span class="num">100</span></tt></span><div class="enum-attributes"></div></td><td><div><p>Only users defined in the configuration file as an administrator may
+        trigger the annotated function.</p></div></td></tr></table><div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.plugins.html">plugins</a> <a class="parent" href="kameloso.plugins.common.html">common</a> <a class="parent" href="kameloso.plugins.common.core.html">core</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="kameloso.plugins.common.core.IRCPlugin.html">IRCPlugin</a></li><li><a class="class" href="kameloso.plugins.common.core.Replay.html">Replay</a></li><li><a class="class" href="kameloso.plugins.common.core.ReplayImpl.html">ReplayImpl</a></li></ul><span class="type-separator">enums</span><ul><li><a class="enum" href="kameloso.plugins.common.core.Chainable.html">Chainable</a></li><li><a class="enum" href="kameloso.plugins.common.core.ChannelPolicy.html">ChannelPolicy</a></li><li><a class="enum" href="kameloso.plugins.common.core.Configuration.html">Configuration</a></li><li><a class="enum" href="kameloso.plugins.common.core.Enabler.html">Enabler</a></li><li><a class="enum" href="kameloso.plugins.common.core.FilterResult.html">FilterResult</a></li><li><a class="enum current" href="kameloso.plugins.common.core.PermissionsRequired.html">PermissionsRequired</a></li><li><a class="enum" href="kameloso.plugins.common.core.PrefixPolicy.html">PrefixPolicy</a></li><li><a class="enum" href="kameloso.plugins.common.core.Resource.html">Resource</a></li><li><a class="enum" href="kameloso.plugins.common.core.Settings.html">Settings</a></li><li><a class="enum" href="kameloso.plugins.common.core.Terminating.html">Terminating</a></li><li><a class="enum" href="kameloso.plugins.common.core.Verbose.html">Verbose</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.plugins.common.core.filterSender.html">filterSender</a></li><li><a class="function" href="kameloso.plugins.common.core.prefixPolicyMatches.html">prefixPolicyMatches</a></li><li><a class="function" href="kameloso.plugins.common.core.replay.1.html">replay</a></li></ul><span class="type-separator">mixin templates</span><ul><li><a class="mixin-template" href="kameloso.plugins.common.core.IRCPluginImpl.html">IRCPluginImpl</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="kameloso.plugins.common.core.BotCommand.html">BotCommand</a></li><li><a class="struct" href="kameloso.plugins.common.core.BotRegex.html">BotRegex</a></li><li><a class="struct" href="kameloso.plugins.common.core.Description.html">Description</a></li><li><a class="struct" href="kameloso.plugins.common.core.IRCPluginState.html">IRCPluginState</a></li><li><a class="struct" href="kameloso.plugins.common.core.Repeat.html">Repeat</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

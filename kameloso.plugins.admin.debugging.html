@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>kameloso.plugins.admin.debugging (kameloso.plugins.admin.debugging)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>kameloso.plugins.admin.debugging</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.plugins.html">plugins</a> <a class="breadcrumb" href="kameloso.plugins.admin.html">admin</a> </div><div><div class="documentation-comment synopsis"><div><p>Implementation of Admin plugin functionality that borders on debugging.
+    For internal use.</p><p>The <a class="xref" href="dialect.defs.IRCEvent.html">dialect.defs.IRCEvent</a>-annotated handlers must be in the same module
+    as the <a class="xref" href="kameloso.plugins.admin.base.AdminPlugin.html">kameloso.plugins.admin.base.AdminPlugin</a>, but these implementation
+    functions can be offloaded here to limit module size a bit.</p></div></div></div><div class="annotated-prototype"></div><h2 id="members"><a class="header-anchor" href="#members">Members</a></h2><h3 class="member-list-header hide-from-toc" id="function"><a class="header-anchor" href="#function">Functions</a></h3><dl class="member-list native"><dt><a href="kameloso.plugins.admin.debugging.onAnyEventImpl.html">onAnyEventImpl</a><div class="simplified-prototype" style="max-width: 60ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">onAnyEventImpl</span>(AdminPlugin plugin, IRCEvent event)</div></dt><dd><div><p>Prints incoming events to the local terminal, in forms depending on
+    which flags have been set with bot commands.</p></div></dd><dt><a href="kameloso.plugins.admin.debugging.onCommandBusImpl.html">onCommandBusImpl</a><div class="simplified-prototype" style="max-width: 60ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">onCommandBusImpl</span>(AdminPlugin plugin, string input)</div></dt><dd><div><p>Sends an internal bus message to other plugins, much like how such can be
+    sent with the Pipeline plugin.</p></div></dd><dt><a href="kameloso.plugins.admin.debugging.onCommandPrintBytesImpl.html">onCommandPrintBytesImpl</a><div class="simplified-prototype" style="max-width: 70ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">onCommandPrintBytesImpl</span>(AdminPlugin plugin, IRCEvent event)</div></dt><dd><div><p>Toggles a flag to print all incoming events *as individual bytes*.</p></div></dd><dt><a href="kameloso.plugins.admin.debugging.onCommandPrintRawImpl.html">onCommandPrintRawImpl</a><div class="simplified-prototype" style="max-width: 68ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">onCommandPrintRawImpl</span>(AdminPlugin plugin, IRCEvent event)</div></dt><dd><div><p>Toggles a flag to print all incoming events *raw*.</p></div></dd><dt><a href="kameloso.plugins.admin.debugging.onCommandShowUserImpl.html">onCommandShowUserImpl</a><div class="simplified-prototype" style="max-width: 68ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">onCommandShowUserImpl</span>(AdminPlugin plugin, IRCEvent event)</div></dt><dd><div><p>Prints the details of one or more specific, supplied users to the local terminal.</p></div></dd><dt><a href="kameloso.plugins.admin.debugging.onCommandShowUsersImpl.html">onCommandShowUsersImpl</a><div class="simplified-prototype" style="max-width: 51ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">onCommandShowUsersImpl</span>(AdminPlugin plugin)</div></dt><dd><div><p>Prints out the current <tt class="inline-code">users</tt> array of the <a class="xref" href="kameloso.plugins.admin.base.AdminPlugin.html">kameloso.plugins.admin.base.AdminPlugin</a>'s
+    <a class="xref" href="kameloso.plugins.common.core.IRCPluginState.html">kameloso.plugins.common.core.IRCPluginState</a> to the local terminal.</p></div></dd><dt><a href="kameloso.plugins.admin.debugging.onCommandStatusImpl.html">onCommandStatusImpl</a><div class="simplified-prototype" style="max-width: 48ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">onCommandStatusImpl</span>(AdminPlugin plugin)</div></dt><dd><div><p>Dumps information about the current state of the bot to the local terminal.</p></div></dd><dt><a href="kameloso.plugins.admin.debugging.onCommandSudoImpl.html">onCommandSudoImpl</a><div class="simplified-prototype" style="max-width: 63ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">onCommandSudoImpl</span>(AdminPlugin plugin, IRCEvent event)</div></dt><dd><div><p>Sends supplied text to the server, verbatim.</p></div></dd></dl><div><h2 id="see-also"><a class="header-anchor" href="#see-also">See Also</a></h2><div class="documentation-comment see-also-section"><div><p><a class="xref" href="kameloso.plugins.admin.base.html">kameloso.plugins.admin.base</a></p></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.plugins.html">plugins</a> <a class="parent" href="kameloso.plugins.admin.html">admin</a> 
+		<span class="type-separator">modules</span><ul><li><a class="module" href="kameloso.plugins.admin.base.html">base</a></li><li><a class="module" href="kameloso.plugins.admin.classifiers.html">classifiers</a></li><li><a class="module current" href="kameloso.plugins.admin.debugging.html">debugging</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

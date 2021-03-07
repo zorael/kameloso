@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>getSpecificQuote (kameloso.plugins.quotes.getSpecificQuote)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>getSpecificQuote</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.plugins.html">plugins</a> <a class="breadcrumb" href="kameloso.plugins.quotes.html">quotes</a> </div><div><div class="documentation-comment synopsis"><div><p>Fetches a specific quote for the specified nickname from the in-memory JSON array.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes"><div class="versions-container">version(WithPlugins &amp;&amp; WithQuotesPlugin)</div>private </div><div class="return-type"><a class="name" data-ident="Quote" href="kameloso.plugins.quotes.Quote.html" title="kameloso.plugins.quotes.Quote">Quote</a></div><div class="function-name">getSpecificQuote</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="3"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><a class="name" data-ident="QuotesPlugin" href="kameloso.plugins.quotes.QuotesPlugin.html" title="kameloso.plugins.quotes.QuotesPlugin">QuotesPlugin</a></span></span> <span class="parameter-name name" data-ident="plugin"><a href="#param-plugin">plugin</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">string</span></span></span> <span class="parameter-name name" data-ident="nickname"><a href="#param-nickname">nickname</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="name" data-ident="size_t">size_t</span></span></span> <span class="parameter-name name" data-ident="index"><a href="#param-index">index</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-plugin"><a class="parameter-name" data-ident="plugin" href="#param-plugin">plugin</a> <span class="parameter-type"><a class="xref" href="kameloso.plugins.quotes.QuotesPlugin.html" title="kameloso.plugins.quotes.QuotesPlugin"><span class="name" data-ident="QuotesPlugin">QuotesPlugin</span></a></span></dt><dd><div class="documentation-comment"><div><p>Current <a class="xref" href="kameloso.plugins.quotes.QuotesPlugin.html">QuotesPlugin</a>.</p></div></div></dd><dt id="param-nickname"><a class="parameter-name" data-ident="nickname" href="#param-nickname">nickname</a> <span class="parameter-type"><span class="builtin-type">string</span></span></dt><dd><div class="documentation-comment"><div><p>Nickname of the user to fetch quotes for.</p></div></div></dd><dt id="param-index"><a class="parameter-name" data-ident="index" href="#param-index">index</a> <span class="parameter-type"><span class="name" data-ident="size_t">size_t</span></span></dt><dd><div class="documentation-comment"><div><p>Index of quote to fetch.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><a class="xref" href="kameloso.plugins.quotes.Quote.html" title="kameloso.plugins.quotes.Quote"><span class="name" data-ident="Quote">Quote</span></a></span></div><div class="documentation-comment returns-description"><div><p>A <a class="xref" href="kameloso.plugins.quotes.Quote.html">Quote</a> containing a the quote string of a specific quote.
+        If no such quote is available it returns an empty <tt class="inline-code">Quote.init</tt> instead.</p></div></div></div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="hid">Quote</span> <span class="hid">quote</span> = <span class="hid">plugin</span>.<span class="hid">getSpecificQuote</span>(<span class="hid">event</span>.<span class="hid">sender</span>.<span class="hid">nickame</span>, <span class="num">2</span>);
+<span class="kwrd">if</span> (<span class="hid">quote</span> == <span class="hid">Quote</span>.<span class="hid">init</span>) <span class="kwrd">return</span>;
+<span class="com">// ...</span></pre></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.plugins.html">plugins</a> <a class="parent" href="kameloso.plugins.quotes.html">quotes</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="kameloso.plugins.quotes.QuotesPlugin.html">QuotesPlugin</a></li></ul><span class="type-separator">enums</span><ul><li><a class="enum" href="kameloso.plugins.quotes.ManageQuoteAction.html">ManageQuoteAction</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.plugins.quotes.addQuoteAndReport.html">addQuoteAndReport</a></li><li><a class="function" href="kameloso.plugins.quotes.getRandomQuote.html">getRandomQuote</a></li><li><a class="function current" href="kameloso.plugins.quotes.getSpecificQuote.html">getSpecificQuote</a></li><li><a class="function" href="kameloso.plugins.quotes.initResources.html">initResources</a></li><li><a class="function" href="kameloso.plugins.quotes.manageQuoteImpl.html">manageQuoteImpl</a></li><li><a class="function" href="kameloso.plugins.quotes.modQuoteAndReport.html">modQuoteAndReport</a></li><li><a class="function" href="kameloso.plugins.quotes.onCommandDelQuote.html">onCommandDelQuote</a></li><li><a class="function" href="kameloso.plugins.quotes.onCommandMergeQuotes.html">onCommandMergeQuotes</a></li><li><a class="function" href="kameloso.plugins.quotes.onCommandModQuote.html">onCommandModQuote</a></li><li><a class="function" href="kameloso.plugins.quotes.onCommandQuote.html">onCommandQuote</a></li><li><a class="function" href="kameloso.plugins.quotes.onWelcome.html">onWelcome</a></li><li><a class="function" href="kameloso.plugins.quotes.reload.html">reload</a></li><li><a class="function" href="kameloso.plugins.quotes.removeWeeChatHead.html">removeWeeChatHead</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="kameloso.plugins.quotes.Quote.html">Quote</a></li><li><a class="struct" href="kameloso.plugins.quotes.QuotesSettings.html">QuotesSettings</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

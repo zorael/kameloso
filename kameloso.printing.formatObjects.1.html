@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>formatObjects (kameloso.printing.formatObjects)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>formatObjects</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.printing.html">printing</a> </div><div><div class="documentation-comment synopsis"><div><p>Formats an aggregate object, with all its printable members with all their
+    printable values. Overload that writes to a passed output range sink.</p></div></div></div><div class="annotated-prototype"><ol class="overloads"><li class="active-overload-option"><span class="overload-signature"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">formatObjects</span>(Sink sink, Flag!&quot;brightTerminal&quot; bright, Things things)</span><div class="function-prototype"><div class="attributes"></div><div class="return-type"><span class="builtin-type">void</span></div><div class="function-name">formatObjects</div><div class="template-parameters" data-count="4">(<div class="parameters-list toplevel"><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="Flag">Flag</span>!&quot;all&quot; <span class="name" data-ident="all">all</span> = <span class="name" data-ident="No">No.all</span></span></div><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="Flag">Flag</span>!&quot;coloured&quot; <span class="name" data-ident="coloured">coloured</span> = <span class="name" data-ident="Yes">Yes.coloured</span></span></div><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="Sink">Sink</span></span></div><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="Things">Things</span>...</span></div></div>)</div><div class="runtime-parameters" data-count="3"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">auto</span> <span class="storage-class">ref</span> <span class="name" data-ident="Sink">Sink</span></span></span> <span class="parameter-name name" data-ident="sink"><a href="#param-sink">sink</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="name" data-ident="Flag">Flag</span>!&quot;brightTerminal&quot;</span></span> <span class="parameter-name name" data-ident="bright"><a href="#param-bright">bright</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">auto</span> <span class="storage-class">ref</span> <span class="name" data-ident="Things">Things</span></span></span> <span class="parameter-name name" data-ident="things"><a href="#param-things">things</a></span></div><span class="paren">)</span></div></div><div class="template-constraint"> <a class="lang-feature" href="http://dpldocs.info/template-constraints">if</a> (<div class="template-constraint-expression"><div class="andand-left"><div class="andand-left"><span class="parenthetical-expression">(<span class="parenthetical-expression-contents"><span class="name" data-ident="Things">Things.length</span> &gt; 0</span>)</span> &amp;&amp; </div><div class="andand-right"><span class="name" data-ident="allSatisfy">allSatisfy</span>!(<span class="name" data-ident="isAggregateType">isAggregateType</span>, <span class="name" data-ident="Things">Things</span>)</div> &amp;&amp; </div><div class="andand-right"><span class="name" data-ident="isOutputRange">isOutputRange</span>!(<span class="name" data-ident="Sink">Sink</span>, <span class="builtin-type">char</span>[])</div></div>)</div><div class="function-contracts"></div></div></li><li class="overload-option"><a href="kameloso.printing.formatObjects.2.html"><span class="overload-signature"><tt class="highlighted"><span class="type">string</span></tt> <span class="name">formatObjects</span>(Flag!&quot;brightTerminal&quot; bright, Things things)</span></a></li><li class="overload-option ditto-option"><a href="kameloso.printing.formatObject.html"><span class="overload-signature"><span class="builtin-type">alias</span> <span class="name">formatObject</span> = <tt class="highlighted"><span class="hid">formatObjects</span></tt></span></a></li></ol></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-all"><a class="parameter-name" data-ident="all" href="#param-all">all</a></dt><dd><div class="documentation-comment"><div><p>Whether or not to also display members marked as
+            <a class="xref" href="lu.uda.Unserialisable.html">lu.uda.Unserialisable</a>; usually transitive information that
+            doesn't carry between program runs. Also those annotated <a class="xref" href="lu.uda.Hidden.html">lu.uda.Hidden</a>.</p></div></div></dd><dt id="param-coloured"><a class="parameter-name" data-ident="coloured" href="#param-coloured">coloured</a></dt><dd><div class="documentation-comment"><div><p>Whether to display in colours or not.</p></div></div></dd><dt id="param-sink"><a class="parameter-name" data-ident="sink" href="#param-sink">sink</a> <span class="parameter-type"><span class="name" data-ident="Sink">Sink</span></span></dt><dd><div class="documentation-comment"><div><p>Output range to write to.</p></div></div></dd><dt id="param-bright"><a class="parameter-name" data-ident="bright" href="#param-bright">bright</a> <span class="parameter-type"><span class="name" data-ident="Flag">Flag</span>!&quot;brightTerminal&quot;</span></dt><dd><div class="documentation-comment"><div><p>Whether or not to format for a bright terminal background.</p></div></div></dd><dt id="param-things"><a class="parameter-name" data-ident="things" href="#param-things">things</a> <span class="parameter-type"><span class="name" data-ident="Things">Things</span></span></dt><dd><div class="documentation-comment"><div><p>Variadic list of aggregate objects to enumerate and format.</p></div></div></dd></dl><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="kwrd">struct</span> <span class="hid">Foo</span>
+{
+    <span class="type">int</span> <span class="hid">foo</span> = <span class="num">42</span>;
+    <span class="type">string</span> <span class="hid">bar</span> = <span class="str">&quot;arr matey&quot;</span>;
+    <span class="type">float</span> <span class="hid">f</span> = <span class="num">3.14f</span>;
+    <span class="type">double</span> <span class="hid">d</span> = <span class="num">9.99</span>;
+}
+
+<span class="hid">Foo</span> <span class="hid">foo</span>, <span class="hid">bar</span>;
+<span class="hid">Appender</span>!(<span class="type">char</span>[]) <span class="hid">sink</span>;
+
+<span class="hid">sink</span>.<span class="hid">formatObjects</span>!(<span class="hid">Yes</span>.<span class="hid">coloured</span>)(<span class="hid">foo</span>);
+<span class="hid">sink</span>.<span class="hid">formatObjects</span>!(<span class="hid">No</span>.<span class="hid">coloured</span>)(<span class="hid">bar</span>);
+<span class="hid">writeln</span>(<span class="hid">sink</span>.<span class="hid">data</span>);</pre></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.printing.html">printing</a> 
+		<span class="type-separator">aliases</span><ul><li><a class="alias" href="kameloso.printing.formatObject.html">formatObject</a></li><li><a class="alias" href="kameloso.printing.printObject.html">printObject</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.printing.formatObjectImpl.html">formatObjectImpl</a></li><li><a class="function current" href="kameloso.printing.formatObjects.1.html">formatObjects</a></li><li><a class="function" href="kameloso.printing.printObjects.html">printObjects</a></li></ul><span class="type-separator">templates</span><ul><li><a class="template" href="kameloso.printing.Widths.html">Widths</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

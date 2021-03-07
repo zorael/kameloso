@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>kameloso.plugins.twitchbot.api (kameloso.plugins.twitchbot.api)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>kameloso.plugins.twitchbot.api</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.plugins.html">plugins</a> <a class="breadcrumb" href="kameloso.plugins.twitchbot.html">twitchbot</a> </div><div><div class="documentation-comment synopsis"><div><p>Functions for accessing the Twitch API. For internal use.</p></div></div></div><div class="annotated-prototype"></div><h2 id="members"><a class="header-anchor" href="#members">Members</a></h2><h3 class="member-list-header hide-from-toc" id="class"><a class="header-anchor" href="#class">Classes</a></h3><dl class="member-list native"><dt><a href="kameloso.plugins.twitchbot.api.TwitchQueryException.html">TwitchQueryException</a><div class="simplified-prototype" style="max-width: 28ch;"><span class="builtin-type">class</span> <span class="name">TwitchQueryException</span></div></dt><dd><div><p>Exception, to be thrown when an API query to the Twitch servers failed,
+    for whatever reason.</p></div></dd></dl><h3 class="member-list-header hide-from-toc" id="function"><a class="header-anchor" href="#function">Functions</a></h3><dl class="member-list native"><dt><a href="kameloso.plugins.twitchbot.api.averageApproximateQueryTime.html">averageApproximateQueryTime</a><div class="simplified-prototype" style="max-width: 83ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">averageApproximateQueryTime</span>(TwitchBotPlugin plugin, long responseMsecs)</div></dt><dd><div><p>Given a query time measurement, calculate a new approximate query time based on
+    the weighted averages of the old value and said new measurement.</p></div></dd><dt><a href="kameloso.plugins.twitchbot.api.generateKey.html">generateKey</a><div class="simplified-prototype" style="max-width: 44ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">generateKey</span>(TwitchBotPlugin plugin)</div></dt><dd><div><p>Start the captive key generation routine at the earliest possible moment,
+    which are the CAP events.</p></div></dd><dt><a href="kameloso.plugins.twitchbot.api.getChatters.html">getChatters</a><div class="simplified-prototype" style="max-width: 71ch;"><tt class="highlighted"><span class="hid">JSONValue</span></tt> <span class="name">getChatters</span>(TwitchBotPlugin plugin, string broadcaster)</div></dt><dd><div><p>Get the JSON representation of everyone currently in a broadcaster's channel.</p></div></dd><dt><a href="kameloso.plugins.twitchbot.api.getFollows.html">getFollows</a><div class="simplified-prototype" style="max-width: 69ch;"><tt class="highlighted"><span class="hid">JSONValue</span>[<span class="type">string</span>]</tt> <span class="name">getFollows</span>(TwitchBotPlugin plugin, string id)</div></dt><dd><div><p>Fetches a list of all follows of the passed channel and caches them in
+    the channel's entry in <a class="xref" href="kameloso.plugins.twitchbot.base.TwitchBotPlugin.rooms.html">kameloso.plugins.twitchbot.base.TwitchBotPlugin.rooms</a>.</p></div></dd><dt><a href="kameloso.plugins.twitchbot.api.getTwitchEntity.html">getTwitchEntity</a><div class="simplified-prototype" style="max-width: 67ch;"><tt class="highlighted"><span class="hid">JSONValue</span></tt> <span class="name">getTwitchEntity</span>(TwitchBotPlugin plugin, string url)</div></dt><dd><div><p>By following a passed URL, queries Twitch servers for an entity (user or channel).</p></div></dd><dt><a href="kameloso.plugins.twitchbot.api.getValidation.html">getValidation</a><div class="simplified-prototype" style="max-width: 51ch;"><tt class="highlighted"><span class="hid">JSONValue</span></tt> <span class="name">getValidation</span>(TwitchBotPlugin plugin)</div></dt><dd><div><p>Validates the current access key, retrieving information about it.</p></div></dd><dt><a href="kameloso.plugins.twitchbot.api.persistentQuerier.html">persistentQuerier</a><div class="simplified-prototype" style="max-width: 95ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">persistentQuerier</span>(QueryResponse[string] bucket, uint timeout, string caBundleFile)</div></dt><dd><div><p>Persistent worker issuing Twitch API queries based on the concurrency messages
+    sent to it.</p></div></dd><dt><a href="kameloso.plugins.twitchbot.api.queryTwitch.html">queryTwitch</a><div class="simplified-prototype" style="max-width: 128ch;"><tt class="highlighted"><span class="hid">QueryResponse</span></tt> <span class="name">queryTwitch</span>(TwitchBotPlugin plugin, string url, string authorisationHeader, Flag!&quot;recursing&quot; recursing)</div></dt><dd><div><p>Wraps <a class="xref" href="kameloso.plugins.twitchbot.api.queryTwitchImpl.html">queryTwitchImpl</a> by either starting it in a subthread, or by calling it normally.</p></div></dd><dt><a href="kameloso.plugins.twitchbot.api.queryTwitchImpl.html">queryTwitchImpl</a><div class="simplified-prototype" style="max-width: 126ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">queryTwitchImpl</span>(string url, string authToken, uint timeout, QueryResponse[string] bucket, string caBundleFile)</div></dt><dd><div><p>Sends a HTTP GET request to the passed URL, and &quot;returns&quot; the response by
+    adding it to the shared <tt class="inline-code">bucket</tt> associative array.</p></div></dd><dt><a href="kameloso.plugins.twitchbot.api.twitchTryCatchDg.html">twitchTryCatchDg</a><div class="simplified-prototype" style="max-width: 25ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">twitchTryCatchDg</span>()</div></dt><dd><div><p>Calls a passed delegate in a try-catch. Allows us to have consistent error messages.</p></div></dd><dt><a href="kameloso.plugins.twitchbot.api.waitForQueryResponse.html">waitForQueryResponse</a><div class="simplified-prototype" style="max-width: 102ch;"><tt class="highlighted"><span class="hid">QueryResponse</span></tt> <span class="name">waitForQueryResponse</span>(TwitchBotPlugin plugin, string url, bool leaveTimingAlone)</div></dt><dd><div><p>Common code to wait for a query response.</p></div></dd></dl><h3 class="member-list-header hide-from-toc" id="struct"><a class="header-anchor" href="#struct">Structs</a></h3><dl class="member-list native"><dt><a href="kameloso.plugins.twitchbot.api.QueryResponse.html">QueryResponse</a><div class="simplified-prototype" style="max-width: 22ch;"><span class="builtin-type">struct</span> <span class="name">QueryResponse</span></div></dt><dd><div><p>Embodies a response from a query to the Twitch servers. A string paired with
+    a millisecond count of how long the query took, and some metadata about the request.</p></div></dd></dl><div><h2 id="see-also"><a class="header-anchor" href="#see-also">See Also</a></h2><div class="documentation-comment see-also-section"><div><p><a class="xref" href="kameloso.plugins.twitchbot.base.html">kameloso.plugins.twitchbot.base</a></p></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.plugins.html">plugins</a> <a class="parent" href="kameloso.plugins.twitchbot.html">twitchbot</a> 
+		<span class="type-separator">modules</span><ul><li><a class="module current" href="kameloso.plugins.twitchbot.api.html">api</a></li><li><a class="module" href="kameloso.plugins.twitchbot.base.html">base</a></li><li><a class="module" href="kameloso.plugins.twitchbot.timers.html">timers</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

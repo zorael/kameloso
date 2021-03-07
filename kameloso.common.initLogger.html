@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>initLogger (kameloso.common.initLogger)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>initLogger</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.common.html">common</a> </div><div><div class="documentation-comment synopsis"><div><p>Initialises the <a class="xref" href="kameloso.logger.KamelosoLogger.html">kameloso.logger.KamelosoLogger</a> logger for use in this thread.</p><p>It needs to be separately instantiated per thread, and even so there may be
+    race conditions. Plugins are encouraged to use <a class="xref" href="kameloso.thread.ThreadMessage.html">kameloso.thread.ThreadMessage</a>s
+    to log to screen from other threads.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes">@<span class="name" data-ident="safe">safe</span> </div><div class="return-type"><span class="builtin-type">void</span></div><div class="function-name">initLogger</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="2"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="name" data-ident="Flag">Flag</span>!&quot;monochrome&quot;</span></span> <span class="parameter-name name" data-ident="monochrome"><a href="#param-monochrome">monochrome</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="name" data-ident="Flag">Flag</span>!&quot;brightTerminal&quot;</span></span> <span class="parameter-name name" data-ident="bright"><a href="#param-bright">bright</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-monochrome"><a class="parameter-name" data-ident="monochrome" href="#param-monochrome">monochrome</a> <span class="parameter-type"><span class="name" data-ident="Flag">Flag</span>!&quot;monochrome&quot;</span></dt><dd><div class="documentation-comment"><div><p>Whether the terminal is set to monochrome or not.</p></div></div></dd><dt id="param-bright"><a class="parameter-name" data-ident="bright" href="#param-bright">bright</a> <span class="parameter-type"><span class="name" data-ident="Flag">Flag</span>!&quot;brightTerminal&quot;</span></dt><dd><div class="documentation-comment"><div><p>Whether the terminal has a bright background or not.</p></div></div></dd></dl><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="hid">initLogger</span>(<span class="hid">No</span>.<span class="hid">monochrome</span>, <span class="hid">Yes</span>.<span class="hid">brightTerminal</span>);</pre></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.common.html">common</a> 
+		<span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.common.findURLs.html">findURLs</a></li><li><a class="function current" href="kameloso.common.initLogger.html">initLogger</a></li><li><a class="function" href="kameloso.common.nextMidnight.html">nextMidnight</a></li><li><a class="function" href="kameloso.common.printStacktrace.html">printStacktrace</a></li><li><a class="function" href="kameloso.common.printVersionInfo.html">printVersionInfo</a></li><li><a class="function" href="kameloso.common.replaceTokens.1.html">replaceTokens</a></li><li><a class="function" href="kameloso.common.stripSeparatedPrefix.html">stripSeparatedPrefix</a></li><li><a class="function" href="kameloso.common.timeSince.html">timeSince</a></li><li><a class="function" href="kameloso.common.timeSinceInto.html">timeSinceInto</a></li></ul><span class="type-separator">static variables</span><ul><li><a class="static-variable" href="kameloso.common.curlErrorStrings.html">curlErrorStrings</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="kameloso.common.OutgoingLine.html">OutgoingLine</a></li><li><a class="struct" href="kameloso.common.Tint.html">Tint</a></li></ul><span class="type-separator">variables</span><ul><li><a class="variable" href="kameloso.common.errnoStrings.html">errnoStrings</a></li><li><a class="variable" href="kameloso.common.logger.html">logger</a></li><li><a class="variable" href="kameloso.common.settings.html">settings</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

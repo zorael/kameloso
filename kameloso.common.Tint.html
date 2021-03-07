@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>Tint (kameloso.common.Tint)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>Tint</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.common.html">common</a> </div><div><div class="documentation-comment synopsis"><div><p>Provides an easy way to access the <tt class="inline-code">*tint</tt> members of our
+    <a class="xref" href="kameloso.logger.KamelosoLogger.html">kameloso.logger.KamelosoLogger</a> instance <a class="xref" href="kameloso.common.logger.html">logger</a>.</p><p>It still accesses the global <a class="xref" href="kameloso.common.logger.html">kameloso.common.logger</a> instance, but is now
+    independent of <a class="xref" href="kameloso.common.settings.html">kameloso.common.settings</a>.</p></div></div></div><div class="annotated-prototype"><div class="aggregate-prototype"><div class="attributes">@<span class="name" data-ident="safe">safe</span> </div><span class="builtin-type">struct</span> Tint  {<div class="aggregate-member"><a href="kameloso.common.Tint.monochrome.html"><div class="attributes">static </div><tt class="highlighted"><span class="type">bool</span></tt> <span class="name">monochrome</span>;</a></div><div class="aggregate-member"><a href="kameloso.common.Tint.opDispatch.html"><span class="storage-class">static</span> <tt class="highlighted"><span class="type">string</span></tt> <span class="name">opDispatch</span>();</a></div><div class="aggregate-member"><a href="kameloso.common.Tint.log.html"><span class="storage-class">static</span> <tt class="highlighted"><span class="type">string</span></tt> <span class="name">log</span>();</a></div>}</div></div><h2 id="members"><a class="header-anchor" href="#members">Members</a></h2><h3 class="member-list-header hide-from-toc" id="static function"><a class="header-anchor" href="#static function">Static functions</a></h3><dl class="member-list native"><dt><a href="kameloso.common.Tint.log.html">log</a><div class="simplified-prototype" style="max-width: 13ch;"><tt class="highlighted"><span class="type">string</span></tt> <span class="name">log</span>()</div></dt><dd><div><p>Returns an empty string, since we're not versioned <tt class="inline-code">Colours</tt>.</p></div></dd><dt><a href="kameloso.common.Tint.opDispatch.html">opDispatch</a><div class="simplified-prototype" style="max-width: 20ch;"><tt class="highlighted"><span class="type">string</span></tt> <span class="name">opDispatch</span>()</div></dt><dd><div><p>Provides the string that corresponds to the tint of the
+            <a class="xref" href="std.experimental.logger.core.LogLevel.html">std.experimental.logger.core.LogLevel</a> that was passed in string form
+            as the <tt class="inline-code">tint</tt> <tt class="inline-code">opDispatch</tt> template parameter.</p></div></dd></dl><h3 class="member-list-header hide-from-toc" id="static variable"><a class="header-anchor" href="#static variable">Static variables</a></h3><dl class="member-list native"><dt><a href="kameloso.common.Tint.monochrome.html">monochrome</a><div class="simplified-prototype" style="max-width: 17ch;"><tt class="highlighted"><span class="type">bool</span></tt> <span class="name">monochrome</span>;</div></dt><dd><div><p>Whether or not output should be coloured at all.</p></div></dd></dl><div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="hid">logger</span>.<span class="hid">logf</span>(<span class="str">&quot;%s%s%s am a %1$s%4$s%3$s!&quot;</span>, <span class="hid">Tint</span>.<span class="hid">info</span>, <span class="str">&quot;I&quot;</span>, <span class="hid">Tint</span>.<span class="hid">log</span>, <span class="str">&quot;fish&quot;</span>);</pre><p>If the inner <tt class="inline-code">monochrome</tt> member is true, <tt class="inline-code">Tint.*</tt> will just return an empty string.</p></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted with-line-wrappers"><span class="br">1 </span><span class="kwrd">if</span> (<span class="hid">logger</span> !<span class="kwrd">is</span> <span class="kwrd">null</span>)
+<span class="br">2 </span>{
+<span class="br">3 </span>    <span class="kwrd">version</span>(<span class="hid">Colours</span>)
+<span class="br">4 </span>    {
+<span class="br">5 </span>        <span class="kwrd">assert</span>(<span class="hid">Tint</span>.<span class="hid">log</span> <span class="kwrd">is</span> <span class="hid">logger</span>.<span class="hid">logtint</span>);
+<span class="br">6 </span>        <span class="kwrd">assert</span>(<span class="hid">Tint</span>.<span class="hid">info</span> <span class="kwrd">is</span> <span class="hid">logger</span>.<span class="hid">infotint</span>);
+<span class="br">7 </span>        <span class="kwrd">assert</span>(<span class="hid">Tint</span>.<span class="hid">warning</span> <span class="kwrd">is</span> <span class="hid">logger</span>.<span class="hid">warningtint</span>);
+<span class="br">8 </span>        <span class="kwrd">assert</span>(<span class="hid">Tint</span>.<span class="hid">error</span> <span class="kwrd">is</span> <span class="hid">logger</span>.<span class="hid">errortint</span>);
+<span class="br">9 </span>        <span class="kwrd">assert</span>(<span class="hid">Tint</span>.<span class="hid">fatal</span> <span class="kwrd">is</span> <span class="hid">logger</span>.<span class="hid">fataltint</span>);
+<span class="br">10 </span>        <span class="kwrd">assert</span>(<span class="hid">Tint</span>.<span class="hid">trace</span> <span class="kwrd">is</span> <span class="hid">logger</span>.<span class="hid">tracetint</span>);
+<span class="br">11 </span>        <span class="kwrd">assert</span>(<span class="hid">Tint</span>.<span class="hid">off</span> <span class="kwrd">is</span> <span class="hid">logger</span>.<span class="hid">offtint</span>);
+<span class="br">12 </span>    }
+<span class="br">13 </span>    <span class="kwrd">else</span>
+<span class="br">14 </span>    {
+<span class="br">15 </span>        <span class="kwrd">assert</span>(<span class="hid">Tint</span>.<span class="hid">log</span> == <span class="type">string</span>.<span class="hid">init</span>);
+<span class="br">16 </span>        <span class="kwrd">assert</span>(<span class="hid">Tint</span>.<span class="hid">info</span> == <span class="type">string</span>.<span class="hid">init</span>);
+<span class="br">17 </span>        <span class="kwrd">assert</span>(<span class="hid">Tint</span>.<span class="hid">warning</span> == <span class="type">string</span>.<span class="hid">init</span>);
+<span class="br">18 </span>        <span class="kwrd">assert</span>(<span class="hid">Tint</span>.<span class="hid">error</span> == <span class="type">string</span>.<span class="hid">init</span>);
+<span class="br">19 </span>        <span class="kwrd">assert</span>(<span class="hid">Tint</span>.<span class="hid">fatal</span> == <span class="type">string</span>.<span class="hid">init</span>);
+<span class="br">20 </span>        <span class="kwrd">assert</span>(<span class="hid">Tint</span>.<span class="hid">trace</span> == <span class="type">string</span>.<span class="hid">init</span>);
+<span class="br">21 </span>        <span class="kwrd">assert</span>(<span class="hid">Tint</span>.<span class="hid">off</span> == <span class="type">string</span>.<span class="hid">init</span>);
+<span class="br">22 </span>    }
+<span class="br">23 </span>}</pre></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.common.html">common</a> 
+		<span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.common.findURLs.html">findURLs</a></li><li><a class="function" href="kameloso.common.initLogger.html">initLogger</a></li><li><a class="function" href="kameloso.common.nextMidnight.html">nextMidnight</a></li><li><a class="function" href="kameloso.common.printStacktrace.html">printStacktrace</a></li><li><a class="function" href="kameloso.common.printVersionInfo.html">printVersionInfo</a></li><li><a class="function" href="kameloso.common.replaceTokens.1.html">replaceTokens</a></li><li><a class="function" href="kameloso.common.stripSeparatedPrefix.html">stripSeparatedPrefix</a></li><li><a class="function" href="kameloso.common.timeSince.html">timeSince</a></li><li><a class="function" href="kameloso.common.timeSinceInto.html">timeSinceInto</a></li></ul><span class="type-separator">static variables</span><ul><li><a class="static-variable" href="kameloso.common.curlErrorStrings.html">curlErrorStrings</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="kameloso.common.OutgoingLine.html">OutgoingLine</a></li><li><a class="struct current" href="kameloso.common.Tint.html">Tint</a></li></ul><span class="type-separator">variables</span><ul><li><a class="variable" href="kameloso.common.errnoStrings.html">errnoStrings</a></li><li><a class="variable" href="kameloso.common.logger.html">logger</a></li><li><a class="variable" href="kameloso.common.settings.html">settings</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

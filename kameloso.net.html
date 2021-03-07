@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>kameloso.net (kameloso.net)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>kameloso.net</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> </div><div><div class="documentation-comment synopsis"><div><p>Functionality related to connecting to a server over the Internet.</p><p>Includes <a class="xref" href="core.thread.fiber.Fiber.html">core.thread.fiber.Fiber</a>s that help with resolving the address of,
+    connecting to, and reading full string lines from a server.</p><p>Having them as <a class="xref" href="core.thread.fiber.Fiber.html">core.thread.fiber.Fiber</a>s means a program can do address resolution,
+    connecting and reading while retaining the ability to do other stuff
+    concurrently. This means you can conveniently run code inbetween each
+    connection attempt, for instance, without breaking the program's flow.</p></div></div></div><div class="annotated-prototype"></div><h2 id="members"><a class="header-anchor" href="#members">Members</a></h2><h3 class="member-list-header hide-from-toc" id="class"><a class="header-anchor" href="#class">Classes</a></h3><dl class="member-list native"><dt><a href="kameloso.net.SSLException.html">SSLException</a><div class="simplified-prototype" style="max-width: 19ch;"><span class="builtin-type">class</span> <span class="name">SSLException</span></div></dt><dd><div><p>Exception thrown when OpenSSL functions return a non-<tt class="inline-code">1</tt> error code, such as
+    when the OpenSSL context could not be setup, or when it could not establish
+    an SSL connection from an otherwise live connection.</p></div></dd></dl><h3 class="member-list-header hide-from-toc" id="function"><a class="header-anchor" href="#function">Functions</a></h3><dl class="member-list native"><dt><a href="kameloso.net.connectFiber.html">connectFiber</a><div class="simplified-prototype" style="max-width: 77ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">connectFiber</span>(Connection conn, uint connectionRetries, bool abort)</div></dt><dd><div><p>Fiber function that tries to connect to IPs in the <tt class="inline-code">ips</tt> array of the passed
+    <a class="xref" href="kameloso.net.Connection.html">Connection</a>, yielding at certain points throughout the process to let the
+    calling function do stuff inbetween connection attempts.</p></div></dd><dt><a href="kameloso.net.listenFiber.html">listenFiber</a><div class="simplified-prototype" style="max-width: 71ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">listenFiber</span>(Connection conn, bool abort, int connectionLost)</div></dt><dd><div><p>A <a class="xref" href="std.socket.Socket.html">std.socket.Socket</a>-reading <a class="xref" href="std.concurrency.Generator.html">std.concurrency.Generator</a>. It reads and
+    yields full string lines.</p></div></dd><dt><a href="kameloso.net.resolveFiber.html">resolveFiber</a><div class="simplified-prototype" style="max-width: 97ch;"><tt class="highlighted"><span class="type">void</span></tt> <span class="name">resolveFiber</span>(Connection conn, string address, ushort port, bool useIPv6, bool abort)</div></dt><dd><div><p>Given an address and a port, resolves these and populates the array of unique
+    <tt class="inline-code">std.socket.Address</tt> IPs inside the passed <a class="xref" href="kameloso.net.Connection.html">Connection</a>.</p></div></dd></dl><h3 class="member-list-header hide-from-toc" id="struct"><a class="header-anchor" href="#struct">Structs</a></h3><dl class="member-list native"><dt><a href="kameloso.net.Connection.html">Connection</a><div class="simplified-prototype" style="max-width: 18ch;"><span class="builtin-type">struct</span> <span class="name">Connection</span></div></dt><dd><div><p>Functions and state needed to maintain a connection.</p></div></dd><dt><a href="kameloso.net.ConnectionAttempt.html">ConnectionAttempt</a><div class="simplified-prototype" style="max-width: 26ch;"><span class="builtin-type">struct</span> <span class="name">ConnectionAttempt</span></div></dt><dd><div><p>Embodies the idea of a connection attempt.</p></div></dd><dt><a href="kameloso.net.ListenAttempt.html">ListenAttempt</a><div class="simplified-prototype" style="max-width: 22ch;"><span class="builtin-type">struct</span> <span class="name">ListenAttempt</span></div></dt><dd><div><p>Embodies the idea of a listening attempt.</p></div></dd><dt><a href="kameloso.net.ResolveAttempt.html">ResolveAttempt</a><div class="simplified-prototype" style="max-width: 23ch;"><span class="builtin-type">struct</span> <span class="name">ResolveAttempt</span></div></dt><dd><div><p>Embodies the idea of an address resolution attempt.</p></div></dd></dl><div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted with-line-wrappers"><span class="br">1 </span><span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">concurrency</span> : <span class="hid">Generator</span>;
+<span class="br">2 </span>
+<span class="br">3 </span><span class="hid">Connection</span> <span class="hid">conn</span>;
+<span class="br">4 </span><span class="type">bool</span> <span class="hid">abort</span>;  <span class="com">// Set to true if something goes wrong</span>
+<span class="br">5 </span>
+<span class="br">6 </span><span class="hid">conn</span>.<span class="hid">reset</span>();
+<span class="br">7 </span>
+<span class="br">8 </span><span class="type">bool</span> <span class="hid">useIPv6</span> = <span class="kwrd">false</span>;
+<span class="br">9 </span><span class="kwrd">enum</span> <span class="hid">resolveAttempts</span> = <span class="num">10</span>;
+<span class="br">10 </span>
+<span class="br">11 </span><span class="kwrd">auto</span> <span class="hid">resolver</span> = <span class="kwrd">new</span> <span class="hid">Generator</span>!<span class="hid">ResolveAttempt</span>(() =&gt;
+<span class="br">12 </span>    <span class="hid">resolveFiber</span>(<span class="hid">conn</span>, <span class="str">&quot;irc.freenode.net&quot;</span>, <span class="num">6667</span>, <span class="hid">useIPv6</span>, <span class="hid">resolveAttempts</span>, <span class="hid">abort</span>));
+<span class="br">13 </span>
+<span class="br">14 </span><span class="hid">resolver</span>.<span class="hid">call</span>();
+<span class="br">15 </span>
+<span class="br">16 </span><span class="hid">resolveloop</span>:
+<span class="br">17 </span><span class="kwrd">foreach</span> (<span class="kwrd">const</span> <span class="hid">attempt</span>; <span class="hid">resolver</span>)
+<span class="br">18 </span>{
+<span class="br">19 </span>    <span class="com">// attempt is a yielded `ResolveAttempt`</span>
+<span class="br">20 </span>    <span class="com">// switch on `attempt.state`, deal with it accordingly</span>
+<span class="br">21 </span>}
+<span class="br">22 </span>
+<span class="br">23 </span><span class="com">// Resolution done</span>
+<span class="br">24 </span>
+<span class="br">25 </span><span class="kwrd">enum</span> <span class="hid">connectionRetries</span> = <span class="num">10</span>;
+<span class="br">26 </span>
+<span class="br">27 </span><span class="kwrd">auto</span> <span class="hid">connector</span> = <span class="kwrd">new</span> <span class="hid">Generator</span>!<span class="hid">ConnectionAttempt</span>(() =&gt;
+<span class="br">28 </span>    <span class="hid">connectFiber</span>(<span class="hid">conn</span>, <span class="kwrd">false</span>, <span class="hid">connectionRetries</span>, <span class="hid">abort</span>));
+<span class="br">29 </span>
+<span class="br">30 </span><span class="hid">connector</span>.<span class="hid">call</span>();
+<span class="br">31 </span>
+<span class="br">32 </span><span class="hid">connectorloop</span>:
+<span class="br">33 </span><span class="kwrd">foreach</span> (<span class="kwrd">const</span> <span class="hid">attempt</span>; <span class="hid">connector</span>)
+<span class="br">34 </span>{
+<span class="br">35 </span>    <span class="com">// attempt is a yielded `ConnectionAttempt`</span>
+<span class="br">36 </span>    <span class="com">// switch on `attempt.state`, deal with it accordingly</span>
+<span class="br">37 </span>}
+<span class="br">38 </span>
+<span class="br">39 </span><span class="com">// Connection established</span>
+<span class="br">40 </span>
+<span class="br">41 </span><span class="kwrd">enum</span> <span class="hid">timeoutSeconds</span> = <span class="num">600</span>;
+<span class="br">42 </span>
+<span class="br">43 </span><span class="kwrd">auto</span> <span class="hid">listener</span> = <span class="kwrd">new</span> <span class="hid">Generator</span>!<span class="hid">ListenAttempt</span>(() =&gt; <span class="hid">listeFiber</span>(<span class="hid">conn</span>, <span class="hid">abort</span>, <span class="hid">timeoutSecond</span>));
+<span class="br">44 </span>
+<span class="br">45 </span><span class="hid">listener</span>.<span class="hid">call</span>();
+<span class="br">46 </span>
+<span class="br">47 </span><span class="kwrd">foreach</span> (<span class="kwrd">const</span> <span class="hid">attempt</span>; <span class="hid">listener</span>)
+<span class="br">48 </span>{
+<span class="br">49 </span>    <span class="com">// attempt is a yielded `ListenAttempt`</span>
+<span class="br">50 </span>    <span class="hid">doThingsWithLineFromServer</span>(<span class="hid">attempt</span>.<span class="hid">line</span>);
+<span class="br">51 </span>    <span class="com">// program logic goes here</span>
+<span class="br">52 </span>}</pre></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> 
+		<span class="type-separator">modules</span><ul><li><a class="module" href="kameloso.common.html">common</a></li><li><a class="module" href="kameloso.config.html">config</a></li><li><a class="module" href="kameloso.constants.html">constants</a></li><li><a class="module" href="kameloso.entrypoint.html">entrypoint</a></li><li><a class="module" href="kameloso.irccolours.html">irccolours</a></li><li><a class="module" href="kameloso.kameloso.html">kameloso</a></li><li><a class="module" href="kameloso.logger.html">logger</a></li><li><a class="module" href="kameloso.main.html">main</a></li><li><a class="module" href="kameloso.messaging.html">messaging</a></li><li><a class="module current" href="kameloso.net.html">net</a></li><li><a class="module" href="kameloso.platform.html">platform</a></li><li><a class="module" href="kameloso.plugins.html">plugins</a></li><li><a class="module" href="kameloso.printing.html">printing</a></li><li><a class="module" href="kameloso.semver.html">semver</a></li><li><a class="module" href="kameloso.terminal.html">terminal</a></li><li><a class="module" href="kameloso.thread.html">thread</a></li><li><a class="module" href="kameloso.traits.html">traits</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

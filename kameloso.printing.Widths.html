@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>Widths (kameloso.printing.Widths)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>Widths</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.printing.html">printing</a> </div><div><div class="documentation-comment synopsis"><div><p>Calculates the minimum padding needed to accommodate the strings of all the
+    types and names of the members of the passed struct and/or classes, for
+    formatting into neat columns.</p></div></div></div><div class="annotated-prototype"><div class="aggregate-prototype"><div class="attributes">private </div><span class="builtin-type">template</span> Widths (<div class="parameters-list toplevel"><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="Flag">Flag</span>!&quot;all&quot; <span class="name" data-ident="all">all</span></span></div><div class="template-parameter-item parameter-item">	<span><span class="name" data-ident="Things">Things</span>...</span></div></div>) {<div class="aggregate-member"><div class="attributes">private </div><span class="builtin-type">enum</span> <span class="name">minimumTypeWidth</span>;</div><div class="aggregate-member"><div class="attributes">private </div><span class="builtin-type">enum</span> <span class="name">minimumNameWidth</span>;</div><div class="aggregate-member"><div class="attributes"></div><span class="builtin-type">enum</span> <span class="name">type</span>;</div><div class="aggregate-member"><div class="attributes">private </div><span class="builtin-type">enum</span> <span class="name">initialWidth</span>;</div><div class="aggregate-member"><div class="attributes"></div><span class="builtin-type">enum</span> <span class="name">type</span>;</div><div class="aggregate-member"><div class="attributes">private </div><span class="builtin-type">enum</span> <span class="name">initialWidth</span>;</div><div class="aggregate-member"><div class="attributes">private </div><tt class="highlighted"><span class="kwrd">enum</span></tt> <tt class="highlighted"><span class="hid">ptrdiff_t</span></tt> <span class="name">compensatedWidth</span>;</div><div class="aggregate-member"><div class="attributes"></div><tt class="highlighted"><span class="kwrd">enum</span></tt> <tt class="highlighted"><span class="hid">ptrdiff_t</span></tt> <span class="name">name</span>;</div>}</div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-all"><a class="parameter-name" data-ident="all" href="#param-all">all</a></dt><dd><div class="documentation-comment"><div><p>Whether or not to also include <a class="xref" href="lu.uda.Unserialisable.html">lu.uda.Unserialisable</a> members.</p></div></div></dd><dt id="param-Things"><a class="parameter-name" data-ident="Things" href="#param-Things">Things</a></dt><dd><div class="documentation-comment"><div><p>Variadic list of aggregates to inspect.</p></div></div></dd></dl><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted with-line-wrappers"><span class="br">1 </span><span class="kwrd">import</span> <span class="hid">std</span>.<span class="hid">algorithm</span>.<span class="hid">comparison</span> : <span class="hid">max</span>;
+<span class="br">2 </span>
+<span class="br">3 </span><span class="kwrd">enum</span> <span class="hid">minimumTypeWidth</span> = <span class="num">8</span>;  <span class="com">// Current sweet spot, accommodates well for `string[]`</span>
+<span class="br">4 </span><span class="kwrd">enum</span> <span class="hid">minimumNameWidth</span> = <span class="num">24</span>;  <span class="com">// Current minimum 22, TwitchBotSettings' &quot;caseSensitiveTriggers&quot;</span>
+<span class="br">5 </span>
+<span class="br">6 </span><span class="kwrd">struct</span> <span class="hid">S1</span>
+<span class="br">7 </span>{
+<span class="br">8 </span>    <span class="type">string</span> <span class="hid">someString</span>;
+<span class="br">9 </span>    <span class="type">int</span> <span class="hid">someInt</span>;
+<span class="br">10 </span>    <span class="type">string</span>[] <span class="hid">aaa</span>;
+<span class="br">11 </span>}
+<span class="br">12 </span>
+<span class="br">13 </span><span class="kwrd">struct</span> <span class="hid">S2</span>
+<span class="br">14 </span>{
+<span class="br">15 </span>    <span class="type">string</span> <span class="hid">longerString</span>;
+<span class="br">16 </span>    <span class="type">int</span> <span class="hid">i</span>;
+<span class="br">17 </span>}
+<span class="br">18 </span>
+<span class="br">19 </span><span class="kwrd">alias</span> <span class="hid">widths</span> = <span class="hid">Widths</span>!(<span class="hid">No</span>.<span class="hid">all</span>, <span class="hid">S1</span>, <span class="hid">S2</span>);
+<span class="br">20 </span>
+<span class="br">21 </span><span class="kwrd">static</span> <span class="kwrd">assert</span>(<span class="hid">widths</span>.<span class="hid">type</span> == <span class="hid">max</span>(<span class="hid">minimumTypeWidth</span>, <span class="str">&quot;string[]&quot;</span>.<span class="hid">length</span>));
+<span class="br">22 </span><span class="kwrd">static</span> <span class="kwrd">assert</span>(<span class="hid">widths</span>.<span class="hid">name</span> == <span class="hid">max</span>(<span class="hid">minimumNameWidth</span>, <span class="str">&quot;longerString&quot;</span>.<span class="hid">length</span>));</pre></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.printing.html">printing</a> 
+		<span class="type-separator">aliases</span><ul><li><a class="alias" href="kameloso.printing.formatObject.html">formatObject</a></li><li><a class="alias" href="kameloso.printing.printObject.html">printObject</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.printing.formatObjectImpl.html">formatObjectImpl</a></li><li><a class="function" href="kameloso.printing.formatObjects.1.html">formatObjects</a></li><li><a class="function" href="kameloso.printing.printObjects.html">printObjects</a></li></ul><span class="type-separator">templates</span><ul><li><a class="template current" href="kameloso.printing.Widths.html">Widths</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

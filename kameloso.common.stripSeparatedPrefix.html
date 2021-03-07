@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>stripSeparatedPrefix (kameloso.common.stripSeparatedPrefix)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>stripSeparatedPrefix</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.common.html">common</a> </div><div><div class="documentation-comment synopsis"><div><p>Strips a prefix word from a string, optionally also stripping away some
+    non-word characters (currently &quot;:;?! &quot;).</p><p>This is to make a helper for stripping away bot prefixes, where such may be
+    &quot;kameloso: &quot;.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes">@<span class="name" data-ident="safe">safe</span> pure @<span class="name" data-ident="nogc">nogc</span> </div><div class="return-type"><span class="builtin-type">string</span></div><div class="function-name">stripSeparatedPrefix</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="3"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">string</span></span></span> <span class="parameter-name name" data-ident="line"><a href="#param-line">line</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">string</span></span></span> <span class="parameter-name name" data-ident="prefix"><a href="#param-prefix">prefix</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="name" data-ident="Flag">Flag</span>!&quot;demandSeparatingChars&quot;</span></span> <span class="parameter-name name" data-ident="demandSep"><a href="#param-demandSep">demandSep</a></span><span class="parameter-default-value">&#160;=&#160;<span class="name" data-ident="Yes">Yes.demandSeparatingChars</span></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-line"><a class="parameter-name" data-ident="line" href="#param-line">line</a> <span class="parameter-type"><span class="builtin-type">string</span></span></dt><dd><div class="documentation-comment"><div><p>String line prefixed with <tt class="inline-code">prefix</tt>, potentially including separating characters.</p></div></div></dd><dt id="param-prefix"><a class="parameter-name" data-ident="prefix" href="#param-prefix">prefix</a> <span class="parameter-type"><span class="builtin-type">string</span></span></dt><dd><div class="documentation-comment"><div><p>Prefix to strip.</p></div></div></dd><dt id="param-demandSep"><a class="parameter-name" data-ident="demandSep" href="#param-demandSep">demandSep</a> <span class="parameter-type"><span class="name" data-ident="Flag">Flag</span>!&quot;demandSeparatingChars&quot;</span></dt><dd><div class="documentation-comment"><div><p>Makes it a necessity that <tt class="inline-code">line</tt> is followed
+            by one of the prefix letters &quot;: !?;&quot;. If it isn't, the <tt class="inline-code">line</tt> string
+            will be returned as is.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><span class="builtin-type">string</span></span></div><div class="documentation-comment returns-description"><div><p>The passed line with the <tt class="inline-code">prefix</tt> sliced away.</p></div></div></div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted"><span class="type">string</span> <span class="hid">prefixed</span> = <span class="str">&quot;kameloso: sudo MODE +o #channel :user&quot;</span>;
+<span class="type">string</span> <span class="hid">command</span> = <span class="hid">prefixed</span>.<span class="hid">stripSeparatedPrefix</span>(<span class="str">&quot;kameloso&quot;</span>);
+<span class="kwrd">assert</span>((<span class="hid">command</span> == <span class="str">&quot;sudo MODE +o #channel :user&quot;</span>), <span class="hid">command</span>);</pre></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted with-line-wrappers"><span class="br">1 </span><span class="kwrd">immutable</span> <span class="hid">lorem</span> = <span class="str">&quot;say: lorem ipsum&quot;</span>.<span class="hid">stripSeparatedPrefix</span>(<span class="str">&quot;say&quot;</span>);
+<span class="br">2 </span><span class="kwrd">assert</span>((<span class="hid">lorem</span> == <span class="str">&quot;lorem ipsum&quot;</span>), <span class="hid">lorem</span>);
+<span class="br">3 </span>
+<span class="br">4 </span><span class="kwrd">immutable</span> <span class="hid">notehello</span> = <span class="str">&quot;note!!!! zorael hello&quot;</span>.<span class="hid">stripSeparatedPrefix</span>(<span class="str">&quot;note&quot;</span>);
+<span class="br">5 </span><span class="kwrd">assert</span>((<span class="hid">notehello</span> == <span class="str">&quot;zorael hello&quot;</span>), <span class="hid">notehello</span>);
+<span class="br">6 </span>
+<span class="br">7 </span><span class="kwrd">immutable</span> <span class="hid">sudoquit</span> = <span class="str">&quot;sudo quit :derp&quot;</span>.<span class="hid">stripSeparatedPrefix</span>(<span class="str">&quot;sudo&quot;</span>);
+<span class="br">8 </span><span class="kwrd">assert</span>((<span class="hid">sudoquit</span> == <span class="str">&quot;quit :derp&quot;</span>), <span class="hid">sudoquit</span>);
+<span class="br">9 </span>
+<span class="br">10 </span><span class="com">/*immutable eightball = &quot;8ball predicate?&quot;.stripSeparatedPrefix(&quot;&quot;);
+<span class="br">11 </span>assert((eightball == &quot;8ball predicate?&quot;), eightball);*/</span>
+<span class="br">12 </span>
+<span class="br">13 </span><span class="kwrd">immutable</span> <span class="hid">isnotabot</span> = <span class="str">&quot;kamelosois a bot&quot;</span>.<span class="hid">stripSeparatedPrefix</span>(<span class="str">&quot;kameloso&quot;</span>);
+<span class="br">14 </span><span class="kwrd">assert</span>((<span class="hid">isnotabot</span> == <span class="str">&quot;kamelosois a bot&quot;</span>), <span class="hid">isnotabot</span>);
+<span class="br">15 </span>
+<span class="br">16 </span><span class="kwrd">immutable</span> <span class="hid">isabot</span> = <span class="str">&quot;kamelosois a bot&quot;</span>
+<span class="br">17 </span>    .<span class="hid">stripSeparatedPrefix</span>(<span class="str">&quot;kameloso&quot;</span>, <span class="hid">No</span>.<span class="hid">demandSeparatingChars</span>);
+<span class="br">18 </span><span class="kwrd">assert</span>((<span class="hid">isabot</span> == <span class="str">&quot;is a bot&quot;</span>), <span class="hid">isabot</span>);
+<span class="br">19 </span>
+<span class="br">20 </span><span class="kwrd">immutable</span> <span class="hid">doubles</span> = <span class="str">&quot;kameloso            is a snek&quot;</span>
+<span class="br">21 </span>    .<span class="hid">stripSeparatedPrefix</span>(<span class="str">&quot;kameloso&quot;</span>);
+<span class="br">22 </span><span class="kwrd">assert</span>((<span class="hid">doubles</span> == <span class="str">&quot;is a snek&quot;</span>), <span class="hid">doubles</span>);</pre></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.common.html">common</a> 
+		<span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.common.findURLs.html">findURLs</a></li><li><a class="function" href="kameloso.common.initLogger.html">initLogger</a></li><li><a class="function" href="kameloso.common.nextMidnight.html">nextMidnight</a></li><li><a class="function" href="kameloso.common.printStacktrace.html">printStacktrace</a></li><li><a class="function" href="kameloso.common.printVersionInfo.html">printVersionInfo</a></li><li><a class="function" href="kameloso.common.replaceTokens.1.html">replaceTokens</a></li><li><a class="function current" href="kameloso.common.stripSeparatedPrefix.html">stripSeparatedPrefix</a></li><li><a class="function" href="kameloso.common.timeSince.html">timeSince</a></li><li><a class="function" href="kameloso.common.timeSinceInto.html">timeSinceInto</a></li></ul><span class="type-separator">static variables</span><ul><li><a class="static-variable" href="kameloso.common.curlErrorStrings.html">curlErrorStrings</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="kameloso.common.OutgoingLine.html">OutgoingLine</a></li><li><a class="struct" href="kameloso.common.Tint.html">Tint</a></li></ul><span class="type-separator">variables</span><ul><li><a class="variable" href="kameloso.common.errnoStrings.html">errnoStrings</a></li><li><a class="variable" href="kameloso.common.logger.html">logger</a></li><li><a class="variable" href="kameloso.common.settings.html">settings</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

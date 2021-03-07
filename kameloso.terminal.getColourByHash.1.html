@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>getColourByHash (kameloso.terminal.getColourByHash)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>getColourByHash</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.terminal.html">terminal</a> </div><div><div class="documentation-comment synopsis"><div><p>Hashes the passed string and picks a <a class="xref" href="kameloso.terminal.TerminalForeground.html">TerminalForeground</a> colour by modulo.
+    Overload that takes an array of <a class="xref" href="kameloso.terminal.TerminalForeground.html">TerminalForeground</a>s, to pick between.</p></div></div></div><div class="annotated-prototype"><ol class="overloads"><li class="active-overload-option"><span class="overload-signature"><tt class="highlighted"><span class="hid">TerminalForeground</span></tt> <span class="name">getColourByHash</span>(string word, TerminalForeground[] fgArray)</span><div class="function-prototype"><div class="attributes"><div class="versions-container">version(Colours)</div>@<span class="name" data-ident="safe">safe</span> pure @<span class="name" data-ident="nogc">nogc</span> nothrow </div><div class="return-type"><a class="name" data-ident="TerminalForeground" href="kameloso.terminal.TerminalForeground.html" title="kameloso.terminal.TerminalForeground">TerminalForeground</a></div><div class="function-name">getColourByHash</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="2"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">string</span></span></span> <span class="parameter-name name" data-ident="word"><a href="#param-word">word</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <a class="name" data-ident="TerminalForeground" href="kameloso.terminal.TerminalForeground.html" title="kameloso.terminal.TerminalForeground">TerminalForeground</a>[]</span></span> <span class="parameter-name name" data-ident="fgArray"><a href="#param-fgArray">fgArray</a></span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></li><li class="overload-option"><a href="kameloso.terminal.getColourByHash.2.html"><span class="overload-signature"><tt class="highlighted"><span class="hid">TerminalForeground</span></tt> <span class="name">getColourByHash</span>(string word, Flag!&quot;brightTerminal&quot; bright)</span></a></li></ol></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-word"><a class="parameter-name" data-ident="word" href="#param-word">word</a> <span class="parameter-type"><span class="builtin-type">string</span></span></dt><dd><div class="documentation-comment"><div><p>String to hash and base colour on.</p></div></div></dd><dt id="param-fgArray"><a class="parameter-name" data-ident="fgArray" href="#param-fgArray">fgArray</a> <span class="parameter-type"><a class="xref" href="kameloso.terminal.TerminalForeground.html" title="kameloso.terminal.TerminalForeground"><span class="name" data-ident="TerminalForeground">TerminalForeground</span></a>[]</span></dt><dd><div class="documentation-comment"><div><p>Array of <a class="xref" href="kameloso.terminal.TerminalForeground.html">TerminalForeground</a>s to pick a colour from.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><a class="xref" href="kameloso.terminal.TerminalForeground.html" title="kameloso.terminal.TerminalForeground"><span class="name" data-ident="TerminalForeground">TerminalForeground</span></a></span></div><div class="documentation-comment returns-description"><div><p>A <a class="xref" href="kameloso.terminal.TerminalForeground.html">TerminalForeground</a> based on the passed string, picked from the
+            passed <tt class="inline-code">fgArray</tt> array.</p></div></div></div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div></div></div><div class="unittest-example-holder"><div class="documentation-comment"></div><pre class="d_code highlighted with-line-wrappers"><span class="br">1 </span><span class="kwrd">import</span> <span class="hid">lu</span>.<span class="hid">conv</span> : <span class="hid">Enum</span>;
+<span class="br">2 </span>
+<span class="br">3 </span><span class="kwrd">alias</span> <span class="hid">FG</span> = <span class="hid">TerminalForeground</span>;
+<span class="br">4 </span>
+<span class="br">5 </span><span class="hid">TerminalForeground</span>[<span class="num">3</span>] <span class="hid">fgArray</span> =
+<span class="br">6 </span>[
+<span class="br">7 </span>    <span class="hid">FG</span>.<span class="hid">red</span>,
+<span class="br">8 </span>    <span class="hid">FG</span>.<span class="hid">green</span>,
+<span class="br">9 </span>    <span class="hid">FG</span>.<span class="hid">blue</span>,
+<span class="br">10 </span>];
+<span class="br">11 </span>
+<span class="br">12 </span>{
+<span class="br">13 </span>    <span class="kwrd">immutable</span> <span class="hid">foreground</span> = <span class="str">&quot;kameloso&quot;</span>.<span class="hid">getColourByHash</span>(<span class="hid">fgArray</span>[]);
+<span class="br">14 </span>    <span class="kwrd">assert</span>((<span class="hid">foreground</span> == <span class="hid">FG</span>.<span class="hid">blue</span>), <span class="hid">Enum</span>!<span class="hid">FG</span>.<span class="hid">toString</span>(<span class="hid">foreground</span>));
+<span class="br">15 </span>}
+<span class="br">16 </span>{
+<span class="br">17 </span>    <span class="kwrd">immutable</span> <span class="hid">foreground</span> = <span class="str">&quot;zorael&quot;</span>.<span class="hid">getColourByHash</span>(<span class="hid">fgArray</span>[]);
+<span class="br">18 </span>    <span class="kwrd">assert</span>((<span class="hid">foreground</span> == <span class="hid">FG</span>.<span class="hid">green</span>), <span class="hid">Enum</span>!<span class="hid">FG</span>.<span class="hid">toString</span>(<span class="hid">foreground</span>));
+<span class="br">19 </span>}
+<span class="br">20 </span>{
+<span class="br">21 </span>    <span class="kwrd">immutable</span> <span class="hid">foreground</span> = <span class="str">&quot;hirrsteff&quot;</span>.<span class="hid">getColourByHash</span>(<span class="hid">fgArray</span>[]);
+<span class="br">22 </span>    <span class="kwrd">assert</span>((<span class="hid">foreground</span> == <span class="hid">FG</span>.<span class="hid">red</span>), <span class="hid">Enum</span>!<span class="hid">FG</span>.<span class="hid">toString</span>(<span class="hid">foreground</span>));
+<span class="br">23 </span>}</pre></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.terminal.html">terminal</a> 
+		<span class="type-separator">enums</span><ul><li><a class="enum" href="kameloso.terminal.TerminalBackground.html">TerminalBackground</a></li><li><a class="enum" href="kameloso.terminal.TerminalForeground.html">TerminalForeground</a></li><li><a class="enum" href="kameloso.terminal.TerminalFormat.html">TerminalFormat</a></li><li><a class="enum" href="kameloso.terminal.TerminalReset.html">TerminalReset</a></li><li><a class="enum" href="kameloso.terminal.TerminalToken.html">TerminalToken</a></li><li><a class="enum" href="kameloso.terminal.isAColourCode.html">isAColourCode</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.terminal.colour.1.html">colour</a></li><li><a class="function" href="kameloso.terminal.colourByHash.html">colourByHash</a></li><li><a class="function" href="kameloso.terminal.colourWith.html">colourWith</a></li><li><a class="function" href="kameloso.terminal.ensureAppropriateBuffering.html">ensureAppropriateBuffering</a></li><li><a class="function current" href="kameloso.terminal.getColourByHash.1.html">getColourByHash</a></li><li><a class="function" href="kameloso.terminal.invert.html">invert</a></li><li><a class="function" href="kameloso.terminal.isTTY.1.html">isTTY</a></li><li><a class="function" href="kameloso.terminal.normaliseColours.html">normaliseColours</a></li><li><a class="function" href="kameloso.terminal.normaliseColoursBright.html">normaliseColoursBright</a></li><li><a class="function" href="kameloso.terminal.resetConsoleModeAndCodepage.html">resetConsoleModeAndCodepage</a></li><li><a class="function" href="kameloso.terminal.setConsoleModeAndCodepage.html">setConsoleModeAndCodepage</a></li><li><a class="function" href="kameloso.terminal.setTitle.html">setTitle</a></li><li><a class="function" href="kameloso.terminal.truecolour.1.html">truecolour</a></li></ul><span class="type-separator">static variables</span><ul><li><a class="static-variable" href="kameloso.terminal.originalCP.html">originalCP</a></li><li><a class="static-variable" href="kameloso.terminal.originalConsoleMode.html">originalConsoleMode</a></li><li><a class="static-variable" href="kameloso.terminal.originalOutputCP.html">originalOutputCP</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

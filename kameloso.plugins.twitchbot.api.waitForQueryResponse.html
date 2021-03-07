@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>waitForQueryResponse (kameloso.plugins.twitchbot.api.waitForQueryResponse)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>waitForQueryResponse</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.plugins.html">plugins</a> <a class="breadcrumb" href="kameloso.plugins.twitchbot.html">twitchbot</a> <a class="breadcrumb" href="kameloso.plugins.twitchbot.api.html">api</a> </div><div><div class="documentation-comment synopsis"><div><p>Common code to wait for a query response.</p><p>Merely spins and monitors the shared <tt class="inline-code">bucket</tt> associative array for when a
+    response has arrived, and then returns it.</p><p>Times out after a hardcoded
+    <a class="xref" href="kameloso.plugins.twitchbot.base.TwitchBotPlugin.queryResponseTimeout.html">kameloso.plugins.twitchbot.base.TwitchBotPlugin.queryResponseTimeout</a></p><p>if nothing was received.</p><p>Note: Must be called from inside a <a class="xref" href="core.thread.fiber.Fiber.html">core.thread.fiber.Fiber</a>.</p></div></div></div><div class="annotated-prototype"><div class="function-prototype"><div class="attributes"><div class="versions-container">version(WithPlugins &amp;&amp; TwitchSupport &amp;&amp; WithTwitchBotPlugin &amp;&amp; TwitchAPIFeatures)</div>package </div><div class="return-type"><a class="name" data-ident="QueryResponse" href="kameloso.plugins.twitchbot.api.QueryResponse.html" title="kameloso.plugins.twitchbot.api.QueryResponse">QueryResponse</a></div><div class="function-name">waitForQueryResponse</div><div class="template-parameters" data-count="0"></div><div class="runtime-parameters" data-count="3"><div class="parameters-list toplevel"><span class="paren">(</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><a class="name" data-ident="TwitchBotPlugin" href="kameloso.plugins.twitchbot.base.TwitchBotPlugin.html" title="kameloso.plugins.twitchbot.base.TwitchBotPlugin">TwitchBotPlugin</a></span></span> <span class="parameter-name name" data-ident="plugin"><a href="#param-plugin">plugin</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">string</span></span></span> <span class="parameter-name name" data-ident="url"><a href="#param-url">url</a></span></div><span class="comma">,</span><div class="runtime-parameter-item parameter-item"><span class="parameter-type-holder"><span class="parameter-type"><span class="storage-class">const</span> <span class="builtin-type">bool</span></span></span> <span class="parameter-name name" data-ident="leaveTimingAlone"><a href="#param-leaveTimingAlone">leaveTimingAlone</a></span><span class="parameter-default-value">&#160;=&#160;true</span></div><span class="paren">)</span></div></div><div class="function-contracts"></div></div></div><div><h2 id="parameters"><a class="header-anchor" href="#parameters">Parameters</a></h2><dl class="parameter-descriptions"><dt id="param-plugin"><a class="parameter-name" data-ident="plugin" href="#param-plugin">plugin</a> <span class="parameter-type"><a class="xref" href="kameloso.plugins.twitchbot.base.TwitchBotPlugin.html" title="kameloso.plugins.twitchbot.base.TwitchBotPlugin"><span class="name" data-ident="TwitchBotPlugin">TwitchBotPlugin</span></a></span></dt><dd><div class="documentation-comment"><div><p>The current <a class="xref" href="kameloso.plugins.twitchbot.base.TwitchBotPlugin.html">kameloso.plugins.twitchbot.base.TwitchBotPlugin</a>.</p></div></div></dd><dt id="param-url"><a class="parameter-name" data-ident="url" href="#param-url">url</a> <span class="parameter-type"><span class="builtin-type">string</span></span></dt><dd><div class="documentation-comment"><div><p>The URL that was queried prior to calling this function. Must match precisely.</p></div></div></dd><dt id="param-leaveTimingAlone"><a class="parameter-name" data-ident="leaveTimingAlone" href="#param-leaveTimingAlone">leaveTimingAlone</a> <span class="parameter-type"><span class="builtin-type">bool</span></span></dt><dd><div class="documentation-comment"><div><p>Whether or not to adjust the approximate query time.
+            Enabled by default but can be disabled if the caller wants to do it.</p></div></div></dd></dl><h2 id="returns"><a class="header-anchor" href="#returns">Return Value</a></h2><div><div class="return-type-holder">Type: <span class="return-type"><a class="xref" href="kameloso.plugins.twitchbot.api.QueryResponse.html" title="kameloso.plugins.twitchbot.api.QueryResponse"><span class="name" data-ident="QueryResponse">QueryResponse</span></a></span></div><div class="documentation-comment returns-description"><div><p>A <a class="xref" href="kameloso.plugins.twitchbot.api.QueryResponse.html">QueryResponse</a> as constructed by other parts of the program.</p></div></div></div><h2 id="examples"><a class="header-anchor" href="#examples">Examples</a></h2><div class="documentation-comment"><div><pre class="d_code highlighted with-line-wrappers"><span class="br">1 </span><span class="kwrd">immutable</span> <span class="hid">url</span> = <span class="str">&quot;https://api.twitch.tv/helix/users?login=zorael&quot;</span>;
+<span class="br">2 </span>
+<span class="br">3 </span><span class="kwrd">if</span> (<span class="hid">plugin</span>.<span class="hid">twitchBotSettings</span>.<span class="hid">singleWorkerThread</span>)
+<span class="br">4 </span>{
+<span class="br">5 </span>    <span class="hid">plugin</span>.<span class="hid">persistentWorkerTid</span>.<span class="hid">send</span>(<span class="hid">url</span>, <span class="hid">plugin</span>.<span class="hid">authorizationBearer</span>);
+<span class="br">6 </span>}
+<span class="br">7 </span><span class="kwrd">else</span>
+<span class="br">8 </span>{
+<span class="br">9 </span>    <span class="hid">spawn</span>(&amp;<span class="hid">queryTwitchImpl</span>, <span class="hid">url</span>, <span class="hid">plugin</span>.<span class="hid">authorizationBearer</span>,
+<span class="br">10 </span>        <span class="hid">plugin</span>.<span class="hid">queryResponseTimeout</span>, <span class="hid">plugin</span>.<span class="hid">bucket</span>, <span class="hid">plugin</span>.<span class="hid">state</span>.<span class="hid">connSettings</span>.<span class="hid">caBundleFile</span>);
+<span class="br">11 </span>}
+<span class="br">12 </span>
+<span class="br">13 </span><span class="hid">delay</span>(<span class="hid">plugin</span>, <span class="hid">plugin</span>.<span class="hid">approximateQueryTime</span>.<span class="hid">msecs</span>, <span class="hid">Yes</span>.<span class="hid">yield</span>);
+<span class="br">14 </span><span class="kwrd">immutable</span> <span class="hid">response</span> = <span class="hid">waitForQueryResponse</span>(<span class="hid">plugin</span>, <span class="hid">url</span>);
+<span class="br">15 </span><span class="com">// response.str is the response body</span></pre></div></div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.plugins.html">plugins</a> <a class="parent" href="kameloso.plugins.twitchbot.html">twitchbot</a> <a class="parent" href="kameloso.plugins.twitchbot.api.html">api</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="kameloso.plugins.twitchbot.api.TwitchQueryException.html">TwitchQueryException</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.plugins.twitchbot.api.averageApproximateQueryTime.html">averageApproximateQueryTime</a></li><li><a class="function" href="kameloso.plugins.twitchbot.api.generateKey.html">generateKey</a></li><li><a class="function" href="kameloso.plugins.twitchbot.api.getChatters.html">getChatters</a></li><li><a class="function" href="kameloso.plugins.twitchbot.api.getFollows.html">getFollows</a></li><li><a class="function" href="kameloso.plugins.twitchbot.api.getTwitchEntity.html">getTwitchEntity</a></li><li><a class="function" href="kameloso.plugins.twitchbot.api.getValidation.html">getValidation</a></li><li><a class="function" href="kameloso.plugins.twitchbot.api.persistentQuerier.html">persistentQuerier</a></li><li><a class="function" href="kameloso.plugins.twitchbot.api.queryTwitch.html">queryTwitch</a></li><li><a class="function" href="kameloso.plugins.twitchbot.api.queryTwitchImpl.html">queryTwitchImpl</a></li><li><a class="function" href="kameloso.plugins.twitchbot.api.twitchTryCatchDg.html">twitchTryCatchDg</a></li><li><a class="function current" href="kameloso.plugins.twitchbot.api.waitForQueryResponse.html">waitForQueryResponse</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="kameloso.plugins.twitchbot.api.QueryResponse.html">QueryResponse</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>

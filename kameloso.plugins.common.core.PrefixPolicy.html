@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>PrefixPolicy (kameloso.plugins.common.core.PrefixPolicy)</title>
+	<meta charset="utf-8" />
+	<meta content="width=device-width, initial-scale=1" name="viewport" />
+        <link href="style.css" rel="stylesheet" />
+        <script src="script.js" type="text/javascript"></script>
+
+	
+	<link href="search-results.html" rel="prefetch" />
+</head>
+<body>
+	<div id="page-header">
+		<div id="logotype">
+		<span>kameloso IRC bot</span>
+		<nav>
+			<a href="http://dlang.org/">Dlang.org</a>
+		</nav>
+		</div>
+
+		<form action="search-docs.html" id="search">
+			<input name="searchTerm" placeholder="Find a symbol name..." type="search" />
+			<input type="submit" value="Go" />
+		</form>
+	</div>
+	<div id="page-body">
+		<div id="page-content">
+		<h1>PrefixPolicy</h1><div class="breadcrumbs"><a class="breadcrumb" href="kameloso.html">kameloso</a> <a class="breadcrumb" href="kameloso.plugins.html">plugins</a> <a class="breadcrumb" href="kameloso.plugins.common.html">common</a> <a class="breadcrumb" href="kameloso.plugins.common.core.html">core</a> </div><div><div class="documentation-comment synopsis"><div><p>In what way the contents of a <a class="xref" href="dialect.defs.IRCEvent.html">dialect.defs.IRCEvent</a> must start (be &quot;prefixed&quot;)
+    for an annotated function to be allowed to trigger.</p></div></div></div><div class="annotated-prototype"></div><h2 id="values"><a class="header-anchor" href="#values">Values</a></h2><table class="enum-members"><tr><th>Value</th><th>Meaning</th></tr><tr class="enum-member" id="direct"><td><a class="enum-member-name" href="#direct">direct</a><div class="enum-attributes"></div></td><td><div><p>The annotated event handler will not examine the <a class="xref" href="dialect.defs.IRCEvent.content.html">dialect.defs.IRCEvent.content</a>
+        member at all and will always trigger, as long as all other annotations match.</p></div></td></tr><tr class="enum-member" id="prefixed"><td><a class="enum-member-name" href="#prefixed">prefixed</a><div class="enum-attributes"></div></td><td><div><p>The annotated event handler will only trigger if the <a class="xref" href="dialect.defs.IRCEvent.content.html">dialect.defs.IRCEvent.content</a>
+        member starts with the <a class="xref" href="kameloso.kameloso.CoreSettings.prefix.html">kameloso.kameloso.CoreSettings.prefix</a> (e.g. &quot;!&quot;).
+        All other annotations must also match.</p></div></td></tr><tr class="enum-member" id="nickname"><td><a class="enum-member-name" href="#nickname">nickname</a><div class="enum-attributes"></div></td><td><div><p>The annotated event handler will only trigger if the <a class="xref" href="dialect.defs.IRCEvent.content.html">dialect.defs.IRCEvent.content</a>
+        member starts with the bot's name, as if addressed to it.</p><p>In <a class="xref" href="dialect.defs.IRCEvent.Type.QUERY.html">dialect.defs.IRCEvent.Type.QUERY</a> events this instead behaves as
+        <a class="xref" href="kameloso.plugins.common.core.PrefixPolicy.html#direct">PrefixPolicy.direct</a>.</p></div></td></tr></table><div></div></div>
+		<div id="page-nav"><a class="parent" href="kameloso.html">kameloso</a> <a class="parent" href="kameloso.plugins.html">plugins</a> <a class="parent" href="kameloso.plugins.common.html">common</a> <a class="parent" href="kameloso.plugins.common.core.html">core</a> 
+		<span class="type-separator">classes</span><ul><li><a class="class" href="kameloso.plugins.common.core.IRCPlugin.html">IRCPlugin</a></li><li><a class="class" href="kameloso.plugins.common.core.Replay.html">Replay</a></li><li><a class="class" href="kameloso.plugins.common.core.ReplayImpl.html">ReplayImpl</a></li></ul><span class="type-separator">enums</span><ul><li><a class="enum" href="kameloso.plugins.common.core.Chainable.html">Chainable</a></li><li><a class="enum" href="kameloso.plugins.common.core.ChannelPolicy.html">ChannelPolicy</a></li><li><a class="enum" href="kameloso.plugins.common.core.Configuration.html">Configuration</a></li><li><a class="enum" href="kameloso.plugins.common.core.Enabler.html">Enabler</a></li><li><a class="enum" href="kameloso.plugins.common.core.FilterResult.html">FilterResult</a></li><li><a class="enum" href="kameloso.plugins.common.core.PermissionsRequired.html">PermissionsRequired</a></li><li><a class="enum current" href="kameloso.plugins.common.core.PrefixPolicy.html">PrefixPolicy</a></li><li><a class="enum" href="kameloso.plugins.common.core.Resource.html">Resource</a></li><li><a class="enum" href="kameloso.plugins.common.core.Settings.html">Settings</a></li><li><a class="enum" href="kameloso.plugins.common.core.Terminating.html">Terminating</a></li><li><a class="enum" href="kameloso.plugins.common.core.Verbose.html">Verbose</a></li></ul><span class="type-separator">functions</span><ul><li><a class="function" href="kameloso.plugins.common.core.filterSender.html">filterSender</a></li><li><a class="function" href="kameloso.plugins.common.core.prefixPolicyMatches.html">prefixPolicyMatches</a></li><li><a class="function" href="kameloso.plugins.common.core.replay.1.html">replay</a></li></ul><span class="type-separator">mixin templates</span><ul><li><a class="mixin-template" href="kameloso.plugins.common.core.IRCPluginImpl.html">IRCPluginImpl</a></li></ul><span class="type-separator">structs</span><ul><li><a class="struct" href="kameloso.plugins.common.core.BotCommand.html">BotCommand</a></li><li><a class="struct" href="kameloso.plugins.common.core.BotRegex.html">BotRegex</a></li><li><a class="struct" href="kameloso.plugins.common.core.Description.html">Description</a></li><li><a class="struct" href="kameloso.plugins.common.core.IRCPluginState.html">IRCPluginState</a></li><li><a class="struct" href="kameloso.plugins.common.core.Repeat.html">Repeat</a></li></ul></div>
+	</div>
+	<div id="page-footer">Page generated by <a href="https://github.com/adamdruppe/adrdox">adrdox</a></div>
+</body>
+</html>
