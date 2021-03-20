@@ -242,8 +242,6 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
         {
             if (!service.state.settings.preferHostmasks)
             {
-                import dialect.semver : DialectSemVer;
-
                 with (IRCEvent.Type)
                 switch (event.type)
                 {
@@ -253,18 +251,6 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
                     // Record updated timestamp; this is the end of a WHOIS
                     stored.updated = event.time;
                     break;
-
-                static if (
-                    (DialectSemVer.majorVersion == 1) &&
-                    (DialectSemVer.minorVersion == 1) &&
-                    (DialectSemVer.patchVersion <= 1))
-                {
-                    case SELFJOIN:
-                        // Work around SELFJOINs inheriting "*" accounts on older dialect
-                        // There will be a fix in v1.1.2
-                        if (stored.account == "*") stored.account = string.init;
-                        break;
-                }
 
                 case ACCOUNT:
                 case JOIN:
