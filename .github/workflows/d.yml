@@ -49,8 +49,6 @@ jobs:
 
     - name: 'Build and test'
       run: |
-        git clone https://github.com/zorael/dialect.git
-        dub add-local dialect
         dub test
         dub build --nodeps -b debug   -c dev
         dub build --nodeps -b plain   -c dev

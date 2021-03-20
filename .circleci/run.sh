@@ -28,10 +28,10 @@ install_deps() {
     install_dmd_dub || install_dmd_dub || install_dmd_dub || install_dmd_dub || install_dmd_dub
 
     #git clone https://github.com/zorael/lu.git
-    git clone https://github.com/zorael/dialect.git
+    #git clone https://github.com/zorael/dialect.git
 
     #dub add-local lu
-    dub add-local dialect
+    #dub add-local dialect
 }
 
 build() {
