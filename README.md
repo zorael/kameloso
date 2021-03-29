@@ -319,11 +319,8 @@ $ ./kameloso --set twitchbot.enabled=false --save
 
 Properly enabled and assuming a prefix of `!`, commands to test are:
 
-* `!enable`, `!disable`
 * `!start`, `!uptime`, `!stop`
-* `!phrase`
 * `!timer`
-* `!permit`
 * `!followage`
 
 ...alongside `!operator`, `!whitelist`, `!blacklist`, `!oneliner`, `!poll`, `!counter`, `!stopwatch`, and other non-Twitch-specific commands.
@@ -357,6 +354,7 @@ Even with SSL seemingly properly set up you may see errors of *"Peer certificate
 * pipedream zero: **no compiler segfaults** ([#18026](https://issues.dlang.org/show_bug.cgi?id=18026), [#20562](https://issues.dlang.org/show_bug.cgi?id=20562))
 * pipedream: DCC
 * non-blocking FIFO
+* make plugins enabled/disabled on per-channel basis
 * more pairs of eyes
 
 # Built with
