@@ -631,6 +631,11 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
                     goto case;
             }
 
+            case "account-tag":  // @account=blahblahj;
+            //case "echo-message":  // Outgoing messages are received as incoming
+            //case "solanum.chat/identify-msg":  // Tag just saying "identified"
+            //case "solanum.chat/realhost":   // Includes user's real host/ip
+
             case "account-notify":
             case "extended-join":
             //case "identify-msg":
@@ -647,7 +652,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
             //case "sts":
             //case "extended-join":  // dup
             //case "chghost":  // dup
-            case "cap-notify":
+            //case "cap-notify":  // Implicitly enabled by CAP LS 302
             //case "userhost-in-names":  // dup
             //case "multi-prefix":  // dup
             //case "away-notify":  // dup

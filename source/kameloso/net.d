@@ -22,7 +22,7 @@
     enum resolveAttempts = 10;
 
     auto resolver = new Generator!ResolveAttempt(() =>
-        resolveFiber(conn, "irc.freenode.net", 6667, useIPv6, resolveAttempts, abort));
+        resolveFiber(conn, "irc.libera.chat", 6667, useIPv6, resolveAttempts, abort));
 
     resolver.call();
 
@@ -1115,7 +1115,7 @@ struct ResolveAttempt
     conn.reset();
 
     auto resolver = new Generator!ResolveAttempt(() =>
-        resolveFiber(conn, "irc.freenode.net", 6667, false, 10, abort));
+        resolveFiber(conn, "irc.libera.chat", 6667, false, 10, abort));
 
     resolver.call();
 

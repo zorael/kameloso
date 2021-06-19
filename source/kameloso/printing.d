@@ -22,7 +22,7 @@
  string[] guestChannels         ["#d"](1)
 
 -- IRCServer
-   string address                "irc.freenode.net"(16)
+   string address                "irc.libera.chat"(16)
    ushort port                    6667
 */
     ---

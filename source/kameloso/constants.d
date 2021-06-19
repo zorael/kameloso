@@ -79,7 +79,7 @@ enum KamelosoDefaults
     user = "kameloso",
 
     /// Default server address.
-    serverAddress = "irc.freenode.net",
+    serverAddress = "irc.libera.chat",
 
     /// The default GEOC/"real name" string.
     realName = "kameloso IRC bot v$version",

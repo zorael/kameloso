@@ -210,6 +210,7 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
                     if (user.account.length && (user.account != "*") && !stored.account.length)
                     {
                         // Unexpected event bearing new account
+                        // These can be whatever if the "account-tag" capability is set
                         goto case RPL_WHOISACCOUNT;
                     }
                     break;

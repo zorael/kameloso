@@ -264,7 +264,7 @@ private:  // Module-level private.
         This is only the basename of the file. It will be completed with a path
         to the default (or specified) resource directory, which varies by
         platform. Expect this variable to have values like
-        "`/home/user/.local/share/kameloso/servers/irc.freenode.net/seen.json`"
+        "`/home/user/.local/share/kameloso/servers/irc.libera.chat/seen.json`"
         after the plugin has been instantiated.
      +/
     @Resource string seenFile = "seen.json";

@@ -7,7 +7,7 @@
     import std.concurrency;
 
     mainThread.send(ThreadMessage.Sendline(), "Message to send to server");
-    mainThread.send(ThreadMessage.Pong(), "irc.freenode.net");
+    mainThread.send(ThreadMessage.Pong(), "irc.libera.chat");
     mainThread.send(ThreadMessage.TerminalOutput.writeln, "writeln this for me please");
     mainThread.send(ThreadMessage.BusMessage(), "header", busMessage("payload"));
 
