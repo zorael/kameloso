@@ -209,9 +209,9 @@ unittest
 
     assert((ps.s == "abc def ghi"), ps.s);
     assert((ps.i == 42), ps.i.text);
-    assert(ps.f.isClose(3.14f), ps.f.text);
+    assert(isClose(ps.f, 3.14f), ps.f.text);
     assert(ps.b);
-    assert(ps.d.isClose(99.99), ps.d.text);
+    assert(isClose(ps.d, 99.99), ps.d.text);
 }
 
 
