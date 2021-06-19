@@ -16,7 +16,7 @@
 
 All of the above are plugins and can be runtime-disabled or compiled out. It is modular and easily extensible. A skeletal Hello World plugin is [20 lines of code](source/kameloso/plugins/hello.d).
 
-Testing is primarily done on [**freenode**](https://freenode.net) and on [**Twitch**](https://dev.twitch.tv/docs/irc/guide) servers, so support and coverage is best there.
+Testing is primarily done on [**libera.chat**](https://libera.chat) and on [**Twitch**](https://dev.twitch.tv/docs/irc/guide) servers, so support and coverage is best there.
 
 **Please report bugs. Unreported bugs can only be fixed by accident.**
 
@@ -24,7 +24,7 @@ Testing is primarily done on [**freenode**](https://freenode.net) and on [**Twit
 
 ```
 -n       --nickname Nickname
--s         --server Server address [irc.freenode.net]
+-s         --server Server address [irc.libera.chat]
 -P           --port Server port [6667]
 -A        --account Services account name
 -p       --password Services account password
@@ -38,13 +38,13 @@ Testing is primarily done on [**freenode**](https://freenode.net) and on [**Twit
 Pre-compiled binaries for Windows and Linux can be found under [releases](https://github.com/zorael/kameloso/releases).
 
 ```sh
-$ dub run kameloso -- --server irc.freenode.net --guestChannels "#d"
+$ dub run kameloso -- --server irc.libera.chat --guestChannels "#d"
 
 # alternatively
 $ git clone https://github.com/zorael/kameloso.git
 $ cd kameloso
 $ dub build
-$ ./kameloso --server irc.freenode.net --guestChannels "#d"
+$ ./kameloso --server irc.libera.chat --guestChannels "#d"
 ```
 
 If there's anyone talking it should show up on your screen.
@@ -150,7 +150,7 @@ Settings provided at the command line override any such already defined in your 
 
 ```sh
 $ ./kameloso \
-    --server irc.freenode.net \
+    --server irc.libera.chat \
     --nickname "kameloso" \
     --admins "you,friend" \
     --homeChannels "#mychannel,#elsewhere" \
@@ -335,7 +335,7 @@ For more information and help, first see [the wiki](https://github.com/zorael/ka
 
 If you still can't find what you're looking for, or if you have suggestions on how to improve the bot, you can...
 
-* ...pop by the [`#kameloso`](irc://irc.freenode.net/kameloso) channel on freenode
+* ...pop by the [`#kameloso`](irc://irc.libera.chat/kameloso) channel on libera.chat
 * ...start a thread under [Discussions](https://github.com/zorael/kameloso/discussions)
 * ...file a [GitHub issue](https://github.com/zorael/kameloso/issues/new)
 
@@ -376,5 +376,5 @@ This project is licensed under the **MIT** license - see the [LICENSE](LICENSE) 
 * [`README.md` template gist](https://gist.github.com/PurpleBooth/109311bb0361f32d87a2)
 * [ikod](https://github.com/ikod) for [`dlang-requests`](https://github.com/ikod/dlang-requests)
 * [Adam D. Ruppe](https://github.com/adamdruppe) for [`arsd`](https://github.com/adamdruppe/arsd)
-* [`#d` on freenode](irc://irc.freenode.org:6667/#d)
-* [IRC Definition Files](http://defs.ircdocs.horse) and [`#ircdocs` on freenode](irc://irc.freenode.org:6667/#ircdocs)
+* [`#d` on libera.chat](irc://irc.libera.chat:6697/#d)
+* [IRC Definition Files](http://defs.ircdocs.horse) and [`#ircdocs` on libera.chat](irc://irc.libera.chat:6667/#ircdocs)
