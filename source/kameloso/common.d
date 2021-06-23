@@ -367,7 +367,7 @@ if (isOutputRange!(Sink, char[]))
         static assert(0, pattern.format(truncateUnits));
     }
 
-    immutable duration = signedDuration < 0.seconds ? -signedDuration : signedDuration;
+    immutable duration = signedDuration < Duration.zero ? -signedDuration : signedDuration;
 
     alias units = AliasSeq!("weeks", "days", "hours", "minutes", "seconds");
     enum daysInAMonth = 30;  // The real average is 30.42 but we get unintuitive results.
@@ -470,7 +470,7 @@ if (isOutputRange!(Sink, char[]))
 
     // -------------------------------------------------------------------------
 
-    if (signedDuration < 0.seconds)
+    if (signedDuration < Duration.zero)
     {
         sink.put('-');
     }
@@ -727,7 +727,7 @@ unittest
     sink.reserve(64);  // workaround for formattedWrite < 2.076
 
     {
-        immutable dur = 0.seconds;
+        immutable dur = Duration.zero;
         dur.timeSinceInto(sink);
         assert((sink.data == "0 seconds"), sink.data);
         sink.clear();
