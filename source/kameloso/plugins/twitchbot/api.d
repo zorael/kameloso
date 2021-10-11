@@ -259,18 +259,29 @@ void generateKey(TwitchBotPlugin plugin)
 
                 version(OSX)
                 {
-                    enum defaultCommand = "open";
+                    enum open = "open";
                 }
                 else
                 {
                     // Assume XDG
-                    enum defaultCommand = "xdg-open";
+                    enum open = "xdg-open";
                 }
 
-                immutable browserCommand = environment.get("BROWSER", defaultCommand);
-                immutable openBrowser = [ browserCommand, url ];
+                immutable browserExecutable = environment.get("BROWSER", open);
+                string[2] browserCommand = [ browserExecutable, url ];  // mutable
                 auto devNull = File("/dev/null", "r+");
-                browser = spawnProcess(openBrowser, devNull, devNull, devNull);
+
+                try
+                {
+                    browser = spawnProcess(browserCommand[], devNull, devNull, devNull);
+                }
+                catch (ProcessException e)
+                {
+                    if (browserExecutable == open) throw e;
+
+                    browserCommand[0] = open;
+                    browser = spawnProcess(browserCommand[], devNull, devNull, devNull);
+                }
             }
             else version(Windows)
             {
@@ -289,9 +300,9 @@ void generateKey(TwitchBotPlugin plugin)
                 urlFile.writeln("URL=", url);
                 urlFile.flush();
 
-                immutable openBrowser = [ "explorer", urlFileName ];
+                immutable string[2] browserCommand = [ "explorer", urlFileName ];
                 auto nulFile = File("NUL", "r+");
-                browser = spawnProcess(openBrowser, nulFile, nulFile, nulFile);
+                browser = spawnProcess(browserCommand[], nulFile, nulFile, nulFile);
             }
             else
             {
