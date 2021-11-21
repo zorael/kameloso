@@ -634,11 +634,26 @@ if (isOutputRange!(Sink, char[]))
             if (!user.isServer && user.colour.length && plugin.printerSettings.truecolour)
             {
                 import kameloso.terminal : truecolour;
-                import lu.conv : numFromHex;
+                import lu.semver : LuSemVer;
 
-                int r, g, b;
-                user.colour.numFromHex(r, g, b);
-                sink.truecolour(r, g, b, bright, normalise);
+                // FIXME: Remove this once we publish lu 1.1.3
+                static if (
+                    (LuSemVer.majorVersion == 1) &&
+                    (LuSemVer.minorVersion == 1) &&
+                    (LuSemVer.patchVersion <= 2))
+                {
+                    import lu.conv : numFromHex;
+                    int r, g, b;
+                    user.colour.numFromHex(r, g, b);
+                    sink.truecolour(r, g, b, bright, normalise);
+                }
+                else
+                {
+                    import lu.conv : rgbFromHex;
+                    auto rgb = rgbFromHex(user.colour);
+                    sink.truecolour(rgb.r, rgb.g, rgb.b, bright, normalise);
+                }
+
                 coloured = true;
             }
         }
