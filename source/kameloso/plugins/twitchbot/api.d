@@ -163,8 +163,11 @@ void generateKey(TwitchBotPlugin plugin)
     writeln();
     writefln("* The redirected address should start with %shttp://localhost%s.", Tint.info, Tint.off);
     writefln(`* It will probably say "%sthis site can't be reached%s".`, Tint.log, Tint.off);
-    writeln("* If you are running local web server, you may have to temporarily disable it");
-    writeln("  for this to work.");
+    writeln("* If your browser is already logged in on Twitch, it will likely immediately");
+    writeln("  lead you to this page without asking for login credentials. If you want to");
+    writeln("  generate a key for a different account, first log out and retry.");
+    writefln("* If you are running local web server on port %s80%s, you may have to", Tint.info, Tint.off);
+    writeln("  temporarily disable it for this to work.");
     writeln();
     stdout.flush();
 
@@ -401,7 +404,7 @@ void generateKey(TwitchBotPlugin plugin)
     writeln();
     writeln("    ", Tint.info, "https://github.com/zorael/kameloso/issues/new", Tint.off);
     writeln();
-    writeln(Tint.warning, "Note: this will need to be repeated once every 60 days.", Tint.off);
+    writeln(Tint.log, "Note: this will need to be repeated once every 60 days.", Tint.off);
     writeln();
 }
 
