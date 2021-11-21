@@ -61,7 +61,7 @@ bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings,
         import std.uni : toLower;
 
         string slice = line;  // mutable
-        immutable pluginstring = slice.nom!(Yes.decode)(".").toLower;
+        string pluginstring = slice.nom!(Yes.decode)(".").toLower;  // mutable
         immutable setting = slice.nom!(Yes.inherit, Yes.decode)('=');
         immutable value = slice;
 
@@ -116,6 +116,8 @@ bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings,
         }
         else
         {
+            if (pluginstring == "twitch") pluginstring = "twitchbot";
+
             foreach (plugin; plugins)
             {
                 if (plugin.name != pluginstring) continue;
