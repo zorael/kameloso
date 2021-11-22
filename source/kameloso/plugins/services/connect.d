@@ -583,6 +583,10 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
     {
     case "LS":
         import std.algorithm.iteration : splitter;
+        import std.array : Appender;
+
+        Appender!(string[]) capsToReq;
+        capsToReq.reserve(8);  // guesstimate
 
         foreach (immutable rawCap; content.splitter(' '))
         {
@@ -662,7 +666,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
             case "znc.in/self-message":
                 // znc SELFCHAN/SELFQUERY events
 
-                immediate(service.state, "CAP REQ :" ~ cap, Yes.quiet);
+                capsToReq ~= cap;
                 ++service.requestedCapabilitiesRemaining;
                 break;
 
@@ -671,43 +675,59 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
                 break;
             }
         }
+
+        if (capsToReq.data.length)
+        {
+            import std.algorithm.iteration : joiner;
+            import std.conv : text;
+            immediate(service.state, text("CAP REQ :", capsToReq.data.joiner(" ")), Yes.quiet);
+        }
         break;
 
     case "ACK":
-        switch (content)
-        {
-        case "sasl":
-            immutable hasKey = (service.state.connSettings.privateKeyFile.length ||
-                service.state.connSettings.certFile.length);
-            immutable mechanism = (service.state.connSettings.ssl && hasKey) ?
-                    "AUTHENTICATE EXTERNAL" :
-                    "AUTHENTICATE PLAIN";
-            immediate(service.state, mechanism, Yes.quiet);
-            break;
+        import std.algorithm.iteration : splitter;
 
-        default:
-            //logger.warning("Unhandled capability ACK: ", content);
-            --service.requestedCapabilitiesRemaining;
-            break;
+        foreach (cap; content.splitter(" "))
+        {
+            switch (cap)
+            {
+            case "sasl":
+                immutable hasKey = (service.state.connSettings.privateKeyFile.length ||
+                    service.state.connSettings.certFile.length);
+                immutable mechanism = (service.state.connSettings.ssl && hasKey) ?
+                        "AUTHENTICATE EXTERNAL" :
+                        "AUTHENTICATE PLAIN";
+                immediate(service.state, mechanism, Yes.quiet);
+                break;
+
+            default:
+                //logger.warning("Unhandled capability ACK: ", cap);
+                --service.requestedCapabilitiesRemaining;
+                break;
+            }
         }
         break;
 
     case "NAK":
-        --service.requestedCapabilitiesRemaining;
+        import std.algorithm.iteration : splitter;
 
-        switch (content)
+        foreach (cap; content.splitter(" "))
         {
-        case "sasl":
-            if (service.connectSettings.exitOnSASLFailure)
+            switch (cap)
             {
-                quit(service.state, "SASL Negotiation Failure");
-                return;
-            }
-            break;
+            case "sasl":
+                if (service.connectSettings.exitOnSASLFailure)
+                {
+                    quit(service.state, "SASL Negotiation Failure");
+                    return;
+                }
+                break;
 
-        default:
-            //logger.warning("Unhandled capability NAK: ", content);
-            break;
+            default:
+                //logger.warning("Unhandled capability NAK: ", cap);
+                --service.requestedCapabilitiesRemaining;
+                break;
+            }
         }
         break;
 
