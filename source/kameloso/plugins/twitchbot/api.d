@@ -117,11 +117,11 @@ void persistentQuerier(shared QueryResponse[string] bucket, const uint timeout,
             {
                 halt = true;
             },
-            (OwnerTerminated e) scope
+            (OwnerTerminated _) scope
             {
                 halt = true;
             },
-            /*(Variant v) scope
+            /*(Variant _) scope
             {
                 // It's technically an error but do nothing for now
             },*/

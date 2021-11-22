@@ -2917,7 +2917,7 @@ int initBot(string[] args)
                     reason = givenReason;
                     quiet = givenQuiet;
                 },
-                (Variant v) scope {},
+                (Variant _) scope {},
             );
         }
         while (notEmpty);

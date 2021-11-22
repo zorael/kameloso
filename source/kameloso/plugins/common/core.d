@@ -2383,7 +2383,7 @@ unittest
 
     // function(IRCEvent)
 
-    static void fn2(IRCEvent thisEvent) { }
+    static void fn2(IRCEvent _) { }
 
     auto reqfn2 = replay(event, pl, &fn2);
     queue ~= reqfn2;

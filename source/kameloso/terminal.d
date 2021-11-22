@@ -602,84 +602,65 @@ unittest
 
     writeln("BRIGHT: ", bright);
 
-    foreach (i; 0..256)
+    foreach (r; 0..256)
     {
-        int r, g, b;
-        r = i;
-        int n = i % 10;
-        write(n.to!string.truecolour(r, g, b, bright));
-        if (n == 0) write(i);
+        immutable n = r % 10;
+        write(n.to!string.truecolour(r, 0, 0, bright));
+        if (n == 0) write(r);
     }
 
     writeln();
 
-    foreach (i; 0..256)
+    foreach (g; 0..256)
     {
-        int r, g, b;
-        g = i;
-        int n = i % 10;
-        write(n.to!string.truecolour(r, g, b, bright));
-        if (n == 0) write(i);
+        immutable n = g % 10;
+        write(n.to!string.truecolour(0, g, 0, bright));
+        if (n == 0) write(g);
     }
 
     writeln();
 
-    foreach (i; 0..256)
+    foreach (b; 0..256)
     {
-        int r, g, b;
-        b = i;
-        int n = i % 10;
-        write(n.to!string.truecolour(r, g, b, bright));
-        if (n == 0) write(i);
+        immutable n = b % 10;
+        write(n.to!string.truecolour(0, 0, b, bright));
+        if (n == 0) write(b);
     }
 
     writeln();
 
-    foreach (i; 0..256)
+    foreach (rg; 0..256)
     {
-        int r, g, b;
-        r = i;
-        g = i;
-        int n = i % 10;
-        write(n.to!string.truecolour(r, g, b, bright));
-        if (n == 0) write(i);
+        immutable n = rg % 10;
+        write(n.to!string.truecolour(rg, rg, 0, bright));
+        if (n == 0) write(rg);
     }
 
     writeln();
 
-    foreach (i; 0..256)
+    foreach (rb; 0..256)
     {
-        int r, g, b;
-        r = i;
-        b = i;
-        int n = i % 10;
-        write(n.to!string.truecolour(r, g, b, bright));
-        if (n == 0) write(i);
+        immutable n = rb % 10;
+        write(n.to!string.truecolour(rb, 0, rb, bright));
+        if (n == 0) write(rb);
     }
 
     writeln();
 
-    foreach (i; 0..256)
+    foreach (gb; 0..256)
     {
-        int r, g, b;
-        g = i;
-        b = i;
-        int n = i % 10;
-        write(n.to!string.truecolour(r, g, b, bright));
-        if (n == 0) write(i);
+        immutable n = gb % 10;
+        write(n.to!string.truecolour(0, gb, gb, bright));
+        if (n == 0) write(gb);
     }
 
     writeln();
 
-    foreach (i; 0..256)
+    foreach (rgb; 0..256)
     {
-        int r, g, b;
-        r = i;
-        g = i;
-        b = i;
-        int n = i % 10;
-        write(n.to!string.truecolour(r, g, b, bright));
-        if (n == 0) write(i);
+        immutable n = rgb % 10;
+        write(n.to!string.truecolour(rgb, rgb, rgb, bright));
+        if (n == 0) write(rgb);
     }
 
     writeln();

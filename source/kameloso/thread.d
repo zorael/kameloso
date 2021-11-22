@@ -257,7 +257,7 @@ unittest
         assert((msg !is null), "Incorrectly cast message: " ~ typeof(asCast).stringof);
     }
     {
-        auto msg = busMessage(12345);
+        auto msg = busMessage(123_456);
         auto asCast = cast(BusMessage!int)msg;
         assert((msg !is null), "Incorrectly cast message: " ~ typeof(asCast).stringof);
     }
@@ -403,7 +403,7 @@ void exhaustMessages()
     do
     {
         notEmpty = receiveTimeout(almostInstant,
-            (Variant v) scope {}
+            (Variant _) scope {}
         );
     }
     while (notEmpty);
@@ -424,7 +424,7 @@ unittest
     exhaustMessages();
 
     immutable receivedSomething = receiveTimeout((-1).seconds,
-        (Variant v) {},
+        (Variant _) {},
     );
 
     assert(!receivedSomething);

@@ -956,7 +956,7 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
             IRCEvent.Type.ERR_NOMOTD,
         ];
 
-        void twitchWarningDg(const IRCEvent endOfMotdEvent)
+        void twitchWarningDg(const IRCEvent _)
         {
             version(TwitchSupport)
             {

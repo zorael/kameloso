@@ -1102,7 +1102,7 @@ unittest
                 assert((logLevel == expectedLevels[i]), logLevel.text);
                 assert((message == expectedMessages[i]), message.text);
             },
-            (Variant v)
+            (Variant _)
             {
                 assert(0, "Receive loop test in `messaging.d` failed.");
             }
