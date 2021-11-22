@@ -174,6 +174,31 @@ in (channelName.length, "Tried to handle SELFJOIN with an empty channel string")
 }
 
 
+// onUserstate
+/++
+    Warns if we're not a moderator when we join a home channel.
+
+    "You will not get USERSTATE for other people. Only for yourself."
+    https://discuss.dev.twitch.tv/t/no-userstate-on-people-joining/11598
+ +/
+@(IRCEvent.Type.USERSTATE)
+@(ChannelPolicy.home)
+void onUserstate(const ref IRCEvent event)
+{
+    import lu.string : contains;
+
+    if (!event.target.badges.contains("moderator/") &&
+        !event.target.badges.contains("broadcaster/"))
+    {
+        import kameloso.common : Tint;
+
+        logger.warningf("The bot is not a moderator of home channel %s%s%s. " ~
+            "Consider elevating it to such to avoid being as rate-limited.",
+                Tint.log, event.channel, Tint.warning);
+    }
+}
+
+
 // onSelfpart
 /++
     Removes a channel's corresponding [TwitchBotPlugin.Room] when we leave it.

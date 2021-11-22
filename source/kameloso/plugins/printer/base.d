@@ -365,7 +365,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
             goto default;
         }
 
-    case USERSTATE: // Insanely spammy, once every sent message
+    case USERSTATE: // Once per channel join?
     case PONG:
         break;
 
