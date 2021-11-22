@@ -272,6 +272,8 @@ Run the bot with `--set twitchbot.keygen` to start the captive process of genera
 
 After entering your login and password and clicking **Authorize**, you will be redirected to an empty "this site can't be reached" page. Copy the URL address of it and paste it into the terminal, when asked. It will parse the address, extract your authorisation token, and offer to save it to your configuration file.
 
+> If you are already logged in on Twitch, it will likely immediately lead you to the empty page you should copy the URL of.
+
 If you prefer to generate the token manually, here is the URL you need to follow. The only thing the generation process does is open it for you, and help with saving the end key to disk.
 
 ```
