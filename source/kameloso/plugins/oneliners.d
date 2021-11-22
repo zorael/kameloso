@@ -225,8 +225,7 @@ void onWelcome(OnelinersPlugin plugin)
     channelOnelinerJSON.load(plugin.onelinerFile);
     //plugin.onelinersByChannel.clear();
     plugin.onelinersByChannel.populateFromJSON(channelOnelinerJSON,
-        plugin.onelinersSettings.caseSensitiveTriggers ?
-            No.lowercaseKeys : Yes.lowercaseKeys);
+        cast(Flag!"lowercaseKeys")(!plugin.onelinersSettings.caseSensitiveTriggers));  // invert it
     plugin.onelinersByChannel = plugin.onelinersByChannel.rehash();
 }
 

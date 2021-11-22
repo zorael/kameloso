@@ -484,9 +484,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             import kameloso.plugins.common.core : BotCommand, BotRegex,
                 ChannelPolicy, Verbose, prefixPolicyMatches;
 
-            enum verbose = (hasUDA!(fun, Verbose) || debug_) ?
-                Yes.verbose :
-                No.verbose;
+            enum verbose = cast(Flag!"verbose")(hasUDA!(fun, Verbose) || debug_);
 
             static if (verbose)
             {

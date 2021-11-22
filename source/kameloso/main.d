@@ -169,18 +169,18 @@ void messageFiber(ref Kameloso instance)
     {
         Next next;
 
+        alias Quiet = Flag!"quiet";
+
         /// Send a message to the server bypassing throttling.
         void immediateline(ThreadMessage.Immediateline, string line) scope
         {
-            instance.immediateBuffer.put(OutgoingLine(line,
-                (instance.settings.hideOutgoing ? Yes.quiet : No.quiet)));
+            instance.immediateBuffer.put(OutgoingLine(line, cast(Quiet)instance.settings.hideOutgoing));
         }
 
         /// Echo a line to the terminal and send it to the server.
         void sendline(ThreadMessage.Sendline, string line) scope
         {
-            instance.outbuffer.put(OutgoingLine(line,
-                (instance.settings.hideOutgoing ? Yes.quiet : No.quiet)));
+            instance.outbuffer.put(OutgoingLine(line, cast(Quiet)instance.settings.hideOutgoing));
         }
 
         /// Send a line to the server without echoing it.
@@ -298,8 +298,8 @@ void messageFiber(ref Kameloso instance)
             }
 
             immutable background = (m.properties & Message.Property.background);
-            immutable quietFlag = (instance.settings.hideOutgoing ||
-                (m.properties & Message.Property.quiet)) ? Yes.quiet : No.quiet;
+            immutable quietFlag = cast(Quiet)(instance.settings.hideOutgoing ||
+                (m.properties & Message.Property.quiet));
             immutable force = (m.properties & Message.Property.forced);
             immutable priority = (m.properties & Message.Property.priority);
             immutable immediate = (m.properties & Message.Property.immediate);
@@ -501,8 +501,7 @@ void messageFiber(ref Kameloso instance)
                 }
                 else
                 {
-                    instance.outbuffer.put(OutgoingLine(finalLine,
-                        (instance.settings.hideOutgoing ? Yes.quiet : No.quiet)));
+                    instance.outbuffer.put(OutgoingLine(finalLine, cast(Quiet)instance.settings.hideOutgoing));
                 }
             }
 
@@ -1671,7 +1670,6 @@ void processReplays(ref Kameloso instance, IRCPlugin plugin)
     // WHOISed in the last Timeout.whoisRetry seconds
 
     immutable now = Clock.currTime.toUnixTime;
-    immutable hideOutgoing = instance.settings.hideOutgoing ? Yes.quiet : No.quiet;
 
     foreach (immutable nickname, const replaysForNickname; plugin.state.replays)
     {
@@ -1697,7 +1695,8 @@ void processReplays(ref Kameloso instance, IRCPlugin plugin)
                 writeln(" ...and actually issuing.");
             }
 
-            instance.outbuffer.put(OutgoingLine("WHOIS " ~ nickname, hideOutgoing));
+            instance.outbuffer.put(OutgoingLine("WHOIS " ~ nickname,
+                cast(Flag!"quiet")instance.settings.hideOutgoing));
             instance.previousWhoisTimestamps[nickname] = now;
         }
         else
@@ -2426,8 +2425,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         // update it to any custom value after each reset() call.
         instance.conn.receiveTimeout = instance.connSettings.receiveTimeout;
 
-        immutable actionAfterResolve = tryResolve(instance,
-            (attempt.firstConnect ? Yes.firstConnect : No.firstConnect));
+        immutable actionAfterResolve = tryResolve(instance, cast(Flag!"firstConnect")(attempt.firstConnect));
         if (*instance.abort) break outerloop;  // tryResolve interruptibleSleep can abort
 
         with (Next)
@@ -2720,8 +2718,8 @@ int initBot(string[] args)
 
     // Initialise the logger immediately so it's always available.
     // handleGetopt re-inits later when we know the settings for monochrome
-    initLogger((instance.settings.monochrome ? Yes.monochrome : No.monochrome),
-        (instance.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal));
+    initLogger(cast(Flag!"monochrome")instance.settings.monochrome,
+        cast(Flag!"brightTerminal")instance.settings.brightTerminal);
 
     // Set up signal handling so that we can gracefully catch Ctrl+C.
     setupSignals();

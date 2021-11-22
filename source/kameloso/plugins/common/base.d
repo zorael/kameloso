@@ -86,8 +86,8 @@ bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings,
                 {
                     if ((setting == "monochrome") || (setting == "brightTerminal"))
                     {
-                        initLogger((copyOfSettings.monochrome ? Yes.monochrome : No.monochrome),
-                            (copyOfSettings.brightTerminal ? Yes.brightTerminal : No.brightTerminal));
+                        initLogger(cast(Flag!"monochrome")copyOfSettings.monochrome,
+                            cast(Flag!"brightTerminal")copyOfSettings.brightTerminal);
                     }
 
                     foreach (plugin; plugins)

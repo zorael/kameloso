@@ -234,8 +234,7 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
         mixin WHOISFiberDelegate!(onSuccess, onFailure, Yes.alwaysLookup);
 
         // Only WHOIS once
-        enqueueAndWHOIS(givenUser.nickname,
-            ((i++ == 0) ? Yes.issueWhois : No.issueWhois), background);
+        enqueueAndWHOIS(givenUser.nickname, cast(Flag!"issueWhois")(i++ == 0), background);
 
         // Break early if givenChannel was empty, and save us a loop and a lookup
         if (!channelName.length) break;

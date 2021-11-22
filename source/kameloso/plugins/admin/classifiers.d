@@ -606,8 +606,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
     string[string] aa;
     aa.populateFromJSON(json);
 
-    immutable brightFlag = plugin.state.settings.brightTerminal ?
-        Yes.brightTerminal : No.brightTerminal;
+    immutable brightFlag = cast(Flag!"brightTerminal")plugin.state.settings.brightTerminal;
 
     if (add)
     {

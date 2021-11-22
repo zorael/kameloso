@@ -401,8 +401,8 @@ in (!plugin.workerRunning, "Tried to double-initialise the pipereader")
 
         createFIFO(plugin.fifoFilename);
         plugin.fifoThread = spawn(&pipereader, cast(shared)plugin.state, plugin.fifoFilename,
-            (plugin.state.settings.monochrome ? Yes.monochrome : No.monochrome),
-            (plugin.state.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal));
+            cast(Flag!"monochrome")plugin.state.settings.monochrome,
+            cast(Flag!"brightTerminal")plugin.state.settings.brightTerminal);
         plugin.workerRunning = true;
     }
     catch (ReturnValueException e)

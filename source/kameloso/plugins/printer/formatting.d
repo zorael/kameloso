@@ -544,11 +544,11 @@ if (isOutputRange!(Sink, char[]))
     string content = event.content;  // mutable
     bool shouldBell;
 
-    immutable bright = plugin.state.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal;
+    immutable bright = cast(Flag!"brightTerminal")plugin.state.settings.brightTerminal;
 
     version(TwitchSupport)
     {
-        immutable normalise = plugin.printerSettings.normaliseTruecolour ? Yes.normalise : No.normalise;
+        immutable normalise = cast(Flag!"normalise")plugin.printerSettings.normaliseTruecolour;
     }
 
     /++
@@ -840,8 +840,8 @@ if (isOutputRange!(Sink, char[]))
                 version(TwitchSupport)
                 {
                     content = highlightEmotes(event,
-                        (plugin.printerSettings.colourfulEmotes ? Yes.colourful : No.colourful),
-                        (plugin.state.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal));
+                        cast(Flag!"colourful")plugin.printerSettings.colourfulEmotes,
+                        cast(Flag!"brightTerminal")plugin.state.settings.brightTerminal);
                 }
             }
 

@@ -434,7 +434,7 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
                     }
 
                     immutable result = line.content.sedReplace(event.content,
-                        (plugin.sedReplaceSettings.relaxSyntax ? Yes.relaxSyntax : No.relaxSyntax));
+                        cast(Flag!"relaxSyntax")plugin.sedReplaceSettings.relaxSyntax);
 
                     if ((result == line.content) || !result.length) continue;
 

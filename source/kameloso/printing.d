@@ -170,7 +170,7 @@ if ((Things.length > 0) && allSatisfy!(isAggregateType, Things))
             if (!kameloso.common.settings.monochrome)
             {
                 formatObjectImpl!(all, Yes.coloured)(outbuffer,
-                    (kameloso.common.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal),
+                    cast(Flag!"brightTerminal")kameloso.common.settings.brightTerminal,
                     thing, widths.type+1, widths.name);
                 put = true;
             }

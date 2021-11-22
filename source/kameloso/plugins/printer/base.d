@@ -391,20 +391,18 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 
         bool put;
 
+        alias BellOnMention = Flag!"bellOnMention";
+        alias BellOnError = Flag!"bellOnError";
+        alias HideBlacklistedUsers = Flag!"hideBlacklistedUsers";
+
         version(Colours)
         {
             if (!plugin.state.settings.monochrome)
             {
                 plugin.formatMessageColoured(plugin.linebuffer, event,
-                    (plugin.printerSettings.bellOnMention ?
-                        Yes.bellOnMention :
-                        No.bellOnMention),
-                    (plugin.printerSettings.bellOnError ?
-                        Yes.bellOnError :
-                        No.bellOnError),
-                    (plugin.printerSettings.hideBlacklistedUsers ?
-                        Yes.hideBlacklistedUsers :
-                        No.hideBlacklistedUsers));
+                    cast(BellOnMention)plugin.printerSettings.bellOnMention,
+                    cast(BellOnError)plugin.printerSettings.bellOnError,
+                    cast(HideBlacklistedUsers)plugin.printerSettings.hideBlacklistedUsers);
                 put = true;
             }
         }
@@ -412,15 +410,9 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         if (!put)
         {
             plugin.formatMessageMonochrome(plugin.linebuffer, event,
-                (plugin.printerSettings.bellOnMention ?
-                    Yes.bellOnMention :
-                    No.bellOnMention),
-                (plugin.printerSettings.bellOnError ?
-                    Yes.bellOnError :
-                    No.bellOnError),
-                (plugin.printerSettings.hideBlacklistedUsers ?
-                    Yes.hideBlacklistedUsers :
-                    No.hideBlacklistedUsers));
+                cast(BellOnMention)plugin.printerSettings.bellOnMention,
+                cast(BellOnError)plugin.printerSettings.bellOnError,
+                cast(HideBlacklistedUsers)plugin.printerSettings.hideBlacklistedUsers);
         }
 
         writeln(plugin.linebuffer.data);

@@ -138,7 +138,7 @@ void onCommandBash(ChatbotPlugin plugin, const ref IRCEvent event)
 
     // Defer all work to the worker thread
     spawn(&worker, cast(shared)plugin.state, event,
-        (plugin.state.settings.colouredOutgoing ? Yes.colouredOutgoing : No.colouredOutgoing));
+        cast(Flag!"colouredOutgoing")plugin.state.settings.colouredOutgoing);
 }
 
 

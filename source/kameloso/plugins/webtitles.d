@@ -142,8 +142,6 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
     import lu.string : beginsWith, contains, nom;
     import std.concurrency : spawn;
 
-    immutable descriptionsFlag = plugin.webtitlesSettings.descriptions ?
-        Yes.descriptions : No.descriptions;
     bool[string] uniques;
 
     foreach (immutable i, url; urls)
@@ -169,9 +167,7 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
         request.event = event;
         request.url = url;
 
-        immutable colouredFlag = plugin.state.settings.colouredOutgoing ?
-            Yes.colouredOutgoing :
-            No.colouredOutgoing;
+        immutable colouredFlag = cast(Flag!"colouredOutgoing")plugin.state.settings.colouredOutgoing;
 
         if (plugin.cache.length) prune(plugin.cache, plugin.expireSeconds);
 
@@ -202,7 +198,8 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
         }
 
         cast(void)spawn(&worker, cast(shared)request, plugin.cache,
-            (i * plugin.delayMsecs), colouredFlag, descriptionsFlag);
+            (i * plugin.delayMsecs), colouredFlag,
+            cast(Flag!"descriptions")plugin.webtitlesSettings.descriptions);
     }
 
     import kameloso.thread : ThreadMessage;

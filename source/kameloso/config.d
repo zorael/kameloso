@@ -705,8 +705,8 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
 
         // Reinitialise the logger with new settings
         import kameloso.common : initLogger;
-        initLogger((settings.monochrome ? Yes.monochrome : No.monochrome),
-            (settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal));
+        initLogger(cast(Flag!"monochrome")settings.monochrome,
+            cast(Flag!"brightTerminal")settings.brightTerminal);
 
         // Manually override or append channels, depending on `shouldAppendChannels`
         if (shouldAppendToArrays)
