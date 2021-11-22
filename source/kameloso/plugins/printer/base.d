@@ -290,12 +290,11 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
             if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
             {
                 // Filter overly verbose JOINs and PARTs on Twitch if we're filtering
-                goto case ROOMSTATE;
+                if (!plugin.printerSettings.filterMost) goto default;
+                break;
             }
-            else
-            {
-                goto default;
-            }
+
+            goto default;
         }
         else
         {
