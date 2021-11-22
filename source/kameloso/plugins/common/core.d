@@ -256,16 +256,16 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
     private import core.thread : Fiber;
 
     /// Symbol needed for the mixin constraints to work.
-    private enum mixinSentinel = true;
+    // https://forum.dlang.org/post/sk4hqm$12cf$1@digitalmars.com
+    alias mixinParent = __traits(parent, {});
 
     // Use a custom constraint to force the scope to be an IRCPlugin
-    static if (!is(__traits(parent, mixinSentinel) : IRCPlugin))
+    static if (!is(mixinParent : IRCPlugin))
     {
         import lu.traits : CategoryName;
         import std.format : format;
 
-        alias pluginImplParent = __traits(parent, mixinSentinel);
-        alias pluginImplParentInfo = CategoryName!pluginImplParent;
+        alias pluginImplParentInfo = CategoryName!mixinParent;
 
         enum pattern = "%s `%s` mixes in `%s` but it is only supposed to be " ~
             "mixed into an `IRCPlugin` subclass";
