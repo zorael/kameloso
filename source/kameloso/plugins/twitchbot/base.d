@@ -65,9 +65,6 @@ public:
      +/
     bool promoteVIPs = true;
 
-    /// Whether or not to use features dependent on the Twitch API.
-    bool enableAPIFeatures = true;
-
     version(Windows)
     {
         /++
@@ -1133,9 +1130,7 @@ void onMyInfo(TwitchBotPlugin plugin)
 
 // start
 /++
-    Disables the bell if we're not running inside a terminal. Snapshots
-    [TwitchBotSettings.enableAPIFeatures] into [TwitchBotPlugin] so it can be
-    disabled without modifying settings.
+    Disables the bell if we're not running inside a terminal.
  +/
 void start(TwitchBotPlugin plugin)
 {
@@ -1145,11 +1140,6 @@ void start(TwitchBotPlugin plugin)
     {
         // Not a TTY so replace our bell string with an empty one
         plugin.bell = string.init;
-    }
-
-    version(TwitchAPIFeatures)
-    {
-        plugin.useAPIFeatures = plugin.twitchBotSettings.enableAPIFeatures;
     }
 }
 
