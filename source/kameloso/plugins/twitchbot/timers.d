@@ -63,7 +63,8 @@ struct TimerDefinition
         timerDef = Definition of the timer to apply.
         channelName = String channel to which the timer belongs.
  +/
-Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
+Fiber createTimerFiber(TwitchBotPlugin plugin,
+    const TimerDefinition timerDef,
     const string channelName)
 {
     import kameloso.constants : BufferSize;
@@ -162,7 +163,9 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
         event = The triggering [dialect.defs.IRCEvent].
         targetChannel = The channel we're handling timers for.
  +/
-void handleTimerCommand(TwitchBotPlugin plugin, const ref IRCEvent event, const string targetChannel)
+void handleTimerCommand(TwitchBotPlugin plugin,
+    const ref IRCEvent event,
+    const string targetChannel)
 in (targetChannel.length, "Tried to handle timers with an empty target channel string")
 {
     import lu.string : SplitResults, contains, nom, splitInto;

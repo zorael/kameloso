@@ -156,7 +156,8 @@ void onCommandBash(ChatbotPlugin plugin, const ref IRCEvent event)
         colouredOutgoing = Whether or not to tint messages going to the server
             with mIRC colouring.
  +/
-void worker(shared IRCPluginState sState, const ref IRCEvent event,
+void worker(shared IRCPluginState sState,
+    const ref IRCEvent event,
     const Flag!"colouredOutgoing" colouredOutgoing)
 {
     import kameloso.constants : BufferSize, KamelosoInfo, Timeout;

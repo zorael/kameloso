@@ -191,8 +191,10 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
         id = The specified nickname or (preferably) account.
         rawLine = The quote string to add.
  +/
-void addQuoteAndReport(QuotesPlugin plugin, const ref IRCEvent event,
-    const string id, const string rawLine)
+void addQuoteAndReport(QuotesPlugin plugin,
+    const ref IRCEvent event,
+    const string id,
+    const string rawLine)
 in (id.length, "Tried to add a quote for an empty user")
 in (rawLine.length, "Tried to add an empty quote")
 {
@@ -254,8 +256,11 @@ in (rawLine.length, "Tried to add an empty quote")
         newText = Optional new text to assign to the quote index; implies
             a modification is requested, not a removal.
  +/
-void modQuoteAndReport(QuotesPlugin plugin, const ref IRCEvent event,
-    const string id, const size_t index, const string newText = string.init)
+void modQuoteAndReport(QuotesPlugin plugin,
+    const ref IRCEvent event,
+    const string id,
+    const size_t index,
+    const string newText = string.init)
 {
     import kameloso.irccolours : ircBold, ircColourByHash;
     import std.algorithm.mutation : SwapStrategy, remove;
@@ -339,7 +344,8 @@ void modQuoteAndReport(QuotesPlugin plugin, const ref IRCEvent event,
         The original line with the WeeChat timestamp and nickname sliced away,
         or as it was passed. No new string is ever allocated.
  +/
-string removeWeeChatHead(const string line, const string nickname,
+string removeWeeChatHead(const string line,
+    const string nickname,
     const string prefixes) pure @safe @nogc
 in (nickname.length, "Tried to remove WeeChat head for a nickname but the nickname was empty")
 {
@@ -507,7 +513,8 @@ void onCommandModQuote(QuotesPlugin plugin, const ref IRCEvent event)
         event = The triggering [dialect.defs.IRCEvent].
         action = What action to take; add (or replay), modify or remove.
  +/
-void manageQuoteImpl(QuotesPlugin plugin, const /*ref*/ IRCEvent event,
+void manageQuoteImpl(QuotesPlugin plugin,
+    const /*ref*/ IRCEvent event,
     const ManageQuoteAction action)
 {
     import kameloso.irccolours : ircBold, ircColourByHash;

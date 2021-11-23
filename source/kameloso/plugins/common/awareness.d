@@ -260,7 +260,8 @@ void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const ref IRCE
         module_ = String name of the mixing-in module; generally leave as-is.
  +/
 mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
-    Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
+    Flag!"debug_" debug_ = No.debug_,
+    string module_ = __MODULE__)
 {
     private import kameloso.plugins.common.awareness;
     private import kameloso.plugins.common.core : Chainable;
@@ -679,7 +680,8 @@ void onUserAwarenessPing(IRCPlugin plugin, ref long pingRehash) @system
  +/
 version(WithPlugins)
 mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
-    Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
+    Flag!"debug_" debug_ = No.debug_,
+    string module_ = __MODULE__)
 {
     private import kameloso.plugins.common.awareness;
     private import kameloso.plugins.common.core : Chainable;
@@ -1360,7 +1362,8 @@ void onChannelAwarenessChannelModeIs(IRCPlugin plugin, const ref IRCEvent event)
 version(WithPlugins)
 version(TwitchSupport)
 mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
-    Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
+    Flag!"debug_" debug_ = No.debug_,
+    string module_ = __MODULE__)
 {
     private import kameloso.plugins.common.awareness;
     private import kameloso.plugins.common.core : Chainable;
@@ -1539,7 +1542,8 @@ else
     No-op mixin of version `!TwitchSupport` [kameloso.plugins.common.awareness.TwitchAwareness].
  +/
 mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
-    Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
+    Flag!"debug_" debug_ = No.debug_,
+    string module_ = __MODULE__)
 {
     private import lu.traits : MixinConstraints, MixinScope;
 

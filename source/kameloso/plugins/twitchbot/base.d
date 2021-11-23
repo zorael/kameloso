@@ -403,7 +403,8 @@ void onAutomaticStop(TwitchBotPlugin plugin, const ref IRCEvent event)
         room = The [TwitchBotPlugin.Room] of the channel.
         justNowEnded = Whether or not the stream ended just now.
  +/
-void reportStreamTime(TwitchBotPlugin plugin, const TwitchBotPlugin.Room room,
+void reportStreamTime(TwitchBotPlugin plugin,
+    const TwitchBotPlugin.Room room,
     const Flag!"justNowEnded" justNowEnded = No.justNowEnded)
 {
     import kameloso.common : timeSince;

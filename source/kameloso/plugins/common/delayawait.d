@@ -383,7 +383,10 @@ in ((dg !is null), "Tried to set up a null delegate to await events")
     See_Also:
         [unawait]
  +/
-private void unawaitImpl(Thing, AA)(Thing thing, ref AA aa, const IRCEvent.Type type)
+private void unawaitImpl(Thing, AA)
+    (Thing thing,
+    ref AA aa,
+    const IRCEvent.Type type)
 in ((thing !is null), "Tried to unlist a null " ~ Thing.stringof ~ " from awaiting events")
 in ((type != IRCEvent.Type.UNSET), "Tried to unlist a " ~ Thing.stringof ~
     " from awaiting `IRCEvent.Type.UNSET`")

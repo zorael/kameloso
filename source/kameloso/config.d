@@ -77,8 +77,11 @@ void printHelp(GetoptResult results) @system
         giveInstructions = Whether or not to give instructions to edit the
             generated file and supply admins and/or home channels.
  +/
-void writeConfig(ref Kameloso instance, ref IRCClient client, ref IRCServer server,
-    ref IRCBot bot, const string[] customSettings,
+void writeConfig(ref Kameloso instance,
+    ref IRCClient client,
+    ref IRCServer server,
+    ref IRCBot bot,
+    const string[] customSettings,
     const Flag!"giveInstructions" giveInstructions = Yes.giveInstructions) @system
 {
     import kameloso.common : Tint, logger, printVersionInfo;
@@ -161,7 +164,8 @@ void printSettings(ref Kameloso instance, const string[] customSettings) @system
         [object.Exception] on unexpected platforms where we did not know how to
         open the configuration file in a text editor.
  +/
-void manageConfigFile(ref Kameloso instance, const bool shouldWriteConfig,
+void manageConfigFile(ref Kameloso instance,
+    const bool shouldWriteConfig,
     const bool shouldOpenTerminalEditor,
     const bool shouldOpenGraphicalEditor,
     ref string[] customSettings) @system
@@ -294,7 +298,8 @@ void manageConfigFile(ref Kameloso instance, const bool shouldWriteConfig,
         configurationText = Content to write to file.
         banner = Whether or not to add the "kameloso bot" banner at the head of the file.
  +/
-void writeToDisk(const string filename, const string configurationText,
+void writeToDisk(const string filename,
+    const string configurationText,
     const Flag!"addBanner" banner = Yes.addBanner)
 {
     import std.file : mkdirRecurse;
@@ -426,7 +431,9 @@ public:
     Throws:
         [std.getopt.GetOptException] if an unknown flag is passed.
  +/
-Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSettings) @system
+Next handleGetopt(ref Kameloso instance,
+    string[] args,
+    out string[] customSettings) @system
 {
     with (instance)
     {
@@ -867,7 +874,8 @@ void writeConfigurationFile(ref Kameloso instance, const string filename) @syste
         configFile = (Relative) path of the configuration file.
  +/
 void notifyAboutMissingSettings(const string[][string] missingEntries,
-    const string binaryPath, const string configFile)
+    const string binaryPath,
+    const string configFile)
 {
     import kameloso.common : Tint, logger;
     import std.conv : text;
@@ -1104,7 +1112,8 @@ private import std.meta : allSatisfy;
  +/
 void readConfigInto(T...)(const string configFile,
     out string[][string] missingEntries,
-    out string[][string] invalidEntries, ref T things)
+    out string[][string] invalidEntries,
+    ref T things)
 if (allSatisfy!(isStruct, T))
 {
     import lu.serialisation : deserialise;

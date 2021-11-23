@@ -38,7 +38,9 @@ package:
         event = The triggering [dialect.defs.IRCEvent].
         list = Which list to add/remove from, "whitelist", "operator" or "blacklist".
  +/
-void manageClassLists(AdminPlugin plugin, const ref IRCEvent event, const string list)
+void manageClassLists(AdminPlugin plugin,
+    const ref IRCEvent event,
+    const string list)
 in (list.among!("whitelist", "blacklist", "operator", "staff"),
     list ~ " is not whitelist, operator, staff nor blacklist")
 {
@@ -90,7 +92,9 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
         list = Which list to list; "whitelist", "operator", "staff" or "blacklist".
         event = Optional [dialect.defs.IRCEvent] that instigated the listing.
  +/
-void listList(AdminPlugin plugin, const string channel, const string list,
+void listList(AdminPlugin plugin,
+    const string channel,
+    const string list,
     const IRCEvent event = IRCEvent.init)
 in (list.among!("whitelist", "blacklist", "operator", "staff"),
     list ~ " is not whitelist, operator, staff nor blacklist")
@@ -140,8 +144,11 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
         channel = Which channel the enlisting relates to.
         event = Optional instigating [dialect.defs.IRCEvent].
  +/
-void lookupEnlist(AdminPlugin plugin, const string rawSpecified, const string list,
-    const string channel, const IRCEvent event = IRCEvent.init)
+void lookupEnlist(AdminPlugin plugin,
+    const string rawSpecified,
+    const string list,
+    const string channel,
+    const IRCEvent event = IRCEvent.init)
 in (list.among!("whitelist", "blacklist", "operator", "staff"),
     list ~ " is not whitelist, operator, staff nor blacklist")
 {
@@ -357,8 +364,11 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
         channel = Which channel the enlisting relates to.
         event = Optional instigating [dialect.defs.IRCEvent].
  +/
-void delist(AdminPlugin plugin, const string account, const string list,
-    const string channel, const IRCEvent event = IRCEvent.init)
+void delist(AdminPlugin plugin,
+    const string account,
+    const string list,
+    const string channel,
+    const IRCEvent event = IRCEvent.init)
 in (list.among!("whitelist", "blacklist", "operator", "staff"),
     list ~ " is not whitelist, operator, staff nor blacklist")
 {
@@ -485,8 +495,11 @@ enum AlterationResult
         channel could be found in the specified list.
         [AlterationResult.success] if enlisting or delisting succeeded.
  +/
-AlterationResult alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
-    const string list, const string account, const string channelName)
+AlterationResult alterAccountClassifier(AdminPlugin plugin,
+    const Flag!"add" add,
+    const string list,
+    const string account,
+    const string channelName)
 in (list.among!("whitelist", "blacklist", "operator", "staff"),
     list ~ " is not whitelist, operator, staff nor blacklist")
 {
@@ -569,8 +582,11 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
         mask = String "nickname!ident@address.tld" hostmask.
         event = Instigating [dialect.defs.IRCEvent].
  +/
-void modifyHostmaskDefinition(AdminPlugin plugin, const Flag!"add" add,
-    const string account, const string mask, const ref IRCEvent event)
+void modifyHostmaskDefinition(AdminPlugin plugin,
+    const Flag!"add" add,
+    const string account,
+    const string mask,
+    const ref IRCEvent event)
 in ((!add || account.length), "Tried to add a hostmask with no account to map it to")
 in (mask.length, "Tried to add an empty hostmask definition")
 {

@@ -91,7 +91,8 @@ if (isSomeFunction!dg)
         timeout = How long before queries time out.
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
  +/
-void persistentQuerier(shared QueryResponse[string] bucket, const uint timeout,
+void persistentQuerier(shared QueryResponse[string] bucket,
+    const uint timeout,
     const string caBundleFile)
 {
     import kameloso.thread : ThreadMessage;
@@ -437,8 +438,10 @@ void generateKey(TwitchBotPlugin plugin)
     Throws:
         [TwitchQueryException] if there were unrecoverable errors.
  +/
-QueryResponse queryTwitch(TwitchBotPlugin plugin, const string url,
-    const string authorisationHeader, const Flag!"recursing" recursing = No.recursing)
+QueryResponse queryTwitch(TwitchBotPlugin plugin,
+    const string url,
+    const string authorisationHeader,
+    const Flag!"recursing" recursing = No.recursing)
 in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
 {
     import kameloso.plugins.common.delayawait : delay;
@@ -565,8 +568,11 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
             values keyed by URL.
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
  +/
-void queryTwitchImpl(const string url, const string authToken,
-    const uint timeout, shared QueryResponse[string] bucket, const string caBundleFile)
+void queryTwitchImpl(const string url,
+    const string authToken,
+    const uint timeout,
+    shared QueryResponse[string] bucket,
+    const string caBundleFile)
 {
     import std.array : Appender;
     import std.datetime.systime : Clock, SysTime;
@@ -872,7 +878,8 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
     Returns:
         A [QueryResponse] as constructed by other parts of the program.
  +/
-QueryResponse waitForQueryResponse(TwitchBotPlugin plugin, const string url,
+QueryResponse waitForQueryResponse(TwitchBotPlugin plugin,
+    const string url,
     const bool leaveTimingAlone = true)
 in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 {

@@ -232,7 +232,9 @@ alias printObject = printObjects;
  +/
 void formatObjects(Flag!"all" all = No.all,
     Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
-    (auto ref Sink sink, const Flag!"brightTerminal" bright, auto ref Things things)
+    (auto ref Sink sink,
+    const Flag!"brightTerminal" bright,
+    auto ref Things things)
 if ((Things.length > 0) && allSatisfy!(isAggregateType, Things) && isOutputRange!(Sink, char[]))
 {
     alias widths = Widths!(all, Things);
@@ -273,8 +275,11 @@ alias formatObject = formatObjects;
  +/
 private void formatObjectImpl(Flag!"all" all = No.all,
     Flag!"coloured" coloured = Yes.coloured, Sink, Thing)
-    (auto ref Sink sink, const Flag!"brightTerminal" bright, auto ref Thing thing,
-    const uint typewidth, const uint namewidth)
+    (auto ref Sink sink,
+    const Flag!"brightTerminal" bright,
+    auto ref Thing thing,
+    const uint typewidth,
+    const uint namewidth)
 if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 {
     static if (coloured)

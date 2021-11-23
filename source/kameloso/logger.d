@@ -335,7 +335,8 @@ auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogL
             args = Variadic arguments to compose the output message with.
      +/
     private void printfImpl(Args...)(const LogLevel logLevel,
-        const string pattern, auto ref Args args)
+        const string pattern,
+        auto ref Args args)
     {
         import std.format : formattedWrite;
 

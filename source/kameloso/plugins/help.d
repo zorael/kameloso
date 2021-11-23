@@ -264,8 +264,11 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
         description = The [kameloso.plugins.common.core.Description] that anotates
             the command's function.
  +/
-void sendCommandHelp(HelpPlugin plugin, const IRCPlugin otherPlugin,
-    const ref IRCEvent event, const string command, const Description description)
+void sendCommandHelp(HelpPlugin plugin,
+    const IRCPlugin otherPlugin,
+    const ref IRCEvent event,
+    const string command,
+    const Description description)
 {
     import kameloso.irccolours : ircBold;
     import std.conv : text;

@@ -108,8 +108,10 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
     if (!plugin.printerSettings.logs) return;
 
     /// Write buffered lines.
-    static void writeEventToFile(PrinterPlugin plugin, const ref IRCEvent event,
-        const string key, const string givenPath = string.init,
+    static void writeEventToFile(PrinterPlugin plugin,
+        const ref IRCEvent event,
+        const string key,
+        const string givenPath = string.init,
         const Flag!"extendPath" extendPath = Yes.extendPath,
         const Flag!"raw" raw = No.raw,
         const Flag!"errors" errors = No.errors)

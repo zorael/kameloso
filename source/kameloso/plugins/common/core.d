@@ -1811,8 +1811,11 @@ unittest
         `true` if the message is in a context where the event matches the
         `policy`, `false` if not.
  +/
-bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)(ref IRCEvent event,
-    const PrefixPolicy policy, const IRCClient client, const string prefix)
+bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)
+    (ref IRCEvent event,
+    const PrefixPolicy policy,
+    const IRCClient client,
+    const string prefix)
 {
     import kameloso.common : stripSeparatedPrefix;
     import lu.string : beginsWith;

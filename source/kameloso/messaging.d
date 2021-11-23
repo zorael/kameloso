@@ -108,8 +108,10 @@ struct Message
         background = Whether or not to send it as a low-priority background message.
         caller = String name of the calling function, or something else that gives context.
  +/
-void chan(Flag!"priority" priority = No.priority)(IRCPluginState state,
-    const string channelName, const string content,
+void chan(Flag!"priority" priority = No.priority)
+    (IRCPluginState state,
+    const string channelName,
+    const string content,
     const Flag!"quiet" quiet = No.quiet,
     const Flag!"background" background = No.background,
     const string caller = __FUNCTION__)
@@ -190,8 +192,10 @@ unittest
         background = Whether or not to send it as a low-priority background message.
         caller = String name of the calling function, or something else that gives context.
  +/
-void query(Flag!"priority" priority = No.priority)(IRCPluginState state,
-    const string nickname, const string content,
+void query(Flag!"priority" priority = No.priority)
+    (IRCPluginState state,
+    const string nickname,
+    const string content,
     const Flag!"quiet" quiet = No.quiet,
     const Flag!"background" background = No.background,
     const string caller = __FUNCTION__)
@@ -256,8 +260,11 @@ unittest
         background = Whether or not to send it as a low-priority background message.
         caller = String name of the calling function, or something else that gives context.
  +/
-void privmsg(Flag!"priority" priority = No.priority)(IRCPluginState state,
-    const string channel, const string nickname, const string content,
+void privmsg(Flag!"priority" priority = No.priority)
+    (IRCPluginState state,
+    const string channel,
+    const string nickname,
+    const string content,
     const Flag!"quiet" quiet = No.quiet,
     const Flag!"background" background = No.background,
     const string caller = __FUNCTION__)
@@ -335,8 +342,10 @@ unittest
         background = Whether or not to send it as a low-priority background message.
         caller = String name of the calling function, or something else that gives context.
  +/
-void emote(Flag!"priority" priority = No.priority)(IRCPluginState state,
-    const string emoteTarget, const string content,
+void emote(Flag!"priority" priority = No.priority)
+    (IRCPluginState state,
+    const string emoteTarget,
+    const string content,
     const Flag!"quiet" quiet = No.quiet,
     const Flag!"background" background = No.background,
     const string caller = __FUNCTION__)
@@ -425,8 +434,11 @@ unittest
         background = Whether or not to send it as a low-priority background message.
         caller = String name of the calling function, or something else that gives context.
  +/
-void mode(Flag!"priority" priority = No.priority)(IRCPluginState state,
-    const string channel, const const(char)[] modes, const string content = string.init,
+void mode(Flag!"priority" priority = No.priority)
+    (IRCPluginState state,
+    const string channel,
+    const const(char)[] modes,
+    const string content = string.init,
     const Flag!"quiet" quiet = No.quiet,
     const Flag!"background" background = No.background,
     const string caller = __FUNCTION__)
@@ -488,8 +500,10 @@ unittest
         background = Whether or not to send it as a low-priority background message.
         caller = String name of the calling function, or something else that gives context.
  +/
-void topic(Flag!"priority" priority = No.priority)(IRCPluginState state,
-    const string channel, const string content,
+void topic(Flag!"priority" priority = No.priority)
+    (IRCPluginState state,
+    const string channel,
+    const string content,
     const Flag!"quiet" quiet = No.quiet,
     const Flag!"background" background = No.background,
     const string caller = __FUNCTION__)
@@ -549,8 +563,10 @@ unittest
         background = Whether or not to send it as a low-priority background message.
         caller = String name of the calling function, or something else that gives context.
  +/
-void invite(Flag!"priority" priority = No.priority)(IRCPluginState state,
-    const string channel, const string nickname,
+void invite(Flag!"priority" priority = No.priority)
+    (IRCPluginState state,
+    const string channel,
+    const string nickname,
     const Flag!"quiet" quiet = No.quiet,
     const Flag!"background" background = No.background,
     const string caller = __FUNCTION__)
@@ -611,8 +627,10 @@ unittest
         background = Whether or not to send it as a low-priority background message.
         caller = String name of the calling function, or something else that gives context.
  +/
-void join(Flag!"priority" priority = No.priority)(IRCPluginState state,
-    const string channel, const string key = string.init,
+void join(Flag!"priority" priority = No.priority)
+    (IRCPluginState state,
+    const string channel,
+    const string key = string.init,
     const Flag!"quiet" quiet = No.quiet,
     const Flag!"background" background = No.background,
     const string caller = __FUNCTION__)
@@ -672,8 +690,11 @@ unittest
         background = Whether or not to send it as a low-priority background message.
         caller = String name of the calling function, or something else that gives context.
  +/
-void kick(Flag!"priority" priority = No.priority)(IRCPluginState state,
-    const string channel, const string nickname, const string reason = string.init,
+void kick(Flag!"priority" priority = No.priority)
+    (IRCPluginState state,
+    const string channel,
+    const string nickname,
+    const string reason = string.init,
     const Flag!"quiet" quiet = No.quiet,
     const Flag!"background" background = No.background,
     const string caller = __FUNCTION__)
@@ -736,8 +757,10 @@ unittest
         background = Whether or not to send it as a low-priority background message.
         caller = String name of the calling function, or something else that gives context.
  +/
-void part(Flag!"priority" priority = No.priority)(IRCPluginState state,
-    const string channel, const string reason = string.init,
+void part(Flag!"priority" priority = No.priority)
+    (IRCPluginState state,
+    const string channel,
+    const string reason = string.init,
     const Flag!"quiet" quiet = No.quiet,
     const Flag!"background" background = No.background,
     const string caller = __FUNCTION__)
@@ -795,8 +818,10 @@ unittest
         reason = Optionally, the reason for quitting.
         quiet = Whether or not to echo what was sent to the local terminal.
  +/
-void quit(Flag!"priority" priority = Yes.priority)(IRCPluginState state,
-    const string reason = string.init, const Flag!"quiet" quiet = No.quiet)
+void quit(Flag!"priority" priority = Yes.priority)
+    (IRCPluginState state,
+    const string reason = string.init,
+    const Flag!"quiet" quiet = No.quiet)
 {
     static if (priority) import std.concurrency : send = prioritySend;
     import kameloso.thread : ThreadMessage;
@@ -843,7 +868,8 @@ unittest
         background = Whether or not to send it as a low-priority background message.
         caller = String name of the calling function, or something else that gives context.
  +/
-void whois(Flag!"priority" priority = No.priority)(IRCPluginState state, const string nickname,
+void whois(Flag!"priority" priority = No.priority)
+    (IRCPluginState state, const string nickname,
     const Flag!"force" force = No.force,
     const Flag!"quiet" quiet = No.quiet,
     const Flag!"background" background = No.background,
@@ -915,7 +941,9 @@ unittest
         background = Whether or not to send it as a low-priority background message.
         caller = String name of the calling function, or something else that gives context.
  +/
-void raw(Flag!"priority" priority = No.priority)(IRCPluginState state, const string line,
+void raw(Flag!"priority" priority = No.priority)
+    (IRCPluginState state,
+    const string line,
     const Flag!"quiet" quiet = No.quiet,
     const Flag!"background" background = No.background,
     const string caller = __FUNCTION__)
@@ -974,7 +1002,8 @@ unittest
         quiet = Whether or not to echo what was sent to the local terminal.
         caller = String name of the calling function, or something else that gives context.
  +/
-void immediate(IRCPluginState state, const string line,
+void immediate(IRCPluginState state,
+    const string line,
     const Flag!"quiet" quiet = No.quiet,
     const string caller = __FUNCTION__)
 {

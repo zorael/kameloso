@@ -803,7 +803,9 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
             (`@`, `+`, `%`, ...).
         time = UNIX timestamp of when the user was seen.
  +/
-void updateUser(SeenPlugin plugin, const string signed, const long time,
+void updateUser(SeenPlugin plugin,
+    const string signed,
+    const long time,
     const Flag!"skipModesignStrip" skipModesignStrip = No.skipModesignStrip)
 in (signed.length, "Tried to update a user with an empty (signed) nickname")
 {

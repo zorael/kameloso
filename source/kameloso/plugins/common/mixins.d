@@ -50,7 +50,8 @@ public:
         alwaysLookup = Whether or not to always issue a WHOIS query, even if
             the requested user's account is already known.
  +/
-mixin template WHOISFiberDelegate(alias onSuccess, alias onFailure = null,
+mixin template WHOISFiberDelegate(alias onSuccess,
+    alias onFailure = null,
     Flag!"alwaysLookup" alwaysLookup = No.alwaysLookup)
 if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSomeFunction!onFailure))
 {
@@ -527,7 +528,8 @@ private:
         Sends a channel message.
      +/
     void chan(Flag!"priority" priority = No.priority)
-        (const string channelName, const string content,
+        (const string channelName,
+        const string content,
         const Flag!"quiet" quiet = No.quiet,
         const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
@@ -561,7 +563,9 @@ private:
         underlying same type; [dialect.defs.IRCEvent.Type.PRIVMSG].
      +/
     void privmsg(Flag!"priority" priority = No.priority)
-        (const string channel, const string nickname, const string content,
+        (const string channel,
+        const string nickname,
+        const string content,
         const Flag!"quiet" quiet = No.quiet,
         const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
@@ -576,7 +580,8 @@ private:
         Sends an `ACTION` "emote" to the supplied target (nickname or channel).
      +/
     void emote(Flag!"priority" priority = No.priority)
-        (const string emoteTarget, const string content,
+        (const string emoteTarget,
+        const string content,
         const Flag!"quiet" quiet = No.quiet,
         const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
@@ -593,7 +598,9 @@ private:
         This includes modes that pertain to a user in the context of a channel, like bans.
      +/
     void mode(Flag!"priority" priority = No.priority)
-        (const string channel, const const(char)[] modes, const string content = string.init,
+        (const string channel,
+        const const(char)[] modes,
+        const string content = string.init,
         const Flag!"quiet" quiet = No.quiet,
         const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
@@ -608,7 +615,8 @@ private:
         Sets the topic of a channel.
      +/
     void topic(Flag!"priority" priority = No.priority)
-        (const string channel, const string content,
+        (const string channel,
+        const string content,
         const Flag!"quiet" quiet = No.quiet,
         const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
@@ -623,7 +631,8 @@ private:
         Invites a user to a channel.
      +/
     void invite(Flag!"priority" priority = No.priority)
-        (const string channel, const string nickname,
+        (const string channel,
+        const string nickname,
         const Flag!"quiet" quiet = No.quiet,
         const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
@@ -638,7 +647,8 @@ private:
         Joins a channel.
      +/
     void join(Flag!"priority" priority = No.priority)
-        (const string channel, const string key = string.init,
+        (const string channel,
+        const string key = string.init,
         const Flag!"quiet" quiet = No.quiet,
         const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
@@ -653,7 +663,9 @@ private:
         Kicks a user from a channel.
      +/
     void kick(Flag!"priority" priority = No.priority)
-        (const string channel, const string nickname, const string reason = string.init,
+        (const string channel,
+        const string nickname,
+        const string reason = string.init,
         const Flag!"quiet" quiet = No.quiet,
         const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
@@ -668,7 +680,8 @@ private:
         Leaves a channel.
      +/
     void part(Flag!"priority" priority = No.priority)
-        (const string channel, const string reason = string.init,
+        (const string channel,
+        const string reason = string.init,
         const Flag!"quiet" quiet = No.quiet,
         const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
@@ -727,7 +740,8 @@ private:
         Sends raw text to the server, verbatim, bypassing all queues and
         throttling delays.
      +/
-    void immediate(const string line, const Flag!"quiet" quiet = No.quiet,
+    void immediate(const string line,
+        const Flag!"quiet" quiet = No.quiet,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.immediate(state, line, quiet, caller);

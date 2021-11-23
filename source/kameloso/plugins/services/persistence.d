@@ -126,7 +126,8 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
             the user looks like.
          +/
         static void applyClassifiers(PersistenceService service,
-            const ref IRCEvent event, ref IRCUser user)
+            const ref IRCEvent event,
+            ref IRCUser user)
         {
             if (user.class_ == IRCUser.Class.admin)
             {

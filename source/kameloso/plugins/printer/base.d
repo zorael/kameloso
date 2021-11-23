@@ -153,8 +153,11 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         if the passed channel, sender or target nickname has a squelchstamp
         that demands it. Additionally updates the squelchstamp if so.
      +/
-    static bool updateSquelchstamp(PrinterPlugin plugin, const long time,
-        const string channel, const string sender, const string target)
+    static bool updateSquelchstamp(PrinterPlugin plugin,
+        const long time,
+        const string channel,
+        const string sender,
+        const string target)
     in ((channel.length || sender.length || target.length),
         "Tried to update squelchstamp but with no channel or user information passed")
     {

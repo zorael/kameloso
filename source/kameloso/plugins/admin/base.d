@@ -857,8 +857,10 @@ void onCommandCycle(AdminPlugin plugin, const ref IRCEvent event)
         delaySecs = Number of second to delay rejoining.
         key = The key to use when rejoining the channel.
  +/
-void cycle(AdminPlugin plugin, const string channelName,
-    const uint delaySecs = 0, const string key = string.init)
+void cycle(AdminPlugin plugin,
+    const string channelName,
+    const uint delaySecs = 0,
+    const string key = string.init)
 {
     import kameloso.plugins.common.delayawait : await, delay;
     import kameloso.thread : CarryingFiber;

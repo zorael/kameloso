@@ -693,7 +693,10 @@ unittest
             dark or too bright.
  +/
 version(Colours)
-void truecolour(Sink)(auto ref Sink sink, uint r, uint g, uint b,
+void truecolour(Sink)(auto ref Sink sink,
+    uint r,
+    uint g,
+    uint b,
     const Flag!"brightTerminal" bright = No.brightTerminal,
     const Flag!"normalise" normalise = Yes.normalise)
 if (isOutputRange!(Sink, char[]))
@@ -755,7 +758,10 @@ if (isOutputRange!(Sink, char[]))
         The passed string word encompassed by terminal colour tags.
  +/
 version(Colours)
-string truecolour(const string word, const uint r, const uint g, const uint b,
+string truecolour(const string word,
+    const uint r,
+    const uint g,
+    const uint b,
     const Flag!"brightTerminal" bright = No.brightTerminal,
     const Flag!"normalise" normalise = Yes.normalise) pure
 {
@@ -809,7 +815,8 @@ unittest
         else (a duplicate of) the line unchanged.
  +/
 version(Colours)
-string invert(const string line, const string toInvert,
+string invert(const string line,
+    const string toInvert,
     const Flag!"caseSensitive" caseSensitive = Yes.caseSensitive) pure
 {
     import dialect.common : isValidNicknameCharacter;

@@ -588,7 +588,9 @@ struct ListenAttempt
         [ListenAttempt]s with information about the line receieved in its member values.
  +/
 void listenFiber(size_t bufferSize = BufferSize.socketReceive*2)
-    (Connection conn, ref bool abort, const int connectionLost = Timeout.connectionLost) @system
+    (Connection conn,
+    ref bool abort,
+    const int connectionLost = Timeout.connectionLost) @system
 in ((conn.connected), "Tried to set up a listening fiber on a dead connection")
 in ((connectionLost > 0), "Tried to set up a listening fiber with connection timeout of <= 0")
 {
@@ -882,7 +884,9 @@ struct ConnectionAttempt
         abort = Reference "abort" flag, which -- if set -- should make the
             function return and the [core.thread.fiber.Fiber] terminate.
  +/
-void connectFiber(ref Connection conn, const uint connectionRetries, ref bool abort) @system
+void connectFiber(ref Connection conn,
+    const uint connectionRetries,
+    ref bool abort) @system
 in (!conn.connected, "Tried to set up a connecting fiber on an already live connection")
 in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
 {
@@ -1162,8 +1166,11 @@ struct ResolveAttempt
         abort = Reference "abort" flag, which -- if set -- should make the
             function return and the [core.thread.fiber.Fiber] terminate.
  +/
-void resolveFiber(ref Connection conn, const string address, const ushort port,
-    const bool useIPv6, ref bool abort) @system
+void resolveFiber(ref Connection conn,
+    const string address,
+    const ushort port,
+    const bool useIPv6,
+    ref bool abort) @system
 in (!conn.connected, "Tried to set up a resolving fiber on an already live connection")
 in (address.length, "Tried to set up a resolving fiber on an empty address")
 {

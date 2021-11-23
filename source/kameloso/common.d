@@ -339,7 +339,8 @@ unittest
         sink = Output buffer sink to write to.
  +/
 void timeSinceInto(uint numUnits = 7, uint truncateUnits = 0, Sink)
-    (const Duration signedDuration, auto ref Sink sink,
+    (const Duration signedDuration,
+    auto ref Sink sink,
     const Flag!"abbreviate" abbreviate = No.abbreviate,
     const Flag!"roundUp" roundUp = Yes.roundUp) pure
 if (isOutputRange!(Sink, char[]))
@@ -915,7 +916,8 @@ unittest
     Returns:
         A string with the passed duration expressed in natural English language.
  +/
-string timeSince(uint numUnits = 7, uint truncateUnits = 0)(const Duration duration,
+string timeSince(uint numUnits = 7, uint truncateUnits = 0)
+    (const Duration duration,
     const Flag!"abbreviate" abbreviate = No.abbreviate,
     const Flag!"roundUp" roundUp = Yes.roundUp) pure
 {
@@ -1079,7 +1081,8 @@ unittest
     Returns:
         The passed line with the `prefix` sliced away.
  +/
-string stripSeparatedPrefix(const string line, const string prefix,
+string stripSeparatedPrefix(const string line,
+    const string prefix,
     const Flag!"demandSeparatingChars" demandSep = Yes.demandSeparatingChars) pure @nogc
 in (prefix.length, "Tried to strip separated prefix but no prefix was given")
 {

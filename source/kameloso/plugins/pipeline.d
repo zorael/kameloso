@@ -82,7 +82,8 @@ public:
         brightTerminal = Whether or not the terminal has a bright background
             and colours should be adjusted to suit.
  +/
-void pipereader(shared IRCPluginState newState, const string filename,
+void pipereader(shared IRCPluginState newState,
+    const string filename,
     const Flag!"monochrome" monochrome,
     const Flag!"brightTerminal" brightTerminal)
 in (filename.length, "Tried to set up a pipereader with an empty filename")
