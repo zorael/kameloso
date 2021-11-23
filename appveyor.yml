@@ -4,58 +4,32 @@ environment:
   matrix:
     - DC: dmd
       DReleaseType: releases
-      DVersion: 2.095.0
+      DVersion: 2.098.0
       DSubversion:
       arch: x64
-      #dubArgs:
-      #Ddflags:
-    #- DC: dmd
-      #DReleaseType: releases
-      #DVersion: 2.095.0
-      #DSubversion:
-      #arch: x86
-      #dubArgs:
-      #Ddflags:
     - DC: dmd
       DReleaseType: releases
-      DVersion: 2.094.2
-      DSubversion:
-      arch: x64
-      #dubArgs:
-      #Ddflags:
-    - DC: dmd
-      DReleaseType: releases
-      DVersion: 2.094.2
+      DVersion: 2.098.0
       DSubversion:
       arch: x86
-      #dubArgs:
-      #Ddflags:
     - DC: dmd
       DReleaseType: releases
       DVersion: 2.084.0
       DSubversion:
       arch: x64
-      #dubArgs:
-      #Ddflags:
     - DC: dmd
       DReleaseType: releases
       DVersion: 2.084.0
       DSubversion:
       arch: x86
-      #dubArgs:
-      #Ddflags:
     - DC: ldc
-      DVersion: 1.24.0
+      DVersion: 1.28.0
       DSubversion:
       arch: x64
-      #dubArgs:
-      #Ddflags:
     - DC: ldc
       DVersion: 1.14.0
       DSubversion:
       arch: x64
-      #dubArgs:
-      #Ddflags:
 
 branches:
   except:
@@ -115,28 +89,23 @@ build_script:
  - echo dummy build script - dont remove me
 
 test_script:
- - echo %PLATFORM%
- - echo %Darch%
- - echo %DC%
- - echo %PATH%
- #- echo %dubArgs%
- #- echo %Ddflags%
+ - echo "%DC% on %PLATFORM% (%Darch%)"
  - '%DC% --version'
  - dub --version
  #- git clone https://github.com/zorael/lu.git
  #- git clone https://github.com/zorael/dialect.git
  #- dub add-local lu
  #- dub add-local dialect
- #- echo Full tests may fail due to https://issues.dlang.org/show_bug.cgi?id=20048
- #- set DFLAGS = %Ddflags% -unittest
- - dub test           --arch=%Darch% --compiler=%DC% %dubArgs%
- #- set DFLAGS = %Ddflags%
- #- dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b plain -c dev
- - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b release -c dev
- - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b debug -c dev
+ #- echo "Full tests may fail due to https://issues.dlang.org/show_bug.cgi?id=20048"
+ - dub test           --compiler=%DC% --arch=%Darch%
+ - dub build --nodeps --compiler=%DC% --arch=%Darch% -b debug -c dev
  - mv kameloso.exe kameloso-dev.exe
- - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b debug -c twitch
- #- mv kameloso.exe kameloso-twitch.exe
+ - dub build --nodeps --compiler=%DC% --arch=%Darch% -b plain -c dev
+ #- mv kameloso.exe kameloso-dev-plain.exe
+ - dub build --nodeps --compiler=%DC% --arch=%Darch% -b release -c dev
+ #- mv kameloso.exe kameloso-dev-release.exe
+ - dub build --nodeps --compiler=%DC% --arch=%Darch% -b debug -c twitch
+ #- mv kameloso.exe kameloso-twitch.exe  # keep artifact as kameloso.exe
 
 after_test:
  - ps: if($env:APPVEYOR_REPO_TAG -eq "True"){
