@@ -268,7 +268,7 @@ You must also supply an [OAuth token](https://en.wikipedia.org/wiki/OAuth) **pas
 
 Run the bot with `--set twitchbot.keygen` to start the captive process of generating one. It will open a browser window, in which you are asked to log onto Twitch *on Twitch's own servers*. Verify this by checking the page address; it should end with `.twitch.tv`, with the little lock symbol showing the connection is secure.
 
-> Note: At no point is the bot privy to your login credentials! The logging-in is wholly done on Twitch's own servers, and no information is sent to any third parties. The code that deals with this is open for audit; [`generateKey` in `twitchbot/api.d`](source/kameloso/plugins/twitchbot/api.d).
+> Note: At no point is the bot privy to your login credentials! The logging-in is wholly done on Twitch's own servers, and no information is sent to any third parties. The code that deals with this is open for audit; [`generateKey` in `twitchbot/keygen.d`](source/kameloso/plugins/twitchbot/keygen.d).
 
 After entering your login and password and clicking **Authorize**, you will be redirected to an empty "this site can't be reached" page. Copy the URL address of it and paste it into the terminal, when asked. It will parse the address, extract your authorisation token, and offer to save it to your configuration file.
 
