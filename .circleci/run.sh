@@ -2,96 +2,137 @@
 
 set -uexo pipefail
 
-get_apt_list() {
-    sudo wget https://netcologne.dl.sourceforge.net/project/d-apt/files/d-apt.list \
-        -O /etc/apt/sources.list.d/d-apt.list
-}
+DMD_VERSION="2.098.0"
+LDC_VERSION="1.28.0"
+CURL_USER_AGENT="CirleCI $(curl --version | head -n 1)"
 
-install_keyring() {
-    sudo apt install -y --allow-unauthenticated --reinstall d-apt-keyring
-}
-
-install_dmd_dub() {
-    sudo apt install -y --allow-unauthenticated dmd-compiler dub libcurl4-openssl-dev
+update_repos() {
+    echo sudo apt-get update
 }
 
 install_deps() {
-    sudo apt update
-    sudo apt install -y apt-transport-https
+    echo sudo apt-get install g++-multilib
 
-    get_apt_list || get_apt_list || get_apt_list || get_apt_list || get_apt_list
-    sudo apt update --allow-insecure-repositories
+    # required for: "core.time.TimeException@std/datetime/timezone.d(2073): Directory /usr/share/zoneinfo/ does not exist."
+    #sudo apt-get install --reinstall tzdata gdb
+}
 
-    # fingerprint 0xEBCF975E5BA24D5E
-    install_keyring || install_keyring || install_keyring || install_keyring || install_keyring
-    sudo apt update --allow-insecure-repositories
-    install_dmd_dub || install_dmd_dub || install_dmd_dub || install_dmd_dub || install_dmd_dub
+download_install_script() {
+    for i in {0..4}; do
+        if curl -fsS -A "$CURL_USER_AGENT" --max-time 5 https://dlang.org/install.sh -O ||
+                curl -fsS -A "$CURL_USER_AGENT" --max-time 5 https://nightlies.dlang.org/install.sh -O ; then
+            break
+        elif [[ "$i" -ge 4 ]]; then
+            sleep $((1 << i))
+        else
+            echo 'Failed to download install script' 1>&2
+            exit 1
+        fi
+    done
+}
 
-    #git clone https://github.com/zorael/lu.git
-    #git clone https://github.com/zorael/dialect.git
+install_and_activate_compiler() {
+    local COMPILER=$1
+    local COMPILER_VER=$2
+    source "$(CURL_USER_AGENT=\"$CURL_USER_AGENT\" bash install.sh $COMPILER-$COMPILER_VER --activate)"
+}
 
-    #dub add-local lu
-    #dub add-local dialect
+use_lu_master() {
+    if [[ ! -d lu ]]; then
+        git clone https://github.com/zorael/lu.git
+        dub add-local lu
+    fi
+}
+
+use_dialect_master() {
+    if [[ ! -d dialect ]]; then
+        git clone https://github.com/zorael/dialect.git
+        dub add-local dialect
+    fi
 }
 
 build() {
-    local C A S
+    local DC compiler_switch arch_switch build_ext arch_ext options
 
-    C="--compiler=$1"
-    A="--arch=$2"
-    S="--build-mode=singleFile"
-    #[ "$2" == "x86" ] && ext="-32bit" || ext=""
+    DC="$1"
+    [[ "$2" == "x86_64" ]] && arch_ext="" || arch_ext="-$2"
+    [[ $# -gt 2 ]] && [[ "$3" ]] && build_ext="-$3" || build_ext=""
+    compiler_switch="--compiler=$DC"
+    arch_switch="--arch=$2"
+
+    shift 2
+    shift 1 || true
+    options="$@"
 
     mkdir -p artifacts
+    dub clean
 
     ## test
-    time dub test $A $C $S
-    S="$S --nodeps --force"
+    time dub test $compiler_switch $arch_switch $options -c unittest${build_ext}
+    options="$options --nodeps"
 
 
     ## debug
-    time dub build $A $C $S -b debug -c twitch
-    mv kameloso artifacts/kameloso
+    time dub build $compiler_switch $arch_switch $options -b debug -c twitch${build_ext}
+    mv kameloso "artifacts/kameloso-${DC}${arch_ext}"
 
-    time dub build $A $C $S -b debug -c dev
-    mv kameloso artifacts/kameloso-dev
+    time dub build $compiler_switch $arch_switch $options -b debug -c dev${build_ext}
+    mv kameloso "artifacts/kameloso-$DC-dev${arch_ext}"
 
 
     ## plain
-    #time dub build $A $C $S -b plain -c twitch || true
-    #mv kameloso artifacts/kameloso-plain || \
-    #    touch artifacts/kameloso-plain.failed
+    #time dub build $compiler_switch $arch_switch $options -b plain -c twitch${build_ext} || true
+    #mv kameloso "artifacts/kameloso-$DC-plain${arch_ext}" || \
+    #    touch "artifacts/kameloso-$DC-plain${arch_ext}.failed"
 
-    time dub build $A $C $S -b plain -c dev || true
-    #mv kameloso artifacts/kameloso-plain-dev || \
-    #    touch artifacts/kameloso-plain-dev.failed
+    time dub build $compiler_switch $arch_switch $options -b plain -c dev${build_ext} || true
+    #mv kameloso "artifacts/kameloso-$DC-plain-dev${build_ext}${arch_ext}" || \
+    #    touch "artifacts/kameloso-$DC-plain-dev${build_ext}${arch_ext}.failed"
 
 
     ## release
-    time dub build $A $C $S -b release -c twitch || true
-    mv kameloso artifacts/kameloso-release || \
-        touch artifacts/kameloso-release.failed
+    #time dub build $compiler_switch $arch_switch $options -b release -c twitch${build_ext} || true
+    #mv kameloso "artifacts/kameloso-$DC-release${arch_ext}" || \
+    #    touch "artifacts/kameloso-$DC-release${arch_ext}.failed"
 
-    time dub build $A $C $S -b release -c dev || true
-    mv kameloso artifacts/kameloso-release-dev || \
-        touch artifacts/kameloso-release-dev.failed
+    time dub build $compiler_switch $arch_switch $options -b release -c dev${build_ext} || true
+    #mv kameloso "artifacts/kameloso-$DC-release-dev${build_ext}${arch_ext}" || \
+    #    touch "artifacts/kameloso-$DC-release-dev${build_ext}${arch_ext}.failed"
 }
 
 # execution start
 
-case "$1" in
+case $1 in
     install-deps)
+        update_repos
         install_deps
+        download_install_script
+        ;;
 
-        dub --version
+    build-dmd)
+        install_and_activate_compiler dmd "$DMD_VERSION"
         dmd --version
-        #ldc --version
+        dub --version
+
+        #use_lu_master
+        #use_dialect_master
+
+        time build dmd x86 "" --build-mode=singleFile
+        time build dmd x86_64 "" --build-mode=singleFile
         ;;
-    build)
-        #time build dmd x86  # CircleCI does not seem to have the needed libs
-        time build dmd x86_64
-        #time build ldc x86_64
+
+    build-ldc)
+        install_and_activate_compiler ldc "$LDC_VERSION"
+        ldc --version
+        dub --version
+
+        #use_lu_master
+        #use_dialect_master
+
+        #time build ldc x86 lowmem  # 32-bit libraries not included?
+        time build ldc x86_64 lowmem
         ;;
+
     *)
         echo "Unknown command: $1";
         exit 1;
