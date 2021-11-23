@@ -2,8 +2,8 @@
 
 set -uexo pipefail
 
-DMD_VERSION="2.098.0"
-LDC_VERSION="1.28.0"
+#DMD_VERSION="2.098.0"
+#LDC_VERSION="1.28.0"
 CURL_USER_AGENT="CirleCI $(curl --version | head -n 1)"
 
 update_repos() {
@@ -32,9 +32,13 @@ download_install_script() {
 }
 
 install_and_activate_compiler() {
-    local COMPILER=$1
-    local COMPILER_VER=$2
-    source "$(CURL_USER_AGENT=\"$CURL_USER_AGENT\" bash install.sh $COMPILER-$COMPILER_VER --activate)"
+    local compiler compiler_version_ext compiler_build
+
+    compiler=$1
+    [[ $# -gt 1 ]] && compiler_version_ext="-$2" || compiler_version_ext=""
+    compiler_build="${compiler}${compiler_version_ext}"
+
+    source "$(CURL_USER_AGENT=\"$CURL_USER_AGENT\" bash install.sh $compiler_build --activate)"
 }
 
 use_lu_master() {
@@ -109,7 +113,7 @@ case $1 in
         ;;
 
     build-dmd)
-        install_and_activate_compiler dmd "$DMD_VERSION"
+        install_and_activate_compiler dmd #"$DMD_VERSION"
         dmd --version
         dub --version
 
@@ -121,7 +125,7 @@ case $1 in
         ;;
 
     build-ldc)
-        install_and_activate_compiler ldc "$LDC_VERSION"
+        install_and_activate_compiler ldc #"$LDC_VERSION"
         ldc2 --version
         dub --version
 
