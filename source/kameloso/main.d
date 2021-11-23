@@ -518,7 +518,7 @@ void messageFiber(ref Kameloso instance)
             }
         }
 
-        /// Proxies the passed message to the [kameloso.common.logger`].
+        /// Proxies the passed message to the [kameloso.common.logger].
         void proxyLoggerMessages(ThreadMessage.TerminalOutput logLevel, string message) scope
         {
             with (ThreadMessage.TerminalOutput)
