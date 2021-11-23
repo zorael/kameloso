@@ -455,8 +455,8 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
          +/
 
         // Results can be const
-        auto argsDup = args.dup;
-        const configFileResults = getopt(argsDup,
+        auto argsSlice = args[];
+        const configFileResults = getopt(argsSlice,
             config.caseSensitive,
             config.bundling,
             config.passThrough,
@@ -484,7 +484,7 @@ Next handleGetopt(ref Kameloso instance, string[] args, out string[] customSetti
         }
 
         // Get `--monochrome` again; let it overwrite what isTTY and readConfigInto set it to
-        cast(void)getopt(argsDup,
+        cast(void)getopt(argsSlice,
             config.caseSensitive,
             config.bundling,
             config.passThrough,
