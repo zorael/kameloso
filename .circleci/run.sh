@@ -123,14 +123,14 @@ case $1 in
 
     build-ldc)
         install_and_activate_compiler ldc "$LDC_VERSION"
-        ldc --version
+        ldc2 --version
         dub --version
 
         #use_lu_master
         #use_dialect_master
 
-        #time build ldc x86 lowmem  # no 32-bit libs?
-        time build ldc x86_64 lowmem
+        #time build ldc2 x86 lowmem  # no 32-bit libs?
+        time build ldc2 x86_64 lowmem
         ;;
 
     *)
