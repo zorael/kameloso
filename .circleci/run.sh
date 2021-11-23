@@ -117,7 +117,7 @@ case $1 in
         #use_lu_master
         #use_dialect_master
 
-        time build dmd x86 "" --build-mode=singleFile
+        #time build dmd x86 "" --build-mode=singleFile  # no 32-bit libs?
         time build dmd x86_64 "" --build-mode=singleFile
         ;;
 
@@ -129,7 +129,7 @@ case $1 in
         #use_lu_master
         #use_dialect_master
 
-        #time build ldc x86 lowmem  # 32-bit libraries not included?
+        #time build ldc x86 lowmem  # no 32-bit libs?
         time build ldc x86_64 lowmem
         ;;
 
