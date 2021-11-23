@@ -209,7 +209,11 @@ void onUserstate(const ref IRCEvent event)
 @(ChannelPolicy.home)
 void onSelfpart(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
-    plugin.rooms.remove(event.channel);
+    if (auto room = event.channel in plugin.rooms)
+    {
+        room.broadcast.active = false;  // In case there is a periodicalChattersDg running
+        plugin.rooms.remove(event.channel);
+    }
 }
 
 
