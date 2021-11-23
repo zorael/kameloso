@@ -255,17 +255,20 @@ unittest
         auto msg = busMessage("asdf");
         auto asCast = cast(BusMessage!string)msg;
         assert((msg !is null), "Incorrectly cast message: " ~ typeof(asCast).stringof);
+        asCast = null;  // silence dscanner
     }
     {
         auto msg = busMessage(123_456);
         auto asCast = cast(BusMessage!int)msg;
         assert((msg !is null), "Incorrectly cast message: " ~ typeof(asCast).stringof);
+        asCast = null;  // silence dscanner
     }
     {
         struct Foo {}
         auto msg = busMessage(Foo());
         auto asCast = cast(BusMessage!Foo)msg;
         assert((msg !is null), "Incorrectly cast message: " ~ typeof(asCast).stringof);
+        asCast = null;  // silence dscanner
     }
 }
 
