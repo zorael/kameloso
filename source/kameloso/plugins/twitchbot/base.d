@@ -1011,14 +1011,15 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
     Start the captive key generation routine at the earliest possible moment,
     which are the CAP events.
 
-    We can't do it in `start` since the calls to save and exit would go unheard,
-    as `start` happens before the main loop starts. It would then immediately
+    We can't do it in [start] since the calls to save and exit would go unheard,
+    as [start] happens before the main loop starts. It would then immediately
     fail to read if too much time has passed, and nothing would be saved.
  +/
 version(TwitchAPIFeatures)
 @(IRCEvent.Type.CAP)
 void onCAP(TwitchBotPlugin plugin)
 {
+    import kameloso.plugins.twitchbot.keygen;
     if (plugin.twitchBotSettings.keygen) return plugin.generateKey();
 }
 

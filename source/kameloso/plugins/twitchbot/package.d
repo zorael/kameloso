@@ -17,3 +17,4 @@ public:
 import kameloso.plugins.twitchbot.base;
 import kameloso.plugins.twitchbot.api;
 import kameloso.plugins.twitchbot.timers;
+//import kameloso.plugins.twitchbot.keygen;  // Only necessary from within onCAP
