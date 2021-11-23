@@ -7,11 +7,11 @@ LDC_VERSION="1.28.0"
 CURL_USER_AGENT="CirleCI $(curl --version | head -n 1)"
 
 update_repos() {
-    echo sudo apt-get update
+    sudo apt-get update
 }
 
 install_deps() {
-    echo sudo apt-get install g++-multilib
+    sudo apt-get install g++-multilib
 
     # required for: "core.time.TimeException@std/datetime/timezone.d(2073): Directory /usr/share/zoneinfo/ does not exist."
     #sudo apt-get install --reinstall tzdata gdb
