@@ -512,7 +512,7 @@ void reportStreamTime(TwitchBotPlugin plugin,
 }
 
 
-// onFollowAge
+// onCommandFollowAge
 /++
     Implements "Follow Age", or the ability to query the server how long you
     (or a specified user) have been a follower of the current channel.
@@ -528,7 +528,7 @@ version(TwitchAPIFeatures)
 @Description("Queries the server for how long you have been a follower of the " ~
     "current channel. Optionally takes a nickname parameter, to query for someone else.",
     "$command [optional nickname]")
-void onFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : nom, stripped;
     import std.conv : to;
