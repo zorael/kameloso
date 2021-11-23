@@ -1131,6 +1131,8 @@ if (allSatisfy!(isStruct, T))
 void readConfigInto(T...)(const string configFile, ref T things)
 if (allSatisfy!(isStruct, T))
 {
-    string[][string] ignore;
-    return configFile.readConfigInto(ignore, ignore, things);
+    // Use two variables to satisfy -preview=dip1021
+    string[][string] ignore1;
+    string[][string] ignore2;
+    return configFile.readConfigInto(ignore1, ignore2, things);
 }
