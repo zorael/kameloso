@@ -90,6 +90,10 @@ configuration "application-lowmem" {
     dflags "-lowmem"
 }
 
+configuration "lowmem" {
+    dflags "-lowmem"
+}
+
 configuration "twitch" {
     subConfiguration "dialect" "twitch"
 
