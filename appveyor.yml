@@ -3,32 +3,22 @@ platform: x64
 environment:
   matrix:
     - DC: dmd
-      DReleaseType: releases
-      DVersion: 2.098.0
-      DSubversion:
+      #DVersion: latest
       arch: x64
+    #- DC: dmd
+      #DVersion: latest
+      #arch: x86
     - DC: dmd
-      DReleaseType: releases
-      DVersion: 2.098.0
-      DSubversion:
-      arch: x86
-    - DC: dmd
-      DReleaseType: releases
       DVersion: 2.084.0
-      DSubversion:
       arch: x64
-    - DC: dmd
-      DReleaseType: releases
-      DVersion: 2.084.0
-      DSubversion:
-      arch: x86
+    #- DC: dmd
+      #DVersion: 2.084.0
+      #arch: x86
     - DC: ldc
-      DVersion: 1.28.0
-      DSubversion:
+      #DVersion: latest
       arch: x64
     - DC: ldc
       DVersion: 1.14.0
-      DSubversion:
       arch: x64
 
 branches:
@@ -40,48 +30,39 @@ branches:
     - /github-.*/
 
 install:
-  - ps: function SetUpDCompiler
+  - ps: function SetupDCompiler
         {
-            $version = $env:DVersion;
-            $subversion = $env:DSubversion;
-            if($env:DC -eq "dmd"){
-              $releasetype = $env:DReleaseType;
-              Invoke-WebRequest "http://downloads.dlang.org/$($releasetype)/2.x/$($version)/dmd.$($version)$($subversion).windows.7z" -OutFile "c:\compiler.archive";
-            }
-            elseif($env:DC -eq "ldc"){
-              $arch = $env:arch;
-              Invoke-WebRequest "https://github.com/ldc-developers/ldc/releases/download/v$($version)$($subversion)/ldc2-$($version)$($subversion)-windows-$($arch).7z" -OutFile "c:\compiler.archive";
-            }
-            pushd c:\\;
-            7z x compiler.archive > $null;
-            popd;
+          mkdir "$env:USERPROFILE\dlang" -Force;
+          Invoke-WebRequest "https://dlang.org/install.sh" -OutFile "$env:USERPROFILE\dlang\install.sh";
+          pushd;
+          cd "$env:USERPROFILE\dlang";
+          if (Test-Path env:DVersion) {
+            & bash install.sh install $env:DC-$env:DVersion;
+          }
+          else {
+            & bash install.sh install $env:DC;
+          }
+          $env:activator = & bash install.sh install $env:DC -a;
+          popd;
         }
   - ps: SetUpDCompiler
+  - "%activator%"
 
 before_build:
   - ps: $env:toolchain = "msvc";
-  - ps: if($env:arch -eq "x86"){
-            $env:compilersetupargs = "x86";
-            $env:Darch = "x86";
-            $env:DConf = "m32";
-          }
-        elseif($env:arch -eq "x64"){
-            $env:compilersetupargs = "amd64";
-            $env:Darch = "x86_64";
-            $env:DConf = "m64";
+  - ps: if ($env:arch -eq "x86") {
+          $env:compilersetupargs = "x86";
+          $env:Darch = "x86";
+          $env:DConf = "m32";
         }
-  - ps : if($env:DC -eq "dmd"){
-           $path = $env:PATH;
-           $env:PATH = "C:\dmd2\windows\bin;$($path)";
-         }
-         elseif($env:DC -eq "ldc"){
-           $version = $env:DVersion;
-           $subversion = $env:DSubversion;
-           $arch = $env:arch;
-           $path = $env:PATH;
-           $env:PATH = "C:\ldc2-$($version)$($subversion)-windows-$($arch)\bin;$($path)";
-           $env:DC = "ldc2";
-         }
+        elseif ($env:arch -eq "x64") {
+          $env:compilersetupargs = "amd64";
+          $env:Darch = "x86_64";
+          $env:DConf = "m64";
+        }
+  - ps: if ($env:DC -eq "ldc") {
+          $env:DC = "ldc2";
+        }
   - ps: $env:compilersetup = "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall";
   - '"%compilersetup%" %compilersetupargs%'
 
@@ -89,7 +70,7 @@ build_script:
  - echo dummy build script - dont remove me
 
 test_script:
- - echo "%DC% on %PLATFORM% (%Darch%)"
+ - echo %DC% on %PLATFORM% (%Darch%)
  - '%DC% --version'
  - dub --version
  #- git clone https://github.com/zorael/lu.git
@@ -108,10 +89,7 @@ test_script:
  #- mv kameloso.exe kameloso-twitch.exe  # keep artifact as kameloso.exe
 
 after_test:
- - ps: if($env:APPVEYOR_REPO_TAG -eq "True"){
+ - ps: if ($env:APPVEYOR_REPO_TAG -eq "True") {
          Push-AppveyorArtifact kameloso.exe -DeploymentName "Full build";
          Push-AppveyorArtifact kameloso-dev.exe -DeploymentName "Development build";
-       }
-       else{
-         echo "Does not seem to be a tag so not pushing artifacts";
        }
