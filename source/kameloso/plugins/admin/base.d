@@ -77,12 +77,6 @@ public:
             of events or not.
          +/
         bool printBytes;
-
-        /++
-            Toggles whether [onAnyEvent] prints assert statements for incoming
-            events or not.
-         +/
-        bool printAsserts;
     }
 }
 
@@ -97,10 +91,6 @@ public:
 
     If [AdminPlugin.printBytes] is set by way of invoking [onCommandPrintBytes],
     prints all incoming server strings byte by byte.
-
-    If [AdminPlugin.printAsserts] is set by way of invoking [onCommandPrintRaw],
-    prints all incoming events as assert statements, for use in generating source
-    code `unittest` blocks.
  +/
 debug
 @Chainable
