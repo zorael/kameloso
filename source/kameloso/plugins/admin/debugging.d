@@ -33,10 +33,10 @@ package:
     which flags have been set with bot commands.
 
     If [kameloso.plugins.admin.base.AdminPlugin.printRaw] is set by way of
-    invoking [onCommandPrintRaw], prints all incoming server strings.
+    invoking [kameloso.plugins.admin.base.onCommandPrintRaw], prints all incoming server strings.
 
     If [kameloso.plugins.admin.base.AdminPlugin.printBytes] is set by way of
-    invoking [onCommandPrintBytes], prints all incoming server strings byte by byte.
+    invoking [kameloso.plugins.admin.base.onCommandPrintBytes], prints all incoming server strings byte by byte.
  +/
 void onAnyEventImpl(AdminPlugin plugin, const ref IRCEvent event)
 {
