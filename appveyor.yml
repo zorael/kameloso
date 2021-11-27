@@ -65,7 +65,7 @@ build_script:
 
 test_script:
  - echo %DC% on %PLATFORM% (%Darch%)
- - '%DC --version'
+ - '%DC% --version'
  - dub --version
  #- git clone https://github.com/zorael/lu.git
  #- git clone https://github.com/zorael/dialect.git
