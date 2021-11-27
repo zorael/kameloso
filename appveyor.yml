@@ -58,14 +58,14 @@ before_build:
           $env:DC = "ldc2";
         }
   - ps: $env:compilersetup = "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall";
-  - "%compilersetup%" %compilersetupargs%
+  - '"%compilersetup%" %compilersetupargs%'
 
 build_script:
  - echo dummy build script - dont remove me
 
 test_script:
  - echo %DC% on %PLATFORM% (%Darch%)
- - "%DC" --version
+ - '%DC --version'
  - dub --version
  #- git clone https://github.com/zorael/lu.git
  #- git clone https://github.com/zorael/dialect.git
