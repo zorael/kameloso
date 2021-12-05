@@ -362,16 +362,22 @@ in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
     import std.json : JSONType, parseJSON;
 
     immutable response = queryTwitch(plugin, url, plugin.authorizationBearer);
-    auto json = parseJSON(response.str);
+    immutable responseJSON = parseJSON(response.str);
 
-    if ((json.type != JSONType.object) || ("data" !in json) ||
-        (json["data"].type != JSONType.array) || (json["data"].array.length != 1))
+    if (responseJSON.type != JSONType.object)
     {
         return JSONValue.init;
     }
+    else if (const dataJSON = "data" in responseJSON)
+    {
+        if ((dataJSON.type == JSONType.array) ||
+            (dataJSON.array.length == 1))
+        {
+            return dataJSON.array[0];
+        }
+    }
 
-    auto dataJSON = "data" in json;
-    return dataJSON.array[0];
+    return JSONValue.init;
 }
 
 
@@ -390,7 +396,7 @@ in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
     immutable chattersURL = text("https://tmi.twitch.tv/group/user/", broadcaster, "/chatters");
 
     immutable response = queryTwitch(plugin, chattersURL, plugin.authorizationBearer);
-    auto json = parseJSON(response.str);
+    immutable responseJSON = parseJSON(response.str);
 
     /*
     {
@@ -416,15 +422,20 @@ in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
     }
     */
 
-    if ((json.type != JSONType.object) || ("chatters" !in json) ||
-        (json["chatters"].type != JSONType.object))
+    if (responseJSON.type != JSONType.object)
     {
-        // Assume the rest is in place
         return JSONValue.init;
     }
+    else if (const chattersJSON = "chatters" in responseJSON)
+    {
+        if (chattersJSON.type != JSONType.object)
+        {
+            return JSONValue.init;
+        }
+    }
 
-    // Don't return json["chatters"], as we would lose "chatter_count".
-    return json;
+    // Don't return `chatterJSON`, as we would lose "chatter_count".
+    return responseJSON;
 }
 
 
