@@ -470,7 +470,7 @@ in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
     immutable authorizationHeader = "OAuth " ~ pass;
 
     immutable response = queryTwitch(plugin, url, authorizationHeader);
-    auto validationJSON = parseJSON(response.str);
+    immutable validationJSON = parseJSON(response.str);
 
     if ((validationJSON.type != JSONType.object) || ("client_id" !in validationJSON))
     {
@@ -516,7 +516,7 @@ in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
             text(url, "&after=", after) : url;
 
         immutable response = queryTwitch(plugin, paginatedURL, plugin.authorizationBearer);
-        auto followsJSON = parseJSON(response.str);
+        immutable followsJSON = parseJSON(response.str);
         const cursor = "cursor" in followsJSON["pagination"];
 
         if (!total) total = followsJSON["total"].integer;
