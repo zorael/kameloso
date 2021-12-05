@@ -354,7 +354,7 @@ void queryTwitchImpl(const string url,
 
     Returns:
         A singular user or channel regardless of how many were asked for in the URL.
-        If nothing was found, an empty [std.json.JSONValue].init is returned.
+        If nothing was found, an empty [std.json.JSONValue].init is returned instead.
  +/
 JSONValue getTwitchEntity(TwitchBotPlugin plugin, const string url)
 in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
@@ -386,6 +386,14 @@ in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
     Get the JSON representation of everyone currently in a broadcaster's channel.
 
     It is not updated in realtime, so it doesn't make sense to call this often.
+
+    Params:
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin].
+        broadcaster = The broadcaster to look up chatters for.
+
+    Returns:
+        A [std.json.JSONValue] with "`chatters`" and "`chatter_count`" keys.
+        If nothing was found, an empty [std.json.JSONValue].init is returned instead.
  +/
 JSONValue getChatters(TwitchBotPlugin plugin, const string broadcaster)
 in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
