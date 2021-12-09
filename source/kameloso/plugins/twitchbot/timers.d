@@ -138,7 +138,7 @@ Fiber createTimerFiber(TwitchBotPlugin plugin,
                 .replace("$streamer", streamer)
                 .replace("$channel", channelName[1..$])
                 .replace("$bot", plugin.state.client.nickname)
-                .replace("$random", uniform!"[]"(0, 100).text);
+                .replace("$random", uniform!"(]"(0, 100).text);
 
             chan(plugin.state, channelName, line);
 
