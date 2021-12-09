@@ -2763,7 +2763,7 @@ int initBot(string[] args)
         import kameloso.terminal : ensureAppropriateBuffering;
 
         // Ensure stdout is buffered by line on Cygwin and vscode.
-        ensureAppropriateBuffering(instance.settings.flush);
+        ensureAppropriateBuffering(cast(Flag!"override_")instance.settings.flush);
     }
     catch (ErrnoException e)
     {

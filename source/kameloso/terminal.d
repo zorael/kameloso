@@ -183,7 +183,7 @@ else
     Params:
         override_ = Whether or not to override checks and always set line buffering.
  +/
-void ensureAppropriateBuffering(const bool override_ = false) @system
+void ensureAppropriateBuffering(const Flag!"override_" override_ = No.override_) @system
 {
     import kameloso.platform : currentPlatform;
 
