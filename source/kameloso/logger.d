@@ -375,14 +375,9 @@ auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogL
     }
 
 
-    /// Mixin to exit the program on `fatal` calls.
-    private enum fatalExitMixin =
-        "import std.stdio : writeln;
-        import core.runtime : defaultTraceHandler;
-        import core.stdc.stdlib : exit;
-
-        writeln(defaultTraceHandler);
-        exit(1);";
+    /// Mixin to error out on `fatal` calls.
+    private enum fatalErrorMixin =
+`throw new Error("A fatal error message was logged");`;
 
     /+
         Generate `trace`, `tracef`, `log`, `logf` and similar Logger-esque functions.
@@ -411,7 +406,7 @@ void %1$sf(string pattern, Args...)(auto ref Args args)
 {
     printfImpl!pattern(LogLevel.%1$s, args);
     %2$s
-}}.format(lv, (lv == LogLevel.fatal) ? fatalExitMixin : string.init));
+}}.format(lv, (lv == LogLevel.fatal) ? fatalErrorMixin : string.init));
     }
 
     /++
