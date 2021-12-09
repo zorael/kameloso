@@ -68,7 +68,8 @@ enum IRCColour
         fg = Foreground [IRCColour].
         bg = Optional background [IRCColour].
  +/
-void ircColourInto(Sink)(const string line,
+void ircColourInto(Sink)
+    (const string line,
     auto ref Sink sink,
     const IRCColour fg,
     const IRCColour bg = IRCColour.unset)

@@ -178,7 +178,7 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
             "Usage: %s%s %s [message threshold] [time threshold] [stagger seconds] [text]"
-            .format(plugin.state.settings.prefix, event.aux, verb));
+                .format(plugin.state.settings.prefix, event.aux, verb));
     }
 
     switch (verb)
@@ -271,7 +271,7 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
                 {
                     privmsg(plugin.state, event.channel, event.sender.nickname,
                         "Timer index %s out of range. (max %d)"
-                        .format(slice, room.timers.length));
+                            .format(slice, room.timers.length));
                     return;
                 }
             }
@@ -324,7 +324,7 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
                 {
                     privmsg(plugin.state, event.channel, event.sender.nickname,
                         "Usage: %s%s list [optional starting position number]"
-                        .format(plugin.state.settings.prefix, event.aux));
+                            .format(plugin.state.settings.prefix, event.aux));
                     return;
                 }
             }
@@ -333,7 +333,7 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
 
             privmsg(plugin.state, event.channel, event.sender.nickname,
                 "Current timers (%d-%d of %d)"
-                .format(start+1, end, timers.length));
+                    .format(start+1, end, timers.length));
 
             foreach (immutable i, const timer; (*timers)[start..end])
             {

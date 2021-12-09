@@ -383,7 +383,7 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
 
     chan(plugin.state, event.channel,
         "Voting commenced! Please place your vote for one of: %-(%s, %) (%d seconds)"
-        .format(sortedChoices, dur));
+            .format(sortedChoices, dur));
 }
 
 

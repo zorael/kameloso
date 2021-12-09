@@ -67,6 +67,7 @@ enum TerminalToken
     bell = '\007',
 }
 
+
 version(Windows)
 {
     // Taken from LDC: https://github.com/ldc-developers/ldc/pull/3086/commits/9626213a
@@ -329,9 +330,12 @@ enum TerminalReset
 /++
     Bool of whether or not a type is a colour code enum.
  +/
-enum isAColourCode(T) = is(T : TerminalForeground) || is(T : TerminalBackground) ||
-                        is(T : TerminalFormat) || is(T : TerminalReset);/* ||
-                        is(T == int);*/
+enum isAColourCode(T) =
+    is(T : TerminalForeground) ||
+    is(T : TerminalBackground) ||
+    is(T : TerminalFormat) ||
+    is(T : TerminalReset);/* ||
+    is(T == int);*/
 
 
 // colour
@@ -693,7 +697,8 @@ unittest
             dark or too bright.
  +/
 version(Colours)
-void truecolour(Sink)(auto ref Sink sink,
+void truecolour(Sink)
+    (auto ref Sink sink,
     uint r,
     uint g,
     uint b,
@@ -787,7 +792,7 @@ unittest
     immutable name = "blarbhl".truecolour(255, 255, 255, No.brightTerminal, No.normalise);
     immutable alsoName = "%c[38;2;%d;%d;%dm%s%c[0m"
         .format(cast(char)TerminalToken.format, 255, 255, 255,
-        "blarbhl", cast(char)TerminalToken.format);
+           "blarbhl", cast(char)TerminalToken.format);
 
     assert((name == alsoName), alsoName);
 }

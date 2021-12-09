@@ -222,7 +222,8 @@ unittest
         The passed line with the relevant bits replaced, or as is if the expression
         didn't apply.
  +/
-string sedReplaceImpl(char char_)(const string line,
+string sedReplaceImpl(char char_)
+    (const string line,
     const string expr,
     const Flag!"relaxSyntax" relaxSyntax)
 in (line.length, "Tried to `sedReplaceImpl` on an empty line")

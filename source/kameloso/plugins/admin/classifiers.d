@@ -121,7 +121,7 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
 
         privmsg(plugin.state, event.channel, event.sender.nickname,
             "Current %s in %s: %-(%s, %)"
-            .format(asWhat, channel, userlist));
+                .format(asWhat, channel, userlist));
     }
     else
     {
@@ -641,7 +641,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
                 import std.format : format;
                 privmsg(plugin.state, event.channel, event.sender.nickname,
                     `Invalid hostmask: "%s"; must be in the form "%s".`
-                    .format(mask.ircBold, "nickname!ident@address".ircBold));
+                        .format(mask.ircBold, "nickname!ident@address".ircBold));
             }
             return;
         }

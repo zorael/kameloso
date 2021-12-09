@@ -194,7 +194,7 @@ void onUserstate(const ref IRCEvent event)
 
         logger.warningf("The bot is not a moderator of home channel %s%s%s. " ~
             "Consider elevating it to such to avoid being as rate-limited.",
-                Tint.log, event.channel, Tint.warning);
+            Tint.log, event.channel, Tint.warning);
     }
 }
 
@@ -812,7 +812,7 @@ void onCommandShoutout(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 
         chan(plugin.state, event.channel,
             ("Shoutout to %s! Visit them at https://twitch.tv/%s!" ~ lastSeenPlayingPattern)
-            .format(broadcasterName, login, gameName));
+                .format(broadcasterName, login, gameName));
     }
 
     Fiber shoutoutFiber = new Fiber(&twitchTryCatchDg!shoutoutQueryDg, BufferSize.fiberStack);

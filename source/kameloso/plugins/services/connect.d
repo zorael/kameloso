@@ -695,8 +695,8 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
                 immutable hasKey = (service.state.connSettings.privateKeyFile.length ||
                     service.state.connSettings.certFile.length);
                 immutable mechanism = (service.state.connSettings.ssl && hasKey) ?
-                        "AUTHENTICATE EXTERNAL" :
-                        "AUTHENTICATE PLAIN";
+                    "AUTHENTICATE EXTERNAL" :
+                    "AUTHENTICATE PLAIN";
                 immediate(service.state, mechanism, Yes.quiet);
                 break;
 
@@ -1267,10 +1267,10 @@ void register(ConnectService service)
     immutable serverWhitelisted = capabilityServerWhitelistSuffix
         .canFind!((a,b) => b.endsWith(a))(serverToLower) ||
         capabilityServerWhitelistPrefix
-        .canFind!((a,b) => b.beginsWith(a))(serverToLower);
+            .canFind!((a,b) => b.beginsWith(a))(serverToLower);
     immutable serverBlacklisted = !serverWhitelisted &&
         capabilityServerBlacklistSuffix
-        .canFind!((a,b) => b.endsWith(a))(serverToLower);
+            .canFind!((a,b) => b.endsWith(a))(serverToLower);
 
     if (!serverBlacklisted || service.state.settings.force)
     {

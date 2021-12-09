@@ -178,7 +178,8 @@ unittest
         bellOnError = Whether or not to emit a terminal bell when an error occurred.
         hideBlacklistedUsers = Whether or not to hide events from blacklisted users.
  +/
-void formatMessageMonochrome(Sink)(PrinterPlugin plugin,
+void formatMessageMonochrome(Sink)
+    (PrinterPlugin plugin,
     auto ref Sink sink,
     const ref IRCEvent event,
     const Flag!"bellOnMention" bellOnMention,
@@ -520,7 +521,8 @@ if (isOutputRange!(Sink, char[]))
         hideBlacklistedUsers = Whether or not to hide events from blacklisted users.
  +/
 version(Colours)
-void formatMessageColoured(Sink)(PrinterPlugin plugin,
+void formatMessageColoured(Sink)
+    (PrinterPlugin plugin,
     auto ref Sink sink,
     const ref IRCEvent event,
     const Flag!"bellOnMention" bellOnMention,
@@ -1181,7 +1183,8 @@ string highlightEmotes(const ref IRCEvent event,
  +/
 version(Colours)
 version(TwitchSupport)
-void highlightEmotesImpl(Sink)(auto ref Sink sink,
+void highlightEmotesImpl(Sink)
+    (auto ref Sink sink,
     const string line,
     const string emotes,
     const TerminalForeground pre,

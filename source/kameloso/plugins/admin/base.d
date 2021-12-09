@@ -233,7 +233,7 @@ void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
             "Usage: %s%s [add|del|list] [channel]"
-            .format(plugin.state.settings.prefix, event.aux));
+                .format(plugin.state.settings.prefix, event.aux));
     }
 
     if (!event.content.length)
@@ -255,7 +255,7 @@ void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
     case "list":
         privmsg(plugin.state, event.channel, event.sender.nickname,
             "Current home channels: %-(%s, %)"
-            .format(plugin.state.bot.homeChannels));
+                .format(plugin.state.bot.homeChannels));
         return;
 
     default:
@@ -925,7 +925,7 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
             "Usage: %s%s [add|del|list] [args...]"
-            .format(plugin.state.settings.prefix, event.aux));
+                .format(plugin.state.settings.prefix, event.aux));
     }
 
     string slice = event.content;  // mutable
@@ -943,7 +943,7 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
         {
             privmsg(plugin.state, event.channel, event.sender.nickname,
                 "Usage: %s%s add [account] [hostmask]"
-                .format(plugin.state.settings.prefix, event.aux));
+                    .format(plugin.state.settings.prefix, event.aux));
             return;
         }
 
@@ -955,7 +955,7 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
         {
             privmsg(plugin.state, event.channel, event.sender.nickname,
                 "Usage: %s%s del [hostmask]"
-                .format(plugin.state.settings.prefix, event.aux));
+                    .format(plugin.state.settings.prefix, event.aux));
             return;
         }
 

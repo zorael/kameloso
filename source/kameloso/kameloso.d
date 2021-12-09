@@ -170,7 +170,8 @@ public:
             The time remaining until the next message may be sent, so that we
             can reschedule the next server read timeout to happen earlier.
      +/
-    double throttleline(Buffer)(ref Buffer buffer,
+    double throttleline(Buffer)
+        (ref Buffer buffer,
         const Flag!"dryRun" dryRun = No.dryRun,
         const Flag!"sendFaster" sendFaster = No.sendFaster,
         const Flag!"immediate" immediate = No.immediate) @system

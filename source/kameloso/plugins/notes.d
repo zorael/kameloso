@@ -324,7 +324,7 @@ void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
             "Usage: %s%s [nickname] [note text]"
-            .format(plugin.state.settings.prefix, event.aux));
+                .format(plugin.state.settings.prefix, event.aux));
         return;
     }
 

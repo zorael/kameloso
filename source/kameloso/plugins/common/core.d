@@ -592,7 +592,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                                     "`IRCEvent.Type.%s` but is missing a `PermissionsRequired`";
                                 pragma(msg, missingPermsPattern
                                     .format(fullyQualifiedName!fun,
-                                    Enum!(IRCEvent.Type).toString(U)));
+                                        Enum!(IRCEvent.Type).toString(U)));
                             }*/
 
                             static if (
@@ -635,6 +635,22 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                                 "with a non-message `IRCEvent.Type.%s`";
                             static assert(0, pattern.format(fullyQualifiedName!fun,
                                 Enum!(IRCEvent.Type).toString(U)));
+                        }
+
+                        static if (hasUDA!(fun, BotCommand))
+                        {
+                            import lu.string : contains;
+
+                            static if (getUDAs!(fun, BotCommand)[0].word.contains(' '))
+                            {
+                                import std.format : format;
+
+                                enum pattern = "`%s` is annotated with a `BotCommand` whose " ~
+                                    `command word "%s" contains a space character`;
+
+                                static assert(0, pattern.format(fullyQualifiedName!fun,
+                                    getUDAs!(fun, BotCommand)[0].word));
+                            }
                         }
                     }
 
@@ -1295,7 +1311,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                     import std.format : format;
                     static assert(0, ("`%s.postprocess` does not take its " ~
                         "`IRCEvent` parameter by `ref`")
-                        .format(module_,));
+                            .format(module_,));
                 }
             }
             else
@@ -2613,7 +2629,8 @@ enum PermissionsRequired
     See_Also:
         [Replay]
  +/
-Replay replay(Fn, SubPlugin)(SubPlugin subPlugin,
+Replay replay(Fn, SubPlugin)
+    (SubPlugin subPlugin,
     const ref IRCEvent event,
     const PermissionsRequired perms,
     Fn fn,
@@ -2641,7 +2658,8 @@ Replay replay(Fn, SubPlugin)(SubPlugin subPlugin,
     See_Also:
         [Replay]
  +/
-Replay replay(Fn)(const ref IRCEvent event,
+Replay replay(Fn)
+    (const ref IRCEvent event,
     const PermissionsRequired perms,
     Fn fn,
     const string caller = __FUNCTION__) @safe

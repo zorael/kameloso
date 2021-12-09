@@ -74,7 +74,7 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
         {
             chan(plugin.state, event.channel,
                 "Counter words must be unique and may not contain any of " ~
-                    "the following characters: [+-=? ]");
+                "the following characters: [+-=? ]");
             return;
         }
 
