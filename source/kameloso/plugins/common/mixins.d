@@ -319,9 +319,14 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
                 version(TwitchWarnings)
                 {
-                    import kameloso.common : logger, printStacktrace;
+                    import kameloso.common : logger;
                     logger.warning("Tried to enqueue and WHOIS on Twitch");
-                    version(PrintStacktraces) printStacktrace();
+
+                    version(PrintStacktraces)
+                    {
+                        import kameloso.common: printStacktrace;
+                        printStacktrace();
+                    }
                 }
 
                 static if (__traits(compiles, .hasUserAwareness))

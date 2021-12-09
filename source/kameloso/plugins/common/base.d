@@ -321,12 +321,17 @@ in ((fn !is null), "Tried to `enqueue` with a null function pointer")
         {
             version(TwitchWarnings)
             {
-                import kameloso.common : logger, printStacktrace;
+                import kameloso.common : logger;
                 import kameloso.printing : printObject;
 
                 logger.warning(caller, " tried to WHOIS on Twitch");
                 printObject(event);
-                version(PrintStacktraces) printStacktrace();
+
+                version(PrintStacktraces)
+                {
+                    import kameloso.common: printStacktrace;
+                    printStacktrace();
+                }
             }
             return;
         }
