@@ -296,20 +296,9 @@ void onDance(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
     }
     else if (event.content.length > (dancePos+5))
     {
+        import std.algorithm.comparison : among;
         immutable trailing = event.content[dancePos+5];
-
-        switch (trailing)
-        {
-        case ' ':
-        case '!':
-        case '.':
-        case '?':
-            // Drop down
-            break;
-
-        default:
-            return;
-        }
+        if (!trailing.among!(' ', '!', '.', '?')) return;
     }
 
     // Should dance. Stagger it a bit with a second in between.
