@@ -405,26 +405,25 @@ auto getNotes(NotesPlugin plugin, const string channel, const string id)
             {
                 logger.errorf("Invalid notes list type for %s on %s: `%s`",
                     id, channel, nickNotes.type);
+                return noteArray;
             }
-            else
+
+            noteArray.length = nickNotes.array.length;
+
+            foreach (immutable i, note; nickNotes.array)
             {
-                noteArray.length = nickNotes.array.length;
+                import std.base64 : Base64Exception;
+                noteArray[i].sender = note["sender"].str;
+                noteArray[i].when = SysTime.fromUnixTime(note["when"].integer);
 
-                foreach (immutable i, note; nickNotes.array)
+                try
                 {
-                    import std.base64 : Base64Exception;
-                    noteArray[i].sender = note["sender"].str;
-                    noteArray[i].when = SysTime.fromUnixTime(note["when"].integer);
-
-                    try
-                    {
-                        noteArray[i].line = decode64(note["line"].str);
-                    }
-                    catch (Base64Exception e)
-                    {
-                        noteArray[i].line = "(An error occurred and the note could not be read)";
-                        version(PrintStacktraces) logger.trace(e);
-                    }
+                    noteArray[i].line = decode64(note["line"].str);
+                }
+                catch (Base64Exception e)
+                {
+                    noteArray[i].line = "(An error occurred and the note could not be read)";
+                    version(PrintStacktraces) logger.trace(e);
                 }
             }
         }
