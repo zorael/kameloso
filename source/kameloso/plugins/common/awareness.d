@@ -412,20 +412,8 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @(IRCEvent.Type.PING)
     void onUserAwarenessPingMixin(IRCPlugin plugin) @system
     {
-        return kameloso.plugins.common.awareness.onUserAwarenessPing(plugin,
-            _kamelosoNextPingRehashTimestamp);
+        return kameloso.plugins.common.awareness.onUserAwarenessPing(plugin);
     }
-
-
-    // _kamelosoNextPingRehashTimestamp
-    /++
-        UNIX timestamp of when the [kameloso.plugins.common.core.IRCPluginState.users]
-        array is next to be rehashed in [onUserAwarenessPingMixin].
-
-        See_Also:
-            [onUserAwarenessPingMixin]
-     +/
-    long _kamelosoNextPingRehashTimestamp;
 }
 
 
@@ -630,13 +618,14 @@ void onUserAwarenessEndOfList(IRCPlugin plugin, const ref IRCEvent event) @syste
     The number of hours is so far hardcoded but can be made configurable if
     there's a use-case for it.
  +/
-void onUserAwarenessPing(IRCPlugin plugin, ref long pingRehash) @system
+void onUserAwarenessPing(IRCPlugin plugin) @system
 {
     import std.datetime.systime : Clock;
 
     enum minutesBeforeInitialRehash = 5;
     enum hoursBetweenRehashes = 12;
 
+    static long pingRehash = 0L;
     immutable now = Clock.currTime.toUnixTime;
 
     if (pingRehash == 0L)
