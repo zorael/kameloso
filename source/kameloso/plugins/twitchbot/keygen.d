@@ -49,20 +49,20 @@ void generateKey(TwitchBotPlugin plugin)
 
     logger.trace();
     logger.info("-- Twitch authorisation key generation mode --");
-    writeln();
-    writeln("Attempting to open a Twitch login page in your default web browser. Follow the");
-    writeln("instructions and log in to authorise the use of this program with your account.");
-    writeln();
-    writeln(Tint.log, "Then paste the address of the page you are redirected to afterwards here.", Tint.off);
-    writeln();
-    writefln("* The redirected address should start with %shttp://localhost%s.", Tint.info, Tint.off);
-    writefln(`* It will probably say "%sthis site can't be reached%s".`, Tint.log, Tint.off);
-    writeln("* If your browser is already logged in on Twitch, it will likely immediately");
-    writeln("  lead you to this page without asking for login credentials. If you want to");
-    writeln("  generate a key for a different account, first log out and retry.");
-    writefln("* If you are running local web server on port %s80%s, you may have to", Tint.info, Tint.off);
-    writeln("  temporarily disable it for this to work.");
-    writeln();
+    writefln(`
+Attempting to open a Twitch login page in your default web browser. Follow the
+instructions and log in to authorise the use of this program with your account.
+
+%1$sThen paste the address of the page you are redirected to afterwards here.%2$s
+
+* The redirected address should start with %3$shttp://localhost%2$s.
+* It will probably say "%1$sthis site can't be reached%2$s".
+* If your browser is already logged in on Twitch, it will likely immediately
+  lead you to this page without asking for login credentials. If you want to
+  generate a key for a different account, first log out and retry.
+* If you are running local web server on port %3$s80%2$s, you may have to
+  temporarily disable it for this to work.
+`, Tint.log, Tint.off, Tint.info);
     stdout.flush();
 
     static immutable scopes =
@@ -127,18 +127,17 @@ void generateKey(TwitchBotPlugin plugin)
 
     void printManualURL()
     {
-        enum scissors = "8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<";
+        enum scissors = "8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<";
 
-        writeln();
-        writeln(Tint.log, "Copy and paste this link manually into your browser, " ~
-            "and log in as asked:", Tint.off);
-        writeln();
-        writeln(Tint.info, scissors, Tint.off);
-        writeln();
-        writeln(url);
-        writeln();
-        writeln(Tint.info, scissors, Tint.off);
-        writeln();
+        writefln(`
+%1$sCopy and paste this link manually into your browser, and log in as asked:%2$s
+
+%3$s%4$s%2$s
+
+%5$s
+
+%3$s%4$s%2$s
+`, Tint.log, Tint.off, Tint.info, scissors, url);
     }
 
     if (plugin.state.settings.force)
@@ -219,10 +218,11 @@ void generateKey(TwitchBotPlugin plugin)
 
     while (!key.length)
     {
-        writeln(Tint.log, "Paste the address of the page you were redirected to here " ~
-            "(empty line exits):", Tint.off);
-        writeln();
-        write("> ");
+        import std.stdio : writef;
+
+        writef("%1$sPaste the addresss of the page you were redirected to here (empty line exits):%2$s
+
+> ", Tint.log, Tint.off);
         stdout.flush();
 
         stdin.flush();
@@ -260,12 +260,10 @@ void generateKey(TwitchBotPlugin plugin)
     plugin.state.bot.pass = key;
     plugin.state.botUpdated = true;
 
-    writeln();
-    writefln("%sYour private authorisation key is: %s%s%s",
-        Tint.log, Tint.info, key, Tint.off);
-    writefln("It should be entered as %spass%s under %1$s[IRCBot]%2$s.",
-        Tint.info, Tint.off);
-    writeln();
+    writefln("
+%1$sYour private authorisation key is: %2$s%3$s%4$s
+It should be entered as %2$spass%4$s under %2$s[IRCBot]%4$s.
+", Tint.log, Tint.info, key, Tint.off);
 
     if (!plugin.state.settings.saveOnExit)
     {
@@ -283,21 +281,19 @@ void generateKey(TwitchBotPlugin plugin)
         }
         else
         {
-            writeln();
-            writefln("* Make sure to add it to %s%s%s, then.",
+            writefln("\n* Make sure to add it to %s%s%s, then.",
                 Tint.info, plugin.state.settings.configFile, Tint.off);
         }
     }
 
-    writeln();
-    writeln("-------------------------------------------------------------------------------");
-    writeln();
-    writefln("All done! Restart the program (without %s--set twitchbot.keygen%s) and it should",
-        Tint.info, Tint.off);
-    writeln("just work. If it doesn't, please file an issue, at:");
-    writeln();
-    writeln("    ", Tint.info, "https://github.com/zorael/kameloso/issues/new", Tint.off);
-    writeln();
-    writeln(Tint.log, "Note: this will need to be repeated once every 60 days.", Tint.off);
-    writeln();
+    writefln("
+--------------------------------------------------------------------------------
+
+All done! Restart the program (without %1$s--set twitchbot.keygen%2$s) and it should
+just work. If it doesn't, please file an issue at:
+
+    %1$shttps://github.com/zorael/kameloso/issues/new%2$s
+
+%3$sNote: keys are valid for 60 days, after which this process needs to be repeated.%2$s
+", Tint.info, Tint.off, Tint.log);
 }
