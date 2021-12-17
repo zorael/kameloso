@@ -378,15 +378,15 @@ public:
         conn.sendline("PRIVMSG #channel :text");
         conn.sendline("PRIVMSG " ~ channel ~ " :" ~ content);
         conn.sendline("PRIVMSG ", channel, " :", content);  // Identical to above
-        conn.sendline!1024(longerLine);  // Now with custom line lengths
+        conn.sendline(longerLine, 1024L);  // Now with custom line lengths
         ---
 
         Params:
-            maxLineLength = Maximum line length before the sent message will be truncated.
             data = Variadic list of strings or characters to send. May contain
                 complete substrings separated by newline characters.
+            maxLineLength = Maximum line length before the sent message will be truncated.
      +/
-    void sendline(uint maxLineLength = 512, Data...)(const Data data) @system
+    void sendline(Data...)(const Data data, const uint maxLineLength = 512) @system
     in (connected, "Tried to send a line on an unconnected `Connection`")
     {
         int remainingMaxLength = (maxLineLength - 2);
