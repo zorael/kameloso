@@ -207,6 +207,21 @@ MrOffline joined #channel
       ray joined #channel
  kameloso sets mode +o ray
 
+      you | !oneliner add info @$nickname: for more information just use Google
+ kameloso | Oneliner !info added.
+      you | !oneliner add vods See https://twitch.tv/zorael/videos for $streamer's on-demand videos (stored temporarily)
+ kameloso | Oneliner !vods added.
+      you | !oneliner add source I am $bot. Peruse my source at https://github.com/zorael/kameloso
+ kameloso | Oneliner !source added.
+      you | !info
+ kameloso | @you: for more information just use Google
+      you | !vods
+ kameloso | See See https://twitch.tv/zorael/videos for Channel's on-demand videos (stored temporarily)
+      you | !commands
+ kameloso | Available commands: !info, !vods, !source
+      you | !oneliner del vods
+ kameloso | Oneliner !vods removed.
+
       you | !poll 60 snek snik
  kameloso | Voting commenced! Please place your vote for one of: snik, snek (60 seconds)
       BOB | snek
