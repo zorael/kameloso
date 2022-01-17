@@ -396,9 +396,18 @@ void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
     import std.concurrency : prioritySend;
     import std.typecons : Flag, No, Yes;
 
-    if ((service.state.server.daemon != IRCServer.Daemon.unset) ||
-        !service.state.server.address.endsWith(".twitch.tv"))
+    with (IRCServer.Daemon)
+    switch (service.state.server.daemon)
     {
+    case unset:
+        if (service.state.server.address.endsWith(".twitch.tv")) goto case twitch;
+        return;
+
+    case twitch:
+        // Drop down
+        break;
+
+    default:
         return;
     }
 
