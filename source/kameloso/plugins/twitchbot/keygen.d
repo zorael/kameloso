@@ -117,11 +117,11 @@ instructions and log in to authorise the use of this program with your account.
         "&client_id=" ~ TwitchBotPlugin.clientID ~
         "&redirect_uri=http://localhost" ~
         "&scope=" ~ scopes.join('+') ~
+        "&force_verify=true" ~
         "&state=kameloso-";
 
     Pid browser;
-    immutable url = ctBaseURL ~ plugin.state.client.nickname ~
-        (plugin.state.settings.force ? "&force_verify=true" : string.init);
+    immutable url = ctBaseURL ~ plugin.state.client.nickname;
 
     scope(exit) if (browser !is null) wait(browser);
 
