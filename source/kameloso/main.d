@@ -2408,6 +2408,13 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
 
             // Clear WHOIS history
             instance.previousWhoisTimestamps = typeof(instance.previousWhoisTimestamps).init;
+
+            // Reset the server but keep the address and port
+            immutable addressSnapshot = instance.parser.server.address;
+            immutable portSnapshot = instance.parser.server.port;
+            instance.parser.server = typeof(instance.parser.server).init;  // TODO: Add IRCServer constructor
+            instance.parser.server.address = addressSnapshot;
+            instance.parser.server.port = portSnapshot;
         }
 
         scope(exit)
