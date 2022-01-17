@@ -443,7 +443,7 @@ void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
     }
 
     // Exit and let the user tend to it.
-    service.state.mainThread.prioritySend(ThreadMessage.Quit(), event.content, No.quiet);
+    quit!(Yes.priority)(service.state, event.content, No.quiet);
 }
 
 
