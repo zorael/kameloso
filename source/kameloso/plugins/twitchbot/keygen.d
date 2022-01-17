@@ -63,7 +63,6 @@ instructions and log in to authorise the use of this program with your account.
 * If you are running local web server on port %3$s80%2$s, you may have to
   temporarily disable it for this to work.
 `, Tint.log, Tint.off, Tint.info);
-    stdout.flush();
 
     static immutable scopes =
     [
