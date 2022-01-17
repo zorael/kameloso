@@ -111,8 +111,31 @@ void onCommand8ball(ChatbotPlugin plugin, const ref IRCEvent event)
     ];
 
     immutable reply = eightballAnswers[uniform(0, eightballAnswers.length)];
-
     privmsg(plugin.state, event.channel, event.sender.nickname, reply);
+}
+
+
+// onCommandRoll
+/++
+    Randomises a number.
+ +/
+@(IRCEvent.Type.CHAN)
+@(IRCEvent.Type.QUERY)
+@(IRCEvent.Type.SELFCHAN)
+@(PermissionsRequired.anyone)
+@(ChannelPolicy.home)
+@BotCommand(PrefixPolicy.prefixed, "roll")
+@BotCommand(PrefixPolicy.prefixed, "random", Yes.hidden)
+@Description("Rolls a random number.")
+void onCommandRoll(ChatbotPlugin plugin, const ref IRCEvent event)
+{
+    import kameloso.plugins.common.base : nameOf;
+    import std.format : format;
+    import std.random : uniform;
+
+    enum pattern = "%s rolled %d!";
+    privmsg(plugin.state, event.channel, event.sender.nickname,
+        pattern.format(nameOf(event.sender), uniform!"[]"(1, 100)));
 }
 
 
