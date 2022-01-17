@@ -398,6 +398,8 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         alias BellOnError = Flag!"bellOnError";
         alias HideBlacklistedUsers = Flag!"hideBlacklistedUsers";
 
+        scope(exit) plugin.linebuffer.clear();
+
         version(Colours)
         {
             if (!plugin.state.settings.monochrome)
@@ -419,7 +421,6 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         }
 
         writeln(plugin.linebuffer.data);
-        plugin.linebuffer.clear();
         break;
     }
 }
