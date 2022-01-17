@@ -276,12 +276,27 @@ if (isOutputRange!(Sink, char[]))
 
     void putTarget()
     {
-        sink.put(" -> ");
-
+        bool putArrow;
         bool putDisplayName;
 
         version(TwitchSupport)
         {
+            with (IRCEvent.Type)
+            switch (event.type)
+            {
+            case TWITCH_PAYFORWARD:
+            case TWITCH_GIFTCHAIN:
+                // Add more as they become apparent
+                sink.put(" <- ");
+                break;
+
+            default:
+                sink.put(" -> ");
+                break;
+            }
+
+            putArrow = true;
+
             if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
                 event.target.displayName.length)
             {
@@ -294,6 +309,11 @@ if (isOutputRange!(Sink, char[]))
                     .put(sink, " (", event.target.nickname, ')');
                 }
             }
+        }
+
+        if (!putArrow)
+        {
+            sink.put(" -> ");
         }
 
         if (!putDisplayName)
