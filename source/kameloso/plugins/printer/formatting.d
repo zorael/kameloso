@@ -761,14 +761,27 @@ if (isOutputRange!(Sink, char[]))
 
     void putTarget()
     {
-        // No need to check isServer; target is never server
-        .put!(Yes.colours)(sink, FG.default_, " -> ");
-        colourUserTruecolour(sink, event.target);
-
+        bool putArrow;
         bool putDisplayName;
 
         version(TwitchSupport)
         {
+            with (IRCEvent.Type)
+            switch (event.type)
+            {
+            case TWITCH_GIFTCHAIN:
+                // Add more as they become apparent
+                .put!(Yes.colours)(sink, FG.default_, " <- ");
+                break;
+
+            default:
+                .put!(Yes.colours)(sink, FG.default_, " -> ");
+                break;
+            }
+
+            colourUserTruecolour(sink, event.target);
+            putArrow = true;
+
             if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
                 event.target.displayName.length)
             {
@@ -786,6 +799,13 @@ if (isOutputRange!(Sink, char[]))
                     .put!(Yes.colours)(sink, event.target.nickname, FG.default_, ')');
                 }
             }
+        }
+
+        if (!putArrow)
+        {
+            // No need to check isServer; target is never server
+            .put!(Yes.colours)(sink, FG.default_, " -> ");
+            colourUserTruecolour(sink, event.target);
         }
 
         if (!putDisplayName)
