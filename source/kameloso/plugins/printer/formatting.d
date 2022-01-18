@@ -284,7 +284,6 @@ if (isOutputRange!(Sink, char[]))
             with (IRCEvent.Type)
             switch (event.type)
             {
-            case TWITCH_PAYFORWARD:
             case TWITCH_GIFTCHAIN:
                 // Add more as they become apparent
                 sink.put(" <- ");
