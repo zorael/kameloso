@@ -71,11 +71,11 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
             import std.random : uniform;
 
             immutable line = (*response)
-                .replace("$nickname", plugin.nameOf(event.sender.nickname))
+                .replace("$nickname", nameOf(event.sender))
                 .replace("$streamer", plugin.nameOf(event.channel[1..$]))  // Twitch
                 .replace("$bot", plugin.state.client.nickname)
                 .replace("$channel", event.channel[1..$])
-                .replace("$random", uniform!"[]"(0, 100).text);
+                .replace("$random", uniform!"[]"(1, 100).text);
 
             chan(plugin.state, event.channel, line);
         }
