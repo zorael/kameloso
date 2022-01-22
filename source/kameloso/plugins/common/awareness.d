@@ -143,6 +143,19 @@ mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
     }
 
 
+    // FIXME
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.RPL_WHOISACCOUNT)
+        .onEvent(IRCEvent.Type.RPL_WHOISREGNICK)
+        .onEvent(IRCEvent.Type.RPL_ENDOFWHOIS)
+        .when(Timing.early)
+    )
+    void onMinimalAuthenticationAccountInfoTargetMixin2(IRCPlugin plugin, const ref IRCEvent event)
+    {
+        return kameloso.plugins.common.awareness.onMinimalAuthenticationAccountInfoTarget(plugin, event);
+    }
+
+
     // onMinimalAuthenticationUnknownCommandWHOISMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onMinimalAuthenticationUnknownCommandWHOIS].
@@ -154,6 +167,17 @@ mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
     @(Chainable)
     @(IRCEvent.Type.ERR_UNKNOWNCOMMAND)
     void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const ref IRCEvent event)
+    {
+        return kameloso.plugins.common.awareness.onMinimalAuthenticationUnknownCommandWHOIS(plugin, event);
+    }
+
+
+    // FIXME
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.ERR_UNKNOWNCOMMAND)
+        .when(Timing.early)
+    )
+    void onMinimalAuthenticationUnknownCommandWHOIS2(IRCPlugin plugin, const ref IRCEvent event)
     {
         return kameloso.plugins.common.awareness.onMinimalAuthenticationUnknownCommandWHOIS(plugin, event);
     }
@@ -306,6 +330,17 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     }
 
 
+    // FIXME
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.QUIT)
+        .when(Timing.cleanup)
+    )
+    void onUserAwarenessQuitMixin2(IRCPlugin plugin, const ref IRCEvent event)
+    {
+        return kameloso.plugins.common.awareness.onUserAwarenessQuit(plugin, event);
+    }
+
+
     // onUserAwarenessNickMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onUserAwarenessNick].
@@ -317,6 +352,17 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @(Chainable)
     @(IRCEvent.Type.NICK)
     void onUserAwarenessNickMixin(IRCPlugin plugin, const ref IRCEvent event)
+    {
+        return kameloso.plugins.common.awareness.onUserAwarenessNick(plugin, event);
+    }
+
+
+    // FIXME
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.NICK)
+        .when(Timing.early)
+    )
+    void onUserAwarenessNickMixin2(IRCPlugin plugin, const ref IRCEvent event)
     {
         return kameloso.plugins.common.awareness.onUserAwarenessNick(plugin, event);
     }
@@ -343,6 +389,22 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     }
 
 
+    // FIXME
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.RPL_WHOISUSER)
+        .onEvent(IRCEvent.Type.RPL_WHOREPLY)
+        /*.onEvent(IRCEvent.Type.RPL_WHOISACCOUNT)
+        .onEvent(IRCEvent.Type.RPL_WHOISREGNICK)*/  // Caught in MinimalAuthentication
+        .onEvent(IRCEvent.Type.CHGHOST)
+        .channelPolicy(channelPolicy)
+        .when(Timing.early)
+    )
+    void onUserAwarenessCatchTargetMixin2(IRCPlugin plugin, const ref IRCEvent event)
+    {
+        return kameloso.plugins.common.awareness.onUserAwarenessCatchTarget(plugin, event);
+    }
+
+
     // onUserAwarenessCatchSenderMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onUserAwarenessCatchSender].
@@ -360,6 +422,23 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @(IRCEvent.Type.EMOTE)*/ // ...except on Twitch, but TwitchAwareness has these annotations
     @channelPolicy
     void onUserAwarenessCatchSenderMixin(IRCPlugin plugin, const ref IRCEvent event)
+    {
+        return kameloso.plugins.common.awareness.onUserAwarenessCatchSender!channelPolicy(plugin, event);
+    }
+
+
+    // FIXME
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.JOIN)
+        .onEvent(IRCEvent.Type.ACCOUNT)
+        .onEvent(IRCEvent.Type.AWAY)
+        .onEvent(IRCEvent.Type.BACK)
+        /*.onEvent(IRCEvent.Type.CHAN)  // Avoid these to be lean; everyone gets indexed by WHO anyway
+        .onEvent(IRCEvent.Type.EMOTE)*/ // ...except on Twitch, but TwitchAwareness has these annotations
+        .channelPolicy(channelPolicy)
+        .when(Timing.setup)
+    )
+    void onUserAwarenessCatchSenderMixin2(IRCPlugin plugin, const ref IRCEvent event)
     {
         return kameloso.plugins.common.awareness.onUserAwarenessCatchSender!channelPolicy(plugin, event);
     }
