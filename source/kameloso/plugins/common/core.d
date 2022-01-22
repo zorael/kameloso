@@ -468,7 +468,9 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             lateAwareness, cleanupAwareness);
         alias isNormalPluginFunction = templateNot!isAwarenessFunction;
 
-        alias funs = Filter!(isSomeFunction, getSymbolsByUDA!(thisModule, IRCEvent.Type));
+        alias hasNewUDA(alias T) = hasUDA!(T, IRCEventHandler);
+        alias hasNoNewUDA = templateNot!hasNewUDA;
+        alias funs = Filter!(hasNoNewUDA, Filter!(isSomeFunction, getSymbolsByUDA!(thisModule, IRCEvent.Type)));
 
         enum NextStep
         {
