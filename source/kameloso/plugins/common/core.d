@@ -1622,57 +1622,74 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                         "mixin (needed for `PermissionsRequired` checks)";
                     static assert(0, pattern.format(module_));
                 }
-            }
-
-            static if (verbose)
-            {
-                writeln("   ...PermissionsRequired.",
-                    Enum!PermissionsRequired.toString(uda._permissionsRequired));
-            }
-
-            immutable result = this.allow(event, uda._permissionsRequired);
-
-            static if (verbose)
-            {
-                writeln("   ...allow result is ", Enum!FilterResult.toString(result));
-            }
-
-            NextStep rtToReturn;
-
-            /*if (result == FilterResult.pass)
-            {
-                // Drop down
-            }
-            else*/ if (result == FilterResult.whois)
-            {
-                import kameloso.plugins.common.base : enqueue;
-                import std.traits : fullyQualifiedName;
-
-                alias Params = staticMap!(Unqual, Parameters!fun);
 
                 static if (verbose)
                 {
-                    writefln("   ...%s WHOIS", typeof(this).stringof);
+                    writeln("   ...PermissionsRequired.",
+                        Enum!PermissionsRequired.toString(uda._permissionsRequired));
                 }
 
-                static if (is(Params : AliasSeq!IRCEvent) || (arity!fun == 0))
-                {
-                    this.enqueue(event, uda._permissionsRequired, &fun, fullyQualifiedName!fun);
+                immutable result = this.allow(event, uda._permissionsRequired);
 
-                    static if (uda._chainable || uda._isAwareness)
+                static if (verbose)
+                {
+                    writeln("   ...allow result is ", Enum!FilterResult.toString(result));
+                }
+
+                NextStep rtToReturn;
+
+                /*if (result == FilterResult.pass)
+                {
+                    // Drop down
+                }
+                else*/ if (result == FilterResult.whois)
+                {
+                    import kameloso.plugins.common.base : enqueue;
+                    import std.traits : fullyQualifiedName;
+
+                    alias Params = staticMap!(Unqual, Parameters!fun);
+
+                    static if (verbose)
                     {
-                        rtToReturn = NextStep.continue_;
+                        writefln("   ...%s WHOIS", typeof(this).stringof);
+                    }
+
+                    static if (is(Params : AliasSeq!IRCEvent) || (arity!fun == 0))
+                    {
+                        this.enqueue(event, uda._permissionsRequired, &fun, fullyQualifiedName!fun);
+
+                        static if (uda._chainable || uda._isAwareness)
+                        {
+                            rtToReturn = NextStep.continue_;
+                        }
+                        else
+                        {
+                            rtToReturn = NextStep.return_;
+                        }
+                    }
+                    else static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
+                        is(Params : AliasSeq!(typeof(this))))
+                    {
+                        this.enqueue(this, event, uda._permissionsRequired, &fun, fullyQualifiedName!fun);
+
+                        static if (uda._chainable || uda._isAwareness)
+                        {
+                            rtToReturn = NextStep.continue_;
+                        }
+                        else
+                        {
+                            rtToReturn = NextStep.return_;
+                        }
                     }
                     else
                     {
-                        rtToReturn = NextStep.return_;
+                        import std.format : format;
+                        static assert(0, "`%s` has an unsupported function signature: `%s`"
+                            .format(fullyQualifiedName!fun, typeof(fun).stringof));
                     }
                 }
-                else static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
-                    is(Params : AliasSeq!(typeof(this))))
+                else if (result == FilterResult.fail)
                 {
-                    this.enqueue(this, event, uda._permissionsRequired, &fun, fullyQualifiedName!fun);
-
                     static if (uda._chainable || uda._isAwareness)
                     {
                         rtToReturn = NextStep.continue_;
@@ -1684,29 +1701,12 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 }
                 else
                 {
-                    import std.format : format;
-                    static assert(0, "`%s` has an unsupported function signature: `%s`"
-                        .format(fullyQualifiedName!fun, typeof(fun).stringof));
+                    assert(0);
                 }
-            }
-            else if (result == FilterResult.fail)
-            {
-                static if (uda._chainable || uda._isAwareness)
-                {
-                    rtToReturn = NextStep.continue_;
-                }
-                else
-                {
-                    rtToReturn = NextStep.return_;
-                }
-            }
-            else
-            {
-                assert(0);
-            }
 
-            // Make a runtime decision on whether to return or not
-            if (rtToReturn != NextStep.unset) return rtToReturn;
+                // Make a runtime decision on whether to return or not
+                if (rtToReturn != NextStep.unset) return rtToReturn;
+            }
 
             alias Params = staticMap!(Unqual, Parameters!fun);
 
