@@ -3551,6 +3551,10 @@ struct IRCEventHandler
         +/
         string _word;
 
+        string _description;
+
+        string _syntax;
+
         /++
             Whether this is a hidden command or if it should show up in help listings.
         +/
@@ -3565,6 +3569,18 @@ struct IRCEventHandler
         auto ref word(const string word)
         {
             this._word = word;
+            return this;
+        }
+
+        auto ref description(const string description)
+        {
+            this._description = description;
+            return this;
+        }
+
+        auto ref syntax(const string syntax)
+        {
+            this._syntax = syntax;
             return this;
         }
 
@@ -3594,6 +3610,8 @@ struct IRCEventHandler
          +/
         string _expression;
 
+        string _description;
+
         /++
             Whether this is a hidden command or if it should show up in help listings.
          +/
@@ -3609,6 +3627,12 @@ struct IRCEventHandler
         {
             this._expression = expression;
             this._engine = expression.regex;
+            return this;
+        }
+
+        auto ref description(const string description)
+        {
+            this._description = description;
             return this;
         }
 
