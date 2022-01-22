@@ -64,6 +64,37 @@ void onCommandSay(ChatbotPlugin plugin, const ref IRCEvent event)
 }
 
 
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(PermissionsRequired.anyone)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .policy(PrefixPolicy.prefixed)
+            .word("say")
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .policy(PrefixPolicy.nickname)
+            .word("säg")
+            .hidden(true)
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .policy(PrefixPolicy.nickname)
+            .word("echo")
+            .hidden(true)
+    )
+)
+void onCommandSay2(ChatbotPlugin plugin, const ref IRCEvent event)
+{
+    return onCommandSay(plugin, event);
+}
+
+
 // onCommand8ball
 /++
     Implements magic `8ball` (https://en.wikipedia.org/wiki/Magic_8-Ball).
@@ -115,6 +146,30 @@ void onCommand8ball(ChatbotPlugin plugin, const ref IRCEvent event)
 }
 
 
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(PermissionsRequired.anyone)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .policy(PrefixPolicy.prefixed)
+            .word("8ball")
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .policy(PrefixPolicy.prefixed)
+            .word("eightball")
+            .hidden(true)
+    )
+)
+void onCommand8ball2(ChatbotPlugin plugin, const ref IRCEvent event)
+{
+    return onCommand8ball(plugin, event);
+}
+
 // onCommandBash
 /++
     Fetch a random or specified `bash.org` quote.
@@ -140,6 +195,24 @@ void onCommandBash(ChatbotPlugin plugin, const ref IRCEvent event)
         cast(Flag!"colouredOutgoing")plugin.state.settings.colouredOutgoing);
 }
 
+
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(PermissionsRequired.anyone)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .policy(PrefixPolicy.prefixed)
+            .word("bash")
+    )
+)
+void onCommandBash2(ChatbotPlugin plugin, const ref IRCEvent event)
+{
+    return onCommandBash(plugin, event);
+}
 
 // worker
 /++
@@ -319,6 +392,19 @@ void onDance(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
 
     Fiber danceFiber = new Fiber(&danceDg, BufferSize.fiberStack);
     danceFiber.call();
+}
+
+
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(PermissionsRequired.anyone)
+    .channelPolicy(ChannelPolicy.home)
+)
+void onDance(ChatbotPlugin plugin, const ref IRCEvent event)
+{
+    return onDance(plugin, event);
 }
 
 
