@@ -3460,9 +3460,9 @@ struct IRCEventHandler
 {
     IRCEvent.Type[] _eventTypes;
 
-    PermissionsRequired _permissionsRequired;
+    PermissionsRequired _permissionsRequired = PermissionsRequired.ignore;
 
-    ChannelPolicy _channelPolicy;
+    ChannelPolicy _channelPolicy = ChannelPolicy.home;
 
     Command[] _commands;
 
