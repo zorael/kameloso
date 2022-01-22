@@ -155,6 +155,20 @@ void onAccountInfo(AutomodePlugin plugin, const ref IRCEvent event)
 }
 
 
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.ACCOUNT)
+    .onEvent(IRCEvent.Type.RPL_WHOISACCOUNT)
+    .onEvent(IRCEvent.Type.RPL_WHOISREGNICK)
+    .onEvent(IRCEvent.Type.RPL_WHOISUSER)
+    .permissionsRequired(PermissionsRequired.ignore)
+)
+void onAccountInfo2(AutomodePlugin plugin, const ref IRCEvent event)
+{
+    return onAccountInfo(plugin, event);
+}
+
+
 // onJoin
 /++
     Applies automodes upon someone joining a home channel.
@@ -172,6 +186,18 @@ void onJoin(AutomodePlugin plugin, const ref IRCEvent event)
     {
         plugin.applyAutomodes(event.channel, event.sender.nickname, event.sender.account);
     }
+}
+
+
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.JOIN)
+    .permissionsRequired(PermissionsRequired.anyone)
+    .channelPolicy(ChannelPolicy.home)
+)
+void onJoin2(AutomodePlugin plugin, const ref IRCEvent event)
+{
+    return onJoin(plugin, event);
 }
 
 
@@ -379,6 +405,25 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 }
 
 
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(PermissionsRequired.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .policy(PrefixPolicy.prefixed)
+            .word("automode")
+            .description("Adds, lists or removes automode definitions for the current channel.")
+            .syntax("$command [add|list|clear] [account/nickname] [mode]")
+    )
+)
+void onCommandAutomode2(AutomodePlugin plugin, const ref IRCEvent event)
+{
+    return onCommandAutomode(plugin, event);
+}
+
+
 // modifyAutomode
 /++
     Modifies an automode entry by adding a new one or removing a (potentially)
@@ -467,6 +512,24 @@ void onCommandOp(AutomodePlugin plugin, const ref IRCEvent event)
 }
 
 
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(PermissionsRequired.ignore)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .policy(PrefixPolicy.prefixed)
+            .word("op")
+            .description("Forces the bot to attempt to apply automodes.")
+    )
+)
+void onCommandOp2(AutomodePlugin plugin, const ref IRCEvent event)
+{
+    return onCommandOp(plugin, event);
+}
+
+
 // onMyInfo
 /++
     Populate automodes array after we have successfully logged onto the server.
@@ -481,6 +544,16 @@ void onMyInfo(AutomodePlugin plugin)
     //plugin.automodes.clear();
     plugin.automodes.populateFromJSON(automodesJSON, Yes.lowercaseKeys);
     plugin.automodes = plugin.automodes.rehash();
+}
+
+
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WELCOME)
+)
+void onMyInfo2(AutomodePlugin plugin)
+{
+    return onMyInfo(plugin);
 }
 
 
@@ -523,6 +596,17 @@ void onMode(AutomodePlugin plugin, const ref IRCEvent event)
             plugin.applyAutomodes(event.channel, user.nickname, user.account);
         }
     }
+}
+
+
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.MODE)
+    .channelPolicy(ChannelPolicy.home)
+)
+void onMode2(AutomodePlugin plugin, const ref IRCEvent event)
+{
+    return onMode(plugin, event);
 }
 
 
