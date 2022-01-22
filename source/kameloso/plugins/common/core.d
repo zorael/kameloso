@@ -431,7 +431,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
     pragma(inline, true)
     override public void onEvent(const ref IRCEvent event) @system
     {
-        return onEventImpl(event);
+        onEventImpl(event);
+        onEventImpl2(event);
     }
 
 
