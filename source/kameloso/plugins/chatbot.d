@@ -402,7 +402,7 @@ void onDance(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
     .permissionsRequired(PermissionsRequired.anyone)
     .channelPolicy(ChannelPolicy.home)
 )
-void onDance(ChatbotPlugin plugin, const ref IRCEvent event)
+void onDance2(ChatbotPlugin plugin, const ref IRCEvent event)
 {
     return onDance(plugin, event);
 }
