@@ -1212,6 +1212,711 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
     }
 
 
+    // onEventImpl
+    /++
+        Pass on the supplied [dialect.defs.IRCEvent] to module-level functions
+        annotated with the matching [dialect.defs.IRCEvent.Type]s.
+
+        It also does checks for [kameloso.plugins.common.core.ChannelPolicy],
+        [kameloso.plugins.common.core.PermissionsRequired], [kameloso.plugins.common.core.PrefixPolicy],
+        [kameloso.plugins.common.core.BotCommand], [kameloso.plugins.common.core.BotRegex]
+        etc; where such is applicable.
+
+        Params:
+            origEvent = Parsed [dialect.defs.IRCEvent] to dispatch to event handlers.
+     +/
+    private void onEventImpl2(/*const*/ IRCEvent origEvent) @system
+    {
+        mixin("static import thisModule = " ~ module_ ~ ";");
+
+        import lu.string : contains, nom;
+        import lu.traits : getSymbolsByUDA;
+        import std.meta : Filter, templateNot, templateOr;
+        import std.traits : isSomeFunction, fullyQualifiedName, getUDAs, hasUDA;
+
+        enum isSetupFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.setup);
+        enum isEarlyFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.early);
+        enum isLateFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.late);
+        enum isCleanupFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.cleanup);
+        alias hasSpecialTiming = templateOr!(isSetupFun, isEarlyFun,
+            isLateFun, isCleanupFun);
+        alias isNormalEventHandler = templateNot!hasSpecialTiming;
+
+        enum NextStep
+        {
+            unset,
+            continue_,
+            repeat,
+            return_,
+        }
+
+        /++
+            Process a function.
+         +/
+        NextStep process(alias fun)(ref IRCEvent event)
+        {
+            import std.algorithm.searching : canFind;
+
+            alias handlerAnnotations = getUDAs!(fun, IRCEventHandler);
+
+            static if (handlerAnnotations.length > 1)
+            {
+                import std.format;
+
+                enum pattern = "`%s` is annotated with more than one `IRCEventHandler`";
+                static assert(0, pattern.format(fullyQualifiedName!fun));
+            }
+
+            static immutable uda = handlerAnnotations[0];
+
+            enum verbose = (uda._verbose || debug_);
+
+            static if (verbose)
+            {
+                import lu.conv : Enum;
+                import std.format : format;
+                import std.stdio : writeln, writefln;
+
+                enum name = "[%s] %s".format(__traits(identifier, thisModule),
+                    __traits(identifier, fun));
+            }
+
+            if (!uda._eventTypes.canFind(event.type)) return NextStep.continue_;
+
+            bool break_;
+
+            static foreach (immutable eventType; uda._eventTypes)
+            {{
+                if (!break_)
+                {
+                    static if (eventType == IRCEvent.Type.UNSET)
+                    {
+                        import std.format : format;
+
+                        enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
+                            "`@(IRCEvent.Type.UNSET)`, which is not a valid event type.";
+                        static assert(0, pattern.format(fullyQualifiedName!fun));
+                    }
+                    else static if (eventType == IRCEvent.Type.PRIVMSG)
+                    {
+                        import std.format : format;
+
+                        enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
+                            "`@(IRCEvent.Type.PRIVMSG)`, which is not a valid event type. " ~
+                            "Use `IRCEvent.Type.CHAN` and/or `IRCEvent.Type.QUERY` instead";
+                        static assert(0, pattern.format(fullyQualifiedName!fun));
+                    }
+                    else static if (eventType == IRCEvent.Type.WHISPER)
+                    {
+                        import std.format : format;
+
+                        enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
+                            "`@(IRCEvent.Type.PRIVMSG)`, which is not a valid event type. " ~
+                            "Use `IRCEvent.Type.QUERY` instead";
+                        static assert(0, pattern.format(fullyQualifiedName!fun));
+                    }
+                    else static if (eventType == IRCEvent.Type.ANY)
+                    {
+                        // Let pass
+                        break_ = true;
+                    }
+                    else
+                    {
+                        static if (uda._commands.length || uda._regexes.length)
+                        {
+                            alias U = eventType;
+
+                            static if (
+                                (U != IRCEvent.Type.CHAN) &&
+                                (U != IRCEvent.Type.QUERY) &&
+                                (U != IRCEvent.Type.SELFCHAN) &&
+                                (U != IRCEvent.Type.SELFQUERY))
+                            {
+                                import lu.conv : Enum;
+                                import std.format : format;
+
+                                enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
+                                    "listening for a `Command` and/or `Regex`, but is at the " ~
+                                    "same time accepting non-message `IRCEvent.Type.%s events`";
+                                static assert(0, pattern.format(fullyQualifiedName!fun,
+                                    Enum!(IRCEvent.Type).toString(U)));
+                            }
+
+                            static if (uda._commands.length)
+                            {
+                                import lu.string : contains;
+
+                                static foreach (immutable command; uda._commands)
+                                {
+                                    static if (!command._word.length)
+                                    {
+                                        import std.format : format;
+
+                                        enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
+                                            "listening for a `Command` with an empty trigger word";
+                                        static assert(0, pattern.format(fullyQualifiedName!fun));
+                                    }
+                                    else static if (command._word.contains(' '))
+                                    {
+                                        import std.format : format;
+
+                                        enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
+                                            "listening for a `Command` whose trigger " ~
+                                            `word "%s" contains a space character`;
+                                        static assert(0, pattern.format(fullyQualifiedName!fun, command._word));
+                                    }
+                                }
+                            }
+
+                            static if (uda._regexes.length)
+                            {
+                                static foreach (immutable regex; uda._regexes)
+                                {
+                                    static if (!regex._expression.length)
+                                    {
+                                        import std.format : format;
+
+                                        enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
+                                            "listening for a `Regex` with an empty expression";
+                                        static assert(0, pattern.format(fullyQualifiedName!fun));
+                                    }
+                                }
+                            }
+                        }
+
+                        break_ = (eventType == event.type);
+                    }
+                }
+            }}
+
+            static if (verbose)
+            {
+                writeln("-- ", name, " @ ", Enum!(IRCEvent.Type).toString(event.type));
+                writeln("   ...", Enum!ChannelPolicy.toString(uda._channelPolicy));
+            }
+
+            if (!event.channel.length)
+            {
+                // it is a non-channel event, like an IRCEvent.Type.QUERY
+            }
+            else
+            {
+                static if (uda._channelPolicy == ChannelPolicy.home)
+                {
+                    immutable channelMatch = state.bot.homeChannels.canFind(event.channel);
+                }
+                else static if (uda._channelPolicy == ChannelPolicy.guest)
+                {
+                    immutable channelMatch = !state.bot.homeChannels.canFind(event.channel);
+                }
+                else /*if (channelPolicy == ChannelPolicy.any)*/
+                {
+                    enum channelMatch = true;
+                }
+
+                if (!channelMatch)
+                {
+                    static if (verbose)
+                    {
+                        writeln("   ...ignore non-matching channel ", event.channel);
+                    }
+
+                    // channel policy does not match
+                    return NextStep.continue_;  // next fun
+                }
+            }
+
+            static if (uda._commands.length /*|| uda._regexes.length*/)
+            {
+                import lu.string : strippedLeft;
+
+                event.content = event.content.strippedLeft;
+
+                if (!event.content.length)
+                {
+                    // Event has a BotCommand or a BotRegex set up but
+                    // `event.content` is empty; cannot possibly be of interest.
+                    return NextStep.continue_;  // next function
+                }
+
+                // Snapshot content and aux for later restoration
+                immutable origContent = event.content;
+                immutable origAux = event.aux;
+
+                /// Whether or not a [BotCommand] or [BotRegex] matched.
+                bool commandMatch;
+            }
+
+            // Evaluate each BotCommand UDAs with the current event
+            static if (uda._commands.length)
+            {
+                static foreach (immutable command; uda._commands)
+                {{
+                    if (!commandMatch)
+                    {
+                        static if (verbose)
+                        {
+                            writefln(`   ...Command "%s"`, command._word);
+                        }
+
+                        bool policyMismatch;
+
+                        if (!event.prefixPolicyMatches2!verbose
+                            (command._policy, state.client, state.settings.prefix))
+                        {
+                            static if (verbose)
+                            {
+                                writeln("   ...policy doesn't match; continue next BotCommand");
+                            }
+
+                            policyMismatch = true;
+                        }
+
+                        if (policyMismatch)
+                        {
+                            // Do nothing, proceed to next command
+                        }
+                        else
+                        {
+                            import lu.string : strippedLeft;
+                            import std.algorithm.comparison : equal;
+                            import std.typecons : No, Yes;
+                            import std.uni : asLowerCase, toLower;
+
+                            // If we don't strip left as a separate step, nom won't alter
+                            // event.content by ref (as it will be an rvalue).
+                            event.content = event.content.strippedLeft;
+
+                            immutable thisCommand = event.content
+                                .nom!(Yes.inherit, Yes.decode)(' ');
+                            enum lowerWord = command._word.toLower;
+
+                            if (thisCommand.asLowerCase.equal(lowerWord))
+                            {
+                                static if (verbose)
+                                {
+                                    writeln("   ...command matches!");
+                                }
+
+                                event.aux = thisCommand;
+                                commandMatch = true;  // breaks the foreach
+                            }
+                            else
+                            {
+                                // Restore content to pre-nom state
+                                event.content = origContent;
+                            }
+                        }
+                    }
+                }}
+            }
+
+            // Iff no match from BotCommands, evaluate BotRegexes
+            static if (uda._regexes.length)
+            {
+                static foreach (immutable regex; uda._regexes)
+                {{
+                    // This reuses previous commandMatch, so a matched Command
+                    // will prevent Regex lookups.
+
+                    if (!commandMatch)
+                    {
+                        static if (verbose)
+                        {
+                            writeln("   ...Regex: `", regex._expression, "`");
+                        }
+
+                        bool policyMismatch;
+
+                        if (!event.prefixPolicyMatches2!verbose
+                            (regex._policy, state.client, state.settings.prefix))
+                        {
+                            static if (verbose)
+                            {
+                                writeln("   ...policy doesn't match; continue next BotRegex");
+                            }
+
+                            policyMismatch = true;
+                        }
+
+                        if (policyMismatch)
+                        {
+                            // Do nothing, proceed to next regex
+                        }
+                        else
+                        {
+                            try
+                            {
+                                import std.regex : matchFirst;
+
+                                const hits = event.content.matchFirst(regex._engine);
+
+                                if (!hits.empty)
+                                {
+                                    static if (verbose)
+                                    {
+                                        writeln("   ...expression matches!");
+                                    }
+
+                                    event.aux = hits[0];
+                                    commandMatch = true;  // breaks the foreach
+                                }
+                                else
+                                {
+                                    static if (verbose)
+                                    {
+                                        writefln(`   ...matching "%s" against expression "%s" failed.`,
+                                            event.content, regex._expression);
+                                    }
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                static if (verbose)
+                                {
+                                    writeln("   ...Regex exception: ", e.msg);
+                                    version(PrintStacktraces) writeln(e);
+                                }
+                            }
+                        }
+                    }
+                }}
+            }
+
+            static if (uda._commands.length || uda._regexes.length)
+            {
+                if (!commandMatch)
+                {
+                    // Bot{Command,Regex} exists but neither matched; skip
+                    static if (verbose)
+                    {
+                        writeln("   ...no Command nor Regex match; continue funloop");
+                    }
+
+                    return NextStep.continue_; // next function
+                }
+
+                scope(exit)
+                {
+                    if (commandMatch)
+                    {
+                        // Restore content and aux as they were definitely altered
+                        event.content = origContent;
+                        event.aux = origAux;
+                    }
+                }
+            }
+
+            import std.meta : AliasSeq, staticMap;
+            import std.traits : Parameters, Unqual, arity;
+
+            static if (uda._permissionsRequired != PermissionsRequired.ignore)
+            {
+                static if (!__traits(compiles, .hasMinimalAuthentication))
+                {
+                    import std.format : format;
+
+                    enum pattern = "`%s` is missing a `MinimalAuthentication` " ~
+                        "mixin (needed for `PermissionsRequired` checks)";
+                    static assert(0, pattern.format(module_));
+                }
+            }
+
+            static if (verbose)
+            {
+                writeln("   ...PermissionsRequired.",
+                    Enum!PermissionsRequired.toString(uda._permissionsRequired));
+            }
+
+            immutable result = this.allow(event, uda._permissionsRequired);
+
+            static if (verbose)
+            {
+                writeln("   ...allow result is ", Enum!FilterResult.toString(result));
+            }
+
+            NextStep rtToReturn;
+
+            /*if (result == FilterResult.pass)
+            {
+                // Drop down
+            }
+            else*/ if (result == FilterResult.whois)
+            {
+                import kameloso.plugins.common.base : enqueue;
+                import std.traits : fullyQualifiedName;
+
+                alias Params = staticMap!(Unqual, Parameters!fun);
+
+                static if (verbose)
+                {
+                    writefln("   ...%s WHOIS", typeof(this).stringof);
+                }
+
+                static if (is(Params : AliasSeq!IRCEvent) || (arity!fun == 0))
+                {
+                    this.enqueue(event, uda._permissionsRequired, &fun, fullyQualifiedName!fun);
+
+                    static if (uda._chainable || uda._isAwareness)
+                    {
+                        rtToReturn = NextStep.continue_;
+                    }
+                    else
+                    {
+                        rtToReturn = NextStep.return_;
+                    }
+                }
+                else static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
+                    is(Params : AliasSeq!(typeof(this))))
+                {
+                    this.enqueue(this, event, uda._permissionsRequired, &fun, fullyQualifiedName!fun);
+
+                    static if (uda._chainable || uda._isAwareness)
+                    {
+                        rtToReturn = NextStep.continue_;
+                    }
+                    else
+                    {
+                        rtToReturn = NextStep.return_;
+                    }
+                }
+                else
+                {
+                    import std.format : format;
+                    static assert(0, "`%s` has an unsupported function signature: `%s`"
+                        .format(fullyQualifiedName!fun, typeof(fun).stringof));
+                }
+            }
+            else if (result == FilterResult.fail)
+            {
+                static if (uda._chainable || uda._isAwareness)
+                {
+                    rtToReturn = NextStep.continue_;
+                }
+                else
+                {
+                    rtToReturn = NextStep.return_;
+                }
+            }
+            else
+            {
+                assert(0);
+            }
+
+            // Make a runtime decision on whether to return or not
+            if (rtToReturn != NextStep.unset) return rtToReturn;
+
+            alias Params = staticMap!(Unqual, Parameters!fun);
+
+            static if (verbose)
+            {
+                writeln("   ...calling!");
+            }
+
+            static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
+                is(Params : AliasSeq!(IRCPlugin, IRCEvent)))
+            {
+                static if (!is(Parameters!fun[1] == const))
+                {
+                    import std.traits : ParameterStorageClass, ParameterStorageClassTuple;
+
+                    alias SC = ParameterStorageClass;
+                    alias paramClasses = ParameterStorageClassTuple!fun;
+
+                    static if ((paramClasses[1] & SC.ref_) ||
+                        (paramClasses[1] & SC.out_))
+                    {
+                        import std.format : format;
+
+                        enum pattern = "`%s` takes an `IRCEvent` of an unsupported storage class; " ~
+                            "may not be mutable `ref` or `out`";
+                        static assert(0, pattern.format(fullyQualifiedName!fun));
+                    }
+                }
+
+                fun(this, event);
+            }
+            else static if (is(Params : AliasSeq!(typeof(this))) ||
+                is(Params : AliasSeq!IRCPlugin))
+            {
+                fun(this);
+            }
+            else static if (is(Params : AliasSeq!IRCEvent))
+            {
+                static if (!is(Parameters!fun[0] == const))
+                {
+                    import std.traits : ParameterStorageClass, ParameterStorageClassTuple;
+
+                    alias SC = ParameterStorageClass;
+                    alias paramClasses = ParameterStorageClassTuple!fun;
+
+                    static if ((paramClasses[0] & SC.ref_) ||
+                        (paramClasses[0] & SC.out_))
+                    {
+                        import std.format : format;
+
+                        enum pattern = "`%s` takes an `IRCEvent` of an unsupported storage class; " ~
+                            "may not be mutable `ref` or `out`";
+                        static assert(0, pattern.format(fullyQualifiedName!fun));
+                    }
+                }
+
+                fun(event);
+            }
+            else static if (arity!fun == 0)
+            {
+                fun();
+            }
+            else
+            {
+                import std.format : format;
+                static assert(0, "`%s` has an unsupported function signature: `%s`"
+                    .format(fullyQualifiedName!fun, typeof(fun).stringof));
+            }
+
+            static if (uda._chainable || uda._isAwareness)
+            {
+                // onEvent found an event and triggered a function, but
+                // it's Chainable and there may be more, so keep looking.
+                // Alternatively it's an awareness function, which may be
+                // sharing one or more annotations with another.
+                return NextStep.continue_;
+            }
+            else
+            {
+                // The triggered function is not Chainable so return and
+                // let the main loop continue with the next plugin.
+                return NextStep.return_;
+            }
+        }
+
+        alias funs = Filter!(isSomeFunction, getSymbolsByUDA!(thisModule, IRCEventHandler));
+
+        alias setupFuns = Filter!(isSetupFun, funs);
+        alias earlyFuns = Filter!(isEarlyFun, funs);
+        alias lateFuns = Filter!(isLateFun, funs);
+        alias cleanupFuns = Filter!(isCleanupFun, funs);
+        alias pluginFuns = Filter!(isNormalEventHandler, funs);
+
+        /// Sanitise and try again once on UTF/Unicode exceptions
+        static void sanitizeEvent(ref IRCEvent event)
+        {
+            import std.encoding : sanitize;
+            import std.range : only;
+
+            event.raw = sanitize(event.raw);
+            event.channel = sanitize(event.channel);
+            event.content = sanitize(event.content);
+            event.aux = sanitize(event.aux);
+            event.tags = sanitize(event.tags);
+            event.errors ~= event.errors.length ? ". Sanitized" : "Sanitized";
+
+            foreach (user; only(&event.sender, &event.target))
+            {
+                user.nickname = sanitize(user.nickname);
+                user.ident = sanitize(user.ident);
+                user.address = sanitize(user.address);
+                user.account = sanitize(user.account);
+
+                version(TwitchSupport)
+                {
+                    user.displayName = sanitize(user.displayName);
+                    user.badges = sanitize(user.badges);
+                    user.colour = sanitize(user.colour);
+                }
+            }
+        }
+
+        /// Wrap all the functions in the passed `funlist` in try-catch blocks.
+        void tryProcess(funlist...)(ref IRCEvent event)
+        {
+            foreach (fun; funlist)
+            {
+                try
+                {
+                    immutable next = process!fun(event);
+
+                    if (next == NextStep.continue_)
+                    {
+                        continue;
+                    }
+                    else if (next == NextStep.repeat)
+                    {
+                        // only repeat once so we don't endlessly loop
+                        if (process!fun(event) == NextStep.continue_)
+                        {
+                            continue;
+                        }
+                        else
+                        {
+                            return;
+                        }
+                    }
+                    else if (next == NextStep.return_)
+                    {
+                        return;
+                    }
+                    else
+                    {
+                        assert(0);
+                    }
+                }
+                catch (Exception e)
+                {
+                    /*logger.warningf("tryProcess some exception on %s: %s",
+                        __traits(identifier, fun), e.msg);*/
+
+                    import std.utf : UTFException;
+                    import core.exception : UnicodeException;
+
+                    immutable isRecoverableException =
+                        (cast(UnicodeException)e !is null) ||
+                        (cast(UTFException)e !is null);
+
+                    if (!isRecoverableException) throw e;
+
+                    sanitizeEvent(event);
+
+                    // Copy-paste, not much we can do otherwise
+                    immutable next = process!fun(event);
+
+                    if (next == NextStep.continue_)
+                    {
+                        continue;
+                    }
+                    else if (next == NextStep.repeat)
+                    {
+                        // only repeat once so we don't endlessly loop
+                        if (process!fun(event) == NextStep.continue_)
+                        {
+                            continue;
+                        }
+                        else
+                        {
+                            return;
+                        }
+                    }
+                    else if (next == NextStep.return_)
+                    {
+                        return;
+                    }
+                    else
+                    {
+                        assert(0);
+                    }
+                }
+            }
+        }
+
+        tryProcess!setupFuns(origEvent);
+        tryProcess!earlyFuns(origEvent);
+        tryProcess!pluginFuns(origEvent);
+        tryProcess!lateFuns(origEvent);
+        tryProcess!cleanupFuns(origEvent);
+    }
+
+
+
     // this(IRCPluginState)
     /++
         Basic constructor for a plugin.
@@ -1936,6 +2641,15 @@ bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)
     return true;
 }
 
+
+bool prefixPolicyMatches2(bool verbose = false)
+    (ref IRCEvent event,
+    const PrefixPolicy policy,
+    const IRCClient client,
+    const string prefix)
+{
+    return prefixPolicyMatches!(cast(Flag!"verbose")verbose)(event, policy, client, prefix);
+}
 
 // filterSender
 /++
@@ -2725,6 +3439,182 @@ struct BotCommand
     this(const string word, const Flag!"hidden" hidden = No.hidden) pure
     {
         this.word = word;
+    }
+}
+
+
+enum Timing
+{
+    unset,
+    setup,
+    early,
+    late,
+    cleanup
+}
+
+
+// IRCEventHandler
+struct IRCEventHandler
+{
+    IRCEvent.Type[] _eventTypes;
+
+    PermissionsRequired _permissionsRequired;
+
+    ChannelPolicy _channelPolicy;
+
+    Command[] _commands;
+
+    Regex[] _regexes;
+
+    bool _chainable;
+
+    bool _verbose;
+
+    bool _isAwareness;
+
+    string _description;
+
+    Timing _when;
+
+    auto ref onEvent(const IRCEvent.Type eventType)
+    {
+        this._eventTypes ~= eventType;
+        return this;
+    }
+
+    auto ref permissionsRequired(const PermissionsRequired permissionsRequired)
+    {
+        this._permissionsRequired = permissionsRequired;
+        return this;
+    }
+
+    auto ref channelPolicy(const ChannelPolicy channelPolicy)
+    {
+        this._channelPolicy = channelPolicy;
+        return this;
+    }
+
+    auto ref addCommand(const Command command)
+    {
+        this._commands ~= command;
+        return this;
+    }
+
+    auto ref addRegex(/*const*/ Regex regex)
+    {
+        this._regexes ~= regex;
+        return this;
+    }
+
+    auto ref chainable(const bool chainable)
+    {
+        this._chainable = chainable;
+        return this;
+    }
+
+    auto ref verbose(const bool verbose)
+    {
+        this._verbose = verbose;
+        return this;
+    }
+
+    auto ref isAwareness(const bool isAwareness)
+    {
+        this._isAwareness = isAwareness;
+        return this;
+    }
+
+    auto ref description(const string description)
+    {
+        this._description = description;
+        return this;
+    }
+
+    auto ref when(const Timing when)
+    {
+        this._when = when;
+        return this;
+    }
+
+    // Command
+    static struct Command
+    {
+        /++
+            In what way the message is required to start for the annotated function to trigger.
+        +/
+        PrefixPolicy _policy = PrefixPolicy.prefixed;
+
+        /++
+            The command word, without spaces.
+        +/
+        string _word;
+
+        /++
+            Whether this is a hidden command or if it should show up in help listings.
+        +/
+        bool _hidden;
+
+        auto ref policy(const PrefixPolicy policy)
+        {
+            this._policy = policy;
+            return this;
+        }
+
+        auto ref word(const string word)
+        {
+            this._word = word;
+            return this;
+        }
+
+        auto ref hidden(const bool hidden)
+        {
+            this._hidden = hidden;
+            return this;
+        }
+    }
+
+    static struct Regex
+    {
+        import std.regex : StdRegex = Regex, regex;
+
+        /++
+            In what way the message is required to start for the annotated function to trigger.
+         +/
+        PrefixPolicy _policy = PrefixPolicy.direct;
+
+        /++
+            Regex engine to match incoming messages with.
+         +/
+        StdRegex!char _engine;
+
+        /++
+            The regular expression in string form.
+         +/
+        string _expression;
+
+        /++
+            Whether this is a hidden command or if it should show up in help listings.
+         +/
+        bool _hidden;
+
+        auto ref policy(const PrefixPolicy policy)
+        {
+            this._policy = policy;
+            return this;
+        }
+
+        auto ref expression(const string expression)
+        {
+            this._expression = expression;
+            this._engine = expression.regex;
+            return this;
+        }
+
+        auto ref hidden(const bool hidden)
+        {
+            this._hidden = hidden;
+            return this;
+        }
     }
 }
 
