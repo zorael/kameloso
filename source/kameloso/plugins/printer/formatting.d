@@ -219,8 +219,7 @@ if (isOutputRange!(Sink, char[]))
 
             version(TwitchSupport)
             {
-                if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-                    event.sender.displayName.length)
+                if (event.sender.displayName.length)
                 {
                     sink.put(event.sender.displayName);
                     putDisplayName = true;
@@ -296,8 +295,7 @@ if (isOutputRange!(Sink, char[]))
 
             putArrow = true;
 
-            if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-                event.target.displayName.length)
+            if (event.target.displayName.length)
             {
                 sink.put(event.target.displayName);
                 putDisplayName = true;
@@ -699,8 +697,7 @@ if (isOutputRange!(Sink, char[]))
 
             version(TwitchSupport)
             {
-                if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-                    event.sender.displayName.length)
+                if (event.sender.displayName.length)
                 {
                     sink.put(event.sender.displayName);
                     putDisplayName = true;
@@ -782,8 +779,7 @@ if (isOutputRange!(Sink, char[]))
             colourUserTruecolour(sink, event.target);
             putArrow = true;
 
-            if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-                event.target.displayName.length)
+            if (event.target.displayName.length)
             {
                 sink.put(event.target.displayName);
                 putDisplayName = true;
@@ -893,9 +889,8 @@ if (isOutputRange!(Sink, char[]))
 
                 version(TwitchSupport)
                 {
-                    // On Twitch, also highlight the display name alias
-                    if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-                        plugin.state.client.displayName.length &&  // Should always be true but check
+                    // If available, also highlight the display name alias
+                    if (plugin.state.client.displayName.length &&
                         (plugin.state.client.nickname != plugin.state.client.displayName) &&
                         content.containsNickname(plugin.state.client.displayName))
                     {
