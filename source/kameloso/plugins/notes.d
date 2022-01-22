@@ -54,6 +54,19 @@ void onReplayEvent(NotesPlugin plugin, const /*ref*/ IRCEvent event)
 }
 
 
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.JOIN)
+    .onEvent(IRCEvent.Type.ACCOUNT)
+    .permissionsRequired(PermissionsRequired.anyone)
+    .channelPolicy(ChannelPolicy.home)
+)
+void onReplayEvent2(NotesPlugin plugin, const ref IRCEvent event)
+{
+    return onReplayEvent(plugin, event);
+}
+
+
 // onWhoReply
 /++
     Plays backs notes upon replies of a WHO query.
@@ -75,6 +88,18 @@ void onWhoReply(NotesPlugin plugin, const /*ref*/ IRCEvent event)
     if (event.channel !in plugin.notes) return;
 
     return plugin.playbackNotes(event.target, event.channel, Yes.background);
+}
+
+
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WHOREPLY)
+    .permissionsRequired(PermissionsRequired.ignore)
+    .channelPolicy(ChannelPolicy.home)
+)
+void onWhoReply2(NotesPlugin plugin, const ref IRCEvent event)
+{
+    return onWhoReply(plugin, event);
 }
 
 
@@ -291,6 +316,18 @@ void onNames(NotesPlugin plugin, const ref IRCEvent event)
 }
 
 
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_NAMREPLY)
+    .permissionsRequired(PermissionsRequired.ignore)
+    .channelPolicy(ChannelPolicy.home)
+)
+void onNames2(NotesPlugin plugin, const ref IRCEvent event)
+{
+    return onNames(plugin, event);
+}
+
+
 // onCommandAddNote
 /++
     Adds a note to the in-memory storage, and saves it to disk.
@@ -350,6 +387,27 @@ void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
         //logger.error("Failed to add note: ", Tint.log, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
+}
+
+
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(PermissionsRequired.whitelist)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .policy(PrefixPolicy.prefixed)
+            .word("note")
+            .description("Adds a note and saves it to disk.")
+            .syntax("$command [account] [note text]")
+    )
+)
+void onCommandAddNote2(NotesPlugin plugin, const ref IRCEvent event)
+{
+    return onCommandAddNote(plugin, event);
 }
 
 
@@ -564,6 +622,16 @@ in (line.length, "Tried to add an empty note")
 void onWelcome(NotesPlugin plugin)
 {
     plugin.notes.load(plugin.notesFile);
+}
+
+
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WELCOME)
+)
+void onWelcome2(NotesPlugin plugin)
+{
+    return onWelcome(plugin);
 }
 
 
