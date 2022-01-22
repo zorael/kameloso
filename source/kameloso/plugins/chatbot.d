@@ -54,16 +54,6 @@ import std.typecons : Flag, No, Yes;
 @BotCommand(PrefixPolicy.prefixed, "säg", Yes.hidden)
 @BotCommand(PrefixPolicy.prefixed, "echo", Yes.hidden)
 @Description("Repeats text to the channel the event was sent to.", "$command [text to repeat]")
-void onCommandSay(ChatbotPlugin plugin, const ref IRCEvent event)
-{
-    immutable message = event.content.length ?
-        event.content :
-        "Say what?";
-
-    privmsg(plugin.state, event.channel, event.sender.nickname, message);
-}
-
-
 // FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -89,9 +79,13 @@ void onCommandSay(ChatbotPlugin plugin, const ref IRCEvent event)
             .hidden(true)
     )
 )
-void onCommandSay2(ChatbotPlugin plugin, const ref IRCEvent event)
+void onCommandSay(ChatbotPlugin plugin, const ref IRCEvent event)
 {
-    return onCommandSay(plugin, event);
+    immutable message = event.content.length ?
+        event.content :
+        "Say what?";
+
+    privmsg(plugin.state, event.channel, event.sender.nickname, message);
 }
 
 
@@ -111,6 +105,25 @@ void onCommandSay2(ChatbotPlugin plugin, const ref IRCEvent event)
 @BotCommand(PrefixPolicy.prefixed, "8ball")
 @BotCommand(PrefixPolicy.prefixed, "eightball")
 @Description("Implements 8ball. Randomises a vague yes/no response.")
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(PermissionsRequired.anyone)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .policy(PrefixPolicy.prefixed)
+            .word("8ball")
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .policy(PrefixPolicy.prefixed)
+            .word("eightball")
+            .hidden(true)
+    )
+)
 void onCommand8ball(ChatbotPlugin plugin, const ref IRCEvent event)
 {
     import std.format : format;
@@ -146,30 +159,6 @@ void onCommand8ball(ChatbotPlugin plugin, const ref IRCEvent event)
 }
 
 
-// FIXME
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.CHAN)
-    .onEvent(IRCEvent.Type.QUERY)
-    .onEvent(IRCEvent.Type.SELFCHAN)
-    .permissionsRequired(PermissionsRequired.anyone)
-    .channelPolicy(ChannelPolicy.home)
-    .addCommand(
-        IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
-            .word("8ball")
-    )
-    .addCommand(
-        IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
-            .word("eightball")
-            .hidden(true)
-    )
-)
-void onCommand8ball2(ChatbotPlugin plugin, const ref IRCEvent event)
-{
-    return onCommand8ball(plugin, event);
-}
-
 // onCommandBash
 /++
     Fetch a random or specified `bash.org` quote.
@@ -183,19 +172,6 @@ void onCommand8ball2(ChatbotPlugin plugin, const ref IRCEvent event)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "bash")
 @Description("Fetch a random or specified bash.org quote.", "$command [optional bash quote number]")
-void onCommandBash(ChatbotPlugin plugin, const ref IRCEvent event)
-{
-    import kameloso.thread : ThreadMessage;
-    import std.concurrency : prioritySend, spawn;
-
-    plugin.state.mainThread.prioritySend(ThreadMessage.ShortenReceiveTimeout());
-
-    // Defer all work to the worker thread
-    spawn(&worker, cast(shared)plugin.state, event,
-        cast(Flag!"colouredOutgoing")plugin.state.settings.colouredOutgoing);
-}
-
-
 // FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -209,10 +185,18 @@ void onCommandBash(ChatbotPlugin plugin, const ref IRCEvent event)
             .word("bash")
     )
 )
-void onCommandBash2(ChatbotPlugin plugin, const ref IRCEvent event)
+void onCommandBash(ChatbotPlugin plugin, const ref IRCEvent event)
 {
-    return onCommandBash(plugin, event);
+    import kameloso.thread : ThreadMessage;
+    import std.concurrency : prioritySend, spawn;
+
+    plugin.state.mainThread.prioritySend(ThreadMessage.ShortenReceiveTimeout());
+
+    // Defer all work to the worker thread
+    spawn(&worker, cast(shared)plugin.state, event,
+        cast(Flag!"colouredOutgoing")plugin.state.settings.colouredOutgoing);
 }
+
 
 // worker
 /++
@@ -351,6 +335,13 @@ void worker(shared IRCPluginState sState,
 @(IRCEvent.Type.SELFCHAN)
 @(PermissionsRequired.anyone)
 @(ChannelPolicy.home)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(PermissionsRequired.anyone)
+    .channelPolicy(ChannelPolicy.home)
+)
 void onDance(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.constants : BufferSize;
@@ -392,19 +383,6 @@ void onDance(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
 
     Fiber danceFiber = new Fiber(&danceDg, BufferSize.fiberStack);
     danceFiber.call();
-}
-
-
-// FIXME
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.CHAN)
-    .onEvent(IRCEvent.Type.SELFCHAN)
-    .permissionsRequired(PermissionsRequired.anyone)
-    .channelPolicy(ChannelPolicy.home)
-)
-void onDance2(ChatbotPlugin plugin, const ref IRCEvent event)
-{
-    return onDance(plugin, event);
 }
 
 

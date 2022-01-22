@@ -52,6 +52,18 @@ import std.typecons : Flag, No, Yes;
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "counter")
 @Description("Manages counters.", "$command [add|del|list] [counter word]")
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(PermissionsRequired.whitelist)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .policy(PrefixPolicy.prefixed)
+            .word("counter")
+    )
+)
 void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.constants : BufferSize;
@@ -175,24 +187,6 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
 }
 
 
-// FIXME
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.CHAN)
-    .onEvent(IRCEvent.Type.SELFCHAN)
-    .permissionsRequired(PermissionsRequired.whitelist)
-    .channelPolicy(ChannelPolicy.home)
-    .addCommand(
-        IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
-            .word("counter")
-    )
-)
-void onCommandCounter2(CounterPlugin plugin, const ref IRCEvent event)
-{
-    return onCommandCounter(plugin, event);
-}
-
-
 // onCounterWord
 /++
     Allows users to increment, decrement, and set counters.
@@ -206,6 +200,13 @@ void onCommandCounter2(CounterPlugin plugin, const ref IRCEvent event)
 @(IRCEvent.Type.SELFCHAN)
 @(PermissionsRequired.anyone)
 @(ChannelPolicy.home)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(PermissionsRequired.anyone)
+    .channelPolicy(ChannelPolicy.home)
+)
 void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.irccolours : ircBold;
@@ -371,24 +372,15 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 }
 
 
-// FIXME
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.CHAN)
-    .onEvent(IRCEvent.Type.SELFCHAN)
-    .permissionsRequired(PermissionsRequired.anyone)
-    .channelPolicy(ChannelPolicy.home)
-)
-void onCounterWord2(CounterPlugin plugin, const ref IRCEvent event)
-{
-    return onCounterWord(plugin, event);
-}
-
-
 // onWelcome
 /++
     Populate the counters array after we have successfully logged onto the server.
  +/
 @(IRCEvent.Type.RPL_WELCOME)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WELCOME)
+)
 void onWelcome(CounterPlugin plugin)
 {
     import lu.json : JSONStorage, populateFromJSON;
@@ -398,16 +390,6 @@ void onWelcome(CounterPlugin plugin)
     countersJSON.load(plugin.countersFile);
     plugin.counters.populateFromJSON(countersJSON, No.lowercaseKeys);
     plugin.counters = plugin.counters.rehash();
-}
-
-
-// FIXME
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.RPL_WELCOME)
-)
-void onWelcome2(CounterPlugin plugin)
-{
-    return onWelcome(plugin);
 }
 
 

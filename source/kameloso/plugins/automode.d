@@ -105,6 +105,14 @@ void initResources(AutomodePlugin plugin)
 @(IRCEvent.Type.RPL_WHOISREGNICK)
 @(IRCEvent.Type.RPL_WHOISUSER)
 @(PermissionsRequired.ignore)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.ACCOUNT)
+    .onEvent(IRCEvent.Type.RPL_WHOISACCOUNT)
+    .onEvent(IRCEvent.Type.RPL_WHOISREGNICK)
+    .onEvent(IRCEvent.Type.RPL_WHOISUSER)
+    .permissionsRequired(PermissionsRequired.ignore)
+)
 void onAccountInfo(AutomodePlugin plugin, const ref IRCEvent event)
 {
     // In case of self WHOIS results, don't automode ourselves
@@ -155,20 +163,6 @@ void onAccountInfo(AutomodePlugin plugin, const ref IRCEvent event)
 }
 
 
-// FIXME
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.ACCOUNT)
-    .onEvent(IRCEvent.Type.RPL_WHOISACCOUNT)
-    .onEvent(IRCEvent.Type.RPL_WHOISREGNICK)
-    .onEvent(IRCEvent.Type.RPL_WHOISUSER)
-    .permissionsRequired(PermissionsRequired.ignore)
-)
-void onAccountInfo2(AutomodePlugin plugin, const ref IRCEvent event)
-{
-    return onAccountInfo(plugin, event);
-}
-
-
 // onJoin
 /++
     Applies automodes upon someone joining a home channel.
@@ -180,24 +174,18 @@ void onAccountInfo2(AutomodePlugin plugin, const ref IRCEvent event)
 @(IRCEvent.Type.JOIN)
 @(PermissionsRequired.anyone)
 @(ChannelPolicy.home)
-void onJoin(AutomodePlugin plugin, const ref IRCEvent event)
-{
-    if (event.sender.account.length)
-    {
-        plugin.applyAutomodes(event.channel, event.sender.nickname, event.sender.account);
-    }
-}
-
-
 // FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.JOIN)
     .permissionsRequired(PermissionsRequired.anyone)
     .channelPolicy(ChannelPolicy.home)
 )
-void onJoin2(AutomodePlugin plugin, const ref IRCEvent event)
+void onJoin(AutomodePlugin plugin, const ref IRCEvent event)
 {
-    return onJoin(plugin, event);
+    if (event.sender.account.length)
+    {
+        plugin.applyAutomodes(event.channel, event.sender.nickname, event.sender.account);
+    }
 }
 
 
@@ -303,6 +291,19 @@ unittest
 @BotCommand(PrefixPolicy.prefixed, "automode")
 @Description("Adds, lists or removes automode definitions for the current channel.",
     "$command [add|list|clear] [account/nickname] [mode]")
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(PermissionsRequired.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .policy(PrefixPolicy.prefixed)
+            .word("automode")
+            .description("Adds, lists or removes automode definitions for the current channel.")
+            .syntax("$command [add|list|clear] [account/nickname] [mode]")
+    )
+)
 void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 {
     import dialect.common : isValidNickname;
@@ -405,25 +406,6 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 }
 
 
-// FIXME
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.CHAN)
-    .permissionsRequired(PermissionsRequired.operator)
-    .channelPolicy(ChannelPolicy.home)
-    .addCommand(
-        IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
-            .word("automode")
-            .description("Adds, lists or removes automode definitions for the current channel.")
-            .syntax("$command [add|list|clear] [account/nickname] [mode]")
-    )
-)
-void onCommandAutomode2(AutomodePlugin plugin, const ref IRCEvent event)
-{
-    return onCommandAutomode(plugin, event);
-}
-
-
 // modifyAutomode
 /++
     Modifies an automode entry by adding a new one or removing a (potentially)
@@ -498,6 +480,18 @@ in ((!add || mode.length), "Tried to add an empty automode")
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "op")
 @Description("Forces the bot to attempt to apply automodes.")
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(PermissionsRequired.ignore)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .policy(PrefixPolicy.prefixed)
+            .word("op")
+            .description("Forces the bot to attempt to apply automodes.")
+    )
+)
 void onCommandOp(AutomodePlugin plugin, const ref IRCEvent event)
 {
     if (event.sender.account.length)
@@ -512,29 +506,15 @@ void onCommandOp(AutomodePlugin plugin, const ref IRCEvent event)
 }
 
 
-// FIXME
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.CHAN)
-    .permissionsRequired(PermissionsRequired.ignore)
-    .channelPolicy(ChannelPolicy.home)
-    .addCommand(
-        IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
-            .word("op")
-            .description("Forces the bot to attempt to apply automodes.")
-    )
-)
-void onCommandOp2(AutomodePlugin plugin, const ref IRCEvent event)
-{
-    return onCommandOp(plugin, event);
-}
-
-
 // onMyInfo
 /++
     Populate automodes array after we have successfully logged onto the server.
  +/
 @(IRCEvent.Type.RPL_WELCOME)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WELCOME)
+)
 void onMyInfo(AutomodePlugin plugin)
 {
     import lu.json : JSONStorage, populateFromJSON;
@@ -547,22 +527,17 @@ void onMyInfo(AutomodePlugin plugin)
 }
 
 
-// FIXME
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.RPL_WELCOME)
-)
-void onMyInfo2(AutomodePlugin plugin)
-{
-    return onMyInfo(plugin);
-}
-
-
 // onMode
 /++
     Applies automodes in a channel upon being given operator privileges.
  +/
 @(IRCEvent.Type.MODE)
 @(ChannelPolicy.home)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.MODE)
+    .channelPolicy(ChannelPolicy.home)
+)
 void onMode(AutomodePlugin plugin, const ref IRCEvent event)
 {
     import std.algorithm.searching : canFind;
@@ -596,17 +571,6 @@ void onMode(AutomodePlugin plugin, const ref IRCEvent event)
             plugin.applyAutomodes(event.channel, user.nickname, user.account);
         }
     }
-}
-
-
-// FIXME
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.MODE)
-    .channelPolicy(ChannelPolicy.home)
-)
-void onMode2(AutomodePlugin plugin, const ref IRCEvent event)
-{
-    return onMode(plugin, event);
 }
 
 
