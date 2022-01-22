@@ -836,9 +836,9 @@ if (isOutputRange!(Sink, char[]))
     {
         immutable FG contentFgBase = bright ? Bright.content : Dark.content;
         immutable FG emoteFgBase = bright ? Bright.emote : Dark.emote;
-        immutable fgBase = ((event.type == IRCEvent.Type.EMOTE) ||
-            (event.type == IRCEvent.Type.SELFEMOTE)) ? emoteFgBase : contentFgBase;
-        immutable isEmote = (fgBase == emoteFgBase);
+        immutable isEmote = (event.type == IRCEvent.Type.EMOTE) ||
+            (event.type == IRCEvent.Type.SELFEMOTE);
+        immutable fgBase = isEmote ? emoteFgBase : contentFgBase;
 
         sink.colourWith(fgBase);  // Always grey colon and SASL +, prepare for emote
 
@@ -935,8 +935,9 @@ if (isOutputRange!(Sink, char[]))
 
     import lu.string : beginsWith;
 
-    if (rawTypestring.beginsWith("ERR_") || (event.type == IRCEvent.Type.ERROR) ||
-        (event.type == IRCEvent.Type.TWITCH_ERROR))
+    if ((event.type == IRCEvent.Type.ERROR) ||
+        (event.type == IRCEvent.Type.TWITCH_ERROR) ||
+        rawTypestring.beginsWith("ERR_"))
     {
         sink.colourWith(TerminalForeground(bright ? Bright.error : Dark.error));
     }
