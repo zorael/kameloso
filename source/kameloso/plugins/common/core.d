@@ -2687,8 +2687,6 @@ struct IRCEventHandler
 
     bool _verbose;
 
-    bool _isAwareness;
-
     Timing _when;
 
     auto ref onEvent(const IRCEvent.Type eventType)
@@ -2730,12 +2728,6 @@ struct IRCEventHandler
     auto ref verbose(const bool verbose)
     {
         this._verbose = verbose;
-        return this;
-    }
-
-    auto ref isAwareness(const bool isAwareness)
-    {
-        this._isAwareness = isAwareness;
         return this;
     }
 
