@@ -1558,7 +1558,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             import kameloso.plugins.common.core : IRCEventHandler;
             import lu.traits : getSymbolsByUDA;
             import std.meta : AliasSeq, Filter;
-            import std.traits : getUDAs, hasUDA, isSomeFunction;
+            import std.traits : getUDAs, isSomeFunction;
 
             mixin("static import thisModule = " ~ module_ ~ ";");
 
