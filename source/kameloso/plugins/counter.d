@@ -90,21 +90,17 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
             return;
         }
 
-        import kameloso.thread : CarryingFiber, ThreadMessage;
+        import kameloso.thread : ThreadMessage;
         import std.concurrency : send;
         import core.thread : Fiber;
 
-        void dg()
+        void dg(IRCPlugin.CommandMetadata[string][string] allPluginCommands)
         {
-            auto thisFiber = cast(CarryingFiber!(IRCPlugin.CommandMetadata[string][string]))(Fiber.getThis);
-            assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
-            const allPluginCommands = thisFiber.payload;
-
             foreach (immutable pluginName, pluginCommands; allPluginCommands)
             {
                 if (slice in pluginCommands)
                 {
-                    enum pattern = "Counter word %s conflicts with a command of the %s plugin.";
+                    enum pattern = `Counter word "%s" conflicts with a command of the %s plugin.`;
 
                     immutable message = plugin.state.settings.colouredOutgoing ?
                         pattern.format(slice.ircBold, pluginName.ircBold) :
@@ -128,8 +124,7 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
             saveResourceToDisk(plugin.counters, plugin.countersFile);
         }
 
-        auto fiber = new CarryingFiber!(IRCPlugin.CommandMetadata[string][string])(&dg, BufferSize.fiberStack);
-        plugin.state.mainThread.send(ThreadMessage.PeekCommands(), cast(shared)fiber);
+        plugin.state.mainThread.send(ThreadMessage.PeekCommands(), cast(shared)&dg);
         break;
 
     case "remove":
