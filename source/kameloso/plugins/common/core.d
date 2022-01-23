@@ -2666,67 +2666,6 @@ Replay replay(Fn)
 }
 
 
-// BotCommand
-/++
-    Defines an IRC bot command, for people to trigger with messages.
-
-    If no [PrefixPolicy] is specified then it will default to [PrefixPolicy.prefixed]
-    and look for [kameloso.kameloso.CoreSettings.prefix] at the beginning of
-    messages, to prefix the command `word`. (Usually "`!`", making it "`!command`".)
-
-    Example:
-    ---
-    @(IRCEvent.Type.CHAN)
-    @(ChannelPolicy.home)
-    @BotCommand(PrefixPolicy.prefixed, "foo")
-    @BotCommand(PrefixPolicy.prefixed, "bar")
-    void onCommandFooOrBar(MyPlugin plugin, const ref IRCEvent event)
-    {
-        // ...
-    }
-    ---
-
-    See_Also:
-        [BotRegex]
- +/
-struct BotCommand
-{
-    /++
-        In what way the message is required to start for the annotated function to trigger.
-     +/
-    PrefixPolicy policy = PrefixPolicy.prefixed;
-
-    /++
-        The command word, without spaces.
-     +/
-    string word;
-
-    /++
-        Whether this is a hidden command or if it should show up in help listings.
-     +/
-    bool hidden;
-
-    /++
-        Create a new [BotCommand] with the passed policy, trigger word, and hidden flag.
-     +/
-    this(const PrefixPolicy policy, const string word, const Flag!"hidden" hidden = No.hidden) pure
-    {
-        this.policy = policy;
-        this.word = word;
-        this.hidden = hidden;
-    }
-
-    /++
-        Create a new [BotCommand] with a default [PrefixPolicy.prefixed] policy
-        and the passed trigger word.
-     +/
-    this(const string word, const Flag!"hidden" hidden = No.hidden) pure
-    {
-        this.word = word;
-    }
-}
-
-
 // Timing
 /++
     Declaration of what order event handler function should be given with respects
@@ -3266,115 +3205,6 @@ struct IRCEventHandler
 }
 
 
-// BotRegex
-/++
-    Defines an IRC bot regular expression, for people to trigger with messages.
-
-    If no [PrefixPolicy] is specified then it will default to [PrefixPolicy.direct]
-    and try to match the regex on all messages, regardless of how they start.
-
-    Example:
-    ---
-    @(IRCEvent.Type.CHAN)
-    @(ChannelPolicy.home)
-    @BotRegex(PrefixPolicy.direct, r"(?:^|\s)MonkaS(?:$|\s)")
-    void onSawMonkaS(MyPlugin plugin, const ref IRCEvent event)
-    {
-        // ...
-    }
-    ---
-
-    See_Also:
-        [BotCommand]
- +/
-struct BotRegex
-{
-private:
-    import std.regex : Regex, regex;
-
-public:
-    /++
-        In what way the message is required to start for the annotated function to trigger.
-     +/
-    PrefixPolicy policy = PrefixPolicy.direct;
-
-    /++
-        Regex engine to match incoming messages with.
-     +/
-    Regex!char engine;
-
-    /++
-        The regular expression in string form.
-     +/
-    string expression;
-
-    /++
-        Whether this is a hidden command or if it should show up in help listings.
-     +/
-    bool hidden;
-
-    /++
-        Creates a new [BotRegex] with the passed policy, regex expression and hidden flag.
-     +/
-    this(const PrefixPolicy policy, const string expression,
-        const Flag!"hidden" hidden = No.hidden)
-    {
-        this.policy = policy;
-        this.hidden = hidden;
-
-        if (!expression.length) return;
-
-        this.engine = expression.regex;
-        this.expression = expression;
-    }
-
-    /++
-        Creates a new [BotRegex] with the passed regex expression.
-     +/
-    this(const string expression, const Flag!"hidden" hidden = No.hidden)
-    {
-        if (!expression.length) return;
-
-        this.engine = expression.regex;
-        this.expression = expression;
-    }
-}
-
-
-// Chainable
-/++
-    Annotation denoting that an event-handling function should let other functions in
-    the same module process after it.
-
-    See_Also:
-        [Terminating]
- +/
-enum Chainable;
-
-
-// Terminating
-/++
-    Annotation denoting that an event-handling function is the end of a chain,
-    letting no other functions in the same module be triggered after it has been.
-
-    This is not strictly necessary since anything non-[Chainable] is implicitly
-    [Terminating], but it's here to silence warnings and in hopes of the code
-    becoming more self-documenting.
-
-    See_Also:
-        [Chainable]
- +/
-enum Terminating;
-
-
-// Verbose
-/++
-    Annotation denoting that we want verbose debug output of the plumbing when
-    handling events, iterating through the module's event handler functions.
- +/
-enum Verbose;
-
-
 // Settings
 /++
     Annotation denoting that a struct variable or struct type is to be considered
@@ -3384,36 +3214,14 @@ enum Verbose;
 enum Settings;
 
 
-// Description
-/++
-    Describes an [dialect.defs.IRCEvent]-annotated handler function.
-
-    This is used to describe functions triggered by [BotCommand]s, in the help
-    listing routine in [kameloso.plugins.chatbot].
- +/
-struct Description
-{
-    /// Description string.
-    string line;
-
-    /// Command usage syntax help string.
-    string syntax;
-
-    /// Creates a new [Description] with the passed [line] description text.
-    this(const string line, const string syntax = string.init)
-    {
-        this.line = line;
-        this.syntax = syntax;
-    }
-}
-
-
+// Resource
 /++
     Annotation denoting that a variable is the basename of a resource file or directory.
  +/
 enum Resource;
 
 
+// Configuration
 /++
     Annotation denoting that a variable is the basename of a configuration
     file or directory.
@@ -3421,6 +3229,7 @@ enum Resource;
 enum Configuration;
 
 
+// Enabler
 /++
     Annotation denoting that a variable enables and disables a plugin.
  +/
