@@ -478,7 +478,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                     import std.format : format;
 
                     enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
-                        "`@(IRCEvent.Type.PRIVMSG)`, which is not a valid event type. " ~
+                        "`@(IRCEvent.Type.WHISPER)`, which is not a valid event type. " ~
                         "Use `IRCEvent.Type.QUERY` instead";
                     static assert(0, pattern.format(fullyQualifiedName!fun));
                 }
