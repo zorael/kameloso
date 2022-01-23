@@ -69,23 +69,25 @@ public:
      +/
     static struct CommandMetadata
     {
+        // description
         /++
             Description about what the command does, in natural language.
          +/
         string description;
 
+        // syntax
         /++
             Syntax on how to use the command.
          +/
         string syntax;
 
+        // hidden
         /++
             Whether or not the command should be hidden from view (but still
             possible to trigger).
          +/
         bool hidden;
     }
-
 
     // state
     /++
@@ -95,13 +97,11 @@ public:
      +/
     IRCPluginState state;
 
-
     // postprocess
     /++
         Allows a plugin to modify an event post-parsing.
      +/
     void postprocess(ref IRCEvent event) @system;
-
 
     // onEvent
     /++
@@ -109,13 +109,11 @@ public:
      +/
     void onEvent(const ref IRCEvent event) @system;
 
-
     // initResources
     /++
         Called when the plugin is requested to initialise its disk resources.
      +/
     void initResources() @system;
-
 
     // deserialiseConfigFrom
     /++
@@ -129,7 +127,6 @@ public:
         out string[][string] missingEntries,
         out string[][string] invalidEntries);
 
-
     // serialiseConfigInto
     /++
         Called to let the plugin contribute settings when writing the configuration file.
@@ -138,7 +135,6 @@ public:
             Boolean of whether something was added.
      +/
     bool serialiseConfigInto(ref Appender!(char[]) sink) const;
-
 
     // setSettingByName
     /++
@@ -149,14 +145,12 @@ public:
      +/
     bool setSettingByName(const string setting, const string value);
 
-
     // start
     /++
         Called when connection has been established, to start the plugin;
         its would-be constructor.
      +/
     void start() @system;
-
 
     // printSettings
     /++
@@ -165,13 +159,11 @@ public:
      +/
     void printSettings() @system const;
 
-
     // teardown
     /++
         Called during shutdown of a connection; a plugin's would-be destructor.
      +/
     void teardown() @system;
-
 
     // name
     /++
@@ -182,7 +174,6 @@ public:
      +/
     string name() @property const pure nothrow @nogc;
 
-
     // commands
     /++
         Returns an array of the descriptions of the commands a plugin offers.
@@ -192,7 +183,6 @@ public:
      +/
     CommandMetadata[string] commands() pure nothrow @property const;
 
-
     // reload
     /++
         Reloads the plugin, where such is applicable.
@@ -200,7 +190,6 @@ public:
         Whatever this does is implementation-defined.
      +/
     void reload() @system;
-
 
     // onBusMessage
     /++
@@ -210,7 +199,6 @@ public:
         discard those not meant for it by examining the value of the `header` argument.
      +/
     void onBusMessage(const string header, shared Sendable content) @system;
-
 
     // isEnabled
     /++
@@ -285,7 +273,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
     @safe:
 
-
     // isEnabled
     /++
         Introspects the current plugin, looking for a
@@ -345,7 +332,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         return retval;
     }
 
-
     // allow
     /++
         Judges whether an event may be triggered, based on the event itself and
@@ -366,7 +352,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
     {
         return allowImpl(event, perms);
     }
-
 
     // allowImpl
     /++
@@ -410,7 +395,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             filterSender(event, perms, state.settings.preferHostmasks);
     }
 
-
     // onEvent
     /++
         Pass on the supplied [dialect.defs.IRCEvent] to
@@ -432,7 +416,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
     {
         onEventImpl(event);
     }
-
 
     // onEventImpl
     /++
@@ -1141,7 +1124,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         tryProcess!cleanupFuns(origEvent);
     }
 
-
     // this(IRCPluginState)
     /++
         Basic constructor for a plugin.
@@ -1208,7 +1190,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         }
     }
 
-
     // postprocess
     /++
         Lets a plugin modify an [dialect.defs.IRCEvent] while it's begin
@@ -1253,7 +1234,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         }
     }
 
-
     // initResources
     /++
         Writes plugin resources to disk, creating them if they don't exist.
@@ -1278,7 +1258,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             }
         }
     }
-
 
     // deserialiseConfigFrom
     /++
@@ -1327,7 +1306,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             }
         }
     }
-
 
     // setSettingByName
     /++
@@ -1379,7 +1357,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         return success;
     }
 
-
     // printSettings
     /++
         Prints the plugin's [kameloso.plugins.common.core.Settings]-annotated settings struct.
@@ -1401,7 +1378,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             }
         }
     }
-
 
     private import std.array : Appender;
 
@@ -1456,7 +1432,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         return didSomething;
     }
 
-
     // start
     /++
         Runs early after-connect routines, immediately after connection has been
@@ -1483,7 +1458,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         }
     }
 
-
     // teardown
     /++
         De-initialises the plugin.
@@ -1508,7 +1482,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             }
         }
     }
-
 
     // name
     /++
@@ -1556,7 +1529,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
         return cutoutModuleName;
     }
-
 
     // commands
     /++
@@ -1664,7 +1636,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         return this.isEnabled ? ctCommandsEnumLiteral : null;
     }
 
-
     // reload
     /++
         Reloads the plugin, where such makes sense.
@@ -1691,7 +1662,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             }
         }
     }
-
 
     private import kameloso.thread : Sendable;
 
@@ -2018,43 +1988,58 @@ private:
     import core.thread : Fiber;
 
 public:
+    // client
     /++
         The current [dialect.defs.IRCClient], containing information pertaining
         to the bot in the context of a client connected to an IRC server.
      +/
     IRCClient client;
 
+    // server
     /++
         The current [dialect.defs.IRCServer], containing information pertaining
         to the bot in the context of an IRC server.
      +/
     IRCServer server;
 
+    // bot
     /++
         The current [kameloso.kameloso.IRCBot], containing information pertaining
         to the bot in the context of an IRC bot.
      +/
     IRCBot bot;
 
+    // settings
     /++
         The current program-wide [kameloso.kameloso.CoreSettings].
      +/
     CoreSettings settings;
 
+    // connSettings
     /++
         The current program-wide [kameloso.kameloso.ConnectionSettings].
      +/
     ConnectionSettings connSettings;
 
-    /// Thread ID to the main thread.
+    // mainThread
+    /++
+        Thread ID to the main thread.
+     +/
     Tid mainThread;
 
-    /// Hashmap of IRC user details.
+    // users
+    /++
+        Hashmap of IRC user details.
+     +/
     IRCUser[string] users;
 
-    /// Hashmap of IRC channels.
+    // channels
+    /++
+        Hashmap of IRC channels.
+     +/
     IRCChannel[string] channels;
 
+    // replays
     /++
         Queued [dialect.defs.IRCEvent]s to replay.
 
@@ -2064,30 +2049,45 @@ public:
      +/
     Replay[][string] replays;
 
-    /// Whether or not [replays] has elements (i.e. is not empty).
+    // hasReplays
+    /++
+        Whether or not [replays] has elements (i.e. is not empty).
+     +/
     bool hasReplays;
 
-    /// This plugin's array of [Repeat]s to let the main loop play back.
+    // repeats
+    /++
+        This plugin's array of [Repeat]s to let the main loop play back.
+     +/
     Repeat[] repeats;
 
+    // awaitingFibers
     /++
         The list of awaiting [core.thread.fiber.Fiber]s, keyed by
         [dialect.defs.IRCEvent.Type].
      +/
     Fiber[][] awaitingFibers;
 
+    // awaitingDelegates
     /++
         The list of awaiting `void delegate(const IRCEvent)` delegates, keyed by
         [dialect.defs.IRCEvent.Type].
      +/
     void delegate(const IRCEvent)[][] awaitingDelegates;
 
-    /// The list of scheduled [core.thread.fiber.Fiber], UNIX time tuples.
+    // scheduledFibers
+    /++
+        The list of scheduled [core.thread.fiber.Fiber], UNIX time tuples.
+     +/
     ScheduledFiber[] scheduledFibers;
 
-    /// The list of scheduled delegate, UNIX time tuples.
+    // scheduledDelegates
+    /++
+        The list of scheduled delegate, UNIX time tuples.
+     +/
     ScheduledDelegate[] scheduledDelegates;
 
+    // nextScheduledTimetamp
     /++
         The UNIX timestamp of when the next scheduled
         [kameloso.thread.ScheduledFiber] or delegate should be triggered.
@@ -2123,19 +2123,34 @@ public:
         }
     }
 
-    /// Whether or not [bot] was altered. Must be reset manually.
+    // botUpdated
+    /++
+        Whether or not [bot] was altered. Must be reset manually.
+    +/
     bool botUpdated;
 
-    /// Whether or not [client] was altered. Must be reset manually.
+    // clientUpdated
+    /++
+        Whether or not [client] was altered. Must be reset manually.
+     +/
     bool clientUpdated;
 
-    /// Whether or not [server] was altered. Must be reset manually.
+    // serverUpdated
+    /++
+        Whether or not [server] was altered. Must be reset manually.
+     +/
     bool serverUpdated;
 
-    /// Whether or not [settings] was altered. Must be reset manually.
+    // settingsUpdated
+    /++
+        Whether or not [settings] was altered. Must be reset manually.
+     +/
     bool settingsUpdated;
 
-    /// Pointer to the global abort flag.
+    // abort
+    /++
+        Pointer to the global abort flag.
+     +/
     bool* abort;
 }
 
@@ -2151,22 +2166,39 @@ public:
  +/
 abstract class Replay
 {
-    /// Name of the caller function or similar context.
+    // caller
+    /++
+        Name of the caller function or similar context.
+     +/
     string caller;
 
-    /// Stored [dialect.defs.IRCEvent] to replay.
+    // event
+    /++
+        Stored [dialect.defs.IRCEvent] to replay.
+     +/
     IRCEvent event;
 
-    /// [PermissionsRequired] of the function to replay.
+    // perms
+    /++
+        [PermissionsRequired] of the function to replay.
+     +/
     PermissionsRequired perms;
 
-    /// When this request was issued.
+    // when
+    /++
+        When this request was issued.
+     +/
     long when;
 
-    /// Replay the stored event.
+    // trigger
+    /++
+        Replay the stored event.
+     +/
     void trigger();
 
-    /// Creates a new [Replay] with a timestamp of the current time.
+    /++
+        Creates a new [Replay] with a timestamp of the current time.
+     +/
     this() @safe
     {
         import std.datetime.systime : Clock;
@@ -2196,14 +2228,19 @@ abstract class Replay
 private final class ReplayImpl(F, Payload = typeof(null)) : Replay
 {
 @safe:
-    /// Stored function pointer/delegate.
+    // fn
+    /++
+        Stored function pointer/delegate.
+     +/
     F fn;
 
     static if (!is(Payload == typeof(null)))
     {
-        /// Command payload aside from the [dialect.defs.IRCEvent].
+        // payload
+        /++
+            Command payload aside from the [dialect.defs.IRCEvent].
+         +/
         Payload payload;
-
 
         /++
             Create a new [ReplayImpl] with the passed variables.
@@ -2248,7 +2285,6 @@ private final class ReplayImpl(F, Payload = typeof(null)) : Replay
             this.caller = caller;
         }
     }
-
 
     // trigger
     /++
@@ -2372,9 +2408,11 @@ private:
     alias This = Unqual!(typeof(this));
 
 public:
-    /// [core.thread.fiber.Fiber] to call to invoke this repeat.
+    // fiber
+    /++
+        [core.thread.fiber.Fiber] to call to invoke this repeat.
+     +/
     Fiber fiber;
-
 
     // carryingFiber
     /++
@@ -2391,7 +2429,6 @@ public:
         return carrying;
     }
 
-
     // isCarrying
     /++
         Returns whether or not [fiber] is actually a
@@ -2405,13 +2442,21 @@ public:
         return cast(CarryingFiber!This)fiber !is null;
     }
 
-    /// The [Replay] to repeat.
+    // replay
+    /++
+        The [Replay] to repeat.
+     +/
     Replay replay;
 
-    /// UNIX timestamp of when this repeat event was created.
+    // created
+    /++
+        UNIX timestamp of when this repeat event was created.
+     +/
     long created;
 
-    /// Constructor taking a [core.thread.fiber.Fiber] and a [Replay].
+    /++
+        Constructor taking a [core.thread.fiber.Fiber] and a [Replay].
+     +/
     this(Fiber fiber, Replay replay) @safe
     {
         import std.datetime.systime : Clock;
@@ -2428,8 +2473,15 @@ public:
  +/
 enum FilterResult
 {
-    fail,   /// The user is not allowed to trigger this function.
-    pass,   /// The user is allowed to trigger this function.
+    /++
+        The user is not allowed to trigger this function.
+     +/
+    fail,
+
+    /++
+        The user is allowed to trigger this function.
+     +/
+    pass,
 
     /++
         We don't know enough to say whether the user is allowed to trigger this
@@ -2682,11 +2734,30 @@ struct BotCommand
  +/
 enum Timing
 {
-    unset,    /// Unset.
-    setup,    /// To be executed during setup; the first thing to happen.
-    early,    /// To be executed after setup but before normal event handlers.
-    late,     /// To be executed after normal event handlers.
-    cleanup,  /// To be executed last before execution moves on to the next plugin.
+    /++
+        Unset.
+     +/
+    unset,
+
+    /++
+        To be executed during setup; the first thing to happen.
+     +/
+    setup,
+
+    /++
+        To be executed after setup but before normal event handlers.
+     +/
+    early,
+
+    /++
+        To be executed after normal event handlers.
+     +/
+    late,
+
+    /++
+        To be executed last before execution moves on to the next plugin.
+     +/
+    cleanup,
 }
 
 
@@ -2697,39 +2768,46 @@ enum Timing
  +/
 struct IRCEventHandler
 {
+    // GivenValues
     /++
         Aggregate of given values, to keep them in a separate namespace from the mutators/setters.
      +/
     static struct GivenValues
     {
+        // eventTypes
         /++
             Array of types of [dialect.defs.IRCEvent] that the annotated event
             handler function should accept.
          +/
         IRCEvent.Type[] eventTypes;
 
+        // permissionsRequired
         /++
             Permissions required of instigating user, below which the annotated
             event handler function should not be triggered.
          +/
         PermissionsRequired permissionsRequired = PermissionsRequired.ignore;
 
+        // channelPolicy
         /++
             What kind of channel the annotated event handler function may be
             triggered in; homes or mere guest channels.
          +/
         ChannelPolicy channelPolicy = ChannelPolicy.home;
 
+        // commands
         /++
             Array of [IRCEventHandler.Command]s the bot should pick up and listen for.
          +/
         Command[] commands;
 
+        // regexes
         /++
             Array of [IRCEventHandler.Regex]es the bot should pick up and listen for.
          +/
         Regex[] regexes;
 
+        // chainable
         /++
             Whether or not the annotated event handler function should allow other
             functions to fire after it. If not set (default false), it will
@@ -2737,12 +2815,14 @@ struct IRCEventHandler
          +/
         bool chainable;
 
+        // verbose
         /++
             Whether or not additional information should be output to the local
             terminal as the function is (or is not) triggered.
          +/
         bool verbose;
 
+        // when
         /++
             Special instruction related to the order of which event handler functions
             within a plugin module are triggered.
@@ -2750,11 +2830,13 @@ struct IRCEventHandler
         Timing when;
     }
 
+    // given
     /++
         The given settings this instance of [IRCEventHandler] holds.
      +/
     GivenValues given;
 
+    // onEvent
     /++
         Adds an [dialect.defs.IRCEvent.Type] to the array of types that the
         annotated event handler function should accept.
@@ -2771,6 +2853,7 @@ struct IRCEventHandler
         return this;
     }
 
+    // permissionsRequired
     /++
         Sets the permission level required of an instigating user before the
         annotated event handler function is allowed to be triggered.
@@ -2787,6 +2870,7 @@ struct IRCEventHandler
         return this;
     }
 
+    // channelPolicy
     /++
         Sets the type of channel the annotated event handler function should be
         allowed to be triggered in.
@@ -2803,6 +2887,7 @@ struct IRCEventHandler
         return this;
     }
 
+    // addCommand
     /++
         Appends an [IRCEventHandler.Command] to the array of commands that the bot
         should listen for to trigger the annotated event handler function.
@@ -2819,6 +2904,7 @@ struct IRCEventHandler
         return this;
     }
 
+    // addRegex
     /++
         Appends an [IRCEventHandler.Regex] to the array of regular expressions
         that the bot should listen for to trigger the annotated event handler function.
@@ -2835,6 +2921,7 @@ struct IRCEventHandler
         return this;
     }
 
+    // chainable
     /++
         Sets whether or not the annotated function should allow other functions
         within the same plugin module to be triggered after it. If not (default false)
@@ -2853,6 +2940,7 @@ struct IRCEventHandler
         return this;
     }
 
+    // verbose
     /++
         Sets whether or not to have the bot plumbing give verbose information about
         what it does as it evaluates and executes the annotated function (or not).
@@ -2869,6 +2957,7 @@ struct IRCEventHandler
         return this;
     }
 
+    // when
     /++
         Sets a [Timing], used to order the evaluation and execution of event
         handler functions within a module, allowing the author to design subsets
@@ -2886,26 +2975,31 @@ struct IRCEventHandler
         return this;
     }
 
+    // Command
     /++
         Embodies the notion of a chat command, e.g. `!hello`.
      +/
     static struct Command
     {
+        // GivenValues
         /++
             Aggregate of given values, to keep them in a separate namespace from the mutators/setters.
          +/
         static struct GivenValues
         {
+            // policy
             /++
                 In what way the message is required to start for the annotated function to trigger.
              +/
             PrefixPolicy policy = PrefixPolicy.prefixed;
 
+            // word
             /++
                 The command word, without spaces.
             +/
             string word;
 
+            // description
             /++
                 Describes the functionality of the event handler function the parent
                 [IRCEventHandler] annotates, and by extension, this [IRCEventHandler.Command].
@@ -2915,22 +3009,26 @@ struct IRCEventHandler
              +/
             string description;
 
+            // syntax
             /++
                 Command usage syntax help string.
              +/
             string syntax;
 
+            // hidden
             /++
                 Whether this is a hidden command or if it should show up in help listings.
              +/
             bool hidden;
         }
 
+        // given
         /++
             The given settings this instance of [IRCEventHandler.Command] holds.
          +/
         GivenValues given;
 
+        // policy
         /++
             Sets what way this [IRCEventHandler.Command] should be expressed.
 
@@ -2947,6 +3045,7 @@ struct IRCEventHandler
             return this;
         }
 
+        // word
         /++
             Assigns a word to trigger this [IRCEventHandler.Command].
 
@@ -2962,6 +3061,7 @@ struct IRCEventHandler
             return this;
         }
 
+        // description
         /++
             Sets a description of what the event handler function the parent
             [IRCEventHandler] annotates does, and by extension, what this
@@ -2982,6 +3082,7 @@ struct IRCEventHandler
             return this;
         }
 
+        // syntax
         /++
             Describes the syntax with which this [IRCEventHandler.Command] should
             be used. Some text replacement is applied, such as `$command`.
@@ -3000,6 +3101,7 @@ struct IRCEventHandler
             return this;
         }
 
+        // hidden
         /++
             Whether or not this particular [IRCEventHandler.Command] (but not
             necessarily that of all commands under this [IRCEventHandler]) should
@@ -3020,6 +3122,7 @@ struct IRCEventHandler
         }
     }
 
+    // Regex
     /++
         Embodies the notion of a chat command regular expression, e.g. `![Hh]ello+`.
      +/
@@ -3027,26 +3130,31 @@ struct IRCEventHandler
     {
         import std.regex : StdRegex = Regex;
 
+        // GivenValues
         /++
             Aggregate of given values, to keep them in a separate namespace from the mutators/setters.
          +/
         static struct GivenValues
         {
+            // policy
             /++
                 In what way the message is required to start for the annotated function to trigger.
              +/
             PrefixPolicy policy = PrefixPolicy.direct;
 
+            // engine
             /++
                 Regex engine to match incoming messages with.
              +/
             StdRegex!char engine;
 
+            // expression
             /++
                 The regular expression in string form.
              +/
             string expression;
 
+            // description
             /++
                 Describes the functionality of the event handler function the parent
                 [IRCEventHandler] annotates, and by extension, this [IRCEventHandler.Regex].
@@ -3056,17 +3164,20 @@ struct IRCEventHandler
              +/
             string description;
 
+            // hidden
             /++
                 Whether this is a hidden command or if it should show up in help listings.
              +/
             bool hidden;
         }
 
+        // given
         /++
             The given settings this instance of [IRCEventHandler.Regex] holds.
          +/
         GivenValues given;
 
+        // policy
         /++
             Sets what way this [IRCEventHandler.Command] should be expressed.
 
@@ -3083,6 +3194,7 @@ struct IRCEventHandler
             return this;
         }
 
+        // expression
         /++
             The regular expession this [IRCEventHandler.Regex] embodies, in string form.
 
@@ -3110,6 +3222,7 @@ struct IRCEventHandler
             return this;
         }
 
+        // description
         /++
             Sets a description of what the event handler function the parent
             [IRCEventHandler] annotates does, and by extension, what this
@@ -3130,6 +3243,7 @@ struct IRCEventHandler
             return this;
         }
 
+        // hidden
         /++
             Whether or not this particular [IRCEventHandler.Regex] (but not
             necessarily that of all regexes under this [IRCEventHandler]) should
