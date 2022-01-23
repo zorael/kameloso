@@ -10,8 +10,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#admin
-        [kameloso.plugins.common.base]
         [kameloso.plugins.common.core]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.admin.base;
 
@@ -24,7 +24,7 @@ import kameloso.plugins.admin.classifiers;
 debug import kameloso.plugins.admin.debugging;
 
 import kameloso.plugins.common.core;
-import kameloso.plugins.common.base : applyCustomSettings;
+import kameloso.plugins.common.misc : applyCustomSettings;
 import kameloso.plugins.common.awareness;
 import kameloso.common : Tint, logger;
 import kameloso.constants : BufferSize;

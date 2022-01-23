@@ -26,7 +26,7 @@
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#seen
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.seen;
 
@@ -161,7 +161,7 @@ public:
         A [kameloso.plugins.common.core.Replay] is otherwise just an
         [dialect.defs.IRCEvent] to be played back when the WHOIS results
         return, as well as a function pointer to call with that event. This is
-        all wrapped in a function [kameloso.plugins.common.base.enqueue], with the
+        all wrapped in a function [kameloso.plugins.common.misc.enqueue], with the
         queue management handled behind the scenes.
 
     * [kameloso.plugins.common.core.IRCPluginState.hasReplays] is merely a bool

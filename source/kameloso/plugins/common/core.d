@@ -905,7 +905,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 }
                 else*/ if (result == FilterResult.whois)
                 {
-                    import kameloso.plugins.common.base : enqueue;
+                    import kameloso.plugins.common.misc : enqueue;
                     import std.traits : fullyQualifiedName;
 
                     alias Params = staticMap!(Unqual, Parameters!fun);

@@ -5,7 +5,7 @@
     See_Also:
         [kameloso.plugins.common.core]
  +/
-module kameloso.plugins.common.base;
+module kameloso.plugins.common.misc;
 
 private:
 

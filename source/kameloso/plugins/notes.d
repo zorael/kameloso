@@ -5,7 +5,7 @@
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#notes
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.notes;
 
@@ -128,7 +128,7 @@ void playbackNotes(NotesPlugin plugin,
     {
         void onSuccess(const IRCUser user)
         {
-            import kameloso.plugins.common.base : idOf, nameOf;
+            import kameloso.plugins.common.misc : idOf, nameOf;
 
             immutable id = user.nickname.toLowerCase(plugin.state.server.caseMapping);
 
@@ -320,7 +320,7 @@ void onNames(NotesPlugin plugin, const ref IRCEvent event)
 )
 void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
 {
-    import kameloso.plugins.common.base : nameOf;
+    import kameloso.plugins.common.misc : nameOf;
     import dialect.common : opEqualsCaseInsensitive, toLowerCase;
     import lu.string : SplitResults, splitInto;
     import std.format : format;
@@ -598,7 +598,7 @@ void initResources(NotesPlugin plugin)
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common.base : IRCPluginInitialisationException;
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
         import std.path : baseName;
 
         version(PrintStacktraces) logger.trace(e);

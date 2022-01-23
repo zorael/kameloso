@@ -10,7 +10,7 @@
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#twitchbot
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.twitchbot.base;
 
@@ -314,7 +314,7 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         }
         else
         {
-            import kameloso.plugins.common.base : nameOf;
+            import kameloso.plugins.common.misc : nameOf;
             immutable streamer = plugin.nameOf(event.channel[1..$]);
         }
 
@@ -456,7 +456,7 @@ void reportStreamTime(TwitchBotPlugin plugin,
     }
     else
     {
-        import kameloso.plugins.common.base : nameOf;
+        import kameloso.plugins.common.misc : nameOf;
         immutable streamer = plugin.nameOf(room.name[1..$]);
     }
 
@@ -814,7 +814,7 @@ version(TwitchAPIFeatures)
 )
 void onCommandShoutout(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.plugins.common.base : idOf;
+    import kameloso.plugins.common.misc : idOf;
     import dialect.common : isValidNickname;
     import lu.string : stripped;
     import std.format : format;
@@ -1107,7 +1107,7 @@ void reload(TwitchBotPlugin plugin)
  +/
 void initResources(TwitchBotPlugin plugin)
 {
-    import kameloso.plugins.common.base : IRCPluginInitialisationException;
+    import kameloso.plugins.common.misc : IRCPluginInitialisationException;
     import lu.json : JSONStorage;
     import std.file : exists;
     import std.json : JSONException;

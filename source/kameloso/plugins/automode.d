@@ -6,7 +6,7 @@
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#automode
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.automode;
 
@@ -74,7 +74,7 @@ void initResources(AutomodePlugin plugin)
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common.base : IRCPluginInitialisationException;
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
         import std.path : baseName;
 
         version(PrintStacktraces) logger.trace(e);

@@ -5,7 +5,7 @@
 
     See_Also:
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.common.mixins;
 
@@ -1029,7 +1029,7 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_,
      +/
     void repeat(Replay replay)
     {
-        import kameloso.plugins.common.base : repeat;
+        import kameloso.plugins.common.misc : repeat;
         context.repeat(&repeaterDelegate, replay);
     }
 }

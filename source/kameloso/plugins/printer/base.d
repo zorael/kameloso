@@ -13,7 +13,7 @@
 
     See_Also:
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.printer.base;
 
@@ -603,7 +603,7 @@ void initResources(PrinterPlugin plugin)
 
     if (!plugin.establishLogLocation(plugin.logDirectory))
     {
-        import kameloso.plugins.common.base : IRCPluginInitialisationException;
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
         throw new IRCPluginInitialisationException("Could not create log directory");
     }
 }

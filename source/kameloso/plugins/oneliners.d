@@ -8,7 +8,7 @@
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#oneliners
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.oneliners;
 
@@ -67,7 +67,7 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 
         if (const response = key in *channelOneliners)
         {
-            import kameloso.plugins.common.base : nameOf;
+            import kameloso.plugins.common.misc : nameOf;
             import std.array : replace;
             import std.conv : text;
             import std.random : uniform;
@@ -294,7 +294,7 @@ void initResources(OnelinersPlugin plugin)
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common.base : IRCPluginInitialisationException;
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
 
         version(PrintStacktraces) logger.trace(e);
         throw new IRCPluginInitialisationException(plugin.onelinerFile.baseName ~ " may be malformed.");

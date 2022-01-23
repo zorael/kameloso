@@ -582,7 +582,7 @@ void initAccountResources(PersistenceService service)
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common.base : IRCPluginInitialisationException;
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
         import kameloso.common : logger;
         import std.path : baseName;
 
@@ -651,7 +651,7 @@ void initAccountResources(PersistenceService service)
             }
             catch (JSONException e)
             {
-                import kameloso.plugins.common.base : IRCPluginInitialisationException;
+                import kameloso.plugins.common.misc : IRCPluginInitialisationException;
                 import kameloso.common : logger;
                 import std.path : baseName;
 
@@ -689,7 +689,7 @@ void initHostmaskResources(PersistenceService service)
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common.base : IRCPluginInitialisationException;
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
         import kameloso.common : logger;
         import std.path : baseName;
 

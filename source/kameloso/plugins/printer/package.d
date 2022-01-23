@@ -2,7 +2,7 @@
     Package for the Printer plugin modules.
 
     See_Also:
-        [kameloso.plugins.common.base],
+        [kameloso.plugins.common.misc],
         [kameloso.plugins.common.formatting],
         [kameloso.plugins.common.logging]
  +/

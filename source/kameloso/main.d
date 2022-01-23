@@ -2482,7 +2482,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             assert(0, "`tryConnect` returned `Next.crash`");
         }
 
-        import kameloso.plugins.common.base : IRCPluginInitialisationException;
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
         import std.path : baseName;
 
         // Ensure initialised resources after resolve so we know we have a
@@ -2860,7 +2860,7 @@ int initBot(string[] args)
     instance.parser.client.origNickname = instance.parser.client.nickname;
 
     // Initialise plugins outside the loop once, for the error messages
-    import kameloso.plugins.common.base : IRCPluginSettingsException;
+    import kameloso.plugins.common.misc : IRCPluginSettingsException;
     import std.conv : ConvException;
 
     try

@@ -8,7 +8,7 @@
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#quotes
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.quotes;
 
@@ -582,7 +582,7 @@ void manageQuoteImpl(QuotesPlugin plugin,
     {
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
-            import kameloso.plugins.common.base : nameOf;
+            import kameloso.plugins.common.misc : nameOf;
 
             if ((slice == event.channel[1..$]) ||
                 (slice == plugin.nameOf(event.channel[1..$])))
@@ -633,7 +633,7 @@ void manageQuoteImpl(QuotesPlugin plugin,
     {
         void onSuccess(const IRCUser replyUser)
         {
-            import kameloso.plugins.common.base : idOf;
+            import kameloso.plugins.common.misc : idOf;
             import std.conv : ConvException, to;
 
             immutable id = idOf(replyUser).toLowerCase(plugin.state.server.caseMapping);
@@ -887,7 +887,7 @@ void initResources(QuotesPlugin plugin)
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common.base : IRCPluginInitialisationException;
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
         import std.path : baseName;
 
         version(PrintStacktraces) logger.trace(e);

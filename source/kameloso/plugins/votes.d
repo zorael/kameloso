@@ -7,7 +7,7 @@
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#votes
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.votes;
 
