@@ -125,6 +125,9 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
     switch (verb)
     {
     case "add":
+        import kameloso.thread : ThreadMessage;
+        import std.concurrency : send;
+
         if (!slice.contains!(Yes.decode)(' ')) return sendUsage(verb, Yes.includeText);
 
         string trigger = slice.nom!(Yes.decode)(' ');
@@ -133,18 +136,39 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 
         if (!plugin.onelinersSettings.caseSensitiveTriggers) trigger = trigger.toLower;
 
-        plugin.onelinersByChannel[event.channel][trigger] = slice;
-        saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
+        void dg(IRCPlugin.CommandMetadata[string][string] aa)
+        {
+            foreach (immutable pluginName, pluginCommands; aa)
+            {
+                foreach (/*mutable*/ word, command; pluginCommands)
+                {
+                    if (!plugin.onelinersSettings.caseSensitiveTriggers) word = word.toLower;
 
-        import std.algorithm.comparison : equal;
-        import std.uni : asLowerCase;
+                    if (word == trigger)
+                    {
+                        enum pattern = `Oneliner word "%s%s" conflicts with a command of the %s plugin.`;
+                        chan(plugin.state, event.channel,
+                            pattern.format(plugin.state.settings.prefix, trigger, pluginName));
+                        return;
+                    }
+                }
+            }
 
-        immutable wasMadeLowerCase = !plugin.onelinersSettings.caseSensitiveTriggers &&
-            !trigger.equal(trigger.asLowerCase);
+            plugin.onelinersByChannel[event.channel][trigger] = slice;
+            saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
 
-        chan(plugin.state, event.channel, "Oneliner %s%s added%s."
-            .format(plugin.state.settings.prefix, trigger,
-                wasMadeLowerCase ? " (made lowercase)" : string.init));
+            import std.algorithm.comparison : equal;
+            import std.uni : asLowerCase;
+
+            immutable wasMadeLowerCase = !plugin.onelinersSettings.caseSensitiveTriggers &&
+                !trigger.equal(trigger.asLowerCase);
+
+            chan(plugin.state, event.channel, "Oneliner %s%s added%s."
+                .format(plugin.state.settings.prefix, trigger,
+                    wasMadeLowerCase ? " (made lowercase)" : string.init));
+        }
+
+        plugin.state.mainThread.send(ThreadMessage.PeekCommands(), cast(shared)&dg);
         break;
 
     case "del":
