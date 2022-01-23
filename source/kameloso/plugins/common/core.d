@@ -10,10 +10,16 @@
     import kameloso.plugins.common.core;
     import kameloso.plugins.common.awareness;
 
-    @(IRCEvent.Type.CHAN)
-    @(ChannelPolicy.home)
-    @(PermissionsRequired.anyone)
-    @BotCommand(PrefixPolicy.prefixed, "foo")
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.CHAN)
+        .permissionsRequired(Permissions.anyone)
+        .channelPolicy(ChannelPolicy.home)
+        .addCommand(
+            IRCEventHandler.Command()
+                .word("foo")
+                .policy(PrefixPolicy.prefixed)
+        )
+    )
     void onFoo(FooPlugin plugin, const ref IRCEvent event)
     {
         // ...
