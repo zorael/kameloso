@@ -96,25 +96,26 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
 
         void dg()
         {
-            auto thisFiber = cast(CarryingFiber!(IRCPlugin[]))(Fiber.getThis);
+            auto thisFiber = cast(CarryingFiber!(IRCPlugin.CommandMetadata[string][string]))(Fiber.getThis);
             assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
-            const plugins = thisFiber.payload;
+            const allPluginCommands = thisFiber.payload;
 
-            foreach (p; plugins)
+            foreach (immutable pluginName, pluginCommands; allPluginCommands)
             {
-                if (slice in p.commands)
+                if (slice in pluginCommands)
                 {
                     enum pattern = "Counter word %s conflicts with a command of the %s plugin.";
 
                     immutable message = plugin.state.settings.colouredOutgoing ?
-                        pattern.format(slice.ircBold, p.name.ircBold) :
-                        pattern.format(slice, p.name);
+                        pattern.format(slice.ircBold, pluginName.ircBold) :
+                        pattern.format(slice, pluginName);
 
                     chan(plugin.state, event.channel, message);
                     return;
                 }
             }
 
+            // If we're here there were no conflicts
             enum pattern = "Counter %s added! Access it with %s.";
 
             immutable command = plugin.state.settings.prefix ~ slice;
@@ -127,8 +128,8 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
             saveResourceToDisk(plugin.counters, plugin.countersFile);
         }
 
-        auto fiber = new CarryingFiber!(IRCPlugin[])(&dg, BufferSize.fiberStack);
-        plugin.state.mainThread.send(ThreadMessage.PeekPlugins(), cast(shared)fiber);
+        auto fiber = new CarryingFiber!(IRCPlugin.CommandMetadata[string][string])(&dg, BufferSize.fiberStack);
+        plugin.state.mainThread.send(ThreadMessage.PeekCommands(), cast(shared)fiber);
         break;
 
     case "remove":

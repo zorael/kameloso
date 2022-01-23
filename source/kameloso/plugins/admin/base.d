@@ -781,44 +781,25 @@ void onCommandPart(AdminPlugin plugin, const ref IRCEvent event)
             .syntax("$command [plugin.setting=value]")
     )
 )
-void onSetCommand(AdminPlugin plugin, const /*ref*/ IRCEvent event)
+void onSetCommand(AdminPlugin plugin, const ref IRCEvent event)
 {
-    import kameloso.thread : CarryingFiber, ThreadMessage;
+    import kameloso.thread : ThreadMessage;
     import std.concurrency : send;
 
-    void dg()
+    void dg(bool success)
     {
-        import std.conv : ConvException;
-        import core.thread : Fiber;
-
-        auto thisFiber = cast(CarryingFiber!(IRCPlugin[]))(Fiber.getThis);
-        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
-
-        try
+        if (success)
         {
-            immutable success = thisFiber.payload
-                .applyCustomSettings([ event.content ], plugin.state.settings);
-
-            if (success)
-            {
-                privmsg(plugin.state, event.channel, event.sender.nickname, "Setting changed.");
-            }
-            else
-            {
-                privmsg(plugin.state, event.channel, event.sender.nickname,
-                    "Invalid syntax or plugin/setting name.");
-            }
+            privmsg(plugin.state, event.channel, event.sender.nickname, "Setting changed.");
         }
-        catch (ConvException e)
+        else
         {
             privmsg(plugin.state, event.channel, event.sender.nickname,
-                "There was a conversion error. Please verify the values in your setting.");
-            version(PrintStacktraces) logger.trace(e.info);
+                "Invalid syntax or plugin/setting name.");
         }
     }
 
-    auto fiber = new CarryingFiber!(IRCPlugin[])(&dg, BufferSize.fiberStack);
-    plugin.state.mainThread.send(ThreadMessage.PeekPlugins(), cast(shared)fiber);
+    plugin.state.mainThread.send(ThreadMessage.ChangeSetting(), cast(shared)&dg, event.content);
 }
 
 
@@ -1258,24 +1239,14 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
     }
 
     case "set":
-        import kameloso.thread : CarryingFiber, ThreadMessage;
+        import kameloso.thread : ThreadMessage;
 
-        void dg()
+        void dg(bool success)
         {
-            import std.conv : ConvException;
-            import core.thread : Fiber;
-
-            auto thisFiber = cast(CarryingFiber!(IRCPlugin[]))(Fiber.getThis);
-            assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
-
-            immutable success = thisFiber.payload
-                .applyCustomSettings([ slice ], plugin.state.settings);
             if (success) logger.log("Setting changed.");
-            // applyCustomSettings displays its own error messages
         }
 
-        auto fiber = new CarryingFiber!(IRCPlugin[])(&dg, BufferSize.fiberStack);
-        return plugin.state.mainThread.send(ThreadMessage.PeekPlugins(), cast(shared)fiber);
+        return plugin.state.mainThread.send(ThreadMessage.ChangeSetting(), cast(shared)&dg, slice);
 
     case "save":
         import kameloso.thread : ThreadMessage;

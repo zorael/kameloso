@@ -221,17 +221,39 @@ void messageFiber(ref Kameloso instance)
         }
 
         /++
-           Attaches a reference to the main array of
-           [kameloso.plugins.common.core.IRCPlugin]s (housing all plugins) to the
-           payload member of the supplied [kameloso.thread.CarryingFiber], then
+           Constructs an associative array of all commands of all plugins, attaches
+           it to the payload member of the supplied [kameloso.thread.CarryingFiber], then
            invokes it.
         +/
-        void peekPlugins(ThreadMessage.PeekPlugins, shared CarryingFiber!(IRCPlugin[]) sFiber) scope
+        void peekCommands(ThreadMessage.PeekCommands,
+            shared CarryingFiber!(IRCPlugin.CommandMetadata[string][string]) sFiber) scope
         {
-            auto fiber = cast(CarryingFiber!(IRCPlugin[]))sFiber;
+            auto fiber = cast(CarryingFiber!(IRCPlugin.CommandMetadata[string][string]))sFiber;
             assert(fiber, "Peeking Fiber was null!");
-            fiber.payload = instance.plugins;  // Make it visible from within the Fiber
+
+            IRCPlugin.CommandMetadata[string][string] commandAA;
+
+            foreach (plugin; instance.plugins)
+            {
+                commandAA[plugin.name] = plugin.commands;
+            }
+
+            fiber.payload = commandAA;
             fiber.call();
+        }
+
+        /++
+            Applies a `plugin.setting=value` change in setting to whichever plugin
+            matches the expression.
+         +/
+        void changeSetting(ThreadMessage.ChangeSetting, shared void delegate(bool) dg, string expression)
+        {
+            import kameloso.plugins.common.misc : applyCustomSettings;
+
+            // Borrow settings from the first plugin. It's taken by value
+            immutable success = applyCustomSettings(instance.plugins,
+                [ expression ], instance.plugins[0].state.settings);
+            dg(success);
         }
 
         /// Reloads a particular plugin.
@@ -606,7 +628,8 @@ void messageFiber(ref Kameloso instance)
                 &save,
                 &reloadPlugins,
                 &reloadSpecificPlugin,
-                &peekPlugins,
+                &peekCommands,
+                &changeSetting,
                 &reconnect,
                 &dispatchBusMessage,
                 &dispatchEmptyBusMessage,
