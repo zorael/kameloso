@@ -859,7 +859,7 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_,
 
     static if (givenContextName.length)
     {
-        static if (!__traits(compiles, { alias context = mixin(givenContextName); }))
+        static if (!__traits(compiles, is(mixin(givenContextName)) ))
         {
             import std.format : format;
 
