@@ -2797,7 +2797,7 @@ struct IRCEventHandler
         Returns:
             A `this` reference to the current struct instance.
      +/
-    auto ref onEvent(const IRCEvent.Type type)
+    ref auto onEvent(const IRCEvent.Type type)
     {
         this.given.acceptedEventTypes ~= type;
         return this;
@@ -2814,7 +2814,7 @@ struct IRCEventHandler
         Returns:
             A `this` reference to the current struct instance.
      +/
-    auto ref permissionsRequired(const Permissions permissionsRequired)
+    ref auto permissionsRequired(const Permissions permissionsRequired)
     {
         this.given.permissionsRequired = permissionsRequired;
         return this;
@@ -2831,7 +2831,7 @@ struct IRCEventHandler
         Returns:
             A `this` reference to the current struct instance.
      +/
-    auto ref channelPolicy(const ChannelPolicy channelPolicy)
+    ref auto channelPolicy(const ChannelPolicy channelPolicy)
     {
         this.given.channelPolicy = channelPolicy;
         return this;
@@ -2848,7 +2848,7 @@ struct IRCEventHandler
         Returns:
             A `this` reference to the current struct instance.
      +/
-    auto ref addCommand(const Command command)
+    ref auto addCommand(const Command command)
     {
         this.given.commands ~= command;
         return this;
@@ -2865,7 +2865,7 @@ struct IRCEventHandler
         Returns:
             A `this` reference to the current struct instance.
      +/
-    auto ref addRegex(/*const*/ Regex regex)
+    ref auto addRegex(/*const*/ Regex regex)
     {
         this.given.regexes ~= regex;
         return this;
@@ -2884,7 +2884,7 @@ struct IRCEventHandler
         Returns:
             A `this` reference to the current struct instance.
      +/
-    auto ref chainable(const bool chainable)
+    ref auto chainable(const bool chainable)
     {
         this.given.chainable = chainable;
         return this;
@@ -2901,7 +2901,7 @@ struct IRCEventHandler
         Returns:
             A `this` reference to the current struct instance.
      +/
-    auto ref verbose(const bool verbose)
+    ref auto verbose(const bool verbose)
     {
         this.given.verbose = verbose;
         return this;
@@ -2919,7 +2919,7 @@ struct IRCEventHandler
         Returns:
             A `this` reference to the current struct instance.
      +/
-    auto ref when(const Timing when)
+    ref auto when(const Timing when)
     {
         this.given.when = when;
         return this;
@@ -2989,7 +2989,7 @@ struct IRCEventHandler
             Returns:
                 A `this` reference to the current struct instance.
          +/
-        auto ref policy(const PrefixPolicy policy)
+        ref auto policy(const PrefixPolicy policy)
         {
             this.given.policy = policy;
             return this;
@@ -3005,7 +3005,7 @@ struct IRCEventHandler
             Returns:
                 A `this` reference to the current struct instance.
          +/
-        auto ref word(const string word)
+        ref auto word(const string word)
         {
             this.given.word = word;
             return this;
@@ -3026,7 +3026,7 @@ struct IRCEventHandler
             Returns:
                 A `this` reference to the current struct instance.
          +/
-        auto ref description(const string description)
+        ref auto description(const string description)
         {
             this.given.description = description;
             return this;
@@ -3045,7 +3045,7 @@ struct IRCEventHandler
             Returns:
                 A `this` reference to the current struct instance.
          +/
-        auto ref syntax(const string syntax)
+        ref auto syntax(const string syntax)
         {
             this.given.syntax = syntax;
             return this;
@@ -3065,7 +3065,7 @@ struct IRCEventHandler
             Returns:
                 A `this` reference to the current struct instance.
          +/
-        auto ref hidden(const bool hidden)
+        ref auto hidden(const bool hidden)
         {
             this.given.hidden = hidden;
             return this;
@@ -3138,7 +3138,7 @@ struct IRCEventHandler
             Returns:
                 A `this` reference to the current struct instance.
          +/
-        auto ref policy(const PrefixPolicy policy)
+        ref auto policy(const PrefixPolicy policy)
         {
             this.given.policy = policy;
             return this;
@@ -3163,7 +3163,7 @@ struct IRCEventHandler
             Returns:
                 A `this` reference to the current struct instance.
          +/
-        auto ref expression(const string expression)
+        ref auto expression(const string expression)
         {
             import std.regex : regex;
 
@@ -3187,7 +3187,7 @@ struct IRCEventHandler
             Returns:
                 A `this` reference to the current struct instance.
          +/
-        auto ref description(const string description)
+        ref auto description(const string description)
         {
             this.given.description = description;
             return this;
@@ -3207,7 +3207,7 @@ struct IRCEventHandler
             Returns:
                 A `this` reference to the current struct instance.
          +/
-        auto ref hidden(const bool hidden)
+        ref auto hidden(const bool hidden)
         {
             this.given.hidden = hidden;
             return this;
