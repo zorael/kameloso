@@ -146,9 +146,9 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 
                     if (word == trigger)
                     {
-                        enum pattern = `Oneliner word "%s%s" conflicts with a command of the %s plugin.`;
+                        enum pattern = `Oneliner word "%s" conflicts with a command of the %s plugin.`;
                         chan(plugin.state, event.channel,
-                            pattern.format(plugin.state.settings.prefix, trigger, pluginName));
+                            pattern.format(trigger, pluginName));
                         return;
                     }
                 }
