@@ -75,6 +75,12 @@ enum Progress
 @(IRCEvent.Type.SELFPART)
 @(IRCEvent.Type.SELFKICK)
 @(ChannelPolicy.any)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.SELFPART)
+    .onEvent(IRCEvent.Type.SELFKICK)
+    .channelPolicy(ChannelPolicy.any)
+)
 void onSelfpart(ConnectService service, const ref IRCEvent event)
 {
     import std.algorithm.mutation : SwapStrategy, remove;
@@ -112,6 +118,11 @@ void onSelfpart(ConnectService service, const ref IRCEvent event)
  +/
 @(IRCEvent.Type.SELFJOIN)
 @(ChannelPolicy.any)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.SELFJOIN)
+    .channelPolicy(ChannelPolicy.any)
+)
 void onSelfjoin(ConnectService service, const ref IRCEvent event)
 {
     import std.algorithm.searching : canFind;
@@ -179,6 +190,10 @@ void joinChannels(ConnectService service)
     Encountered at least once, on a private server.
  +/
 @(IRCEvent.Type.ERR_NEEDPONG)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.ERR_NEEDPONG)
+)
 void onToConnectType(ConnectService service, const ref IRCEvent event)
 {
     immediate(service.state, event.content, Yes.quiet);
@@ -195,6 +210,10 @@ void onToConnectType(ConnectService service, const ref IRCEvent event)
     ping a random number or string.
  +/
 @(IRCEvent.Type.PING)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.PING)
+)
 void onPing(ConnectService service, const ref IRCEvent event)
 {
     import std.concurrency : prioritySend;
@@ -367,6 +386,11 @@ void tryAuth(ConnectService service)
  +/
 @(IRCEvent.Type.AUTH_SUCCESS)
 @(IRCEvent.Type.AUTH_FAILURE)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.AUTH_SUCCESS)
+    .onEvent(IRCEvent.Type.AUTH_FAILURE)
+)
 void onAuthEnd(ConnectService service, const ref IRCEvent event)
 {
     service.authentication = Progress.finished;
@@ -389,6 +413,11 @@ void onAuthEnd(ConnectService service, const ref IRCEvent event)
 version(TwitchSupport)
 @Chainable
 @(IRCEvent.Type.NOTICE)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.NOTICE)
+    .chainable(true)
+)
 void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
 {
     import kameloso.thread : ThreadMessage;
@@ -456,6 +485,11 @@ void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
  +/
 @(IRCEvent.Type.ERR_NICKNAMEINUSE)
 @(IRCEvent.Type.ERR_NICKCOLLISION)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.ERR_NICKNAMEINUSE)
+    .onEvent(IRCEvent.Type.ERR_NICKCOLLISION)
+)
 void onNickInUse(ConnectService service)
 {
     import std.conv : text;
@@ -487,6 +521,10 @@ void onNickInUse(ConnectService service)
     long or contains invalid characters.
  +/
 @(IRCEvent.Type.ERR_ERRONEOUSNICKNAME)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.ERR_ERRONEOUSNICKNAME)
+)
 void onBadNick(ConnectService service)
 {
     if (service.registration == Progress.inProgress)
@@ -515,6 +553,10 @@ void onBadNick(ConnectService service)
     There's no point in reconnecting.
  +/
 @(IRCEvent.Type.ERR_YOUREBANNEDCREEP)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.ERR_YOUREBANNEDCREEP)
+)
 void onBanned(ConnectService service)
 {
     logger.error("You are banned!");
@@ -529,6 +571,10 @@ void onBanned(ConnectService service)
     There's no point in reconnecting.
  +/
 @(IRCEvent.Type.ERR_PASSWDMISMATCH)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.ERR_PASSWDMISMATCH)
+)
 void onPassMismatch(ConnectService service)
 {
     if (service.registration != Progress.inProgress)
@@ -548,6 +594,11 @@ void onPassMismatch(ConnectService service)
  +/
 @(IRCEvent.Type.INVITE)
 @(ChannelPolicy.any)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.INVITE)
+    .channelPolicy(ChannelPolicy.any)
+)
 void onInvite(ConnectService service, const ref IRCEvent event)
 {
     if (!service.connectSettings.joinOnInvite)
@@ -570,6 +621,10 @@ void onInvite(ConnectService service, const ref IRCEvent event)
     (`CAP END`).
  +/
 @(IRCEvent.Type.CAP)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CAP)
+)
 void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
 {
     import lu.string : strippedRight;
@@ -765,6 +820,10 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
     key and/or certificate is set in the configuration file, and by PLAIN otherwise.
  +/
 @(IRCEvent.Type.SASL_AUTHENTICATE)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.SASL_AUTHENTICATE)
+)
 void onSASLAuthenticate(ConnectService service)
 {
     service.authentication = Progress.inProgress;
@@ -851,6 +910,10 @@ bool trySASLPlain(ConnectService service)
     main loop to pick it up and propagate it to all other plugins.
  +/
 @(IRCEvent.Type.RPL_SASLSUCCESS)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_SASLSUCCESS)
+)
 void onSASLSuccess(ConnectService service)
 {
     service.authentication = Progress.finished;
@@ -892,6 +955,10 @@ void onSASLSuccess(ConnectService service)
     pick it up and propagate it to all other plugins.
  +/
 @(IRCEvent.Type.ERR_SASLFAIL)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.ERR_SASLFAIL)
+)
 void onSASLFailure(ConnectService service)
 {
     if ((service.saslExternal == Progress.inProgress) && service.state.bot.password.length)
@@ -935,6 +1002,10 @@ void onSASLFailure(ConnectService service)
     and send-after-connect).
  +/
 @(IRCEvent.Type.RPL_WELCOME)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WELCOME)
+)
 void onWelcome(ConnectService service, const ref IRCEvent event)
 {
     import std.algorithm.searching : endsWith;
@@ -1076,6 +1147,11 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
 version(WithPrinterPlugin)
 @(IRCEvent.Type.SELFNICK)
 @(IRCEvent.Type.ERR_NICKNAMEINUSE)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.SELFNICK)
+    .onEvent(IRCEvent.Type.ERR_NICKNAMEINUSE)
+)
 void onSelfnickSuccessOrFailure(ConnectService service)
 {
     import kameloso.thread : ThreadMessage, busMessage;
@@ -1090,6 +1166,9 @@ void onSelfnickSuccessOrFailure(ConnectService service)
     Regains nickname if the holder of the one we wanted during registration quit.
  +/
 @(IRCEvent.Type.QUIT)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.QUIT)
+)
 void onQuit(ConnectService service, const ref IRCEvent event)
 {
     if ((service.state.server.daemon != IRCServer.Daemon.twitch) &&
@@ -1113,6 +1192,11 @@ void onQuit(ConnectService service, const ref IRCEvent event)
  +/
 @(IRCEvent.Type.RPL_ENDOFMOTD)
 @(IRCEvent.Type.ERR_NOMOTD)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_ENDOFMOTD)
+    .onEvent(IRCEvent.Type.ERR_NOMOTD)
+)
 void onEndOfMotd(ConnectService service)
 {
     // Gather information about ourselves
@@ -1156,6 +1240,10 @@ void onEndOfMotd(ConnectService service)
     Catch information about ourselves (notably our `IDENT`) from `WHOIS` results.
  +/
 @(IRCEvent.Type.RPL_WHOISUSER)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WHOISUSER)
+)
 void onWHOISUser(ConnectService service, const ref IRCEvent event)
 {
     if (event.target.nickname != service.state.client.nickname) return;
@@ -1175,6 +1263,10 @@ void onWHOISUser(ConnectService service, const ref IRCEvent event)
     Currently only RusNet is known to support codepages.
  +/
 @(IRCEvent.Type.RPL_ISUPPORT)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_ISUPPORT)
+)
 void onISUPPORT(ConnectService service, const ref IRCEvent event)
 {
     import lu.string : contains;
@@ -1197,6 +1289,10 @@ void onISUPPORT(ConnectService service, const ref IRCEvent event)
  +/
 version(TwitchSupport)
 @(IRCEvent.Type.RECONNECT)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RECONNECT)
+)
 void onReconnect(ConnectService service)
 {
     import std.concurrency : send;
@@ -1212,6 +1308,10 @@ void onReconnect(ConnectService service)
     that they enable hostmasks mode instead.
  +/
 @(IRCEvent.Type.ERR_UNKNOWNCOMMAND)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.ERR_UNKNOWNCOMMAND)
+)
 void onUnknownCommand(ConnectService service, const ref IRCEvent event)
 {
     if (service.serverSupportsWHOIS && !service.state.settings.preferHostmasks && (event.aux == "WHOIS"))
