@@ -857,6 +857,9 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_,
         enum hasRepeater = true;
     }
 
+    import std.conv : text;
+    pragma(msg, text("version is ", __VERSION__));
+
     static if ((__VERSION__ >= 2088L) && givenContextName.length)
     {
         // mixin(givenContextName) only works on 2.088 and later
