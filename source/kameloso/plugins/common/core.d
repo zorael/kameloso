@@ -1572,12 +1572,12 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
                 static foreach (immutable command; uda.given.commands)
                 {{
+                    enum key = command.given.word;
+                    commandAA[key] = IRCPlugin.CommandMetadata
+                        (command.given.description, command.given.syntax, command.given.hidden);
+
                     static if (command.given.description.length)
                     {
-                        enum key = command.given.word;
-                        commandAA[key] = IRCPlugin.CommandMetadata
-                            (command.given.description, command.given.syntax, command.given.hidden);
-
                         static if (command.given.policy == PrefixPolicy.nickname)
                         {
                             static if (command.given.syntax.length)
@@ -1605,11 +1605,11 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
                 static foreach (immutable regex; uda.given.regexes)
                 {{
-                    static if (regex.description.length)
-                    {
-                        enum key = `r"` ~ regex.expression ~ `"`;
+                    enum key = `r"` ~ regex.expression ~ `"`;
                         commandAA[key] = IRCPlugin.CommandMetadata(regex.description, regex.hidden);
 
+                    static if (regex.description.length)
+                    {
                         static if (regex.given.policy == PrefixPolicy.direct)
                         {
                             commandAA[key].syntax = regex.given.expression;
