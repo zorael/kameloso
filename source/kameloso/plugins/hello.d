@@ -8,12 +8,12 @@ import dialect.defs;
 
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .description("Says hello.")
     .permissionsRequired(PermissionsRequired.ignore)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
             .word("hello")
+            .description("Says hello.")
     )
 )
 void onCommandHello(HelloPlugin plugin, const ref IRCEvent event)
