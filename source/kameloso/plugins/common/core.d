@@ -462,9 +462,9 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
             static immutable uda = handlerAnnotations[0];
 
-            static foreach (immutable eventType; uda.given.eventTypes)
+            static foreach (immutable type; uda.given.acceptedEventTypes)
             {{
-                static if (eventType == IRCEvent.Type.UNSET)
+                static if (type == IRCEvent.Type.UNSET)
                 {
                     import std.format : format;
 
@@ -472,7 +472,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                         "`@(IRCEvent.Type.UNSET)`, which is not a valid event type.";
                     static assert(0, pattern.format(fullyQualifiedName!fun));
                 }
-                else static if (eventType == IRCEvent.Type.PRIVMSG)
+                else static if (type == IRCEvent.Type.PRIVMSG)
                 {
                     import std.format : format;
 
@@ -481,7 +481,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                         "Use `IRCEvent.Type.CHAN` and/or `IRCEvent.Type.QUERY` instead";
                     static assert(0, pattern.format(fullyQualifiedName!fun));
                 }
-                else static if (eventType == IRCEvent.Type.WHISPER)
+                else static if (type == IRCEvent.Type.WHISPER)
                 {
                     import std.format : format;
 
@@ -493,13 +493,11 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
                 static if (uda.given.commands.length || uda.given.regexes.length)
                 {
-                    alias U = eventType;
-
                     static if (
-                        (U != IRCEvent.Type.CHAN) &&
-                        (U != IRCEvent.Type.QUERY) &&
-                        (U != IRCEvent.Type.SELFCHAN) &&
-                        (U != IRCEvent.Type.SELFQUERY))
+                        (type != IRCEvent.Type.CHAN) &&
+                        (type != IRCEvent.Type.QUERY) &&
+                        (type != IRCEvent.Type.SELFCHAN) &&
+                        (type != IRCEvent.Type.SELFQUERY))
                     {
                         import lu.conv : Enum;
                         import std.format : format;
@@ -508,51 +506,51 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                             "listening for a `Command` and/or `Regex`, but is at the " ~
                             "same time accepting non-message `IRCEvent.Type.%s events`";
                         static assert(0, pattern.format(fullyQualifiedName!fun,
-                            Enum!(IRCEvent.Type).toString(U)));
-                    }
-                }
-
-                static if (uda.given.commands.length)
-                {
-                    import lu.string : contains;
-
-                    static foreach (immutable command; uda.given.commands)
-                    {
-                        static if (!command.given.word.length)
-                        {
-                            import std.format : format;
-
-                            enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
-                                "listening for a `Command` with an empty trigger word";
-                            static assert(0, pattern.format(fullyQualifiedName!fun));
-                        }
-                        else static if (command.given.word.contains(' '))
-                        {
-                            import std.format : format;
-
-                            enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
-                                "listening for a `Command` whose trigger " ~
-                                `word "%s" contains a space character`;
-                            static assert(0, pattern.format(fullyQualifiedName!fun, command.given.word));
-                        }
-                    }
-                }
-
-                static if (uda.given.regexes.length)
-                {
-                    static foreach (immutable regex; uda.given.regexes)
-                    {
-                        static if (!regex.given.expression.length)
-                        {
-                            import std.format : format;
-
-                            enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
-                                "listening for a `Regex` with an empty expression";
-                            static assert(0, pattern.format(fullyQualifiedName!fun));
-                        }
+                            Enum!(IRCEvent.Type).toString(type)));
                     }
                 }
             }}
+
+            static if (uda.given.commands.length)
+            {
+                import lu.string : contains;
+
+                static foreach (immutable command; uda.given.commands)
+                {
+                    static if (!command.given.word.length)
+                    {
+                        import std.format : format;
+
+                        enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
+                            "listening for a `Command` with an empty trigger word";
+                        static assert(0, pattern.format(fullyQualifiedName!fun));
+                    }
+                    else static if (command.given.word.contains(' '))
+                    {
+                        import std.format : format;
+
+                        enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
+                            "listening for a `Command` whose trigger " ~
+                            `word "%s" contains a space character`;
+                        static assert(0, pattern.format(fullyQualifiedName!fun, command.given.word));
+                    }
+                }
+            }
+
+            static if (uda.given.regexes.length)
+            {
+                static foreach (immutable regex; uda.given.regexes)
+                {
+                    static if (!regex.given.expression.length)
+                    {
+                        import std.format : format;
+
+                        enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
+                            "listening for a `Regex` with an empty expression";
+                        static assert(0, pattern.format(fullyQualifiedName!fun));
+                    }
+                }
+            }
 
             return true;
         }
@@ -655,9 +653,9 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                     __traits(identifier, fun));
             }
 
-            static if (!uda.given.eventTypes.canFind(IRCEvent.Type.ANY))
+            static if (!uda.given.acceptedEventTypes.canFind(IRCEvent.Type.ANY))
             {
-                if (!uda.given.eventTypes.canFind(event.type)) return NextStep.continue_;
+                if (!uda.given.acceptedEventTypes.canFind(event.type)) return NextStep.continue_;
             }
 
             static if (verbose)
@@ -936,7 +934,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                             rtToReturn = NextStep.return_;
                         }
                     }
-                    else static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
+                    else static if (
+                        is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
                         is(Params : AliasSeq!(typeof(this))))
                     {
                         this.enqueue(this, event, uda.given.permissionsRequired, &fun, fullyQualifiedName!fun);
@@ -2725,12 +2724,12 @@ struct IRCEventHandler
      +/
     static struct GivenValues
     {
-        // eventTypes
+        // acceptedEventTypes
         /++
             Array of types of [dialect.defs.IRCEvent] that the annotated event
             handler function should accept.
          +/
-        IRCEvent.Type[] eventTypes;
+        IRCEvent.Type[] acceptedEventTypes;
 
         // permissionsRequired
         /++
@@ -2793,14 +2792,14 @@ struct IRCEventHandler
         annotated event handler function should accept.
 
         Params:
-            eventType = New [dialect.defs.IRCEvent.Type] to listen for.
+            type = New [dialect.defs.IRCEvent.Type] to listen for.
 
         Returns:
             A `this` reference to the current struct instance.
      +/
-    auto ref onEvent(const IRCEvent.Type eventType)
+    auto ref onEvent(const IRCEvent.Type type)
     {
-        this.given.eventTypes ~= eventType;
+        this.given.acceptedEventTypes ~= type;
         return this;
     }
 
