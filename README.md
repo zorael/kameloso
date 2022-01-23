@@ -14,9 +14,9 @@
 * works on **Twitch** with some common Twitch bot features
 * [more random stuff and gimmicks](https://github.com/zorael/kameloso/wiki/Current-plugins)
 
-All of the above are plugins and can be runtime-disabled or compiled out. It is modular and easily extensible. A skeletal Hello World plugin is [20 lines of code](source/kameloso/plugins/hello.d).
+All of the above are plugins and can be runtime-disabled or compiled out. It is modular and easily extensible. A skeletal Hello World plugin is [25 lines of code](source/kameloso/plugins/hello.d).
 
-Testing is primarily done on [**libera.chat**](https://libera.chat) and on [**Twitch**](https://dev.twitch.tv/docs/irc/guide) servers, so support and coverage is best there.
+Testing is primarily done on [**Libera.Chat**](https://libera.chat) and on [**Twitch**](https://dev.twitch.tv/docs/irc/guide) servers, so support and coverage is best there.
 
 **Please report bugs. Unreported bugs can only be fixed by accident.**
 
@@ -35,7 +35,7 @@ Testing is primarily done on [**libera.chat**](https://libera.chat) and on [**Tw
 -w           --save Write configuration to file
 ```
 
-Pre-compiled binaries for Windows and Linux can be found under [releases](https://github.com/zorael/kameloso/releases).
+Pre-compiled binaries for Windows and Linux can be found under [Releases](https://github.com/zorael/kameloso/releases).
 
 ```sh
 $ dub run kameloso -- --server irc.libera.chat --guestChannels "#d"
@@ -82,13 +82,15 @@ If there's anyone talking it should show up on your screen.
 
 # Getting started
 
-Grab a pre-compiled binary from under [releases](https://github.com/zorael/kameloso/releases); alternatively, download the source and compile it yourself.
+Grab a pre-compiled binary from under [Releases](https://github.com/zorael/kameloso/releases); alternatively, download the source and compile it yourself.
 
 ## Prerequisites
 
-There are three [D](https://dlang.org) compilers available; see [here](https://wiki.dlang.org/Compilers) for an overview. You need one based on D version **2.084** or later (January 2019).
+**kameloso** is written in [**D**](https://dlang.org). It can be built using the reference compiler [**dmd**](https://dlang.org/download.html), which compiles very fast; and the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases), which is slower at compiling but produces faster code. See [here](https://wiki.dlang.org/Compilers) for an overview of the available compiler vendors.
 
-**kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html), which compiles very fast; and the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases), which is slower at compiling but produces faster code. The stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently based on version **2.076** and is thus too old to be used.
+You need one based on D version **2.096** or later (March 2021). For **ldc** this is version **1.26**. Sadly, the stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently based on version **2.076** and is thus too old to be used.
+
+If your repositories (or other software sources) don't have new enough compilers, you can use the official [`install.sh`](https://dlang.org/install.html) installation script to download current ones, or any version of choice.
 
 The package manager [**dub**](https://code.dlang.org) is used to facilitate compilation and dependency management. On Windows it comes bundled in the compiler archive, while on Linux it may need to be installed separately. Refer to your repositories.
 
@@ -352,7 +354,6 @@ For more information and help, first see [the wiki](https://github.com/zorael/ka
 
 If you still can't find what you're looking for, or if you have suggestions on how to improve the bot, you can...
 
-* ...pop by the [`#kameloso`](irc://irc.libera.chat/kameloso) channel on libera.chat
 * ...start a thread under [Discussions](https://github.com/zorael/kameloso/discussions)
 * ...file a [GitHub issue](https://github.com/zorael/kameloso/issues/new)
 
