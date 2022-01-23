@@ -156,7 +156,7 @@ void messageFiber(ref Kameloso instance)
 {
     import kameloso.common : OutgoingLine, replaceTokens;
     import kameloso.messaging : Message;
-    import kameloso.thread : CarryingFiber, Sendable, ThreadMessage;
+    import kameloso.thread : Sendable, ThreadMessage;
     import std.concurrency : yield;
 
     // The Generator we use this function with popFronts the first thing it does
@@ -221,17 +221,34 @@ void messageFiber(ref Kameloso instance)
         }
 
         /++
-           Attaches a reference to the main array of
-           [kameloso.plugins.common.core.IRCPlugin]s (housing all plugins) to the
-           payload member of the supplied [kameloso.thread.CarryingFiber], then
-           invokes it.
+           Constructs an associative array of all commands of all plugins and
+           calls the passed delegate with it as argument.
         +/
-        void peekPlugins(ThreadMessage.PeekPlugins, shared CarryingFiber!(IRCPlugin[]) sFiber) scope
+        void peekCommands(ThreadMessage.PeekCommands,
+            shared void delegate(IRCPlugin.CommandMetadata[string][string]) dg)
         {
-            auto fiber = cast(CarryingFiber!(IRCPlugin[]))sFiber;
-            assert(fiber, "Peeking Fiber was null!");
-            fiber.payload = instance.plugins;  // Make it visible from within the Fiber
-            fiber.call();
+            IRCPlugin.CommandMetadata[string][string] commandAA;
+
+            foreach (plugin; instance.plugins)
+            {
+                commandAA[plugin.name] = plugin.commands;
+            }
+
+            dg(commandAA);
+        }
+
+        /++
+            Applies a `plugin.setting=value` change in setting to whichever plugin
+            matches the expression.
+         +/
+        void changeSetting(ThreadMessage.ChangeSetting, shared void delegate(bool) dg, string expression)
+        {
+            import kameloso.plugins.common.misc : applyCustomSettings;
+
+            // Borrow settings from the first plugin. It's taken by value
+            immutable success = applyCustomSettings(instance.plugins,
+                [ expression ], instance.plugins[0].state.settings);
+            dg(success);
         }
 
         /// Reloads a particular plugin.
@@ -293,7 +310,9 @@ void messageFiber(ref Kameloso instance)
 
             version(TwitchSupport)
             {
-                immutable fast = (instance.parser.server.daemon == IRCServer.Daemon.twitch) &&
+                immutable fast =
+                    (instance.parser.server.daemon == IRCServer.Daemon.twitch) &&
+                    (m.event.type != IRCEvent.Type.QUERY) &&
                     (m.properties & Message.Property.fast);
             }
 
@@ -606,7 +625,8 @@ void messageFiber(ref Kameloso instance)
                 &save,
                 &reloadPlugins,
                 &reloadSpecificPlugin,
-                &peekPlugins,
+                &peekCommands,
+                &changeSetting,
                 &reconnect,
                 &dispatchBusMessage,
                 &dispatchEmptyBusMessage,
@@ -2482,7 +2502,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             assert(0, "`tryConnect` returned `Next.crash`");
         }
 
-        import kameloso.plugins.common.base : IRCPluginInitialisationException;
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
         import std.path : baseName;
 
         // Ensure initialised resources after resolve so we know we have a
@@ -2860,7 +2880,7 @@ int initBot(string[] args)
     instance.parser.client.origNickname = instance.parser.client.nickname;
 
     // Initialise plugins outside the loop once, for the error messages
-    import kameloso.plugins.common.base : IRCPluginSettingsException;
+    import kameloso.plugins.common.misc : IRCPluginSettingsException;
     import std.conv : ConvException;
 
     try

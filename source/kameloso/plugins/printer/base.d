@@ -13,7 +13,7 @@
 
     See_Also:
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.printer.base;
 
@@ -137,9 +137,11 @@ public:
     Mutable [dialect.defs.IRCEvent] parameter so as to make fewer internal copies
     (as this is a hotspot).
  +/
-@Chainable
-@(IRCEvent.Type.ANY)
-@(ChannelPolicy.any)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.ANY)
+    .channelPolicy(ChannelPolicy.any)
+    .chainable(true)
+)
 void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 {
     if (!plugin.printerSettings.printToScreen) return;
@@ -441,9 +443,11 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     See_Also:
         [commitAllLogs]
  +/
-@Chainable
-@(ChannelPolicy.any)
-@(IRCEvent.Type.ANY)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.ANY)
+    .channelPolicy(ChannelPolicy.any)
+    .chainable(true)
+)
 void onLoggableEvent(PrinterPlugin plugin, const ref IRCEvent event)
 {
     return onLoggableEventImpl(plugin, event);
@@ -462,7 +466,9 @@ void onLoggableEvent(PrinterPlugin plugin, const ref IRCEvent event)
     See_Also:
         [kameloso.plugins.printer.logging.commitLog]
  +/
-@(IRCEvent.Type.PING)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.PING)
+)
 void commitAllLogs(PrinterPlugin plugin)
 {
     return commitAllLogsImpl(plugin);
@@ -477,7 +483,9 @@ void commitAllLogs(PrinterPlugin plugin)
     Set a flag so we only print this information once; (ISUPPORTS can/do stretch
     across several events.)
  +/
-@(IRCEvent.Type.RPL_ISUPPORT)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_ISUPPORT)
+)
 void onISUPPORT(PrinterPlugin plugin)
 {
     import kameloso.common : Tint, logger;
@@ -595,7 +603,7 @@ void initResources(PrinterPlugin plugin)
 
     if (!plugin.establishLogLocation(plugin.logDirectory))
     {
-        import kameloso.plugins.common.base : IRCPluginInitialisationException;
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
         throw new IRCPluginInitialisationException("Could not create log directory");
     }
 }

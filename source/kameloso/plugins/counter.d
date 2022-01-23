@@ -8,7 +8,7 @@
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#counter
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.counter;
 
@@ -45,13 +45,19 @@ import std.typecons : Flag, No, Yes;
 /++
     Manages runtime counters (adding, removing and listing).
  +/
-@Terminating
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.whitelist)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "counter")
-@Description("Manages counters.", "$command [add|del|list] [counter word]")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(Permissions.whitelist)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("counter")
+            .policy(PrefixPolicy.prefixed)
+            .description("Manages counters.")
+            .syntax("$command [add|del|list] [counter word]")
+    )
+)
 void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.constants : BufferSize;
@@ -84,31 +90,28 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
             return;
         }
 
-        import kameloso.thread : CarryingFiber, ThreadMessage;
+        import kameloso.thread : ThreadMessage;
         import std.concurrency : send;
         import core.thread : Fiber;
 
-        void dg()
+        void dg(IRCPlugin.CommandMetadata[string][string] allPluginCommands)
         {
-            auto thisFiber = cast(CarryingFiber!(IRCPlugin[]))(Fiber.getThis);
-            assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
-            const plugins = thisFiber.payload;
-
-            foreach (p; plugins)
+            foreach (immutable pluginName, pluginCommands; allPluginCommands)
             {
-                if (slice in p.commands)
+                if (slice in pluginCommands)
                 {
-                    enum pattern = "Counter word %s conflicts with a command of the %s plugin.";
+                    enum pattern = `Counter word "%s" conflicts with a command of the %s plugin.`;
 
                     immutable message = plugin.state.settings.colouredOutgoing ?
-                        pattern.format(slice.ircBold, p.name.ircBold) :
-                        pattern.format(slice, p.name);
+                        pattern.format(slice.ircBold, pluginName.ircBold) :
+                        pattern.format(slice, pluginName);
 
                     chan(plugin.state, event.channel, message);
                     return;
                 }
             }
 
+            // If we're here there were no conflicts
             enum pattern = "Counter %s added! Access it with %s.";
 
             immutable command = plugin.state.settings.prefix ~ slice;
@@ -121,8 +124,7 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
             saveResourceToDisk(plugin.counters, plugin.countersFile);
         }
 
-        auto fiber = new CarryingFiber!(IRCPlugin[])(&dg, BufferSize.fiberStack);
-        plugin.state.mainThread.send(ThreadMessage.PeekPlugins(), cast(shared)fiber);
+        plugin.state.mainThread.send(ThreadMessage.PeekCommands(), cast(shared)&dg);
         break;
 
     case "remove":
@@ -179,15 +181,16 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
 /++
     Allows users to increment, decrement, and set counters.
 
-    This function fakes [kameloso.plugins.core.BotCommand]s by listening for
+    This function fakes [kameloso.plugins.core.IRCEventHandler.Command]s by listening for
     prefixes (and the bot's nickname), and treating whatever comes after it as
     a command word. If it doesn't match a previously added counter, it is ignored.
  +/
-@Terminating
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.anyone)
-@(ChannelPolicy.home)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(Permissions.anyone)
+    .channelPolicy(ChannelPolicy.home)
+)
 void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.irccolours : ircBold;
@@ -357,7 +360,9 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 /++
     Populate the counters array after we have successfully logged onto the server.
  +/
-@(IRCEvent.Type.RPL_WELCOME)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WELCOME)
+)
 void onWelcome(CounterPlugin plugin)
 {
     import lu.json : JSONStorage, populateFromJSON;
@@ -409,7 +414,7 @@ void initResources(CounterPlugin plugin)
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common.base : IRCPluginInitialisationException;
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
         import kameloso.common : logger;
 
         version(PrintStacktraces) logger.trace(e);

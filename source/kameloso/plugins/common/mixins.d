@@ -5,7 +5,7 @@
 
     See_Also:
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.common.mixins;
 
@@ -769,10 +769,11 @@ private:
             No need for any annotation; [kameloso.messaging.askToOutputImpl] is
             `@system` and nothing else.
          +/
-        mixin("void askTo%s(const string line)
-        {
-            return kameloso.messaging.askTo%1$s(state, line);
-        }".format(verb));
+        mixin(q{
+void askTo%s(const string line)
+{
+    return kameloso.messaging.askTo%1$s(state, line);
+}}.format(verb));
     }
 }
 
@@ -832,7 +833,8 @@ unittest
     Params:
         debug_ = Whether or not to print debug output to the terminal.
  +/
-mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
+mixin template Repeater(Flag!"debug_" debug_ = No.debug_,
+    string module_ = __MODULE__)
 {
     import kameloso.plugins.common.core : Repeat, Replay;
     import dialect.defs : IRCUser;
@@ -875,7 +877,7 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
     // explainRepeat
     /++
         Verbosely explains a repeat, including what
-        [kameloso.plugins.common.core.PermissionsRequired] and
+        [kameloso.plugins.common.core.Permissions] and
         [dialect.defs.IRCUser.Class] were involved.
 
         Gated behind version `ExplainRepeat`.
@@ -896,7 +898,7 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
 
         logger.logf(pattern,
             Tint.info, context.name, Tint.log, contextName,
-            repeat.replay.perms,
+            repeat.replay.permissionsRequired,
             caller,
             repeat.replay.event.sender.nickname,
             repeat.replay.event.sender.class_);
@@ -926,7 +928,7 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
 
         logger.logf(pattern,
             Tint.info, context.name, Tint.log, contextName,
-            repeat.replay.perms,
+            repeat.replay.permissionsRequired,
             caller,
             repeat.replay.event.sender.nickname,
             repeat.replay.event.sender.class_,
@@ -950,8 +952,8 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
 
         Repeat repeat = thisFiber.payload;
 
-        with (PermissionsRequired)
-        final switch (repeat.replay.perms)
+        with (Permissions)
+        final switch (repeat.replay.permissionsRequired)
         {
         case admin:
             if (repeat.replay.event.sender.class_ >= IRCUser.Class.admin)
@@ -1013,7 +1015,7 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
      +/
     void repeat(Replay replay)
     {
-        import kameloso.plugins.common.base : repeat;
+        import kameloso.plugins.common.misc : repeat;
         context.repeat(&repeaterDelegate, replay);
     }
 }

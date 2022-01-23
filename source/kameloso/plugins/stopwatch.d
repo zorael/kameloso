@@ -6,7 +6,7 @@
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#stopwatch
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.stopwatch;
 
@@ -37,13 +37,25 @@ import std.typecons : Flag, No, Yes;
 /++
     Manages stopwatches.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.whitelist)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "stopwatch")
-@BotCommand(PrefixPolicy.prefixed, "sw", Yes.hidden)
-@Description("Manages stopwatches.", "$command [start|stop|status]")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(Permissions.whitelist)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("stopwatch")
+            .policy(PrefixPolicy.prefixed)
+            .description("Manages stopwatches.")
+            .syntax("$command [start|stop|status]")
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("sw")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
+)
 void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.irccolours : ircBold, ircColourByHash;

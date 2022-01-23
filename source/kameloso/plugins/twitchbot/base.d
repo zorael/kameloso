@@ -10,7 +10,7 @@
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#twitchbot
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.twitchbot.base;
 
@@ -96,23 +96,25 @@ public:
     Bells on any important event, like subscriptions, cheers and raids, if the
     [TwitchBotSettings.bellOnImportant] setting is set.
  +/
-@Chainable
-@(IRCEvent.Type.TWITCH_SUB)
-@(IRCEvent.Type.TWITCH_SUBGIFT)
-@(IRCEvent.Type.TWITCH_CHEER)
-@(IRCEvent.Type.TWITCH_REWARDGIFT)
-@(IRCEvent.Type.TWITCH_GIFTCHAIN)
-@(IRCEvent.Type.TWITCH_BULKGIFT)
-@(IRCEvent.Type.TWITCH_SUBUPGRADE)
-@(IRCEvent.Type.TWITCH_CHARITY)
-@(IRCEvent.Type.TWITCH_BITSBADGETIER)
-@(IRCEvent.Type.TWITCH_RITUAL)
-@(IRCEvent.Type.TWITCH_EXTENDSUB)
-@(IRCEvent.Type.TWITCH_GIFTRECEIVED)
-@(IRCEvent.Type.TWITCH_PAYFORWARD)
-@(IRCEvent.Type.TWITCH_RAID)
-@(PermissionsRequired.ignore)
-@(ChannelPolicy.home)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.TWITCH_SUB)
+    .onEvent(IRCEvent.Type.TWITCH_SUBGIFT)
+    .onEvent(IRCEvent.Type.TWITCH_CHEER)
+    .onEvent(IRCEvent.Type.TWITCH_REWARDGIFT)
+    .onEvent(IRCEvent.Type.TWITCH_GIFTCHAIN)
+    .onEvent(IRCEvent.Type.TWITCH_BULKGIFT)
+    .onEvent(IRCEvent.Type.TWITCH_SUBUPGRADE)
+    .onEvent(IRCEvent.Type.TWITCH_CHARITY)
+    .onEvent(IRCEvent.Type.TWITCH_BITSBADGETIER)
+    .onEvent(IRCEvent.Type.TWITCH_RITUAL)
+    .onEvent(IRCEvent.Type.TWITCH_EXTENDSUB)
+    .onEvent(IRCEvent.Type.TWITCH_GIFTRECEIVED)
+    .onEvent(IRCEvent.Type.TWITCH_PAYFORWARD)
+    .onEvent(IRCEvent.Type.TWITCH_RAID)
+    .permissionsRequired(Permissions.ignore)
+    .channelPolicy(ChannelPolicy.home)
+    .chainable(true)
+)
 void onImportant(TwitchBotPlugin plugin)
 {
     import kameloso.terminal : TerminalToken;
@@ -132,8 +134,10 @@ void onImportant(TwitchBotPlugin plugin)
 
     Simply passes on execution to [handleSelfjoin].
  +/
-@(IRCEvent.Type.SELFJOIN)
-@(ChannelPolicy.home)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.SELFJOIN)
+    .channelPolicy(ChannelPolicy.home)
+)
 void onSelfjoin(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     return plugin.handleSelfjoin(event.channel);
@@ -181,8 +185,10 @@ in (channelName.length, "Tried to handle SELFJOIN with an empty channel string")
     "You will not get USERSTATE for other people. Only for yourself."
     https://discuss.dev.twitch.tv/t/no-userstate-on-people-joining/11598
  +/
-@(IRCEvent.Type.USERSTATE)
-@(ChannelPolicy.home)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.USERSTATE)
+    .channelPolicy(ChannelPolicy.home)
+)
 void onUserstate(const ref IRCEvent event)
 {
     import lu.string : contains;
@@ -205,8 +211,10 @@ void onUserstate(const ref IRCEvent event)
 
     This resets all that channel's transient state.
  +/
-@(IRCEvent.Type.SELFPART)
-@(ChannelPolicy.home)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.SELFPART)
+    .channelPolicy(ChannelPolicy.home)
+)
 void onSelfpart(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     if (auto room = event.channel in plugin.rooms)
@@ -223,13 +231,19 @@ void onSelfpart(TwitchBotPlugin plugin, const ref IRCEvent event)
 
     Changes are persistently saved to the [TwitchBotPlugin.timersFile] file.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.operator)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "timer")
-@Description("Adds, removes, lists or clears timered lines.",
-    "$command [add|del|list|clear]")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("timer")
+            .policy(PrefixPolicy.prefixed)
+            .description("Adds, removes, lists or clears timered lines.")
+            .syntax("$command [add|del|list|clear]")
+    )
+)
 void onCommandTimer(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     return handleTimerCommand(plugin, event, event.channel);
@@ -245,12 +259,18 @@ void onCommandTimer(TwitchBotPlugin plugin, const ref IRCEvent event)
     The streamer's name is divined from the `plugin.state.users` associative
     array by looking at the entry for the nickname this channel corresponds to.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.ignore)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "uptime")
-@Description("Reports how long the streamer has been streaming.")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(Permissions.anyone)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("uptime")
+            .policy(PrefixPolicy.prefixed)
+            .description("Reports how long the streamer has been streaming.")
+    )
+)
 void onCommandUptime(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     const room = event.channel in plugin.rooms;
@@ -269,12 +289,18 @@ void onCommandUptime(TwitchBotPlugin plugin, const ref IRCEvent event)
     The streamer's name is divined from the `plugin.state.users` associative
     array by looking at the entry for the nickname this channel corresponds to.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.operator)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "start")
-@Description("Marks the start of a broadcast.")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("start")
+            .policy(PrefixPolicy.prefixed)
+            .description("Marks the start of a broadcast.")
+    )
+)
 void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 {
     auto room = event.channel in plugin.rooms;
@@ -288,7 +314,7 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         }
         else
         {
-            import kameloso.plugins.common.base : nameOf;
+            import kameloso.plugins.common.misc : nameOf;
             immutable streamer = plugin.nameOf(event.channel[1..$]);
         }
 
@@ -348,12 +374,18 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 /++
     Marks the stop of a broadcast.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.operator)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "stop")
-@Description("Marks the stop of a broadcast.")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("stop")
+            .policy(PrefixPolicy.prefixed)
+            .description("Marks the end of a broadcast.")
+    )
+)
 void onCommandStop(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     auto room = event.channel in plugin.rooms;
@@ -389,8 +421,10 @@ void onCommandStop(TwitchBotPlugin plugin, const ref IRCEvent event)
     This is generally done as the last thing after a stream session, so it makes
     sense to automate [onCommandStop].
  +/
-@(ChannelPolicy.home)
-@(IRCEvent.Type.TWITCH_HOSTSTART)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.TWITCH_HOSTSTART)
+    .channelPolicy(ChannelPolicy.home)
+)
 void onAutomaticStop(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     return onCommandStop(plugin, event);
@@ -422,7 +456,7 @@ void reportStreamTime(TwitchBotPlugin plugin,
     }
     else
     {
-        import kameloso.plugins.common.base : nameOf;
+        import kameloso.plugins.common.misc : nameOf;
         immutable streamer = plugin.nameOf(room.name[1..$]);
     }
 
@@ -520,14 +554,21 @@ void reportStreamTime(TwitchBotPlugin plugin,
     Lookups are done asynchronously in subthreads.
  +/
 version(TwitchAPIFeatures)
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.ignore)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "followage")
-@Description("Queries the server for how long you have been a follower of the " ~
-    "current channel. Optionally takes a nickname parameter, to query for someone else.",
-    "$command [optional nickname]")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(Permissions.ignore)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("followage")
+            .policy(PrefixPolicy.prefixed)
+            .description("Queries the server for how long you have been a follower " ~
+                "of the current channel. Optionally takes a nickname parameter, " ~
+                "to query for someone else.")
+            .syntax("$command [optional nickname]")
+    )
+)
 void onCommandFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : nom, stripped;
@@ -695,8 +736,10 @@ void onCommandFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     the display name of its broadcaster.
  +/
 version(TwitchAPIFeatures)
-@(IRCEvent.Type.ROOMSTATE)
-@(ChannelPolicy.home)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.ROOMSTATE)
+    .channelPolicy(ChannelPolicy.home)
+)
 void onRoomState(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import std.datetime.systime : Clock, SysTime;
@@ -750,16 +793,28 @@ void onRoomState(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     Merely gives a link to their channel and echoes what game they last streamed.
  +/
 version(TwitchAPIFeatures)
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.operator)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "shoutout")
-@BotCommand(PrefixPolicy.prefixed, "so", Yes.hidden)
-@Description("Emits a shoutout to another streamer.", "$command [name of streamer]")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("shoutout")
+            .policy(PrefixPolicy.prefixed)
+            .description("Emits a shoutout to another streamer.")
+            .syntax("$command [name of streamer]")
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("so")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
+)
 void onCommandShoutout(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.plugins.common.base : idOf;
+    import kameloso.plugins.common.misc : idOf;
     import dialect.common : isValidNickname;
     import lu.string : stripped;
     import std.format : format;
@@ -829,12 +884,13 @@ void onCommandShoutout(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 
     Belling is useful with small audiences, so you don't miss messages.
  +/
-@Terminating
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.EMOTE)
-@(PermissionsRequired.ignore)
-@(ChannelPolicy.home)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .onEvent(IRCEvent.Type.EMOTE)
+    .permissionsRequired(Permissions.ignore)
+    .channelPolicy(ChannelPolicy.home)
+)
 void onAnyMessage(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     if (plugin.twitchBotSettings.bellOnMessage)
@@ -870,8 +926,10 @@ void onAnyMessage(TwitchBotPlugin plugin, const ref IRCEvent event)
     Has to be done at MOTD, as we only know whether we're on Twitch after
     RPL_MYINFO or so.
  +/
-@(IRCEvent.Type.RPL_ENDOFMOTD)
-@(IRCEvent.Type.ERR_NOMOTD)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_ENDOFMOTD)
+    .onEvent(IRCEvent.Type.ERR_NOMOTD)
+)
 void onEndOfMOTD(TwitchBotPlugin plugin)
 {
     import lu.json : JSONStorage, populateFromJSON;
@@ -1016,7 +1074,9 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
     fail to read if too much time has passed, and nothing would be saved.
  +/
 version(TwitchAPIFeatures)
-@(IRCEvent.Type.CAP)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CAP)
+)
 void onCAP(TwitchBotPlugin plugin)
 {
     import kameloso.plugins.twitchbot.keygen;
@@ -1047,7 +1107,7 @@ void reload(TwitchBotPlugin plugin)
  +/
 void initResources(TwitchBotPlugin plugin)
 {
-    import kameloso.plugins.common.base : IRCPluginInitialisationException;
+    import kameloso.plugins.common.misc : IRCPluginInitialisationException;
     import lu.json : JSONStorage;
     import std.file : exists;
     import std.json : JSONException;
@@ -1080,7 +1140,9 @@ void initResources(TwitchBotPlugin plugin)
     Cannot be done on [dialect.defs.IRCEvent.Type.RPL_WELCOME] as the server
     daemon isn't known by then.
  +/
-@(IRCEvent.Type.RPL_MYINFO)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_MYINFO)
+)
 void onMyInfo(TwitchBotPlugin plugin)
 {
     import kameloso.plugins.common.delayawait : delay;

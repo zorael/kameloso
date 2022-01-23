@@ -344,7 +344,9 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
 
     Additionally from the nickname-channel cache.
  +/
-@(IRCEvent.Type.QUIT)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.QUIT)
+)
 void onQuit(PersistenceService service, const ref IRCEvent event)
 {
     if (service.state.settings.preferHostmasks)
@@ -364,9 +366,11 @@ void onQuit(PersistenceService service, const ref IRCEvent event)
 
     Annotated [kameloso.plugins.common.awareness.Awareness.cleanup] to delay execution.
  +/
-@(Awareness.cleanup)
-@(IRCEvent.Type.NICK)
-@(IRCEvent.Type.SELFNICK)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.NICK)
+    .onEvent(IRCEvent.Type.SELFNICK)
+    .when(Timing.cleanup)
+)
 void onNick(PersistenceService service, const ref IRCEvent event)
 {
     // onQuit already doees everything this function wants to do.
@@ -382,7 +386,9 @@ void onNick(PersistenceService service, const ref IRCEvent event)
     This is normally done as part of user awareness, but we're not mixing that
     in so we have to reinvent it.
  +/
-@(IRCEvent.Type.RPL_WELCOME)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WELCOME)
+)
 void onWelcome(PersistenceService service)
 {
     import kameloso.plugins.common.delayawait : delay;
@@ -576,7 +582,7 @@ void initAccountResources(PersistenceService service)
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common.base : IRCPluginInitialisationException;
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
         import kameloso.common : logger;
         import std.path : baseName;
 
@@ -645,7 +651,7 @@ void initAccountResources(PersistenceService service)
             }
             catch (JSONException e)
             {
-                import kameloso.plugins.common.base : IRCPluginInitialisationException;
+                import kameloso.plugins.common.misc : IRCPluginInitialisationException;
                 import kameloso.common : logger;
                 import std.path : baseName;
 
@@ -683,7 +689,7 @@ void initHostmaskResources(PersistenceService service)
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common.base : IRCPluginInitialisationException;
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
         import kameloso.common : logger;
         import std.path : baseName;
 

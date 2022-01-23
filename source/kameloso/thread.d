@@ -153,11 +153,15 @@ struct ThreadMessage
     static struct Save {}
 
     /++
-        Concurrency message asking for a reference to the arrays of
-        [kameloso.plugins.common.core.IRCPlugin]s in the current
-        [kameloso.kameloso.Kameloso] instance's `plugin` array.
+        Concurrency message asking for an associative array of a description of
+        all plugins' commands.
      +/
-    static struct PeekPlugins {}
+    static struct PeekCommands {}
+
+    /++
+        Concurrency message askin to apply an expression to change a setting of a plugin.
+     +/
+    static struct ChangeSetting {}
 
     /// Concurrency message asking plugins to "reload".
     static struct Reload {}

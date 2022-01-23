@@ -8,7 +8,7 @@
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#quotes
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.quotes;
 
@@ -164,15 +164,26 @@ Quote getSpecificQuote(QuotesPlugin plugin, const string nickname, const size_t 
     channel the triggering event occurred in, alternatively in a private message
     if the request was sent in one such.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.whitelist)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "quote")
-@BotCommand(PrefixPolicy.prefixed, "addquote", Yes.hidden)
-@Description("Fetches and repeats a random quote of a supplied nickname, " ~
-    "or adds a new one.", "$command [nickname] [text if adding new quote]")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(Permissions.whitelist)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("quote")
+            .policy(PrefixPolicy.prefixed)
+            .description("Fetches and repeats a random quote of a supplied nickname, or adds a new one.")
+            .syntax("$command [nickname] [text if adding new quote]")
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("addquote")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
+)
 void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
 {
     return manageQuoteImpl(plugin, event, ManageQuoteAction.addOrReplay);
@@ -464,13 +475,20 @@ unittest
     channel the triggering event occurred in, alternatively in a private message
     if the request was sent in one such.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.operator)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "delquote")
-@Description("Removes a quote from the quote database.", "$command [nickname] [quote index]")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("delquote")
+            .policy(PrefixPolicy.prefixed)
+            .description("Removes a quote from the quote database.")
+            .syntax("$command [nickname] [quote index]")
+    )
+)
 void onCommandDelQuote(QuotesPlugin plugin, const ref IRCEvent event)
 {
     manageQuoteImpl(plugin, event, ManageQuoteAction.del);
@@ -487,14 +505,20 @@ void onCommandDelQuote(QuotesPlugin plugin, const ref IRCEvent event)
     channel the triggering event occurred in, alternatively in a private message
     if the request was sent in one such.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.operator)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "modquote")
-@Description("Modifies a quote's text in the quote database.",
-    "$command [nickname] [quote index] [next quote text]")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("modquote")
+            .policy(PrefixPolicy.prefixed)
+            .description("Modifies a quote's text in the quote database.")
+            .syntax("$command [nickname] [quote index] [new quote text]")
+    )
+)
 void onCommandModQuote(QuotesPlugin plugin, const ref IRCEvent event)
 {
     manageQuoteImpl(plugin, event, ManageQuoteAction.mod);
@@ -558,7 +582,7 @@ void manageQuoteImpl(QuotesPlugin plugin,
     {
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
-            import kameloso.plugins.common.base : nameOf;
+            import kameloso.plugins.common.misc : nameOf;
 
             if ((slice == event.channel[1..$]) ||
                 (slice == plugin.nameOf(event.channel[1..$])))
@@ -609,7 +633,7 @@ void manageQuoteImpl(QuotesPlugin plugin,
     {
         void onSuccess(const IRCUser replyUser)
         {
-            import kameloso.plugins.common.base : idOf;
+            import kameloso.plugins.common.misc : idOf;
             import std.conv : ConvException, to;
 
             immutable id = idOf(replyUser).toLowerCase(plugin.state.server.caseMapping);
@@ -742,14 +766,26 @@ void manageQuoteImpl(QuotesPlugin plugin,
 
     Does not perform account lookups.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.operator)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "mergequotes")
-@BotCommand(PrefixPolicy.prefixed, "mergequote", Yes.hidden)
-@Description("Merges the quotes of two users.", "$command [source] [target]")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("mergequotes")
+            .policy(PrefixPolicy.prefixed)
+            .description("Merges the quotes of two users.")
+            .syntax("$command [source] [target]")
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("mergequote")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
+)
 void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.irccolours : ircBold, ircColourByHash;
@@ -825,7 +861,9 @@ void reload(QuotesPlugin plugin)
 /++
     Initialises the passed [QuotesPlugin]. Loads the quotes from disk.
  +/
-@(IRCEvent.Type.RPL_WELCOME)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WELCOME)
+)
 void onWelcome(QuotesPlugin plugin)
 {
     plugin.quotes.load(plugin.quotesFile);
@@ -849,7 +887,7 @@ void initResources(QuotesPlugin plugin)
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common.base : IRCPluginInitialisationException;
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
         import std.path : baseName;
 
         version(PrintStacktraces) logger.trace(e);

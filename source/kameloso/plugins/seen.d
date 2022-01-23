@@ -26,7 +26,7 @@
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#seen
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.seen;
 
@@ -161,7 +161,7 @@ public:
         A [kameloso.plugins.common.core.Replay] is otherwise just an
         [dialect.defs.IRCEvent] to be played back when the WHOIS results
         return, as well as a function pointer to call with that event. This is
-        all wrapped in a function [kameloso.plugins.common.base.enqueue], with the
+        all wrapped in a function [kameloso.plugins.common.misc.enqueue], with the
         queue management handled behind the scenes.
 
     * [kameloso.plugins.common.core.IRCPluginState.hasReplays] is merely a bool
@@ -396,73 +396,75 @@ else
     [kameloso.plugins.common.core.Chainable] only for the modules and functions that
     actually need it.
 
-    The [kameloso.plugins.common.core.PermissionsRequired] annotation dictates who is
+    The [kameloso.plugins.common.core.Permissions] annotation dictates who is
     authorised to trigger the function. It has six policies, in increasing
     order of importance:
-    [kameloso.plugins.common.core.PermissionsRequired.ignore],
-    [kameloso.plugins.common.core.PermissionsRequired.anyone],
-    [kameloso.plugins.common.core.PermissionsRequired.registered],
-    [kameloso.plugins.common.core.PermissionsRequired.whitelist],
-    [kameloso.plugins.common.core.PermissionsRequired.operator],
-    [kameloso.plugins.common.core.PermissionsRequired.staff] and
-    [kameloso.plugins.common.core.PermissionsRequired.admin].
+    [kameloso.plugins.common.core.Permissions.ignore],
+    [kameloso.plugins.common.core.Permissions.anyone],
+    [kameloso.plugins.common.core.Permissions.registered],
+    [kameloso.plugins.common.core.Permissions.whitelist],
+    [kameloso.plugins.common.core.Permissions.operator],
+    [kameloso.plugins.common.core.Permissions.staff] and
+    [kameloso.plugins.common.core.Permissions.admin].
 
-    * [kameloso.plugins.common.core.PermissionsRequired.ignore] will let precisely anyone
+    * [kameloso.plugins.common.core.Permissions.ignore] will let precisely anyone
         trigger it, without looking them up.<br>
-    * [kameloso.plugins.common.core.PermissionsRequired.anyone] will let precisely anyone
+    * [kameloso.plugins.common.core.Permissions.anyone] will let precisely anyone
         trigger it, but only after having looked them up.<br>
-    * [kameloso.plugins.common.core.PermissionsRequired.registered] will let anyone logged
+    * [kameloso.plugins.common.core.Permissions.registered] will let anyone logged
         into a services account trigger it.<br>
-    * [kameloso.plugins.common.core.PermissionsRequired.whitelist] will only allow users
+    * [kameloso.plugins.common.core.Permissions.whitelist] will only allow users
         in the whitelist section of the `users.json` resource file. Consider this
         to correspond to "regulars" in the channel.<br>
-    * [kameloso.plugins.common.core.PermissionsRequired.operator] will only allow users
+    * [kameloso.plugins.common.core.Permissions.operator] will only allow users
         in the operator section of the `users.json` resource file. Consider this
         to correspond to "moderators" in the channel.<br>
-    * [kameloso.plugins.common.core.PermissionsRequired.staff] will only allow users
+    * [kameloso.plugins.common.core.Permissions.staff] will only allow users
         in the staff section of the `users.json` resource file. Consider this
         to correspond to channel owners.<br>
-    * [kameloso.plugins.common.core.PermissionsRequired.admin] will allow only you and
+    * [kameloso.plugins.common.core.Permissions.admin] will allow only you and
         your other superuser administrators, as defined in the configuration file.
 
-    In the case of [kameloso.plugins.common.core.PermissionsRequired.whitelist],
-    [kameloso.plugins.common.core.PermissionsRequired.operator],
-    [kameloso.plugins.common.core.PermissionsRequired.staff] and
-    [kameloso.plugins.common.core.PermissionsRequired.admin] it will look you up and
+    In the case of [kameloso.plugins.common.core.Permissions.whitelist],
+    [kameloso.plugins.common.core.Permissions.operator],
+    [kameloso.plugins.common.core.Permissions.staff] and
+    [kameloso.plugins.common.core.Permissions.admin] it will look you up and
     compare your *services account name* to those known good before doing
-    anything. In the case of [kameloso.plugins.common.core.PermissionsRequired.registered],
+    anything. In the case of [kameloso.plugins.common.core.Permissions.registered],
     merely being logged in is enough. In the case of
-    [kameloso.plugins.common.core.PermissionsRequired.anyone], the WHOIS results won't
+    [kameloso.plugins.common.core.Permissions.anyone], the WHOIS results won't
     matter and it will just let it pass, but it will check all the same.
     In the other cases, if you aren't logged into services or if your account
     name isn't included in the lists, the function will not trigger.
 
     This particular function doesn't care at all, so it is
-    [kameloso.plugins.common.core.PermissionsRequired.ignore].
+    [kameloso.plugins.common.core.Permissions.ignore].
  +/
-@Chainable
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.EMOTE)
-@(IRCEvent.Type.JOIN)
-@(IRCEvent.Type.PART)
-@(IRCEvent.Type.MODE)
-@(IRCEvent.Type.TWITCH_TIMEOUT)
-@(IRCEvent.Type.TWITCH_BAN)
-@(IRCEvent.Type.TWITCH_BULKGIFT)
-@(IRCEvent.Type.TWITCH_CHARITY)
-@(IRCEvent.Type.TWITCH_EXTENDSUB)
-@(IRCEvent.Type.TWITCH_GIFTCHAIN)
-@(IRCEvent.Type.TWITCH_GIFTRECEIVED)
-@(IRCEvent.Type.TWITCH_PAYFORWARD)
-@(IRCEvent.Type.TWITCH_REWARDGIFT)
-@(IRCEvent.Type.TWITCH_RITUAL)
-@(IRCEvent.Type.TWITCH_SUB)
-@(IRCEvent.Type.TWITCH_SUBGIFT)
-@(IRCEvent.Type.TWITCH_SUBUPGRADE)
-@(IRCEvent.Type.TWITCH_TIMEOUT)
-@(PermissionsRequired.ignore)
-@omniscientChannelPolicy
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .onEvent(IRCEvent.Type.EMOTE)
+    .onEvent(IRCEvent.Type.JOIN)
+    .onEvent(IRCEvent.Type.PART)
+    .onEvent(IRCEvent.Type.MODE)
+    .onEvent(IRCEvent.Type.TWITCH_TIMEOUT)
+    .onEvent(IRCEvent.Type.TWITCH_BAN)
+    .onEvent(IRCEvent.Type.TWITCH_BULKGIFT)
+    .onEvent(IRCEvent.Type.TWITCH_CHARITY)
+    .onEvent(IRCEvent.Type.TWITCH_EXTENDSUB)
+    .onEvent(IRCEvent.Type.TWITCH_GIFTCHAIN)
+    .onEvent(IRCEvent.Type.TWITCH_GIFTRECEIVED)
+    .onEvent(IRCEvent.Type.TWITCH_PAYFORWARD)
+    .onEvent(IRCEvent.Type.TWITCH_REWARDGIFT)
+    .onEvent(IRCEvent.Type.TWITCH_RITUAL)
+    .onEvent(IRCEvent.Type.TWITCH_SUB)
+    .onEvent(IRCEvent.Type.TWITCH_SUBGIFT)
+    .onEvent(IRCEvent.Type.TWITCH_SUBUPGRADE)
+    .onEvent(IRCEvent.Type.TWITCH_TIMEOUT)
+    .permissionsRequired(Permissions.ignore)
+    .channelPolicy(omniscientChannelPolicy)
+    .chainable(true)
+)
 void onSomeAction(SeenPlugin plugin, const ref IRCEvent event)
 {
     /+
@@ -502,7 +504,9 @@ void onSomeAction(SeenPlugin plugin, const ref IRCEvent event)
 
     Do nothing if an entry was not found.
  +/
-@(IRCEvent.Type.QUIT)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.QUIT)
+)
 void onQuit(SeenPlugin plugin, const ref IRCEvent event)
 {
     auto seenTimestamp = event.sender.nickname in plugin.seenUsers;
@@ -521,9 +525,11 @@ void onQuit(SeenPlugin plugin, const ref IRCEvent event)
 
     Bookkeeping; this is to avoid getting ghost entries in the seen array.
  +/
-@Chainable
-@(IRCEvent.Type.NICK)
-@(PermissionsRequired.ignore)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.NICK)
+    .permissionsRequired(Permissions.ignore)
+    .chainable(true)
+)
 void onNick(SeenPlugin plugin, const ref IRCEvent event)
 {
     auto seenTimestamp = event.sender.nickname in plugin.seenUsers;
@@ -546,8 +552,10 @@ void onNick(SeenPlugin plugin, const ref IRCEvent event)
     [kameloso.plugins.chanqueries.ChanQueriesService] services instigates this
     shortly after having joined one, as a service to other plugins.
  +/
-@(IRCEvent.Type.RPL_WHOREPLY)
-@omniscientChannelPolicy
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WHOREPLY)
+    .channelPolicy(omniscientChannelPolicy)
+)
 void onWHOReply(SeenPlugin plugin, const ref IRCEvent event)
 {
     // Update the user's entry
@@ -565,8 +573,10 @@ void onWHOReply(SeenPlugin plugin, const ref IRCEvent event)
     with mode signs if they are operators, voiced or similar, so we'll need to
     strip that away.
  +/
-@(IRCEvent.Type.RPL_NAMREPLY)
-@omniscientChannelPolicy
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_NAMREPLY)
+    .channelPolicy(omniscientChannelPolicy)
+)
 void onNamesReply(SeenPlugin plugin, const ref IRCEvent event)
 {
     import std.algorithm.iteration : splitter;
@@ -597,9 +607,11 @@ void onNamesReply(SeenPlugin plugin, const ref IRCEvent event)
     At the end of a long listing of users in a channel, when we're reasonably
     sure we've added users to our associative array of seen users, *rehashes* it.
  +/
-@(IRCEvent.Type.RPL_ENDOFNAMES)
-@(IRCEvent.Type.RPL_ENDOFWHO)
-@omniscientChannelPolicy
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_ENDOFNAMES)
+    .onEvent(IRCEvent.Type.RPL_ENDOFWHO)
+    .channelPolicy(omniscientChannelPolicy)
+)
 void onEndOfList(SeenPlugin plugin)
 {
     plugin.seenUsers = plugin.seenUsers.rehash();
@@ -612,7 +624,7 @@ void onEndOfList(SeenPlugin plugin)
     a [dialect.defs.IRCEvent.Type.QUERY], and if
     [dialect.defs.IRCEvent.Type.CHAN] then only if in a *home*, this function triggers.
 
-    The [kameloso.plugins.common.core.BotCommand] annotation defines a piece of text
+    The [kameloso.plugins.common.core.IRCEventHandler] annotation defines a piece of text
     that the incoming message must start with for this function to be called.
     [kameloso.plugins.common.core.PrefixPolicy] deals with whether the message has to
     start with the name of the *bot* or not, and to what extent.
@@ -627,7 +639,7 @@ void onEndOfList(SeenPlugin plugin)
 
     The plugin system will have made certain we only get messages starting with
     "`seen`", since we annotated this function with such a
-    [kameloso.plugins.common.core.BotCommand]. It will since have been sliced off,
+    [kameloso.plugins.common.core.IRCEventHandler.Command]. It will since have been sliced off,
     so we're left only with the "arguments" to "`seen`". [dialect.defs.IRCEvent.aux]
     contains the triggering word, if it's needed.
 
@@ -654,13 +666,20 @@ void onEndOfList(SeenPlugin plugin)
     how this function will be listed in the "online help" list, shown by triggering
     the [kameloso.plugins.help.HelpPlugin]'s' "`help`" command.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.anyone)
-@omniscientChannelPolicy
-@BotCommand(PrefixPolicy.prefixed, "seen")
-@Description("Queries the bot when it last saw a specified nickname online.", "$command [nickname]")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(Permissions.anyone)
+    .channelPolicy(omniscientChannelPolicy)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("seen")
+            .policy(PrefixPolicy.prefixed)
+            .description("Queries the bot when it last saw a specified nickname online.")
+            .syntax("$command [nickname]")
+    )
+)
 void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.common : timeSince;
@@ -929,7 +948,9 @@ in (filename.length, "Tried to save seen users to an empty filename")
     This is to make sure that as little data as possible is lost in the event
     of an unexpected shutdown.
  +/
-@(IRCEvent.Type.RPL_WELCOME)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WELCOME)
+)
 void onWelcome(SeenPlugin plugin)
 {
     import kameloso.plugins.common.delayawait : await, delay;

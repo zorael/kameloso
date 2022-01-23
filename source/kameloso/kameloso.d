@@ -287,8 +287,8 @@ public:
         out string[][string] invalidEntries) @system
     {
         import kameloso.plugins : PluginModules;
-        import kameloso.plugins.common.base : applyCustomSettings;
         import kameloso.plugins.common.core : IRCPluginState;
+        import kameloso.plugins.common.misc : applyCustomSettings;
         import std.concurrency : thisTid;
 
         teardownPlugins();
@@ -372,7 +372,7 @@ public:
 
         if (!allCustomSuccess)
         {
-            import kameloso.plugins.common.base : IRCPluginSettingsException;
+            import kameloso.plugins.common.misc : IRCPluginSettingsException;
             throw new IRCPluginSettingsException("Some custom plugin settings could not be applied.");
         }
     }

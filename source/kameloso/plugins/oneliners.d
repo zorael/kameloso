@@ -8,7 +8,7 @@
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#oneliners
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.oneliners;
 
@@ -41,11 +41,13 @@ import dialect.defs;
 
     Responses are stored in [OnelinersPlugin.onelinersByChannel].
  +/
-@Chainable
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.ignore)
-@(ChannelPolicy.home)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(Permissions.ignore)
+    .channelPolicy(ChannelPolicy.home)
+    .chainable(true)
+)
 void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : beginsWith, contains, nom;
@@ -65,7 +67,7 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 
         if (const response = key in *channelOneliners)
         {
-            import kameloso.plugins.common.base : nameOf;
+            import kameloso.plugins.common.misc : nameOf;
             import std.array : replace;
             import std.conv : text;
             import std.random : uniform;
@@ -87,12 +89,19 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 /++
     Adds or removes a oneliner to/from the list of oneliners, and saves it to disk.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.operator)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "oneliner")
-@Description("Adds or removes a oneliner command.", "$command [add|del|list] [text]")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("oneliner")
+            .policy(PrefixPolicy.prefixed)
+            .description("Adds or removes a oneliner command.")
+            .syntax("$command [add|del|list] [text]")
+    )
+)
 void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : contains, nom;
@@ -116,6 +125,9 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
     switch (verb)
     {
     case "add":
+        import kameloso.thread : ThreadMessage;
+        import std.concurrency : send;
+
         if (!slice.contains!(Yes.decode)(' ')) return sendUsage(verb, Yes.includeText);
 
         string trigger = slice.nom!(Yes.decode)(' ');
@@ -124,18 +136,39 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 
         if (!plugin.onelinersSettings.caseSensitiveTriggers) trigger = trigger.toLower;
 
-        plugin.onelinersByChannel[event.channel][trigger] = slice;
-        saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
+        void dg(IRCPlugin.CommandMetadata[string][string] aa)
+        {
+            foreach (immutable pluginName, pluginCommands; aa)
+            {
+                foreach (/*mutable*/ word, command; pluginCommands)
+                {
+                    if (!plugin.onelinersSettings.caseSensitiveTriggers) word = word.toLower;
 
-        import std.algorithm.comparison : equal;
-        import std.uni : asLowerCase;
+                    if (word == trigger)
+                    {
+                        enum pattern = `Oneliner word "%s" conflicts with a command of the %s plugin.`;
+                        chan(plugin.state, event.channel,
+                            pattern.format(trigger, pluginName));
+                        return;
+                    }
+                }
+            }
 
-        immutable wasMadeLowerCase = !plugin.onelinersSettings.caseSensitiveTriggers &&
-            !trigger.equal(trigger.asLowerCase);
+            plugin.onelinersByChannel[event.channel][trigger] = slice;
+            saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
 
-        chan(plugin.state, event.channel, "Oneliner %s%s added%s."
-            .format(plugin.state.settings.prefix, trigger,
-                wasMadeLowerCase ? " (made lowercase)" : string.init));
+            import std.algorithm.comparison : equal;
+            import std.uni : asLowerCase;
+
+            immutable wasMadeLowerCase = !plugin.onelinersSettings.caseSensitiveTriggers &&
+                !trigger.equal(trigger.asLowerCase);
+
+            chan(plugin.state, event.channel, "Oneliner %s%s added%s."
+                .format(plugin.state.settings.prefix, trigger,
+                    wasMadeLowerCase ? " (made lowercase)" : string.init));
+        }
+
+        plugin.state.mainThread.send(ThreadMessage.PeekCommands(), cast(shared)&dg);
         break;
 
     case "del":
@@ -173,12 +206,18 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 
     Merely calls [listCommands].
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.ignore)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "commands")
-@Description("Lists all available oneliners.")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(Permissions.anyone)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("commands")
+            .policy(PrefixPolicy.prefixed)
+            .description("Lists all available oneliners.")
+    )
+)
 void onCommandCommands(OnelinersPlugin plugin, const ref IRCEvent event)
 {
     return plugin.listCommands(event.channel);
@@ -215,7 +254,9 @@ void listCommands(OnelinersPlugin plugin, const string channelName)
 /++
     Populate the oneliners array after we have successfully logged onto the server.
  +/
-@(IRCEvent.Type.RPL_WELCOME)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WELCOME)
+)
 void onWelcome(OnelinersPlugin plugin)
 {
     import lu.json : JSONStorage, populateFromJSON;
@@ -277,7 +318,7 @@ void initResources(OnelinersPlugin plugin)
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common.base : IRCPluginInitialisationException;
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
 
         version(PrintStacktraces) logger.trace(e);
         throw new IRCPluginInitialisationException(plugin.onelinerFile.baseName ~ " may be malformed.");

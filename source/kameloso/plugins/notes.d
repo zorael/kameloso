@@ -5,7 +5,7 @@
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#notes
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.notes;
 
@@ -41,11 +41,12 @@ import std.typecons : Flag, No, Yes;
     There's no need to trigger each `CHAN` since we know we enumerate all
     users in a channel when querying `WHO`.
  +/
-@Chainable
-@(IRCEvent.Type.JOIN)
-@(IRCEvent.Type.ACCOUNT)
-@(PermissionsRequired.anyone)
-@(ChannelPolicy.home)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.JOIN)
+    .onEvent(IRCEvent.Type.ACCOUNT)
+    .permissionsRequired(Permissions.anyone)
+    .channelPolicy(ChannelPolicy.home)
+)
 void onReplayEvent(NotesPlugin plugin, const /*ref*/ IRCEvent event)
 {
     if (event.channel !in plugin.notes) return;
@@ -66,8 +67,10 @@ void onReplayEvent(NotesPlugin plugin, const /*ref*/ IRCEvent event)
     Pass `Yes.background` to [playbackNotes] to ensure it does low-priority background
     WHOIS queries.
  +/
-@(IRCEvent.Type.RPL_WHOREPLY)
-@(ChannelPolicy.home)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WHOREPLY)
+    .channelPolicy(ChannelPolicy.home)
+)
 void onWhoReply(NotesPlugin plugin, const /*ref*/ IRCEvent event)
 {
     if (plugin.state.settings.eagerLookups) return;
@@ -125,7 +128,7 @@ void playbackNotes(NotesPlugin plugin,
     {
         void onSuccess(const IRCUser user)
         {
-            import kameloso.plugins.common.base : idOf, nameOf;
+            import kameloso.plugins.common.misc : idOf, nameOf;
 
             immutable id = user.nickname.toLowerCase(plugin.state.server.caseMapping);
 
@@ -253,8 +256,10 @@ void playbackNotes(NotesPlugin plugin,
     more information than NAMES replies do, so we'd just be duplicating effort
     for worse results.
  +/
-@(IRCEvent.Type.RPL_NAMREPLY)
-@(ChannelPolicy.home)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_NAMREPLY)
+    .channelPolicy(ChannelPolicy.home)
+)
 void onNames(NotesPlugin plugin, const ref IRCEvent event)
 {
     version(WithChanQueriesService)
@@ -284,7 +289,7 @@ void onNames(NotesPlugin plugin, const ref IRCEvent event)
             fakeEvent.channel = event.channel;
 
             // Use a replay to fill in known information about the user by use of Persistence
-            auto req = replay(plugin, fakeEvent, PermissionsRequired.anyone, &onReplayEvent);
+            auto req = replay(plugin, fakeEvent, Permissions.anyone, &onReplayEvent);
             repeat(req);
         }
     }
@@ -299,16 +304,23 @@ void onNames(NotesPlugin plugin, const ref IRCEvent event)
     channel. Those sent in a private query will be private notes, sent privately
     in the same fashion as channel notes are sent publicly.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.whitelist)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "note")
-@Description("Adds a note and saves it to disk.", "$command [account] [note text]")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(Permissions.whitelist)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("note")
+            .policy(PrefixPolicy.prefixed)
+            .description("Adds a note and saves it to disk.")
+            .syntax("$command [account] [note text]")
+    )
+)
 void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
 {
-    import kameloso.plugins.common.base : nameOf;
+    import kameloso.plugins.common.misc : nameOf;
     import dialect.common : opEqualsCaseInsensitive, toLowerCase;
     import lu.string : SplitResults, splitInto;
     import std.format : format;
@@ -560,7 +572,9 @@ in (line.length, "Tried to add an empty note")
 /++
     Initialises the Notes plugin. Loads the notes from disk.
  +/
-@(IRCEvent.Type.RPL_WELCOME)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WELCOME)
+)
 void onWelcome(NotesPlugin plugin)
 {
     plugin.notes.load(plugin.notesFile);
@@ -584,7 +598,7 @@ void initResources(NotesPlugin plugin)
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common.base : IRCPluginInitialisationException;
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
         import std.path : baseName;
 
         version(PrintStacktraces) logger.trace(e);

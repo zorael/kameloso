@@ -93,7 +93,7 @@ Fiber createTimerFiber(TwitchBotPlugin plugin,
         }
         else
         {
-            import kameloso.plugins.common.base : nameOf;
+            import kameloso.plugins.common.misc : nameOf;
             immutable streamer = plugin.nameOf(channelName[1..$]);
         }
 

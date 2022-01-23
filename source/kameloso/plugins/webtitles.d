@@ -7,7 +7,7 @@
 
     See_Also:
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.webtitles;
 
@@ -110,11 +110,12 @@ struct TitleLookupRequest
     It uses a simple state machine in [kameloso.common.findURLs] to exhaustively
     try to look up every URL returned by it.
  +/
-@Terminating
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.ignore)
-@(ChannelPolicy.home)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(Permissions.ignore)
+    .channelPolicy(ChannelPolicy.home)
+)
 void onMessage(WebtitlesPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.common : findURLs;
