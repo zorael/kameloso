@@ -472,7 +472,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
             static immutable uda = handlerAnnotations[0];
 
-            static foreach (immutable eventType; uda._eventTypes)
+            static foreach (immutable eventType; uda.given.eventTypes)
             {{
                 static if (eventType == IRCEvent.Type.UNSET)
                 {
@@ -501,7 +501,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                     static assert(0, pattern.format(fullyQualifiedName!fun));
                 }
 
-                static if (uda._commands.length || uda._regexes.length)
+                static if (uda.given.commands.length || uda.given.regexes.length)
                 {
                     alias U = eventType;
 
@@ -522,13 +522,13 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                     }
                 }
 
-                static if (uda._commands.length)
+                static if (uda.given.commands.length)
                 {
                     import lu.string : contains;
 
-                    static foreach (immutable command; uda._commands)
+                    static foreach (immutable command; uda.given.commands)
                     {
-                        static if (!command._word.length)
+                        static if (!command.given.word.length)
                         {
                             import std.format : format;
 
@@ -536,23 +536,23 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                                 "listening for a `Command` with an empty trigger word";
                             static assert(0, pattern.format(fullyQualifiedName!fun));
                         }
-                        else static if (command._word.contains(' '))
+                        else static if (command.given.word.contains(' '))
                         {
                             import std.format : format;
 
                             enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                                 "listening for a `Command` whose trigger " ~
                                 `word "%s" contains a space character`;
-                            static assert(0, pattern.format(fullyQualifiedName!fun, command._word));
+                            static assert(0, pattern.format(fullyQualifiedName!fun, command.given.word));
                         }
                     }
                 }
 
-                static if (uda._regexes.length)
+                static if (uda.given.regexes.length)
                 {
-                    static foreach (immutable regex; uda._regexes)
+                    static foreach (immutable regex; uda.given.regexes)
                     {
-                        static if (!regex._expression.length)
+                        static if (!regex.given.expression.length)
                         {
                             import std.format : format;
 
@@ -653,7 +653,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
             static immutable uda = getUDAs!(fun, IRCEventHandler)[0];
 
-            enum verbose = (uda._verbose || debug_);
+            enum verbose = (uda.given.verbose || debug_);
 
             static if (verbose)
             {
@@ -665,15 +665,15 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                     __traits(identifier, fun));
             }
 
-            static if (!uda._eventTypes.canFind(IRCEvent.Type.ANY))
+            static if (!uda.given.eventTypes.canFind(IRCEvent.Type.ANY))
             {
-                if (!uda._eventTypes.canFind(event.type)) return NextStep.continue_;
+                if (!uda.given.eventTypes.canFind(event.type)) return NextStep.continue_;
             }
 
             static if (verbose)
             {
                 writeln("-- ", funID, " @ ", Enum!(IRCEvent.Type).toString(event.type));
-                writeln("   ...", Enum!ChannelPolicy.toString(uda._channelPolicy));
+                writeln("   ...", Enum!ChannelPolicy.toString(uda.given.channelPolicy));
             }
 
             if (!event.channel.length)
@@ -682,11 +682,11 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             }
             else
             {
-                static if (uda._channelPolicy == ChannelPolicy.home)
+                static if (uda.given.channelPolicy == ChannelPolicy.home)
                 {
                     immutable channelMatch = state.bot.homeChannels.canFind(event.channel);
                 }
-                else static if (uda._channelPolicy == ChannelPolicy.guest)
+                else static if (uda.given.channelPolicy == ChannelPolicy.guest)
                 {
                     immutable channelMatch = !state.bot.homeChannels.canFind(event.channel);
                 }
@@ -707,7 +707,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 }
             }
 
-            static if (uda._commands.length || uda._regexes.length)
+            static if (uda.given.commands.length || uda.given.regexes.length)
             {
                 import lu.string : strippedLeft;
 
@@ -729,21 +729,21 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             }
 
             // Evaluate each BotCommand UDAs with the current event
-            static if (uda._commands.length)
+            static if (uda.given.commands.length)
             {
-                static foreach (immutable command; uda._commands)
+                static foreach (immutable command; uda.given.commands)
                 {{
                     if (!commandMatch)
                     {
                         static if (verbose)
                         {
-                            writefln(`   ...Command "%s"`, command._word);
+                            writefln(`   ...Command "%s"`, command.given.word);
                         }
 
                         bool policyMismatch;
 
                         if (!event.prefixPolicyMatches!verbose
-                            (command._policy, state.client, state.settings.prefix))
+                            (command.given.policy, state.client, state.settings.prefix))
                         {
                             static if (verbose)
                             {
@@ -770,7 +770,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
                             immutable thisCommand = event.content
                                 .nom!(Yes.inherit, Yes.decode)(' ');
-                            enum lowerWord = command._word.toLower;
+                            enum lowerWord = command.given.word.toLower;
 
                             if (thisCommand.asLowerCase.equal(lowerWord))
                             {
@@ -793,9 +793,9 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             }
 
             // Iff no match from BotCommands, evaluate BotRegexes
-            static if (uda._regexes.length)
+            static if (uda.given.regexes.length)
             {
-                static foreach (immutable regex; uda._regexes)
+                static foreach (immutable regex; uda.given.regexes)
                 {{
                     // This reuses previous commandMatch, so a matched Command
                     // will prevent Regex lookups.
@@ -804,13 +804,13 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                     {
                         static if (verbose)
                         {
-                            writeln("   ...Regex: `", regex._expression, "`");
+                            writeln("   ...Regex: `", regex.given.expression, "`");
                         }
 
                         bool policyMismatch;
 
                         if (!event.prefixPolicyMatches!verbose
-                            (regex._policy, state.client, state.settings.prefix))
+                            (regex.given.policy, state.client, state.settings.prefix))
                         {
                             static if (verbose)
                             {
@@ -830,7 +830,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                             {
                                 import std.regex : matchFirst;
 
-                                const hits = event.content.matchFirst(regex._engine);
+                                const hits = event.content.matchFirst(regex.given.engine);
 
                                 if (!hits.empty)
                                 {
@@ -847,7 +847,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                                     static if (verbose)
                                     {
                                         writefln(`   ...matching "%s" against expression "%s" failed.`,
-                                            event.content, regex._expression);
+                                            event.content, regex.given.expression);
                                     }
                                 }
                             }
@@ -864,7 +864,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 }}
             }
 
-            static if (uda._commands.length || uda._regexes.length)
+            static if (uda.given.commands.length || uda.given.regexes.length)
             {
                 if (!commandMatch)
                 {
@@ -891,7 +891,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             import std.meta : AliasSeq, staticMap;
             import std.traits : Parameters, Unqual, arity;
 
-            static if (uda._permissionsRequired != PermissionsRequired.ignore)
+            static if (uda.given.permissionsRequired != PermissionsRequired.ignore)
             {
                 static if (!__traits(compiles, .hasMinimalAuthentication))
                 {
@@ -905,10 +905,10 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 static if (verbose)
                 {
                     writeln("   ...PermissionsRequired.",
-                        Enum!PermissionsRequired.toString(uda._permissionsRequired));
+                        Enum!PermissionsRequired.toString(uda.given.permissionsRequired));
                 }
 
-                immutable result = this.allow(event, uda._permissionsRequired);
+                immutable result = this.allow(event, uda.given.permissionsRequired);
 
                 static if (verbose)
                 {
@@ -935,9 +935,9 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
                     static if (is(Params : AliasSeq!IRCEvent) || (arity!fun == 0))
                     {
-                        this.enqueue(event, uda._permissionsRequired, &fun, fullyQualifiedName!fun);
+                        this.enqueue(event, uda.given.permissionsRequired, &fun, fullyQualifiedName!fun);
 
-                        static if (uda._chainable)
+                        static if (uda.given.chainable)
                         {
                             rtToReturn = NextStep.continue_;
                         }
@@ -949,9 +949,9 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                     else static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
                         is(Params : AliasSeq!(typeof(this))))
                     {
-                        this.enqueue(this, event, uda._permissionsRequired, &fun, fullyQualifiedName!fun);
+                        this.enqueue(this, event, uda.given.permissionsRequired, &fun, fullyQualifiedName!fun);
 
-                        static if (uda._chainable)
+                        static if (uda.given.chainable)
                         {
                             rtToReturn = NextStep.continue_;
                         }
@@ -969,7 +969,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 }
                 else if (result == FilterResult.fail)
                 {
-                    static if (uda._chainable)
+                    static if (uda.given.chainable)
                     {
                         rtToReturn = NextStep.continue_;
                     }
@@ -994,7 +994,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
             call!fun(event);
 
-            static if (uda._chainable)
+            static if (uda.given.chainable)
             {
                 // onEvent found an event and triggered a function, but
                 // it's Chainable and there may be more, so keep looking.
@@ -1120,10 +1120,10 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             }
         }
 
-        enum isSetupFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.setup);
-        enum isEarlyFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.early);
-        enum isLateFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.late);
-        enum isCleanupFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.cleanup);
+        enum isSetupFun(alias T) = (getUDAs!(T, IRCEventHandler)[0].given.when == Timing.setup);
+        enum isEarlyFun(alias T) = (getUDAs!(T, IRCEventHandler)[0].given.when == Timing.early);
+        enum isLateFun(alias T) = (getUDAs!(T, IRCEventHandler)[0].given.when == Timing.late);
+        enum isCleanupFun(alias T) = (getUDAs!(T, IRCEventHandler)[0].given.when == Timing.cleanup);
         alias hasSpecialTiming = templateOr!(isSetupFun, isEarlyFun,
             isLateFun, isCleanupFun);
         alias isNormalEventHandler = templateNot!hasSpecialTiming;
@@ -2673,119 +2673,129 @@ enum Timing
 // IRCEventHandler
 struct IRCEventHandler
 {
-    IRCEvent.Type[] _eventTypes;
+    static struct GivenValues
+    {
+        IRCEvent.Type[] eventTypes;
 
-    PermissionsRequired _permissionsRequired = PermissionsRequired.ignore;
+        PermissionsRequired permissionsRequired = PermissionsRequired.ignore;
 
-    ChannelPolicy _channelPolicy = ChannelPolicy.home;
+        ChannelPolicy channelPolicy = ChannelPolicy.home;
 
-    Command[] _commands;
+        Command[] commands;
 
-    Regex[] _regexes;
+        Regex[] regexes;
 
-    bool _chainable;
+        bool chainable;
 
-    bool _verbose;
+        bool verbose;
 
-    Timing _when;
+        Timing when;
+    }
+
+    GivenValues given;
 
     auto ref onEvent(const IRCEvent.Type eventType)
     {
-        this._eventTypes ~= eventType;
+        this.given.eventTypes ~= eventType;
         return this;
     }
 
     auto ref permissionsRequired(const PermissionsRequired permissionsRequired)
     {
-        this._permissionsRequired = permissionsRequired;
+        this.given.permissionsRequired = permissionsRequired;
         return this;
     }
 
     auto ref channelPolicy(const ChannelPolicy channelPolicy)
     {
-        this._channelPolicy = channelPolicy;
+        this.given.channelPolicy = channelPolicy;
         return this;
     }
 
     auto ref addCommand(const Command command)
     {
-        this._commands ~= command;
+        this.given.commands ~= command;
         return this;
     }
 
     auto ref addRegex(/*const*/ Regex regex)
     {
-        this._regexes ~= regex;
+        this.given.regexes ~= regex;
         return this;
     }
 
     auto ref chainable(const bool chainable)
     {
-        this._chainable = chainable;
+        this.given.chainable = chainable;
         return this;
     }
 
     auto ref verbose(const bool verbose)
     {
-        this._verbose = verbose;
+        this.given.verbose = verbose;
         return this;
     }
 
     auto ref when(const Timing when)
     {
-        this._when = when;
+        this.given.when = when;
         return this;
     }
 
     // Command
     static struct Command
     {
-        /++
-            In what way the message is required to start for the annotated function to trigger.
-        +/
-        PrefixPolicy _policy = PrefixPolicy.prefixed;
+        static struct GivenValues
+        {
+            /++
+                In what way the message is required to start for the annotated function to trigger.
+             +/
+            PrefixPolicy policy = PrefixPolicy.prefixed;
 
-        /++
-            The command word, without spaces.
-        +/
-        string _word;
+            /++
+                The command word, without spaces.
+            +/
+            string word;
 
-        string _description;
+            string description;
 
-        string _syntax;
+            string syntax;
 
-        /++
-            Whether this is a hidden command or if it should show up in help listings.
-        +/
-        bool _hidden;
+            /++
+                Whether this is a hidden command or if it should show up in help listings.
+             +/
+            bool hidden;
+        }
+
+        GivenValues given;
 
         auto ref policy(const PrefixPolicy policy)
         {
-            this._policy = policy;
+            this.given.policy = policy;
             return this;
         }
 
         auto ref word(const string word)
         {
-            this._word = word;
+            this.given.word = word;
             return this;
         }
 
         auto ref description(const string description)
         {
-            this._description = description;
+            this.given.description = description;
             return this;
         }
 
         auto ref syntax(const string syntax)
         {
-            this._syntax = syntax;
+            this.given.syntax = syntax;
             return this;
         }
 
         auto ref hidden(const bool hidden)
         {
-            this._hidden = hidden;
+            this.given.hidden = hidden;
             return this;
         }
     }
@@ -2794,50 +2804,55 @@ struct IRCEventHandler
     {
         import std.regex : StdRegex = Regex, regex;
 
-        /++
-            In what way the message is required to start for the annotated function to trigger.
-         +/
-        PrefixPolicy _policy = PrefixPolicy.direct;
+        static struct GivenValues
+        {
+            /++
+                In what way the message is required to start for the annotated function to trigger.
+             +/
+            PrefixPolicy policy = PrefixPolicy.direct;
 
-        /++
-            Regex engine to match incoming messages with.
-         +/
-        StdRegex!char _engine;
+            /++
+                Regex engine to match incoming messages with.
+             +/
+            StdRegex!char engine;
 
-        /++
-            The regular expression in string form.
-         +/
-        string _expression;
+            /++
+                The regular expression in string form.
+             +/
+            string expression;
 
-        string _description;
+            string description;
 
-        /++
-            Whether this is a hidden command or if it should show up in help listings.
-         +/
-        bool _hidden;
+            /++
+                Whether this is a hidden command or if it should show up in help listings.
+             +/
+            bool hidden;
+        }
+
+        GivenValues given;
 
         auto ref policy(const PrefixPolicy policy)
         {
-            this._policy = policy;
+            this.given.policy = policy;
             return this;
         }
 
         auto ref expression(const string expression)
         {
-            this._expression = expression;
-            this._engine = expression.regex;
+            this.given.expression = expression;
+            this.given.engine = expression.regex;
             return this;
         }
 
         auto ref description(const string description)
         {
-            this._description = description;
+            this.given.description = description;
             return this;
         }
 
         auto ref hidden(const bool hidden)
         {
-            this._hidden = hidden;
+            this.given.hidden = hidden;
             return this;
         }
     }
