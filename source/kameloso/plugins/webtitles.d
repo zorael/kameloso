@@ -113,7 +113,7 @@ struct TitleLookupRequest
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.SELFCHAN)
-    .permissionsRequired(PermissionsRequired.ignore)
+    .permissionsRequired(Permissions.ignore)
     .channelPolicy(ChannelPolicy.home)
 )
 void onMessage(WebtitlesPlugin plugin, const ref IRCEvent event)

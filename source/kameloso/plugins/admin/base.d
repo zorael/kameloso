@@ -115,7 +115,7 @@ debug
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
     .onEvent(IRCEvent.Type.SELFCHAN)
-    .permissionsRequired(PermissionsRequired.admin)
+    .permissionsRequired(Permissions.admin)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
@@ -143,7 +143,7 @@ void onCommandShowUser(AdminPlugin plugin, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
     .onEvent(IRCEvent.Type.SELFCHAN)
-    .permissionsRequired(PermissionsRequired.admin)
+    .permissionsRequired(Permissions.admin)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
@@ -171,7 +171,7 @@ debug
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
     .onEvent(IRCEvent.Type.SELFCHAN)
-    .permissionsRequired(PermissionsRequired.admin)
+    .permissionsRequired(Permissions.admin)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
@@ -197,7 +197,7 @@ debug
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
     .onEvent(IRCEvent.Type.SELFCHAN)
-    .permissionsRequired(PermissionsRequired.admin)
+    .permissionsRequired(Permissions.admin)
     .channelPolicy(omniscientChannelPolicy)
     .addCommand(
         IRCEventHandler.Command()
@@ -225,7 +225,7 @@ void onCommandSudo(AdminPlugin plugin, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
     .onEvent(IRCEvent.Type.SELFCHAN)
-    .permissionsRequired(PermissionsRequired.admin)
+    .permissionsRequired(Permissions.admin)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
@@ -253,7 +253,7 @@ void onCommandQuit(AdminPlugin plugin, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
     .onEvent(IRCEvent.Type.SELFCHAN)
-    .permissionsRequired(PermissionsRequired.admin)
+    .permissionsRequired(Permissions.admin)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
@@ -502,13 +502,13 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
     [dialect.defs.IRCClient.Class.whitelist] of the current [AdminPlugin]'s
     [kameloso.plugins.common.core.IRCPluginState].
 
-    This is on a [kameloso.plugins.common.core.PermissionsRequired.operator] level.
+    This is on a [kameloso.plugins.common.core.Permissions.operator] level.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
     .onEvent(IRCEvent.Type.SELFCHAN)
-    .permissionsRequired(PermissionsRequired.operator)
+    .permissionsRequired(Permissions.operator)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
@@ -533,7 +533,7 @@ void onCommandWhitelist(AdminPlugin plugin, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
     .onEvent(IRCEvent.Type.SELFCHAN)
-    .permissionsRequired(PermissionsRequired.staff)
+    .permissionsRequired(Permissions.staff)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
@@ -559,7 +559,7 @@ void onCommandOperator(AdminPlugin plugin, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
     .onEvent(IRCEvent.Type.SELFCHAN)
-    .permissionsRequired(PermissionsRequired.admin)
+    .permissionsRequired(Permissions.admin)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
@@ -578,15 +578,15 @@ void onCommandStaff(AdminPlugin plugin, const ref IRCEvent event)
 // onCommandBlacklist
 /++
     Adds a nickname to the list of users who may not trigger the bot whatsoever,
-    except on actions annotated [kameloso.plugins.common.core.PermissionsRequired.ignore].
+    except on actions annotated [kameloso.plugins.common.core.Permissions.ignore].
 
-    This is on a [kameloso.plugins.common.core.PermissionsRequired.operator] level.
+    This is on a [kameloso.plugins.common.core.Permissions.operator] level.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
     .onEvent(IRCEvent.Type.SELFCHAN)
-    .permissionsRequired(PermissionsRequired.operator)
+    .permissionsRequired(Permissions.operator)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
@@ -611,7 +611,7 @@ void onCommandBlacklist(AdminPlugin plugin, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
     .onEvent(IRCEvent.Type.SELFCHAN)
-    .permissionsRequired(PermissionsRequired.admin)
+    .permissionsRequired(Permissions.admin)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
@@ -646,7 +646,7 @@ debug
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
     .onEvent(IRCEvent.Type.SELFCHAN)
-    .permissionsRequired(PermissionsRequired.admin)
+    .permissionsRequired(Permissions.admin)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
@@ -672,7 +672,7 @@ debug
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
     .onEvent(IRCEvent.Type.SELFCHAN)
-    .permissionsRequired(PermissionsRequired.admin)
+    .permissionsRequired(Permissions.admin)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
@@ -695,7 +695,7 @@ void onCommandPrintBytes(AdminPlugin plugin, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
     .onEvent(IRCEvent.Type.SELFCHAN)
-    .permissionsRequired(PermissionsRequired.admin)
+    .permissionsRequired(Permissions.admin)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
@@ -733,7 +733,7 @@ void onCommandJoin(AdminPlugin plugin, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
     .onEvent(IRCEvent.Type.SELFCHAN)
-    .permissionsRequired(PermissionsRequired.admin)
+    .permissionsRequired(Permissions.admin)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
@@ -771,7 +771,7 @@ void onCommandPart(AdminPlugin plugin, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
     .onEvent(IRCEvent.Type.SELFCHAN)
-    .permissionsRequired(PermissionsRequired.admin)
+    .permissionsRequired(Permissions.admin)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
@@ -831,7 +831,7 @@ version(WithConnectService)
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
     .onEvent(IRCEvent.Type.SELFCHAN)
-    .permissionsRequired(PermissionsRequired.admin)
+    .permissionsRequired(Permissions.admin)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
@@ -866,7 +866,7 @@ debug
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
     .onEvent(IRCEvent.Type.SELFCHAN)
-    .permissionsRequired(PermissionsRequired.admin)
+    .permissionsRequired(Permissions.admin)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
@@ -889,7 +889,7 @@ void onCommandStatus(AdminPlugin plugin)
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
     .onEvent(IRCEvent.Type.SELFCHAN)
-    .permissionsRequired(PermissionsRequired.admin)
+    .permissionsRequired(Permissions.admin)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
@@ -913,7 +913,7 @@ void onCommandSummary(AdminPlugin plugin)
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
     .onEvent(IRCEvent.Type.SELFCHAN)
-    .permissionsRequired(PermissionsRequired.admin)
+    .permissionsRequired(Permissions.admin)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
@@ -1032,7 +1032,7 @@ void cycle(AdminPlugin plugin,
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
     .onEvent(IRCEvent.Type.SELFCHAN)
-    .permissionsRequired(PermissionsRequired.admin)
+    .permissionsRequired(Permissions.admin)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
@@ -1176,7 +1176,7 @@ debug
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
     .onEvent(IRCEvent.Type.SELFCHAN)
-    .permissionsRequired(PermissionsRequired.admin)
+    .permissionsRequired(Permissions.admin)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()

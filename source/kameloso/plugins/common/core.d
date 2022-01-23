@@ -238,7 +238,7 @@ public:
 version(WithPlugins)
 mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
 {
-    private import kameloso.plugins.common.core : FilterResult, IRCPluginState, PermissionsRequired;
+    private import kameloso.plugins.common.core : FilterResult, IRCPluginState, Permissions;
     private import dialect.defs : IRCEvent, IRCServer, IRCUser;
     private import core.thread : Fiber;
 
@@ -335,33 +335,35 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
     // allow
     /++
         Judges whether an event may be triggered, based on the event itself and
-        the annotated [kameloso.plugins.common.core.PermissionsRequired] of the
+        the annotated required [kameloso.plugins.common.core.Permissions] of the
         handler in question. Wrapper function that merely calls
         [kameloso.plugins.common.core.IRCPluginImpl.allowImpl]. The point behind it is to make something
         that can be overridden and still allow it to call the original logic (below).
 
         Params:
             event = [dialect.defs.IRCEvent] to allow, or not.
-            perms = [kameloso.plugins.common.core.PermissionsRequired] of the handler in question.
+            permissionsRequired = Required [kameloso.plugins.common.core.Permissions]
+                of the handler in question.
 
         Returns:
             `true` if the event should be allowed to trigger, `false` if not.
      +/
     pragma(inline, true)
-    private FilterResult allow(const ref IRCEvent event, const PermissionsRequired perms)
+    private FilterResult allow(const ref IRCEvent event, const Permissions permissionsRequired)
     {
-        return allowImpl(event, perms);
+        return allowImpl(event, permissionsRequired);
     }
 
     // allowImpl
     /++
         Judges whether an event may be triggered, based on the event itself and
-        the annotated [kameloso.plugins.common.core.PermissionsRequired] of the
+        the annotated [kameloso.plugins.common.core.Permissions] of the
         handler in question. Implementation function.
 
         Params:
             event = [dialect.defs.IRCEvent] to allow, or not.
-            perms = [kameloso.plugins.common.core.PermissionsRequired] of the handler in question.
+            permissionsRequired = Required [kameloso.plugins.common.core.Permissions]
+                of the handler in question.
 
         Returns:
             `true` if the event should be allowed to trigger, `false` if not.
@@ -369,7 +371,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         See_Also:
             [kameloso.plugins.common.core.filterSender]
      +/
-    private FilterResult allowImpl(const ref IRCEvent event, const PermissionsRequired perms)
+    private FilterResult allowImpl(const ref IRCEvent event, const Permissions permissionsRequired)
     {
         import kameloso.plugins.common.core : filterSender;
         import std.typecons : Flag, No, Yes;
@@ -378,21 +380,21 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         {
             if (state.server.daemon == IRCServer.Daemon.twitch)
             {
-                if (((perms == PermissionsRequired.anyone) ||
-                    (perms == PermissionsRequired.registered)) &&
+                if (((permissionsRequired == Permissions.anyone) ||
+                    (permissionsRequired == Permissions.registered)) &&
                     (event.sender.class_ != IRCUser.Class.blacklist))
                 {
-                    // We can't WHOIS on Twitch, and PermissionsRequired.anyone is just
-                    // PermissionsRequired.ignore with an extra WHOIS for good measure.
+                    // We can't WHOIS on Twitch, and Permissions.anyone is just
+                    // Permissions.ignore with an extra WHOIS for good measure.
                     // Also everyone is registered on Twitch, by definition.
                     return FilterResult.pass;
                 }
             }
         }
 
-        // PermissionsRequired.ignore always passes, even for Class.blacklist.
-        return (perms == PermissionsRequired.ignore) ? FilterResult.pass :
-            filterSender(event, perms, state.settings.preferHostmasks);
+        // Permissions.ignore always passes, even for Class.blacklist.
+        return (permissionsRequired == Permissions.ignore) ? FilterResult.pass :
+            filterSender(event, permissionsRequired, state.settings.preferHostmasks);
     }
 
     // onEvent
@@ -423,7 +425,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         annotated with the matching [dialect.defs.IRCEvent.Type]s.
 
         It also does checks for [kameloso.plugins.common.core.ChannelPolicy],
-        [kameloso.plugins.common.core.PermissionsRequired], [kameloso.plugins.common.core.PrefixPolicy],
+        [kameloso.plugins.common.core.Permissions], [kameloso.plugins.common.core.PrefixPolicy],
         [kameloso.plugins.common.core.BotCommand], [kameloso.plugins.common.core.BotRegex]
         etc; where such is applicable.
 
@@ -873,21 +875,21 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             import std.meta : AliasSeq, staticMap;
             import std.traits : Parameters, Unqual, arity;
 
-            static if (uda.given.permissionsRequired != PermissionsRequired.ignore)
+            static if (uda.given.permissionsRequired != Permissions.ignore)
             {
                 static if (!__traits(compiles, .hasMinimalAuthentication))
                 {
                     import std.format : format;
 
                     enum pattern = "`%s` is missing a `MinimalAuthentication` " ~
-                        "mixin (needed for `PermissionsRequired` checks)";
+                        "mixin (needed for `Permissions` checks)";
                     static assert(0, pattern.format(module_));
                 }
 
                 static if (verbose)
                 {
-                    writeln("   ...PermissionsRequired.",
-                        Enum!PermissionsRequired.toString(uda.given.permissionsRequired));
+                    writeln("   ...Permissions.",
+                        Enum!Permissions.toString(uda.given.permissionsRequired));
                 }
 
                 immutable result = this.allow(event, uda.given.permissionsRequired);
@@ -1855,14 +1857,14 @@ bool prefixPolicyMatches(bool verbose = false)
 
 // filterSender
 /++
-    Decides if a sender meets a [PermissionsRequired] and is allowed to trigger an event
+    Decides if a sender meets a [Permissions] and is allowed to trigger an event
     handler, or if a WHOIS query is needed to be able to tell.
 
     This requires the Persistence service to be active to work.
 
     Params:
         event = [dialect.defs.IRCEvent] to filter.
-        level = The [PermissionsRequired] context in which this user should be filtered.
+        permissionsRequired = The [Permissions] context in which this user should be filtered.
         preferHostmasks = Whether to rely on hostmasks for user identification,
             or to use services account logins, which need to be issued WHOIS
             queries to divine.
@@ -1872,7 +1874,7 @@ bool prefixPolicyMatches(bool verbose = false)
         information about the sender is needed via a WHOIS call.
  +/
 FilterResult filterSender(const ref IRCEvent event,
-    const PermissionsRequired level,
+    const Permissions permissionsRequired,
     const bool preferHostmasks) @safe
 {
     import kameloso.constants : Timeout;
@@ -1907,29 +1909,29 @@ FilterResult filterSender(const ref IRCEvent event,
         {
             return FilterResult.pass;
         }
-        else if (isStaff && (level <= PermissionsRequired.staff))
+        else if (isStaff && (permissionsRequired <= Permissions.staff))
         {
             return FilterResult.pass;
         }
-        else if (isOperator && (level <= PermissionsRequired.operator))
+        else if (isOperator && (permissionsRequired <= Permissions.operator))
         {
             return FilterResult.pass;
         }
-        else if (isWhitelisted && (level <= PermissionsRequired.whitelist))
+        else if (isWhitelisted && (permissionsRequired <= Permissions.whitelist))
         {
             return FilterResult.pass;
         }
-        else if (/*event.sender.account.length &&*/ level <= PermissionsRequired.registered)
+        else if (/*event.sender.account.length &&*/ permissionsRequired <= Permissions.registered)
         {
             return FilterResult.pass;
         }
-        else if (isAnyone && (level <= PermissionsRequired.anyone))
+        else if (isAnyone && (permissionsRequired <= Permissions.anyone))
         {
             return whoisExpired ? FilterResult.whois : FilterResult.pass;
         }
-        else if (level == PermissionsRequired.ignore)
+        else if (permissionsRequired == Permissions.ignore)
         {
-            /*assert(0, "`filterSender` saw a `PermissionsRequired.ignore` and the call " ~
+            /*assert(0, "`filterSender` saw a `Permissions.ignore` and the call " ~
                 "to it could have been skipped");*/
             return FilterResult.pass;
         }
@@ -1942,8 +1944,8 @@ FilterResult filterSender(const ref IRCEvent event,
     {
         immutable isLogoutEvent = (event.type == IRCEvent.Type.ACCOUNT);
 
-        with (PermissionsRequired)
-        final switch (level)
+        with (Permissions)
+        final switch (permissionsRequired)
         {
         case admin:
         case staff:
@@ -1958,7 +1960,7 @@ FilterResult filterSender(const ref IRCEvent event,
             return (whoisExpired && !isLogoutEvent) ? FilterResult.whois : FilterResult.pass;
 
         case ignore:
-            /*assert(0, "`filterSender` saw a `PermissionsRequired.ignore` and the call " ~
+            /*assert(0, "`filterSender` saw a `Permissions.ignore` and the call " ~
                 "to it could have been skipped");*/
             return FilterResult.pass;
         }
@@ -2178,11 +2180,11 @@ abstract class Replay
      +/
     IRCEvent event;
 
-    // perms
+    // permissionsRequired
     /++
-        [PermissionsRequired] of the function to replay.
+        [Permissions] required by the function to replay.
      +/
-    PermissionsRequired perms;
+    Permissions permissionsRequired;
 
     // when
     /++
@@ -2248,19 +2250,20 @@ private final class ReplayImpl(F, Payload = typeof(null)) : Replay
             Params:
                 payload = Payload of templated type `Payload` to attach to this [ReplayImpl].
                 event = [dialect.defs.IRCEvent] to attach to this [ReplayImpl].
-                perms = The permissions level required to replay the
+                permissionsRequired = The permissions level required to replay the
                     passed function.
                 fn = Function pointer to call with the attached payloads when
                     the replay is triggered.
+                caller = String of calling function.
          +/
-        this(Payload payload, IRCEvent event, PermissionsRequired perms,
+        this(Payload payload, IRCEvent event, Permissions permissionsRequired,
             F fn, const string caller)
         {
             super();
 
             this.payload = payload;
             this.event = event;
-            this.perms = perms;
+            this.permissionsRequired = permissionsRequired;
             this.fn = fn;
             this.caller = caller;
         }
@@ -2271,16 +2274,19 @@ private final class ReplayImpl(F, Payload = typeof(null)) : Replay
             Create a new [ReplayImpl] with the passed variables.
 
             Params:
-                payload = Payload of templated type `Payload` to attach to this [ReplayImpl].
+                event = [dialect.defs.IRCEvent] to attach to this [ReplayImpl].
+                permissionsRequired = The permissions level required to replay the
+                    passed function.
                 fn = Function pointer to call with the attached payloads when
                     the replay is triggered.
+                caller = String of calling function.
          +/
-        this(IRCEvent event, PermissionsRequired perms, F fn, const string caller)
+        this(IRCEvent event, Permissions permissionsRequired, F fn, const string caller)
         {
             super();
 
             this.event = event;
-            this.perms = perms;
+            this.permissionsRequired = permissionsRequired;
             this.fn = fn;
             this.caller = caller;
         }
@@ -2334,7 +2340,7 @@ unittest
     event.target.nickname = "kameloso";
     event.content = "hirrpp";
     event.sender.nickname = "zorael";
-    PermissionsRequired pl = PermissionsRequired.admin;
+    Permissions pl = Permissions.admin;
 
     // delegate()
 
@@ -2548,7 +2554,7 @@ enum ChannelPolicy
 }
 
 
-// PermissionsRequired
+// Permissions
 /++
     What level of permissions is needed to trigger an event handler.
 
@@ -2559,7 +2565,7 @@ enum ChannelPolicy
     Permissions are set on a per-channel basis and are stored in the "users.json"
     file in the resource directory.
  +/
-enum PermissionsRequired
+enum Permissions
 {
     /++
         Override privilege checks, allowing anyone to trigger the annotated function.
@@ -2616,7 +2622,7 @@ enum PermissionsRequired
         subPlugin = Subclass [IRCPlugin] to call the function pointer `fn` with
             as first argument, when the WHOIS results return.
         event = [dialect.defs.IRCEvent] that instigated the WHOIS lookup.
-        perms = The permissions level policy to apply to the WHOIS results.
+        permissionsRequired = The permissions level policy to apply to the WHOIS results.
         fn = Function/delegate pointer to call upon receiving the results.
         caller = String name of the calling function, or something else that gives context.
 
@@ -2630,11 +2636,11 @@ enum PermissionsRequired
 Replay replay(Fn, SubPlugin)
     (SubPlugin subPlugin,
     const ref IRCEvent event,
-    const PermissionsRequired perms,
+    const Permissions permissionsRequired,
     Fn fn,
     const string caller = __FUNCTION__) @safe
 {
-    return new ReplayImpl!(Fn, SubPlugin)(subPlugin, event, perms, fn, caller);
+    return new ReplayImpl!(Fn, SubPlugin)(subPlugin, event, permissionsRequired, fn, caller);
 }
 
 
@@ -2645,7 +2651,7 @@ Replay replay(Fn, SubPlugin)
 
     Params:
         event = [dialect.defs.IRCEvent] that instigated the WHOIS lookup.
-        perms = The permissions level policy to apply to the WHOIS results.
+        permissionsRequired = The permissions level policy to apply to the WHOIS results.
         fn = Function/delegate pointer to call upon receiving the results.
         caller = String name of the calling function, or something else that gives context.
 
@@ -2658,11 +2664,11 @@ Replay replay(Fn, SubPlugin)
  +/
 Replay replay(Fn)
     (const ref IRCEvent event,
-    const PermissionsRequired perms,
+    const Permissions permissionsRequired,
     Fn fn,
     const string caller = __FUNCTION__) @safe
 {
-    return new ReplayImpl!Fn(event, perms, fn, caller);
+    return new ReplayImpl!Fn(event, permissionsRequired, fn, caller);
 }
 
 
@@ -2725,7 +2731,7 @@ struct IRCEventHandler
             Permissions required of instigating user, below which the annotated
             event handler function should not be triggered.
          +/
-        PermissionsRequired permissionsRequired = PermissionsRequired.ignore;
+        Permissions permissionsRequired = Permissions.ignore;
 
         // channelPolicy
         /++
@@ -2798,12 +2804,12 @@ struct IRCEventHandler
         annotated event handler function is allowed to be triggered.
 
         Params:
-            permissionsRequired = New [PermissionsRequired] permissions level.
+            permissionsRequired = New [Permissions] permissions level.
 
         Returns:
             A `this` reference to the current struct instance.
      +/
-    auto ref permissionsRequired(const PermissionsRequired permissionsRequired)
+    auto ref permissionsRequired(const Permissions permissionsRequired)
     {
         this.given.permissionsRequired = permissionsRequired;
         return this;

@@ -40,7 +40,7 @@ import std.typecons : Flag, No, Yes;
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.SELFCHAN)
-    .permissionsRequired(PermissionsRequired.whitelist)
+    .permissionsRequired(Permissions.whitelist)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()

@@ -44,7 +44,7 @@ import std.typecons : Flag, No, Yes;
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.JOIN)
     .onEvent(IRCEvent.Type.ACCOUNT)
-    .permissionsRequired(PermissionsRequired.anyone)
+    .permissionsRequired(Permissions.anyone)
     .channelPolicy(ChannelPolicy.home)
 )
 void onReplayEvent(NotesPlugin plugin, const /*ref*/ IRCEvent event)
@@ -289,7 +289,7 @@ void onNames(NotesPlugin plugin, const ref IRCEvent event)
             fakeEvent.channel = event.channel;
 
             // Use a replay to fill in known information about the user by use of Persistence
-            auto req = replay(plugin, fakeEvent, PermissionsRequired.anyone, &onReplayEvent);
+            auto req = replay(plugin, fakeEvent, Permissions.anyone, &onReplayEvent);
             repeat(req);
         }
     }
@@ -308,7 +308,7 @@ void onNames(NotesPlugin plugin, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
     .onEvent(IRCEvent.Type.SELFCHAN)
-    .permissionsRequired(PermissionsRequired.whitelist)
+    .permissionsRequired(Permissions.whitelist)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()

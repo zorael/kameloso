@@ -105,7 +105,7 @@ void initResources(AutomodePlugin plugin)
     .onEvent(IRCEvent.Type.RPL_WHOISACCOUNT)
     .onEvent(IRCEvent.Type.RPL_WHOISREGNICK)
     .onEvent(IRCEvent.Type.RPL_WHOISUSER)
-    .permissionsRequired(PermissionsRequired.ignore)
+    .permissionsRequired(Permissions.ignore)
 )
 void onAccountInfo(AutomodePlugin plugin, const ref IRCEvent event)
 {
@@ -167,7 +167,7 @@ void onAccountInfo(AutomodePlugin plugin, const ref IRCEvent event)
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.JOIN)
-    .permissionsRequired(PermissionsRequired.anyone)
+    .permissionsRequired(Permissions.anyone)
     .channelPolicy(ChannelPolicy.home)
 )
 void onJoin(AutomodePlugin plugin, const ref IRCEvent event)
@@ -277,7 +277,7 @@ unittest
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .permissionsRequired(PermissionsRequired.operator)
+    .permissionsRequired(Permissions.operator)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
@@ -460,7 +460,7 @@ in ((!add || mode.length), "Tried to add an empty automode")
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .permissionsRequired(PermissionsRequired.ignore)
+    .permissionsRequired(Permissions.ignore)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()

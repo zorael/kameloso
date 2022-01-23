@@ -396,49 +396,49 @@ else
     [kameloso.plugins.common.core.Chainable] only for the modules and functions that
     actually need it.
 
-    The [kameloso.plugins.common.core.PermissionsRequired] annotation dictates who is
+    The [kameloso.plugins.common.core.Permissions] annotation dictates who is
     authorised to trigger the function. It has six policies, in increasing
     order of importance:
-    [kameloso.plugins.common.core.PermissionsRequired.ignore],
-    [kameloso.plugins.common.core.PermissionsRequired.anyone],
-    [kameloso.plugins.common.core.PermissionsRequired.registered],
-    [kameloso.plugins.common.core.PermissionsRequired.whitelist],
-    [kameloso.plugins.common.core.PermissionsRequired.operator],
-    [kameloso.plugins.common.core.PermissionsRequired.staff] and
-    [kameloso.plugins.common.core.PermissionsRequired.admin].
+    [kameloso.plugins.common.core.Permissions.ignore],
+    [kameloso.plugins.common.core.Permissions.anyone],
+    [kameloso.plugins.common.core.Permissions.registered],
+    [kameloso.plugins.common.core.Permissions.whitelist],
+    [kameloso.plugins.common.core.Permissions.operator],
+    [kameloso.plugins.common.core.Permissions.staff] and
+    [kameloso.plugins.common.core.Permissions.admin].
 
-    * [kameloso.plugins.common.core.PermissionsRequired.ignore] will let precisely anyone
+    * [kameloso.plugins.common.core.Permissions.ignore] will let precisely anyone
         trigger it, without looking them up.<br>
-    * [kameloso.plugins.common.core.PermissionsRequired.anyone] will let precisely anyone
+    * [kameloso.plugins.common.core.Permissions.anyone] will let precisely anyone
         trigger it, but only after having looked them up.<br>
-    * [kameloso.plugins.common.core.PermissionsRequired.registered] will let anyone logged
+    * [kameloso.plugins.common.core.Permissions.registered] will let anyone logged
         into a services account trigger it.<br>
-    * [kameloso.plugins.common.core.PermissionsRequired.whitelist] will only allow users
+    * [kameloso.plugins.common.core.Permissions.whitelist] will only allow users
         in the whitelist section of the `users.json` resource file. Consider this
         to correspond to "regulars" in the channel.<br>
-    * [kameloso.plugins.common.core.PermissionsRequired.operator] will only allow users
+    * [kameloso.plugins.common.core.Permissions.operator] will only allow users
         in the operator section of the `users.json` resource file. Consider this
         to correspond to "moderators" in the channel.<br>
-    * [kameloso.plugins.common.core.PermissionsRequired.staff] will only allow users
+    * [kameloso.plugins.common.core.Permissions.staff] will only allow users
         in the staff section of the `users.json` resource file. Consider this
         to correspond to channel owners.<br>
-    * [kameloso.plugins.common.core.PermissionsRequired.admin] will allow only you and
+    * [kameloso.plugins.common.core.Permissions.admin] will allow only you and
         your other superuser administrators, as defined in the configuration file.
 
-    In the case of [kameloso.plugins.common.core.PermissionsRequired.whitelist],
-    [kameloso.plugins.common.core.PermissionsRequired.operator],
-    [kameloso.plugins.common.core.PermissionsRequired.staff] and
-    [kameloso.plugins.common.core.PermissionsRequired.admin] it will look you up and
+    In the case of [kameloso.plugins.common.core.Permissions.whitelist],
+    [kameloso.plugins.common.core.Permissions.operator],
+    [kameloso.plugins.common.core.Permissions.staff] and
+    [kameloso.plugins.common.core.Permissions.admin] it will look you up and
     compare your *services account name* to those known good before doing
-    anything. In the case of [kameloso.plugins.common.core.PermissionsRequired.registered],
+    anything. In the case of [kameloso.plugins.common.core.Permissions.registered],
     merely being logged in is enough. In the case of
-    [kameloso.plugins.common.core.PermissionsRequired.anyone], the WHOIS results won't
+    [kameloso.plugins.common.core.Permissions.anyone], the WHOIS results won't
     matter and it will just let it pass, but it will check all the same.
     In the other cases, if you aren't logged into services or if your account
     name isn't included in the lists, the function will not trigger.
 
     This particular function doesn't care at all, so it is
-    [kameloso.plugins.common.core.PermissionsRequired.ignore].
+    [kameloso.plugins.common.core.Permissions.ignore].
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -461,7 +461,7 @@ else
     .onEvent(IRCEvent.Type.TWITCH_SUBGIFT)
     .onEvent(IRCEvent.Type.TWITCH_SUBUPGRADE)
     .onEvent(IRCEvent.Type.TWITCH_TIMEOUT)
-    .permissionsRequired(PermissionsRequired.ignore)
+    .permissionsRequired(Permissions.ignore)
     .channelPolicy(omniscientChannelPolicy)
     .chainable(true)
 )
@@ -527,7 +527,7 @@ void onQuit(SeenPlugin plugin, const ref IRCEvent event)
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.NICK)
-    .permissionsRequired(PermissionsRequired.ignore)
+    .permissionsRequired(Permissions.ignore)
     .chainable(true)
 )
 void onNick(SeenPlugin plugin, const ref IRCEvent event)
@@ -670,7 +670,7 @@ void onEndOfList(SeenPlugin plugin)
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
     .onEvent(IRCEvent.Type.SELFCHAN)
-    .permissionsRequired(PermissionsRequired.anyone)
+    .permissionsRequired(Permissions.anyone)
     .channelPolicy(omniscientChannelPolicy)
     .addCommand(
         IRCEventHandler.Command()

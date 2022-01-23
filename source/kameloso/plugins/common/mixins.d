@@ -891,7 +891,7 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_,
     // explainRepeat
     /++
         Verbosely explains a repeat, including what
-        [kameloso.plugins.common.core.PermissionsRequired] and
+        [kameloso.plugins.common.core.Permissions] and
         [dialect.defs.IRCUser.Class] were involved.
 
         Gated behind version `ExplainRepeat`.
@@ -912,7 +912,7 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_,
 
         logger.logf(pattern,
             Tint.info, context.name, Tint.log, contextName,
-            repeat.replay.perms,
+            repeat.replay.permissionsRequired,
             caller,
             repeat.replay.event.sender.nickname,
             repeat.replay.event.sender.class_);
@@ -942,7 +942,7 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_,
 
         logger.logf(pattern,
             Tint.info, context.name, Tint.log, contextName,
-            repeat.replay.perms,
+            repeat.replay.permissionsRequired,
             caller,
             repeat.replay.event.sender.nickname,
             repeat.replay.event.sender.class_,
@@ -966,8 +966,8 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_,
 
         Repeat repeat = thisFiber.payload;
 
-        with (PermissionsRequired)
-        final switch (repeat.replay.perms)
+        with (Permissions)
+        final switch (repeat.replay.permissionsRequired)
         {
         case admin:
             if (repeat.replay.event.sender.class_ >= IRCUser.Class.admin)

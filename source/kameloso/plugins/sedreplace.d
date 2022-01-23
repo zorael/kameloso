@@ -379,7 +379,7 @@ unittest
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .permissionsRequired(PermissionsRequired.ignore)
+    .permissionsRequired(Permissions.ignore)
     .channelPolicy(ChannelPolicy.home)
 )
 void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
