@@ -3476,8 +3476,6 @@ struct IRCEventHandler
 
     bool _isAwareness;
 
-    string _description;
-
     Timing _when;
 
     auto ref onEvent(const IRCEvent.Type eventType)
@@ -3525,12 +3523,6 @@ struct IRCEventHandler
     auto ref isAwareness(const bool isAwareness)
     {
         this._isAwareness = isAwareness;
-        return this;
-    }
-
-    auto ref description(const string description)
-    {
-        this._description = description;
         return this;
     }
 
