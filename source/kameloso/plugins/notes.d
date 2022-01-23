@@ -271,7 +271,6 @@ void playbackNotes(NotesPlugin plugin,
 // FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_NAMREPLY)
-    .permissionsRequired(PermissionsRequired.ignore)
     .channelPolicy(ChannelPolicy.home)
 )
 void onNames(NotesPlugin plugin, const ref IRCEvent event)
