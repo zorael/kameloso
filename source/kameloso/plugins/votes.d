@@ -47,6 +47,26 @@ import std.typecons : Flag, No, Yes;
 @BotCommand(PrefixPolicy.prefixed, "vote", Yes.hidden)
 @Description(`Starts or stops a vote. Pass "abort" to abort, or "end" to end early.`,
     "$command [seconds] [choice1] [choice2] ...")
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(PermissionsRequired.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .policy(PrefixPolicy.prefixed)
+            .word("poll")
+            .description(`Starts or stops a vote. Pass "abort" to abort, or "end" to end early.`)
+            .syntax("$command [seconds] [choice1] [choice2] ...")
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .policy(PrefixPolicy.prefixed)
+            .word("vote")
+            .hidden(true)
+    )
+)
 void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : contains, nom;
