@@ -432,7 +432,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
     override public void onEvent(const ref IRCEvent event) @system
     {
         onEventImpl(event);
-        onEventImpl2(event);
     }
 
 
@@ -449,6 +448,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         Params:
             origEvent = Parsed [dialect.defs.IRCEvent] to dispatch to event handlers.
      +/
+    version(none)
     private void onEventImpl(/*const*/ IRCEvent origEvent) @system
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
@@ -1228,7 +1228,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         Params:
             origEvent = Parsed [dialect.defs.IRCEvent] to dispatch to event handlers.
      +/
-    private void onEventImpl2(/*const*/ IRCEvent origEvent) @system
+    private void onEventImpl(/*const*/ IRCEvent origEvent) @system
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
