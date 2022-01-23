@@ -61,6 +61,21 @@ import dialect.defs;
 @(PermissionsRequired.anyone)
 @BotCommand(PrefixPolicy.prefixed, "help")
 @Description("Shows a list of all available commands.", "$command [plugin] [command]")
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(PermissionsRequired.anyone)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .policy(PrefixPolicy.prefixed)
+            .word("help")
+            .description("Shows a list of all available commands.")
+            .syntax("$command [plugin] [command]")
+    )
+)
 void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.irccolours : ircBold;
