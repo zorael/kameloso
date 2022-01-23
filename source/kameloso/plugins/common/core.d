@@ -998,8 +998,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             {
                 // onEvent found an event and triggered a function, but
                 // it's Chainable and there may be more, so keep looking.
-                // Alternatively it's an awareness function, which may be
-                // sharing one or more annotations with another.
                 return NextStep.continue_;
             }
             else
@@ -1143,7 +1141,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         tryProcess!lateFuns(origEvent);
         tryProcess!cleanupFuns(origEvent);
     }
-
 
 
     // this(IRCPluginState)
