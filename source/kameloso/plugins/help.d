@@ -71,8 +71,7 @@ import dialect.defs;
 )
 void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.irccolours : ircBold;
-    import kameloso.thread : CarryingFiber, ThreadMessage;
+    import kameloso.thread : ThreadMessage;
     import std.concurrency : send;
 
     static IRCPlugin.CommandMetadata[string] filterHiddenCommands(IRCPlugin.CommandMetadata[string] aa)
@@ -86,18 +85,14 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
             .assocArray;
     }
 
-    void dg()
+    void dg(IRCPlugin.CommandMetadata[string][string] allPluginCommands)
     {
+        import kameloso.irccolours : ircBold;
         import lu.string : beginsWith, contains, nom;
         import std.algorithm.sorting : sort;
         import std.array : array;
         import std.format : format;
         import std.typecons : No, Yes;
-        import core.thread : Fiber;
-
-        auto thisFiber = cast(CarryingFiber!(IRCPlugin.CommandMetadata[string][string]))(Fiber.getThis);
-        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
-        auto allPluginCommands = thisFiber.payload;
 
         IRCEvent mutEvent = event;  // mutable
         if (plugin.helpSettings.repliesInQuery) mutEvent.channel = string.init;
@@ -254,10 +249,7 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
         }
     }
 
-    import kameloso.constants : BufferSize;
-
-    auto fiber = new CarryingFiber!(IRCPlugin.CommandMetadata[string][string])(&dg, BufferSize.fiberStack);
-    plugin.state.mainThread.send(ThreadMessage.PeekCommands(), cast(shared)fiber);
+    plugin.state.mainThread.send(ThreadMessage.PeekCommands(), cast(shared)&dg);
 }
 
 // sendCommandHelp
