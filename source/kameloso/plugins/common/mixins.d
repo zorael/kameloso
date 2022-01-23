@@ -857,9 +857,16 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_,
         enum hasRepeater = true;
     }
 
-    static if (givenContextName.length)
+    static if ((__VERSION__ >= 2088L) && givenContextName.length)
     {
-        static if (!__traits(compiles, is(mixin(givenContextName)) ))
+        // mixin(givenContextName) only works on 2.088 and later
+
+        static if (__traits(compiles, { alias context = mixin(givenContextName); }) )
+        {
+            alias context = mixin(givenContextName);
+            enum contextName = givenContextName;
+        }
+        else
         {
             import std.format : format;
 
@@ -867,8 +874,6 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_,
             static assert(0, pattern.format(givenContextName));
         }
 
-        alias context = mixin(givenContextName);
-        enum contextName = givenContextName;
     }
     else static if (__traits(compiles, plugin))
     {
