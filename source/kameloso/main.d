@@ -221,28 +221,10 @@ void messageFiber(ref Kameloso instance)
         }
 
         /++
-           Constructs an associative array of all commands of all plugins, attaches
-           it to the payload member of the supplied [kameloso.thread.CarryingFiber], then
-           invokes it.
+           Constructs an associative array of all commands of all plugins and
+           calls the passed delegate with it as argument.
         +/
         void peekCommands(ThreadMessage.PeekCommands,
-            shared CarryingFiber!(IRCPlugin.CommandMetadata[string][string]) sFiber) scope
-        {
-            auto fiber = cast(CarryingFiber!(IRCPlugin.CommandMetadata[string][string]))sFiber;
-            assert(fiber, "Peeking Fiber was null!");
-
-            IRCPlugin.CommandMetadata[string][string] commandAA;
-
-            foreach (plugin; instance.plugins)
-            {
-                commandAA[plugin.name] = plugin.commands;
-            }
-
-            fiber.payload = commandAA;
-            fiber.call();
-        }
-
-        void peekCommandsWithDg(ThreadMessage.PeekCommands,
             shared void delegate(IRCPlugin.CommandMetadata[string][string]) dg)
         {
             IRCPlugin.CommandMetadata[string][string] commandAA;
@@ -644,7 +626,6 @@ void messageFiber(ref Kameloso instance)
                 &reloadPlugins,
                 &reloadSpecificPlugin,
                 &peekCommands,
-                &peekCommandsWithDg,
                 &changeSetting,
                 &reconnect,
                 &dispatchBusMessage,
