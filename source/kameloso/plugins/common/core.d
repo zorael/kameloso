@@ -2660,91 +2660,225 @@ struct BotCommand
 }
 
 
+// Timing
+/++
+    Declaration of what order event handler function should be given with respects
+    to other functions in the same plugin module.
+ +/
 enum Timing
 {
-    unset,
-    setup,
-    early,
-    late,
-    cleanup
+    unset,    /// Unset.
+    setup,    /// To be executed during setup; the first thing to happen.
+    early,    /// To be executed after setup but before normal event handlers.
+    late,     /// To be executed after normal event handlers.
+    cleanup,  /// To be executed last before execution moves on to the next plugin.
 }
 
 
 // IRCEventHandler
+/++
+    Aggregate to annotate event handler functions with, to control what they do
+    and how they work.
+ +/
 struct IRCEventHandler
 {
+    /++
+        Aggregate of given values, to keep them in a separate namespace from the mutators/setters.
+     +/
     static struct GivenValues
     {
+        /++
+            Array of types of [dialect.defs.IRCEvent] that the annotated event
+            handler function should accept.
+         +/
         IRCEvent.Type[] eventTypes;
 
+        /++
+            Permissions required of instigating user, below which the annotated
+            event handler function should not be triggered.
+         +/
         PermissionsRequired permissionsRequired = PermissionsRequired.ignore;
 
+        /++
+            What kind of channel the annotated event handler function may be
+            triggered in; homes or mere guest channels.
+         +/
         ChannelPolicy channelPolicy = ChannelPolicy.home;
 
+        /++
+            Array of [IRCEventHandler.Command]s the bot should pick up and listen for.
+         +/
         Command[] commands;
 
+        /++
+            Array of [IRCEventHandler.Regex]es the bot should pick up and listen for.
+         +/
         Regex[] regexes;
 
+        /++
+            Whether or not the annotated event handler function should allow other
+            functions to fire after it. If not set (default false), it will
+            terminate and move on to the next plugin after the function returns.
+         +/
         bool chainable;
 
+        /++
+            Whether or not additional information should be output to the local
+            terminal as the function is (or is not) triggered.
+         +/
         bool verbose;
 
+        /++
+            Special instruction related to the order of which event handler functions
+            within a plugin module are triggered.
+         +/
         Timing when;
     }
 
+    /++
+        The given settings this instance of [IRCEventHandler] holds.
+     +/
     GivenValues given;
 
+    /++
+        Adds an [dialect.defs.IRCEvent.Type] to the array of types that the
+        annotated event handler function should accept.
+
+        Params:
+            eventType = New [dialect.defs.IRCEvent.Type] to listen for.
+
+        Returns:
+            A `this` reference to the current struct instance.
+     +/
     auto ref onEvent(const IRCEvent.Type eventType)
     {
         this.given.eventTypes ~= eventType;
         return this;
     }
 
+    /++
+        Sets the permission level required of an instigating user before the
+        annotated event handler function is allowed to be triggered.
+
+        Params:
+            permissionsRequired = New [PermissionsRequired] permissions level.
+
+        Returns:
+            A `this` reference to the current struct instance.
+     +/
     auto ref permissionsRequired(const PermissionsRequired permissionsRequired)
     {
         this.given.permissionsRequired = permissionsRequired;
         return this;
     }
 
+    /++
+        Sets the type of channel the annotated event handler function should be
+        allowed to be triggered in.
+
+        Params:
+            channelPolicy = New [ChannelPolicy] channel policy.
+
+        Returns:
+            A `this` reference to the current struct instance.
+     +/
     auto ref channelPolicy(const ChannelPolicy channelPolicy)
     {
         this.given.channelPolicy = channelPolicy;
         return this;
     }
 
+    /++
+        Appends an [IRCEventHandler.Command] to the array of commands that the bot
+        should listen for to trigger the annotated event handler function.
+
+        Params:
+            command = New [IRCEventHandler.Command] to append to the commands array.
+
+        Returns:
+            A `this` reference to the current struct instance.
+     +/
     auto ref addCommand(const Command command)
     {
         this.given.commands ~= command;
         return this;
     }
 
+    /++
+        Appends an [IRCEventHandler.Regex] to the array of regular expressions
+        that the bot should listen for to trigger the annotated event handler function.
+
+        Params:
+            regex = New [IRCEventHandler.Regex] to append to the regex array.
+
+        Returns:
+            A `this` reference to the current struct instance.
+     +/
     auto ref addRegex(/*const*/ Regex regex)
     {
         this.given.regexes ~= regex;
         return this;
     }
 
+    /++
+        Sets whether or not the annotated function should allow other functions
+        within the same plugin module to be triggered after it. If not (default false)
+        it will signal the bot to proceed to the next plugin after this function returns.
+
+        Params:
+            chainable = Whether or not to allow further event handler functions
+                to trigger within the same module (after this one returns).
+
+        Returns:
+            A `this` reference to the current struct instance.
+     +/
     auto ref chainable(const bool chainable)
     {
         this.given.chainable = chainable;
         return this;
     }
 
+    /++
+        Sets whether or not to have the bot plumbing give verbose information about
+        what it does as it evaluates and executes the annotated function (or not).
+
+        Params:
+            verbose = Whether or not to enable verbose output.
+
+        Returns:
+            A `this` reference to the current struct instance.
+     +/
     auto ref verbose(const bool verbose)
     {
         this.given.verbose = verbose;
         return this;
     }
 
+    /++
+        Sets a [Timing], used to order the evaluation and execution of event
+        handler functions within a module, allowing the author to design subsets
+        of functions that should be run before or after others.
+
+        Params:
+            when = [Timing] setting to give an order to the annotated event handler function.
+
+        Returns:
+            A `this` reference to the current struct instance.
+     +/
     auto ref when(const Timing when)
     {
         this.given.when = when;
         return this;
     }
 
-    // Command
+    /++
+        Embodies the notion of a chat command, e.g. `!hello`.
+     +/
     static struct Command
     {
+        /++
+            Aggregate of given values, to keep them in a separate namespace from the mutators/setters.
+         +/
         static struct GivenValues
         {
             /++
@@ -2757,8 +2891,18 @@ struct IRCEventHandler
             +/
             string word;
 
+            /++
+                Describes the functionality of the event handler function the parent
+                [IRCEventHandler] annotates, and by extension, this [IRCEventHandler.Command].
+
+                Specifically this is used to describe functions triggered by
+                [IRCEventHandler.Command]s, in the help listing routine in [kameloso.plugins.chatbot].
+             +/
             string description;
 
+            /++
+                Command usage syntax help string.
+             +/
             string syntax;
 
             /++
@@ -2767,32 +2911,93 @@ struct IRCEventHandler
             bool hidden;
         }
 
+        /++
+            The given settings this instance of [IRCEventHandler.Command] holds.
+         +/
         GivenValues given;
 
+        /++
+            Sets what way this [IRCEventHandler.Command] should be expressed.
+
+            Params:
+                policy = New [PrefixPolicy] to dictate how the command word should
+                    be expressed to be picked up by the bot.
+
+            Returns:
+                A `this` reference to the current struct instance.
+         +/
         auto ref policy(const PrefixPolicy policy)
         {
             this.given.policy = policy;
             return this;
         }
 
+        /++
+            Assigns a word to trigger this [IRCEventHandler.Command].
+
+            Params:
+                word = New word string.
+
+            Returns:
+                A `this` reference to the current struct instance.
+         +/
         auto ref word(const string word)
         {
             this.given.word = word;
             return this;
         }
 
+        /++
+            Sets a description of what the event handler function the parent
+            [IRCEventHandler] annotates does, and by extension, what this
+            [IRCEventHandler.Command] does.
+
+            This is used to describe the command in help listings.
+
+            Params:
+                description = Command functionality/feature/purpose description
+                    in natural language.
+
+            Returns:
+                A `this` reference to the current struct instance.
+         +/
         auto ref description(const string description)
         {
             this.given.description = description;
             return this;
         }
 
+        /++
+            Describes the syntax with which this [IRCEventHandler.Command] should
+            be used. Some text replacement is applied, such as `$command`.
+
+            This is used to describe the command usage in help listings.
+
+            Params:
+                syntax = A brief syntax description.
+
+            Returns:
+                A `this` reference to the current struct instance.
+         +/
         auto ref syntax(const string syntax)
         {
             this.given.syntax = syntax;
             return this;
         }
 
+        /++
+            Whether or not this particular [IRCEventHandler.Command] (but not
+            necessarily that of all commands under this [IRCEventHandler]) should
+            be included in help listings.
+
+            This is used to allow for hidden command aliases.
+
+            Params:
+                syntax = A brief syntax description.
+
+            Returns:
+                A `this` reference to the current struct instance.
+         +/
         auto ref hidden(const bool hidden)
         {
             this.given.hidden = hidden;
@@ -2800,10 +3005,16 @@ struct IRCEventHandler
         }
     }
 
+    /++
+        Embodies the notion of a chat command regular expression, e.g. `![Hh]ello+`.
+     +/
     static struct Regex
     {
-        import std.regex : StdRegex = Regex, regex;
+        import std.regex : StdRegex = Regex;
 
+        /++
+            Aggregate of given values, to keep them in a separate namespace from the mutators/setters.
+         +/
         static struct GivenValues
         {
             /++
@@ -2821,6 +3032,13 @@ struct IRCEventHandler
              +/
             string expression;
 
+            /++
+                Describes the functionality of the event handler function the parent
+                [IRCEventHandler] annotates, and by extension, this [IRCEventHandler.Regex].
+
+                Specifically this is used to describe functions triggered by
+                [IRCEventHandler.Command]s, in the help listing routine in [kameloso.plugins.chatbot].
+             +/
             string description;
 
             /++
@@ -2829,27 +3047,87 @@ struct IRCEventHandler
             bool hidden;
         }
 
+        /++
+            The given settings this instance of [IRCEventHandler.Regex] holds.
+         +/
         GivenValues given;
 
+        /++
+            Sets what way this [IRCEventHandler.Command] should be expressed.
+
+            Params:
+                policy = New [PrefixPolicy] to dictate how the command word should
+                    be expressed to be picked up by the bot.
+
+            Returns:
+                A `this` reference to the current struct instance.
+         +/
         auto ref policy(const PrefixPolicy policy)
         {
             this.given.policy = policy;
             return this;
         }
 
+        /++
+            The regular expession this [IRCEventHandler.Regex] embodies, in string form.
+
+            Upon setting this a regex engine is also created.
+
+            Example:
+            ---
+            BotRegex()
+                .expression(r"(?:^|\s)MonkaS(?:$|\s)")
+                .description("Detects MonkaS.")
+            ---
+
+            Params:
+                expression = New regular expression string.
+
+            Returns:
+                A `this` reference to the current struct instance.
+         +/
         auto ref expression(const string expression)
         {
+            import std.regex : regex;
+
             this.given.expression = expression;
             this.given.engine = expression.regex;
             return this;
         }
 
+        /++
+            Sets a description of what the event handler function the parent
+            [IRCEventHandler] annotates does, and by extension, what this
+            [IRCEventHandler.Regex] does.
+
+            This is used to describe the command in help listings.
+
+            Params:
+                description = Command functionality/feature/purpose description
+                    in natural language.
+
+            Returns:
+                A `this` reference to the current struct instance.
+         +/
         auto ref description(const string description)
         {
             this.given.description = description;
             return this;
         }
 
+        /++
+            Whether or not this particular [IRCEventHandler.Regex] (but not
+            necessarily that of all regexes under this [IRCEventHandler]) should
+            be included in help listings.
+
+            This is used to allow for hidden command aliases.
+
+            Params:
+                syntax = A brief syntax description.
+
+            Returns:
+                A `this` reference to the current struct instance.
+         +/
         auto ref hidden(const bool hidden)
         {
             this.given.hidden = hidden;
