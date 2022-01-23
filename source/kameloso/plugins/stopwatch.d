@@ -44,6 +44,26 @@ import std.typecons : Flag, No, Yes;
 @BotCommand(PrefixPolicy.prefixed, "stopwatch")
 @BotCommand(PrefixPolicy.prefixed, "sw", Yes.hidden)
 @Description("Manages stopwatches.", "$command [start|stop|status]")
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(PermissionsRequired.whitelist)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .policy(PrefixPolicy.prefixed)
+            .word("stopwatch")
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .policy(PrefixPolicy.prefixed)
+            .word("sw")
+            .hidden(true)
+            .description("Manages stopwatches.")
+            .syntax("$command [start|stop|status]")
+    )
+)
 void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.irccolours : ircBold, ircColourByHash;
