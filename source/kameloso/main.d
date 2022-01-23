@@ -315,7 +315,9 @@ void messageFiber(ref Kameloso instance)
 
             version(TwitchSupport)
             {
-                immutable fast = (instance.parser.server.daemon == IRCServer.Daemon.twitch) &&
+                immutable fast =
+                    (instance.parser.server.daemon == IRCServer.Daemon.twitch) &&
+                    (m.event.type != IRCEvent.Type.QUERY) &&
                     (m.properties & Message.Property.fast);
             }
 
