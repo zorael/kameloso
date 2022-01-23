@@ -143,6 +143,7 @@ mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
         .onEvent(IRCEvent.Type.RPL_WHOISREGNICK)
         .onEvent(IRCEvent.Type.RPL_ENDOFWHOIS)
         .when(Timing.early)
+        .chainable(true)
     )
     void onMinimalAuthenticationAccountInfoTargetMixin(IRCPlugin plugin, const ref IRCEvent event)
     {
