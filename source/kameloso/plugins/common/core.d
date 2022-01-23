@@ -905,11 +905,11 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
                 NextStep rtToReturn;
 
-                /*if (result == FilterResult.pass)
+                if (result == FilterResult.pass)
                 {
                     // Drop down
                 }
-                else*/ if (result == FilterResult.whois)
+                else if (result == FilterResult.whois)
                 {
                     import kameloso.plugins.common.misc : enqueue;
                     import std.traits : fullyQualifiedName;
