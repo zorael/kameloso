@@ -1465,7 +1465,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
                         bool policyMismatch;
 
-                        if (!event.prefixPolicyMatches2!verbose
+                        if (!event.prefixPolicyMatches!verbose
                             (command._policy, state.client, state.settings.prefix))
                         {
                             static if (verbose)
@@ -1532,7 +1532,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
                         bool policyMismatch;
 
-                        if (!event.prefixPolicyMatches2!verbose
+                        if (!event.prefixPolicyMatches!verbose
                             (regex._policy, state.client, state.settings.prefix))
                         {
                             static if (verbose)
@@ -2536,7 +2536,7 @@ unittest
         `true` if the message is in a context where the event matches the
         `policy`, `false` if not.
  +/
-bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)
+bool prefixPolicyMatches(bool verbose = false)
     (ref IRCEvent event,
     const PrefixPolicy policy,
     const IRCClient client,
@@ -2645,15 +2645,6 @@ bool prefixPolicyMatches(Flag!"verbose" verbose = No.verbose)
     return true;
 }
 
-
-bool prefixPolicyMatches2(bool verbose = false)
-    (ref IRCEvent event,
-    const PrefixPolicy policy,
-    const IRCClient client,
-    const string prefix)
-{
-    return prefixPolicyMatches!(cast(Flag!"verbose")verbose)(event, policy, client, prefix);
-}
 
 // filterSender
 /++
