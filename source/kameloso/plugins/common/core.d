@@ -2737,7 +2737,7 @@ struct IRCEventHandler
             Permissions required of instigating user, below which the annotated
             event handler function should not be triggered.
          +/
-        Permissions permissionsRequired = Permissions.ignore;
+        Permissions permissionsRequired = Permissions.anyone;
 
         // channelPolicy
         /++
