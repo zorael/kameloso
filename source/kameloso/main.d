@@ -242,6 +242,19 @@ void messageFiber(ref Kameloso instance)
             fiber.call();
         }
 
+        void peekCommandsWithDg(ThreadMessage.PeekCommands,
+            shared void delegate(IRCPlugin.CommandMetadata[string][string]) dg)
+        {
+            IRCPlugin.CommandMetadata[string][string] commandAA;
+
+            foreach (plugin; instance.plugins)
+            {
+                commandAA[plugin.name] = plugin.commands;
+            }
+
+            dg(commandAA);
+        }
+
         /++
             Applies a `plugin.setting=value` change in setting to whichever plugin
             matches the expression.
@@ -631,6 +644,7 @@ void messageFiber(ref Kameloso instance)
                 &reloadPlugins,
                 &reloadSpecificPlugin,
                 &peekCommands,
+                &peekCommandsWithDg,
                 &changeSetting,
                 &reconnect,
                 &dispatchBusMessage,
