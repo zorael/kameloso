@@ -1238,13 +1238,183 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         import std.meta : Filter, templateNot, templateOr;
         import std.traits : isSomeFunction, fullyQualifiedName, getUDAs, hasUDA;
 
-        enum isSetupFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.setup);
-        enum isEarlyFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.early);
-        enum isLateFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.late);
-        enum isCleanupFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.cleanup);
-        alias hasSpecialTiming = templateOr!(isSetupFun, isEarlyFun,
-            isLateFun, isCleanupFun);
-        alias isNormalEventHandler = templateNot!hasSpecialTiming;
+        bool udaSanityCheck(alias fun)()
+        {
+            alias handlerAnnotations = getUDAs!(fun, IRCEventHandler);
+
+            static if (handlerAnnotations.length > 1)
+            {
+                import std.format;
+
+                enum pattern = "`%s` is annotated with more than one `IRCEventHandler`";
+                static assert(0, pattern.format(fullyQualifiedName!fun));
+            }
+
+            static immutable uda = handlerAnnotations[0];
+
+            static foreach (immutable eventType; uda._eventTypes)
+            {{
+                static if (eventType == IRCEvent.Type.UNSET)
+                {
+                    import std.format : format;
+
+                    enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
+                        "`@(IRCEvent.Type.UNSET)`, which is not a valid event type.";
+                    static assert(0, pattern.format(fullyQualifiedName!fun));
+                }
+                else static if (eventType == IRCEvent.Type.PRIVMSG)
+                {
+                    import std.format : format;
+
+                    enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
+                        "`@(IRCEvent.Type.PRIVMSG)`, which is not a valid event type. " ~
+                        "Use `IRCEvent.Type.CHAN` and/or `IRCEvent.Type.QUERY` instead";
+                    static assert(0, pattern.format(fullyQualifiedName!fun));
+                }
+                else static if (eventType == IRCEvent.Type.WHISPER)
+                {
+                    import std.format : format;
+
+                    enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
+                        "`@(IRCEvent.Type.PRIVMSG)`, which is not a valid event type. " ~
+                        "Use `IRCEvent.Type.QUERY` instead";
+                    static assert(0, pattern.format(fullyQualifiedName!fun));
+                }
+
+                static if (uda._commands.length || uda._regexes.length)
+                {
+                    alias U = eventType;
+
+                    static if (
+                        (U != IRCEvent.Type.CHAN) &&
+                        (U != IRCEvent.Type.QUERY) &&
+                        (U != IRCEvent.Type.SELFCHAN) &&
+                        (U != IRCEvent.Type.SELFQUERY))
+                    {
+                        import lu.conv : Enum;
+                        import std.format : format;
+
+                        enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
+                            "listening for a `Command` and/or `Regex`, but is at the " ~
+                            "same time accepting non-message `IRCEvent.Type.%s events`";
+                        static assert(0, pattern.format(fullyQualifiedName!fun,
+                            Enum!(IRCEvent.Type).toString(U)));
+                    }
+                }
+
+                static if (uda._commands.length)
+                {
+                    import lu.string : contains;
+
+                    static foreach (immutable command; uda._commands)
+                    {
+                        static if (!command._word.length)
+                        {
+                            import std.format : format;
+
+                            enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
+                                "listening for a `Command` with an empty trigger word";
+                            static assert(0, pattern.format(fullyQualifiedName!fun));
+                        }
+                        else static if (command._word.contains(' '))
+                        {
+                            import std.format : format;
+
+                            enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
+                                "listening for a `Command` whose trigger " ~
+                                `word "%s" contains a space character`;
+                            static assert(0, pattern.format(fullyQualifiedName!fun, command._word));
+                        }
+                    }
+                }
+
+                static if (uda._regexes.length)
+                {
+                    static foreach (immutable regex; uda._regexes)
+                    {
+                        static if (!regex._expression.length)
+                        {
+                            import std.format : format;
+
+                            enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
+                                "listening for a `Regex` with an empty expression";
+                            static assert(0, pattern.format(fullyQualifiedName!fun));
+                        }
+                    }
+                }
+            }}
+
+            return true;
+        }
+
+        void call(alias fun)(ref IRCEvent event)
+        {
+            import std.meta : AliasSeq, staticMap;
+            import std.traits : Parameters, Unqual, arity;
+
+            alias Params = staticMap!(Unqual, Parameters!fun);
+
+            static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
+                is(Params : AliasSeq!(IRCPlugin, IRCEvent)))
+            {
+                static if (!is(Parameters!fun[1] == const))
+                {
+                    import std.traits : ParameterStorageClass, ParameterStorageClassTuple;
+
+                    alias SC = ParameterStorageClass;
+                    alias paramClasses = ParameterStorageClassTuple!fun;
+
+                    static if ((paramClasses[1] & SC.ref_) ||
+                        (paramClasses[1] & SC.out_))
+                    {
+                        import std.format : format;
+
+                        enum pattern = "`%s` takes an `IRCEvent` of an unsupported storage class; " ~
+                            "may not be mutable `ref` or `out`";
+                        static assert(0, pattern.format(fullyQualifiedName!fun));
+                    }
+                }
+
+                fun(this, event);
+            }
+            else static if (is(Params : AliasSeq!(typeof(this))) ||
+                is(Params : AliasSeq!IRCPlugin))
+            {
+                fun(this);
+            }
+            else static if (is(Params : AliasSeq!IRCEvent))
+            {
+                static if (!is(Parameters!fun[0] == const))
+                {
+                    import std.traits : ParameterStorageClass, ParameterStorageClassTuple;
+
+                    alias SC = ParameterStorageClass;
+                    alias paramClasses = ParameterStorageClassTuple!fun;
+
+                    static if ((paramClasses[0] & SC.ref_) ||
+                        (paramClasses[0] & SC.out_))
+                    {
+                        import std.format : format;
+
+                        enum pattern = "`%s` takes an `IRCEvent` of an unsupported storage class; " ~
+                            "may not be mutable `ref` or `out`";
+                        static assert(0, pattern.format(fullyQualifiedName!fun));
+                    }
+                }
+
+                fun(event);
+            }
+            else static if (arity!fun == 0)
+            {
+                fun();
+            }
+            else
+            {
+                import std.format : format;
+                static assert(0, "`%s` has an unsupported function signature: `%s`"
+                    .format(fullyQualifiedName!fun, typeof(fun).stringof));
+            }
+        }
 
         enum NextStep
         {
@@ -1261,17 +1431,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         {
             import std.algorithm.searching : canFind;
 
-            alias handlerAnnotations = getUDAs!(fun, IRCEventHandler);
-
-            static if (handlerAnnotations.length > 1)
-            {
-                import std.format;
-
-                enum pattern = "`%s` is annotated with more than one `IRCEventHandler`";
-                static assert(0, pattern.format(fullyQualifiedName!fun));
-            }
-
-            static immutable uda = handlerAnnotations[0];
+            static immutable uda = getUDAs!(fun, IRCEventHandler)[0];
 
             enum verbose = (uda._verbose || debug_);
 
@@ -1281,7 +1441,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 import std.format : format;
                 import std.stdio : writeln, writefln;
 
-                enum name = "[%s] %s".format(__traits(identifier, thisModule),
+                enum funID = "[%s] %s".format(__traits(identifier, thisModule),
                     __traits(identifier, fun));
             }
 
@@ -1290,115 +1450,9 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 if (!uda._eventTypes.canFind(event.type)) return NextStep.continue_;
             }
 
-            bool break_;
-
-            static foreach (immutable eventType; uda._eventTypes)
-            {{
-                if (!break_)
-                {
-                    static if (eventType == IRCEvent.Type.UNSET)
-                    {
-                        import std.format : format;
-
-                        enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
-                            "`@(IRCEvent.Type.UNSET)`, which is not a valid event type.";
-                        static assert(0, pattern.format(fullyQualifiedName!fun));
-                    }
-                    else static if (eventType == IRCEvent.Type.PRIVMSG)
-                    {
-                        import std.format : format;
-
-                        enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
-                            "`@(IRCEvent.Type.PRIVMSG)`, which is not a valid event type. " ~
-                            "Use `IRCEvent.Type.CHAN` and/or `IRCEvent.Type.QUERY` instead";
-                        static assert(0, pattern.format(fullyQualifiedName!fun));
-                    }
-                    else static if (eventType == IRCEvent.Type.WHISPER)
-                    {
-                        import std.format : format;
-
-                        enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
-                            "`@(IRCEvent.Type.PRIVMSG)`, which is not a valid event type. " ~
-                            "Use `IRCEvent.Type.QUERY` instead";
-                        static assert(0, pattern.format(fullyQualifiedName!fun));
-                    }
-                    else static if (eventType == IRCEvent.Type.ANY)
-                    {
-                        // Let pass
-                        break_ = true;
-                    }
-                    else
-                    {
-                        static if (uda._commands.length || uda._regexes.length)
-                        {
-                            alias U = eventType;
-
-                            static if (
-                                (U != IRCEvent.Type.CHAN) &&
-                                (U != IRCEvent.Type.QUERY) &&
-                                (U != IRCEvent.Type.SELFCHAN) &&
-                                (U != IRCEvent.Type.SELFQUERY))
-                            {
-                                import lu.conv : Enum;
-                                import std.format : format;
-
-                                enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
-                                    "listening for a `Command` and/or `Regex`, but is at the " ~
-                                    "same time accepting non-message `IRCEvent.Type.%s events`";
-                                static assert(0, pattern.format(fullyQualifiedName!fun,
-                                    Enum!(IRCEvent.Type).toString(U)));
-                            }
-
-                            static if (uda._commands.length)
-                            {
-                                import lu.string : contains;
-
-                                static foreach (immutable command; uda._commands)
-                                {
-                                    static if (!command._word.length)
-                                    {
-                                        import std.format : format;
-
-                                        enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
-                                            "listening for a `Command` with an empty trigger word";
-                                        static assert(0, pattern.format(fullyQualifiedName!fun));
-                                    }
-                                    else static if (command._word.contains(' '))
-                                    {
-                                        import std.format : format;
-
-                                        enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
-                                            "listening for a `Command` whose trigger " ~
-                                            `word "%s" contains a space character`;
-                                        static assert(0, pattern.format(fullyQualifiedName!fun, command._word));
-                                    }
-                                }
-                            }
-
-                            static if (uda._regexes.length)
-                            {
-                                static foreach (immutable regex; uda._regexes)
-                                {
-                                    static if (!regex._expression.length)
-                                    {
-                                        import std.format : format;
-
-                                        enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
-                                            "listening for a `Regex` with an empty expression";
-                                        static assert(0, pattern.format(fullyQualifiedName!fun));
-                                    }
-                                }
-                            }
-                        }
-
-                        break_ = (eventType == event.type);
-                    }
-                }
-            }}
-
             static if (verbose)
             {
-                writeln("-- ", name, " @ ", Enum!(IRCEvent.Type).toString(event.type));
+                writeln("-- ", funID, " @ ", Enum!(IRCEvent.Type).toString(event.type));
                 writeln("   ...", Enum!ChannelPolicy.toString(uda._channelPolicy));
             }
 
@@ -1433,7 +1487,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 }
             }
 
-            static if (uda._commands.length /*|| uda._regexes.length*/)
+            static if (uda._commands.length || uda._regexes.length)
             {
                 import lu.string : strippedLeft;
 
@@ -1663,7 +1717,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                     {
                         this.enqueue(event, uda._permissionsRequired, &fun, fullyQualifiedName!fun);
 
-                        static if (uda._chainable || uda._isAwareness)
+                        static if (uda._chainable)
                         {
                             rtToReturn = NextStep.continue_;
                         }
@@ -1677,7 +1731,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                     {
                         this.enqueue(this, event, uda._permissionsRequired, &fun, fullyQualifiedName!fun);
 
-                        static if (uda._chainable || uda._isAwareness)
+                        static if (uda._chainable)
                         {
                             rtToReturn = NextStep.continue_;
                         }
@@ -1695,7 +1749,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 }
                 else if (result == FilterResult.fail)
                 {
-                    static if (uda._chainable || uda._isAwareness)
+                    static if (uda._chainable)
                     {
                         rtToReturn = NextStep.continue_;
                     }
@@ -1713,75 +1767,14 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 if (rtToReturn != NextStep.unset) return rtToReturn;
             }
 
-            alias Params = staticMap!(Unqual, Parameters!fun);
-
             static if (verbose)
             {
                 writeln("   ...calling!");
             }
 
-            static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
-                is(Params : AliasSeq!(IRCPlugin, IRCEvent)))
-            {
-                static if (!is(Parameters!fun[1] == const))
-                {
-                    import std.traits : ParameterStorageClass, ParameterStorageClassTuple;
+            call!fun(event);
 
-                    alias SC = ParameterStorageClass;
-                    alias paramClasses = ParameterStorageClassTuple!fun;
-
-                    static if ((paramClasses[1] & SC.ref_) ||
-                        (paramClasses[1] & SC.out_))
-                    {
-                        import std.format : format;
-
-                        enum pattern = "`%s` takes an `IRCEvent` of an unsupported storage class; " ~
-                            "may not be mutable `ref` or `out`";
-                        static assert(0, pattern.format(fullyQualifiedName!fun));
-                    }
-                }
-
-                fun(this, event);
-            }
-            else static if (is(Params : AliasSeq!(typeof(this))) ||
-                is(Params : AliasSeq!IRCPlugin))
-            {
-                fun(this);
-            }
-            else static if (is(Params : AliasSeq!IRCEvent))
-            {
-                static if (!is(Parameters!fun[0] == const))
-                {
-                    import std.traits : ParameterStorageClass, ParameterStorageClassTuple;
-
-                    alias SC = ParameterStorageClass;
-                    alias paramClasses = ParameterStorageClassTuple!fun;
-
-                    static if ((paramClasses[0] & SC.ref_) ||
-                        (paramClasses[0] & SC.out_))
-                    {
-                        import std.format : format;
-
-                        enum pattern = "`%s` takes an `IRCEvent` of an unsupported storage class; " ~
-                            "may not be mutable `ref` or `out`";
-                        static assert(0, pattern.format(fullyQualifiedName!fun));
-                    }
-                }
-
-                fun(event);
-            }
-            else static if (arity!fun == 0)
-            {
-                fun();
-            }
-            else
-            {
-                import std.format : format;
-                static assert(0, "`%s` has an unsupported function signature: `%s`"
-                    .format(fullyQualifiedName!fun, typeof(fun).stringof));
-            }
-
-            static if (uda._chainable || uda._isAwareness)
+            static if (uda._chainable)
             {
                 // onEvent found an event and triggered a function, but
                 // it's Chainable and there may be more, so keep looking.
@@ -1796,14 +1789,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 return NextStep.return_;
             }
         }
-
-        alias funs = Filter!(isSomeFunction, getSymbolsByUDA!(thisModule, IRCEventHandler));
-
-        alias setupFuns = Filter!(isSetupFun, funs);
-        alias earlyFuns = Filter!(isEarlyFun, funs);
-        alias lateFuns = Filter!(isLateFun, funs);
-        alias cleanupFuns = Filter!(isCleanupFun, funs);
-        alias pluginFuns = Filter!(isNormalEventHandler, funs);
 
         /// Sanitise and try again once on UTF/Unicode exceptions
         static void sanitizeEvent(ref IRCEvent event)
@@ -1839,6 +1824,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         {
             foreach (fun; funlist)
             {
+                static assert(udaSanityCheck!fun);
+
                 try
                 {
                     immutable next = process!fun(event);
@@ -1914,6 +1901,21 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 }
             }
         }
+
+        enum isSetupFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.setup);
+        enum isEarlyFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.early);
+        enum isLateFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.late);
+        enum isCleanupFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.cleanup);
+        alias hasSpecialTiming = templateOr!(isSetupFun, isEarlyFun,
+            isLateFun, isCleanupFun);
+        alias isNormalEventHandler = templateNot!hasSpecialTiming;
+
+        alias funs = Filter!(isSomeFunction, getSymbolsByUDA!(thisModule, IRCEventHandler));
+        alias setupFuns = Filter!(isSetupFun, funs);
+        alias earlyFuns = Filter!(isEarlyFun, funs);
+        alias lateFuns = Filter!(isLateFun, funs);
+        alias cleanupFuns = Filter!(isCleanupFun, funs);
+        alias pluginFuns = Filter!(isNormalEventHandler, funs);
 
         tryProcess!setupFuns(origEvent);
         tryProcess!earlyFuns(origEvent);
