@@ -463,6 +463,32 @@ else
 @(IRCEvent.Type.TWITCH_TIMEOUT)
 @(PermissionsRequired.ignore)
 @omniscientChannelPolicy
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .onEvent(IRCEvent.Type.EMOTE)
+    .onEvent(IRCEvent.Type.JOIN)
+    .onEvent(IRCEvent.Type.PART)
+    .onEvent(IRCEvent.Type.MODE)
+    .onEvent(IRCEvent.Type.TWITCH_TIMEOUT)
+    .onEvent(IRCEvent.Type.TWITCH_BAN)
+    .onEvent(IRCEvent.Type.TWITCH_BULKGIFT)
+    .onEvent(IRCEvent.Type.TWITCH_CHARITY)
+    .onEvent(IRCEvent.Type.TWITCH_EXTENDSUB)
+    .onEvent(IRCEvent.Type.TWITCH_GIFTCHAIN)
+    .onEvent(IRCEvent.Type.TWITCH_GIFTRECEIVED)
+    .onEvent(IRCEvent.Type.TWITCH_PAYFORWARD)
+    .onEvent(IRCEvent.Type.TWITCH_REWARDGIFT)
+    .onEvent(IRCEvent.Type.TWITCH_RITUAL)
+    .onEvent(IRCEvent.Type.TWITCH_SUB)
+    .onEvent(IRCEvent.Type.TWITCH_SUBGIFT)
+    .onEvent(IRCEvent.Type.TWITCH_SUBUPGRADE)
+    .onEvent(IRCEvent.Type.TWITCH_TIMEOUT)
+    .permissionsRequired(PermissionsRequired.ignore)
+    .channelPolicy(omniscientChannelPolicy)
+    .chainable(true)
+)
 void onSomeAction(SeenPlugin plugin, const ref IRCEvent event)
 {
     /+
@@ -503,6 +529,10 @@ void onSomeAction(SeenPlugin plugin, const ref IRCEvent event)
     Do nothing if an entry was not found.
  +/
 @(IRCEvent.Type.QUIT)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.QUIT)
+)
 void onQuit(SeenPlugin plugin, const ref IRCEvent event)
 {
     auto seenTimestamp = event.sender.nickname in plugin.seenUsers;
@@ -524,6 +554,12 @@ void onQuit(SeenPlugin plugin, const ref IRCEvent event)
 @Chainable
 @(IRCEvent.Type.NICK)
 @(PermissionsRequired.ignore)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.NICK)
+    .permissionsRequired(PermissionsRequired.ignore)
+    .chainable(true)
+)
 void onNick(SeenPlugin plugin, const ref IRCEvent event)
 {
     auto seenTimestamp = event.sender.nickname in plugin.seenUsers;
@@ -548,6 +584,11 @@ void onNick(SeenPlugin plugin, const ref IRCEvent event)
  +/
 @(IRCEvent.Type.RPL_WHOREPLY)
 @omniscientChannelPolicy
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WHOREPLY)
+    .channelPolicy(omniscientChannelPolicy)
+)
 void onWHOReply(SeenPlugin plugin, const ref IRCEvent event)
 {
     // Update the user's entry
@@ -567,6 +608,11 @@ void onWHOReply(SeenPlugin plugin, const ref IRCEvent event)
  +/
 @(IRCEvent.Type.RPL_NAMREPLY)
 @omniscientChannelPolicy
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_NAMREPLY)
+    .channelPolicy(omniscientChannelPolicy)
+)
 void onNamesReply(SeenPlugin plugin, const ref IRCEvent event)
 {
     import std.algorithm.iteration : splitter;
@@ -600,6 +646,12 @@ void onNamesReply(SeenPlugin plugin, const ref IRCEvent event)
 @(IRCEvent.Type.RPL_ENDOFNAMES)
 @(IRCEvent.Type.RPL_ENDOFWHO)
 @omniscientChannelPolicy
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_ENDOFNAMES)
+    .onEvent(IRCEvent.Type.RPL_ENDOFWHO)
+    .channelPolicy(omniscientChannelPolicy)
+)
 void onEndOfList(SeenPlugin plugin)
 {
     plugin.seenUsers = plugin.seenUsers.rehash();
@@ -661,6 +713,21 @@ void onEndOfList(SeenPlugin plugin)
 @omniscientChannelPolicy
 @BotCommand(PrefixPolicy.prefixed, "seen")
 @Description("Queries the bot when it last saw a specified nickname online.", "$command [nickname]")
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(PermissionsRequired.anyone)
+    .channelPolicy(omniscientChannelPolicy)
+    .addCommand(
+        IRCEventHandler.Command()
+            .policy(PrefixPolicy.prefixed)
+            .word("seen")
+            .description("Queries the bot when it last saw a specified nickname online.")
+            .syntax("$command [nickname]")
+    )
+)
 void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.common : timeSince;
@@ -930,6 +997,10 @@ in (filename.length, "Tried to save seen users to an empty filename")
     of an unexpected shutdown.
  +/
 @(IRCEvent.Type.RPL_WELCOME)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WELCOME)
+)
 void onWelcome(SeenPlugin plugin)
 {
     import kameloso.plugins.common.delayawait : await, delay;
