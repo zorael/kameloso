@@ -140,6 +140,12 @@ public:
 @Chainable
 @(IRCEvent.Type.ANY)
 @(ChannelPolicy.any)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.ANY)
+    .channelPolicy(ChannelPolicy.any)
+    .chainable(true)
+)
 void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 {
     if (!plugin.printerSettings.printToScreen) return;
@@ -444,6 +450,12 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 @Chainable
 @(ChannelPolicy.any)
 @(IRCEvent.Type.ANY)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.ANY)
+    .channelPolicy(ChannelPolicy.any)
+    .chainable(true)
+)
 void onLoggableEvent(PrinterPlugin plugin, const ref IRCEvent event)
 {
     return onLoggableEventImpl(plugin, event);
@@ -463,6 +475,10 @@ void onLoggableEvent(PrinterPlugin plugin, const ref IRCEvent event)
         [kameloso.plugins.printer.logging.commitLog]
  +/
 @(IRCEvent.Type.PING)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.PING)
+)
 void commitAllLogs(PrinterPlugin plugin)
 {
     return commitAllLogsImpl(plugin);
@@ -478,6 +494,10 @@ void commitAllLogs(PrinterPlugin plugin)
     across several events.)
  +/
 @(IRCEvent.Type.RPL_ISUPPORT)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_ISUPPORT)
+)
 void onISUPPORT(PrinterPlugin plugin)
 {
     import kameloso.common : Tint, logger;
