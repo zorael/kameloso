@@ -345,6 +345,10 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
     Additionally from the nickname-channel cache.
  +/
 @(IRCEvent.Type.QUIT)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.QUIT)
+)
 void onQuit(PersistenceService service, const ref IRCEvent event)
 {
     if (service.state.settings.preferHostmasks)
@@ -367,6 +371,12 @@ void onQuit(PersistenceService service, const ref IRCEvent event)
 @(Awareness.cleanup)
 @(IRCEvent.Type.NICK)
 @(IRCEvent.Type.SELFNICK)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.NICK)
+    .onEvent(IRCEvent.Type.SELFNICK)
+    .when(Timing.cleanup)
+)
 void onNick(PersistenceService service, const ref IRCEvent event)
 {
     // onQuit already doees everything this function wants to do.
@@ -383,6 +393,10 @@ void onNick(PersistenceService service, const ref IRCEvent event)
     in so we have to reinvent it.
  +/
 @(IRCEvent.Type.RPL_WELCOME)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WELCOME)
+)
 void onWelcome(PersistenceService service)
 {
     import kameloso.plugins.common.delayawait : delay;
