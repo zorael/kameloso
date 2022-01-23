@@ -46,6 +46,14 @@ import dialect.defs;
 @(IRCEvent.Type.SELFCHAN)
 @(PermissionsRequired.ignore)
 @(ChannelPolicy.home)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(PermissionsRequired.ignore)
+    .channelPolicy(ChannelPolicy.home)
+    .chainable(true)
+)
 void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : beginsWith, contains, nom;
@@ -93,6 +101,20 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "oneliner")
 @Description("Adds or removes a oneliner command.", "$command [add|del|list] [text]")
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(PermissionsRequired.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .policy(PrefixPolicy.prefixed)
+            .word("oneliner")
+            .description("Adds or removes a oneliner command.")
+            .syntax("$command [add|del|list] [text]")
+    )
+)
 void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : contains, nom;
@@ -179,6 +201,19 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "commands")
 @Description("Lists all available oneliners.")
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(PermissionsRequired.ignore)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .policy(PrefixPolicy.prefixed)
+            .word("commands")
+            .description("Lists all available oneliners.")
+    )
+)
 void onCommandCommands(OnelinersPlugin plugin, const ref IRCEvent event)
 {
     return plugin.listCommands(event.channel);
@@ -216,6 +251,10 @@ void listCommands(OnelinersPlugin plugin, const string channelName)
     Populate the oneliners array after we have successfully logged onto the server.
  +/
 @(IRCEvent.Type.RPL_WELCOME)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WELCOME)
+)
 void onWelcome(OnelinersPlugin plugin)
 {
     import lu.json : JSONStorage, populateFromJSON;
