@@ -40,6 +40,19 @@ import std.typecons : Flag, No, Yes;
 @(IRCEvent.Type.CTCP_DCC)
 @(IRCEvent.Type.CTCP_AVATAR)
 @(IRCEvent.Type.CTCP_LAG)
+// FIXME
+@(IRCEventHandler()
+    //.onEvent(IRCEvent.Type.CTCP_SLOTS)  // We don't really need to handle those
+    .onEvent(IRCEvent.Type.CTCP_VERSION)
+    .onEvent(IRCEvent.Type.CTCP_FINGER)
+    .onEvent(IRCEvent.Type.CTCP_SOURCE)
+    .onEvent(IRCEvent.Type.CTCP_PING)
+    .onEvent(IRCEvent.Type.CTCP_TIME)
+    .onEvent(IRCEvent.Type.CTCP_USERINFO)
+    .onEvent(IRCEvent.Type.CTCP_DCC)
+    .onEvent(IRCEvent.Type.CTCP_AVATAR)
+    .onEvent(IRCEvent.Type.CTCP_LAG)
+)
 void onCTCPs(CTCPService service, const ref IRCEvent event)
 {
     import kameloso.constants : KamelosoInfo;
@@ -237,6 +250,10 @@ unittest
     new such types `CTCP_SOMETHING`, this list will always be correct.
  +/
 @(IRCEvent.Type.CTCP_CLIENTINFO)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CTCP_CLIENTINFO)
+)
 void onCTCPClientinfo(CTCPService service, const ref IRCEvent event)
 {
     import dialect.common : IRCControlCharacter;
