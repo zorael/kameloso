@@ -1285,7 +1285,10 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                     __traits(identifier, fun));
             }
 
-            if (!uda._eventTypes.canFind(event.type)) return NextStep.continue_;
+            static if (!uda._eventTypes.canFind(IRCEvent.Type.ANY))
+            {
+                if (!uda._eventTypes.canFind(event.type)) return NextStep.continue_;
+            }
 
             bool break_;
 
