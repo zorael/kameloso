@@ -3060,7 +3060,7 @@ struct IRCEventHandler
             This is used to allow for hidden command aliases.
 
             Params:
-                syntax = A brief syntax description.
+                hidden = Whether or not to mark this command as hidden.
 
             Returns:
                 A `this` reference to the current struct instance.
@@ -3202,7 +3202,7 @@ struct IRCEventHandler
             This is used to allow for hidden command aliases.
 
             Params:
-                syntax = A brief syntax description.
+                hidden = Whether or not to mark this Regex as hidden.
 
             Returns:
                 A `this` reference to the current struct instance.
