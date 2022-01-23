@@ -66,6 +66,10 @@ enum ChannelState : ubyte
     and if one we inhabit hasn't been queried, queries it.
  +/
 @(IRCEvent.Type.PING)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.PING)
+)
 void startChannelQueries(ChanQueriesService service)
 {
     import core.thread : Fiber;
@@ -362,6 +366,11 @@ void startChannelQueries(ChanQueriesService service)
  +/
 @(IRCEvent.Type.SELFJOIN)
 @omniscientChannelPolicy
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.SELFJOIN)
+    .channelPolicy(omniscientChannelPolicy)
+)
 void onSelfjoin(ChanQueriesService service, const ref IRCEvent event)
 {
     service.channelStates[event.channel] = ChannelState.unset;
@@ -376,6 +385,12 @@ void onSelfjoin(ChanQueriesService service, const ref IRCEvent event)
 @(IRCEvent.Type.SELFPART)
 @(IRCEvent.Type.SELFKICK)
 @omniscientChannelPolicy
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.SELFPART)
+    .onEvent(IRCEvent.Type.SELFKICK)
+    .channelPolicy(omniscientChannelPolicy)
+)
 void onSelfpart(ChanQueriesService service, const ref IRCEvent event)
 {
     service.channelStates.remove(event.channel);
@@ -390,6 +405,11 @@ void onSelfpart(ChanQueriesService service, const ref IRCEvent event)
  +/
 @(IRCEvent.Type.RPL_TOPIC)
 @omniscientChannelPolicy
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_TOPIC)
+    .channelPolicy(omniscientChannelPolicy)
+)
 void onTopic(ChanQueriesService service, const ref IRCEvent event)
 {
     service.channelStates[event.channel] |= ChannelState.topicKnown;
@@ -404,6 +424,11 @@ void onTopic(ChanQueriesService service, const ref IRCEvent event)
  +/
 @(IRCEvent.Type.RPL_ENDOFNAMES)
 @omniscientChannelPolicy
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_ENDOFNAMES)
+    .channelPolicy(omniscientChannelPolicy)
+)
 void onEndOfNames(ChanQueriesService service)
 {
     if (!service.querying && service.queriedAtLeastOnce)
@@ -418,6 +443,10 @@ void onEndOfNames(ChanQueriesService service)
     After successful connection, start a delayed channel query on all channels.
  +/
 @(IRCEvent.Type.RPL_MYINFO)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_MYINFO)
+)
 void onMyInfo(ChanQueriesService service)
 {
     import kameloso.thread : CarryingFiber;
