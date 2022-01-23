@@ -30,17 +30,6 @@ import std.typecons : Flag, No, Yes;
     instead of having five different functions each dealing with one.
     Either design works; both end up with a switch.
  +/
-//@(IRCEvent.Type.CTCP_SLOTS)  // We don't really need to handle those
-@(IRCEvent.Type.CTCP_VERSION)
-@(IRCEvent.Type.CTCP_FINGER)
-@(IRCEvent.Type.CTCP_SOURCE)
-@(IRCEvent.Type.CTCP_PING)
-@(IRCEvent.Type.CTCP_TIME)
-@(IRCEvent.Type.CTCP_USERINFO)
-@(IRCEvent.Type.CTCP_DCC)
-@(IRCEvent.Type.CTCP_AVATAR)
-@(IRCEvent.Type.CTCP_LAG)
-// FIXME
 @(IRCEventHandler()
     //.onEvent(IRCEvent.Type.CTCP_SLOTS)  // We don't really need to handle those
     .onEvent(IRCEvent.Type.CTCP_VERSION)
@@ -249,8 +238,6 @@ unittest
     that begin with `CTCP_`, at compile-time. As such, as long as we name any
     new such types `CTCP_SOMETHING`, this list will always be correct.
  +/
-@(IRCEvent.Type.CTCP_CLIENTINFO)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CTCP_CLIENTINFO)
 )

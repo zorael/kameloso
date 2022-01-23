@@ -100,12 +100,6 @@ void initResources(AutomodePlugin plugin)
     manual checks to see if the user is in a home channel we're in. Otherwise
     there's nothing for the bot to do.
  +/
-@(IRCEvent.Type.ACCOUNT)
-@(IRCEvent.Type.RPL_WHOISACCOUNT)
-@(IRCEvent.Type.RPL_WHOISREGNICK)
-@(IRCEvent.Type.RPL_WHOISUSER)
-@(PermissionsRequired.ignore)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ACCOUNT)
     .onEvent(IRCEvent.Type.RPL_WHOISACCOUNT)
@@ -171,10 +165,6 @@ void onAccountInfo(AutomodePlugin plugin, const ref IRCEvent event)
     apply, so there's little sense in doing it here as well. Just pass the
     arguments and let it look things up.
  +/
-@(IRCEvent.Type.JOIN)
-@(PermissionsRequired.anyone)
-@(ChannelPolicy.home)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.JOIN)
     .permissionsRequired(PermissionsRequired.anyone)
@@ -285,21 +275,14 @@ unittest
     Lists current automodes for a user in the current channel, clears them,
     or adds new ones depending on the verb passed.
  +/
-@(IRCEvent.Type.CHAN)
-@(PermissionsRequired.operator)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "automode")
-@Description("Adds, lists or removes automode definitions for the current channel.",
-    "$command [add|list|clear] [account/nickname] [mode]")
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .permissionsRequired(PermissionsRequired.operator)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
             .word("automode")
+            .policy(PrefixPolicy.prefixed)
             .description("Adds, lists or removes automode definitions for the current channel.")
             .syntax("$command [add|list|clear] [account/nickname] [mode]")
     )
@@ -475,20 +458,14 @@ in ((!add || mode.length), "Tried to add an empty automode")
 /++
     Triggers a WHOIS of the user invoking it with bot commands.
  +/
-@(IRCEvent.Type.CHAN)
-@(PermissionsRequired.ignore)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "op")
-@Description("Forces the bot to attempt to apply automodes.")
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .permissionsRequired(PermissionsRequired.ignore)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
             .word("op")
+            .policy(PrefixPolicy.prefixed)
             .description("Forces the bot to attempt to apply automodes.")
     )
 )
@@ -510,8 +487,6 @@ void onCommandOp(AutomodePlugin plugin, const ref IRCEvent event)
 /++
     Populate automodes array after we have successfully logged onto the server.
  +/
-@(IRCEvent.Type.RPL_WELCOME)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
 )
@@ -531,9 +506,6 @@ void onMyInfo(AutomodePlugin plugin)
 /++
     Applies automodes in a channel upon being given operator privileges.
  +/
-@(IRCEvent.Type.MODE)
-@(ChannelPolicy.home)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.MODE)
     .channelPolicy(ChannelPolicy.home)

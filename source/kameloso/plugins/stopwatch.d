@@ -37,14 +37,6 @@ import std.typecons : Flag, No, Yes;
 /++
     Manages stopwatches.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.whitelist)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "stopwatch")
-@BotCommand(PrefixPolicy.prefixed, "sw", Yes.hidden)
-@Description("Manages stopwatches.", "$command [start|stop|status]")
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.SELFCHAN)
@@ -52,16 +44,16 @@ import std.typecons : Flag, No, Yes;
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
             .word("stopwatch")
+            .policy(PrefixPolicy.prefixed)
+            .description("Manages stopwatches.")
+            .syntax("$command [start|stop|status]")
     )
     .addCommand(
         IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
             .word("sw")
+            .policy(PrefixPolicy.prefixed)
             .hidden(true)
-            .description("Manages stopwatches.")
-            .syntax("$command [start|stop|status]")
     )
 )
 void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)

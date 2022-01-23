@@ -8,8 +8,6 @@ import dialect.defs;
 
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .permissionsRequired(PermissionsRequired.ignore)
-    .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
             .word("hello")

@@ -344,8 +344,6 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
 
     Additionally from the nickname-channel cache.
  +/
-@(IRCEvent.Type.QUIT)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.QUIT)
 )
@@ -368,10 +366,6 @@ void onQuit(PersistenceService service, const ref IRCEvent event)
 
     Annotated [kameloso.plugins.common.awareness.Awareness.cleanup] to delay execution.
  +/
-@(Awareness.cleanup)
-@(IRCEvent.Type.NICK)
-@(IRCEvent.Type.SELFNICK)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.NICK)
     .onEvent(IRCEvent.Type.SELFNICK)
@@ -392,8 +386,6 @@ void onNick(PersistenceService service, const ref IRCEvent event)
     This is normally done as part of user awareness, but we're not mixing that
     in so we have to reinvent it.
  +/
-@(IRCEvent.Type.RPL_WELCOME)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
 )

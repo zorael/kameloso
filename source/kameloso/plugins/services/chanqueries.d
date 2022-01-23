@@ -65,8 +65,6 @@ enum ChannelState : ubyte
     Checks an internal list of channels once every [dialect.defs.IRCEvent.Type.PING],
     and if one we inhabit hasn't been queried, queries it.
  +/
-@(IRCEvent.Type.PING)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.PING)
 )
@@ -364,9 +362,6 @@ void startChannelQueries(ChanQueriesService service)
     Adds a channel we join to the internal [ChanQueriesService.channels] list of
     channel states.
  +/
-@(IRCEvent.Type.SELFJOIN)
-@omniscientChannelPolicy
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.SELFJOIN)
     .channelPolicy(omniscientChannelPolicy)
@@ -382,10 +377,6 @@ void onSelfjoin(ChanQueriesService service, const ref IRCEvent event)
     Removes a channel we part from the internal [ChanQueriesService.channels]
     list of channel states.
  +/
-@(IRCEvent.Type.SELFPART)
-@(IRCEvent.Type.SELFKICK)
-@omniscientChannelPolicy
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.SELFPART)
     .onEvent(IRCEvent.Type.SELFKICK)
@@ -403,9 +394,6 @@ void onSelfpart(ChanQueriesService service, const ref IRCEvent event)
 
     We do this so we know not to query it later. Mostly cosmetic.
  +/
-@(IRCEvent.Type.RPL_TOPIC)
-@omniscientChannelPolicy
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_TOPIC)
     .channelPolicy(omniscientChannelPolicy)
@@ -422,9 +410,6 @@ void onTopic(ChanQueriesService service, const ref IRCEvent event)
     unless one is already running. Additionally don't do it before it has been
     done at least once, after login.
  +/
-@(IRCEvent.Type.RPL_ENDOFNAMES)
-@omniscientChannelPolicy
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_ENDOFNAMES)
     .channelPolicy(omniscientChannelPolicy)
@@ -442,8 +427,6 @@ void onEndOfNames(ChanQueriesService service)
 /++
     After successful connection, start a delayed channel query on all channels.
  +/
-@(IRCEvent.Type.RPL_MYINFO)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_MYINFO)
 )

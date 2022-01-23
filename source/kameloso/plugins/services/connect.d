@@ -72,10 +72,6 @@ enum Progress
 
     Fires when the bot leaves a channel, one way or another.
  +/
-@(IRCEvent.Type.SELFPART)
-@(IRCEvent.Type.SELFKICK)
-@(ChannelPolicy.any)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.SELFPART)
     .onEvent(IRCEvent.Type.SELFKICK)
@@ -116,9 +112,6 @@ void onSelfpart(ConnectService service, const ref IRCEvent event)
     Records a channel in the `channels` array in the [dialect.defs.IRCClient] of
     the current [ConnectService]'s [kameloso.plugins.common.core.IRCPluginState] upon joining it.
  +/
-@(IRCEvent.Type.SELFJOIN)
-@(ChannelPolicy.any)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.SELFJOIN)
     .channelPolicy(ChannelPolicy.any)
@@ -189,8 +182,6 @@ void joinChannels(ConnectService service)
 
     Encountered at least once, on a private server.
  +/
-@(IRCEvent.Type.ERR_NEEDPONG)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ERR_NEEDPONG)
 )
@@ -209,8 +200,6 @@ void onToConnectType(ConnectService service, const ref IRCEvent event)
     example, [dialect.defs.IRCEvent.Type.ERR_NEEDPONG] generally wants you to
     ping a random number or string.
  +/
-@(IRCEvent.Type.PING)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.PING)
 )
@@ -384,9 +373,6 @@ void tryAuth(ConnectService service)
     Fires when an authentication service sends a message with a known success,
     invalid or rejected auth text, signifying completed login.
  +/
-@(IRCEvent.Type.AUTH_SUCCESS)
-@(IRCEvent.Type.AUTH_FAILURE)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.AUTH_SUCCESS)
     .onEvent(IRCEvent.Type.AUTH_FAILURE)
@@ -411,9 +397,6 @@ void onAuthEnd(ConnectService service, const ref IRCEvent event)
     On Twitch, if the OAuth pass is wrong or malformed, abort and exit the program.
  +/
 version(TwitchSupport)
-@Chainable
-@(IRCEvent.Type.NOTICE)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.NOTICE)
     .chainable(true)
@@ -483,9 +466,6 @@ void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
     Don't modify [IRCPluginState.client.nickname] as the nickname only changes
     when the [dialect.defs.IRCEvent.Type.RPL_LOGGEDIN] event actually occurs.
  +/
-@(IRCEvent.Type.ERR_NICKNAMEINUSE)
-@(IRCEvent.Type.ERR_NICKCOLLISION)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ERR_NICKNAMEINUSE)
     .onEvent(IRCEvent.Type.ERR_NICKCOLLISION)
@@ -520,8 +500,6 @@ void onNickInUse(ConnectService service)
     Aborts a registration attempt and quits if the requested nickname is too
     long or contains invalid characters.
  +/
-@(IRCEvent.Type.ERR_ERRONEOUSNICKNAME)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ERR_ERRONEOUSNICKNAME)
 )
@@ -552,8 +530,6 @@ void onBadNick(ConnectService service)
 
     There's no point in reconnecting.
  +/
-@(IRCEvent.Type.ERR_YOUREBANNEDCREEP)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ERR_YOUREBANNEDCREEP)
 )
@@ -570,8 +546,6 @@ void onBanned(ConnectService service)
 
     There's no point in reconnecting.
  +/
-@(IRCEvent.Type.ERR_PASSWDMISMATCH)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ERR_PASSWDMISMATCH)
 )
@@ -592,9 +566,6 @@ void onPassMismatch(ConnectService service)
 /++
     Upon being invited to a channel, joins it if the settings say we should.
  +/
-@(IRCEvent.Type.INVITE)
-@(ChannelPolicy.any)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.INVITE)
     .channelPolicy(ChannelPolicy.any)
@@ -620,8 +591,6 @@ void onInvite(ConnectService service, const ref IRCEvent event)
     have to be requested (`CAP LS`), and the negotiations need to be ended
     (`CAP END`).
  +/
-@(IRCEvent.Type.CAP)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CAP)
 )
@@ -819,8 +788,6 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
     Attempts to authenticate via SASL, with the EXTERNAL mechanism if a private
     key and/or certificate is set in the configuration file, and by PLAIN otherwise.
  +/
-@(IRCEvent.Type.SASL_AUTHENTICATE)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.SASL_AUTHENTICATE)
 )
@@ -909,8 +876,6 @@ bool trySASLPlain(ConnectService service)
     Flags the client as having finished registering and authing, allowing the
     main loop to pick it up and propagate it to all other plugins.
  +/
-@(IRCEvent.Type.RPL_SASLSUCCESS)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_SASLSUCCESS)
 )
@@ -954,8 +919,6 @@ void onSASLSuccess(ConnectService service)
     Flags the client as having finished registering, allowing the main loop to
     pick it up and propagate it to all other plugins.
  +/
-@(IRCEvent.Type.ERR_SASLFAIL)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ERR_SASLFAIL)
 )
@@ -1001,8 +964,6 @@ void onSASLFailure(ConnectService service)
     Additionally performs post-connect routines (authenticates if not already done,
     and send-after-connect).
  +/
-@(IRCEvent.Type.RPL_WELCOME)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
 )
@@ -1145,9 +1106,6 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
     successful or failed nick change. This so as to be squelching as little as possible.
  +/
 version(WithPrinterPlugin)
-@(IRCEvent.Type.SELFNICK)
-@(IRCEvent.Type.ERR_NICKNAMEINUSE)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.SELFNICK)
     .onEvent(IRCEvent.Type.ERR_NICKNAMEINUSE)
@@ -1165,7 +1123,6 @@ void onSelfnickSuccessOrFailure(ConnectService service)
 /++
     Regains nickname if the holder of the one we wanted during registration quit.
  +/
-@(IRCEvent.Type.QUIT)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.QUIT)
 )
@@ -1190,9 +1147,6 @@ void onQuit(ConnectService service, const ref IRCEvent event)
     Do this then instead of on [IRCEvent.Type.RPL_WELCOME] for better timing,
     and to avoid having the message drown in MOTD.
  +/
-@(IRCEvent.Type.RPL_ENDOFMOTD)
-@(IRCEvent.Type.ERR_NOMOTD)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_ENDOFMOTD)
     .onEvent(IRCEvent.Type.ERR_NOMOTD)
@@ -1239,8 +1193,6 @@ void onEndOfMotd(ConnectService service)
 /++
     Catch information about ourselves (notably our `IDENT`) from `WHOIS` results.
  +/
-@(IRCEvent.Type.RPL_WHOISUSER)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WHOISUSER)
 )
@@ -1262,8 +1214,6 @@ void onWHOISUser(ConnectService service, const ref IRCEvent event)
 
     Currently only RusNet is known to support codepages.
  +/
-@(IRCEvent.Type.RPL_ISUPPORT)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_ISUPPORT)
 )
@@ -1288,8 +1238,6 @@ void onISUPPORT(ConnectService service, const ref IRCEvent event)
     [kameloso.kameloso.CoreSettings.endlesslyConnect] isn't set.
  +/
 version(TwitchSupport)
-@(IRCEvent.Type.RECONNECT)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RECONNECT)
 )
@@ -1307,8 +1255,6 @@ void onReconnect(ConnectService service)
     Warns the user if the server does not seem to support WHOIS queries, suggesting
     that they enable hostmasks mode instead.
  +/
-@(IRCEvent.Type.ERR_UNKNOWNCOMMAND)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ERR_UNKNOWNCOMMAND)
 )

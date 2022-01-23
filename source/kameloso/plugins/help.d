@@ -55,13 +55,6 @@ import dialect.defs;
     Once we have the list we format it nicely and send it back to the requester,
     which we remember since we saved the original [dialect.defs.IRCEvent].
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.anyone)
-@BotCommand(PrefixPolicy.prefixed, "help")
-@Description("Shows a list of all available commands.", "$command [plugin] [command]")
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
@@ -70,8 +63,8 @@ import dialect.defs;
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
             .word("help")
+            .policy(PrefixPolicy.prefixed)
             .description("Shows a list of all available commands.")
             .syntax("$command [plugin] [command]")
     )

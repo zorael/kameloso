@@ -96,24 +96,6 @@ public:
     Bells on any important event, like subscriptions, cheers and raids, if the
     [TwitchBotSettings.bellOnImportant] setting is set.
  +/
-@Chainable
-@(IRCEvent.Type.TWITCH_SUB)
-@(IRCEvent.Type.TWITCH_SUBGIFT)
-@(IRCEvent.Type.TWITCH_CHEER)
-@(IRCEvent.Type.TWITCH_REWARDGIFT)
-@(IRCEvent.Type.TWITCH_GIFTCHAIN)
-@(IRCEvent.Type.TWITCH_BULKGIFT)
-@(IRCEvent.Type.TWITCH_SUBUPGRADE)
-@(IRCEvent.Type.TWITCH_CHARITY)
-@(IRCEvent.Type.TWITCH_BITSBADGETIER)
-@(IRCEvent.Type.TWITCH_RITUAL)
-@(IRCEvent.Type.TWITCH_EXTENDSUB)
-@(IRCEvent.Type.TWITCH_GIFTRECEIVED)
-@(IRCEvent.Type.TWITCH_PAYFORWARD)
-@(IRCEvent.Type.TWITCH_RAID)
-@(PermissionsRequired.ignore)
-@(ChannelPolicy.home)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.TWITCH_SUB)
     .onEvent(IRCEvent.Type.TWITCH_SUBGIFT)
@@ -152,9 +134,6 @@ void onImportant(TwitchBotPlugin plugin)
 
     Simply passes on execution to [handleSelfjoin].
  +/
-@(IRCEvent.Type.SELFJOIN)
-@(ChannelPolicy.home)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.SELFJOIN)
     .channelPolicy(ChannelPolicy.home)
@@ -206,9 +185,6 @@ in (channelName.length, "Tried to handle SELFJOIN with an empty channel string")
     "You will not get USERSTATE for other people. Only for yourself."
     https://discuss.dev.twitch.tv/t/no-userstate-on-people-joining/11598
  +/
-@(IRCEvent.Type.USERSTATE)
-@(ChannelPolicy.home)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.USERSTATE)
     .channelPolicy(ChannelPolicy.home)
@@ -235,9 +211,6 @@ void onUserstate(const ref IRCEvent event)
 
     This resets all that channel's transient state.
  +/
-@(IRCEvent.Type.SELFPART)
-@(ChannelPolicy.home)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.SELFPART)
     .channelPolicy(ChannelPolicy.home)
@@ -258,14 +231,6 @@ void onSelfpart(TwitchBotPlugin plugin, const ref IRCEvent event)
 
     Changes are persistently saved to the [TwitchBotPlugin.timersFile] file.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.operator)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "timer")
-@Description("Adds, removes, lists or clears timered lines.",
-    "$command [add|del|list|clear]")
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.SELFCHAN)
@@ -273,8 +238,8 @@ void onSelfpart(TwitchBotPlugin plugin, const ref IRCEvent event)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
             .word("timer")
+            .policy(PrefixPolicy.prefixed)
             .description("Adds, removes, lists or clears timered lines.")
             .syntax("$command [add|del|list|clear]")
     )
@@ -294,22 +259,15 @@ void onCommandTimer(TwitchBotPlugin plugin, const ref IRCEvent event)
     The streamer's name is divined from the `plugin.state.users` associative
     array by looking at the entry for the nickname this channel corresponds to.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.ignore)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "uptime")
-@Description("Reports how long the streamer has been streaming.")
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.SELFCHAN)
-    .permissionsRequired(PermissionsRequired.ignore)
+    .permissionsRequired(PermissionsRequired.anyone)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
             .word("uptime")
+            .policy(PrefixPolicy.prefixed)
             .description("Reports how long the streamer has been streaming.")
     )
 )
@@ -331,13 +289,6 @@ void onCommandUptime(TwitchBotPlugin plugin, const ref IRCEvent event)
     The streamer's name is divined from the `plugin.state.users` associative
     array by looking at the entry for the nickname this channel corresponds to.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.operator)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "start")
-@Description("Marks the start of a broadcast.")
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.SELFCHAN)
@@ -345,8 +296,8 @@ void onCommandUptime(TwitchBotPlugin plugin, const ref IRCEvent event)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
             .word("start")
+            .policy(PrefixPolicy.prefixed)
             .description("Marks the start of a broadcast.")
     )
 )
@@ -423,13 +374,6 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 /++
     Marks the stop of a broadcast.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.operator)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "stop")
-@Description("Marks the stop of a broadcast.")
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.SELFCHAN)
@@ -437,8 +381,8 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
             .word("stop")
+            .policy(PrefixPolicy.prefixed)
             .description("Marks the end of a broadcast.")
     )
 )
@@ -477,12 +421,9 @@ void onCommandStop(TwitchBotPlugin plugin, const ref IRCEvent event)
     This is generally done as the last thing after a stream session, so it makes
     sense to automate [onCommandStop].
  +/
-@(ChannelPolicy.home)
-@(IRCEvent.Type.TWITCH_HOSTSTART)
-// FIXME
 @(IRCEventHandler()
-    .channelPolicy(ChannelPolicy.home)
     .onEvent(IRCEvent.Type.TWITCH_HOSTSTART)
+    .channelPolicy(ChannelPolicy.home)
 )
 void onAutomaticStop(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
@@ -613,15 +554,6 @@ void reportStreamTime(TwitchBotPlugin plugin,
     Lookups are done asynchronously in subthreads.
  +/
 version(TwitchAPIFeatures)
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.ignore)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "followage")
-@Description("Queries the server for how long you have been a follower of the " ~
-    "current channel. Optionally takes a nickname parameter, to query for someone else.",
-    "$command [optional nickname]")
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.SELFCHAN)
@@ -629,8 +561,8 @@ version(TwitchAPIFeatures)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
             .word("followage")
+            .policy(PrefixPolicy.prefixed)
             .description("Queries the server for how long you have been a follower " ~
                 "of the current channel. Optionally takes a nickname parameter, " ~
                 "to query for someone else.")
@@ -804,9 +736,6 @@ void onCommandFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     the display name of its broadcaster.
  +/
 version(TwitchAPIFeatures)
-@(IRCEvent.Type.ROOMSTATE)
-@(ChannelPolicy.home)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ROOMSTATE)
     .channelPolicy(ChannelPolicy.home)
@@ -864,14 +793,6 @@ void onRoomState(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     Merely gives a link to their channel and echoes what game they last streamed.
  +/
 version(TwitchAPIFeatures)
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.operator)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "shoutout")
-@BotCommand(PrefixPolicy.prefixed, "so", Yes.hidden)
-@Description("Emits a shoutout to another streamer.", "$command [name of streamer]")
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.SELFCHAN)
@@ -879,15 +800,15 @@ version(TwitchAPIFeatures)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
             .word("shoutout")
+            .policy(PrefixPolicy.prefixed)
+            .description("Emits a shoutout to another streamer.")
+            .syntax("$command [name of streamer]")
     )
     .addCommand(
         IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
             .word("so")
-            .description("Emits a shoutout to another streamer.")
-            .syntax("$command [name of streamer]")
+            .policy(PrefixPolicy.prefixed)
             .hidden(true)
     )
 )
@@ -963,13 +884,6 @@ void onCommandShoutout(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 
     Belling is useful with small audiences, so you don't miss messages.
  +/
-@Terminating
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.EMOTE)
-@(PermissionsRequired.ignore)
-@(ChannelPolicy.home)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
@@ -1012,9 +926,6 @@ void onAnyMessage(TwitchBotPlugin plugin, const ref IRCEvent event)
     Has to be done at MOTD, as we only know whether we're on Twitch after
     RPL_MYINFO or so.
  +/
-@(IRCEvent.Type.RPL_ENDOFMOTD)
-@(IRCEvent.Type.ERR_NOMOTD)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_ENDOFMOTD)
     .onEvent(IRCEvent.Type.ERR_NOMOTD)
@@ -1163,8 +1074,6 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
     fail to read if too much time has passed, and nothing would be saved.
  +/
 version(TwitchAPIFeatures)
-@(IRCEvent.Type.CAP)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CAP)
 )
@@ -1231,8 +1140,6 @@ void initResources(TwitchBotPlugin plugin)
     Cannot be done on [dialect.defs.IRCEvent.Type.RPL_WELCOME] as the server
     daemon isn't known by then.
  +/
-@(IRCEvent.Type.RPL_MYINFO)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_MYINFO)
 )

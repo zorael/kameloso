@@ -39,15 +39,6 @@ import std.typecons : Flag, No, Yes;
 
     If starting one a duration and two or more voting options have to be passed.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.operator)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "poll")
-@BotCommand(PrefixPolicy.prefixed, "vote", Yes.hidden)
-@Description(`Starts or stops a vote. Pass "abort" to abort, or "end" to end early.`,
-    "$command [seconds] [choice1] [choice2] ...")
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.SELFCHAN)
@@ -55,15 +46,15 @@ import std.typecons : Flag, No, Yes;
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
             .word("poll")
+            .policy(PrefixPolicy.prefixed)
             .description(`Starts or stops a vote. Pass "abort" to abort, or "end" to end early.`)
             .syntax("$command [seconds] [choice1] [choice2] ...")
     )
     .addCommand(
         IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
             .word("vote")
+            .policy(PrefixPolicy.prefixed)
             .hidden(true)
     )
 )

@@ -137,10 +137,6 @@ public:
     Mutable [dialect.defs.IRCEvent] parameter so as to make fewer internal copies
     (as this is a hotspot).
  +/
-@Chainable
-@(IRCEvent.Type.ANY)
-@(ChannelPolicy.any)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ANY)
     .channelPolicy(ChannelPolicy.any)
@@ -447,10 +443,6 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     See_Also:
         [commitAllLogs]
  +/
-@Chainable
-@(ChannelPolicy.any)
-@(IRCEvent.Type.ANY)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ANY)
     .channelPolicy(ChannelPolicy.any)
@@ -474,8 +466,6 @@ void onLoggableEvent(PrinterPlugin plugin, const ref IRCEvent event)
     See_Also:
         [kameloso.plugins.printer.logging.commitLog]
  +/
-@(IRCEvent.Type.PING)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.PING)
 )
@@ -493,8 +483,6 @@ void commitAllLogs(PrinterPlugin plugin)
     Set a flag so we only print this information once; (ISUPPORTS can/do stretch
     across several events.)
  +/
-@(IRCEvent.Type.RPL_ISUPPORT)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_ISUPPORT)
 )

@@ -377,11 +377,6 @@ unittest
     Parses a channel message and looks for any sed-replace expressions therein,
     to apply on the previous message.
  +/
-@Terminating
-@(IRCEvent.Type.CHAN)
-@(PermissionsRequired.ignore)
-@(ChannelPolicy.home)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .permissionsRequired(PermissionsRequired.ignore)
@@ -479,8 +474,6 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
 
     This is to prevent the lists from becoming huge over time.
  +/
-@(IRCEvent.Type.RPL_WELCOME)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
 )
@@ -508,8 +501,6 @@ void onWelcome(SedReplacePlugin plugin)
 /++
     Removes the records of previous messages from a user when they quit.
  +/
-@(IRCEvent.Type.QUIT)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.QUIT)
 )

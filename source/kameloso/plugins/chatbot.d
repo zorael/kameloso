@@ -45,16 +45,6 @@ import std.typecons : Flag, No, Yes;
 
     If it was sent in a query, respond in a private message in kind.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.anyone)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "say")
-@BotCommand(PrefixPolicy.prefixed, "säg", Yes.hidden)
-@BotCommand(PrefixPolicy.prefixed, "echo", Yes.hidden)
-@Description("Repeats text to the channel the event was sent to.", "$command [text to repeat]")
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
@@ -63,19 +53,21 @@ import std.typecons : Flag, No, Yes;
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
             .word("say")
+            .policy(PrefixPolicy.prefixed)
+            .description("Repeats text to the channel the event was sent to.")
+            .syntax("$command [text to repeat]")
     )
     .addCommand(
         IRCEventHandler.Command()
-            .policy(PrefixPolicy.nickname)
             .word("säg")
+            .policy(PrefixPolicy.nickname)
             .hidden(true)
     )
     .addCommand(
         IRCEventHandler.Command()
-            .policy(PrefixPolicy.nickname)
             .word("echo")
+            .policy(PrefixPolicy.nickname)
             .hidden(true)
     )
 )
@@ -97,15 +89,6 @@ void onCommandSay(ChatbotPlugin plugin, const ref IRCEvent event)
     it back to the channel in which the triggering event happened, or in a query
     if it was a private message.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.anyone)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "8ball")
-@BotCommand(PrefixPolicy.prefixed, "eightball")
-@Description("Implements 8ball. Randomises a vague yes/no response.")
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
@@ -114,13 +97,14 @@ void onCommandSay(ChatbotPlugin plugin, const ref IRCEvent event)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
             .word("8ball")
+            .policy(PrefixPolicy.prefixed)
+            .description("Implements 8ball. Randomises a vague yes/no response.")
     )
     .addCommand(
         IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
             .word("eightball")
+            .policy(PrefixPolicy.prefixed)
             .hidden(true)
     )
 )
@@ -165,14 +149,6 @@ void onCommand8ball(ChatbotPlugin plugin, const ref IRCEvent event)
 
     Defers to the [worker] subthread.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.anyone)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "bash")
-@Description("Fetch a random or specified bash.org quote.", "$command [optional bash quote number]")
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
@@ -181,8 +157,10 @@ void onCommand8ball(ChatbotPlugin plugin, const ref IRCEvent event)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
             .word("bash")
+            .policy(PrefixPolicy.prefixed)
+            .description("Fetch a random or specified bash.org quote.")
+            .syntax("$command [optional bash quote number]")
     )
 )
 void onCommandBash(ChatbotPlugin plugin, const ref IRCEvent event)
@@ -330,12 +308,6 @@ void worker(shared IRCPluginState sState,
 
     - http://bash.org/?4281
  +/
-@Terminating
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.anyone)
-@(ChannelPolicy.home)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.SELFCHAN)

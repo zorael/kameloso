@@ -41,12 +41,6 @@ import std.typecons : Flag, No, Yes;
     There's no need to trigger each `CHAN` since we know we enumerate all
     users in a channel when querying `WHO`.
  +/
-@Chainable
-@(IRCEvent.Type.JOIN)
-@(IRCEvent.Type.ACCOUNT)
-@(PermissionsRequired.anyone)
-@(ChannelPolicy.home)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.JOIN)
     .onEvent(IRCEvent.Type.ACCOUNT)
@@ -73,12 +67,8 @@ void onReplayEvent(NotesPlugin plugin, const /*ref*/ IRCEvent event)
     Pass `Yes.background` to [playbackNotes] to ensure it does low-priority background
     WHOIS queries.
  +/
-@(IRCEvent.Type.RPL_WHOREPLY)
-@(ChannelPolicy.home)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WHOREPLY)
-    .permissionsRequired(PermissionsRequired.ignore)
     .channelPolicy(ChannelPolicy.home)
 )
 void onWhoReply(NotesPlugin plugin, const /*ref*/ IRCEvent event)
@@ -266,9 +256,6 @@ void playbackNotes(NotesPlugin plugin,
     more information than NAMES replies do, so we'd just be duplicating effort
     for worse results.
  +/
-@(IRCEvent.Type.RPL_NAMREPLY)
-@(ChannelPolicy.home)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_NAMREPLY)
     .channelPolicy(ChannelPolicy.home)
@@ -317,14 +304,6 @@ void onNames(NotesPlugin plugin, const ref IRCEvent event)
     channel. Those sent in a private query will be private notes, sent privately
     in the same fashion as channel notes are sent publicly.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.whitelist)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "note")
-@Description("Adds a note and saves it to disk.", "$command [account] [note text]")
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
@@ -333,8 +312,8 @@ void onNames(NotesPlugin plugin, const ref IRCEvent event)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
             .word("note")
+            .policy(PrefixPolicy.prefixed)
             .description("Adds a note and saves it to disk.")
             .syntax("$command [account] [note text]")
     )
@@ -593,8 +572,6 @@ in (line.length, "Tried to add an empty note")
 /++
     Initialises the Notes plugin. Loads the notes from disk.
  +/
-@(IRCEvent.Type.RPL_WELCOME)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
 )

@@ -440,30 +440,6 @@ else
     This particular function doesn't care at all, so it is
     [kameloso.plugins.common.core.PermissionsRequired.ignore].
  +/
-@Chainable
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.EMOTE)
-@(IRCEvent.Type.JOIN)
-@(IRCEvent.Type.PART)
-@(IRCEvent.Type.MODE)
-@(IRCEvent.Type.TWITCH_TIMEOUT)
-@(IRCEvent.Type.TWITCH_BAN)
-@(IRCEvent.Type.TWITCH_BULKGIFT)
-@(IRCEvent.Type.TWITCH_CHARITY)
-@(IRCEvent.Type.TWITCH_EXTENDSUB)
-@(IRCEvent.Type.TWITCH_GIFTCHAIN)
-@(IRCEvent.Type.TWITCH_GIFTRECEIVED)
-@(IRCEvent.Type.TWITCH_PAYFORWARD)
-@(IRCEvent.Type.TWITCH_REWARDGIFT)
-@(IRCEvent.Type.TWITCH_RITUAL)
-@(IRCEvent.Type.TWITCH_SUB)
-@(IRCEvent.Type.TWITCH_SUBGIFT)
-@(IRCEvent.Type.TWITCH_SUBUPGRADE)
-@(IRCEvent.Type.TWITCH_TIMEOUT)
-@(PermissionsRequired.ignore)
-@omniscientChannelPolicy
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
@@ -528,8 +504,6 @@ void onSomeAction(SeenPlugin plugin, const ref IRCEvent event)
 
     Do nothing if an entry was not found.
  +/
-@(IRCEvent.Type.QUIT)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.QUIT)
 )
@@ -551,10 +525,6 @@ void onQuit(SeenPlugin plugin, const ref IRCEvent event)
 
     Bookkeeping; this is to avoid getting ghost entries in the seen array.
  +/
-@Chainable
-@(IRCEvent.Type.NICK)
-@(PermissionsRequired.ignore)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.NICK)
     .permissionsRequired(PermissionsRequired.ignore)
@@ -582,9 +552,6 @@ void onNick(SeenPlugin plugin, const ref IRCEvent event)
     [kameloso.plugins.chanqueries.ChanQueriesService] services instigates this
     shortly after having joined one, as a service to other plugins.
  +/
-@(IRCEvent.Type.RPL_WHOREPLY)
-@omniscientChannelPolicy
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WHOREPLY)
     .channelPolicy(omniscientChannelPolicy)
@@ -606,9 +573,6 @@ void onWHOReply(SeenPlugin plugin, const ref IRCEvent event)
     with mode signs if they are operators, voiced or similar, so we'll need to
     strip that away.
  +/
-@(IRCEvent.Type.RPL_NAMREPLY)
-@omniscientChannelPolicy
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_NAMREPLY)
     .channelPolicy(omniscientChannelPolicy)
@@ -643,10 +607,6 @@ void onNamesReply(SeenPlugin plugin, const ref IRCEvent event)
     At the end of a long listing of users in a channel, when we're reasonably
     sure we've added users to our associative array of seen users, *rehashes* it.
  +/
-@(IRCEvent.Type.RPL_ENDOFNAMES)
-@(IRCEvent.Type.RPL_ENDOFWHO)
-@omniscientChannelPolicy
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_ENDOFNAMES)
     .onEvent(IRCEvent.Type.RPL_ENDOFWHO)
@@ -706,14 +666,6 @@ void onEndOfList(SeenPlugin plugin)
     how this function will be listed in the "online help" list, shown by triggering
     the [kameloso.plugins.help.HelpPlugin]'s' "`help`" command.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.anyone)
-@omniscientChannelPolicy
-@BotCommand(PrefixPolicy.prefixed, "seen")
-@Description("Queries the bot when it last saw a specified nickname online.", "$command [nickname]")
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
@@ -722,8 +674,8 @@ void onEndOfList(SeenPlugin plugin)
     .channelPolicy(omniscientChannelPolicy)
     .addCommand(
         IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
             .word("seen")
+            .policy(PrefixPolicy.prefixed)
             .description("Queries the bot when it last saw a specified nickname online.")
             .syntax("$command [nickname]")
     )
@@ -996,8 +948,6 @@ in (filename.length, "Tried to save seen users to an empty filename")
     This is to make sure that as little data as possible is lost in the event
     of an unexpected shutdown.
  +/
-@(IRCEvent.Type.RPL_WELCOME)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
 )

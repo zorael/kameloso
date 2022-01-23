@@ -45,14 +45,6 @@ import std.typecons : Flag, No, Yes;
 /++
     Manages runtime counters (adding, removing and listing).
  +/
-@Terminating
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.whitelist)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "counter")
-@Description("Manages counters.", "$command [add|del|list] [counter word]")
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.SELFCHAN)
@@ -60,8 +52,10 @@ import std.typecons : Flag, No, Yes;
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
             .word("counter")
+            .policy(PrefixPolicy.prefixed)
+            .description("Manages counters.")
+            .syntax("$command [add|del|list] [counter word]")
     )
 )
 void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
@@ -195,12 +189,6 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
     prefixes (and the bot's nickname), and treating whatever comes after it as
     a command word. If it doesn't match a previously added counter, it is ignored.
  +/
-@Terminating
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.anyone)
-@(ChannelPolicy.home)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.SELFCHAN)
@@ -376,8 +364,6 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 /++
     Populate the counters array after we have successfully logged onto the server.
  +/
-@(IRCEvent.Type.RPL_WELCOME)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
 )

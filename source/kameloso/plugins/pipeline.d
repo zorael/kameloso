@@ -312,8 +312,6 @@ in (filename.length, "Tried to create a FIFO with an empty filename")
 /++
     Initialises the fifo pipe and thus the purpose of the plugin, by leveraging [initPipe].
  +/
-@(IRCEvent.Type.RPL_WELCOME)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
 )

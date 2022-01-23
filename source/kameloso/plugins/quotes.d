@@ -164,16 +164,6 @@ Quote getSpecificQuote(QuotesPlugin plugin, const string nickname, const size_t 
     channel the triggering event occurred in, alternatively in a private message
     if the request was sent in one such.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.whitelist)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "quote")
-@BotCommand(PrefixPolicy.prefixed, "addquote", Yes.hidden)
-@Description("Fetches and repeats a random quote of a supplied nickname, " ~
-    "or adds a new one.", "$command [nickname] [text if adding new quote]")
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
@@ -182,15 +172,15 @@ Quote getSpecificQuote(QuotesPlugin plugin, const string nickname, const size_t 
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
             .word("quote")
+            .policy(PrefixPolicy.prefixed)
+            .description("Fetches and repeats a random quote of a supplied nickname, or adds a new one.")
+            .syntax("$command [nickname] [text if adding new quote]")
     )
     .addCommand(
         IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
             .word("addquote")
-            .description("Fetches and repeats a random quote of a supplied nickname, or adds a new one.")
-            .syntax("$command [nickname] [text if adding new quote]")
+            .policy(PrefixPolicy.prefixed)
             .hidden(true)
     )
 )
@@ -485,14 +475,6 @@ unittest
     channel the triggering event occurred in, alternatively in a private message
     if the request was sent in one such.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.operator)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "delquote")
-@Description("Removes a quote from the quote database.", "$command [nickname] [quote index]")
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
@@ -501,8 +483,8 @@ unittest
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
             .word("delquote")
+            .policy(PrefixPolicy.prefixed)
             .description("Removes a quote from the quote database.")
             .syntax("$command [nickname] [quote index]")
     )
@@ -523,15 +505,6 @@ void onCommandDelQuote(QuotesPlugin plugin, const ref IRCEvent event)
     channel the triggering event occurred in, alternatively in a private message
     if the request was sent in one such.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.operator)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "modquote")
-@Description("Modifies a quote's text in the quote database.",
-    "$command [nickname] [quote index] [next quote text]")
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
@@ -540,8 +513,8 @@ void onCommandDelQuote(QuotesPlugin plugin, const ref IRCEvent event)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
             .word("modquote")
+            .policy(PrefixPolicy.prefixed)
             .description("Modifies a quote's text in the quote database.")
             .syntax("$command [nickname] [quote index] [new quote text]")
     )
@@ -793,15 +766,6 @@ void manageQuoteImpl(QuotesPlugin plugin,
 
     Does not perform account lookups.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.operator)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "mergequotes")
-@BotCommand(PrefixPolicy.prefixed, "mergequote", Yes.hidden)
-@Description("Merges the quotes of two users.", "$command [source] [target]")
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
@@ -810,16 +774,16 @@ void manageQuoteImpl(QuotesPlugin plugin,
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
             .word("mergequotes")
+            .policy(PrefixPolicy.prefixed)
+            .description("Merges the quotes of two users.")
+            .syntax("$command [source] [target]")
     )
     .addCommand(
         IRCEventHandler.Command()
-            .policy(PrefixPolicy.prefixed)
             .word("mergequote")
+            .policy(PrefixPolicy.prefixed)
             .hidden(true)
-            .description("Merges the quotes of two users.")
-            .syntax("$command [source] [target]")
     )
 )
 void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
@@ -897,8 +861,6 @@ void reload(QuotesPlugin plugin)
 /++
     Initialises the passed [QuotesPlugin]. Loads the quotes from disk.
  +/
-@(IRCEvent.Type.RPL_WELCOME)
-// FIXME
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
 )
