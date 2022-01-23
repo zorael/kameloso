@@ -69,17 +69,16 @@ public:
      +/
     static struct CommandMetadata
     {
-        // desc
         /++
-            Description about what the command does, along with optional syntax.
-
-            See_Also:
-                [kameloso.plugins.common.core.Description]
+            Description about what the command does, in natural language.
          +/
-        Description desc;
+        string description;
 
+        /++
+            Syntax on how to use the command.
+         +/
+        string syntax;
 
-        // hidden
         /++
             Whether or not the command should be hidden from view (but still
             possible to trigger).
@@ -1577,76 +1576,92 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
     {
         enum ctCommandsEnumLiteral =
         {
-            import kameloso.plugins.common.core : BotCommand, BotRegex, Description;
+            import kameloso.plugins.common.core : IRCEventHandler;
             import lu.traits : getSymbolsByUDA;
             import std.meta : AliasSeq, Filter;
             import std.traits : getUDAs, hasUDA, isSomeFunction;
 
             mixin("static import thisModule = " ~ module_ ~ ";");
 
-            alias symbols = getSymbolsByUDA!(thisModule, BotCommand);
-            alias funs = Filter!(isSomeFunction, symbols);
+            alias funs = Filter!(isSomeFunction, getSymbolsByUDA!(thisModule, IRCEventHandler));
 
-            IRCPlugin.CommandMetadata[string] commands;
+            IRCPlugin.CommandMetadata[string] commandAA;
 
             foreach (fun; funs)
             {
-                foreach (immutable uda; AliasSeq!(getUDAs!(fun, BotCommand),
-                    getUDAs!(fun, BotRegex)))
-                {
-                    static if (hasUDA!(fun, Description))
+                static immutable uda = getUDAs!(fun, IRCEventHandler)[0];
+
+                static foreach (immutable command; uda.given.commands)
+                {{
+                    static if (command.given.description.length)
                     {
-                        enum desc = getUDAs!(fun, Description)[0];
-                        if (desc == Description.init) continue;
+                        enum key = command.given.word;
+                        commandAA[key] = IRCPlugin.CommandMetadata
+                            (command.given.description, command.given.syntax, command.given.hidden);
 
-                        static if (is(typeof(uda) : BotCommand))
+                        static if (command.given.policy == PrefixPolicy.nickname)
                         {
-                            enum key = uda.word;
-                        }
-                        else /*static if (is(typeof(uda) : BotRegex))*/
-                        {
-                            enum key = `r"` ~ uda.expression ~ `"`;
-                        }
-
-                        commands[key] = IRCPlugin.CommandMetadata(desc, uda.hidden);
-
-                        static if (uda.policy == PrefixPolicy.nickname)
-                        {
-                            static if (desc.syntax.length)
+                            static if (command.given.syntax.length)
                             {
                                 // Prefix the command with the bot's nickname,
                                 // as that's how it's actually used.
-                                commands[key].desc.syntax = "$nickname: " ~ desc.syntax;
+                                commandAA[key].syntax = "$nickname: " ~ command.given.syntax;
                             }
                             else
                             {
                                 // Define an empty nickname: command syntax
                                 // to give hint about the nickname prefix
-                                commands[key].desc.syntax = "$nickname: $command";
+                                commandAA[key].syntax = "$nickname: $command";
                             }
                         }
                     }
-                    else
+                    else static if (!command.given.hidden)
                     {
-                        static if (!hasUDA!(fun, Description))
+                        import std.format : format;
+                        import std.traits : fullyQualifiedName;
+                        pragma(msg, "Warning: `%s` non-hidden command word \"%s\" is missing a description"
+                            .format(fullyQualifiedName!fun, command.given.word));
+                    }
+                }}
+
+                static foreach (immutable regex; uda.given.regexes)
+                {{
+                    static if (regex.description.length)
+                    {
+                        enum key = `r"` ~ regex.expression ~ `"`;
+                        commandAA[key] = IRCPlugin.CommandMetadata(regex.description, regex.hidden);
+
+                        static if (regex.given.policy == PrefixPolicy.direct)
                         {
-                            import std.format : format;
-                            import std.traits : fullyQualifiedName;
-                            pragma(msg, "Warning: `%s` is missing a `@Description` annotation"
-                                .format(fullyQualifiedName!fun));
+                            commandAA[key].syntax = regex.given.expression;
+                        }
+                        else static if (regex.given.policy == PrefixPolicy.prefix)
+                        {
+                            commandAA[key].syntax = "$prefix" ~ regex.given.expression;
+                        }
+                        else static if (regex.given.policy == PrefixPolicy.nickname)
+                        {
+                            commandAA[key].syntax = "$nickname: " ~ regex.given.expression;
                         }
                     }
-                }
+                    else static if (!regex.given.hidden)
+                    {
+                        import std.format : format;
+                        import std.traits : fullyQualifiedName;
+                        pragma(msg, "Warning: `%s` non-hidden expression \"%s\" is missing a description"
+                            .format(fullyQualifiedName!fun, regex.given.expression));
+                    }
+                }}
             }
 
-            return commands;
+            return commandAA;
         }();
 
         // This is an associative array literal. We can't make it static immutable
         // because of AAs' runtime-ness. We could make it runtime immutable once
         // and then just the address, but this is really not a hotspot.
         // So just let it allocate when it wants.
-        return this.isEnabled ? ctCommandsEnumLiteral : typeof(ctCommandsEnumLiteral).init;
+        return this.isEnabled ? ctCommandsEnumLiteral : null;
     }
 
 

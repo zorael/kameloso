@@ -124,7 +124,8 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
                 {
                     if (const command = specifiedCommand in p.commands)
                     {
-                        plugin.sendCommandHelp(p, mutEvent, specifiedCommand, command.desc);
+                        plugin.sendCommandHelp(p, mutEvent, specifiedCommand,
+                            command.description, command.syntax);
                         return;
                     }
                 }
@@ -149,7 +150,8 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
 
                     if (const command = specifiedCommand in p.commands)
                     {
-                        plugin.sendCommandHelp(p, mutEvent, specifiedCommand, command.desc);
+                        plugin.sendCommandHelp(p, mutEvent, specifiedCommand,
+                            command.description, command.syntax);
                     }
                     else
                     {
@@ -269,14 +271,15 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
         otherPlugin = The plugin that hosts the command we're to send the help text for.
         event = The triggering [dialect.defs.IRCEvent].
         command = String of the command we're to send help text for (sans prefix).
-        description = The [kameloso.plugins.common.core.Description] that anotates
-            the command's function.
+        description = The description text that the event handler function is annotated with.
+        syntax = The declared syntax of the command.
  +/
 void sendCommandHelp(HelpPlugin plugin,
     const IRCPlugin otherPlugin,
     const ref IRCEvent event,
     const string command,
-    const Description description)
+    const string description,
+    const string syntax)
 {
     import kameloso.irccolours : ircBold;
     import std.conv : text;
@@ -285,29 +288,31 @@ void sendCommandHelp(HelpPlugin plugin,
     enum pattern = "[%s] %s: %s";
 
     immutable message = plugin.state.settings.colouredOutgoing ?
-        pattern.format(otherPlugin.name.ircBold, command.ircBold, description.line) :
-        pattern.format(otherPlugin.name, command, description.line);
+        pattern.format(otherPlugin.name.ircBold, command.ircBold, description) :
+        pattern.format(otherPlugin.name, command, description);
 
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
 
-    if (description.syntax.length)
+    if (syntax.length)
     {
         import lu.string : beginsWith;
         import std.array : replace;
 
-        immutable udaSyntax = description.syntax
+        immutable udaSyntax = syntax
+            .replace("$command", command)
             .replace("$nickname", plugin.state.client.nickname)
-            .replace("$command", command);
+            .replace("$prefix", plugin.state.settings.prefix);
 
         // Prepend the prefix to non-PrefixPolicy.nickname commands
-        immutable prefixedSyntax = description.syntax.beginsWith("$nickname") ?
-            udaSyntax : plugin.state.settings.prefix ~ udaSyntax;
+        immutable prefixedSyntax =
+            (syntax.beginsWith("$nickname") || syntax.beginsWith("$prefix")) ?
+                udaSyntax : plugin.state.settings.prefix ~ udaSyntax;
 
-        immutable syntax = plugin.state.settings.colouredOutgoing ?
+        immutable usage = plugin.state.settings.colouredOutgoing ?
             text("Usage".ircBold, ": ", prefixedSyntax) :
             text("Usage: ", prefixedSyntax);
 
-        privmsg(plugin.state, event.channel, event.sender.nickname, syntax);
+        privmsg(plugin.state, event.channel, event.sender.nickname, usage);
     }
 }
 
