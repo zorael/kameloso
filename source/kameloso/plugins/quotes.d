@@ -173,6 +173,27 @@ Quote getSpecificQuote(QuotesPlugin plugin, const string nickname, const size_t 
 @BotCommand(PrefixPolicy.prefixed, "addquote", Yes.hidden)
 @Description("Fetches and repeats a random quote of a supplied nickname, " ~
     "or adds a new one.", "$command [nickname] [text if adding new quote]")
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(PermissionsRequired.whitelist)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .policy(PrefixPolicy.prefixed)
+            .word("quote")
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .policy(PrefixPolicy.prefixed)
+            .word("addquote")
+            .description("Fetches and repeats a random quote of a supplied nickname, or adds a new one.")
+            .syntax("$command [nickname] [text if adding new quote]")
+            .hidden(true)
+    )
+)
 void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
 {
     return manageQuoteImpl(plugin, event, ManageQuoteAction.addOrReplay);
@@ -471,6 +492,21 @@ unittest
 @(ChannelPolicy.home)
 @BotCommand(PrefixPolicy.prefixed, "delquote")
 @Description("Removes a quote from the quote database.", "$command [nickname] [quote index]")
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(PermissionsRequired.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .policy(PrefixPolicy.prefixed)
+            .word("delquote")
+            .description("Removes a quote from the quote database.")
+            .syntax("$command [nickname] [quote index]")
+    )
+)
 void onCommandDelQuote(QuotesPlugin plugin, const ref IRCEvent event)
 {
     manageQuoteImpl(plugin, event, ManageQuoteAction.del);
@@ -495,6 +531,21 @@ void onCommandDelQuote(QuotesPlugin plugin, const ref IRCEvent event)
 @BotCommand(PrefixPolicy.prefixed, "modquote")
 @Description("Modifies a quote's text in the quote database.",
     "$command [nickname] [quote index] [next quote text]")
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(PermissionsRequired.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .policy(PrefixPolicy.prefixed)
+            .word("modquote")
+            .description("Modifies a quote's text in the quote database.")
+            .syntax("$command [nickname] [quote index] [new quote text]")
+    )
+)
 void onCommandModQuote(QuotesPlugin plugin, const ref IRCEvent event)
 {
     manageQuoteImpl(plugin, event, ManageQuoteAction.mod);
@@ -750,6 +801,27 @@ void manageQuoteImpl(QuotesPlugin plugin,
 @BotCommand(PrefixPolicy.prefixed, "mergequotes")
 @BotCommand(PrefixPolicy.prefixed, "mergequote", Yes.hidden)
 @Description("Merges the quotes of two users.", "$command [source] [target]")
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .onEvent(IRCEvent.Type.SELFCHAN)
+    .permissionsRequired(PermissionsRequired.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .policy(PrefixPolicy.prefixed)
+            .word("mergequotes")
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .policy(PrefixPolicy.prefixed)
+            .word("mergequote")
+            .hidden(true)
+            .description("Merges the quotes of two users.")
+            .syntax("$command [source] [target]")
+    )
+)
 void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.irccolours : ircBold, ircColourByHash;
@@ -826,6 +898,10 @@ void reload(QuotesPlugin plugin)
     Initialises the passed [QuotesPlugin]. Loads the quotes from disk.
  +/
 @(IRCEvent.Type.RPL_WELCOME)
+// FIXME
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WELCOME)
+)
 void onWelcome(QuotesPlugin plugin)
 {
     plugin.quotes.load(plugin.quotesFile);
