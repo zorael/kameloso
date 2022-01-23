@@ -67,7 +67,7 @@ import std.typecons : Flag, No, Yes;
     .addCommand(
         IRCEventHandler.Command()
             .word("echo")
-            .policy(PrefixPolicy.nickname)
+            .policy(PrefixPolicy.prefixed)
             .hidden(true)
     )
 )
