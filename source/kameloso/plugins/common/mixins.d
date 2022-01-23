@@ -834,7 +834,6 @@ unittest
         debug_ = Whether or not to print debug output to the terminal.
  +/
 mixin template Repeater(Flag!"debug_" debug_ = No.debug_,
-    string givenContextName = string.init,
     string module_ = __MODULE__)
 {
     import kameloso.plugins.common.core : Repeat, Replay;
@@ -857,28 +856,7 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_,
         enum hasRepeater = true;
     }
 
-    import std.conv : text;
-    pragma(msg, text("version is ", __VERSION__));
-
-    static if ((__VERSION__ >= 2088L) && givenContextName.length)
-    {
-        // mixin(givenContextName) only works on 2.088 and later
-
-        static if (__traits(compiles, { alias context = mixin(givenContextName); }) )
-        {
-            alias context = mixin(givenContextName);
-            enum contextName = givenContextName;
-        }
-        else
-        {
-            import std.format : format;
-
-            enum pattern = "Context parameter name `%s` passed to mixin `Repeater` does not resolve";
-            static assert(0, pattern.format(givenContextName));
-        }
-
-    }
-    else static if (__traits(compiles, plugin))
+    static if (__traits(compiles, plugin))
     {
         alias context = plugin;
         enum contextName = "plugin";
