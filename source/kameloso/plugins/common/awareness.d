@@ -1581,7 +1581,6 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @(IRCEvent.Type.TWITCH_EXTENDSUB)
     @(IRCEvent.Type.TWITCH_GIFTRECEIVED)
     @(IRCEvent.Type.TWITCH_PAYFORWARD)
-    @(IRCEvent.Type.CLEARMSG)
     @channelPolicy
     // FIXME
     @(IRCEventHandler()
@@ -1607,7 +1606,6 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
         .onEvent(IRCEvent.Type.TWITCH_EXTENDSUB)
         .onEvent(IRCEvent.Type.TWITCH_GIFTRECEIVED)
         .onEvent(IRCEvent.Type.TWITCH_PAYFORWARD)
-        .onEvent(IRCEvent.Type.CLEARMSG)
         .channelPolicy(channelPolicy)
         .when(Timing.early)
         .chainable(true)
@@ -1639,6 +1637,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     @(IRCEvent.Type.TWITCH_GIFTCHAIN)
     @(IRCEvent.Type.TWITCH_GIFTRECEIVED)
     @(IRCEvent.Type.TWITCH_PAYFORWARD)
+    @(IRCEvent.Type.CLEARMSG)
     @channelPolicy
     // FIXME
     @(IRCEventHandler()
