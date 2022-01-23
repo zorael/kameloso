@@ -769,10 +769,11 @@ private:
             No need for any annotation; [kameloso.messaging.askToOutputImpl] is
             `@system` and nothing else.
          +/
-        mixin("void askTo%s(const string line)
-        {
-            return kameloso.messaging.askTo%1$s(state, line);
-        }".format(verb));
+        mixin(q{
+void askTo%s(const string line)
+{
+    return kameloso.messaging.askTo%1$s(state, line);
+}}.format(verb));
     }
 }
 
@@ -832,7 +833,9 @@ unittest
     Params:
         debug_ = Whether or not to print debug output to the terminal.
  +/
-mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
+mixin template Repeater(Flag!"debug_" debug_ = No.debug_,
+    string givenContextName = string.init,
+    string module_ = __MODULE__)
 {
     import kameloso.plugins.common.core : Repeat, Replay;
     import dialect.defs : IRCUser;
@@ -854,7 +857,20 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
         enum hasRepeater = true;
     }
 
-    static if (__traits(compiles, plugin))
+    static if (givenContextName.length)
+    {
+        static if (!__traits(compiles, { alias context = mixin(givenContextName); }))
+        {
+            import std.format : format;
+
+            enum pattern = "Context parameter name `%s` passed to mixin `Repeater` does not resolve";
+            static assert(0, pattern.format(givenContextName));
+        }
+
+        alias context = mixin(givenContextName);
+        enum contextName = givenContextName;
+    }
+    else static if (__traits(compiles, plugin))
     {
         alias context = plugin;
         enum contextName = "plugin";
