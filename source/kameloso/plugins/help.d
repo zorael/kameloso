@@ -43,7 +43,7 @@ import dialect.defs;
     Plugins don't know about other plugins; the only thing they know of the
     outside world is the thread ID of the main thread ID (stored in
     [kameloso.plugins.common.core.IRCPluginState,mainThread]). As such, we can't easily query
-    each plugin for their [kameloso.plugins.common.core.BotCommand]-annotated functions.
+    each plugin for their [kameloso.plugins.common.core.IRCEventHandler.Command]-annotated functions.
 
     To work around this we construct an array of
     `kameloso.thread.CarryingFiber!(kameloso.plugins.common.core.IRCPlugin)`s and send it

@@ -67,8 +67,8 @@ private:
 public:
     // CommandMetadata
     /++
-        Metadata about a [kameloso.plugins.common.core.BotCommand]- and/or
-        [kameloso.plugins.common.core.BotRegex]-annotated event handler.
+        Metadata about a [kameloso.plugins.common.core.IRCEventHandler.Command]- and/or
+        [kameloso.plugins.common.core.IRCEventHandler.Regex]-annotated event handler.
 
         See_Also:
             [commands]
@@ -432,7 +432,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
         It also does checks for [kameloso.plugins.common.core.ChannelPolicy],
         [kameloso.plugins.common.core.Permissions], [kameloso.plugins.common.core.PrefixPolicy],
-        [kameloso.plugins.common.core.BotCommand], [kameloso.plugins.common.core.BotRegex]
+        [kameloso.plugins.common.core.IRCEventHandler.Command], [kameloso.plugins.common.core.IRCEventHandler.Regex]
         etc; where such is applicable.
 
         Params:
@@ -703,7 +703,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
                 if (!event.content.length)
                 {
-                    // Event has a BotCommand or a BotRegex set up but
+                    // Event has a Command or a Regex set up but
                     // `event.content` is empty; cannot possibly be of interest.
                     return NextStep.continue_;  // next function
                 }
@@ -712,11 +712,11 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 immutable origContent = event.content;
                 immutable origAux = event.aux;
 
-                /// Whether or not a [BotCommand] or [BotRegex] matched.
+                /// Whether or not a Command or Regex matched.
                 bool commandMatch;
             }
 
-            // Evaluate each BotCommand UDAs with the current event
+            // Evaluate each Command UDAs with the current event
             static if (uda.given.commands.length)
             {
                 static foreach (immutable command; uda.given.commands)
@@ -735,7 +735,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                         {
                             static if (verbose)
                             {
-                                writeln("   ...policy doesn't match; continue next BotCommand");
+                                writeln("   ...policy doesn't match; continue next Command");
                             }
 
                             policyMismatch = true;
@@ -780,7 +780,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 }}
             }
 
-            // Iff no match from BotCommands, evaluate BotRegexes
+            // Iff no match from Commands, evaluate Regexes
             static if (uda.given.regexes.length)
             {
                 static foreach (immutable regex; uda.given.regexes)
@@ -802,7 +802,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                         {
                             static if (verbose)
                             {
-                                writeln("   ...policy doesn't match; continue next BotRegex");
+                                writeln("   ...policy doesn't match; continue next Regex");
                             }
 
                             policyMismatch = true;
@@ -856,7 +856,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             {
                 if (!commandMatch)
                 {
-                    // Bot{Command,Regex} exists but neither matched; skip
+                    // {Command,Regex} exist but neither matched; skip
                     static if (verbose)
                     {
                         writeln("   ...no Command nor Regex match; continue funloop");
@@ -1539,8 +1539,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
     // commands
     /++
-        Collects all [kameloso.plugins.common.core.BotCommand] command words and
-        [kameloso.plugins.common.core.BotRegex] regex expressions
+        Collects all [kameloso.plugins.common.core.IRCEventHandler.Command] command words and
+        [kameloso.plugins.common.core.IRCEventHandler.Regex] regex expressions
         that this plugin offers at compile time, then at runtime returns them
         alongside their [Description]s and their visibility, as an associative
         array of [kameloso.plugins.common.core.IRCPlugin.CommandMetadata]s
@@ -1548,8 +1548,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
         Returns:
             Associative array of tuples of all [kameloso.plugins.common.core.Descriptions]
-            and whether they are hidden, keyed by [kameloso.plugins.common.core.BotCommand.word]s
-            and [kameloso.plugins.common.core.BotRegex.expression]s.
+            and whether they are hidden, keyed by [kameloso.plugins.common.core.IRCEventHandler.Command.word]s
+            and [kameloso.plugins.common.core.IRCEventHandler.Regex.expression]s.
      +/
     override public IRCPlugin.CommandMetadata[string] commands() pure nothrow @property const
     {
@@ -1734,7 +1734,7 @@ unittest
 // prefixPolicyMatches
 /++
     Evaluates whether or not the message in an event satisfies the [PrefixPolicy]
-    specified, as fetched from a [BotCommand] or [BotRegex] UDA.
+    specified, as fetched from a [IRCEventHandler.Command] or [IRCEventHandler.Regex] UDA.
 
     If it doesn't match, the [onEvent] routine shall consider the UDA as not
     matching and continue with the next one.
@@ -3152,7 +3152,7 @@ struct IRCEventHandler
 
             Example:
             ---
-            BotRegex()
+            Regex()
                 .expression(r"(?:^|\s)MonkaS(?:$|\s)")
                 .description("Detects MonkaS.")
             ---

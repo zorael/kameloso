@@ -624,7 +624,7 @@ void onEndOfList(SeenPlugin plugin)
     a [dialect.defs.IRCEvent.Type.QUERY], and if
     [dialect.defs.IRCEvent.Type.CHAN] then only if in a *home*, this function triggers.
 
-    The [kameloso.plugins.common.core.BotCommand] annotation defines a piece of text
+    The [kameloso.plugins.common.core.IRCEventHandler] annotation defines a piece of text
     that the incoming message must start with for this function to be called.
     [kameloso.plugins.common.core.PrefixPolicy] deals with whether the message has to
     start with the name of the *bot* or not, and to what extent.
@@ -639,7 +639,7 @@ void onEndOfList(SeenPlugin plugin)
 
     The plugin system will have made certain we only get messages starting with
     "`seen`", since we annotated this function with such a
-    [kameloso.plugins.common.core.BotCommand]. It will since have been sliced off,
+    [kameloso.plugins.common.core.IRCEventHandler.Command]. It will since have been sliced off,
     so we're left only with the "arguments" to "`seen`". [dialect.defs.IRCEvent.aux]
     contains the triggering word, if it's needed.
 
