@@ -597,7 +597,7 @@ void messageFiber(ref Kameloso instance)
         }
 
         import std.datetime.systime : Clock;
-        import core.time : seconds;
+        import core.time : Duration, seconds;
 
         /// Did the concurrency receive catch something?
         bool receivedSomething;
@@ -605,7 +605,7 @@ void messageFiber(ref Kameloso instance)
         /// Timestamp of when the loop started.
         immutable loopStartTime = Clock.currTime;
 
-        static immutable instant = (-1).seconds;
+        static immutable instant = Duration.zero;
         static immutable oneSecond = 1.seconds;
 
         do
@@ -2925,7 +2925,7 @@ int initBot(string[] args)
         import kameloso.thread : ThreadMessage;
         import std.concurrency : receiveTimeout;
         import std.variant : Variant;
-        import core.time : seconds;
+        import core.time : Duration;
 
         // Connected and aborting
         // Catch any queued quit calls and use their reasons and quit settings
@@ -2937,7 +2937,7 @@ int initBot(string[] args)
 
         do
         {
-            notEmpty = receiveTimeout((-1).seconds,
+            notEmpty = receiveTimeout(Duration.zero,
                 (ThreadMessage.Quit, string givenReason, Flag!"quiet" givenQuiet) scope
                 {
                     reason = givenReason;

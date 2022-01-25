@@ -205,9 +205,9 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
         }
 
         import kameloso.thread : busMessage;
-        import core.time : seconds;
+        import core.time : Duration;
 
-        static immutable instant = (-1).seconds;
+        static immutable instant = Duration.zero;
         bool halt;
 
         cast(void)receiveTimeout(instant,

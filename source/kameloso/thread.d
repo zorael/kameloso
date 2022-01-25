@@ -421,7 +421,7 @@ unittest
 {
     import std.concurrency : receiveTimeout, send, thisTid;
     import std.variant : Variant;
-    import core.time : seconds;
+    import core.time : Duration;
 
     foreach (immutable i; 0..10)
     {
@@ -430,7 +430,7 @@ unittest
 
     exhaustMessages();
 
-    immutable receivedSomething = receiveTimeout((-1).seconds,
+    immutable receivedSomething = receiveTimeout(Duration.zero,
         (Variant _) {},
     );
 

@@ -1123,9 +1123,9 @@ unittest
         import std.concurrency : receiveTimeout;
         import std.conv : text;
         import std.variant : Variant;
-        import core.time : seconds;
+        import core.time : Duration;
 
-        receiveTimeout((-1).seconds,
+        receiveTimeout(Duration.zero,
             (ThreadMessage.TerminalOutput logLevel, string message)
             {
                 assert((logLevel == expectedLevels[i]), logLevel.text);
