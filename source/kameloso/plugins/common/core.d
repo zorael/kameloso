@@ -294,42 +294,44 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
      +/
     override public bool isEnabled() const @property pure nothrow @nogc
     {
-        import lu.traits : getSymbolsByUDA;
-        import std.traits : hasUDA;
-
         bool retval = true;
 
         top:
-        foreach (immutable i, const ref member; this.tupleof)
+        foreach (immutable i, _; this.tupleof)
         {
-            static if (hasUDA!(this.tupleof[i], Settings) ||
-                (is(typeof(this.tupleof[i]) == struct) &&
-                hasUDA!(typeof(this.tupleof[i]), Settings)))
+            import std.meta : Alias;
+            import std.traits : hasUDA;
+
+            alias member = Alias!(this.tupleof[i]);
+
+            static if (hasUDA!(member, Settings) ||
+                (is(typeof(member) == struct) &&
+                hasUDA!(typeof(member), Settings)))
             {
-                static if (getSymbolsByUDA!(typeof(this.tupleof[i]), Enabler).length)
+                foreach (immutable n, _2; member.tupleof)
                 {
-                    foreach (immutable n, const submember; this.tupleof[i].tupleof)
+                    alias settingsStructMember = Alias!(member.tupleof[n]);
+
+                    static if (hasUDA!(settingsStructMember, Enabler))
                     {
-                        static if (hasUDA!(this.tupleof[i].tupleof[n], Enabler))
+                        import std.traits : Unqual;
+
+                        alias ThisEnabler = Unqual!(typeof(settingsStructMember));
+
+                        static if (!is(ThisEnabler == bool))
                         {
-                            import std.traits : Unqual;
-                            alias ThisEnabler = Unqual!(typeof(this.tupleof[i].tupleof[n]));
+                            import std.format : format;
 
-                            static if (!is(ThisEnabler == bool))
-                            {
-                                import std.format : format;
+                            alias UnqualThis = Unqual!(typeof(this));
+                            enum pattern = "`%s` has a non-bool `Enabler`: `%s %s`";
 
-                                alias UnqualThis = Unqual!(typeof(this));
-                                enum pattern = "`%s` has a non-bool `Enabler`: `%s %s`";
-
-                                static assert(0, pattern.format(UnqualThis.stringof,
-                                    ThisEnabler.stringof,
-                                    __traits(identifier, this.tupleof[i].tupleof[n])));
-                            }
-
-                            retval = submember;
-                            break top;
+                            static assert(0, pattern.format(UnqualThis.stringof,
+                                ThisEnabler.stringof,
+                                __traits(identifier, this.tupleof[i].tupleof[n])));
                         }
+
+                        retval = __traits(child, member, settingsStructMember);
+                        break top;
                     }
                 }
             }
