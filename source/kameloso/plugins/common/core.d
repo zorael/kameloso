@@ -1502,41 +1502,29 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
     pragma(inline, true)
     override public string name() @property const pure nothrow @nogc
     {
-        import std.traits : packageName;
+        import std.traits : getUDAs;
 
         mixin("static import thisModule = " ~ module_ ~ ";");
+        alias annotatedNameStrings = getUDAs!(thisModule, string);
 
-        enum moduleNameString = __traits(identifier, thisModule);
-
-        enum cutoutModuleName = ()
+        static if (annotatedNameStrings.length)
         {
-            static if (moduleNameString == "base")
+            return annotatedNameStrings[0];
+        }
+        else
+        {
+            enum moduleIdentifier = __traits(identifier, thisModule);
+
+            static if (moduleIdentifier == "base")
             {
-                import std.string : indexOf;
-
-                // Assumes a fqn of "kameloso.plugins.*.base"
-
-                string slice = module_;
-                immutable firstDot = slice.indexOf('.');
-                if (firstDot == -1) return slice;
-
-                slice = slice[firstDot+1..$];
-                immutable secondDot = slice.indexOf('.');
-                if (secondDot == -1) return slice;
-
-                slice = slice[secondDot+1..$];
-                immutable thirdDot = slice.indexOf('.');
-                if (thirdDot == -1) return slice;
-
-                return slice[0..thirdDot];
+                import std.traits : fullyQualifiedName;
+                static assert(0, "Cannot determine plugin name of module `" ~
+                    fullyQualifiedName!thisModule ~ "`; annotate the `module` " ~
+                    "line with a `@(\"string\")` to explicitly define one");
             }
-            else
-            {
-                return moduleNameString;
-            }
-        }().idup;
 
-        return cutoutModuleName;
+            return moduleIdentifier;
+        }
     }
 
     // commands

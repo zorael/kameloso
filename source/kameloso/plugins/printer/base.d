@@ -15,6 +15,7 @@
         [kameloso.plugins.common.core]
         [kameloso.plugins.common.misc]
  +/
+@("printer")
 module kameloso.plugins.printer.base;
 
 version(WithPlugins):
