@@ -2288,8 +2288,12 @@ private final class ReplayImpl(Fun, Payload = typeof(null)) : Replay
                     the replay is triggered.
                 caller = String of calling function.
          +/
-        this(Payload payload, IRCEvent event, Permissions permissionsRequired,
-            Fun fun, const string caller)
+        this(
+            Payload payload,
+            const IRCEvent event,
+            const Permissions permissionsRequired,
+            Fun fun,
+            const string caller)
         {
             super();
 
@@ -2313,7 +2317,11 @@ private final class ReplayImpl(Fun, Payload = typeof(null)) : Replay
                     the replay is triggered.
                 caller = String of calling function.
          +/
-        this(IRCEvent event, Permissions permissionsRequired, Fun fun, const string caller)
+        this(
+            const IRCEvent event,
+            const Permissions permissionsRequired,
+            Fun fun,
+            const string caller)
         {
             super();
 
@@ -2498,6 +2506,7 @@ public:
     this(Fiber fiber, Replay replay) @safe
     {
         import std.datetime.systime : Clock;
+
         created = Clock.currTime.toUnixTime;
         this.fiber = fiber;
         this.replay = replay;
