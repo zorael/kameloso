@@ -2234,14 +2234,14 @@ abstract class Replay
         [Replay]
         [replay]
  +/
-private final class ReplayImpl(F, Payload = typeof(null)) : Replay
+private final class ReplayImpl(Fun, Payload = typeof(null)) : Replay
 {
 @safe:
-    // fn
+    // fun
     /++
         Stored function pointer/delegate.
      +/
-    F fn;
+    Fun fun;
 
     static if (!is(Payload == typeof(null)))
     {
@@ -2259,19 +2259,19 @@ private final class ReplayImpl(F, Payload = typeof(null)) : Replay
                 event = [dialect.defs.IRCEvent] to attach to this [ReplayImpl].
                 permissionsRequired = The permissions level required to replay the
                     passed function.
-                fn = Function pointer to call with the attached payloads when
+                fun = Function pointer to call with the attached payloads when
                     the replay is triggered.
                 caller = String of calling function.
          +/
         this(Payload payload, IRCEvent event, Permissions permissionsRequired,
-            F fn, const string caller)
+            Fun fun, const string caller)
         {
             super();
 
             this.payload = payload;
             this.event = event;
             this.permissionsRequired = permissionsRequired;
-            this.fn = fn;
+            this.fun = fun;
             this.caller = caller;
         }
     }
@@ -2284,17 +2284,17 @@ private final class ReplayImpl(F, Payload = typeof(null)) : Replay
                 event = [dialect.defs.IRCEvent] to attach to this [ReplayImpl].
                 permissionsRequired = The permissions level required to replay the
                     passed function.
-                fn = Function pointer to call with the attached payloads when
+                fun = Function pointer to call with the attached payloads when
                     the replay is triggered.
                 caller = String of calling function.
          +/
-        this(IRCEvent event, Permissions permissionsRequired, F fn, const string caller)
+        this(IRCEvent event, Permissions permissionsRequired, Fun fun, const string caller)
         {
             super();
 
             this.event = event;
             this.permissionsRequired = permissionsRequired;
-            this.fn = fn;
+            this.fun = fun;
             this.caller = caller;
         }
     }
@@ -2310,23 +2310,23 @@ private final class ReplayImpl(F, Payload = typeof(null)) : Replay
         import std.meta : AliasSeq;
         import std.traits : arity;
 
-        assert((fn !is null), "null fn in `" ~ typeof(this).stringof ~ '`');
+        assert((fun !is null), "null fun in `" ~ typeof(this).stringof ~ '`');
 
-        static if (TakesParams!(fn, AliasSeq!(Payload, IRCEvent)))
+        static if (TakesParams!(fun, AliasSeq!(Payload, IRCEvent)))
         {
-            fn(payload, event);
+            fun(payload, event);
         }
-        else static if (TakesParams!(fn, AliasSeq!Payload))
+        else static if (TakesParams!(fun, AliasSeq!Payload))
         {
-            fn(payload);
+            fun(payload);
         }
-        else static if (TakesParams!(fn, AliasSeq!IRCEvent))
+        else static if (TakesParams!(fun, AliasSeq!IRCEvent))
         {
-            fn(event);
+            fun(event);
         }
-        else static if (arity!fn == 0)
+        else static if (arity!fun == 0)
         {
-            fn();
+            fun();
         }
         else
         {
@@ -2334,7 +2334,7 @@ private final class ReplayImpl(F, Payload = typeof(null)) : Replay
 
             enum pattern = "`ReplayImpl` instantiated with an invalid " ~
                 "replay function signature: `%s`";
-            static assert(0, pattern.format(F.stringof));
+            static assert(0, pattern.format(Fun.stringof));
         }
     }
 }
@@ -2626,11 +2626,11 @@ enum Permissions
     *with* a subclass plugin reference attached.
 
     Params:
-        subPlugin = Subclass [IRCPlugin] to call the function pointer `fn` with
+        subPlugin = Subclass [IRCPlugin] to call the function pointer `fun` with
             as first argument, when the WHOIS results return.
         event = [dialect.defs.IRCEvent] that instigated the WHOIS lookup.
         permissionsRequired = The permissions level policy to apply to the WHOIS results.
-        fn = Function/delegate pointer to call upon receiving the results.
+        fun = Function/delegate pointer to call upon receiving the results.
         caller = String name of the calling function, or something else that gives context.
 
     Returns:
@@ -2640,14 +2640,14 @@ enum Permissions
     See_Also:
         [Replay]
  +/
-Replay replay(Fn, SubPlugin)
+Replay replay(Fun, SubPlugin)
     (SubPlugin subPlugin,
     const ref IRCEvent event,
     const Permissions permissionsRequired,
-    Fn fn,
+    Fun fun,
     const string caller = __FUNCTION__) @safe
 {
-    return new ReplayImpl!(Fn, SubPlugin)(subPlugin, event, permissionsRequired, fn, caller);
+    return new ReplayImpl!(Fun, SubPlugin)(subPlugin, event, permissionsRequired, fun, caller);
 }
 
 
@@ -2659,7 +2659,7 @@ Replay replay(Fn, SubPlugin)
     Params:
         event = [dialect.defs.IRCEvent] that instigated the WHOIS lookup.
         permissionsRequired = The permissions level policy to apply to the WHOIS results.
-        fn = Function/delegate pointer to call upon receiving the results.
+        fun = Function/delegate pointer to call upon receiving the results.
         caller = String name of the calling function, or something else that gives context.
 
     Returns:
@@ -2669,13 +2669,13 @@ Replay replay(Fn, SubPlugin)
     See_Also:
         [Replay]
  +/
-Replay replay(Fn)
+Replay replay(Fun)
     (const ref IRCEvent event,
     const Permissions permissionsRequired,
-    Fn fn,
+    Fun fun,
     const string caller = __FUNCTION__) @safe
 {
-    return new ReplayImpl!Fn(event, permissionsRequired, fn, caller);
+    return new ReplayImpl!Fun(event, permissionsRequired, fun, caller);
 }
 
 
