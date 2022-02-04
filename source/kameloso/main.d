@@ -1135,6 +1135,16 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
 
         eventWasInitialised = true;
 
+        version(TwitchSupport)
+        {
+            // If it's an RPL_WELCOME event, record it as having been seen so we
+            // know we can't reconnect without waiting a bit.
+            if (event.type == IRCEvent.Type.RPL_WELCOME)
+            {
+                instance.sawWelcome = true;
+            }
+        }
+
         if (instance.parser.clientUpdated)
         {
             // Parsing changed the client; propagate
@@ -2410,8 +2420,23 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                 instance.fastbuffer.clear();
             }
 
+            auto gracePeriodBeforeReconnect = Timeout.connectionRetry.seconds;
+
+            version(TwitchSupport)
+            {
+                import std.algorithm.searching : endsWith;
+                import core.time : msecs;
+
+                if (instance.parser.server.address.endsWith(".twitch.tv") && !instance.sawWelcome)
+                {
+                    // We probably saw an instant disconnect before even getting to RPL_WELCOME
+                    // Quickly attempt again
+                    gracePeriodBeforeReconnect = 500.msecs;
+                }
+            }
+
             logger.log("One moment...");
-            interruptibleSleep(Timeout.connectionRetry.seconds, *instance.abort);
+            interruptibleSleep(gracePeriodBeforeReconnect, *instance.abort);
             if (*instance.abort) break outerloop;
 
             // Re-init plugins here so it isn't done on the first connect attempt
@@ -2429,6 +2454,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             instance.parser.server = typeof(instance.parser.server).init;  // TODO: Add IRCServer constructor
             instance.parser.server.address = addressSnapshot;
             instance.parser.server.port = portSnapshot;
+            instance.sawWelcome = false;
         }
 
         scope(exit)

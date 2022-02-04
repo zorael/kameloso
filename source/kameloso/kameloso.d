@@ -608,6 +608,12 @@ public:
 
     /// Set when the Socket read timeout was requested to be shortened.
     bool wantReceiveTimeoutShortened;
+
+    version(TwitchSupport)
+    {
+        /// Set when an `IRCEvent.Type.RPL_WELCOME` event was encountered.
+        bool sawWelcome;
+    }
 }
 
 
