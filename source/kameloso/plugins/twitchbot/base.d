@@ -234,7 +234,6 @@ void onSelfpart(TwitchBotPlugin plugin, const ref IRCEvent event)
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .onEvent(IRCEvent.Type.SELFCHAN)
     .permissionsRequired(Permissions.operator)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
@@ -262,7 +261,6 @@ void onCommandTimer(TwitchBotPlugin plugin, const ref IRCEvent event)
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .onEvent(IRCEvent.Type.SELFCHAN)
     .permissionsRequired(Permissions.anyone)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
@@ -292,7 +290,6 @@ void onCommandUptime(TwitchBotPlugin plugin, const ref IRCEvent event)
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .onEvent(IRCEvent.Type.SELFCHAN)
     .permissionsRequired(Permissions.operator)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
@@ -377,7 +374,6 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .onEvent(IRCEvent.Type.SELFCHAN)
     .permissionsRequired(Permissions.operator)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
@@ -557,7 +553,6 @@ void reportStreamTime(TwitchBotPlugin plugin,
 version(TwitchAPIFeatures)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .onEvent(IRCEvent.Type.SELFCHAN)
     .permissionsRequired(Permissions.ignore)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
@@ -796,7 +791,6 @@ void onRoomState(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 version(TwitchAPIFeatures)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .onEvent(IRCEvent.Type.SELFCHAN)
     .permissionsRequired(Permissions.operator)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(

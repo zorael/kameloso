@@ -307,7 +307,6 @@ void onNames(NotesPlugin plugin, const ref IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
-    .onEvent(IRCEvent.Type.SELFCHAN)
     .permissionsRequired(Permissions.whitelist)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(

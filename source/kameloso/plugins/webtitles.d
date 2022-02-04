@@ -112,7 +112,6 @@ struct TitleLookupRequest
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .onEvent(IRCEvent.Type.SELFCHAN)
     .permissionsRequired(Permissions.ignore)
     .channelPolicy(ChannelPolicy.home)
 )

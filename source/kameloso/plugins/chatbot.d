@@ -48,7 +48,6 @@ import std.typecons : Flag, No, Yes;
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
-    .onEvent(IRCEvent.Type.SELFCHAN)
     .permissionsRequired(Permissions.anyone)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
@@ -92,7 +91,6 @@ void onCommandSay(ChatbotPlugin plugin, const ref IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
-    .onEvent(IRCEvent.Type.SELFCHAN)
     .permissionsRequired(Permissions.anyone)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
@@ -152,7 +150,6 @@ void onCommand8ball(ChatbotPlugin plugin, const ref IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
-    .onEvent(IRCEvent.Type.SELFCHAN)
     .permissionsRequired(Permissions.anyone)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
@@ -310,7 +307,6 @@ void worker(shared IRCPluginState sState,
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .onEvent(IRCEvent.Type.SELFCHAN)
     .permissionsRequired(Permissions.anyone)
     .channelPolicy(ChannelPolicy.home)
 )

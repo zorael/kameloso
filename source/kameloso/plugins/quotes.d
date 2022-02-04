@@ -167,7 +167,6 @@ Quote getSpecificQuote(QuotesPlugin plugin, const string nickname, const size_t 
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
-    .onEvent(IRCEvent.Type.SELFCHAN)
     .permissionsRequired(Permissions.whitelist)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
@@ -478,7 +477,6 @@ unittest
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
-    .onEvent(IRCEvent.Type.SELFCHAN)
     .permissionsRequired(Permissions.operator)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
@@ -508,7 +506,6 @@ void onCommandDelQuote(QuotesPlugin plugin, const ref IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
-    .onEvent(IRCEvent.Type.SELFCHAN)
     .permissionsRequired(Permissions.operator)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
@@ -769,7 +766,6 @@ void manageQuoteImpl(QuotesPlugin plugin,
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
-    .onEvent(IRCEvent.Type.SELFCHAN)
     .permissionsRequired(Permissions.operator)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(

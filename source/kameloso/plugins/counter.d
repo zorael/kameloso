@@ -47,7 +47,6 @@ import std.typecons : Flag, No, Yes;
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .onEvent(IRCEvent.Type.SELFCHAN)
     .permissionsRequired(Permissions.whitelist)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
@@ -187,7 +186,6 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .onEvent(IRCEvent.Type.SELFCHAN)
     .permissionsRequired(Permissions.anyone)
     .channelPolicy(ChannelPolicy.home)
 )

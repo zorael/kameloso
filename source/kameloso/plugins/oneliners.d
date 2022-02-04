@@ -43,7 +43,6 @@ import dialect.defs;
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .onEvent(IRCEvent.Type.SELFCHAN)
     .permissionsRequired(Permissions.ignore)
     .channelPolicy(ChannelPolicy.home)
     .chainable(true)
@@ -91,7 +90,6 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .onEvent(IRCEvent.Type.SELFCHAN)
     .permissionsRequired(Permissions.operator)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
@@ -208,7 +206,6 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .onEvent(IRCEvent.Type.SELFCHAN)
     .permissionsRequired(Permissions.anyone)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(

@@ -669,7 +669,6 @@ void onEndOfList(SeenPlugin plugin)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
-    .onEvent(IRCEvent.Type.SELFCHAN)
     .permissionsRequired(Permissions.anyone)
     .channelPolicy(omniscientChannelPolicy)
     .addCommand(
