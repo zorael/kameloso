@@ -497,16 +497,16 @@ private:
     import std.typecons : Flag, No, Yes;
 
     /// Symbol needed for the mixin constraints to work.
-    enum mixinSentinel = true;
+    // https://forum.dlang.org/post/sk4hqm$12cf$1@digitalmars.com
+    alias mixinParent = __traits(parent, {});
 
     // Use a custom constraint to force the scope to be an IRCPlugin
-    static if (!is(__traits(parent, mixinSentinel) : IRCPlugin))
+    static if (!is(mixinParent : IRCPlugin))
     {
         import lu.traits : CategoryName;
         import std.format : format;
 
-        alias messagingParent = __traits(parent, mixinSentinel);
-        alias messagingParentInfo = CategoryName!messagingParent;
+        alias messagingParentInfo = CategoryName!mixinParent;
 
         private enum pattern = "%s `%s` mixes in `%s` but it is only supposed to be " ~
             "mixed into an `IRCPlugin` subclass";
