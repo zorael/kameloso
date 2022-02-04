@@ -386,7 +386,6 @@ mixin template IRCPluginImpl(
     private FilterResult allowImpl(const ref IRCEvent event, const Permissions permissionsRequired)
     {
         import kameloso.plugins.common.core : filterSender;
-        import std.typecons : Flag, No, Yes;
 
         version(TwitchSupport)
         {

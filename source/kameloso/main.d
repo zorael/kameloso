@@ -1162,6 +1162,7 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
         // Save timestamp in the event itself.
         event.time = nowInUnix;
 
+        // Let each plugin postprocess the event
         foreach (plugin; instance.plugins)
         {
             if (!plugin.isEnabled) continue;
