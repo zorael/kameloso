@@ -1110,6 +1110,7 @@ mixin template IRCPluginImpl(
             }
         }
 
+        import kameloso.plugins.common.core : IRCEventHandler;
         import lu.traits : getSymbolsByUDA;
         import std.meta : Filter, templateNot, templateOr;
         import std.traits : getUDAs, isSomeFunction;
