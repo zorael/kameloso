@@ -80,8 +80,8 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     static if (__traits(compiles, hasWHOISFiber))
     {
         import std.format : format;
-        static assert(0, "Double mixin of `%s` in `%s`"
-            .format("WHOISFiberDelegate", __FUNCTION__));
+        enum pattern = "Double mixin of `%s` in `%s`";
+        static assert(0, pattern.format("WHOISFiberDelegate", __FUNCTION__));
     }
     else
     {
@@ -517,8 +517,8 @@ private:
     static if (__traits(compiles, this.hasMessagingProxy))
     {
         import std.format : format;
-        static assert(0, "Double mixin of `%s` in `%s`"
-            .format("MessagingProxy", typeof(this).stringof));
+        enum pattern = "Double mixin of `%s` in `%s`";
+        static assert(0, pattern.format("MessagingProxy", typeof(this).stringof));
     }
     else
     {
@@ -847,8 +847,8 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_,
     static if (__traits(compiles, hasRepeater))
     {
         import std.format : format;
-        static assert(0, "Double mixin of `%s` in `%s`"
-            .format("Repeater", __FUNCTION__));
+        enum pattern = "Double mixin of `%s` in `%s`";
+        static assert(0, pattern.format("Repeater", __FUNCTION__));
     }
     else
     {

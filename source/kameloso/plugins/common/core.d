@@ -269,8 +269,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
     static if (__traits(compiles, this.hasIRCPluginImpl))
     {
         import std.format : format;
-        static assert(0, "Double mixin of `%s` in `%s`"
-            .format("IRCPluginImpl", typeof(this).stringof));
+        enum pattern = "Double mixin of `%s` in `%s`";
+        static assert(0, pattern.format("IRCPluginImpl", typeof(this).stringof));
     }
     else
     {
@@ -445,11 +445,11 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         mixin("static import thisModule = " ~ module_ ~ ";");
 
         import kameloso.plugins.common.core : IRCEventHandler;
-        import lu.string : contains, nom;
-        import lu.traits : getSymbolsByUDA;
-        import std.meta : Filter, templateNot, templateOr;
-        import std.traits : isSomeFunction, fullyQualifiedName, getUDAs, hasUDA;
+        import std.traits : fullyQualifiedName, getUDAs;
 
+        /++
+            Verifies that annotations are as expected.
+         +/
         bool udaSanityCheck(alias fun)()
         {
             alias handlerAnnotations = getUDAs!(fun, IRCEventHandler);
@@ -557,6 +557,9 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             return true;
         }
 
+        /++
+            Calls the passed function, appropriately.
+         +/
         void call(alias fun)(ref IRCEvent event)
         {
             import std.meta : AliasSeq, staticMap;
@@ -621,8 +624,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             else
             {
                 import std.format : format;
-                static assert(0, "`%s` has an unsupported function signature: `%s`"
-                    .format(fullyQualifiedName!fun, typeof(fun).stringof));
+                enum pattern = "`%s` has an unsupported function signature: `%s`";
+                static assert(0, pattern.format(fullyQualifiedName!fun, typeof(fun).stringof));
             }
         }
 
@@ -651,7 +654,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 import std.format : format;
                 import std.stdio : writeln, writefln;
 
-                enum funID = "[%s] %s".format(__traits(identifier, thisModule),
+                enum pattern = "[%s] %s";
+                enum funID = pattern.format(__traits(identifier, thisModule),
                     __traits(identifier, fun));
             }
 
@@ -749,7 +753,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                         }
                         else
                         {
-                            import lu.string : strippedLeft;
+                            import lu.string : nom, strippedLeft;
                             import std.algorithm.comparison : equal;
                             import std.typecons : No, Yes;
                             import std.uni : asLowerCase, toLower;
@@ -954,8 +958,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                     else
                     {
                         import std.format : format;
-                        static assert(0, "`%s` has an unsupported function signature: `%s`"
-                            .format(fullyQualifiedName!fun, typeof(fun).stringof));
+                        enum pattern = "`%s` has an unsupported function signature: `%s`";
+                        static assert(0, pattern.format(fullyQualifiedName!fun, typeof(fun).stringof));
                     }
                 }
                 else if (result == FilterResult.fail)
@@ -1111,6 +1115,10 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             }
         }
 
+        import lu.traits : getSymbolsByUDA;
+        import std.meta : Filter, templateNot, templateOr;
+        import std.traits : isSomeFunction;
+
         enum isSetupFun(alias T) = (getUDAs!(T, IRCEventHandler)[0].given.when == Timing.setup);
         enum isEarlyFun(alias T) = (getUDAs!(T, IRCEventHandler)[0].given.when == Timing.early);
         enum isLateFun(alias T) = (getUDAs!(T, IRCEventHandler)[0].given.when == Timing.late);
@@ -1193,8 +1201,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             else
             {
                 import std.format : format;
-                static assert(0, "`%s.initialise` has an unsupported function signature: `%s`"
-                    .format(module_, typeof(.initialise).stringof));
+                enum pattern = "`%s.initialise` has an unsupported function signature: `%s`";
+                static assert(0, pattern.format(module_, typeof(.initialise).stringof));
             }
         }
     }
@@ -1229,16 +1237,16 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 else
                 {
                     import std.format : format;
-                    static assert(0, ("`%s.postprocess` does not take its " ~
-                        "`IRCEvent` parameter by `ref`")
-                            .format(module_,));
+                    enum pattern = "`%s.postprocess` does not take its " ~
+                        "`IRCEvent` parameter by `ref`";
+                    static assert(0, pattern.format(module_,));
                 }
             }
             else
             {
                 import std.format : format;
-                static assert(0, "`%s.postprocess` has an unsupported function signature: `%s`"
-                    .format(module_, typeof(.postprocess).stringof));
+                enum pattern = "`%s.postprocess` has an unsupported function signature: `%s`";
+                static assert(0, pattern.format(module_, typeof(.postprocess).stringof));
             }
         }
     }
@@ -1262,8 +1270,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             else
             {
                 import std.format : format;
-                static assert(0, "`%s.initResources` has an unsupported function signature: `%s`"
-                    .format(module_, typeof(.initResources).stringof));
+                enum pattern = "`%s.initResources` has an unsupported function signature: `%s`";
+                static assert(0, pattern.format(module_, typeof(.initResources).stringof));
             }
         }
     }
@@ -1433,8 +1441,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 import std.traits : fullyQualifiedName;
 
                 // Warn here but nowhere else about this.
-                static assert(0, "`%s` is annotated `@Settings` but is not a `struct`"
-                    .format(fullyQualifiedName!(this.tupleof[i])));
+                enum pattern = "`%s` is annotated `@Settings` but is not a `struct`";
+                static assert(0, pattern.format(fullyQualifiedName!(this.tupleof[i])));
             }
         }
 
@@ -1461,8 +1469,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             else
             {
                 import std.format : format;
-                static assert(0, "`%s.start` has an unsupported function signature: `%s`"
-                    .format(module_, typeof(.start).stringof));
+                enum pattern = "`%s.start` has an unsupported function signature: `%s`";
+                static assert(0, pattern.format(module_, typeof(.start).stringof));
             }
         }
     }
@@ -1486,8 +1494,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             else
             {
                 import std.format : format;
-                static assert(0, "`%s.teardown` has an unsupported function signature: `%s`"
-                    .format(module_, typeof(.teardown).stringof));
+                enum pattern = "`%s.teardown` has an unsupported function signature: `%s`";
+                static assert(0, pattern.format(module_, typeof(.teardown).stringof));
             }
         }
     }
@@ -1517,10 +1525,12 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
             static if (moduleIdentifier == "base")
             {
+                import std.format : format;
                 import std.traits : fullyQualifiedName;
-                static assert(0, "Cannot determine plugin name of module `" ~
-                    fullyQualifiedName!thisModule ~ "`; annotate the `module` " ~
-                    "line with a `@(\"string\")` to explicitly define one");
+
+                enum pattern = "Cannot determine plugin name of module `%s`; " ~
+                    "annotate the `module` line with a `@(\"string\")` to explicitly define one";
+                static assert(0, pattern.format(fullyQualifiedName!thisModule));
             }
 
             return moduleIdentifier;
@@ -1547,7 +1557,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         {
             import kameloso.plugins.common.core : IRCEventHandler;
             import lu.traits : getSymbolsByUDA;
-            import std.meta : AliasSeq, Filter;
+            import std.meta : Filter;
             import std.traits : getUDAs, isSomeFunction;
 
             mixin("static import thisModule = " ~ module_ ~ ";");
@@ -1617,8 +1627,9 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                     {
                         import std.format : format;
                         import std.traits : fullyQualifiedName;
-                        pragma(msg, "Warning: `%s` non-hidden expression \"%s\" is missing a description"
-                            .format(fullyQualifiedName!fun, regex.given.expression));
+
+                        enum pattern = "Warning: `%s` non-hidden expression \"%s\" is missing a description";
+                        pragma(msg, pattern.format(fullyQualifiedName!fun, regex.given.expression));
                     }
                 }}
             }
@@ -1654,8 +1665,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             else
             {
                 import std.format : format;
-                static assert(0, "`%s.reload` has an unsupported function signature: `%s`"
-                    .format(module_, typeof(.reload).stringof));
+                enum pattern = "`%s.reload` has an unsupported function signature: `%s`";
+                static assert(0, pattern.format(module_, typeof(.reload).stringof));
             }
         }
     }
@@ -1688,8 +1699,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             else
             {
                 import std.format : format;
-                static assert(0, "`%s.onBusMessage` has an unsupported function signature: `%s`"
-                    .format(module_, typeof(.onBusMessage).stringof));
+                enum pattern = "`%s.onBusMessage` has an unsupported function signature: `%s`";
+                static assert(0, pattern.format(module_, typeof(.onBusMessage).stringof));
             }
         }
     }

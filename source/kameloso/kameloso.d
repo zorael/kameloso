@@ -332,8 +332,8 @@ public:
                             else
                             {
                                 import std.format : format;
-                                static assert(0, "`%s.%s` constructor does not compile"
-                                    .format(moduleName, Class.stringof));
+                                enum pattern = "`%s.%s` constructor does not compile";
+                                static assert(0, pattern.format(moduleName, Class.stringof));
                             }
                         }
                     }

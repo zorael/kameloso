@@ -120,8 +120,8 @@ mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
     static if (__traits(compiles, .hasMinimalAuthentication))
     {
         private import std.format : format;
-        static assert(0, "Double mixin of `%s` in `%s`"
-            .format("MinimalAuthentication", module_));
+        private enum pattern = "Double mixin of `%s` in `%s`";
+        static assert(0, pattern.format("MinimalAuthentication", module_));
     }
     else
     {
@@ -281,8 +281,8 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     static if (__traits(compiles, .hasUserAwareness))
     {
         private import std.format : format;
-        static assert(0, "Double mixin of `%s` in `%s`"
-            .format("UserAwareness", module_));
+        private enum pattern = "Double mixin of `%s` in `%s`";
+        static assert(0, pattern.format("UserAwareness", module_));
     }
     else
     {
@@ -703,8 +703,8 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     static if (__traits(compiles, .hasChannelAwareness))
     {
         private import std.format : format;
-        static assert(0, "Double mixin of `%s` in `%s`"
-            .format("ChannelAwareness", module_));
+        private enum pattern = "Double mixin of `%s` in `%s`";
+        static assert(0, pattern.format("ChannelAwareness", module_));
     }
     else
     {
@@ -1410,8 +1410,8 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     static if (__traits(compiles, .hasTwitchAwareness))
     {
         private import std.format : format;
-        static assert(0, "Double mixin of `%s` in `%s`"
-            .format("TwitchAwareness", module_));
+        private enum pattern = "Double mixin of `%s` in `%s`";
+        static assert(0, pattern.format("TwitchAwareness", module_));
     }
     else
     {
@@ -1591,8 +1591,8 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     static if (__traits(compiles, .hasTwitchAwareness))
     {
         private import std.format : format;
-        static assert(0, "Double mixin of `%s` in `%s`"
-            .format("TwitchAwareness", module_));
+        private enum pattern = "Double mixin of `%s` in `%s`";
+        static assert(0, pattern.format("TwitchAwareness", module_));
     }
     else
     {
