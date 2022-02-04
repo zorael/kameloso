@@ -248,6 +248,11 @@ if (isOutputRange!(Sink, char[]))
                 }
             }
 
+            version(PrintClassNamesToo)
+            {
+                .put(sink, ':', event.sender.class_);
+            }
+
             version(TwitchSupport)
             {
                 if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
@@ -326,6 +331,11 @@ if (isOutputRange!(Sink, char[]))
             {
                 .put(sink, '(', event.target.account, ')');
             }
+        }
+
+        version(PrintClassNamesToo)
+        {
+            .put(sink, ':', event.target.class_);
         }
 
         version(TwitchSupport)
@@ -731,6 +741,11 @@ if (isOutputRange!(Sink, char[]))
                 }
             }
 
+            version(PrintClassNamesToo)
+            {
+                .put(sink, ':', event.sender.class_);
+            }
+
             version(TwitchSupport)
             {
                 if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
@@ -817,6 +832,11 @@ if (isOutputRange!(Sink, char[]))
             {
                 .put!(Yes.colours)(sink, FG.default_, '(', event.target.account, ')');
             }
+        }
+
+        version(PrintClassNamesToo)
+        {
+            .put(sink, ':', event.target.class_);
         }
 
         version(TwitchSupport)
