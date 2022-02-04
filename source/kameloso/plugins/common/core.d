@@ -129,7 +129,8 @@ public:
         first `out string[][string]` parameter, and the invalid encountered
         entries in the second.
      +/
-    void deserialiseConfigFrom(const string configFile,
+    void deserialiseConfigFrom(
+        const string configFile,
         out string[][string] missingEntries,
         out string[][string] invalidEntries);
 
@@ -242,7 +243,9 @@ public:
         [kameloso.plugins.common.core.IRCPlugin]
  +/
 version(WithPlugins)
-mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
+mixin template IRCPluginImpl(
+    Flag!"debug_" debug_ = No.debug_,
+    string module_ = __MODULE__)
 {
     private import kameloso.plugins.common.core : FilterResult, IRCPluginState, Permissions;
     private import dialect.defs : IRCEvent, IRCServer, IRCUser;
@@ -304,9 +307,10 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
             alias member = Alias!(this.tupleof[i]);
 
-            static if (hasUDA!(member, Settings) ||
+            static if (
+                hasUDA!(member, Settings) ||
                 (is(typeof(member) == struct) &&
-                hasUDA!(typeof(member), Settings)))
+                    hasUDA!(typeof(member), Settings)))
             {
                 foreach (immutable n, _2; member.tupleof)
                 {
@@ -567,7 +571,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
             alias Params = staticMap!(Unqual, Parameters!fun);
 
-            static if (is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
+            static if (
+                is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
                 is(Params : AliasSeq!(IRCPlugin, IRCEvent)))
             {
                 static if (!is(Parameters!fun[1] == const))
@@ -577,7 +582,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                     alias SC = ParameterStorageClass;
                     alias paramClasses = ParameterStorageClassTuple!fun;
 
-                    static if ((paramClasses[1] & SC.ref_) ||
+                    static if (
+                        (paramClasses[1] & SC.ref_) ||
                         (paramClasses[1] & SC.out_))
                     {
                         import std.format : format;
@@ -590,7 +596,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
                 fun(this, event);
             }
-            else static if (is(Params : AliasSeq!(typeof(this))) ||
+            else static if (
+                is(Params : AliasSeq!(typeof(this))) ||
                 is(Params : AliasSeq!IRCPlugin))
             {
                 fun(this);
@@ -604,7 +611,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                     alias SC = ParameterStorageClass;
                     alias paramClasses = ParameterStorageClassTuple!fun;
 
-                    static if ((paramClasses[0] & SC.ref_) ||
+                    static if (
+                        (paramClasses[0] & SC.ref_) ||
                         (paramClasses[0] & SC.out_))
                     {
                         import std.format : format;
@@ -1293,19 +1301,21 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             invalidEntries = Out reference of an associative array of string arrays
                 of unexpected configuration entries that did not belong.
      +/
-    override public void deserialiseConfigFrom(const string configFile,
+    override public void deserialiseConfigFrom(
+        const string configFile,
         out string[][string] missingEntries,
         out string[][string] invalidEntries)
     {
         import kameloso.config : readConfigInto;
-        import lu.meld : MeldingStrategy, meldInto;
+        import lu.meld : meldInto;
         import std.traits : hasUDA;
 
         foreach (immutable i, ref symbol; this.tupleof)
         {
-            static if (is(typeof(this.tupleof[i]) == struct) &&
+            static if (
+                is(typeof(this.tupleof[i]) == struct) &&
                 (hasUDA!(this.tupleof[i], Settings) ||
-                hasUDA!(typeof(this.tupleof[i]), Settings)))
+                    hasUDA!(typeof(this.tupleof[i]), Settings)))
             {
                 if (symbol != typeof(symbol).init)
                 {
@@ -1362,9 +1372,10 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
         foreach (immutable i, ref symbol; this.tupleof)
         {
-            static if (is(typeof(this.tupleof[i]) == struct) &&
+            static if (
+                is(typeof(this.tupleof[i]) == struct) &&
                 (hasUDA!(this.tupleof[i], Settings) ||
-                hasUDA!(typeof(this.tupleof[i]), Settings)))
+                    hasUDA!(typeof(this.tupleof[i]), Settings)))
             {
                 success = symbol.setMemberByName(setting, value);
                 if (success) break;
@@ -1385,9 +1396,10 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
         foreach (immutable i, const ref symbol; this.tupleof)
         {
-            static if (is(typeof(this.tupleof[i]) == struct) &&
+            static if (
+                is(typeof(this.tupleof[i]) == struct) &&
                 (hasUDA!(this.tupleof[i], Settings) ||
-                hasUDA!(typeof(this.tupleof[i]), Settings)))
+                    hasUDA!(typeof(this.tupleof[i]), Settings)))
             {
                 import std.typecons : No, Yes;
                 printObject!(No.all)(symbol);
@@ -1425,9 +1437,10 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
         foreach (immutable i, ref symbol; this.tupleof)
         {
-            static if (is(typeof(this.tupleof[i]) == struct) &&
+            static if (
+                is(typeof(this.tupleof[i]) == struct) &&
                 (hasUDA!(this.tupleof[i], Settings) ||
-                hasUDA!(typeof(this.tupleof[i]), Settings)))
+                    hasUDA!(typeof(this.tupleof[i]), Settings)))
             {
                 import lu.serialisation : serialise;
 
