@@ -108,7 +108,8 @@ enum Awareness
         debug_ = Whether or not to include debugging output.
         module_ = String name of the mixing-in module; generally leave as-is.
  +/
-mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
+mixin template MinimalAuthentication(
+    Flag!"debug_" debug_ = No.debug_,
     string module_ = __MODULE__)
 {
     private import kameloso.plugins.common.awareness;
@@ -268,7 +269,8 @@ void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const ref IRCE
         debug_ = Whether or not to include debugging output.
         module_ = String name of the mixing-in module; generally leave as-is.
  +/
-mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
+mixin template UserAwareness(
+    ChannelPolicy channelPolicy = ChannelPolicy.home,
     Flag!"debug_" debug_ = No.debug_,
     string module_ = __MODULE__)
 {
@@ -690,7 +692,8 @@ void onUserAwarenessPing(IRCPlugin plugin) @system
         module_ = String name of the mixing-in module; generally leave as-is.
  +/
 version(WithPlugins)
-mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
+mixin template ChannelAwareness(
+    ChannelPolicy channelPolicy = ChannelPolicy.home,
     Flag!"debug_" debug_ = No.debug_,
     string module_ = __MODULE__)
 {
@@ -1397,7 +1400,8 @@ void onChannelAwarenessChannelModeIs(IRCPlugin plugin, const ref IRCEvent event)
  +/
 version(WithPlugins)
 version(TwitchSupport)
-mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
+mixin template TwitchAwareness(
+    ChannelPolicy channelPolicy = ChannelPolicy.home,
     Flag!"debug_" debug_ = No.debug_,
     string module_ = __MODULE__)
 {
@@ -1580,7 +1584,8 @@ else
 /++
     No-op mixin of version `!TwitchSupport` [kameloso.plugins.common.awareness.TwitchAwareness].
  +/
-mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
+mixin template TwitchAwareness(
+    ChannelPolicy channelPolicy = ChannelPolicy.home,
     Flag!"debug_" debug_ = No.debug_,
     string module_ = __MODULE__)
 {

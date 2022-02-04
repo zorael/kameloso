@@ -50,7 +50,8 @@ public:
         alwaysLookup = Whether or not to always issue a WHOIS query, even if
             the requested user's account is already known.
  +/
-mixin template WHOISFiberDelegate(alias onSuccess,
+mixin template WHOISFiberDelegate(
+    alias onSuccess,
     alias onFailure = null,
     Flag!"alwaysLookup" alwaysLookup = No.alwaysLookup)
 if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSomeFunction!onFailure))
@@ -489,7 +490,9 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         debug_ = Whether or not to include debugging output.
         module_ = String name of the mixing-in module; generally leave as-is.
  +/
-mixin template MessagingProxy(Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
+mixin template MessagingProxy(
+    Flag!"debug_" debug_ = No.debug_,
+    string module_ = __MODULE__)
 {
 private:
     static import kameloso.messaging;
@@ -833,7 +836,8 @@ unittest
     Params:
         debug_ = Whether or not to print debug output to the terminal.
  +/
-mixin template Repeater(Flag!"debug_" debug_ = No.debug_,
+mixin template Repeater(
+    Flag!"debug_" debug_ = No.debug_,
     string module_ = __MODULE__)
 {
     import kameloso.plugins.common.core : Repeat, Replay;
