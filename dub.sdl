@@ -68,6 +68,7 @@ versions \
 versions \
     "TwitchSupport" \
     "WithTwitchBotPlugin" \
+    "PromoteTwitchBadgesInAllChannels" \
     "OmniscientAdmin" \
     "PrintStacktraces" \
     "ExplainRepeat" \

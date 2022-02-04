@@ -1267,7 +1267,12 @@ void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
     import std.algorithm.searching : canFind;
 
     if (!event.sender.nickname.length || !event.channel.length) return;
-    else if (!plugin.state.bot.homeChannels.canFind(event.channel)) return;
+
+    version(PromoteTwitchBadgesInAllChannels) {}
+    else
+    {
+        if (!plugin.state.bot.homeChannels.canFind(event.channel)) return;
+    }
 
     static void postprocessImpl(const TwitchBotPlugin plugin,
         const ref IRCEvent event, ref IRCUser user)
