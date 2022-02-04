@@ -448,14 +448,14 @@ mixin template IRCPluginImpl(
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
 
-        import kameloso.plugins.common.core : IRCEventHandler;
-        import std.traits : fullyQualifiedName, getUDAs;
-
         /++
             Verifies that annotations are as expected.
          +/
         bool udaSanityCheck(alias fun)()
         {
+            import kameloso.plugins.common.core : IRCEventHandler;
+            import std.traits : fullyQualifiedName, getUDAs;
+
             alias handlerAnnotations = getUDAs!(fun, IRCEventHandler);
 
             static if (handlerAnnotations.length > 1)
@@ -637,6 +637,9 @@ mixin template IRCPluginImpl(
             }
         }
 
+        /++
+            Signal up the callstack of what to do next.
+         +/
         enum NextStep
         {
             unset,
@@ -713,6 +716,8 @@ mixin template IRCPluginImpl(
             {
                 import lu.string : strippedLeft;
 
+                // Snapshot content for later restoration
+                immutable origContent = event.content;
                 event.content = event.content.strippedLeft;
 
                 if (!event.content.length)
@@ -722,12 +727,21 @@ mixin template IRCPluginImpl(
                     return NextStep.continue_;  // next function
                 }
 
-                // Snapshot content and aux for later restoration
-                immutable origContent = event.content;
+                // Also snapshot aux
                 immutable origAux = event.aux;
 
                 /// Whether or not a Command or Regex matched.
                 bool commandMatch;
+
+                scope(exit)
+                {
+                    if (commandMatch)
+                    {
+                        // Restore content and aux as they were definitely altered
+                        event.content = origContent;
+                        event.aux = origAux;
+                    }
+                }
             }
 
             // Evaluate each Command UDAs with the current event
@@ -878,16 +892,6 @@ mixin template IRCPluginImpl(
 
                     return NextStep.continue_; // next function
                 }
-
-                scope(exit)
-                {
-                    if (commandMatch)
-                    {
-                        // Restore content and aux as they were definitely altered
-                        event.content = origContent;
-                        event.aux = origAux;
-                    }
-                }
             }
 
             import std.meta : AliasSeq, staticMap;
@@ -970,7 +974,7 @@ mixin template IRCPluginImpl(
                         static assert(0, pattern.format(fullyQualifiedName!fun, typeof(fun).stringof));
                     }
                 }
-                else if (result == FilterResult.fail)
+                else /*if (result == FilterResult.fail)*/
                 {
                     static if (uda.given.chainable)
                     {
@@ -980,10 +984,6 @@ mixin template IRCPluginImpl(
                     {
                         rtToReturn = NextStep.return_;
                     }
-                }
-                else
-                {
-                    assert(0);
                 }
 
                 // Make a runtime decision on whether to return or not
@@ -1071,10 +1071,6 @@ mixin template IRCPluginImpl(
                     {
                         return;
                     }
-                    else
-                    {
-                        assert(0);
-                    }
                 }
                 catch (Exception e)
                 {
@@ -1111,13 +1107,9 @@ mixin template IRCPluginImpl(
                             return;
                         }
                     }
-                    else if (next == NextStep.return_)
+                    else /*if (next == NextStep.return_)*/
                     {
                         return;
-                    }
-                    else
-                    {
-                        assert(0);
                     }
                 }
             }
@@ -1125,7 +1117,7 @@ mixin template IRCPluginImpl(
 
         import lu.traits : getSymbolsByUDA;
         import std.meta : Filter, templateNot, templateOr;
-        import std.traits : isSomeFunction;
+        import std.traits : getUDAs, isSomeFunction;
 
         enum isSetupFun(alias T) = (getUDAs!(T, IRCEventHandler)[0].given.when == Timing.setup);
         enum isEarlyFun(alias T) = (getUDAs!(T, IRCEventHandler)[0].given.when == Timing.early);
@@ -1135,12 +1127,12 @@ mixin template IRCPluginImpl(
             isLateFun, isCleanupFun);
         alias isNormalEventHandler = templateNot!hasSpecialTiming;
 
-        alias funs = Filter!(isSomeFunction, getSymbolsByUDA!(thisModule, IRCEventHandler));
-        alias setupFuns = Filter!(isSetupFun, funs);
-        alias earlyFuns = Filter!(isEarlyFun, funs);
-        alias lateFuns = Filter!(isLateFun, funs);
-        alias cleanupFuns = Filter!(isCleanupFun, funs);
-        alias pluginFuns = Filter!(isNormalEventHandler, funs);
+        alias allFuns = Filter!(isSomeFunction, getSymbolsByUDA!(thisModule, IRCEventHandler));
+        alias setupFuns = Filter!(isSetupFun, allFuns);
+        alias earlyFuns = Filter!(isEarlyFun, allFuns);
+        alias lateFuns = Filter!(isLateFun, allFuns);
+        alias cleanupFuns = Filter!(isCleanupFun, allFuns);
+        alias pluginFuns = Filter!(isNormalEventHandler, allFuns);
 
         tryProcess!setupFuns(origEvent);
         tryProcess!earlyFuns(origEvent);
