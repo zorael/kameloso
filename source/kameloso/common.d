@@ -108,7 +108,8 @@ void printVersionInfo(const Flag!"colours" colours = Yes.colours) @safe
     immutable logtint = colours ? Tint.log : string.init;
     immutable infotint = colours ? Tint.info : string.init;
 
-    writefln("%skameloso IRC bot v%s, built with %s (%s) on %s%s",
+    enum versionPattern = "%skameloso IRC bot v%s, built with %s (%s) on %s%s";
+    writefln(versionPattern,
         logtint,
         cast(string)KamelosoInfo.version_,
         cast(string)KamelosoInfo.compiler,
@@ -116,7 +117,8 @@ void printVersionInfo(const Flag!"colours" colours = Yes.colours) @safe
         cast(string)KamelosoInfo.built,
         Tint.off);
 
-    writefln("$ git clone %s%s.git%s",
+    enum gitClonePattern = "$ git clone %s%s.git%s";
+    writefln(gitClonePattern,
         infotint,
         cast(string)KamelosoInfo.source,
         Tint.off);

@@ -49,7 +49,7 @@ void generateKey(TwitchBotPlugin plugin)
 
     logger.trace();
     logger.info("-- Twitch authorisation key generation mode --");
-    writefln(`
+    enum attemptToOpenPattern = `
 Attempting to open a Twitch login page in your default web browser. Follow the
 instructions and log in to authorise the use of this program with your account.
 
@@ -62,7 +62,8 @@ instructions and log in to authorise the use of this program with your account.
   generate a key for a different account, first log out and retry.
 * If you are running local web server on port %3$s80%2$s, you may have to
   temporarily disable it for this to work.
-`, Tint.log, Tint.off, Tint.info);
+`;
+    writefln(attemptToOpenPattern, Tint.log, Tint.off, Tint.info);
 
     static immutable scopes =
     [
@@ -127,8 +128,7 @@ instructions and log in to authorise the use of this program with your account.
     void printManualURL()
     {
         enum scissors = "8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<";
-
-        writefln(`
+        enum copyPastePattern = `
 %1$sCopy and paste this link manually into your browser, and log in as asked:%2$s
 
 %3$s%4$s%2$s
@@ -136,7 +136,8 @@ instructions and log in to authorise the use of this program with your account.
 %5$s
 
 %3$s%4$s%2$s
-`, Tint.log, Tint.off, Tint.info, scissors, url);
+`;
+        writefln(copyPastePattern, Tint.log, Tint.off, Tint.info, scissors, url);
     }
 
     if (plugin.state.settings.force)
@@ -260,10 +261,11 @@ instructions and log in to authorise the use of this program with your account.
     plugin.state.bot.pass = key;
     plugin.state.updates |= typeof(plugin.state.updates).bot;
 
-    writefln("
+    enum keyPattern = "
 %1$sYour private authorisation key is: %2$s%3$s%4$s
 It should be entered as %2$spass%4$s under %2$s[IRCBot]%4$s.
-", Tint.log, Tint.info, key, Tint.off);
+";
+    writefln(keyPattern, Tint.log, Tint.info, key, Tint.off);
 
     if (!plugin.state.settings.saveOnExit)
     {
@@ -281,12 +283,12 @@ It should be entered as %2$spass%4$s under %2$s[IRCBot]%4$s.
         }
         else
         {
-            writefln("\n* Make sure to add it to %s%s%s, then.",
-                Tint.info, plugin.state.settings.configFile, Tint.off);
+            enum keyAddPattern = "\n* Make sure to add it to %s%s%s, then.";
+            writefln(keyAddPattern, Tint.info, plugin.state.settings.configFile, Tint.off);
         }
     }
 
-    writefln("
+    enum issuePattern = "
 --------------------------------------------------------------------------------
 
 All done! Restart the program (without %1$s--set twitchbot.keygen%2$s) and it should
@@ -295,5 +297,6 @@ just work. If it doesn't, please file an issue at:
     %1$shttps://github.com/zorael/kameloso/issues/new%2$s
 
 %3$sNote: keys are valid for 60 days, after which this process needs to be repeated.%2$s
-", Tint.info, Tint.off, Tint.log);
+";
+    writefln(issuePattern, Tint.info, Tint.off, Tint.log);
 }

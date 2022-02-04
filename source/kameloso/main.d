@@ -2693,9 +2693,9 @@ void printSummary(const ref Kameloso instance)
         totalTime += duration;
         totalBytesReceived += entry.bytesReceived;
 
-        writefln("%2d: %s, %d events parsed in %,d bytes (%s to %s)",
-            i+1, duration.timeSince!(7, 0)(Yes.abbreviate), entry.numEvents,
-            entry.bytesReceived, startString, stopString);
+        enum pattern = "%2d: %s, %d events parsed in %,d bytes (%s to %s)";
+        writefln(pattern, i+1, duration.timeSince!(7, 0)(Yes.abbreviate),
+            entry.numEvents, entry.bytesReceived, startString, stopString);
     }
 
     enum pattern = "Total received: %s%,d%s bytes";
