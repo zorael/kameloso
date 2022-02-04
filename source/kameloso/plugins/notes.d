@@ -185,9 +185,10 @@ void playbackNotes(NotesPlugin plugin,
             }
             catch (JSONException e)
             {
-                logger.errorf("Failed to fetch, replay and clear notes for " ~
-                    "%s%s%s on %1$s%4$s%3$s: %1$s%5$s",
-                    Tint.log, id, Tint.error, (channelName.length ? channelName : "<no channel>"), e.msg);
+                enum pattern = "Failed to fetch, replay and clear notes for " ~
+                    "%s%s%s on %1$s%4$s%3$s: %1$s%5$s";
+                logger.errorf(pattern, Tint.log, id, Tint.error,
+                    (channelName.length ? channelName : "<no channel>"), e.msg);
 
                 if (e.msg == "JSONValue is not an object")
                 {
@@ -407,15 +408,15 @@ auto getNotes(NotesPlugin plugin, const string channel, const string id)
     {
         if (channelNotes.type != JSONType.object)
         {
-            logger.errorf("Invalid channel notes list type for %s: `%s`",
-                channel, channelNotes.type);
+            enum pattern = "Invalid channel notes list type for %s: `%s`";
+            logger.errorf(pattern, channel, channelNotes.type);
         }
         else if (const nickNotes = id in channelNotes.object)
         {
             if (nickNotes.type != JSONType.array)
             {
-                logger.errorf("Invalid notes list type for %s on %s: `%s`",
-                    id, channel, nickNotes.type);
+                enum pattern = "Invalid notes list type for %s on %s: `%s`";
+                logger.errorf(pattern, id, channel, nickNotes.type);
                 return noteArray;
             }
 
@@ -464,13 +465,14 @@ in (id.length, "Tried to clear notes for an empty id")
     {
         if (plugin.notes[channel].type != JSONType.object)
         {
-            logger.errorf("Invalid channel notes list type for %s: `%s`",
-                channel, plugin.notes[channel].type);
+            enum pattern = "Invalid channel notes list type for %s: `%s`";
+            logger.errorf(pattern, channel, plugin.notes[channel].type);
             return;
         }
 
-        /*logger.logf("Clearing stored notes for %s%s%s in %1$s%4$s%3$s.",
-            Tint.info, id, Tint.log, channel.length ? channel : "(private messages)");*/
+        /*enum pattern = "Clearing stored notes for %s%s%s in %1$s%4$s%3$s.";
+        logger.logf(pattern, Tint.info, id, Tint.log,
+            channel.length ? channel : "(private messages)");*/
         plugin.notes[channel].object.remove(id);
         plugin.pruneNotes();
     }

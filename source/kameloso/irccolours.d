@@ -178,11 +178,13 @@ string ircColour(const IRCColour fg, const IRCColour bg = IRCColour.unset) pure
 
     if (bg != IRCColour.unset)
     {
-        return "%c%02d,%02d".format(cast(char)IRCControlCharacter.colour, fg, bg);
+        enum pattern = "%c%02d,%02d";
+        return format(pattern, cast(char)IRCControlCharacter.colour, fg, bg);
     }
     else
     {
-        return "%c%02d".format(cast(char)IRCControlCharacter.colour, fg);
+        enum pattern = "%c%02d";
+        return format(pattern, cast(char)IRCControlCharacter.colour, fg);
     }
 }
 
@@ -255,7 +257,8 @@ in (word.length, "Tried to apply IRC colours by hash to a string but no string w
     alias I = IRCControlCharacter;
 
     immutable colourIndex = hashOf(word) % 16;
-    return "%c%02d%s%c".format(cast(char)I.colour, colourIndex, word, cast(char)I.colour);
+    enum pattern = "%c%02d%s%c";
+    return format(pattern, cast(char)I.colour, colourIndex, word, cast(char)I.colour);
 }
 
 ///

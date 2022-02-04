@@ -247,8 +247,8 @@ in (rawLine.length, "Tried to add an empty quote")
     }
     catch (JSONException e)
     {
-        logger.errorf("Could not add quote for %s%s%s: %1$s%4$s",
-            Tint.log, id, Tint.error, e.msg);
+        enum pattern = "Could not add quote for %s%s%s: %1$s%4$s";
+        logger.errorf(pattern, Tint.log, id, Tint.error, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
 }
@@ -334,8 +334,8 @@ void modQuoteAndReport(QuotesPlugin plugin,
     }
     catch (JSONException e)
     {
-        logger.errorf("Could not remove quote for %s%s%s: %1$s%4$s",
-            Tint.log, id, Tint.error, e.msg);
+        enum pattern = "Could not remove quote for %s%s%s: %1$s%4$s";
+        logger.errorf(pattern, Tint.log, id, Tint.error, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
 }
@@ -750,7 +750,8 @@ void manageQuoteImpl(QuotesPlugin plugin,
     }
     catch (JSONException e)
     {
-        logger.errorf("Could not quote %s%s%s: %1$s%4$s", Tint.log, specified, Tint.error, e.msg);
+        enum pattern = "Could not quote %s%s%s: %1$s%4$s";
+        logger.errorf(pattern, Tint.log, specified, Tint.error, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
 }

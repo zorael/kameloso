@@ -540,10 +540,11 @@ void reportTitle(TitleLookupRequest request,
         import std.format : format;
 
         immutable maybePipe = request.results.description.length ? " | " : string.init;
+        enum pattern = "[%s] %s%s%s";
         line = colouredOutgoing ?
-            "[%s] %s%s%s".format(request.results.domain.ircBold, request.results.title,
+            format(pattern, request.results.domain.ircBold, request.results.title,
                 maybePipe, request.results.description) :
-            "[%s] %s%s%s".format(request.results.domain, request.results.title,
+            format(pattern, request.results.domain, request.results.title,
                 maybePipe, request.results.description);
     }
     else

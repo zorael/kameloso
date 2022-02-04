@@ -1238,7 +1238,8 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 
         if (slice.length)
         {
-            logger.logf("Reloading plugin \"%s%s%s\".", Tint.info, slice, Tint.log);
+            enum pattern = "Reloading plugin \"%s%s%s\".";
+            logger.logf(pattern, Tint.info, slice, Tint.log);
         }
         else
         {
@@ -1260,9 +1261,9 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         if (results == SplitResults.underrun)
         {
             // verb_channel_nickname
-            logger.warningf("Invalid bus message syntax; expected %s " ~
-                "[verb] [channel] [nickname if add/del], got \"%s\"",
-                verb, message.payload.strippedRight);
+            enum pattern = "Invalid bus message syntax; expected %s " ~
+                "[verb] [channel] [nickname if add/del], got \"%s\"";
+            logger.warningf(pattern, verb, message.payload.strippedRight);
             return;
         }
 
@@ -1292,7 +1293,8 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             return plugin.listList(channel, verb);
 
         default:
-            logger.warningf("Invalid bus message %s subverb: %s", verb, subverb);
+            enum pattern = "Invalid bus message %s subverb: %s";
+            logger.warningf(pattern, verb, subverb);
             break;
         }
         break;
@@ -1338,7 +1340,8 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             return listHostmaskDefinitions(plugin, lvalueEvent);
 
         default:
-            logger.warningf("Invalid bus message %s subverb: %s", verb, subverb);
+            enum pattern = "Invalid bus message %s subverb: %s";
+            logger.warningf(pattern, verb, subverb);
             break;
         }
         break;

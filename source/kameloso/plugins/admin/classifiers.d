@@ -209,8 +209,8 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
             final switch (result)
             {
             case success:
-                logger.logf("Added %s%s%s as %s in %s.",
-                    Tint.info, specified, Tint.log, asWhat, channel);
+                enum pattern = "Added %s%s%s as %s in %s.";
+                logger.logf(pattern, Tint.info, specified, Tint.log, asWhat, channel);
                 break;
 
             case noSuchAccount:
@@ -218,8 +218,8 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
                 assert(0, "Invalid enlist-only `AlterationResult` passed to `lookupEnlist.report`");
 
             case alreadyInList:
-                logger.logf("%s%s%s is already %s in %s.",
-                    Tint.info, specified, Tint.log, asWhat, channel);
+                enum pattern = "%s%s%s is already %s in %s.";
+                logger.logf(pattern, Tint.info, specified, Tint.log, asWhat, channel);
                 break;
             }
         }
@@ -440,18 +440,18 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
             assert(0, "Invalid enlist-only `AlterationResult` returned to `delist`");
 
         case noSuchAccount:
-            logger.logf("No such account %s%s%s was found as %s in %s.",
-                Tint.info, account, Tint.log, asWhat, channel);
+            enum pattern = "No such account %s%s%s was found as %s in %s.";
+            logger.logf(pattern, Tint.info, account, Tint.log, asWhat, channel);
             break;
 
         case noSuchChannel:
-            logger.logf("Account %s%s%s isn't %s in %s.",
-                Tint.info, account, Tint.log, asWhat, channel);
+            enum pattern = "Account %s%s%s isn't %s in %s.";
+            logger.logf(pattern, Tint.info, account, Tint.log, asWhat, channel);
             break;
 
         case success:
-            logger.logf("Removed %s%s%s as %s in %s",
-                Tint.info, account, Tint.log, asWhat, channel);
+            enum pattern = "Removed %s%s%s as %s in %s";
+            logger.logf(pattern, Tint.info, account, Tint.log, asWhat, channel);
             break;
         }
     }
@@ -632,16 +632,16 @@ in (mask.length, "Tried to add an empty hostmask definition")
         {
             if (event == IRCEvent.init)
             {
-                logger.warningf(`Invalid hostmask: "%s%s%s"; must be in the form ` ~
-                    `"%1$snickname!ident@address%3$s".`,
-                    Tint.log, mask, Tint.warning);
+                enum pattern = `Invalid hostmask: "%s%s%s"; must be in the form ` ~
+                    `"%1$snickname!ident@address%3$s".`;
+                logger.warningf(pattern, Tint.log, mask, Tint.warning);
             }
             else
             {
                 import std.format : format;
+                enum pattern = `Invalid hostmask: "%s"; must be in the form "%s".`;
                 privmsg(plugin.state, event.channel, event.sender.nickname,
-                    `Invalid hostmask: "%s"; must be in the form "%s".`
-                        .format(mask.ircBold, "nickname!ident@address".ircBold));
+                    format(pattern, mask.ircBold, "nickname!ident@address".ircBold));
             }
             return;
         }
@@ -655,8 +655,8 @@ in (mask.length, "Tried to add an empty hostmask definition")
 
         if (event == IRCEvent.init)
         {
-            logger.infof(`Added hostmask "%s%s%s", mapped to account %4$s%3$s.`,
-                Tint.log, mask, Tint.info, colouredAccount);
+            enum pattern = `Added hostmask "%s%s%s", mapped to account %4$s%3$s.`;
+            logger.infof(pattern, Tint.log, mask, Tint.info, colouredAccount);
         }
         else
         {
@@ -676,7 +676,8 @@ in (mask.length, "Tried to add an empty hostmask definition")
 
             if (event == IRCEvent.init)
             {
-                logger.infof(`Removed hostmask "%s%s%s".`, Tint.log, mask, Tint.info);
+                enum pattern = `Removed hostmask "%s%s%s".`;
+                logger.infof(pattern, Tint.log, mask, Tint.info);
             }
             else
             {
@@ -688,12 +689,13 @@ in (mask.length, "Tried to add an empty hostmask definition")
         {
             if (event == IRCEvent.init)
             {
-                logger.warningf(`No such hostmask "%s%s%s" on file.`,
-                    Tint.log, mask, Tint.warning);
+                enum pattern = `No such hostmask "%s%s%s" on file.`;
+                logger.warningf(pattern, Tint.log, mask, Tint.warning);
             }
             else
             {
-                immutable message = `No such hostmask "%s" on file.`.format(mask.ircBold);
+                enum pattern = `No such hostmask "%s" on file.`;
+                immutable message = format(pattern, mask.ircBold);
                 privmsg(plugin.state, event.channel, event.sender.nickname, message);
             }
             return;  // Skip saving and updating below

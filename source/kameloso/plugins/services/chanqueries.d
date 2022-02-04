@@ -316,8 +316,8 @@ void startChannelQueries(ChanQueriesService service)
                             // Cannot WHOIS on this server (assume)
                             logger.error("Error: This server does not seem " ~
                                 "to support user accounts?");
-                            logger.errorf("Consider enabling %sCore%s.%1$spreferHostmasks%2$s.",
-                                Tint.log, Tint.warning);
+                            enum pattern = "Consider enabling %sCore%s.%1$spreferHostmasks%2$s.";
+                            logger.errorf(pattern, Tint.log, Tint.warning);
                             service.serverSupportsWHOIS = false;
                             return;
                         }

@@ -185,13 +185,14 @@ void manageConfigFile(ref Kameloso instance,
 
         if (!editor.length)
         {
-            logger.errorf("Missing %s$EDITOR%s environment variable; " ~
-                "cannot guess editor.", Tint.log, Tint.error);
+            enum pattern = "Missing %s$EDITOR%s environment variable; " ~
+                "cannot guess editor.";
+            logger.errorf(pattern, Tint.log, Tint.error);
             return;
         }
 
-        logger.logf("Attempting to open %s%s%s in %1$s%4$s%3$s...",
-            Tint.info, instance.settings.configFile, Tint.log, editor);
+        enum pattern = "Attempting to open %s%s%s in %1$s%4$s%3$s...";
+        logger.logf(pattern, Tint.info, instance.settings.configFile, Tint.log, editor);
 
         immutable command = [ editor, instance.settings.configFile ];
         spawnProcess(command).wait;
@@ -240,8 +241,8 @@ void manageConfigFile(ref Kameloso instance,
         // Let exceptions (ProcessExceptions) fall through and get caught
         // by [kameloso.kameloso.tryGetopt].
 
-        logger.logf("Attempting to open %s%s%s in a graphical text editor...",
-            Tint.info, instance.settings.configFile, Tint.log);
+        enum pattern = "Attempting to open %s%s%s in a graphical text editor...";
+        logger.logf(pattern, Tint.info, instance.settings.configFile, Tint.log);
 
         immutable command = [ editor, instance.settings.configFile ];
         execute(command);
@@ -339,9 +340,10 @@ void giveConfigurationMinimalIntructions()
 {
     import kameloso.common : Tint, logger;
 
-    logger.tracef("...one or more %sadmins%s who get administrative control over the bot.",
-        Tint.info, Tint.trace);
-    logger.tracef("...one or more %shomeChannels%s in which to operate.", Tint.info, Tint.trace);
+    enum adminPattern = "...one or more %sadmins%s who get administrative control over the bot.";
+    logger.tracef(adminPattern, Tint.info, Tint.trace);
+    enum homePattern = "...one or more %shomeChannels%s in which to operate.";
+    logger.tracef(homePattern, Tint.info, Tint.trace);
 }
 
 
@@ -882,16 +884,16 @@ void notifyAboutMissingSettings(const string[][string] missingEntries,
     import std.path : baseName;
 
     logger.log("Your configuration file is missing the following settings:");
-    immutable pattern = text("...under %s[%s%s%s]: %-(", Tint.info, "%s%|", Tint.trace, ", %)");
+    immutable rtPattern = text("...under %s[%s%s%s]: %-(", Tint.info, "%s%|", Tint.trace, ", %)");
 
     foreach (immutable section, const sectionEntries; missingEntries)
     {
-        logger.tracef(pattern, Tint.log, Tint.info, section, Tint.log, sectionEntries);
+        logger.tracef(rtPattern, Tint.log, Tint.info, section, Tint.log, sectionEntries);
     }
 
-    logger.logf("Use %s%s --save%s to regenerate the file, " ~
-        "updating it with all available configuration. [%1$s%4$s%3$s]",
-        Tint.info, binaryPath.baseName, Tint.log, configFile);
+    enum pattern = "Use %s%s --save%s to regenerate the file, " ~
+        "updating it with all available configuration. [%1$s%4$s%3$s]";
+    logger.logf(pattern, Tint.info, binaryPath.baseName, Tint.log, configFile);
     logger.warning("Mind that any comments and/or sections belonging to unbuilt plugins will be removed.");
     logger.trace();
 }
@@ -918,14 +920,14 @@ void notifyAboutIncompleteConfiguration(const string configFile, const string bi
 
     if (configFile.exists)
     {
-        logger.logf("Edit %s%s%s and make sure it has at least one of the following:",
-            Tint.info, configFile, Tint.log);
+        enum pattern = "Edit %s%s%s and make sure it has at least one of the following:";
+        logger.logf(pattern, Tint.info, configFile, Tint.log);
         giveConfigurationMinimalIntructions();
     }
     else
     {
-        logger.logf("Use %s%s --save%s to generate a configuration file.",
-            Tint.info, binaryPath.baseName, Tint.log);
+        enum pattern = "Use %s%s --save%s to generate a configuration file.";
+        logger.logf(pattern, Tint.info, binaryPath.baseName, Tint.log);
     }
 
     logger.trace();

@@ -219,9 +219,10 @@ instructions and log in to authorise the use of this program with your account.
     {
         import std.stdio : writef;
 
-        writef("%1$sPaste the addresss of the page you were redirected to here (empty line exits):%2$s
+        enum pattern = "%1$sPaste the addresss of the page you were redirected to here (empty line exits):%2$s
 
-> ", Tint.log, Tint.off);
+> ";
+        writef(pattern, Tint.log, Tint.off);
         stdout.flush();
 
         stdin.flush();

@@ -232,9 +232,9 @@ in (account.length, "Tried to apply automodes to an empty account")
 
     if (!channel.ops.canFind(plugin.state.client.nickname))
     {
-        logger.logf("Could not apply %s+%s%s %1$s%4$s%3$s in %1$s%5$s%3$s " ~
-            "because we are not an operator in the channel.",
-            Tint.info, missingModes, Tint.log, nickname, channelName);
+        enum pattern = "Could not apply %s+%s%s %1$s%4$s%3$s in %1$s%5$s%3$s " ~
+            "because we are not an operator in the channel.";
+        logger.logf(pattern, Tint.info, missingModes, Tint.log, nickname, channelName);
         return;
     }
 

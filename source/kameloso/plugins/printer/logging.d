@@ -308,15 +308,15 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                 import kameloso.common : errnoStrings;
                 import core.stdc.errno : errno;
 
-                logger.warningf("ErrnoException (%s%s%s) caught when writing to log: %1$s%4$s",
-                    Tint.log, errnoStrings[errno], Tint.warning, e.msg);
+                enum pattern = "ErrnoException (%s%s%s) caught when writing to log: %1$s%4$s";
+                logger.warningf(pattern, Tint.log, errnoStrings[errno], Tint.warning, e.msg);
             }
             else version(Windows)
             {
                 import core.stdc.errno : errno;
 
-                logger.warningf("ErrnoException (%s%ds%s) caught when writing to log: %1$s%4$s",
-                    Tint.log, errno, Tint.warning, e.msg);
+                enum pattern = "ErrnoException (%s%ds%s) caught when writing to log: %1$s%4$s";
+                logger.warningf(pattern, Tint.log, errno, Tint.warning, e.msg);
             }
             else
             {
@@ -472,8 +472,8 @@ bool establishLogLocation(PrinterPlugin plugin, const string logLocation)
 
         if (!plugin.naggedAboutDir)
         {
-            logger.warningf("Specified log directory (%s%s%s) is not a directory.",
-                Tint.log, logLocation, Tint.warning);
+            enum pattern = "Specified log directory (%s%s%s) is not a directory.";
+            logger.warningf(pattern, Tint.log, logLocation, Tint.warning);
             plugin.naggedAboutDir = true;
         }
 
@@ -569,8 +569,8 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
     }
     catch (FileException e)
     {
-        logger.warningf("File exception caught when committing log %s%s%s: %1$s%4$s%5$s",
-            Tint.log, buffer.file, Tint.warning, e.msg, plugin.bell);
+        enum pattern = "File exception caught when committing log %s%s%s: %1$s%4$s%5$s";
+        logger.warningf(pattern, Tint.log, buffer.file, Tint.warning, e.msg, plugin.bell);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (ErrnoException e)
@@ -578,23 +578,25 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
         version(Posix)
         {
             import kameloso.common : errnoStrings;
-            logger.warningf("ErrnoException %s%s%s caught when committing " ~
-                "log to %1$s%4$s%3$s: %1$s%5$s%6$s",
-                Tint.log, errnoStrings[e.errno], Tint.warning, buffer.file, e.msg, plugin.bell);
+            enum pattern = "ErrnoException %s%s%s caught when committing " ~
+                "log to %1$s%4$s%3$s: %1$s%5$s%6$s";
+            logger.warningf(pattern, Tint.log, errnoStrings[e.errno], Tint.warning,
+                buffer.file, e.msg, plugin.bell);
         }
         else
         {
-            logger.warningf("ErrnoException %s%d%s caught when committing " ~
-                "log to %1$s%4$s%3$s: %1$s%5$s%6$s",
-                Tint.log, e.errno, Tint.warning, buffer.file, e.msg, plugin.bell);
+            enum pattern = "ErrnoException %s%d%s caught when committing " ~
+                "log to %1$s%4$s%3$s: %1$s%5$s%6$s";
+            logger.warningf(pattern, Tint.log, e.errno, Tint.warning,
+                buffer.file, e.msg, plugin.bell);
         }
 
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (Exception e)
     {
-        logger.warningf("Unexpected exception caught when committing log %s%s%s: %1$s%4$s%5$s",
-            Tint.log, buffer.file, Tint.warning, e.msg, plugin.bell);
+        enum pattern = "Unexpected exception caught when committing log %s%s%s: %1$s%4$s%5$s";
+        logger.warningf(pattern, Tint.log, buffer.file, Tint.warning, e.msg, plugin.bell);
         version(PrintStacktraces) logger.trace(e);
     }
 }

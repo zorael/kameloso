@@ -499,7 +499,8 @@ void onISUPPORT(PrinterPlugin plugin)
 
     plugin.printedISUPPORT = true;
 
-    logger.logf("Detected %s%s%s running daemon %s%s%s (%s)",
+    enum pattern = "Detected %s%s%s running daemon %s%s%s (%s)";
+    logger.logf(pattern,
         Tint.info, plugin.state.server.network, Tint.log,
         Tint.info, plugin.state.server.daemon,
         Tint.off, plugin.state.server.daemonstring);
@@ -524,7 +525,8 @@ package string datestamp()
     import std.format : format;
 
     immutable now = Clock.currTime;
-    return "-- [%d-%02d-%02d]".format(now.year, cast(int)now.month, now.day);
+    enum pattern = "-- [%d-%02d-%02d]";
+    return format(pattern, now.year, cast(int)now.month, now.day);
 }
 
 

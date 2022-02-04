@@ -158,8 +158,8 @@ void joinChannels(ConnectService service)
     auto guestlist = service.state.bot.guestChannels.sort.uniq;
     immutable numChans = homelist.walkLength() + guestlist.walkLength();
 
-    logger.logf("Joining %s%d%s %s...", Tint.info, numChans, Tint.log,
-        numChans.plurality("channel", "channels"));
+    enum pattern = "Joining %s%d%s %s...";
+    logger.logf(pattern, Tint.info, numChans, Tint.log, numChans.plurality("channel", "channels"));
 
     // Join in two steps so home channels don't get shoved away by guest channels
     // FIXME: line should split if it reaches 512 characters
@@ -271,8 +271,9 @@ void tryAuth(ConnectService service)
         // Only accepts password, no auth nickname
         if (service.state.client.nickname != service.state.client.origNickname)
         {
-            logger.warningf("Cannot auth when you have changed your nickname. " ~
-                "(%s%s%s != %1$s%4$s%3$s)", Tint.log, service.state.client.nickname,
+            enum pattern = "Cannot auth when you have changed your nickname. " ~
+                "(%s%s%s != %1$s%4$s%3$s)";
+            logger.warningf(pattern, Tint.log, service.state.client.nickname,
                 Tint.warning, service.state.client.origNickname);
 
             service.authentication = Progress.finished;
@@ -283,7 +284,8 @@ void tryAuth(ConnectService service)
 
         if (!service.state.settings.hideOutgoing && !service.state.settings.trace)
         {
-            logger.tracef("--> PRIVMSG %s :%s hunter2", serviceNick, verb);
+            enum pattern = "--> PRIVMSG %s :%s hunter2";
+            logger.tracef(pattern, serviceNick, verb);
         }
         break;
 
@@ -298,8 +300,8 @@ void tryAuth(ConnectService service)
 
         if (!service.state.bot.account.length)
         {
-            logger.logf("No account specified! Trying %s%s%s...",
-                Tint.info, service.state.client.origNickname, Tint.log);
+            enum pattern = "No account specified! Trying %s%s%s...";
+            logger.logf(pattern, Tint.info, service.state.client.origNickname, Tint.log);
             account = service.state.client.origNickname;
         }
 
@@ -307,7 +309,8 @@ void tryAuth(ConnectService service)
 
         if (!service.state.settings.hideOutgoing && !service.state.settings.trace)
         {
-            logger.tracef("--> PRIVMSG %s :%s %s hunter2", serviceNick, verb, account);
+            enum pattern = "--> PRIVMSG %s :%s %s hunter2";
+            logger.tracef(pattern, serviceNick, verb, account);
         }
         break;
 
@@ -429,8 +432,8 @@ void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
         if (!service.state.bot.pass.length)
         {
             logger.error("You *need* a pass to join this server.");
-            logger.logf("Run the program with %s--set twitchbot.keygen%s to generate a new one.",
-                Tint.info, Tint.log);
+            enum pattern = "Run the program with %s--set twitchbot.keygen%s to generate a new one.";
+            logger.logf(pattern, Tint.info, Tint.log);
         }
         else
         {
@@ -441,8 +444,8 @@ void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
 
     case "Login authentication failed":
         logger.error("Incorrect client pass. Please make sure it is valid and has not expired.");
-        logger.logf("Run the program with %s--set twitchbot.keygen%s to generate a new one.",
-            Tint.info, Tint.log);
+        enum pattern = "Run the program with %s--set twitchbot.keygen%s to generate a new one.";
+        logger.logf(pattern, Tint.info, Tint.log);
         break;
 
     case "Login unsuccessful":
@@ -574,8 +577,8 @@ void onInvite(ConnectService service, const ref IRCEvent event)
 {
     if (!service.connectSettings.joinOnInvite)
     {
-        logger.logf("Invited, but %sjoinOnInvite%s is set to false.",
-            Tint.info, Tint.log);
+        enum pattern = "Invited, but %sjoinOnInvite%s is set to false.";
+        logger.logf(pattern, Tint.info, Tint.log);
         return;
     }
 
@@ -860,8 +863,8 @@ bool trySASLPlain(ConnectService service)
     }
     catch (Base64Exception e)
     {
-        logger.errorf("Could not authenticate: malformed password (%s%s%s)",
-            Tint.log, e.msg, Tint.error);
+        enum pattern = "Could not authenticate: malformed password (%s%s%s)";
+        logger.errorf(pattern, Tint.log, e.msg, Tint.error);
         version(PrintStacktraces) logger.trace(e.info);
         return false;
     }
@@ -1040,9 +1043,9 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
                 if (service.state.settings.prefix.beginsWith(".") ||
                     service.state.settings.prefix.beginsWith("/"))
                 {
-                    logger.warningf(`WARNING: A prefix of "%s%s%s" will *not* work on Twitch servers, ` ~
-                        `as %1$s.%3$s and %1$s/%3$s are reserved for Twitch's own commands.`,
-                        Tint.log, service.state.settings.prefix, Tint.warning);
+                    enum pattern =`WARNING: A prefix of "%s%s%s" will *not* work on Twitch servers, ` ~
+                        `as %1$s.%3$s and %1$s/%3$s are reserved for Twitch's own commands.`;
+                    logger.warningf(pattern, Tint.log, service.state.settings.prefix, Tint.warning);
                 }
             }
             else
@@ -1133,8 +1136,8 @@ void onQuit(ConnectService service, const ref IRCEvent event)
         (event.sender.nickname == service.state.client.origNickname))
     {
         // The regain Fiber will end itself when it is next triggered
-        logger.infof("Attempting to regain nickname %s%s%s...",
-            Tint.log, service.state.client.origNickname, Tint.info);
+        enum pattern = "Attempting to regain nickname %s%s%s...";
+        logger.infof(pattern, Tint.log, service.state.client.origNickname, Tint.info);
         raw(service.state, "NICK " ~ service.state.client.origNickname, No.quiet, No.background);
     }
 }
@@ -1263,8 +1266,8 @@ void onUnknownCommand(ConnectService service, const ref IRCEvent event)
     if (service.serverSupportsWHOIS && !service.state.settings.preferHostmasks && (event.aux == "WHOIS"))
     {
         logger.error("Error: This server does not seem to support user accounts.");
-        logger.errorf("Consider enabling %sCore%s.%1$spreferHostmasks%2$s.",
-            Tint.log, Tint.warning);
+        enum pattern = "Consider enabling %sCore%s.%1$spreferHostmasks%2$s.";
+        logger.errorf(pattern, Tint.log, Tint.warning);
         logger.error("As it is, functionality will be greatly limited.");
         service.serverSupportsWHOIS = false;
     }

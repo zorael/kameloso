@@ -338,8 +338,9 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
             foreach (immutable i, const timer; (*timers)[start..end])
             {
                 immutable maxLen = min(timer.line.length, maxLineLength);
+                enum pattern = "%d: %s%s (%d:%d:%d)";
                 privmsg(plugin.state, event.channel, event.sender.nickname,
-                    "%d: %s%s (%d:%d:%d)".format(start+i+1, timer.line[0..maxLen],
+                    format(pattern, start+i+1, timer.line[0..maxLen],
                         (timer.line.length > maxLen) ? " ...  [truncated]" : string.init,
                         timer.messageCountThreshold, timer.timeThreshold, timer.stagger));
             }
@@ -436,8 +437,9 @@ in (filename.length, "Tried to populate timers from an empty filename")
     {
         if (channelTimersJSON.type != JSONType.array)
         {
-            logger.errorf("Twitch timer file malformed! Invalid channel timers " ~
-                "list type for %s: `%s`", channelName, channelTimersJSON.type);
+            enum pattern = "Twitch timer file malformed! Invalid channel timers " ~
+                "list type for %s: `%s`";
+            logger.errorf(pattern, channelName, channelTimersJSON.type);
             errored = true;
             continue;
         }
@@ -449,8 +451,9 @@ in (filename.length, "Tried to populate timers from an empty filename")
         {
             if (timerArrayEntry.type != JSONType.object)
             {
-                logger.errorf("Twitch timer file malformed! Invalid timer type " ~
-                    "for %s: `%s`", channelName, timerArrayEntry.type);
+                enum pattern = "Twitch timer file malformed! Invalid timer type " ~
+                    "for %s: `%s`";
+                logger.errorf(pattern, channelName, timerArrayEntry.type);
                 errored = true;
                 continue;
             }

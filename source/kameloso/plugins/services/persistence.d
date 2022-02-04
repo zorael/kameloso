@@ -481,12 +481,14 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
         }
         catch (JSONException e)
         {
-            logger.warningf("JSON exception caught when populating %s: %s", list, e.msg);
+            enum pattern = "JSON exception caught when populating %s: %s";
+            logger.warningf(pattern, list, e.msg);
             version(PrintStacktraces) logger.trace(e.info);
         }
         catch (Exception e)
         {
-            logger.warningf("Unhandled exception caught when populating %s: %s", list, e.msg);
+            enum pattern = "Unhandled exception caught when populating %s: %s";
+            logger.warningf(pattern, list, e.msg);
             version(PrintStacktraces) logger.trace(e);
         }
     }
@@ -535,8 +537,8 @@ void reloadHostmasksFromDisk(PersistenceService service)
         catch (FormatException e)
         {
             import kameloso.common : Tint, logger;
-            logger.warningf("Malformed hostmask in %s%s%s: %1$s%4$s",
-                Tint.log, service.hostmasksFile, Tint.warning, hostmask);
+            enum pattern = "Malformed hostmask in %s%s%s: %1$s%4$s";
+            logger.warningf(pattern, Tint.log, service.hostmasksFile, Tint.warning, hostmask);
         }
     }
 }

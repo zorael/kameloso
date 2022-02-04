@@ -845,8 +845,9 @@ string invert(const string line,
     //assert((startpos != -1), "Tried to invert nonexistent text");
     if (startpos == -1) return line;
 
-    immutable inverted = "%c[%dm%s%c[%dm".format(TerminalToken.format,
-        TerminalFormat.reverse, toInvert, TerminalToken.format, TerminalReset.invert);
+    enum pattern = "%c[%dm%s%c[%dm";
+    immutable inverted = format(pattern, TerminalToken.format, TerminalFormat.reverse,
+        toInvert, TerminalToken.format, TerminalReset.invert);
 
     Appender!(char[]) sink;
     sink.reserve(line.length + 16);

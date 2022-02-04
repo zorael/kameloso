@@ -199,9 +199,9 @@ void onUserstate(const ref IRCEvent event)
     {
         import kameloso.common : Tint;
 
-        logger.warningf("The bot is not a moderator of home channel %s%s%s. " ~
-            "Consider elevating it to such to avoid being as rate-limited.",
-            Tint.log, event.channel, Tint.warning);
+        enum pattern = "The bot is not a moderator of home channel %s%s%s. " ~
+            "Consider elevating it to such to avoid being as rate-limited.";
+        logger.warningf(pattern, Tint.log, event.channel, Tint.warning);
     }
 }
 
@@ -1036,15 +1036,15 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                 import etc.c.curl : CurlError;
 
                 // Something is deeply wrong.
-                logger.errorf("Failed to validate Twitch API keys: %s (%s%s%s) (%2$s%5$s%4$s)",
-                    e.msg, Tint.log, e.error, Tint.error, curlErrorStrings[e.errorCode]);
+                enum pattern = "Failed to validate Twitch API keys: %s (%s%s%s) (%2$s%5$s%4$s)";
+                logger.errorf(pattern, e.msg, Tint.log, e.error, Tint.error, curlErrorStrings[e.errorCode]);
 
                 if (e.errorCode == CurlError.ssl_cacert)
                 {
                     // Peer certificate cannot be authenticated with given CA certificates
-                    logger.errorf("You may need to supply a CA bundle file " ~
-                        "(e.g. %scacert.pem%s) in the configuration file.",
-                        Tint.log, Tint.error);
+                    enum caBundlePattern = "You may need to supply a CA bundle file " ~
+                        "(e.g. %scacert.pem%s) in the configuration file.";
+                    logger.errorf(caBundlePattern, Tint.log, Tint.error);
                 }
 
                 logger.error("Disabling API features.");

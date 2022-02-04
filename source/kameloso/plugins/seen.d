@@ -888,8 +888,8 @@ long[string] loadSeen(const string filename)
 
     if (!filename.exists || !filename.isFile)
     {
-        logger.warningf("%s%s%s does not exist or is not a file",
-            Tint.log, filename, Tint.warning);
+        enum pattern = "%s%s%s does not exist or is not a file";
+        logger.warningf(pattern, Tint.log, filename, Tint.warning);
         return aa;
     }
 
@@ -990,8 +990,8 @@ void onWelcome(SeenPlugin plugin)
 
         // Reports statistics on how many users are registered as having been seen
 
-        logger.logf("Currently %s%d%s %s seen.",
-            Tint.info, plugin.seenUsers.length, Tint.log,
+        enum pattern = "Currently %s%d%s %s seen.";
+        logger.logf(pattern, Tint.info, plugin.seenUsers.length, Tint.log,
             plugin.seenUsers.length.plurality("user", "users"));
     }
 

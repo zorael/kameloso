@@ -410,20 +410,20 @@ in (!plugin.workerRunning, "Tried to double-initialise the pipereader")
     }
     catch (ReturnValueException e)
     {
-        logger.warningf("Failed to initialise Pipeline plugin: %s (%s%s%s returned %2$s%5$d%4$s)",
-            e.msg, Tint.log, e.command, Tint.warning, e.retval);
+        enum pattern = "Failed to initialise Pipeline plugin: %s (%s%s%s returned %2$s%5$d%4$s)";
+        logger.warningf(pattern, e.msg, Tint.log, e.command, Tint.warning, e.retval);
         //version(PrintStacktraces) logger.trace(e.info);
     }
     catch (FileExistsException e)
     {
-        logger.warningf("Failed to initialise Pipeline plugin: %s [%s%s%s]",
-            e.msg, Tint.log, e.filename, Tint.warning);
+        enum pattern = "Failed to initialise Pipeline plugin: %s [%s%s%s]";
+        logger.warningf(pattern, e.msg, Tint.log, e.filename, Tint.warning);
         //version(PrintStacktraces) logger.trace(e.info);
     }
     catch (FileTypeMismatchException e)
     {
-        logger.warningf("Failed to initialise Pipeline plugin: %s [%s%s%s]",
-            e.msg, Tint.log, e.filename, Tint.warning);
+        enum pattern = "Failed to initialise Pipeline plugin: %s [%s%s%s]";
+        logger.warningf(pattern, e.msg, Tint.log, e.filename, Tint.warning);
         //version(PrintStacktraces) logger.trace(e.info);
     }
 

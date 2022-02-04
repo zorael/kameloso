@@ -53,8 +53,8 @@ bool applyCustomSettings(IRCPlugin[] plugins,
     {
         if (!line.contains!(Yes.decode)('.'))
         {
-            logger.warningf(`Bad %splugin%s.%1$ssetting%2$s=%1$svalue%2$s format. (%1$s%3$s%2$s)`,
-                Tint.log, Tint.warning, line);
+            enum pattern = `Bad %splugin%s.%1$ssetting%2$s=%1$svalue%2$s format. (%1$s%3$s%2$s)`;
+            logger.warningf(pattern, Tint.log, Tint.warning, line);
             noErrors = false;
             continue;
         }
@@ -79,8 +79,8 @@ bool applyCustomSettings(IRCPlugin[] plugins,
 
                 if (!success)
                 {
-                    logger.warningf("No such %score%s setting: %1$s%3$s",
-                        Tint.log, Tint.warning, setting);
+                    enum pattern = "No such %score%s setting: %1$s%3$s";
+                    logger.warningf(pattern, Tint.log, Tint.warning, setting);
                     noErrors = false;
                 }
                 else
@@ -100,16 +100,16 @@ bool applyCustomSettings(IRCPlugin[] plugins,
             }
             catch (SetMemberException e)
             {
-                logger.warningf("Failed to set %score%s.%1$s%3$s%2$s: " ~
-                    "it requires a value and none was supplied",
-                    Tint.log, Tint.warning, setting);
+                enum pattern = "Failed to set %score%s.%1$s%3$s%2$s: " ~
+                    "it requires a value and none was supplied";
+                logger.warningf(pattern, Tint.log, Tint.warning, setting);
                 version(PrintStacktraces) logger.trace(e.info);
                 noErrors = false;
             }
             catch (ConvException e)
             {
-                logger.warningf(`Invalid value for %score%s.%1$s%3$s%2$s: "%1$s%4$s%2$s"`,
-                    Tint.log, Tint.warning, setting, value);
+                enum pattern = `Invalid value for %score%s.%1$s%3$s%2$s: "%1$s%4$s%2$s"`;
+                logger.warningf(pattern, Tint.log, Tint.warning, setting, value);
                 noErrors = false;
             }
 
@@ -130,15 +130,15 @@ bool applyCustomSettings(IRCPlugin[] plugins,
 
                     if (!success)
                     {
-                        logger.warningf("No such %s%s%s plugin setting: %1$s%4$s",
-                            Tint.log, pluginstring, Tint.warning, setting);
+                        enum pattern = "No such %s%s%s plugin setting: %1$s%4$s";
+                        logger.warningf(pattern, Tint.log, pluginstring, Tint.warning, setting);
                         noErrors = false;
                     }
                 }
                 catch (ConvException e)
                 {
-                    logger.warningf(`Invalid value for %s%s%s.%1$s%4$s%3$s: "%1$s%5$s%3$s"`,
-                        Tint.log, pluginstring, Tint.warning, setting, value);
+                    enum pattern = `Invalid value for %s%s%s.%1$s%4$s%3$s: "%1$s%5$s%3$s"`;
+                    logger.warningf(pattern, Tint.log, pluginstring, Tint.warning, setting, value);
                     noErrors = false;
 
                     //version(PrintStacktraces) logger.trace(e.info);

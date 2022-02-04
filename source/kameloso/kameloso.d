@@ -447,14 +447,15 @@ public:
                 }
                 else
                 {
-                    logger.warningf("ErrnoException when tearing down %s: %s",
-                        plugin.name, e.msg);
+                    enum pattern = "ErrnoException when tearing down %s: %s";
+                    logger.warningf(pattern, plugin.name, e.msg);
                     version(PrintStacktraces) logger.trace(e.info);
                 }
             }
             catch (Exception e)
             {
-                logger.warningf("Exception when tearing down %s: %s", plugin.name, e.msg);
+                enum pattern = "Exception when tearing down %s: %s";
+                logger.warningf(pattern, plugin.name, e.msg);
                 version(PrintStacktraces) logger.trace(e);
             }
 

@@ -1069,8 +1069,8 @@ mixin template IRCPluginImpl(
                 }
                 catch (Exception e)
                 {
-                    /*logger.warningf("tryProcess some exception on %s: %s",
-                        __traits(identifier, fun), e.msg);*/
+                    /*enum pattern = "tryProcess some exception on %s: %s";
+                    logger.warningf(pattern, __traits(identifier, fun), e);*/
 
                     import std.utf : UTFException;
                     import core.exception : UnicodeException;
