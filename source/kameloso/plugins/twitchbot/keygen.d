@@ -257,7 +257,7 @@ instructions and log in to authorise the use of this program with your account.
     }
 
     plugin.state.bot.pass = key;
-    plugin.state.botUpdated = true;
+    plugin.state.updates |= typeof(plugin.state.updates).bot;
 
     writefln("
 %1$sYour private authorisation key is: %2$s%3$s%4$s

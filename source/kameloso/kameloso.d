@@ -500,33 +500,38 @@ public:
      +/
     void checkPluginForUpdates(IRCPlugin plugin)
     {
-        if (plugin.state.botUpdated)
+        alias Update = typeof(plugin.state.updates);
+
+        if (plugin.state.updates & Update.bot)
         {
             // Something changed the bot; propagate
-            plugin.state.botUpdated = false;
+            plugin.state.updates ^= Update.bot;
             propagate(plugin.state.bot);
         }
 
-        if (plugin.state.clientUpdated)
+        if (plugin.state.updates & Update.client)
         {
             // Something changed the client; propagate
-            plugin.state.clientUpdated = false;
+            plugin.state.updates ^= Update.client;
             propagate(plugin.state.client);
         }
 
-        if (plugin.state.serverUpdated)
+        if (plugin.state.updates & Update.server)
         {
             // Something changed the server; propagate
-            plugin.state.serverUpdated = false;
+            plugin.state.updates ^= Update.server;
             propagate(plugin.state.server);
         }
 
-        if (plugin.state.settingsUpdated)
+        if (plugin.state.updates & Update.settings)
         {
             // Something changed the settings; propagate
-            plugin.state.settingsUpdated = false;
+            plugin.state.updates ^= Update.settings;
             propagate(plugin.state.settings);
         }
+
+        assert((plugin.state.updates == Update.nothing),
+            "`IRCPluginState.updates` was not reset after checking and propagation");
     }
 
 

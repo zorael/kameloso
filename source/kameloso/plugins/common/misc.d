@@ -94,7 +94,7 @@ bool applyCustomSettings(IRCPlugin[] plugins,
                     foreach (plugin; plugins)
                     {
                         plugin.state.settings = copyOfSettings;
-                        plugin.state.settingsUpdated = true;
+                        plugin.state.updates |= typeof(plugin.state.updates).settings;
                     }
                 }
             }

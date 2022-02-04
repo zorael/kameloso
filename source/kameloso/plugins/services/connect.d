@@ -88,7 +88,7 @@ void onSelfpart(ConnectService service, const ref IRCEvent event)
     {
         service.state.bot.guestChannels = service.state.bot.guestChannels
             .remove!(SwapStrategy.unstable)(index);
-        service.state.botUpdated = true;
+        service.state.updates |= typeof(service.state.updates).bot;
     }
     else
     {
@@ -125,7 +125,7 @@ void onSelfjoin(ConnectService service, const ref IRCEvent event)
     {
         // Track new channel in the channels array
         service.state.bot.guestChannels ~= event.channel;
-        service.state.botUpdated = true;
+        service.state.updates |= typeof(service.state.updates).bot;
     }
 }
 
@@ -979,7 +979,7 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
     if (event.target.nickname.length && (service.state.client.nickname != event.target.nickname))
     {
         service.state.client.nickname = event.target.nickname;
-        service.state.clientUpdated = true;
+        service.state.updates |= typeof(service.state.updates).client;
     }
 
     foreach (immutable unstripped; service.connectSettings.sendAfterConnect)
@@ -1008,7 +1008,7 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
             // We already infer account by username on Twitch;
             // hostmasks mode makes no sense there. So disable it.
             service.state.settings.preferHostmasks = false;
-            service.state.settingsUpdated = true;
+            service.state.updates |= typeof(service.state.updates).settings;
         }
 
         static immutable IRCEvent.Type[2] endOfMotdEventTypes =
@@ -1035,7 +1035,7 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
                 if (service.state.server.daemon != IRCServer.Daemon.twitch) return;
 
                 service.state.settings.colouredOutgoing = false;
-                service.state.settingsUpdated = true;
+                service.state.updates |= typeof(service.state.updates).settings;
 
                 if (service.state.settings.prefix.beginsWith(".") ||
                     service.state.settings.prefix.beginsWith("/"))
@@ -1203,7 +1203,7 @@ void onWHOISUser(ConnectService service, const ref IRCEvent event)
     if (!service.state.client.ident.length)
     {
         service.state.client.ident = event.target.ident;
-        service.state.clientUpdated = true;
+        service.state.updates |= typeof(service.state.updates).client;
     }
 }
 
@@ -1376,7 +1376,7 @@ void register(ConnectService service)
         }
 
         if (!service.state.bot.pass.length) service.state.bot.pass = decoded;
-        service.state.botUpdated = true;
+        service.state.updates |= typeof(service.state.updates).bot;
 
         immediate(service.state, "PASS " ~ service.state.bot.pass, Yes.quiet);
 
@@ -1395,7 +1395,7 @@ void register(ConnectService service)
 
             // Make sure nickname is lowercase so we can rely on it as account name
             service.state.client.nickname = service.state.client.nickname.toLower;
-            service.state.clientUpdated = true;
+            service.state.updates |= typeof(service.state.updates).client;
         }
     }
 

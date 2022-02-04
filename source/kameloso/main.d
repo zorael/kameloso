@@ -1188,10 +1188,7 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
             }
             finally
             {
-                if (plugin.state.botUpdated ||
-                    plugin.state.clientUpdated ||
-                    plugin.state.serverUpdated ||
-                    plugin.state.settingsUpdated)
+                if (plugin.state.updates != typeof(plugin.state.updates).nothing)
                 {
                     instance.checkPluginForUpdates(plugin);
                 }
@@ -1234,10 +1231,7 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
             }
             finally
             {
-                if (plugin.state.botUpdated ||
-                    plugin.state.clientUpdated ||
-                    plugin.state.serverUpdated ||
-                    plugin.state.settingsUpdated)
+                if (plugin.state.updates != typeof(plugin.state.updates).nothing)
                 {
                     instance.checkPluginForUpdates(plugin);
                 }

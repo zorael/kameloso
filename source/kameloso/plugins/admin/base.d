@@ -339,7 +339,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
     // We need to add it to the homeChannels array so as to get ChannelPolicy.home
     // ChannelAwareness to pick up the SELFJOIN.
     plugin.state.bot.homeChannels ~= channelName;
-    plugin.state.botUpdated = true;
+    plugin.state.updates |= typeof(plugin.state.updates).bot;
     privmsg(plugin.state, event.channel, event.sender.nickname, "Home added.");
 
     immutable existingChannelIndex = plugin.state.bot.guestChannels.countUntil(channelName);
@@ -433,7 +433,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
         {
             plugin.state.bot.homeChannels = plugin.state.bot.homeChannels
                 .remove!(SwapStrategy.unstable)(homeIndex);
-            plugin.state.botUpdated = true;
+            plugin.state.updates |= typeof(plugin.state.updates).bot;
         }
         /*else
         {
@@ -479,7 +479,7 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
 
     plugin.state.bot.homeChannels = plugin.state.bot.homeChannels
         .remove!(SwapStrategy.unstable)(homeIndex);
-    plugin.state.botUpdated = true;
+    plugin.state.updates |= typeof(plugin.state.updates).bot;
     part(plugin.state, channelName);
 
     if (channelName != event.channel)

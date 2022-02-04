@@ -1997,6 +1997,38 @@ private:
     import core.thread : Fiber;
 
 public:
+    // Update
+    /++
+        Bitfield enum of what member of an instance of `IRCPluginState` was updated (if any).
+     +/
+    enum Update
+    {
+        /++
+            Nothing marked as updated. Initial value.
+         +/
+        nothing  = 0,
+
+        /++
+            `IRCPluginState.bot` was marked as updated.
+         +/
+        bot      = 1 << 0,
+
+        /++
+            `IRCPluginState.client` was marked as updated.
+         +/
+        client   = 1 << 1,
+
+        /++
+            `IRCPluginState.server` was marked as updated.
+         +/
+        server   = 1 << 2,
+
+        /++
+            `IRCPluginState.settings` was marked as updated.
+         +/
+        settings = 1 << 3,
+    }
+
     // client
     /++
         The current [dialect.defs.IRCClient], containing information pertaining
@@ -2132,29 +2164,22 @@ public:
         }
     }
 
-    // botUpdated
+    // updates
     /++
-        Whether or not [bot] was altered. Must be reset manually.
-    +/
-    bool botUpdated;
+        Bitfield of in what way the plugin state was altered during postprocessing
+        or event handler execution.
 
-    // clientUpdated
-    /++
-        Whether or not [client] was altered. Must be reset manually.
+        Example:
+        ---
+        if (state.updates & IRCPluginState.Update.bot)
+        {
+            // state.bot was marked as updated
+            state.updates |= IRCPluginState.Update.server;
+            // state.server now marked as updated
+        }
+        ---
      +/
-    bool clientUpdated;
-
-    // serverUpdated
-    /++
-        Whether or not [server] was altered. Must be reset manually.
-     +/
-    bool serverUpdated;
-
-    // settingsUpdated
-    /++
-        Whether or not [settings] was altered. Must be reset manually.
-     +/
-    bool settingsUpdated;
+    Update updates;
 
     // abort
     /++
