@@ -80,7 +80,6 @@ void postprocess(PersistenceService service, ref IRCEvent event)
 }
 
 
-
 // postprocessCommon
 /++
     Postprocessing implementation common for service and hostmasks mode.

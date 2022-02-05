@@ -185,7 +185,7 @@ void manageConfigFile(ref Kameloso instance,
         import std.process : environment, spawnProcess, wait;
 
         // Let exceptions (ProcessExceptions) fall through and get caught
-        // by [kameloso.kameloso.tryGetopt].
+        // by [kameloso.main.tryGetopt].
 
         immutable editor = environment.get("EDITOR", string.init);
 
@@ -245,7 +245,7 @@ void manageConfigFile(ref Kameloso instance,
         }
 
         // Let exceptions (ProcessExceptions) fall through and get caught
-        // by [kameloso.kameloso.tryGetopt].
+        // by [kameloso.main.tryGetopt].
 
         enum pattern = "Attempting to open %s%s%s in a graphical text editor...";
         logger.logf(pattern, Tint.info, instance.settings.configFile, Tint.log);
@@ -798,8 +798,6 @@ Next handleGetopt(ref Kameloso instance,
 
         if (shouldWriteConfig || shouldOpenTerminalEditor || shouldOpenGraphicalEditor)
         {
-            import std.stdio : writeln;
-
             // --save and/or --edit was passed; defer to manageConfigFile
             manageConfigFile(instance, shouldWriteConfig, shouldOpenTerminalEditor,
                 shouldOpenGraphicalEditor, customSettings);
