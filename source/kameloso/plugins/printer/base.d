@@ -49,7 +49,7 @@ public:
     @Enabler bool enabled = true;
 
     /// Toggles whether or not the plugin should print to screen (as opposed to just log).
-    bool printToScreen = true;
+    bool monitor = true;
 
     version(Colours)
     {
@@ -145,7 +145,7 @@ public:
 )
 void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 {
-    if (!plugin.printerSettings.printToScreen || plugin.state.settings.headless) return;
+    if (!plugin.printerSettings.monitor || plugin.state.settings.headless) return;
 
     // For many types there's no need to display the target nickname when it's the bot's
     // Clear event.target.nickname for those types.
@@ -574,7 +574,7 @@ void start(PrinterPlugin plugin)
         {
             if (plugin.isEnabled)
             {
-                if (plugin.printerSettings.printToScreen && plugin.printerSettings.daybreaks)
+                if (plugin.printerSettings.monitor && plugin.printerSettings.daybreaks)
                 {
                     import kameloso.common : logger;
                     logger.info(datestamp);
