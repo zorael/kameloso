@@ -145,7 +145,7 @@ public:
 )
 void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 {
-    if (!plugin.printerSettings.printToScreen) return;
+    if (!plugin.printerSettings.printToScreen || plugin.state.settings.headless) return;
 
     // For many types there's no need to display the target nickname when it's the bot's
     // Clear event.target.nickname for those types.

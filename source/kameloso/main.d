@@ -64,6 +64,15 @@ version(ProfileGC)
 public __gshared bool rawAbort;
 
 
+// headless
+/++
+    Headless flag.
+
+    If this is true the program should not output anything to the terminal.
+ +/
+public __gshared bool rawHeadless;
+
+
 version(Posix)
 {
     // signalRaised
@@ -128,7 +137,7 @@ void signalHandler(int sig) nothrow @nogc @system
         31 : "SYS",   /// Bad system call. (SVr4)
     ];
 
-    printf("...caught signal SIG%s!\n", signalNames[sig].ptr);
+    if (!rawHeadless) printf("...caught signal SIG%s!\n", signalNames[sig].ptr);
     rawAbort = true;
 
     version(Posix)
@@ -545,8 +554,11 @@ void messageFiber(ref Kameloso instance)
             final switch (logLevel)
             {
             case writeln:
-                import std.stdio : writeln;
-                writeln(message);
+                if (!instance.settings.headless)
+                {
+                    import std.stdio : writeln;
+                    writeln(message);
+                }
                 break;
 
             case trace:
@@ -716,7 +728,7 @@ Next mainLoop(ref Kameloso instance)
 
         if (*instance.abort) return Next.returnFailure;
 
-        if (instance.wantLiveSummary)
+        if (!instance.settings.headless && instance.wantLiveSummary)
         {
             // Live connection summary requested.
             instance.printSummary();
@@ -1094,6 +1106,8 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
     {
         import lu.string : contains;
         import std.algorithm.searching : canFind;
+
+        if (instance.settings.headless) return;
 
         // Something asserted
         logger.error("scopeguard tripped.");
@@ -1703,13 +1717,17 @@ void processReplays(ref Kameloso instance, IRCPlugin plugin)
 
         version(TraceWhois)
         {
-            import std.algorithm.iteration : map;
             import std.stdio : writef, writefln, writeln;
 
-            auto callerNames = replaysForNickname.map!(replay => replay.caller);
-            enum pattern = "[TraceWhois] processReplays saw request to " ~
-                "WHOIS \"%s\" from: %-(%s, %)";
-            writef(pattern, nickname, callerNames);
+            if (!instance.settings.headless)
+            {
+                import std.algorithm.iteration : map;
+
+                auto callerNames = replaysForNickname.map!(replay => replay.caller);
+                enum pattern = "[TraceWhois] processReplays saw request to " ~
+                    "WHOIS \"%s\" from: %-(%s, %)";
+                writef(pattern, nickname, callerNames);
+            }
         }
 
         immutable then = instance.previousWhoisTimestamps.get(nickname, 0);
@@ -1718,7 +1736,7 @@ void processReplays(ref Kameloso instance, IRCPlugin plugin)
         {
             version(TraceWhois)
             {
-                writeln(" ...and actually issuing.");
+                if (!instance.settings.headless) writeln(" ...and actually issuing.");
             }
 
             instance.outbuffer.put(OutgoingLine("WHOIS " ~ nickname,
@@ -2621,7 +2639,7 @@ void printEventDebugDetails(const ref IRCEvent event,
     const string raw,
     const bool eventWasInitialised = true)
 {
-    if (!raw.length) return;
+    if (rawHeadless || !raw.length) return;
 
     if (!eventWasInitialised || (event == IRCEvent.init))
     {
@@ -2770,9 +2788,11 @@ int initBot(string[] args)
     expandPaths(instance.settings);
 
     // Initialise the logger immediately so it's always available.
-    // handleGetopt re-inits later when we know the settings for monochrome
-    initLogger(cast(Flag!"monochrome")instance.settings.monochrome,
-        cast(Flag!"brightTerminal")instance.settings.brightTerminal);
+    // handleGetopt re-inits later when we know the settings for monochrome and headless
+    initLogger(
+        cast(Flag!"monochrome")instance.settings.monochrome,
+        cast(Flag!"brightTerminal")instance.settings.brightTerminal,
+        cast(Flag!"headless")instance.settings.headless);
 
     // Set up signal handling so that we can gracefully catch Ctrl+C.
     setupSignals();
@@ -2781,15 +2801,19 @@ int initBot(string[] args)
     {
         import kameloso.terminal : TerminalToken, isTTY;
 
-        enum bellString = ("" ~ cast(char)(TerminalToken.bell));
-        immutable bell = isTTY ? bellString : string.init;
+        if (!instance.settings.headless)
+        {
+            enum bellString = ("" ~ cast(char)(TerminalToken.bell));
+            immutable bell = isTTY ? bellString : string.init;
+            logger.error("We just crashed!", bell);
+        }
 
-        logger.error("We just crashed!", bell);
         *instance.abort = true;
         resetSignals();
     }
 
     immutable actionAfterGetopt = instance.tryGetopt(args, attempt.customSettings);
+    rawHeadless = instance.settings.headless;
 
     with (Next)
     final switch (actionAfterGetopt)
@@ -2820,14 +2844,18 @@ int initBot(string[] args)
     catch (ErrnoException e)
     {
         import std.stdio : writeln;
-        writeln("Failed to set stdout buffer mode/size! errno:", errno);
+        if (!instance.settings.headless) writeln("Failed to set stdout buffer mode/size! errno:", errno);
         if (!instance.settings.force) return 1;
     }
     catch (Exception e)
     {
-        import std.stdio : writeln;
-        writeln("Failed to set stdout buffer mode/size!");
-        writeln(e);
+        if (!instance.settings.headless)
+        {
+            import std.stdio : writeln;
+            writeln("Failed to set stdout buffer mode/size!");
+            writeln(e);
+        }
+
         if (!instance.settings.force) return 1;
     }
 
@@ -2860,18 +2888,21 @@ int initBot(string[] args)
     import kameloso.printing : printObjects;
     import std.stdio : writeln;
 
-    printVersionInfo();
-    writeln();
-
-    // Print the current settings to show what's going on.
-    IRCClient prettyClient = instance.parser.client;
-    prettyClient.realName = replaceTokens(prettyClient.realName);
-    printObjects(prettyClient, instance.bot, instance.parser.server);
-
-    if (!instance.bot.homeChannels.length && !instance.bot.admins.length)
+    if (!instance.settings.headless)
     {
-        import kameloso.config : notifyAboutIncompleteConfiguration;
-        notifyAboutIncompleteConfiguration(instance.settings.configFile, args[0]);
+        printVersionInfo();
+        writeln();
+
+        // Print the current settings to show what's going on.
+        IRCClient prettyClient = instance.parser.client;
+        prettyClient.realName = replaceTokens(prettyClient.realName);
+        printObjects(prettyClient, instance.bot, instance.parser.server);
+
+        if (!instance.bot.homeChannels.length && !instance.bot.admins.length)
+        {
+            import kameloso.config : notifyAboutIncompleteConfiguration;
+            notifyAboutIncompleteConfiguration(instance.settings.configFile, args[0]);
+        }
     }
 
     // Verify that settings are as they should be (nickname exists and not too long, etc)
@@ -2917,7 +2948,7 @@ int initBot(string[] args)
 
         instance.initPlugins(attempt.customSettings, missingEntries, invalidEntries);
 
-        if (missingEntries.length && instance.settings.configFile.exists)
+        if (!instance.settings.headless && missingEntries.length && instance.settings.configFile.exists)
         {
             import kameloso.config : notifyAboutMissingSettings;
             notifyAboutMissingSettings(missingEntries, args[0], instance.settings.configFile);
@@ -3020,7 +3051,7 @@ int initBot(string[] args)
         }
     }
 
-    if (instance.settings.exitSummary && instance.connectionHistory.length)
+    if (!instance.settings.headless && instance.settings.exitSummary && instance.connectionHistory.length)
     {
         instance.printSummary();
     }

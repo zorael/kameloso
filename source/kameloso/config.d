@@ -91,8 +91,11 @@ void writeConfig(ref Kameloso instance,
 
     // --save was passed; write configuration to file and quit
 
-    printVersionInfo();
-    writeln();
+    if (!instance.settings.headless)
+    {
+        printVersionInfo();
+        writeln();
+    }
 
     // If we don't initialise the plugins there'll be no plugins array
     instance.initPlugins(customSettings);
@@ -102,16 +105,19 @@ void writeConfig(ref Kameloso instance,
     // string, and having it there would enforce the default string if none present.
     if (!instance.bot.quitReason.length) instance.bot.quitReason = KamelosoDefaults.quitReason;
 
-    printObjects(client, instance.bot, server, instance.connSettings, instance.settings);
-
     instance.writeConfigurationFile(instance.settings.configFile);
-    logger.log("Configuration written to ", Tint.info, instance.settings.configFile);
 
-    if (!instance.bot.admins.length && !instance.bot.homeChannels.length && giveInstructions)
+    if (!instance.settings.headless)
     {
-        logger.trace();
-        logger.log("Edit it and make sure it contains at least one of the following:");
-        giveConfigurationMinimalIntructions();
+        printObjects(client, instance.bot, server, instance.connSettings, instance.settings);
+        logger.log("Configuration written to ", Tint.info, instance.settings.configFile);
+
+        if (!instance.bot.admins.length && !instance.bot.homeChannels.length && giveInstructions)
+        {
+            logger.trace();
+            logger.log("Edit it and make sure it contains at least one of the following:");
+            giveConfigurationMinimalIntructions();
+        }
     }
 }
 
@@ -695,6 +701,10 @@ Next handleGetopt(ref Kameloso instance,
                             "(or the default application used to open ", Tint.info,
                             "*.conf", Tint.off, " files on your system)"),
                     &shouldOpenGraphicalEditor,
+                "headless",
+                    quiet ? string.init :
+                        "Enables headless mode, disabling all terminal output",
+                    &settings.headless,
                 "version",
                     quiet ? string.init :
                         "Show version information",
@@ -714,8 +724,10 @@ Next handleGetopt(ref Kameloso instance,
 
         // Reinitialise the logger with new settings
         import kameloso.common : initLogger;
-        initLogger(cast(Flag!"monochrome")settings.monochrome,
-            cast(Flag!"brightTerminal")settings.brightTerminal);
+        initLogger(
+            cast(Flag!"monochrome")settings.monochrome,
+            cast(Flag!"brightTerminal")settings.brightTerminal,
+            cast(Flag!"headless")settings.headless);
 
         // Manually override or append channels, depending on `shouldAppendChannels`
         if (shouldAppendToArrays)
@@ -780,7 +792,7 @@ Next handleGetopt(ref Kameloso instance,
             // --help|-h was passed, show the help table and quit
             // It's okay to reuse args, it's probably empty save for arg0
             // and we just want the help listing
-            printHelp(callGetopt(args, No.quiet));
+            if (!settings.headless) printHelp(callGetopt(args, No.quiet));
             return Next.returnSuccess;
         }
 
@@ -797,7 +809,7 @@ Next handleGetopt(ref Kameloso instance,
         if (shouldShowSettings)
         {
             // --settings was passed, show all options and quit
-            printSettings(instance, customSettings);
+            if (!settings.headless) printSettings(instance, customSettings);
             return Next.returnSuccess;
         }
 

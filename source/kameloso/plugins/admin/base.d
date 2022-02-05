@@ -101,7 +101,8 @@ debug
 )
 void onAnyEvent(AdminPlugin plugin, const ref IRCEvent event)
 {
-    return onAnyEventImpl(plugin, event);
+    if (plugin.state.settings.headless) return;
+    onAnyEventImpl(plugin, event);
 }
 
 
@@ -128,7 +129,8 @@ debug
 )
 void onCommandShowUser(AdminPlugin plugin, const ref IRCEvent event)
 {
-    return onCommandShowUserImpl(plugin, event);
+    if (plugin.state.settings.headless) return;
+    onCommandShowUserImpl(plugin, event);
 }
 
 
@@ -180,7 +182,8 @@ debug
 )
 void onCommandShowUsers(AdminPlugin plugin)
 {
-    return onCommandShowUsersImpl(plugin);
+    if (plugin.state.settings.headless) return;
+    onCommandShowUsersImpl(plugin);
 }
 
 
@@ -646,7 +649,7 @@ debug
 )
 void onCommandPrintRaw(AdminPlugin plugin, const ref IRCEvent event)
 {
-    return onCommandPrintRawImpl(plugin, event);
+    onCommandPrintRawImpl(plugin, event);
 }
 
 
@@ -671,7 +674,7 @@ debug
 )
 void onCommandPrintBytes(AdminPlugin plugin, const ref IRCEvent event)
 {
-    return onCommandPrintBytesImpl(plugin, event);
+    onCommandPrintBytesImpl(plugin, event);
 }
 
 
@@ -841,7 +844,8 @@ debug
 )
 void onCommandStatus(AdminPlugin plugin)
 {
-    return onCommandStatusImpl(plugin);
+    if (plugin.state.settings.headless) return;
+    onCommandStatusImpl(plugin);
 }
 
 
@@ -1148,7 +1152,7 @@ debug
 )
 void onCommandBus(AdminPlugin plugin, const ref IRCEvent event)
 {
-    return onCommandBusImpl(plugin, event.content);
+    onCommandBusImpl(plugin, event.content);
 }
 
 

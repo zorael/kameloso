@@ -211,9 +211,12 @@ void onCommandBusImpl(AdminPlugin plugin, const string input)
 
     if (!input.contains!(Yes.decode)(' '))
     {
-        logger.info("Sending bus message.");
-        writeln("Header: ", input);
-        writeln("Content: (empty)");
+        if (!plugin.state.settings.headless)
+        {
+            logger.info("Sending bus message.");
+            writeln("Header: ", input);
+            writeln("Content: (empty)");
+        }
 
         plugin.state.mainThread.send(ThreadMessage.BusMessage(), input);
     }
@@ -222,9 +225,12 @@ void onCommandBusImpl(AdminPlugin plugin, const string input)
         string slice = input;  // mutable
         immutable header = slice.nom(' ');
 
-        logger.info("Sending bus message.");
-        writeln("Header: ", header);
-        writeln("Content: ", slice);
+        if (!plugin.state.settings.headless)
+        {
+            logger.info("Sending bus message.");
+            writeln("Header: ", header);
+            writeln("Content: ", slice);
+        }
 
         plugin.state.mainThread.send(ThreadMessage.BusMessage(),
             header, busMessage(slice));

@@ -25,7 +25,7 @@ version(unittest)
 shared static this()
 {
     // This is technically before settings have been read...
-    logger = new KamelosoLogger(No.monochrome, No.brightTerminal);
+    logger = new KamelosoLogger(No.monochrome, No.brightTerminal, No.headless);
 
     // settings needs instantiating now.
     settings = new kameloso.kameloso.CoreSettings;
@@ -64,13 +64,16 @@ KamelosoLogger logger;
     Params:
         monochrome = Whether the terminal is set to monochrome or not.
         bright = Whether the terminal has a bright background or not.
+        headless = Whether the terminal is headless or not.
  +/
-void initLogger(const Flag!"monochrome" monochrome,
-    const Flag!"brightTerminal" bright)
+void initLogger(
+    const Flag!"monochrome" monochrome,
+    const Flag!"brightTerminal" bright,
+    const Flag!"headless" headless)
 out (; (logger !is null), "Failed to initialise logger")
 {
     import kameloso.logger : KamelosoLogger;
-    logger = new KamelosoLogger(monochrome, bright);
+    logger = new KamelosoLogger(monochrome, bright, headless);
     Tint.monochrome = monochrome;
 }
 
