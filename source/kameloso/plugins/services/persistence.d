@@ -299,15 +299,18 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
         {
             // Do nothing, admin is permanent and program-wide
         }
-        else if ((service.state.server.daemon == IRCServer.Daemon.twitch) &&
+        /*else if ((service.state.server.daemon == IRCServer.Daemon.twitch) &&
             (stored.nickname == service.state.client.nickname))
         {
+            // I don't think we want this...
             stored.class_ = IRCUser.Class.admin;
-        }
+        }*/
         else if (!event.channel.length || !service.state.bot.homeChannels.canFind(event.channel))
         {
-            // Not a channel or not a home. Additionally not an admin nor us
+            // Not a channel or not a home. Additionally not an admin
+            // (Comment out the second expression to apply classifiers outside of homes)
             // Default to registered if the user has an account, except on Twitch
+            // postprocess in twitchbot/base.d will assign class as per badges
             stored.class_ = ((service.state.server.daemon != IRCServer.Daemon.twitch) &&
                 stored.account.length && (stored.account != "*")) ?
                     IRCUser.Class.registered :
