@@ -1,20 +1,18 @@
+license "DustMiteNoRemoveStart"
 name "kameloso"
 description "IRC bot"
 authors "JR"
 copyright "Copyright © 2021, JR"
 homepage "https://www.github.com/zorael/kameloso"
-license "MIT"
 
 targetType "executable"
-mainSourceFile "source/kameloso/entrypoint.d"
 dflags "-dip25" "-dip1008"
 libs "curl"
 x:ddoxTool "scod"
 
-dependency "lu" version="~>1.1.3"
-dependency "dialect" version="~>1.2.0"
-dependency "arsd-official:dom" version="~>10.5.0"
-dependency "requests" version="~>2.0.0"
+//dependency "lu" version="~>1.1.3"
+//dependency "dialect" version="~>1.2.0"
+//dependency "requests" version="~>2.0.0"
 
 sourcePaths "source"
 importPaths "source"
@@ -38,7 +36,15 @@ versions \
     "WithSeenPlugin" \
     "WithStopwatchPlugin" \
     "WithVotesPlugin" \
-    "WithWebtitlesPlugin"
+    "WithWebtitlesPlugin" \
+        "TwitchSupport" \
+        "WithTwitchBotPlugin" \
+        "TwitchWarnings" \
+        "OmniscientAdmin" \
+        "PrintStacktraces" \
+        "ExplainRepeat" \
+        "GCStatsOnExit"
+        //"TraceWhois" \
 
 /**
     Services; needed for everything to work right.
@@ -95,7 +101,7 @@ configuration "lowmem" {
 }
 
 configuration "twitch" {
-    subConfiguration "dialect" "twitch"
+//    subConfiguration "dialect" "twitch"
 
     versions \
         "TwitchSupport" \
@@ -103,7 +109,7 @@ configuration "twitch" {
 }
 
 configuration "twitch-lowmem" {
-    subConfiguration "dialect" "twitch"
+//    subConfiguration "dialect" "twitch"
     dflags "-lowmem"
 
     versions \
@@ -112,7 +118,7 @@ configuration "twitch-lowmem" {
 }
 
 configuration "dev" {
-    subConfiguration "dialect" "dev"
+//    subConfiguration "dialect" "dev"
 
     versions \
         "TwitchSupport" \
@@ -126,7 +132,7 @@ configuration "dev" {
 }
 
 configuration "dev-lowmem" {
-    subConfiguration "dialect" "dev"
+//    subConfiguration "dialect" "dev"
     dflags "-lowmem"
 
     versions \
@@ -141,7 +147,7 @@ configuration "dev-lowmem" {
 }
 
 configuration "unittest" {
-    subConfiguration "dialect" "dev"
+//    subConfiguration "dialect" "dev"
 
     versions \
         "TwitchSupport" \
@@ -157,7 +163,7 @@ configuration "unittest" {
 }
 
 configuration "unittest-lowmem" {
-    subConfiguration "dialect" "dev"
+//    subConfiguration "dialect" "dev"
     dflags "-lowmem"
 
     versions \
@@ -172,3 +178,5 @@ configuration "unittest-lowmem" {
         "GCStatsOnExit" \
         "ProfileGC"
 }
+
+license "DustMiteNoRemoveStop"

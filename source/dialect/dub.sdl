@@ -1,0 +1,68 @@
+name "dialect"
+description "IRC parsing library"
+authors "JR"
+copyright "Copyright © 2021, JR"
+homepage "https://www.github.com/zorael/dialect"
+license "MIT"
+
+targetType "library"
+dflags "-dip25" "-dip1008"
+x:ddoxTool "scod"
+
+subPackage {
+    name "assertgen"
+    description "Tool for generating asserts for unittest blocks"
+    targetType "executable"
+    targetName "assertgen"
+
+    dependency "lu" version="~>1.1.1"
+
+    sourcePaths "source"
+    importPaths "source"
+
+    mainSourceFile "source/dialect/assertgen.d"
+
+    versions \
+        "FlagAsUpdated" \
+        "TwitchSupport" \
+        "TwitchWarnings" \
+        "PrintStacktraces" \
+        "AssertGeneration"
+}
+
+dependency "lu" version="~>1.1.1"
+
+sourcePaths "source"
+importPaths "source"
+
+versions "FlagAsUpdated"
+
+configuration "library" {
+    excludedSourceFiles "source/dialect/assertgen.d"
+}
+
+configuration "twitch" {
+    excludedSourceFiles "source/dialect/assertgen.d"
+
+    versions \
+        "TwitchSupport"
+}
+
+configuration "dev" {
+    excludedSourceFiles "source/dialect/assertgen.d"
+
+    versions \
+        "TwitchSupport" \
+        "TwitchWarnings"
+}
+
+configuration "unittest" {
+    sourcePaths "source" "tests"
+    importPaths "source" "tests"
+
+    versions \
+        "TwitchSupport" \
+        "TwitchWarnings" \
+        "PrintStacktraces" \
+        "AssertGeneration"
+}

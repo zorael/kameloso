@@ -1,36 +1,8 @@
-/++
-    Functions for generating a Twitch API key.
 
-    See_Also:
-        [kameloso.plugins.twitchbot.base]
-        [kameloso.plugins.twitchbot.api]
- +/
 module kameloso.plugins.twitchbot.keygen;
-
-version(WithPlugins):
-version(TwitchSupport):
-version(WithTwitchBotPlugin):
-version(TwitchAPIFeatures):
-
-private:
 
 import kameloso.plugins.twitchbot.base;
 
-package:
-
-
-// generateKey
-/++
-    Start the captive key generation routine at the earliest possible moment,
-    which are the CAP events.
-
-    Invoked by [kameloso.plugins.twitchbot.base.onCAP] during capability negotiation.
-
-    We can't do it in [kameloso.plugins.twitchbot.base.start] since the calls to
-    save and exit would go unheard, as `start` happens before the main loop starts.
-    It would then immediately fail to read if too much time has passed,
-    and nothing would be saved.
- +/
 void generateKey(TwitchBotPlugin plugin)
 {
     import kameloso.common : Tint, logger;
@@ -66,42 +38,42 @@ instructions and log in to authorise the use of this program with your account.
 
     static immutable scopes =
     [
-        // New Twitch API
+        
 
-        //"analytics:read:extension",
-        //"analytics:read:games",
+        
+        
         "bits:read",
         "channel:edit:commercial",
         "channel:read:subscriptions",
-        //"clips:edit",
+        
         "user:edit",
-        "user:edit:broadcast",  // implies user:read:broadcast
-        //"user:edit:follows",
-        //"user:read:broadcast",
-        //"user:read:email",
+        "user:edit:broadcast",  
+        
+        
+        
 
-        // Twitch APIv5
+        
 
-        //"channel_check_subscription",
-        //"channel_commercial",
+        
+        
         "channel_editor",
-        //"channel_feed_edit",
-        //"channel_feed_read",
-        //"channel_read",
-        //"channel_stream",
-        //"channel_subscriptions",
-        //"collections_edit",
-        //"communities_edit",
-        //"communities_moderate",
-        //"openid",
+        
+        
+        
+        
+        
+        
+        
+        
+        
         "user_blocks_edit",
         "user_blocks_read",
         "user_follows_edit",
-        //"user_read",
-        //"user_subscriptions",
-        //"viewing_activity_read",
+        
+        
+        
 
-        // Chat and PubSub
+        
 
         "channel:moderate",
         "chat:edit",
@@ -158,12 +130,12 @@ instructions and log in to authorise the use of this program with your account.
                 }
                 else
                 {
-                    // Assume XDG
+                    
                     enum open = "xdg-open";
                 }
 
                 immutable browserExecutable = environment.get("BROWSER", open);
-                string[2] browserCommand = [ browserExecutable, url ];  // mutable
+                string[2] browserCommand = [ browserExecutable, url ];  
                 auto devNull = File("/dev/null", "r+");
 
                 try
@@ -201,13 +173,13 @@ instructions and log in to authorise the use of this program with your account.
             }
             else
             {
-                // Jump to the catch
+                
                 throw new ProcessException("Unexpected platform");
             }
         }
         catch (ProcessException e)
         {
-            // Probably we got some platform wrong and command was not found
+            
             logger.warning("Error: could not automatically open browser.");
             printManualURL();
         }
@@ -243,7 +215,7 @@ instructions and log in to authorise the use of this program with your account.
             continue;
         }
 
-        string slice = readURL;  // mutable
+        string slice = readURL;  
         slice.nom("access_token=");
         key = slice.nom('&');
 
@@ -252,7 +224,7 @@ instructions and log in to authorise the use of this program with your account.
             writeln();
             logger.error("Invalid key length!");
             writeln();
-            key = string.init;  // reset it so the while loop repeats
+            key = string.init;  
         }
     }
 

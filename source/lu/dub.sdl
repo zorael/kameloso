@@ -1,0 +1,20 @@
+name "lu"
+description "Library of reusable miscellanea"
+authors "JR"
+copyright "Copyright © 2021, JR"
+homepage "https://www.github.com/zorael/lu"
+license "MIT"
+
+targetType "library"
+dflags "-dip25" "-dip1008"
+x:ddoxTool "scod"
+
+configuration "library" {
+    sourcePaths "source"
+    importPaths "source"
+}
+
+configuration "unittest" {
+    sourcePaths "source"
+    importPaths "source"
+}

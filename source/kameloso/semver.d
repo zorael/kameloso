@@ -1,20 +1,15 @@
-/++
-    SemVer information about the current release.
 
-    Contains only definitions, no code. Helps importing projects tell what
-    features are available.
- +/
 module kameloso.semver;
 
 
-/// SemVer versioning of this build.
+
 enum KamelosoSemVer
 {
-    majorVersion = 2,  /// SemVer major version of the program.
-    minorVersion = 0,  /// SemVer minor version of the program.
-    patchVersion = 1,  /// SemVer patch version of the program.
+    majorVersion = 2,  
+    minorVersion = 0,  
+    patchVersion = 1,  
 }
 
 
-/// Pre-release SemVer subversion of this build.
+
 enum KamelosoSemVerPrerelease = string.init;
