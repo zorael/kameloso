@@ -2475,7 +2475,11 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             instance.parser.server = typeof(instance.parser.server).init;  // TODO: Add IRCServer constructor
             instance.parser.server.address = addressSnapshot;
             instance.parser.server.port = portSnapshot;
-            instance.sawWelcome = false;
+
+            version(TwitchSupport)
+            {
+                instance.sawWelcome = false;
+            }
         }
 
         scope(exit)

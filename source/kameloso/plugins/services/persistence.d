@@ -334,8 +334,13 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
 
             if (service.state.server.daemon == IRCServer.Daemon.twitch)
             {
-                stored.class_ = IRCUser.Class.anyone;
-                if (!event.channel.length) stored.badges = string.init;
+                version(TwitchSupport)
+                {
+                    // This needs to be versioned becaused IRCUser.badges isn't
+                    // available if not version TwitchSupport
+                    stored.class_ = IRCUser.Class.anyone;
+                    if (!event.channel.length) stored.badges = string.init;
+                }
             }
             else if (stored.account.length && (stored.account != "*"))
             {
