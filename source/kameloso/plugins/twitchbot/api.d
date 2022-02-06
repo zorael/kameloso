@@ -17,48 +17,23 @@ import core.thread : Fiber;
 
 package:
 
-
-
-
 struct QueryResponse
 {
-    
     string str;
-
-    
     long msecs;
-
-    
     uint code;
-
-    
     string error;
-
-    
     uint errorCode;
 }
 
-
-
-
 void twitchTryCatchDg(alias dg)()
 if (isSomeFunction!dg)
-{
-    
-}
-
-
-
+{}
 
 void persistentQuerier(shared QueryResponse[string] bucket,
     const uint timeout,
     const string caBundleFile)
-{
-    
-}
-
-
-
+{}
 
 QueryResponse queryTwitch(TwitchBotPlugin plugin,
     const string url,
@@ -100,9 +75,8 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
 
     scope(exit)
     {
-        synchronized 
+        synchronized
         {
-            
             plugin.bucket.remove(url);
         }
     }
@@ -134,8 +108,6 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
         import std.format : format;
         import std.json : parseJSON;
 
-        
-        
         immutable errorJSON = parseJSON(response.str);
         enum pattern = "%s %3d: %s";
 
@@ -156,67 +128,37 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
     return response;
 }
 
-
-
-
 void queryTwitchImpl(const string url,
     const string authToken,
     const uint timeout,
     shared QueryResponse[string] bucket,
     const string caBundleFile)
-{
-    
-}
-
-
-
+{}
 
 JSONValue getValidation(TwitchBotPlugin plugin)
 in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
 {
-    
     return JSONValue.init;
 }
 
-
-
-
-void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsecs)
-{
-    
-}
-
-
-
+void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsecs) {}
 
 QueryResponse waitForQueryResponse(TwitchBotPlugin plugin,
     const string url,
     const bool leaveTimingAlone = true)
 in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 {
-    
     return QueryResponse.init;
 }
-
-
-
 
 final class TwitchQueryException : Exception
 {
 @safe:
-    
     string responseBody;
-
-    
     string error;
-
-    
     uint code;
-
-    
     uint errorCode;
 
-    
     this(const string message,
         const string responseBody,
         const string error,
@@ -226,11 +168,9 @@ final class TwitchQueryException : Exception
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
     {
-        
         super(message, file, line, nextInChain);
     }
 
-    
     this(const string message,
         const string file = __FILE__,
         const size_t line = __LINE__,

@@ -1,69 +1,52 @@
-
 module lu.json;
 
 import std;
+
 struct JSONStorage
 {
-    
     JSONValue storage;
-
     alias storage this;
 
-    
     enum KeyOrderStrategy
     {
-        
-        passthrough,  
-
-        
+        passthrough,
         inGivenOrder,
     }
 
-    
-    
-    void reset()     {
-    }
+    void reset() {}
 
-    
-    
-    void load(string )     {
-    }
+    void load(string ) {}
 
-
-    
-    
     void save(KeyOrderStrategy strategy = KeyOrderStrategy.passthrough)
-        (string , const string[] = string[].init)     {
-    }
-
-
+        (string,
+        const string[] = string[].init)
+    {}
 }
 
-
-void populateFromJSON(T)(T target, JSONValue json) {
-    static if (isAssociativeArray!T )
+void populateFromJSON(T)(T target, JSONValue json)
+{
+    static if (isAssociativeArray!T)
     {
-            const aggregate = json.objectNoRef;
+        const aggregate = json.objectNoRef;
         foreach (ikey, valJSON; aggregate)
+        {
             populateFromJSON(target[ikey], valJSON);
-        
+        }
     }
     else
+    {
         with (JSONType)
         final switch (json.type)
         {
         case string:
             target = json.str;
-
             break;
 
         case integer:
-            
             target = integer.to!T;
             break;
 
         case uinteger:
-            
             target = uinteger.to!T;
             break;
 
@@ -77,14 +60,12 @@ void populateFromJSON(T)(T target, JSONValue json) {
             break;
 
         case null_:
-            
             break;
 
         case object:
         case array:
             import std;
-(format(stringof, json.type));
+            (format(stringof, json.type));
         }
+    }
 }
-
-

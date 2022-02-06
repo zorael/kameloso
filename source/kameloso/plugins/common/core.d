@@ -1,4 +1,3 @@
-
 module kameloso.plugins.common.core;
 
 private:
@@ -7,9 +6,6 @@ import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
 public:
-
-
-
 
 abstract class IRCPlugin
 {
@@ -20,88 +16,45 @@ private:
     import std.array : Appender;
 
 public:
-    
-    
     static struct CommandMetadata
     {
-        
-        
         string description;
-
-        
-        
         string syntax;
-
-        
-        
         bool hidden;
     }
 
-    
-    
     IRCPluginState state;
 
-    
-    
     void postprocess(ref IRCEvent event) @system;
 
-    
-    
     void onEvent(const ref IRCEvent event) @system;
 
-    
-    
     void initResources() @system;
 
-    
-    
     void deserialiseConfigFrom(const string configFile,
         out string[][string] missingEntries,
         out string[][string] invalidEntries);
 
-    
-    
     bool serialiseConfigInto(ref Appender!(char[]) sink) const;
 
-    
-    
     bool setSettingByName(const string setting, const string value);
 
-    
-    
     void start() @system;
 
-    
-    
     void printSettings() @system const;
 
-    
-    
     void teardown() @system;
 
-    
-    
     string name() @property const pure nothrow @nogc;
 
-    
-    
     CommandMetadata[string] commands() pure nothrow @property const;
 
-    
-    
     void reload() @system;
 
-    
-    
     void onBusMessage(const string header, shared Sendable content) @system;
 
-    
-    
     bool isEnabled() const @property pure nothrow @nogc;
 }
-
-
-
 
 version(WithPlugins)
 mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
@@ -110,11 +63,8 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
     private import dialect.defs : IRCEvent, IRCServer, IRCUser;
     private import core.thread : Fiber;
 
-    
-    
     alias mixinParent = __traits(parent, {});
 
-    
     static if (!is(mixinParent : IRCPlugin))
     {
         import lu.traits : CategoryName;
@@ -128,45 +78,27 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             pluginImplParentInfo.fqn, "IRCPluginImpl"));
     }
 
-    
-
     @safe:
 
-    
-    
     override public bool isEnabled() const @property pure nothrow @nogc
     {
         return true;
-        
     }
 
-    
-    
     pragma(inline, true)
     private FilterResult allow(const ref IRCEvent event, const Permissions permissionsRequired)
     {
-        
         return FilterResult.init;
     }
 
-    
-    
     private FilterResult allowImpl(const ref IRCEvent event, const Permissions permissionsRequired)
     {
-        
         return FilterResult.init;
     }
 
-    
-    
     pragma(inline, true)
-    override public void onEvent(const ref IRCEvent event) @system
-    {
-        
-    }
+    override public void onEvent(const ref IRCEvent event) @system {}
 
-    
-    
     private void onEventImpl( IRCEvent origEvent) @system
     {
         mixin("static import thisModule = " ~ module_ ~ ";");
@@ -180,13 +112,9 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         bool udaSanityCheck(alias fun)()
         {
             return true;
-            
         }
 
-        void call(alias fun)(ref IRCEvent event)
-        {
-            
-        }
+        void call(alias fun)(ref IRCEvent event) {}
 
         enum NextStep
         {
@@ -196,7 +124,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
             return_,
         }
 
-        
         NextStep process(alias fun)(ref IRCEvent event)
         {
             import std.algorithm.searching : canFind;
@@ -226,10 +153,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 writeln("   ...", Enum!ChannelPolicy.toString(uda.given.channelPolicy));
             }
 
-            if (!event.channel.length)
-            {
-                
-            }
+            if (!event.channel.length) {}
             else
             {
                 static if (uda.given.channelPolicy == ChannelPolicy.home)
@@ -240,7 +164,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 {
                     immutable channelMatch = !state.bot.homeChannels.canFind(event.channel);
                 }
-                else 
+                else
                 {
                     enum channelMatch = true;
                 }
@@ -252,8 +176,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                         writeln("   ...ignore non-matching channel ", event.channel);
                     }
 
-                    
-                    return NextStep.continue_;  
+                    return NextStep.continue_;
                 }
             }
 
@@ -265,26 +188,13 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
                 if (!event.content.length)
                 {
-                    
-                    
-                    return NextStep.continue_;  
+                    return NextStep.continue_;
                 }
 
-                
                 immutable origContent = event.content;
                 immutable origAux = event.aux;
-
-                
                 bool commandMatch;
             }
-
-            
-            
-
-            
-            
-
-            
 
             import std.meta : AliasSeq, staticMap;
             import std.traits : Parameters, Unqual, arity;
@@ -315,10 +225,7 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
                 NextStep rtToReturn;
 
-                if (result == FilterResult.pass)
-                {
-                    
-                }
+                if (result == FilterResult.pass) {}
                 else if (result == FilterResult.whois)
                 {
                     import kameloso.plugins.common.misc : enqueue;
@@ -382,7 +289,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                     assert(0);
                 }
 
-                
                 if (rtToReturn != NextStep.unset) return rtToReturn;
             }
 
@@ -395,25 +301,16 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
             static if (uda.given.chainable)
             {
-                
-                
                 return NextStep.continue_;
             }
             else
             {
-                
-                
                 return NextStep.return_;
             }
         }
 
-        
-        static void sanitizeEvent(ref IRCEvent event)
-        {
-            
-        }
+        static void sanitizeEvent(ref IRCEvent event) {}
 
-        
         void tryProcess(funlist...)(ref IRCEvent event)
         {
             foreach (fun; funlist)
@@ -430,7 +327,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                     }
                     else if (next == NextStep.repeat)
                     {
-                        
                         if (process!fun(event) == NextStep.continue_)
                         {
                             continue;
@@ -451,8 +347,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 }
                 catch (Exception e)
                 {
-                    
-
                     import std.utf : UTFException;
                     import core.exception : UnicodeException;
 
@@ -464,7 +358,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
                     sanitizeEvent(event);
 
-                    
                     immutable next = process!fun(event);
 
                     if (next == NextStep.continue_)
@@ -473,7 +366,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                     }
                     else if (next == NextStep.repeat)
                     {
-                        
                         if (process!fun(event) == NextStep.continue_)
                         {
                             continue;
@@ -510,53 +402,25 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
         alias cleanupFuns = Filter!(isCleanupFun, funs);
         alias pluginFuns = Filter!(isNormalEventHandler, funs);
 
-        
-        
         tryProcess!pluginFuns(origEvent);
-        
-        
     }
 
-    
-    
-    public this(IRCPluginState state) @system
-    {
-        
-    }
+    public this(IRCPluginState state) @system {}
 
-    
-    
-    override public void postprocess(ref IRCEvent event) @system
-    {
-        
-    }
+    override public void postprocess(ref IRCEvent event) @system {}
 
-    
-    
-    override public void initResources() @system
-    {
-        
-    }
+    override public void initResources() @system {}
 
-    
-    
     override public void deserialiseConfigFrom(const string configFile,
         out string[][string] missingEntries,
         out string[][string] invalidEntries)
-    {
-        
-    }
+    {}
 
-    
-    
     override public bool setSettingByName(const string setting, const string value)
     {
-        
         return true;
     }
 
-    
-    
     override public void printSettings() const
     {
         import kameloso.printing : printObject;
@@ -577,8 +441,6 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
 
     private import std.array : Appender;
 
-    
-    
     override public bool serialiseConfigInto(ref Appender!(char[]) sink) const
     {
         import std.traits : hasUDA;
@@ -602,67 +464,34 @@ mixin template IRCPluginImpl(Flag!"debug_" debug_ = No.debug_, string module_ = 
                 import std.format : format;
                 import std.traits : fullyQualifiedName;
 
-                
                 static assert(0, "`%s` is annotated `@Settings` but is not a `struct`"
                     .format(fullyQualifiedName!(this.tupleof[i])));
             }
         }
-
         return didSomething;
     }
 
-    
-    
-    override public void start() @system
-    {
-        
-    }
+    override public void start() @system {}
 
-    
-    
-    override public void teardown() @system
-    {
-        
-    }
+    override public void teardown() @system {}
 
-    
-    
     pragma(inline, true)
     override public string name() @property const pure nothrow @nogc
     {
-        
         return string.init;
     }
 
-    
-    
     override public IRCPlugin.CommandMetadata[string] commands() pure nothrow @property const
     {
-        
         return (IRCPlugin.CommandMetadata[string]).init;
     }
 
-    
-    
-    override public void reload() @system
-    {
-        
-    }
+    override public void reload() @system {}
 
     private import kameloso.thread : Sendable;
 
-    
-    
-    override public void onBusMessage(const string header, shared Sendable content) @system
-    {
-        
-    }
+    override public void onBusMessage(const string header, shared Sendable content) @system {}
 }
-
-
-
-
-
 
 bool prefixPolicyMatches(bool verbose = false)
     (ref IRCEvent event,
@@ -670,24 +499,15 @@ bool prefixPolicyMatches(bool verbose = false)
     const IRCClient client,
     const string prefix)
 {
-    
-
     return true;
 }
-
-
-
 
 FilterResult filterSender(const ref IRCEvent event,
     const Permissions permissionsRequired,
     const bool preferHostmasks) @safe
 {
-    
     return FilterResult.init;
 }
-
-
-
 
 struct IRCPluginState
 {
@@ -698,177 +518,64 @@ private:
     import core.thread : Fiber;
 
 public:
-    
-    
     IRCClient client;
-
-    
-    
     IRCServer server;
-
-    
-    
     IRCBot bot;
-
-    
-    
     CoreSettings settings;
-
-    
-    
     ConnectionSettings connSettings;
-
-    
-    
     Tid mainThread;
-
-    
-    
     IRCUser[string] users;
-
-    
-    
     IRCChannel[string] channels;
-
-    
-    
     Replay[][string] replays;
-
-    
-    
     bool hasReplays;
-
-    
-    
     Repeat[] repeats;
-
-    
-    
     Fiber[][] awaitingFibers;
-
-    
-    
     void delegate(const IRCEvent)[][] awaitingDelegates;
-
-    
-    
     ScheduledFiber[] scheduledFibers;
-
-    
-    
     ScheduledDelegate[] scheduledDelegates;
-
-    
-    
     long nextScheduledTimestamp;
 
-    
-    
-    void updateSchedule() pure nothrow @nogc
-    {
-        
-        
+    void updateSchedule() pure nothrow @nogc {}
 
-        
-    }
-
-    
-    
     bool botUpdated;
-
-    
-    
     bool clientUpdated;
-
-    
-    
     bool serverUpdated;
-
-    
-    
     bool settingsUpdated;
-
-    
-    
     bool* abort;
 }
 
-
-
-
 abstract class Replay
 {
-    
-    
     string caller;
-
-    
-    
     IRCEvent event;
-
-    
-    
     Permissions permissionsRequired;
-
-    
-    
     long when;
 
-    
-    
     void trigger();
 
-    
-    this() @safe
-    {
-        
-    }
+    this() @safe {}
 }
-
-
-
 
 private final class ReplayImpl(F, Payload = typeof(null)) : Replay
 {
 @safe:
-    
-    
     F fn;
 
     static if (!is(Payload == typeof(null)))
     {
-        
-        
         Payload payload;
 
-        
         this(Payload payload, IRCEvent event, Permissions permissionsRequired,
             F fn, const string caller)
-        {
-            
-        }
+        {}
     }
     else
     {
-        
-        this(IRCEvent event, Permissions permissionsRequired, F fn, const string caller)
-        {
-            
-        }
+        this(IRCEvent event, Permissions permissionsRequired, F fn, const string caller) {}
     }
 
-    
-    
-    override void trigger() @system
-    {
-        
-    }
+    override void trigger() @system {}
 }
-
-
-
-
-
 
 struct Repeat
 {
@@ -880,115 +587,55 @@ private:
     alias This = Unqual!(typeof(this));
 
 public:
-    
-    
     Fiber fiber;
 
-    
-    
     CarryingFiber!This carryingFiber() pure inout @nogc @property
     {
-        
         return null;
     }
 
-    
-    
     bool isCarrying() const pure @nogc @property
     {
-        
         return true;
     }
 
-    
-    
     Replay replay;
-
-    
-    
     long created;
 
-    
-    this(Fiber fiber, Replay replay) @safe
-    {
-        
-    }
+    this(Fiber fiber, Replay replay) @safe {}
 }
-
-
-
 
 enum FilterResult
 {
-    
     fail,
-
-    
     pass,
-
-    
     whois,
 }
 
-
-
-
 enum PrefixPolicy
 {
-    
     direct,
-
-    
     prefixed,
-
-    
     nickname,
 }
 
-
-
-
 enum ChannelPolicy
 {
-    
     home,
-
-    
     guest,
-
-    
     any,
 }
 
-
-
-
 enum Permissions
 {
-    
     ignore = 0,
-
-    
     anyone = 10,
-
-    
     registered = 20,
-
-    
     whitelist = 30,
-
-    
     operator = 40,
-
-    
     staff = 50,
-
-    
     admin = 100,
 }
-
-
-
 
 Replay replay(Fn, SubPlugin)
     (SubPlugin subPlugin,
@@ -997,12 +644,8 @@ Replay replay(Fn, SubPlugin)
     Fn fn,
     const string caller = __FUNCTION__) @safe
 {
-    
     return null;
 }
-
-
-
 
 Replay replay(Fn)
     (const ref IRCEvent event,
@@ -1010,208 +653,119 @@ Replay replay(Fn)
     Fn fn,
     const string caller = __FUNCTION__) @safe
 {
-    
     return null;
 }
 
-
-
-
 enum Timing
 {
-    
     unset,
-
-    
     setup,
-
-    
     early,
-
-    
     late,
-
-    
     cleanup,
 }
 
-
-
-
 struct IRCEventHandler
 {
-    
-    
     static struct GivenValues
     {
-        
-        
         IRCEvent.Type[] acceptedEventTypes;
-
-        
-        
         Permissions permissionsRequired = Permissions.ignore;
-
-        
-        
         ChannelPolicy channelPolicy = ChannelPolicy.home;
-
-        
-        
         Command[] commands;
-
-        
-        
         Regex[] regexes;
-
-        
-        
         bool chainable;
-
-        
-        
         bool verbose;
-
-        
-        
         Timing when;
     }
 
-    
-    
     GivenValues given;
 
-    
-    
     ref auto onEvent(const IRCEvent.Type type)
     {
         this.given.acceptedEventTypes ~= type;
         return this;
     }
 
-    
-    
     ref auto permissionsRequired(const Permissions permissionsRequired)
     {
         this.given.permissionsRequired = permissionsRequired;
         return this;
     }
 
-    
-    
     ref auto channelPolicy(const ChannelPolicy channelPolicy)
     {
         this.given.channelPolicy = channelPolicy;
         return this;
     }
 
-    
-    
     ref auto addCommand(const Command command)
     {
         this.given.commands ~= command;
         return this;
     }
 
-    
-    
     ref auto addRegex( Regex regex)
     {
         this.given.regexes ~= regex;
         return this;
     }
 
-    
-    
     ref auto chainable(const bool chainable)
     {
         this.given.chainable = chainable;
         return this;
     }
 
-    
-    
     ref auto verbose(const bool verbose)
     {
         this.given.verbose = verbose;
         return this;
     }
 
-    
-    
     ref auto when(const Timing when)
     {
         this.given.when = when;
         return this;
     }
 
-    
-    
     static struct Command
     {
-        
-        
         static struct GivenValues
         {
-            
-            
             PrefixPolicy policy = PrefixPolicy.prefixed;
-
-            
-            
             string word;
-
-            
-            
             string description;
-
-            
-            
             string syntax;
-
-            
-            
             bool hidden;
         }
 
-        
-        
         GivenValues given;
 
-        
-        
         ref auto policy(const PrefixPolicy policy)
         {
             this.given.policy = policy;
             return this;
         }
 
-        
-        
         ref auto word(const string word)
         {
             this.given.word = word;
             return this;
         }
 
-        
-        
         ref auto description(const string description)
         {
             this.given.description = description;
             return this;
         }
 
-        
-        
         ref auto syntax(const string syntax)
         {
             this.given.syntax = syntax;
             return this;
         }
 
-        
-        
         ref auto hidden(const bool hidden)
         {
             this.given.hidden = hidden;
@@ -1219,51 +773,27 @@ struct IRCEventHandler
         }
     }
 
-    
-    
     static struct Regex
     {
         import std.regex : StdRegex = Regex;
 
-        
-        
         static struct GivenValues
         {
-            
-            
             PrefixPolicy policy = PrefixPolicy.direct;
-
-            
-            
             StdRegex!char engine;
-
-            
-            
             string expression;
-
-            
-            
             string description;
-
-            
-            
             bool hidden;
         }
 
-        
-        
         GivenValues given;
 
-        
-        
         ref auto policy(const PrefixPolicy policy)
         {
             this.given.policy = policy;
             return this;
         }
 
-        
-        
         ref auto expression(const string expression)
         {
             import std.regex : regex;
@@ -1273,16 +803,12 @@ struct IRCEventHandler
             return this;
         }
 
-        
-        
         ref auto description(const string description)
         {
             this.given.description = description;
             return this;
         }
 
-        
-        
         ref auto hidden(const bool hidden)
         {
             this.given.hidden = hidden;
@@ -1291,17 +817,8 @@ struct IRCEventHandler
     }
 }
 
-
-
-
 enum Settings;
 
-
-
-
 enum Resource;
-
-
-
 
 enum Enabler;

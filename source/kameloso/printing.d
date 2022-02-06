@@ -7,16 +7,13 @@ import std.typecons : Flag, No, Yes;
 
 public:
 
-
-
-
 private template Widths(Flag!"all" all, Things...)
 {
 private:
     import std.algorithm.comparison : max;
 
-    enum minimumTypeWidth = 8;  
-    enum minimumNameWidth = 24;  
+    enum minimumTypeWidth = 8;
+    enum minimumNameWidth = 24;
 
     static if (all)
     {
@@ -38,12 +35,6 @@ private:
         (initialWidth - type + minimumTypeWidth) : initialWidth;
     public enum ptrdiff_t name = max(minimumNameWidth, compensatedWidth);
 }
-
-
-
-
-
-
 
 void printObjects(Flag!"all" all = No.all, Things...)
     (auto ref Things things)
@@ -68,9 +59,6 @@ if ((Things.length > 0) && allSatisfy!(isAggregateType, Things))
         {
             if (!kameloso.common.settings)
             {
-                
-                
-                
                 kameloso.common.settings = new typeof(*kameloso.common.settings);
             }
 
@@ -85,14 +73,13 @@ if ((Things.length > 0) && allSatisfy!(isAggregateType, Things))
 
         if (!put)
         {
-            
             formatObjectImpl!(all, No.coloured)(outbuffer, No.brightTerminal,
                 thing, widths.type+1, widths.name);
         }
 
         static if (i+1 < things.length)
         {
-            
+
             outbuffer.put('\n');
         }
     }
@@ -100,12 +87,7 @@ if ((Things.length > 0) && allSatisfy!(isAggregateType, Things))
     writeln(outbuffer.data);
 }
 
-
-
 alias printObject = printObjects;
-
-
-
 
 void formatObjects(Flag!"all" all = No.all,
     Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
@@ -113,10 +95,7 @@ void formatObjects(Flag!"all" all = No.all,
     const Flag!"brightTerminal" bright,
     auto ref Things things)
 if ((Things.length > 0) && allSatisfy!(isAggregateType, Things) && isOutputRange!(Sink, char[]))
-{
-    
-}
-
+{}
 
 private void formatObjectImpl(Flag!"all" all = No.all,
     Flag!"coloured" coloured = Yes.coloured, Sink, Thing)
@@ -262,7 +241,7 @@ private void formatObjectImpl(Flag!"all" all = No.all,
                     is(T == struct) ? "struct" :
                     is(T == class) ? "class" :
                     is(T == interface) ? "interface" :
-                     "union"; 
+                     "union";
 
                 static if (is(Thing == struct) && is(T == struct))
                 {
@@ -324,10 +303,3 @@ private void formatObjectImpl(Flag!"all" all = No.all,
         sink.put(defaultColour);
     }
 }
-
-
-
-
-
-
-

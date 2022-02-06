@@ -1,4 +1,3 @@
-
 module kameloso.plugins.twitchbot.timers;
 
 version(WithPlugins):
@@ -13,39 +12,23 @@ import kameloso.messaging;
 import dialect.defs;
 import lu.json : JSONStorage;
 import std.typecons : Flag, No, Yes;
+
 package:
-
-
-
 
 struct TimerDefinition
 {
-    
     string line;
-
-    
     int messageCountThreshold;
-
-    
     int timeThreshold;
-
-    
     int stagger;
 }
-
-
-
 
 Fiber createTimerFiber(TwitchBotPlugin plugin,
     const TimerDefinition timerDef,
     const string channelName)
 {
-    
     return null;
 }
-
-
-
 
 void handleTimerCommand(TwitchBotPlugin plugin,
     const ref IRCEvent event,
@@ -54,7 +37,7 @@ void handleTimerCommand(TwitchBotPlugin plugin,
     import lu.string : SplitResults, contains, nom, splitInto;
     import std.format : format;
 
-    string slice = event.content;  
+    string slice = event.content;
     immutable verb = slice.nom!(Yes.inherit)(' ');
 
     void sendUsage(const string verb = "[add|del|list|clear]")
@@ -72,8 +55,6 @@ void handleTimerCommand(TwitchBotPlugin plugin,
 
         if (slice.count(' ') < 3)
         {
-            
-            
             return sendUsage(verb);
         }
 
@@ -161,7 +142,6 @@ void handleTimerCommand(TwitchBotPlugin plugin,
             {
                 privmsg(plugin.state, event.channel, event.sender.nickname,
                     "Invalid timer index: " ~ slice);
-                
                 return;
             }
 
@@ -245,17 +225,10 @@ void handleTimerCommand(TwitchBotPlugin plugin,
     }
 }
 
-
-
-
 JSONStorage timerDefsToJSON(TwitchBotPlugin plugin)
 {
-    
     return JSONStorage.init;
 }
-
-
-
 
 void populateTimers(TwitchBotPlugin plugin, const string filename)
 in (filename.length, "Tried to populate timers from an empty filename")

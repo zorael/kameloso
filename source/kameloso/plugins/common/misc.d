@@ -11,26 +11,15 @@ import std.typecons : Flag, No, Yes;
 
 public:
 
-
-
-
 bool applyCustomSettings(IRCPlugin[] plugins,
     const string[] customSettings,
     CoreSettings copyOfSettings)
 {
-    
     return true;
 }
 
-
-
-
-
-
-
 final class IRCPluginSettingsException : Exception
 {
-    
     this(const string message,
         const string file = __FILE__,
         const int line = __LINE__,
@@ -39,13 +28,9 @@ final class IRCPluginSettingsException : Exception
         super(message, file, line, nextInChain);
     }
 }
-
-
-
 
 final class IRCPluginInitialisationException : Exception
 {
-    
     this(const string message,
         const string file = __FILE__,
         const int line = __LINE__,
@@ -55,16 +40,7 @@ final class IRCPluginInitialisationException : Exception
     }
 }
 
-
-
-
-void catchUser(IRCPlugin plugin, const IRCUser newUser) @safe
-{
-    
-}
-
-
-
+void catchUser(IRCPlugin plugin, const IRCUser newUser) @safe {}
 
 void enqueue(SubPlugin, Fn)
     (IRCPlugin plugin,
@@ -119,51 +95,24 @@ in ((fn !is null), "Tried to `enqueue` with a null function pointer")
     plugin.state.hasReplays = true;
 }
 
-
-
-
 void enqueue(Fn)
     (IRCPlugin plugin,
     const ref IRCEvent event,
     const Permissions permissionsRequired,
     Fn fn,
     const string caller = __FUNCTION__)
-{
-    
-}
-
-
-
+{}
 
 void repeat(Dg)(IRCPlugin plugin, Dg dg, Replay replay)
 if (isSomeFunction!Dg)
 in ((dg !is null), "Tried to queue a repeat with a null delegate pointer")
 in ((replay.event != IRCEvent.init), "Tried to queue a repeat of an init `Replay`")
-{
-    
-}
+{}
 
-
-
-
-void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
-{
-    
-}
-
-
-
+void rehashUsers(IRCPlugin plugin, const string channelName = string.init) {}
 
 pragma(inline, true)
 string nameOf(const IRCUser user) pure @safe nothrow @nogc
 {
     return string.init;
-    
 }
-
-
-
-
-
-
-

@@ -1,10 +1,3 @@
-
 module lu.serialisation;
 
-void serialise(Sink, Things)(Sink , Things )
-{
-}
-
-
-
-
+void serialise(Sink, Things)(Sink, Things) {}

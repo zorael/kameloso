@@ -13,63 +13,31 @@ import kameloso.thread : ThreadMessage;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
-
-
-
 @Settings struct ConnectSettings
 {
 private:
     import lu.uda : CannotContainComments, Separator, Unserialisable;
 
 public:
-    
     bool regainNickname = true;
-
-    
     bool joinOnInvite = false;
-
-    
     @Unserialisable bool sasl = true;
-
-    
     bool exitOnSASLFailure = false;
-
-    
     @Separator(";;")
     @CannotContainComments
     string[] sendAfterConnect;
 }
 
-
-
 enum Progress
 {
-    notStarted, 
-    inProgress, 
-    finished,   
+    notStarted,
+    inProgress,
+    finished,
 }
 
+void onSelfpart(ConnectService service, const ref IRCEvent event) {}
 
-
-
-
-void onSelfpart(ConnectService service, const ref IRCEvent event)
-{
-    
-}
-
-
-
-
-
-void onToConnectType(ConnectService service, const ref IRCEvent event)
-{
-    
-}
-
-
-
-
+void onToConnectType(ConnectService service, const ref IRCEvent event) {}
 
 void onPing(ConnectService service, const ref IRCEvent event)
 {
@@ -79,35 +47,11 @@ void onPing(ConnectService service, const ref IRCEvent event)
     service.state.mainThread.prioritySend(ThreadMessage.Pong(), target);
 }
 
+void tryAuth(ConnectService service) {}
 
+void onAuthEnd(ConnectService service, const ref IRCEvent event) {}
 
-
-void tryAuth(ConnectService service)
-{
-    
-}
-
-
-
-
-
-void onAuthEnd(ConnectService service, const ref IRCEvent event)
-{
-    
-}
-
-
-
-
-
-void onISUPPORT(ConnectService service, const ref IRCEvent event)
-{
-    
-}
-
-
-
-
+void onISUPPORT(ConnectService service, const ref IRCEvent event) {}
 
 void onReconnect(ConnectService service)
 {
@@ -117,60 +61,26 @@ void onReconnect(ConnectService service)
     service.state.mainThread.send(ThreadMessage.Reconnect());
 }
 
-
-
-
-
 public:
-
-
-
 
 final class ConnectService : IRCPlugin
 {
 private:
     import core.time : seconds;
 
-    
     ConnectSettings connectSettings;
-
-    
     static immutable authenticationGracePeriod = 15.seconds;
-
-    
     static immutable capLSTimeout = 15.seconds;
-
-    
     static immutable nickRegainPeriodicity = 600.seconds;
-
-    
     enum appendAltNickSignSeparately = false;
-
-    
     Progress authentication;
-
-    
     Progress saslExternal;
-
-    
     Progress registration;
-
-    
     Progress capabilityNegotiation;
-
-    
     bool issuedNICK;
-
-    
     string renameDuringRegistration;
-
-    
     bool joinedChannels;
-
-    
     bool serverSupportsWHOIS = true;
-
-    
     uint requestedCapabilitiesRemaining;
 
     mixin IRCPluginImpl;

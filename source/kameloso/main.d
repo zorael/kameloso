@@ -1,4 +1,3 @@
-
 module kameloso.main;
 
 private:
@@ -15,7 +14,6 @@ version(ProfileGC)
 {
     static if (__VERSION__ >= 2085L)
     {
-        
         extern(C)
         public __gshared string[] rt_options =
         [
@@ -25,7 +23,6 @@ version(ProfileGC)
     }
     else
     {
-        
         extern(C)
         public __gshared string[] rt_options =
         [
@@ -34,30 +31,15 @@ version(ProfileGC)
     }
 }
 
-
-
-
 public __gshared bool rawAbort;
-
 
 version(Posix)
 {
-    
-    
     private int signalRaised;
 }
 
-
-
-
 extern (C)
-void signalHandler(int sig) nothrow @nogc @system
-{
-    
-}
-
-
-
+void signalHandler(int sig) nothrow @nogc @system {}
 
 void messageFiber(ref Kameloso instance)
 {
@@ -66,101 +48,44 @@ void messageFiber(ref Kameloso instance)
     import kameloso.thread : Sendable, ThreadMessage;
     import std.concurrency : yield;
 
-    
-    
-    
     yield(Next.init);
-
-    
-    
 
     assert(0, "`while (true)` loop break in `messageFiber`");
 }
 
-
-
-
 Next mainLoop(ref Kameloso instance)
 {
-    
     return Next.init;
 }
 
-
-
-
 double sendLines(ref Kameloso instance)
 {
-    
-
     return 0.0;
 }
 
-
 import kameloso.net : ListenAttempt;
-
-
 
 Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
 {
     return Next.init;
-    
-    
 }
-
-
-
 
 void processScheduledFibers(IRCPlugin plugin, const long nowInHnsecs)
 in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset timestamp")
-{
-    
-}
+{}
 
+void processRepeats(ref Kameloso instance, IRCPlugin plugin) {}
 
+void processReplays(ref Kameloso instance, IRCPlugin plugin) {}
 
+void setupSignals() nothrow @nogc {}
 
-void processRepeats(ref Kameloso instance, IRCPlugin plugin)
-{
-    
-}
-
-
-
-
-void processReplays(ref Kameloso instance, IRCPlugin plugin)
-{
-    
-}
-
-
-
-
-void setupSignals() nothrow @nogc
-{
-    
-}
-
-
-
-
-void resetSignals() nothrow @nogc
-{
-    
-}
-
-
-
+void resetSignals() nothrow @nogc {}
 
 Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings)
 {
-    
-
     return Next.returnFailure;
 }
-
-
-
 
 Next tryConnect(ref Kameloso instance)
 {
@@ -228,11 +153,7 @@ Next tryConnect(ref Kameloso instance)
                 {
                     resolvedHost = attempt.ip.toHostNameString;
                 }
-                catch (AddressException e)
-                {
-                    
-                    
-                }
+                catch (AddressException e) {}
 
                 if (*instance.abort) return Next.returnFailure;
             }
@@ -296,13 +217,11 @@ Next tryConnect(ref Kameloso instance)
             continue;
 
         case delayThenNextIP:
-            
+
             if (*instance.abort) return Next.returnFailure;
             verboselyDelayToNextIP();
             if (*instance.abort) return Next.returnFailure;
             continue;
-
-        
 
         case ipv6Failure:
             version(Posix)
@@ -326,8 +245,6 @@ Next tryConnect(ref Kameloso instance)
             continue;
 
         case sslFailure:
-            
-            
             logger.error("Failed to connect: ", Tint.log, attempt.error);
             if (*instance.abort) return Next.returnFailure;
             if (!lastRetry) verboselyDelay();
@@ -365,59 +282,27 @@ Next tryConnect(ref Kameloso instance)
     return Next.returnFailure;
 }
 
-
-
-
 Next tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
 {
-    
-
     return Next.returnFailure;
 }
 
+void postInstanceSetup(ref Kameloso instance) {}
 
-
-
-void postInstanceSetup(ref Kameloso instance)
-{
-    
-}
-
-
-
-
-void expandPaths(ref CoreSettings settings)
-{
-    
-}
-
-
-
+void expandPaths(ref CoreSettings settings) {}
 
 Next verifySettings(ref Kameloso instance)
 {
-    
-
     return Next.continue_;
 }
 
-
-
-
-void resolveResourceDirectory(ref Kameloso instance)
-{
-    
-}
-
-
-
+void resolveResourceDirectory(ref Kameloso instance) {}
 
 void startBot(ref Kameloso instance, ref AttemptState attempt)
 {
     import kameloso.terminal : TerminalToken, isTTY;
     import std.algorithm.comparison : among;
 
-    
     IRCClient backupClient = instance.parser.client;
 
     enum bellString = ("" ~ cast(char)(TerminalToken.bell));
@@ -426,8 +311,6 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
     outerloop:
     do
     {
-        
-
         attempt.silentExit = true;
 
         if (!attempt.firstConnect)
@@ -436,14 +319,9 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             import kameloso.thread : exhaustMessages, interruptibleSleep;
             import core.time : seconds;
 
-            
             backupClient.nickname = instance.parser.client.nickname;
-            
-
-            
             exhaustMessages();
 
-            
             instance.outbuffer.clear();
             instance.backgroundBuffer.clear();
             instance.priorityBuffer.clear();
@@ -458,40 +336,30 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             interruptibleSleep(Timeout.connectionRetry.seconds, *instance.abort);
             if (*instance.abort) break outerloop;
 
-            
             instance.initPlugins(attempt.customSettings);
 
-            
             instance.throttle = typeof(instance.throttle).init;
-
-            
             instance.previousWhoisTimestamps = typeof(instance.previousWhoisTimestamps).init;
-
-            
             immutable addressSnapshot = instance.parser.server.address;
             immutable portSnapshot = instance.parser.server.port;
-            instance.parser.server = typeof(instance.parser.server).init;  
+            instance.parser.server = typeof(instance.parser.server).init;
             instance.parser.server.address = addressSnapshot;
             instance.parser.server.port = portSnapshot;
         }
 
         scope(exit)
         {
-            
             instance.teardownPlugins();
         }
 
-        
         if (*instance.abort) break outerloop;
 
         instance.conn.reset();
 
-        
-        
         instance.conn.receiveTimeout = instance.connSettings.receiveTimeout;
 
         immutable actionAfterResolve = tryResolve(instance, cast(Flag!"firstConnect")(attempt.firstConnect));
-        if (*instance.abort) break outerloop;  
+        if (*instance.abort) break outerloop;
 
         with (Next)
         final switch (actionAfterResolve)
@@ -499,16 +367,16 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         case continue_:
             break;
 
-        case retry:  
+        case retry:
             assert(0, "`tryResolve` returned `Next.retry`");
 
         case returnFailure:
-            
+
             attempt.retval = 1;
             break outerloop;
 
         case returnSuccess:
-            
+
             attempt.retval = 0;
             break outerloop;
 
@@ -517,7 +385,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         }
 
         immutable actionAfterConnect = tryConnect(instance);
-        if (*instance.abort) break outerloop;  
+        if (*instance.abort) break outerloop;
 
         with (Next)
         final switch (actionAfterConnect)
@@ -525,14 +393,14 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         case continue_:
             break;
 
-        case returnSuccess:  
+        case returnSuccess:
             assert(0, "`tryConnect` returned `Next.returnSuccess`");
 
-        case retry:  
+        case retry:
             assert(0, "`tryConnect` returned `Next.retry`");
 
         case returnFailure:
-            
+
             attempt.retval = 1;
             break outerloop;
 
@@ -543,8 +411,6 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         import kameloso.plugins.common.misc : IRCPluginInitialisationException;
         import std.path : baseName;
 
-        
-        
         try
         {
             instance.initPluginResources();
@@ -578,7 +444,6 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
 
         import dialect.parsing : IRCParser;
 
-        
         instance.parser = IRCParser(backupClient, instance.parser.server);
 
         try
@@ -611,28 +476,17 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             break outerloop;
         }
 
-        
         attempt.silentExit = false;
-
-        
         attempt.next = instance.mainLoop();
         attempt.firstConnect = false;
     }
     while (!*instance.abort && attempt.next.among!(Next.continue_, Next.retry, Next.returnFailure));
 }
 
-
-
-
 void printEventDebugDetails(const ref IRCEvent event,
     const string raw,
     const bool eventWasInitialised = true)
-{
-    
-}
-
-
-
+{}
 
 void printSummary(const ref Kameloso instance)
 {
@@ -678,31 +532,16 @@ void printSummary(const ref Kameloso instance)
     logger.infof("Total received: %s%,d%s bytes", Tint.log, totalBytesReceived, Tint.info);
 }
 
-
-
 struct AttemptState
 {
-    
     Next next;
-
-    
     string[] customSettings;
-
-    
     bool firstConnect = true;
-
-    
     bool silentExit;
-
-    
     int retval;
 }
 
-
 public:
-
-
-
 
 int initBot(string[] args)
 {
@@ -711,26 +550,18 @@ int initBot(string[] args)
     import std.exception : ErrnoException;
     import core.stdc.errno : errno;
 
-    
     Kameloso instance;
     postInstanceSetup(instance);
 
-    
     kameloso.common.settings = &instance.settings;
     instance.abort = &rawAbort;
 
-    
     AttemptState attempt;
 
-    
     expandPaths(instance.settings);
-
-    
-    
     initLogger(cast(Flag!"monochrome")instance.settings.monochrome,
         cast(Flag!"brightTerminal")instance.settings.brightTerminal);
 
-    
     setupSignals();
 
     scope(failure)
@@ -753,7 +584,7 @@ int initBot(string[] args)
     case continue_:
         break;
 
-    case retry:  
+    case retry:
         assert(0, "`tryGetopt` returned `Next.retry`");
 
     case returnSuccess:
@@ -769,8 +600,6 @@ int initBot(string[] args)
     try
     {
         import kameloso.terminal : ensureAppropriateBuffering;
-
-        
         ensureAppropriateBuffering(cast(Flag!"override_")instance.settings.flush);
     }
     catch (ErrnoException e)
@@ -787,9 +616,6 @@ int initBot(string[] args)
         if (!instance.settings.force) return 1;
     }
 
-    
-    
-    
     if (!instance.settings.force)
     {
         import kameloso.config : applyDefaults;
@@ -798,17 +624,14 @@ int initBot(string[] args)
 
     import std.algorithm.comparison : among;
 
-    
     instance.conn.certFile = instance.connSettings.certFile;
     instance.conn.privateKeyFile = instance.connSettings.privateKeyFile;
     instance.conn.ssl = instance.connSettings.ssl;
 
-    
-    
     if (!instance.conn.ssl && !instance.settings.force &&
         instance.parser.server.port.among(6697, 7000, 7001, 7029, 7070, 9999, 443))
     {
-        instance.connSettings.ssl = true;  
+        instance.connSettings.ssl = true;
         instance.conn.ssl = true;
     }
 
@@ -819,7 +642,6 @@ int initBot(string[] args)
     printVersionInfo();
     writeln();
 
-    
     IRCClient prettyClient = instance.parser.client;
     prettyClient.realName = replaceTokens(prettyClient.realName);
     printObjects(prettyClient, instance.bot, instance.parser.server);
@@ -830,7 +652,6 @@ int initBot(string[] args)
         notifyAboutIncompleteConfiguration(instance.settings.configFile, args[0]);
     }
 
-    
     immutable actionAfterVerification = instance.verifySettings();
 
     with (Next)
@@ -839,7 +660,7 @@ int initBot(string[] args)
     case continue_:
         break;
 
-    case retry:  
+    case retry:
         assert(0, "`verifySettings` returned `Next.retry`");
 
     case returnSuccess:
@@ -852,15 +673,10 @@ int initBot(string[] args)
         assert(0, "`verifySettings` returned `Next.crash`");
     }
 
-    
     instance.resolveResourceDirectory();
 
-    
-    
-    
     instance.parser.client.origNickname = instance.parser.client.nickname;
 
-    
     import kameloso.plugins.common.misc : IRCPluginSettingsException;
     import std.conv : ConvException;
 
@@ -881,25 +697,19 @@ int initBot(string[] args)
     }
     catch (ConvException e)
     {
-        
         logger.error(e.msg);
         if (!instance.settings.force) return 1;
     }
     catch (IRCPluginSettingsException e)
     {
-        
+
         logger.error(e.msg);
         if (!instance.settings.force) return 1;
     }
 
-    
-    
     instance.parser.client.origNickname = instance.parser.client.nickname;
 
-    
     instance.startBot(attempt);
-
-    
 
     if (*instance.abort && instance.conn.connected)
     {
@@ -907,10 +717,6 @@ int initBot(string[] args)
         import std.concurrency : receiveTimeout;
         import std.variant : Variant;
         import core.time : seconds;
-
-        
-        
-        
 
         string reason = instance.bot.quitReason;
         bool quiet;
@@ -959,7 +765,6 @@ int initBot(string[] args)
         instance.conn.sendline("QUIT :" ~ reason.replaceTokens(instance.parser.client));
     }
 
-    
     if (instance.settings.saveOnExit)
     {
         try
@@ -1000,18 +805,14 @@ int initBot(string[] args)
 
     if (*instance.abort)
     {
-        
         logger.error("Aborting...");
 
         version(Posix)
         {
-            
-            
             attempt.retval = (signalRaised > 0) ? (128 + signalRaised) : 1;
         }
         else
         {
-            
             attempt.retval = 1;
         }
     }

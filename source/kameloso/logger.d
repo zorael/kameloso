@@ -1,10 +1,6 @@
-
 module kameloso.logger;
 
 public:
-
-
-
 
 pragma(msg, "DustMiteNoRemoveStart");
  class KamelosoLogger
@@ -25,17 +21,17 @@ private:
         alias logcoloursDark = DefaultColours.logcoloursDark;
     }
 
-    
+
     Appender!(char[]) linebuffer;
 
-    
+
     enum linebufferInitialSize = 4096;
 
-    bool monochrome;  
-    bool brightTerminal;   
+    bool monochrome;
+    bool brightTerminal;
 
 public:
-    
+
     this(const Flag!"monochrome" monochrome,
         const Flag!"brightTerminal" brightTerminal) pure nothrow @safe
     {
@@ -48,14 +44,14 @@ public:
     pragma(inline, true)
     version(Colours)
     {
-        
-        
+
+
         static auto tint(const LogLevel level, const Flag!"brightTerminal" bright) pure nothrow @nogc @safe
         {
             return bright ? logcoloursBright[level] : logcoloursDark[level];
         }
 
-        
+
         unittest
         {
             import std.range : only;
@@ -78,8 +74,8 @@ public:
         }
 
 
-        
-        
+
+
         private string tintImpl(LogLevel level)() const @property pure nothrow @nogc @safe
         {
             if (brightTerminal)
@@ -95,7 +91,7 @@ public:
         }
 
 
-        
+
         static foreach (const lv; EnumMembers!LogLevel)
         {
             mixin(
@@ -104,12 +100,12 @@ auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogL
             }.format(lv));
         }
 
-        
+
         alias logtint = alltint;
     }
 
 
-    
+
     private void beginLogMsg(const LogLevel logLevel) @safe
     {
         import std.datetime : DateTime;
@@ -140,7 +136,7 @@ auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogL
     }
 
 
-    
+
     private void finishLogMsg() @safe
     {
         import std.stdio : writeln;
@@ -149,7 +145,7 @@ auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogL
         {
             if (!monochrome)
             {
-                
+
                 linebuffer.colourWith(TerminalForeground.default_, TerminalReset.blink);
             }
         }
@@ -159,8 +155,8 @@ auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogL
     }
 
 
-    
-    
+
+
     private void printImpl(Args...)(const LogLevel logLevel, auto ref Args args)
     {
         import std.traits : isAggregateType;
@@ -188,44 +184,44 @@ auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogL
                 {
                     static if (__traits(compiles, arg.toString(linebuffer)))
                     {
-                        
+
                         arg.toString(linebuffer);
                     }
                     else static if (__traits(compiles,
                         arg.toString((const(char)[] text) => linebuffer.put(text))))
                     {
-                        
+
                         arg.toString((const(char)[] text) => linebuffer.put(text));
                     }
                     else static if (__traits(compiles, linebuffer.put(arg.toString)))
                     {
-                        
+
                         linebuffer.put(arg.toString);
                     }
                     else
                     {
                         import std.conv : to;
-                        
+
                         linebuffer.put(arg.to!string);
                     }
                 }
                 else static if (is(typeof(T.toString)) &&
                     (is(typeof(T.toString) : string) || is(typeof(T.toString) : char[])))
                 {
-                    
+
                     linebuffer.put(arg.toString);
                 }
                 else
                 {
                     import std.conv : to;
-                    
+
                     linebuffer.put(arg.to!string);
                 }
             }
             else
             {
                 import std.conv : to;
-                
+
                 linebuffer.put(arg.to!string);
             }
         }
@@ -234,8 +230,8 @@ auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogL
     }
 
 
-    
-    
+
+
     private void printfImpl(Args...)
         (const LogLevel logLevel,
         const string pattern,
@@ -249,8 +245,8 @@ auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogL
     }
 
 
-    
-    
+
+
     private void printfImpl(string pattern, Args...)(const LogLevel logLevel, auto ref Args args)
     {
         import std.format : formattedWrite;
@@ -261,11 +257,11 @@ auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogL
     }
 
 
-    
+
     private enum fatalErrorMixin =
 `throw new Error("A fatal error message was logged");`;
 
-    
+
     static foreach (const lv; [ EnumMembers!LogLevel ])
     {
         mixin(
@@ -291,12 +287,10 @@ void %1$sf(string pattern, Args...)(auto ref Args args)
 }}.format(lv, (lv == LogLevel.fatal) ? fatalErrorMixin : string.init));
     }
 
-    
+
     alias log = all;
 
-    
+
     alias logf = allf;
 }
 pragma(msg, "DustMiteNoRemoveStop");
-
-

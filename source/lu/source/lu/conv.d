@@ -1,8 +1,3 @@
-
 module lu.conv;
 
-template Enum()
-{
-}
-
-
+template Enum() {}

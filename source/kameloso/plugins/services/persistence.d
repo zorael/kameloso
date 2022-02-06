@@ -6,9 +6,6 @@ private:
 import kameloso.plugins.common.core;
 import dialect.defs;
 
-
-
-
 void initAccountResources(PersistenceService service)
 {
     import lu.json : JSONStorage;
@@ -31,8 +28,6 @@ void initAccountResources(PersistenceService service)
         throw new IRCPluginInitialisationException(service.userFile.baseName ~ " may be malformed.");
     }
 
-    
-
     static auto deduplicate(JSONValue before)
     {
         import std.algorithm.iteration : filter, uniq;
@@ -48,8 +43,6 @@ void initAccountResources(PersistenceService service)
 
         return JSONValue(after);
     }
-
-    
 
     import std.range : only;
 
@@ -94,18 +87,11 @@ void initAccountResources(PersistenceService service)
         }
     }
 
-    
     static immutable order = [ "staff", "operator", "whitelist", "blacklist" ];
     json.save!(JSONStorage.KeyOrderStrategy.inGivenOrder)(service.userFile, order);
 }
 
-
-
-
 public:
-
-
-
 
 final class PersistenceService : IRCPlugin
 {
@@ -113,25 +99,12 @@ private:
     import kameloso.constants : KamelosoFilenames;
     import core.time : seconds;
 
-    
     enum timeBetweenRehashes = (3 * 3600).seconds;
-
-    
     @Resource string userFile = KamelosoFilenames.users;
-
-    
     @Resource string hostmasksFile = KamelosoFilenames.hostmasks;
-
-    
     IRCUser.Class[string][string] channelUsers;
-
-    
     IRCUser[] hostmaskUsers;
-
-    
     string[string] hostmaskNicknameAccountCache;
-
-    
     string[string] userClassCurrentChannelCache;
 
     mixin IRCPluginImpl;

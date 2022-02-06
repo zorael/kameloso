@@ -1,4 +1,3 @@
-
 module kameloso.plugins.twitchbot.keygen;
 
 import kameloso.plugins.twitchbot.base;
@@ -20,61 +19,20 @@ void generateKey(TwitchBotPlugin plugin)
     }
 
     logger.trace();
-    logger.info("-- Twitch authorisation key generation mode --");
-    writefln(`
-Attempting to open a Twitch login page in your default web browser. Follow the
-instructions and log in to authorise the use of this program with your account.
-
-%1$sThen paste the address of the page you are redirected to afterwards here.%2$s
-
-* The redirected address should start with %3$shttp://localhost%2$s.
-* It will probably say "%1$sthis site can't be reached%2$s".
-* If your browser is already logged in on Twitch, it will likely immediately
-  lead you to this page without asking for login credentials. If you want to
-  generate a key for a different account, first log out and retry.
-* If you are running local web server on port %3$s80%2$s, you may have to
-  temporarily disable it for this to work.
-`, Tint.log, Tint.off, Tint.info);
+    logger.info(string.init);
+    writefln(string.init, Tint.log, Tint.off, Tint.info);
 
     static immutable scopes =
     [
-        
-
-        
-        
         "bits:read",
         "channel:edit:commercial",
         "channel:read:subscriptions",
-        
         "user:edit",
-        "user:edit:broadcast",  
-        
-        
-        
-
-        
-
-        
-        
+        "user:edit:broadcast",
         "channel_editor",
-        
-        
-        
-        
-        
-        
-        
-        
-        
         "user_blocks_edit",
         "user_blocks_read",
         "user_follows_edit",
-        
-        
-        
-
-        
-
         "channel:moderate",
         "chat:edit",
         "chat:read",
@@ -98,22 +56,14 @@ instructions and log in to authorise the use of this program with your account.
 
     void printManualURL()
     {
-        enum scissors = "8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<";
+        enum scissors = "";
 
-        writefln(`
-%1$sCopy and paste this link manually into your browser, and log in as asked:%2$s
-
-%3$s%4$s%2$s
-
-%5$s
-
-%3$s%4$s%2$s
-`, Tint.log, Tint.off, Tint.info, scissors, url);
+        writefln(string.init, Tint.log, Tint.off, Tint.info, scissors, url);
     }
 
     if (plugin.state.settings.force)
     {
-        logger.warning("Forcing; not automatically opening browser.");
+        logger.warning(string.init);
         printManualURL();
     }
     else
@@ -130,12 +80,11 @@ instructions and log in to authorise the use of this program with your account.
                 }
                 else
                 {
-                    
                     enum open = "xdg-open";
                 }
 
                 immutable browserExecutable = environment.get("BROWSER", open);
-                string[2] browserCommand = [ browserExecutable, url ];  
+                string[2] browserCommand = [ browserExecutable, url ];
                 auto devNull = File("/dev/null", "r+");
 
                 try
@@ -173,14 +122,12 @@ instructions and log in to authorise the use of this program with your account.
             }
             else
             {
-                
                 throw new ProcessException("Unexpected platform");
             }
         }
         catch (ProcessException e)
         {
-            
-            logger.warning("Error: could not automatically open browser.");
+            logger.warning(string.init);
             printManualURL();
         }
     }
@@ -191,9 +138,7 @@ instructions and log in to authorise the use of this program with your account.
     {
         import std.stdio : writef;
 
-        writef("%1$sPaste the addresss of the page you were redirected to here (empty line exits):%2$s
-
-> ", Tint.log, Tint.off);
+        writef(string.init, Tint.log, Tint.off);
         stdout.flush();
 
         stdin.flush();
@@ -202,7 +147,7 @@ instructions and log in to authorise the use of this program with your account.
         if (!readURL.length || *plugin.state.abort)
         {
             writeln();
-            logger.warning("Aborting key generation.");
+            logger.warning(string.init);
             logger.trace();
             return;
         }
@@ -210,12 +155,12 @@ instructions and log in to authorise the use of this program with your account.
         if (!readURL.contains("access_token="))
         {
             writeln();
-            logger.error("Could not make sense of URL. Try again or file a bug.");
+            logger.error(string.init);
             writeln();
             continue;
         }
 
-        string slice = readURL;  
+        string slice = readURL;
         slice.nom("access_token=");
         key = slice.nom('&');
 
@@ -224,21 +169,18 @@ instructions and log in to authorise the use of this program with your account.
             writeln();
             logger.error("Invalid key length!");
             writeln();
-            key = string.init;  
+            key = string.init;
         }
     }
 
     plugin.state.bot.pass = key;
     plugin.state.botUpdated = true;
 
-    writefln("
-%1$sYour private authorisation key is: %2$s%3$s%4$s
-It should be entered as %2$spass%4$s under %2$s[IRCBot]%4$s.
-", Tint.log, Tint.info, key, Tint.off);
+    writefln(string.init, Tint.log, Tint.info, key, Tint.off);
 
     if (!plugin.state.settings.saveOnExit)
     {
-        write("Do you want to save it there now? [Y/*]: ");
+        write(string.init);
         stdout.flush();
 
         stdin.flush();
@@ -252,19 +194,10 @@ It should be entered as %2$spass%4$s under %2$s[IRCBot]%4$s.
         }
         else
         {
-            writefln("\n* Make sure to add it to %s%s%s, then.",
+            writefln(string.init,
                 Tint.info, plugin.state.settings.configFile, Tint.off);
         }
     }
 
-    writefln("
---------------------------------------------------------------------------------
-
-All done! Restart the program (without %1$s--set twitchbot.keygen%2$s) and it should
-just work. If it doesn't, please file an issue at:
-
-    %1$shttps://github.com/zorael/kameloso/issues/new%2$s
-
-%3$sNote: keys are valid for 60 days, after which this process needs to be repeated.%2$s
-", Tint.info, Tint.off, Tint.log);
+    writefln(string.init, Tint.info, Tint.off, Tint.log);
 }

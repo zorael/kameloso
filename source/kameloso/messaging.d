@@ -1,4 +1,3 @@
-
 module kameloso.messaging;
 
 private:
@@ -17,34 +16,22 @@ version(unittest)
 
 public:
 
-
-
-
 struct Message
 {
-    
     enum Property
     {
-        fast        = 1 << 0,  
-        quiet       = 1 << 1,  
-        background  = 1 << 2,  
-        forced      = 1 << 3,  
-        priority    = 1 << 4,  
-        immediate   = 1 << 5,  
+        fast        = 1 << 0,
+        quiet       = 1 << 1,
+        background  = 1 << 2,
+        forced      = 1 << 3,
+        priority    = 1 << 4,
+        immediate   = 1 << 5,
     }
 
-    
     IRCEvent event;
-
-    
     Property properties;
-
-    
     string caller;
 }
-
-
-
 
 void chan(Flag!"priority" priority = No.priority)
     (IRCPluginState state,
@@ -54,15 +41,7 @@ void chan(Flag!"priority" priority = No.priority)
     const Flag!"background" background = No.background,
     const string caller = __FUNCTION__)
 in (channelName.length, "Tried to send a channel message but no channel was given")
-{
-    
-}
-
-
-
-
-
-
+{}
 
 void query(Flag!"priority" priority = No.priority)
     (IRCPluginState state,
@@ -72,15 +51,7 @@ void query(Flag!"priority" priority = No.priority)
     const Flag!"background" background = No.background,
     const string caller = __FUNCTION__)
 in (nickname.length, "Tried to send a private query but no nickname was given")
-{
-    
-}
-
-
-
-
-
-
+{}
 
 void privmsg(Flag!"priority" priority = No.priority)
     (IRCPluginState state,
@@ -91,15 +62,7 @@ void privmsg(Flag!"priority" priority = No.priority)
     const Flag!"background" background = No.background,
     const string caller = __FUNCTION__)
 in ((channel.length || nickname.length), "Tried to send a PRIVMSG but no channel nor nickname was given")
-{
-    
-}
-
-
-
-
-
-
+{}
 
 void emote(Flag!"priority" priority = No.priority)
     (IRCPluginState state,
@@ -109,15 +72,7 @@ void emote(Flag!"priority" priority = No.priority)
     const Flag!"background" background = No.background,
     const string caller = __FUNCTION__)
 in (emoteTarget.length, "Tried to send an emote but no target was given")
-{
-    
-}
-
-
-
-
-
-
+{}
 
 void mode(Flag!"priority" priority = No.priority)
     (IRCPluginState state,
@@ -128,15 +83,7 @@ void mode(Flag!"priority" priority = No.priority)
     const Flag!"background" background = No.background,
     const string caller = __FUNCTION__)
 in (channel.length, "Tried to set a mode but no channel was given")
-{
-    
-}
-
-
-
-
-
-
+{}
 
 void part(Flag!"priority" priority = No.priority)
     (IRCPluginState state,
@@ -146,15 +93,7 @@ void part(Flag!"priority" priority = No.priority)
     const Flag!"background" background = No.background,
     const string caller = __FUNCTION__)
 in (channel.length, "Tried to part a channel but no channel was given")
-{
-    
-}
-
-
-
-
-
-
+{}
 
 void quit(Flag!"priority" priority = Yes.priority)
     (IRCPluginState state,
@@ -167,12 +106,6 @@ void quit(Flag!"priority" priority = Yes.priority)
     state.mainThread.send(ThreadMessage.Quit(),
         reason.length ? reason : state.bot.quitReason, cast()quiet);
 }
-
-
-
-
-
-
 
 void immediate(IRCPluginState state,
     const string line,
@@ -194,14 +127,7 @@ void immediate(IRCPluginState state,
     state.mainThread.prioritySend(m);
 }
 
-
-
-
-
 alias immediateline = immediate;
-
-
-
 
 void askToOutputImpl(string logLevel)(IRCPluginState state, const string line)
 {
@@ -210,6 +136,4 @@ void askToOutputImpl(string logLevel)(IRCPluginState state, const string line)
     mixin("state.mainThread.prioritySend(ThreadMessage.TerminalOutput." ~ logLevel ~ ", line);");
 }
 
-
 alias askToWriteln = askToOutputImpl!"writeln";
-

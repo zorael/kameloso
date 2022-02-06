@@ -20,67 +20,34 @@ import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 
-
-
 @Settings struct TwitchBotSettings
 {
 private:
     import lu.uda : Unserialisable;
 
 public:
-    
     @Enabler bool enabled = true;
-
-    
     bool bellOnMessage = false;
-
-    
     bool bellOnImportant = false;
-
-    
     bool promoteBroadcasters = true;
-
-    
     bool promoteModerators = true;
-
-    
     bool promoteVIPs = true;
 
     version(Windows)
     {
-        
         bool singleWorkerThread = true;
     }
     else
     {
-        
         bool singleWorkerThread = false;
     }
 
-    
     @Unserialisable bool keygen = false;
 }
 
+void onImportant(TwitchBotPlugin plugin) {}
 
-
-
-
-void onImportant(TwitchBotPlugin plugin)
-{
-    
-}
-
-
-
-
-
-void onAutomaticStop(TwitchBotPlugin plugin, const ref IRCEvent event)
-{
-    
-}
-
-
-
+void onAutomaticStop(TwitchBotPlugin plugin, const ref IRCEvent event) {}
 
 void reportStreamTime(TwitchBotPlugin plugin,
     const TwitchBotPlugin.Room room,
@@ -105,7 +72,6 @@ void reportStreamTime(TwitchBotPlugin plugin,
     {
         assert(!justNowEnded, "Tried to report ended stream time on an active stream");
 
-        
         auto now = Clock.currTime;
         now.fracSecs = 0.msecs;
         immutable delta = now - SysTime.fromUnixTime(room.broadcast.startTime);
@@ -136,7 +102,6 @@ void reportStreamTime(TwitchBotPlugin plugin,
     {
         if (room.broadcast.stopTime)
         {
-            
             auto end = SysTime.fromUnixTime(room.broadcast.stopTime);
             end.fracSecs = 0.msecs;
             immutable delta = end - SysTime.fromUnixTime(room.broadcast.startTime);
@@ -180,22 +145,16 @@ void reportStreamTime(TwitchBotPlugin plugin,
             assert(!justNowEnded, "Tried to report stream time of a just ended stream " ~
                 "but no stop time had been recorded");
 
-            
             chan(plugin.state, room.name, streamer ~ " is currently not streaming.");
         }
     }
 }
-
-
-
-
 
 void onEndOfMOTD(TwitchBotPlugin plugin)
 {
     import lu.json : JSONStorage, populateFromJSON;
     import std.typecons : Flag, No, Yes;
 
-    
     plugin.populateTimers(plugin.timersFile);
 
     version(TwitchAPIFeatures)
@@ -205,7 +164,6 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
 
         if (!plugin.useAPIFeatures) return;
 
-        
         immutable pass = plugin.state.bot.pass.beginsWith("oauth:") ?
             plugin.state.bot.pass[6..$] :
             plugin.state.bot.pass;
@@ -238,8 +196,6 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
 
             try
             {
-                
-
                 immutable validationJSON = getValidation(plugin);
                 plugin.userID = validationJSON["user_id"].str;
                 immutable expiresIn = validationJSON["expires_in"].integer;
@@ -249,7 +205,6 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                     import kameloso.messaging : quit;
                     import std.typecons : Flag, No, Yes;
 
-                    
                     logger.error("Error: Your Twitch authorisation key has expired.");
                     quit!(Yes.priority)(plugin.state, string.init, Yes.quiet);
                 }
@@ -260,7 +215,6 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
 
                     if ((expiresWhen - now) > 1.weeks)
                     {
-                        
                         enum pattern = "Your Twitch authorisation key will expire on " ~
                             "%s%02d-%02d-%02d%s.";
                         logger.infof!pattern( Tint.log, expiresWhen.year,
@@ -268,7 +222,6 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                     }
                     else
                     {
-                        
                         enum pattern = "Warning: Your Twitch authorisation key will expire " ~
                             "%s%02d-%02d-%02d %02d:%02d%s.";
                         logger.warningf!pattern( Tint.log, expiresWhen.year,
@@ -282,13 +235,11 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                 import kameloso.common : curlErrorStrings;
                 import etc.c.curl : CurlError;
 
-                
                 logger.errorf("Failed to validate Twitch API keys: %s (%s%s%s) (%2$s%5$s%4$s)",
                     e.msg, Tint.log, e.error, Tint.error, curlErrorStrings[e.errorCode]);
 
                 if (e.errorCode == CurlError.ssl_cacert)
                 {
-                    
                     logger.errorf("You may need to supply a CA bundle file " ~
                         "(e.g. %scacert.pem%s) in the configuration file.",
                         Tint.log, Tint.error);
@@ -305,17 +256,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
     }
 }
 
-
-
-
-
-void onCAP(TwitchBotPlugin plugin)
-{
-    
-}
-
-
-
+void onCAP(TwitchBotPlugin plugin) {}
 
 void teardown(TwitchBotPlugin plugin)
 {
@@ -325,27 +266,15 @@ void teardown(TwitchBotPlugin plugin)
     if (plugin.twitchBotSettings.singleWorkerThread &&
         (plugin.persistentWorkerTid != Tid.init))
     {
-        
         plugin.persistentWorkerTid.send(ThreadMessage.Teardown());
     }
 }
 
-
-
-
-void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
-{
-    
-}
-
+void postprocess(TwitchBotPlugin plugin, ref IRCEvent event) {}
 
 mixin TwitchAwareness;
 
-
 public:
-
-
-
 
 final class TwitchBotPlugin : IRCPlugin
 {
@@ -354,142 +283,71 @@ private:
     import core.time : seconds;
 
 package:
-    
     static struct Room
     {
-        
         static struct Broadcast
         {
-            
             bool active;
-
-            
             long startTime;
-
-            
             long stopTime;
 
             version(TwitchAPIFeatures)
             {
-                
                 bool[string] chattersSeen;
-
-                
                 int maxConcurrentChatters;
-
-                
                 size_t numViewersLastStream;
             }
         }
 
-        
         this(const string name) @safe pure nothrow @nogc
         {
             this.name = name;
         }
 
-        
         string name;
-
-        
         Broadcast broadcast;
-
-        
         int voteInstance;
-
-        
         ulong messageCount;
-
-        
         Fiber[] timers;
 
         version(TwitchAPIFeatures)
         {
-            
             string broadcasterDisplayName;
-
-            
             string id;
-
-            
             JSONValue[string] follows;
         }
     }
 
-    
     TwitchBotSettings twitchBotSettings;
-
-    
     Room[string] rooms;
-
-    
     TimerDefinition[][string] timerDefsByChannel;
-
-    
     @Resource string timersFile = "twitchtimers.json";
-
-    
     static immutable timerPeriodicity = 5.seconds;
-
-    
     private enum bellString = ("" ~ cast(char)(TerminalToken.bell));
-
-    
     string bell = bellString;
 
     version(TwitchAPIFeatures)
     {
         import std.concurrency : Tid;
 
-        
         enum clientID = "tjyryd2ojnqr8a51ml19kn1yi2n0v1";
-
-        
         string authorizationBearer;
-
-        
         bool useAPIFeatures = true;
-
-        
         string userID;
-
-        
         long approximateQueryTime = 700;
-
-        
         enum approximateQueryGrowthMultiplier = 1.1;
-
-        
         enum approximateQueryRetryTimeDivisor = 3;
-
-        
         enum approximateQueryMeasurementPadding = 30;
-
-        
         enum approximateQueryAveragingWeight = 3;
-
-        
         enum queryResponseTimeout = 15;
-
-        
         enum queryBufferSize = 4096;
-
-        
         static immutable chattersCheckPeriodicity = 180.seconds;
-
-        
         Tid persistentWorkerTid;
-
-        
         shared QueryResponse[string] bucket;
     }
 
-
-    
-    
     override public bool isEnabled() const @property pure nothrow @nogc
     {
-        
         return true;
     }
 

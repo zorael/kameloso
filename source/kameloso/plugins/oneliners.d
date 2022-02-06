@@ -12,29 +12,13 @@ import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
 
-
-
 @Settings struct OnelinersSettings
 {
-    
     @Enabler bool enabled = true;
-
-    
     bool caseSensitiveTriggers = false;
 }
 
-
-
-
-
-void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
-{
-    
-}
-
-
-
-
+void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event) {}
 
 void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 {
@@ -133,9 +117,6 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
     }
 }
 
-
-
-
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.SELFCHAN)
@@ -148,13 +129,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
             .description("Lists all available oneliners.")
     )
 )
-void onCommandCommands(OnelinersPlugin plugin, const ref IRCEvent event)
-{
-    
-}
-
-
-
+void onCommandCommands(OnelinersPlugin plugin, const ref IRCEvent event) {}
 
 void listCommands(OnelinersPlugin plugin, const string channelName)
 {
@@ -173,51 +148,24 @@ void listCommands(OnelinersPlugin plugin, const string channelName)
     }
 }
 
-
-
-
-
-void onWelcome(OnelinersPlugin plugin)
-{
-    
-}
-
-
-
+void onWelcome(OnelinersPlugin plugin) {}
 
 void saveResourceToDisk(const string[string][string] aa, const string filename)
 in (filename.length, "Tried to save resources to an empty filename string")
-{
-    
-}
+{}
 
-
-
-
-void initResources(OnelinersPlugin plugin)
-{
-    
-}
-
+void initResources(OnelinersPlugin plugin) {}
 
 mixin UserAwareness;
 mixin ChannelAwareness;
 
 public:
 
-
-
-
 final class OnelinersPlugin : IRCPlugin
 {
 private:
-    
     OnelinersSettings onelinersSettings;
-
-    
     string[string][string] onelinersByChannel;
-
-    
     @Resource string onelinerFile = "oneliners.json";
 
     mixin IRCPluginImpl;

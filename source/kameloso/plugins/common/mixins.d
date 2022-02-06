@@ -1,4 +1,3 @@
-
 module kameloso.plugins.common.mixins;
 
 import std.typecons : Flag, No, Yes;
@@ -11,10 +10,6 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_,
     import lu.traits : MixinConstraints, MixinScope;
     import std.conv : text;
     import std.traits : isSomeFunction;
-
-    
-
-    
 
     static if (__traits(compiles, plugin))
     {
@@ -33,9 +28,6 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_,
             "`plugin` nor `service` from within `" ~ __FUNCTION__ ~ "`)");
     }
 
-
-    
-    
     version(ExplainRepeat)
     void explainRepeat(const Repeat repeat)
     {
@@ -58,24 +50,11 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_,
             repeat.replay.event.sender.class_);
     }
 
-
-    
-    
     version(ExplainRepeat)
-    void explainRefuse(const Repeat repeat)
-    {
-        
-    }
+    void explainRefuse(const Repeat repeat) {}
 
+    void repeaterDelegate() {}
 
-    
-    
-    void repeaterDelegate()
-    {
-        
-    }
-
-    
     void repeat(Replay replay)
     {
         import kameloso.plugins.common.misc : repeat;

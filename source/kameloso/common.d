@@ -1,4 +1,3 @@
-
 module kameloso.common;
 
 private:
@@ -18,20 +17,11 @@ public:
 version(unittest)
 shared static this()
 {
-    
     logger = new KamelosoLogger(No.monochrome, No.brightTerminal);
-
-    
     settings = new kameloso.kameloso.CoreSettings;
 }
 
-
-
-
 KamelosoLogger logger;
-
-
-
 
 void initLogger(const Flag!"monochrome" monochrome,
     const Flag!"brightTerminal" bright)
@@ -42,40 +32,18 @@ out (; (logger !is null), "Failed to initialise logger")
     Tint.monochrome = monochrome;
 }
 
-
-
-
 kameloso.kameloso.CoreSettings* settings;
 
-
-
-
-void printVersionInfo(const Flag!"colours" colours = Yes.colours) @safe
-{
-    
-}
-
-
-
+void printVersionInfo(const Flag!"colours" colours = Yes.colours) @safe {}
 
 version(PrintStacktraces)
-void printStacktrace() @system
-{
-    
-}
-
-
-
+void printStacktrace() @system {}
 
 struct OutgoingLine
 {
-    
     string line;
-
-    
     bool quiet;
 
-    
     this(const string line, const Flag!"quiet" quiet = No.quiet)
     {
         this.line = line;
@@ -83,64 +51,34 @@ struct OutgoingLine
     }
 }
 
-
-
-
 string[] findURLs(const string line) @safe pure
 {
-    
-
     string[] hits;
-    
-
     return hits;
 }
-
-
-
-
-
-
 
 string timeSince(uint numUnits = 7, uint truncateUnits = 0)
     (const Duration duration,
     const Flag!"abbreviate" abbreviate = No.abbreviate,
     const Flag!"roundUp" roundUp = Yes.roundUp) pure
 {
-    
     return string.init;
 }
-
-
-
-
-
-
 
 string stripSeparatedPrefix(const string line,
     const string prefix,
     const Flag!"demandSeparatingChars" demandSep = Yes.demandSeparatingChars) pure @nogc
 in (prefix.length, "Tried to strip separated prefix but no prefix was given")
 {
-    
     return string.init;
 }
 
-
-
-
-
-
-
 struct Tint
 {
-    
     static bool monochrome;
 
     version(Colours)
     {
-        
-        
         pragma(inline, true)
         static string opDispatch(string tint)()
         in ((logger !is null), "`Tint." ~ tint ~ "` was called with an uninitialised `logger`")
@@ -162,7 +100,6 @@ struct Tint
     }
     else
     {
-        
         pragma(inline, true)
         static string log()
         {
@@ -179,44 +116,20 @@ struct Tint
     }
 }
 
-
-
-
-
-
-
 string replaceTokens(const string line, const IRCClient client) @safe pure nothrow
 {
-    
     return string.init;
 }
-
-
-
-
-
-
 
 string replaceTokens(const string line) @safe pure nothrow
 {
-    
     return string.init;
 }
 
-
-
-
 SysTime nextMidnight(const SysTime now)
 {
-    
     return SysTime.init;
 }
-
-
-
-
-
-
 
 static immutable string[90] curlErrorStrings =
 [
