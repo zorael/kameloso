@@ -7,10 +7,10 @@ import kameloso.messaging;
 import dialect.defs;
 
 @(IRCEventHandler()
-    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.CHAN)  // This function should be called on channel messages
     .addCommand(
         IRCEventHandler.Command()
-            .word("hello")
+            .word("hello")        // ...with the contents "!hello"
             .description("Says hello.")
     )
 )
