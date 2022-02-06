@@ -180,10 +180,13 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
         }
 
         auto stored = user.nickname in service.state.users;
-        immutable foundNoStored = stored is null;
+        immutable persistentCacheMiss = stored is null;
         if (service.state.settings.preferHostmasks) user.account = string.init;
 
-        if (foundNoStored)
+        // Save cache lookups so we don't do them more than once.
+        string* cachedChannel;
+
+        if (persistentCacheMiss)
         {
             service.state.users[user.nickname] = user;
             stored = user.nickname in service.state.users;
@@ -225,8 +228,32 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
         // Store initial class and restore after meld. The origin user.class_
         // can ever only be IRCUser.Class.unset UNLESS altered in the switch above.
         // Additionally snapshot the .updated value and restore it after melding
-        if (!foundNoStored)
+        if (!persistentCacheMiss)
         {
+            version(TwitchSupport)
+            {
+                if (stored.class_ == IRCUser.Class.admin)
+                {
+                    // Admin is a sticky class and nothing special needs to be done.
+                }
+                else if (stored.badges.length && !user.badges.length)
+                {
+                    // The current user doesn't have any badges and the stored one
+                    // does, potentially for a different channel. Look it up and
+                    // save the AA lookup pointer for later checks, in case we
+                    // have to do this again down below.
+
+                    /*const*/ cachedChannel = stored.nickname in service.userClassCurrentChannelCache;
+
+                    if (!cachedChannel || (*cachedChannel != event.channel))
+                    {
+                        // Current event has no badges but the stored one has
+                        // and for a different channel. Clear them.
+                        stored.badges = string.init;
+                    }
+                }
+            }
+
             immutable preMeldClass = stored.class_;
             immutable preMeldUpdated = stored.updated;
             user.meldInto!(MeldingStrategy.aggressive)(*stored);
@@ -299,27 +326,36 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
         {
             // Do nothing, admin is permanent and program-wide
         }
-        /*else if ((service.state.server.daemon == IRCServer.Daemon.twitch) &&
-            (stored.nickname == service.state.client.nickname))
-        {
-            // I don't think we want this...
-            stored.class_ = IRCUser.Class.admin;
-        }*/
         else if (!event.channel.length || !service.state.bot.homeChannels.canFind(event.channel))
         {
             // Not a channel or not a home. Additionally not an admin
-            // (Comment out the second expression to apply classifiers outside of homes)
             // Default to registered if the user has an account, except on Twitch
             // postprocess in twitchbot/base.d will assign class as per badges
-            stored.class_ = ((service.state.server.daemon != IRCServer.Daemon.twitch) &&
-                stored.account.length && (stored.account != "*")) ?
-                    IRCUser.Class.registered :
-                    IRCUser.Class.anyone;
+
+            if (service.state.server.daemon == IRCServer.Daemon.twitch)
+            {
+                stored.class_ = IRCUser.Class.anyone;
+                if (!event.channel.length) stored.badges = string.init;
+            }
+            else if (stored.account.length && (stored.account != "*"))
+            {
+                stored.class_ = IRCUser.Class.registered;
+            }
+            else
+            {
+                stored.class_ = IRCUser.Class.anyone;
+            }
             service.userClassCurrentChannelCache.remove(user.nickname);
         }
         else
         {
-            const cachedChannel = stored.nickname in service.userClassCurrentChannelCache;
+            // Non-admin, home channel. Perform a new cache lookup if none was
+            // previously made, otherwise reuse the earlier hit.
+
+            if (!cachedChannel)
+            {
+                /*const*/ cachedChannel = stored.nickname in service.userClassCurrentChannelCache;
+            }
 
             if (!cachedChannel || (*cachedChannel != event.channel))
             {
