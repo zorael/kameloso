@@ -2683,15 +2683,18 @@ void printSummary(const ref Kameloso instance)
 
     Duration totalTime;
     long totalBytesReceived;
+    uint i;
 
     logger.info("-- Connection summary --");
 
-    foreach (immutable i, const entry; instance.connectionHistory)
+    foreach (const entry; instance.connectionHistory)
     {
         import std.datetime.systime : SysTime;
         import std.format : format;
         import std.stdio : writefln;
         import core.time : hnsecs;
+
+        if (!entry.bytesReceived) continue;
 
         enum onlyTimePattern = "%02d:%02d:%02d";
         enum fullDatePattern = "%d-%02d-%02d " ~ onlyTimePattern;
@@ -2712,7 +2715,7 @@ void printSummary(const ref Kameloso instance)
         totalBytesReceived += entry.bytesReceived;
 
         enum pattern = "%2d: %s, %d events parsed in %,d bytes (%s to %s)";
-        writefln(pattern, i+1, duration.timeSince!(7, 0)(Yes.abbreviate),
+        writefln(pattern, ++i, duration.timeSince!(7, 0)(Yes.abbreviate),
             entry.numEvents, entry.bytesReceived, startString, stopString);
     }
 
