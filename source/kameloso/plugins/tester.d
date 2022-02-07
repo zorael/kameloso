@@ -44,12 +44,17 @@ version(DigitalMars)
 /++
  +
  +/
-@(IRCEvent.Type.CHAN)
-@(PermissionsRequired.admin)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.nickname, "test")
-@Description("Runs tests.")
-void onCommandTest(TesterPlugin plugin, const IRCEvent event)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.admin)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("test")
+            .policy(PrefixPolicy.nickname)
+            .description("Runs tests.")
+    )
+)
+void onCommandTest(TesterPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : SplitResults, splitInto;
     import core.thread : Fiber;
@@ -234,7 +239,7 @@ void onCommandTest(TesterPlugin plugin, const IRCEvent event)
 /++
  +
  +/
-bool testAdminFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
+bool testAdminFiber(TesterPlugin plugin, const ref IRCEvent origEvent, const string botNickname)
 in (origEvent.channel.length, "Tried to test Admin with empty channel in original event")
 {
     scope(failure) return false;
@@ -358,7 +363,7 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
 /++
  +
  +/
-bool testAutomodesFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
+bool testAutomodesFiber(TesterPlugin plugin, const ref IRCEvent origEvent, const string botNickname)
 in (origEvent.channel.length, "Tried to test Automodes with empty channel in original event")
 {
     scope(failure) return false;
@@ -438,7 +443,7 @@ in (origEvent.channel.length, "Tried to test Automodes with empty channel in ori
 /++
  +
  +/
-bool testChatbotFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
+bool testChatbotFiber(TesterPlugin plugin, const ref IRCEvent origEvent, const string botNickname)
 in (origEvent.channel.length, "Tried to test Chatbot with empty channel in original event")
 {
     scope(failure) return false;
@@ -526,7 +531,7 @@ in (origEvent.channel.length, "Tried to test Chatbot with empty channel in origi
 /++
  +
  +/
-bool testNotesFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
+bool testNotesFiber(TesterPlugin plugin, const ref IRCEvent origEvent, const string botNickname)
 in (origEvent.channel.length, "Tried to test Notes with empty channel in original event")
 {
     scope(failure) return false;
@@ -587,7 +592,7 @@ in (origEvent.channel.length, "Tried to test Notes with empty channel in origina
 /++
  +
  +/
-bool testOnelinersFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
+bool testOnelinersFiber(TesterPlugin plugin, const ref IRCEvent origEvent, const string botNickname)
 in (origEvent.channel.length, "Tried to test Oneliners with empty channel in original event")
 {
     scope(failure) return false;
@@ -651,7 +656,7 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
 /++
  +
  +/
-bool testQuotesFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
+bool testQuotesFiber(TesterPlugin plugin, const ref IRCEvent origEvent, const string botNickname)
 in (origEvent.channel.length, "Tried to test Quotes with empty channel in original event")
 {
     import std.algorithm.searching : endsWith;
@@ -730,7 +735,7 @@ in (origEvent.channel.length, "Tried to test Quotes with empty channel in origin
 /++
  +
  +/
-bool testSedReplaceFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
+bool testSedReplaceFiber(TesterPlugin plugin, const ref IRCEvent origEvent, const string botNickname)
 in (origEvent.channel.length, "Tried to test SedReplace with empty channel in original event")
 {
     scope(failure) return false;
@@ -784,7 +789,7 @@ in (origEvent.channel.length, "Tried to test SedReplace with empty channel in or
 /++
  +
  +/
-bool testSeenFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
+bool testSeenFiber(TesterPlugin plugin, const ref IRCEvent origEvent, const string botNickname)
 in (origEvent.channel.length, "Tried to test Seen with empty channel in original event")
 {
     scope(failure) return false;
@@ -836,7 +841,7 @@ in (origEvent.channel.length, "Tried to test Seen with empty channel in original
 /++
  +
  +/
-bool testCounterFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
+bool testCounterFiber(TesterPlugin plugin, const ref IRCEvent origEvent, const string botNickname)
 in (origEvent.channel.length, "Tried to test Counter with empty channel in original event")
 {
     scope(failure) return false;
@@ -976,7 +981,7 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
 /++
  +
  +/
-bool testStopwatchFiber(TesterPlugin plugin, const IRCEvent origEvent, const string botNickname)
+bool testStopwatchFiber(TesterPlugin plugin, const ref IRCEvent origEvent, const string botNickname)
 in (origEvent.channel.length, "Tried to test Stopwatch with empty channel in original event")
 {
     scope(failure) return false;
