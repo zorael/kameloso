@@ -308,6 +308,8 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
         immutable result = line.splitInto(nickname, mode);
         if (result != SplitResults.match) goto default;
 
+        if (nickname.beginsWith('@')) nickname = nickname[1..$];
+
         if (!nickname.isValidNickname(plugin.state.server))
         {
             chan(plugin.state, event.channel, "Invalid nickname.");
@@ -345,7 +347,8 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 
     case "clear":
     case "del":
-        immutable nickname = line;
+        string nickname = line;  // mutable
+        if (nickname.beginsWith('@')) nickname = nickname[1..$];
 
         if (!nickname.length) goto default;
 

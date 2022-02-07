@@ -322,7 +322,7 @@ void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.common.misc : nameOf;
     import dialect.common : opEqualsCaseInsensitive, toLowerCase;
-    import lu.string : SplitResults, splitInto;
+    import lu.string : SplitResults, beginsWith, splitInto;
     import std.format : format;
     import std.json : JSONException;
     import std.typecons : No, Yes;
@@ -331,8 +331,9 @@ void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
     string target;
 
     immutable results = slice.splitInto(target);
+    if (target.beginsWith('@')) target = target[1..$];
 
-    if (results != SplitResults.overrun)
+    if ((results != SplitResults.overrun) || !target.length)
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
             "Usage: %s%s [nickname] [note text]"

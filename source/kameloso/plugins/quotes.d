@@ -540,11 +540,12 @@ void manageQuoteImpl(QuotesPlugin plugin,
 {
     import kameloso.irccolours : ircBold, ircColourByHash;
     import dialect.common : isValidNickname, stripModesign, toLowerCase;
-    import lu.string : nom, stripped, strippedLeft;
+    import lu.string : beginsWith, nom, stripped, strippedLeft;
     import std.format : format;
     import std.json : JSONException;
 
     string slice = event.content.stripped;  // mutable
+    if (slice.beginsWith('@')) slice = slice[1..$];
 
     void sendUsage()
     {

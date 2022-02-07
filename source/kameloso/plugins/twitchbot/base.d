@@ -567,7 +567,7 @@ version(TwitchAPIFeatures)
 )
 void onCommandFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import lu.string : nom, stripped;
+    import lu.string : beginsWith, nom, stripped;
     import std.conv : to;
     import std.json : JSONValue;
     import core.thread : Fiber;
@@ -590,7 +590,8 @@ void onCommandFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         }
         else
         {
-            immutable givenName = slice.nom!(Yes.inherit)(' ');
+            string givenName = slice.nom!(Yes.inherit)(' ');  // mutable
+            if (givenName.beginsWith('@')) givenName = givenName[1..$];
 
             if (const user = givenName in plugin.state.users)
             {
@@ -811,12 +812,12 @@ void onCommandShoutout(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.plugins.common.misc : idOf;
     import dialect.common : isValidNickname;
-    import lu.string : stripped;
+    import lu.string : beginsWith, stripped;
     import std.format : format;
     import std.json : JSONType, parseJSON;
 
     string slice = event.content.stripped;  // mutable
-    if (slice.length && (slice[0] == '@')) slice = slice[1..$];
+    if (slice.beginsWith('@')) slice = slice[1..$];
 
     if (!slice.length)
     {

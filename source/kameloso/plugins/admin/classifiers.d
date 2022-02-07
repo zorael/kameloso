@@ -44,7 +44,7 @@ void manageClassLists(AdminPlugin plugin,
 in (list.among!("whitelist", "blacklist", "operator", "staff"),
     list ~ " is not whitelist, operator, staff nor blacklist")
 {
-    import lu.string : nom;
+    import lu.string : beginsWith, nom, strippedRight;
     import std.typecons : Flag, No, Yes;
 
     void sendUsage()
@@ -61,6 +61,8 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
 
     string slice = event.content;  // mutable
     immutable verb = slice.nom!(Yes.inherit)(' ');
+    if (slice.beginsWith('@')) slice = slice[1..$];
+    slice = slice.strippedRight;
 
     switch (verb)
     {
@@ -139,13 +141,13 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
 
     Params:
         plugin = The current [kameloso.plugins.admin.base.AdminPlugin].
-        rawSpecified = The nickname or account to white-/blacklist.
+        specified = The nickname or account to white-/blacklist.
         list = Which of "whitelist", "operator", "staff" or "blacklist" to add to.
         channel = Which channel the enlisting relates to.
         event = Optional instigating [dialect.defs.IRCEvent].
  +/
 void lookupEnlist(AdminPlugin plugin,
-    const string rawSpecified,
+    const string specified,
     const string list,
     const string channel,
     const IRCEvent event = IRCEvent.init)
@@ -153,10 +155,8 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
     list ~ " is not whitelist, operator, staff nor blacklist")
 {
     import dialect.common : isValidNickname;
-    import lu.string : contains, stripped;
+    import lu.string : beginsWith, contains;
     import std.range : only;
-
-    immutable specified = rawSpecified.stripped;
 
     immutable asWhat =
         (list == "operator") ? "an operator" :
@@ -210,7 +210,7 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
             {
             case success:
                 enum pattern = "Added %s%s%s as %s in %s.";
-                logger.logf(pattern, Tint.info, specified, Tint.log, asWhat, channel);
+                logger.logf(pattern, Tint.info, id, Tint.log, asWhat, channel);
                 break;
 
             case noSuchAccount:
@@ -219,7 +219,7 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
 
             case alreadyInList:
                 enum pattern = "%s%s%s is already %s in %s.";
-                logger.logf(pattern, Tint.info, specified, Tint.log, asWhat, channel);
+                logger.logf(pattern, Tint.info, id, Tint.log, asWhat, channel);
                 break;
             }
         }
