@@ -91,6 +91,7 @@ void onCommandTest(TesterPlugin plugin, const ref IRCEvent event)
         assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
 
         awaitReply();
+        if (!msg.length) return;
         enforce((thisFiber.payload.content == msg),
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
@@ -129,6 +130,7 @@ void onCommandTest(TesterPlugin plugin, const ref IRCEvent event)
 
         disableColours();
         scope(exit) enableColours();
+        expect(string.init); // ignore the echo
         expect("Setting changed.");
 
         runTestAndReport!fun();
@@ -141,8 +143,8 @@ void onCommandTest(TesterPlugin plugin, const ref IRCEvent event)
         fiber.call();
         break;
 
-    case "automodes":
-        Fiber fiber = new CarryingFiber!IRCEvent(&wrapTest!testAutomodesFiber, 32_768);
+    case "automode":
+        Fiber fiber = new CarryingFiber!IRCEvent(&wrapTest!testAutomodeFiber, 32_768);
         fiber.call();
         break;
 
@@ -196,13 +198,14 @@ void onCommandTest(TesterPlugin plugin, const ref IRCEvent event)
 
             disableColours();
             scope(exit) enableColours();
+            expect(string.init);  // ignore the echo
             expect("Setting changed.");
 
-            static immutable timeInBetween = 3.seconds;
+            static immutable timeInBetween = 10.seconds;
 
             runTestAndReport!testAdminFiber();
             delay(plugin, timeInBetween, Yes.yield);
-            runTestAndReport!testAutomodesFiber();
+            runTestAndReport!testAutomodeFiber();
             delay(plugin, timeInBetween, Yes.yield);
             runTestAndReport!testChatbotFiber();
             delay(plugin, timeInBetween, Yes.yield);
@@ -359,12 +362,12 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
 }
 
 
-// testAutomodesFiber
+// testAutomodeFiber
 /++
  +
  +/
-bool testAutomodesFiber(TesterPlugin plugin, const ref IRCEvent origEvent, const string botNickname)
-in (origEvent.channel.length, "Tried to test Automodes with empty channel in original event")
+bool testAutomodeFiber(TesterPlugin plugin, const ref IRCEvent origEvent, const string botNickname)
+in (origEvent.channel.length, "Tried to test Automode with empty channel in original event")
 {
     scope(failure) return false;
 
