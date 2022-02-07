@@ -238,6 +238,11 @@ if (isOutputRange!(Sink, char[]))
                 sink.put(event.sender.nickname);
             }
 
+            version(PrintClassNamesToo)
+            {
+                .put(sink, ':', event.sender.class_);
+            }
+
             version(PrintAccountNamesToo)
             {
                 // No need to check for nickname.length, I think
@@ -246,11 +251,6 @@ if (isOutputRange!(Sink, char[]))
                 {
                     .put(sink, '(', event.sender.account, ')');
                 }
-            }
-
-            version(PrintClassNamesToo)
-            {
-                .put(sink, ':', event.sender.class_);
             }
 
             version(TwitchSupport)
@@ -323,6 +323,11 @@ if (isOutputRange!(Sink, char[]))
             sink.put(event.target.nickname);
         }
 
+        version(PrintClassNamesToo)
+        {
+            .put(sink, ':', event.target.class_);
+        }
+
         version(PrintAccountNamesToo)
         {
             // No need to check for nickname.length, I think
@@ -331,11 +336,6 @@ if (isOutputRange!(Sink, char[]))
             {
                 .put(sink, '(', event.target.account, ')');
             }
-        }
-
-        version(PrintClassNamesToo)
-        {
-            .put(sink, ':', event.target.class_);
         }
 
         version(TwitchSupport)
@@ -731,6 +731,11 @@ if (isOutputRange!(Sink, char[]))
                 sink.put(event.sender.nickname);
             }
 
+            version(PrintClassNamesToo)
+            {
+                .put(sink, ':', event.sender.class_);
+            }
+
             version(PrintAccountNamesToo)
             {
                 // No need to check for nickname.length, I think
@@ -739,11 +744,6 @@ if (isOutputRange!(Sink, char[]))
                 {
                     .put!(Yes.colours)(sink, FG.default_, '(', event.sender.account, ')');
                 }
-            }
-
-            version(PrintClassNamesToo)
-            {
-                .put(sink, ':', event.sender.class_);
             }
 
             version(TwitchSupport)
@@ -824,6 +824,11 @@ if (isOutputRange!(Sink, char[]))
             sink.put(event.target.nickname);
         }
 
+        version(PrintClassNamesToo)
+        {
+            .put(sink, ':', event.target.class_);
+        }
+
         version(PrintAccountNamesToo)
         {
             // No need to check for nickname.length, I think
@@ -832,11 +837,6 @@ if (isOutputRange!(Sink, char[]))
             {
                 .put!(Yes.colours)(sink, FG.default_, '(', event.target.account, ')');
             }
-        }
-
-        version(PrintClassNamesToo)
-        {
-            .put(sink, ':', event.target.class_);
         }
 
         version(TwitchSupport)
