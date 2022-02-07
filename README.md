@@ -91,7 +91,9 @@ Grab a pre-compiled binary from under [Releases](https://github.com/zorael/kamel
 
 You need one based on D version **2.096** or later (March 2021). For **ldc** this is version **1.26**. Sadly, the stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently based on version **2.076** and is thus too old to be used.
 
-If your repositories (or other software sources) don't have new enough compilers, you can use the official [`install.sh`](https://dlang.org/install.html) installation script to download current ones, or any version of choice.
+> [**Compiling with ldc on Windows is currently broken**](https://github.com/ldc-developers/ldc/issues/3913) and requires a modified compiler with a larger stack to build. This should hopefully be resolved in **ldc 1.29**; until such time please use **dmd**. Linux and MacOS are not affected.
+
+If your repositories (or other software sources) don't have compilers new enough, you can use the official [`install.sh`](https://dlang.org/install.html) installation script to download current ones, or any version of choice.
 
 The package manager [**dub**](https://code.dlang.org) is used to facilitate compilation and dependency management. On Windows it comes bundled in the compiler archive, while on Linux it may need to be installed separately. Refer to your repositories.
 
