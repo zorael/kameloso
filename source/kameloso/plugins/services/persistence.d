@@ -326,9 +326,9 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
         {
             // Do nothing, admin is permanent and program-wide
         }
-        else if (!event.channel.length || !service.state.bot.homeChannels.canFind(event.channel))
+        else if (!event.channel.length)
         {
-            // Not a channel or not a home. Additionally not an admin
+            // Not in a channel. Additionally not an admin
             // Default to registered if the user has an account, except on Twitch
             // postprocess in twitchbot/base.d will assign class as per badges
 
@@ -352,9 +352,9 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
             }
             service.userClassCurrentChannelCache.remove(user.nickname);
         }
-        else
+        else /*if (channel.length)*/
         {
-            // Non-admin, home channel. Perform a new cache lookup if none was
+            // Non-admin, channel present. Perform a new cache lookup if none was
             // previously made, otherwise reuse the earlier hit.
 
             if (!cachedChannel)
