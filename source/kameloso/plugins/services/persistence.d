@@ -66,9 +66,9 @@ void postprocess(PersistenceService service, ref IRCEvent event)
 
         if (!service.state.settings.preferHostmasks)
         {
-            if (const channelName = event.sender.nickname in service.userClassCurrentChannelCache)
+            if (const channelName = event.sender.nickname in service.userClassChannelCache)
             {
-                service.userClassCurrentChannelCache[event.target.nickname] = *channelName;
+                service.userClassChannelCache[event.target.nickname] = *channelName;
             }
         }
 
@@ -176,7 +176,7 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
 
             // Record this channel as being the one the current class_ applies to.
             // That way we only have to look up a class_ when the channel has changed.
-            service.userClassCurrentChannelCache[user.nickname] = event.channel;
+            service.userClassChannelCache[user.nickname] = event.channel;
         }
 
         auto stored = user.nickname in service.state.users;
@@ -243,7 +243,7 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
                     // save the AA lookup pointer for later checks, in case we
                     // have to do this again down below.
 
-                    /*const*/ cachedChannel = stored.nickname in service.userClassCurrentChannelCache;
+                    /*const*/ cachedChannel = stored.nickname in service.userClassChannelCache;
 
                     if (!cachedChannel || (*cachedChannel != event.channel))
                     {
@@ -289,7 +289,7 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
                         stored.account = string.init;
                         stored.class_ = IRCUser.Class.anyone;
                         stored.updated = 1L;  // To facilitate melding
-                        service.userClassCurrentChannelCache.remove(stored.nickname);
+                        service.userClassChannelCache.remove(stored.nickname);
                     }
                     else
                     {
@@ -350,7 +350,7 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
             {
                 stored.class_ = IRCUser.Class.anyone;
             }
-            service.userClassCurrentChannelCache.remove(user.nickname);
+            service.userClassChannelCache.remove(user.nickname);
         }
         else /*if (channel.length)*/
         {
@@ -359,7 +359,7 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
 
             if (!cachedChannel)
             {
-                /*const*/ cachedChannel = stored.nickname in service.userClassCurrentChannelCache;
+                /*const*/ cachedChannel = stored.nickname in service.userClassChannelCache;
             }
 
             if (!cachedChannel || (*cachedChannel != event.channel))
@@ -398,7 +398,7 @@ void onQuit(PersistenceService service, const ref IRCEvent event)
     }
 
     service.state.users.remove(event.sender.nickname);
-    service.userClassCurrentChannelCache.remove(event.sender.nickname);
+    service.userClassChannelCache.remove(event.sender.nickname);
 }
 
 
@@ -806,7 +806,7 @@ private:
     string[string] hostmaskNicknameAccountCache;
 
     /// Associative array of which channel the latest class lookup for an account related to.
-    string[string] userClassCurrentChannelCache;
+    string[string] userClassChannelCache;
 
     mixin IRCPluginImpl;
 }
