@@ -12,9 +12,9 @@ enum KamelosoSemVer
 {
     majorVersion = 2,  /// SemVer major version of the program.
     minorVersion = 0,  /// SemVer minor version of the program.
-    patchVersion = 0,  /// SemVer patch version of the program.
+    patchVersion = 1,  /// SemVer patch version of the program.
 }
 
 
 /// Pre-release SemVer subversion of this build.
-enum KamelosoSemVerPrerelease = "rc.5";
+enum KamelosoSemVerPrerelease = string.init;

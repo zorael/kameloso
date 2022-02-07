@@ -68,7 +68,10 @@ enum IRCColour
         fg = Foreground [IRCColour].
         bg = Optional background [IRCColour].
  +/
-void ircColourInto(Sink)(const string line, auto ref Sink sink, const IRCColour fg,
+void ircColourInto(Sink)
+    (const string line,
+    auto ref Sink sink,
+    const IRCColour fg,
     const IRCColour bg = IRCColour.unset)
 if (isOutputRange!(Sink, char[]))
 in (line.length, "Tried to apply IRC colours to a string but no string was given")
@@ -126,7 +129,9 @@ unittest
     Returns:
         The passed line, encased within IRC colour tags.
  +/
-string ircColour(const string line, const IRCColour fg, const IRCColour bg = IRCColour.unset) pure
+string ircColour(const string line,
+    const IRCColour fg,
+    const IRCColour bg = IRCColour.unset) pure
 in (line.length, "Tried to apply IRC colours to a string but no string was given")
 {
     if (!line.length) return string.init;
@@ -173,11 +178,13 @@ string ircColour(const IRCColour fg, const IRCColour bg = IRCColour.unset) pure
 
     if (bg != IRCColour.unset)
     {
-        return "%c%02d,%02d".format(cast(char)IRCControlCharacter.colour, fg, bg);
+        enum pattern = "%c%02d,%02d";
+        return format(pattern, cast(char)IRCControlCharacter.colour, fg, bg);
     }
     else
     {
-        return "%c%02d".format(cast(char)IRCControlCharacter.colour, fg);
+        enum pattern = "%c%02d";
+        return format(pattern, cast(char)IRCControlCharacter.colour, fg);
     }
 }
 
@@ -250,7 +257,8 @@ in (word.length, "Tried to apply IRC colours by hash to a string but no string w
     alias I = IRCControlCharacter;
 
     immutable colourIndex = hashOf(word) % 16;
-    return "%c%02d%s%c".format(cast(char)I.colour, colourIndex, word, cast(char)I.colour);
+    enum pattern = "%c%02d%s%c";
+    return format(pattern, cast(char)I.colour, colourIndex, word, cast(char)I.colour);
 }
 
 ///
@@ -436,7 +444,8 @@ char ircReset() @nogc pure nothrow
         A new string based on `origLine` with mIRC tokens mapped to terminal ones.
  +/
 version(Colours)
-string mapEffects(const string origLine, const uint fgBase = TerminalForeground.default_,
+string mapEffects(const string origLine,
+    const uint fgBase = TerminalForeground.default_,
     const uint bgBase = TerminalBackground.default_) pure nothrow
 {
     import kameloso.terminal : TF = TerminalFormat;
@@ -591,8 +600,10 @@ string mapColours(const string line,
     Returns:
         The passed `line`, now with terminal colouring, or completely without.
  +/
-private string mapColoursImpl(Flag!"strip" strip = No.strip)(const string line,
-    const uint fgReset, const uint bgReset) pure nothrow
+private string mapColoursImpl(Flag!"strip" strip = No.strip)
+    (const string line,
+    const uint fgReset,
+    const uint bgReset) pure nothrow
 in ((fgReset > 0), "Tried to " ~ (strip ? "strip" : "map") ~
     " colours with a foreground reset value of 0")
 in ((bgReset > 0), "Tried to " ~ (strip ? "strip" : "map") ~

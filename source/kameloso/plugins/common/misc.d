@@ -5,7 +5,7 @@
     See_Also:
         [kameloso.plugins.common.core]
  +/
-module kameloso.plugins.common.base;
+module kameloso.plugins.common.misc;
 
 private:
 
@@ -38,7 +38,8 @@ public:
     See_Also:
         [lu.objmanip.setSettingByName]
  +/
-bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings,
+bool applyCustomSettings(IRCPlugin[] plugins,
+    const string[] customSettings,
     CoreSettings copyOfSettings)
 {
     import kameloso.common : Tint, logger;
@@ -52,8 +53,8 @@ bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings,
     {
         if (!line.contains!(Yes.decode)('.'))
         {
-            logger.warningf(`Bad %splugin%s.%1$ssetting%2$s=%1$svalue%2$s format. (%1$s%3$s%2$s)`,
-                Tint.log, Tint.warning, line);
+            enum pattern = `Bad %splugin%s.%1$ssetting%2$s=%1$svalue%2$s format. (%1$s%3$s%2$s)`;
+            logger.warningf(pattern, Tint.log, Tint.warning, line);
             noErrors = false;
             continue;
         }
@@ -61,7 +62,7 @@ bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings,
         import std.uni : toLower;
 
         string slice = line;  // mutable
-        immutable pluginstring = slice.nom!(Yes.decode)(".").toLower;
+        string pluginstring = slice.nom!(Yes.decode)(".").toLower;  // mutable
         immutable setting = slice.nom!(Yes.inherit, Yes.decode)('=');
         immutable value = slice;
 
@@ -78,37 +79,39 @@ bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings,
 
                 if (!success)
                 {
-                    logger.warningf("No such %score%s setting: %1$s%3$s",
-                        Tint.log, Tint.warning, setting);
+                    enum pattern = "No such %score%s setting: %1$s%3$s";
+                    logger.warningf(pattern, Tint.log, Tint.warning, setting);
                     noErrors = false;
                 }
                 else
                 {
                     if ((setting == "monochrome") || (setting == "brightTerminal"))
                     {
-                        initLogger((copyOfSettings.monochrome ? Yes.monochrome : No.monochrome),
-                            (copyOfSettings.brightTerminal ? Yes.brightTerminal : No.brightTerminal));
+                        initLogger(
+                            cast(Flag!"monochrome")copyOfSettings.monochrome,
+                            cast(Flag!"brightTerminal")copyOfSettings.brightTerminal,
+                            cast(Flag!"headless")copyOfSettings.headless);
                     }
 
                     foreach (plugin; plugins)
                     {
                         plugin.state.settings = copyOfSettings;
-                        plugin.state.settingsUpdated = true;
+                        plugin.state.updates |= typeof(plugin.state.updates).settings;
                     }
                 }
             }
             catch (SetMemberException e)
             {
-                logger.warningf("Failed to set %score%s.%1$s%3$s%2$s: " ~
-                    "it requires a value and none was supplied",
-                    Tint.log, Tint.warning, setting);
+                enum pattern = "Failed to set %score%s.%1$s%3$s%2$s: " ~
+                    "it requires a value and none was supplied";
+                logger.warningf(pattern, Tint.log, Tint.warning, setting);
                 version(PrintStacktraces) logger.trace(e.info);
                 noErrors = false;
             }
             catch (ConvException e)
             {
-                logger.warningf(`Invalid value for %score%s.%1$s%3$s%2$s: "%1$s%4$s%2$s"`,
-                    Tint.log, Tint.warning, setting, value);
+                enum pattern = `Invalid value for %score%s.%1$s%3$s%2$s: "%1$s%4$s%2$s"`;
+                logger.warningf(pattern, Tint.log, Tint.warning, setting, value);
                 noErrors = false;
             }
 
@@ -116,6 +119,8 @@ bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings,
         }
         else
         {
+            if (pluginstring == "twitch") pluginstring = "twitchbot";
+
             foreach (plugin; plugins)
             {
                 if (plugin.name != pluginstring) continue;
@@ -127,15 +132,15 @@ bool applyCustomSettings(IRCPlugin[] plugins, const string[] customSettings,
 
                     if (!success)
                     {
-                        logger.warningf("No such %s%s%s plugin setting: %1$s%4$s",
-                            Tint.log, pluginstring, Tint.warning, setting);
+                        enum pattern = "No such %s%s%s plugin setting: %1$s%4$s";
+                        logger.warningf(pattern, Tint.log, pluginstring, Tint.warning, setting);
                         noErrors = false;
                     }
                 }
                 catch (ConvException e)
                 {
-                    logger.warningf(`Invalid value for %s%s%s.%1$s%4$s%3$s: "%1$s%5$s%3$s"`,
-                        Tint.log, pluginstring, Tint.warning, setting, value);
+                    enum pattern = `Invalid value for %s%s%s.%1$s%4$s%3$s: "%1$s%5$s%3$s"`;
+                    logger.warningf(pattern, Tint.log, pluginstring, Tint.warning, setting, value);
                     noErrors = false;
 
                     //version(PrintStacktraces) logger.trace(e.info);
@@ -195,14 +200,23 @@ unittest
 
     const ps = (cast(MyPlugin)plugin).myPluginSettings;
 
+    static if (__VERSION__ >= 2091)
+    {
+        import std.math : isClose;
+    }
+    else
+    {
+        import std.math : approxEqual;
+        alias isClose = approxEqual;
+    }
+
     import std.conv : text;
-    import std.math : approxEqual;
 
     assert((ps.s == "abc def ghi"), ps.s);
     assert((ps.i == 42), ps.i.text);
-    assert(ps.f.approxEqual(3.14f), ps.f.text);
+    assert(isClose(ps.f, 3.14f), ps.f.text);
     assert(ps.b);
-    assert(ps.d.approxEqual(99.99), ps.d.text);
+    assert(isClose(ps.d, 99.99), ps.d.text);
 }
 
 
@@ -285,12 +299,17 @@ void catchUser(IRCPlugin plugin, const IRCUser newUser) @safe
         subPlugin = Subclass [kameloso.plugins.common.core.IRCPlugin] to replay the
             function pointer `fn` with as first argument.
         event = [dialect.defs.IRCEvent] to queue up to replay.
-        perms = Permissions level to match the results from the WHOIS query with.
+        permissionsRequired = Permissions level to match the results from the WHOIS query with.
         fn = Function/delegate pointer to call when the results return.
         caller = String name of the calling function, or something else that gives context.
  +/
-void enqueue(SubPlugin, Fn)(IRCPlugin plugin, SubPlugin subPlugin, const ref IRCEvent event,
-    const PermissionsRequired perms, Fn fn, const string caller = __FUNCTION__)
+void enqueue(SubPlugin, Fn)
+    (IRCPlugin plugin,
+    SubPlugin subPlugin,
+    const ref IRCEvent event,
+    const Permissions permissionsRequired,
+    Fn fn,
+    const string caller = __FUNCTION__)
 in ((event != IRCEvent.init), "Tried to `enqueue` with an init IRCEvent")
 in ((fn !is null), "Tried to `enqueue` with a null function pointer")
 {
@@ -304,12 +323,17 @@ in ((fn !is null), "Tried to `enqueue` with a null function pointer")
         {
             version(TwitchWarnings)
             {
-                import kameloso.common : logger, printStacktrace;
+                import kameloso.common : logger;
                 import kameloso.printing : printObject;
 
                 logger.warning(caller, " tried to WHOIS on Twitch");
                 printObject(event);
-                version(PrintStacktraces) printStacktrace();
+
+                version(PrintStacktraces)
+                {
+                    import kameloso.common: printStacktrace;
+                    printStacktrace();
+                }
             }
             return;
         }
@@ -321,12 +345,12 @@ in ((fn !is null), "Tried to `enqueue` with a null function pointer")
     static if (is(SubPlugin == typeof(null)))
     {
         plugin.state.replays[user.nickname] ~=
-            replay(event, perms, fn, caller);
+            replay(event, permissionsRequired, fn, caller);
     }
     else
     {
         plugin.state.replays[user.nickname] ~=
-            replay(subPlugin, event, perms, fn, caller);
+            replay(subPlugin, event, permissionsRequired, fn, caller);
     }
 
     plugin.state.hasReplays = true;
@@ -344,14 +368,18 @@ in ((fn !is null), "Tried to `enqueue` with a null function pointer")
     Params:
         plugin = Current [kameloso.plugins.common.core.IRCPlugin] as a base class.
         event = [dialect.defs.IRCEvent] to queue up to replay.
-        perms = Permissions level to match the results from the WHOIS query with.
+        permissionsRequired = Permissions level to match the results from the WHOIS query with.
         fn = Function/delegate pointer to call when the results return.
         caller = String name of the calling function, or something else that gives context.
  +/
-void enqueue(Fn)(IRCPlugin plugin, const ref IRCEvent event,
-    const PermissionsRequired perms, Fn fn, const string caller = __FUNCTION__)
+void enqueue(Fn)
+    (IRCPlugin plugin,
+    const ref IRCEvent event,
+    const Permissions permissionsRequired,
+    Fn fn,
+    const string caller = __FUNCTION__)
 {
-    return enqueue(plugin, null, event, perms, fn, caller);
+    return enqueue(plugin, null, event, permissionsRequired, fn, caller);
 }
 
 

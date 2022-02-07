@@ -18,7 +18,7 @@ private:
 
 import kameloso.plugins.admin.base;
 
-import kameloso.plugins.common.base : nameOf;
+import kameloso.plugins.common.misc : nameOf;
 import kameloso.common : Tint, logger;
 import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
 import kameloso.messaging;
@@ -38,11 +38,13 @@ package:
         event = The triggering [dialect.defs.IRCEvent].
         list = Which list to add/remove from, "whitelist", "operator" or "blacklist".
  +/
-void manageClassLists(AdminPlugin plugin, const ref IRCEvent event, const string list)
+void manageClassLists(AdminPlugin plugin,
+    const ref IRCEvent event,
+    const string list)
 in (list.among!("whitelist", "blacklist", "operator", "staff"),
     list ~ " is not whitelist, operator, staff nor blacklist")
 {
-    import lu.string : nom;
+    import lu.string : beginsWith, nom, strippedRight;
     import std.typecons : Flag, No, Yes;
 
     void sendUsage()
@@ -59,6 +61,8 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
 
     string slice = event.content;  // mutable
     immutable verb = slice.nom!(Yes.inherit)(' ');
+    if (slice.beginsWith('@')) slice = slice[1..$];
+    slice = slice.strippedRight;
 
     switch (verb)
     {
@@ -90,7 +94,9 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
         list = Which list to list; "whitelist", "operator", "staff" or "blacklist".
         event = Optional [dialect.defs.IRCEvent] that instigated the listing.
  +/
-void listList(AdminPlugin plugin, const string channel, const string list,
+void listList(AdminPlugin plugin,
+    const string channel,
+    const string list,
     const IRCEvent event = IRCEvent.init)
 in (list.among!("whitelist", "blacklist", "operator", "staff"),
     list ~ " is not whitelist, operator, staff nor blacklist")
@@ -117,7 +123,7 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
 
         privmsg(plugin.state, event.channel, event.sender.nickname,
             "Current %s in %s: %-(%s, %)"
-            .format(asWhat, channel, userlist));
+                .format(asWhat, channel, userlist));
     }
     else
     {
@@ -135,21 +141,22 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
 
     Params:
         plugin = The current [kameloso.plugins.admin.base.AdminPlugin].
-        rawSpecified = The nickname or account to white-/blacklist.
+        specified = The nickname or account to white-/blacklist.
         list = Which of "whitelist", "operator", "staff" or "blacklist" to add to.
         channel = Which channel the enlisting relates to.
         event = Optional instigating [dialect.defs.IRCEvent].
  +/
-void lookupEnlist(AdminPlugin plugin, const string rawSpecified, const string list,
-    const string channel, const IRCEvent event = IRCEvent.init)
+void lookupEnlist(AdminPlugin plugin,
+    const string specified,
+    const string list,
+    const string channel,
+    const IRCEvent event = IRCEvent.init)
 in (list.among!("whitelist", "blacklist", "operator", "staff"),
     list ~ " is not whitelist, operator, staff nor blacklist")
 {
     import dialect.common : isValidNickname;
-    import lu.string : contains, stripped;
+    import lu.string : beginsWith, contains;
     import std.range : only;
-
-    immutable specified = rawSpecified.stripped;
 
     immutable asWhat =
         (list == "operator") ? "an operator" :
@@ -202,8 +209,8 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
             final switch (result)
             {
             case success:
-                logger.logf("Added %s%s%s as %s in %s.",
-                    Tint.info, specified, Tint.log, asWhat, channel);
+                enum pattern = "Added %s%s%s as %s in %s.";
+                logger.logf(pattern, Tint.info, id, Tint.log, asWhat, channel);
                 break;
 
             case noSuchAccount:
@@ -211,8 +218,8 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
                 assert(0, "Invalid enlist-only `AlterationResult` passed to `lookupEnlist.report`");
 
             case alreadyInList:
-                logger.logf("%s%s%s is already %s in %s.",
-                    Tint.info, specified, Tint.log, asWhat, channel);
+                enum pattern = "%s%s%s is already %s in %s.";
+                logger.logf(pattern, Tint.info, id, Tint.log, asWhat, channel);
                 break;
             }
         }
@@ -357,8 +364,11 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
         channel = Which channel the enlisting relates to.
         event = Optional instigating [dialect.defs.IRCEvent].
  +/
-void delist(AdminPlugin plugin, const string account, const string list,
-    const string channel, const IRCEvent event = IRCEvent.init)
+void delist(AdminPlugin plugin,
+    const string account,
+    const string list,
+    const string channel,
+    const IRCEvent event = IRCEvent.init)
 in (list.among!("whitelist", "blacklist", "operator", "staff"),
     list ~ " is not whitelist, operator, staff nor blacklist")
 {
@@ -430,18 +440,18 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
             assert(0, "Invalid enlist-only `AlterationResult` returned to `delist`");
 
         case noSuchAccount:
-            logger.logf("No such account %s%s%s was found as %s in %s.",
-                Tint.info, account, Tint.log, asWhat, channel);
+            enum pattern = "No such account %s%s%s was found as %s in %s.";
+            logger.logf(pattern, Tint.info, account, Tint.log, asWhat, channel);
             break;
 
         case noSuchChannel:
-            logger.logf("Account %s%s%s isn't %s in %s.",
-                Tint.info, account, Tint.log, asWhat, channel);
+            enum pattern = "Account %s%s%s isn't %s in %s.";
+            logger.logf(pattern, Tint.info, account, Tint.log, asWhat, channel);
             break;
 
         case success:
-            logger.logf("Removed %s%s%s as %s in %s",
-                Tint.info, account, Tint.log, asWhat, channel);
+            enum pattern = "Removed %s%s%s as %s in %s";
+            logger.logf(pattern, Tint.info, account, Tint.log, asWhat, channel);
             break;
         }
     }
@@ -485,8 +495,11 @@ enum AlterationResult
         channel could be found in the specified list.
         [AlterationResult.success] if enlisting or delisting succeeded.
  +/
-AlterationResult alterAccountClassifier(AdminPlugin plugin, const Flag!"add" add,
-    const string list, const string account, const string channelName)
+AlterationResult alterAccountClassifier(AdminPlugin plugin,
+    const Flag!"add" add,
+    const string list,
+    const string account,
+    const string channelName)
 in (list.among!("whitelist", "blacklist", "operator", "staff"),
     list ~ " is not whitelist, operator, staff nor blacklist")
 {
@@ -569,8 +582,11 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
         mask = String "nickname!ident@address.tld" hostmask.
         event = Instigating [dialect.defs.IRCEvent].
  +/
-void modifyHostmaskDefinition(AdminPlugin plugin, const Flag!"add" add,
-    const string account, const string mask, const ref IRCEvent event)
+void modifyHostmaskDefinition(AdminPlugin plugin,
+    const Flag!"add" add,
+    const string account,
+    const string mask,
+    const ref IRCEvent event)
 in ((!add || account.length), "Tried to add a hostmask with no account to map it to")
 in (mask.length, "Tried to add an empty hostmask definition")
 {
@@ -606,8 +622,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
     string[string] aa;
     aa.populateFromJSON(json);
 
-    immutable brightFlag = plugin.state.settings.brightTerminal ?
-        Yes.brightTerminal : No.brightTerminal;
+    immutable brightFlag = cast(Flag!"brightTerminal")plugin.state.settings.brightTerminal;
 
     if (add)
     {
@@ -617,16 +632,16 @@ in (mask.length, "Tried to add an empty hostmask definition")
         {
             if (event == IRCEvent.init)
             {
-                logger.warningf(`Invalid hostmask: "%s%s%s"; must be in the form ` ~
-                    `"%1$snickname!ident@address%3$s".`,
-                    Tint.log, mask, Tint.warning);
+                enum pattern = `Invalid hostmask: "%s%s%s"; must be in the form ` ~
+                    `"%1$snickname!ident@address%3$s".`;
+                logger.warningf(pattern, Tint.log, mask, Tint.warning);
             }
             else
             {
                 import std.format : format;
+                enum pattern = `Invalid hostmask: "%s"; must be in the form "%s".`;
                 privmsg(plugin.state, event.channel, event.sender.nickname,
-                    `Invalid hostmask: "%s"; must be in the form "%s".`
-                    .format(mask.ircBold, "nickname!ident@address".ircBold));
+                    format(pattern, mask.ircBold, "nickname!ident@address".ircBold));
             }
             return;
         }
@@ -640,8 +655,8 @@ in (mask.length, "Tried to add an empty hostmask definition")
 
         if (event == IRCEvent.init)
         {
-            logger.infof(`Added hostmask "%s%s%s", mapped to account %4$s%3$s.`,
-                Tint.log, mask, Tint.info, colouredAccount);
+            enum pattern = `Added hostmask "%s%s%s", mapped to account %4$s%3$s.`;
+            logger.infof(pattern, Tint.log, mask, Tint.info, colouredAccount);
         }
         else
         {
@@ -661,7 +676,8 @@ in (mask.length, "Tried to add an empty hostmask definition")
 
             if (event == IRCEvent.init)
             {
-                logger.infof(`Removed hostmask "%s%s%s".`, Tint.log, mask, Tint.info);
+                enum pattern = `Removed hostmask "%s%s%s".`;
+                logger.infof(pattern, Tint.log, mask, Tint.info);
             }
             else
             {
@@ -673,12 +689,13 @@ in (mask.length, "Tried to add an empty hostmask definition")
         {
             if (event == IRCEvent.init)
             {
-                logger.warningf(`No such hostmask "%s%s%s" on file.`,
-                    Tint.log, mask, Tint.warning);
+                enum pattern = `No such hostmask "%s%s%s" on file.`;
+                logger.warningf(pattern, Tint.log, mask, Tint.warning);
             }
             else
             {
-                immutable message = `No such hostmask "%s" on file.`.format(mask.ircBold);
+                enum pattern = `No such hostmask "%s" on file.`;
+                immutable message = format(pattern, mask.ircBold);
                 privmsg(plugin.state, event.channel, event.sender.nickname, message);
             }
             return;  // Skip saving and updating below

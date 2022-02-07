@@ -8,7 +8,7 @@
     See_Also:
         [kameloso.net]
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.services.connect;
 
@@ -72,9 +72,11 @@ enum Progress
 
     Fires when the bot leaves a channel, one way or another.
  +/
-@(IRCEvent.Type.SELFPART)
-@(IRCEvent.Type.SELFKICK)
-@(ChannelPolicy.any)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.SELFPART)
+    .onEvent(IRCEvent.Type.SELFKICK)
+    .channelPolicy(ChannelPolicy.any)
+)
 void onSelfpart(ConnectService service, const ref IRCEvent event)
 {
     import std.algorithm.mutation : SwapStrategy, remove;
@@ -86,7 +88,7 @@ void onSelfpart(ConnectService service, const ref IRCEvent event)
     {
         service.state.bot.guestChannels = service.state.bot.guestChannels
             .remove!(SwapStrategy.unstable)(index);
-        service.state.botUpdated = true;
+        service.state.updates |= typeof(service.state.updates).bot;
     }
     else
     {
@@ -110,8 +112,10 @@ void onSelfpart(ConnectService service, const ref IRCEvent event)
     Records a channel in the `channels` array in the [dialect.defs.IRCClient] of
     the current [ConnectService]'s [kameloso.plugins.common.core.IRCPluginState] upon joining it.
  +/
-@(IRCEvent.Type.SELFJOIN)
-@(ChannelPolicy.any)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.SELFJOIN)
+    .channelPolicy(ChannelPolicy.any)
+)
 void onSelfjoin(ConnectService service, const ref IRCEvent event)
 {
     import std.algorithm.searching : canFind;
@@ -121,7 +125,7 @@ void onSelfjoin(ConnectService service, const ref IRCEvent event)
     {
         // Track new channel in the channels array
         service.state.bot.guestChannels ~= event.channel;
-        service.state.botUpdated = true;
+        service.state.updates |= typeof(service.state.updates).bot;
     }
 }
 
@@ -154,8 +158,8 @@ void joinChannels(ConnectService service)
     auto guestlist = service.state.bot.guestChannels.sort.uniq;
     immutable numChans = homelist.walkLength() + guestlist.walkLength();
 
-    logger.logf("Joining %s%d%s %s...", Tint.info, numChans, Tint.log,
-        numChans.plurality("channel", "channels"));
+    enum pattern = "Joining %s%d%s %s...";
+    logger.logf(pattern, Tint.info, numChans, Tint.log, numChans.plurality("channel", "channels"));
 
     // Join in two steps so home channels don't get shoved away by guest channels
     // FIXME: line should split if it reaches 512 characters
@@ -178,7 +182,9 @@ void joinChannels(ConnectService service)
 
     Encountered at least once, on a private server.
  +/
-@(IRCEvent.Type.ERR_NEEDPONG)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.ERR_NEEDPONG)
+)
 void onToConnectType(ConnectService service, const ref IRCEvent event)
 {
     immediate(service.state, event.content, Yes.quiet);
@@ -194,7 +200,9 @@ void onToConnectType(ConnectService service, const ref IRCEvent event)
     example, [dialect.defs.IRCEvent.Type.ERR_NEEDPONG] generally wants you to
     ping a random number or string.
  +/
-@(IRCEvent.Type.PING)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.PING)
+)
 void onPing(ConnectService service, const ref IRCEvent event)
 {
     import std.concurrency : prioritySend;
@@ -263,8 +271,9 @@ void tryAuth(ConnectService service)
         // Only accepts password, no auth nickname
         if (service.state.client.nickname != service.state.client.origNickname)
         {
-            logger.warningf("Cannot auth when you have changed your nickname. " ~
-                "(%s%s%s != %1$s%4$s%3$s)", Tint.log, service.state.client.nickname,
+            enum pattern = "Cannot auth when you have changed your nickname. " ~
+                "(%s%s%s != %1$s%4$s%3$s)";
+            logger.warningf(pattern, Tint.log, service.state.client.nickname,
                 Tint.warning, service.state.client.origNickname);
 
             service.authentication = Progress.finished;
@@ -275,7 +284,8 @@ void tryAuth(ConnectService service)
 
         if (!service.state.settings.hideOutgoing && !service.state.settings.trace)
         {
-            logger.tracef("--> PRIVMSG %s :%s hunter2", serviceNick, verb);
+            enum pattern = "--> PRIVMSG %s :%s hunter2";
+            logger.tracef(pattern, serviceNick, verb);
         }
         break;
 
@@ -290,8 +300,8 @@ void tryAuth(ConnectService service)
 
         if (!service.state.bot.account.length)
         {
-            logger.logf("No account specified! Trying %s%s%s...",
-                Tint.info, service.state.client.origNickname, Tint.log);
+            enum pattern = "No account specified! Trying %s%s%s...";
+            logger.logf(pattern, Tint.info, service.state.client.origNickname, Tint.log);
             account = service.state.client.origNickname;
         }
 
@@ -299,7 +309,8 @@ void tryAuth(ConnectService service)
 
         if (!service.state.settings.hideOutgoing && !service.state.settings.trace)
         {
-            logger.tracef("--> PRIVMSG %s :%s %s hunter2", serviceNick, verb, account);
+            enum pattern = "--> PRIVMSG %s :%s %s hunter2";
+            logger.tracef(pattern, serviceNick, verb, account);
         }
         break;
 
@@ -365,8 +376,10 @@ void tryAuth(ConnectService service)
     Fires when an authentication service sends a message with a known success,
     invalid or rejected auth text, signifying completed login.
  +/
-@(IRCEvent.Type.AUTH_SUCCESS)
-@(IRCEvent.Type.AUTH_FAILURE)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.AUTH_SUCCESS)
+    .onEvent(IRCEvent.Type.AUTH_FAILURE)
+)
 void onAuthEnd(ConnectService service, const ref IRCEvent event)
 {
     service.authentication = Progress.finished;
@@ -387,8 +400,10 @@ void onAuthEnd(ConnectService service, const ref IRCEvent event)
     On Twitch, if the OAuth pass is wrong or malformed, abort and exit the program.
  +/
 version(TwitchSupport)
-@Chainable
-@(IRCEvent.Type.NOTICE)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.NOTICE)
+    .chainable(true)
+)
 void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
 {
     import kameloso.thread : ThreadMessage;
@@ -396,9 +411,18 @@ void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
     import std.concurrency : prioritySend;
     import std.typecons : Flag, No, Yes;
 
-    if ((service.state.server.daemon != IRCServer.Daemon.unset) ||
-        !service.state.server.address.endsWith(".twitch.tv"))
+    with (IRCServer.Daemon)
+    switch (service.state.server.daemon)
     {
+    case unset:
+        if (service.state.server.address.endsWith(".twitch.tv")) goto case twitch;
+        return;
+
+    case twitch:
+        // Drop down
+        break;
+
+    default:
         return;
     }
 
@@ -408,8 +432,8 @@ void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
         if (!service.state.bot.pass.length)
         {
             logger.error("You *need* a pass to join this server.");
-            logger.logf("Run the program with %s--set twitchbot.keygen%s to generate a new one.",
-                Tint.info, Tint.log);
+            enum pattern = "Run the program with %s--set twitchbot.keygen%s to generate a new one.";
+            logger.logf(pattern, Tint.info, Tint.log);
         }
         else
         {
@@ -420,8 +444,8 @@ void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
 
     case "Login authentication failed":
         logger.error("Incorrect client pass. Please make sure it is valid and has not expired.");
-        logger.logf("Run the program with %s--set twitchbot.keygen%s to generate a new one.",
-            Tint.info, Tint.log);
+        enum pattern = "Run the program with %s--set twitchbot.keygen%s to generate a new one.";
+        logger.logf(pattern, Tint.info, Tint.log);
         break;
 
     case "Login unsuccessful":
@@ -434,7 +458,7 @@ void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
     }
 
     // Exit and let the user tend to it.
-    service.state.mainThread.prioritySend(ThreadMessage.Quit(), event.content, No.quiet);
+    quit!(Yes.priority)(service.state, event.content, No.quiet);
 }
 
 
@@ -445,8 +469,10 @@ void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
     Don't modify [IRCPluginState.client.nickname] as the nickname only changes
     when the [dialect.defs.IRCEvent.Type.RPL_LOGGEDIN] event actually occurs.
  +/
-@(IRCEvent.Type.ERR_NICKNAMEINUSE)
-@(IRCEvent.Type.ERR_NICKCOLLISION)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.ERR_NICKNAMEINUSE)
+    .onEvent(IRCEvent.Type.ERR_NICKCOLLISION)
+)
 void onNickInUse(ConnectService service)
 {
     import std.conv : text;
@@ -477,7 +503,9 @@ void onNickInUse(ConnectService service)
     Aborts a registration attempt and quits if the requested nickname is too
     long or contains invalid characters.
  +/
-@(IRCEvent.Type.ERR_ERRONEOUSNICKNAME)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.ERR_ERRONEOUSNICKNAME)
+)
 void onBadNick(ConnectService service)
 {
     if (service.registration == Progress.inProgress)
@@ -505,7 +533,9 @@ void onBadNick(ConnectService service)
 
     There's no point in reconnecting.
  +/
-@(IRCEvent.Type.ERR_YOUREBANNEDCREEP)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.ERR_YOUREBANNEDCREEP)
+)
 void onBanned(ConnectService service)
 {
     logger.error("You are banned!");
@@ -519,7 +549,9 @@ void onBanned(ConnectService service)
 
     There's no point in reconnecting.
  +/
-@(IRCEvent.Type.ERR_PASSWDMISMATCH)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.ERR_PASSWDMISMATCH)
+)
 void onPassMismatch(ConnectService service)
 {
     if (service.registration != Progress.inProgress)
@@ -537,14 +569,16 @@ void onPassMismatch(ConnectService service)
 /++
     Upon being invited to a channel, joins it if the settings say we should.
  +/
-@(IRCEvent.Type.INVITE)
-@(ChannelPolicy.any)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.INVITE)
+    .channelPolicy(ChannelPolicy.any)
+)
 void onInvite(ConnectService service, const ref IRCEvent event)
 {
     if (!service.connectSettings.joinOnInvite)
     {
-        logger.logf("Invited, but %sjoinOnInvite%s is set to false.",
-            Tint.info, Tint.log);
+        enum pattern = "Invited, but %sjoinOnInvite%s is set to false.";
+        logger.logf(pattern, Tint.info, Tint.log);
         return;
     }
 
@@ -560,7 +594,9 @@ void onInvite(ConnectService service, const ref IRCEvent event)
     have to be requested (`CAP LS`), and the negotiations need to be ended
     (`CAP END`).
  +/
-@(IRCEvent.Type.CAP)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CAP)
+)
 void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
 {
     import lu.string : strippedRight;
@@ -583,6 +619,10 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
     {
     case "LS":
         import std.algorithm.iteration : splitter;
+        import std.array : Appender;
+
+        Appender!(string[]) capsToReq;
+        capsToReq.reserve(8);  // guesstimate
 
         foreach (immutable rawCap; content.splitter(' '))
         {
@@ -631,6 +671,11 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
                     goto case;
             }
 
+            case "account-tag":  // @account=blahblahj;
+            //case "echo-message":  // Outgoing messages are received as incoming
+            //case "solanum.chat/identify-msg":  // Tag just saying "identified"
+            //case "solanum.chat/realhost":   // Includes user's real host/ip
+
             case "account-notify":
             case "extended-join":
             //case "identify-msg":
@@ -647,7 +692,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
             //case "sts":
             //case "extended-join":  // dup
             //case "chghost":  // dup
-            case "cap-notify":
+            //case "cap-notify":  // Implicitly enabled by CAP LS 302
             //case "userhost-in-names":  // dup
             //case "multi-prefix":  // dup
             //case "away-notify":  // dup
@@ -657,7 +702,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
             case "znc.in/self-message":
                 // znc SELFCHAN/SELFQUERY events
 
-                immediate(service.state, "CAP REQ :" ~ cap, Yes.quiet);
+                capsToReq ~= cap;
                 ++service.requestedCapabilitiesRemaining;
                 break;
 
@@ -666,43 +711,59 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
                 break;
             }
         }
+
+        if (capsToReq.data.length)
+        {
+            import std.algorithm.iteration : joiner;
+            import std.conv : text;
+            immediate(service.state, text("CAP REQ :", capsToReq.data.joiner(" ")), Yes.quiet);
+        }
         break;
 
     case "ACK":
-        switch (content)
+        import std.algorithm.iteration : splitter;
+
+        foreach (cap; content.splitter(" "))
         {
-        case "sasl":
-            immutable hasKey = (service.state.connSettings.privateKeyFile.length ||
-                service.state.connSettings.certFile.length);
-            immutable mechanism = (service.state.connSettings.ssl && hasKey) ?
+            switch (cap)
+            {
+            case "sasl":
+                immutable hasKey = (service.state.connSettings.privateKeyFile.length ||
+                    service.state.connSettings.certFile.length);
+                immutable mechanism = (service.state.connSettings.ssl && hasKey) ?
                     "AUTHENTICATE EXTERNAL" :
                     "AUTHENTICATE PLAIN";
-            immediate(service.state, mechanism, Yes.quiet);
-            break;
+                immediate(service.state, mechanism, Yes.quiet);
+                break;
 
-        default:
-            //logger.warning("Unhandled capability ACK: ", content);
-            --service.requestedCapabilitiesRemaining;
-            break;
+            default:
+                //logger.warning("Unhandled capability ACK: ", cap);
+                --service.requestedCapabilitiesRemaining;
+                break;
+            }
         }
         break;
 
     case "NAK":
-        --service.requestedCapabilitiesRemaining;
+        import std.algorithm.iteration : splitter;
 
-        switch (content)
+        foreach (cap; content.splitter(" "))
         {
-        case "sasl":
-            if (service.connectSettings.exitOnSASLFailure)
+            switch (cap)
             {
-                quit(service.state, "SASL Negotiation Failure");
-                return;
-            }
-            break;
+            case "sasl":
+                if (service.connectSettings.exitOnSASLFailure)
+                {
+                    quit(service.state, "SASL Negotiation Failure");
+                    return;
+                }
+                break;
 
-        default:
-            //logger.warning("Unhandled capability NAK: ", content);
-            break;
+            default:
+                //logger.warning("Unhandled capability NAK: ", cap);
+                --service.requestedCapabilitiesRemaining;
+                break;
+            }
         }
         break;
 
@@ -730,7 +791,9 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
     Attempts to authenticate via SASL, with the EXTERNAL mechanism if a private
     key and/or certificate is set in the configuration file, and by PLAIN otherwise.
  +/
-@(IRCEvent.Type.SASL_AUTHENTICATE)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.SASL_AUTHENTICATE)
+)
 void onSASLAuthenticate(ConnectService service)
 {
     service.authentication = Progress.inProgress;
@@ -800,8 +863,8 @@ bool trySASLPlain(ConnectService service)
     }
     catch (Base64Exception e)
     {
-        logger.errorf("Could not authenticate: malformed password (%s%s%s)",
-            Tint.log, e.msg, Tint.error);
+        enum pattern = "Could not authenticate: malformed password (%s%s%s)";
+        logger.errorf(pattern, Tint.log, e.msg, Tint.error);
         version(PrintStacktraces) logger.trace(e.info);
         return false;
     }
@@ -816,7 +879,9 @@ bool trySASLPlain(ConnectService service)
     Flags the client as having finished registering and authing, allowing the
     main loop to pick it up and propagate it to all other plugins.
  +/
-@(IRCEvent.Type.RPL_SASLSUCCESS)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_SASLSUCCESS)
+)
 void onSASLSuccess(ConnectService service)
 {
     service.authentication = Progress.finished;
@@ -857,7 +922,9 @@ void onSASLSuccess(ConnectService service)
     Flags the client as having finished registering, allowing the main loop to
     pick it up and propagate it to all other plugins.
  +/
-@(IRCEvent.Type.ERR_SASLFAIL)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.ERR_SASLFAIL)
+)
 void onSASLFailure(ConnectService service)
 {
     if ((service.saslExternal == Progress.inProgress) && service.state.bot.password.length)
@@ -900,7 +967,9 @@ void onSASLFailure(ConnectService service)
     Additionally performs post-connect routines (authenticates if not already done,
     and send-after-connect).
  +/
-@(IRCEvent.Type.RPL_WELCOME)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WELCOME)
+)
 void onWelcome(ConnectService service, const ref IRCEvent event)
 {
     import std.algorithm.searching : endsWith;
@@ -913,7 +982,7 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
     if (event.target.nickname.length && (service.state.client.nickname != event.target.nickname))
     {
         service.state.client.nickname = event.target.nickname;
-        service.state.clientUpdated = true;
+        service.state.updates |= typeof(service.state.updates).client;
     }
 
     foreach (immutable unstripped; service.connectSettings.sendAfterConnect)
@@ -942,7 +1011,7 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
             // We already infer account by username on Twitch;
             // hostmasks mode makes no sense there. So disable it.
             service.state.settings.preferHostmasks = false;
-            service.state.settingsUpdated = true;
+            service.state.updates |= typeof(service.state.updates).settings;
         }
 
         static immutable IRCEvent.Type[2] endOfMotdEventTypes =
@@ -951,7 +1020,7 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
             IRCEvent.Type.ERR_NOMOTD,
         ];
 
-        void twitchWarningDg(const IRCEvent endOfMotdEvent)
+        void twitchWarningDg(const IRCEvent _)
         {
             version(TwitchSupport)
             {
@@ -969,14 +1038,14 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
                 if (service.state.server.daemon != IRCServer.Daemon.twitch) return;
 
                 service.state.settings.colouredOutgoing = false;
-                service.state.settingsUpdated = true;
+                service.state.updates |= typeof(service.state.updates).settings;
 
                 if (service.state.settings.prefix.beginsWith(".") ||
                     service.state.settings.prefix.beginsWith("/"))
                 {
-                    logger.warningf(`WARNING: A prefix of "%s%s%s" will *not* work on Twitch servers, ` ~
-                        `as %1$s.%3$s and %1$s/%3$s are reserved for Twitch's own commands.`,
-                        Tint.log, service.state.settings.prefix, Tint.warning);
+                    enum pattern =`WARNING: A prefix of "%s%s%s" will *not* work on Twitch servers, ` ~
+                        `as %1$s.%3$s and %1$s/%3$s are reserved for Twitch's own commands.`;
+                    logger.warningf(pattern, Tint.log, service.state.settings.prefix, Tint.warning);
                 }
             }
             else
@@ -1040,8 +1109,10 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
     successful or failed nick change. This so as to be squelching as little as possible.
  +/
 version(WithPrinterPlugin)
-@(IRCEvent.Type.SELFNICK)
-@(IRCEvent.Type.ERR_NICKNAMEINUSE)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.SELFNICK)
+    .onEvent(IRCEvent.Type.ERR_NICKNAMEINUSE)
+)
 void onSelfnickSuccessOrFailure(ConnectService service)
 {
     import kameloso.thread : ThreadMessage, busMessage;
@@ -1055,7 +1126,9 @@ void onSelfnickSuccessOrFailure(ConnectService service)
 /++
     Regains nickname if the holder of the one we wanted during registration quit.
  +/
-@(IRCEvent.Type.QUIT)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.QUIT)
+)
 void onQuit(ConnectService service, const ref IRCEvent event)
 {
     if ((service.state.server.daemon != IRCServer.Daemon.twitch) &&
@@ -1063,8 +1136,8 @@ void onQuit(ConnectService service, const ref IRCEvent event)
         (event.sender.nickname == service.state.client.origNickname))
     {
         // The regain Fiber will end itself when it is next triggered
-        logger.infof("Attempting to regain nickname %s%s%s...",
-            Tint.log, service.state.client.origNickname, Tint.info);
+        enum pattern = "Attempting to regain nickname %s%s%s...";
+        logger.infof(pattern, Tint.log, service.state.client.origNickname, Tint.info);
         raw(service.state, "NICK " ~ service.state.client.origNickname, No.quiet, No.background);
     }
 }
@@ -1077,8 +1150,10 @@ void onQuit(ConnectService service, const ref IRCEvent event)
     Do this then instead of on [IRCEvent.Type.RPL_WELCOME] for better timing,
     and to avoid having the message drown in MOTD.
  +/
-@(IRCEvent.Type.RPL_ENDOFMOTD)
-@(IRCEvent.Type.ERR_NOMOTD)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_ENDOFMOTD)
+    .onEvent(IRCEvent.Type.ERR_NOMOTD)
+)
 void onEndOfMotd(ConnectService service)
 {
     // Gather information about ourselves
@@ -1121,7 +1196,9 @@ void onEndOfMotd(ConnectService service)
 /++
     Catch information about ourselves (notably our `IDENT`) from `WHOIS` results.
  +/
-@(IRCEvent.Type.RPL_WHOISUSER)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WHOISUSER)
+)
 void onWHOISUser(ConnectService service, const ref IRCEvent event)
 {
     if (event.target.nickname != service.state.client.nickname) return;
@@ -1129,7 +1206,7 @@ void onWHOISUser(ConnectService service, const ref IRCEvent event)
     if (!service.state.client.ident.length)
     {
         service.state.client.ident = event.target.ident;
-        service.state.clientUpdated = true;
+        service.state.updates |= typeof(service.state.updates).client;
     }
 }
 
@@ -1140,7 +1217,9 @@ void onWHOISUser(ConnectService service, const ref IRCEvent event)
 
     Currently only RusNet is known to support codepages.
  +/
-@(IRCEvent.Type.RPL_ISUPPORT)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_ISUPPORT)
+)
 void onISUPPORT(ConnectService service, const ref IRCEvent event)
 {
     import lu.string : contains;
@@ -1162,7 +1241,9 @@ void onISUPPORT(ConnectService service, const ref IRCEvent event)
     [kameloso.kameloso.CoreSettings.endlesslyConnect] isn't set.
  +/
 version(TwitchSupport)
-@(IRCEvent.Type.RECONNECT)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RECONNECT)
+)
 void onReconnect(ConnectService service)
 {
     import std.concurrency : send;
@@ -1177,14 +1258,16 @@ void onReconnect(ConnectService service)
     Warns the user if the server does not seem to support WHOIS queries, suggesting
     that they enable hostmasks mode instead.
  +/
-@(IRCEvent.Type.ERR_UNKNOWNCOMMAND)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.ERR_UNKNOWNCOMMAND)
+)
 void onUnknownCommand(ConnectService service, const ref IRCEvent event)
 {
     if (service.serverSupportsWHOIS && !service.state.settings.preferHostmasks && (event.aux == "WHOIS"))
     {
         logger.error("Error: This server does not seem to support user accounts.");
-        logger.errorf("Consider enabling %sCore%s.%1$spreferHostmasks%2$s.",
-            Tint.log, Tint.warning);
+        enum pattern = "Consider enabling %sCore%s.%1$spreferHostmasks%2$s.";
+        logger.errorf(pattern, Tint.log, Tint.warning);
         logger.error("As it is, functionality will be greatly limited.");
         service.serverSupportsWHOIS = false;
     }
@@ -1242,10 +1325,10 @@ void register(ConnectService service)
     immutable serverWhitelisted = capabilityServerWhitelistSuffix
         .canFind!((a,b) => b.endsWith(a))(serverToLower) ||
         capabilityServerWhitelistPrefix
-        .canFind!((a,b) => b.beginsWith(a))(serverToLower);
+            .canFind!((a,b) => b.beginsWith(a))(serverToLower);
     immutable serverBlacklisted = !serverWhitelisted &&
         capabilityServerBlacklistSuffix
-        .canFind!((a,b) => b.endsWith(a))(serverToLower);
+            .canFind!((a,b) => b.endsWith(a))(serverToLower);
 
     if (!serverBlacklisted || service.state.settings.force)
     {
@@ -1296,7 +1379,7 @@ void register(ConnectService service)
         }
 
         if (!service.state.bot.pass.length) service.state.bot.pass = decoded;
-        service.state.botUpdated = true;
+        service.state.updates |= typeof(service.state.updates).bot;
 
         immediate(service.state, "PASS " ~ service.state.bot.pass, Yes.quiet);
 
@@ -1315,7 +1398,7 @@ void register(ConnectService service)
 
             // Make sure nickname is lowercase so we can rely on it as account name
             service.state.client.nickname = service.state.client.nickname.toLower;
-            service.state.clientUpdated = true;
+            service.state.updates |= typeof(service.state.updates).client;
         }
     }
 

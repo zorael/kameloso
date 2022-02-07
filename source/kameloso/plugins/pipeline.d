@@ -11,7 +11,7 @@
 
     See_Also:
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.pipeline;
 
@@ -82,7 +82,8 @@ public:
         brightTerminal = Whether or not the terminal has a bright background
             and colours should be adjusted to suit.
  +/
-void pipereader(shared IRCPluginState newState, const string filename,
+void pipereader(shared IRCPluginState newState,
+    const string filename,
     const Flag!"monochrome" monochrome,
     const Flag!"brightTerminal" brightTerminal)
 in (filename.length, "Tried to set up a pipereader with an empty filename")
@@ -204,9 +205,9 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
         }
 
         import kameloso.thread : busMessage;
-        import core.time : seconds;
+        import core.time : Duration;
 
-        static immutable instant = (-1).seconds;
+        static immutable instant = Duration.zero;
         bool halt;
 
         cast(void)receiveTimeout(instant,
@@ -311,7 +312,9 @@ in (filename.length, "Tried to create a FIFO with an empty filename")
 /++
     Initialises the fifo pipe and thus the purpose of the plugin, by leveraging [initPipe].
  +/
-@(IRCEvent.Type.RPL_WELCOME)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WELCOME)
+)
 void onWelcome(PipelinePlugin plugin)
 {
     plugin.initPipe();
@@ -401,26 +404,26 @@ in (!plugin.workerRunning, "Tried to double-initialise the pipereader")
 
         createFIFO(plugin.fifoFilename);
         plugin.fifoThread = spawn(&pipereader, cast(shared)plugin.state, plugin.fifoFilename,
-            (plugin.state.settings.monochrome ? Yes.monochrome : No.monochrome),
-            (plugin.state.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal));
+            cast(Flag!"monochrome")plugin.state.settings.monochrome,
+            cast(Flag!"brightTerminal")plugin.state.settings.brightTerminal);
         plugin.workerRunning = true;
     }
     catch (ReturnValueException e)
     {
-        logger.warningf("Failed to initialise Pipeline plugin: %s (%s%s%s returned %2$s%5$d%4$s)",
-            e.msg, Tint.log, e.command, Tint.warning, e.retval);
+        enum pattern = "Failed to initialise Pipeline plugin: %s (%s%s%s returned %2$s%5$d%4$s)";
+        logger.warningf(pattern, e.msg, Tint.log, e.command, Tint.warning, e.retval);
         //version(PrintStacktraces) logger.trace(e.info);
     }
     catch (FileExistsException e)
     {
-        logger.warningf("Failed to initialise Pipeline plugin: %s [%s%s%s]",
-            e.msg, Tint.log, e.filename, Tint.warning);
+        enum pattern = "Failed to initialise Pipeline plugin: %s [%s%s%s]";
+        logger.warningf(pattern, e.msg, Tint.log, e.filename, Tint.warning);
         //version(PrintStacktraces) logger.trace(e.info);
     }
     catch (FileTypeMismatchException e)
     {
-        logger.warningf("Failed to initialise Pipeline plugin: %s [%s%s%s]",
-            e.msg, Tint.log, e.filename, Tint.warning);
+        enum pattern = "Failed to initialise Pipeline plugin: %s [%s%s%s]";
+        logger.warningf(pattern, e.msg, Tint.log, e.filename, Tint.warning);
         //version(PrintStacktraces) logger.trace(e.info);
     }
 

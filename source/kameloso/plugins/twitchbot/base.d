@@ -1,6 +1,6 @@
 /++
     This is an example Twitch streamer bot. It supports querying uptime or how
-    long a streamer has been live, banned phrases, follower age queries, and
+    long a streamer has been live, follower age queries, and
     timered announcements. It can also emit some terminal bells on certain
     events, to draw attention.
 
@@ -10,8 +10,9 @@
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#twitchbot
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
+@("twitchbot")
 module kameloso.plugins.twitchbot.base;
 
 version(WithPlugins):
@@ -48,25 +49,22 @@ public:
     bool bellOnMessage = false;
 
     /// Whether or not to bell on important events, like subscriptions.
-    bool bellOnImportant = true;
-
-    /// Whether or not to filter URLs in user messages.
-    bool filterURLs = false;
-
-    /// Whether or not to employ phrase bans.
-    bool phraseBans = true;
-
-    /// Whether or not to match ban phrases case-sensitively.
-    bool phraseBansObeyCase = true;
-
-    /// Whether or not a link permit should be for one link only or for any number in 60 seconds.
-    bool permitOneLinkOnly = true;
+    bool bellOnImportant = false;
 
     /// Whether or not broadcasters are always implicitly class [dialect.defs.IRCUser.Class.staff].
     bool promoteBroadcasters = true;
 
-    /// Whether or not to use features dependent on the Twitch API.
-    bool enableAPIFeatures = true;
+    /++
+        Whether or not moderators are always implicitly (at least) class
+        [dialect.defs.IRCUser.Class.operator].
+     +/
+    bool promoteModerators = true;
+
+    /++
+        Whether or not VIPs are always implicitly (at least) class
+        [dialect.defs.IRCUser.Class.whitelist].
+     +/
+    bool promoteVIPs = true;
 
     version(Windows)
     {
@@ -94,92 +92,30 @@ public:
 }
 
 
-// onCommandPermit
-/++
-    Permits a user to post links for a hardcoded 60 seconds.
- +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.operator)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "permit")
-@Description("Permits a specified user to post links for a brief period of time.",
-    "$command [target user]")
-void onCommandPermit(TwitchBotPlugin plugin, const ref IRCEvent event)
-{
-    import kameloso.plugins.common.base : idOf, nameOf;
-    import dialect.common : isValidNickname;
-    import lu.string : stripped;
-    import std.format : format;
-
-    if (!plugin.twitchBotSettings.filterURLs)
-    {
-        chan(plugin.state, event.channel, "Links are not being filtered.");
-        return;
-    }
-
-    string slice = event.content.stripped;  // mutable
-    if (slice.length && (slice[0] == '@')) slice = slice[1..$];
-
-    if (!slice.length)
-    {
-        chan(plugin.state, event.channel, "Usage: %s%s [nickname]"
-            .format(plugin.state.settings.prefix, event.aux));
-        return;
-    }
-
-    auto room = event.channel in plugin.rooms;
-    assert(room, "Tried to handle permits on nonexistent room");
-
-    immutable nickname = idOf(plugin, slice);
-
-    if (!nickname.isValidNickname(plugin.state.server))
-    {
-        chan(plugin.state, event.channel, "Invalid streamer name.");
-        return;
-    }
-
-    immutable name = nameOf(plugin, nickname);
-
-    room.linkPermits[nickname] = event.time;
-
-    if (nickname in room.linkBans)
-    {
-        // Was or is timed out, remove it just in case
-        room.linkBans.remove(nickname);
-        chan(plugin.state, event.channel, "/untimeout " ~ nickname);
-    }
-
-    immutable pattern = plugin.twitchBotSettings.permitOneLinkOnly ?
-        "@%s, you are now allowed to post a link for 60 seconds." :
-        "@%s, you are now allowed to post links for 60 seconds.";
-
-    chan(plugin.state, event.channel, pattern.format(name));
-}
-
-
 // onImportant
 /++
     Bells on any important event, like subscriptions, cheers and raids, if the
     [TwitchBotSettings.bellOnImportant] setting is set.
  +/
-@Chainable
-@(IRCEvent.Type.TWITCH_SUB)
-@(IRCEvent.Type.TWITCH_SUBGIFT)
-@(IRCEvent.Type.TWITCH_CHEER)
-@(IRCEvent.Type.TWITCH_REWARDGIFT)
-@(IRCEvent.Type.TWITCH_GIFTCHAIN)
-@(IRCEvent.Type.TWITCH_BULKGIFT)
-@(IRCEvent.Type.TWITCH_SUBUPGRADE)
-@(IRCEvent.Type.TWITCH_CHARITY)
-@(IRCEvent.Type.TWITCH_BITSBADGETIER)
-@(IRCEvent.Type.TWITCH_RITUAL)
-@(IRCEvent.Type.TWITCH_EXTENDSUB)
-@(IRCEvent.Type.TWITCH_GIFTRECEIVED)
-@(IRCEvent.Type.TWITCH_PAYFORWARD)
-@(IRCEvent.Type.TWITCH_RAID)
-@(PermissionsRequired.ignore)
-@(ChannelPolicy.home)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.TWITCH_SUB)
+    .onEvent(IRCEvent.Type.TWITCH_SUBGIFT)
+    .onEvent(IRCEvent.Type.TWITCH_CHEER)
+    .onEvent(IRCEvent.Type.TWITCH_REWARDGIFT)
+    .onEvent(IRCEvent.Type.TWITCH_GIFTCHAIN)
+    .onEvent(IRCEvent.Type.TWITCH_BULKGIFT)
+    .onEvent(IRCEvent.Type.TWITCH_SUBUPGRADE)
+    .onEvent(IRCEvent.Type.TWITCH_CHARITY)
+    .onEvent(IRCEvent.Type.TWITCH_BITSBADGETIER)
+    .onEvent(IRCEvent.Type.TWITCH_RITUAL)
+    .onEvent(IRCEvent.Type.TWITCH_EXTENDSUB)
+    .onEvent(IRCEvent.Type.TWITCH_GIFTRECEIVED)
+    .onEvent(IRCEvent.Type.TWITCH_PAYFORWARD)
+    .onEvent(IRCEvent.Type.TWITCH_RAID)
+    .permissionsRequired(Permissions.ignore)
+    .channelPolicy(ChannelPolicy.home)
+    .chainable(true)
+)
 void onImportant(TwitchBotPlugin plugin)
 {
     import kameloso.terminal : TerminalToken;
@@ -199,8 +135,10 @@ void onImportant(TwitchBotPlugin plugin)
 
     Simply passes on execution to [handleSelfjoin].
  +/
-@(IRCEvent.Type.SELFJOIN)
-@(ChannelPolicy.home)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.SELFJOIN)
+    .channelPolicy(ChannelPolicy.home)
+)
 void onSelfjoin(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     return plugin.handleSelfjoin(event.channel);
@@ -219,7 +157,7 @@ void onSelfjoin(TwitchBotPlugin plugin, const ref IRCEvent event)
         plugin = The current [TwitchBotPlugin].
         channelName = The name of the channel we're supposedly joining.
  +/
-package void handleSelfjoin(TwitchBotPlugin plugin, const string channelName)
+void handleSelfjoin(TwitchBotPlugin plugin, const string channelName)
 in (channelName.length, "Tried to handle SELFJOIN with an empty channel string")
 {
     if (channelName in plugin.rooms) return;
@@ -241,196 +179,49 @@ in (channelName.length, "Tried to handle SELFJOIN with an empty channel string")
 }
 
 
+// onUserstate
+/++
+    Warns if we're not a moderator when we join a home channel.
+
+    "You will not get USERSTATE for other people. Only for yourself."
+    https://discuss.dev.twitch.tv/t/no-userstate-on-people-joining/11598
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.USERSTATE)
+    .channelPolicy(ChannelPolicy.home)
+)
+void onUserstate(const ref IRCEvent event)
+{
+    import lu.string : contains;
+
+    if (!event.target.badges.contains("moderator/") &&
+        !event.target.badges.contains("broadcaster/"))
+    {
+        import kameloso.common : Tint;
+
+        enum pattern = "The bot is not a moderator of home channel %s%s%s. " ~
+            "Consider elevating it to such to avoid being as rate-limited.";
+        logger.warningf(pattern, Tint.log, event.channel, Tint.warning);
+    }
+}
+
+
 // onSelfpart
 /++
     Removes a channel's corresponding [TwitchBotPlugin.Room] when we leave it.
 
     This resets all that channel's transient state.
  +/
-@(IRCEvent.Type.SELFPART)
-@(ChannelPolicy.home)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.SELFPART)
+    .channelPolicy(ChannelPolicy.home)
+)
 void onSelfpart(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
-    plugin.rooms.remove(event.channel);
-}
-
-
-// onCommandPhrase
-/++
-    Bans, unbans, lists or clears banned phrases for the current channel.
-
-    Changes are persistently saved to the [TwitchBotPlugin.bannedPhrasesFile] file.
- +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.operator)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "phrase")
-@Description("Adds, removes, lists or clears phrases from the list of banned such.",
-    "$command [ban|unban|list|clear]")
-void onCommandPhrase(TwitchBotPlugin plugin, const ref IRCEvent event)
-{
-    return handlePhraseCommand(plugin, event, event.channel);
-}
-
-
-// handlePhraseCommand
-/++
-    Bans, unbans, lists or clears banned phrases for the specified target channel.
-
-    Params:
-        plugin = The current [TwitchBotPlugin].
-        event = The triggering [dialect.defs.IRCEvent].
-        targetChannel = The channel we're handling phrase bans for.
- +/
-void handlePhraseCommand(TwitchBotPlugin plugin, const ref IRCEvent event, const string targetChannel)
-in (targetChannel.length, "Tried to handle phrases with an empty target channel string")
-{
-    import lu.string : contains, nom;
-    import std.format : format;
-
-    string slice = event.content;  // mutable
-    immutable verb = slice.nom!(Yes.inherit)(' ');
-
-    switch (verb)
+    if (auto room = event.channel in plugin.rooms)
     {
-    case "ban":
-    case "add":
-        if (!slice.length)
-        {
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: %s%s %s [phrase]"
-                .format(plugin.state.settings.prefix, event.aux, verb));
-            return;
-        }
-
-        plugin.bannedPhrasesByChannel[targetChannel] ~= slice;
-        saveResourceToDisk(plugin.bannedPhrasesByChannel, plugin.bannedPhrasesFile);
-        privmsg(plugin.state, event.channel, event.sender.nickname, "New phrase ban added.");
-        break;
-
-    case "unban":
-    case "del":
-        if (!slice.length)
-        {
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: %s%s %s [phrase index]"
-                .format(plugin.state.settings.prefix, event.aux, verb));
-            return;
-        }
-
-        if (auto phrases = targetChannel in plugin.bannedPhrasesByChannel)
-        {
-            import lu.string : stripped;
-            import std.algorithm.iteration : splitter;
-            import std.conv : ConvException, to;
-
-            if (slice == "*") goto case "clear";
-
-            try
-            {
-                ptrdiff_t i = slice.stripped.to!ptrdiff_t - 1;
-
-                if ((i >= 0) && (i < phrases.length))
-                {
-                    import std.algorithm.mutation : SwapStrategy, remove;
-                    *phrases = (*phrases).remove!(SwapStrategy.unstable)(i);
-                }
-                else
-                {
-                    privmsg(plugin.state, event.channel, event.sender.nickname,
-                        "Phrase ban index %s out of range. (max %d)"
-                        .format(slice, phrases.length));
-                    return;
-                }
-            }
-            catch (ConvException e)
-            {
-                privmsg(plugin.state, event.channel, event.sender.nickname,
-                    "Invalid phrase ban index: " ~ slice);
-                //version(PrintStacktraces) logger.trace(e);
-                return;
-            }
-
-            if (!phrases.length) plugin.bannedPhrasesByChannel.remove(targetChannel);
-            saveResourceToDisk(plugin.bannedPhrasesByChannel, plugin.bannedPhrasesFile);
-            privmsg(plugin.state, event.channel, event.sender.nickname, "Phrase ban removed.");
-        }
-        else
-        {
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "No banned phrases registered for this channel.");
-        }
-        break;
-
-    case "list":
-        if (const phrases = targetChannel in plugin.bannedPhrasesByChannel)
-        {
-            import lu.string : stripped;
-            import std.algorithm.comparison : min;
-
-            enum toDisplay = 10;
-            enum maxLineLength = 100;
-
-            ptrdiff_t start;
-
-            if (slice.length)
-            {
-                import std.conv : ConvException, to;
-
-                try
-                {
-                    start = slice.stripped.to!ptrdiff_t - 1;
-
-                    if ((start < 0) || (start >= phrases.length))
-                    {
-                        privmsg(plugin.state, event.channel, event.sender.nickname,
-                            "Invalid phrase index or out of bounds.");
-                        return;
-                    }
-                }
-                catch (ConvException e)
-                {
-                    privmsg(plugin.state, event.channel, event.sender.nickname,
-                        "Usage: %s%s %s [optional starting position number]"
-                        .format(plugin.state.settings.prefix, event.aux, verb));
-                    //version(PrintStacktraces) logger.trace(e.info);
-                    return;
-                }
-            }
-
-            size_t end = min(start+toDisplay, phrases.length);
-
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Currently banned phrases (%d-%d of %d)"
-                .format(start+1, end, phrases.length));
-
-            foreach (immutable i, const phrase; (*phrases)[start..end])
-            {
-                immutable maxLen = min(phrase.length, maxLineLength);
-                privmsg(plugin.state, event.channel, event.sender.nickname,
-                    "%d: %s%s".format(start+i+1, phrase[0..maxLen],
-                        (phrase.length > maxLen) ? " ...  [truncated]" : string.init));
-            }
-        }
-        else
-        {
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "No banned phrases registered for this channel.");
-        }
-        break;
-
-    case "clear":
-        plugin.bannedPhrasesByChannel.remove(targetChannel);
-        saveResourceToDisk(plugin.bannedPhrasesByChannel, plugin.bannedPhrasesFile);
-        privmsg(plugin.state, event.channel, event.sender.nickname, "All banned phrases cleared.");
-        break;
-
-    default:
-        privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Usage: %s%s [ban|unban|list|clear]"
-            .format(plugin.state.settings.prefix, event.aux));
-        break;
+        room.broadcast.active = false;  // In case there is a periodicalChattersDg running
+        plugin.rooms.remove(event.channel);
     }
 }
 
@@ -441,42 +232,21 @@ in (targetChannel.length, "Tried to handle phrases with an empty target channel 
 
     Changes are persistently saved to the [TwitchBotPlugin.timersFile] file.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.operator)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "timer")
-@Description("Adds, removes, lists or clears timered lines.",
-    "$command [add|del|list|clear]")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("timer")
+            .policy(PrefixPolicy.prefixed)
+            .description("Adds, removes, lists or clears timered lines.")
+            .syntax("$command [add|del|list|clear]")
+    )
+)
 void onCommandTimer(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     return handleTimerCommand(plugin, event, event.channel);
-}
-
-
-// onCommandEnableDisable
-/++
-    Toggles whether or not the bot should operate in this channel.
- +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.operator)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "enable")
-@BotCommand(PrefixPolicy.prefixed, "disable")
-@Description("Toggles the Twitch bot in the current channel.")
-void onCommandEnableDisable(TwitchBotPlugin plugin, const ref IRCEvent event)
-{
-    if (event.aux == "enable")
-    {
-        plugin.rooms[event.channel].enabled = true;
-        chan(plugin.state, event.channel, "Bot enabled!");
-    }
-    else /*if (event.aux == "disable")*/
-    {
-        plugin.rooms[event.channel].enabled = false;
-        chan(plugin.state, event.channel, "Bot disabled.");
-    }
 }
 
 
@@ -489,12 +259,17 @@ void onCommandEnableDisable(TwitchBotPlugin plugin, const ref IRCEvent event)
     The streamer's name is divined from the `plugin.state.users` associative
     array by looking at the entry for the nickname this channel corresponds to.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.ignore)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "uptime")
-@Description("Reports how long the streamer has been streaming.")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.anyone)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("uptime")
+            .policy(PrefixPolicy.prefixed)
+            .description("Reports how long the streamer has been streaming.")
+    )
+)
 void onCommandUptime(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     const room = event.channel in plugin.rooms;
@@ -513,12 +288,17 @@ void onCommandUptime(TwitchBotPlugin plugin, const ref IRCEvent event)
     The streamer's name is divined from the `plugin.state.users` associative
     array by looking at the entry for the nickname this channel corresponds to.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.operator)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "start")
-@Description("Marks the start of a broadcast.")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("start")
+            .policy(PrefixPolicy.prefixed)
+            .description("Marks the start of a broadcast.")
+    )
+)
 void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 {
     auto room = event.channel in plugin.rooms;
@@ -532,7 +312,7 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         }
         else
         {
-            import kameloso.plugins.common.base : nameOf;
+            import kameloso.plugins.common.misc : nameOf;
             immutable streamer = plugin.nameOf(event.channel[1..$]);
         }
 
@@ -592,12 +372,17 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 /++
     Marks the stop of a broadcast.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.operator)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "stop")
-@Description("Marks the stop of a broadcast.")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("stop")
+            .policy(PrefixPolicy.prefixed)
+            .description("Marks the end of a broadcast.")
+    )
+)
 void onCommandStop(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     auto room = event.channel in plugin.rooms;
@@ -633,8 +418,10 @@ void onCommandStop(TwitchBotPlugin plugin, const ref IRCEvent event)
     This is generally done as the last thing after a stream session, so it makes
     sense to automate [onCommandStop].
  +/
-@(ChannelPolicy.home)
-@(IRCEvent.Type.TWITCH_HOSTSTART)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.TWITCH_HOSTSTART)
+    .channelPolicy(ChannelPolicy.home)
+)
 void onAutomaticStop(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     return onCommandStop(plugin, event);
@@ -651,7 +438,8 @@ void onAutomaticStop(TwitchBotPlugin plugin, const ref IRCEvent event)
         room = The [TwitchBotPlugin.Room] of the channel.
         justNowEnded = Whether or not the stream ended just now.
  +/
-void reportStreamTime(TwitchBotPlugin plugin, const TwitchBotPlugin.Room room,
+void reportStreamTime(TwitchBotPlugin plugin,
+    const TwitchBotPlugin.Room room,
     const Flag!"justNowEnded" justNowEnded = No.justNowEnded)
 {
     import kameloso.common : timeSince;
@@ -665,7 +453,7 @@ void reportStreamTime(TwitchBotPlugin plugin, const TwitchBotPlugin.Room room,
     }
     else
     {
-        import kameloso.plugins.common.base : nameOf;
+        import kameloso.plugins.common.misc : nameOf;
         immutable streamer = plugin.nameOf(room.name[1..$]);
     }
 
@@ -755,170 +543,7 @@ void reportStreamTime(TwitchBotPlugin plugin, const TwitchBotPlugin.Room room,
 }
 
 
-// onLink
-/++
-    Parses a message to see if the message contains one or more URLs.
-
-    It uses a simple state machine in [kameloso.common.findURLs]. If the Webtitles
-    plugin has been compiled in, (version `WithWebtitlesPlugin`) it will try to
-    send them to it for lookups and reporting.
-
-    Operators, whitelisted and admin users are so far allowed to trigger this, as are
-    any user who has been given a temporary permit via [onCommandPermit].
-    Those without permission will have the message deleted and be served a timeout.
- +/
-@Chainable
-@(IRCEvent.Type.CHAN)
-@(PermissionsRequired.ignore)
-@(ChannelPolicy.home)
-void onLink(TwitchBotPlugin plugin, const ref IRCEvent event)
-{
-    import kameloso.common : findURLs;
-    import lu.string : beginsWith;
-    import std.algorithm.searching : canFind;
-    import std.format : format;
-
-    version(WithWebtitlesPlugin)
-    {
-        // Webtitles soft-disables itself on Twitch servers to allow us to filter links.
-        // It's still desirable to have their titles echoed however, when a link
-        // was allowed. So pass allowed links as bus messages to it.
-
-        void passToWebtitles(string[] urls)
-        {
-            import kameloso.plugins.common.base : EventURLs;
-            import kameloso.thread : ThreadMessage, busMessage;
-            import std.concurrency : send;
-
-            auto eventAndURLs = EventURLs(event, urls);
-
-            plugin.state.mainThread.send(ThreadMessage.BusMessage(),
-                "webtitles", busMessage(eventAndURLs));
-        }
-    }
-    else
-    {
-        // No Webtitles so just abort if we're not filtering
-        if (!plugin.twitchBotSettings.filterURLs) return;
-    }
-
-    string[] urls = findURLs(event.content);  // mutable so nom works
-    if (!urls.length) return;
-
-    version(WithWebtitlesPlugin)
-    {
-        if (!plugin.twitchBotSettings.filterURLs)
-        {
-            // Not filtering but Webtitles available; pass to it to emulate it
-            // not being soft-disabled.
-            return passToWebtitles(urls);
-        }
-    }
-
-    TwitchBotPlugin.Room* room;
-    bool allowed;
-
-    with (IRCUser.Class)
-    final switch (event.sender.class_)
-    {
-    case unset:
-    case blacklist:
-    case anyone:
-        room = event.channel in plugin.rooms;
-
-        if (!room)
-        {
-            // Race...
-            plugin.handleSelfjoin(event.channel);
-            room = event.channel in plugin.rooms;
-        }
-
-        if (const permitTimestamp = event.sender.nickname in room.linkPermits)
-        {
-            allowed = (event.time - *permitTimestamp) <= 60;
-
-            if (allowed && plugin.twitchBotSettings.permitOneLinkOnly)
-            {
-                // Reset permit since only one link was permitted
-                room.linkPermits.remove(event.sender.nickname);
-            }
-        }
-        break;
-
-    case whitelist:
-    case operator:
-    case staff:
-    case admin:
-        allowed = true;
-        break;
-    }
-
-    if (allowed)
-    {
-        version(WithWebtitlesPlugin)
-        {
-            // Pass to Webtitles if available
-            passToWebtitles(urls);
-        }
-
-        return;
-    }
-
-    static immutable int[3] durations = [ 5, 60, 3600 ];
-    static immutable int[3] gracePeriods = [ 300, 600, 7200 ];
-    static immutable string[3] messages =
-    [
-        "Stop posting links.",
-        "Really, no links!",
-        "Go cool off.",
-    ];
-
-    /*if (!room)
-    {
-        room = event.channel in plugin.rooms;
-
-        if (!room)
-        {
-            // Race...
-            plugin.handleSelfjoin(event.channel);
-            room = event.channel in plugin.rooms;
-        }
-    }*/
-
-    auto ban = event.sender.nickname in room.linkBans;
-
-    immediate(plugin.state, "PRIVMSG %s :/delete %s".format(event.channel, event.id));
-
-    if (ban)
-    {
-        immutable banEndTime = ban.timestamp + durations[ban.offense] + gracePeriods[ban.offense];
-
-        if (banEndTime > event.time)
-        {
-            ban.timestamp = event.time;
-            if (ban.offense < 2) ++ban.offense;
-        }
-        else
-        {
-            // Force a new ban
-            ban = null;
-        }
-    }
-
-    if (!ban)
-    {
-        TwitchBotPlugin.Room.Ban newBan;
-        newBan.timestamp = event.time;
-        room.linkBans[event.sender.nickname] = newBan;
-        ban = event.sender.nickname in room.linkBans;
-    }
-
-    chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %ds %s"
-        .format(event.sender.nickname, durations[ban.offense], messages[ban.offense]));
-}
-
-
-// onFollowAge
+// onCommandFollowAge
 /++
     Implements "Follow Age", or the ability to query the server how long you
     (or a specified user) have been a follower of the current channel.
@@ -926,17 +551,23 @@ void onLink(TwitchBotPlugin plugin, const ref IRCEvent event)
     Lookups are done asynchronously in subthreads.
  +/
 version(TwitchAPIFeatures)
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.ignore)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "followage")
-@Description("Queries the server for how long you have been a follower of the " ~
-    "current channel. Optionally takes a nickname parameter, to query for someone else.",
-    "$command [optional nickname]")
-void onFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.ignore)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("followage")
+            .policy(PrefixPolicy.prefixed)
+            .description("Queries the server for how long you have been a follower " ~
+                "of the current channel. Optionally takes a nickname parameter, " ~
+                "to query for someone else.")
+            .syntax("$command [optional nickname]")
+    )
+)
+void onCommandFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import lu.string : nom, stripped;
+    import lu.string : beginsWith, nom, stripped;
     import std.conv : to;
     import std.json : JSONValue;
     import core.thread : Fiber;
@@ -959,7 +590,8 @@ void onFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         }
         else
         {
-            immutable givenName = slice.nom!(Yes.inherit)(' ');
+            string givenName = slice.nom!(Yes.inherit)(' ');  // mutable
+            if (givenName.beginsWith('@')) givenName = givenName[1..$];
 
             if (const user = givenName in plugin.state.users)
             {
@@ -1101,8 +733,10 @@ void onFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     the display name of its broadcaster.
  +/
 version(TwitchAPIFeatures)
-@(IRCEvent.Type.ROOMSTATE)
-@(ChannelPolicy.home)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.ROOMSTATE)
+    .channelPolicy(ChannelPolicy.home)
+)
 void onRoomState(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import std.datetime.systime : Clock, SysTime;
@@ -1156,23 +790,34 @@ void onRoomState(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     Merely gives a link to their channel and echoes what game they last streamed.
  +/
 version(TwitchAPIFeatures)
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.operator)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "shoutout")
-@BotCommand(PrefixPolicy.prefixed, "so", Yes.hidden)
-@Description("Emits a shoutout to another streamer.", "$command [name of streamer]")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("shoutout")
+            .policy(PrefixPolicy.prefixed)
+            .description("Emits a shoutout to another streamer.")
+            .syntax("$command [name of streamer]")
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("so")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
+)
 void onCommandShoutout(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.plugins.common.base : idOf;
+    import kameloso.plugins.common.misc : idOf;
     import dialect.common : isValidNickname;
-    import lu.string : stripped;
+    import lu.string : beginsWith, stripped;
     import std.format : format;
     import std.json : JSONType, parseJSON;
 
     string slice = event.content.stripped;  // mutable
-    if (slice.length && (slice[0] == '@')) slice = slice[1..$];
+    if (slice.beginsWith('@')) slice = slice[1..$];
 
     if (!slice.length)
     {
@@ -1218,7 +863,7 @@ void onCommandShoutout(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 
         chan(plugin.state, event.channel,
             ("Shoutout to %s! Visit them at https://twitch.tv/%s!" ~ lastSeenPlayingPattern)
-            .format(broadcasterName, login, gameName));
+                .format(broadcasterName, login, gameName));
     }
 
     Fiber shoutoutFiber = new Fiber(&twitchTryCatchDg!shoutoutQueryDg, BufferSize.fiberStack);
@@ -1231,22 +876,17 @@ void onCommandShoutout(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     Performs various actions on incoming messages.
 
     * Bells on any message, if the [TwitchBotSettings.bellOnMessage] setting is set.
-    * Detects and deals with banned phrases.
     * Bumps the message counter for the channel, used by timers.
 
     Belling is useful with small audiences, so you don't miss messages.
-
-    Note: This is annotated [kameloso.plugins.common.core.Terminating] and must be
-    placed after all other handlers with these [dialect.defs.IRCEvent.Type] annotations.
-    This lets us know the banned phrase wasn't part of a command (as it would
-    otherwise not reach this point).
  +/
-@Terminating
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.EMOTE)
-@(PermissionsRequired.ignore)
-@(ChannelPolicy.home)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .onEvent(IRCEvent.Type.EMOTE)
+    .permissionsRequired(Permissions.ignore)
+    .channelPolicy(ChannelPolicy.home)
+)
 void onAnyMessage(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     if (plugin.twitchBotSettings.bellOnMessage)
@@ -1271,98 +911,25 @@ void onAnyMessage(TwitchBotPlugin plugin, const ref IRCEvent event)
     }
 
     ++room.messageCount;
-
-    with (IRCUser.Class)
-    final switch (event.sender.class_)
-    {
-    case unset:
-    case blacklist:
-    case anyone:
-        // Drop down, continue to phrase bans
-        break;
-
-    case whitelist:
-    case operator:
-    case staff:
-    case admin:
-        // Nothing more to do
-        return;
-    }
-
-    const bannedPhrases = event.channel in plugin.bannedPhrasesByChannel;
-    if (!bannedPhrases) return;
-
-    foreach (immutable phrase; *bannedPhrases)
-    {
-        import lu.string : contains;
-        import std.algorithm.searching : canFind;
-        import std.format : format;
-        import std.uni : asLowerCase;
-
-        // Try not to allocate two whole new strings
-        immutable match = plugin.twitchBotSettings.phraseBansObeyCase ?
-            event.content.contains(phrase) :
-            event.content.asLowerCase.canFind(phrase.asLowerCase);
-
-        if (!match) continue;
-
-        static immutable int[3] durations = [ 5, 60, 3600 ];
-        static immutable int[3] gracePeriods = [ 300, 600, 7200 ];
-
-        auto ban = event.sender.nickname in room.phraseBans;
-
-        immediate(plugin.state, "PRIVMSG %s :/delete %s".format(event.channel, event.id));
-
-        if (ban)
-        {
-            immutable banEndTime = ban.timestamp + durations[ban.offense] + gracePeriods[ban.offense];
-
-            if (banEndTime > event.time)
-            {
-                ban.timestamp = event.time;
-                if (ban.offense < 2) ++ban.offense;
-            }
-            else
-            {
-                // Force a new ban
-                ban = null;
-            }
-        }
-
-        if (!ban)
-        {
-            TwitchBotPlugin.Room.Ban newBan;
-            newBan.timestamp = event.time;
-            room.phraseBans[event.sender.nickname] = newBan;
-            ban = event.sender.nickname in room.phraseBans;
-        }
-
-        chan!(Yes.priority)(plugin.state, event.channel, "/timeout %s %ds"
-            .format(event.sender.nickname, durations[ban.offense]));
-        return;
-    }
 }
 
 
 // onEndOfMOTD
 /++
-    Populate the banned phrases array after we have successfully
+    Sets up various things after we have successfully
     logged onto the server.
 
     Has to be done at MOTD, as we only know whether we're on Twitch after
     RPL_MYINFO or so.
  +/
-@(IRCEvent.Type.RPL_ENDOFMOTD)
-@(IRCEvent.Type.ERR_NOMOTD)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_ENDOFMOTD)
+    .onEvent(IRCEvent.Type.ERR_NOMOTD)
+)
 void onEndOfMOTD(TwitchBotPlugin plugin)
 {
     import lu.json : JSONStorage, populateFromJSON;
     import std.typecons : Flag, No, Yes;
-
-    JSONStorage channelBannedPhrasesJSON;
-    channelBannedPhrasesJSON.load(plugin.bannedPhrasesFile);
-    plugin.bannedPhrasesByChannel.populateFromJSON(channelBannedPhrasesJSON);
-    plugin.bannedPhrasesByChannel = plugin.bannedPhrasesByChannel.rehash();
 
     // Timers use a specialised function
     plugin.populateTimers(plugin.timersFile);
@@ -1470,15 +1037,15 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                 import etc.c.curl : CurlError;
 
                 // Something is deeply wrong.
-                logger.errorf("Failed to validate Twitch API keys: %s (%s%s%s) (%2$s%5$s%4$s)",
-                    e.msg, Tint.log, e.error, Tint.error, curlErrorStrings[e.errorCode]);
+                enum pattern = "Failed to validate Twitch API keys: %s (%s%s%s) (%2$s%5$s%4$s)";
+                logger.errorf(pattern, e.msg, Tint.log, e.error, Tint.error, curlErrorStrings[e.errorCode]);
 
                 if (e.errorCode == CurlError.ssl_cacert)
                 {
                     // Peer certificate cannot be authenticated with given CA certificates
-                    logger.errorf("You may need to supply a CA bundle file " ~
-                        "(e.g. %scacert.pem%s) in the configuration file.",
-                        Tint.log, Tint.error);
+                    enum caBundlePattern = "You may need to supply a CA bundle file " ~
+                        "(e.g. %scacert.pem%s) in the configuration file.";
+                    logger.errorf(caBundlePattern, Tint.log, Tint.error);
                 }
 
                 logger.error("Disabling API features.");
@@ -1498,14 +1065,17 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
     Start the captive key generation routine at the earliest possible moment,
     which are the CAP events.
 
-    We can't do it in `start` since the calls to save and exit would go unheard,
-    as `start` happens before the main loop starts. It would then immediately
+    We can't do it in [start] since the calls to save and exit would go unheard,
+    as [start] happens before the main loop starts. It would then immediately
     fail to read if too much time has passed, and nothing would be saved.
  +/
 version(TwitchAPIFeatures)
-@(IRCEvent.Type.CAP)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CAP)
+)
 void onCAP(TwitchBotPlugin plugin)
 {
+    import kameloso.plugins.twitchbot.keygen;
     if (plugin.twitchBotSettings.keygen) return plugin.generateKey();
 }
 
@@ -1521,73 +1091,24 @@ void reload(TwitchBotPlugin plugin)
 
     if (plugin.state.server.daemon != IRCServer.Daemon.twitch) return;
 
-    JSONStorage channelBannedPhrasesJSON;
-    channelBannedPhrasesJSON.load(plugin.bannedPhrasesFile);
-    plugin.bannedPhrasesByChannel = typeof(plugin.bannedPhrasesByChannel).init;
-    plugin.bannedPhrasesByChannel.populateFromJSON(channelBannedPhrasesJSON);
-    plugin.bannedPhrasesByChannel = plugin.bannedPhrasesByChannel.rehash();
-
     plugin.timerDefsByChannel = typeof(plugin.timerDefsByChannel).init;
     plugin.populateTimers(plugin.timersFile);
 }
 
 
-// saveResourceToDisk
-/++
-    Saves the passed resource to disk, but in JSON format.
-
-    This is used with the associative arrays for banned phrases.
-
-    Example:
-    ---
-    plugin.bannedPhrasesByChannel["#channel"] ~= "kameloso";
-    plugin.bannedPhrasesByChannel["#channel"] ~= "hirrsteff";
-
-    saveResource(plugin.bannedPhrasesByChannel, plugin.bannedPhrasesFile);
-    ---
-
-    Params:
-        resource = The JSON-convertible resource to save.
-        filename = Filename of the file to write to.
- +/
-void saveResourceToDisk(Resource)(const Resource resource, const string filename)
-in (filename.length, "Tried to save resources to an empty filename")
-{
-    import lu.json : JSONStorage;
-    import std.json : JSONValue;
-
-    JSONStorage storage;
-
-    storage = JSONValue(resource);
-    storage.save(filename);
-}
-
-
 // initResources
 /++
-    Reads and writes the file of banned phrases and timers to disk, ensuring
+    Reads and writes the file of timers to disk, ensuring
     that they're there and properly formatted.
  +/
 void initResources(TwitchBotPlugin plugin)
 {
-    import kameloso.plugins.common.base : IRCPluginInitialisationException;
+    import kameloso.plugins.common.misc : IRCPluginInitialisationException;
     import lu.json : JSONStorage;
     import std.file : exists;
     import std.json : JSONException;
     import std.path : baseName;
     import std.stdio : File;
-
-    JSONStorage bannedPhrasesJSON;
-
-    try
-    {
-        bannedPhrasesJSON.load(plugin.bannedPhrasesFile);
-    }
-    catch (JSONException e)
-    {
-        version(PrintStacktraces) logger.trace(e);
-        throw new IRCPluginInitialisationException(plugin.bannedPhrasesFile.baseName ~ " may be malformed.");
-    }
 
     JSONStorage timersJSON;
 
@@ -1603,7 +1124,6 @@ void initResources(TwitchBotPlugin plugin)
 
     // Let other Exceptions pass.
 
-    bannedPhrasesJSON.save(plugin.bannedPhrasesFile);
     timersJSON.save(plugin.timersFile);
 }
 
@@ -1616,7 +1136,9 @@ void initResources(TwitchBotPlugin plugin)
     Cannot be done on [dialect.defs.IRCEvent.Type.RPL_WELCOME] as the server
     daemon isn't known by then.
  +/
-@(IRCEvent.Type.RPL_MYINFO)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_MYINFO)
+)
 void onMyInfo(TwitchBotPlugin plugin)
 {
     import kameloso.plugins.common.delayawait : delay;
@@ -1627,8 +1149,11 @@ void onMyInfo(TwitchBotPlugin plugin)
         import kameloso.common : nextMidnight;
         import std.datetime.systime : Clock;
 
-        // Schedule next prune to next midnight
-        long nextPrune = Clock.currTime.nextMidnight.toUnixTime;
+        version(TwitchAPIFeatures)
+        {
+            // Schedule next follow cache update to next midnight
+            long nextCacheUpdate = Clock.currTime.nextMidnight.toUnixTime;
+        }
 
         top:
         while (true)
@@ -1648,71 +1173,41 @@ void onMyInfo(TwitchBotPlugin plugin)
                 }
             }
 
-            immutable now = Clock.currTime;
-            immutable nowInUnix = now.toUnixTime;
-
-            // Early yield if we shouldn't clean up
-            if (nowInUnix < nextPrune)
+            version(TwitchAPIFeatures)
             {
-                delay(plugin, plugin.timerPeriodicity, Yes.yield);
-                continue top;
+                immutable now = Clock.currTime;
+                immutable nowInUnix = now.toUnixTime;
+
+                // Early yield if we shouldn't clean up
+                if (nowInUnix < nextCacheUpdate)
+                {
+                    delay(plugin, plugin.timerPeriodicity, Yes.yield);
+                    continue top;
+                }
+
+                nextCacheUpdate = now.nextMidnight.toUnixTime;
+
+                version(TwitchAPIFeatures)
+                {
+                    // Clear and re-cache follows once as often as we prune
+
+                    void cacheFollowsAnewDg()
+                    {
+                        foreach (immutable channelName, room; plugin.rooms)
+                        {
+                            room.follows = getFollows(plugin, room.id);
+                        }
+                    }
+
+                    Fiber cacheFollowsAnewFiber =
+                        new Fiber(&twitchTryCatchDg!cacheFollowsAnewDg, BufferSize.fiberStack);
+                    cacheFollowsAnewFiber.call();
+                }
             }
             else
             {
-                nextPrune = now.nextMidnight.toUnixTime;
-            }
-
-            // Walk through channels, prune stale bans and permits
-            foreach (immutable channelName, room; plugin.rooms)
-            {
-                static void pruneByTimestamp(T)(ref T aa, const long now, const uint gracePeriod)
-                {
-                    string[] garbage;
-
-                    foreach (immutable key, const entry; aa)
-                    {
-                        static if (is(typeof(entry) : long))
-                        {
-                            immutable maxEndTime = entry + gracePeriod;
-                        }
-                        else
-                        {
-                            immutable maxEndTime = entry.timestamp + gracePeriod;
-                        }
-
-                        if (now > maxEndTime)
-                        {
-                            garbage ~= key;
-                        }
-                    }
-
-                    foreach (immutable key; garbage)
-                    {
-                        aa.remove(key);
-                    }
-                }
-
-                pruneByTimestamp(room.linkBans, nowInUnix, 7200);
-                pruneByTimestamp(room.linkPermits, nowInUnix, 60);
-                pruneByTimestamp(room.phraseBans, nowInUnix, 7200);
-            }
-
-            version(TwitchAPIFeatures)
-            {
-                // Clear and re-cache follows once as often as we prune
-
-                void cacheFollowsAnewDg()
-                {
-                    foreach (immutable channelName, room; plugin.rooms)
-                    {
-                        if (!room.enabled) continue;
-                        room.follows = getFollows(plugin, room.id);
-                    }
-                }
-
-                Fiber cacheFollowsAnewFiber =
-                    new Fiber(&twitchTryCatchDg!cacheFollowsAnewDg, BufferSize.fiberStack);
-                cacheFollowsAnewFiber.call();
+                delay(plugin, plugin.timerPeriodicity, Yes.yield);
+                continue top;
             }
         }
     }
@@ -1724,9 +1219,7 @@ void onMyInfo(TwitchBotPlugin plugin)
 
 // start
 /++
-    Disables the bell if we're not running inside a terminal. Snapshots
-    [TwitchBotSettings.enableAPIFeatures] into [TwitchBotPlugin] so it can be
-    disabled without modifying settings.
+    Disables the bell if we're not running inside a terminal.
  +/
 void start(TwitchBotPlugin plugin)
 {
@@ -1736,11 +1229,6 @@ void start(TwitchBotPlugin plugin)
     {
         // Not a TTY so replace our bell string with an empty one
         plugin.bell = string.init;
-    }
-
-    version(TwitchAPIFeatures)
-    {
-        plugin.useAPIFeatures = plugin.twitchBotSettings.enableAPIFeatures;
     }
 }
 
@@ -1761,6 +1249,76 @@ void teardown(TwitchBotPlugin plugin)
         // It may not have been started if we're aborting very early.
         plugin.persistentWorkerTid.send(ThreadMessage.Teardown());
     }
+}
+
+
+// postprocess
+/++
+    Hijacks a reference to a [dialect.defs.IRCEvent] and modifies the sender and
+    target class based on their badges (and the current settings).
+ +/
+void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
+{
+    import std.algorithm.searching : canFind;
+
+    if (!event.sender.nickname.length || !event.channel.length) return;
+
+    version(PromoteTwitchBadgesInAllChannels) {}
+    else
+    {
+        if (!plugin.state.bot.homeChannels.canFind(event.channel)) return;
+    }
+
+    static void postprocessImpl(const TwitchBotPlugin plugin,
+        const ref IRCEvent event, ref IRCUser user)
+    {
+        import lu.string : contains;
+
+        if (user.class_ == IRCUser.Class.blacklist) return;
+
+        if (plugin.twitchBotSettings.promoteBroadcasters)
+        {
+            if ((user.class_ < IRCUser.Class.staff) &&
+                (user.nickname == event.channel[1..$]))
+            {
+                // User is broadcaster but is not registered as staff
+                user.class_ = IRCUser.Class.staff;
+                return;
+            }
+        }
+
+        if (plugin.twitchBotSettings.promoteModerators)
+        {
+            if ((user.class_ < IRCUser.Class.operator) &&
+                user.badges.contains("moderator/"))
+            {
+                // User is moderator but is not registered as at least operator
+                user.class_ = IRCUser.Class.operator;
+                return;
+            }
+        }
+
+        if (plugin.twitchBotSettings.promoteVIPs)
+        {
+            if ((user.class_ < IRCUser.Class.whitelist) &&
+                user.badges.contains("vip/"))
+            {
+                // User is VIP but is not registered as at least whitelist
+                user.class_ = IRCUser.Class.whitelist;
+                return;
+            }
+        }
+
+        // There is no "registered" list; just map subscribers to registered 1:1
+        if ((user.class_ < IRCUser.Class.registered) &&
+            user.badges.contains("subscriber/"))
+        {
+            user.class_ = IRCUser.Class.registered;
+        }
+    }
+
+    if (event.sender.badges.length) postprocessImpl(plugin, event, event.sender);
+    if (event.target.badges.length) postprocessImpl(plugin, event, event.target);
 }
 
 
@@ -1812,21 +1370,11 @@ package:
             }
         }
 
-        /// Aggregate of a ban action.
-        static struct Ban
-        {
-            long timestamp;  /// When this ban was triggered.
-            uint offense;  /// How many consecutive bans have been fired.
-        }
-
         /// Constructor taking a string (channel) name.
         this(const string name) @safe pure nothrow @nogc
         {
             this.name = name;
         }
-
-        /// Toggle of whether or not the bot should operate in this channel.
-        bool enabled = true;
 
         /// Name of the channel.
         string name;
@@ -1836,15 +1384,6 @@ package:
 
         /// ID of the currently ongoing vote, if any (otherwise 0).
         int voteInstance;
-
-        /// Phrase ban actions keyed by offending nickname.
-        Ban[string] phraseBans;
-
-        /// Link ban actions keyed by offending nickname.
-        Ban[string] linkBans;
-
-        /// Users permitted to post links (for a brief time).
-        long[string] linkPermits;
 
         /++
             A counter of how many messages we have seen in the channel.
@@ -1876,12 +1415,6 @@ package:
     /// Array of active bot channels' state.
     Room[string] rooms;
 
-    /// Associative array of banned phrases; phrases array keyed by channel.
-    string[][string] bannedPhrasesByChannel;
-
-    /// Filename of file with banned phrases.
-    @Resource string bannedPhrasesFile = "twitchphrases.json";
-
     /// Timer definition arrays, keyed by channel string.
     TimerDefinition[][string] timerDefsByChannel;
 
@@ -1892,7 +1425,7 @@ package:
         How often to check whether timers should fire, in seconds. A smaller
         number means better precision.
      +/
-    static immutable timerPeriodicity = 10.seconds;
+    static immutable timerPeriodicity = 5.seconds;
 
     /// [kameloso.terminal.TerminalToken.bell] as string, for use as bell.
     private enum bellString = ("" ~ cast(char)(TerminalToken.bell));
@@ -1987,96 +1520,6 @@ package:
         return ((state.server.daemon == IRCServer.Daemon.twitch) ||
             (state.server.daemon == IRCServer.Daemon.unset)) &&
             (twitchBotSettings.enabled || twitchBotSettings.keygen);
-    }
-
-
-    // onEvent
-    /++
-        Override [kameloso.plugins.common.core.IRCPluginImpl.onEvent] and inject a server check, so this
-        plugin does nothing on non-Twitch servers. Also filters [dialect.defs.IRCEvent.Type.CHAN]
-        events to only trigger on active channels (that have its [TwitchBotPlugin.Room.enabled]
-        set to true).
-
-        The function to call is [kameloso.plugins.common.core.IRCPluginImpl.onEventImpl].
-
-        Params:
-            origEvent = Parsed [dialect.defs.IRCEvent] to pass onto
-                [kameloso.plugins.common.core.IRCPluginImpl.onEventImpl]
-                after verifying we should process the event.
-     +/
-    override public void onEvent(const ref IRCEvent origEvent)
-    {
-        IRCEvent event = origEvent;
-
-        if (this.twitchBotSettings.promoteBroadcasters)
-        {
-            if (event.sender.nickname.length && event.channel.length &&
-                (event.sender.class_ < IRCUser.Class.staff) &&
-                (event.sender.nickname == event.channel[1..$]))
-            {
-                // Sender is broadcaster but is not registered as staff
-                event.sender.class_ = IRCUser.Class.staff;
-            }
-        }
-
-        if ((event.type == IRCEvent.Type.CHAN) || (event.type == IRCEvent.Type.SELFCHAN))
-        {
-            import lu.string : beginsWith;
-
-            immutable prefix = this.state.settings.prefix;
-
-            if (event.content.beginsWith(prefix) &&
-                (event.content.length > prefix.length))
-            {
-                // Specialcase prefixed "enable"
-                if (event.content[prefix.length..$] == "enable")
-                {
-                    // Always pass through
-                    return onEventImpl(event);
-                }
-                else
-                {
-                    // Only pass through if the channel is enabled
-                    if (const room = event.channel in rooms)
-                    {
-                        if (room.enabled) return onEventImpl(event);
-                    }
-                    return;
-                }
-            }
-            /*else if (event.content.beginsWith(this.state.client.nickname))
-            {
-                import kameloso.common : stripSeparatedPrefix;
-
-                immutable tail = event.content
-                    .stripSeparatedPrefix(this.state.client.nickname, Yes.demandSeparatingChars);
-
-                // Specialcase "nickname: enable"
-                if (tail == "enable")
-                {
-                    // Always pass through
-                    return onEventImpl(event);
-                }
-                else
-                {
-                    // Only pass through if the channel is enabled
-                    if (const room = event.channel in rooms)
-                    {
-                        if (room.enabled) return onEventImpl(event);
-                    }
-                }
-            }*/
-            else
-            {
-                // Normal non-command channel message
-                return onEventImpl(event);
-            }
-        }
-        else
-        {
-            // Other event
-            return onEventImpl(event);
-        }
     }
 
     mixin IRCPluginImpl;

@@ -8,7 +8,7 @@
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#quotes
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.quotes;
 
@@ -164,15 +164,25 @@ Quote getSpecificQuote(QuotesPlugin plugin, const string nickname, const size_t 
     channel the triggering event occurred in, alternatively in a private message
     if the request was sent in one such.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.whitelist)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "quote")
-@BotCommand(PrefixPolicy.prefixed, "addquote", Yes.hidden)
-@Description("Fetches and repeats a random quote of a supplied nickname, " ~
-    "or adds a new one.", "$command [nickname] [text if adding new quote]")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .permissionsRequired(Permissions.whitelist)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("quote")
+            .policy(PrefixPolicy.prefixed)
+            .description("Fetches and repeats a random quote of a supplied nickname, or adds a new one.")
+            .syntax("$command [nickname] [text if adding new quote]")
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("addquote")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
+)
 void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
 {
     return manageQuoteImpl(plugin, event, ManageQuoteAction.addOrReplay);
@@ -191,8 +201,10 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
         id = The specified nickname or (preferably) account.
         rawLine = The quote string to add.
  +/
-void addQuoteAndReport(QuotesPlugin plugin, const ref IRCEvent event,
-    const string id, const string rawLine)
+void addQuoteAndReport(QuotesPlugin plugin,
+    const ref IRCEvent event,
+    const string id,
+    const string rawLine)
 in (id.length, "Tried to add a quote for an empty user")
 in (rawLine.length, "Tried to add an empty quote")
 {
@@ -235,8 +247,8 @@ in (rawLine.length, "Tried to add an empty quote")
     }
     catch (JSONException e)
     {
-        logger.errorf("Could not add quote for %s%s%s: %1$s%4$s",
-            Tint.log, id, Tint.error, e.msg);
+        enum pattern = "Could not add quote for %s%s%s: %1$s%4$s";
+        logger.errorf(pattern, Tint.log, id, Tint.error, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
 }
@@ -254,8 +266,11 @@ in (rawLine.length, "Tried to add an empty quote")
         newText = Optional new text to assign to the quote index; implies
             a modification is requested, not a removal.
  +/
-void modQuoteAndReport(QuotesPlugin plugin, const ref IRCEvent event,
-    const string id, const size_t index, const string newText = string.init)
+void modQuoteAndReport(QuotesPlugin plugin,
+    const ref IRCEvent event,
+    const string id,
+    const size_t index,
+    const string newText = string.init)
 {
     import kameloso.irccolours : ircBold, ircColourByHash;
     import std.algorithm.mutation : SwapStrategy, remove;
@@ -319,8 +334,8 @@ void modQuoteAndReport(QuotesPlugin plugin, const ref IRCEvent event,
     }
     catch (JSONException e)
     {
-        logger.errorf("Could not remove quote for %s%s%s: %1$s%4$s",
-            Tint.log, id, Tint.error, e.msg);
+        enum pattern = "Could not remove quote for %s%s%s: %1$s%4$s";
+        logger.errorf(pattern, Tint.log, id, Tint.error, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
 }
@@ -339,7 +354,8 @@ void modQuoteAndReport(QuotesPlugin plugin, const ref IRCEvent event,
         The original line with the WeeChat timestamp and nickname sliced away,
         or as it was passed. No new string is ever allocated.
  +/
-string removeWeeChatHead(const string line, const string nickname,
+string removeWeeChatHead(const string line,
+    const string nickname,
     const string prefixes) pure @safe @nogc
 in (nickname.length, "Tried to remove WeeChat head for a nickname but the nickname was empty")
 {
@@ -458,13 +474,19 @@ unittest
     channel the triggering event occurred in, alternatively in a private message
     if the request was sent in one such.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.operator)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "delquote")
-@Description("Removes a quote from the quote database.", "$command [nickname] [quote index]")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("delquote")
+            .policy(PrefixPolicy.prefixed)
+            .description("Removes a quote from the quote database.")
+            .syntax("$command [nickname] [quote index]")
+    )
+)
 void onCommandDelQuote(QuotesPlugin plugin, const ref IRCEvent event)
 {
     manageQuoteImpl(plugin, event, ManageQuoteAction.del);
@@ -481,14 +503,19 @@ void onCommandDelQuote(QuotesPlugin plugin, const ref IRCEvent event)
     channel the triggering event occurred in, alternatively in a private message
     if the request was sent in one such.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.operator)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "modquote")
-@Description("Modifies a quote's text in the quote database.",
-    "$command [nickname] [quote index] [next quote text]")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("modquote")
+            .policy(PrefixPolicy.prefixed)
+            .description("Modifies a quote's text in the quote database.")
+            .syntax("$command [nickname] [quote index] [new quote text]")
+    )
+)
 void onCommandModQuote(QuotesPlugin plugin, const ref IRCEvent event)
 {
     manageQuoteImpl(plugin, event, ManageQuoteAction.mod);
@@ -507,16 +534,18 @@ void onCommandModQuote(QuotesPlugin plugin, const ref IRCEvent event)
         event = The triggering [dialect.defs.IRCEvent].
         action = What action to take; add (or replay), modify or remove.
  +/
-void manageQuoteImpl(QuotesPlugin plugin, const /*ref*/ IRCEvent event,
+void manageQuoteImpl(QuotesPlugin plugin,
+    const /*ref*/ IRCEvent event,
     const ManageQuoteAction action)
 {
     import kameloso.irccolours : ircBold, ircColourByHash;
     import dialect.common : isValidNickname, stripModesign, toLowerCase;
-    import lu.string : nom, stripped, strippedLeft;
+    import lu.string : beginsWith, nom, stripped, strippedLeft;
     import std.format : format;
     import std.json : JSONException;
 
     string slice = event.content.stripped;  // mutable
+    if (slice.beginsWith('@')) slice = slice[1..$];
 
     void sendUsage()
     {
@@ -551,7 +580,7 @@ void manageQuoteImpl(QuotesPlugin plugin, const /*ref*/ IRCEvent event,
     {
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
-            import kameloso.plugins.common.base : nameOf;
+            import kameloso.plugins.common.misc : nameOf;
 
             if ((slice == event.channel[1..$]) ||
                 (slice == plugin.nameOf(event.channel[1..$])))
@@ -602,7 +631,7 @@ void manageQuoteImpl(QuotesPlugin plugin, const /*ref*/ IRCEvent event,
     {
         void onSuccess(const IRCUser replyUser)
         {
-            import kameloso.plugins.common.base : idOf;
+            import kameloso.plugins.common.misc : idOf;
             import std.conv : ConvException, to;
 
             immutable id = idOf(replyUser).toLowerCase(plugin.state.server.caseMapping);
@@ -722,7 +751,8 @@ void manageQuoteImpl(QuotesPlugin plugin, const /*ref*/ IRCEvent event,
     }
     catch (JSONException e)
     {
-        logger.errorf("Could not quote %s%s%s: %1$s%4$s", Tint.log, specified, Tint.error, e.msg);
+        enum pattern = "Could not quote %s%s%s: %1$s%4$s";
+        logger.errorf(pattern, Tint.log, specified, Tint.error, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
 }
@@ -735,14 +765,25 @@ void manageQuoteImpl(QuotesPlugin plugin, const /*ref*/ IRCEvent event,
 
     Does not perform account lookups.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.operator)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "mergequotes")
-@BotCommand(PrefixPolicy.prefixed, "mergequote", Yes.hidden)
-@Description("Merges the quotes of two users.", "$command [source] [target]")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("mergequotes")
+            .policy(PrefixPolicy.prefixed)
+            .description("Merges the quotes of two users.")
+            .syntax("$command [source] [target]")
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("mergequote")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
+)
 void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.irccolours : ircBold, ircColourByHash;
@@ -818,7 +859,9 @@ void reload(QuotesPlugin plugin)
 /++
     Initialises the passed [QuotesPlugin]. Loads the quotes from disk.
  +/
-@(IRCEvent.Type.RPL_WELCOME)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WELCOME)
+)
 void onWelcome(QuotesPlugin plugin)
 {
     plugin.quotes.load(plugin.quotesFile);
@@ -842,7 +885,7 @@ void initResources(QuotesPlugin plugin)
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common.base : IRCPluginInitialisationException;
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
         import std.path : baseName;
 
         version(PrintStacktraces) logger.trace(e);

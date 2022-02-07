@@ -10,7 +10,7 @@
 
     See_Also:
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.services.chanqueries;
 
@@ -65,7 +65,9 @@ enum ChannelState : ubyte
     Checks an internal list of channels once every [dialect.defs.IRCEvent.Type.PING],
     and if one we inhabit hasn't been queried, queries it.
  +/
-@(IRCEvent.Type.PING)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.PING)
+)
 void startChannelQueries(ChanQueriesService service)
 {
     import core.thread : Fiber;
@@ -314,8 +316,8 @@ void startChannelQueries(ChanQueriesService service)
                             // Cannot WHOIS on this server (assume)
                             logger.error("Error: This server does not seem " ~
                                 "to support user accounts?");
-                            logger.errorf("Consider enabling %sCore%s.%1$spreferHostmasks%2$s.",
-                                Tint.log, Tint.warning);
+                            enum pattern = "Consider enabling %sCore%s.%1$spreferHostmasks%2$s.";
+                            logger.errorf(pattern, Tint.log, Tint.warning);
                             service.serverSupportsWHOIS = false;
                             return;
                         }
@@ -360,8 +362,10 @@ void startChannelQueries(ChanQueriesService service)
     Adds a channel we join to the internal [ChanQueriesService.channels] list of
     channel states.
  +/
-@(IRCEvent.Type.SELFJOIN)
-@omniscientChannelPolicy
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.SELFJOIN)
+    .channelPolicy(omniscientChannelPolicy)
+)
 void onSelfjoin(ChanQueriesService service, const ref IRCEvent event)
 {
     service.channelStates[event.channel] = ChannelState.unset;
@@ -373,9 +377,11 @@ void onSelfjoin(ChanQueriesService service, const ref IRCEvent event)
     Removes a channel we part from the internal [ChanQueriesService.channels]
     list of channel states.
  +/
-@(IRCEvent.Type.SELFPART)
-@(IRCEvent.Type.SELFKICK)
-@omniscientChannelPolicy
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.SELFPART)
+    .onEvent(IRCEvent.Type.SELFKICK)
+    .channelPolicy(omniscientChannelPolicy)
+)
 void onSelfpart(ChanQueriesService service, const ref IRCEvent event)
 {
     service.channelStates.remove(event.channel);
@@ -388,8 +394,10 @@ void onSelfpart(ChanQueriesService service, const ref IRCEvent event)
 
     We do this so we know not to query it later. Mostly cosmetic.
  +/
-@(IRCEvent.Type.RPL_TOPIC)
-@omniscientChannelPolicy
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_TOPIC)
+    .channelPolicy(omniscientChannelPolicy)
+)
 void onTopic(ChanQueriesService service, const ref IRCEvent event)
 {
     service.channelStates[event.channel] |= ChannelState.topicKnown;
@@ -402,8 +410,10 @@ void onTopic(ChanQueriesService service, const ref IRCEvent event)
     unless one is already running. Additionally don't do it before it has been
     done at least once, after login.
  +/
-@(IRCEvent.Type.RPL_ENDOFNAMES)
-@omniscientChannelPolicy
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_ENDOFNAMES)
+    .channelPolicy(omniscientChannelPolicy)
+)
 void onEndOfNames(ChanQueriesService service)
 {
     if (!service.querying && service.queriedAtLeastOnce)
@@ -417,7 +427,9 @@ void onEndOfNames(ChanQueriesService service)
 /++
     After successful connection, start a delayed channel query on all channels.
  +/
-@(IRCEvent.Type.RPL_MYINFO)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_MYINFO)
+)
 void onMyInfo(ChanQueriesService service)
 {
     import kameloso.thread : CarryingFiber;

@@ -8,7 +8,7 @@
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#chatbot
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.chatbot;
 
@@ -45,15 +45,31 @@ import std.typecons : Flag, No, Yes;
 
     If it was sent in a query, respond in a private message in kind.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.anyone)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "say")
-@BotCommand(PrefixPolicy.prefixed, "säg", Yes.hidden)
-@BotCommand(PrefixPolicy.prefixed, "echo", Yes.hidden)
-@Description("Repeats text to the channel the event was sent to.", "$command [text to repeat]")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .permissionsRequired(Permissions.anyone)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("say")
+            .policy(PrefixPolicy.prefixed)
+            .description("Repeats text to the channel the event was sent to.")
+            .syntax("$command [text to repeat]")
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("säg")
+            .policy(PrefixPolicy.nickname)
+            .hidden(true)
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("echo")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
+)
 void onCommandSay(ChatbotPlugin plugin, const ref IRCEvent event)
 {
     immutable message = event.content.length ?
@@ -72,14 +88,24 @@ void onCommandSay(ChatbotPlugin plugin, const ref IRCEvent event)
     it back to the channel in which the triggering event happened, or in a query
     if it was a private message.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.anyone)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "8ball")
-@BotCommand(PrefixPolicy.prefixed, "eightball")
-@Description("Implements 8ball. Randomises a vague yes/no response.")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .permissionsRequired(Permissions.anyone)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("8ball")
+            .policy(PrefixPolicy.prefixed)
+            .description("Implements 8ball. Randomises a vague yes/no response.")
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("eightball")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
+)
 void onCommand8ball(ChatbotPlugin plugin, const ref IRCEvent event)
 {
     import std.format : format;
@@ -111,7 +137,6 @@ void onCommand8ball(ChatbotPlugin plugin, const ref IRCEvent event)
     ];
 
     immutable reply = eightballAnswers[uniform(0, eightballAnswers.length)];
-
     privmsg(plugin.state, event.channel, event.sender.nickname, reply);
 }
 
@@ -122,13 +147,19 @@ void onCommand8ball(ChatbotPlugin plugin, const ref IRCEvent event)
 
     Defers to the [worker] subthread.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.anyone)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "bash")
-@Description("Fetch a random or specified bash.org quote.", "$command [optional bash quote number]")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .permissionsRequired(Permissions.anyone)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("bash")
+            .policy(PrefixPolicy.prefixed)
+            .description("Fetch a random or specified bash.org quote.")
+            .syntax("$command [optional bash quote number]")
+    )
+)
 void onCommandBash(ChatbotPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.thread : ThreadMessage;
@@ -138,7 +169,7 @@ void onCommandBash(ChatbotPlugin plugin, const ref IRCEvent event)
 
     // Defer all work to the worker thread
     spawn(&worker, cast(shared)plugin.state, event,
-        (plugin.state.settings.colouredOutgoing ? Yes.colouredOutgoing : No.colouredOutgoing));
+        cast(Flag!"colouredOutgoing")plugin.state.settings.colouredOutgoing);
 }
 
 
@@ -156,7 +187,8 @@ void onCommandBash(ChatbotPlugin plugin, const ref IRCEvent event)
         colouredOutgoing = Whether or not to tint messages going to the server
             with mIRC colouring.
  +/
-void worker(shared IRCPluginState sState, const ref IRCEvent event,
+void worker(shared IRCPluginState sState,
+    const ref IRCEvent event,
     const Flag!"colouredOutgoing" colouredOutgoing)
 {
     import kameloso.constants : BufferSize, KamelosoInfo, Timeout;
@@ -273,11 +305,11 @@ void worker(shared IRCPluginState sState, const ref IRCEvent event,
 
     - http://bash.org/?4281
  +/
-@Terminating
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.anyone)
-@(ChannelPolicy.home)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.anyone)
+    .channelPolicy(ChannelPolicy.home)
+)
 void onDance(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.constants : BufferSize;
@@ -295,20 +327,9 @@ void onDance(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
     }
     else if (event.content.length > (dancePos+5))
     {
+        import std.algorithm.comparison : among;
         immutable trailing = event.content[dancePos+5];
-
-        switch (trailing)
-        {
-        case ' ':
-        case '!':
-        case '.':
-        case '?':
-            // Drop down
-            break;
-
-        default:
-            return;
-        }
+        if (!trailing.among!(' ', '!', '.', '?')) return;
     }
 
     // Should dance. Stagger it a bit with a second in between.

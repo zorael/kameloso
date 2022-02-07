@@ -25,7 +25,7 @@ version(unittest)
 shared static this()
 {
     // This is technically before settings have been read...
-    logger = new KamelosoLogger(No.monochrome, No.brightTerminal);
+    logger = new KamelosoLogger(No.monochrome, No.brightTerminal, No.headless);
 
     // settings needs instantiating now.
     settings = new kameloso.kameloso.CoreSettings;
@@ -64,13 +64,16 @@ KamelosoLogger logger;
     Params:
         monochrome = Whether the terminal is set to monochrome or not.
         bright = Whether the terminal has a bright background or not.
+        headless = Whether the terminal is headless or not.
  +/
-void initLogger(const Flag!"monochrome" monochrome,
-    const Flag!"brightTerminal" bright)
+void initLogger(
+    const Flag!"monochrome" monochrome,
+    const Flag!"brightTerminal" bright,
+    const Flag!"headless" headless)
 out (; (logger !is null), "Failed to initialise logger")
 {
     import kameloso.logger : KamelosoLogger;
-    logger = new KamelosoLogger(monochrome, bright);
+    logger = new KamelosoLogger(monochrome, bright, headless);
     Tint.monochrome = monochrome;
 }
 
@@ -108,7 +111,8 @@ void printVersionInfo(const Flag!"colours" colours = Yes.colours) @safe
     immutable logtint = colours ? Tint.log : string.init;
     immutable infotint = colours ? Tint.info : string.init;
 
-    writefln("%skameloso IRC bot v%s, built with %s (%s) on %s%s",
+    enum versionPattern = "%skameloso IRC bot v%s, built with %s (%s) on %s%s";
+    writefln(versionPattern,
         logtint,
         cast(string)KamelosoInfo.version_,
         cast(string)KamelosoInfo.compiler,
@@ -116,7 +120,8 @@ void printVersionInfo(const Flag!"colours" colours = Yes.colours) @safe
         cast(string)KamelosoInfo.built,
         Tint.off);
 
-    writefln("$ git clone %s%s.git%s",
+    enum gitClonePattern = "$ git clone %s%s.git%s";
+    writefln(gitClonePattern,
         infotint,
         cast(string)KamelosoInfo.source,
         Tint.off);
@@ -339,7 +344,8 @@ unittest
         sink = Output buffer sink to write to.
  +/
 void timeSinceInto(uint numUnits = 7, uint truncateUnits = 0, Sink)
-    (const Duration signedDuration, auto ref Sink sink,
+    (const Duration signedDuration,
+    auto ref Sink sink,
     const Flag!"abbreviate" abbreviate = No.abbreviate,
     const Flag!"roundUp" roundUp = Yes.roundUp) pure
 if (isOutputRange!(Sink, char[]))
@@ -367,7 +373,7 @@ if (isOutputRange!(Sink, char[]))
         static assert(0, pattern.format(truncateUnits));
     }
 
-    immutable duration = signedDuration < 0.seconds ? -signedDuration : signedDuration;
+    immutable duration = signedDuration < Duration.zero ? -signedDuration : signedDuration;
 
     alias units = AliasSeq!("weeks", "days", "hours", "minutes", "seconds");
     enum daysInAMonth = 30;  // The real average is 30.42 but we get unintuitive results.
@@ -470,7 +476,7 @@ if (isOutputRange!(Sink, char[]))
 
     // -------------------------------------------------------------------------
 
-    if (signedDuration < 0.seconds)
+    if (signedDuration < Duration.zero)
     {
         sink.put('-');
     }
@@ -727,7 +733,7 @@ unittest
     sink.reserve(64);  // workaround for formattedWrite < 2.076
 
     {
-        immutable dur = 0.seconds;
+        immutable dur = Duration.zero;
         dur.timeSinceInto(sink);
         assert((sink.data == "0 seconds"), sink.data);
         sink.clear();
@@ -915,7 +921,8 @@ unittest
     Returns:
         A string with the passed duration expressed in natural English language.
  +/
-string timeSince(uint numUnits = 7, uint truncateUnits = 0)(const Duration duration,
+string timeSince(uint numUnits = 7, uint truncateUnits = 0)
+    (const Duration duration,
     const Flag!"abbreviate" abbreviate = No.abbreviate,
     const Flag!"roundUp" roundUp = Yes.roundUp) pure
 {
@@ -1079,7 +1086,8 @@ unittest
     Returns:
         The passed line with the `prefix` sliced away.
  +/
-string stripSeparatedPrefix(const string line, const string prefix,
+string stripSeparatedPrefix(const string line,
+    const string prefix,
     const Flag!"demandSeparatingChars" demandSep = Yes.demandSeparatingChars) pure @nogc
 in (prefix.length, "Tried to strip separated prefix but no prefix was given")
 {

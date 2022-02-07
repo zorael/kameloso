@@ -6,7 +6,7 @@
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#automode
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.automode;
 
@@ -74,7 +74,7 @@ void initResources(AutomodePlugin plugin)
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common.base : IRCPluginInitialisationException;
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
         import std.path : baseName;
 
         version(PrintStacktraces) logger.trace(e);
@@ -100,11 +100,13 @@ void initResources(AutomodePlugin plugin)
     manual checks to see if the user is in a home channel we're in. Otherwise
     there's nothing for the bot to do.
  +/
-@(IRCEvent.Type.ACCOUNT)
-@(IRCEvent.Type.RPL_WHOISACCOUNT)
-@(IRCEvent.Type.RPL_WHOISREGNICK)
-@(IRCEvent.Type.RPL_WHOISUSER)
-@(PermissionsRequired.ignore)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.ACCOUNT)
+    .onEvent(IRCEvent.Type.RPL_WHOISACCOUNT)
+    .onEvent(IRCEvent.Type.RPL_WHOISREGNICK)
+    .onEvent(IRCEvent.Type.RPL_WHOISUSER)
+    .permissionsRequired(Permissions.ignore)
+)
 void onAccountInfo(AutomodePlugin plugin, const ref IRCEvent event)
 {
     // In case of self WHOIS results, don't automode ourselves
@@ -163,9 +165,11 @@ void onAccountInfo(AutomodePlugin plugin, const ref IRCEvent event)
     apply, so there's little sense in doing it here as well. Just pass the
     arguments and let it look things up.
  +/
-@(IRCEvent.Type.JOIN)
-@(PermissionsRequired.anyone)
-@(ChannelPolicy.home)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.JOIN)
+    .permissionsRequired(Permissions.anyone)
+    .channelPolicy(ChannelPolicy.home)
+)
 void onJoin(AutomodePlugin plugin, const ref IRCEvent event)
 {
     if (event.sender.account.length)
@@ -185,8 +189,10 @@ void onJoin(AutomodePlugin plugin, const ref IRCEvent event)
         nickname = String nickname of the user to apply modes to.
         account = String account of the user, to look up definitions for.
  +/
-void applyAutomodes(AutomodePlugin plugin, const string channelName,
-    const string nickname, const string account)
+void applyAutomodes(AutomodePlugin plugin,
+    const string channelName,
+    const string nickname,
+    const string account)
 in (channelName.length, "Tried to apply automodes to an empty channel string")
 in (nickname.length, "Tried to apply automodes to an empty nickname")
 in (account.length, "Tried to apply automodes to an empty account")
@@ -226,9 +232,9 @@ in (account.length, "Tried to apply automodes to an empty account")
 
     if (!channel.ops.canFind(plugin.state.client.nickname))
     {
-        logger.logf("Could not apply %s+%s%s %1$s%4$s%3$s in %1$s%5$s%3$s " ~
-            "because we are not an operator in the channel.",
-            Tint.info, missingModes, Tint.log, nickname, channelName);
+        enum pattern = "Could not apply %s+%s%s %1$s%4$s%3$s in %1$s%5$s%3$s " ~
+            "because we are not an operator in the channel.";
+        logger.logf(pattern, Tint.info, missingModes, Tint.log, nickname, channelName);
         return;
     }
 
@@ -269,12 +275,18 @@ unittest
     Lists current automodes for a user in the current channel, clears them,
     or adds new ones depending on the verb passed.
  +/
-@(IRCEvent.Type.CHAN)
-@(PermissionsRequired.operator)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "automode")
-@Description("Adds, lists or removes automode definitions for the current channel.",
-    "$command [add|list|clear] [account/nickname] [mode]")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("automode")
+            .policy(PrefixPolicy.prefixed)
+            .description("Adds, lists or removes automode definitions for the current channel.")
+            .syntax("$command [add|list|clear] [account/nickname] [mode]")
+    )
+)
 void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 {
     import dialect.common : isValidNickname;
@@ -295,6 +307,8 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 
         immutable result = line.splitInto(nickname, mode);
         if (result != SplitResults.match) goto default;
+
+        if (nickname.beginsWith('@')) nickname = nickname[1..$];
 
         if (!nickname.isValidNickname(plugin.state.server))
         {
@@ -333,7 +347,8 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 
     case "clear":
     case "del":
-        immutable nickname = line;
+        string nickname = line;  // mutable
+        if (nickname.beginsWith('@')) nickname = nickname[1..$];
 
         if (!nickname.length) goto default;
 
@@ -389,8 +404,11 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
         channelName = The channel the automode should play out in.
         mode = The mode string, when adding a new automode.
  +/
-void modifyAutomode(AutomodePlugin plugin, const Flag!"add" add, const string nickname,
-    const string channelName, const string mode = string.init)
+void modifyAutomode(AutomodePlugin plugin,
+    const Flag!"add" add,
+    const string nickname,
+    const string channelName,
+    const string mode = string.init)
 in ((!add || mode.length), "Tried to add an empty automode")
 {
     import kameloso.plugins.common.mixins : WHOISFiberDelegate;
@@ -443,11 +461,17 @@ in ((!add || mode.length), "Tried to add an empty automode")
 /++
     Triggers a WHOIS of the user invoking it with bot commands.
  +/
-@(IRCEvent.Type.CHAN)
-@(PermissionsRequired.ignore)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "op")
-@Description("Forces the bot to attempt to apply automodes.")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.ignore)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("op")
+            .policy(PrefixPolicy.prefixed)
+            .description("Forces the bot to attempt to apply automodes.")
+    )
+)
 void onCommandOp(AutomodePlugin plugin, const ref IRCEvent event)
 {
     if (event.sender.account.length)
@@ -466,7 +490,9 @@ void onCommandOp(AutomodePlugin plugin, const ref IRCEvent event)
 /++
     Populate automodes array after we have successfully logged onto the server.
  +/
-@(IRCEvent.Type.RPL_WELCOME)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WELCOME)
+)
 void onMyInfo(AutomodePlugin plugin)
 {
     import lu.json : JSONStorage, populateFromJSON;
@@ -483,8 +509,10 @@ void onMyInfo(AutomodePlugin plugin)
 /++
     Applies automodes in a channel upon being given operator privileges.
  +/
-@(IRCEvent.Type.MODE)
-@(ChannelPolicy.home)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.MODE)
+    .channelPolicy(ChannelPolicy.home)
+)
 void onMode(AutomodePlugin plugin, const ref IRCEvent event)
 {
     import std.algorithm.searching : canFind;

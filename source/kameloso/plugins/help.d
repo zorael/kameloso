@@ -6,7 +6,7 @@
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#help
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.help;
 
@@ -43,7 +43,7 @@ import dialect.defs;
     Plugins don't know about other plugins; the only thing they know of the
     outside world is the thread ID of the main thread ID (stored in
     [kameloso.plugins.common.core.IRCPluginState,mainThread]). As such, we can't easily query
-    each plugin for their [kameloso.plugins.common.core.BotCommand]-annotated functions.
+    each plugin for their [kameloso.plugins.common.core.IRCEventHandler.Command]-annotated functions.
 
     To work around this we construct an array of
     `kameloso.thread.CarryingFiber!(kameloso.plugins.common.core.IRCPlugin)`s and send it
@@ -55,44 +55,43 @@ import dialect.defs;
     Once we have the list we format it nicely and send it back to the requester,
     which we remember since we saved the original [dialect.defs.IRCEvent].
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.anyone)
-@BotCommand(PrefixPolicy.prefixed, "help")
-@Description("Shows a list of all available commands.", "$command [plugin] [command]")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .permissionsRequired(Permissions.anyone)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("help")
+            .policy(PrefixPolicy.prefixed)
+            .description("Shows a list of all available commands.")
+            .syntax("$command [plugin] [command]")
+    )
+)
 void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.irccolours : ircBold;
-    import kameloso.thread : CarryingFiber, ThreadMessage;
+    import kameloso.thread : ThreadMessage;
     import std.concurrency : send;
 
-    /// Get non-hidden command keys for a plugin.
-    static string[] getUnhiddenCommandKeys(const IRCPlugin thisPlugin)
+    static IRCPlugin.CommandMetadata[string] filterHiddenCommands(IRCPlugin.CommandMetadata[string] aa)
     {
-        import std.algorithm.iteration : filter, map;
-        import std.algorithm.sorting : sort;
-        import std.array : array;
+        import std.algorithm.iteration : filter;
+        import std.array : assocArray, byPair;
 
-        return thisPlugin.commands
-            .byKeyValue
-            .filter!(kv => !kv.value.hidden)
-            .map!(kv => kv.key)
-            .array
-            .sort
-            .array;
+        return aa
+            .byPair
+            .filter!(pair => !pair[1].hidden)
+            .assocArray;
     }
 
-    void dg()
+    void dg(IRCPlugin.CommandMetadata[string][string] allPluginCommands)
     {
+        import kameloso.irccolours : ircBold;
         import lu.string : beginsWith, contains, nom;
+        import std.algorithm.sorting : sort;
+        import std.array : array;
         import std.format : format;
         import std.typecons : No, Yes;
-        import core.thread : Fiber;
-
-        auto thisFiber = cast(CarryingFiber!(IRCPlugin[]))(Fiber.getThis);
-        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
-        const plugins = thisFiber.payload;
 
         IRCEvent mutEvent = event;  // mutable
         if (plugin.helpSettings.repliesInQuery) mutEvent.channel = string.init;
@@ -112,11 +111,12 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
                     return;
                 }
 
-                foreach (p; plugins)
+                foreach (immutable pluginName, pluginCommands; allPluginCommands)
                 {
-                    if (const command = specifiedCommand in p.commands)
+                    if (const command = specifiedCommand in pluginCommands)
                     {
-                        plugin.sendCommandHelp(p, mutEvent, specifiedCommand, command.desc);
+                        plugin.sendCommandHelp(pluginName, mutEvent, specifiedCommand,
+                            command.description, command.syntax);
                         return;
                     }
                 }
@@ -135,13 +135,12 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
                 immutable specifiedPlugin = slice.nom!(Yes.decode)(' ');
                 immutable specifiedCommand = slice;
 
-                foreach (p; plugins)
+                if (const pluginCommands = specifiedPlugin in allPluginCommands)
                 {
-                    if (p.name != specifiedPlugin) continue;
-
-                    if (const command = specifiedCommand in p.commands)
+                    if (const command = specifiedCommand in *pluginCommands)
                     {
-                        plugin.sendCommandHelp(p, mutEvent, specifiedCommand, command.desc);
+                        plugin.sendCommandHelp(specifiedPlugin, mutEvent, specifiedCommand,
+                            command.description, command.syntax);
                     }
                     else
                     {
@@ -153,26 +152,26 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
 
                         privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, message);
                     }
-
-                    return;
                 }
+                else
+                {
+                    immutable message = plugin.state.settings.colouredOutgoing ?
+                        "No such plugin: " ~ specifiedPlugin.ircBold :
+                        "No such plugin: " ~ specifiedPlugin;
 
-                immutable message = plugin.state.settings.colouredOutgoing ?
-                    "No such plugin: " ~ specifiedPlugin.ircBold :
-                    "No such plugin: " ~ specifiedPlugin;
-
-                privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, message);
+                    privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, message);
+                }
             }
             else
             {
                 // Just one word; print a specified plugin's commands
-                foreach (p; plugins)
+                immutable specifiedPlugin = event.content;
+
+                if (auto pluginCommands = specifiedPlugin in allPluginCommands)
                 {
-                    if (p.name != mutEvent.content)
-                    {
-                        continue;
-                    }
-                    else if (!p.commands.length)
+                    const nonhiddenCommands = filterHiddenCommands(*pluginCommands);
+
+                    if (!nonhiddenCommands.length)
                     {
                         immutable message = plugin.state.settings.colouredOutgoing ?
                             "No commands available for plugin " ~ mutEvent.content.ircBold :
@@ -184,21 +183,23 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
 
                     enum width = 12;
                     enum pattern = "* %-*s %-([%s]%| %)";
-                    const keys = getUnhiddenCommandKeys(p);
+                    const keys = nonhiddenCommands.keys.sort.array;
 
                     immutable message = plugin.state.settings.colouredOutgoing ?
-                        pattern.format(width, p.name.ircBold, keys) :
-                        pattern.format(width, p.name, keys);
+                        pattern.format(width, specifiedPlugin.ircBold, keys) :
+                        pattern.format(width, specifiedPlugin, keys);
 
                     privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, message);
                     return;
                 }
+                else
+                {
+                    immutable message = plugin.state.settings.colouredOutgoing ?
+                        "No such plugin: " ~ mutEvent.content.ircBold :
+                        "No such plugin: " ~ mutEvent.content;
 
-                immutable message = plugin.state.settings.colouredOutgoing ?
-                    "No such plugin: " ~ mutEvent.content.ircBold :
-                    "No such plugin: " ~ mutEvent.content;
-
-                privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, message);
+                    privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, message);
+                }
             }
         }
         else
@@ -218,17 +219,19 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
             privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, banner);
             privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, "Available bot commands per plugin:");
 
-            foreach (p; plugins)
+            foreach (immutable pluginName, pluginCommands; allPluginCommands)
             {
-                if (!p.commands.length) continue;  // command-less plugin/service
+                const nonhiddenCommands = filterHiddenCommands(pluginCommands);
+
+                if (!nonhiddenCommands.length) continue;
 
                 enum width = 12;
                 enum pattern = "* %-*s %-([%s]%| %)";
-                const keys = getUnhiddenCommandKeys(p);
+                const keys = nonhiddenCommands.keys.sort.array;
 
                 immutable message = plugin.state.settings.colouredOutgoing ?
-                    pattern.format(width, p.name.ircBold, keys) :
-                    pattern.format(width, p.name, keys);
+                    pattern.format(width, pluginName.ircBold, keys) :
+                    pattern.format(width, pluginName, keys);
 
                 privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, message);
             }
@@ -236,21 +239,17 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
             enum pattern = "Use %s [%s] [%s] for information about a command.";
             enum colouredLine = pattern.format("help".ircBold,
                 "plugin".ircBold, "command".ircBold);
+            enum uncolouredLine = "Use help [plugin] [command] for information about a command.";
 
             immutable message = plugin.state.settings.colouredOutgoing ?
-                colouredLine :
-                "Use help [plugin] [command] for information about a command.";
+                colouredLine : uncolouredLine;
 
             privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, message);
         }
     }
 
-    import kameloso.constants : BufferSize;
-
-    auto fiber = new CarryingFiber!(IRCPlugin[])(&dg, BufferSize.fiberStack);
-    plugin.state.mainThread.send(ThreadMessage.PeekPlugins(), cast(shared)fiber);
+    plugin.state.mainThread.send(ThreadMessage.PeekCommands(), cast(shared)&dg);
 }
-
 
 // sendCommandHelp
 /++
@@ -258,14 +257,19 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
 
     Params:
         plugin = The current [HelpPlugin].
-        otherPlugin = The plugin that hosts the command we're to send the help text for.
+        otherPluginName = The name of the plugin that hosts the command we're to
+            send the help text for.
         event = The triggering [dialect.defs.IRCEvent].
         command = String of the command we're to send help text for (sans prefix).
-        description = The [kameloso.plugins.common.core.Description] that anotates
-            the command's function.
+        description = The description text that the event handler function is annotated with.
+        syntax = The declared syntax of the command.
  +/
-void sendCommandHelp(HelpPlugin plugin, const IRCPlugin otherPlugin,
-    const ref IRCEvent event, const string command, const Description description)
+void sendCommandHelp(HelpPlugin plugin,
+    const string otherPluginName,
+    const ref IRCEvent event,
+    const string command,
+    const string description,
+    const string syntax)
 {
     import kameloso.irccolours : ircBold;
     import std.conv : text;
@@ -274,29 +278,31 @@ void sendCommandHelp(HelpPlugin plugin, const IRCPlugin otherPlugin,
     enum pattern = "[%s] %s: %s";
 
     immutable message = plugin.state.settings.colouredOutgoing ?
-        pattern.format(otherPlugin.name.ircBold, command.ircBold, description.line) :
-        pattern.format(otherPlugin.name, command, description.line);
+        pattern.format(otherPluginName.ircBold, command.ircBold, description) :
+        pattern.format(otherPluginName, command, description);
 
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
 
-    if (description.syntax.length)
+    if (syntax.length)
     {
         import lu.string : beginsWith;
         import std.array : replace;
 
-        immutable udaSyntax = description.syntax
+        immutable udaSyntax = syntax
+            .replace("$command", command)
             .replace("$nickname", plugin.state.client.nickname)
-            .replace("$command", command);
+            .replace("$prefix", plugin.state.settings.prefix);
 
         // Prepend the prefix to non-PrefixPolicy.nickname commands
-        immutable prefixedSyntax = description.syntax.beginsWith("$nickname") ?
-            udaSyntax : plugin.state.settings.prefix ~ udaSyntax;
+        immutable prefixedSyntax =
+            (syntax.beginsWith("$nickname") || syntax.beginsWith("$prefix")) ?
+                udaSyntax : plugin.state.settings.prefix ~ udaSyntax;
 
-        immutable syntax = plugin.state.settings.colouredOutgoing ?
+        immutable usage = plugin.state.settings.colouredOutgoing ?
             text("Usage".ircBold, ": ", prefixedSyntax) :
             text("Usage: ", prefixedSyntax);
 
-        privmsg(plugin.state, event.channel, event.sender.nickname, syntax);
+        privmsg(plugin.state, event.channel, event.sender.nickname, usage);
     }
 }
 

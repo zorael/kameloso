@@ -7,7 +7,7 @@
     import std.concurrency;
 
     mainThread.send(ThreadMessage.Sendline(), "Message to send to server");
-    mainThread.send(ThreadMessage.Pong(), "irc.freenode.net");
+    mainThread.send(ThreadMessage.Pong(), "irc.libera.chat");
     mainThread.send(ThreadMessage.TerminalOutput.writeln, "writeln this for me please");
     mainThread.send(ThreadMessage.BusMessage(), "header", busMessage("payload"));
 
@@ -153,11 +153,15 @@ struct ThreadMessage
     static struct Save {}
 
     /++
-        Concurrency message asking for a reference to the arrays of
-        [kameloso.plugins.common.core.IRCPlugin]s in the current
-        [kameloso.kameloso.Kameloso] instance's `plugin` array.
+        Concurrency message asking for an associative array of a description of
+        all plugins' commands.
      +/
-    static struct PeekPlugins {}
+    static struct PeekCommands {}
+
+    /++
+        Concurrency message askin to apply an expression to change a setting of a plugin.
+     +/
+    static struct ChangeSetting {}
 
     /// Concurrency message asking plugins to "reload".
     static struct Reload {}
@@ -255,17 +259,20 @@ unittest
         auto msg = busMessage("asdf");
         auto asCast = cast(BusMessage!string)msg;
         assert((msg !is null), "Incorrectly cast message: " ~ typeof(asCast).stringof);
+        asCast = null;  // silence dscanner
     }
     {
-        auto msg = busMessage(12345);
+        auto msg = busMessage(123_456);
         auto asCast = cast(BusMessage!int)msg;
         assert((msg !is null), "Incorrectly cast message: " ~ typeof(asCast).stringof);
+        asCast = null;  // silence dscanner
     }
     {
         struct Foo {}
         auto msg = busMessage(Foo());
         auto asCast = cast(BusMessage!Foo)msg;
         assert((msg !is null), "Incorrectly cast message: " ~ typeof(asCast).stringof);
+        asCast = null;  // silence dscanner
     }
 }
 
@@ -403,7 +410,7 @@ void exhaustMessages()
     do
     {
         notEmpty = receiveTimeout(almostInstant,
-            (Variant v) scope {}
+            (Variant _) scope {}
         );
     }
     while (notEmpty);
@@ -414,7 +421,7 @@ unittest
 {
     import std.concurrency : receiveTimeout, send, thisTid;
     import std.variant : Variant;
-    import core.time : seconds;
+    import core.time : Duration;
 
     foreach (immutable i; 0..10)
     {
@@ -423,8 +430,8 @@ unittest
 
     exhaustMessages();
 
-    immutable receivedSomething = receiveTimeout((-1).seconds,
-        (Variant v) {},
+    immutable receivedSomething = receiveTimeout(Duration.zero,
+        (Variant _) {},
     );
 
     assert(!receivedSomething);

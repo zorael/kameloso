@@ -22,7 +22,7 @@
  string[] guestChannels         ["#d"](1)
 
 -- IRCServer
-   string address                "irc.freenode.net"(16)
+   string address                "irc.libera.chat"(16)
    ushort port                    6667
 */
     ---
@@ -170,7 +170,7 @@ if ((Things.length > 0) && allSatisfy!(isAggregateType, Things))
             if (!kameloso.common.settings.monochrome)
             {
                 formatObjectImpl!(all, Yes.coloured)(outbuffer,
-                    (kameloso.common.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal),
+                    cast(Flag!"brightTerminal")kameloso.common.settings.brightTerminal,
                     thing, widths.type+1, widths.name);
                 put = true;
             }
@@ -232,7 +232,9 @@ alias printObject = printObjects;
  +/
 void formatObjects(Flag!"all" all = No.all,
     Flag!"coloured" coloured = Yes.coloured, Sink, Things...)
-    (auto ref Sink sink, const Flag!"brightTerminal" bright, auto ref Things things)
+    (auto ref Sink sink,
+    const Flag!"brightTerminal" bright,
+    auto ref Things things)
 if ((Things.length > 0) && allSatisfy!(isAggregateType, Things) && isOutputRange!(Sink, char[]))
 {
     alias widths = Widths!(all, Things);
@@ -273,8 +275,11 @@ alias formatObject = formatObjects;
  +/
 private void formatObjectImpl(Flag!"all" all = No.all,
     Flag!"coloured" coloured = Yes.coloured, Sink, Thing)
-    (auto ref Sink sink, const Flag!"brightTerminal" bright, auto ref Thing thing,
-    const uint typewidth, const uint namewidth)
+    (auto ref Sink sink,
+    const Flag!"brightTerminal" bright,
+    auto ref Thing thing,
+    const uint typewidth,
+    const uint namewidth)
 if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 {
     static if (coloured)

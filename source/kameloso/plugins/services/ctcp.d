@@ -7,7 +7,7 @@
 
     See_Also:
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.services.ctcp;
 
@@ -30,16 +30,18 @@ import std.typecons : Flag, No, Yes;
     instead of having five different functions each dealing with one.
     Either design works; both end up with a switch.
  +/
-//@(IRCEvent.Type.CTCP_SLOTS)  // We don't really need to handle those
-@(IRCEvent.Type.CTCP_VERSION)
-@(IRCEvent.Type.CTCP_FINGER)
-@(IRCEvent.Type.CTCP_SOURCE)
-@(IRCEvent.Type.CTCP_PING)
-@(IRCEvent.Type.CTCP_TIME)
-@(IRCEvent.Type.CTCP_USERINFO)
-@(IRCEvent.Type.CTCP_DCC)
-@(IRCEvent.Type.CTCP_AVATAR)
-@(IRCEvent.Type.CTCP_LAG)
+@(IRCEventHandler()
+    //.onEvent(IRCEvent.Type.CTCP_SLOTS)  // We don't really need to handle those
+    .onEvent(IRCEvent.Type.CTCP_VERSION)
+    .onEvent(IRCEvent.Type.CTCP_FINGER)
+    .onEvent(IRCEvent.Type.CTCP_SOURCE)
+    .onEvent(IRCEvent.Type.CTCP_PING)
+    .onEvent(IRCEvent.Type.CTCP_TIME)
+    .onEvent(IRCEvent.Type.CTCP_USERINFO)
+    .onEvent(IRCEvent.Type.CTCP_DCC)
+    .onEvent(IRCEvent.Type.CTCP_AVATAR)
+    .onEvent(IRCEvent.Type.CTCP_LAG)
+)
 void onCTCPs(CTCPService service, const ref IRCEvent event)
 {
     import kameloso.constants : KamelosoInfo;
@@ -206,7 +208,8 @@ void onCTCPs(CTCPService service, const ref IRCEvent event)
         import dialect.common : I = IRCControlCharacter;
         immutable target = event.sender.isServer ?
             event.sender.address: event.sender.nickname;
-        raw(service.state, "NOTICE %s :%c%s%2$c".format(target, cast(char)I.ctcp, line), Yes.quiet);
+        enum pattern = "NOTICE %s :%c%s%2$c";
+        raw(service.state, format(pattern, target, cast(char)I.ctcp, line), Yes.quiet);
     }
 }
 
@@ -236,7 +239,9 @@ unittest
     that begin with `CTCP_`, at compile-time. As such, as long as we name any
     new such types `CTCP_SOMETHING`, this list will always be correct.
  +/
-@(IRCEvent.Type.CTCP_CLIENTINFO)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CTCP_CLIENTINFO)
+)
 void onCTCPClientinfo(CTCPService service, const ref IRCEvent event)
 {
     import dialect.common : IRCControlCharacter;

@@ -6,9 +6,14 @@ import kameloso.plugins.common;
 import kameloso.messaging;
 import dialect.defs;
 
-@(IRCEvent.Type.CHAN)          // This function should be automatically called on incoming channel messages
-@(PermissionsRequired.ignore)  // ...sent by anyone...
-@BotCommand("hello")           // ...saying "!hello"
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)  // This function should be called on channel messages
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("hello")        // ...with the contents "!hello"
+            .description("Says hello.")
+    )
+)
 void onCommandHello(HelloPlugin plugin, const ref IRCEvent event)
 {
     chan(plugin.state, event.channel, "Hello World!");

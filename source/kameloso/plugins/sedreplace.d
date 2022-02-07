@@ -29,7 +29,7 @@
 
     See_Also:
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.sedreplace;
 
@@ -114,7 +114,8 @@ struct Line
     Returns:
         Original line with the changes the replace pattern incurred.
  +/
-string sedReplace(const string line, const string expr,
+string sedReplace(const string line,
+    const string expr,
     const Flag!"relaxSyntax" relaxSyntax) @safe pure nothrow
 in (line.length, "Tried to `sedReplace` an empty line")
 in ((expr.length >= 5), "Tried to `sedReplace` with an invalid-length expression")
@@ -221,7 +222,9 @@ unittest
         The passed line with the relevant bits replaced, or as is if the expression
         didn't apply.
  +/
-string sedReplaceImpl(char char_)(const string line, const string expr,
+string sedReplaceImpl(char char_)
+    (const string line,
+    const string expr,
     const Flag!"relaxSyntax" relaxSyntax)
 in (line.length, "Tried to `sedReplaceImpl` on an empty line")
 in (expr.length, "Tried to `sedReplaceImpl` with an empty expression")
@@ -374,10 +377,11 @@ unittest
     Parses a channel message and looks for any sed-replace expressions therein,
     to apply on the previous message.
  +/
-@Terminating
-@(IRCEvent.Type.CHAN)
-@(PermissionsRequired.ignore)
-@(ChannelPolicy.home)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.ignore)
+    .channelPolicy(ChannelPolicy.home)
+)
 void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
 {
     import lu.string : beginsWith, stripped;
@@ -434,7 +438,7 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
                     }
 
                     immutable result = line.content.sedReplace(event.content,
-                        (plugin.sedReplaceSettings.relaxSyntax ? Yes.relaxSyntax : No.relaxSyntax));
+                        cast(Flag!"relaxSyntax")plugin.sedReplaceSettings.relaxSyntax);
 
                     if ((result == line.content) || !result.length) continue;
 
@@ -470,7 +474,9 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
 
     This is to prevent the lists from becoming huge over time.
  +/
-@(IRCEvent.Type.RPL_WELCOME)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WELCOME)
+)
 void onWelcome(SedReplacePlugin plugin)
 {
     import kameloso.plugins.common.delayawait : delay;
@@ -495,7 +501,9 @@ void onWelcome(SedReplacePlugin plugin)
 /++
     Removes the records of previous messages from a user when they quit.
  +/
-@(IRCEvent.Type.QUIT)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.QUIT)
+)
 void onQuit(SedReplacePlugin plugin, const ref IRCEvent event)
 {
     plugin.prevlines.remove(event.sender.nickname);

@@ -117,6 +117,11 @@ if (isOutputRange!(Sink, char[]))
         {
             sink.put(arg);
         }
+        else static if (is(T == enum))
+        {
+            import lu.conv : Enum;
+            sink.put(Enum!T.toString(arg));
+        }
         else static if (is(T == bool))
         {
             sink.put(arg ? "true" : "false");
@@ -173,7 +178,9 @@ unittest
         bellOnError = Whether or not to emit a terminal bell when an error occurred.
         hideBlacklistedUsers = Whether or not to hide events from blacklisted users.
  +/
-void formatMessageMonochrome(Sink)(PrinterPlugin plugin, auto ref Sink sink,
+void formatMessageMonochrome(Sink)
+    (PrinterPlugin plugin,
+    auto ref Sink sink,
     const ref IRCEvent event,
     const Flag!"bellOnMention" bellOnMention,
     const Flag!"bellOnError" bellOnError,
@@ -212,8 +219,7 @@ if (isOutputRange!(Sink, char[]))
 
             version(TwitchSupport)
             {
-                if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-                    event.sender.displayName.length)
+                if (event.sender.displayName.length)
                 {
                     sink.put(event.sender.displayName);
                     putDisplayName = true;
@@ -240,6 +246,11 @@ if (isOutputRange!(Sink, char[]))
                 {
                     .put(sink, '(', event.sender.account, ')');
                 }
+            }
+
+            version(PrintClassNamesToo)
+            {
+                .put(sink, ':', event.sender.class_);
             }
 
             version(TwitchSupport)
@@ -269,14 +280,27 @@ if (isOutputRange!(Sink, char[]))
 
     void putTarget()
     {
-        sink.put(" -> ");
-
+        bool putArrow;
         bool putDisplayName;
 
         version(TwitchSupport)
         {
-            if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-                event.target.displayName.length)
+            with (IRCEvent.Type)
+            switch (event.type)
+            {
+            case TWITCH_GIFTCHAIN:
+                // Add more as they become apparent
+                sink.put(" <- ");
+                break;
+
+            default:
+                sink.put(" -> ");
+                break;
+            }
+
+            putArrow = true;
+
+            if (event.target.displayName.length)
             {
                 sink.put(event.target.displayName);
                 putDisplayName = true;
@@ -287,6 +311,11 @@ if (isOutputRange!(Sink, char[]))
                     .put(sink, " (", event.target.nickname, ')');
                 }
             }
+        }
+
+        if (!putArrow)
+        {
+            sink.put(" -> ");
         }
 
         if (!putDisplayName)
@@ -302,6 +331,11 @@ if (isOutputRange!(Sink, char[]))
             {
                 .put(sink, '(', event.target.account, ')');
             }
+        }
+
+        version(PrintClassNamesToo)
+        {
+            .put(sink, ':', event.target.class_);
         }
 
         version(TwitchSupport)
@@ -514,7 +548,9 @@ if (isOutputRange!(Sink, char[]))
         hideBlacklistedUsers = Whether or not to hide events from blacklisted users.
  +/
 version(Colours)
-void formatMessageColoured(Sink)(PrinterPlugin plugin, auto ref Sink sink,
+void formatMessageColoured(Sink)
+    (PrinterPlugin plugin,
+    auto ref Sink sink,
     const ref IRCEvent event,
     const Flag!"bellOnMention" bellOnMention,
     const Flag!"bellOnError" bellOnError,
@@ -539,11 +575,11 @@ if (isOutputRange!(Sink, char[]))
     string content = event.content;  // mutable
     bool shouldBell;
 
-    immutable bright = plugin.state.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal;
+    immutable bright = cast(Flag!"brightTerminal")plugin.state.settings.brightTerminal;
 
     version(TwitchSupport)
     {
-        immutable normalise = plugin.printerSettings.normaliseTruecolour ? Yes.normalise : No.normalise;
+        immutable normalise = cast(Flag!"normalise")plugin.printerSettings.normaliseTruecolour;
     }
 
     /++
@@ -629,11 +665,10 @@ if (isOutputRange!(Sink, char[]))
             if (!user.isServer && user.colour.length && plugin.printerSettings.truecolour)
             {
                 import kameloso.terminal : truecolour;
-                import lu.conv : numFromHex;
+                import lu.conv : rgbFromHex;
 
-                int r, g, b;
-                user.colour.numFromHex(r, g, b);
-                sink.truecolour(r, g, b, bright, normalise);
+                auto rgb = rgbFromHex(user.colour);
+                sink.truecolour(rgb.r, rgb.g, rgb.b, bright, normalise);
                 coloured = true;
             }
         }
@@ -672,8 +707,7 @@ if (isOutputRange!(Sink, char[]))
 
             version(TwitchSupport)
             {
-                if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-                    event.sender.displayName.length)
+                if (event.sender.displayName.length)
                 {
                     sink.put(event.sender.displayName);
                     putDisplayName = true;
@@ -707,6 +741,11 @@ if (isOutputRange!(Sink, char[]))
                 }
             }
 
+            version(PrintClassNamesToo)
+            {
+                .put(sink, ':', event.sender.class_);
+            }
+
             version(TwitchSupport)
             {
                 if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
@@ -734,16 +773,28 @@ if (isOutputRange!(Sink, char[]))
 
     void putTarget()
     {
-        // No need to check isServer; target is never server
-        .put!(Yes.colours)(sink, FG.default_, " -> ");
-        colourUserTruecolour(sink, event.target);
-
+        bool putArrow;
         bool putDisplayName;
 
         version(TwitchSupport)
         {
-            if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-                event.target.displayName.length)
+            with (IRCEvent.Type)
+            switch (event.type)
+            {
+            case TWITCH_GIFTCHAIN:
+                // Add more as they become apparent
+                .put!(Yes.colours)(sink, FG.default_, " <- ");
+                break;
+
+            default:
+                .put!(Yes.colours)(sink, FG.default_, " -> ");
+                break;
+            }
+
+            colourUserTruecolour(sink, event.target);
+            putArrow = true;
+
+            if (event.target.displayName.length)
             {
                 sink.put(event.target.displayName);
                 putDisplayName = true;
@@ -761,6 +812,13 @@ if (isOutputRange!(Sink, char[]))
             }
         }
 
+        if (!putArrow)
+        {
+            // No need to check isServer; target is never server
+            .put!(Yes.colours)(sink, FG.default_, " -> ");
+            colourUserTruecolour(sink, event.target);
+        }
+
         if (!putDisplayName)
         {
             sink.put(event.target.nickname);
@@ -774,6 +832,11 @@ if (isOutputRange!(Sink, char[]))
             {
                 .put!(Yes.colours)(sink, FG.default_, '(', event.target.account, ')');
             }
+        }
+
+        version(PrintClassNamesToo)
+        {
+            .put(sink, ':', event.target.class_);
         }
 
         version(TwitchSupport)
@@ -793,9 +856,9 @@ if (isOutputRange!(Sink, char[]))
     {
         immutable FG contentFgBase = bright ? Bright.content : Dark.content;
         immutable FG emoteFgBase = bright ? Bright.emote : Dark.emote;
-        immutable fgBase = ((event.type == IRCEvent.Type.EMOTE) ||
-            (event.type == IRCEvent.Type.SELFEMOTE)) ? emoteFgBase : contentFgBase;
-        immutable isEmote = (fgBase == emoteFgBase);
+        immutable isEmote = (event.type == IRCEvent.Type.EMOTE) ||
+            (event.type == IRCEvent.Type.SELFEMOTE);
+        immutable fgBase = isEmote ? emoteFgBase : contentFgBase;
 
         sink.colourWith(fgBase);  // Always grey colon and SASL +, prepare for emote
 
@@ -820,8 +883,8 @@ if (isOutputRange!(Sink, char[]))
                 version(TwitchSupport)
                 {
                     content = highlightEmotes(event,
-                        (plugin.printerSettings.colourfulEmotes ? Yes.colourful : No.colourful),
-                        (plugin.state.settings.brightTerminal ? Yes.brightTerminal : No.brightTerminal));
+                        cast(Flag!"colourful")plugin.printerSettings.colourfulEmotes,
+                        cast(Flag!"brightTerminal")plugin.state.settings.brightTerminal);
                 }
             }
 
@@ -846,9 +909,8 @@ if (isOutputRange!(Sink, char[]))
 
                 version(TwitchSupport)
                 {
-                    // On Twitch, also highlight the display name alias
-                    if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-                        plugin.state.client.displayName.length &&  // Should always be true but check
+                    // If available, also highlight the display name alias
+                    if (plugin.state.client.displayName.length &&
                         (plugin.state.client.nickname != plugin.state.client.displayName) &&
                         content.containsNickname(plugin.state.client.displayName))
                     {
@@ -893,8 +955,9 @@ if (isOutputRange!(Sink, char[]))
 
     import lu.string : beginsWith;
 
-    if (rawTypestring.beginsWith("ERR_") || (event.type == IRCEvent.Type.ERROR) ||
-        (event.type == IRCEvent.Type.TWITCH_ERROR))
+    if ((event.type == IRCEvent.Type.ERROR) ||
+        (event.type == IRCEvent.Type.TWITCH_ERROR) ||
+        rawTypestring.beginsWith("ERR_"))
     {
         sink.colourWith(TerminalForeground(bright ? Bright.error : Dark.error));
     }
@@ -1159,8 +1222,12 @@ string highlightEmotes(const ref IRCEvent event,
  +/
 version(Colours)
 version(TwitchSupport)
-void highlightEmotesImpl(Sink)(auto ref Sink sink, const string line,
-    const string emotes, const TerminalForeground pre, const TerminalForeground post,
+void highlightEmotesImpl(Sink)
+    (auto ref Sink sink,
+    const string line,
+    const string emotes,
+    const TerminalForeground pre,
+    const TerminalForeground post,
     const Flag!"colourful" colourful,
     const Flag!"brightTerminal" brightTerminal)
 if (isOutputRange!(Sink, char[]))

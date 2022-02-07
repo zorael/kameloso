@@ -5,7 +5,7 @@
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#notes
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.notes;
 
@@ -41,11 +41,12 @@ import std.typecons : Flag, No, Yes;
     There's no need to trigger each `CHAN` since we know we enumerate all
     users in a channel when querying `WHO`.
  +/
-@Chainable
-@(IRCEvent.Type.JOIN)
-@(IRCEvent.Type.ACCOUNT)
-@(PermissionsRequired.anyone)
-@(ChannelPolicy.home)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.JOIN)
+    .onEvent(IRCEvent.Type.ACCOUNT)
+    .permissionsRequired(Permissions.anyone)
+    .channelPolicy(ChannelPolicy.home)
+)
 void onReplayEvent(NotesPlugin plugin, const /*ref*/ IRCEvent event)
 {
     if (event.channel !in plugin.notes) return;
@@ -66,8 +67,10 @@ void onReplayEvent(NotesPlugin plugin, const /*ref*/ IRCEvent event)
     Pass `Yes.background` to [playbackNotes] to ensure it does low-priority background
     WHOIS queries.
  +/
-@(IRCEvent.Type.RPL_WHOREPLY)
-@(ChannelPolicy.home)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WHOREPLY)
+    .channelPolicy(ChannelPolicy.home)
+)
 void onWhoReply(NotesPlugin plugin, const /*ref*/ IRCEvent event)
 {
     if (plugin.state.settings.eagerLookups) return;
@@ -91,8 +94,10 @@ void onWhoReply(NotesPlugin plugin, const /*ref*/ IRCEvent event)
         givenChannel = Name of the channel we want the notes related to.
         background = Whether or not to issue WHOIS queries as low-priority background messages.
  +/
-void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
-    const string givenChannel, const Flag!"background" background = No.background)
+void playbackNotes(NotesPlugin plugin,
+    const IRCUser givenUser,
+    const string givenChannel,
+    const Flag!"background" background = No.background)
 {
     import kameloso.common : timeSince;
     import dialect.common : toLowerCase;
@@ -123,7 +128,7 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
     {
         void onSuccess(const IRCUser user)
         {
-            import kameloso.plugins.common.base : idOf, nameOf;
+            import kameloso.plugins.common.misc : idOf, nameOf;
 
             immutable id = user.nickname.toLowerCase(plugin.state.server.caseMapping);
 
@@ -180,9 +185,10 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
             }
             catch (JSONException e)
             {
-                logger.errorf("Failed to fetch, replay and clear notes for " ~
-                    "%s%s%s on %1$s%4$s%3$s: %1$s%5$s",
-                    Tint.log, id, Tint.error, (channelName.length ? channelName : "<no channel>"), e.msg);
+                enum pattern = "Failed to fetch, replay and clear notes for " ~
+                    "%s%s%s on %1$s%4$s%3$s: %1$s%5$s";
+                logger.errorf(pattern, Tint.log, id, Tint.error,
+                    (channelName.length ? channelName : "<no channel>"), e.msg);
 
                 if (e.msg == "JSONValue is not an object")
                 {
@@ -234,8 +240,7 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
         mixin WHOISFiberDelegate!(onSuccess, onFailure, Yes.alwaysLookup);
 
         // Only WHOIS once
-        enqueueAndWHOIS(givenUser.nickname,
-            ((i++ == 0) ? Yes.issueWhois : No.issueWhois), background);
+        enqueueAndWHOIS(givenUser.nickname, cast(Flag!"issueWhois")(i++ == 0), background);
 
         // Break early if givenChannel was empty, and save us a loop and a lookup
         if (!channelName.length) break;
@@ -252,8 +257,10 @@ void playbackNotes(NotesPlugin plugin, const IRCUser givenUser,
     more information than NAMES replies do, so we'd just be duplicating effort
     for worse results.
  +/
-@(IRCEvent.Type.RPL_NAMREPLY)
-@(ChannelPolicy.home)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_NAMREPLY)
+    .channelPolicy(ChannelPolicy.home)
+)
 void onNames(NotesPlugin plugin, const ref IRCEvent event)
 {
     version(WithChanQueriesService)
@@ -283,7 +290,7 @@ void onNames(NotesPlugin plugin, const ref IRCEvent event)
             fakeEvent.channel = event.channel;
 
             // Use a replay to fill in known information about the user by use of Persistence
-            auto req = replay(plugin, fakeEvent, PermissionsRequired.anyone, &onReplayEvent);
+            auto req = replay(plugin, fakeEvent, Permissions.anyone, &onReplayEvent);
             repeat(req);
         }
     }
@@ -298,18 +305,24 @@ void onNames(NotesPlugin plugin, const ref IRCEvent event)
     channel. Those sent in a private query will be private notes, sent privately
     in the same fashion as channel notes are sent publicly.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.QUERY)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.whitelist)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "note")
-@Description("Adds a note and saves it to disk.", "$command [account] [note text]")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .permissionsRequired(Permissions.whitelist)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("note")
+            .policy(PrefixPolicy.prefixed)
+            .description("Adds a note and saves it to disk.")
+            .syntax("$command [account] [note text]")
+    )
+)
 void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
 {
-    import kameloso.plugins.common.base : nameOf;
+    import kameloso.plugins.common.misc : nameOf;
     import dialect.common : opEqualsCaseInsensitive, toLowerCase;
-    import lu.string : SplitResults, splitInto;
+    import lu.string : SplitResults, beginsWith, splitInto;
     import std.format : format;
     import std.json : JSONException;
     import std.typecons : No, Yes;
@@ -318,12 +331,13 @@ void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
     string target;
 
     immutable results = slice.splitInto(target);
+    if (target.beginsWith('@')) target = target[1..$];
 
-    if (results != SplitResults.overrun)
+    if ((results != SplitResults.overrun) || !target.length)
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
             "Usage: %s%s [nickname] [note text]"
-            .format(plugin.state.settings.prefix, event.aux));
+                .format(plugin.state.settings.prefix, event.aux));
         return;
     }
 
@@ -395,35 +409,34 @@ auto getNotes(NotesPlugin plugin, const string channel, const string id)
     {
         if (channelNotes.type != JSONType.object)
         {
-            logger.errorf("Invalid channel notes list type for %s: `%s`",
-                channel, channelNotes.type);
+            enum pattern = "Invalid channel notes list type for %s: `%s`";
+            logger.errorf(pattern, channel, channelNotes.type);
         }
         else if (const nickNotes = id in channelNotes.object)
         {
             if (nickNotes.type != JSONType.array)
             {
-                logger.errorf("Invalid notes list type for %s on %s: `%s`",
-                    id, channel, nickNotes.type);
+                enum pattern = "Invalid notes list type for %s on %s: `%s`";
+                logger.errorf(pattern, id, channel, nickNotes.type);
+                return noteArray;
             }
-            else
+
+            noteArray.length = nickNotes.array.length;
+
+            foreach (immutable i, note; nickNotes.array)
             {
-                noteArray.length = nickNotes.array.length;
+                import std.base64 : Base64Exception;
+                noteArray[i].sender = note["sender"].str;
+                noteArray[i].when = SysTime.fromUnixTime(note["when"].integer);
 
-                foreach (immutable i, note; nickNotes.array)
+                try
                 {
-                    import std.base64 : Base64Exception;
-                    noteArray[i].sender = note["sender"].str;
-                    noteArray[i].when = SysTime.fromUnixTime(note["when"].integer);
-
-                    try
-                    {
-                        noteArray[i].line = decode64(note["line"].str);
-                    }
-                    catch (Base64Exception e)
-                    {
-                        noteArray[i].line = "(An error occurred and the note could not be read)";
-                        version(PrintStacktraces) logger.trace(e);
-                    }
+                    noteArray[i].line = decode64(note["line"].str);
+                }
+                catch (Base64Exception e)
+                {
+                    noteArray[i].line = "(An error occurred and the note could not be read)";
+                    version(PrintStacktraces) logger.trace(e);
                 }
             }
         }
@@ -453,13 +466,14 @@ in (id.length, "Tried to clear notes for an empty id")
     {
         if (plugin.notes[channel].type != JSONType.object)
         {
-            logger.errorf("Invalid channel notes list type for %s: `%s`",
-                channel, plugin.notes[channel].type);
+            enum pattern = "Invalid channel notes list type for %s: `%s`";
+            logger.errorf(pattern, channel, plugin.notes[channel].type);
             return;
         }
 
-        /*logger.logf("Clearing stored notes for %s%s%s in %1$s%4$s%3$s.",
-            Tint.info, id, Tint.log, channel.length ? channel : "(private messages)");*/
+        /*enum pattern = "Clearing stored notes for %s%s%s in %1$s%4$s%3$s.";
+        logger.logf(pattern, Tint.info, id, Tint.log,
+            channel.length ? channel : "(private messages)");*/
         plugin.notes[channel].object.remove(id);
         plugin.pruneNotes();
     }
@@ -507,8 +521,11 @@ void pruneNotes(NotesPlugin plugin)
         channel = Channel for which we should save the note.
         line = Note text.
  +/
-void addNote(NotesPlugin plugin, const string id, const string sender,
-    const string channel, const string line)
+void addNote(NotesPlugin plugin,
+    const string id,
+    const string sender,
+    const string channel,
+    const string line)
 in (id.length, "Tried to add a note for an empty id")
 in (sender.length, "Tried to add a note from an empty sender")
 //in (channel.length, "Tried to add a note with an empty channel")
@@ -557,7 +574,9 @@ in (line.length, "Tried to add an empty note")
 /++
     Initialises the Notes plugin. Loads the notes from disk.
  +/
-@(IRCEvent.Type.RPL_WELCOME)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WELCOME)
+)
 void onWelcome(NotesPlugin plugin)
 {
     plugin.notes.load(plugin.notesFile);
@@ -581,7 +600,7 @@ void initResources(NotesPlugin plugin)
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common.base : IRCPluginInitialisationException;
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
         import std.path : baseName;
 
         version(PrintStacktraces) logger.trace(e);

@@ -7,7 +7,7 @@
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#votes
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.votes;
 
@@ -39,14 +39,24 @@ import std.typecons : Flag, No, Yes;
 
     If starting one a duration and two or more voting options have to be passed.
  +/
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.operator)
-@(ChannelPolicy.home)
-@BotCommand(PrefixPolicy.prefixed, "poll")
-@BotCommand(PrefixPolicy.prefixed, "vote", Yes.hidden)
-@Description(`Starts or stops a vote. Pass "abort" to abort, or "end" to end early.`,
-    "$command [seconds] [choice1] [choice2] ...")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("poll")
+            .policy(PrefixPolicy.prefixed)
+            .description(`Starts or stops a vote. Pass "abort" to abort, or "end" to end early.`)
+            .syntax("$command [seconds] [choice1] [choice2] ...")
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("vote")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
+)
 void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : contains, nom;
@@ -383,7 +393,7 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
 
     chan(plugin.state, event.channel,
         "Voting commenced! Please place your vote for one of: %-(%s, %) (%d seconds)"
-        .format(sortedChoices, dur));
+            .format(sortedChoices, dur));
 }
 
 

@@ -11,10 +11,16 @@
 
     @Settings struct FooSettings { /* ... */ }
 
-    @(IRCEvent.Type.CHAN)
-    @(ChannelPolicy.home)
-    @(PermissionsRequired.anyone)
-    @BotCommand(PrefixPolicy.prefixed, "foo")
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.CHAN)
+        .permissionsRequired(Permissions.anyone)
+        .channelPolicy(ChannelPolicy.home)
+        .addCommand(
+            IRCEventHandler.Command()
+                .word("foo")
+                .policy(PrefixPolicy.prefixed)
+        )
+    )
     void onFoo(FooPlugin plugin, const ref IRCEvent event)
     {
         // ...
@@ -35,7 +41,7 @@
 
     See_Also:
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.common.awareness;
 
@@ -102,11 +108,11 @@ enum Awareness
         debug_ = Whether or not to include debugging output.
         module_ = String name of the mixing-in module; generally leave as-is.
  +/
-mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
+mixin template MinimalAuthentication(
+    Flag!"debug_" debug_ = No.debug_,
     string module_ = __MODULE__)
 {
     private import kameloso.plugins.common.awareness;
-    private import kameloso.plugins.common.core : Chainable;
     private import dialect.defs : IRCEvent;
     private import lu.traits : MixinConstraints, MixinScope;
 
@@ -115,8 +121,8 @@ mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
     static if (__traits(compiles, .hasMinimalAuthentication))
     {
         private import std.format : format;
-        static assert(0, "Double mixin of `%s` in `%s`"
-            .format("MinimalAuthentication", module_));
+        private enum pattern = "Double mixin of `%s` in `%s`";
+        static assert(0, pattern.format("MinimalAuthentication", module_));
     }
     else
     {
@@ -132,11 +138,13 @@ mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
         See_Also:
             [kameloso.plugins.common.awareness.onMinimalAuthenticationAccountInfoTarget]
      +/
-    @(Awareness.early)
-    @(Chainable)
-    @(IRCEvent.Type.RPL_WHOISACCOUNT)
-    @(IRCEvent.Type.RPL_WHOISREGNICK)
-    @(IRCEvent.Type.RPL_ENDOFWHOIS)
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.RPL_WHOISACCOUNT)
+        .onEvent(IRCEvent.Type.RPL_WHOISREGNICK)
+        .onEvent(IRCEvent.Type.RPL_ENDOFWHOIS)
+        .when(Timing.early)
+        .chainable(true)
+    )
     void onMinimalAuthenticationAccountInfoTargetMixin(IRCPlugin plugin, const ref IRCEvent event)
     {
         return kameloso.plugins.common.awareness.onMinimalAuthenticationAccountInfoTarget(plugin, event);
@@ -150,9 +158,11 @@ mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
         See_Also:
             [kameloso.plugins.common.awareness.onMinimalAuthenticationUnknownCommandWHOIS]
      +/
-    @(Awareness.early)
-    @(Chainable)
-    @(IRCEvent.Type.ERR_UNKNOWNCOMMAND)
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.ERR_UNKNOWNCOMMAND)
+        .when(Timing.early)
+        .chainable(true)
+    )
     void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const ref IRCEvent event)
     {
         return kameloso.plugins.common.awareness.onMinimalAuthenticationUnknownCommandWHOIS(plugin, event);
@@ -169,15 +179,15 @@ mixin template MinimalAuthentication(Flag!"debug_" debug_ = No.debug_,
 
     [dialect.defs.IRCEvent.Type.RPL_ENDOFWHOIS] is also handled, to
     cover the case where a user without an account triggering
-    [kameloso.plugins.common.core.PermissionsRequired.anyone]- or
-    [kameloso.plugins.common.core.PermissionsRequired.ignore]-level commands.
+    [kameloso.plugins.common.core.Permissions.anyone]- or
+    [kameloso.plugins.common.core.Permissions.ignore]-level commands.
 
     This function was part of [UserAwareness] but triggering queued replays
     is too common to conflate with it.
  +/
 void onMinimalAuthenticationAccountInfoTarget(IRCPlugin plugin, const ref IRCEvent event) @system
 {
-    import kameloso.plugins.common.base : catchUser;
+    import kameloso.plugins.common.misc : catchUser;
     import kameloso.plugins.common.mixins : Repeater;
 
     // Catch the user here, before replaying anything.
@@ -223,8 +233,8 @@ void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const ref IRCE
     if (event.aux != "WHOIS") return;
 
     // We're on a server that doesn't support WHOIS
-    // Trigger queued replays of a PermissionsRequired.anyone nature, since
-    // they're just PermissionsRequired.ignore plus a WHOIS lookup just in case
+    // Trigger queued replays of a Permissions.anyone nature, since
+    // they're just Permissions.ignore plus a WHOIS lookup just in case
     // Then clear everything
 
     mixin Repeater;
@@ -259,11 +269,12 @@ void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const ref IRCE
         debug_ = Whether or not to include debugging output.
         module_ = String name of the mixing-in module; generally leave as-is.
  +/
-mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
-    Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
+mixin template UserAwareness(
+    ChannelPolicy channelPolicy = ChannelPolicy.home,
+    Flag!"debug_" debug_ = No.debug_,
+    string module_ = __MODULE__)
 {
     private import kameloso.plugins.common.awareness;
-    private import kameloso.plugins.common.core : Chainable;
     private import dialect.defs : IRCEvent;
     private import lu.traits : MixinConstraints, MixinScope;
 
@@ -272,8 +283,8 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     static if (__traits(compiles, .hasUserAwareness))
     {
         private import std.format : format;
-        static assert(0, "Double mixin of `%s` in `%s`"
-            .format("UserAwareness", module_));
+        private enum pattern = "Double mixin of `%s` in `%s`";
+        static assert(0, pattern.format("UserAwareness", module_));
     }
     else
     {
@@ -296,9 +307,11 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
         See_Also:
             [kameloso.plugins.common.awareness.onUserAwarenessQuit]
      +/
-    @(Awareness.cleanup)
-    @(Chainable)
-    @(IRCEvent.Type.QUIT)
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.QUIT)
+        .when(Timing.cleanup)
+        .chainable(true)
+    )
     void onUserAwarenessQuitMixin(IRCPlugin plugin, const ref IRCEvent event)
     {
         return kameloso.plugins.common.awareness.onUserAwarenessQuit(plugin, event);
@@ -312,9 +325,11 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
         See_Also:
             [kameloso.plugins.common.awareness.onUserAwarenessNick]
      +/
-    @(Awareness.early)
-    @(Chainable)
-    @(IRCEvent.Type.NICK)
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.NICK)
+        .when(Timing.early)
+        .chainable(true)
+    )
     void onUserAwarenessNickMixin(IRCPlugin plugin, const ref IRCEvent event)
     {
         return kameloso.plugins.common.awareness.onUserAwarenessNick(plugin, event);
@@ -328,14 +343,16 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
         See_Also:
             [kameloso.plugins.common.awareness.onUserAwarenessCatchTarget]
      +/
-    @(Awareness.early)
-    @(Chainable)
-    @(IRCEvent.Type.RPL_WHOISUSER)
-    @(IRCEvent.Type.RPL_WHOREPLY)
-    /*@(IRCEvent.Type.RPL_WHOISACCOUNT)  // Caught in MinimalAuthentication
-    @(IRCEvent.Type.RPL_WHOISREGNICK)*/
-    @(IRCEvent.Type.CHGHOST)
-    @channelPolicy
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.RPL_WHOISUSER)
+        .onEvent(IRCEvent.Type.RPL_WHOREPLY)
+        /*.onEvent(IRCEvent.Type.RPL_WHOISACCOUNT)
+        .onEvent(IRCEvent.Type.RPL_WHOISREGNICK)*/  // Caught in MinimalAuthentication
+        .onEvent(IRCEvent.Type.CHGHOST)
+        .channelPolicy(channelPolicy)
+        .when(Timing.early)
+        .chainable(true)
+    )
     void onUserAwarenessCatchTargetMixin(IRCPlugin plugin, const ref IRCEvent event)
     {
         return kameloso.plugins.common.awareness.onUserAwarenessCatchTarget(plugin, event);
@@ -349,15 +366,17 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
         See_Also:
             [kameloso.plugins.common.awareness.onUserAwarenessCatchSender]
      +/
-    @(Awareness.setup)
-    @(Chainable)
-    @(IRCEvent.Type.JOIN)
-    @(IRCEvent.Type.ACCOUNT)
-    @(IRCEvent.Type.AWAY)
-    @(IRCEvent.Type.BACK)
-    /*@(IRCEvent.Type.CHAN)  // Avoid these to be lean; everyone gets indexed by WHO anyway
-    @(IRCEvent.Type.EMOTE)*/ // ...except on Twitch, but TwitchAwareness has these annotations
-    @channelPolicy
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.JOIN)
+        .onEvent(IRCEvent.Type.ACCOUNT)
+        .onEvent(IRCEvent.Type.AWAY)
+        .onEvent(IRCEvent.Type.BACK)
+        /*.onEvent(IRCEvent.Type.CHAN)  // Avoid these to be lean; everyone gets indexed by WHO anyway
+        .onEvent(IRCEvent.Type.EMOTE)*/ // ...except on Twitch, but TwitchAwareness has these annotations
+        .channelPolicy(channelPolicy)
+        .when(Timing.setup)
+        .chainable(true)
+    )
     void onUserAwarenessCatchSenderMixin(IRCPlugin plugin, const ref IRCEvent event)
     {
         return kameloso.plugins.common.awareness.onUserAwarenessCatchSender!channelPolicy(plugin, event);
@@ -371,10 +390,12 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
         See_Also:
             [kameloso.plugins.common.awareness.onUserAwarenessNamesReply]
      +/
-    @(Awareness.early)
-    @(Chainable)
-    @(IRCEvent.Type.RPL_NAMREPLY)
-    @channelPolicy
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.RPL_NAMREPLY)
+        .channelPolicy(channelPolicy)
+        .when(Timing.early)
+        .chainable(true)
+    )
     void onUserAwarenessNamesReplyMixin(IRCPlugin plugin, const ref IRCEvent event)
     {
         return kameloso.plugins.common.awareness.onUserAwarenessNamesReply(plugin, event);
@@ -388,11 +409,13 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
         See_Also:
             [kameloso.plugins.common.awareness.onUserAwarenessEndOfList]
      +/
-    @(Awareness.early)
-    @(Chainable)
-    @(IRCEvent.Type.RPL_ENDOFNAMES)
-    @(IRCEvent.Type.RPL_ENDOFWHO)
-    @channelPolicy
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.RPL_ENDOFNAMES)
+        .onEvent(IRCEvent.Type.RPL_ENDOFWHO)
+        .channelPolicy(channelPolicy)
+        .when(Timing.early)
+        .chainable(true)
+    )
     void onUserAwarenessEndOfListMixin(IRCPlugin plugin, const ref IRCEvent event) @system
     {
         return kameloso.plugins.common.awareness.onUserAwarenessEndOfList(plugin, event);
@@ -406,25 +429,15 @@ mixin template UserAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
         See_Also:
             [kameloso.plugins.common.awareness.onUserAwarenessPing]
      +/
-    @(Awareness.early)
-    @(Chainable)
-    @(IRCEvent.Type.PING)
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.PING)
+        .when(Timing.early)
+        .chainable(true)
+    )
     void onUserAwarenessPingMixin(IRCPlugin plugin) @system
     {
-        return kameloso.plugins.common.awareness.onUserAwarenessPing(plugin,
-            _kamelosoNextPingRehashTimestamp);
+        return kameloso.plugins.common.awareness.onUserAwarenessPing(plugin);
     }
-
-
-    // _kamelosoNextPingRehashTimestamp
-    /++
-        UNIX timestamp of when the [kameloso.plugins.common.core.IRCPluginState.users]
-        array is next to be rehashed in [onUserAwarenessPingMixin].
-
-        See_Also:
-            [onUserAwarenessPingMixin]
-     +/
-    long _kamelosoNextPingRehashTimestamp;
 }
 
 
@@ -476,7 +489,7 @@ void onUserAwarenessNick(IRCPlugin plugin, const ref IRCEvent event)
  +/
 void onUserAwarenessCatchTarget(IRCPlugin plugin, const ref IRCEvent event)
 {
-    import kameloso.plugins.common.base : catchUser;
+    import kameloso.plugins.common.misc : catchUser;
     plugin.catchUser(event.target);
 }
 
@@ -494,7 +507,7 @@ void onUserAwarenessCatchTarget(IRCPlugin plugin, const ref IRCEvent event)
 void onUserAwarenessCatchSender(ChannelPolicy channelPolicy)
     (IRCPlugin plugin, const ref IRCEvent event)
 {
-    import kameloso.plugins.common.base : catchUser;
+    import kameloso.plugins.common.misc : catchUser;
 
     with (IRCEvent.Type)
     switch (event.type)
@@ -553,7 +566,7 @@ void onUserAwarenessCatchSender(ChannelPolicy channelPolicy)
  +/
 void onUserAwarenessNamesReply(IRCPlugin plugin, const ref IRCEvent event)
 {
-    import kameloso.plugins.common.base : catchUser;
+    import kameloso.plugins.common.misc : catchUser;
     import kameloso.irccolours : stripColours;
     import dialect.common : IRCControlCharacter, stripModesign;
     import lu.string : contains, nom;
@@ -610,7 +623,7 @@ void onUserAwarenessNamesReply(IRCPlugin plugin, const ref IRCEvent event)
  +/
 void onUserAwarenessEndOfList(IRCPlugin plugin, const ref IRCEvent event) @system
 {
-    import kameloso.plugins.common.base : rehashUsers;
+    import kameloso.plugins.common.misc : rehashUsers;
 
     // Pass a channel name so only that channel is rehashed
     plugin.rehashUsers(event.channel);
@@ -629,13 +642,14 @@ void onUserAwarenessEndOfList(IRCPlugin plugin, const ref IRCEvent event) @syste
     The number of hours is so far hardcoded but can be made configurable if
     there's a use-case for it.
  +/
-void onUserAwarenessPing(IRCPlugin plugin, ref long pingRehash) @system
+void onUserAwarenessPing(IRCPlugin plugin) @system
 {
     import std.datetime.systime : Clock;
 
     enum minutesBeforeInitialRehash = 5;
     enum hoursBetweenRehashes = 12;
 
+    static long pingRehash = 0L;
     immutable now = Clock.currTime.toUnixTime;
 
     if (pingRehash == 0L)
@@ -646,7 +660,7 @@ void onUserAwarenessPing(IRCPlugin plugin, ref long pingRehash) @system
     }
     else if (now >= pingRehash)
     {
-        import kameloso.plugins.common.base : rehashUsers;
+        import kameloso.plugins.common.misc : rehashUsers;
 
         // Once every `hoursBetweenRehashes` hours, rehash the `users` array.
         plugin.rehashUsers();
@@ -678,11 +692,12 @@ void onUserAwarenessPing(IRCPlugin plugin, ref long pingRehash) @system
         module_ = String name of the mixing-in module; generally leave as-is.
  +/
 version(WithPlugins)
-mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
-    Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
+mixin template ChannelAwareness(
+    ChannelPolicy channelPolicy = ChannelPolicy.home,
+    Flag!"debug_" debug_ = No.debug_,
+    string module_ = __MODULE__)
 {
     private import kameloso.plugins.common.awareness;
-    private import kameloso.plugins.common.core : Chainable;
     private import dialect.defs : IRCEvent;
     private import lu.traits : MixinConstraints, MixinScope;
 
@@ -691,8 +706,8 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
     static if (__traits(compiles, .hasChannelAwareness))
     {
         private import std.format : format;
-        static assert(0, "Double mixin of `%s` in `%s`"
-            .format("ChannelAwareness", module_));
+        private enum pattern = "Double mixin of `%s` in `%s`";
+        static assert(0, pattern.format("ChannelAwareness", module_));
     }
     else
     {
@@ -719,10 +734,12 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         See_Also:
             [kameloso.plugins.common.awareness.onChannelAwarenessSelfjoin]
      +/
-    @(Awareness.setup)
-    @(Chainable)
-    @(IRCEvent.Type.SELFJOIN)
-    @channelPolicy
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.SELFJOIN)
+        .channelPolicy(channelPolicy)
+        .when(Timing.setup)
+        .chainable(true)
+    )
     void onChannelAwarenessSelfjoinMixin(IRCPlugin plugin, const ref IRCEvent event)
     {
         return kameloso.plugins.common.awareness.onChannelAwarenessSelfjoin(plugin, event);
@@ -736,11 +753,13 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         See_Also:
             [kameloso.plugins.common.awareness.onChannelAwarenessSelfpart]
      +/
-    @(Awareness.cleanup)
-    @(Chainable)
-    @(IRCEvent.Type.SELFPART)
-    @(IRCEvent.Type.SELFKICK)
-    @channelPolicy
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.SELFPART)
+        .onEvent(IRCEvent.Type.SELFKICK)
+        .channelPolicy(channelPolicy)
+        .when(Timing.cleanup)
+        .chainable(true)
+    )
     void onChannelAwarenessSelfpartMixin(IRCPlugin plugin, const ref IRCEvent event)
     {
         return kameloso.plugins.common.awareness.onChannelAwarenessSelfpart(plugin, event);
@@ -754,10 +773,12 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         See_Also:
             [kameloso.plugins.common.awareness.onChannelAwarenessJoin]
      +/
-    @(Awareness.setup)
-    @(Chainable)
-    @(IRCEvent.Type.JOIN)
-    @channelPolicy
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.JOIN)
+        .channelPolicy(channelPolicy)
+        .when(Timing.setup)
+        .chainable(true)
+    )
     void onChannelAwarenessJoinMixin(IRCPlugin plugin, const ref IRCEvent event)
     {
         return kameloso.plugins.common.awareness.onChannelAwarenessJoin(plugin, event);
@@ -771,10 +792,12 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         See_Also:
             [kameloso.plugins.common.awareness.onChannelAwarenessPart]
      +/
-    @(Awareness.late)
-    @(Chainable)
-    @(IRCEvent.Type.PART)
-    @channelPolicy
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.PART)
+        .channelPolicy(channelPolicy)
+        .when(Timing.late)
+        .chainable(true)
+    )
     void onChannelAwarenessPartMixin(IRCPlugin plugin, const ref IRCEvent event)
     {
         return kameloso.plugins.common.awareness.onChannelAwarenessPart(plugin, event);
@@ -788,9 +811,11 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         See_Also:
             [kameloso.plugins.common.awareness.onChannelAwarenessNick]
      +/
-    @(Awareness.setup)
-    @(Chainable)
-    @(IRCEvent.Type.NICK)
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.NICK)
+        .when(Timing.setup)
+        .chainable(true)
+    )
     void onChannelAwarenessNickMixin(IRCPlugin plugin, const ref IRCEvent event)
     {
         return kameloso.plugins.common.awareness.onChannelAwarenessNick(plugin, event);
@@ -804,9 +829,11 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         See_Also:
             [kameloso.plugins.common.awareness.onChannelAwarenessQuit]
      +/
-    @(Awareness.late)
-    @(Chainable)
-    @(IRCEvent.Type.QUIT)
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.QUIT)
+        .when(Timing.late)
+        .chainable(true)
+    )
     void onChannelAwarenessQuitMixin(IRCPlugin plugin, const ref IRCEvent event)
     {
         return kameloso.plugins.common.awareness.onChannelAwarenessQuit(plugin, event);
@@ -820,11 +847,13 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         See_Also:
             [kameloso.plugins.common.awareness.onChannelAwarenessTopic]
      +/
-    @(Awareness.early)
-    @(Chainable)
-    @(IRCEvent.Type.TOPIC)
-    @(IRCEvent.Type.RPL_TOPIC)
-    @channelPolicy
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.TOPIC)
+        .onEvent(IRCEvent.Type.RPL_TOPIC)
+        .channelPolicy(channelPolicy)
+        .when(Timing.early)
+        .chainable(true)
+    )
     void onChannelAwarenessTopicMixin(IRCPlugin plugin, const ref IRCEvent event)
     {
         return kameloso.plugins.common.awareness.onChannelAwarenessTopic(plugin, event);
@@ -838,10 +867,12 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         See_Also:
             [kameloso.plugins.common.awareness.onChannelAwarenessCreationTime]
      +/
-    @(Awareness.early)
-    @(Chainable)
-    @(IRCEvent.Type.RPL_CREATIONTIME)
-    @channelPolicy
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.RPL_CREATIONTIME)
+        .channelPolicy(channelPolicy)
+        .when(Timing.early)
+        .chainable(true)
+    )
     void onChannelAwarenessCreationTimeMixin(IRCPlugin plugin, const ref IRCEvent event)
     {
         return kameloso.plugins.common.awareness.onChannelAwarenessCreationTime(plugin, event);
@@ -855,10 +886,12 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         See_Also:
             [kameloso.plugins.common.awareness.onChannelAwarenessMode]
      +/
-    @(Awareness.early)
-    @(Chainable)
-    @(IRCEvent.Type.MODE)
-    @channelPolicy
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.MODE)
+        .channelPolicy(channelPolicy)
+        .when(Timing.early)
+        .chainable(true)
+    )
     void onChannelAwarenessModeMixin(IRCPlugin plugin, const ref IRCEvent event)
     {
         return kameloso.plugins.common.awareness.onChannelAwarenessMode(plugin, event);
@@ -872,10 +905,12 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         See_Also:
             [kameloso.plugins.common.awareness.onChannelAwarenessWhoReply]
      +/
-    @(Awareness.early)
-    @(Chainable)
-    @(IRCEvent.Type.RPL_WHOREPLY)
-    @channelPolicy
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.RPL_WHOREPLY)
+        .channelPolicy(channelPolicy)
+        .when(Timing.early)
+        .chainable(true)
+    )
     void onChannelAwarenessWhoReplyMixin(IRCPlugin plugin, const ref IRCEvent event)
     {
         return kameloso.plugins.common.awareness.onChannelAwarenessWhoReply(plugin, event);
@@ -889,10 +924,12 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         See_Also:
             [kameloso.plugins.common.awareness.onChannelAwarenessNamesReply]
      +/
-    @(Awareness.early)
-    @(Chainable)
-    @(IRCEvent.Type.RPL_NAMREPLY)
-    @channelPolicy
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.RPL_NAMREPLY)
+        .channelPolicy(channelPolicy)
+        .when(Timing.early)
+        .chainable(true)
+    )
     void onChannelAwarenessNamesReplyMixin(IRCPlugin plugin, const ref IRCEvent event)
     {
         return kameloso.plugins.common.awareness.onChannelAwarenessNamesReply(plugin, event);
@@ -906,14 +943,16 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         See_Also:
             [kameloso.plugins.common.awareness.onChannelAwarenessModeLists]
      +/
-    @(Awareness.early)
-    @(Chainable)
-    @(IRCEvent.Type.RPL_BANLIST)
-    @(IRCEvent.Type.RPL_EXCEPTLIST)
-    @(IRCEvent.Type.RPL_INVITELIST)
-    @(IRCEvent.Type.RPL_REOPLIST)
-    @(IRCEvent.Type.RPL_QUIETLIST)
-    @channelPolicy
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.RPL_BANLIST)
+        .onEvent(IRCEvent.Type.RPL_EXCEPTLIST)
+        .onEvent(IRCEvent.Type.RPL_INVITELIST)
+        .onEvent(IRCEvent.Type.RPL_REOPLIST)
+        .onEvent(IRCEvent.Type.RPL_QUIETLIST)
+        .channelPolicy(channelPolicy)
+        .when(Timing.early)
+        .chainable(true)
+    )
     void onChannelAwarenessModeListsMixin(IRCPlugin plugin, const ref IRCEvent event)
     {
         return kameloso.plugins.common.awareness.onChannelAwarenessModeLists(plugin, event);
@@ -927,10 +966,12 @@ mixin template ChannelAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home
         See_Also:
             [kameloso.plugins.common.awareness.onChannelAwarenessChannelModeIs]
      +/
-    @(Awareness.early)
-    @(Chainable)
-    @(IRCEvent.Type.RPL_CHANNELMODEIS)
-    @channelPolicy
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.RPL_CHANNELMODEIS)
+        .channelPolicy(channelPolicy)
+        .when(Timing.early)
+        .chainable(true)
+    )
     void onChannelAwarenessChannelModeIsMixin(IRCPlugin plugin, const ref IRCEvent event)
     {
         return kameloso.plugins.common.awareness.onChannelAwarenessChannelModeIs(plugin, event);
@@ -1359,11 +1400,12 @@ void onChannelAwarenessChannelModeIs(IRCPlugin plugin, const ref IRCEvent event)
  +/
 version(WithPlugins)
 version(TwitchSupport)
-mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
-    Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
+mixin template TwitchAwareness(
+    ChannelPolicy channelPolicy = ChannelPolicy.home,
+    Flag!"debug_" debug_ = No.debug_,
+    string module_ = __MODULE__)
 {
     private import kameloso.plugins.common.awareness;
-    private import kameloso.plugins.common.core : Chainable;
     private import dialect.defs : IRCEvent;
     private import lu.traits : MixinConstraints, MixinScope;
 
@@ -1372,8 +1414,8 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     static if (__traits(compiles, .hasTwitchAwareness))
     {
         private import std.format : format;
-        static assert(0, "Double mixin of `%s` in `%s`"
-            .format("TwitchAwareness", module_));
+        private enum pattern = "Double mixin of `%s` in `%s`";
+        static assert(0, pattern.format("TwitchAwareness", module_));
     }
     else
     {
@@ -1400,32 +1442,33 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
         See_Also:
             [kameloso.plugins.common.awareness.onTwitchAwarenessSenderCarryingEvent]
      +/
-    @(Awareness.early)
-    @(Chainable)
-    @(IRCEvent.Type.CHAN)  // Catch these as we don't index people by WHO on Twitch
-    @(IRCEvent.Type.JOIN)
-    @(IRCEvent.Type.SELFJOIN)
-    @(IRCEvent.Type.PART)
-    @(IRCEvent.Type.EMOTE)  // As above
-    @(IRCEvent.Type.TWITCH_SUB)
-    @(IRCEvent.Type.TWITCH_CHEER)
-    @(IRCEvent.Type.TWITCH_SUBGIFT)
-    @(IRCEvent.Type.TWITCH_HOSTSTART)
-    @(IRCEvent.Type.TWITCH_HOSTEND)
-    @(IRCEvent.Type.TWITCH_BITSBADGETIER)
-    @(IRCEvent.Type.TWITCH_RAID)
-    @(IRCEvent.Type.TWITCH_UNRAID)
-    @(IRCEvent.Type.TWITCH_RITUAL)
-    @(IRCEvent.Type.TWITCH_REWARDGIFT)
-    @(IRCEvent.Type.TWITCH_GIFTCHAIN)
-    @(IRCEvent.Type.TWITCH_SUBUPGRADE)
-    @(IRCEvent.Type.TWITCH_CHARITY)
-    @(IRCEvent.Type.TWITCH_BULKGIFT)
-    @(IRCEvent.Type.TWITCH_EXTENDSUB)
-    @(IRCEvent.Type.TWITCH_GIFTRECEIVED)
-    @(IRCEvent.Type.TWITCH_PAYFORWARD)
-    @(IRCEvent.Type.CLEARMSG)
-    @channelPolicy
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.CHAN)  // Catch these as we don't index people by WHO on Twitch
+        .onEvent(IRCEvent.Type.JOIN)
+        .onEvent(IRCEvent.Type.SELFJOIN)
+        .onEvent(IRCEvent.Type.PART)
+        .onEvent(IRCEvent.Type.EMOTE) // As above
+        .onEvent(IRCEvent.Type.TWITCH_SUB)
+        .onEvent(IRCEvent.Type.TWITCH_CHEER)
+        .onEvent(IRCEvent.Type.TWITCH_SUBGIFT)
+        .onEvent(IRCEvent.Type.TWITCH_HOSTSTART)
+        .onEvent(IRCEvent.Type.TWITCH_HOSTEND)
+        .onEvent(IRCEvent.Type.TWITCH_BITSBADGETIER)
+        .onEvent(IRCEvent.Type.TWITCH_RAID)
+        .onEvent(IRCEvent.Type.TWITCH_UNRAID)
+        .onEvent(IRCEvent.Type.TWITCH_RITUAL)
+        .onEvent(IRCEvent.Type.TWITCH_REWARDGIFT)
+        .onEvent(IRCEvent.Type.TWITCH_GIFTCHAIN)
+        .onEvent(IRCEvent.Type.TWITCH_SUBUPGRADE)
+        .onEvent(IRCEvent.Type.TWITCH_CHARITY)
+        .onEvent(IRCEvent.Type.TWITCH_BULKGIFT)
+        .onEvent(IRCEvent.Type.TWITCH_EXTENDSUB)
+        .onEvent(IRCEvent.Type.TWITCH_GIFTRECEIVED)
+        .onEvent(IRCEvent.Type.TWITCH_PAYFORWARD)
+        .channelPolicy(channelPolicy)
+        .when(Timing.early)
+        .chainable(true)
+    )
     void onTwitchAwarenessSenderCarryingEventMixin(IRCPlugin plugin, const ref IRCEvent event)
     {
         return kameloso.plugins.common.awareness.onTwitchAwarenessSenderCarryingEvent(plugin, event);
@@ -1444,16 +1487,19 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
         See_Also:
             [kameloso.plugins.common.awareness.onTwitchAwarenessSenderCarryingEvent]
      +/
-    @(Awareness.early)
-    @(Chainable)
-    @(IRCEvent.Type.TWITCH_BAN)
-    @(IRCEvent.Type.TWITCH_SUBGIFT)
-    @(IRCEvent.Type.TWITCH_REWARDGIFT)
-    @(IRCEvent.Type.TWITCH_TIMEOUT)
-    @(IRCEvent.Type.TWITCH_GIFTCHAIN)
-    @(IRCEvent.Type.TWITCH_GIFTRECEIVED)
-    @(IRCEvent.Type.TWITCH_PAYFORWARD)
-    @channelPolicy
+    @(IRCEventHandler()
+        .onEvent(IRCEvent.Type.TWITCH_BAN)
+        .onEvent(IRCEvent.Type.TWITCH_SUBGIFT)
+        .onEvent(IRCEvent.Type.TWITCH_REWARDGIFT)
+        .onEvent(IRCEvent.Type.TWITCH_TIMEOUT)
+        .onEvent(IRCEvent.Type.TWITCH_GIFTCHAIN)
+        .onEvent(IRCEvent.Type.TWITCH_GIFTRECEIVED)
+        .onEvent(IRCEvent.Type.TWITCH_PAYFORWARD)
+        .onEvent(IRCEvent.Type.CLEARMSG)
+        .channelPolicy(channelPolicy)
+        .when(Timing.early)
+        .chainable(true)
+    )
     void onTwitchAwarenessTargetCarryingEventMixin(IRCPlugin plugin, const ref IRCEvent event)
     {
         return kameloso.plugins.common.awareness.onTwitchAwarenessTargetCarryingEvent(plugin, event);
@@ -1476,7 +1522,7 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
 version(TwitchSupport)
 void onTwitchAwarenessSenderCarryingEvent(IRCPlugin plugin, const ref IRCEvent event)
 {
-    import kameloso.plugins.common.base : catchUser;
+    import kameloso.plugins.common.misc : catchUser;
 
     if (plugin.state.server.daemon != IRCServer.Daemon.twitch) return;
 
@@ -1512,7 +1558,7 @@ void onTwitchAwarenessSenderCarryingEvent(IRCPlugin plugin, const ref IRCEvent e
 version(TwitchSupport)
 void onTwitchAwarenessTargetCarryingEvent(IRCPlugin plugin, const ref IRCEvent event)
 {
-    import kameloso.plugins.common.base : catchUser;
+    import kameloso.plugins.common.misc : catchUser;
 
     if (plugin.state.server.daemon != IRCServer.Daemon.twitch) return;
 
@@ -1538,8 +1584,10 @@ else
 /++
     No-op mixin of version `!TwitchSupport` [kameloso.plugins.common.awareness.TwitchAwareness].
  +/
-mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
-    Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
+mixin template TwitchAwareness(
+    ChannelPolicy channelPolicy = ChannelPolicy.home,
+    Flag!"debug_" debug_ = No.debug_,
+    string module_ = __MODULE__)
 {
     private import lu.traits : MixinConstraints, MixinScope;
 
@@ -1548,8 +1596,8 @@ mixin template TwitchAwareness(ChannelPolicy channelPolicy = ChannelPolicy.home,
     static if (__traits(compiles, .hasTwitchAwareness))
     {
         private import std.format : format;
-        static assert(0, "Double mixin of `%s` in `%s`"
-            .format("TwitchAwareness", module_));
+        private enum pattern = "Double mixin of `%s` in `%s`";
+        static assert(0, pattern.format("TwitchAwareness", module_));
     }
     else
     {

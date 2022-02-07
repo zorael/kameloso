@@ -170,7 +170,8 @@ public:
             The time remaining until the next message may be sent, so that we
             can reschedule the next server read timeout to happen earlier.
      +/
-    double throttleline(Buffer)(ref Buffer buffer,
+    double throttleline(Buffer)
+        (ref Buffer buffer,
         const Flag!"dryRun" dryRun = No.dryRun,
         const Flag!"sendFaster" sendFaster = No.sendFaster,
         const Flag!"immediate" immediate = No.immediate) @system
@@ -286,8 +287,8 @@ public:
         out string[][string] invalidEntries) @system
     {
         import kameloso.plugins : PluginModules;
-        import kameloso.plugins.common.base : applyCustomSettings;
         import kameloso.plugins.common.core : IRCPluginState;
+        import kameloso.plugins.common.misc : applyCustomSettings;
         import std.concurrency : thisTid;
 
         teardownPlugins();
@@ -331,8 +332,8 @@ public:
                             else
                             {
                                 import std.format : format;
-                                static assert(0, "`%s.%s` constructor does not compile"
-                                    .format(moduleName, Class.stringof));
+                                enum pattern = "`%s.%s` constructor does not compile";
+                                static assert(0, pattern.format(moduleName, Class.stringof));
                             }
                         }
                     }
@@ -371,7 +372,7 @@ public:
 
         if (!allCustomSuccess)
         {
-            import kameloso.plugins.common.base : IRCPluginSettingsException;
+            import kameloso.plugins.common.misc : IRCPluginSettingsException;
             throw new IRCPluginSettingsException("Some custom plugin settings could not be applied.");
         }
     }
@@ -446,14 +447,15 @@ public:
                 }
                 else
                 {
-                    logger.warningf("ErrnoException when tearing down %s: %s",
-                        plugin.name, e.msg);
+                    enum pattern = "ErrnoException when tearing down %s: %s";
+                    logger.warningf(pattern, plugin.name, e.msg);
                     version(PrintStacktraces) logger.trace(e.info);
                 }
             }
             catch (Exception e)
             {
-                logger.warningf("Exception when tearing down %s: %s", plugin.name, e.msg);
+                enum pattern = "Exception when tearing down %s: %s";
+                logger.warningf(pattern, plugin.name, e.msg);
                 version(PrintStacktraces) logger.trace(e);
             }
 
@@ -499,33 +501,38 @@ public:
      +/
     void checkPluginForUpdates(IRCPlugin plugin)
     {
-        if (plugin.state.botUpdated)
+        alias Update = typeof(plugin.state.updates);
+
+        if (plugin.state.updates & Update.bot)
         {
             // Something changed the bot; propagate
-            plugin.state.botUpdated = false;
+            plugin.state.updates ^= Update.bot;
             propagate(plugin.state.bot);
         }
 
-        if (plugin.state.clientUpdated)
+        if (plugin.state.updates & Update.client)
         {
             // Something changed the client; propagate
-            plugin.state.clientUpdated = false;
+            plugin.state.updates ^= Update.client;
             propagate(plugin.state.client);
         }
 
-        if (plugin.state.serverUpdated)
+        if (plugin.state.updates & Update.server)
         {
             // Something changed the server; propagate
-            plugin.state.serverUpdated = false;
+            plugin.state.updates ^= Update.server;
             propagate(plugin.state.server);
         }
 
-        if (plugin.state.settingsUpdated)
+        if (plugin.state.updates & Update.settings)
         {
             // Something changed the settings; propagate
-            plugin.state.settingsUpdated = false;
+            plugin.state.updates ^= Update.settings;
             propagate(plugin.state.settings);
         }
+
+        assert((plugin.state.updates == Update.nothing),
+            "`IRCPluginState.updates` was not reset after checking and propagation");
     }
 
 
@@ -602,6 +609,12 @@ public:
 
     /// Set when the Socket read timeout was requested to be shortened.
     bool wantReceiveTimeoutShortened;
+
+    version(TwitchSupport)
+    {
+        /// Set when an `IRCEvent.Type.RPL_WELCOME` event was encountered.
+        bool sawWelcome;
+    }
 }
 
 
@@ -669,6 +682,7 @@ public:
         bool flush;  /// Whether or not to explicitly set stdout to flush after writing a linebreak to it.
         bool trace = false;  /// Whether or not *all* outgoing messages should be echoed to the terminal.
         bool numericAddresses;  /// Whether to print addresses as IPs or as hostnames (where applicable).
+        bool headless;  /// Whether or not to be "headless", disabling all terminal output.
     }
 }
 

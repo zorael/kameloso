@@ -63,7 +63,8 @@ struct TimerDefinition
         timerDef = Definition of the timer to apply.
         channelName = String channel to which the timer belongs.
  +/
-Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
+Fiber createTimerFiber(TwitchBotPlugin plugin,
+    const TimerDefinition timerDef,
     const string channelName)
 {
     import kameloso.constants : BufferSize;
@@ -92,7 +93,7 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
         }
         else
         {
-            import kameloso.plugins.common.base : nameOf;
+            import kameloso.plugins.common.misc : nameOf;
             immutable streamer = plugin.nameOf(channelName[1..$]);
         }
 
@@ -129,22 +130,17 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
                 continue;
             }
 
-            if (room.enabled)
-            {
-                import std.array : replace;
-                import std.conv : text;
-                import std.random : uniform;
+            import std.array : replace;
+            import std.conv : text;
+            import std.random : uniform;
 
-                immutable line = timerDef.line
-                    .replace("$streamer", streamer)
-                    .replace("$channel", channelName[1..$])
-                    .replace("$bot", plugin.state.client.nickname)
-                    .replace("$random", uniform!"[]"(0, 100).text);
+            immutable line = timerDef.line
+                .replace("$streamer", streamer)
+                .replace("$channel", channelName[1..$])
+                .replace("$bot", plugin.state.client.nickname)
+                .replace("$random", uniform!"(]"(0, 100).text);
 
-                chan(plugin.state, channelName, line);
-            }
-
-            // If channel is disabled, silently fizzle but keep updating counts
+            chan(plugin.state, channelName, line);
 
             lastMessageCount = room.messageCount;
             lastTimestamp = now;
@@ -167,7 +163,9 @@ Fiber createTimerFiber(TwitchBotPlugin plugin, const TimerDefinition timerDef,
         event = The triggering [dialect.defs.IRCEvent].
         targetChannel = The channel we're handling timers for.
  +/
-void handleTimerCommand(TwitchBotPlugin plugin, const ref IRCEvent event, const string targetChannel)
+void handleTimerCommand(TwitchBotPlugin plugin,
+    const ref IRCEvent event,
+    const string targetChannel)
 in (targetChannel.length, "Tried to handle timers with an empty target channel string")
 {
     import lu.string : SplitResults, contains, nom, splitInto;
@@ -180,7 +178,7 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
             "Usage: %s%s %s [message threshold] [time threshold] [stagger seconds] [text]"
-            .format(plugin.state.settings.prefix, event.aux, verb));
+                .format(plugin.state.settings.prefix, event.aux, verb));
     }
 
     switch (verb)
@@ -273,7 +271,7 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
                 {
                     privmsg(plugin.state, event.channel, event.sender.nickname,
                         "Timer index %s out of range. (max %d)"
-                        .format(slice, room.timers.length));
+                            .format(slice, room.timers.length));
                     return;
                 }
             }
@@ -326,7 +324,7 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
                 {
                     privmsg(plugin.state, event.channel, event.sender.nickname,
                         "Usage: %s%s list [optional starting position number]"
-                        .format(plugin.state.settings.prefix, event.aux));
+                            .format(plugin.state.settings.prefix, event.aux));
                     return;
                 }
             }
@@ -335,13 +333,14 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
 
             privmsg(plugin.state, event.channel, event.sender.nickname,
                 "Current timers (%d-%d of %d)"
-                .format(start+1, end, timers.length));
+                    .format(start+1, end, timers.length));
 
             foreach (immutable i, const timer; (*timers)[start..end])
             {
                 immutable maxLen = min(timer.line.length, maxLineLength);
+                enum pattern = "%d: %s%s (%d:%d:%d)";
                 privmsg(plugin.state, event.channel, event.sender.nickname,
-                    "%d: %s%s (%d:%d:%d)".format(start+i+1, timer.line[0..maxLen],
+                    format(pattern, start+i+1, timer.line[0..maxLen],
                         (timer.line.length > maxLen) ? " ...  [truncated]" : string.init,
                         timer.messageCountThreshold, timer.timeThreshold, timer.stagger));
             }
@@ -438,8 +437,9 @@ in (filename.length, "Tried to populate timers from an empty filename")
     {
         if (channelTimersJSON.type != JSONType.array)
         {
-            logger.errorf("Twitch timer file malformed! Invalid channel timers " ~
-                "list type for %s: `%s`", channelName, channelTimersJSON.type);
+            enum pattern = "Twitch timer file malformed! Invalid channel timers " ~
+                "list type for %s: `%s`";
+            logger.errorf(pattern, channelName, channelTimersJSON.type);
             errored = true;
             continue;
         }
@@ -451,8 +451,9 @@ in (filename.length, "Tried to populate timers from an empty filename")
         {
             if (timerArrayEntry.type != JSONType.object)
             {
-                logger.errorf("Twitch timer file malformed! Invalid timer type " ~
-                    "for %s: `%s`", channelName, timerArrayEntry.type);
+                enum pattern = "Twitch timer file malformed! Invalid timer type " ~
+                    "for %s: `%s`";
+                logger.errorf(pattern, channelName, timerArrayEntry.type);
                 errored = true;
                 continue;
             }

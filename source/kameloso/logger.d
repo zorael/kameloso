@@ -54,7 +54,8 @@ private:
     enum linebufferInitialSize = 4096;
 
     bool monochrome;  /// Whether to use colours or not in logger output.
-    bool brightTerminal;   /// Whether or not to use colours for a bright background.
+    bool brightTerminal;  /// Whether or not to use colours for a bright background.
+    bool headless;  /// Whether or not to disable all terminal output.
 
 public:
     /++
@@ -63,13 +64,16 @@ public:
         Params:
             monochrome = Whether or not to print colours.
             brightTerminal = Bright terminal setting.
+            headless = Headless setting.
      +/
     this(const Flag!"monochrome" monochrome,
-        const Flag!"brightTerminal" brightTerminal) pure nothrow @safe
+        const Flag!"brightTerminal" brightTerminal,
+        const Flag!"headless" headless) pure nothrow @safe
     {
         linebuffer.reserve(linebufferInitialSize);
         this.monochrome = monochrome;
         this.brightTerminal = brightTerminal;
+        this.headless = headless;
     }
 
 
@@ -144,7 +148,11 @@ public:
          +/
         private string tintImpl(LogLevel level)() const @property pure nothrow @nogc @safe
         {
-            if (brightTerminal)
+            if (headless)
+            {
+                return string.init;
+            }
+            else if (brightTerminal)
             {
                 enum ctTintBright = tint(level, Yes.brightTerminal).colour.idup;
                 return ctTintBright;
@@ -188,6 +196,8 @@ auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogL
         import std.datetime : DateTime;
         import std.datetime.systime : Clock;
 
+        if (headless) return;
+
         version(Colours)
         {
             if (!monochrome)
@@ -220,6 +230,8 @@ auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogL
     {
         import std.stdio : writeln;
 
+        if (headless) return;
+
         version(Colours)
         {
             if (!monochrome)
@@ -250,6 +262,8 @@ auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogL
     private void printImpl(Args...)(const LogLevel logLevel, auto ref Args args)
     {
         import std.traits : isAggregateType;
+
+        if (headless) return;
 
         beginLogMsg(logLevel);
 
@@ -334,10 +348,14 @@ auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogL
             pattern = Runtime pattern to format the output with.
             args = Variadic arguments to compose the output message with.
      +/
-    private void printfImpl(Args...)(const LogLevel logLevel,
-        const string pattern, auto ref Args args)
+    private void printfImpl(Args...)
+        (const LogLevel logLevel,
+        const string pattern,
+        auto ref Args args)
     {
         import std.format : formattedWrite;
+
+        if (headless) return;
 
         beginLogMsg(logLevel);
         linebuffer.formattedWrite(pattern, args);
@@ -367,20 +385,17 @@ auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogL
     {
         import std.format : formattedWrite;
 
+        if (headless) return;
+
         beginLogMsg(logLevel);
         linebuffer.formattedWrite!pattern(args);
         finishLogMsg();
     }
 
 
-    /// Mixin to exit the program on `fatal` calls.
-    private enum fatalExitMixin =
-        "import std.stdio : writeln;
-        import core.runtime : defaultTraceHandler;
-        import core.stdc.stdlib : exit;
-
-        writeln(defaultTraceHandler);
-        exit(1);";
+    /// Mixin to error out on `fatal` calls.
+    private enum fatalErrorMixin =
+`throw new Error("A fatal error message was logged");`;
 
     /+
         Generate `trace`, `tracef`, `log`, `logf` and similar Logger-esque functions.
@@ -409,7 +424,7 @@ void %1$sf(string pattern, Args...)(auto ref Args args)
 {
     printfImpl!pattern(LogLevel.%1$s, args);
     %2$s
-}}.format(lv, (lv == LogLevel.fatal) ? fatalExitMixin : string.init));
+}}.format(lv, (lv == LogLevel.fatal) ? fatalErrorMixin : string.init));
     }
 
     /++
@@ -475,7 +490,7 @@ unittest
         }
     }
 
-    auto log_ = new KamelosoLogger(Yes.monochrome, No.brightTerminal);
+    auto log_ = new KamelosoLogger(Yes.monochrome, No.brightTerminal, No.headless);
 
     log_.logf!"log: %s"("log");
     log_.infof!"log: %s"("info");
@@ -488,7 +503,7 @@ unittest
 
     version(Colours)
     {
-        log_ = new KamelosoLogger(No.monochrome, Yes.brightTerminal);
+        log_ = new KamelosoLogger(No.monochrome, Yes.brightTerminal, No.headless);
 
         log_.log("log: log");
         log_.info("log: info");
@@ -499,7 +514,7 @@ unittest
         log_.trace("log: trace");
         log_.off("log: off");
 
-        log_ = new KamelosoLogger(No.monochrome, No.brightTerminal);
+        log_ = new KamelosoLogger(No.monochrome, No.brightTerminal, No.headless);
 
         log_.log("log: log");
         log_.info("log: info");

@@ -13,8 +13,9 @@
 
     See_Also:
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
+@("printer")
 module kameloso.plugins.printer.base;
 
 version(WithPlugins):
@@ -48,7 +49,7 @@ public:
     @Enabler bool enabled = true;
 
     /// Toggles whether or not the plugin should print to screen (as opposed to just log).
-    bool printToScreen = true;
+    bool monitor = true;
 
     version(Colours)
     {
@@ -137,12 +138,14 @@ public:
     Mutable [dialect.defs.IRCEvent] parameter so as to make fewer internal copies
     (as this is a hotspot).
  +/
-@Chainable
-@(IRCEvent.Type.ANY)
-@(ChannelPolicy.any)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.ANY)
+    .channelPolicy(ChannelPolicy.any)
+    .chainable(true)
+)
 void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 {
-    if (!plugin.printerSettings.printToScreen) return;
+    if (!plugin.printerSettings.monitor || plugin.state.settings.headless) return;
 
     // For many types there's no need to display the target nickname when it's the bot's
     // Clear event.target.nickname for those types.
@@ -153,8 +156,11 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         if the passed channel, sender or target nickname has a squelchstamp
         that demands it. Additionally updates the squelchstamp if so.
      +/
-    static bool updateSquelchstamp(PrinterPlugin plugin, const long time,
-        const string channel, const string sender, const string target)
+    static bool updateSquelchstamp(PrinterPlugin plugin,
+        const long time,
+        const string channel,
+        const string sender,
+        const string target)
     in ((channel.length || sender.length || target.length),
         "Tried to update squelchstamp but with no channel or user information passed")
     {
@@ -290,12 +296,11 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
             if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
             {
                 // Filter overly verbose JOINs and PARTs on Twitch if we're filtering
-                goto case ROOMSTATE;
+                if (!plugin.printerSettings.filterMost) goto default;
+                break;
             }
-            else
-            {
-                goto default;
-            }
+
+            goto default;
         }
         else
         {
@@ -366,7 +371,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
             goto default;
         }
 
-    case USERSTATE: // Insanely spammy, once every sent message
+    case USERSTATE: // Once per channel join?
     case PONG:
         break;
 
@@ -392,20 +397,20 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 
         bool put;
 
+        alias BellOnMention = Flag!"bellOnMention";
+        alias BellOnError = Flag!"bellOnError";
+        alias HideBlacklistedUsers = Flag!"hideBlacklistedUsers";
+
+        scope(exit) plugin.linebuffer.clear();
+
         version(Colours)
         {
             if (!plugin.state.settings.monochrome)
             {
                 plugin.formatMessageColoured(plugin.linebuffer, event,
-                    (plugin.printerSettings.bellOnMention ?
-                        Yes.bellOnMention :
-                        No.bellOnMention),
-                    (plugin.printerSettings.bellOnError ?
-                        Yes.bellOnError :
-                        No.bellOnError),
-                    (plugin.printerSettings.hideBlacklistedUsers ?
-                        Yes.hideBlacklistedUsers :
-                        No.hideBlacklistedUsers));
+                    cast(BellOnMention)plugin.printerSettings.bellOnMention,
+                    cast(BellOnError)plugin.printerSettings.bellOnError,
+                    cast(HideBlacklistedUsers)plugin.printerSettings.hideBlacklistedUsers);
                 put = true;
             }
         }
@@ -413,19 +418,12 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         if (!put)
         {
             plugin.formatMessageMonochrome(plugin.linebuffer, event,
-                (plugin.printerSettings.bellOnMention ?
-                    Yes.bellOnMention :
-                    No.bellOnMention),
-                (plugin.printerSettings.bellOnError ?
-                    Yes.bellOnError :
-                    No.bellOnError),
-                (plugin.printerSettings.hideBlacklistedUsers ?
-                    Yes.hideBlacklistedUsers :
-                    No.hideBlacklistedUsers));
+                cast(BellOnMention)plugin.printerSettings.bellOnMention,
+                cast(BellOnError)plugin.printerSettings.bellOnError,
+                cast(HideBlacklistedUsers)plugin.printerSettings.hideBlacklistedUsers);
         }
 
         writeln(plugin.linebuffer.data);
-        plugin.linebuffer.clear();
         break;
     }
 }
@@ -446,9 +444,11 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     See_Also:
         [commitAllLogs]
  +/
-@Chainable
-@(ChannelPolicy.any)
-@(IRCEvent.Type.ANY)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.ANY)
+    .channelPolicy(ChannelPolicy.any)
+    .chainable(true)
+)
 void onLoggableEvent(PrinterPlugin plugin, const ref IRCEvent event)
 {
     return onLoggableEventImpl(plugin, event);
@@ -467,7 +467,9 @@ void onLoggableEvent(PrinterPlugin plugin, const ref IRCEvent event)
     See_Also:
         [kameloso.plugins.printer.logging.commitLog]
  +/
-@(IRCEvent.Type.PING)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.PING)
+)
 void commitAllLogs(PrinterPlugin plugin)
 {
     return commitAllLogsImpl(plugin);
@@ -482,7 +484,9 @@ void commitAllLogs(PrinterPlugin plugin)
     Set a flag so we only print this information once; (ISUPPORTS can/do stretch
     across several events.)
  +/
-@(IRCEvent.Type.RPL_ISUPPORT)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_ISUPPORT)
+)
 void onISUPPORT(PrinterPlugin plugin)
 {
     import kameloso.common : Tint, logger;
@@ -495,7 +499,8 @@ void onISUPPORT(PrinterPlugin plugin)
 
     plugin.printedISUPPORT = true;
 
-    logger.logf("Detected %s%s%s running daemon %s%s%s (%s)",
+    enum pattern = "Detected %s%s%s running daemon %s%s%s (%s)";
+    logger.logf(pattern,
         Tint.info, plugin.state.server.network, Tint.log,
         Tint.info, plugin.state.server.daemon,
         Tint.off, plugin.state.server.daemonstring);
@@ -520,7 +525,8 @@ package string datestamp()
     import std.format : format;
 
     immutable now = Clock.currTime;
-    return "-- [%d-%02d-%02d]".format(now.year, cast(int)now.month, now.day);
+    enum pattern = "-- [%d-%02d-%02d]";
+    return format(pattern, now.year, cast(int)now.month, now.day);
 }
 
 
@@ -568,7 +574,7 @@ void start(PrinterPlugin plugin)
         {
             if (plugin.isEnabled)
             {
-                if (plugin.printerSettings.printToScreen && plugin.printerSettings.daybreaks)
+                if (plugin.printerSettings.monitor && plugin.printerSettings.daybreaks)
                 {
                     import kameloso.common : logger;
                     logger.info(datestamp);
@@ -600,7 +606,7 @@ void initResources(PrinterPlugin plugin)
 
     if (!plugin.establishLogLocation(plugin.logDirectory))
     {
-        import kameloso.plugins.common.base : IRCPluginInitialisationException;
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
         throw new IRCPluginInitialisationException("Could not create log directory");
     }
 }

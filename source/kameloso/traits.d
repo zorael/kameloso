@@ -70,8 +70,8 @@ if (Things.length > 0)
             else
             {
                 import std.format : format;
-                static assert(0, "Non-aggregate type `%s` passed to `longestMemberNameImpl`"
-                    .format(Thing.stringof));
+                enum pattern = "Non-aggregate type `%s` passed to `longestMemberNameImpl`";
+                static assert(0, pattern.format(Thing.stringof));
             }
         }
 
@@ -234,8 +234,8 @@ if (Things.length > 0)
             else
             {
                 import std.format : format;
-                static assert(0, "Non-aggregate type `%s` passed to `longestMemberTypeNameImpl`"
-                    .format(Thing.stringof));
+                enum pattern = "Non-aggregate type `%s` passed to `longestMemberTypeNameImpl`";
+                static assert(0, pattern.format(Thing.stringof));
             }
         }
 

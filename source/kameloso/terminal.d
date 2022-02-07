@@ -67,6 +67,7 @@ enum TerminalToken
     bell = '\007',
 }
 
+
 version(Windows)
 {
     // Taken from LDC: https://github.com/ldc-developers/ldc/pull/3086/commits/9626213a
@@ -182,7 +183,7 @@ else
     Params:
         override_ = Whether or not to override checks and always set line buffering.
  +/
-void ensureAppropriateBuffering(const bool override_ = false) @system
+void ensureAppropriateBuffering(const Flag!"override_" override_ = No.override_) @system
 {
     import kameloso.platform : currentPlatform;
 
@@ -329,9 +330,12 @@ enum TerminalReset
 /++
     Bool of whether or not a type is a colour code enum.
  +/
-enum isAColourCode(T) = is(T : TerminalForeground) || is(T : TerminalBackground) ||
-                        is(T : TerminalFormat) || is(T : TerminalReset);/* ||
-                        is(T == int);*/
+enum isAColourCode(T) =
+    is(T : TerminalForeground) ||
+    is(T : TerminalBackground) ||
+    is(T : TerminalFormat) ||
+    is(T : TerminalReset);/* ||
+    is(T == int);*/
 
 
 // colour
@@ -602,84 +606,65 @@ unittest
 
     writeln("BRIGHT: ", bright);
 
-    foreach (i; 0..256)
+    foreach (r; 0..256)
     {
-        int r, g, b;
-        r = i;
-        int n = i % 10;
-        write(n.to!string.truecolour(r, g, b, bright));
-        if (n == 0) write(i);
+        immutable n = r % 10;
+        write(n.to!string.truecolour(r, 0, 0, bright));
+        if (n == 0) write(r);
     }
 
     writeln();
 
-    foreach (i; 0..256)
+    foreach (g; 0..256)
     {
-        int r, g, b;
-        g = i;
-        int n = i % 10;
-        write(n.to!string.truecolour(r, g, b, bright));
-        if (n == 0) write(i);
+        immutable n = g % 10;
+        write(n.to!string.truecolour(0, g, 0, bright));
+        if (n == 0) write(g);
     }
 
     writeln();
 
-    foreach (i; 0..256)
+    foreach (b; 0..256)
     {
-        int r, g, b;
-        b = i;
-        int n = i % 10;
-        write(n.to!string.truecolour(r, g, b, bright));
-        if (n == 0) write(i);
+        immutable n = b % 10;
+        write(n.to!string.truecolour(0, 0, b, bright));
+        if (n == 0) write(b);
     }
 
     writeln();
 
-    foreach (i; 0..256)
+    foreach (rg; 0..256)
     {
-        int r, g, b;
-        r = i;
-        g = i;
-        int n = i % 10;
-        write(n.to!string.truecolour(r, g, b, bright));
-        if (n == 0) write(i);
+        immutable n = rg % 10;
+        write(n.to!string.truecolour(rg, rg, 0, bright));
+        if (n == 0) write(rg);
     }
 
     writeln();
 
-    foreach (i; 0..256)
+    foreach (rb; 0..256)
     {
-        int r, g, b;
-        r = i;
-        b = i;
-        int n = i % 10;
-        write(n.to!string.truecolour(r, g, b, bright));
-        if (n == 0) write(i);
+        immutable n = rb % 10;
+        write(n.to!string.truecolour(rb, 0, rb, bright));
+        if (n == 0) write(rb);
     }
 
     writeln();
 
-    foreach (i; 0..256)
+    foreach (gb; 0..256)
     {
-        int r, g, b;
-        g = i;
-        b = i;
-        int n = i % 10;
-        write(n.to!string.truecolour(r, g, b, bright));
-        if (n == 0) write(i);
+        immutable n = gb % 10;
+        write(n.to!string.truecolour(0, gb, gb, bright));
+        if (n == 0) write(gb);
     }
 
     writeln();
 
-    foreach (i; 0..256)
+    foreach (rgb; 0..256)
     {
-        int r, g, b;
-        r = i;
-        g = i;
-        b = i;
-        int n = i % 10;
-        write(n.to!string.truecolour(r, g, b, bright));
-        if (n == 0) write(i);
+        immutable n = rgb % 10;
+        write(n.to!string.truecolour(rgb, rgb, rgb, bright));
+        if (n == 0) write(rgb);
     }
 
     writeln();
@@ -712,7 +697,11 @@ unittest
             dark or too bright.
  +/
 version(Colours)
-void truecolour(Sink)(auto ref Sink sink, uint r, uint g, uint b,
+void truecolour(Sink)
+    (auto ref Sink sink,
+    uint r,
+    uint g,
+    uint b,
     const Flag!"brightTerminal" bright = No.brightTerminal,
     const Flag!"normalise" normalise = Yes.normalise)
 if (isOutputRange!(Sink, char[]))
@@ -774,7 +763,10 @@ if (isOutputRange!(Sink, char[]))
         The passed string word encompassed by terminal colour tags.
  +/
 version(Colours)
-string truecolour(const string word, const uint r, const uint g, const uint b,
+string truecolour(const string word,
+    const uint r,
+    const uint g,
+    const uint b,
     const Flag!"brightTerminal" bright = No.brightTerminal,
     const Flag!"normalise" normalise = Yes.normalise) pure
 {
@@ -800,7 +792,7 @@ unittest
     immutable name = "blarbhl".truecolour(255, 255, 255, No.brightTerminal, No.normalise);
     immutable alsoName = "%c[38;2;%d;%d;%dm%s%c[0m"
         .format(cast(char)TerminalToken.format, 255, 255, 255,
-        "blarbhl", cast(char)TerminalToken.format);
+           "blarbhl", cast(char)TerminalToken.format);
 
     assert((name == alsoName), alsoName);
 }
@@ -828,7 +820,8 @@ unittest
         else (a duplicate of) the line unchanged.
  +/
 version(Colours)
-string invert(const string line, const string toInvert,
+string invert(const string line,
+    const string toInvert,
     const Flag!"caseSensitive" caseSensitive = Yes.caseSensitive) pure
 {
     import dialect.common : isValidNicknameCharacter;
@@ -852,8 +845,9 @@ string invert(const string line, const string toInvert,
     //assert((startpos != -1), "Tried to invert nonexistent text");
     if (startpos == -1) return line;
 
-    immutable inverted = "%c[%dm%s%c[%dm".format(TerminalToken.format,
-        TerminalFormat.reverse, toInvert, TerminalToken.format, TerminalReset.invert);
+    enum pattern = "%c[%dm%s%c[%dm";
+    immutable inverted = format(pattern, TerminalToken.format, TerminalFormat.reverse,
+        toInvert, TerminalToken.format, TerminalReset.invert);
 
     Appender!(char[]) sink;
     sink.reserve(line.length + 16);

@@ -3,6 +3,7 @@
 
     See_Also:
         [kameloso.plugins.twitchbot.base]
+        [kameloso.plugins.twitchbot.keygen]
  +/
 module kameloso.plugins.twitchbot.api;
 
@@ -66,8 +67,8 @@ if (isSomeFunction!dg)
     catch (TwitchQueryException e)
     {
         import kameloso.common : Tint, curlErrorStrings, logger;
-        logger.errorf("Failed to query Twitch: %s (%s%s%s) (%2$s%5$s%4$s)",
-            e.msg, Tint.log, e.error, Tint.error, curlErrorStrings[e.errorCode]);
+        enum pattern = "Failed to query Twitch: %s (%s%s%s) (%2$s%5$s%4$s)";
+        logger.errorf(pattern, e.msg, Tint.log, e.error, Tint.error, curlErrorStrings[e.errorCode]);
     }
 }
 
@@ -91,7 +92,8 @@ if (isSomeFunction!dg)
         timeout = How long before queries time out.
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
  +/
-void persistentQuerier(shared QueryResponse[string] bucket, const uint timeout,
+void persistentQuerier(shared QueryResponse[string] bucket,
+    const uint timeout,
     const string caBundleFile)
 {
     import kameloso.thread : ThreadMessage;
@@ -117,281 +119,16 @@ void persistentQuerier(shared QueryResponse[string] bucket, const uint timeout,
             {
                 halt = true;
             },
-            (OwnerTerminated e) scope
+            (OwnerTerminated _) scope
             {
                 halt = true;
             },
-            /*(Variant v) scope
+            /*(Variant _) scope
             {
                 // It's technically an error but do nothing for now
             },*/
         );
     }
-}
-
-
-// generateKey
-/++
-    Start the captive key generation routine at the earliest possible moment,
-    which are the CAP events.
-
-    We can't do it in `start` since the calls to save and exit would go unheard,
-    as `start` happens before the main loop starts. It would then immediately
-    fail to read if too much time has passed, and nothing would be saved.
- +/
-void generateKey(TwitchBotPlugin plugin)
-{
-    import kameloso.common : Tint, logger;
-    import kameloso.thread : ThreadMessage;
-    import lu.string : contains, nom, stripped;
-    import std.process : Pid, ProcessException, wait;
-    import std.stdio : File, readln, stdin, stdout, write, writefln, writeln;
-
-    scope(exit)
-    {
-        import kameloso.messaging : quit;
-        quit!(Yes.priority)(plugin.state, string.init, Yes.quiet);
-    }
-
-    logger.trace();
-    logger.info("-- Twitch authorisation key generation mode --");
-    writeln();
-    writeln("Attempting to open a Twitch login page in your default web browser. Follow the");
-    writeln("instructions and log in to authorise the use of this program with your account.");
-    writeln();
-    writeln(Tint.log, "Then paste the address of the page you are redirected to afterwards here.", Tint.off);
-    writeln();
-    writefln("* The redirected address should start with %shttp://localhost%s.", Tint.info, Tint.off);
-    writefln(`* It will probably say "%sthis site can't be reached%s".`, Tint.log, Tint.off);
-    writeln("* If you are running local web server, you may have to temporarily disable it");
-    writeln("  for this to work.");
-    writeln();
-    stdout.flush();
-
-    static immutable scopes =
-    [
-        // New Twitch API
-
-        //"analytics:read:extension",
-        //"analytics:read:games",
-        "bits:read",
-        "channel:edit:commercial",
-        "channel:read:subscriptions",
-        //"clips:edit",
-        "user:edit",
-        "user:edit:broadcast",  // implies user:read:broadcast
-        //"user:edit:follows",
-        //"user:read:broadcast",
-        //"user:read:email",
-
-        // Twitch APIv5
-
-        //"channel_check_subscription",
-        //"channel_commercial",
-        "channel_editor",
-        //"channel_feed_edit",
-        //"channel_feed_read",
-        //"channel_read",
-        //"channel_stream",
-        //"channel_subscriptions",
-        //"collections_edit",
-        //"communities_edit",
-        //"communities_moderate",
-        //"openid",
-        "user_blocks_edit",
-        "user_blocks_read",
-        "user_follows_edit",
-        //"user_read",
-        //"user_subscriptions",
-        //"viewing_activity_read",
-
-        // Chat and PubSub
-
-        "channel:moderate",
-        "chat:edit",
-        "chat:read",
-        "whispers:edit",
-        "whispers:read",
-    ];
-
-    import std.array : join;
-
-    enum ctBaseURL = "https://id.twitch.tv/oauth2/authorize?response_type=token" ~
-        "&client_id=" ~ TwitchBotPlugin.clientID ~
-        "&redirect_uri=http://localhost" ~
-        "&scope=" ~ scopes.join('+') ~
-        "&state=kameloso-";
-
-    Pid browser;
-    immutable url = ctBaseURL ~ plugin.state.client.nickname ~
-        (plugin.state.settings.force ? "&force_verify=true" : string.init);
-
-    scope(exit) if (browser !is null) wait(browser);
-
-    void printManualURL()
-    {
-        enum scissors = "8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<";
-
-        writeln();
-        writeln(Tint.log, "Copy and paste this link manually into your browser, " ~
-            "and log in as asked:", Tint.off);
-        writeln();
-        writeln(Tint.info, scissors, Tint.off);
-        writeln();
-        writeln(url);
-        writeln();
-        writeln(Tint.info, scissors, Tint.off);
-        writeln();
-    }
-
-    if (plugin.state.settings.force)
-    {
-        logger.warning("Forcing; not automatically opening browser.");
-        printManualURL();
-    }
-    else
-    {
-        try
-        {
-            version(Posix)
-            {
-                import std.process : environment, spawnProcess;
-
-                version(OSX)
-                {
-                    enum defaultCommand = "open";
-                }
-                else
-                {
-                    // Assume XDG
-                    enum defaultCommand = "xdg-open";
-                }
-
-                immutable browserCommand = environment.get("BROWSER", defaultCommand);
-                immutable openBrowser = [ browserCommand, url ];
-                auto devNull = File("/dev/null", "r+");
-                browser = spawnProcess(openBrowser, devNull, devNull, devNull);
-            }
-            else version(Windows)
-            {
-                import std.file : tempDir;
-                import std.format : format;
-                import std.path : buildPath;
-                import std.process : spawnProcess;
-
-                immutable urlBasename = "kameloso-twitch-%s.url"
-                    .format(plugin.state.client.nickname);
-                immutable urlFileName = buildPath(tempDir, urlBasename);
-
-                auto urlFile = File(urlFileName, "w");
-
-                urlFile.writeln("[InternetShortcut]");
-                urlFile.writeln("URL=", url);
-                urlFile.flush();
-
-                immutable openBrowser = [ "explorer", urlFileName ];
-                auto nulFile = File("NUL", "r+");
-                browser = spawnProcess(openBrowser, nulFile, nulFile, nulFile);
-            }
-            else
-            {
-                // Jump to the catch
-                throw new ProcessException("Unexpected platform");
-            }
-        }
-        catch (ProcessException e)
-        {
-            // Probably we got some platform wrong and command was not found
-            logger.warning("Error: could not automatically open browser.");
-            printManualURL();
-        }
-    }
-
-    string key;
-
-    while (!key.length)
-    {
-        writeln(Tint.log, "Paste the address of the page you were redirected to here " ~
-            "(empty line exits):", Tint.off);
-        writeln();
-        write("> ");
-        stdout.flush();
-
-        stdin.flush();
-        immutable readURL = readln().stripped;
-
-        if (!readURL.length || *plugin.state.abort)
-        {
-            writeln();
-            logger.warning("Aborting key generation.");
-            logger.trace();
-            return;
-        }
-
-        if (!readURL.contains("access_token="))
-        {
-            writeln();
-            logger.error("Could not make sense of URL. Try again or file a bug.");
-            writeln();
-            continue;
-        }
-
-        string slice = readURL;  // mutable
-        slice.nom("access_token=");
-        key = slice.nom('&');
-
-        if (key.length != 30L)
-        {
-            writeln();
-            logger.error("Invalid key length!");
-            writeln();
-            key = string.init;  // reset it so the while loop repeats
-        }
-    }
-
-    plugin.state.bot.pass = key;
-    plugin.state.botUpdated = true;
-
-    writeln();
-    writefln("%sYour private authorisation key is: %s%s%s",
-        Tint.log, Tint.info, key, Tint.off);
-    writefln("It should be entered as %spass%s under %1$s[IRCBot]%2$s.",
-        Tint.info, Tint.off);
-    writeln();
-
-    if (!plugin.state.settings.saveOnExit)
-    {
-        write("Do you want to save it there now? [Y/*]: ");
-        stdout.flush();
-
-        stdin.flush();
-        immutable input = readln().stripped;
-        if (*plugin.state.abort) return;
-
-        if (!input.length || (input == "y") || (input == "Y"))
-        {
-            import std.concurrency : prioritySend;
-            plugin.state.mainThread.prioritySend(ThreadMessage.Save());
-        }
-        else
-        {
-            writeln();
-            writefln("* Make sure to add it to %s%s%s, then.",
-                Tint.info, plugin.state.settings.configFile, Tint.off);
-        }
-    }
-
-    writeln();
-    writeln("-------------------------------------------------------------------------------");
-    writeln();
-    writefln("All done! Restart the program (without %s--set twitchbot.keygen%s) and it should",
-        Tint.info, Tint.off);
-    writeln("just work. If it doesn't, please file an issue, at:");
-    writeln();
-    writeln("    ", Tint.info, "https://github.com/zorael/kameloso/issues/new", Tint.off);
-    writeln();
-    writeln(Tint.warning, "Note: this will need to be repeated once every 60 days.", Tint.off);
-    writeln();
 }
 
 
@@ -423,8 +160,10 @@ void generateKey(TwitchBotPlugin plugin)
     Throws:
         [TwitchQueryException] if there were unrecoverable errors.
  +/
-QueryResponse queryTwitch(TwitchBotPlugin plugin, const string url,
-    const string authorisationHeader, const Flag!"recursing" recursing = No.recursing)
+QueryResponse queryTwitch(TwitchBotPlugin plugin,
+    const string url,
+    const string authorisationHeader,
+    const Flag!"recursing" recursing = No.recursing)
 in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
 {
     import kameloso.plugins.common.delayawait : delay;
@@ -551,8 +290,11 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
             values keyed by URL.
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
  +/
-void queryTwitchImpl(const string url, const string authToken,
-    const uint timeout, shared QueryResponse[string] bucket, const string caBundleFile)
+void queryTwitchImpl(const string url,
+    const string authToken,
+    const uint timeout,
+    shared QueryResponse[string] bucket,
+    const string caBundleFile)
 {
     import std.array : Appender;
     import std.datetime.systime : Clock, SysTime;
@@ -612,7 +354,7 @@ void queryTwitchImpl(const string url, const string authToken,
 
     Returns:
         A singular user or channel regardless of how many were asked for in the URL.
-        If nothing was found, an empty [std.json.JSONValue].init is returned.
+        If nothing was found, an empty [std.json.JSONValue].init is returned instead.
  +/
 JSONValue getTwitchEntity(TwitchBotPlugin plugin, const string url)
 in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
@@ -620,16 +362,22 @@ in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
     import std.json : JSONType, parseJSON;
 
     immutable response = queryTwitch(plugin, url, plugin.authorizationBearer);
-    auto json = parseJSON(response.str);
+    immutable responseJSON = parseJSON(response.str);
 
-    if ((json.type != JSONType.object) || ("data" !in json) ||
-        (json["data"].type != JSONType.array) || (json["data"].array.length != 1))
+    if (responseJSON.type != JSONType.object)
     {
         return JSONValue.init;
     }
+    else if (const dataJSON = "data" in responseJSON)
+    {
+        if ((dataJSON.type == JSONType.array) ||
+            (dataJSON.array.length == 1))
+        {
+            return dataJSON.array[0];
+        }
+    }
 
-    auto dataJSON = "data" in json;
-    return dataJSON.array[0];
+    return JSONValue.init;
 }
 
 
@@ -638,6 +386,14 @@ in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
     Get the JSON representation of everyone currently in a broadcaster's channel.
 
     It is not updated in realtime, so it doesn't make sense to call this often.
+
+    Params:
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin].
+        broadcaster = The broadcaster to look up chatters for.
+
+    Returns:
+        A [std.json.JSONValue] with "`chatters`" and "`chatter_count`" keys.
+        If nothing was found, an empty [std.json.JSONValue].init is returned instead.
  +/
 JSONValue getChatters(TwitchBotPlugin plugin, const string broadcaster)
 in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
@@ -648,7 +404,7 @@ in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
     immutable chattersURL = text("https://tmi.twitch.tv/group/user/", broadcaster, "/chatters");
 
     immutable response = queryTwitch(plugin, chattersURL, plugin.authorizationBearer);
-    auto json = parseJSON(response.str);
+    immutable responseJSON = parseJSON(response.str);
 
     /*
     {
@@ -674,15 +430,20 @@ in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
     }
     */
 
-    if ((json.type != JSONType.object) || ("chatters" !in json) ||
-        (json["chatters"].type != JSONType.object))
+    if (responseJSON.type != JSONType.object)
     {
-        // Assume the rest is in place
         return JSONValue.init;
     }
+    else if (const chattersJSON = "chatters" in responseJSON)
+    {
+        if (chattersJSON.type != JSONType.object)
+        {
+            return JSONValue.init;
+        }
+    }
 
-    // Don't return json["chatters"], as we would lose "chatter_count".
-    return json;
+    // Don't return `chatterJSON`, as we would lose "chatter_count".
+    return responseJSON;
 }
 
 
@@ -717,7 +478,7 @@ in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
     immutable authorizationHeader = "OAuth " ~ pass;
 
     immutable response = queryTwitch(plugin, url, authorizationHeader);
-    auto validationJSON = parseJSON(response.str);
+    immutable validationJSON = parseJSON(response.str);
 
     if ((validationJSON.type != JSONType.object) || ("client_id" !in validationJSON))
     {
@@ -763,7 +524,7 @@ in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
             text(url, "&after=", after) : url;
 
         immutable response = queryTwitch(plugin, paginatedURL, plugin.authorizationBearer);
-        auto followsJSON = parseJSON(response.str);
+        immutable followsJSON = parseJSON(response.str);
         const cursor = "cursor" in followsJSON["pagination"];
 
         if (!total) total = followsJSON["total"].integer;
@@ -858,7 +619,8 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
     Returns:
         A [QueryResponse] as constructed by other parts of the program.
  +/
-QueryResponse waitForQueryResponse(TwitchBotPlugin plugin, const string url,
+QueryResponse waitForQueryResponse(TwitchBotPlugin plugin,
+    const string url,
     const bool leaveTimingAlone = true)
 in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 {

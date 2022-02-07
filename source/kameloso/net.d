@@ -22,7 +22,7 @@
     enum resolveAttempts = 10;
 
     auto resolver = new Generator!ResolveAttempt(() =>
-        resolveFiber(conn, "irc.freenode.net", 6667, useIPv6, resolveAttempts, abort));
+        resolveFiber(conn, "irc.libera.chat", 6667, useIPv6, resolveAttempts, abort));
 
     resolver.call();
 
@@ -378,15 +378,15 @@ public:
         conn.sendline("PRIVMSG #channel :text");
         conn.sendline("PRIVMSG " ~ channel ~ " :" ~ content);
         conn.sendline("PRIVMSG ", channel, " :", content);  // Identical to above
-        conn.sendline!1024(longerLine);  // Now with custom line lengths
+        conn.sendline(longerLine, 1024L);  // Now with custom line lengths
         ---
 
         Params:
-            maxLineLength = Maximum line length before the sent message will be truncated.
             data = Variadic list of strings or characters to send. May contain
                 complete substrings separated by newline characters.
+            maxLineLength = Maximum line length before the sent message will be truncated.
      +/
-    void sendline(uint maxLineLength = 512, Data...)(const Data data) @system
+    void sendline(Data...)(const Data data, const uint maxLineLength = 512) @system
     in (connected, "Tried to send a line on an unconnected `Connection`")
     {
         int remainingMaxLength = (maxLineLength - 2);
@@ -588,7 +588,9 @@ struct ListenAttempt
         [ListenAttempt]s with information about the line receieved in its member values.
  +/
 void listenFiber(size_t bufferSize = BufferSize.socketReceive*2)
-    (Connection conn, ref bool abort, const int connectionLost = Timeout.connectionLost) @system
+    (Connection conn,
+    ref bool abort,
+    const int connectionLost = Timeout.connectionLost) @system
 in ((conn.connected), "Tried to set up a listening fiber on a dead connection")
 in ((connectionLost > 0), "Tried to set up a listening fiber with connection timeout of <= 0")
 {
@@ -882,7 +884,9 @@ struct ConnectionAttempt
         abort = Reference "abort" flag, which -- if set -- should make the
             function return and the [core.thread.fiber.Fiber] terminate.
  +/
-void connectFiber(ref Connection conn, const uint connectionRetries, ref bool abort) @system
+void connectFiber(ref Connection conn,
+    const uint connectionRetries,
+    ref bool abort) @system
 in (!conn.connected, "Tried to set up a connecting fiber on an already live connection")
 in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
 {
@@ -1115,7 +1119,7 @@ struct ResolveAttempt
     conn.reset();
 
     auto resolver = new Generator!ResolveAttempt(() =>
-        resolveFiber(conn, "irc.freenode.net", 6667, false, 10, abort));
+        resolveFiber(conn, "irc.libera.chat", 6667, false, 10, abort));
 
     resolver.call();
 
@@ -1162,8 +1166,11 @@ struct ResolveAttempt
         abort = Reference "abort" flag, which -- if set -- should make the
             function return and the [core.thread.fiber.Fiber] terminate.
  +/
-void resolveFiber(ref Connection conn, const string address, const ushort port,
-    const bool useIPv6, ref bool abort) @system
+void resolveFiber(ref Connection conn,
+    const string address,
+    const ushort port,
+    const bool useIPv6,
+    ref bool abort) @system
 in (!conn.connected, "Tried to set up a resolving fiber on an already live connection")
 in (address.length, "Tried to set up a resolving fiber on an empty address")
 {

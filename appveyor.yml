@@ -3,59 +3,17 @@ platform: x64
 environment:
   matrix:
     - DC: dmd
-      DReleaseType: releases
-      DVersion: 2.095.0
-      DSubversion:
+      #DVersion: latest
       arch: x64
-      #dubArgs:
-      #Ddflags:
-    #- DC: dmd
-      #DReleaseType: releases
-      #DVersion: 2.095.0
-      #DSubversion:
-      #arch: x86
-      #dubArgs:
-      #Ddflags:
     - DC: dmd
-      DReleaseType: releases
-      DVersion: 2.094.2
-      DSubversion:
-      arch: x64
-      #dubArgs:
-      #Ddflags:
-    - DC: dmd
-      DReleaseType: releases
-      DVersion: 2.094.2
-      DSubversion:
-      arch: x86
-      #dubArgs:
-      #Ddflags:
-    - DC: dmd
-      DReleaseType: releases
       DVersion: 2.084.0
-      DSubversion:
       arch: x64
-      #dubArgs:
-      #Ddflags:
-    - DC: dmd
-      DReleaseType: releases
-      DVersion: 2.084.0
-      DSubversion:
-      arch: x86
-      #dubArgs:
-      #Ddflags:
     - DC: ldc
-      DVersion: 1.24.0
-      DSubversion:
+      #DVersion: latest
       arch: x64
-      #dubArgs:
-      #Ddflags:
     - DC: ldc
-      DVersion: 1.14.0
-      DSubversion:
+      DVersion: 1.26.0
       arch: x64
-      #dubArgs:
-      #Ddflags:
 
 branches:
   except:
@@ -68,46 +26,37 @@ branches:
 install:
   - ps: function SetUpDCompiler
         {
-            $version = $env:DVersion;
-            $subversion = $env:DSubversion;
-            if($env:DC -eq "dmd"){
-              $releasetype = $env:DReleaseType;
-              Invoke-WebRequest "http://downloads.dlang.org/$($releasetype)/2.x/$($version)/dmd.$($version)$($subversion).windows.7z" -OutFile "c:\compiler.archive";
-            }
-            elseif($env:DC -eq "ldc"){
-              $arch = $env:arch;
-              Invoke-WebRequest "https://github.com/ldc-developers/ldc/releases/download/v$($version)$($subversion)/ldc2-$($version)$($subversion)-windows-$($arch).7z" -OutFile "c:\compiler.archive";
-            }
-            pushd c:\\;
-            7z x compiler.archive > $null;
-            popd;
+          mkdir "$env:USERPROFILE\dlang" -Force;
+          Invoke-WebRequest "https://dlang.org/install.sh" -OutFile "$env:USERPROFILE\dlang\install.sh";
+          pushd;
+          cd "$env:USERPROFILE\dlang";
+          if (Test-Path env:DVersion) {
+            & bash install.sh install $env:DC-$env:DVersion;
+          }
+          else {
+            & bash install.sh install $env:DC;
+          }
+          $env:activator = & bash install.sh install $env:DC -a;
+          popd;
         }
   - ps: SetUpDCompiler
+  - "%activator%"
 
 before_build:
   - ps: $env:toolchain = "msvc";
-  - ps: if($env:arch -eq "x86"){
-            $env:compilersetupargs = "x86";
-            $env:Darch = "x86";
-            $env:DConf = "m32";
-          }
-        elseif($env:arch -eq "x64"){
-            $env:compilersetupargs = "amd64";
-            $env:Darch = "x86_64";
-            $env:DConf = "m64";
+  - ps: if ($env:arch -eq "x86") {
+          $env:compilersetupargs = "x86";
+          $env:Darch = "x86";
+          $env:DConf = "m32";
         }
-  - ps : if($env:DC -eq "dmd"){
-           $path = $env:PATH;
-           $env:PATH = "C:\dmd2\windows\bin;$($path)";
-         }
-         elseif($env:DC -eq "ldc"){
-           $version = $env:DVersion;
-           $subversion = $env:DSubversion;
-           $arch = $env:arch;
-           $path = $env:PATH;
-           $env:PATH = "C:\ldc2-$($version)$($subversion)-windows-$($arch)\bin;$($path)";
-           $env:DC = "ldc2";
-         }
+        elseif ($env:arch -eq "x64") {
+          $env:compilersetupargs = "amd64";
+          $env:Darch = "x86_64";
+          $env:DConf = "m64";
+        }
+  - ps: if ($env:DC -eq "ldc") {
+          $env:DC = "ldc2";
+        }
   - ps: $env:compilersetup = "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall";
   - '"%compilersetup%" %compilersetupargs%'
 
@@ -115,34 +64,26 @@ build_script:
  - echo dummy build script - dont remove me
 
 test_script:
- - echo %PLATFORM%
- - echo %Darch%
- - echo %DC%
- - echo %PATH%
- #- echo %dubArgs%
- #- echo %Ddflags%
+ - echo %DC% on %PLATFORM% (%Darch%)
  - '%DC% --version'
  - dub --version
  #- git clone https://github.com/zorael/lu.git
  #- git clone https://github.com/zorael/dialect.git
  #- dub add-local lu
  #- dub add-local dialect
- #- echo Full tests may fail due to https://issues.dlang.org/show_bug.cgi?id=20048
- #- set DFLAGS = %Ddflags% -unittest
- - dub test           --arch=%Darch% --compiler=%DC% %dubArgs%
- #- set DFLAGS = %Ddflags%
- #- dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b plain -c dev
- - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b release -c dev
- - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b debug -c dev
+ #- echo "Full tests may fail due to https://issues.dlang.org/show_bug.cgi?id=20048"
+ - dub test           --compiler=%DC% --arch=%Darch%
+ - dub build --nodeps --compiler=%DC% --arch=%Darch% -b debug -c dev
  - mv kameloso.exe kameloso-dev.exe
- - dub build --nodeps --arch=%Darch% --compiler=%DC% %dubArgs% -b debug -c twitch
- #- mv kameloso.exe kameloso-twitch.exe
+ - dub build --nodeps --compiler=%DC% --arch=%Darch% -b plain -c dev
+ #- mv kameloso.exe kameloso-dev-plain.exe
+ - dub build --nodeps --compiler=%DC% --arch=%Darch% -b release -c dev
+ #- mv kameloso.exe kameloso-dev-release.exe
+ - dub build --nodeps --compiler=%DC% --arch=%Darch% -b debug -c twitch
+ #- mv kameloso.exe kameloso-twitch.exe  # keep artifact as kameloso.exe
 
 after_test:
- - ps: if($env:APPVEYOR_REPO_TAG -eq "True"){
+ - ps: if ($env:APPVEYOR_REPO_TAG -eq "True") {
          Push-AppveyorArtifact kameloso.exe -DeploymentName "Full build";
          Push-AppveyorArtifact kameloso-dev.exe -DeploymentName "Development build";
-       }
-       else{
-         echo "Does not seem to be a tag so not pushing artifacts";
        }

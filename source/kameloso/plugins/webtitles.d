@@ -7,7 +7,7 @@
 
     See_Also:
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.webtitles;
 
@@ -110,11 +110,11 @@ struct TitleLookupRequest
     It uses a simple state machine in [kameloso.common.findURLs] to exhaustively
     try to look up every URL returned by it.
  +/
-@Terminating
-@(IRCEvent.Type.CHAN)
-@(IRCEvent.Type.SELFCHAN)
-@(PermissionsRequired.ignore)
-@(ChannelPolicy.home)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.ignore)
+    .channelPolicy(ChannelPolicy.home)
+)
 void onMessage(WebtitlesPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.common : findURLs;
@@ -142,8 +142,6 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
     import lu.string : beginsWith, contains, nom;
     import std.concurrency : spawn;
 
-    immutable descriptionsFlag = plugin.webtitlesSettings.descriptions ?
-        Yes.descriptions : No.descriptions;
     bool[string] uniques;
 
     foreach (immutable i, url; urls)
@@ -169,9 +167,7 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
         request.event = event;
         request.url = url;
 
-        immutable colouredFlag = plugin.state.settings.colouredOutgoing ?
-            Yes.colouredOutgoing :
-            No.colouredOutgoing;
+        immutable colouredFlag = cast(Flag!"colouredOutgoing")plugin.state.settings.colouredOutgoing;
 
         if (plugin.cache.length) prune(plugin.cache, plugin.expireSeconds);
 
@@ -202,7 +198,8 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
         }
 
         cast(void)spawn(&worker, cast(shared)request, plugin.cache,
-            (i * plugin.delayMsecs), colouredFlag, descriptionsFlag);
+            (i * plugin.delayMsecs), colouredFlag,
+            cast(Flag!"descriptions")plugin.webtitlesSettings.descriptions);
     }
 
     import kameloso.thread : ThreadMessage;
@@ -543,10 +540,11 @@ void reportTitle(TitleLookupRequest request,
         import std.format : format;
 
         immutable maybePipe = request.results.description.length ? " | " : string.init;
+        enum pattern = "[%s] %s%s%s";
         line = colouredOutgoing ?
-            "[%s] %s%s%s".format(request.results.domain.ircBold, request.results.title,
+            format(pattern, request.results.domain.ircBold, request.results.title,
                 maybePipe, request.results.description) :
-            "[%s] %s%s%s".format(request.results.domain, request.results.title,
+            format(pattern, request.results.domain, request.results.title,
                 maybePipe, request.results.description);
     }
     else
@@ -844,39 +842,6 @@ void start(WebtitlesPlugin plugin)
 }
 
 
-import kameloso.thread : Sendable;
-
-// onBusMessage
-/++
-    Catches bus messages with the "`webtitles`" header requesting URLs to be
-    looked up and the titles of which reported.
-
-    Only relevant on Twitch servers with the Twitch bot plugin when it's filtering
-    links, so gate it behind version TwitchBotPlugin.
-
-    Params:
-        plugin = The current [WebtitlesPlugin].
-        header = String header describing the passed content payload.
-        content = Message content.
- +/
-version(TwitchBotPlugin)
-void onBusMessage(WebtitlesPlugin plugin, const string header, shared Sendable content)
-{
-    if (header != "webtitles") return;
-
-    if (plugin.state.server.daemon != IRCServer.Daemon.twitch) return;
-
-    import kameloso.plugins.common.base : EventURLs;
-    import kameloso.thread : BusMessage;
-
-    auto message = cast(BusMessage!EventURLs)content;
-    assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
-
-    auto eventAndURLs = message.payload;  // Mustn't be const
-    plugin.lookupURLs(eventAndURLs.event, eventAndURLs.urls);
-}
-
-
 mixin MinimalAuthentication;
 
 public:
@@ -911,22 +876,6 @@ private:
         their titles.
      +/
     enum lookupBufferSize = 8192;
-
-
-    // isEnabled
-    /++
-        Override [kameloso.plugins.common.core.IRCPluginImpl.isEnabled] and inject
-        a server check, so this plugin does nothing on Twitch servers, in addition
-        to doing nothing when [WebtitlesSettings.enabled] is false.
-
-        Returns:
-            `true` if this plugin should react to events; `false` if not.
-     +/
-    version(TwitchSupport)
-    override public bool isEnabled() const @property pure nothrow @nogc
-    {
-        return (state.server.daemon != IRCServer.Daemon.twitch) && webtitlesSettings.enabled;
-    }
 
     mixin IRCPluginImpl;
 }

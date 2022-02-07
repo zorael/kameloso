@@ -5,7 +5,7 @@
 
     See_Also:
         [kameloso.plugins.common.core]
-        [kameloso.plugins.common.base]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.common.mixins;
 
@@ -50,7 +50,9 @@ public:
         alwaysLookup = Whether or not to always issue a WHOIS query, even if
             the requested user's account is already known.
  +/
-mixin template WHOISFiberDelegate(alias onSuccess, alias onFailure = null,
+mixin template WHOISFiberDelegate(
+    alias onSuccess,
+    alias onFailure = null,
     Flag!"alwaysLookup" alwaysLookup = No.alwaysLookup)
 if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSomeFunction!onFailure))
 {
@@ -79,8 +81,8 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     static if (__traits(compiles, hasWHOISFiber))
     {
         import std.format : format;
-        static assert(0, "Double mixin of `%s` in `%s`"
-            .format("WHOISFiberDelegate", __FUNCTION__));
+        enum pattern = "Double mixin of `%s` in `%s`";
+        static assert(0, pattern.format("WHOISFiberDelegate", __FUNCTION__));
     }
     else
     {
@@ -318,9 +320,14 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
                 version(TwitchWarnings)
                 {
-                    import kameloso.common : logger, printStacktrace;
+                    import kameloso.common : logger;
                     logger.warning("Tried to enqueue and WHOIS on Twitch");
-                    version(PrintStacktraces) printStacktrace();
+
+                    version(PrintStacktraces)
+                    {
+                        import kameloso.common: printStacktrace;
+                        printStacktrace();
+                    }
                 }
 
                 static if (__traits(compiles, .hasUserAwareness))
@@ -483,7 +490,9 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         debug_ = Whether or not to include debugging output.
         module_ = String name of the mixing-in module; generally leave as-is.
  +/
-mixin template MessagingProxy(Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
+mixin template MessagingProxy(
+    Flag!"debug_" debug_ = No.debug_,
+    string module_ = __MODULE__)
 {
 private:
     static import kameloso.messaging;
@@ -491,16 +500,16 @@ private:
     import std.typecons : Flag, No, Yes;
 
     /// Symbol needed for the mixin constraints to work.
-    enum mixinSentinel = true;
+    // https://forum.dlang.org/post/sk4hqm$12cf$1@digitalmars.com
+    alias mixinParent = __traits(parent, {});
 
     // Use a custom constraint to force the scope to be an IRCPlugin
-    static if (!is(__traits(parent, mixinSentinel) : IRCPlugin))
+    static if (!is(mixinParent : IRCPlugin))
     {
         import lu.traits : CategoryName;
         import std.format : format;
 
-        alias messagingParent = __traits(parent, mixinSentinel);
-        alias messagingParentInfo = CategoryName!messagingParent;
+        alias messagingParentInfo = CategoryName!mixinParent;
 
         private enum pattern = "%s `%s` mixes in `%s` but it is only supposed to be " ~
             "mixed into an `IRCPlugin` subclass";
@@ -511,8 +520,8 @@ private:
     static if (__traits(compiles, this.hasMessagingProxy))
     {
         import std.format : format;
-        static assert(0, "Double mixin of `%s` in `%s`"
-            .format("MessagingProxy", typeof(this).stringof));
+        enum pattern = "Double mixin of `%s` in `%s`";
+        static assert(0, pattern.format("MessagingProxy", typeof(this).stringof));
     }
     else
     {
@@ -527,7 +536,8 @@ private:
         Sends a channel message.
      +/
     void chan(Flag!"priority" priority = No.priority)
-        (const string channelName, const string content,
+        (const string channelName,
+        const string content,
         const Flag!"quiet" quiet = No.quiet,
         const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
@@ -561,7 +571,9 @@ private:
         underlying same type; [dialect.defs.IRCEvent.Type.PRIVMSG].
      +/
     void privmsg(Flag!"priority" priority = No.priority)
-        (const string channel, const string nickname, const string content,
+        (const string channel,
+        const string nickname,
+        const string content,
         const Flag!"quiet" quiet = No.quiet,
         const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
@@ -576,7 +588,8 @@ private:
         Sends an `ACTION` "emote" to the supplied target (nickname or channel).
      +/
     void emote(Flag!"priority" priority = No.priority)
-        (const string emoteTarget, const string content,
+        (const string emoteTarget,
+        const string content,
         const Flag!"quiet" quiet = No.quiet,
         const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
@@ -593,7 +606,9 @@ private:
         This includes modes that pertain to a user in the context of a channel, like bans.
      +/
     void mode(Flag!"priority" priority = No.priority)
-        (const string channel, const const(char)[] modes, const string content = string.init,
+        (const string channel,
+        const const(char)[] modes,
+        const string content = string.init,
         const Flag!"quiet" quiet = No.quiet,
         const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
@@ -608,7 +623,8 @@ private:
         Sets the topic of a channel.
      +/
     void topic(Flag!"priority" priority = No.priority)
-        (const string channel, const string content,
+        (const string channel,
+        const string content,
         const Flag!"quiet" quiet = No.quiet,
         const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
@@ -623,7 +639,8 @@ private:
         Invites a user to a channel.
      +/
     void invite(Flag!"priority" priority = No.priority)
-        (const string channel, const string nickname,
+        (const string channel,
+        const string nickname,
         const Flag!"quiet" quiet = No.quiet,
         const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
@@ -638,7 +655,8 @@ private:
         Joins a channel.
      +/
     void join(Flag!"priority" priority = No.priority)
-        (const string channel, const string key = string.init,
+        (const string channel,
+        const string key = string.init,
         const Flag!"quiet" quiet = No.quiet,
         const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
@@ -653,7 +671,9 @@ private:
         Kicks a user from a channel.
      +/
     void kick(Flag!"priority" priority = No.priority)
-        (const string channel, const string nickname, const string reason = string.init,
+        (const string channel,
+        const string nickname,
+        const string reason = string.init,
         const Flag!"quiet" quiet = No.quiet,
         const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
@@ -668,7 +688,8 @@ private:
         Leaves a channel.
      +/
     void part(Flag!"priority" priority = No.priority)
-        (const string channel, const string reason = string.init,
+        (const string channel,
+        const string reason = string.init,
         const Flag!"quiet" quiet = No.quiet,
         const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
@@ -727,7 +748,8 @@ private:
         Sends raw text to the server, verbatim, bypassing all queues and
         throttling delays.
      +/
-    void immediate(const string line, const Flag!"quiet" quiet = No.quiet,
+    void immediate(const string line,
+        const Flag!"quiet" quiet = No.quiet,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.immediate(state, line, quiet, caller);
@@ -750,10 +772,11 @@ private:
             No need for any annotation; [kameloso.messaging.askToOutputImpl] is
             `@system` and nothing else.
          +/
-        mixin("void askTo%s(const string line)
-        {
-            return kameloso.messaging.askTo%1$s(state, line);
-        }".format(verb));
+        mixin(q{
+void askTo%s(const string line)
+{
+    return kameloso.messaging.askTo%1$s(state, line);
+}}.format(verb));
     }
 }
 
@@ -813,7 +836,9 @@ unittest
     Params:
         debug_ = Whether or not to print debug output to the terminal.
  +/
-mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MODULE__)
+mixin template Repeater(
+    Flag!"debug_" debug_ = No.debug_,
+    string module_ = __MODULE__)
 {
     import kameloso.plugins.common.core : Repeat, Replay;
     import dialect.defs : IRCUser;
@@ -826,8 +851,8 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
     static if (__traits(compiles, hasRepeater))
     {
         import std.format : format;
-        static assert(0, "Double mixin of `%s` in `%s`"
-            .format("Repeater", __FUNCTION__));
+        enum pattern = "Double mixin of `%s` in `%s`";
+        static assert(0, pattern.format("Repeater", __FUNCTION__));
     }
     else
     {
@@ -856,7 +881,7 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
     // explainRepeat
     /++
         Verbosely explains a repeat, including what
-        [kameloso.plugins.common.core.PermissionsRequired] and
+        [kameloso.plugins.common.core.Permissions] and
         [dialect.defs.IRCUser.Class] were involved.
 
         Gated behind version `ExplainRepeat`.
@@ -877,7 +902,7 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
 
         logger.logf(pattern,
             Tint.info, context.name, Tint.log, contextName,
-            repeat.replay.perms,
+            repeat.replay.permissionsRequired,
             caller,
             repeat.replay.event.sender.nickname,
             repeat.replay.event.sender.class_);
@@ -907,7 +932,7 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
 
         logger.logf(pattern,
             Tint.info, context.name, Tint.log, contextName,
-            repeat.replay.perms,
+            repeat.replay.permissionsRequired,
             caller,
             repeat.replay.event.sender.nickname,
             repeat.replay.event.sender.class_,
@@ -931,8 +956,8 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
 
         Repeat repeat = thisFiber.payload;
 
-        with (PermissionsRequired)
-        final switch (repeat.replay.perms)
+        with (Permissions)
+        final switch (repeat.replay.permissionsRequired)
         {
         case admin:
             if (repeat.replay.event.sender.class_ >= IRCUser.Class.admin)
@@ -994,7 +1019,7 @@ mixin template Repeater(Flag!"debug_" debug_ = No.debug_, string module_ = __MOD
      +/
     void repeat(Replay replay)
     {
-        import kameloso.plugins.common.base : repeat;
+        import kameloso.plugins.common.misc : repeat;
         context.repeat(&repeaterDelegate, replay);
     }
 }

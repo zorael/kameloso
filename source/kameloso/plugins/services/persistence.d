@@ -66,9 +66,9 @@ void postprocess(PersistenceService service, ref IRCEvent event)
 
         if (!service.state.settings.preferHostmasks)
         {
-            if (const channelName = event.sender.nickname in service.userClassCurrentChannelCache)
+            if (const channelName = event.sender.nickname in service.userClassChannelCache)
             {
-                service.userClassCurrentChannelCache[event.target.nickname] = *channelName;
+                service.userClassChannelCache[event.target.nickname] = *channelName;
             }
         }
 
@@ -78,7 +78,6 @@ void postprocess(PersistenceService service, ref IRCEvent event)
         return postprocessCommon(service, event);
     }
 }
-
 
 
 // postprocessCommon
@@ -126,7 +125,8 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
             the user looks like.
          +/
         static void applyClassifiers(PersistenceService service,
-            const ref IRCEvent event, ref IRCUser user)
+            const ref IRCEvent event,
+            ref IRCUser user)
         {
             if (user.class_ == IRCUser.Class.admin)
             {
@@ -169,20 +169,24 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
 
             if (!set)
             {
-                // All else failed, consider it a random
-                user.class_ = IRCUser.Class.anyone;
+                // All else failed, consider it a random registered or anyone, depending on server
+                user.class_ = (service.state.server.daemon == IRCServer.Daemon.twitch) ?
+                    IRCUser.Class.anyone : IRCUser.Class.registered;
             }
 
             // Record this channel as being the one the current class_ applies to.
             // That way we only have to look up a class_ when the channel has changed.
-            service.userClassCurrentChannelCache[user.nickname] = event.channel;
+            service.userClassChannelCache[user.nickname] = event.channel;
         }
 
         auto stored = user.nickname in service.state.users;
-        immutable foundNoStored = stored is null;
+        immutable persistentCacheMiss = stored is null;
         if (service.state.settings.preferHostmasks) user.account = string.init;
 
-        if (foundNoStored)
+        // Save cache lookups so we don't do them more than once.
+        string* cachedChannel;
+
+        if (persistentCacheMiss)
         {
             service.state.users[user.nickname] = user;
             stored = user.nickname in service.state.users;
@@ -209,6 +213,7 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
                     if (user.account.length && (user.account != "*") && !stored.account.length)
                     {
                         // Unexpected event bearing new account
+                        // These can be whatever if the "account-tag" capability is set
                         goto case RPL_WHOISACCOUNT;
                     }
                     break;
@@ -223,8 +228,32 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
         // Store initial class and restore after meld. The origin user.class_
         // can ever only be IRCUser.Class.unset UNLESS altered in the switch above.
         // Additionally snapshot the .updated value and restore it after melding
-        if (!foundNoStored)
+        if (!persistentCacheMiss)
         {
+            version(TwitchSupport)
+            {
+                if (stored.class_ == IRCUser.Class.admin)
+                {
+                    // Admin is a sticky class and nothing special needs to be done.
+                }
+                else if (stored.badges.length && !user.badges.length)
+                {
+                    // The current user doesn't have any badges and the stored one
+                    // does, potentially for a different channel. Look it up and
+                    // save the AA lookup pointer for later checks, in case we
+                    // have to do this again down below.
+
+                    /*const*/ cachedChannel = stored.nickname in service.userClassChannelCache;
+
+                    if (!cachedChannel || (*cachedChannel != event.channel))
+                    {
+                        // Current event has no badges but the stored one has
+                        // and for a different channel. Clear them.
+                        stored.badges = string.init;
+                    }
+                }
+            }
+
             immutable preMeldClass = stored.class_;
             immutable preMeldUpdated = stored.updated;
             user.meldInto!(MeldingStrategy.aggressive)(*stored);
@@ -241,8 +270,6 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
         {
             if (!service.state.settings.preferHostmasks)
             {
-                import dialect.semver : DialectSemVer;
-
                 with (IRCEvent.Type)
                 switch (event.type)
                 {
@@ -253,18 +280,6 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
                     stored.updated = event.time;
                     break;
 
-                static if (
-                    (DialectSemVer.majorVersion == 1) &&
-                    (DialectSemVer.minorVersion == 1) &&
-                    (DialectSemVer.patchVersion <= 1))
-                {
-                    case SELFJOIN:
-                        // Work around SELFJOINs inheriting "*" accounts on older dialect
-                        // There will be a fix in v1.1.2
-                        if (stored.account == "*") stored.account = string.init;
-                        break;
-                }
-
                 case ACCOUNT:
                 case JOIN:
                     if (stored.account == "*")
@@ -274,7 +289,7 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
                         stored.account = string.init;
                         stored.class_ = IRCUser.Class.anyone;
                         stored.updated = 1L;  // To facilitate melding
-                        service.userClassCurrentChannelCache.remove(stored.nickname);
+                        service.userClassChannelCache.remove(stored.nickname);
                     }
                     else
                     {
@@ -311,20 +326,41 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
         {
             // Do nothing, admin is permanent and program-wide
         }
-        else if ((service.state.server.daemon == IRCServer.Daemon.twitch) &&
-            (stored.nickname == service.state.client.nickname))
+        else if (!event.channel.length)
         {
-            stored.class_ = IRCUser.Class.admin;
+            // Not in a channel. Additionally not an admin
+            // Default to registered if the user has an account, except on Twitch
+            // postprocess in twitchbot/base.d will assign class as per badges
+
+            if (service.state.server.daemon == IRCServer.Daemon.twitch)
+            {
+                version(TwitchSupport)
+                {
+                    // This needs to be versioned becaused IRCUser.badges isn't
+                    // available if not version TwitchSupport
+                    stored.class_ = IRCUser.Class.anyone;
+                    if (!event.channel.length) stored.badges = string.init;
+                }
+            }
+            else if (stored.account.length && (stored.account != "*"))
+            {
+                stored.class_ = IRCUser.Class.registered;
+            }
+            else
+            {
+                stored.class_ = IRCUser.Class.anyone;
+            }
+            service.userClassChannelCache.remove(user.nickname);
         }
-        else if (!event.channel.length || !service.state.bot.homeChannels.canFind(event.channel))
+        else /*if (channel.length)*/
         {
-            // Not a channel or not a home. Additionally not an admin nor us
-            stored.class_ = IRCUser.Class.anyone;
-            service.userClassCurrentChannelCache.remove(user.nickname);
-        }
-        else
-        {
-            const cachedChannel = stored.nickname in service.userClassCurrentChannelCache;
+            // Non-admin, channel present. Perform a new cache lookup if none was
+            // previously made, otherwise reuse the earlier hit.
+
+            if (!cachedChannel)
+            {
+                /*const*/ cachedChannel = stored.nickname in service.userClassChannelCache;
+            }
 
             if (!cachedChannel || (*cachedChannel != event.channel))
             {
@@ -351,7 +387,9 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
 
     Additionally from the nickname-channel cache.
  +/
-@(IRCEvent.Type.QUIT)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.QUIT)
+)
 void onQuit(PersistenceService service, const ref IRCEvent event)
 {
     if (service.state.settings.preferHostmasks)
@@ -360,7 +398,7 @@ void onQuit(PersistenceService service, const ref IRCEvent event)
     }
 
     service.state.users.remove(event.sender.nickname);
-    service.userClassCurrentChannelCache.remove(event.sender.nickname);
+    service.userClassChannelCache.remove(event.sender.nickname);
 }
 
 
@@ -371,9 +409,11 @@ void onQuit(PersistenceService service, const ref IRCEvent event)
 
     Annotated [kameloso.plugins.common.awareness.Awareness.cleanup] to delay execution.
  +/
-@(Awareness.cleanup)
-@(IRCEvent.Type.NICK)
-@(IRCEvent.Type.SELFNICK)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.NICK)
+    .onEvent(IRCEvent.Type.SELFNICK)
+    .when(Timing.cleanup)
+)
 void onNick(PersistenceService service, const ref IRCEvent event)
 {
     // onQuit already doees everything this function wants to do.
@@ -389,7 +429,9 @@ void onNick(PersistenceService service, const ref IRCEvent event)
     This is normally done as part of user awareness, but we're not mixing that
     in so we have to reinvent it.
  +/
-@(IRCEvent.Type.RPL_WELCOME)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WELCOME)
+)
 void onWelcome(PersistenceService service)
 {
     import kameloso.plugins.common.delayawait : delay;
@@ -482,12 +524,14 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
         }
         catch (JSONException e)
         {
-            logger.warningf("JSON exception caught when populating %s: %s", list, e.msg);
+            enum pattern = "JSON exception caught when populating %s: %s";
+            logger.warningf(pattern, list, e.msg);
             version(PrintStacktraces) logger.trace(e.info);
         }
         catch (Exception e)
         {
-            logger.warningf("Unhandled exception caught when populating %s: %s", list, e.msg);
+            enum pattern = "Unhandled exception caught when populating %s: %s";
+            logger.warningf(pattern, list, e.msg);
             version(PrintStacktraces) logger.trace(e);
         }
     }
@@ -536,8 +580,8 @@ void reloadHostmasksFromDisk(PersistenceService service)
         catch (FormatException e)
         {
             import kameloso.common : Tint, logger;
-            logger.warningf("Malformed hostmask in %s%s%s: %1$s%4$s",
-                Tint.log, service.hostmasksFile, Tint.warning, hostmask);
+            enum pattern = "Malformed hostmask in %s%s%s: %1$s%4$s";
+            logger.warningf(pattern, Tint.log, service.hostmasksFile, Tint.warning, hostmask);
         }
     }
 }
@@ -583,7 +627,7 @@ void initAccountResources(PersistenceService service)
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common.base : IRCPluginInitialisationException;
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
         import kameloso.common : logger;
         import std.path : baseName;
 
@@ -652,7 +696,7 @@ void initAccountResources(PersistenceService service)
             }
             catch (JSONException e)
             {
-                import kameloso.plugins.common.base : IRCPluginInitialisationException;
+                import kameloso.plugins.common.misc : IRCPluginInitialisationException;
                 import kameloso.common : logger;
                 import std.path : baseName;
 
@@ -690,7 +734,7 @@ void initHostmaskResources(PersistenceService service)
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common.base : IRCPluginInitialisationException;
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
         import kameloso.common : logger;
         import std.path : baseName;
 
@@ -762,7 +806,7 @@ private:
     string[string] hostmaskNicknameAccountCache;
 
     /// Associative array of which channel the latest class lookup for an account related to.
-    string[string] userClassCurrentChannelCache;
+    string[string] userClassChannelCache;
 
     mixin IRCPluginImpl;
 }
