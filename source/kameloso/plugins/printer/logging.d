@@ -541,6 +541,8 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
 
     try
     {
+        import std.algorithm.iteration : joiner, map;
+        import std.encoding : sanitize;
         import std.file : exists, isDir, mkdirRecurse;
         import std.stdio : File, writeln;
 
@@ -556,14 +558,16 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
             return;
         }
 
-        auto file = File(buffer.file, "a");
+        // Write all in one go
+        const lines = buffer.lines.data
+            .map!sanitize
+            .joiner("\n");
 
-        foreach (line; buffer.lines.data)
-        {
-            import std.encoding : sanitize;
-            file.writeln(sanitize(line));
-        }
+        File file = File(buffer.file, "a");
+        file.writeln(lines);
+        file.flush();
 
+        // If we're here, no exceptions were thrown
         // Only clear if we managed to write everything, otherwise accumulate
         buffer.lines.clear();
     }
