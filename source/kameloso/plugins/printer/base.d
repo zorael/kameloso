@@ -423,7 +423,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
                 cast(HideBlacklistedUsers)plugin.printerSettings.hideBlacklistedUsers);
         }
 
-        writeln(plugin.linebuffer.data);
+        writeln(plugin.linebuffer[]);
         break;
     }
 }

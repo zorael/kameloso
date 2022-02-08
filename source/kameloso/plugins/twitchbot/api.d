@@ -335,7 +335,7 @@ void queryTwitchImpl(const string url,
     immutable delta = (post - pre);
     response.code = client.statusLine.code;
     response.msecs = delta.total!"msecs";
-    response.str = assumeUnique(cast(char[])sink.data);
+    response.str = assumeUnique(cast(char[])sink[]);
 
     synchronized //()
     {

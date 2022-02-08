@@ -296,7 +296,7 @@ void manageConfigFile(ref Kameloso instance,
     ---
     Appender!(char[]) sink;
     sink.serialise(client, server, settings);
-    immutable configText = sink.data.justifiedEntryValueText;
+    immutable configText = sink[].justifiedEntryValueText;
     writeToDisk("kameloso.conf", configText, Yes.addBanner);
     ---
 
@@ -868,7 +868,7 @@ void writeConfigurationFile(ref Kameloso instance, const string filename) @syste
             }
         }
 
-        immutable justified = sink.data.idup.justifiedEntryValueText;
+        immutable justified = sink[].idup.justifiedEntryValueText;
         writeToDisk(filename, justified, Yes.addBanner);
     }
 }

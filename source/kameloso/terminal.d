@@ -368,7 +368,7 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
     sink.reserve(16);
 
     sink.colourWith(codes);
-    return sink.data;
+    return sink[];
 }
 
 
@@ -447,7 +447,7 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
     sink.colourWith(codes);
     sink.put(text);
     sink.colourWith(TerminalReset.all);
-    return sink.data;
+    return sink[];
 }
 
 
@@ -780,7 +780,7 @@ string truecolour(const string word,
     sink.truecolour(r, g, b, bright, normalise);
     sink.put(word);
     sink.colourWith(TerminalReset.all);
-    return sink.data;
+    return sink[];
 }
 
 ///
@@ -897,7 +897,7 @@ string invert(const string line,
     // Add the remainder, from the last match to the end
     sink.put(slice);
 
-    return sink.data;
+    return sink[];
 }
 
 ///

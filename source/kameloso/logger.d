@@ -241,7 +241,7 @@ auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogL
             }
         }
 
-        writeln(linebuffer.data);
+        writeln(linebuffer[]);
         linebuffer.clear();
     }
 

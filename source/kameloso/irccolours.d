@@ -107,11 +107,11 @@ unittest
     Appender!(char[]) sink;
 
     "kameloso".ircColourInto(sink, IRCColour.red, IRCColour.white);
-    assert((sink.data == I.colour ~ "04,00kameloso" ~ I.colour), sink.data);
+    assert((sink[] == I.colour ~ "04,00kameloso" ~ I.colour), sink[]);
     sink.clear();
 
     "harbl".ircColourInto(sink, IRCColour.green);
-    assert((sink.data == I.colour ~ "03harbl" ~ I.colour), sink.data);
+    assert((sink[] == I.colour ~ "03harbl" ~ I.colour), sink[]);
 }
 
 
@@ -143,7 +143,7 @@ in (line.length, "Tried to apply IRC colours to a string but no string was given
     sink.reserve(line.length + 7);  // Two colour tokens, four colour numbers and a comma
     line.ircColourInto(sink, fg, bg);
 
-    return sink.data;
+    return sink[];
 }
 
 ///
@@ -855,7 +855,7 @@ in ((bgReset > 0), "Tried to " ~ (strip ? "strip" : "map") ~
         }
     }
 
-    return sink.data;
+    return sink[];
 }
 
 ///
@@ -1063,7 +1063,7 @@ in ((strip || (terminalFormatCode > 0)), "Tried to map effects with terminal for
         if (open) sink.colourWith(TerminalReset.all);
     }
 
-    return sink.data;
+    return sink[];
 }
 
 ///

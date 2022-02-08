@@ -181,7 +181,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                         // Normal log
                         plugin.formatMessageMonochrome(plugin.linebuffer, event,
                             No.bellOnMention, No.bellOnError, No.hideBlacklistedUsers);
-                        buffer.lines ~= plugin.linebuffer.data.idup;
+                        buffer.lines ~= plugin.linebuffer[].idup;
                         plugin.linebuffer.clear();
                     }
                     else
@@ -269,14 +269,14 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 
                     formatObjects!(Yes.all, No.coloured)(plugin.linebuffer,
                         No.brightTerminal, event);
-                    errFile.writeln(plugin.linebuffer.data);
+                    errFile.writeln(plugin.linebuffer[]);
                     plugin.linebuffer.clear();
 
                     if (event.sender.nickname.length || event.sender.address.length)
                     {
                         formatObjects!(Yes.all, No.coloured)(plugin.linebuffer,
                             No.brightTerminal, event.sender);
-                        errFile.writeln(plugin.linebuffer.data);
+                        errFile.writeln(plugin.linebuffer[]);
                         plugin.linebuffer.clear();
                     }
 
@@ -284,7 +284,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                     {
                         formatObjects!(Yes.all, No.coloured)(plugin.linebuffer,
                             No.brightTerminal, event.target);
-                        errFile.writeln(plugin.linebuffer.data);
+                        errFile.writeln(plugin.linebuffer[]);
                         plugin.linebuffer.clear();
                     }
 
@@ -535,7 +535,7 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
     import std.file : FileException;
     import std.utf : UTFException;
 
-    if (!buffer.lines.data.length) return;
+    if (!buffer.lines[].length) return;
 
     try
     {
@@ -557,7 +557,7 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
         }
 
         // Write all in one go
-        const lines = buffer.lines.data
+        const lines = buffer.lines[]
             .map!sanitize
             .joiner("\n");
 

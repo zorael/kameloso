@@ -190,7 +190,7 @@ if ((Things.length > 0) && allSatisfy!(isAggregateType, Things))
         }
     }
 
-    writeln(outbuffer.data);
+    writeln(outbuffer[]);
 }
 
 
@@ -218,7 +218,7 @@ alias printObject = printObjects;
 
     sink.formatObjects!(Yes.coloured)(foo);
     sink.formatObjects!(No.coloured)(bar);
-    writeln(sink.data);
+    writeln(sink[]);
     ---
 
     Params:
@@ -538,7 +538,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
       int[] iA                        [1, 2, 3, 4](4)
  char[char] cC                        ['b':'b', 'a':'a'](2)
 `;
-    assert((sink.data == structNameSerialised), "\n" ~ sink.data);
+    assert((sink[] == structNameSerialised), "\n" ~ sink[]);
 
     // Adding Settings does nothing
     alias StructNameSettings = StructName;
@@ -546,7 +546,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
     sink.clear();
     sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, so);
 
-    assert((sink.data == structNameSerialised), "\n" ~ sink.data);
+    assert((sink[] == structNameSerialised), "\n" ~ sink[]);
 
     // Class copy
     class ClassName
@@ -587,7 +587,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
  char[char] cC                          [](0)
 `;
 
-    assert((sink.data == classNameSerialised), '\n' ~ sink.data);
+    assert((sink[] == classNameSerialised), '\n' ~ sink[]);
 
     // Two at a time
     struct Struct1
@@ -621,7 +621,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
    string mumburs                    "hirrs"(5)
       int fdsa                        -1
 `;
-    assert((sink.data == st1st2Formatted), '\n' ~ sink.data);
+    assert((sink[] == st1st2Formatted), '\n' ~ sink[]);
 
     // Colour
     struct StructName2
@@ -641,32 +641,32 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
         sink.reserve(256);  // ~239
         sink.formatObjects!(No.all, Yes.coloured)(No.brightTerminal, s2);
 
-        assert((sink.data.length > 12), "Empty sink after coloured fill");
+        assert((sink[].length > 12), "Empty sink after coloured fill");
 
-        assert(sink.data.contains("-- StructName"));
-        assert(sink.data.contains("int_"));
-        assert(sink.data.contains("12345"));
+        assert(sink[].contains("-- StructName"));
+        assert(sink[].contains("int_"));
+        assert(sink[].contains("12345"));
 
-        assert(sink.data.contains("string_"));
-        assert(sink.data.contains(`"foo"`));
+        assert(sink[].contains("string_"));
+        assert(sink[].contains(`"foo"`));
 
-        assert(sink.data.contains("bool_"));
-        assert(sink.data.contains("true"));
+        assert(sink[].contains("bool_"));
+        assert(sink[].contains("true"));
 
-        assert(sink.data.contains("float_"));
-        assert(sink.data.contains("3.14"));
+        assert(sink[].contains("float_"));
+        assert(sink[].contains("3.14"));
 
-        assert(sink.data.contains("double_"));
-        assert(sink.data.contains("99.9"));
+        assert(sink[].contains("double_"));
+        assert(sink[].contains("99.9"));
 
         // Adding Settings does nothing
         alias StructName2Settings = StructName2;
-        immutable sinkCopy = sink.data.idup;
+        immutable sinkCopy = sink[].idup;
         StructName2Settings s2o;
 
         sink.clear();
         sink.formatObjects!(No.all, Yes.coloured)(No.brightTerminal, s2o);
-        assert((sink.data == sinkCopy), sink.data);
+        assert((sink[] == sinkCopy), sink[]);
     }
 
     class C
@@ -686,7 +686,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
      bool b                           true
       int i                           42
 `;
-    assert((sink.data == cFormatted), '\n' ~ sink.data);
+    assert((sink[] == cFormatted), '\n' ~ sink[]);
 }
 
 
@@ -737,7 +737,7 @@ if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))
     sink.reserve(BufferSize.printObjectBufferPerObject * Things.length);
 
     formatObjects!(all, coloured)(sink, bright, things);
-    return sink.data;
+    return sink[];
 }
 
 ///

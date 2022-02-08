@@ -147,7 +147,7 @@ unittest
     Appender!(char[]) sink;
 
     .put(sink, "abc", long.min, "def", 456, true);
-    assert((sink.data == "abc-9223372036854775808def456true"), sink.data);
+    assert((sink[] == "abc-9223372036854775808def456true"), sink[]);
 
     version(Colours)
     {
@@ -157,7 +157,7 @@ unittest
 
         .put!(Yes.colours)(sink, "abc", TerminalForeground.white, "def",
             TerminalBackground.red, "ghi", TerminalReset.all, "123");
-        assert((sink.data == "abc\033[97mdef\033[41mghi\033[0m123"), sink.data);
+        assert((sink[] == "abc\033[97mdef\033[41mghi\033[0m123"), sink[]);
     }
 }
 
@@ -474,7 +474,7 @@ if (isOutputRange!(Sink, char[]))
     event.channel = "#channel";
 
     plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError, No.hideBlacklistedUsers);
-    immutable joinLine = sink.data[11..$].idup;
+    immutable joinLine = sink[][11..$].idup;
     version(TwitchSupport) assert((joinLine == "[join] [#channel] Nickname"), joinLine);
     else assert((joinLine == "[join] [#channel] nickname"), joinLine);
     sink = typeof(sink).init;
@@ -483,7 +483,7 @@ if (isOutputRange!(Sink, char[]))
     event.content = "Harbl snarbl";
 
     plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError, No.hideBlacklistedUsers);
-    immutable chanLine = sink.data[11..$].idup;
+    immutable chanLine = sink[][11..$].idup;
     version(TwitchSupport) assert((chanLine == `[chan] [#channel] Nickname: "Harbl snarbl"`), chanLine);
     else assert((chanLine == `[chan] [#channel] nickname: "Harbl snarbl"`), chanLine);
     sink = typeof(sink).init;
@@ -494,7 +494,7 @@ if (isOutputRange!(Sink, char[]))
         //colour = "#3c507d";
 
         plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError, No.hideBlacklistedUsers);
-        immutable twitchLine = sink.data[11..$].idup;
+        immutable twitchLine = sink[][11..$].idup;
         assert((twitchLine == `[chan] [#channel] Nickname [broadcaster/0,moderator/1,subscriber/9]: "Harbl snarbl"`),
             twitchLine);
         sink = typeof(sink).init;
@@ -508,7 +508,7 @@ if (isOutputRange!(Sink, char[]))
     event.aux = "n1ckn4m3";
 
     plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError, No.hideBlacklistedUsers);
-    immutable accountLine = sink.data[11..$].idup;
+    immutable accountLine = sink[][11..$].idup;
     version(TwitchSupport) assert((accountLine == "[account] Nickname (n1ckn4m3)"), accountLine);
     else assert((accountLine == "[account] nickname (n1ckn4m3)"), accountLine);
     sink = typeof(sink).init;
@@ -521,7 +521,7 @@ if (isOutputRange!(Sink, char[]))
     event.type = IRCEvent.Type.ERROR;
 
     plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError, No.hideBlacklistedUsers);
-    immutable errorLine = sink.data[11..$].idup;
+    immutable errorLine = sink[][11..$].idup;
     version(TwitchSupport) assert((errorLine == `[error] Nickname: "Blah balah" {-42} (#666) ` ~
         "! DANGER WILL ROBINSON !"), errorLine);
     else assert((errorLine == `[error] nickname: "Blah balah" {-42} (#666) ` ~
@@ -1200,7 +1200,7 @@ string highlightEmotes(const ref IRCEvent event,
         break;
     }
 
-    return sink.data.idup;
+    return sink[].idup;
 }
 
 
@@ -1314,7 +1314,7 @@ unittest
         immutable line = "Moody the god pownyFine pownyL";
         sink.highlightEmotesImpl(line, emotes, TerminalForeground.white,
             TerminalForeground.default_, No.colourful, No.brightTerminal);
-        assert((sink.data == "Moody the god \033[97mpownyFine\033[39m \033[97mpownyL\033[39m"), sink.data);
+        assert((sink[] == "Moody the god \033[97mpownyFine\033[39m \033[97mpownyL\033[39m"), sink[]);
     }
     {
         sink.clear();
@@ -1322,7 +1322,7 @@ unittest
         immutable line = "whoever plays nintendo switch whisper me Kappa";
         sink.highlightEmotesImpl(line, emotes, TerminalForeground.white,
             TerminalForeground.default_, No.colourful, No.brightTerminal);
-        assert((sink.data == "whoever plays nintendo switch whisper me \033[97mKappa\033[39m"), sink.data);
+        assert((sink[] == "whoever plays nintendo switch whisper me \033[97mKappa\033[39m"), sink[]);
     }
     {
         sink.clear();
@@ -1330,8 +1330,8 @@ unittest
         immutable line = "NOOOOOO camillsCry camillsCry camillsCry";
         sink.highlightEmotesImpl(line, emotes, TerminalForeground.white,
             TerminalForeground.default_, No.colourful, No.brightTerminal);
-        assert((sink.data == "NOOOOOO \033[97mcamillsCry\033[39m " ~
-            "\033[97mcamillsCry\033[39m \033[97mcamillsCry\033[39m"), sink.data);
+        assert((sink[] == "NOOOOOO \033[97mcamillsCry\033[39m " ~
+            "\033[97mcamillsCry\033[39m \033[97mcamillsCry\033[39m"), sink[]);
     }
     {
         sink.clear();
@@ -1339,8 +1339,8 @@ unittest
         immutable line = "FortOne FortOne FortOne";
         sink.highlightEmotesImpl(line, emotes, TerminalForeground.white,
             TerminalForeground.default_, No.colourful, No.brightTerminal);
-        assert((sink.data == "\033[97mFortOne\033[39m \033[97mFortOne\033[39m " ~
-            "\033[97mFortOne\033[39m"), sink.data);
+        assert((sink[] == "\033[97mFortOne\033[39m \033[97mFortOne\033[39m " ~
+            "\033[97mFortOne\033[39m"), sink[]);
     }
     {
         sink.clear();
@@ -1348,8 +1348,8 @@ unittest
         immutable line = "@mugs123 cohhWow cohhBoop cohhBoop cohhBoop";
         sink.highlightEmotesImpl(line, emotes, TerminalForeground.white,
             TerminalForeground.default_, No.colourful, No.brightTerminal);
-        assert((sink.data == "@mugs123 \033[97mcohhWow\033[39m \033[97mcohhBoop\033[39m " ~
-            "\033[97mcohhBoop\033[39m \033[97mcohhBoop\033[39m"), sink.data);
+        assert((sink[] == "@mugs123 \033[97mcohhWow\033[39m \033[97mcohhBoop\033[39m " ~
+            "\033[97mcohhBoop\033[39m \033[97mcohhBoop\033[39m"), sink[]);
     }
     {
         sink.clear();
@@ -1364,7 +1364,7 @@ unittest
             "free prime sub is available to use!";
         sink.highlightEmotesImpl(line, emotes, TerminalForeground.white,
             TerminalForeground.default_, No.colourful, No.brightTerminal);
-        assert((sink.data == highlitLine), sink.data);
+        assert((sink[] == highlitLine), sink[]);
     }
     {
         sink.clear();
@@ -1372,7 +1372,7 @@ unittest
         immutable line = "@kiwiskool but you’re a sub too Kappa";
         sink.highlightEmotesImpl(line, emotes, TerminalForeground.white,
             TerminalForeground.default_, No.colourful, No.brightTerminal);
-        assert((sink.data == "@kiwiskool but you’re a sub too \033[97mKappa\033[39m"), sink.data);
+        assert((sink[] == "@kiwiskool but you’re a sub too \033[97mKappa\033[39m"), sink[]);
     }
     {
         sink.clear();
@@ -1380,8 +1380,8 @@ unittest
         immutable line = "高所恐怖症 LUL なにぬねの LUL :)";
         sink.highlightEmotesImpl(line, emotes, TerminalForeground.white,
             TerminalForeground.default_, No.colourful, No.brightTerminal);
-        assert((sink.data == "高所恐怖症 \033[97mLUL\033[39m なにぬねの " ~
-            "\033[97mLUL\033[39m \033[97m:)\033[39m"), sink.data);
+        assert((sink[] == "高所恐怖症 \033[97mLUL\033[39m なにぬねの " ~
+            "\033[97mLUL\033[39m \033[97m:)\033[39m"), sink[]);
     }
     {
         sink.clear();
@@ -1389,8 +1389,8 @@ unittest
         immutable line = "高所恐怖症 LUL なにぬねの LUL :)";
         sink.highlightEmotesImpl(line, emotes, TerminalForeground.white,
             TerminalForeground.default_, Yes.colourful, No.brightTerminal);
-        assert((sink.data == "高所恐怖症 \033[34mLUL\033[39m なにぬねの " ~
-            "\033[34mLUL\033[39m \033[91m:)\033[39m"), sink.data);
+        assert((sink[] == "高所恐怖症 \033[34mLUL\033[39m なにぬねの " ~
+            "\033[34mLUL\033[39m \033[91m:)\033[39m"), sink[]);
     }
     {
         sink.clear();
@@ -1398,7 +1398,7 @@ unittest
         immutable line = "Moody the god pownyFine pownyL";
         sink.highlightEmotesImpl(line, emotes, TerminalForeground.white,
             TerminalForeground.default_, Yes.colourful, No.brightTerminal);
-        assert((sink.data == "Moody the god \033[37mpownyFine\033[39m \033[96mpownyL\033[39m"), sink.data);
+        assert((sink[] == "Moody the god \033[37mpownyFine\033[39m \033[96mpownyL\033[39m"), sink[]);
     }
     {
         sink.clear();
@@ -1406,7 +1406,7 @@ unittest
         immutable line = "whoever plays nintendo switch whisper me Kappa";
         sink.highlightEmotesImpl(line, emotes, TerminalForeground.white,
             TerminalForeground.default_, Yes.colourful, No.brightTerminal);
-        assert((sink.data == "whoever plays nintendo switch whisper me \033[93mKappa\033[39m"), sink.data);
+        assert((sink[] == "whoever plays nintendo switch whisper me \033[93mKappa\033[39m"), sink[]);
     }
     {
         sink.clear();
@@ -1414,8 +1414,8 @@ unittest
         immutable line = "NOOOOOO camillsCry camillsCry camillsCry";
         sink.highlightEmotesImpl(line, emotes, TerminalForeground.white,
             TerminalForeground.default_, Yes.colourful, No.brightTerminal);
-        assert((sink.data == "NOOOOOO \033[95mcamillsCry\033[39m " ~
-            "\033[95mcamillsCry\033[39m \033[95mcamillsCry\033[39m"), sink.data);
+        assert((sink[] == "NOOOOOO \033[95mcamillsCry\033[39m " ~
+            "\033[95mcamillsCry\033[39m \033[95mcamillsCry\033[39m"), sink[]);
     }
 }
 
