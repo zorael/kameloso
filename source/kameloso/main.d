@@ -637,7 +637,8 @@ void messageFiber(ref Kameloso instance)
                 }
             );
         }
-        while (receivedSomething && (next == Next.continue_) &&
+        while (receivedSomething &&
+            (next == Next.continue_) &&
             ((Clock.currTime - loopStartTime) <= oneSecond));
 
         yield(next);
@@ -2103,7 +2104,7 @@ Next tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
 
     auto resolver = new Generator!ResolveAttempt(() =>
         resolveFiber(instance.conn, instance.parser.server.address,
-        instance.parser.server.port, instance.connSettings.ipv6, *instance.abort));
+            instance.parser.server.port, instance.connSettings.ipv6, *instance.abort));
     scope(exit) resolver.reset();
 
     uint incrementedRetryDelay = Timeout.connectionRetry;
