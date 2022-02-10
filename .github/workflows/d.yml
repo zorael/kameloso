@@ -44,16 +44,26 @@ jobs:
       with:
         compiler: ${{ matrix.dc }}
 
-    - name: 'Build and test'
-      continue-on-error: false
-      run: |
-        dub test || exit 1
-        dub build --nodeps -b debug          || exit 1
-        dub build --nodeps -b plain          || exit 1
-        dub build --nodeps -b release        || exit 1
-        dub build --nodeps -b debug   -c dev || exit 1
-        dub build --nodeps -b plain   -c dev || exit 1
-        dub build --nodeps -b release -c dev || exit 1
+    - name: 'Fetch dependencies and test'
+      run: dub test
+
+    - name: 'Build: application (debug)'
+      run: dub build --nodeps -b debug
+
+    - name: 'Build: application (plain)'
+      run: dub build --nodeps -b plain
+
+    - name: 'Build: application (release)'
+      run: dub build --nodeps -b release
+
+    - name: 'Build: dev (debug)'
+      run: dub build --nodeps -c dev -b debug
+
+    - name: 'Build: dev (plain)'
+      run: dub build --nodeps -c dev -b plain
+
+    - name: 'Build: dev (release)'
+      run: dub build --nodeps -c dev -b release
 
     - name: 'Generate documenation'
       if: matrix.dc == 'dmd-latest' && matrix.os == 'ubuntu-latest' && success()
