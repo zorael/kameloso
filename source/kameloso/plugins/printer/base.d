@@ -423,7 +423,12 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
                 cast(HideBlacklistedUsers)plugin.printerSettings.hideBlacklistedUsers);
         }
 
-        writeln(plugin.linebuffer[]);
+        if (plugin.linebuffer[].length)
+        {
+            // The linebuffer is empty if the sender was blacklisted (and settings are to hide those)
+            // so only write it out if there's something to write
+            writeln(plugin.linebuffer[]);
+        }
         break;
     }
 }
