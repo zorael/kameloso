@@ -403,7 +403,7 @@ void onCommandStop(TwitchBotPlugin plugin, const ref IRCEvent event)
     version(TwitchAPIFeatures)
     {
         room.broadcast.numViewersLastStream = room.broadcast.chattersSeen.length;
-        room.broadcast.chattersSeen = typeof(room.broadcast.chattersSeen).init;
+        room.broadcast.chattersSeen = null;
     }
 
     chan(plugin.state, event.channel, "Broadcast ended!");
@@ -1091,7 +1091,7 @@ void reload(TwitchBotPlugin plugin)
 
     if (plugin.state.server.daemon != IRCServer.Daemon.twitch) return;
 
-    plugin.timerDefsByChannel = typeof(plugin.timerDefsByChannel).init;
+    plugin.timerDefsByChannel = null;
     plugin.populateTimers(plugin.timersFile);
 }
 

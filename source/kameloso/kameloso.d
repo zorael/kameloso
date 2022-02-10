@@ -464,7 +464,7 @@ public:
         }
 
         // Zero out old plugins array
-        plugins = typeof(plugins).init;
+        plugins = null;
     }
 
 

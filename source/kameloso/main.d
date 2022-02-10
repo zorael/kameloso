@@ -775,7 +775,7 @@ Next mainLoop(ref Kameloso instance)
         // That should be enough to stop it from being a memory leak.
         if ((nowInUnix % 86_400) == 0)
         {
-            instance.previousWhoisTimestamps = typeof(instance.previousWhoisTimestamps).init;
+            instance.previousWhoisTimestamps = null;
         }
 
         // Call the generator, query it for event lines
@@ -1671,7 +1671,7 @@ void processRepeats(ref Kameloso instance, IRCPlugin plugin)
     }
 
     // All repeats guaranteed exhausted
-    plugin.state.repeats = typeof(plugin.state.repeats).init;
+    plugin.state.repeats = null;
 }
 
 
@@ -2452,7 +2452,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             instance.throttle = typeof(instance.throttle).init;
 
             // Clear WHOIS history
-            instance.previousWhoisTimestamps = typeof(instance.previousWhoisTimestamps).init;
+            instance.previousWhoisTimestamps = null;
 
             // Reset the server but keep the address and port
             immutable addressSnapshot = instance.parser.server.address;

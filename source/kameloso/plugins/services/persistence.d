@@ -555,7 +555,7 @@ void reloadHostmasksFromDisk(PersistenceService service)
     string[string] accountByHostmask;
     accountByHostmask.populateFromJSON(hostmasksJSON);
 
-    service.hostmaskUsers = typeof(service.hostmaskUsers).init;
+    service.hostmaskUsers = null;
     service.hostmaskNicknameAccountCache.clear();
 
     foreach (immutable hostmask, immutable account; accountByHostmask)
