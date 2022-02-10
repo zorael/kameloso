@@ -45,11 +45,15 @@ jobs:
         compiler: ${{ matrix.dc }}
 
     - name: 'Build and test'
+      continue-on-error: false
       run: |
-        dub test
-        dub build --nodeps -b debug   -c dev
-        dub build --nodeps -b plain   -c dev
-        dub build --nodeps -b release -c dev
+        dub test || exit 1
+        dub build --nodeps -b debug          || exit 1
+        dub build --nodeps -b plain          || exit 1
+        dub build --nodeps -b release        || exit 1
+        dub build --nodeps -b debug   -c dev || exit 1
+        dub build --nodeps -b plain   -c dev || exit 1
+        dub build --nodeps -b release -c dev || exit 1
 
     - name: 'Generate documenation'
       if: matrix.dc == 'dmd-latest' && matrix.os == 'ubuntu-latest' && success()
