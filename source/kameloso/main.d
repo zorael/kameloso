@@ -36,7 +36,7 @@ version(ProfileGC)
 }
 
 
-// rawAbort
+// globalAbort
 /++
     Abort flag.
 
@@ -46,16 +46,16 @@ version(ProfileGC)
 
     Must be `__gshared` or it doesn't seem to work on Windows.
  +/
-public __gshared bool rawAbort;
+public __gshared bool globalAbort;
 
 
-// headless
+// globalHeadless
 /++
     Headless flag.
 
     If this is true the program should not output anything to the terminal.
  +/
-public __gshared bool rawHeadless;
+public __gshared bool globalHeadless;
 
 
 version(Posix)
@@ -73,7 +73,7 @@ version(Posix)
 /++
     Called when a signal is raised, usually `SIGINT`.
 
-    Sets the [rawAbort] variable to true so other parts of the program knows to
+    Sets the [globalAbort] variable to true so other parts of the program knows to
     gracefully shut down.
 
     Params:
@@ -122,8 +122,8 @@ void signalHandler(int sig) nothrow @nogc @system
         31 : "SYS",   /// Bad system call. (SVr4)
     ];
 
-    if (!rawHeadless) printf("...caught signal SIG%s!\n", signalNames[sig].ptr);
-    rawAbort = true;
+    if (!globalHeadless) printf("...caught signal SIG%s!\n", signalNames[sig].ptr);
+    globalAbort = true;
 
     version(Posix)
     {
@@ -2628,7 +2628,7 @@ void printEventDebugDetails(const ref IRCEvent event,
     const string raw,
     const bool eventWasInitialised = true)
 {
-    if (rawHeadless || !raw.length) return;
+    if (globalHeadless || !raw.length) return;
 
     if (!eventWasInitialised || (event == IRCEvent.init))
     {
@@ -2771,7 +2771,7 @@ int initBot(string[] args)
 
     // Set pointers.
     kameloso.common.settings = &instance.settings;
-    instance.abort = &rawAbort;
+    instance.abort = &globalAbort;
 
     // Declare AttemptState instance.
     AttemptState attempt;
@@ -2805,7 +2805,7 @@ int initBot(string[] args)
     }
 
     immutable actionAfterGetopt = instance.tryGetopt(args, attempt.customSettings);
-    rawHeadless = instance.settings.headless;
+    globalHeadless = instance.settings.headless;
 
     with (Next)
     final switch (actionAfterGetopt)
