@@ -153,7 +153,7 @@ unittest
     {
         import kameloso.terminal : TerminalBackground, TerminalForeground, TerminalReset;
 
-        sink = typeof(sink).init;
+        sink.clear();
 
         .put!(Yes.colours)(sink, "abc", TerminalForeground.white, "def",
             TerminalBackground.red, "ghi", TerminalReset.all, "123");
@@ -477,7 +477,7 @@ if (isOutputRange!(Sink, char[]))
     immutable joinLine = sink[][11..$].idup;
     version(TwitchSupport) assert((joinLine == "[join] [#channel] Nickname"), joinLine);
     else assert((joinLine == "[join] [#channel] nickname"), joinLine);
-    sink = typeof(sink).init;
+    sink.clear();
 
     event.type = IRCEvent.Type.CHAN;
     event.content = "Harbl snarbl";
@@ -486,7 +486,7 @@ if (isOutputRange!(Sink, char[]))
     immutable chanLine = sink[][11..$].idup;
     version(TwitchSupport) assert((chanLine == `[chan] [#channel] Nickname: "Harbl snarbl"`), chanLine);
     else assert((chanLine == `[chan] [#channel] nickname: "Harbl snarbl"`), chanLine);
-    sink = typeof(sink).init;
+    sink.clear();
 
     version(TwitchSupport)
     {
@@ -497,7 +497,7 @@ if (isOutputRange!(Sink, char[]))
         immutable twitchLine = sink[][11..$].idup;
         assert((twitchLine == `[chan] [#channel] Nickname [broadcaster/0,moderator/1,subscriber/9]: "Harbl snarbl"`),
             twitchLine);
-        sink = typeof(sink).init;
+        sink.clear();
         event.sender.badges = string.init;
     }
 
@@ -511,7 +511,7 @@ if (isOutputRange!(Sink, char[]))
     immutable accountLine = sink[][11..$].idup;
     version(TwitchSupport) assert((accountLine == "[account] Nickname (n1ckn4m3)"), accountLine);
     else assert((accountLine == "[account] nickname (n1ckn4m3)"), accountLine);
-    sink = typeof(sink).init;
+    sink.clear();
 
     event.errors = "DANGER WILL ROBINSON";
     event.content = "Blah balah";
@@ -526,7 +526,7 @@ if (isOutputRange!(Sink, char[]))
         "! DANGER WILL ROBINSON !"), errorLine);
     else assert((errorLine == `[error] nickname: "Blah balah" {-42} (#666) ` ~
         "! DANGER WILL ROBINSON !"), errorLine);
-    //sink = typeof(sink).init;
+    //sink.clear();
 }
 
 
