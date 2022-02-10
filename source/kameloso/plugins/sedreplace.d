@@ -487,7 +487,21 @@ void onWelcome(SedReplacePlugin plugin)
     {
         while (true)
         {
-            plugin.prevlines = typeof(plugin.prevlines).init;
+            import std.datetime.systime : Clock;
+
+            immutable now = Clock.currTime.toUnixTime;
+
+            foreach (immutable sender, const lines; plugin.prevlines)
+            {
+                if (!lines.length ||
+                    ((now - lines[0].timestamp) >= plugin.replaceTimeoutSeconds))
+                {
+                    // Something is either wrong with the sender's entries or
+                    // the most recent entry is too old
+                    plugin.prevlines.remove(sender);
+                }
+            }
+
             delay(plugin, plugin.timeBetweenPurges, Yes.yield);
         }
     }
