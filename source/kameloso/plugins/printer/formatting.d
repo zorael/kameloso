@@ -90,11 +90,9 @@ void put(Flag!"colours" colours = No.colours, Sink, Args...)
     (auto ref Sink sink, Args args)
 if (isOutputRange!(Sink, char[]))
 {
-    import std.traits : Unqual;
-
     foreach (arg; args)
     {
-        alias T = Unqual!(typeof(arg));
+        alias T = typeof(arg);
 
         version(Colours)
         {
@@ -112,16 +110,18 @@ if (isOutputRange!(Sink, char[]))
             if (coloured) continue;
         }
 
-        static if (__traits(compiles, sink.put(T.init)) && !is(T == bool))
+        static if (__traits(compiles, sink.put(T.init)) && !is(T : bool))
         {
             sink.put(arg);
         }
         else static if (is(T == enum))
         {
             import lu.conv : Enum;
-            sink.put(Enum!T.toString(arg));
+            import std.traits : Unqual;
+
+            sink.put(Enum!(Unqual!T).toString(arg));
         }
-        else static if (is(T == bool))
+        else static if (is(T : bool))
         {
             sink.put(arg ? "true" : "false");
         }

@@ -317,13 +317,12 @@ mixin template IRCPluginImpl(
 
                     static if (hasUDA!(settingsStructMember, Enabler))
                     {
-                        import std.traits : Unqual;
+                        alias ThisEnabler = typeof(settingsStructMember);
 
-                        alias ThisEnabler = Unqual!(typeof(settingsStructMember));
-
-                        static if (!is(ThisEnabler == bool))
+                        static if (!is(ThisEnabler : bool))
                         {
                             import std.format : format;
+                            import std.traits : Unqual;
 
                             alias UnqualThis = Unqual!(typeof(this));
                             enum pattern = "`%s` has a non-bool `Enabler`: `%s %s`";
@@ -888,9 +887,6 @@ mixin template IRCPluginImpl(
                 }
             }
 
-            import std.meta : AliasSeq, staticMap;
-            import std.traits : Parameters, Unqual, arity;
-
             static if (uda.given.permissionsRequired != Permissions.ignore)
             {
                 static if (!__traits(compiles, .hasMinimalAuthentication))
@@ -924,7 +920,8 @@ mixin template IRCPluginImpl(
                 else if (result == FilterResult.whois)
                 {
                     import kameloso.plugins.common.misc : enqueue;
-                    import std.traits : fullyQualifiedName;
+                    import std.meta : AliasSeq, staticMap;
+                    import std.traits : Parameters, Unqual, arity, fullyQualifiedName;
 
                     alias Params = staticMap!(Unqual, Parameters!fun);
 
@@ -2448,10 +2445,9 @@ struct Repeat
 {
 private:
     import kameloso.thread : CarryingFiber;
-    import std.traits : Unqual;
     import core.thread : Fiber;
 
-    alias This = Unqual!(typeof(this));
+    alias This = typeof(this);
 
 public:
     // fiber

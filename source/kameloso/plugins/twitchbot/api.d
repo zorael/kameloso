@@ -464,7 +464,6 @@ JSONValue getValidation(TwitchBotPlugin plugin)
 in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
 {
     import lu.string : beginsWith;
-    import lu.traits : UnqualArray;
     import std.json : JSONType, JSONValue, parseJSON;
 
     enum url = "https://id.twitch.tv/oauth2/validate";
