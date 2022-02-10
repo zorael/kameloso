@@ -8,7 +8,6 @@
  +/
 module kameloso.plugins.printer;
 
-version(WithPlugins):
 version(WithPrinterPlugin):
 
 public:

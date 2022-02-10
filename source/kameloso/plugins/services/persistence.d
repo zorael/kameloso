@@ -12,7 +12,6 @@
  +/
 module kameloso.plugins.services.persistence;
 
-version(WithPlugins):
 version(WithPersistenceService):
 
 private:

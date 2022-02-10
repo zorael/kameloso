@@ -45,8 +45,6 @@
  +/
 module kameloso.plugins.common.awareness;
 
-version(WithPlugins):
-
 private:
 
 import kameloso.plugins.common.core;
@@ -691,7 +689,6 @@ void onUserAwarenessPing(IRCPlugin plugin) @system
         debug_ = Whether or not to include debugging output.
         module_ = String name of the mixing-in module; generally leave as-is.
  +/
-version(WithPlugins)
 mixin template ChannelAwareness(
     ChannelPolicy channelPolicy = ChannelPolicy.home,
     Flag!"debug_" debug_ = No.debug_,
@@ -1398,7 +1395,6 @@ void onChannelAwarenessChannelModeIs(IRCPlugin plugin, const ref IRCEvent event)
         debug_ = Whether or not to include debugging output.
         module_ = String name of the mixing-in module; generally leave as-is.
  +/
-version(WithPlugins)
 version(TwitchSupport)
 mixin template TwitchAwareness(
     ChannelPolicy channelPolicy = ChannelPolicy.home,

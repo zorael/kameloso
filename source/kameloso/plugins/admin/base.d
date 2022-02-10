@@ -16,7 +16,6 @@
 @("admin")
 module kameloso.plugins.admin.base;
 
-version(WithPlugins):
 version(WithAdminPlugin):
 
 private:

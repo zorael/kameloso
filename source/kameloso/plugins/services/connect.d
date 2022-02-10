@@ -12,7 +12,6 @@
  +/
 module kameloso.plugins.services.connect;
 
-version(WithPlugins):
 version(WithConnectService):
 
 private:

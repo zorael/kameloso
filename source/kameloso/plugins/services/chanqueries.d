@@ -14,7 +14,6 @@
  +/
 module kameloso.plugins.services.chanqueries;
 
-version(WithPlugins):
 version(WithChanQueriesService):
 
 private:

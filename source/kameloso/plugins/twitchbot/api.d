@@ -7,7 +7,6 @@
  +/
 module kameloso.plugins.twitchbot.api;
 
-version(WithPlugins):
 version(TwitchSupport):
 version(WithTwitchBotPlugin):
 version(TwitchAPIFeatures):

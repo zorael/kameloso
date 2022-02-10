@@ -55,7 +55,6 @@ versions \
     Default but optional features.
  */
 versions \
-    "WithPlugins" \
     "Colours" \
     "TwitchAPIFeatures"
 

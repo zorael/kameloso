@@ -12,7 +12,6 @@
  +/
 module kameloso.plugins.printer.logging;
 
-version(WithPlugins):
 version(WithPrinterPlugin):
 
 private:

@@ -11,7 +11,6 @@
  +/
 module kameloso.plugins.printer.formatting;
 
-version(WithPlugins):
 version(WithPrinterPlugin):
 
 private:

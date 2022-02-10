@@ -30,10 +30,7 @@
  +/
 module kameloso.plugins.seen;
 
-// We only want to compile this if we're compiling plugins at all.
-version(WithPlugins):
-
-// ...and also if compiling in specifically this plugin.
+// We only want to compile this if we're compiling specifically this plugin.
 version(WithSeenPlugin):
 
 // We need the definition of an [kameloso.plugin.core.IRCPlugin] and other crucial things.

@@ -242,7 +242,6 @@ public:
     See_Also:
         [kameloso.plugins.common.core.IRCPlugin]
  +/
-version(WithPlugins)
 mixin template IRCPluginImpl(
     Flag!"debug_" debug_ = No.debug_,
     string module_ = __MODULE__)
@@ -1710,7 +1709,6 @@ mixin template IRCPluginImpl(
 }
 
 @system
-version(WithPlugins)
 unittest
 {
     @Settings static struct TestSettings

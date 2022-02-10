@@ -15,7 +15,6 @@
 @("twitchbot")
 module kameloso.plugins.twitchbot.base;
 
-version(WithPlugins):
 version(TwitchSupport):
 version(WithTwitchBotPlugin):
 

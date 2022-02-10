@@ -11,7 +11,6 @@
  +/
 module kameloso.plugins.admin.classifiers;
 
-version(WithPlugins):
 version(WithAdminPlugin):
 
 private:

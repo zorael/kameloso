@@ -11,7 +11,6 @@
  +/
 module kameloso.plugins.webtitles;
 
-version(WithPlugins):
 version(WithWebtitlesPlugin):
 
 private:

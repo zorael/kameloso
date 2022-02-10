@@ -10,7 +10,6 @@
  +/
 module kameloso.plugins.twitchbot.timers;
 
-version(WithPlugins):
 version(TwitchSupport):
 version(WithTwitchBotPlugin):
 
