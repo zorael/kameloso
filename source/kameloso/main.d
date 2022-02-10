@@ -22,32 +22,17 @@ import std.typecons : Flag, No, Yes;
 
 version(ProfileGC)
 {
-    static if (__VERSION__ >= 2085L)
-    {
-        /++
-            Set some flags to tune the garbage collector and have it print
-            profiling information at program exit, iff version `ProfileGC`.
-            Enables the precise garbage collector.
-         +/
-        extern(C)
-        public __gshared string[] rt_options =
-        [
-            "gcopt=profile:1 gc:precise",
-            "scanDataSeg=precise",
-        ];
-    }
-    else
-    {
-        /++
-            Set some flags to tune the garbage collector and have it print
-            profiling information at program exit, iff version `ProfileGC`.
-         +/
-        extern(C)
-        public __gshared string[] rt_options =
-        [
-            "gcopt=profile:1",
-        ];
-    }
+    /++
+        Set some flags to tune the garbage collector and have it print
+        profiling information at program exit, iff version `ProfileGC`.
+        Enables the precise garbage collector.
+     +/
+    extern(C)
+    public __gshared string[] rt_options =
+    [
+        "gcopt=profile:1 gc:precise",
+        "scanDataSeg=precise",
+    ];
 }
 
 
@@ -3068,13 +3053,10 @@ int initBot(string[] args)
         import core.memory : GC;
 
         immutable stats = GC.stats();
+        immutable allocated = stats.allocatedInCurrentThread;
 
-        static if (__VERSION__ >= 2087L)
-        {
-            immutable allocated = stats.allocatedInCurrentThread;
-            enum pattern = "Allocated in current thread: %s%,d%s bytes";
-            logger.infof(pattern, Tint.log, allocated, Tint.info);
-        }
+        enum pattern = "Allocated in current thread: %s%,d%s bytes";
+        logger.infof(pattern, Tint.log, allocated, Tint.info);
 
         enum memoryUsedPattern = "Memory used: %s%,d%s bytes, free: %1$s%4$,d%3$s bytes";
         logger.infof(memoryUsedPattern, Tint.log, stats.usedSize, Tint.info, stats.freeSize);
