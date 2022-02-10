@@ -45,8 +45,17 @@ jobs:
       with:
         compiler: ${{ matrix.dc }}
 
-    - name: 'Fetch dependencies and test'
-      run: dub test
+    - name: 'Fetch dependencies'
+      run: |
+        dub fetch dialect
+        dub fetch lu
+        dub fetch requests
+        dub fetch cachetools
+        dub fetch arsd-official
+
+    - name: 'Run tests'
+      if: matrix.os != 'windows-latest'
+      run: dub test --nodeps
 
     - name: 'Build: application (debug)'
       run: dub build --nodeps -b debug
