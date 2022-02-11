@@ -332,7 +332,7 @@ mixin template IRCPluginImpl(
                                 __traits(identifier, this.tupleof[i].tupleof[n])));
                         }
 
-                        retval = __traits(child, member, settingsStructMember);
+                        retval = member.tupleof[n];
                         break top;
                     }
                 }
@@ -1567,7 +1567,7 @@ mixin template IRCPluginImpl(
 
             foreach (fun; funs)
             {
-                static immutable uda = getUDAs!(fun, IRCEventHandler)[0];
+                enum uda = getUDAs!(fun, IRCEventHandler)[0];
 
                 static foreach (immutable command; uda.given.commands)
                 {{
