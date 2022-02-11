@@ -2746,7 +2746,7 @@ struct AttemptState
 public:
 
 
-// initBot
+// run
 /++
     Entry point of the program.
 
@@ -2759,7 +2759,7 @@ public:
     Returns:
         `0` on success, non-`0` on failure.
  +/
-int initBot(string[] args)
+int run(string[] args)
 {
     static import kameloso.common;
     import kameloso.common : initLogger;
