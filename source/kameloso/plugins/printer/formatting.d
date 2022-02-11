@@ -8,6 +8,7 @@
 
     See_Also:
         [kameloso.plugins.printer.base]
+        [kameloso.plugins.printer.logging]
  +/
 module kameloso.plugins.printer.formatting;
 

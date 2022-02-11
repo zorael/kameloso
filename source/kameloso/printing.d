@@ -30,6 +30,9 @@
     Distance between types, member names and member values are deduced automatically
     based on how long they are (in terms of characters). If it doesn't line up,
     its a bug.
+
+    See_Also:
+        [kameloso.terminal.colours]
  +/
 module kameloso.printing;
 

@@ -13,6 +13,9 @@
     logger.trace(".trace");
     //logger.fatal("This will crash the program.");
     ---
+
+    See_Also:
+        [kameloso.terminal.colours]
  +/
 module kameloso.logger;
 

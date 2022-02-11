@@ -28,6 +28,7 @@
     )
 
     See_Also:
+        https://github.com/zorael/kameloso/wiki/Current-plugins#sedreplace
         [kameloso.plugins.common.core]
         [kameloso.plugins.common.misc]
  +/

@@ -6,6 +6,7 @@
     and private query messages for things that look like links.
 
     See_Also:
+        https://github.com/zorael/kameloso/wiki/Current-plugins#webtitles
         [kameloso.plugins.common.core]
         [kameloso.plugins.common.misc]
  +/
