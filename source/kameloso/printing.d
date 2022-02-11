@@ -350,9 +350,6 @@ private struct FormatArrayMemberArguments(T)
     /// Width (length) of longest member name.
     uint namewidth;
 
-    /// Additional width for array formatting.
-    uint thisWidth;
-
     /// Whether or not we should compensate for a bright terminal background.
     bool bright;
 }
@@ -391,7 +388,7 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, Sink, Args, T)
 
         sink.formattedWrite(rtArrayPattern,
             typeCode.colour, args.typewidth, args.typestring,
-            memberCode.colour, args.thisWidth, args.memberstring,
+            memberCode.colour, args.namewidth, args.memberstring,
             valueCode.colour, content,
             lengthCode.colour, content.length);
     }
@@ -403,7 +400,7 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, Sink, Args, T)
 
         sink.formattedWrite(rtArrayPattern,
             args.typewidth, args.typestring,
-            args.thisWidth, args.memberstring,
+            args.namewidth, args.memberstring,
             content,
             content.length);
     }
@@ -433,7 +430,6 @@ private struct FormatAggregateMemberArguments(T)
     /// Width (length) of longest member name.
     uint namewidth;
 
-    uint thisWidth;
     /// Whether or not we should compensate for a bright terminal background.
     bool bright;
 }
@@ -498,9 +494,6 @@ private struct FormatOtherMemberArguments(T)
 
     /// Width (length) of longest member name.
     uint namewidth;
-
-    /// Additional width for formatting of other values.
-    uint thisWidth;
 
     /// Whether or not we should compensate for a bright terminal background.
     bool bright;
@@ -644,7 +637,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
                     is(ElemType == dchar) ||
                     is(ElemType == wchar);
 
-                immutable thisWidth = __traits(getMember, thing, memberstring).length ?
+                immutable compensatedNamewidth = __traits(getMember, thing, memberstring).length ?
                     (namewidth + 2) : (namewidth + 4);
 
                 FormatArrayMemberArguments!T args;
@@ -653,8 +646,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
                 args.elemstring = ElemType.stringof;
                 args.elemIsCharacter = elemIsCharacter;
                 args.typewidth = typewidth;
-                args.namewidth = namewidth;
-                args.thisWidth = thisWidth;
+                args.namewidth = compensatedNamewidth;
                 args.bright = bright;
 
                 formatArrayMemberImpl!coloured(sink, args, __traits(getMember, thing, memberstring));
