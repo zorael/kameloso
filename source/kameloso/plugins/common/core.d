@@ -555,6 +555,16 @@ mixin template IRCPluginImpl(
                 }
             }
 
+            static if ((uda.given.permissionsRequired != Permissions.ignore) &&
+                !__traits(compiles, .hasMinimalAuthentication))
+            {
+                import std.format : format;
+
+                enum pattern = "`%s` is missing a `MinimalAuthentication` " ~
+                    "mixin (needed for `Permissions` checks)";
+                static assert(0, pattern.format(module_));
+            }
+
             return true;
         }
 
@@ -648,53 +658,43 @@ mixin template IRCPluginImpl(
         /++
             Process a function.
          +/
-        NextStep process(alias fun)(ref IRCEvent event)
+        NextStep process(bool verbose, Fun)(Fun fun, const string funName,
+            const IRCEventHandler uda, ref IRCEvent event)
         {
             import std.algorithm.searching : canFind;
-
-            static immutable uda = getUDAs!(fun, IRCEventHandler)[0];
-
-            enum verbose = (uda.given.verbose || debug_);
 
             static if (verbose)
             {
                 import lu.conv : Enum;
-                import std.format : format;
                 import std.stdio : writeln, writefln;
-
-                enum pattern = "[%s] %s";
-                enum funID = pattern.format(__traits(identifier, thisModule),
-                    __traits(identifier, fun));
             }
 
-            static if (!uda.given.acceptedEventTypes.canFind(IRCEvent.Type.ANY))
+            if (!uda.given.acceptedEventTypes.canFind(IRCEvent.Type.ANY))
             {
                 if (!uda.given.acceptedEventTypes.canFind(event.type)) return NextStep.continue_;
             }
 
             static if (verbose)
             {
-                writeln("-- ", funID, " @ ", Enum!(IRCEvent.Type).toString(event.type));
+                writeln("-- ", funName, " @ ", Enum!(IRCEvent.Type).toString(event.type));
                 writeln("   ...", Enum!ChannelPolicy.toString(uda.given.channelPolicy));
             }
 
-            if (!event.channel.length)
+            if (event.channel.length)
             {
-                // it is a non-channel event, like an IRCEvent.Type.QUERY
-            }
-            else
-            {
-                static if (uda.given.channelPolicy == ChannelPolicy.home)
+                bool channelMatch;
+
+                if (uda.given.channelPolicy == ChannelPolicy.home)
                 {
-                    immutable channelMatch = state.bot.homeChannels.canFind(event.channel);
+                    channelMatch = state.bot.homeChannels.canFind(event.channel);
                 }
-                else static if (uda.given.channelPolicy == ChannelPolicy.guest)
+                else if (uda.given.channelPolicy == ChannelPolicy.guest)
                 {
-                    immutable channelMatch = !state.bot.homeChannels.canFind(event.channel);
+                    channelMatch = !state.bot.homeChannels.canFind(event.channel);
                 }
                 else /*if (channelPolicy == ChannelPolicy.any)*/
                 {
-                    enum channelMatch = true;
+                    channelMatch = true;
                 }
 
                 if (!channelMatch)
@@ -709,12 +709,27 @@ mixin template IRCPluginImpl(
                 }
             }
 
-            static if (uda.given.commands.length || uda.given.regexes.length)
+            // Snapshot content and aux for later restoration
+            string origContent = event.content;
+            string origAux = event.aux;
+
+            /// Whether or not a Command or Regex matched.
+            bool commandMatch;
+
+            scope(exit)
+            {
+                if (commandMatch)
+                {
+                    // Restore content and aux as they were definitely altered
+                    event.content = origContent;
+                    event.aux = origAux;
+                }
+            }
+
+            if (uda.given.commands.length || uda.given.regexes.length)
             {
                 import lu.string : strippedLeft;
 
-                // Snapshot content for later restoration
-                immutable origContent = event.content;
                 event.content = event.content.strippedLeft;
 
                 if (!event.content.length)
@@ -723,157 +738,141 @@ mixin template IRCPluginImpl(
                     // `event.content` is empty; cannot possibly be of interest.
                     return NextStep.continue_;  // next function
                 }
+            }
 
-                // Also snapshot aux
-                immutable origAux = event.aux;
-
-                /// Whether or not a Command or Regex matched.
-                bool commandMatch;
-
-                scope(exit)
+            // Evaluate each Command UDAs with the current event
+            if (uda.given.commands.length)
+            {
+                foreach (immutable command; uda.given.commands)
                 {
-                    if (commandMatch)
+                    if (commandMatch) break;
+
+                    static if (verbose)
                     {
-                        // Restore content and aux as they were definitely altered
-                        event.content = origContent;
-                        event.aux = origAux;
+                        writefln(`   ...Command "%s"`, command.given.word);
+                    }
+
+                    bool policyMismatch;
+
+                    if (!event.prefixPolicyMatches!verbose
+                        (command.given.policy, state.client, state.settings.prefix))
+                    {
+                        static if (verbose)
+                        {
+                            writeln("   ...policy doesn't match; continue next Command");
+                        }
+
+                        policyMismatch = true;
+                    }
+
+                    if (policyMismatch)
+                    {
+                        // Do nothing, proceed to next command
+                    }
+                    else
+                    {
+                        import lu.string : nom;
+                        import std.algorithm.comparison : equal;
+                        import std.typecons : No, Yes;
+                        import std.uni : asLowerCase, toLower;
+
+                        immutable thisCommand = event.content
+                            .nom!(Yes.inherit, Yes.decode)(' ');
+                        immutable lowerWord = command.given.word.toLower;
+
+                        if (thisCommand.asLowerCase.equal(lowerWord))
+                        {
+                            static if (verbose)
+                            {
+                                writeln("   ...command matches!");
+                            }
+
+                            event.aux = thisCommand;
+                            commandMatch = true;
+                            break;
+                        }
+                        else
+                        {
+                            // Restore content to pre-nom state
+                            event.content = origContent;
+                        }
                     }
                 }
             }
 
-            // Evaluate each Command UDAs with the current event
-            static if (uda.given.commands.length)
-            {
-                static foreach (immutable command; uda.given.commands)
-                {{
-                    if (!commandMatch)
-                    {
-                        static if (verbose)
-                        {
-                            writefln(`   ...Command "%s"`, command.given.word);
-                        }
-
-                        bool policyMismatch;
-
-                        if (!event.prefixPolicyMatches!verbose
-                            (command.given.policy, state.client, state.settings.prefix))
-                        {
-                            static if (verbose)
-                            {
-                                writeln("   ...policy doesn't match; continue next Command");
-                            }
-
-                            policyMismatch = true;
-                        }
-
-                        if (policyMismatch)
-                        {
-                            // Do nothing, proceed to next command
-                        }
-                        else
-                        {
-                            import lu.string : nom;
-                            import std.algorithm.comparison : equal;
-                            import std.typecons : No, Yes;
-                            import std.uni : asLowerCase, toLower;
-
-                            immutable thisCommand = event.content
-                                .nom!(Yes.inherit, Yes.decode)(' ');
-                            enum lowerWord = command.given.word.toLower;
-
-                            if (thisCommand.asLowerCase.equal(lowerWord))
-                            {
-                                static if (verbose)
-                                {
-                                    writeln("   ...command matches!");
-                                }
-
-                                event.aux = thisCommand;
-                                commandMatch = true;  // breaks the foreach
-                            }
-                            else
-                            {
-                                // Restore content to pre-nom state
-                                event.content = origContent;
-                            }
-                        }
-                    }
-                }}
-            }
-
             // Iff no match from Commands, evaluate Regexes
-            static if (uda.given.regexes.length)
+            if (uda.given.regexes.length)
             {
-                static foreach (immutable regex; uda.given.regexes)
-                {{
+                foreach (const regex; uda.given.regexes)
+                {
                     // This reuses previous commandMatch, so a matched Command
                     // will prevent Regex lookups.
 
-                    if (!commandMatch)
+                    if (commandMatch) break;
+
+                    static if (verbose)
+                    {
+                        writeln("   ...Regex: `", regex.given.expression, "`");
+                    }
+
+                    bool policyMismatch;
+
+                    if (!event.prefixPolicyMatches!verbose
+                        (regex.given.policy, state.client, state.settings.prefix))
                     {
                         static if (verbose)
                         {
-                            writeln("   ...Regex: `", regex.given.expression, "`");
+                            writeln("   ...policy doesn't match; continue next Regex");
                         }
 
-                        bool policyMismatch;
+                        policyMismatch = true;
+                    }
 
-                        if (!event.prefixPolicyMatches!verbose
-                            (regex.given.policy, state.client, state.settings.prefix))
+                    if (policyMismatch)
+                    {
+                        // Do nothing, proceed to next regex
+                    }
+                    else
+                    {
+                        try
                         {
-                            static if (verbose)
-                            {
-                                writeln("   ...policy doesn't match; continue next Regex");
-                            }
+                            import std.regex : matchFirst;
 
-                            policyMismatch = true;
-                        }
+                            const hits = event.content.matchFirst(regex.given.engine);
 
-                        if (policyMismatch)
-                        {
-                            // Do nothing, proceed to next regex
-                        }
-                        else
-                        {
-                            try
-                            {
-                                import std.regex : matchFirst;
-
-                                const hits = event.content.matchFirst(regex.given.engine);
-
-                                if (!hits.empty)
-                                {
-                                    static if (verbose)
-                                    {
-                                        writeln("   ...expression matches!");
-                                    }
-
-                                    event.aux = hits[0];
-                                    commandMatch = true;  // breaks the foreach
-                                }
-                                else
-                                {
-                                    static if (verbose)
-                                    {
-                                        writefln(`   ...matching "%s" against expression "%s" failed.`,
-                                            event.content, regex.given.expression);
-                                    }
-                                }
-                            }
-                            catch (Exception e)
+                            if (!hits.empty)
                             {
                                 static if (verbose)
                                 {
-                                    writeln("   ...Regex exception: ", e.msg);
-                                    version(PrintStacktraces) writeln(e);
+                                    writeln("   ...expression matches!");
+                                }
+
+                                event.aux = hits[0];
+                                commandMatch = true;
+                                break;
+                            }
+                            else
+                            {
+                                static if (verbose)
+                                {
+                                    writefln(`   ...matching "%s" against expression "%s" failed.`,
+                                        event.content, regex.given.expression);
                                 }
                             }
                         }
+                        catch (Exception e)
+                        {
+                            static if (verbose)
+                            {
+                                writeln("   ...Regex exception: ", e.msg);
+                                version(PrintStacktraces) writeln(e);
+                            }
+                        }
                     }
-                }}
+                }
             }
 
-            static if (uda.given.commands.length || uda.given.regexes.length)
+            if (uda.given.commands.length || uda.given.regexes.length)
             {
                 if (!commandMatch)
                 {
@@ -887,17 +886,8 @@ mixin template IRCPluginImpl(
                 }
             }
 
-            static if (uda.given.permissionsRequired != Permissions.ignore)
+            if (uda.given.permissionsRequired != Permissions.ignore)
             {
-                static if (!__traits(compiles, .hasMinimalAuthentication))
-                {
-                    import std.format : format;
-
-                    enum pattern = "`%s` is missing a `MinimalAuthentication` " ~
-                        "mixin (needed for `Permissions` checks)";
-                    static assert(0, pattern.format(module_));
-                }
-
                 static if (verbose)
                 {
                     writeln("   ...Permissions.",
@@ -911,8 +901,6 @@ mixin template IRCPluginImpl(
                     writeln("   ...allow result is ", Enum!FilterResult.toString(result));
                 }
 
-                NextStep rtToReturn;
-
                 if (result == FilterResult.pass)
                 {
                     // Drop down
@@ -923,7 +911,7 @@ mixin template IRCPluginImpl(
                     import std.meta : AliasSeq, staticMap;
                     import std.traits : Parameters, Unqual, arity, fullyQualifiedName;
 
-                    alias Params = staticMap!(Unqual, Parameters!fun);
+                    alias Params = staticMap!(Unqual, Parameters!Fun);
 
                     static if (verbose)
                     {
@@ -932,53 +920,31 @@ mixin template IRCPluginImpl(
 
                     static if (is(Params : AliasSeq!IRCEvent) || (arity!fun == 0))
                     {
-                        this.enqueue(event, uda.given.permissionsRequired, &fun, fullyQualifiedName!fun);
-
-                        static if (uda.given.chainable)
-                        {
-                            rtToReturn = NextStep.continue_;
-                        }
-                        else
-                        {
-                            rtToReturn = NextStep.return_;
-                        }
+                        this.enqueue(event, uda.given.permissionsRequired, fun, fullyQualifiedName!fun);
+                        return uda.given.chainable ? NextStep.continue_ : NextStep.return_;
                     }
                     else static if (
                         is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
-                        is(Params : AliasSeq!(typeof(this))))
+                        is(Params : AliasSeq!(IRCPlugin, IRCEvent)) ||
+                        is(Params : AliasSeq!(typeof(this))) ||
+                        is(Params : AliasSeq!(IRCPlugin)))
                     {
-                        this.enqueue(this, event, uda.given.permissionsRequired, &fun, fullyQualifiedName!fun);
-
-                        static if (uda.given.chainable)
-                        {
-                            rtToReturn = NextStep.continue_;
-                        }
-                        else
-                        {
-                            rtToReturn = NextStep.return_;
-                        }
+                        // Unsure why we need to specifically specify IRCPlugin
+                        // now despite typeof(this) being a subclass...
+                        this.enqueue(this, event, uda.given.permissionsRequired, fun, fullyQualifiedName!fun);
+                        return uda.given.chainable ? NextStep.continue_ : NextStep.return_;
                     }
                     else
                     {
                         import std.format : format;
-                        enum pattern = "`%s` has an unsupported function signature: `%s`";
-                        static assert(0, pattern.format(fullyQualifiedName!fun, typeof(fun).stringof));
+                        enum pattern = "`%s` has an event handler with an unsupported function signature: `%s`";
+                        static assert(0, pattern.format(module_, Fun.stringof));
                     }
                 }
                 else /*if (result == FilterResult.fail)*/
                 {
-                    static if (uda.given.chainable)
-                    {
-                        rtToReturn = NextStep.continue_;
-                    }
-                    else
-                    {
-                        rtToReturn = NextStep.return_;
-                    }
+                    return uda.given.chainable ? NextStep.continue_ : NextStep.return_;
                 }
-
-                // Make a runtime decision on whether to return or not
-                if (rtToReturn != NextStep.unset) return rtToReturn;
             }
 
             static if (verbose)
@@ -986,9 +952,9 @@ mixin template IRCPluginImpl(
                 writeln("   ...calling!");
             }
 
-            call(&fun, event);
+            call(fun, event);
 
-            static if (uda.given.chainable)
+            if (uda.given.chainable)
             {
                 // onEvent found an event and triggered a function, but
                 // it's Chainable and there may be more, so keep looking.
@@ -1036,11 +1002,16 @@ mixin template IRCPluginImpl(
         {
             foreach (fun; funlist)
             {
+                import std.traits : getUDAs;
+
                 static assert(udaSanityCheck!fun);
+                static immutable uda = getUDAs!(fun, IRCEventHandler)[0];
+                enum verbose = (uda.given.verbose || debug_);
+                enum funName = __traits(identifier, fun);
 
                 try
                 {
-                    immutable next = process!fun(event);
+                    immutable next = process!verbose(&fun, funName, uda, event);
 
                     if (next == NextStep.continue_)
                     {
@@ -1049,7 +1020,7 @@ mixin template IRCPluginImpl(
                     else if (next == NextStep.repeat)
                     {
                         // only repeat once so we don't endlessly loop
-                        if (process!fun(event) == NextStep.continue_)
+                        if (process!verbose(&fun, funName, uda, event) == NextStep.continue_)
                         {
                             continue;
                         }
@@ -1066,7 +1037,7 @@ mixin template IRCPluginImpl(
                 catch (Exception e)
                 {
                     /*enum pattern = "tryProcess some exception on %s: %s";
-                    logger.warningf(pattern, __traits(identifier, fun), e);*/
+                    logger.warningf(pattern, funName, e);*/
 
                     import std.utf : UTFException;
                     import core.exception : UnicodeException;
@@ -1080,7 +1051,7 @@ mixin template IRCPluginImpl(
                     sanitizeEvent(event);
 
                     // Copy-paste, not much we can do otherwise
-                    immutable next = process!fun(event);
+                    immutable next = process!verbose(&fun, funName, uda, event);
 
                     if (next == NextStep.continue_)
                     {
@@ -1089,7 +1060,7 @@ mixin template IRCPluginImpl(
                     else if (next == NextStep.repeat)
                     {
                         // only repeat once so we don't endlessly loop
-                        if (process!fun(event) == NextStep.continue_)
+                        if (process!verbose(&fun, funName, uda, event) == NextStep.continue_)
                         {
                             continue;
                         }
@@ -2353,6 +2324,14 @@ private final class ReplayImpl(Fun, Payload = typeof(null)) : Replay
         else static if (TakesParams!(fun, AliasSeq!IRCEvent))
         {
             fun(event);
+        }
+        else static if (TakesParams!(fun, AliasSeq!(IRCPlugin, IRCEvent)))  // FIXME
+        {
+            fun(payload, event);
+        }
+        else static if (TakesParams!(fun, AliasSeq!IRCPlugin))  // FIXME
+        {
+            fun(payload);
         }
         else static if (arity!fun == 0)
         {
