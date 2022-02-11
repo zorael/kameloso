@@ -33,13 +33,71 @@ else
 }
 
 
-// compilerVersion
+// buildCompilerVersionString
 /++
-    Compiler version used when this binary was compiled.
+    Replaces the following expression and lowers compilation memory by avoiding
+    use of compile-time [std.format.format].
 
-    It is formatted to be in `2.094` form.
+    ---
+    enum compilerVersion = format("%d.%03d", (__VERSION__ / 1000), (__VERSION__ % 1000));
+    ---
  +/
-enum compilerVersion = format("%d.%03d", (__VERSION__ / 1000), (__VERSION__ % 1000));
+auto buildCompilerVersionString()
+{
+    import lu.conv : toAlphaInto;
+    import std.array : Appender;
+
+    Appender!(char[]) sink;
+    sink.reserve(5);  // 2.098
+
+    (__VERSION__ / 1000).toAlphaInto(sink);
+    sink.put('.');
+    (__VERSION__ % 1000).toAlphaInto!(3,3)(sink);
+
+    return sink[].idup;
+}
+
+
+// buildVersionString
+/++
+    Replaces the following expression and lowers compilation memory by avoiding
+    use of compile-time [std.format.format].
+
+    ---
+    enum version_ = "%d.%d.%d%s%s"
+        .format(
+            KamelosoSemVer.majorVersion,
+            KamelosoSemVer.minorVersion,
+            KamelosoSemVer.patchVersion,
+            KamelosoSemVerPrerelease.length ? "-" : string.init,
+            KamelosoSemVerPrerelease);
+    ---
+ +/
+auto buildVersionString()
+{
+    import lu.conv : toAlphaInto;
+    import std.array : Appender;
+
+    Appender!(char[]) sink;
+    sink.reserve(15);  // 10.10.10-beta.1
+
+    with (KamelosoSemVer)
+    {
+        majorVersion.toAlphaInto(sink);
+        sink.put('.');
+        minorVersion.toAlphaInto(sink);
+        sink.put('.');
+        patchVersion.toAlphaInto(sink);
+
+        if (KamelosoSemVerPrerelease.length)
+        {
+            sink.put('-');
+            sink.put(cast(string)KamelosoSemVerPrerelease);
+        }
+    }
+
+    return sink[].idup;
+}
 
 
 public:
@@ -51,16 +109,10 @@ public:
  +/
 enum KamelosoInfo
 {
-    version_ = "%d.%d.%d%s%s"
-        .format(
-            KamelosoSemVer.majorVersion,
-            KamelosoSemVer.minorVersion,
-            KamelosoSemVer.patchVersion,
-            KamelosoSemVerPrerelease.length ? "-" : string.init,
-            KamelosoSemVerPrerelease),  /// Version as a string.
+    version_ = .buildVersionString(), /// Version as a string.
     built = __TIMESTAMP__, /// Timestamp of when the binary was built.
     compiler = .compiler,  /// Compiler used to build this binary.
-    compilerVersion = .compilerVersion,  /// Compiler version used to build this binary.
+    compilerVersion = .buildCompilerVersionString(),  /// Compiler version used to build this binary.
     source = "https://github.com/zorael/kameloso",  /// GitHub source link.
 }
 
