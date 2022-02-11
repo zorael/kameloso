@@ -636,7 +636,8 @@ void messageFiber(ref Kameloso instance)
                 }
             );
         }
-        while (receivedSomething &&
+        while (!*instance.abort &&
+            receivedSomething &&
             (next == Next.continue_) &&
             ((Clock.currTime - loopStartTime) <= oneSecond));
 
