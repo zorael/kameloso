@@ -79,7 +79,7 @@ auto buildVersionString()
     import std.array : Appender;
 
     Appender!(char[]) sink;
-    sink.reserve(15);  // 10.10.10-beta.1
+    sink.reserve(16);  // 10.10.10-alpha.1
 
     with (KamelosoSemVer)
     {
