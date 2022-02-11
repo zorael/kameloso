@@ -458,7 +458,7 @@ TitleLookupResults lookupTitle(const string url, const Flag!"descriptions" descr
     client.onReceive = (ubyte[] data)
     {
         sink.put(data);
-        doc.parseGarbage(cast(string)sink[]);
+        doc.parseGarbage(cast(string)sink.data);
         return doc.title.length ? HTTP.requestAbort : data.length;
     };
 
@@ -695,13 +695,13 @@ JSONValue getYouTubeInfo(const string url)
         throw new TitleFetchException(message, url, client.statusLine.code, errorCode);
     }
 
-    if (sink[] == "Not Found")
+    if (sink.data == "Not Found")
     {
         throw new TitleFetchException("Invalid YouTube video ID",
             url, client.statusLine.code, errorCode);
     }
 
-    immutable received = assumeUnique(cast(char[])sink[]);
+    immutable received = assumeUnique(cast(char[])sink.data);
     return parseJSON(received);
 }
 

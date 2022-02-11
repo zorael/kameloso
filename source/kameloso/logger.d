@@ -243,7 +243,7 @@ public:
             }
         }
 
-        writeln(linebuffer[]);
+        writeln(linebuffer.data);
         linebuffer.clear();
     }
 
