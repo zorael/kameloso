@@ -2450,7 +2450,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             instance.initPlugins(attempt.customSettings);
 
             // Reset throttling, in case there were queued messages.
-            instance.throttle = typeof(instance.throttle).init;
+            instance.throttle.reset();
 
             // Clear WHOIS history
             instance.previousWhoisTimestamps = null;

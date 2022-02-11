@@ -45,6 +45,13 @@ private:
 
         /// Don't copy this, just keep one instance.
         @disable this(this);
+
+        /// Resets the throttle values in-place.
+        void reset()
+        {
+            t0 = SysTime.init;
+            m = 0.0;
+        }
     }
 
 public:
