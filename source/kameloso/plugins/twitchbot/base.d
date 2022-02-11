@@ -1150,16 +1150,6 @@ void onMyInfo(TwitchBotPlugin plugin)
 
     void periodicDg()
     {
-        import kameloso.common : nextMidnight;
-        import std.datetime.systime : Clock;
-
-        version(TwitchAPIFeatures)
-        {
-            // Schedule next follow cache update to next midnight
-            long nextCacheUpdate = Clock.currTime.nextMidnight.toUnixTime;
-        }
-
-        top:
         while (true)
         {
             // Walk through channels, trigger fibers
@@ -1177,47 +1167,38 @@ void onMyInfo(TwitchBotPlugin plugin)
                 }
             }
 
-            version(TwitchAPIFeatures)
-            {
-                immutable now = Clock.currTime;
-                immutable nowInUnix = now.toUnixTime;
-
-                // Early yield if we shouldn't clean up
-                if (nowInUnix < nextCacheUpdate)
-                {
-                    delay(plugin, plugin.timerPeriodicity, Yes.yield);
-                    continue top;
-                }
-
-                nextCacheUpdate = now.nextMidnight.toUnixTime;
-
-                version(TwitchAPIFeatures)
-                {
-                    // Clear and re-cache follows once as often as we prune
-
-                    void cacheFollowsAnewDg()
-                    {
-                        foreach (immutable channelName, room; plugin.rooms)
-                        {
-                            room.follows = getFollows(plugin, room.id);
-                        }
-                    }
-
-                    Fiber cacheFollowsAnewFiber =
-                        new Fiber(&twitchTryCatchDg!cacheFollowsAnewDg, BufferSize.fiberStack);
-                    cacheFollowsAnewFiber.call();
-                }
-            }
-            else
-            {
-                delay(plugin, plugin.timerPeriodicity, Yes.yield);
-                continue top;
-            }
+            delay(plugin, plugin.timerPeriodicity, Yes.yield);
         }
     }
 
     Fiber periodicFiber = new Fiber(&periodicDg, BufferSize.fiberStack);
     delay(plugin, periodicFiber, plugin.timerPeriodicity);
+
+    version(TwitchAPIFeatures)
+    {
+        import kameloso.common : nextMidnight;
+        import std.datetime.systime : Clock;
+
+        // Clear and re-cache follows once every midnight
+        void cacheFollowersDg()
+        {
+            while (true)
+            {
+                foreach (immutable channelName, room; plugin.rooms)
+                {
+                    room.follows = getFollows(plugin, room.id);
+                }
+
+                immutable now = Clock.currTime;
+                delay(plugin, now.nextMidnight-now, Yes.yield);
+            }
+        }
+
+        immutable now = Clock.currTime;
+
+        Fiber followersFiber = new Fiber(&cacheFollowersDg, BufferSize.fiberStack);
+        delay(plugin, followersFiber, now.nextMidnight-now);
+    }
 }
 
 
