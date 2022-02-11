@@ -89,7 +89,7 @@ Grab a pre-compiled binary from under [Releases](https://github.com/zorael/kamel
 
 **kameloso** is written in [**D**](https://dlang.org). It can be built using the reference compiler [**dmd**](https://dlang.org/download.html), which compiles very fast; and the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases), which is slower at compiling but produces faster code. See [here](https://wiki.dlang.org/Compilers) for an overview of the available compiler vendors.
 
-You need one based on D version **2.096** or later (March 2021). For **ldc** this is version **1.26**. Sadly, the stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently based on version **2.076** and is thus too old to be used.
+You need one based on D version **2.084** or later (January 2019). For **ldc** this is version **1.14**. Sadly, the stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently based on version **2.076** and is thus too old to be used.
 
 > [**Compiling with ldc on Windows is currently broken**](https://github.com/ldc-developers/ldc/issues/3913) and requires a modified compiler with a larger stack to build. This should hopefully be resolved in **ldc 1.29**. Until such time please use **dmd** or download a pre-compiled binary.
 >
