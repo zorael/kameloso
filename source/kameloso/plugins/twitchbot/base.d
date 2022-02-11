@@ -12,7 +12,6 @@
         [kameloso.plugins.common.core]
         [kameloso.plugins.common.misc]
  +/
-@("twitchbot")
 module kameloso.plugins.twitchbot.base;
 
 version(TwitchSupport):
