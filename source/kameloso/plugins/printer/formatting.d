@@ -22,7 +22,7 @@ import dialect.defs;
 import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;
 
-version(Colours) import kameloso.terminal : TerminalForeground;
+version(Colours) import kameloso.terminal.colours : TerminalForeground;
 
 package:
 
@@ -96,13 +96,13 @@ if (isOutputRange!(Sink, char[]))
 
         version(Colours)
         {
-            import kameloso.terminal : isAColourCode;
+            import kameloso.terminal.colours : isAColourCode;
 
             bool coloured;
 
             static if (colours && isAColourCode!T)
             {
-                import kameloso.terminal : colourWith;
+                import kameloso.terminal.colours : colourWith;
                 sink.colourWith(arg);
                 coloured = true;
             }
@@ -150,7 +150,7 @@ unittest
 
     version(Colours)
     {
-        import kameloso.terminal : TerminalBackground, TerminalForeground, TerminalReset;
+        import kameloso.terminal.colours : TerminalBackground, TerminalForeground, TerminalReset;
 
         sink.clear();
 
@@ -557,7 +557,7 @@ void formatMessageColoured(Sink)
 if (isOutputRange!(Sink, char[]))
 {
     import kameloso.constants : DefaultColours;
-    import kameloso.terminal : FG = TerminalForeground, colourWith;
+    import kameloso.terminal.colours : FG = TerminalForeground, colourWith;
     import lu.conv : Enum;
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
@@ -637,7 +637,7 @@ if (isOutputRange!(Sink, char[]))
 
         if (plugin.printerSettings.randomNickColours)
         {
-            import kameloso.terminal : getColourByHash;
+            import kameloso.terminal.colours : getColourByHash;
             return getColourByHash(nickname, bright ? fgBright[] : fgDark[]);
         }
         else
@@ -663,7 +663,7 @@ if (isOutputRange!(Sink, char[]))
         {
             if (!user.isServer && user.colour.length && plugin.printerSettings.truecolour)
             {
-                import kameloso.terminal : truecolour;
+                import kameloso.terminal.colours : truecolour;
                 import lu.conv : rgbFromHex;
 
                 auto rgb = rgbFromHex(user.colour);
@@ -894,7 +894,7 @@ if (isOutputRange!(Sink, char[]))
             case EMOTE:
             case TWITCH_SUBGIFT:
             //case SELFCHAN:
-                import kameloso.terminal : invert;
+                import kameloso.terminal.colours : invert;
 
                 /// Nick was mentioned (certain)
                 bool match;
@@ -930,7 +930,7 @@ if (isOutputRange!(Sink, char[]))
                 break;
             }
 
-            import kameloso.terminal : TerminalBackground;
+            import kameloso.terminal.colours : TerminalBackground;
 
             // Reset the background to ward off bad backgrounds bleeding out
             sink.colourWith(fgBase, TerminalBackground.default_);
@@ -1147,7 +1147,7 @@ string highlightEmotes(const ref IRCEvent event,
     const Flag!"brightTerminal" brightTerminal)
 {
     import kameloso.constants : DefaultColours;
-    import kameloso.terminal : colourWith;
+    import kameloso.terminal.colours : colourWith;
     import lu.string : contains;
     import std.array : Appender;
 
@@ -1281,7 +1281,7 @@ if (isOutputRange!(Sink, char[]))
 
     foreach (immutable i; 0..numHighlights)
     {
-        import kameloso.terminal : getColourByHash, colourWith;
+        import kameloso.terminal.colours : getColourByHash, colourWith;
 
         immutable id = highlights[i].id;
         immutable start = highlights[i].start;

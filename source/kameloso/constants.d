@@ -322,7 +322,7 @@ version(Colours)
 struct DefaultColours
 {
 private:
-    import kameloso.terminal : TerminalForeground;
+    import kameloso.terminal.colours : TerminalForeground;
     import std.experimental.logger : LogLevel;
 
     alias TF = TerminalForeground;

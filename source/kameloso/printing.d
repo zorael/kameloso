@@ -298,7 +298,7 @@ private void formatStringMemberImpl(Flag!"coloured" coloured, Sink, Args, T)
 
     static if (coloured)
     {
-        import kameloso.terminal : TerminalForeground, colour;
+        import kameloso.terminal.colours : TerminalForeground, colour;
         alias F = TerminalForeground;
 
         enum stringPattern = `%s%*s %s%-*s %s%s"%s"%s(%d)` ~ '\n';
@@ -377,7 +377,7 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, Sink, Args, T)
 
     static if (coloured)
     {
-        import kameloso.terminal : TerminalForeground, colour;
+        import kameloso.terminal.colours : TerminalForeground, colour;
         alias F = TerminalForeground;
 
         immutable rtArrayPattern = args.elemIsCharacter ?
@@ -459,7 +459,7 @@ private void formatAggregateMemberImpl(Flag!"coloured" coloured, Sink, Args)
 
     static if (coloured)
     {
-        import kameloso.terminal : TerminalForeground, colour;
+        import kameloso.terminal.colours : TerminalForeground, colour;
         alias F = TerminalForeground;
 
         enum normalPattern = "%s%*s %s%-*s %s<%s>%s\n";
@@ -527,7 +527,7 @@ private void formatOtherMemberImpl(Flag!"coloured" coloured, Sink, Args, T)
 
     static if (coloured)
     {
-        import kameloso.terminal : TerminalForeground, colour;
+        import kameloso.terminal.colours : TerminalForeground, colour;
         alias F = TerminalForeground;
 
         enum normalPattern = "%s%*s %s%-*s  %s%s\n";
@@ -577,7 +577,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 {
     static if (coloured)
     {
-        import kameloso.terminal : TerminalForeground, colour;
+        import kameloso.terminal.colours : TerminalForeground, colour;
         alias F = TerminalForeground;
     }
 

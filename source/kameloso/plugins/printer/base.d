@@ -31,7 +31,7 @@ import kameloso.irccolours;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
-version(Colours) import kameloso.terminal : TerminalForeground;
+version(Colours) import kameloso.terminal.colours : TerminalForeground;
 
 
 // PrinterSettings

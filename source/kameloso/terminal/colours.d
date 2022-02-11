@@ -1,8 +1,8 @@
 /++
     A collection of enums and functions that relate to a terminal shell.
 
-    Much of this module has to do with terminal text colouring and is therefore
-    version `Colours`.
+    This submodule has to do with terminal text colouring and its contents are
+    therefore version `Colours`.
 
     Example:
     ---
@@ -44,10 +44,18 @@
 
     The output range versions are cumbersome but necessary to minimise the number
     of strings generated.
+
+    See_Also:
+        [kameloso.terminal]
  +/
-module kameloso.terminal;
+
+module kameloso.terminal.colours;
+
+version(Colours):
 
 private:
+
+import kameloso.terminal : TerminalToken;
 
 import std.meta : allSatisfy;
 import std.range.primitives : isOutputRange;
@@ -56,203 +64,6 @@ import std.typecons : Flag, No, Yes;
 public:
 
 @safe:
-
-/// Special terminal control characters.
-enum TerminalToken
-{
-    /// Character that preludes a terminal colouring code.
-    format = '\033',
-
-    /// Terminal bell/beep.
-    bell = '\007',
-}
-
-
-version(Windows)
-{
-    // Taken from LDC: https://github.com/ldc-developers/ldc/pull/3086/commits/9626213a
-    // https://github.com/ldc-developers/ldc/pull/3086/commits/9626213a
-
-    import core.sys.windows.wincon : SetConsoleCP, SetConsoleMode, SetConsoleOutputCP;
-
-    /// Original codepage at program start.
-    private __gshared uint originalCP;
-
-    /// Original output codepage at program start.
-    private __gshared uint originalOutputCP;
-
-    /// Original console mode at program start.
-    private __gshared uint originalConsoleMode;
-
-    /++
-        Sets the console codepage to display UTF-8 characters (åäö, 高所恐怖症, ...)
-        and the console mode to display terminal colours.
-     +/
-    void setConsoleModeAndCodepage() @system
-    {
-        import core.stdc.stdlib : atexit;
-        import core.sys.windows.winbase : GetStdHandle, INVALID_HANDLE_VALUE, STD_OUTPUT_HANDLE;
-        import core.sys.windows.wincon : ENABLE_VIRTUAL_TERMINAL_PROCESSING,
-            GetConsoleCP, GetConsoleMode, GetConsoleOutputCP;
-        import core.sys.windows.winnls : CP_UTF8;
-
-        originalCP = GetConsoleCP();
-        originalOutputCP = GetConsoleOutputCP();
-
-        cast(void)SetConsoleCP(CP_UTF8);
-        cast(void)SetConsoleOutputCP(CP_UTF8);
-
-        auto stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-        assert((stdoutHandle != INVALID_HANDLE_VALUE), "Failed to get standard output handle");
-
-        immutable getModeRetval = GetConsoleMode(stdoutHandle, &originalConsoleMode);
-
-        if (getModeRetval != 0)
-        {
-            // The console is a real terminal, not a pager (or Cygwin mintty)
-            cast(void)SetConsoleMode(stdoutHandle, originalConsoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-        }
-
-        // atexit handlers are also called when exiting via exit() etc.;
-        // that's the reason this isn't a RAII struct.
-        atexit(&resetConsoleModeAndCodepage);
-    }
-
-    /++
-        Resets the console codepage and console mode to the values they had at
-        program start.
-     +/
-    extern(C)
-    private void resetConsoleModeAndCodepage() @system
-    {
-        import core.sys.windows.winbase : GetStdHandle, INVALID_HANDLE_VALUE, STD_OUTPUT_HANDLE;
-
-        auto stdoutHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-        assert((stdoutHandle != INVALID_HANDLE_VALUE), "Failed to get standard output handle");
-
-        cast(void)SetConsoleCP(originalCP);
-        cast(void)SetConsoleOutputCP(originalOutputCP);
-        cast(void)SetConsoleMode(stdoutHandle, originalConsoleMode);
-    }
-}
-
-
-version(Posix)
-{
-    // isTTY
-    /++
-        Determines whether or not the program is being run in a terminal (virtual TTY).
-
-        "isatty() returns 1 if fd is an open file descriptor referring to a
-        terminal; otherwise 0 is returned, and errno is set to indicate the error."
-
-        Returns:
-            `true` if the current environment appears to be a terminal; `false` if not (e.g. pager).
-     +/
-    bool isTTY() //@safe
-    {
-        import core.sys.posix.unistd : STDOUT_FILENO, isatty;
-        return (isatty(STDOUT_FILENO) == 1);
-    }
-}
-else version(Windows)
-{
-    /// Ditto
-    bool isTTY() @system
-    {
-        import core.sys.windows.winbase : FILE_TYPE_PIPE, GetFileType, GetStdHandle, STD_OUTPUT_HANDLE;
-        auto handle = GetStdHandle(STD_OUTPUT_HANDLE);
-        return (GetFileType(handle) != FILE_TYPE_PIPE);
-    }
-}
-else
-{
-    /// Ditto
-    bool isTTY() //@safe
-    {
-        return true;
-    }
-}
-
-
-// ensureAppropriateBuffering
-/++
-    Ensures select non-TTY environments (like Cygwin) are line-buffered.
-    Allows for overriding behaviour and forcing the change in buffer mode.
-
-    Params:
-        override_ = Whether or not to override checks and always set line buffering.
- +/
-void ensureAppropriateBuffering(const Flag!"override_" override_ = No.override_) @system
-{
-    import kameloso.platform : currentPlatform;
-
-    if (isTTY) return;
-
-    // Some environments require us to flush standard out after writing to it,
-    // or else nothing will appear on screen (until it gets automatically flushed
-    // at an indeterminate point in the future).
-    // Automate this by setting standard out to be line-buffered.
-
-    static void setLineBufferingMode()
-    {
-        import kameloso.constants : BufferSize;
-        import std.stdio : stdout;
-        import core.stdc.stdio : _IOLBF;
-
-        stdout.setvbuf(BufferSize.vbufStdout, _IOLBF);  // FIXME
-    }
-
-    if (override_) return setLineBufferingMode();
-
-    switch (currentPlatform)
-    {
-    case "Cygwin":  // No longer seems to need this?
-    case "vscode":
-        return setLineBufferingMode();
-
-    default:
-        // Non-whitelisted non-TTY; just leave as-is.
-        break;
-    }
-}
-
-
-// setTitle
-/++
-    Sets the terminal title to a given string. Supposedly.
-
-    Example:
-    ---
-    setTitle("kameloso IRC bot");
-    ---
-
-    Params:
-        title = String to set the title to.
- +/
-void setTitle(const string title) @system
-{
-    version(Posix)
-    {
-        import std.stdio : stdout, write;
-
-        write("\033]0;", title, "\007");
-        stdout.flush();
-    }
-    else version(Windows)
-    {
-        import std.string : toStringz;
-        import core.sys.windows.wincon : SetConsoleTitleA;
-
-        SetConsoleTitleA(title.toStringz);
-    }
-    else
-    {
-        // Unexpected platform, do nothing
-    }
-}
-
-version(Colours):
 
 /++
     Format codes that work like terminal colouring does, except here for formats
@@ -358,7 +169,6 @@ enum isAColourCode(T) =
     Returns:
         A terminal code sequence of the passed codes.
  +/
-version(Colours)
 string colour(Codes...)(const Codes codes) pure nothrow
 if (Codes.length && allSatisfy!(isAColourCode, Codes))
 {
@@ -391,7 +201,6 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
         sink = Output range to write output to.
         codes = Variadic list of terminal format codes.
  +/
-version(Colours)
 void colourWith(Sink, Codes...)(auto ref Sink sink, const Codes codes)
 if (isOutputRange!(Sink, char[]) && Codes.length && allSatisfy!(isAColourCode, Codes))
 {
@@ -435,7 +244,6 @@ if (isOutputRange!(Sink, char[]) && Codes.length && allSatisfy!(isAColourCode, C
     Returns:
         A terminal code sequence of the passed codes, encompassing the passed text.
  +/
-version(Colours)
 string colour(Codes...)(const string text, const Codes codes) pure nothrow
 if (Codes.length && allSatisfy!(isAColourCode, Codes))
 {
@@ -472,7 +280,6 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
         g = Reference to a green value.
         b = Reference to a blue value.
  +/
-version(Colours)
 private void normaliseColoursBright(ref uint r, ref uint g, ref uint b) pure nothrow @nogc
 {
     enum pureWhiteReplacement = 120;
@@ -536,7 +343,6 @@ private void normaliseColoursBright(ref uint r, ref uint g, ref uint b) pure not
         g = Reference to a green value.
         b = Reference to a blue value.
  +/
-version(Colours)
 private void normaliseColours(ref uint r, ref uint g, ref uint b) pure nothrow @nogc
 {
     enum pureBlackReplacement = 120;
@@ -595,7 +401,6 @@ private void normaliseColours(ref uint r, ref uint g, ref uint b) pure nothrow @
 }
 
 version(none)
-version(Colours)
 unittest
 {
     import std.conv : to;
@@ -696,7 +501,6 @@ unittest
         normalise = Whether or not to normalise colours so that they aren't too
             dark or too bright.
  +/
-version(Colours)
 void truecolour(Sink)
     (auto ref Sink sink,
     uint r,
@@ -762,7 +566,6 @@ if (isOutputRange!(Sink, char[]))
     Returns:
         The passed string word encompassed by terminal colour tags.
  +/
-version(Colours)
 string truecolour(const string word,
     const uint r,
     const uint g,
@@ -784,7 +587,6 @@ string truecolour(const string word,
 }
 
 ///
-version(Colours)
 unittest
 {
     import std.format : format;
@@ -819,7 +621,6 @@ unittest
         Line with the substring in it inverted, if inversion was successful,
         else (a duplicate of) the line unchanged.
  +/
-version(Colours)
 string invert(const string line,
     const string toInvert,
     const Flag!"caseSensitive" caseSensitive = Yes.caseSensitive) pure
@@ -901,7 +702,6 @@ string invert(const string line,
 }
 
 ///
-version(Colours)
 unittest
 {
     import std.format : format;
@@ -1129,7 +929,6 @@ unittest
     Returns:
         A [TerminalForeground] based on the passed string.
  +/
-version(Colours)
 TerminalForeground getColourByHash(const string word,
     const Flag!"brightTerminal" bright) pure @nogc nothrow
 in (word.length, "Tried to get colour by hash but no word was given")
@@ -1148,7 +947,6 @@ in (word.length, "Tried to get colour by hash but no word was given")
 }
 
 ///
-version(Colours)
 unittest
 {
     import lu.conv : Enum;
@@ -1185,14 +983,12 @@ unittest
     Returns:
         `word`, now in colour based on the hash of its contents.
  +/
-version(Colours)
 string colourByHash(const string word, const Flag!"brightTerminal" bright) pure nothrow
 {
     return word.colour(getColourByHash(word, bright));
 }
 
 ///
-version(Colours)
 unittest
 {
     import std.conv : text;

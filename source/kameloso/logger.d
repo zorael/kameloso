@@ -42,7 +42,7 @@ private:
     version(Colours)
     {
         import kameloso.constants : DefaultColours;
-        import kameloso.terminal : TerminalForeground, TerminalReset, colourWith, colour;
+        import kameloso.terminal.colours : TerminalForeground, TerminalReset, colourWith, colour;
 
         alias logcoloursBright = DefaultColours.logcoloursBright;
         alias logcoloursDark = DefaultColours.logcoloursDark;
