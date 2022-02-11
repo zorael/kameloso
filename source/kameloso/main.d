@@ -535,15 +535,14 @@ void messageFiber(ref Kameloso instance)
         /// Proxies the passed message to the [kameloso.common.logger].
         void proxyLoggerMessages(ThreadMessage.TerminalOutput logLevel, string message) scope
         {
+            if (instance.settings.headless) return;
+
             with (ThreadMessage.TerminalOutput)
             final switch (logLevel)
             {
             case writeln:
-                if (!instance.settings.headless)
-                {
-                    import std.stdio : writeln;
-                    writeln(message);
-                }
+                import std.stdio : writeln;
+                writeln(message);
                 break;
 
             case trace:
