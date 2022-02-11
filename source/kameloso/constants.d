@@ -54,7 +54,7 @@ auto buildCompilerVersionString()
     sink.put('.');
     (__VERSION__ % 1000).toAlphaInto!(3,3)(sink);
 
-    return sink[].idup;
+    return sink.data.idup;
 }
 
 
@@ -96,7 +96,7 @@ auto buildVersionString()
         }
     }
 
-    return sink[].idup;
+    return sink.data.idup;
 }
 
 
