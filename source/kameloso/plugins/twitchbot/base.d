@@ -1424,9 +1424,9 @@ package:
 
     /++
         How often to check whether timers should fire, in seconds. A smaller
-        number means better precision.
+        number means better precision, but also higher gc pressure.
      +/
-    static immutable timerPeriodicity = 5.seconds;
+    static immutable timerPeriodicity = 15.seconds;
 
     /// [kameloso.terminal.TerminalToken.bell] as string, for use as bell.
     private enum bellString = ("" ~ cast(char)(TerminalToken.bell));
