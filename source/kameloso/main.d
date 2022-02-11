@@ -245,7 +245,7 @@ void messageFiber(ref Kameloso instance)
             dg(success);
         }
 
-        /// Reloads a particular plugin.
+        /// Reloads a particular plugin, or all if no plugin name passed.
         void reloadSpecificPlugin(ThreadMessage.Reload, string pluginToReload) scope
         {
             foreach (plugin; instance.plugins)
@@ -268,7 +268,7 @@ void messageFiber(ref Kameloso instance)
             }
         }
 
-        /// Reloads all plugins.
+        /// Reloads all plugins. Wraps and leverages [reloadSpecificPlugin].
         void reloadPlugins(ThreadMessage.Reload) scope
         {
             reloadSpecificPlugin(ThreadMessage.Reload(), string.init);
