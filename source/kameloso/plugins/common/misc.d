@@ -199,8 +199,17 @@ unittest
 
     const ps = (cast(MyPlugin)plugin).myPluginSettings;
 
+    static if (__VERSION__ >= 2091)
+    {
+        import std.math : isClose;
+    }
+    else
+    {
+        import std.math : approxEqual;
+        alias isClose = approxEqual;
+    }
+
     import std.conv : text;
-    import std.math : isClose;
 
     assert((ps.s == "abc def ghi"), ps.s);
     assert((ps.i == 42), ps.i.text);
