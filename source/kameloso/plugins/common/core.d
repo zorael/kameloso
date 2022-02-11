@@ -559,9 +559,9 @@ mixin template IRCPluginImpl(
         }
 
         /++
-            Calls the passed function, appropriately.
+            Calls the passed function pointer, appropriately.
          +/
-        void call(alias fun)(ref IRCEvent event)
+        void call(Fun)(Fun fun, ref IRCEvent event)
         {
             import std.meta : AliasSeq, staticMap;
             import std.traits : Parameters, Unqual, arity;
@@ -986,7 +986,7 @@ mixin template IRCPluginImpl(
                 writeln("   ...calling!");
             }
 
-            call!fun(event);
+            call(&fun, event);
 
             static if (uda.given.chainable)
             {
