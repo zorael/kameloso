@@ -598,9 +598,10 @@ mixin template IRCPluginImpl(
                     {
                         import std.format : format;
 
-                        enum pattern = "`%s` takes an `IRCEvent` of an unsupported storage class; " ~
+                        enum pattern = "`%s` has a `%s` event handler takes an " ~
+                            "`IRCEvent` of an unsupported storage class; " ~
                             "may not be mutable `ref` or `out`";
-                        static assert(0, pattern.format(fullyQualifiedName!fun));
+                        static assert(0, pattern.format(module_, Fun.stringof));
                     }
                 }
 
@@ -627,9 +628,10 @@ mixin template IRCPluginImpl(
                     {
                         import std.format : format;
 
-                        enum pattern = "`%s` takes an `IRCEvent` of an unsupported storage class; " ~
+                        enum pattern = "`%s` has a `%s` event handler takes an " ~
+                            "`IRCEvent` of an unsupported storage class; " ~
                             "may not be mutable `ref` or `out`";
-                        static assert(0, pattern.format(fullyQualifiedName!fun));
+                        static assert(0, pattern.format(module_, Fun.stringof));
                     }
                 }
 
@@ -642,8 +644,9 @@ mixin template IRCPluginImpl(
             else
             {
                 import std.format : format;
-                enum pattern = "`%s` has an unsupported function signature: `%s`";
-                static assert(0, pattern.format(fullyQualifiedName!fun, typeof(fun).stringof));
+
+                enum pattern = "`%s` has an event handler with an unsupported function signature: `%s`";
+                static assert(0, pattern.format(module_, Fun.stringof));
             }
         }
 
@@ -912,7 +915,7 @@ mixin template IRCPluginImpl(
                 {
                     import kameloso.plugins.common.misc : enqueue;
                     import std.meta : AliasSeq, staticMap;
-                    import std.traits : Parameters, Unqual, arity, fullyQualifiedName;
+                    import std.traits : Parameters, Unqual, arity;
 
                     alias Params = staticMap!(Unqual, Parameters!Fun);
 
@@ -923,7 +926,7 @@ mixin template IRCPluginImpl(
 
                     static if (is(Params : AliasSeq!IRCEvent) || (arity!fun == 0))
                     {
-                        this.enqueue(event, uda.given.permissionsRequired, fun, fullyQualifiedName!fun);
+                        this.enqueue(event, uda.given.permissionsRequired, fun, funName);
                         return uda.given.chainable ? NextStep.continue_ : NextStep.return_;
                     }
                     else static if (
@@ -934,7 +937,7 @@ mixin template IRCPluginImpl(
                     {
                         // Unsure why we need to specifically specify IRCPlugin
                         // now despite typeof(this) being a subclass...
-                        this.enqueue(this, event, uda.given.permissionsRequired, fun, fullyQualifiedName!fun);
+                        this.enqueue(this, event, uda.given.permissionsRequired, fun, funName);
                         return uda.given.chainable ? NextStep.continue_ : NextStep.return_;
                     }
                     else
