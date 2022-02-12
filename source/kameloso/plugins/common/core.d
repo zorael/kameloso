@@ -719,9 +719,6 @@ mixin template IRCPluginImpl(
             immutable origContent = event.content;
             immutable origAux = event.aux;
 
-            /// Whether or not a Command or Regex matched.
-            bool commandMatch;
-
             scope(exit)
             {
                 // Restore content and aux as they may have been altered
@@ -743,13 +740,14 @@ mixin template IRCPluginImpl(
                 }
             }
 
+            /// Whether or not a Command or Regex matched.
+            bool commandMatch;
+
             // Evaluate each Command UDAs with the current event
             if (uda.given.commands.length)
             {
                 foreach (immutable command; uda.given.commands)
                 {
-                    if (commandMatch) break;
-
                     static if (verbose)
                     {
                         writefln(`   ...Command "%s"`, command.given.word);
