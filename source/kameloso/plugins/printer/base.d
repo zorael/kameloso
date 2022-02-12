@@ -291,8 +291,8 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     case SELFMODE:
         // These event types are spammy and/or have low signal-to-noise ratio;
         // ignore if we're configured to
-        if (!plugin.printerSettings.filterMost) goto default;
-        break;
+        if (plugin.printerSettings.filterMost) break;
+        goto default;
 
     case JOIN:
     case PART:
@@ -301,10 +301,8 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
             if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
             {
                 // Filter overly verbose JOINs and PARTs on Twitch if we're filtering
-                if (!plugin.printerSettings.filterMost) goto default;
-                break;
+                if (plugin.printerSettings.filterMost) break;
             }
-
             goto default;
         }
         else
@@ -343,15 +341,8 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
                 updateSquelchstamp(plugin, event.time, event.channel,
                     event.sender.nickname, event.target.nickname);
 
-            if (shouldSquelch)
-            {
-                return;
-            }
-            else
-            {
-                // Obey normal filterMost rules for unsquelched
-                goto case RPL_NAMREPLY;
-            }
+            if (shouldSquelch) break;
+            else goto case RPL_NAMREPLY;  // Obey normal filterMost rules for unsquelched
         }
 
     version(WithConnectService)
@@ -368,15 +359,8 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
             updateSquelchstamp(plugin, event.time, event.channel,
                 event.sender.nickname, event.target.nickname);
 
-        if (shouldSquelch)
-        {
-            return;
-        }
-        else
-        {
-            // Always display unsquelched
-            goto default;
-        }
+        if (shouldSquelch) break;
+        else goto default;
 
     case USERSTATE: // Once per channel join?
     case PONG:
