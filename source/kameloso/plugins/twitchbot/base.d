@@ -346,11 +346,11 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
                 // https://twitchbots.info/bots
                 static immutable botBlacklist =
                 [
-                    "nightbot",
+                    //"nightbot",
                     "streamlabs",
                     "streamelements",
                     "soundalerts",
-                    "moobot",
+                    //"moobot",
                     "anotherttvviewer",
                     "kaxips06",
                     "la_kaylee",
@@ -388,12 +388,13 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 
                 foreach (immutable viewerJSON; chattersJSON["chatters"]["viewers"].array)
                 {
-                    import std.algorithm.searching : canFind;
+                    import std.algorithm.searching : canFind, endsWith;
 
                     immutable viewer = viewerJSON.str;
 
                     if ((viewer == plugin.state.client.nickname) ||
                         (viewer == event.channel[1..$]) ||
+                        (viewer.endsWith("bot")) ||
                         botBlacklist.canFind(viewer)) continue;
 
                     room.broadcast.chattersSeen[viewer] = true;
