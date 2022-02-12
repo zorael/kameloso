@@ -3,9 +3,6 @@
  +/
 module kameloso.plugins.tester;
 
-version(WithPlugins):
-//version(WithTesterPlugin):
-
 private:
 
 import kameloso.plugins.common.core;
