@@ -1008,7 +1008,7 @@ mixin template IRCPluginImpl(
                 static assert(udaSanityCheck!fun);
                 enum uda = getUDAs!(fun, IRCEventHandler)[0];
                 enum verbose = (uda.given.verbose || debug_);
-                enum funName = __traits(identifier, fun);
+                enum funName = module_ ~ '.' ~ __traits(identifier, fun);
 
                 try
                 {
