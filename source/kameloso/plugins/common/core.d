@@ -716,8 +716,8 @@ mixin template IRCPluginImpl(
             }
 
             // Snapshot content and aux for later restoration
-            string origContent = event.content;
-            string origAux = event.aux;
+            immutable origContent = event.content;
+            immutable origAux = event.aux;
 
             /// Whether or not a Command or Regex matched.
             bool commandMatch;
