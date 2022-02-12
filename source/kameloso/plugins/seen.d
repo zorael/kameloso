@@ -1,6 +1,6 @@
 /++
-    The Seen plugin implements "seen" functionality; the ability for someone to
-    query when a given nickname was last seen online.
+    The Seen plugin implements "seen"; the ability for someone to
+    query when a given nickname was last encountered online.
 
     We will implement this by keeping an internal `long[string]` associative
     array of timestamps keyed by nickname. Whenever we see a user do something,
@@ -70,13 +70,13 @@ public:
 
 // SeenPlugin
 /++
-    This is your plugin to the outside world, the only thing visible in the
+    This is your plugin to the outside world, the only thing publicly visible in the
     entire module. It only serves as a way of proxying calls to our top-level
-    private functions, as well as to house plugin-private variables that we want
+    private functions, as well as to house plugin-specific and -private variables that we want
     to keep out of top-level scope for the sake of modularity. If the only state
     is in the plugin, several plugins of the same kind can technically be run
     alongside each other, which would allow for several bots to be run in
-    parallel. This is not yet supported but there's nothing stopping it.
+    parallel. This is not yet supported but there's fundamentally nothing stopping it.
 
     As such it houses this plugin's *state*, notably its instance of
     [SeenSettings] and its [kameloso.plugins.common.core.IRCPluginState].
@@ -103,14 +103,11 @@ public:
         Repeat[] repeats;
         Fiber[][] awaitingFibers;
         void delegate(const IRCEvent)[][] awaitingDelegates;
-        ScheduledFiber[] scheduledFibers;  // `ScheduledFiber` is a struct in [kameloso.thread]
-        ScheduledDelegate[] scheduledDelegates;  // Ditto
-        long nextFiberTimestamp;
+        ScheduledFiber[] scheduledFibers;
+        ScheduledDelegate[] scheduledDelegates;
+        long nextScheduledTimestamp;
         void updateScheule();
-        bool botUpdated;
-        bool clientUpdated;
-        bool serverUpdated;
-        bool settingsUpdated;
+        Update updates;
         bool* abort;
     }
     ---
@@ -143,13 +140,13 @@ public:
     * [kameloso.plugins.common.core.IRCPluginState.users] is an associative array
         keyed with users' nicknames. The value to that key is an
         [dialect.defs.IRCUser] representing that user in terms of nickname,
-        address, ident, and services account name. This is a way to keep track of
+        address, ident, services account name, and much more. This is a way to keep track of
         users by more than merely their name. It is however not saved at the end
-        of the program; it is merely state and transient.
+        of the program; as everything else it is merely state and transient.
 
     * [kameloso.plugins.common.core.IRCPluginState.channels] is another associative
         array, this one with all the known channels keyed by their names. This
-        way we can access detailed information about any given channel, knowing
+        way we can access detailed information about any known channel, given
         only their name.
 
     * [kameloso.plugins.common.core.IRCPluginState.replays] is also an
@@ -172,8 +169,8 @@ public:
         information in the event, such as details on its sender, before repeating
         it again. This can only be done outside of plugins.
 
-    * [kameloso.plugins.common.core.IRCPluginState.awaitingFibers] is an associative
-        array of [core.thread.fiber.Fiber]s keyed by [dialect.ircdefs.IRCEvent.Type]s.
+    * [kameloso.plugins.common.core.IRCPluginState.awaitingFibers] is an
+        array of [core.thread.fiber.Fiber]s indexed by [dialect.ircdefs.IRCEvent.Type]s' numeric values.
         Fibers in the array of a particular event type will be executed the next
         time such an event is incoming. Think of it as Fiber callbacks.
 
@@ -182,7 +179,7 @@ public:
         matching type comes along.
 
     * [kameloso.plugins.common.core.IRCPluginState.scheduledFibers] is also an array of
-        [core.thread.fiber.Fiber]s, but not an associative one keyed on event types.
+        [core.thread.fiber.Fiber]s, but not one keyed on or indexed by event types.
         Instead they are tuples of a [core.thread.fiber.Fiber] and a `long`
         timestamp of when they should be run.
         Use [kameloso.plugins.common.delayFiber] to enqueue, or
@@ -201,23 +198,15 @@ public:
 
     * [kameloso.plugins.common.core.IRCPluginState.updateSchedule] merely iterates all
         scheduled fibers and delegates, caching the time at which the next one
-        should trigger.
+        should trigger in [kameloso.plugins.common.core.IRCPluginState.nextScheduledTimestamp].
 
-    * [kameloso.plugins.common.core.IRCPluginState.botUpdated] is set when
-        [kameloso.plugins.common.core.IRCPluginState.bot] was updated during parsing
-        and/or postprocessing. It is merely for internal use.
-
-    * [kameloso.plugins.common.core.IRCPluginState.clientUpdated] is likewise set when
-        [kameloso.plugins.common.core.IRCPluginState.client] was updated during parsing
-        and/or postprocessing. Ditto.
-
-    * [kameloso.plugins.common.core.IRCPluginState.serverUpdated] is likewise set when
-        [kameloso.plugins.common.core.IRCPluginState.server] was updated during parsing
-        and/or postprocessing. Ditto.
-
-    * [kameloso.plugins.common.core.IRCPluginState.settingsUpdated] is likewise set when
-        [kameloso.plugins.common.core.IRCPluginState.settings] was updated during parsing
-        and/or postprocessing. Ditto.
+    * [kameloso.plugins.common.core.IRCPluginState.updates] is a bitfield which
+        represents what aspect of the bot was *changed* during processing or postprocessing.
+        If any of the bits are set, represented by the enum values of
+        `kameloso.plugins.common.core.IRCPluginState.Updates`, the main loop will
+        pick up on it and propagate it to other plugins. If these flags are not set,
+        changes will never leave the plugin and may be overwritten by other plugins.
+        It is mostly for internal use.
 
     * [kameloso.plugins.common.core.IRCPluginState.abort] is a pointer to the global
         abort bool. When this is set, it signals the rest of the program that we
@@ -238,7 +227,7 @@ private:  // Module-level private.
 
     // seenUsers
     /++
-        Our associative array (AA) of seen users; the dictionary keyed with
+        Our associative array (AA) of seen users; a dictionary keyed with
         users' nicknames and with values that are UNIX timestamps, denoting when
         that user was last *seen* online.
 
@@ -278,12 +267,12 @@ private:  // Module-level private.
     /++
         This mixes in functions that fully implement an
         [kameloso.plugins.common.core.IRCPlugin]. They don't do much by themselves
-        other than call the module's functions.
+        other than call the module's functions, as well as implement things like
+        functions that return the plugin's name, its list of bot command words, etc.
+        It does this by introspecting the module and implementing itself as it sees fit.
 
-        As an exception, it mixes in the bits needed to automatically call
-        functions based on their [dialect.defs.IRCEvent.Type] annotations.
-        It is mandatory if you want things to work, unless you're making a
-        separate implementation yourself.
+        This includes the functions that call the top-level event handler functions
+        on incoming events.
 
         Seen from any other module, this module is a big block of private things
         they can't see, plus this visible plugin class. By having this class
@@ -342,7 +331,7 @@ private:
     /++
         Toggles whether or not the plugin should react to events at all.
         The @[kameloso.plugins.common.core.Enabler] annotation makes it special and
-        lets us easily enable or disable it without having checks everywhere.
+        lets us easily enable or disable the plugin without having checks everywhere.
      +/
     @Enabler bool enabled = true;
 }
@@ -357,15 +346,17 @@ version(OmniscientSeen)
         the event took place in, if applicable.
 
         The three policies are [kameloso.plugins.common.core.ChannelPolicy.home],
-        in which only events in channels in the [kameloso.kameloso.IRCBot.homeChannels]
+        with which only events in channels in the [kameloso.kameloso.IRCBot.homeChannels]
         array will be allowed to trigger it; [kameloso.plugins.common.core.ChannelPolicy.guest]
-        in which only events outside of such home channels will be allowed to trigger;
+        with which only events outside of such home channels will be allowed to trigger;
         or [kameloso.plugins.common.core.ChannelPolicy.any], in which case anywhere goes.
         For events that don't correspond to a channel (such as
-        [dialect.defs.IRCEvent.Type.QUERY]) the setting is ignored.
+        [dialect.defs.IRCEvent.Type.QUERY]) the setting doesn't apply and is ignored.
 
-        This constant is a compile-time setting for all event handlers where
-        whether a channel is a home or not is of interest (or even applies).
+        Thus this [omniscientChannelPolicy] enum constant is a compile-time setting
+        for all event handlers where whether a channel is a home or not is of
+        interest (or even applies). Put in a version block like this it allows
+        us to control the plugin's behaviour via `dub` build configurations.
      +/
     enum omniscientChannelPolicy = ChannelPolicy.any;
 }
@@ -385,17 +376,16 @@ else
     being processed of the [dialect.defs.IRCEvent.Type]s that we annotate
     the function with.
 
-    The [kameloso.plugins.common.core.Chainable] annotations mean that the plugin
+    The [kameloso.plugins.common.core.IRCEventHandler.chainable] annotations mean that the plugin
     will also process other functions in this module with the same
     [dialect.defs.IRCEvent.Type] annotations, even if this one matched. The
-    default is otherwise that it will end early after one match, but this
+    default is otherwise that it will end early after one match and proceed to the next plugin, but this
     doesn't ring well with catch-all functions like these. It's sensible to save
-    [kameloso.plugins.common.core.Chainable] only for the modules and functions that
+    [kameloso.plugins.common.core.IRCEventHandler.chainable] only for the modules and functions that
     actually need it.
 
-    The [kameloso.plugins.common.core.Permissions] annotation dictates who is
-    authorised to trigger the function. It has six policies, in increasing
-    order of importance:
+    The [kameloso.plugins.common.core.IRCEventHandler.requiredPermissions] annotation dictates who is
+    authorised to trigger the function. It has six policies, in increasing order of importance:
     [kameloso.plugins.common.core.Permissions.ignore],
     [kameloso.plugins.common.core.Permissions.anyone],
     [kameloso.plugins.common.core.Permissions.registered],
@@ -405,22 +395,29 @@ else
     [kameloso.plugins.common.core.Permissions.admin].
 
     * [kameloso.plugins.common.core.Permissions.ignore] will let precisely anyone
-        trigger it, without looking them up.<br>
+        trigger it, without looking them up.
+
     * [kameloso.plugins.common.core.Permissions.anyone] will let precisely anyone
-        trigger it, but only after having looked them up.<br>
+        trigger it, but only after having looked them up, allowing for blacklisting people.
+
     * [kameloso.plugins.common.core.Permissions.registered] will let anyone logged
-        into a services account trigger it.<br>
+        into a services account trigger it, provided they are not blacklisted.
+
     * [kameloso.plugins.common.core.Permissions.whitelist] will only allow users
-        in the whitelist section of the `users.json` resource file. Consider this
-        to correspond to "regulars" in the channel.<br>
+        in the whitelist section of the `users.json` resource file, provided they
+        are not blacklisted. Consider this to correspond to "regulars" in the channel.
+
     * [kameloso.plugins.common.core.Permissions.operator] will only allow users
         in the operator section of the `users.json` resource file. Consider this
-        to correspond to "moderators" in the channel.<br>
+        to correspond to "moderators" in the channel.
+
     * [kameloso.plugins.common.core.Permissions.staff] will only allow users
         in the staff section of the `users.json` resource file. Consider this
-        to correspond to channel owners.<br>
+        to correspond to channel owners.
+
     * [kameloso.plugins.common.core.Permissions.admin] will allow only you and
         your other superuser administrators, as defined in the configuration file.
+        This is a program-wide permission and will apply to all channels.
 
     In the case of [kameloso.plugins.common.core.Permissions.whitelist],
     [kameloso.plugins.common.core.Permissions.operator],
@@ -430,12 +427,18 @@ else
     anything. In the case of [kameloso.plugins.common.core.Permissions.registered],
     merely being logged in is enough. In the case of
     [kameloso.plugins.common.core.Permissions.anyone], the WHOIS results won't
-    matter and it will just let it pass, but it will check all the same.
+    matter and it will just let it pass, but it will check all the same so as to
+    be able to apply the blacklist.
     In the other cases, if you aren't logged into services or if your account
     name isn't included in the lists, the function will not trigger.
 
     This particular function doesn't care at all, so it is
     [kameloso.plugins.common.core.Permissions.ignore].
+
+    The [kameloso.plugins.common.core.ChannelPolicy] here is the same
+    [omniscientChannelPolicy] we defined earlier, versioned to have a different
+    value based on the dub build configuration. By default, it's
+    [kameloso.plugins.common.core.ChannelPolicy.home].
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -493,8 +496,8 @@ void onSomeAction(SeenPlugin plugin, const ref IRCEvent event)
     already have an entry.
 
     [dialect.defs.IRCEvent.Type.QUIT] events don't carry a channel.
-    Users bleed into the seen users database by quitting unless we somehow limit
-    it to only accept quits from those in home channels. Users in home channels
+    Users bleed into the seen users database from guest channels by quitting unless we somehow limit
+    it to only accept quits from those in homes. Users in home channels
     should always have an entry, provided that
     [dialect.defs.IRCEvent.Type.RPL_NAMREPLY] lists were given when
     joining one, which seems to (largely?) be the case.
@@ -569,6 +572,10 @@ void onWHOReply(SeenPlugin plugin, const ref IRCEvent event)
     This is done automatically when you join a channel. Nicknames are prefixed
     with mode signs if they are operators, voiced or similar, so we'll need to
     strip that away.
+
+    More concretely, it uses a [std.algorithm.iteration.splitter] to iterate each
+    name and call [updateUser] to update (or create) their entry in the
+    [SeenPlugin.seenUsers] associative array.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_NAMREPLY)
@@ -577,12 +584,6 @@ void onWHOReply(SeenPlugin plugin, const ref IRCEvent event)
 void onNamesReply(SeenPlugin plugin, const ref IRCEvent event)
 {
     import std.algorithm.iteration : splitter;
-
-    /+
-        Use a [std.algorithm.iteration.splitter] to iterate each name and call
-        [updateUser] to update (or create) their entry in the
-        [SeenPlugin.seenUsers] associative array.
-     +/
 
     foreach (immutable entry; event.content.splitter(' '))
     {
@@ -599,10 +600,11 @@ void onNamesReply(SeenPlugin plugin, const ref IRCEvent event)
 
 // onEndOfList
 /++
-    Optimises the lookups in the associative array of seen users.
+    Optimise the lookups in the associative array of seen users.
 
     At the end of a long listing of users in a channel, when we're reasonably
     sure we've added users to our associative array of seen users, *rehashes* it.
+    This balances the hash map and allows for more efficient reads.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_ENDOFNAMES)
@@ -617,22 +619,25 @@ void onEndOfList(SeenPlugin plugin)
 
 // onCommandSeen
 /++
-    Whenever someone says "seen" in a [dialect.defs.IRCEvent.Type.CHAN] or
+    Whenever someone says "!seen" in a [dialect.defs.IRCEvent.Type.CHAN] or
     a [dialect.defs.IRCEvent.Type.QUERY], and if
     [dialect.defs.IRCEvent.Type.CHAN] then only if in a *home*, this function triggers.
 
-    The [kameloso.plugins.common.core.IRCEventHandler] annotation defines a piece of text
+    The [kameloso.plugins.common.core.IRCEventHandler.Command.word] annotation defines a piece of text
     that the incoming message must start with for this function to be called.
-    [kameloso.plugins.common.core.PrefixPolicy] deals with whether the message has to
+    [kameloso.plugins.common.core.IRCEventHandler.Command.policy] deals with whether the message has to
     start with the name of the *bot* or not, and to what extent.
 
     Prefix policies can be one of:
-    * `direct`, where the raw command is expected without any bot prefix at all;
+
+    * [kameloso.plugins.common.core.PrefixPolicy.direct], where the raw command is expected without any bot prefix at all;
         the command is simply that string: "`seen`".
-    * `prefixed`, where the message has to start with the command *prefix* character
+
+    * [kameloso.plugins.common.core.PrefixPolicy.prefixed], where the message has to start with the command *prefix* character
         or string (usually `!` or `.`): "`!seen`".
-    * `nickname`, where the message has to start with bot's nickname:
-        "`kameloso: seen`" -- except if it's in a [dialect.defs.IRCEvent.Type.QUERY] message.<br>
+
+    * [kameloso.plugins.common.core.PrefixPolicy.nickname], where the message has to start with bot's nickname:
+        "`kameloso: seen`" -- except if it's in a [dialect.defs.IRCEvent.Type.QUERY] message.
 
     The plugin system will have made certain we only get messages starting with
     "`seen`", since we annotated this function with such a
@@ -659,7 +664,7 @@ void onEndOfList(SeenPlugin plugin)
     event.aux = "seen";
     ---
 
-    Lastly, the [kameloso.plugins.common.core.Description] annotation merely defines
+    Lastly, the [kameloso.plugins.common.core.IRCEventHandler.Command.description] annotation merely defines
     how this function will be listed in the "online help" list, shown by triggering
     the [kameloso.plugins.help.HelpPlugin]'s' "`help`" command.
  +/
@@ -799,10 +804,10 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
 
 // updateUser
 /++
-    Updates a given nickname's entry in the seen array with the passed time,
+    Update a given nickname's entry in the seen array with the passed time,
     expressed in UNIX time.
 
-    This is not annotated with an IRC event type and will merely be invoked from
+    This is not annotated as an IRC event handler and will merely be invoked from
     elsewhere, like any normal function.
 
     Example:
@@ -817,6 +822,7 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
         signed = Nickname to update, potentially prefixed with one or more modesigns
             (`@`, `+`, `%`, ...).
         time = UNIX timestamp of when the user was seen.
+        skipModesignStrp = Whether or not to explicitly not strip modesigns from the nickname.
  +/
 void updateUser(SeenPlugin plugin,
     const string signed,
@@ -835,7 +841,7 @@ in (signed.length, "Tried to update a user with an empty (signed) nickname")
 
 // updateAllObservedUsers
 /++
-    Updates all currently observed users.
+    Update all currently observed users.
 
     This allows us to update users that don't otherwise trigger events that
     would register activity, such as silent participants.
@@ -866,9 +872,9 @@ void updateAllObservedUsers(SeenPlugin plugin)
 
 // loadSeen
 /++
-    Given a filename, reads the contents and load it into a `long[string]`
+    Given a filename, read the contents and load it into a `long[string]`
     associative array, then returns it. If there was no file there to read,
-    returns an empty array for a fresh start.
+    return an empty array for a fresh start.
 
     Params:
         filename = Filename of the file to read from.
@@ -913,7 +919,7 @@ long[string] loadSeen(const string filename)
 
 // saveSeen
 /++
-    Saves the passed seen users associative array to disk, but in JSON format.
+    Save the passed seen users associative array to disk, in JSON format.
 
     This is a convenient way to serialise the array.
 
@@ -938,11 +944,11 @@ in (filename.length, "Tried to save seen users to an empty filename")
 // onWelcome
 /++
     After we have registered on the server and seen the welcome messages, load
-    our seen users from file. Additionally sets up a Fiber that periodically
+    our seen users from file. Additionally set up a Fiber that periodically
     saves seen users to disk once every [SeenPlugin.timeBetweenSaves] seconds.
 
     This is to make sure that as little data as possible is lost in the event
-    of an unexpected shutdown.
+    of an unexpected shutdown while still not hammering the disk.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
@@ -998,7 +1004,7 @@ void onWelcome(SeenPlugin plugin)
 
 // reload
 /++
-    Reloads seen users from disk.
+    Reload seen users from disk.
  +/
 void reload(SeenPlugin plugin)
 {
@@ -1009,7 +1015,7 @@ void reload(SeenPlugin plugin)
 
 // teardown
 /++
-    When closing the program or when crashing with grace, saves the seen users
+    When closing the program or when crashing with grace, save the seen users
     array to disk for later reloading.
  +/
 void teardown(SeenPlugin plugin)
@@ -1021,7 +1027,7 @@ void teardown(SeenPlugin plugin)
 
 // initResources
 /++
-    Reads and writes the file of seen people to disk, ensuring that it's there.
+    Read and write the file of seen people to disk, ensuring that it's there.
  +/
 void initResources(SeenPlugin plugin)
 {
@@ -1046,7 +1052,7 @@ void initResources(SeenPlugin plugin)
         version(PrintStacktraces) logger.trace(e);
     }
 
-    // Let other Exceptions pass.
+    // Let other Exceptions pass up the stack.
 
     json.save(plugin.seenFile);
 }
@@ -1056,7 +1062,7 @@ import kameloso.thread : Sendable;
 
 // onBusMessage
 /++
-    Receives a passed [kameloso.thread.BusMessage] with the "`seen`" header,
+    Receive a passed [kameloso.thread.BusMessage] with the "`seen`" header,
     and calls functions based on the payload message.
 
     This is used in the Pipeline plugin, to allow us to trigger seen verbs via
@@ -1066,10 +1072,11 @@ import kameloso.thread : Sendable;
     Params:
         plugin = The current [SeenPlugin].
         header = String header describing the passed content payload.
-        content = Message content.
+        content = Boxed message content.
  +/
 debug
 version(Posix)
+//version(WithPipelinePlugin)  // Be available to other plugins too, like admin
 void onBusMessage(SeenPlugin plugin, const string header, shared Sendable content)
 {
     if (!plugin.isEnabled) return;
@@ -1102,18 +1109,21 @@ void onBusMessage(SeenPlugin plugin, const string header, shared Sendable conten
 
 
 /++
-    [kameloso.plugins.common.awareness.UserAwareness] is a mixin template; a few functions
-    defined in [kameloso.plugins.common.awareness] to deal with common bookkeeping that
+    [kameloso.plugins.common.awareness.UserAwareness] is a mixin template; it proxies to a few functions
+    defined in [kameloso.plugins.common.awareness] to deal with common book-keeping that
     every plugin *that wants to keep track of users* need. If you don't want to
     track which users you have seen (and are visible to you now), you don't need this.
+
+    Additionally it implicitly mixes in [kameloso.plugins.common.awareness.MinimalAuthentication],
+    needed as soon as you have any [kameloso.plugins.common.core.PrefixPolicy] checks.
  +/
 mixin UserAwareness;
 
 
 /++
     Complementary to [kameloso.plugins.common.awareness.UserAwareness] is
-    [kameloso.plugins.common.awareness.ChannelAwareness], which will add in bookkeeping
-    about the channels the bot is in, their topics, modes and list of
+    [kameloso.plugins.common.awareness.ChannelAwareness], which will add in book-keeping
+    about the channels the bot is in, their topics, modes, and list of
     participants. Channel awareness requires user awareness, but not the other way around.
 
     Depending on the value of [omniscientChannelPolicy] we may want it to limit
