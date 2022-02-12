@@ -1183,9 +1183,12 @@ void onMyInfo(TwitchBotPlugin plugin)
         {
             while (true)
             {
-                foreach (immutable channelName, room; plugin.rooms)
+                if (plugin.isEnabled)
                 {
-                    room.follows = getFollows(plugin, room.id);
+                    foreach (immutable channelName, room; plugin.rooms)
+                    {
+                        room.follows = getFollows(plugin, room.id);
+                    }
                 }
 
                 immutable now = Clock.currTime;
