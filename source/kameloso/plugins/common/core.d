@@ -466,7 +466,7 @@ mixin template IRCPluginImpl(
                 static assert(0, pattern.format(fullyQualifiedName!fun));
             }
 
-            static immutable uda = handlerAnnotations[0];
+            enum uda = handlerAnnotations[0];
 
             static foreach (immutable type; uda.given.acceptedEventTypes)
             {{
@@ -1006,7 +1006,7 @@ mixin template IRCPluginImpl(
                 import std.traits : getUDAs;
 
                 static assert(udaSanityCheck!fun);
-                static immutable uda = getUDAs!(fun, IRCEventHandler)[0];
+                enum uda = getUDAs!(fun, IRCEventHandler)[0];
                 enum verbose = (uda.given.verbose || debug_);
                 enum funName = __traits(identifier, fun);
 
