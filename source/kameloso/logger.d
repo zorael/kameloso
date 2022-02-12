@@ -81,7 +81,6 @@ public:
     }
 
 
-    pragma(inline, true)
     version(Colours)
     {
         // tint
