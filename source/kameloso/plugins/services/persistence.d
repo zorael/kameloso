@@ -182,20 +182,18 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
             service.userClassChannelCache[user.nickname] = event.channel;
         }
 
-        auto stored = user.nickname in service.state.users;
-        immutable persistentCacheMiss = stored is null;
-        if (service.state.settings.preferHostmasks) user.account = string.init;
-
         // Save cache lookups so we don't do them more than once.
         string* cachedChannel;
 
-        if (persistentCacheMiss)
-        {
-            service.state.users[user.nickname] = user;
-            stored = user.nickname in service.state.users;
-        }
+        auto stored = user.nickname in service.state.users;
+        immutable persistentCacheMiss = stored is null;
 
-        if (!service.state.settings.preferHostmasks)
+        if (service.state.settings.preferHostmasks)
+        {
+            // Ignore any account that may have been parsed
+            user.account = string.init;
+        }
+        else /*if (!service.state.settings.preferHostmasks)*/
         {
             if (service.state.server.daemon != IRCServer.Daemon.twitch)
             {
@@ -213,7 +211,8 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
                     break;
 
                 default:
-                    if (user.account.length && (user.account != "*") && !stored.account.length)
+                    if ((user.account.length && (user.account != "*")) ||
+                        (!persistentCacheMiss && !stored.account.length))
                     {
                         // Unexpected event bearing new account
                         // These can be whatever if the "account-tag" capability is set
@@ -224,15 +223,20 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
             }
         }
 
-        import lu.meld : MeldingStrategy, meldInto;
-
-        // Meld into the stored user, and store the union in the event
-        // Skip if the current stored is just a direct copy of user
-        // Store initial class and restore after meld. The origin user.class_
-        // can ever only be IRCUser.Class.unset UNLESS altered in the switch above.
-        // Additionally snapshot the .updated value and restore it after melding
-        if (!persistentCacheMiss)
+        if (persistentCacheMiss)
         {
+            service.state.users[user.nickname] = user;
+            stored = user.nickname in service.state.users;
+        }
+        else
+        {
+            import lu.meld : MeldingStrategy, meldInto;
+            // Meld into the stored user, and store the union in the event
+            // Skip if the current stored is just a direct copy of user
+            // Store initial class and restore after meld. The origin user.class_
+            // can ever only be IRCUser.Class.unset UNLESS altered in the switch above.
+            // Additionally snapshot the .updated value and restore it after melding
+
             version(TwitchSupport)
             {
                 if (stored.class_ == IRCUser.Class.admin)
