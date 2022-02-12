@@ -724,12 +724,9 @@ mixin template IRCPluginImpl(
 
             scope(exit)
             {
-                if (commandMatch)
-                {
-                    // Restore content and aux as they were definitely altered
-                    event.content = origContent;
-                    event.aux = origAux;
-                }
+                // Restore content and aux as they may have been altered
+                event.content = origContent;
+                event.aux = origAux;
             }
 
             if (uda.given.commands.length || uda.given.regexes.length)
