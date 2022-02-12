@@ -9,10 +9,13 @@
 
     It has no commands. It only does post-processing and doesn't handle
     [dialect.defs.IRCEvent]s in the normal sense at all.
+
+    See_Also:
+        [kameloso.plugins.common.core]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.services.persistence;
 
-version(WithPlugins):
 version(WithPersistenceService):
 
 private:
@@ -555,7 +558,7 @@ void reloadHostmasksFromDisk(PersistenceService service)
     string[string] accountByHostmask;
     accountByHostmask.populateFromJSON(hostmasksJSON);
 
-    service.hostmaskUsers = typeof(service.hostmaskUsers).init;
+    service.hostmaskUsers = null;
     service.hostmaskNicknameAccountCache.clear();
 
     foreach (immutable hostmask, immutable account; accountByHostmask)

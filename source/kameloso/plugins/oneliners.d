@@ -12,7 +12,6 @@
  +/
 module kameloso.plugins.oneliners;
 
-version(WithPlugins):
 version(WithOnelinersPlugin):
 
 private:

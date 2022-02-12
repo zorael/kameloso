@@ -24,7 +24,7 @@ import std.typecons : Flag, No, Yes;
 
 version(Colours)
 {
-    import kameloso.terminal : TerminalBackground, TerminalForeground;
+    import kameloso.terminal.colours : TerminalBackground, TerminalForeground;
 }
 
 public:
@@ -448,7 +448,7 @@ string mapEffects(const string origLine,
     const uint fgBase = TerminalForeground.default_,
     const uint bgBase = TerminalBackground.default_) pure nothrow
 {
-    import kameloso.terminal : TF = TerminalFormat;
+    import kameloso.terminal.colours : TF = TerminalFormat;
     import lu.string : contains;
 
     alias I = IRCControlCharacter;
@@ -488,7 +488,8 @@ string mapEffects(const string origLine,
 version(Colours)
 unittest
 {
-    import kameloso.terminal : TF = TerminalFormat, TerminalToken;
+    import kameloso.terminal : TerminalToken;
+    import kameloso.terminal.colours : TF = TerminalFormat;
     import lu.conv : toAlpha;
 
     alias I = IRCControlCharacter;
@@ -995,7 +996,8 @@ in ((strip || (terminalFormatCode > 0)), "Tried to map effects with terminal for
 
     static if (!strip)
     {
-        import kameloso.terminal : TF = TerminalFormat, TerminalReset, TerminalToken, colourWith;
+        import kameloso.terminal : TerminalToken;
+        import kameloso.terminal.colours : TF = TerminalFormat, TerminalReset, colourWith;
 
         enum terminalToken = TerminalToken.format ~ "[" ~ toAlpha(terminalFormatCode) ~ "m";
         // enum pattern = "(?:"~mircToken~")([^"~mircToken~"]*)(?:"~mircToken~")";
@@ -1070,7 +1072,8 @@ in ((strip || (terminalFormatCode > 0)), "Tried to map effects with terminal for
 version(Colours)
 unittest
 {
-    import kameloso.terminal : TerminalFormat, TerminalToken;
+    import kameloso.terminal : TerminalToken;
+    import kameloso.terminal.colours : TerminalFormat;
     import lu.conv : toAlpha;
 
     alias I = IRCControlCharacter;

@@ -13,6 +13,9 @@
     logger.trace(".trace");
     //logger.fatal("This will crash the program.");
     ---
+
+    See_Also:
+        [kameloso.terminal.colours]
  +/
 module kameloso.logger;
 
@@ -32,6 +35,7 @@ public:
 final class KamelosoLogger
 {
 private:
+    import lu.conv : Enum;
     import std.array : Appender;
     import std.experimental.logger : LogLevel;
     import std.format : format;
@@ -41,7 +45,7 @@ private:
     version(Colours)
     {
         import kameloso.constants : DefaultColours;
-        import kameloso.terminal : TerminalForeground, TerminalReset, colourWith, colour;
+        import kameloso.terminal.colours : TerminalForeground, TerminalReset, colourWith, colour;
 
         alias logcoloursBright = DefaultColours.logcoloursBright;
         alias logcoloursDark = DefaultColours.logcoloursDark;
@@ -77,7 +81,6 @@ public:
     }
 
 
-    pragma(inline, true)
     version(Colours)
     {
         // tint
@@ -171,9 +174,10 @@ public:
         static foreach (const lv; EnumMembers!LogLevel)
         {
             mixin(
-q{/// Provides an easy way to get a %1$s tint.
-auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogLevel.%1$s); }
-            }.format(lv));
+"auto " ~ Enum!LogLevel.toString(lv) ~ "tint() const @property pure nothrow @nogc @safe
+{
+    return tintImpl!(LogLevel." ~ Enum!LogLevel.toString(lv) ~ ");
+}");
         }
 
         /++
@@ -405,26 +409,23 @@ auto %1$stint() const @property pure nothrow @nogc @safe { return tintImpl!(LogL
     static foreach (const lv; [ EnumMembers!LogLevel ])
     {
         mixin(
-q{/// Prints a %1$s message.
-void %1$s(Args...)(auto ref Args args)
+"void " ~ Enum!LogLevel.toString(lv) ~ "(Args...)(auto ref Args args)
 {
-    printImpl(LogLevel.%1$s, args);
-    %2$s
+    printImpl(LogLevel." ~ Enum!LogLevel.toString(lv) ~ ", args);
+    " ~ ((lv == LogLevel.fatal) ? fatalErrorMixin : string.init) ~ "
 }
 
-/// Prints a formatted %1$s message.
-void %1$sf(Args...)(const string pattern, auto ref Args args)
+void " ~ Enum!LogLevel.toString(lv) ~ "f(Args...)(const string pattern, auto ref Args args)
 {
-    printfImpl(LogLevel.%1$s, pattern, args);
-    %2$s
+    printfImpl(LogLevel." ~ Enum!LogLevel.toString(lv) ~ ", pattern, args);
+    " ~ ((lv == LogLevel.fatal) ? fatalErrorMixin : string.init) ~ "
 }
 
-/// Prints a formatted %1$s message, validating the pattern at compile time.
-void %1$sf(string pattern, Args...)(auto ref Args args)
+void " ~ Enum!LogLevel.toString(lv) ~ "f(string pattern, Args...)(auto ref Args args)
 {
-    printfImpl!pattern(LogLevel.%1$s, args);
-    %2$s
-}}.format(lv, (lv == LogLevel.fatal) ? fatalErrorMixin : string.init));
+    printfImpl!pattern(LogLevel." ~ Enum!LogLevel.toString(lv) ~ ", args);
+    " ~ ((lv == LogLevel.fatal) ? fatalErrorMixin : string.init) ~ "
+}");
     }
 
     /++

@@ -11,7 +11,6 @@
  +/
 module kameloso.plugins.admin.classifiers;
 
-version(WithPlugins):
 version(WithAdminPlugin):
 
 private:
@@ -600,7 +599,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
 
     version(Colours)
     {
-        import kameloso.terminal : colourByHash;
+        import kameloso.terminal.colours : colourByHash;
     }
     else
     {

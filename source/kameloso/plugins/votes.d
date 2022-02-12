@@ -11,7 +11,6 @@
  +/
 module kameloso.plugins.votes;
 
-version(WithPlugins):
 version(WithVotesPlugin):
 
 private:

@@ -10,12 +10,12 @@
     Linux and macOS).
 
     See_Also:
+        https://github.com/zorael/kameloso/wiki/Current-plugins#pipeline
         [kameloso.plugins.common.core]
         [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.pipeline;
 
-version(WithPlugins):
 version(Posix):
 version(WithPipelinePlugin):
 
@@ -109,7 +109,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
         if (!monochrome)
         {
             import kameloso.constants : DefaultColours;
-            import kameloso.terminal : colour;
+            import kameloso.terminal.colours : colour;
             import std.experimental.logger : LogLevel;
 
             // We don't have a logger instance so we have to access the

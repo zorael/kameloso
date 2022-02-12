@@ -2,13 +2,13 @@
     Package for the TwitchBot plugin modules.
 
     See_Also:
-        [kameloso.plugins.twitchbot.base],
-        [kameloso.plugins.twitchbot.api],
+        [kameloso.plugins.twitchbot.base]
+        [kameloso.plugins.twitchbot.api]
         [kameloso.plugins.twitchbot.timers]
+        [kameloso.plugins.twitchbot.keygen]
  +/
 module kameloso.plugins.twitchbot;
 
-version(WithPlugins):
 version(TwitchSupport):
 version(WithTwitchBotPlugin):
 

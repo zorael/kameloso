@@ -21,7 +21,7 @@ else
     /++
         Entry point of the program.
 
-        Technically it just passes on execution to [kameloso.main.initBot].
+        Technically it just passes on execution to [kameloso.main.run].
 
         Params:
             args = Command-line arguments passed to the program.
@@ -31,7 +31,7 @@ else
      +/
     int main(string[] args)
     {
-        import kameloso.main : initBot;
+        import kameloso.main : run;
 
         scope(exit)
         {
@@ -42,6 +42,6 @@ else
             stdout.flush();
         }
 
-        return initBot(args);
+        return run(args);
     }
 }

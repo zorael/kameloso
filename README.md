@@ -1,4 +1,4 @@
-# kameloso [![Linux/macOS/Windows](https://img.shields.io/github/workflow/status/zorael/kameloso/D?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/actions?query=workflow%3AD) [![Linux](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?logo=circleci&style=flat&maxAge=3600)](https://circleci.com/gh/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?logo=appveyor&style=flat&maxAge=3600)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v2.0.1.svg?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/compare/v2.0.1...master)
+# kameloso [![Linux/macOS/Windows](https://img.shields.io/github/workflow/status/zorael/kameloso/D?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/actions?query=workflow%3AD) [![Linux](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?logo=circleci&style=flat&maxAge=3600)](https://circleci.com/gh/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?logo=appveyor&style=flat&maxAge=3600)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v3.0.0-beta.1.svg?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/compare/v3.0.0-beta.1...master)
 
 **kameloso** idles in your channels and listens to commands and events, like bots generally do.
 
@@ -89,9 +89,15 @@ Grab a pre-compiled binary from under [Releases](https://github.com/zorael/kamel
 
 **kameloso** is written in [**D**](https://dlang.org). It can be built using the reference compiler [**dmd**](https://dlang.org/download.html), which compiles very fast; and the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases), which is slower at compiling but produces faster code. See [here](https://wiki.dlang.org/Compilers) for an overview of the available compiler vendors.
 
-You need one based on D version **2.096** or later (March 2021). For **ldc** this is version **1.26**. Sadly, the stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently based on version **2.076** and is thus too old to be used.
+You need one based on D version **2.084** or later (January 2019). For **ldc** this is version **1.14**. Sadly, the stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently based on version **2.076** and is thus too old to be used.
 
-> [**Compiling with ldc on Windows is currently broken**](https://github.com/ldc-developers/ldc/issues/3913) and requires a modified compiler with a larger stack to build. This should hopefully be resolved in **ldc 1.29**; until such time please use **dmd**. Linux and MacOS are not affected.
+> [**Compiling with ldc on Windows is currently broken**](https://github.com/ldc-developers/ldc/issues/3913) and requires a modified compiler with a larger stack to build. This should hopefully be resolved in **ldc 1.29**. Until such time please use **dmd** or download a pre-compiled binary.
+>
+> Likewise, if **ldc** won't compile on Linux or MacOS, ensure that the stack size is set high enough with `ulimit -s`.
+> ```sh
+> $ ulimit -s 16384
+> $ dub build --compiler=ldc2
+> ```
 
 If your repositories (or other software sources) don't have compilers new enough, you can use the official [`install.sh`](https://dlang.org/install.html) installation script to download current ones, or any version of choice.
 

@@ -8,10 +8,10 @@
 
     See_Also:
         [kameloso.plugins.printer.base]
+        [kameloso.plugins.printer.logging]
  +/
 module kameloso.plugins.printer.formatting;
 
-version(WithPlugins):
 version(WithPrinterPlugin):
 
 private:
@@ -23,7 +23,7 @@ import dialect.defs;
 import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;
 
-version(Colours) import kameloso.terminal : TerminalForeground;
+version(Colours) import kameloso.terminal.colours : TerminalForeground;
 
 package:
 
@@ -91,21 +91,19 @@ void put(Flag!"colours" colours = No.colours, Sink, Args...)
     (auto ref Sink sink, Args args)
 if (isOutputRange!(Sink, char[]))
 {
-    import std.traits : Unqual;
-
     foreach (arg; args)
     {
-        alias T = Unqual!(typeof(arg));
+        alias T = typeof(arg);
 
         version(Colours)
         {
-            import kameloso.terminal : isAColourCode;
+            import kameloso.terminal.colours : isAColourCode;
 
             bool coloured;
 
             static if (colours && isAColourCode!T)
             {
-                import kameloso.terminal : colourWith;
+                import kameloso.terminal.colours : colourWith;
                 sink.colourWith(arg);
                 coloured = true;
             }
@@ -113,16 +111,18 @@ if (isOutputRange!(Sink, char[]))
             if (coloured) continue;
         }
 
-        static if (__traits(compiles, sink.put(T.init)) && !is(T == bool))
+        static if (__traits(compiles, sink.put(T.init)) && !is(T : bool))
         {
             sink.put(arg);
         }
         else static if (is(T == enum))
         {
             import lu.conv : Enum;
-            sink.put(Enum!T.toString(arg));
+            import std.traits : Unqual;
+
+            sink.put(Enum!(Unqual!T).toString(arg));
         }
-        else static if (is(T == bool))
+        else static if (is(T : bool))
         {
             sink.put(arg ? "true" : "false");
         }
@@ -151,9 +151,9 @@ unittest
 
     version(Colours)
     {
-        import kameloso.terminal : TerminalBackground, TerminalForeground, TerminalReset;
+        import kameloso.terminal.colours : TerminalBackground, TerminalForeground, TerminalReset;
 
-        sink = typeof(sink).init;
+        sink.clear();
 
         .put!(Yes.colours)(sink, "abc", TerminalForeground.white, "def",
             TerminalBackground.red, "ghi", TerminalReset.all, "123");
@@ -238,6 +238,11 @@ if (isOutputRange!(Sink, char[]))
                 sink.put(event.sender.nickname);
             }
 
+            version(PrintClassNamesToo)
+            {
+                .put(sink, ':', event.sender.class_);
+            }
+
             version(PrintAccountNamesToo)
             {
                 // No need to check for nickname.length, I think
@@ -246,11 +251,6 @@ if (isOutputRange!(Sink, char[]))
                 {
                     .put(sink, '(', event.sender.account, ')');
                 }
-            }
-
-            version(PrintClassNamesToo)
-            {
-                .put(sink, ':', event.sender.class_);
             }
 
             version(TwitchSupport)
@@ -323,6 +323,11 @@ if (isOutputRange!(Sink, char[]))
             sink.put(event.target.nickname);
         }
 
+        version(PrintClassNamesToo)
+        {
+            .put(sink, ':', event.target.class_);
+        }
+
         version(PrintAccountNamesToo)
         {
             // No need to check for nickname.length, I think
@@ -331,11 +336,6 @@ if (isOutputRange!(Sink, char[]))
             {
                 .put(sink, '(', event.target.account, ')');
             }
-        }
-
-        version(PrintClassNamesToo)
-        {
-            .put(sink, ':', event.target.class_);
         }
 
         version(TwitchSupport)
@@ -477,7 +477,7 @@ if (isOutputRange!(Sink, char[]))
     immutable joinLine = sink.data[11..$].idup;
     version(TwitchSupport) assert((joinLine == "[join] [#channel] Nickname"), joinLine);
     else assert((joinLine == "[join] [#channel] nickname"), joinLine);
-    sink = typeof(sink).init;
+    sink.clear();
 
     event.type = IRCEvent.Type.CHAN;
     event.content = "Harbl snarbl";
@@ -486,7 +486,7 @@ if (isOutputRange!(Sink, char[]))
     immutable chanLine = sink.data[11..$].idup;
     version(TwitchSupport) assert((chanLine == `[chan] [#channel] Nickname: "Harbl snarbl"`), chanLine);
     else assert((chanLine == `[chan] [#channel] nickname: "Harbl snarbl"`), chanLine);
-    sink = typeof(sink).init;
+    sink.clear();
 
     version(TwitchSupport)
     {
@@ -497,7 +497,7 @@ if (isOutputRange!(Sink, char[]))
         immutable twitchLine = sink.data[11..$].idup;
         assert((twitchLine == `[chan] [#channel] Nickname [broadcaster/0,moderator/1,subscriber/9]: "Harbl snarbl"`),
             twitchLine);
-        sink = typeof(sink).init;
+        sink.clear();
         event.sender.badges = string.init;
     }
 
@@ -511,7 +511,7 @@ if (isOutputRange!(Sink, char[]))
     immutable accountLine = sink.data[11..$].idup;
     version(TwitchSupport) assert((accountLine == "[account] Nickname (n1ckn4m3)"), accountLine);
     else assert((accountLine == "[account] nickname (n1ckn4m3)"), accountLine);
-    sink = typeof(sink).init;
+    sink.clear();
 
     event.errors = "DANGER WILL ROBINSON";
     event.content = "Blah balah";
@@ -526,7 +526,7 @@ if (isOutputRange!(Sink, char[]))
         "! DANGER WILL ROBINSON !"), errorLine);
     else assert((errorLine == `[error] nickname: "Blah balah" {-42} (#666) ` ~
         "! DANGER WILL ROBINSON !"), errorLine);
-    //sink = typeof(sink).init;
+    //sink.clear();
 }
 
 
@@ -558,7 +558,7 @@ void formatMessageColoured(Sink)
 if (isOutputRange!(Sink, char[]))
 {
     import kameloso.constants : DefaultColours;
-    import kameloso.terminal : FG = TerminalForeground, colourWith;
+    import kameloso.terminal.colours : FG = TerminalForeground, colourWith;
     import lu.conv : Enum;
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
@@ -638,7 +638,7 @@ if (isOutputRange!(Sink, char[]))
 
         if (plugin.printerSettings.randomNickColours)
         {
-            import kameloso.terminal : getColourByHash;
+            import kameloso.terminal.colours : getColourByHash;
             return getColourByHash(nickname, bright ? fgBright[] : fgDark[]);
         }
         else
@@ -664,7 +664,7 @@ if (isOutputRange!(Sink, char[]))
         {
             if (!user.isServer && user.colour.length && plugin.printerSettings.truecolour)
             {
-                import kameloso.terminal : truecolour;
+                import kameloso.terminal.colours : truecolour;
                 import lu.conv : rgbFromHex;
 
                 auto rgb = rgbFromHex(user.colour);
@@ -731,6 +731,11 @@ if (isOutputRange!(Sink, char[]))
                 sink.put(event.sender.nickname);
             }
 
+            version(PrintClassNamesToo)
+            {
+                .put(sink, ':', event.sender.class_);
+            }
+
             version(PrintAccountNamesToo)
             {
                 // No need to check for nickname.length, I think
@@ -739,11 +744,6 @@ if (isOutputRange!(Sink, char[]))
                 {
                     .put!(Yes.colours)(sink, FG.default_, '(', event.sender.account, ')');
                 }
-            }
-
-            version(PrintClassNamesToo)
-            {
-                .put(sink, ':', event.sender.class_);
             }
 
             version(TwitchSupport)
@@ -824,6 +824,11 @@ if (isOutputRange!(Sink, char[]))
             sink.put(event.target.nickname);
         }
 
+        version(PrintClassNamesToo)
+        {
+            .put(sink, ':', event.target.class_);
+        }
+
         version(PrintAccountNamesToo)
         {
             // No need to check for nickname.length, I think
@@ -832,11 +837,6 @@ if (isOutputRange!(Sink, char[]))
             {
                 .put!(Yes.colours)(sink, FG.default_, '(', event.target.account, ')');
             }
-        }
-
-        version(PrintClassNamesToo)
-        {
-            .put(sink, ':', event.target.class_);
         }
 
         version(TwitchSupport)
@@ -895,7 +895,7 @@ if (isOutputRange!(Sink, char[]))
             case EMOTE:
             case TWITCH_SUBGIFT:
             //case SELFCHAN:
-                import kameloso.terminal : invert;
+                import kameloso.terminal.colours : invert;
 
                 /// Nick was mentioned (certain)
                 bool match;
@@ -931,7 +931,7 @@ if (isOutputRange!(Sink, char[]))
                 break;
             }
 
-            import kameloso.terminal : TerminalBackground;
+            import kameloso.terminal.colours : TerminalBackground;
 
             // Reset the background to ward off bad backgrounds bleeding out
             sink.colourWith(fgBase, TerminalBackground.default_);
@@ -1148,7 +1148,7 @@ string highlightEmotes(const ref IRCEvent event,
     const Flag!"brightTerminal" brightTerminal)
 {
     import kameloso.constants : DefaultColours;
-    import kameloso.terminal : colourWith;
+    import kameloso.terminal.colours : colourWith;
     import lu.string : contains;
     import std.array : Appender;
 
@@ -1282,7 +1282,7 @@ if (isOutputRange!(Sink, char[]))
 
     foreach (immutable i; 0..numHighlights)
     {
-        import kameloso.terminal : getColourByHash, colourWith;
+        import kameloso.terminal.colours : getColourByHash, colourWith;
 
         immutable id = highlights[i].id;
         immutable start = highlights[i].start;

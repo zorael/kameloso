@@ -55,7 +55,6 @@ versions \
     Default but optional features.
  */
 versions \
-    "WithPlugins" \
     "Colours" \
     "TwitchAPIFeatures"
 
@@ -68,7 +67,6 @@ versions \
 versions \
     "TwitchSupport" \
     "WithTwitchBotPlugin" \
-    "PromoteTwitchBadgesInAllChannels" \
     "OmniscientAdmin" \
     "PrintStacktraces" \
     "ExplainRepeat" \

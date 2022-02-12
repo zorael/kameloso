@@ -11,7 +11,6 @@
  +/
 module kameloso.plugins.admin.debugging;
 
-version(WithPlugins):
 version(WithAdminPlugin):
 debug:
 

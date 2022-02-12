@@ -12,7 +12,6 @@
  +/
 module kameloso.plugins.quotes;
 
-version(WithPlugins):
 version(WithQuotesPlugin):
 
 private:

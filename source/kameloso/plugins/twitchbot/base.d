@@ -12,10 +12,8 @@
         [kameloso.plugins.common.core]
         [kameloso.plugins.common.misc]
  +/
-@("twitchbot")
 module kameloso.plugins.twitchbot.base;
 
-version(WithPlugins):
 version(TwitchSupport):
 version(WithTwitchBotPlugin):
 
@@ -65,6 +63,11 @@ public:
         [dialect.defs.IRCUser.Class.whitelist].
      +/
     bool promoteVIPs = true;
+
+    /++
+        Whether or not promotion based on badges should be done in guest channels too.
+     +/
+    bool promoteEverywhere = false;
 
     version(Windows)
     {
@@ -403,7 +406,7 @@ void onCommandStop(TwitchBotPlugin plugin, const ref IRCEvent event)
     version(TwitchAPIFeatures)
     {
         room.broadcast.numViewersLastStream = room.broadcast.chattersSeen.length;
-        room.broadcast.chattersSeen = typeof(room.broadcast.chattersSeen).init;
+        room.broadcast.chattersSeen = null;
     }
 
     chan(plugin.state, event.channel, "Broadcast ended!");
@@ -1091,7 +1094,7 @@ void reload(TwitchBotPlugin plugin)
 
     if (plugin.state.server.daemon != IRCServer.Daemon.twitch) return;
 
-    plugin.timerDefsByChannel = typeof(plugin.timerDefsByChannel).init;
+    plugin.timerDefsByChannel = null;
     plugin.populateTimers(plugin.timersFile);
 }
 
@@ -1146,16 +1149,6 @@ void onMyInfo(TwitchBotPlugin plugin)
 
     void periodicDg()
     {
-        import kameloso.common : nextMidnight;
-        import std.datetime.systime : Clock;
-
-        version(TwitchAPIFeatures)
-        {
-            // Schedule next follow cache update to next midnight
-            long nextCacheUpdate = Clock.currTime.nextMidnight.toUnixTime;
-        }
-
-        top:
         while (true)
         {
             // Walk through channels, trigger fibers
@@ -1173,47 +1166,38 @@ void onMyInfo(TwitchBotPlugin plugin)
                 }
             }
 
-            version(TwitchAPIFeatures)
-            {
-                immutable now = Clock.currTime;
-                immutable nowInUnix = now.toUnixTime;
-
-                // Early yield if we shouldn't clean up
-                if (nowInUnix < nextCacheUpdate)
-                {
-                    delay(plugin, plugin.timerPeriodicity, Yes.yield);
-                    continue top;
-                }
-
-                nextCacheUpdate = now.nextMidnight.toUnixTime;
-
-                version(TwitchAPIFeatures)
-                {
-                    // Clear and re-cache follows once as often as we prune
-
-                    void cacheFollowsAnewDg()
-                    {
-                        foreach (immutable channelName, room; plugin.rooms)
-                        {
-                            room.follows = getFollows(plugin, room.id);
-                        }
-                    }
-
-                    Fiber cacheFollowsAnewFiber =
-                        new Fiber(&twitchTryCatchDg!cacheFollowsAnewDg, BufferSize.fiberStack);
-                    cacheFollowsAnewFiber.call();
-                }
-            }
-            else
-            {
-                delay(plugin, plugin.timerPeriodicity, Yes.yield);
-                continue top;
-            }
+            delay(plugin, plugin.timerPeriodicity, Yes.yield);
         }
     }
 
     Fiber periodicFiber = new Fiber(&periodicDg, BufferSize.fiberStack);
     delay(plugin, periodicFiber, plugin.timerPeriodicity);
+
+    version(TwitchAPIFeatures)
+    {
+        import kameloso.common : nextMidnight;
+        import std.datetime.systime : Clock;
+
+        // Clear and re-cache follows once every midnight
+        void cacheFollowersDg()
+        {
+            while (true)
+            {
+                foreach (immutable channelName, room; plugin.rooms)
+                {
+                    room.follows = getFollows(plugin, room.id);
+                }
+
+                immutable now = Clock.currTime;
+                delay(plugin, now.nextMidnight-now, Yes.yield);
+            }
+        }
+
+        immutable now = Clock.currTime;
+
+        Fiber followersFiber = new Fiber(&cacheFollowersDg, BufferSize.fiberStack);
+        delay(plugin, followersFiber, now.nextMidnight-now);
+    }
 }
 
 
@@ -1263,11 +1247,8 @@ void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
 
     if (!event.sender.nickname.length || !event.channel.length) return;
 
-    version(PromoteTwitchBadgesInAllChannels) {}
-    else
-    {
-        if (!plugin.state.bot.homeChannels.canFind(event.channel)) return;
-    }
+    if (!plugin.twitchBotSettings.promoteEverywhere &&
+        !plugin.state.bot.homeChannels.canFind(event.channel)) return;
 
     static void postprocessImpl(const TwitchBotPlugin plugin,
         const ref IRCEvent event, ref IRCUser user)
@@ -1423,9 +1404,9 @@ package:
 
     /++
         How often to check whether timers should fire, in seconds. A smaller
-        number means better precision.
+        number means better precision, but also higher gc pressure.
      +/
-    static immutable timerPeriodicity = 5.seconds;
+    static immutable timerPeriodicity = 15.seconds;
 
     /// [kameloso.terminal.TerminalToken.bell] as string, for use as bell.
     private enum bellString = ("" ~ cast(char)(TerminalToken.bell));

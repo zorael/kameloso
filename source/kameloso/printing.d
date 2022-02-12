@@ -30,6 +30,9 @@
     Distance between types, member names and member values are deduced automatically
     based on how long they are (in terms of characters). If it doesn't line up,
     its a bug.
+
+    See_Also:
+        [kameloso.terminal.colours]
  +/
 module kameloso.printing;
 
@@ -256,6 +259,292 @@ if ((Things.length > 0) && allSatisfy!(isAggregateType, Things) && isOutputRange
 alias formatObject = formatObjects;
 
 
+// FormatStringMemberArguments
+/++
+    Argument aggregate for invocations of [formatStringMemberImpl].
+ +/
+private struct FormatStringMemberArguments(T)
+{
+    /// Type name.
+    string typestring;
+
+    /// Member name.
+    string memberstring;
+
+    /// Width (length) of longest type name.
+    uint typewidth;
+
+    /// Width (length) of longest member name.
+    uint namewidth;
+
+    /// Whether or not we should compensate for a bright terminal background.
+    bool bright;
+}
+
+
+// formatStringMemberImpl
+/++
+    Formats the description of a string for insertion into a [formatObjects] listing.
+
+    Broken out of [formatObjects] to reduce template bloat.
+
+    Params:
+        coloured = Whether or no to display terminal colours.
+        sink = Output range to store output in.
+        args = Argument aggregate for easier passing.
+        content = The contents of the string member we're describing.
+ +/
+private void formatStringMemberImpl(Flag!"coloured" coloured, Sink, Args, T)
+    (auto ref Sink sink, const Args args, T content)
+{
+    import std.format : formattedWrite;
+
+    static if (coloured)
+    {
+        import kameloso.terminal.colours : TerminalForeground, colour;
+        alias F = TerminalForeground;
+
+        enum stringPattern = `%s%*s %s%-*s %s%s"%s"%s(%d)` ~ '\n';
+        immutable memberCode = args.bright ? F.black : F.white;
+        immutable valueCode = args.bright ? F.green : F.lightgreen;
+        immutable lengthCode = args.bright ? F.lightgrey : F.darkgrey;
+        immutable typeCode = args.bright ? F.lightcyan : F.cyan;
+
+        sink.formattedWrite(stringPattern,
+            typeCode.colour, args.typewidth, args.typestring,
+            memberCode.colour, (args.namewidth + 2), args.memberstring,
+            (content.length < 2) ? " " : string.init,
+            valueCode.colour, content,
+            lengthCode.colour, content.length);
+    }
+    else
+    {
+        enum stringPattern = `%*s %-*s %s"%s"(%d)` ~ '\n';
+        sink.formattedWrite(stringPattern, args.typewidth, args.typestring,
+            (args.namewidth + 2), args.memberstring,
+            (content.length < 2) ? " " : string.init,
+            content,
+            content.length);
+    }
+}
+
+
+// FormatArrayMemberArguments
+/++
+    Argument aggregate for invocations of [formatArrayMemberImpl].
+ +/
+private struct FormatArrayMemberArguments(T)
+{
+    /// Type name.
+    string typestring;
+
+    /// Member name.
+    string memberstring;
+
+    /// Element type name.
+    string elemstring;
+
+    /// Whether or not the element is a `char`.
+    bool elemIsCharacter;
+
+    /// Width (length) of longest type name.
+    uint typewidth;
+
+    /// Width (length) of longest member name.
+    uint namewidth;
+
+    /// Whether or not we should compensate for a bright terminal background.
+    bool bright;
+}
+
+
+// formatArrayMemberImpl
+/++
+    Formats the description of an array for insertion into a [formatObjects] listing.
+
+    Broken out of [formatObjects] to reduce template bloat.
+
+    Params:
+        coloured = Whether or no to display terminal colours.
+        sink = Output range to store output in.
+        args = Argument aggregate for easier passing.
+        content = The array we're describing.
+ +/
+private void formatArrayMemberImpl(Flag!"coloured" coloured, Sink, Args, T)
+    (auto ref Sink sink, Args args, T content)
+{
+    import std.format : formattedWrite;
+
+    static if (coloured)
+    {
+        import kameloso.terminal.colours : TerminalForeground, colour;
+        alias F = TerminalForeground;
+
+        immutable rtArrayPattern = args.elemIsCharacter ?
+            "%s%*s %s%-*s%s[%(%s, %)]%s(%d)\n" :
+            "%s%*s %s%-*s%s%s%s(%d)\n";
+
+        immutable memberCode = args.bright ? F.black : F.white;
+        immutable valueCode = args.bright ? F.green : F.lightgreen;
+        immutable lengthCode = args.bright ? F.lightgrey : F.darkgrey;
+        immutable typeCode = args.bright ? F.lightcyan : F.cyan;
+
+        sink.formattedWrite(rtArrayPattern,
+            typeCode.colour, args.typewidth, args.typestring,
+            memberCode.colour, args.namewidth, args.memberstring,
+            valueCode.colour, content,
+            lengthCode.colour, content.length);
+    }
+    else
+    {
+        immutable rtArrayPattern = args.elemIsCharacter ?
+            "%*s %-*s[%(%s, %)](%d)\n" :
+            "%*s %-*s%s(%d)\n";
+
+        sink.formattedWrite(rtArrayPattern,
+            args.typewidth, args.typestring,
+            args.namewidth, args.memberstring,
+            content,
+            content.length);
+    }
+}
+
+// FormatAggregateMemberArguments
+/++
+    Argument aggregate for invocations of [formatAggregateMemberImpl].
+ +/
+private struct FormatAggregateMemberArguments(T)
+{
+    /// Type name.
+    string typestring;
+
+    /// Member name.
+    string memberstring;
+
+    /// Type of member aggregate; one of "struct", "class", "interface" and "union".
+    string aggregateType;
+
+    /// Whether or not the aggregate is in an initial state.
+    bool isInit;
+
+    /// Width (length) of longest type name.
+    uint typewidth;
+
+    /// Width (length) of longest member name.
+    uint namewidth;
+
+    /// Whether or not we should compensate for a bright terminal background.
+    bool bright;
+}
+
+
+// formatAggregateMemberImpl
+/++
+    Formats the description of an aggregate for insertion into a [formatObjects] listing.
+
+    Broken out of [formatObjects] to reduce template bloat.
+
+    Params:
+        coloured = Whether or no to display terminal colours.
+        sink = Output range to store output in.
+        args = Argument aggregate for easier passing.
+ +/
+private void formatAggregateMemberImpl(Flag!"coloured" coloured, Sink, Args)
+    (auto ref Sink sink, Args args)
+{
+    import std.format : formattedWrite;
+
+    immutable initText = args.isInit ? " (init)" : string.init;
+
+    static if (coloured)
+    {
+        import kameloso.terminal.colours : TerminalForeground, colour;
+        alias F = TerminalForeground;
+
+        enum normalPattern = "%s%*s %s%-*s %s<%s>%s\n";
+        immutable memberCode = args.bright ? F.black : F.white;
+        immutable valueCode = args.bright ? F.green : F.lightgreen;
+        immutable typeCode = args.bright ? F.lightcyan : F.cyan;
+
+        sink.formattedWrite(normalPattern,
+            typeCode.colour, args.typewidth, args.typestring,
+            memberCode.colour, (args.namewidth + 2), args.memberstring,
+            valueCode.colour, args.aggregateType, initText);
+    }
+    else
+    {
+        enum normalPattern = "%*s %-*s <%s>%s\n";
+        sink.formattedWrite(normalPattern, args.typewidth, args.typestring,
+            (args.namewidth + 2), args.memberstring, args.aggregateType, initText);
+    }
+}
+
+
+// FormatOtherMemberArguments
+/++
+    Argument aggregate for invocations of [formatOtherMemberImpl].
+ +/
+private struct FormatOtherMemberArguments(T)
+{
+    /// Type name.
+    string typestring;
+
+    /// Member name.
+    string memberstring;
+
+    /// Width (length) of longest type name.
+    uint typewidth;
+
+    /// Width (length) of longest member name.
+    uint namewidth;
+
+    /// Whether or not we should compensate for a bright terminal background.
+    bool bright;
+}
+
+
+// formatOtherMemberImpl
+/++
+    Formats the description of a non-string, non-array, non-aggregate value
+    for insertion into a [formatObjects] listing.
+
+    Broken out of [formatObjects] to reduce template bloat.
+
+    Params:
+        coloured = Whether or no to display terminal colours.
+        sink = Output range to store output in.
+        args = Argument aggregate for easier passing.
+        content = The value we're describing.
+ +/
+private void formatOtherMemberImpl(Flag!"coloured" coloured, Sink, Args, T)
+    (auto ref Sink sink, Args args, T content)
+{
+    import std.format : formattedWrite;
+
+    static if (coloured)
+    {
+        import kameloso.terminal.colours : TerminalForeground, colour;
+        alias F = TerminalForeground;
+
+        enum normalPattern = "%s%*s %s%-*s  %s%s\n";
+        immutable memberCode = args.bright ? F.black : F.white;
+        immutable valueCode = args.bright ? F.green : F.lightgreen;
+        immutable typeCode = args.bright ? F.lightcyan : F.cyan;
+
+        sink.formattedWrite(normalPattern,
+            typeCode.colour, args.typewidth, args.typestring,
+            memberCode.colour, (args.namewidth + 2), args.memberstring,
+            valueCode.colour, content);
+    }
+    else
+    {
+        enum normalPattern = "%*s %-*s  %s\n";
+        sink.formattedWrite(normalPattern, args.typewidth, args.typestring,
+            (args.namewidth + 2), args.memberstring, content);
+    }
+}
+
+
 // formatObjectImpl
 /++
     Formats an aggregate object, with all its printable members with all their
@@ -284,7 +573,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 {
     static if (coloured)
     {
-        import kameloso.terminal : TerminalForeground, colour;
+        import kameloso.terminal.colours : TerminalForeground, colour;
         alias F = TerminalForeground;
     }
 
@@ -331,86 +620,39 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 
             static if (isTrulyString!T)
             {
-                static if (coloured)
-                {
-                    enum stringPattern = `%s%*s %s%-*s %s%s"%s"%s(%d)` ~ '\n';
-                    immutable memberCode = bright ? F.black : F.white;
-                    immutable valueCode = bright ? F.green : F.lightgreen;
-                    immutable lengthCode = bright ? F.lightgrey : F.darkgrey;
-                    immutable typeCode = bright ? F.lightcyan : F.cyan;
-
-                    sink.formattedWrite(stringPattern,
-                        typeCode.colour, typewidth, T.stringof,
-                        memberCode.colour, (namewidth + 2), memberstring,
-                        (__traits(getMember, thing, memberstring).length < 2) ? " " : string.init,
-                        valueCode.colour, __traits(getMember, thing, memberstring),
-                        lengthCode.colour, __traits(getMember, thing, memberstring).length);
-                }
-                else
-                {
-                    enum stringPattern = `%*s %-*s %s"%s"(%d)` ~ '\n';
-                    sink.formattedWrite(stringPattern, typewidth, T.stringof,
-                        (namewidth + 2), memberstring,
-                        (__traits(getMember, thing, memberstring).length < 2) ? " " : string.init,
-                        __traits(getMember, thing, memberstring),
-                        __traits(getMember, thing, memberstring).length);
-                }
+                FormatStringMemberArguments!T args;
+                args.typestring = T.stringof;
+                args.memberstring = memberstring;
+                args.typewidth = typewidth;
+                args.namewidth = namewidth;
+                args.bright = bright;
+                formatStringMemberImpl!coloured(sink, args, __traits(getMember, thing, memberstring));
             }
             else static if (isArray!T || isAssociativeArray!T)
             {
+                import lu.traits : UnqualArray;
                 import std.range.primitives : ElementEncodingType;
 
                 alias ElemType = Unqual!(ElementEncodingType!T);
 
-                enum elemIsCharacter = is(ElemType == char) ||
-                    is(ElemType == dchar) || is(ElemType == wchar);
+                enum elemIsCharacter =
+                    is(ElemType == char) ||
+                    is(ElemType == dchar) ||
+                    is(ElemType == wchar);
 
-                immutable thisWidth = __traits(getMember, thing, memberstring).length ?
+                immutable compensatedNamewidth = __traits(getMember, thing, memberstring).length ?
                     (namewidth + 2) : (namewidth + 4);
 
-                static if (coloured)
-                {
-                    static if (elemIsCharacter)
-                    {
-                        enum arrayPattern = "%s%*s %s%-*s%s[%(%s, %)]%s(%d)\n";
-                    }
-                    else
-                    {
-                        enum arrayPattern = "%s%*s %s%-*s%s%s%s(%d)\n";
-                    }
+                FormatArrayMemberArguments!T args;
+                args.typestring = UnqualArray!T.stringof;
+                args.memberstring = memberstring;
+                args.elemstring = ElemType.stringof;
+                args.elemIsCharacter = elemIsCharacter;
+                args.typewidth = typewidth;
+                args.namewidth = compensatedNamewidth;
+                args.bright = bright;
 
-                    immutable memberCode = bright ? F.black : F.white;
-                    immutable valueCode = bright ? F.green : F.lightgreen;
-                    immutable lengthCode = bright ? F.lightgrey : F.darkgrey;
-                    immutable typeCode = bright ? F.lightcyan : F.cyan;
-
-                    import lu.traits : UnqualArray;
-
-                    sink.formattedWrite(arrayPattern,
-                        typeCode.colour, typewidth, UnqualArray!T.stringof,
-                        memberCode.colour, thisWidth, memberstring,
-                        valueCode.colour, __traits(getMember, thing, memberstring),
-                        lengthCode.colour, __traits(getMember, thing, memberstring).length);
-                }
-                else
-                {
-                    static if (elemIsCharacter)
-                    {
-                        enum arrayPattern = "%*s %-*s[%(%s, %)](%d)\n";
-                    }
-                    else
-                    {
-                        enum arrayPattern = "%*s %-*s%s(%d)\n";
-                    }
-
-                    import lu.traits : UnqualArray;
-
-                    sink.formattedWrite(arrayPattern,
-                        typewidth, UnqualArray!T.stringof,
-                        thisWidth, memberstring,
-                        __traits(getMember, thing, memberstring),
-                        __traits(getMember, thing, memberstring).length);
-                }
+                formatArrayMemberImpl!coloured(sink, args, __traits(getMember, thing, memberstring));
             }
             else static if (isAggregateType!T)
             {
@@ -422,54 +664,37 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 
                 static if (is(Thing == struct) && is(T == struct))
                 {
-                    immutable initText = (__traits(getMember, thing, memberstring) ==
-                        __traits(getMember, Thing.init, memberstring)) ?
-                            " (init)" : string.init;
+                    immutable isInit = (__traits(getMember, thing, memberstring) ==
+                        __traits(getMember, Thing.init, memberstring));
                 }
                 else
                 {
-                    enum initText = string.init;
+                    enum isInit = false;
                 }
 
-                static if (coloured)
-                {
-                    enum normalPattern = "%s%*s %s%-*s %s<%s>%s\n";
-                    immutable memberCode = bright ? F.black : F.white;
-                    immutable valueCode = bright ? F.green : F.lightgreen;
-                    immutable typeCode = bright ? F.lightcyan : F.cyan;
+                FormatAggregateMemberArguments!T args;
+                args.typestring = T.stringof;
+                args.memberstring = memberstring;
+                args.aggregateType = aggregateType;
+                args.isInit = isInit;
+                args.typewidth = typewidth;
+                args.namewidth = namewidth;
+                args.bright = bright;
 
-                    sink.formattedWrite(normalPattern,
-                        typeCode.colour, typewidth, T.stringof,
-                        memberCode.colour, (namewidth + 2), memberstring,
-                        valueCode.colour, aggregateType, initText);
-                }
-                else
-                {
-                    enum normalPattern = "%*s %-*s <%s>%s\n";
-                    sink.formattedWrite(normalPattern, typewidth, T.stringof,
-                        (namewidth + 2), memberstring, aggregateType, initText);
-                }
+                formatAggregateMemberImpl!coloured(sink, args);
             }
             else
             {
-                static if (coloured)
-                {
-                    enum normalPattern = "%s%*s %s%-*s  %s%s\n";
-                    immutable memberCode = bright ? F.black : F.white;
-                    immutable valueCode = bright ? F.green : F.lightgreen;
-                    immutable typeCode = bright ? F.lightcyan : F.cyan;
+                import std.traits : Unqual;
 
-                    sink.formattedWrite(normalPattern,
-                        typeCode.colour, typewidth, T.stringof,
-                        memberCode.colour, (namewidth + 2), memberstring,
-                        valueCode.colour, __traits(getMember, thing, memberstring));
-                }
-                else
-                {
-                    enum normalPattern = "%*s %-*s  %s\n";
-                    sink.formattedWrite(normalPattern, typewidth, T.stringof,
-                        (namewidth + 2), memberstring, __traits(getMember, thing, memberstring));
-                }
+                FormatOtherMemberArguments!T args;
+                args.typestring = T.stringof;
+                args.memberstring = memberstring;
+                args.typewidth = typewidth;
+                args.namewidth = namewidth;
+                args.bright = bright;
+
+                formatOtherMemberImpl!coloured(sink, args, __traits(getMember, thing, memberstring));
             }
         }
     }

@@ -9,8 +9,6 @@
  +/
 module kameloso.plugins.common.mixins;
 
-version(WithPlugins):
-
 private:
 
 import dialect.defs;

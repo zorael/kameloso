@@ -23,9 +23,13 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-latest, macOS-latest, windows-latest ]
-        dc: [ dmd-latest, dmd-2.096.0, ldc-latest, ldc-1.26.0 ]
+        dc: [ dmd-latest, dmd-2.085.0, ldc-latest, ldc-1.14.0 ]
+        exclude:
+          - { os: macOS-latest, dc: dmd-2.085.0 }
+          - { os: macOS-latest, dc: ldc-1.14.0 }
 
     runs-on: ${{ matrix.os }}
+    continue-on-error: true
     env:
       ACTIONS_ALLOW_UNSECURE_COMMANDS: true
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -44,12 +48,27 @@ jobs:
       with:
         compiler: ${{ matrix.dc }}
 
-    - name: 'Build and test'
-      run: |
-        dub test
-        dub build --nodeps -b debug   -c dev
-        dub build --nodeps -b plain   -c dev
-        dub build --nodeps -b release -c dev
+    - name: 'Run tests unless Windows'
+      if: matrix.os != 'windows-latest'
+      run: dub test
+
+    - name: 'Build: dev (debug)'
+      run: dub build -c dev -b debug
+
+    - name: 'Build: dev (plain)'
+      run: dub build -c dev -b plain
+
+    - name: 'Build: dev (release)'
+      run: dub build -c dev -b release
+
+    - name: 'Build: application (debug)'
+      run: dub build -b debug
+
+    - name: 'Build: application (plain)'
+      run: dub build -b plain
+
+    - name: 'Build: application (release)'
+      run: dub build -b release
 
     - name: 'Generate documenation'
       if: matrix.dc == 'dmd-latest' && matrix.os == 'ubuntu-latest' && success()

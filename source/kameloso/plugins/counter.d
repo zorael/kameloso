@@ -12,7 +12,6 @@
  +/
 module kameloso.plugins.counter;
 
-version(WithPlugins):
 version(WithCounterPlugin):
 
 private:

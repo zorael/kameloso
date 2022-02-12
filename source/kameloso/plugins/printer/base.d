@@ -12,13 +12,12 @@
     really "headless" environment.
 
     See_Also:
+        https://github.com/zorael/kameloso/wiki/Current-plugins#printer
         [kameloso.plugins.common.core]
         [kameloso.plugins.common.misc]
  +/
-@("printer")
 module kameloso.plugins.printer.base;
 
-version(WithPlugins):
 version(WithPrinterPlugin):
 
 private:
@@ -32,7 +31,7 @@ import kameloso.irccolours;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
-version(Colours) import kameloso.terminal : TerminalForeground;
+version(Colours) import kameloso.terminal.colours : TerminalForeground;
 
 
 // PrinterSettings
@@ -423,7 +422,12 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
                 cast(HideBlacklistedUsers)plugin.printerSettings.hideBlacklistedUsers);
         }
 
-        writeln(plugin.linebuffer.data);
+        if (plugin.linebuffer.data.length)
+        {
+            // The linebuffer is empty if the sender was blacklisted (and settings are to hide those)
+            // so only write it out if there's something to write
+            writeln(plugin.linebuffer.data);
+        }
         break;
     }
 }

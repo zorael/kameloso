@@ -51,7 +51,7 @@ version(ProfileGC)
 }
 
 
-// rawAbort
+// globalAbort
 /++
     Abort flag.
 
@@ -61,16 +61,16 @@ version(ProfileGC)
 
     Must be `__gshared` or it doesn't seem to work on Windows.
  +/
-public __gshared bool rawAbort;
+public __gshared bool globalAbort;
 
 
-// headless
+// globalHeadless
 /++
     Headless flag.
 
     If this is true the program should not output anything to the terminal.
  +/
-public __gshared bool rawHeadless;
+public __gshared bool globalHeadless;
 
 
 version(Posix)
@@ -88,7 +88,7 @@ version(Posix)
 /++
     Called when a signal is raised, usually `SIGINT`.
 
-    Sets the [rawAbort] variable to true so other parts of the program knows to
+    Sets the [globalAbort] variable to true so other parts of the program knows to
     gracefully shut down.
 
     Params:
@@ -137,8 +137,8 @@ void signalHandler(int sig) nothrow @nogc @system
         31 : "SYS",   /// Bad system call. (SVr4)
     ];
 
-    if (!rawHeadless) printf("...caught signal SIG%s!\n", signalNames[sig].ptr);
-    rawAbort = true;
+    if (!globalHeadless) printf("...caught signal SIG%s!\n", signalNames[sig].ptr);
+    globalAbort = true;
 
     version(Posix)
     {
@@ -260,7 +260,7 @@ void messageFiber(ref Kameloso instance)
             dg(success);
         }
 
-        /// Reloads a particular plugin.
+        /// Reloads a particular plugin, or all if no plugin name passed.
         void reloadSpecificPlugin(ThreadMessage.Reload, string pluginToReload) scope
         {
             foreach (plugin; instance.plugins)
@@ -283,7 +283,7 @@ void messageFiber(ref Kameloso instance)
             }
         }
 
-        /// Reloads all plugins.
+        /// Reloads all plugins. Wraps and leverages [reloadSpecificPlugin].
         void reloadPlugins(ThreadMessage.Reload) scope
         {
             reloadSpecificPlugin(ThreadMessage.Reload(), string.init);
@@ -550,15 +550,14 @@ void messageFiber(ref Kameloso instance)
         /// Proxies the passed message to the [kameloso.common.logger].
         void proxyLoggerMessages(ThreadMessage.TerminalOutput logLevel, string message) scope
         {
+            if (instance.settings.headless) return;
+
             with (ThreadMessage.TerminalOutput)
             final switch (logLevel)
             {
             case writeln:
-                if (!instance.settings.headless)
-                {
-                    import std.stdio : writeln;
-                    writeln(message);
-                }
+                import std.stdio : writeln;
+                writeln(message);
                 break;
 
             case trace:
@@ -652,7 +651,9 @@ void messageFiber(ref Kameloso instance)
                 }
             );
         }
-        while (receivedSomething && (next == Next.continue_) &&
+        while (!*instance.abort &&
+            receivedSomething &&
+            (next == Next.continue_) &&
             ((Clock.currTime - loopStartTime) <= oneSecond));
 
         yield(next);
@@ -790,7 +791,7 @@ Next mainLoop(ref Kameloso instance)
         // That should be enough to stop it from being a memory leak.
         if ((nowInUnix % 86_400) == 0)
         {
-            instance.previousWhoisTimestamps = typeof(instance.previousWhoisTimestamps).init;
+            instance.previousWhoisTimestamps = null;
         }
 
         // Call the generator, query it for event lines
@@ -1686,7 +1687,7 @@ void processRepeats(ref Kameloso instance, IRCPlugin plugin)
     }
 
     // All repeats guaranteed exhausted
-    plugin.state.repeats = typeof(plugin.state.repeats).init;
+    plugin.state.repeats = null;
 }
 
 
@@ -2118,7 +2119,7 @@ Next tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
 
     auto resolver = new Generator!ResolveAttempt(() =>
         resolveFiber(instance.conn, instance.parser.server.address,
-        instance.parser.server.port, instance.connSettings.ipv6, *instance.abort));
+            instance.parser.server.port, instance.connSettings.ipv6, *instance.abort));
     scope(exit) resolver.reset();
 
     uint incrementedRetryDelay = Timeout.connectionRetry;
@@ -2464,10 +2465,10 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             instance.initPlugins(attempt.customSettings);
 
             // Reset throttling, in case there were queued messages.
-            instance.throttle = typeof(instance.throttle).init;
+            instance.throttle.reset();
 
             // Clear WHOIS history
-            instance.previousWhoisTimestamps = typeof(instance.previousWhoisTimestamps).init;
+            instance.previousWhoisTimestamps = null;
 
             // Reset the server but keep the address and port
             immutable addressSnapshot = instance.parser.server.address;
@@ -2643,7 +2644,7 @@ void printEventDebugDetails(const ref IRCEvent event,
     const string raw,
     const bool eventWasInitialised = true)
 {
-    if (rawHeadless || !raw.length) return;
+    if (globalHeadless || !raw.length) return;
 
     if (!eventWasInitialised || (event == IRCEvent.init))
     {
@@ -2760,7 +2761,7 @@ struct AttemptState
 public:
 
 
-// initBot
+// run
 /++
     Entry point of the program.
 
@@ -2773,7 +2774,7 @@ public:
     Returns:
         `0` on success, non-`0` on failure.
  +/
-int initBot(string[] args)
+int run(string[] args)
 {
     static import kameloso.common;
     import kameloso.common : initLogger;
@@ -2786,7 +2787,7 @@ int initBot(string[] args)
 
     // Set pointers.
     kameloso.common.settings = &instance.settings;
-    instance.abort = &rawAbort;
+    instance.abort = &globalAbort;
 
     // Declare AttemptState instance.
     AttemptState attempt;
@@ -2820,7 +2821,7 @@ int initBot(string[] args)
     }
 
     immutable actionAfterGetopt = instance.tryGetopt(args, attempt.customSettings);
-    rawHeadless = instance.settings.headless;
+    globalHeadless = instance.settings.headless;
 
     with (Next)
     final switch (actionAfterGetopt)
@@ -2885,7 +2886,7 @@ int initBot(string[] args)
     // Additionally if the port is an SSL-like port, assume SSL,
     // but only if the user isn't forcing settings
     if (!instance.conn.ssl && !instance.settings.force &&
-        instance.parser.server.port.among(6697, 7000, 7001, 7029, 7070, 9999, 443))
+        instance.parser.server.port.among!(6697, 7000, 7001, 7029, 7070, 9999, 443))
     {
         instance.connSettings.ssl = true;  // Is this wise?
         instance.conn.ssl = true;

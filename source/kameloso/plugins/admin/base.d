@@ -13,10 +13,8 @@
         [kameloso.plugins.common.core]
         [kameloso.plugins.common.misc]
  +/
-@("admin")
 module kameloso.plugins.admin.base;
 
-version(WithPlugins):
 version(WithAdminPlugin):
 
 private:

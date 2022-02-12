@@ -45,6 +45,13 @@ private:
 
         /// Don't copy this, just keep one instance.
         @disable this(this);
+
+        /// Resets the throttle values in-place.
+        void reset()
+        {
+            t0 = SysTime.init;
+            m = 0.0;
+        }
     }
 
 public:
@@ -464,7 +471,7 @@ public:
         }
 
         // Zero out old plugins array
-        plugins = typeof(plugins).init;
+        plugins = null;
     }
 
 
@@ -680,7 +687,7 @@ public:
         string configDirectory;  /// Path to configuration directory.
         bool force;  /// Whether or not to force connecting, skipping some sanity checks.
         bool flush;  /// Whether or not to explicitly set stdout to flush after writing a linebreak to it.
-        bool trace = false;  /// Whether or not *all* outgoing messages should be echoed to the terminal.
+        bool trace;  /// Whether or not *all* outgoing messages should be echoed to the terminal.
         bool numericAddresses;  /// Whether to print addresses as IPs or as hostnames (where applicable).
         bool headless;  /// Whether or not to be "headless", disabling all terminal output.
     }

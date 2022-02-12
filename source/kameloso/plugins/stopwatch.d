@@ -10,7 +10,6 @@
  +/
 module kameloso.plugins.stopwatch;
 
-version(WithPlugins):
 version(WithStopwatchPlugin):
 
 private:
