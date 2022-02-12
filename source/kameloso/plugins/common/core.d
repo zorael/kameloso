@@ -807,15 +807,10 @@ mixin template IRCPluginImpl(
             }
 
             // Iff no match from Commands, evaluate Regexes
-            if (uda.given.regexes.length)
+            if (uda.given.regexes.length && !commandMatch)
             {
                 foreach (const regex; uda.given.regexes)
                 {
-                    // This reuses previous commandMatch, so a matched Command
-                    // will prevent Regex lookups.
-
-                    if (commandMatch) break;
-
                     static if (verbose)
                     {
                         writeln("   ...Regex: `", regex.given.expression, "`");
