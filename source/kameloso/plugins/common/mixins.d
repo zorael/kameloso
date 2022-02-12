@@ -455,6 +455,15 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             slice.nom('!') :
             slice;
 
+        version(WithPrinterPlugin)
+        {
+            import kameloso.thread : ThreadMessage, busMessage;
+            import std.concurrency : send;
+
+            plugin.state.mainThread.send(ThreadMessage.BusMessage(),
+                "printer", busMessage("squelch " ~ nicknamePart));
+        }
+
         if (issueWhois)
         {
             if (background)
