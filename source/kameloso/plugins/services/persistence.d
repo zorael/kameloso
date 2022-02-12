@@ -9,6 +9,10 @@
 
     It has no commands. It only does post-processing and doesn't handle
     [dialect.defs.IRCEvent]s in the normal sense at all.
+
+    See_Also:
+        [kameloso.plugins.common.core]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.services.persistence;
 

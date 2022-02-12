@@ -13,6 +13,9 @@
     logger.trace(".trace");
     //logger.fatal("This will crash the program.");
     ---
+
+    See_Also:
+        [kameloso.terminal.colours]
  +/
 module kameloso.logger;
 
@@ -78,7 +81,6 @@ public:
     }
 
 
-    pragma(inline, true)
     version(Colours)
     {
         // tint
@@ -243,7 +245,7 @@ public:
             }
         }
 
-        writeln(linebuffer[]);
+        writeln(linebuffer.data);
         linebuffer.clear();
     }
 

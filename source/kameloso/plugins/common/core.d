@@ -35,6 +35,9 @@
         mixin IRCPluginImpl;
     }
     ---
+
+    See_Also:
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.common.core;
 
@@ -332,7 +335,7 @@ mixin template IRCPluginImpl(
                                 __traits(identifier, this.tupleof[i].tupleof[n])));
                         }
 
-                        retval = __traits(child, member, settingsStructMember);
+                        retval = member.tupleof[n];
                         break top;
                     }
                 }
@@ -1480,30 +1483,22 @@ mixin template IRCPluginImpl(
     pragma(inline, true)
     override public string name() @property const pure nothrow @nogc
     {
-        import std.traits : getUDAs;
+        import lu.string : beginsWith;
 
-        mixin("static import thisModule = " ~ module_ ~ ";");
-        alias annotatedNameStrings = getUDAs!(thisModule, string);
-
-        static if (annotatedNameStrings.length)
+        static if (module_.beginsWith("kameloso.plugins."))
         {
-            return annotatedNameStrings[0];
+            import std.string : indexOf;
+
+            string slice = module_[17..$];  // mutable
+            immutable dotPos = slice.indexOf('.');
+            return (dotPos == -1) ? slice : slice[0..dotPos];
         }
         else
         {
-            enum moduleIdentifier = __traits(identifier, thisModule);
+            import std.format : format;
 
-            static if (moduleIdentifier == "base")
-            {
-                import std.format : format;
-                import std.traits : fullyQualifiedName;
-
-                enum pattern = "Cannot determine plugin name of module `%s`; " ~
-                    "annotate the `module` line with a `@(\"string\")` to explicitly define one";
-                static assert(0, pattern.format(fullyQualifiedName!thisModule));
-            }
-
-            return moduleIdentifier;
+            enum pattern = "Plugin module `%s` is not under `kameloso.plugins`";
+            static assert(0, pattern.format(module_));
         }
     }
 
@@ -1538,7 +1533,7 @@ mixin template IRCPluginImpl(
 
             foreach (fun; funs)
             {
-                static immutable uda = getUDAs!(fun, IRCEventHandler)[0];
+                enum uda = getUDAs!(fun, IRCEventHandler)[0];
 
                 static foreach (immutable command; uda.given.commands)
                 {{

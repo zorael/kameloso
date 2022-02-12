@@ -54,7 +54,7 @@ auto buildCompilerVersionString()
     sink.put('.');
     (__VERSION__ % 1000).toAlphaInto!(3,3)(sink);
 
-    return sink[].idup;
+    return sink.data.idup;
 }
 
 
@@ -79,7 +79,7 @@ auto buildVersionString()
     import std.array : Appender;
 
     Appender!(char[]) sink;
-    sink.reserve(15);  // 10.10.10-beta.1
+    sink.reserve(16);  // 10.10.10-alpha.1
 
     with (KamelosoSemVer)
     {
@@ -96,7 +96,7 @@ auto buildVersionString()
         }
     }
 
-    return sink[].idup;
+    return sink.data.idup;
 }
 
 

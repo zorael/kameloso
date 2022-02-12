@@ -711,11 +711,11 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
             }
         }
 
-        if (capsToReq[].length)
+        if (capsToReq.data.length)
         {
             import std.algorithm.iteration : joiner;
             import std.conv : text;
-            immediate(service.state, text("CAP REQ :", capsToReq[].joiner(" ")), Yes.quiet);
+            immediate(service.state, text("CAP REQ :", capsToReq.data.joiner(" ")), Yes.quiet);
         }
         break;
 

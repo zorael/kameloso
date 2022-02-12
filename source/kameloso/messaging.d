@@ -35,6 +35,9 @@
         mode(string.init, "nickname", "+i");
     }
     ---
+
+    See_Also:
+        [kameloso.thread]
  +/
 module kameloso.messaging;
 

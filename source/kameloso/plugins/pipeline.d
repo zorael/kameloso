@@ -10,6 +10,7 @@
     Linux and macOS).
 
     See_Also:
+        https://github.com/zorael/kameloso/wiki/Current-plugins#pipeline
         [kameloso.plugins.common.core]
         [kameloso.plugins.common.misc]
  +/
