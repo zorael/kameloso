@@ -296,22 +296,22 @@ void catchUser(IRCPlugin plugin, const IRCUser newUser) @safe
             function pointer `fn` with as first argument.
         event = [dialect.defs.IRCEvent] to queue up to replay.
         permissionsRequired = Permissions level to match the results from the WHOIS query with.
-        dg = Delegate pointer to call when the results return.
+        fn = Function/delegate pointer to call when the results return.
         caller = String name of the calling function, or something else that gives context.
  +/
-void enqueue(SubPlugin, Dg)
+void enqueue(SubPlugin, Fn)
     (IRCPlugin plugin,
     SubPlugin subPlugin,
     const ref IRCEvent event,
     const Permissions permissionsRequired,
-    Dg dg,
+    Fn fn,
     const string caller = __FUNCTION__)
 in ((event != IRCEvent.init), "Tried to `enqueue` with an init IRCEvent")
-in ((dg !is null), "Tried to `enqueue` with a null function pointer")
+in ((fn !is null), "Tried to `enqueue` with a null function pointer")
 {
     import std.traits : isSomeFunction;
 
-    static assert (isSomeFunction!Dg, "Tried to `enqueue` with a non-function function");
+    static assert (isSomeFunction!Fn, "Tried to `enqueue` with a non-function function");
 
     version(TwitchSupport)
     {
@@ -341,12 +341,12 @@ in ((dg !is null), "Tried to `enqueue` with a null function pointer")
     static if (is(SubPlugin == typeof(null)))
     {
         plugin.state.replays[user.nickname] ~=
-            replay(event, permissionsRequired, dg, caller);
+            replay(event, permissionsRequired, fn, caller);
     }
     else
     {
         plugin.state.replays[user.nickname] ~=
-            replay(subPlugin, event, permissionsRequired, dg, caller);
+            replay(subPlugin, event, permissionsRequired, fn, caller);
     }
 
     plugin.state.hasReplays = true;
@@ -365,17 +365,17 @@ in ((dg !is null), "Tried to `enqueue` with a null function pointer")
         plugin = Current [kameloso.plugins.common.core.IRCPlugin] as a base class.
         event = [dialect.defs.IRCEvent] to queue up to replay.
         permissionsRequired = Permissions level to match the results from the WHOIS query with.
-        dg = Delegate pointer to call when the results return.
+        fn = Function/delegate pointer to call when the results return.
         caller = String name of the calling function, or something else that gives context.
  +/
-void enqueue(Dg)
+void enqueue(Fn)
     (IRCPlugin plugin,
     const ref IRCEvent event,
     const Permissions permissionsRequired,
-    Dg dg,
+    Fn fn,
     const string caller = __FUNCTION__)
 {
-    return enqueue(plugin, null, event, permissionsRequired, dg, caller);
+    return enqueue(plugin, null, event, permissionsRequired, fn, caller);
 }
 
 
