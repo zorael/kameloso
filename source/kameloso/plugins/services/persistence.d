@@ -21,7 +21,6 @@ version(WithPersistenceService):
 private:
 
 import kameloso.plugins.common.core;
-import kameloso.plugins.common.awareness : Awareness;
 import dialect.defs;
 
 
