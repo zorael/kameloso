@@ -66,7 +66,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     static if ((paramNames.length == 0) || !is(typeof(mixin(paramNames[0])) : IRCPlugin))
     {
         static assert(0, "`WHOISFiberDelegate` should be mixed into the context of an event handler. " ~
-            "(First parameter of `" ~ __FUNCTION__ ~ "` is not an `IRCPlugin`)");
+            "(First parameter of `" ~ __FUNCTION__ ~ "` is not an `IRCPlugin` or subclass)");
     }
     else
     {
@@ -851,7 +851,7 @@ mixin template Repeater(
     import dialect.defs : IRCUser;
     import lu.traits : MixinConstraints, MixinScope;
     import std.conv : text;
-    import std.traits : isSomeFunction;
+    import std.traits : ParameterIdentifierTuple, isSomeFunction;
 
     mixin MixinConstraints!(MixinScope.function_, "Repeater");
 
@@ -867,23 +867,20 @@ mixin template Repeater(
         enum hasRepeater = true;
     }
 
-    static if (__traits(compiles, plugin))
+    alias paramNames = ParameterIdentifierTuple!(mixin(__FUNCTION__));
+
+    static if ((paramNames.length == 0) || !is(typeof(mixin(paramNames[0])) : IRCPlugin))
     {
-        alias context = plugin;
-        enum contextName = "plugin";
-    }
-    else static if (__traits(compiles, service))
-    {
-        alias context = service;
-        enum contextName = "service";
+        static assert(0, "`Repeater` should be mixed into the context of an event handler. " ~
+            "(First parameter of `" ~ __FUNCTION__ ~ "` is not an `IRCPlugin` or subclass)");
     }
     else
     {
-        static assert(0, "`Repeater` should be mixed into the context " ~
-            "of an event handler. (Could not access variables named neither " ~
-            "`plugin` nor `service` from within `" ~ __FUNCTION__ ~ "`)");
+        //alias context = mixin(paramNames[0]);  // Only works on 2.088 and later
+        // The mixin must be a concatenated string for 2.083 and earlier,
+        // but we only support 2.084+
+        mixin("alias context = ", paramNames[0], ";");
     }
-
 
     // explainRepeat
     /++
@@ -908,7 +905,7 @@ mixin template Repeater(
             repeat.replay.caller;
 
         logger.logf(pattern,
-            Tint.info, context.name, Tint.log, contextName,
+            Tint.info, context.name, Tint.log, __traits(identifier, context),
             repeat.replay.permissionsRequired,
             caller,
             repeat.replay.event.sender.nickname,
@@ -938,7 +935,7 @@ mixin template Repeater(
             repeat.replay.caller;
 
         logger.logf(pattern,
-            Tint.info, context.name, Tint.log, contextName,
+            Tint.info, context.name, Tint.log, __traits(identifier, context),
             repeat.replay.permissionsRequired,
             caller,
             repeat.replay.event.sender.nickname,
