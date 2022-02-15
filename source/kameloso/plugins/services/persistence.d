@@ -127,13 +127,15 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
             none available, tries to set one that seems to apply based on what
             the user looks like.
          +/
-        static void applyClassifiers(PersistenceService service,
+        static void applyClassifiers(
+            PersistenceService service,
             const ref IRCEvent event,
             ref IRCUser user)
         {
-            if (user.class_ == IRCUser.Class.admin)
+            if ((user.class_ == IRCUser.Class.admin) && (user.account != "*"))
             {
                 // Do nothing, admin is permanent and program-wide
+                // unless it's someone logging out
                 return;
             }
 
@@ -329,9 +331,10 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
             }
         }
 
-        if (stored.class_ == IRCUser.Class.admin)
+        if ((stored.class_ == IRCUser.Class.admin) && (stored.account != "*"))
         {
             // Do nothing, admin is permanent and program-wide
+            // unless it's someone logging out
         }
         else if (!event.channel.length)
         {
