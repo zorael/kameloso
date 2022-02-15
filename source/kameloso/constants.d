@@ -364,6 +364,18 @@ enum Timeout
 }
 
 
+// Periodicals
+/++
+ +/
+enum Periodicals
+{
+    /++
+        How often to rehash plugins' `users` associative arrays for more efficient lookups.
+     +/
+    userAARehashMinutes = 60,
+}
+
+
 // DefaultColours
 /++
     Default colours gathered in one struct namespace.
