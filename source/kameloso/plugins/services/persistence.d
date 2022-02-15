@@ -241,24 +241,27 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
 
             version(TwitchSupport)
             {
-                if (stored.class_ == IRCUser.Class.admin)
+                if (service.state.server.daemon == IRCServer.Daemon.twitch)
                 {
-                    // Admin is a sticky class and nothing special needs to be done.
-                }
-                else if (stored.badges.length && !user.badges.length)
-                {
-                    // The current user doesn't have any badges and the stored one
-                    // does, potentially for a different channel. Look it up and
-                    // save the AA lookup pointer for later checks, in case we
-                    // have to do this again down below.
-
-                    /*const*/ cachedChannel = stored.nickname in service.userClassChannelCache;
-
-                    if (!cachedChannel || (*cachedChannel != event.channel))
+                    if (stored.class_ == IRCUser.Class.admin)
                     {
-                        // Current event has no badges but the stored one has
-                        // and for a different channel. Clear them.
-                        stored.badges = string.init;
+                        // Admin is a sticky class and nothing special needs to be done.
+                    }
+                    else if (stored.badges.length && !user.badges.length)
+                    {
+                        // The current user doesn't have any badges and the stored one
+                        // does, potentially for a different channel. Look it up and
+                        // save the AA lookup pointer for later checks, in case we
+                        // have to do this again down below.
+
+                        /*const*/ cachedChannel = stored.nickname in service.userClassChannelCache;
+
+                        if (!cachedChannel || (*cachedChannel != event.channel))
+                        {
+                            // Current event has no badges but the stored one has
+                            // and for a different channel. Clear them.
+                            stored.badges = string.init;
+                        }
                     }
                 }
             }
