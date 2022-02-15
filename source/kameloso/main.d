@@ -3057,26 +3057,38 @@ int run(string[] args)
         }
     }
 
-    if (!instance.settings.headless && instance.settings.exitSummary && instance.connectionHistory.length)
+    if (!instance.settings.headless)
     {
-        instance.printSummary();
-    }
-
-    version(GCStatsOnExit)
-    {
-        import core.memory : GC;
-
-        immutable stats = GC.stats();
-
-        static if (__VERSION__ >= 2087L)
+        if (instance.settings.exitSummary && instance.connectionHistory.length)
         {
-            immutable allocated = stats.allocatedInCurrentThread;
-            enum pattern = "Allocated in current thread: %s%,d%s bytes";
-            logger.infof(pattern, Tint.log, allocated, Tint.info);
+            instance.printSummary();
         }
 
-        enum memoryUsedPattern = "Memory used: %s%,d%s bytes, free: %1$s%4$,d%3$s bytes";
-        logger.infof(memoryUsedPattern, Tint.log, stats.usedSize, Tint.info, stats.freeSize);
+        version(GCStatsOnExit)
+        {
+            import core.memory : GC;
+
+            immutable stats = GC.stats();
+
+            static if (__VERSION__ >= 2087L)
+            {
+                immutable allocated = stats.allocatedInCurrentThread;
+                enum pattern = "Allocated in current thread: %s%,d%s bytes";
+                logger.infof(pattern, Tint.log, allocated, Tint.info);
+            }
+
+            enum memoryUsedPattern = "Memory used: %s%,d%s bytes, free: %1$s%4$,d%3$s bytes";
+            logger.infof(memoryUsedPattern, Tint.log, stats.usedSize, Tint.info, stats.freeSize);
+        }
+
+        if (*instance.abort)
+        {
+            logger.error("Aborting...");
+        }
+        else if (!attempt.silentExit)
+        {
+            logger.info("Exiting...");
+        }
     }
 
     if (*instance.abort)
@@ -3091,18 +3103,6 @@ int run(string[] args)
         {
             // Pass through any specific values, set to failure if unset
             attempt.retval = ShellReturnValue.failure;
-        }
-    }
-
-    if (!instance.settings.headless)
-    {
-        if (*instance.abort)
-        {
-            logger.error("Aborting...");
-        }
-        else if (!attempt.silentExit)
-        {
-            logger.info("Exiting...");
         }
     }
 
