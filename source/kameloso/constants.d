@@ -374,6 +374,7 @@ enum Timeout
 
 // Periodicals
 /++
+    Timings and timeouts of various periodical events.
  +/
 enum Periodicals
 {
