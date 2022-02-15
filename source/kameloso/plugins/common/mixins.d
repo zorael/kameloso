@@ -882,22 +882,22 @@ mixin template Reparser(
         mixin("alias context = ", paramNames[0], ";");
     }
 
-    // explainReparse
+    // explainReplay
     /++
         Verbosely explains a reparse, including what
         [kameloso.plugins.common.core.Permissions] and
         [dialect.defs.IRCUser.Class] were involved.
 
-        Gated behind version `ExplainReparse`.
+        Gated behind version `ExplainReplay`.
      +/
-    version(ExplainReparse)
-    void explainReparse(const Reparse reparse)
+    version(ExplainReplay)
+    void explainReplay(const Reparse reparse)
     {
         import kameloso.common : Tint, logger;
         import lu.conv : Enum;
         import lu.string : beginsWith;
 
-        enum pattern = "%s%s%s %s reparsing %1$s%5$s%3$s-level event (invoking %1$s%6$s%3$s) " ~
+        enum pattern = "The %s%s%s %s replaying %1$s%5$s%3$s-level event (invoking %1$s%6$s%3$s) " ~
             "based on WHOIS results: user %1$s%7$s%3$s is %1$s%8$s%3$s class";
 
         immutable caller = reparse.replay.caller.beginsWith("kameloso.plugins.") ?
@@ -917,16 +917,16 @@ mixin template Reparser(
     /++
         Verbosely explains why a reparse is not reparsed.
 
-        Gated behind version `ExplainReparse`.
+        Gated behind version `ExplainReplay`.
      +/
-    version(ExplainReparse)
+    version(ExplainReplay)
     void explainRefuse(const Reparse reparse)
     {
         import kameloso.common : Tint, logger;
         import lu.conv : Enum;
         import lu.string : beginsWith;
 
-        enum pattern = "%s%s%s %s is %9$sNOT%3$s reparsing %1$s%5$s%3$s-level event " ~
+        enum pattern = "The %s%s%s %s is %9$sNOT%3$s replaying %1$s%5$s%3$s-level event " ~
             "(which would have invoked %1$s%6$s%3$s) " ~
             "based on WHOIS results: user %1$s%7$s%3$s is insufficient %1$s%8$s%3$s class";
 
@@ -1009,12 +1009,12 @@ mixin template Reparser(
             break;
 
         case ignore:
-            version(ExplainReparse) explainReparse(reparse);
+            version(ExplainReplay) explainReplay(reparse);
             reparse.replay.trigger();
             return;
         }
 
-        version(ExplainReparse) explainRefuse(reparse);
+        version(ExplainReplay) explainRefuse(reparse);
     }
 
     /++

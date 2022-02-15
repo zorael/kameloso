@@ -1603,8 +1603,8 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
 
 // processReparses
 /++
-    Handles the reparse queue, reparsing events from the current (main loop)
-    context, outside of any plugin, *after* re-postprocessing them.
+    Handles the reparse queue, re-postprocessing ("reparsing") events from the
+    current (main loop) context, outside of any plugin.
 
     Params:
         instance = Reference to the current bot instance.
