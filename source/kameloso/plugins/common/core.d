@@ -965,7 +965,7 @@ mixin template IRCPluginImpl(
         }
 
         /// Sanitise and try again once on UTF/Unicode exceptions
-        static void sanitizeEvent(ref IRCEvent event)
+        static void sanitiseEvent(ref IRCEvent event)
         {
             import std.encoding : sanitize;
             import std.range : only;
@@ -976,7 +976,7 @@ mixin template IRCPluginImpl(
             event.aux = sanitize(event.aux);
             event.tags = sanitize(event.tags);
             event.errors = sanitize(event.errors);
-            event.errors ~= event.errors.length ? " | Sanitized" : "Sanitized";
+            event.errors ~= event.errors.length ? " | Sanitised" : "Sanitised";
 
             foreach (user; only(&event.sender, &event.target))
             {
@@ -1045,7 +1045,7 @@ mixin template IRCPluginImpl(
 
                     if (!isRecoverableException) throw e;
 
-                    sanitizeEvent(event);
+                    sanitiseEvent(event);
 
                     // Copy-paste, not much we can do otherwise
                     immutable next = process!verbose(&fun, funName, uda, event);
