@@ -2398,6 +2398,7 @@ void resolveResourceDirectory(ref Kameloso instance)
  +/
 void startBot(ref Kameloso instance, ref AttemptState attempt)
 {
+    import kameloso.constants : ShellReturnValue;
     import kameloso.terminal : TerminalToken, isTTY;
     import std.algorithm.comparison : among;
 
@@ -2508,12 +2509,12 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
 
         case returnFailure:
             // No need to teardown; the scopeguard does it for us.
-            attempt.retval = 1;
+            attempt.retval = ShellReturnValue.resolutionFailure;
             break outerloop;
 
         case returnSuccess:
             // Ditto
-            attempt.retval = 0;
+            attempt.retval = ShellReturnValue.success;
             break outerloop;
 
         case crash:
@@ -2537,7 +2538,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
 
         case returnFailure:
             // No need to saveOnExit, the scopeguard takes care of that
-            attempt.retval = 1;
+            attempt.retval = ShellReturnValue.connectionFailure;
             break outerloop;
 
         case crash:
@@ -2563,7 +2564,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             logger.warningf(pattern, Tint.log, e.file.baseName[0..$-2], Tint.warning,
                 e.msg, e.file.baseName, e.line, bell);
             version(PrintStacktraces) logger.trace(e.info);
-            attempt.retval = 1;
+            attempt.retval = ShellReturnValue.pluginResourceLoadFailure;
             break outerloop;
         }
         catch (Exception e)
@@ -2576,7 +2577,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             logger.warningf(pattern, Tint.log, e.file.baseName[0..$-2], Tint.warning,
                 e.msg, e.file, e.line, bell);
             version(PrintStacktraces) logger.trace(e);
-            attempt.retval = 1;
+            attempt.retval = ShellReturnValue.pluginResourceLoadException;
             break outerloop;
         }
 
@@ -2599,7 +2600,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             logger.warningf(pattern, Tint.log, e.file.baseName[0..$-2], Tint.warning,
                 e.msg, e.file.baseName, e.line, bell);
             version(PrintStacktraces) logger.trace(e.info);
-            attempt.retval = 1;
+            attempt.retval = ShellReturnValue.pluginStartFailure;
             break outerloop;
         }
         catch (Exception e)
@@ -2611,7 +2612,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             logger.warningf(pattern, Tint.log, e.file.baseName[0..$-2], Tint.warning,
                 e.msg, e.file.baseName, e.line, bell);
             version(PrintStacktraces) logger.trace(e);
-            attempt.retval = 1;
+            attempt.retval = ShellReturnValue.pluginStartException;
             break outerloop;
         }
 
@@ -2774,6 +2775,7 @@ int run(string[] args)
 {
     static import kameloso.common;
     import kameloso.common : initLogger;
+    import kameloso.constants : ShellReturnValue;
     import std.exception : ErrnoException;
     import core.stdc.errno : errno;
 
@@ -2829,10 +2831,10 @@ int run(string[] args)
         assert(0, "`tryGetopt` returned `Next.retry`");
 
     case returnSuccess:
-        return 0;
+        return ShellReturnValue.success;
 
     case returnFailure:
-        return 1;
+        return ShellReturnValue.getoptFailure;
 
     case crash:
         assert(0, "`tryGetopt` returned `Next.crash`");
@@ -2849,7 +2851,7 @@ int run(string[] args)
     {
         import std.stdio : writeln;
         if (!instance.settings.headless) writeln("Failed to set stdout buffer mode/size! errno:", errno);
-        if (!instance.settings.force) return 1;
+        if (!instance.settings.force) return ShellReturnValue.terminalSetupFailure;
     }
     catch (Exception e)
     {
@@ -2860,7 +2862,7 @@ int run(string[] args)
             writeln(e);
         }
 
-        if (!instance.settings.force) return 1;
+        if (!instance.settings.force) return ShellReturnValue.terminalSetupFailure;
     }
 
     // Apply some defaults to empty members, as stored in `kameloso.constants`.
@@ -2922,10 +2924,10 @@ int run(string[] args)
         assert(0, "`verifySettings` returned `Next.retry`");
 
     case returnSuccess:
-        return 0;
+        return ShellReturnValue.success;
 
     case returnFailure:
-        return 1;
+        return ShellReturnValue.settingsVerificationFailure;
 
     case crash:
         assert(0, "`verifySettings` returned `Next.crash`");
@@ -2962,13 +2964,13 @@ int run(string[] args)
     {
         // Configuration file/--set argument syntax error
         logger.error(e.msg);
-        if (!instance.settings.force) return 1;
+        if (!instance.settings.force) return ShellReturnValue.customConfigSyntaxFailure;
     }
     catch (IRCPluginSettingsException e)
     {
         // --set plugin/setting name error
         logger.error(e.msg);
-        if (!instance.settings.force) return 1;
+        if (!instance.settings.force) return ShellReturnValue.customConfigFailure;
     }
 
     // Save the original nickname *once*, outside the connection loop.
@@ -3084,14 +3086,13 @@ int run(string[] args)
 
         version(Posix)
         {
-            // Even if no signal raised attempt.retval may already be 1,
-            // but double-set it to be sure
-            attempt.retval = (signalRaised > 0) ? (128 + signalRaised) : 1;
+            if (signalRaised > 0) attempt.retval = (128 + signalRaised);
         }
-        else
+
+        if (attempt.retval == 0)
         {
-            // Ditto
-            attempt.retval = 1;
+            // Pass through any specific values, set to 1 if unset
+            attempt.retval = ShellReturnValue.failure;
         }
     }
     else if (!attempt.silentExit)

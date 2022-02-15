@@ -384,6 +384,79 @@ enum Periodicals
 }
 
 
+// ShellReturnValue
+/++
+    Magic number shell exit codes.
+ +/
+enum ShellReturnValue
+{
+    /++
+        Success. No error encountered.
+     +/
+    success = 0,
+
+    /++
+        Generic error.
+     +/
+    failure = 1,
+
+    /++
+        Failure encountered during `getopt`.
+     +/
+    getoptFailure = 2,
+
+    /++
+        Failure encountered when setting up terminal buffering.
+     +/
+    terminalSetupFailure = 3,
+
+    /++
+        Settings verification failed.
+     +/
+    settingsVerificationFailure = 4,
+
+    /++
+        `--set` argument syntax error.
+     +/
+    customConfigSyntaxFailure = 5,
+
+    /++
+        `--set` other failure.
+     +/
+    customConfigFailure = 6,
+
+    /++
+        Failure encountered during host address resolution.
+     +/
+    resolutionFailure = 21,
+
+    /++
+        Failure encountered during connection attempt.
+     +/
+    connectionFailure = 22,
+
+    /++
+        Failure encountered when a plugin tried to load resources.
+     +/
+    pluginResourceLoadFailure = 31,
+
+    /++
+        Generic exception was thrown when a plugin tried to load resources.
+     +/
+    pluginResourceLoadException = 32,
+
+    /++
+        Failure encountered during plugin startup.
+     +/
+    pluginStartFailure = 33,
+
+    /++
+        Generic exception was thrown when a plugin tried to start up.
+     +/
+    pluginStartException = 34,
+}
+
+
 // DefaultColours
 /++
     Default colours gathered in one struct namespace.
