@@ -262,7 +262,7 @@ alias formatObject = formatObjects;
 /++
     Argument aggregate for invocations of [formatStringMemberImpl].
  +/
-private struct FormatStringMemberArguments(T)
+private struct FormatStringMemberArguments
 {
     /// Type name.
     string typestring;
@@ -332,7 +332,7 @@ private void formatStringMemberImpl(Flag!"coloured" coloured, Sink, Args, T)
 /++
     Argument aggregate for invocations of [formatArrayMemberImpl].
  +/
-private struct FormatArrayMemberArguments(T)
+private struct FormatArrayMemberArguments
 {
     /// Type name.
     string typestring;
@@ -412,7 +412,7 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, Sink, Args, T)
 /++
     Argument aggregate for invocations of [formatAggregateMemberImpl].
  +/
-private struct FormatAggregateMemberArguments(T)
+private struct FormatAggregateMemberArguments
 {
     /// Type name.
     string typestring;
@@ -483,7 +483,7 @@ private void formatAggregateMemberImpl(Flag!"coloured" coloured, Sink, Args)
 /++
     Argument aggregate for invocations of [formatOtherMemberImpl].
  +/
-private struct FormatOtherMemberArguments(T)
+private struct FormatOtherMemberArguments
 {
     /// Type name.
     string typestring;
@@ -619,7 +619,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 
             static if (isTrulyString!T)
             {
-                FormatStringMemberArguments!T args;
+                FormatStringMemberArguments args;
                 args.typestring = T.stringof;
                 args.memberstring = memberstring;
                 args.typewidth = typewidth;
@@ -642,7 +642,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
                 immutable compensatedNamewidth = __traits(getMember, thing, memberstring).length ?
                     (namewidth + 2) : (namewidth + 4);
 
-                FormatArrayMemberArguments!T args;
+                FormatArrayMemberArguments args;
                 args.typestring = UnqualArray!T.stringof;
                 args.memberstring = memberstring;
                 args.elemstring = ElemType.stringof;
@@ -671,7 +671,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
                     enum isInit = false;
                 }
 
-                FormatAggregateMemberArguments!T args;
+                FormatAggregateMemberArguments args;
                 args.typestring = T.stringof;
                 args.memberstring = memberstring;
                 args.aggregateType = aggregateType;
@@ -686,7 +686,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
             {
                 import std.traits : Unqual;
 
-                FormatOtherMemberArguments!T args;
+                FormatOtherMemberArguments args;
                 args.typestring = T.stringof;
                 args.memberstring = memberstring;
                 args.typewidth = typewidth;
