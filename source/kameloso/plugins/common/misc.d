@@ -379,26 +379,26 @@ void enqueue(Dg)
 }
 
 
-// repeat
+// reparse
 /++
     Queues a [core.thread.fiber.Fiber] (actually a [kameloso.thread.CarryingFiber]
-    with a [kameloso.plugins.common.core.Repeat] payload) to repeat a passed [kameloso.plugins.common.core.Replay] from the
+    with a [kameloso.plugins.common.core.Reparse] payload) to reparse a passed [kameloso.plugins.common.core.Replay] from the
     context of the main loop after postprocessing the event once more.
 
     Params:
         plugin = The current [kameloso.plugins.common.core.IRCPlugin].
         dg = Delegate/function pointer to wrap the [core.thread.fiber.Fiber] around.
-        replay = The [kameloso.plugins.common.core.Replay] to repeat.
+        replay = The [kameloso.plugins.common.core.Replay] to reparse.
  +/
-void repeat(Dg)(IRCPlugin plugin, Dg dg, Replay replay)
+void reparse(Dg)(IRCPlugin plugin, Dg dg, Replay replay)
 if (isSomeFunction!Dg)
-in ((dg !is null), "Tried to queue a repeat with a null delegate pointer")
-in ((replay.event != IRCEvent.init), "Tried to queue a repeat of an init `Replay`")
+in ((dg !is null), "Tried to queue a reparse with a null delegate pointer")
+in ((replay.event != IRCEvent.init), "Tried to queue a reparse of an init `Replay`")
 {
     import kameloso.constants : BufferSize;
     import kameloso.thread : CarryingFiber;
 
-    plugin.state.repeats ~= Repeat(new CarryingFiber!Repeat(dg, BufferSize.fiberStack), replay);
+    plugin.state.reparses ~= Reparse(new CarryingFiber!Reparse(dg, BufferSize.fiberStack), replay);
 }
 
 

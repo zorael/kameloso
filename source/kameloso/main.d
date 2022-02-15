@@ -1231,7 +1231,7 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
             {
                 plugin.onEvent(event);
                 if (plugin.state.hasReplays) processReplays(instance, plugin);
-                if (plugin.state.repeats.length) processRepeats(instance, plugin);
+                if (plugin.state.reparses.length) processReparses(instance, plugin);
                 processAwaitingDelegates(plugin, event);
                 processAwaitingFibers(plugin, event);
                 if (*instance.abort) return;  // handled in mainLoop listenerloop
@@ -1601,16 +1601,16 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
 }
 
 
-// processRepeats
+// processReparses
 /++
-    Handles the repeat queue, repeating events from the current (main loop)
-    context, outside of any plugin, *after* re-postprocessing them.
+    Handles the reparse queue, re-postprocessing ("reparsing") events from the
+    current (main loop) context, outside of any plugin.
 
     Params:
         instance = Reference to the current bot instance.
         plugin = The current [kameloso.plugins.common.core.IRCPlugin].
  +/
-void processRepeats(ref Kameloso instance, IRCPlugin plugin)
+void processReparses(ref Kameloso instance, IRCPlugin plugin)
 {
     import lu.string : NomException;
     import std.utf : UTFException;
@@ -1618,76 +1618,76 @@ void processRepeats(ref Kameloso instance, IRCPlugin plugin)
     import core.memory : GC;
     import core.thread : Fiber;
 
-    foreach (immutable i, repeat; plugin.state.repeats)
+    foreach (immutable i, reparse; plugin.state.reparses)
     {
         version(WithPersistenceService)
         {
             // Postprocessing will reapply class, but not if there is already
             // a custom class (assuming channel cache hit)
-            repeat.replay.event.sender.class_ = IRCUser.Class.unset;
-            repeat.replay.event.target.class_ = IRCUser.Class.unset;
+            reparse.replay.event.sender.class_ = IRCUser.Class.unset;
+            reparse.replay.event.target.class_ = IRCUser.Class.unset;
         }
 
         try
         {
             foreach (postprocessor; instance.plugins)
             {
-                postprocessor.postprocess(repeat.replay.event);
+                postprocessor.postprocess(reparse.replay.event);
             }
         }
         catch (NomException e)
         {
-            enum pattern = "Nom Exception postprocessing %s.state.repeats[%d]: " ~
+            enum pattern = "Nom Exception postprocessing %s.state.reparses[%d]: " ~
                 `tried to nom "%s%s%s" with "%3$s%6$s%5$s"`;
             logger.warningf(pattern, plugin.name, i, Tint.log, e.haystack, Tint.warning, e.needle);
-            printEventDebugDetails(repeat.replay.event, repeat.replay.event.raw);
+            printEventDebugDetails(reparse.replay.event, reparse.replay.event.raw);
             version(PrintStacktraces) logger.trace(e.info);
         }
         catch (UTFException e)
         {
-            enum pattern = "UTFException postprocessing %s.state.repeats[%d]: %s%s";
+            enum pattern = "UTFException postprocessing %s.state.reparses[%d]: %s%s";
             logger.warningf(pattern, plugin.name, i, Tint.log, e.msg);
             version(PrintStacktraces) logger.trace(e.info);
         }
         catch (UnicodeException e)
         {
-            enum pattern = "UnicodeException postprocessing %s.state.repeats[%d]: %s%s";
+            enum pattern = "UnicodeException postprocessing %s.state.reparses[%d]: %s%s";
             logger.warningf(pattern, plugin.name, i, Tint.log, e.msg);
             version(PrintStacktraces) logger.trace(e.info);
         }
         catch (Exception e)
         {
-            enum pattern = "Exception postprocessing %s.state.repeats[%d]: %s%s";
+            enum pattern = "Exception postprocessing %s.state.reparses[%d]: %s%s";
             logger.warningf(pattern, plugin.name, i, Tint.log, e.msg);
-            printEventDebugDetails(repeat.replay.event, repeat.replay.event.raw);
+            printEventDebugDetails(reparse.replay.event, reparse.replay.event.raw);
             version(PrintStacktraces) logger.trace(e);
         }
 
-        if (repeat.isCarrying)
+        if (reparse.isCarrying)
         {
-            repeat.carryingFiber.payload = repeat;
+            reparse.carryingFiber.payload = reparse;
         }
 
         try
         {
-            repeat.fiber.call();
+            reparse.fiber.call();
         }
         catch (Exception e)
         {
-            enum pattern = "Exception %s.state.repeats[%d]: %s%s";
+            enum pattern = "Exception %s.state.reparses[%d]: %s%s";
             logger.warningf(pattern, plugin.name, i, Tint.log, e.msg);
-            printEventDebugDetails(repeat.replay.event, repeat.replay.event.raw);
+            printEventDebugDetails(reparse.replay.event, reparse.replay.event.raw);
             version(PrintStacktraces) logger.trace(e);
         }
 
-        assert((repeat.fiber.state == Fiber.State.TERM), "Undead Repeater Fiber");
+        assert((reparse.fiber.state == Fiber.State.TERM), "Undead Reparser Fiber");
 
-        destroy(repeat);
-        GC.free(&repeat);
+        destroy(reparse);
+        GC.free(&reparse);
     }
 
-    // All repeats guaranteed exhausted
-    plugin.state.repeats = null;
+    // All reparses guaranteed exhausted
+    plugin.state.reparses = null;
 }
 
 

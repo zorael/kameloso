@@ -1129,7 +1129,7 @@ mixin template IRCPluginImpl(
         this.state.awaitingDelegates.length = numEventTypes;
         this.state.replays = state.replays.dup;
         this.state.hasReplays = state.hasReplays;
-        this.state.repeats = state.repeats.dup;
+        this.state.reparses = state.reparses.dup;
         this.state.scheduledFibers = state.scheduledFibers.dup;
         this.state.scheduledDelegates = state.scheduledDelegates.dup;
 
@@ -2053,11 +2053,11 @@ public:
      +/
     bool hasReplays;
 
-    // repeats
+    // reparses
     /++
-        This plugin's array of [Repeat]s to let the main loop play back.
+        This plugin's array of [Reparse]s to let the main loop replay after reparsing.
      +/
-    Repeat[] repeats;
+    Reparse[] reparses;
 
     // awaitingFibers
     /++
@@ -2397,19 +2397,21 @@ unittest
 
     auto reqfn2 = replay(event, pl, &fn2);
     queue ~= reqfn2;
+
+
 }
 
 
-// Repeat
+// Reparse
 /++
-    An event to be repeated from the context of the main loop after having
+    An event to be reparsed from the context of the main loop after having
     re-postprocessed it.
 
     With this plugins get an ability to postprocess on demand, which is needed
     to apply user classes to stored events, such as those saved before issuing
     WHOIS queries.
  +/
-struct Repeat
+struct Reparse
 {
 private:
     import kameloso.thread : CarryingFiber;
@@ -2420,7 +2422,7 @@ private:
 public:
     // fiber
     /++
-        [core.thread.fiber.Fiber] to call to invoke this repeat.
+        [core.thread.fiber.Fiber] to call to invoke this reparse.
      +/
     Fiber fiber;
 
@@ -2430,19 +2432,19 @@ public:
         it can be cast thus.
 
         Returns:
-            [fiber], cast as a [kameloso.thread.CarryingFiber]![Repeat].
+            [fiber], cast as a [kameloso.thread.CarryingFiber]![Reparse].
      +/
     CarryingFiber!This carryingFiber() pure inout @nogc @property
     {
         auto carrying = cast(CarryingFiber!This)fiber;
-        assert(carrying, "Tried to get a `CarryingFiber!Repeat` out of a normal Fiber");
+        assert(carrying, "Tried to get a `CarryingFiber!Reparse` out of a normal Fiber");
         return carrying;
     }
 
     // isCarrying
     /++
         Returns whether or not [fiber] is actually a
-        [kameloso.thread.CarryingFiber]![Repeat].
+        [kameloso.thread.CarryingFiber]![Reparse].
 
         Returns:
             `true` if it is of such a subclass, `false` if not.
@@ -2454,13 +2456,13 @@ public:
 
     // replay
     /++
-        The [Replay] to repeat.
+        The [Replay] to reparse.
      +/
     Replay replay;
 
     // created
     /++
-        UNIX timestamp of when this repeat event was created.
+        UNIX timestamp of when this reparse event was created.
      +/
     long created;
 
