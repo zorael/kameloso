@@ -399,9 +399,9 @@ mixin template UserAwareness(
         .when(Timing.early)
         .chainable(true)
     )
-    void onUserAwarenessPingMixin(IRCPlugin plugin) @system
+    void onUserAwarenessPingMixin(IRCPlugin plugin, const ref IRCEvent event) @system
     {
-        return kameloso.plugins.common.awareness.onUserAwarenessPing(plugin);
+        return kameloso.plugins.common.awareness.onUserAwarenessPing(plugin, event);
     }
 }
 
@@ -607,29 +607,28 @@ void onUserAwarenessEndOfList(IRCPlugin plugin, const ref IRCEvent event) @syste
     The number of hours is so far hardcoded but can be made configurable if
     there's a use-case for it.
  +/
-void onUserAwarenessPing(IRCPlugin plugin) @system
+void onUserAwarenessPing(IRCPlugin plugin, const ref IRCEvent event) @system
 {
     import std.datetime.systime : Clock;
 
     enum minutesBeforeInitialRehash = 5;
-    enum hoursBetweenRehashes = 12;
 
     static long pingRehash = 0L;
-    immutable now = Clock.currTime.toUnixTime;
 
     if (pingRehash == 0L)
     {
         // First PING encountered
         // Delay rehashing to let the client join all channels
-        pingRehash = now + (minutesBeforeInitialRehash * 60);
+        pingRehash = event.time + (minutesBeforeInitialRehash * 60);
     }
-    else if (now >= pingRehash)
+    else if (event.time >= pingRehash)
     {
+        import kameloso.constants : Periodicals;
         import kameloso.plugins.common.misc : rehashUsers;
 
-        // Once every `hoursBetweenRehashes` hours, rehash the `users` array.
+        // Once every `userAARehashMinutes` minutes, rehash the `users` array.
         plugin.rehashUsers();
-        pingRehash = now + (hoursBetweenRehashes * 3600);
+        pingRehash = event.time + (Periodicals.userAARehashMinutes * 60);
     }
 }
 
