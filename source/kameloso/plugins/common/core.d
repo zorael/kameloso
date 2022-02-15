@@ -1129,7 +1129,8 @@ mixin template IRCPluginImpl(
         this.state.awaitingDelegates.length = numEventTypes;
         this.state.replays = state.replays.dup;
         this.state.hasReplays = state.hasReplays;
-        this.state.reparses = state.reparses.dup;
+        version(none) this.state.reparses = state.reparses.dup;
+        this.state.reparses2 = state.reparses2.dup;
         this.state.scheduledFibers = state.scheduledFibers.dup;
         this.state.scheduledDelegates = state.scheduledDelegates.dup;
 
@@ -2057,7 +2058,14 @@ public:
     /++
         This plugin's array of [Reparse]s to let the main loop replay after reparsing.
      +/
+    version(none)
     Reparse[] reparses;
+
+    // reparses2
+    /++
+        FIXME
+     +/
+    Reparse2[] reparses2;
 
     // awaitingFibers
     /++
@@ -2411,6 +2419,7 @@ unittest
     to apply user classes to stored events, such as those saved before issuing
     WHOIS queries.
  +/
+version(none)
 struct Reparse
 {
 private:
@@ -2475,6 +2484,49 @@ public:
 
         created = Clock.currTime.toUnixTime;
         this.fiber = fiber;
+        this.replay = replay;
+    }
+}
+
+
+// Reparse2
+/++
+    An event to be reparsed from the context of the main loop after having
+    re-postprocessed it.
+
+    With this plugins get an ability to postprocess on demand, which is needed
+    to apply user classes to stored events, such as those saved before issuing
+    WHOIS queries.
+ +/
+struct Reparse2
+{
+    // dg
+    /++
+        FIXME
+     +/
+    void delegate(Replay) dg;
+
+    // replay
+    /++
+        The [Replay] to reparse.
+     +/
+    Replay replay;
+
+    // created
+    /++
+        UNIX timestamp of when this reparse event was created.
+     +/
+    long created;
+
+    /++
+        Constructor taking a [core.thread.fiber.Fiber] and a [Replay].
+     +/
+    this(void delegate(Replay) dg, Replay replay) @safe
+    {
+        import std.datetime.systime : Clock;
+
+        created = Clock.currTime.toUnixTime;
+        this.dg = dg;
         this.replay = replay;
     }
 }

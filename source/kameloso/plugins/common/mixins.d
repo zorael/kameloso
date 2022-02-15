@@ -847,7 +847,8 @@ mixin template Reparser(
     Flag!"debug_" debug_ = No.debug_,
     string module_ = __MODULE__)
 {
-    import kameloso.plugins.common.core : Reparse, Replay;
+    //import kameloso.plugins.common.core : Reparse, Replay;
+    import kameloso.plugins.common.core : Reparse2, Replay;
     import dialect.defs : IRCUser;
     import lu.traits : MixinConstraints, MixinScope;
     import std.conv : text;
@@ -890,6 +891,7 @@ mixin template Reparser(
 
         Gated behind version `ExplainReplay`.
      +/
+    version(none)
     version(ExplainReplay)
     void explainReplay(const Reparse reparse)
     {
@@ -919,6 +921,7 @@ mixin template Reparser(
 
         Gated behind version `ExplainReplay`.
      +/
+    version(none)
     version(ExplainReplay)
     void explainRefuse(const Reparse reparse)
     {
@@ -944,10 +947,71 @@ mixin template Reparser(
     }
 
 
+        // explainReplay
+    /++
+        Verbosely explains a reparse, including what
+        [kameloso.plugins.common.core.Permissions] and
+        [dialect.defs.IRCUser.Class] were involved.
+
+        Gated behind version `ExplainReplay`.
+     +/
+    version(ExplainReplay)
+    void explainReplay(const Replay replay)
+    {
+        import kameloso.common : Tint, logger;
+        import lu.string : beginsWith;
+
+        enum pattern = "The %s%s%s %s replaying %1$s%5$s%3$s-level event (invoking %1$s%6$s%3$s) " ~
+            "based on WHOIS results: user %1$s%7$s%3$s is %1$s%8$s%3$s class";
+
+        immutable caller = replay.caller.beginsWith("kameloso.plugins.") ?
+            replay.caller[17..$] :
+            replay.caller;
+
+        logger.logf(pattern,
+            Tint.info, context.name, Tint.log, __traits(identifier, context),
+            replay.permissionsRequired,
+            caller,
+            replay.event.sender.nickname,
+            replay.event.sender.class_);
+    }
+
+
+    // explainRefuse
+    /++
+        Verbosely explains why a reparse is not reparsed.
+
+        Gated behind version `ExplainReplay`.
+     +/
+    version(ExplainReplay)
+    void explainRefuse(const Replay replay)
+    {
+        import kameloso.common : Tint, logger;
+        import lu.string : beginsWith;
+
+        enum pattern = "The %s%s%s %s is %9$sNOT%3$s replaying %1$s%5$s%3$s-level event " ~
+            "(which would have invoked %1$s%6$s%3$s) " ~
+            "based on WHOIS results: user %1$s%7$s%3$s is insufficient %1$s%8$s%3$s class";
+
+        immutable caller = replay.caller.beginsWith("kameloso.plugins.") ?
+            replay.caller[17..$] :
+            replay.caller;
+
+        logger.logf(pattern,
+            Tint.info, context.name, Tint.log, __traits(identifier, context),
+            replay.permissionsRequired,
+            caller,
+            replay.event.sender.nickname,
+            replay.event.sender.class_,
+            Tint.warning);
+    }
+
+
     // reparserDelegate
     /++
         Delegate to call from inside a [kameloso.thread.CarryingFiber].
      +/
+    version(none)
     void reparserDelegate()
     {
         import kameloso.thread : CarryingFiber;
@@ -1017,13 +1081,83 @@ mixin template Reparser(
         version(ExplainReplay) explainRefuse(reparse);
     }
 
+    // reparserDelegate2
+    /++
+        Delegate to call FIXME.
+     +/
+    void reparserDelegate2(Replay replay)
+    {
+        with (Permissions)
+        final switch (replay.permissionsRequired)
+        {
+        case admin:
+            if (replay.event.sender.class_ >= IRCUser.Class.admin)
+            {
+                goto case ignore;
+            }
+            break;
+
+        case staff:
+            if (replay.event.sender.class_ >= IRCUser.Class.staff)
+            {
+                goto case ignore;
+            }
+            break;
+
+        case operator:
+            if (replay.event.sender.class_ >= IRCUser.Class.operator)
+            {
+                goto case ignore;
+            }
+            break;
+
+        case whitelist:
+            if (replay.event.sender.class_ >= IRCUser.Class.whitelist)
+            {
+                goto case ignore;
+            }
+            break;
+
+        case registered:
+            if (replay.event.sender.account.length)
+            {
+                goto case ignore;
+            }
+            break;
+
+        case anyone:
+            if (replay.event.sender.class_ >= IRCUser.Class.anyone)
+            {
+                goto case ignore;
+            }
+
+            // reparse.replay.event.sender.class_ is Class.blacklist here (or unset)
+            // Do nothing an drop down
+            break;
+
+        case ignore:
+            version(ExplainReplay) explainReplay(replay);
+            replay.trigger();
+            return;
+        }
+
+        version(ExplainReplay) explainRefuse(replay);
+    }
+
     /++
         Queues the delegate [reparserDelegate] with the passed
         [kameloso.plugins.common.core.Replay] attached to it.
      +/
+    version(none)
     void reparse(Replay replay)
     {
         import kameloso.plugins.common.misc : reparse;
         context.reparse(&reparserDelegate, replay);
+    }
+
+    void reparse2(Replay replay)
+    {
+        import kameloso.plugins.common.misc : reparse2;
+        context.reparse2(&reparserDelegate2, replay);
     }
 }

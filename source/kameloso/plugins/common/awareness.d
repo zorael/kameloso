@@ -178,7 +178,8 @@ void onMinimalAuthenticationAccountInfoTarget(IRCPlugin plugin, const ref IRCEve
 
         if ((event.time - replay.when) <= Timeout.whoisRetry)
         {
-            reparse(replay);
+            //reparse(replay);
+            reparse2(replay);
         }
     }
 }
@@ -208,7 +209,8 @@ void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const ref IRCE
     {
         foreach (replay; replaysForNickname)
         {
-            reparse(replay);
+            //reparse(replay);
+            reparse2(replay);
         }
     }
 
