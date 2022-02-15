@@ -466,7 +466,7 @@ mixin template IRCPluginImpl(
                 static assert(0, pattern.format(fullyQualifiedName!fun));
             }
 
-            enum uda = handlerAnnotations[0];
+            static immutable uda = handlerAnnotations[0];
 
             static foreach (immutable type; uda.given.acceptedEventTypes)
             {{
@@ -566,6 +566,17 @@ mixin template IRCPluginImpl(
                 enum pattern = "`%s` is missing a `MinimalAuthentication` " ~
                     "mixin (needed for `Permissions` checks)";
                 static assert(0, pattern.format(module_));
+            }
+
+            static if (uda.given.verbose && (__VERSION__ < 2096L))
+            {
+                import std.format : format;
+
+                enum pattern = "Warning: `%s` is marked as `verbose`, but " ~
+                    "your compiler is too old to support this (<2.096). " ~
+                    "Mix in the whole of `MinimalAuthentication` with `Yes.debug_` " ~
+                    "as a workaround; or better yet, update your compiler";
+                pragma(msg, pattern.format(fullyQualifiedName!fun));
             }
 
             return true;
@@ -997,13 +1008,54 @@ mixin template IRCPluginImpl(
         /// Wrap all the functions in the passed `funlist` in try-catch blocks.
         void tryProcess(funlist...)(ref IRCEvent event)
         {
-            foreach (fun; funlist)
+            static if (__VERSION__ < 2096L)
+            {
+                /+
+                    Pre-2.096 needs an ugly workaround so as to not allocate an
+                    array literal every funlist (likely due to containing dynamic
+                    arrays, as an enum).
+
+                    Compose an array of all UDAs in this funlist, at compile-time.
+                    This gives us static immutables to work with instead of enums,
+                    and as such we don't suffer the array literal allocations
+                    the latter impose.
+
+                    The drawback to this is that `IRCEventHandler.verbose` won't
+                    work anymore (on a per-function basis). Regrettable but it
+                    can't be helped.
+                 +/
+                static immutable ctUDAArray = ()
+                {
+                    IRCEventHandler[] udas;
+                    udas.length = funlist.length;
+
+                    static foreach (immutable i, fun; funlist)
+                    {{
+                        udas[i] = getUDAs!(fun, IRCEventHandler)[0];
+                    }}
+
+                    return udas;
+                }();
+            }
+
+            foreach (immutable i, fun; funlist)
             {
                 import std.traits : getUDAs;
 
                 static assert(udaSanityCheck!fun);
-                enum uda = getUDAs!(fun, IRCEventHandler)[0];
-                enum verbose = (uda.given.verbose || debug_);
+
+                static if (__VERSION__ >= 2096L)
+                {
+                    static immutable uda = getUDAs!(fun, IRCEventHandler)[0];
+                    enum verbose = (uda.given.verbose || debug_);
+                }
+                else
+                {
+                    // Can't do static immutable and enum allocates an array literal...
+                    immutable uda = ctUDAArray[i];
+                    enum verbose = (/*uda.given.verbose ||*/ debug_);  // regrettable
+                }
+
                 enum funName = module_ ~ '.' ~ __traits(identifier, fun);
 
                 try
