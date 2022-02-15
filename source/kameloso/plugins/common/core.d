@@ -976,7 +976,7 @@ mixin template IRCPluginImpl(
             event.aux = sanitize(event.aux);
             event.tags = sanitize(event.tags);
             event.errors = sanitize(event.errors);
-            event.errors ~= event.errors.length ? "| Sanitized" : "Sanitized";
+            event.errors ~= event.errors.length ? " | Sanitized" : "Sanitized";
 
             foreach (user; only(&event.sender, &event.target))
             {

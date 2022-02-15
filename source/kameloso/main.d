@@ -1139,13 +1139,13 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
         catch (UTFException e)
         {
             event = instance.parser.toIRCEvent(sanitize(raw));
-            event.errors ~= (event.errors.length ? ". " : string.init) ~
+            event.errors ~= (event.errors.length ? " | " : string.init) ~
                 "UTFException: " ~ e.msg;
         }
         catch (UnicodeException e)
         {
             event = instance.parser.toIRCEvent(sanitize(raw));
-            event.errors ~= (event.errors.length ? ". " : string.init) ~
+            event.errors ~= (event.errors.length ? " | " : string.init) ~
                 "UnicodeException: " ~ e.msg;
         }
 
