@@ -182,8 +182,7 @@ void onMinimalAuthenticationAccountInfoTarget(IRCPlugin plugin, const ref IRCEve
         }
         else
         {
-            //reparse(replay);
-            reparse2(replay);
+            reparse(replay);
         }
     }
 }
@@ -213,8 +212,7 @@ void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const ref IRCE
     {
         foreach (replay; replaysForNickname)
         {
-            //reparse(replay);
-            reparse2(replay);
+            reparse(replay);
         }
     }
 

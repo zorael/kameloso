@@ -1129,8 +1129,7 @@ mixin template IRCPluginImpl(
         this.state.awaitingDelegates.length = numEventTypes;
         this.state.replays = state.replays.dup;
         this.state.hasReplays = state.hasReplays;
-        version(none) this.state.reparses = state.reparses.dup;
-        this.state.reparses2 = state.reparses2.dup;
+        this.state.reparses = state.reparses.dup;
         this.state.scheduledFibers = state.scheduledFibers.dup;
         this.state.scheduledDelegates = state.scheduledDelegates.dup;
 
@@ -2058,14 +2057,7 @@ public:
     /++
         This plugin's array of [Reparse]s to let the main loop replay after reparsing.
      +/
-    version(none)
     Reparse[] reparses;
-
-    // reparses2
-    /++
-        FIXME
-     +/
-    Reparse2[] reparses2;
 
     // awaitingFibers
     /++
@@ -2419,90 +2411,11 @@ unittest
     to apply user classes to stored events, such as those saved before issuing
     WHOIS queries.
  +/
-version(none)
 struct Reparse
-{
-private:
-    import kameloso.thread : CarryingFiber;
-    import core.thread : Fiber;
-
-    alias This = typeof(this);
-
-public:
-    // fiber
-    /++
-        [core.thread.fiber.Fiber] to call to invoke this reparse.
-     +/
-    Fiber fiber;
-
-    // carryingFiber
-    /++
-        Returns [fiber] as a [kameloso.thread.CarryingFiber], blindly assuming
-        it can be cast thus.
-
-        Returns:
-            [fiber], cast as a [kameloso.thread.CarryingFiber]![Reparse].
-     +/
-    CarryingFiber!This carryingFiber() pure inout @nogc @property
-    {
-        auto carrying = cast(CarryingFiber!This)fiber;
-        assert(carrying, "Tried to get a `CarryingFiber!Reparse` out of a normal Fiber");
-        return carrying;
-    }
-
-    // isCarrying
-    /++
-        Returns whether or not [fiber] is actually a
-        [kameloso.thread.CarryingFiber]![Reparse].
-
-        Returns:
-            `true` if it is of such a subclass, `false` if not.
-     +/
-    bool isCarrying() const pure @nogc @property
-    {
-        return cast(CarryingFiber!This)fiber !is null;
-    }
-
-    // replay
-    /++
-        The [Replay] to reparse.
-     +/
-    Replay replay;
-
-    // created
-    /++
-        UNIX timestamp of when this reparse event was created.
-     +/
-    long created;
-
-    /++
-        Constructor taking a [core.thread.fiber.Fiber] and a [Replay].
-     +/
-    this(Fiber fiber, Replay replay) @safe
-    {
-        import std.datetime.systime : Clock;
-
-        created = Clock.currTime.toUnixTime;
-        this.fiber = fiber;
-        this.replay = replay;
-    }
-}
-
-
-// Reparse2
-/++
-    An event to be reparsed from the context of the main loop after having
-    re-postprocessed it.
-
-    With this plugins get an ability to postprocess on demand, which is needed
-    to apply user classes to stored events, such as those saved before issuing
-    WHOIS queries.
- +/
-struct Reparse2
 {
     // dg
     /++
-        FIXME
+        Delegate to call after reparsing.
      +/
     void delegate(Replay) dg;
 

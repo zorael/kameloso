@@ -1231,8 +1231,7 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
             {
                 plugin.onEvent(event);
                 if (plugin.state.hasReplays) processReplays(instance, plugin);
-                version(none) if (plugin.state.reparses.length) processReparses(instance, plugin);
-                if (plugin.state.reparses2.length) processReparses2(instance, plugin);
+                if (plugin.state.reparses.length) processReparses(instance, plugin);
                 processAwaitingDelegates(plugin, event);
                 processAwaitingFibers(plugin, event);
                 if (*instance.abort) return;  // handled in mainLoop listenerloop
@@ -1611,7 +1610,6 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
         instance = Reference to the current bot instance.
         plugin = The current [kameloso.plugins.common.core.IRCPlugin].
  +/
-version(none)
 void processReparses(ref Kameloso instance, IRCPlugin plugin)
 {
     import lu.string : NomException;
@@ -1621,96 +1619,6 @@ void processReparses(ref Kameloso instance, IRCPlugin plugin)
     import core.thread : Fiber;
 
     foreach (immutable i, reparse; plugin.state.reparses)
-    {
-        version(WithPersistenceService)
-        {
-            // Postprocessing will reapply class, but not if there is already
-            // a custom class (assuming channel cache hit)
-            reparse.replay.event.sender.class_ = IRCUser.Class.unset;
-            reparse.replay.event.target.class_ = IRCUser.Class.unset;
-        }
-
-        try
-        {
-            foreach (postprocessor; instance.plugins)
-            {
-                postprocessor.postprocess(reparse.replay.event);
-            }
-        }
-        catch (NomException e)
-        {
-            enum pattern = "Nom Exception postprocessing %s.state.reparses[%d]: " ~
-                `tried to nom "%s%s%s" with "%3$s%6$s%5$s"`;
-            logger.warningf(pattern, plugin.name, i, Tint.log, e.haystack, Tint.warning, e.needle);
-            printEventDebugDetails(reparse.replay.event, reparse.replay.event.raw);
-            version(PrintStacktraces) logger.trace(e.info);
-        }
-        catch (UTFException e)
-        {
-            enum pattern = "UTFException postprocessing %s.state.reparses[%d]: %s%s";
-            logger.warningf(pattern, plugin.name, i, Tint.log, e.msg);
-            version(PrintStacktraces) logger.trace(e.info);
-        }
-        catch (UnicodeException e)
-        {
-            enum pattern = "UnicodeException postprocessing %s.state.reparses[%d]: %s%s";
-            logger.warningf(pattern, plugin.name, i, Tint.log, e.msg);
-            version(PrintStacktraces) logger.trace(e.info);
-        }
-        catch (Exception e)
-        {
-            enum pattern = "Exception postprocessing %s.state.reparses[%d]: %s%s";
-            logger.warningf(pattern, plugin.name, i, Tint.log, e.msg);
-            printEventDebugDetails(reparse.replay.event, reparse.replay.event.raw);
-            version(PrintStacktraces) logger.trace(e);
-        }
-
-        if (reparse.isCarrying)
-        {
-            reparse.carryingFiber.payload = reparse;
-        }
-
-        try
-        {
-            reparse.fiber.call();
-        }
-        catch (Exception e)
-        {
-            enum pattern = "Exception %s.state.reparses[%d]: %s%s";
-            logger.warningf(pattern, plugin.name, i, Tint.log, e.msg);
-            printEventDebugDetails(reparse.replay.event, reparse.replay.event.raw);
-            version(PrintStacktraces) logger.trace(e);
-        }
-
-        assert((reparse.fiber.state == Fiber.State.TERM), "Undead Reparser Fiber");
-
-        destroy(reparse);
-        GC.free(&reparse);
-    }
-
-    // All reparses guaranteed exhausted
-    plugin.state.reparses = null;
-}
-
-
-// processReparses2
-/++
-    Handles the reparse queue, re-postprocessing ("reparsing") events from the
-    current (main loop) context, outside of any plugin.
-
-    Params:
-        instance = Reference to the current bot instance.
-        plugin = The current [kameloso.plugins.common.core.IRCPlugin].
- +/
-void processReparses2(ref Kameloso instance, IRCPlugin plugin)
-{
-    import lu.string : NomException;
-    import std.utf : UTFException;
-    import core.exception : UnicodeException;
-    import core.memory : GC;
-    import core.thread : Fiber;
-
-    foreach (immutable i, reparse; plugin.state.reparses2)
     {
         version(WithPersistenceService)
         {
@@ -1775,7 +1683,7 @@ void processReparses2(ref Kameloso instance, IRCPlugin plugin)
     }
 
     // All reparses guaranteed exhausted
-    plugin.state.reparses2 = null;
+    plugin.state.reparses = null;
 }
 
 

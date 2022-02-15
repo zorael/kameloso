@@ -379,30 +379,6 @@ void enqueue(Fn)
 }
 
 
-// reparse
-/++
-    Queues a [core.thread.fiber.Fiber] (actually a [kameloso.thread.CarryingFiber]
-    with a [kameloso.plugins.common.core.Reparse] payload) to reparse a passed [kameloso.plugins.common.core.Replay] from the
-    context of the main loop after postprocessing the event once more.
-
-    Params:
-        plugin = The current [kameloso.plugins.common.core.IRCPlugin].
-        dg = Delegate/function pointer to wrap the [core.thread.fiber.Fiber] around.
-        replay = The [kameloso.plugins.common.core.Replay] to reparse.
- +/
-version(none)
-void reparse(Dg)(IRCPlugin plugin, Dg dg, Replay replay)
-if (isSomeFunction!Dg)
-in ((dg !is null), "Tried to queue a reparse with a null delegate pointer")
-in ((replay.event != IRCEvent.init), "Tried to queue a reparse of an init `Replay`")
-{
-    import kameloso.constants : BufferSize;
-    import kameloso.thread : CarryingFiber;
-
-    plugin.state.reparses ~= Reparse(new CarryingFiber!Reparse(dg, BufferSize.fiberStack), replay);
-}
-
-
 // reparse2
 /++
     Queues a [core.thread.fiber.Fiber] (actually a [kameloso.thread.CarryingFiber]
@@ -414,14 +390,14 @@ in ((replay.event != IRCEvent.init), "Tried to queue a reparse of an init `Repla
         dg = Delegate/function pointer to wrap the [core.thread.fiber.Fiber] around.
         replay = The [kameloso.plugins.common.core.Replay] to reparse.
  +/
-void reparse2(IRCPlugin plugin, void delegate(Replay) dg, Replay replay)
+void reparse(IRCPlugin plugin, void delegate(Replay) dg, Replay replay)
 in ((dg !is null), "Tried to queue a reparse with a null delegate pointer")
 in ((replay.event != IRCEvent.init), "Tried to queue a reparse of an init `Replay`")
 {
     import kameloso.constants : BufferSize;
     import kameloso.thread : CarryingFiber;
 
-    plugin.state.reparses2 ~= Reparse2(dg, replay);
+    plugin.state.reparses ~= Reparse(dg, replay);
 }
 
 
