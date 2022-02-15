@@ -203,8 +203,7 @@ unittest
     }
     else
     {
-        import std.math : approxEqual;
-        alias isClose = approxEqual;
+        import std.math : isClose = approxEqual;
     }
 
     import std.conv : text;

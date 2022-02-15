@@ -110,8 +110,9 @@ in ((dg !is null), "Tried to delay a null delegate")
 /++
     Removes a [core.thread.fiber.Fiber] from being called at any point later.
 
-    Updates the `nextScheduledTimestamp` UNIX timestamp so that the main loop knows
-    when to process the array of [core.thread.fiber.Fiber]s.
+    Updates the `nextScheduledTimestamp` UNIX timestamp (by way of
+    [kameloso.plugins.common.core.IRCPluginState.updateSchedule]) so that the
+    main loop knows when to process the array of [core.thread.fiber.Fiber]s.
 
     Do not destroy and free the removed [core.thread.fiber.Fiber], as it may be reused.
 
@@ -372,9 +373,9 @@ in ((dg !is null), "Tried to set up a null delegate to await events")
     [dialect.defs.IRCEvent.Type] type. Implementation template.
 
     Params:
-        plugin = The current [kameloso.plugins.common.core.IRCPlugin].
         thing = Thing to dequeue from being executed when the next
             [dialect.defs.IRCEvent] of type `type` comes along.
+        aa = Associative array to remove entries from.
         type = The kind of [dialect.defs.IRCEvent] that would trigger the
             passed awaiting thing.
 
