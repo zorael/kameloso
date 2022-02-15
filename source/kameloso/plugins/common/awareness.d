@@ -978,8 +978,9 @@ void onChannelAwarenessSelfpart(IRCPlugin plugin, const ref IRCEvent event)
     nickloop:
     foreach (immutable nickname; channel.users.byKey)
     {
-        foreach (const stateChannel; plugin.state.channels)
+        foreach (immutable stateChannelName, const stateChannel; plugin.state.channels)
         {
+            if (stateChannelName == event.channel) continue;
             if (nickname in stateChannel.users) continue nickloop;
         }
 
