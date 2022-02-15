@@ -3082,8 +3082,6 @@ int run(string[] args)
     if (*instance.abort)
     {
         // Ctrl+C
-        logger.error("Aborting...");
-
         version(Posix)
         {
             if (signalRaised > 0) attempt.retval = (128 + signalRaised);
@@ -3091,13 +3089,21 @@ int run(string[] args)
 
         if (attempt.retval == 0)
         {
-            // Pass through any specific values, set to 1 if unset
+            // Pass through any specific values, set to failure if unset
             attempt.retval = ShellReturnValue.failure;
         }
     }
-    else if (!attempt.silentExit)
+
+    if (!instance.settings.headless)
     {
-        logger.info("Exiting...");
+        if (*instance.abort)
+        {
+            logger.error("Aborting...");
+        }
+        else if (!attempt.silentExit)
+        {
+            logger.info("Exiting...");
+        }
     }
 
     return attempt.retval;
