@@ -551,7 +551,7 @@ in (user.nickname.length, "Tried to get `idOf` a user with an empty nickname")
     See_Also:
         [getUser]
  +/
-string idOf()(IRCPlugin plugin, const string nickname) pure @safe /*nothrow*/ @nogc
+auto idOf(IRCPlugin plugin, const string nickname)
 {
     immutable user = getUser(plugin, nickname);
     return idOf(user);
@@ -599,7 +599,7 @@ unittest
         passed plugin's arrays. A minimally viable [dialect.defs.IRCUser] if
         none was found.
  +/
-IRCUser getUser()(IRCPlugin plugin, const string nickname) pure @safe /*nothrow*/ @nogc
+auto getUser(IRCPlugin plugin, const string nickname)
 {
     if (const user = nickname in plugin.state.users)
     {
