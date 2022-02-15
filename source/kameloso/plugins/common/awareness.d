@@ -153,7 +153,7 @@ mixin template MinimalAuthentication(
 void onMinimalAuthenticationAccountInfoTarget(IRCPlugin plugin, const ref IRCEvent event) @system
 {
     import kameloso.plugins.common.misc : catchUser;
-    import kameloso.plugins.common.mixins : Repeater;
+    import kameloso.plugins.common.mixins : Reparser;
 
     // Catch the user here, before replaying anything.
     plugin.catchUser(event.target);
@@ -170,7 +170,7 @@ void onMinimalAuthenticationAccountInfoTarget(IRCPlugin plugin, const ref IRCEve
 
     if (!replaysForNickname.length) return;
 
-    mixin Repeater;
+    mixin Reparser;
 
     foreach (immutable i, replay; *replaysForNickname)
     {
@@ -178,7 +178,7 @@ void onMinimalAuthenticationAccountInfoTarget(IRCPlugin plugin, const ref IRCEve
 
         if ((event.time - replay.when) <= Timeout.whoisRetry)
         {
-            repeat(replay);
+            reparse(replay);
         }
     }
 }
@@ -193,7 +193,7 @@ void onMinimalAuthenticationAccountInfoTarget(IRCPlugin plugin, const ref IRCEve
  +/
 void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const ref IRCEvent event) @system
 {
-    import kameloso.plugins.common.mixins : Repeater;
+    import kameloso.plugins.common.mixins : Reparser;
 
     if (event.aux != "WHOIS") return;
 
@@ -202,13 +202,13 @@ void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const ref IRCE
     // they're just Permissions.ignore plus a WHOIS lookup just in case
     // Then clear everything
 
-    mixin Repeater;
+    mixin Reparser;
 
     foreach (replaysForNickname; plugin.state.replays)
     {
         foreach (replay; replaysForNickname)
         {
-            repeat(replay);
+            reparse(replay);
         }
     }
 
