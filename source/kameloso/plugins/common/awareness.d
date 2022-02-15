@@ -176,7 +176,11 @@ void onMinimalAuthenticationAccountInfoTarget(IRCPlugin plugin, const ref IRCEve
     {
         import kameloso.constants : Timeout;
 
-        if ((event.time - replay.when) <= Timeout.whoisRetry)
+        if ((event.time - replay.when) >= Timeout.whoisDiscard)
+        {
+            // Stale entry
+        }
+        else
         {
             reparse(replay);
         }

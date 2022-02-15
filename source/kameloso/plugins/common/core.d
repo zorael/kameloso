@@ -2413,46 +2413,11 @@ unittest
  +/
 struct Reparse
 {
-private:
-    import kameloso.thread : CarryingFiber;
-    import core.thread : Fiber;
-
-    alias This = typeof(this);
-
-public:
-    // fiber
+    // dg
     /++
-        [core.thread.fiber.Fiber] to call to invoke this reparse.
+        Delegate to call after reparsing.
      +/
-    Fiber fiber;
-
-    // carryingFiber
-    /++
-        Returns [fiber] as a [kameloso.thread.CarryingFiber], blindly assuming
-        it can be cast thus.
-
-        Returns:
-            [fiber], cast as a [kameloso.thread.CarryingFiber]![Reparse].
-     +/
-    CarryingFiber!This carryingFiber() pure inout @nogc @property
-    {
-        auto carrying = cast(CarryingFiber!This)fiber;
-        assert(carrying, "Tried to get a `CarryingFiber!Reparse` out of a normal Fiber");
-        return carrying;
-    }
-
-    // isCarrying
-    /++
-        Returns whether or not [fiber] is actually a
-        [kameloso.thread.CarryingFiber]![Reparse].
-
-        Returns:
-            `true` if it is of such a subclass, `false` if not.
-     +/
-    bool isCarrying() const pure @nogc @property
-    {
-        return cast(CarryingFiber!This)fiber !is null;
-    }
+    void delegate(Replay) dg;
 
     // replay
     /++
@@ -2469,12 +2434,12 @@ public:
     /++
         Constructor taking a [core.thread.fiber.Fiber] and a [Replay].
      +/
-    this(Fiber fiber, Replay replay) @safe
+    this(void delegate(Replay) dg, Replay replay) @safe
     {
         import std.datetime.systime : Clock;
 
         created = Clock.currTime.toUnixTime;
-        this.fiber = fiber;
+        this.dg = dg;
         this.replay = replay;
     }
 }

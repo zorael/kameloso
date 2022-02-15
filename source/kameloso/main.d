@@ -1642,18 +1642,21 @@ void processReparses(ref Kameloso instance, IRCPlugin plugin)
             logger.warningf(pattern, plugin.name, i, Tint.log, e.haystack, Tint.warning, e.needle);
             printEventDebugDetails(reparse.replay.event, reparse.replay.event.raw);
             version(PrintStacktraces) logger.trace(e.info);
+            continue;
         }
         catch (UTFException e)
         {
             enum pattern = "UTFException postprocessing %s.state.reparses[%d]: %s%s";
             logger.warningf(pattern, plugin.name, i, Tint.log, e.msg);
             version(PrintStacktraces) logger.trace(e.info);
+            continue;
         }
         catch (UnicodeException e)
         {
             enum pattern = "UnicodeException postprocessing %s.state.reparses[%d]: %s%s";
             logger.warningf(pattern, plugin.name, i, Tint.log, e.msg);
             version(PrintStacktraces) logger.trace(e.info);
+            continue;
         }
         catch (Exception e)
         {
@@ -1661,16 +1664,14 @@ void processReparses(ref Kameloso instance, IRCPlugin plugin)
             logger.warningf(pattern, plugin.name, i, Tint.log, e.msg);
             printEventDebugDetails(reparse.replay.event, reparse.replay.event.raw);
             version(PrintStacktraces) logger.trace(e);
+            continue;
         }
 
-        if (reparse.isCarrying)
-        {
-            reparse.carryingFiber.payload = reparse;
-        }
+        // If we're here no exceptions were thrown
 
         try
         {
-            reparse.fiber.call();
+            reparse.dg(reparse.replay);
         }
         catch (Exception e)
         {
@@ -1679,11 +1680,6 @@ void processReparses(ref Kameloso instance, IRCPlugin plugin)
             printEventDebugDetails(reparse.replay.event, reparse.replay.event.raw);
             version(PrintStacktraces) logger.trace(e);
         }
-
-        assert((reparse.fiber.state == Fiber.State.TERM), "Undead Reparser Fiber");
-
-        destroy(reparse);
-        GC.free(&reparse);
     }
 
     // All reparses guaranteed exhausted

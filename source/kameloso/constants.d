@@ -343,6 +343,14 @@ enum Timeout
     whoisRetry = 30,
 
     /++
+        How long a replayable event is expected to be relevant. Before this it
+        will be replayed, after this it will be discarded.
+
+        Note: WHOIS-replays will break if the ping toward the server reaches this value.
+     +/
+    whoisDiscard = 10,
+
+    /++
         How long to wait after encountering an error when reading from the server,
         before trying anew.
 
