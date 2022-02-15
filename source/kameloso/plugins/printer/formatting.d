@@ -590,11 +590,9 @@ if (isOutputRange!(Sink, char[]))
      +/
     FG colourByHash(const string nickname)
     {
-        import std.traits : EnumMembers;
+        enum foregroundMembersLength = __traits(allMembers, TerminalForeground).length;
 
-        alias foregroundMembers = EnumMembers!TerminalForeground;
-
-        static immutable TerminalForeground[foregroundMembers.length+(-3)] fgBright =
+        static immutable TerminalForeground[foregroundMembersLength+(-3)] fgBright =
         [
             //FG.default_,
             FG.black,
@@ -615,7 +613,7 @@ if (isOutputRange!(Sink, char[]))
             //FG.white,
         ];
 
-        static immutable TerminalForeground[foregroundMembers.length+(-3)] fgDark =
+        static immutable TerminalForeground[foregroundMembersLength+(-3)] fgDark =
         [
             //FG.default_,
             //FG.black,

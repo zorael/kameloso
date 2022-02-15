@@ -1118,9 +1118,9 @@ mixin template IRCPluginImpl(
     public this(IRCPluginState state) @system
     {
         import lu.traits : isSerialisable;
-        import std.traits : EnumMembers, hasUDA;
+        import std.traits : hasUDA;
 
-        enum numEventTypes = EnumMembers!(IRCEvent.Type).length;
+        enum numEventTypes = __traits(allMembers, IRCEvent.Type).length;
 
         this.state = state;
         this.state.awaitingFibers = state.awaitingFibers.dup;
