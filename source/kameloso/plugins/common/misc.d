@@ -59,10 +59,8 @@ bool applyCustomSettings(IRCPlugin[] plugins,
             continue;
         }
 
-        import std.uni : toLower;
-
         string slice = line;  // mutable
-        string pluginstring = slice.nom!(Yes.decode)(".").toLower;  // mutable
+        string pluginstring = slice.nom!(Yes.decode)(".");  // mutable
         immutable setting = slice.nom!(Yes.inherit, Yes.decode)('=');
         immutable value = slice;
 
