@@ -166,7 +166,6 @@ if ((Things.length > 0) && allSatisfy!(isAggregateType, Things))
             {
                 // Threading and/or otherwise forgot to assign pointer `kameloso.common.settings`
                 // It will be wrong but initialise it here so we at least don't crash
-                //logger.warning("Tried to call `printObjects` with an uninitialised `kameloso.common.settings`!");
                 kameloso.common.settings = new typeof(*kameloso.common.settings);
             }
 
