@@ -446,7 +446,7 @@ mixin template IRCPluginImpl(
      +/
     private void onEventImpl(/*const*/ IRCEvent origEvent) @system
     {
-        mixin("static import thisModule = " ~ module_ ~ ";");
+        mixin("static import thisModule = ", module_, ";");
 
         /++
             Verifies that annotations are as expected.
@@ -1518,7 +1518,7 @@ mixin template IRCPluginImpl(
             import std.meta : Filter;
             import std.traits : getUDAs, isSomeFunction;
 
-            mixin("static import thisModule = " ~ module_ ~ ";");
+            mixin("static import thisModule = ", module_, ";");
 
             alias funs = Filter!(isSomeFunction, getSymbolsByUDA!(thisModule, IRCEventHandler));
 
