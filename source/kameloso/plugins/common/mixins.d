@@ -898,7 +898,7 @@ mixin template Reparser(
         import kameloso.common : Tint, logger;
         import lu.string : beginsWith;
 
-        enum pattern = "The %s%s%s %s replaying %1$s%5$s%3$s-level event (invoking %1$s%6$s%3$s) " ~
+        enum pattern = "%s%s%s %s replaying %1$s%5$s%3$s-level event (invoking %1$s%6$s%3$s) " ~
             "based on WHOIS results: user %1$s%7$s%3$s is %1$s%8$s%3$s class";
 
         immutable caller = replay.caller.beginsWith("kameloso.plugins.") ?
@@ -926,7 +926,7 @@ mixin template Reparser(
         import kameloso.common : Tint, logger;
         import lu.string : beginsWith;
 
-        enum pattern = "The %s%s%s %s is %9$sNOT%3$s replaying %1$s%5$s%3$s-level event " ~
+        enum pattern = "%s%s%s %s %9$sNOT%3$s replaying %1$s%5$s%3$s-level event " ~
             "(which would have invoked %1$s%6$s%3$s) " ~
             "based on WHOIS results: user %1$s%7$s%3$s is insufficient %1$s%8$s%3$s class";
 
