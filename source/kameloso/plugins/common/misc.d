@@ -397,7 +397,23 @@ in ((replay.event != IRCEvent.init), "Tried to queue a reparse of an init `Repla
     import kameloso.constants : BufferSize;
     import kameloso.thread : CarryingFiber;
 
-    plugin.state.reparses ~= Reparse(dg, replay);
+    bool foundDuplicate;
+
+    foreach (const existingReparse; plugin.state.reparses)
+    {
+        if (existingReparse.replay.event.raw == replay.event.raw)
+        {
+            // This exact event already exists in the reparse queue;
+            // the user probably just repeated it. Ignore
+        }
+        else
+        {
+            foundDuplicate = true;
+            break;
+        }
+    }
+
+    if (!foundDuplicate) plugin.state.reparses ~= Reparse(dg, replay);
 }
 
 
