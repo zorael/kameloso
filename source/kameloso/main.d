@@ -249,8 +249,16 @@ void messageFiber(ref Kameloso instance)
         /++
             Applies a `plugin.setting=value` change in setting to whichever plugin
             matches the expression.
+
+            For some reason the sending site really really wants the delegate to
+            be `@safe`, so we'll just have to cater to its whims:
+
+            Main thread message fiber received unknown Variant:
+            std.typecons.Tuple!(kameloso.thread.ThreadMessage.ChangeSetting,
+                shared(void delegate(bool) @safe), immutable(char)[]).Tuple
          +/
-        void changeSetting(ThreadMessage.ChangeSetting, shared void delegate(bool) dg, string expression)
+        void changeSetting(ThreadMessage.ChangeSetting,
+            shared(void delegate(bool) @safe) dg, string expression)
         {
             import kameloso.plugins.common.misc : applyCustomSettings;
 
