@@ -543,9 +543,6 @@ public:
     }
 
 
-    private import lu.traits : isStruct;
-    private import std.meta : allSatisfy;
-
     // propagate
     /++
         Propgates an updated struct, to `this`, [parser], and to each plugins'
@@ -556,7 +553,7 @@ public:
      +/
     //pragma(inline, true)
     void propagate(Thing)(Thing thing) pure nothrow @nogc
-    if (allSatisfy!(isStruct, Thing))
+    if (is(Thing == struct))
     {
         import std.meta : AliasSeq;
 
