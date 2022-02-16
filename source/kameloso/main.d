@@ -474,6 +474,7 @@ void messageFiber(ref Kameloso instance)
 
                     line = "WHOIS " ~ m.event.target.nickname;
                     instance.previousWhoisTimestamps[m.event.target.nickname] = now;
+                    instance.propagateWhoisTimestamps();
                 }
                 else
                 {
@@ -1739,6 +1740,7 @@ void processReplays(ref Kameloso instance, IRCPlugin plugin)
             instance.outbuffer.put(OutgoingLine("WHOIS " ~ nickname,
                 cast(Flag!"quiet")instance.settings.hideOutgoing));
             instance.previousWhoisTimestamps[nickname] = now;
+            instance.propagateWhoisTimestamps();
         }
         else
         {

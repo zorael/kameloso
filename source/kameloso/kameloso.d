@@ -589,6 +589,24 @@ public:
     }
 
 
+    // propagateWhoisTimestamps
+    /++
+        Propagates the [previousWhoisTimestamps] associative array to all plugins.
+
+        Makes a copy of it before passing it onwards; this way, plugins cannot
+        modify the original.
+     +/
+    void propagateWhoisTimestamps() pure
+    {
+        auto copy = previousWhoisTimestamps.dup;
+
+        foreach (plugin; plugins)
+        {
+            plugin.state.previousWhoisTimestamps = copy;
+        }
+    }
+
+
     // ConnectionHistoryEntry
     /++
         A record of a successful connection.

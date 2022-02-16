@@ -2174,6 +2174,14 @@ public:
         }
     }
 
+    // previousWhoisTimestamps
+    /++
+        A copy of the main thread's `previousWhoisTimestamps` associative arrays
+        of UNIX timestamps of when someone had a WHOIS query aimed at them, keyed
+        by nickname.
+     +/
+    long[string] previousWhoisTimestamps;
+
     // updates
     /++
         Bitfield of in what way the plugin state was altered during postprocessing
