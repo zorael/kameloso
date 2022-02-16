@@ -351,6 +351,12 @@ enum Timeout
     whoisDiscard = 10,
 
     /++
+        The length of the window in which replays may be queued before the timer
+        towards [whoisRetry] kicks in.
+     +/
+    whoisGracePeriod = 3,
+
+    /++
         How long to wait after encountering an error when reading from the server,
         before trying anew.
 
