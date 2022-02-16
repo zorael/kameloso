@@ -1537,7 +1537,8 @@ mixin template IRCPluginImpl(
 
             string slice = module_[17..$];  // mutable
             immutable dotPos = slice.indexOf('.');
-            return (dotPos == -1) ? slice : slice[0..dotPos];
+            if (dotPos == -1) return slice;
+            return (slice[dotPos+1..$] == "base") ? slice[0..dotPos] : slice[dotPos+1..$];
         }
         else
         {
