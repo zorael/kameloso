@@ -338,6 +338,49 @@ in ((fn !is null), "Tried to `enqueue` with a null function pointer")
     immutable user = event.sender.isServer ? event.target : event.sender;
     assert(user.nickname.length, "Bad user derived in `enqueue` (no nickname)");
 
+    version(ExplainReplay)
+    {
+        import kameloso.common : Tint, logger;
+        import lu.string : beginsWith;
+
+        immutable callerSlice = caller.beginsWith("kameloso.plugins.") ?
+            caller[17..$] :
+            caller;
+    }
+
+    if (const previousWhoisTimestamp = user.nickname in plugin.state.previousWhoisTimestamps)
+    {
+        import kameloso.constants : Timeout;
+        import std.datetime.systime : Clock;
+
+        immutable now = Clock.currTime.toUnixTime;
+        immutable delta = (now - *previousWhoisTimestamp);
+
+        if ((delta < Timeout.whoisRetry) && (delta > Timeout.whoisGracePeriod))
+        {
+            version(ExplainReplay)
+            {
+                enum pattern = "%s%s%s plugin %6$sNOT%3$s queueing an event to be replayed " ~
+                    "on behalf of %1$s%4$s%3$s; delta time %1$s%5$d%3$s";
+
+                logger.logf(pattern,
+                    Tint.info, plugin.name, Tint.log,
+                    callerSlice,
+                    delta,
+                    Tint.warning);
+            }
+            return;
+        }
+    }
+
+    version(ExplainReplay)
+    {
+        enum pattern = "%s%s%s plugin queueing an event to be replayed " ~
+            "on behalf of %1$s%4$s%3$s";
+
+        logger.logf(pattern, Tint.info, plugin.name, Tint.log, callerSlice);
+    }
+
     static if (is(SubPlugin == typeof(null)))
     {
         plugin.state.replays[user.nickname] ~=
