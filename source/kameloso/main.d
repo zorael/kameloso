@@ -2462,7 +2462,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                 {
                     // We probably saw an instant disconnect before even getting to RPL_WELCOME
                     // Quickly attempt again
-                    gracePeriodBeforeReconnect = 500.msecs;
+                    gracePeriodBeforeReconnect = Timeout.twitchRegistrationFailConnectionRetryMsecs.msecs;
                 }
             }
 

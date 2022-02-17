@@ -335,6 +335,12 @@ enum Timeout
     connectionRetry = 10,
 
     /++
+        The amount of seconds to wait before retrying to connect after an instant
+        failure to register on Twitch.
+     +/
+    twitchRegistrationFailConnectionRetryMsecs = 500,
+
+    /++
         How long to wait before allowing to re-issue a WHOIS query for a user.
 
         This is merely to stop us from spamming queries for the same person
