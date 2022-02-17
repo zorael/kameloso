@@ -1174,16 +1174,20 @@ mixin template IRCPluginImpl(
 
         enum numEventTypes = __traits(allMembers, IRCEvent.Type).length;
 
+        // Inherit select members of state by zeroing out what we don't want
         this.state = state;
-        this.state.awaitingFibers = state.awaitingFibers.dup;
+        this.state.awaitingFibers = null;
         this.state.awaitingFibers.length = numEventTypes;
-        this.state.awaitingDelegates = state.awaitingDelegates.dup;
+        this.state.awaitingDelegates = null;
         this.state.awaitingDelegates.length = numEventTypes;
-        this.state.replays = state.replays.dup;
-        this.state.hasReplays = state.hasReplays;
-        this.state.reparses = state.reparses.dup;
-        this.state.scheduledFibers = state.scheduledFibers.dup;
-        this.state.scheduledDelegates = state.scheduledDelegates.dup;
+        this.state.replays = null;
+        this.state.hasReplays = false;
+        this.state.reparses = null;
+        this.state.scheduledFibers = null;
+        this.state.scheduledDelegates = null;
+        this.state.nextScheduledTimestamp = long.max;
+        //this.state.previousWhoisTimestamps = null;  // keep
+        this.updates = IRCPluginState.Updates.nothing;
 
         foreach (immutable i, ref member; this.tupleof)
         {
