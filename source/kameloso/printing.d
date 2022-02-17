@@ -293,8 +293,8 @@ private struct FormatStringMemberArguments
         args = Argument aggregate for easier passing.
         content = The contents of the string member we're describing.
  +/
-private void formatStringMemberImpl(Flag!"coloured" coloured, Sink, Args, T)
-    (auto ref Sink sink, const Args args, T content)
+private void formatStringMemberImpl(Flag!"coloured" coloured, T, Sink)
+    (auto ref Sink sink, const FormatStringMemberArguments args, const auto ref T content)
 {
     import std.format : formattedWrite;
 
@@ -370,8 +370,8 @@ private struct FormatArrayMemberArguments
         args = Argument aggregate for easier passing.
         content = The associative array we're describing.
  +/
-private void formatArrayMemberImpl(Flag!"coloured" coloured, Sink, Args, T)
-    (auto ref Sink sink, Args args, T content)
+private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
+    (auto ref Sink sink, const FormatArrayMemberArguments args, const auto ref T content)
 {
     import std.format : formattedWrite;
 
@@ -452,10 +452,10 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, Sink, Args, T)
         coloured = Whether or no to display terminal colours.
         sink = Output range to store output in.
         args = Argument aggregate for easier passing.
-        content = The array we're describing.
+        content = The array we're describing.auto ref
  +/
-private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, Sink, Args, T)
-    (auto ref Sink sink, Args args, T content)
+private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
+    (auto ref Sink sink, const FormatArrayMemberArguments args, const auto ref T content)
 {
     import std.format : formattedWrite;
 
@@ -558,8 +558,8 @@ private struct FormatAggregateMemberArguments
         sink = Output range to store output in.
         args = Argument aggregate for easier passing.
  +/
-private void formatAggregateMemberImpl(Flag!"coloured" coloured, Sink, Args)
-    (auto ref Sink sink, Args args)
+private void formatAggregateMemberImpl(Flag!"coloured" coloured, Sink)
+    (auto ref Sink sink, const FormatAggregateMemberArguments args)
 {
     import std.format : formattedWrite;
 
@@ -625,8 +625,8 @@ private struct FormatOtherMemberArguments
         args = Argument aggregate for easier passing.
         content = The value we're describing.
  +/
-private void formatOtherMemberImpl(Flag!"coloured" coloured, Sink, Args, T)
-    (auto ref Sink sink, Args args, T content)
+private void formatOtherMemberImpl(Flag!"coloured" coloured, T, Sink)
+    (auto ref Sink sink, const FormatOtherMemberArguments args, const auto ref T content)
 {
     import std.format : formattedWrite;
 
@@ -737,7 +737,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
                 args.typewidth = typewidth;
                 args.namewidth = namewidth + namePadding;
                 args.bright = bright;
-                formatStringMemberImpl!coloured(sink, args, __traits(getMember, thing, memberstring));
+                formatStringMemberImpl!(coloured, T)(sink, args, __traits(getMember, thing, memberstring));
             }
             else static if (isArray!T || isAssociativeArray!T)
             {
@@ -762,12 +762,13 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
                         is(ElemType == wchar);
 
                     args.elemIsCharacter = elemIsCharacter;
-                    formatArrayMemberImpl!coloured(sink, args,
+                    formatArrayMemberImpl!(coloured, T)(sink, args,
                         __traits(getMember, thing, memberstring));
                 }
                 else /*static if (isAssociativeArray!T)*/
                 {
-                    formatAssociativeArrayMemberImpl!coloured(sink, args,
+                    // Can't pass T for some reason, nor UnqualArray
+                    formatAssociativeArrayMemberImpl!(coloured, T)(sink, args,
                         __traits(getMember, thing, memberstring));
                 }
             }
@@ -802,8 +803,6 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
             }
             else
             {
-                import std.traits : Unqual;
-
                 FormatOtherMemberArguments args;
                 args.typestring = T.stringof;
                 args.memberstring = memberstring;
@@ -811,7 +810,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
                 args.namewidth = namewidth + namePadding;
                 args.bright = bright;
 
-                formatOtherMemberImpl!coloured(sink, args, __traits(getMember, thing, memberstring));
+                formatOtherMemberImpl!(coloured, T)(sink, args, __traits(getMember, thing, memberstring));
             }
         }
     }
