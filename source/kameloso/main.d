@@ -802,6 +802,7 @@ Next mainLoop(ref Kameloso instance)
         if ((nowInUnix % 86_400) == 0)
         {
             instance.previousWhoisTimestamps = null;
+            instance.propagateWhoisTimestamps();
         }
 
         // Call the generator, query it for event lines
