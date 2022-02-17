@@ -751,8 +751,9 @@ Next mainLoop(ref Kameloso instance)
             return Next.retry;
         }
 
-        immutable nowInUnix = Clock.currTime.toUnixTime;
-        immutable nowInHnsecs = Clock.currStdTime;
+        immutable now = Clock.currTime;
+        immutable nowInUnix = now.toUnixTime;
+        immutable nowInHnsecs = now.stdTime;
 
         /// The timestamp of the next scheduled delegate or fiber across all plugins.
         long nextGlobalScheduledTimestamp;
