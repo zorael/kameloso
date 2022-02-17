@@ -2147,7 +2147,7 @@ public:
         The UNIX timestamp of when the next scheduled
         [kameloso.thread.ScheduledFiber] or delegate should be triggered.
      +/
-    long nextScheduledTimestamp;
+    long nextScheduledTimestamp = long.max;
 
     // updateSchedule
     /++
