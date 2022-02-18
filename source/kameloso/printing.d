@@ -707,7 +707,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
     {
         import lu.traits : isSerialisable;
         import lu.uda : Hidden, Unserialisable;
-        import std.traits : hasUDA, isAggregateType, isAssociativeArray, isSomeFunction, isType;
+        import std.traits : hasUDA, isSomeFunction, isType;
 
         enum namePadding = 2;
 
@@ -725,7 +725,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
                 !hasUDA!(__traits(getMember, thing, memberstring), Unserialisable))))
         {
             import lu.traits : isTrulyString;
-            import std.traits : isArray;
+            import std.traits : isAggregateType, isArray, isAssociativeArray;
 
             alias T = Unqual!(typeof(__traits(getMember, thing, memberstring)));
 
