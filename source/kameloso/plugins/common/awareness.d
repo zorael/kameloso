@@ -153,36 +153,33 @@ mixin template MinimalAuthentication(
 void onMinimalAuthenticationAccountInfoTarget(IRCPlugin plugin, const ref IRCEvent event) @system
 {
     import kameloso.plugins.common.misc : catchUser;
-    import kameloso.plugins.common.mixins : Reparser;
 
     // Catch the user here, before replaying anything.
     plugin.catchUser(event.target);
 
     // See if there are any queued replays to trigger
-    auto replaysForNickname = event.target.nickname in plugin.state.replays;
+    auto replaysForNickname = event.target.nickname in plugin.state.pendingReplays;
     if (!replaysForNickname) return;
 
     scope(exit)
     {
-        plugin.state.replays.remove(event.target.nickname);
-        plugin.state.hasReplays = (plugin.state.replays.length > 0);
+        plugin.state.pendingReplays.remove(event.target.nickname);
+        plugin.state.hasPendingReplays = (plugin.state.pendingReplays.length > 0);
     }
 
     if (!replaysForNickname.length) return;
-
-    mixin Reparser;
 
     foreach (immutable i, replay; *replaysForNickname)
     {
         import kameloso.constants : Timeout;
 
-        if ((event.time - replay.when) >= Timeout.whoisDiscard)
+        if ((event.time - replay.timestamp) >= Timeout.whoisDiscard)
         {
             // Stale entry
         }
         else
         {
-            reparse(replay);
+            plugin.state.readyReplays ~= replay;
         }
     }
 }
@@ -197,8 +194,6 @@ void onMinimalAuthenticationAccountInfoTarget(IRCPlugin plugin, const ref IRCEve
  +/
 void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const ref IRCEvent event) @system
 {
-    import kameloso.plugins.common.mixins : Reparser;
-
     if (event.aux != "WHOIS") return;
 
     // We're on a server that doesn't support WHOIS
@@ -206,18 +201,16 @@ void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const ref IRCE
     // they're just Permissions.ignore plus a WHOIS lookup just in case
     // Then clear everything
 
-    mixin Reparser;
-
-    foreach (replaysForNickname; plugin.state.replays)
+    foreach (replaysForNickname; plugin.state.pendingReplays)
     {
         foreach (replay; replaysForNickname)
         {
-            reparse(replay);
+            plugin.state.readyReplays ~= replay;
         }
     }
 
-    plugin.state.replays.clear();
-    plugin.state.hasReplays = false;
+    plugin.state.pendingReplays.clear();
+    plugin.state.hasPendingReplays = false;
 }
 
 
