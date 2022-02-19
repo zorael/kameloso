@@ -1068,7 +1068,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
  +/
 string formatObjects(Flag!"all" all = No.all,
     Flag!"coloured" coloured = Yes.coloured, Things...)
-    (const Flag!"brightTerminal" bright, Things things)
+    (const Flag!"brightTerminal" bright, auto ref Things things)
 if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))
 {
     import kameloso.constants : BufferSize;
