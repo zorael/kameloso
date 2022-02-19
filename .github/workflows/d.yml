@@ -73,8 +73,10 @@ jobs:
     - name: 'Generate documenation'
       if: matrix.dc == 'dmd-latest' && matrix.os == 'ubuntu-latest' && success()
       run: |
+        git clone https://github.com/zorael/dialect.git
+        git clone https://github.com/zorael/lu.git
         dub fetch adrdox
-        dub run adrdox -- -ip --header-title="kameloso IRC bot" source
+        dub run adrdox -- -ip --header-title="kameloso IRC bot" source dialect/source lu/source
         cp -rv .circleci generated-docs
 
     - name: 'Deploy documentation to GitHub Pages'
