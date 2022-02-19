@@ -22,6 +22,13 @@ import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
 
+version(WithChanQueriesService) {}
+else
+{
+    pragma(msg, "Note: The `Notes` plugin will work but not well without the `ChanQueries` service.");
+}
+
+
 // NotesSettings
 /++
     Notes plugin settings.
@@ -243,55 +250,6 @@ void playbackNotes(NotesPlugin plugin,
 
         // Break early if givenChannel was empty, and save us a loop and a lookup
         if (!channelName.length) break;
-    }
-}
-
-
-// onNames
-/++
-    Sends notes to a channel upon joining it.
-
-    Do nothing if version `WithChanQueriesService`, as the ChanQueries service
-    will issue WHO queries on channels shortly after joining. WHO replies carry
-    more information than NAMES replies do, so we'd just be duplicating effort
-    for worse results.
- +/
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.RPL_NAMREPLY)
-    .channelPolicy(ChannelPolicy.home)
-)
-void onNames(NotesPlugin plugin, const ref IRCEvent event)
-{
-    version(WithChanQueriesService)
-    {
-        // Do nothing
-    }
-    else
-    {
-        import dialect.common : stripModesign;
-        import lu.string : contains, nom;
-        import std.algorithm.iteration : splitter;
-
-        if (event.channel !in plugin.notes) return;
-
-        mixin Repeater;
-
-        foreach (immutable signed; event.content.splitter(' '))
-        {
-            string slice = signed.stripModesign(plugin.state.server);
-            immutable nickname = slice.contains('!') ? slice.nom('!') : slice;
-
-            if (nickname == plugin.state.client.nickname) continue;
-
-            IRCEvent fakeEvent;
-            fakeEvent.type = IRCEvent.Type.JOIN;
-            fakeEvent.sender.nickname = nickname;
-            fakeEvent.channel = event.channel;
-
-            // Use a replay to fill in known information about the user by use of Persistence
-            auto req = replay(plugin, fakeEvent, Permissions.anyone, &onReplayEvent);
-            repeat(req);
-        }
     }
 }
 
