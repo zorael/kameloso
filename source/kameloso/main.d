@@ -1241,8 +1241,8 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
             try
             {
                 plugin.onEvent(event);
-                if (plugin.state.hasReplays) processReplays(instance, plugin);
-                if (plugin.state.reparses.length) processReparses(instance, plugin);
+                if (plugin.state.hasPendingReplays) processPendingReplays(instance, plugin);
+                if (plugin.state.readyReplays.length) processReadyReplays(instance, plugin);
                 processAwaitingDelegates(plugin, event);
                 processAwaitingFibers(plugin, event);
                 if (*instance.abort) return;  // handled in mainLoop listenerloop
@@ -1612,16 +1612,16 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
 }
 
 
-// processReparses
+// processReadyReplays
 /++
-    Handles the reparse queue, re-postprocessing ("reparsing") events from the
+    Handles the queue of ready-to-replay objects, re-postprocessing events from the
     current (main loop) context, outside of any plugin.
 
     Params:
         instance = Reference to the current bot instance.
         plugin = The current [kameloso.plugins.common.core.IRCPlugin].
  +/
-void processReparses(ref Kameloso instance, IRCPlugin plugin)
+void processReadyReplays(ref Kameloso instance, IRCPlugin plugin)
 {
     import lu.string : NomException;
     import std.utf : UTFException;
@@ -1629,51 +1629,51 @@ void processReparses(ref Kameloso instance, IRCPlugin plugin)
     import core.memory : GC;
     import core.thread : Fiber;
 
-    foreach (immutable i, reparse; plugin.state.reparses)
+    foreach (immutable i, replay; plugin.state.readyReplays)
     {
         version(WithPersistenceService)
         {
             // Postprocessing will reapply class, but not if there is already
             // a custom class (assuming channel cache hit)
-            reparse.replay.event.sender.class_ = IRCUser.Class.unset;
-            reparse.replay.event.target.class_ = IRCUser.Class.unset;
+            replay.event.sender.class_ = IRCUser.Class.unset;
+            replay.event.target.class_ = IRCUser.Class.unset;
         }
 
         try
         {
             foreach (postprocessor; instance.plugins)
             {
-                postprocessor.postprocess(reparse.replay.event);
+                postprocessor.postprocess(replay.event);
             }
         }
         catch (NomException e)
         {
-            enum pattern = "Nom Exception postprocessing %s.state.reparses[%d]: " ~
+            enum pattern = "Nom Exception postprocessing %s.state.readyReplays[%d]: " ~
                 `tried to nom "%s%s%s" with "%3$s%6$s%5$s"`;
             logger.warningf(pattern, plugin.name, i, Tint.log, e.haystack, Tint.warning, e.needle);
-            printEventDebugDetails(reparse.replay.event, reparse.replay.event.raw);
+            printEventDebugDetails(replay.event, replay.event.raw);
             version(PrintStacktraces) logger.trace(e.info);
             continue;
         }
         catch (UTFException e)
         {
-            enum pattern = "UTFException postprocessing %s.state.reparses[%d]: %s%s";
+            enum pattern = "UTFException postprocessing %s.state.readyReplays[%d]: %s%s";
             logger.warningf(pattern, plugin.name, i, Tint.log, e.msg);
             version(PrintStacktraces) logger.trace(e.info);
             continue;
         }
         catch (UnicodeException e)
         {
-            enum pattern = "UnicodeException postprocessing %s.state.reparses[%d]: %s%s";
+            enum pattern = "UnicodeException postprocessing %s.state.readyReplays[%d]: %s%s";
             logger.warningf(pattern, plugin.name, i, Tint.log, e.msg);
             version(PrintStacktraces) logger.trace(e.info);
             continue;
         }
         catch (Exception e)
         {
-            enum pattern = "Exception postprocessing %s.state.reparses[%d]: %s%s";
+            enum pattern = "Exception postprocessing %s.state.readyReplays[%d]: %s%s";
             logger.warningf(pattern, plugin.name, i, Tint.log, e.msg);
-            printEventDebugDetails(reparse.replay.event, reparse.replay.event.raw);
+            printEventDebugDetails(replay.event, replay.event.raw);
             version(PrintStacktraces) logger.trace(e);
             continue;
         }
@@ -1682,36 +1682,36 @@ void processReparses(ref Kameloso instance, IRCPlugin plugin)
 
         try
         {
-            reparse.dg(reparse.replay);
+            replay.dg(replay);
         }
         catch (Exception e)
         {
-            enum pattern = "Exception %s.state.reparses[%d]: %s%s";
+            enum pattern = "Exception %s.state.readyReplays[%d]: %s%s";
             logger.warningf(pattern, plugin.name, i, Tint.log, e.msg);
-            printEventDebugDetails(reparse.replay.event, reparse.replay.event.raw);
+            printEventDebugDetails(replay.event, replay.event.raw);
             version(PrintStacktraces) logger.trace(e);
         }
     }
 
-    // All reparses guaranteed exhausted
-    plugin.state.reparses = null;
+    // All ready replays guaranteed exhausted
+    plugin.state.readyReplays = null;
 }
 
 
-// processReplays
+// processPendingReplay
 /++
-    Takes a queue of [kameloso.plugins.common.core.Replay] objects and issues WHOIS queries for each one,
-    unless it has already been done recently (within
+    Takes a queue of pending [kameloso.plugins.common.core.Replay] objects and
+    issues WHOIS queries for each one, unless it has already been done recently (within
     [kameloso.constants.Timeout.whoisRetry] seconds).
 
     Params:
         instance = Reference to the current [kameloso.kameloso.Kameloso].
         plugin = The relevant [kameloso.plugins.common.core.IRCPlugin].
  +/
-void processReplays(ref Kameloso instance, IRCPlugin plugin)
+void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
 {
-    import kameloso.common : OutgoingLine;
     import kameloso.constants : Timeout;
+    import kameloso.messaging : whois;
     import std.datetime.systime : Clock;
 
     // Walk through replays and call WHOIS on those that haven't been
@@ -1719,10 +1719,8 @@ void processReplays(ref Kameloso instance, IRCPlugin plugin)
 
     immutable now = Clock.currTime.toUnixTime;
 
-    foreach (immutable nickname, const replaysForNickname; plugin.state.replays)
+    foreach (immutable nickname, replaysForNickname; plugin.state.pendingReplays)
     {
-        assert(nickname.length, "Empty nickname in replay queue");
-
         version(TraceWhois)
         {
             import std.stdio : writef, writefln, writeln;
@@ -1738,25 +1736,27 @@ void processReplays(ref Kameloso instance, IRCPlugin plugin)
             }
         }
 
-        immutable then = instance.previousWhoisTimestamps.get(nickname, 0);
+        immutable lastWhois = instance.previousWhoisTimestamps.get(nickname, 0L);
 
-        if ((now - then) > Timeout.whoisRetry)
+        if ((now - lastWhois) > Timeout.whoisRetry)
         {
             version(TraceWhois)
             {
                 if (!instance.settings.headless) writeln(" ...and actually issuing.");
             }
 
-            instance.outbuffer.put(OutgoingLine("WHOIS " ~ nickname,
+            /*instance.outbuffer.put(OutgoingLine("WHOIS " ~ nickname,
                 cast(Flag!"quiet")instance.settings.hideOutgoing));
             instance.previousWhoisTimestamps[nickname] = now;
-            instance.propagateWhoisTimestamps();
+            instance.propagateWhoisTimestamps();*/
+
+            whois(plugin.state, nickname, Yes.force, Yes.quiet);
         }
         else
         {
             version(TraceWhois)
             {
-                writefln(" ...but already issued %d seconds ago.", (now - then));
+                writefln(" ...but already issued %d seconds ago.", (now - lastWhois));
             }
         }
     }

@@ -925,20 +925,17 @@ mixin template IRCPluginImpl(
                         writefln("   ...%s WHOIS", typeof(this).stringof);
                     }
 
-                    static if (is(Params : AliasSeq!IRCEvent) || (arity!fun == 0))
-                    {
-                        this.enqueue(event, uda.given.permissionsRequired, fun, funName);
-                        return uda.given.chainable ? NextStep.continue_ : NextStep.return_;
-                    }
-                    else static if (
+                    static if (
                         is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
                         is(Params : AliasSeq!(IRCPlugin, IRCEvent)) ||
                         is(Params : AliasSeq!(typeof(this))) ||
-                        is(Params : AliasSeq!(IRCPlugin)))
+                        is(Params : AliasSeq!IRCPlugin) ||
+                        is(Params : AliasSeq!IRCEvent) ||
+                        (arity!fun == 0))
                     {
                         // Unsure why we need to specifically specify IRCPlugin
                         // now despite typeof(this) being a subclass...
-                        this.enqueue(this, event, uda.given.permissionsRequired, fun, funName);
+                        enqueue(this, event, uda.given.permissionsRequired, fun, funName);
                         return uda.given.chainable ? NextStep.continue_ : NextStep.return_;
                     }
                     else
@@ -1180,9 +1177,9 @@ mixin template IRCPluginImpl(
         this.state.awaitingFibers.length = numEventTypes;
         this.state.awaitingDelegates = null;
         this.state.awaitingDelegates.length = numEventTypes;
-        this.state.replays = null;
-        this.state.hasReplays = false;
-        this.state.reparses = null;
+        this.state.pendingReplays = null;
+        this.state.hasPendingReplays = false;
+        this.state.readyReplays = null;
         this.state.scheduledFibers = null;
         this.state.scheduledDelegates = null;
         this.state.nextScheduledTimestamp = long.max;
@@ -2094,7 +2091,7 @@ public:
      +/
     IRCChannel[string] channels;
 
-    // replays
+    // pendingReplays
     /++
         Queued [dialect.defs.IRCEvent]s to replay.
 
@@ -2102,19 +2099,19 @@ public:
         as to know what nicks the plugin wants a WHOIS for. After the WHOIS
         response returns, the event bundled with the [Replay] will be replayed.
      +/
-    Replay[][string] replays;
+    Replay[][string] pendingReplays;
 
     // hasReplays
     /++
-        Whether or not [replays] has elements (i.e. is not empty).
+        Whether or not [pendingReplays] has elements (i.e. is not empty).
      +/
-    bool hasReplays;
+    bool hasPendingReplays;
 
-    // reparses
+    // readyReplays
     /++
-        This plugin's array of [Reparse]s to let the main loop replay after reparsing.
+        [Replay]s primed and ready to be replayed.
      +/
-    Reparse[] reparses;
+    Replay[] readyReplays;
 
     // awaitingFibers
     /++
@@ -2213,14 +2210,10 @@ public:
 
 // Replay
 /++
-    A queued event to be replayed upon a WHOIS query response.
-
-    It is abstract; all objects must be of a concrete [ReplayImpl] type.
-
-    See_Also:
-        [ReplayImpl]
+    Embodies the notion of an event to be replayed, once we know more about a user
+    (meaning after a WHOIS query response).
  +/
-abstract class Replay
+struct Replay
 {
     // caller
     /++
@@ -2240,272 +2233,31 @@ abstract class Replay
      +/
     Permissions permissionsRequired;
 
-    // when
+    // dg
+    /++
+        Delegate, whose context includes the plugin to whom this [Replay] relates.
+     +/
+    void delegate(Replay) dg;
+
+    // timestamp
     /++
         When this request was issued.
      +/
-    long when;
-
-    // trigger
-    /++
-        Replay the stored event.
-     +/
-    void trigger();
+    long timestamp;
 
     /++
         Creates a new [Replay] with a timestamp of the current time.
      +/
-    this() @safe
-    {
-        import std.datetime.systime : Clock;
-        when = Clock.currTime.toUnixTime;
-    }
-}
-
-
-// ReplayImpl
-/++
-    Implementation of the notion of a function call with a bundled payload
-    [dialect.defs.IRCEvent], used to replay a previous event.
-
-    It functions like a Command pattern object in that it stores a payload and
-    a function pointer, which we queue and issue a WHOIS query. When the response
-    returns we trigger the object and the original [dialect.defs.IRCEvent]
-    is replayed.
-
-    Params:
-        F = Some function type.
-        Payload = Optional payload type.
-
-    See_Also:
-        [Replay]
-        [replay]
- +/
-private final class ReplayImpl(Fun, Payload = typeof(null)) : Replay
-{
-@safe:
-    // fun
-    /++
-        Stored function pointer/delegate.
-     +/
-    Fun fun;
-
-    static if (!is(Payload == typeof(null)))
-    {
-        // payload
-        /++
-            Command payload aside from the [dialect.defs.IRCEvent].
-         +/
-        Payload payload;
-
-        /++
-            Create a new [ReplayImpl] with the passed variables.
-
-            Params:
-                payload = Payload of templated type `Payload` to attach to this [ReplayImpl].
-                event = [dialect.defs.IRCEvent] to attach to this [ReplayImpl].
-                permissionsRequired = The permissions level required to replay the
-                    passed function.
-                fun = Function pointer to call with the attached payloads when
-                    the replay is triggered.
-                caller = String of calling function.
-         +/
-        this(
-            Payload payload,
-            const IRCEvent event,
-            const Permissions permissionsRequired,
-            Fun fun,
-            const string caller)
-        {
-            super();
-
-            this.payload = payload;
-            this.event = event;
-            this.permissionsRequired = permissionsRequired;
-            this.fun = fun;
-            this.caller = caller;
-        }
-    }
-    else
-    {
-        /++
-            Create a new [ReplayImpl] with the passed variables.
-
-            Params:
-                event = [dialect.defs.IRCEvent] to attach to this [ReplayImpl].
-                permissionsRequired = The permissions level required to replay the
-                    passed function.
-                fun = Function pointer to call with the attached payloads when
-                    the replay is triggered.
-                caller = String of calling function.
-         +/
-        this(
-            const IRCEvent event,
-            const Permissions permissionsRequired,
-            Fun fun,
-            const string caller)
-        {
-            super();
-
-            this.event = event;
-            this.permissionsRequired = permissionsRequired;
-            this.fun = fun;
-            this.caller = caller;
-        }
-    }
-
-    // trigger
-    /++
-        Call the passed function/delegate pointer, optionally with the stored
-        [dialect.defs.IRCEvent] and/or `Payload`.
-     +/
-    override void trigger() @system
-    {
-        import lu.traits : TakesParams;
-        import std.meta : AliasSeq;
-        import std.traits : arity;
-
-        assert((fun !is null), "null fun in `" ~ typeof(this).stringof ~ '`');
-
-        static if (TakesParams!(fun, AliasSeq!(Payload, IRCEvent)))
-        {
-            fun(payload, event);
-        }
-        else static if (TakesParams!(fun, AliasSeq!Payload))
-        {
-            fun(payload);
-        }
-        else static if (TakesParams!(fun, AliasSeq!IRCEvent))
-        {
-            fun(event);
-        }
-        else static if (TakesParams!(fun, AliasSeq!(IRCPlugin, IRCEvent)))  // FIXME
-        {
-            fun(payload, event);
-        }
-        else static if (TakesParams!(fun, AliasSeq!IRCPlugin))  // FIXME
-        {
-            fun(payload);
-        }
-        else static if (arity!fun == 0)
-        {
-            fun();
-        }
-        else
-        {
-            import std.format : format;
-
-            enum pattern = "`ReplayImpl` instantiated with an invalid " ~
-                "replay function signature: `%s`";
-            static assert(0, pattern.format(Fun.stringof));
-        }
-    }
-}
-
-unittest
-{
-    Replay[] queue;
-
-    IRCEvent event;
-    event.target.nickname = "kameloso";
-    event.content = "hirrpp";
-    event.sender.nickname = "zorael";
-    Permissions pl = Permissions.admin;
-
-    // delegate()
-
-    int i = 5;
-
-    void dg()
-    {
-        ++i;
-    }
-
-    Replay reqdg = new ReplayImpl!(void delegate())(event, pl, &dg, "test");
-    queue ~= reqdg;
-
-    with (reqdg.event)
-    {
-        assert((target.nickname == "kameloso"), target.nickname);
-        assert((content == "hirrpp"), content);
-        assert((sender.nickname == "zorael"), sender.nickname);
-    }
-
-    assert(i == 5);
-    reqdg.trigger();
-    assert(i == 6);
-
-    // function()
-
-    static void fn() { }
-
-    auto reqfn = replay(event, pl, &fn);
-    queue ~= reqfn;
-
-    // delegate(ref IRCEvent)
-
-    void dg2(ref IRCEvent thisEvent)
-    {
-        thisEvent.content = "blah";
-    }
-
-    auto reqdg2 = replay(event, pl, &dg2);
-    queue ~= reqdg2;
-
-    assert((reqdg2.event.content == "hirrpp"), event.content);
-    reqdg2.trigger();
-    assert((reqdg2.event.content == "blah"), event.content);
-
-    // function(IRCEvent)
-
-    static void fn2(IRCEvent _) { }
-
-    auto reqfn2 = replay(event, pl, &fn2);
-    queue ~= reqfn2;
-
-
-}
-
-
-// Reparse
-/++
-    An event to be reparsed from the context of the main loop after having
-    re-postprocessed it.
-
-    With this plugins get an ability to postprocess on demand, which is needed
-    to apply user classes to stored events, such as those saved before issuing
-    WHOIS queries.
- +/
-struct Reparse
-{
-    // dg
-    /++
-        Delegate to call after reparsing.
-     +/
-    void delegate(Replay) dg;
-
-    // replay
-    /++
-        The [Replay] to reparse.
-     +/
-    Replay replay;
-
-    // created
-    /++
-        UNIX timestamp of when this reparse event was created.
-     +/
-    long created;
-
-    /++
-        Constructor taking a [core.thread.fiber.Fiber] and a [Replay].
-     +/
-    this(void delegate(Replay) dg, Replay replay) @safe
+    this(void delegate(Replay) dg, const ref IRCEvent event,
+        const Permissions permissionsRequired, const string caller)
     {
         import std.datetime.systime : Clock;
 
-        created = Clock.currTime.toUnixTime;
+        timestamp = Clock.currTime.toUnixTime;
         this.dg = dg;
-        this.replay = replay;
+        this.event = event;
+        this.permissionsRequired = permissionsRequired;
+        this.caller = caller;
     }
 }
 
@@ -2656,11 +2408,11 @@ enum Permissions
     *with* a subclass plugin reference attached.
 
     Params:
-        subPlugin = Subclass [IRCPlugin] to call the function pointer `fun` with
+        plugin = Subclass [IRCPlugin] to call the function pointer `fun` with
             as first argument, when the WHOIS results return.
         event = [dialect.defs.IRCEvent] that instigated the WHOIS lookup.
-        permissionsRequired = The permissions level policy to apply to the WHOIS results.
         fun = Function/delegate pointer to call upon receiving the results.
+        permissionsRequired = The permissions level policy to apply to the WHOIS results.
         caller = String name of the calling function, or something else that gives context.
 
     Returns:
@@ -2670,42 +2422,143 @@ enum Permissions
     See_Also:
         [Replay]
  +/
-Replay replay(Fun, SubPlugin)
-    (SubPlugin subPlugin,
-    const ref IRCEvent event,
-    const Permissions permissionsRequired,
-    Fun fun,
-    const string caller = __FUNCTION__) @safe
+Replay replay(Plugin, Fun)(Plugin plugin, const ref IRCEvent event,
+    Fun fun, const Permissions permissionsRequired, const string caller = __FUNCTION__)
 {
-    return new ReplayImpl!(Fun, SubPlugin)(subPlugin, event, permissionsRequired, fun, caller);
-}
+    void dg(Replay replay)
+    {
+        version(ExplainReplay)
+        void explainReplay()
+        {
+            import kameloso.common : Tint, logger;
+            import lu.string : beginsWith;
 
+            enum pattern = "%s%s%s replaying %1$s%4$s%3$s-level event (invoking %1$s%5$s%3$s) " ~
+                "based on WHOIS results: user %1$s%6$s%3$s is %1$s%7$s%3$s class";
 
-// replay
-/++
-    Convenience function that returns a [ReplayImpl] of the right type,
-    *without* a subclass plugin reference attached.
+            immutable caller = replay.caller.beginsWith("kameloso.plugins.") ?
+                replay.caller[17..$] :
+                replay.caller;
 
-    Params:
-        event = [dialect.defs.IRCEvent] that instigated the WHOIS lookup.
-        permissionsRequired = The permissions level policy to apply to the WHOIS results.
-        fun = Function/delegate pointer to call upon receiving the results.
-        caller = String name of the calling function, or something else that gives context.
+            logger.logf(pattern,
+                Tint.info, plugin.name, Tint.log,
+                replay.permissionsRequired,
+                caller,
+                replay.event.sender.nickname,
+                replay.event.sender.class_);
+        }
 
-    Returns:
-        A [Replay] with template parameters inferred from the arguments
-        passed to this function.
+        version(ExplainReplay)
+        void explainRefuse()
+        {
+            import kameloso.common : Tint, logger;
+            import lu.string : beginsWith;
 
-    See_Also:
-        [Replay]
- +/
-Replay replay(Fun)
-    (const ref IRCEvent event,
-    const Permissions permissionsRequired,
-    Fun fun,
-    const string caller = __FUNCTION__) @safe
-{
-    return new ReplayImpl!Fun(event, permissionsRequired, fun, caller);
+            enum pattern = "%s%s%s %8$sNOT%3$s replaying %1$s%4$s%3$s-level event " ~
+                "(which would have invoked %1$s%5$s%3$s) " ~
+                "based on WHOIS results: user %1$s%6$s%3$s is insufficient %1$s%7$s%3$s class";
+
+            immutable caller = replay.caller.beginsWith("kameloso.plugins.") ?
+                replay.caller[17..$] :
+                replay.caller;
+
+            logger.logf(pattern,
+                Tint.info, plugin.name, Tint.log,
+                replay.permissionsRequired,
+                caller,
+                replay.event.sender.nickname,
+                replay.event.sender.class_,
+                Tint.warning);
+        }
+
+        with (Permissions)
+        final switch (permissionsRequired)
+        {
+        case admin:
+            if (replay.event.sender.class_ >= IRCUser.Class.admin)
+            {
+                goto case ignore;
+            }
+            break;
+
+        case staff:
+            if (replay.event.sender.class_ >= IRCUser.Class.staff)
+            {
+                goto case ignore;
+            }
+            break;
+
+        case operator:
+            if (replay.event.sender.class_ >= IRCUser.Class.operator)
+            {
+                goto case ignore;
+            }
+            break;
+
+        case whitelist:
+            if (replay.event.sender.class_ >= IRCUser.Class.whitelist)
+            {
+                goto case ignore;
+            }
+            break;
+
+        case registered:
+            if (replay.event.sender.account.length)
+            {
+                goto case ignore;
+            }
+            break;
+
+        case anyone:
+            if (replay.event.sender.class_ >= IRCUser.Class.anyone)
+            {
+                goto case ignore;
+            }
+
+            // event.sender.class_ is Class.blacklist here (or unset)
+            // Do nothing and drop down
+            break;
+
+        case ignore:
+
+            import lu.traits : TakesParams;
+            import std.meta : AliasSeq;
+            import std.traits : arity;
+
+            version(ExplainReplay) explainReplay();
+
+            static if (
+                TakesParams!(Fun, AliasSeq!(Plugin, IRCEvent)) ||
+                TakesParams!(Fun, AliasSeq!(IRCPlugin, IRCEvent)))
+            {
+                fun(plugin, replay.event);
+            }
+            else static if (
+                TakesParams!(Fun, Plugin) ||
+                TakesParams!(Fun, IRCPlugin))
+            {
+                fun(plugin);
+            }
+            else static if (
+                TakesParams!(Fun, IRCEvent))
+            {
+                fun(replay.event);
+            }
+            else static if (arity!Fun == 0)
+            {
+                fun();
+            }
+            else
+            {
+                static assert(0, "FIXME");
+            }
+            return;
+        }
+
+        version(ExplainReplay) explainRefuse();
+    }
+
+    return Replay(&dg, event, permissionsRequired, caller);
 }
 
 

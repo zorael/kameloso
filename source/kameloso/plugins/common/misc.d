@@ -291,27 +291,25 @@ void catchUser(IRCPlugin plugin, const IRCUser newUser) @safe
     replay the event upon receiving the results.
 
     Params:
-        plugin = Current [kameloso.plugins.common.core.IRCPlugin] as a base class.
-        subPlugin = Subclass [kameloso.plugins.common.core.IRCPlugin] to replay the
-            function pointer `fn` with as first argument.
+        plugin = Subclass [kameloso.plugins.common.core.IRCPlugin] to replay the
+            function pointer `fun` with as first argument.
         event = [dialect.defs.IRCEvent] to queue up to replay.
         permissionsRequired = Permissions level to match the results from the WHOIS query with.
-        fn = Function/delegate pointer to call when the results return.
+        fun = Function/delegate pointer to call when the results return.
         caller = String name of the calling function, or something else that gives context.
  +/
-void enqueue(SubPlugin, Fn)
-    (IRCPlugin plugin,
-    SubPlugin subPlugin,
+void enqueue(Plugin, Fun)
+    (Plugin plugin,
     const ref IRCEvent event,
     const Permissions permissionsRequired,
-    Fn fn,
+    Fun fun,
     const string caller = __FUNCTION__)
 in ((event != IRCEvent.init), "Tried to `enqueue` with an init IRCEvent")
-in ((fn !is null), "Tried to `enqueue` with a null function pointer")
+in ((fun !is null), "Tried to `enqueue` with a null function pointer")
 {
     import std.traits : isSomeFunction;
 
-    static assert (isSomeFunction!Fn, "Tried to `enqueue` with a non-function function");
+    static assert (isSomeFunction!Fun, "Tried to `enqueue` with a non-function function");
 
     version(TwitchSupport)
     {
@@ -381,82 +379,9 @@ in ((fn !is null), "Tried to `enqueue` with a null function pointer")
         logger.logf(pattern, Tint.info, plugin.name, Tint.log, callerSlice);
     }
 
-    static if (is(SubPlugin == typeof(null)))
-    {
-        plugin.state.replays[user.nickname] ~=
-            replay(event, permissionsRequired, fn, caller);
-    }
-    else
-    {
-        plugin.state.replays[user.nickname] ~=
-            replay(subPlugin, event, permissionsRequired, fn, caller);
-    }
-
-    plugin.state.hasReplays = true;
-}
-
-
-// enqueue
-/++
-    Construct and enqueue a function replay in the plugin's queue of such.
-    Overload that does not take an [kameloso.plugins.common.core.IRCPlugin] subclass parameter.
-
-    The main loop will catch up on it and issue WHOIS queries as necessary, then
-    replay the event upon receiving the results.
-
-    Params:
-        plugin = Current [kameloso.plugins.common.core.IRCPlugin] as a base class.
-        event = [dialect.defs.IRCEvent] to queue up to replay.
-        permissionsRequired = Permissions level to match the results from the WHOIS query with.
-        fn = Function/delegate pointer to call when the results return.
-        caller = String name of the calling function, or something else that gives context.
- +/
-void enqueue(Fn)
-    (IRCPlugin plugin,
-    const ref IRCEvent event,
-    const Permissions permissionsRequired,
-    Fn fn,
-    const string caller = __FUNCTION__)
-{
-    return enqueue(plugin, null, event, permissionsRequired, fn, caller);
-}
-
-
-// reparse
-/++
-    Queues a [core.thread.fiber.Fiber] (actually a [kameloso.thread.CarryingFiber]
-    with a [kameloso.plugins.common.core.Reparse] payload) to reparse a passed [kameloso.plugins.common.core.Replay] from the
-    context of the main loop after postprocessing the event once more.
-
-    Params:
-        plugin = The current [kameloso.plugins.common.core.IRCPlugin].
-        dg = Delegate/function pointer to wrap the [core.thread.fiber.Fiber] around.
-        replay = The [kameloso.plugins.common.core.Replay] to reparse.
- +/
-void reparse(IRCPlugin plugin, void delegate(Replay) dg, Replay replay)
-in ((dg !is null), "Tried to queue a reparse with a null delegate pointer")
-in ((replay.event != IRCEvent.init), "Tried to queue a reparse of an init `Replay`")
-{
-    import kameloso.constants : BufferSize;
-    import kameloso.thread : CarryingFiber;
-
-    bool foundDuplicate;
-
-    foreach (const existingReparse; plugin.state.reparses)
-    {
-        if (existingReparse.replay.event.raw == replay.event.raw)
-        {
-            // This exact event already exists in the reparse queue;
-            // the user probably just repeated it. Ignore
-        }
-        else
-        {
-            foundDuplicate = true;
-            break;
-        }
-    }
-
-    if (!foundDuplicate) plugin.state.reparses ~= Reparse(dg, replay);
+    plugin.state.pendingReplays[user.nickname] ~=
+        replay(plugin, event, fun, permissionsRequired, caller);
+    plugin.state.hasPendingReplays = true;
 }
 
 
