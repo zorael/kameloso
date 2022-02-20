@@ -587,63 +587,57 @@ mixin template IRCPluginImpl(
          +/
         void call(Fun)(Fun fun, ref IRCEvent event)
         {
-            import std.meta : AliasSeq, staticMap;
-            import std.traits : Parameters, Unqual, arity;
+            import lu.traits : TakesParams;
+            import std.meta : AliasSeq;
+            import std.traits : ParameterStorageClass, Parameters, arity;
 
-            alias Params = staticMap!(Unqual, Parameters!fun);
+            /++
+                Statically asserts that a parameter storage class is neither `out` nor `ref`.
+
+                Take the storage class as a template parameter and statically
+                assert inside this function, unlike how `udaSanityCheck` returns
+                false on failure, so we can format and print the error message
+                once here (instead of at all call sites upon receiving false).
+             +/
+            static void assertNotRefNorOut(ParameterStorageClass storageClass)()
+            {
+                static if (
+                    (storageClass & ParameterStorageClass.ref_) ||
+                    (storageClass & ParameterStorageClass.out_))
+                {
+                    import std.format : format;
+
+                    enum pattern = "`%s` has a `%s` event handler that takes an " ~
+                        "`IRCEvent` of an unsupported storage class; " ~
+                        "may not be mutable `ref` or `out`";
+                    static assert(0, pattern.format(module_, Fun.stringof));
+                }
+            }
 
             static if (
-                is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
-                is(Params : AliasSeq!(IRCPlugin, IRCEvent)))
+                TakesParams!(fun, AliasSeq!(typeof(this), IRCEvent)) ||
+                TakesParams!(fun, AliasSeq!(IRCPlugin, IRCEvent)))
             {
                 static if (!is(Parameters!fun[1] == const))
                 {
-                    import std.traits : ParameterStorageClass, ParameterStorageClassTuple;
-
-                    alias SC = ParameterStorageClass;
-                    alias paramClasses = ParameterStorageClassTuple!fun;
-
-                    static if (
-                        (paramClasses[1] & SC.ref_) ||
-                        (paramClasses[1] & SC.out_))
-                    {
-                        import std.format : format;
-
-                        enum pattern = "`%s` has a `%s` event handler takes an " ~
-                            "`IRCEvent` of an unsupported storage class; " ~
-                            "may not be mutable `ref` or `out`";
-                        static assert(0, pattern.format(module_, Fun.stringof));
-                    }
+                    import std.traits : ParameterStorageClassTuple;
+                    assertNotRefNorOut!(ParameterStorageClassTuple!fun[1]);
                 }
 
                 fun(this, event);
             }
             else static if (
-                is(Params : AliasSeq!(typeof(this))) ||
-                is(Params : AliasSeq!IRCPlugin))
+                TakesParams!(fun, typeof(this)) ||
+                TakesParams!(fun, IRCPlugin))
             {
                 fun(this);
             }
-            else static if (is(Params : AliasSeq!IRCEvent))
+            else static if (TakesParams!(fun, IRCEvent))
             {
                 static if (!is(Parameters!fun[0] == const))
                 {
-                    import std.traits : ParameterStorageClass, ParameterStorageClassTuple;
-
-                    alias SC = ParameterStorageClass;
-                    alias paramClasses = ParameterStorageClassTuple!fun;
-
-                    static if (
-                        (paramClasses[0] & SC.ref_) ||
-                        (paramClasses[0] & SC.out_))
-                    {
-                        import std.format : format;
-
-                        enum pattern = "`%s` has a `%s` event handler takes an " ~
-                            "`IRCEvent` of an unsupported storage class; " ~
-                            "may not be mutable `ref` or `out`";
-                        static assert(0, pattern.format(module_, Fun.stringof));
-                    }
+                    import std.traits : ParameterStorageClassTuple;
+                    assertNotRefNorOut!(ParameterStorageClassTuple!fun[0]);
                 }
 
                 fun(event);
