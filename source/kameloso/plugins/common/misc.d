@@ -358,14 +358,27 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
         {
             version(ExplainReplay)
             {
-                enum pattern = "%s%s%s plugin %6$sNOT%3$s queueing an event to be replayed " ~
-                    "on behalf of %1$s%4$s%3$s; delta time %1$s%5$d%3$s";
+                version(Colours)
+                {
+                    enum pattern = "%s%s%s plugin %6$sNOT%3$s queueing an event to be replayed " ~
+                        "on behalf of %1$s%4$s%3$s; delta time %1$s%5$d%3$s is too recent";
 
-                logger.logf(pattern,
-                    Tint.info, plugin.name, Tint.log,
-                    callerSlice,
-                    delta,
-                    Tint.warning);
+                    logger.logf(pattern,
+                        Tint.info, plugin.name, Tint.log,
+                        callerSlice,
+                        delta,
+                        Tint.warning);
+                }
+                else
+                {
+                    enum pattern = "%s plugin NOT queueing an event to be replayed " ~
+                        "on behalf of %s; delta time %d is too recent";
+
+                    logger.logf(pattern,
+                        plugin.name,
+                        callerSlice,
+                        delta);
+                }
             }
             return;
         }
@@ -373,10 +386,16 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
 
     version(ExplainReplay)
     {
-        enum pattern = "%s%s%s plugin queueing an event to be replayed " ~
-            "on behalf of %1$s%4$s%3$s";
-
-        logger.logf(pattern, Tint.info, plugin.name, Tint.log, callerSlice);
+        version(Colours)
+        {
+            enum pattern = "%s%s%s plugin queueing an event to be replayed on behalf of %1$s%4$s%3$s";
+            logger.logf(pattern, Tint.info, plugin.name, Tint.log, callerSlice);
+        }
+        else
+        {
+            enum pattern = "%s plugin queueing an event to be replayed on behalf of %s";
+            logger.logf(pattern, plugin.name, callerSlice);
+        }
     }
 
     plugin.state.pendingReplays[user.nickname] ~=
@@ -416,19 +435,34 @@ Replay replay(Plugin, Fun)(Plugin plugin, const ref IRCEvent event,
             import kameloso.common : Tint, logger;
             import lu.string : beginsWith;
 
-            enum pattern = "%s%s%s replaying %1$s%4$s%3$s-level event (invoking %1$s%5$s%3$s) " ~
-                "based on WHOIS results: user %1$s%6$s%3$s is %1$s%7$s%3$s class";
-
             immutable caller = replay.caller.beginsWith("kameloso.plugins.") ?
                 replay.caller[17..$] :
                 replay.caller;
 
-            logger.logf(pattern,
-                Tint.info, plugin.name, Tint.log,
-                replay.permissionsRequired,
-                caller,
-                replay.event.sender.nickname,
-                replay.event.sender.class_);
+            version(Colours)
+            {
+                enum pattern = "%s%s%s replaying %1$s%4$s%3$s-level event (invoking %1$s%5$s%3$s) " ~
+                    "based on WHOIS results: user %1$s%6$s%3$s is %1$s%7$s%3$s class";
+
+                logger.logf(pattern,
+                    Tint.info, plugin.name, Tint.log,
+                    replay.permissionsRequired,
+                    caller,
+                    replay.event.sender.nickname,
+                    replay.event.sender.class_);
+            }
+            else
+            {
+                enum pattern = "%s replaying %s-level event (invoking %s) " ~
+                    "based on WHOIS results: user %s is %s class";
+
+                logger.logf(pattern,
+                    plugin.name,
+                    replay.permissionsRequired,
+                    caller,
+                    replay.event.sender.nickname,
+                    replay.event.sender.class_);
+            }
         }
 
         version(ExplainReplay)
@@ -437,21 +471,37 @@ Replay replay(Plugin, Fun)(Plugin plugin, const ref IRCEvent event,
             import kameloso.common : Tint, logger;
             import lu.string : beginsWith;
 
-            enum pattern = "%s%s%s %8$sNOT%3$s replaying %1$s%4$s%3$s-level event " ~
-                "(which would have invoked %1$s%5$s%3$s) " ~
-                "based on WHOIS results: user %1$s%6$s%3$s is insufficient %1$s%7$s%3$s class";
-
             immutable caller = replay.caller.beginsWith("kameloso.plugins.") ?
                 replay.caller[17..$] :
                 replay.caller;
 
-            logger.logf(pattern,
-                Tint.info, plugin.name, Tint.log,
-                replay.permissionsRequired,
-                caller,
-                replay.event.sender.nickname,
-                replay.event.sender.class_,
-                Tint.warning);
+            version(Colours)
+            {
+                enum pattern = "%s%s%s %8$sNOT%3$s replaying %1$s%4$s%3$s-level event " ~
+                    "(which would have invoked %1$s%5$s%3$s) " ~
+                    "based on WHOIS results: user %1$s%6$s%3$s is insufficient %1$s%7$s%3$s class";
+
+                logger.logf(pattern,
+                    Tint.info, plugin.name, Tint.log,
+                    replay.permissionsRequired,
+                    caller,
+                    replay.event.sender.nickname,
+                    replay.event.sender.class_,
+                    Tint.warning);
+            }
+            else
+            {
+                enum pattern = "%s NOT replaying %s-level event " ~
+                    "(which would have invoked %s) " ~
+                    "based on WHOIS results: user %s is insufficient %s class";
+
+                logger.logf(pattern,
+                    plugin.name,
+                    replay.permissionsRequired,
+                    caller,
+                    replay.event.sender.nickname,
+                    replay.event.sender.class_);
+            }
         }
 
         with (Permissions)
