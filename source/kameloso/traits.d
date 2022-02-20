@@ -321,9 +321,7 @@ unittest
  +/
 mixin template Wrap(string newName, alias symbol)
 {
-    private import std.format : format;
-    private import std.range.primitives : ElementEncodingType;
-    private import std.traits : fullyQualifiedName, isArray, isSomeString;
+    private import std.traits : isArray, isSomeString;
 
     static if (!__traits(compiles, __traits(identifier, symbol)))
     {
@@ -340,6 +338,9 @@ mixin template Wrap(string newName, alias symbol)
 
     static if (isArray!(typeof(symbol)) && !isSomeString!(typeof(symbol)))
     {
+        private import std.range.primitives : ElementEncodingType;
+        private import std.traits : fullyQualifiedName;
+
         mixin(
 "ref auto " ~ newName ~ '(' ~ fullyQualifiedName!(ElementEncodingType!(typeof(symbol))) ~ " newVal)
 {
