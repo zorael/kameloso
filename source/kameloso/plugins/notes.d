@@ -254,47 +254,6 @@ void playbackNotes(NotesPlugin plugin,
 }
 
 
-// onNames
-/++
-    Sends notes to a channel upon joining it.
-
-    Do nothing if version `WithChanQueriesService`, as the ChanQueries service
-    will issue WHO queries on channels shortly after joining. WHO replies carry
-    more information than NAMES replies do, so we'd just be duplicating effort
-    for worse results.
- +/
-version(WithChanQueriesService) {}
-else
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.RPL_NAMREPLY)
-    .channelPolicy(ChannelPolicy.home)
-)
-void onNames(NotesPlugin plugin, const ref IRCEvent event)
-{
-    import dialect.common : stripModesign;
-    import lu.string : contains, nom;
-    import std.algorithm.iteration : splitter;
-
-    if (event.channel !in plugin.notes) return;
-
-    foreach (immutable signed; event.content.splitter(' '))
-    {
-        string slice = signed.stripModesign(plugin.state.server);
-        immutable nickname = slice.contains('!') ? slice.nom('!') : slice;
-
-        if (nickname == plugin.state.client.nickname) continue;
-
-        IRCEvent fakeEvent;
-        fakeEvent.type = IRCEvent.Type.JOIN;
-        fakeEvent.sender.nickname = nickname;
-        fakeEvent.channel = event.channel;
-
-        // Use a replay to fill in known information about the user by use of Persistence
-        plugin.state.readyReplays ~= replay(plugin, fakeEvent, &onReplayEvent, Permissions.anyone,);
-    }
-}
-
-
 // onCommandAddNote
 /++
     Adds a note to the in-memory storage, and saves it to disk.
