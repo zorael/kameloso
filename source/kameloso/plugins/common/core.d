@@ -1033,10 +1033,10 @@ mixin template IRCPluginImpl(
                     IRCEventHandler[] udas;
                     udas.length = funlist.length;
 
-                    static foreach (immutable i, fun; funlist)
-                    {{
+                    foreach (immutable i, fun; funlist)
+                    {
                         udas[i] = getUDAs!(fun, IRCEventHandler)[0];
-                    }}
+                    }
 
                     return udas;
                 }();
