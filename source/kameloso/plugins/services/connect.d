@@ -1019,7 +1019,7 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
             IRCEvent.Type.ERR_NOMOTD,
         ];
 
-        void twitchWarningDg(const IRCEvent _)
+        void twitchWarningDg(const IRCEvent)
         {
             version(TwitchSupport)
             {

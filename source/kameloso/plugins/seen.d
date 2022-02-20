@@ -984,7 +984,7 @@ void onWelcome(SeenPlugin plugin)
         IRCEvent.Type.ERR_NOMOTD,
     ];
 
-    void endOfMotdDg(const IRCEvent _)
+    void endOfMotdDg(const IRCEvent)
     {
         import kameloso.plugins.common.delayawait : unawait;
         import lu.string : plurality;
