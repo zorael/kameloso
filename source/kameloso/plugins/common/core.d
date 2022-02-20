@@ -909,10 +909,9 @@ mixin template IRCPluginImpl(
                 else if (result == FilterResult.whois)
                 {
                     import kameloso.plugins.common.misc : enqueue;
-                    import std.meta : AliasSeq, staticMap;
-                    import std.traits : Parameters, Unqual, arity;
-
-                    alias Params = staticMap!(Unqual, Parameters!Fun);
+                    import lu.traits : TakesParams;
+                    import std.meta : AliasSeq;
+                    import std.traits : arity;
 
                     static if (verbose)
                     {
@@ -920,11 +919,11 @@ mixin template IRCPluginImpl(
                     }
 
                     static if (
-                        is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
-                        is(Params : AliasSeq!(IRCPlugin, IRCEvent)) ||
-                        is(Params : AliasSeq!(typeof(this))) ||
-                        is(Params : AliasSeq!IRCPlugin) ||
-                        is(Params : AliasSeq!IRCEvent) ||
+                        TakesParams!(fun, AliasSeq!(typeof(this), IRCEvent)) ||
+                        TakesParams!(fun, AliasSeq!(IRCPlugin, IRCEvent)) ||
+                        TakesParams!(fun, AliasSeq!(typeof(this))) ||
+                        TakesParams!(fun, IRCPlugin) ||
+                        TakesParams!(fun, IRCEvent) ||
                         (arity!fun == 0))
                     {
                         // Unsure why we need to specifically specify IRCPlugin
