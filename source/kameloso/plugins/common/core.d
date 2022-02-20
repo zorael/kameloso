@@ -1462,15 +1462,6 @@ mixin template IRCPluginImpl(
                 didSomething = true;
                 break;
             }
-            else static if (hasUDA!(this.tupleof[i], Settings))
-            {
-                import std.format : format;
-                import std.traits : fullyQualifiedName;
-
-                // Warn here but nowhere else about this.
-                enum pattern = "`%s` is annotated `@Settings` but is not a `struct`";
-                static assert(0, pattern.format(fullyQualifiedName!(this.tupleof[i])));
-            }
         }
 
         return didSomething;
