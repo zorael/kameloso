@@ -344,7 +344,7 @@ mixin template Wrap(string newName, alias symbol)
         mixin(
 "ref auto " ~ newName ~ '(' ~ fullyQualifiedName!(ElementEncodingType!(typeof(symbol))) ~ " newVal)
 {
-    " ~ symbol.stringof ~ " ~= newVal;
+    " ~ __traits(identifier, symbol) ~ " ~= newVal;
     return this;
 }");
     }
@@ -353,7 +353,7 @@ mixin template Wrap(string newName, alias symbol)
         mixin(
 "ref auto " ~ newName ~ '(' ~ typeof(symbol).stringof ~ " newVal)
 {
-    " ~ symbol.stringof ~ " = newVal;
+    " ~ __traits(identifier, symbol) ~ " = newVal;
     return this;
 }");
     }
