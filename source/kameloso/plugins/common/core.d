@@ -434,17 +434,31 @@ mixin template IRCPluginImpl(
     // onEventImpl
     /++
         Pass on the supplied [dialect.defs.IRCEvent] to module-level functions
-        annotated with the matching [dialect.defs.IRCEvent.Type]s.
+        annotated with an [kameloso.plugins.common.core.IRCEventHandler], registered
+        with the matching [dialect.defs.IRCEvent.Type]s.
 
-        It also does checks for [kameloso.plugins.common.core.ChannelPolicy],
-        [kameloso.plugins.common.core.Permissions], [kameloso.plugins.common.core.PrefixPolicy],
-        [kameloso.plugins.common.core.IRCEventHandler.Command], [kameloso.plugins.common.core.IRCEventHandler.Regex]
+        It also does checks for
+        [kameloso.plugins.common.core.ChannelPolicy],
+        [kameloso.plugins.common.core.Permissions],
+        [kameloso.plugins.common.core.PrefixPolicy],
+        [kameloso.plugins.common.core.IRCEventHandler.Command],
+        [kameloso.plugins.common.core.IRCEventHandler.Regex],
+        [kameloso.plugins.common.core.Chainable]
         etc; where such is applicable.
 
+        This function is private, but since it's part of a mixin template it will
+        be visible at the mixin site. Plugins can as such override
+        [kameloso.plugins.common.core.IRCPlugin.onEvent] with their own code and
+        invoke [onEventImpl] as a fallback.
+
         Params:
-            origEvent = Parsed [dialect.defs.IRCEvent] to dispatch to event handlers.
+            origEvent = Parsed [dialect.defs.IRCEvent] to dispatch to event handlers,
+                taken by value so we have an object we can modify.
+
+        See_Also:
+            [kameloso.plugins.common.core.IRCPluginImpl.onEvent]
      +/
-    private void onEventImpl(/*const*/ IRCEvent origEvent) @system
+    private void onEventImpl(/*const ref*/ IRCEvent origEvent) @system
     {
         mixin("static import thisModule = ", module_, ";");
 
