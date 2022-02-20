@@ -533,7 +533,9 @@ Replay replay(Plugin, Fun)(Plugin plugin, const ref IRCEvent event,
             }
             else
             {
-                static assert(0, "FIXME");
+                // onEventImpl.call should already have statically asserted all
+                // event handlers are of the types above
+                static assert(0);
             }
             return;
         }
