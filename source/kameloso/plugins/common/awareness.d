@@ -444,7 +444,7 @@ void onUserAwarenessNick(IRCPlugin plugin, const ref IRCEvent event)
     [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users] array of [dialect.defs.IRCUser|IRCUser]s.
 
     [dialect.defs.IRCEvent.Type.RPL_WHOISUSER] events carry values in
-    the [dialect.defs.IRCUser.updated] field that we want to store.
+    the [dialect.defs.IRCUser.updated|IRCUser.updated] field that we want to store.
 
     [dialect.defs.IRCEvent.Type.CHGHOST] occurs when a user changes host
     on some servers that allow for custom host addresses.
@@ -671,7 +671,7 @@ mixin template ChannelAwareness(
     }
     else
     {
-        /// Flag denoting that [kameloso.plugins.common.awareness.ChannelAwareness] has been mixed in.
+        /// Flag denoting that [kameloso.plugins.common.awareness.ChannelAwareness|ChannelAwareness] has been mixed in.
         package enum hasChannelAwareness = true;
     }
 
@@ -689,10 +689,10 @@ mixin template ChannelAwareness(
 
     // onChannelAwarenessSelfjoinMixin
     /++
-        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessSelfjoin].
+        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessSelfjoin|onChannelAwarenessSelfjoin].
 
         See_Also:
-            [kameloso.plugins.common.awareness.onChannelAwarenessSelfjoin]
+            [kameloso.plugins.common.awareness.onChannelAwarenessSelfjoin|onChannelAwarenessSelfjoin]
      +/
     @(IRCEventHandler()
         .onEvent(IRCEvent.Type.SELFJOIN)
@@ -708,10 +708,10 @@ mixin template ChannelAwareness(
 
     // onChannelAwarenessSelfpartMixin
     /++
-        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessSelfpart].
+        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessSelfpart|onChannelAwarenessSelfpart].
 
         See_Also:
-            [kameloso.plugins.common.awareness.onChannelAwarenessSelfpart]
+            [kameloso.plugins.common.awareness.onChannelAwarenessSelfpart|onChannelAwarenessSelfpart]
      +/
     @(IRCEventHandler()
         .onEvent(IRCEvent.Type.SELFPART)
@@ -728,10 +728,10 @@ mixin template ChannelAwareness(
 
     // onChannelAwarenessJoinMixin
     /++
-        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessJoin].
+        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessJoin|onChannelAwarenessJoin].
 
         See_Also:
-            [kameloso.plugins.common.awareness.onChannelAwarenessJoin]
+            [kameloso.plugins.common.awareness.onChannelAwarenessJoin|onChannelAwarenessJoin]
      +/
     @(IRCEventHandler()
         .onEvent(IRCEvent.Type.JOIN)
@@ -747,10 +747,10 @@ mixin template ChannelAwareness(
 
     // onChannelAwarenessPartMixin
     /++
-        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessPart].
+        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessPart|onChannelAwarenessPart].
 
         See_Also:
-            [kameloso.plugins.common.awareness.onChannelAwarenessPart]
+            [kameloso.plugins.common.awareness.onChannelAwarenessPart|onChannelAwarenessPart]
      +/
     @(IRCEventHandler()
         .onEvent(IRCEvent.Type.PART)
@@ -766,10 +766,10 @@ mixin template ChannelAwareness(
 
     // onChannelAwarenessNickMixin
     /++
-        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessNick].
+        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessNick|onChannelAwarenessNick].
 
         See_Also:
-            [kameloso.plugins.common.awareness.onChannelAwarenessNick]
+            [kameloso.plugins.common.awareness.onChannelAwarenessNick|onChannelAwarenessNick]
      +/
     @(IRCEventHandler()
         .onEvent(IRCEvent.Type.NICK)
@@ -784,10 +784,10 @@ mixin template ChannelAwareness(
 
     // onChannelAwarenessQuitMixin
     /++
-        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessQuit].
+        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessQuit|onChannelAwarenessQuit].
 
         See_Also:
-            [kameloso.plugins.common.awareness.onChannelAwarenessQuit]
+            [kameloso.plugins.common.awareness.onChannelAwarenessQuit|onChannelAwarenessQuit]
      +/
     @(IRCEventHandler()
         .onEvent(IRCEvent.Type.QUIT)
@@ -802,10 +802,10 @@ mixin template ChannelAwareness(
 
     // onChannelAwarenessTopicMixin
     /++
-        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessTopic].
+        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessTopic|onChannelAwarenessTopic].
 
         See_Also:
-            [kameloso.plugins.common.awareness.onChannelAwarenessTopic]
+            [kameloso.plugins.common.awareness.onChannelAwarenessTopic|onChannelAwarenessTopic]
      +/
     @(IRCEventHandler()
         .onEvent(IRCEvent.Type.TOPIC)
@@ -822,10 +822,10 @@ mixin template ChannelAwareness(
 
     // onChannelAwarenessCreationTimeMixin
     /++
-        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessCreationTime].
+        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessCreationTime|onChannelAwarenessCreationTime].
 
         See_Also:
-            [kameloso.plugins.common.awareness.onChannelAwarenessCreationTime]
+            [kameloso.plugins.common.awareness.onChannelAwarenessCreationTime|onChannelAwarenessCreationTime]
      +/
     @(IRCEventHandler()
         .onEvent(IRCEvent.Type.RPL_CREATIONTIME)
@@ -841,10 +841,10 @@ mixin template ChannelAwareness(
 
     // onChannelAwarenessModeMixin
     /++
-        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessMode].
+        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessMode|onChannelAwarenessMode].
 
         See_Also:
-            [kameloso.plugins.common.awareness.onChannelAwarenessMode]
+            [kameloso.plugins.common.awareness.onChannelAwarenessMode|onChannelAwarenessMode]
      +/
     @(IRCEventHandler()
         .onEvent(IRCEvent.Type.MODE)
@@ -860,10 +860,10 @@ mixin template ChannelAwareness(
 
     // onChannelAwarenessWhoReplyMixin
     /++
-        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessWhoReply].
+        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessWhoReply|onChannelAwarenessWhoReply].
 
         See_Also:
-            [kameloso.plugins.common.awareness.onChannelAwarenessWhoReply]
+            [kameloso.plugins.common.awareness.onChannelAwarenessWhoReply|onChannelAwarenessWhoReply]
      +/
     @(IRCEventHandler()
         .onEvent(IRCEvent.Type.RPL_WHOREPLY)
@@ -879,10 +879,10 @@ mixin template ChannelAwareness(
 
     // onChannelAwarenessNamesReplyMixin
     /++
-        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessNamesReply].
+        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessNamesReply|onChannelAwarenessNamesReply].
 
         See_Also:
-            [kameloso.plugins.common.awareness.onChannelAwarenessNamesReply]
+            [kameloso.plugins.common.awareness.onChannelAwarenessNamesReply|onChannelAwarenessNamesReply]
      +/
     @(IRCEventHandler()
         .onEvent(IRCEvent.Type.RPL_NAMREPLY)
@@ -898,10 +898,10 @@ mixin template ChannelAwareness(
 
     // onChannelAwarenessModeListsMixin
     /++
-        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessModeLists].
+        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessModeLists|onChannelAwarenessModeLists].
 
         See_Also:
-            [kameloso.plugins.common.awareness.onChannelAwarenessModeLists]
+            [kameloso.plugins.common.awareness.onChannelAwarenessModeLists|onChannelAwarenessModeLists]
      +/
     @(IRCEventHandler()
         .onEvent(IRCEvent.Type.RPL_BANLIST)
@@ -921,10 +921,10 @@ mixin template ChannelAwareness(
 
     // onChannelAwarenessChannelModeIsMixin
     /++
-        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessChannelModeIs].
+        Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessChannelModeIs|onChannelAwarenessChannelModeIs].
 
         See_Also:
-            [kameloso.plugins.common.awareness.onChannelAwarenessChannelModeIs]
+            [kameloso.plugins.common.awareness.onChannelAwarenessChannelModeIs|onChannelAwarenessChannelModeIs]
      +/
     @(IRCEventHandler()
         .onEvent(IRCEvent.Type.RPL_CHANNELMODEIS)
@@ -941,8 +941,8 @@ mixin template ChannelAwareness(
 
 // onChannelAwarenessSelfjoin
 /++
-    Create a new [dialect.defs.IRCChannel] in the the [kameloso.plugins.common.core.IRCPlugin|IRCPlugin]'s
-    [kameloso.plugins.common.core.IRCPluginState.channels] associative array
+    Create a new [dialect.defs.IRCChannel|IRCChannel] in the the [kameloso.plugins.common.core.IRCPlugin|IRCPlugin]'s
+    [kameloso.plugins.common.core.IRCPluginState.channels|IRCPluginState.channels] associative array
     when the bot joins a channel.
  +/
 void onChannelAwarenessSelfjoin(IRCPlugin plugin, const ref IRCEvent event)
@@ -956,10 +956,10 @@ void onChannelAwarenessSelfjoin(IRCPlugin plugin, const ref IRCEvent event)
 
 // onChannelAwarenessSelfpart
 /++
-    Removes an [dialect.defs.IRCChannel] from the internal list when the
+    Removes an [dialect.defs.IRCChannel|IRCChannel] from the internal list when the
     bot leaves it.
 
-    Remove users from the [kameloso.plugins.common.core.IRCPlugin.state.users] array if, by leaving, it left
+    Remove users from the [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users] array if, by leaving, it left
     the last channel we can observe it from, so as not to leak users. It can
     be argued that this should be part of user awareness, however this would
     not be possible if it were not for channel-tracking. As such keep the
@@ -1005,7 +1005,7 @@ void onChannelAwarenessJoin(IRCPlugin plugin, const ref IRCEvent event)
 /++
     Removes a user from being part of a channel when they leave it.
 
-    Remove the user from the [kameloso.plugins.common.core.IRCPlugin.state.users] array if, by leaving, it
+    Remove the user from the [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users] array if, by leaving, it
     left the last channel we can observe it from, so as not to leak users.
     It can be argued that this should be part of user awareness, however
     this would not be possible if it were not for channel-tracking. As such
@@ -1103,7 +1103,7 @@ void onChannelAwarenessQuit(IRCPlugin plugin, const ref IRCEvent event)
 
 // onChannelAwarenessTopic
 /++
-    Update the entry for an [dialect.defs.IRCChannel] if someone changes
+    Update the entry for an [dialect.defs.IRCChannel|IRCChannel] if someone changes
     the topic of it.
  +/
 void onChannelAwarenessTopic(IRCPlugin plugin, const ref IRCEvent event)
@@ -1348,7 +1348,7 @@ void onChannelAwarenessChannelModeIs(IRCPlugin plugin, const ref IRCEvent event)
 
     There is a chance of a user leak, if parting users are not broadcast. As
     such we mark when the user was last seen in the
-    [dialect.defs.IRCUser.updated] member, which opens up the possibility
+    [dialect.defs.IRCUser.updated|IRCUser.updated] member, which opens up the possibility
     of pruning the plugin's [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users] array of old entries.
 
     Twitch awareness needs channel awareness, or it is meaningless.
@@ -1379,7 +1379,7 @@ mixin template TwitchAwareness(
     }
     else
     {
-        /// Flag denoting that [kameloso.plugins.common.awareness.TwitchAwareness] has been mixed in.
+        /// Flag denoting that [kameloso.plugins.common.awareness.TwitchAwareness|TwitchAwareness] has been mixed in.
         package enum hasTwitchAwareness = true;
     }
 
@@ -1397,10 +1397,10 @@ mixin template TwitchAwareness(
 
     // onTwitchAwarenessSenderCarryingEventMixin
     /++
-        Proxies to [kameloso.plugins.common.awareness.onTwitchAwarenessSenderCarryingEvent].
+        Proxies to [kameloso.plugins.common.awareness.onTwitchAwarenessSenderCarryingEvent|onTwitchAwarenessSenderCarryingEvent].
 
         See_Also:
-            [kameloso.plugins.common.awareness.onTwitchAwarenessSenderCarryingEvent]
+            [kameloso.plugins.common.awareness.onTwitchAwarenessSenderCarryingEvent|onTwitchAwarenessSenderCarryingEvent]
      +/
     @(IRCEventHandler()
         .onEvent(IRCEvent.Type.CHAN)  // Catch these as we don't index people by WHO on Twitch
@@ -1445,7 +1445,7 @@ mixin template TwitchAwareness(
         we ensure we do our best to scrape the channels.
 
         See_Also:
-            [kameloso.plugins.common.awareness.onTwitchAwarenessSenderCarryingEvent]
+            [kameloso.plugins.common.awareness.onTwitchAwarenessSenderCarryingEvent|onTwitchAwarenessSenderCarryingEvent]
      +/
     @(IRCEventHandler()
         .onEvent(IRCEvent.Type.TWITCH_BAN)
@@ -1477,7 +1477,7 @@ mixin template TwitchAwareness(
     do our best to scrape the channels.
 
     See_Also:
-        [kameloso.plugins.common.awareness.onTwitchAwarenessTargetCarryingEvent]
+        [kameloso.plugins.common.awareness.onTwitchAwarenessTargetCarryingEvent|onTwitchAwarenessTargetCarryingEvent]
  +/
 version(TwitchSupport)
 void onTwitchAwarenessSenderCarryingEvent(IRCPlugin plugin, const ref IRCEvent event)
@@ -1513,7 +1513,7 @@ void onTwitchAwarenessSenderCarryingEvent(IRCPlugin plugin, const ref IRCEvent e
     we ensure we do our best to scrape the channels.
 
     See_Also:
-        [kameloso.plugins.common.awareness.onTwitchAwarenessSenderCarryingEvent]
+        [kameloso.plugins.common.awareness.onTwitchAwarenessSenderCarryingEvent|onTwitchAwarenessSenderCarryingEvent]
  +/
 version(TwitchSupport)
 void onTwitchAwarenessTargetCarryingEvent(IRCPlugin plugin, const ref IRCEvent event)
@@ -1542,7 +1542,7 @@ void onTwitchAwarenessTargetCarryingEvent(IRCPlugin plugin, const ref IRCEvent e
 version(TwitchSupport) {}
 else
 /++
-    No-op mixin of version `!TwitchSupport` [kameloso.plugins.common.awareness.TwitchAwareness].
+    No-op mixin of version `!TwitchSupport` [kameloso.plugins.common.awareness.TwitchAwareness|TwitchAwareness].
  +/
 mixin template TwitchAwareness(
     ChannelPolicy channelPolicy = ChannelPolicy.home,
@@ -1561,7 +1561,7 @@ mixin template TwitchAwareness(
     }
     else
     {
-        /// Flag denoting that [kameloso.plugins.common.awareness.TwitchAwareness] has been mixed in.
+        /// Flag denoting that [kameloso.plugins.common.awareness.TwitchAwareness|TwitchAwareness] has been mixed in.
         package enum hasTwitchAwareness = true;
     }
 

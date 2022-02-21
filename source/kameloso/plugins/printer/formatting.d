@@ -1047,7 +1047,7 @@ if (isOutputRange!(Sink, char[]))
 // withoutTypePrefix
 /++
     Slices away any type prefixes from the string of a
-    [dialect.defs.IRCEvent.Type].
+    [dialect.defs.IRCEvent.Type|IRCEvent.Type].
 
     Only for shared use in [formatMessageMonochrome] and
     [formatMessageColoured].
@@ -1065,7 +1065,7 @@ if (isOutputRange!(Sink, char[]))
     ---
 
     Params:
-        typestring = The string form of a [dialect.defs.IRCEvent.Type].
+        typestring = The string form of a [dialect.defs.IRCEvent.Type|IRCEvent.Type].
 
     Returns:
         A slice of the passed `typestring`, excluding any prefixes if present.

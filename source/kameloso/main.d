@@ -682,7 +682,7 @@ void messageFiber(ref Kameloso instance)
 
 // mainLoop
 /++
-    This loops creates a [std.concurrency.Generator] [core.thread.fiber.Fiber] to loop
+    This loops creates a [std.concurrency.Generator] [core.thread.fiber.Fiber|Fiber] to loop
     over the connected [std.socket.Socket].
 
     Full lines are stored in [kameloso.net.ListenAttempt]s, which are
@@ -1382,7 +1382,7 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
 
     Params:
         plugin = The [kameloso.plugins.common.core.IRCPlugin|IRCPlugin] whose
-            [dialect.defs.IRCEvent.Type]-awaiting delegates to iterate and process.
+            [dialect.defs.IRCEvent.Type|IRCEvent.Type]-awaiting delegates to iterate and process.
         event = The triggering const [dialect.defs.IRCEvent|IRCEvent].
  +/
 void processAwaitingDelegates(IRCPlugin plugin, const ref IRCEvent event)
@@ -1426,14 +1426,14 @@ void processAwaitingDelegates(IRCPlugin plugin, const ref IRCEvent event)
 
 // processAwaitingFibers
 /++
-    Processes the awaiting [core.thread.fiber.Fiber]s of an
+    Processes the awaiting [core.thread.fiber.Fiber|Fiber]s of an
     [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
 
-    Don't delete [core.thread.fiber.Fiber]s, as they can be reset and reused.
+    Don't delete [core.thread.fiber.Fiber|Fiber]s, as they can be reset and reused.
 
     Params:
         plugin = The [kameloso.plugins.common.core.IRCPlugin|IRCPlugin] whose
-            [dialect.defs.IRCEvent.Type]-awaiting [core.thread.fiber.Fiber]s to
+            [dialect.defs.IRCEvent.Type|IRCEvent.Type]-awaiting [core.thread.fiber.Fiber|Fiber]s to
             iterate and process.
         event = The triggering [dialect.defs.IRCEvent|IRCEvent].
  +/
@@ -2268,12 +2268,12 @@ void postInstanceSetup(ref Kameloso instance)
 
 // expandPaths
 /++
-    Sets up the passed [kameloso.kameloso.CoreSettings], expanding paths.
+    Sets up the passed [kameloso.kameloso.CoreSettings|CoreSettings], expanding paths.
 
     This is called during early execution.
 
     Params:
-        settings = A reference to the [kameloso.kameloso.CoreSettings] we want to set up.
+        settings = A reference to the [kameloso.kameloso.CoreSettings|CoreSettings] we want to set up.
  +/
 void expandPaths(ref CoreSettings settings)
 {

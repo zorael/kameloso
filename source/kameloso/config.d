@@ -4,8 +4,8 @@
 
     Employs the standard [std.getopt] to read arguments from the command line
     to construct and populate instances of the structs needed for the bot to
-    function, like [dialect.defs.IRCClient|IRCClient], [dialect.defs.IRCServer],
-    [kameloso.kameloso.IRCBot] and [kameloso.kameloso.CoreSettings].
+    function, like [dialect.defs.IRCClient|IRCClient], [dialect.defs.IRCServer|IRCServer],
+    [kameloso.kameloso.IRCBot|IRCBot] and [kameloso.kameloso.CoreSettings|CoreSettings].
 
     See_Also:
         [kameloso.kameloso]
@@ -70,8 +70,8 @@ void printHelp(GetoptResult results) @system
     Params:
         instance = Reference to the current [kameloso.kameloso.Kameloso].
         client = Reference to the current [dialect.defs.IRCClient|IRCClient].
-        server = Reference to the current [dialect.defs.IRCServer].
-        bot = Reference to the current [kameloso.kameloso.IRCBot].
+        server = Reference to the current [dialect.defs.IRCServer|IRCServer].
+        bot = Reference to the current [kameloso.kameloso.IRCBot|IRCBot].
         customSettings = const string array to all the custom settings set
             via [std.getopt.getopt], to apply to things before saving to disk.
         giveInstructions = Whether or not to give instructions to edit the
@@ -956,8 +956,8 @@ void notifyAboutIncompleteConfiguration(const string configFile, const string bi
 
     Params:
         client = Reference to the [dialect.defs.IRCClient|IRCClient] to complete.
-        server = Reference to the [dialect.defs.IRCServer] to complete.
-        bot = Reference to the [kameloso.kameloso.IRCBot] to complete.
+        server = Reference to the [dialect.defs.IRCServer|IRCServer] to complete.
+        bot = Reference to the [kameloso.kameloso.IRCBot|IRCBot] to complete.
  +/
 void applyDefaults(ref IRCClient client, ref IRCServer server, ref IRCBot bot)
 out (; (client.nickname.length), "Empty client nickname")

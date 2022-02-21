@@ -215,7 +215,7 @@ void onCTCPs(CTCPService service, const ref IRCEvent event)
 unittest
 {
     // Ensure onCTCPs implement cases for all its annotated
-    // [dialect.defs.IRCEvent.Type]s.
+    // [dialect.defs.IRCEvent.Type|IRCEvent.Type]s.
     import std.traits : getUDAs;
 
     IRCPluginState state;
@@ -234,7 +234,7 @@ unittest
 /++
     Sends a list of which `CTCP` events we understand.
 
-    This builds a string of the names of all [dialect.defs.IRCEvent.Type]s
+    This builds a string of the names of all [dialect.defs.IRCEvent.Type|IRCEvent.Type]s
     that begin with `CTCP_`, at compile-time. As such, as long as we name any
     new such types `CTCP_SOMETHING`, this list will always be correct.
  +/

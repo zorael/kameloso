@@ -413,7 +413,7 @@ private:
 
     /++
         An unique identifier for an ongoing channel vote, as set by
-        [onCommandVote] and monitored inside its [core.thread.fiber.Fiber]'s closures.
+        [onCommandVote] and monitored inside its [core.thread.fiber.Fiber|Fiber]'s closures.
      +/
     int[string] channelVoteInstances;
 

@@ -92,7 +92,7 @@ void initResources(AutomodePlugin plugin)
     Potentially applies an automode, depending on the definitions and the user
     triggering the function.
 
-    Different [dialect.defs.IRCEvent.Type]s have to be handled differently,
+    Different [dialect.defs.IRCEvent.Type|IRCEvent.Type]s have to be handled differently,
     as the triggering user may be either the sender or the target.
 
     Additionally none of these events carry a channel, so we'll have to make

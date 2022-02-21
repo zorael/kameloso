@@ -295,7 +295,7 @@ enum BufferSize
     vbufStdout = 16_384,
 
     /++
-        How large to make [core.thread.fiber.Fiber] stacks, so they don't overflow
+        How large to make [core.thread.fiber.Fiber|Fiber] stacks, so they don't overflow
         (which they seem to have a knack for doing).
      +/
     fiberStack = 32_768,

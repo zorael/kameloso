@@ -153,7 +153,7 @@ void onSelfjoin(TwitchBotPlugin plugin, const ref IRCEvent event)
     Registers a new [TwitchBotPlugin.Room] as we join a channel, so there's
     always a state struct available.
 
-    Creates the timer [core.thread.fiber.Fiber]s that there are definitions for in
+    Creates the timer [core.thread.fiber.Fiber|Fiber]s that there are definitions for in
     [TwitchBotPlugin.timerDefsByChannel].
 
     Params:
@@ -1179,7 +1179,7 @@ void initResources(TwitchBotPlugin plugin)
 
 // onMyInfo
 /++
-    Sets up a Fiber to periodically call timer [core.thread.fiber.Fiber]s with a
+    Sets up a Fiber to periodically call timer [core.thread.fiber.Fiber|Fiber]s with a
     periodicity of [TwitchBotPlugin.timerPeriodicity].
 
     Cannot be done on [dialect.defs.IRCEvent.Type.RPL_WELCOME] as the server
@@ -1423,7 +1423,7 @@ package:
          +/
         ulong messageCount;
 
-        /// Timer [core.thread.fiber.Fiber]s.
+        /// Timer [core.thread.fiber.Fiber|Fiber]s.
         Fiber[] timers;
 
         version(TwitchAPIFeatures)

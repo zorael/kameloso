@@ -153,7 +153,7 @@ enum isAColourCode(T) =
 /++
     Takes a mix of a [TerminalForeground], a [TerminalBackground], a
     [TerminalFormat] and/or a [TerminalReset] and composes them into a single
-    terminal format code token. Overload that creates an [std.array.Appender]
+    terminal format code token. Overload that creates an [std.array.Appender|Appender]
     and fills it with the return value of the output range version of `colour`.
 
     Example:

@@ -18,7 +18,7 @@
     with `UDA`s of IRC event *types*. When an event is incoming it will trigger
     the function(s) annotated with its type.
 
-    Callback delegates and [core.thread.fiber.Fiber]s *are* supported but are not
+    Callback delegates and [core.thread.fiber.Fiber|Fiber]s *are* supported but are not
     the primary way to trigger event handler functions. Such can however
     be registered to process on incoming events, or scheduled with a reasonably
     high degree of precision.
@@ -85,7 +85,7 @@ public:
     variables that together make up the plugin's state. This is where
     information is kept about the bot, the server, and some metathings allowing
     us to send messages to the server. We don't define it here; we mix it in
-    later with the [kameloso.plugins.common.core.IRCPluginImpl] mixin.
+    later with the [kameloso.plugins.common.core.IRCPluginImpl|IRCPluginImpl] mixin.
 
     ---
     struct IRCPluginState
@@ -124,7 +124,7 @@ public:
         home channels to operate in, the list of administrator accounts, etc.
 
     * [kameloso.plugins.common.core.IRCPluginState.settings] is a copy of the
-        "global" [kameloso.kameloso.CoreSettings], which contains information
+        "global" [kameloso.kameloso.CoreSettings|CoreSettings], which contains information
         about how the bot should output text, whether or not to always save to
         disk upon program exit, and some other program-wide settings.
 
@@ -144,7 +144,7 @@ public:
         users by more than merely their name. It is however not saved at the end
         of the program; as everything else it is merely state and transient.
 
-    * [kameloso.plugins.common.core.IRCPluginState.channels] is another associative
+    * [kameloso.plugins.common.core.IRCPluginState.channels|IRCPluginState.channels] is another associative
         array, this one with all the known channels keyed by their names. This
         way we can access detailed information about any known channel, given
         only their name.
@@ -174,7 +174,7 @@ public:
         the event by invoking its delegate.
 
     * [kameloso.plugins.common.core.IRCPluginState.awaitingFibers] is an
-        array of [core.thread.fiber.Fiber]s indexed by [dialect.ircdefs.IRCEvent.Type]s' numeric values.
+        array of [core.thread.fiber.Fiber|Fiber]s indexed by [dialect.ircdefs.IRCEvent.Type]s' numeric values.
         Fibers in the array of a particular event type will be executed the next
         time such an event is incoming. Think of it as Fiber callbacks.
 
@@ -183,8 +183,8 @@ public:
         matching type comes along.
 
     * [kameloso.plugins.common.core.IRCPluginState.scheduledFibers] is also an array of
-        [core.thread.fiber.Fiber]s, but not one keyed on or indexed by event types.
-        Instead they are tuples of a [core.thread.fiber.Fiber] and a `long`
+        [core.thread.fiber.Fiber|Fiber]s, but not one keyed on or indexed by event types.
+        Instead they are tuples of a [core.thread.fiber.Fiber|Fiber] and a `long`
         timestamp of when they should be run.
         Use [kameloso.plugins.common.delayFiber] to enqueue, or
         [kameloso.plugins.common.delayFiberMsecs] for greater granularity.
@@ -321,7 +321,7 @@ private:
     configuration file. For this purpose we create a "Settings" struct housing
     our configurable bits, which we already made an instance of in [SeenPlugin].
 
-    If it's annotated with [kameloso.plugins.common.core.Settings], the wizardry will
+    If it's annotated with [kameloso.plugins.common.core.Settings|Settings], the wizardry will
     pick it up and each member of the struct will be given its own line in the
     configuration file. Note that not all types are supported, such as
     associative arrays or nested structs/classes.
@@ -377,12 +377,12 @@ else
     current time.
 
     This function will be called whenever an [dialect.defs.IRCEvent|IRCEvent] is
-    being processed of the [dialect.defs.IRCEvent.Type]s that we annotate
+    being processed of the [dialect.defs.IRCEvent.Type|IRCEvent.Type]s that we annotate
     the function with.
 
     The [kameloso.plugins.common.core.IRCEventHandler.chainable] annotations mean that the plugin
     will also process other functions in this module with the same
-    [dialect.defs.IRCEvent.Type] annotations, even if this one matched. The
+    [dialect.defs.IRCEvent.Type|IRCEvent.Type] annotations, even if this one matched. The
     default is otherwise that it will end early after one match and proceed to the next plugin, but this
     doesn't ring well with catch-all functions like these. It's sensible to save
     [kameloso.plugins.common.core.IRCEventHandler.chainable] only for the modules and functions that
@@ -475,7 +475,7 @@ void onSomeAction(SeenPlugin plugin, const ref IRCEvent event)
         Updates the user's timestamp to the current time, both sender and target.
 
         This will be automatically called on any and all the kinds of
-        [dialect.defs.IRCEvent.Type]s it is annotated with. Furthermore, it will
+        [dialect.defs.IRCEvent.Type|IRCEvent.Type]s it is annotated with. Furthermore, it will
         only trigger if it took place in a home channel.
 
         There's no need to check for whether the sender/target is us, as
@@ -645,7 +645,7 @@ void onEndOfList(SeenPlugin plugin)
 
     The plugin system will have made certain we only get messages starting with
     "`seen`", since we annotated this function with such a
-    [kameloso.plugins.common.core.IRCEventHandler.Command]. It will since have been sliced off,
+    [kameloso.plugins.common.core.IRCEventHandler.Command|IRCEventHandler.Command]. It will since have been sliced off,
     so we're left only with the "arguments" to "`seen`". [dialect.defs.IRCEvent.aux]
     contains the triggering word, if it's needed.
 
@@ -1119,14 +1119,14 @@ void onBusMessage(SeenPlugin plugin, const string header, shared Sendable conten
     track which users you have seen (and are visible to you now), you don't need this.
 
     Additionally it implicitly mixes in [kameloso.plugins.common.awareness.MinimalAuthentication],
-    needed as soon as you have any [kameloso.plugins.common.core.PrefixPolicy] checks.
+    needed as soon as you have any [kameloso.plugins.common.core.PrefixPolicy|PrefixPolicy] checks.
  +/
 mixin UserAwareness;
 
 
 /++
     Complementary to [kameloso.plugins.common.awareness.UserAwareness] is
-    [kameloso.plugins.common.awareness.ChannelAwareness], which will add in book-keeping
+    [kameloso.plugins.common.awareness.ChannelAwareness|ChannelAwareness], which will add in book-keeping
     about the channels the bot is in, their topics, modes, and list of
     participants. Channel awareness requires user awareness, but not the other way around.
 

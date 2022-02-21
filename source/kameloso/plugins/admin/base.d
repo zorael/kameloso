@@ -306,7 +306,7 @@ void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
     [kameloso.kameloso.IRCBot.homeChannels|IRCBot.homeChannels] array of the current [AdminPlugin]'s
     [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
 
-    Follows up with a [core.thread.fiber.Fiber] to verify that the channel was actually joined.
+    Follows up with a [core.thread.fiber.Fiber|Fiber] to verify that the channel was actually joined.
 
     Params:
         plugin = The current [AdminPlugin].

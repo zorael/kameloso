@@ -1,6 +1,6 @@
 /++
     Structures and functions related to concurrency message passing, threads and
-    [core.thread.fiber.Fiber]s.
+    [core.thread.fiber.Fiber|Fiber]s.
 
     Example:
     ---
@@ -37,10 +37,10 @@ public:
 
 // ScheduledFiber
 /++
-    A [core.thread.fiber.Fiber] paired with a `long` UNIX timestamp.
+    A [core.thread.fiber.Fiber|Fiber] paired with a `long` UNIX timestamp.
 
     If we bundle the two together like this, we can associate a point in time
-    with a [core.thread.fiber.Fiber] without having to to use an associative
+    with a [core.thread.fiber.Fiber|Fiber] without having to to use an associative
     array (with UNIX timestamp keys).
 
     Example:
@@ -279,9 +279,9 @@ unittest
 
 // CarryingFiber
 /++
-    A [core.thread.fiber.Fiber] carrying a payload of type `T`.
+    A [core.thread.fiber.Fiber|Fiber] carrying a payload of type `T`.
 
-    Used interchangeably with [core.thread.fiber.Fiber], but allows for casting to true
+    Used interchangeably with [core.thread.fiber.Fiber|Fiber], but allows for casting to true
     `CarryingFiber!T`-ness to access the `payload` member.
 
     Example:

@@ -30,7 +30,7 @@ public:
         plugins = Array of all [kameloso.plugins.common.core.IRCPlugin|IRCPlugin]s.
         customSettings = Array of custom settings to apply to plugins' own
             setting, in the string forms of "`plugin.setting=value`".
-        copyOfSettings = A copy of the program-wide [kameloso.kameloso.CoreSettings].
+        copyOfSettings = A copy of the program-wide [kameloso.kameloso.CoreSettings|CoreSettings].
 
     Returns:
         `true` if no setting name mismatches occurred, `false` if it did.
@@ -869,6 +869,6 @@ struct EventURLs
     /// The [dialect.defs.IRCEvent|IRCEvent] that should trigger a Webtitles lookup.
     IRCEvent event;
 
-    /// The URLs discovered inside [dialect.defs.IRCEvent.content].
+    /// The URLs discovered inside [dialect.defs.IRCEvent.content|IRCEvent.content].
     string[] urls;
 }

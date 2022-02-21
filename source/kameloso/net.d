@@ -1,10 +1,10 @@
 /++
     Functionality related to connecting to a server over the Internet.
 
-    Includes [core.thread.fiber.Fiber]s that help with resolving the address of,
+    Includes [core.thread.fiber.Fiber|Fiber]s that help with resolving the address of,
     connecting to, and reading full string lines from a server.
 
-    Having them as [core.thread.fiber.Fiber]s means a program can do address resolution,
+    Having them as [core.thread.fiber.Fiber|Fiber]s means a program can do address resolution,
     connecting and reading while retaining the ability to do other stuff
     concurrently. This means you can conveniently run code inbetween each
     connection attempt, for instance, without breaking the program's flow.
@@ -580,7 +580,7 @@ struct ListenAttempt
             twice of [kameloso.constants.BufferSize.socketReceive] for now.
         conn = [Connection] whose [std.socket.Socket] it reads from the server with.
         abort = Reference "abort" flag, which -- if set -- should make the
-            function return and the [core.thread.fiber.Fiber] terminate.
+            function return and the [core.thread.fiber.Fiber|Fiber] terminate.
         connectionLost = How many seconds may pass before we consider the connection lost.
             Optional, defaults to [kameloso.constants.Timeout.connectionLost].
 
@@ -882,7 +882,7 @@ struct ConnectionAttempt
         connectionRetries = How many times to attempt to connect before signaling
             that we should move on to the next IP.
         abort = Reference "abort" flag, which -- if set -- should make the
-            function return and the [core.thread.fiber.Fiber] terminate.
+            function return and the [core.thread.fiber.Fiber|Fiber] terminate.
  +/
 void connectFiber(ref Connection conn,
     const uint connectionRetries,
@@ -1164,7 +1164,7 @@ struct ResolveAttempt
         port = Remote port build into the [std.socket.Address].
         useIPv6 = Whether to include resolved IPv6 addresses or not.
         abort = Reference "abort" flag, which -- if set -- should make the
-            function return and the [core.thread.fiber.Fiber] terminate.
+            function return and the [core.thread.fiber.Fiber|Fiber] terminate.
  +/
 void resolveFiber(ref Connection conn,
     const string address,

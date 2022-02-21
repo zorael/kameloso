@@ -119,7 +119,7 @@ unittest
 /++
     Colour-codes the passed string with mIRC colouring, foreground and background.
     Direct overload that leverages the output range version to colour an internal
-    [std.array.Appender], and returns the resulting string.
+    [std.array.Appender|Appender], and returns the resulting string.
 
     Params:
         line = Line to tint.

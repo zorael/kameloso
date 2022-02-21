@@ -31,7 +31,7 @@ package:
 
     This is only relevant if [kameloso.plugins.printer.base.PrinterSettings.bufferedWrites] is set.
 
-    As a micro-optimisation an [std.array.Appender] is used to store the lines,
+    As a micro-optimisation an [std.array.Appender|Appender] is used to store the lines,
     instead of a normal `string[]`.
  +/
 struct LogLineBuffer

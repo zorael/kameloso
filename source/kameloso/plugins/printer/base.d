@@ -132,7 +132,7 @@ public:
 /++
     Prints an event to the local terminal.
 
-    Buffer output in an [std.array.Appender].
+    Buffer output in an [std.array.Appender|Appender].
 
     Mutable [dialect.defs.IRCEvent|IRCEvent] parameter so as to make fewer internal copies
     (as this is a hotspot).

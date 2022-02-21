@@ -55,7 +55,7 @@ struct TimerDefinition
 // createTimerFiber
 /++
     Given a [TimerDefinition] and a string channel name, creates a
-    [core.thread.fiber.Fiber] that implements the timer.
+    [core.thread.fiber.Fiber|Fiber] that implements the timer.
 
     Params:
         plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin].

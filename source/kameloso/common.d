@@ -80,7 +80,7 @@ out (; (logger !is null), "Failed to initialise logger")
 
 // settings
 /++
-    A [kameloso.kameloso.CoreSettings] struct global, housing certain runtime settings.
+    A [kameloso.kameloso.CoreSettings|CoreSettings] struct global, housing certain runtime settings.
 
     This will be accessed from other parts of the program, via
     [kameloso.common.settings], so they know to use monochrome output or not.

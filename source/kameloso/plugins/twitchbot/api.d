@@ -138,7 +138,7 @@ void persistentQuerier(shared QueryResponse[string] bucket,
     Once the query returns, the response body is checked to see whether or not
     an error occurred. If so, it throws an exception with a descriptive message.
 
-    Note: Must be called from inside a [core.thread.fiber.Fiber].
+    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Example:
     ---
@@ -493,7 +493,7 @@ in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
     Fetches a list of all follows of the passed channel and caches them in
     the channel's entry in [kameloso.plugins.twitchbot.base.TwitchBotPlugin.rooms].
 
-    Note: Must be called from inside a [core.thread.fiber.Fiber].
+    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
         plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin].
@@ -587,7 +587,7 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
     [kameloso.plugins.twitchbot.base.TwitchBotPlugin.queryResponseTimeout]
     if nothing was received.
 
-    Note: Must be called from inside a [core.thread.fiber.Fiber].
+    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Example:
     ---

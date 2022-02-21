@@ -195,7 +195,7 @@ void onToConnectType(ConnectService service, const ref IRCEvent event)
     Pongs the server upon [dialect.defs.IRCEvent.Type.PING].
 
     Ping with the sender as target, and not the necessarily
-    the server as saved in the [dialect.defs.IRCServer] struct. For
+    the server as saved in the [dialect.defs.IRCServer|IRCServer] struct. For
     example, [dialect.defs.IRCEvent.Type.ERR_NEEDPONG] generally wants you to
     ping a random number or string.
  +/
