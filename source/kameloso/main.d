@@ -249,16 +249,9 @@ void messageFiber(ref Kameloso instance)
         /++
             Applies a `plugin.setting=value` change in setting to whichever plugin
             matches the expression.
-
-            For some reason the sending site really really wants the delegate to
-            be `@safe`, so we'll just have to cater to its whims:
-
-            Main thread message fiber received unknown Variant:
-            std.typecons.Tuple!(kameloso.thread.ThreadMessage.ChangeSetting,
-                shared(void delegate(bool) @safe), immutable(char)[]).Tuple
          +/
         void changeSetting(ThreadMessage.ChangeSetting,
-            shared(void delegate(bool) @safe) dg, string expression)
+            shared(void delegate(bool)) dg, string expression)
         {
             import kameloso.plugins.common.misc : applyCustomSettings;
 
@@ -266,6 +259,20 @@ void messageFiber(ref Kameloso instance)
             immutable success = applyCustomSettings(instance.plugins,
                 [ expression ], instance.plugins[0].state.settings);
             dg(success);
+        }
+
+        /++
+            Overload of the above because we keep seeing both @safe and @system
+            delegates for no apparent reason.
+
+            Main thread message fiber received unknown Variant:
+            std.typecons.Tuple!(kameloso.thread.ThreadMessage.ChangeSetting,
+                shared(void delegate(bool) @safe), immutable(char)[]).Tuple
+         +/
+        void changeSettingSafeDg(ThreadMessage.ChangeSetting,
+            shared(void delegate(bool) @safe) dg, string expression)
+        {
+            changeSetting(ThreadMessage.ChangeSetting(), dg, expression);
         }
 
         /// Reloads a particular plugin, or all if no plugin name passed.
@@ -648,6 +655,7 @@ void messageFiber(ref Kameloso instance)
                 &reloadSpecificPlugin,
                 &peekCommands,
                 &changeSetting,
+                &changeSettingSafeDg,
                 &reconnect,
                 &dispatchBusMessage,
                 &dispatchEmptyBusMessage,
