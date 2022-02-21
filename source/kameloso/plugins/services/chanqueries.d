@@ -9,8 +9,8 @@
     [kameloso.plugins.common.awareness.ChannelAwareness|ChannelAwareness] into your plugins.
 
     See_Also:
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.services.chanqueries;
 
@@ -61,7 +61,7 @@ enum ChannelState : ubyte
 /++
     Queries channels for information about them and their users.
 
-    Checks an internal list of channels once every [dialect.defs.IRCEvent.Type.PING],
+    Checks an internal list of channels once every [dialect.defs.IRCEvent.Type.PING|PING],
     and if one we inhabit hasn't been queried, queries it.
  +/
 @(IRCEventHandler()
@@ -495,7 +495,7 @@ private:
 
     // isEnabled
     /++
-        Override [kameloso.plugins.common.core.IRCPluginImpl.isEnabled] and inject
+        Override [kameloso.plugins.common.core.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled] and inject
         a server check, so this service does nothing on Twitch servers.
 
         Returns:

@@ -9,8 +9,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#twitchbot
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.twitchbot.base;
 
@@ -49,18 +49,18 @@ public:
     /// Whether or not to bell on important events, like subscriptions.
     bool bellOnImportant = false;
 
-    /// Whether or not broadcasters are always implicitly class [dialect.defs.IRCUser.Class.staff].
+    /// Whether or not broadcasters are always implicitly class [dialect.defs.IRCUser.Class.staff|IRCUser.Class.staff].
     bool promoteBroadcasters = true;
 
     /++
         Whether or not moderators are always implicitly (at least) class
-        [dialect.defs.IRCUser.Class.operator].
+        [dialect.defs.IRCUser.Class.operator|IRCUser.Class.operator].
      +/
     bool promoteModerators = true;
 
     /++
         Whether or not VIPs are always implicitly (at least) class
-        [dialect.defs.IRCUser.Class.whitelist].
+        [dialect.defs.IRCUser.Class.whitelist|IRCUser.Class.whitelist].
      +/
     bool promoteVIPs = true;
 
@@ -969,7 +969,7 @@ void onAnyMessage(TwitchBotPlugin plugin, const ref IRCEvent event)
     logged onto the server.
 
     Has to be done at MOTD, as we only know whether we're on Twitch after
-    RPL_MYINFO or so.
+    [dialect.defs.IRCEvent.Type.RPL_MYINFO|RPL_MYINFO] or so.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_ENDOFMOTD)
@@ -1112,7 +1112,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
 // onCAP
 /++
     Start the captive key generation routine at the earliest possible moment,
-    which are the CAP events.
+    which are the [dialect.defs.IRCEvent.Type.CAP|CAP] events.
 
     We can't do it in [start] since the calls to save and exit would go unheard,
     as [start] happens before the main loop starts. It would then immediately
@@ -1182,7 +1182,7 @@ void initResources(TwitchBotPlugin plugin)
     Sets up a Fiber to periodically call timer [core.thread.fiber.Fiber|Fiber]s with a
     periodicity of [TwitchBotPlugin.timerPeriodicity].
 
-    Cannot be done on [dialect.defs.IRCEvent.Type.RPL_WELCOME] as the server
+    Cannot be done on [dialect.defs.IRCEvent.Type.RPL_WELCOME|RPL_WELCOME] as the server
     daemon isn't known by then.
  +/
 @(IRCEventHandler()
@@ -1538,7 +1538,7 @@ package:
 
     // isEnabled
     /++
-        Override [kameloso.plugins.common.core.IRCPluginImpl.isEnabled] and inject
+        Override [kameloso.plugins.common.core.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled] and inject
         a server check, so this plugin only works on Twitch, in addition
         to doing nothing when [TwitchbotSettings.enabled] is false.
 

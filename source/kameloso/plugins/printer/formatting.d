@@ -3,12 +3,12 @@
     For internal use.
 
     The [dialect.defs.IRCEvent|IRCEvent]-annotated handlers must be in the same module
-    as the [kameloso.plugins.printer.base.PrinterPlugin], but these implementation
+    as the [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin], but these implementation
     functions can be offloaded here to limit module size a bit.
 
     See_Also:
-        [kameloso.plugins.printer.base]
-        [kameloso.plugins.printer.logging]
+        [kameloso.plugins.printer.base|printer.base]
+        [kameloso.plugins.printer.logging|printer.logging]
  +/
 module kameloso.plugins.printer.formatting;
 
@@ -170,7 +170,7 @@ unittest
     the channel or target, the content body, as well as auxiliary information.
 
     Params:
-        plugin = Current [kameloso.plugins.printer.base.PrinterPlugin].
+        plugin = Current [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin].
         sink = Output range to format the [dialect.defs.IRCEvent|IRCEvent] into.
         event = The [dialect.defs.IRCEvent|IRCEvent] that is to be formatted.
         bellOnMention = Whether or not to emit a terminal bell when the bot's
@@ -538,7 +538,7 @@ if (isOutputRange!(Sink, char[]))
     information and numbers.
 
     Params:
-        plugin = Current [kameloso.plugins.printer.base.PrinterPlugin].
+        plugin = Current [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin].
         sink = Output range to format the [dialect.defs.IRCEvent|IRCEvent] into.
         event = The [dialect.defs.IRCEvent|IRCEvent] that is to be formatted.
         bellOnMention = Whether or not to emit a terminal bell when the bot's
@@ -1422,9 +1422,9 @@ unittest
     getting false positives from similar nicknames.
 
     Tries to detect nicknames enclosed in terminal formatting. As such, call this
-    *after* having translated IRC- to terminal such with [kameloso.irccolours.mapEffects].
+    *after* having translated IRC- to terminal such with [kameloso.irccolours.mapEffects|irccolours.mapEffects].
 
-    Uses [std.string.indexOf] internally with hopes of being more resilient to
+    Uses [std.string.indexOf|indexOf] internally with hopes of being more resilient to
     weird UTF-8.
 
     Params:

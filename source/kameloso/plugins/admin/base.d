@@ -498,7 +498,7 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
     [dialect.defs.IRCClient.Class.whitelist|IRCClient.Class.whitelist] of the current [AdminPlugin]'s
     [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
 
-    This is on a [kameloso.plugins.common.core.Permissions.operator] level.
+    This is on a [kameloso.plugins.common.core.Permissions.operator|Permissions.operator] level.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)

@@ -7,8 +7,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#quotes
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.quotes;
 
@@ -55,7 +55,7 @@ public:
     /// The index of the quote in the quote array.
     size_t index;
 
-    /// Constructor taking a [std.json.JSONValue] and an index.
+    /// Constructor taking a [std.json.JSONValue|JSONValue] and an index.
     this(const JSONValue json, const size_t index)
     {
         this.line = json["line"].str;
@@ -908,7 +908,7 @@ public:
     These are not currently automatically replayed, such as when a user joins,
     but can rather be actively queried by use of the `quote` verb.
 
-    It was historically part of [kameloso.plugins.chatbot.ChatbotPlugin].
+    It was historically part of [kameloso.plugins.chatbot.ChatbotPlugin|ChatbotPlugin].
  +/
 final class QuotesPlugin : IRCPlugin
 {

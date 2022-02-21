@@ -7,8 +7,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#chatbot
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.chatbot;
 
@@ -179,7 +179,7 @@ void onCommandBash(ChatbotPlugin plugin, const ref IRCEvent event)
     Supposed to be run in its own, short-lived thread.
 
     Params:
-        sState = A `shared` [kameloso.plugins.common.core.IRCPluginState] containing
+        sState = A `shared` [kameloso.plugins.common.core.IRCPluginState|IRCPluginState] containing
             necessary information to pass messages to send messages to the main
             thread, to send text to the server or display text on the screen.
         event = The [dialect.defs.IRCEvent|IRCEvent] in flight.

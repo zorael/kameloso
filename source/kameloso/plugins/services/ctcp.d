@@ -6,8 +6,8 @@
     responds to requests.
 
     See_Also:
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.services.ctcp;
 
@@ -315,7 +315,7 @@ final class CTCPService : IRCPlugin
 private:
     // isEnabled
     /++
-        Override [kameloso.plugins.common.core.IRCPluginImpl.isEnabled] and inject
+        Override [kameloso.plugins.common.core.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled] and inject
         a server check, so this service does nothing on Twitch servers.
 
         Returns:

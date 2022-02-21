@@ -4,8 +4,8 @@
     This was all in one `plugins/common.d` file that just grew too big.
 
     See_Also:
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.common.mixins;
 
@@ -284,7 +284,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     // enqueueAndWHOIS
     /++
         Constructs a [kameloso.thread.CarryingFiber] carrying a [dialect.defs.IRCEvent|IRCEvent]
-        and enqueues it into the [kameloso.plugins.common.core.IRCPluginState.awaitingFibers]
+        and enqueues it into the [kameloso.plugins.common.core.IRCPluginState.awaitingFibers|IRCPluginState.awaitingFibers]
         associative array, then issues a WHOIS query (unless overridden via
         the `issueWhois` parameter).
 
@@ -294,7 +294,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             background = Whether or not to issue queries as low-priority background messages.
 
         Throws:
-            [object.Exception] if a success of failure function was to trigger
+            [object.Exception|Exception] if a success of failure function was to trigger
             in an impossible scenario, such as on WHOIS results on Twitch.
      +/
     void enqueueAndWHOIS(const string nickname,

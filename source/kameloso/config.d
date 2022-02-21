@@ -167,7 +167,7 @@ void printSettings(ref Kameloso instance, const string[] customSettings) @system
             passed to [writeConfig] when writing to the configuration file.
 
     Throws:
-        [object.Exception] on unexpected platforms where we did not know how to
+        [object.Exception|Exception] on unexpected platforms where we did not know how to
         open the configuration file in a text editor.
  +/
 void manageConfigFile(ref Kameloso instance,
@@ -340,7 +340,7 @@ void writeToDisk(const string filename,
     Displays a hint on how to complete a minimal configuration file.
 
     It assumes that the bot's [kameloso.kameloso.IRCBot.admins] and
-    [kameloso.kameloso.IRCBot.homeChannels] are both empty. (Else it should not have been called.)
+    [kameloso.kameloso.IRCBot.homeChannels|IRCBot.homeChannels] are both empty. (Else it should not have been called.)
  +/
 void giveConfigurationMinimalIntructions()
 {
@@ -1055,7 +1055,7 @@ unittest
     Exception, to be thrown when the specified configuration file could not be
     read, for whatever reason.
 
-    It is a normal [object.Exception] but with an attached filename string.
+    It is a normal [object.Exception|Exception] but with an attached filename string.
  +/
 final class ConfigurationFileReadFailureException : Exception
 {

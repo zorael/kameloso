@@ -2,8 +2,8 @@
     Functions for accessing the Twitch API. For internal use.
 
     See_Also:
-        [kameloso.plugins.twitchbot.base]
-        [kameloso.plugins.twitchbot.keygen]
+        [kameloso.plugins.twitchbot.base|twitchbot.base]
+        [kameloso.plugins.twitchbot.keygen|twitchbot.keygen]
  +/
 module kameloso.plugins.twitchbot.api;
 
@@ -146,7 +146,7 @@ void persistentQuerier(shared QueryResponse[string] bucket,
     ---
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
         url = The URL to query.
         authorisationHeader = Authorisation HTTP header to pass.
         recursing = Whether or not this is a recursive call and another one should
@@ -348,12 +348,12 @@ void queryTwitchImpl(const string url,
     By following a passed URL, queries Twitch servers for an entity (user or channel).
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
         url = The URL to follow.
 
     Returns:
         A singular user or channel regardless of how many were asked for in the URL.
-        If nothing was found, an empty [std.json.JSONValue].init is returned instead.
+        If nothing was found, an empty [std.json.JSONValue|JSONValue].init is returned instead.
  +/
 JSONValue getTwitchEntity(TwitchBotPlugin plugin, const string url)
 in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
@@ -387,12 +387,12 @@ in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
     It is not updated in realtime, so it doesn't make sense to call this often.
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
         broadcaster = The broadcaster to look up chatters for.
 
     Returns:
-        A [std.json.JSONValue] with "`chatters`" and "`chatter_count`" keys.
-        If nothing was found, an empty [std.json.JSONValue].init is returned instead.
+        A [std.json.JSONValue|JSONValue] with "`chatters`" and "`chatter_count`" keys.
+        If nothing was found, an empty [std.json.JSONValue|JSONValue].init is returned instead.
  +/
 JSONValue getChatters(TwitchBotPlugin plugin, const string broadcaster)
 in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
@@ -451,10 +451,10 @@ in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
     Validates the current access key, retrieving information about it.
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
 
     Returns:
-        A [std.json.JSONValue] with the validation information JSON of the
+        A [std.json.JSONValue|JSONValue] with the validation information JSON of the
         current authorisation header/client ID pair.
 
     Throws:
@@ -491,16 +491,16 @@ in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
 // getFollows
 /++
     Fetches a list of all follows of the passed channel and caches them in
-    the channel's entry in [kameloso.plugins.twitchbot.base.TwitchBotPlugin.rooms].
+    the channel's entry in [kameloso.plugins.twitchbot.base.TwitchBotPlugin.rooms|TwitchBotPlugin.rooms].
 
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
         id = The string identifier for the channel.
 
     Returns:
-        An associative array of [std.json.JSONValue]s keyed by nickname string,
+        An associative array of [std.json.JSONValue|JSONValue]s keyed by nickname string,
         containing follows.
  +/
 JSONValue[string] getFollows(TwitchBotPlugin plugin, const string id)
@@ -546,13 +546,13 @@ in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
     the weighted averages of the old value and said new measurement.
 
     The old value is given a weight of
-    [kameloso.plugins.twitchbot.base.TwitchBotPlugin.approximateQueryAveragingWeight]
+    [kameloso.plugins.twitchbot.base.TwitchBotPlugin.approximateQueryAveragingWeight|approximateQueryAveragingWeight]
     and the new measurement a weight of 1. Additionally the measurement is padded
-    by [kameloso.plugins.twitchbot.base.TwitchBotPlugin.approximateQueryMeasurementPadding]
+    by [kameloso.plugins.twitchbot.base.TwitchBotPlugin.approximateQueryMeasurementPadding|approximateQueryMeasurementPadding]
     to be on the safe side.
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
         responseMsecs = The new measurement of how many milliseconds the last
             query took to complete.
  +/
@@ -584,7 +584,7 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
     response has arrived, and then returns it.
 
     Times out after a hardcoded
-    [kameloso.plugins.twitchbot.base.TwitchBotPlugin.queryResponseTimeout]
+    [kameloso.plugins.twitchbot.base.TwitchBotPlugin.queryResponseTimeout|queryResponseTimeout]
     if nothing was received.
 
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
@@ -609,7 +609,7 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
     ---
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
         url = The URL that was queried prior to calling this function. Must match precisely.
         leaveTimingAlone = Whether or not to adjust the approximate query time.
             Enabled by default but can be disabled if the caller wants to do it.
@@ -666,7 +666,7 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
     Exception, to be thrown when an API query to the Twitch servers failed,
     for whatever reason.
 
-    It is a normal [object.Exception] but with attached metadata.
+    It is a normal [object.Exception|Exception] but with attached metadata.
  +/
 final class TwitchQueryException : Exception
 {

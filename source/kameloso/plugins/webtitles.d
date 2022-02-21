@@ -7,8 +7,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#webtitles
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.webtitles;
 
@@ -107,7 +107,7 @@ struct TitleLookupRequest
 /++
     Parses a message to see if the message contains one or more URLs.
 
-    It uses a simple state machine in [kameloso.common.findURLs] to exhaustively
+    It uses a simple state machine in [kameloso.common.findURLs|findURLs] to exhaustively
     try to look up every URL returned by it.
  +/
 @(IRCEventHandler()
@@ -428,7 +428,7 @@ void worker(shared TitleLookupRequest sRequest,
     Returns:
         A finished [TitleLookupResults].
 
-    Throws: [object.Exception] if URL could not be fetched, or if no title could be
+    Throws: [object.Exception|Exception] if URL could not be fetched, or if no title could be
         divined from it.
  +/
 TitleLookupResults lookupTitle(const string url, const Flag!"descriptions" descriptions)
@@ -654,11 +654,11 @@ unittest
         url = A YouTube video link string.
 
     Returns:
-        A [std.json.JSONValue] with fields describing the looked-up video.
+        A [std.json.JSONValue|JSONValue] with fields describing the looked-up video.
 
     Throws:
-        [object.Exception] if the YouTube ID was invalid and could not be queried.
-        [std.json.JSONException] if the JSON response could not be parsed.
+        [object.Exception|Exception] if the YouTube ID was invalid and could not be queried.
+        [std.json.JSONException|JSONException] if the JSON response could not be parsed.
  +/
 JSONValue getYouTubeInfo(const string url)
 {
@@ -709,7 +709,7 @@ JSONValue getYouTubeInfo(const string url)
 
 // TitleFetchException
 /++
-    A normal [object.Exception] but with an HTTP status code and a cURL error code attached.
+    A normal [object.Exception|Exception] but with an HTTP status code and a cURL error code attached.
  +/
 final class TitleFetchException : Exception
 {

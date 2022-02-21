@@ -37,7 +37,7 @@
     ---
 
     See_Also:
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.common.core;
 
@@ -288,7 +288,7 @@ mixin template IRCPluginImpl(
     /++
         Introspects the current plugin, looking for a
         [kameloso.plugins.common.core.Settings|Settings]-annotated struct
-        member that has a bool annotated with [kameloso.plugins.common.core.Enabler],
+        member that has a bool annotated with [kameloso.plugins.common.core.Enabler|Enabler],
         which denotes it as the bool that toggles a plugin on and off.
 
         It then returns its value.
@@ -2309,7 +2309,7 @@ enum PrefixPolicy
         The annotated event handler will only trigger if the [dialect.defs.IRCEvent.content|IRCEvent.content]
         member starts with the bot's name, as if addressed to it.
 
-        In [dialect.defs.IRCEvent.Type.QUERY] events this instead behaves as
+        In [dialect.defs.IRCEvent.Type.QUERY|QUERY] events this instead behaves as
         [PrefixPolicy.direct].
      +/
     nickname,

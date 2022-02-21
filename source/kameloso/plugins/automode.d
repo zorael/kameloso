@@ -5,8 +5,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#automode
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.automode;
 
@@ -591,7 +591,7 @@ private:
 
     // isEnabled
     /++
-        Override [kameloso.plugins.common.core.IRCPluginImpl.isEnabled] and inject
+        Override [kameloso.plugins.common.core.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled] and inject
         a server check, so this plugin does nothing on Twitch servers, in addition
         to doing nothing when [AutomodeSettings.enabled] is false.
 

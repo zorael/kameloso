@@ -4,8 +4,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#notes
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.notes;
 
@@ -67,7 +67,7 @@ void onReplayEvent(NotesPlugin plugin, const /*ref*/ IRCEvent event)
 
     These carry a sender, so it's possible we know the account without lookups.
 
-    Do nothing if [kameloso.kameloso.CoreSettings.eagerLookups] is true,
+    Do nothing if [kameloso.kameloso.CoreSettings.eagerLookups|CoreSettings.eagerLookups] is true,
     as we'd collide with ChanQueries' queries.
 
     Pass `Yes.background` to [playbackNotes] to ensure it does low-priority background

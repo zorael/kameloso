@@ -5,8 +5,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#help
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.help;
 
@@ -41,7 +41,7 @@ import dialect.defs;
 
     Plugins don't know about other plugins; the only thing they know of the
     outside world is the thread ID of the main thread ID (stored in
-    [kameloso.plugins.common.core.IRCPluginState,mainThread]). As such, we can't easily query
+    [kameloso.plugins.common.core.IRCPluginState.mainThread|IRCPluginState.mainThread]). As such, we can't easily query
     each plugin for their [kameloso.plugins.common.core.IRCEventHandler.Command|IRCEventHandler.Command]-annotated functions.
 
     To work around this we construct an array of

@@ -1528,13 +1528,13 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
 
 // processScheduledDelegates
 /++
-    Processes the queued [kameloso.thread.ScheduledDelegate]s of an
+    Processes the queued [kameloso.thread.ScheduledDelegate|ScheduledDelegate]s of an
     [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
 
     Params:
         plugin = The [kameloso.plugins.common.core.IRCPlugin|IRCPlugin] whose queued
-            [kameloso.thread.ScheduledDelegate]s to iterate and process.
-        nowInHnsecs = Current timestamp to compare the [kameloso.thread.ScheduledDelegate]'s
+            [kameloso.thread.ScheduledDelegate|ScheduledDelegate]s to iterate and process.
+        nowInHnsecs = Current timestamp to compare the [kameloso.thread.ScheduledDelegate|ScheduledDelegate]'s
             timestamp with.
  +/
 void processScheduledDelegates(IRCPlugin plugin, const long nowInHnsecs)

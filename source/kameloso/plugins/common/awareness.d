@@ -91,7 +91,7 @@ mixin template MinimalAuthentication(
     }
     else
     {
-        /// Flag denoting that [kameloso.plugins.common.awareness.MinimalAuthentication] has been mixed in.
+        /// Flag denoting that [kameloso.plugins.common.awareness.MinimalAuthentication|MinimalAuthentication] has been mixed in.
         package enum hasMinimalAuthentication = true;
     }
 
@@ -144,8 +144,8 @@ mixin template MinimalAuthentication(
 
     [dialect.defs.IRCEvent.Type.RPL_ENDOFWHOIS] is also handled, to
     cover the case where a user without an account triggering
-    [kameloso.plugins.common.core.Permissions.anyone]- or
-    [kameloso.plugins.common.core.Permissions.ignore]-level commands.
+    [kameloso.plugins.common.core.Permissions.anyone|Permissions.anyone]- or
+    [kameloso.plugins.common.core.Permissions.ignore|Permissions.ignore]-level commands.
 
     This function was part of [UserAwareness] but triggering queued replays
     is too common to conflate with it.
@@ -250,7 +250,7 @@ mixin template UserAwareness(
     }
     else
     {
-        /// Flag denoting that [kameloso.plugins.common.awareness.UserAwareness] has been mixed in.
+        /// Flag denoting that [kameloso.plugins.common.awareness.UserAwareness|UserAwareness] has been mixed in.
         package enum hasUserAwareness = true;
     }
 
@@ -597,7 +597,7 @@ void onUserAwarenessEndOfList(IRCPlugin plugin, const ref IRCEvent event) @syste
     Rehash the internal [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users] associative array of
     [dialect.defs.IRCUser|IRCUser]s, once every `hoursBetweenRehashes` hours.
 
-    We ride the periodicity of [dialect.defs.IRCEvent.Type.PING] to get
+    We ride the periodicity of [dialect.defs.IRCEvent.Type.PING|PING] to get
     a natural cadence without having to resort to queued
     [kameloso.thread.ScheduledFiber|ScheduledFiber]s.
 

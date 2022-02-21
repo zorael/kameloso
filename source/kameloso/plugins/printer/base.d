@@ -13,8 +13,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#printer
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.printer.base;
 
@@ -429,7 +429,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 /++
     Logs an event to disk.
 
-    It is set to [kameloso.plugins.common.core.ChannelPolicy.any], and configuration
+    It is set to [kameloso.plugins.common.core.ChannelPolicy.any|ChannelPolicy.any], and configuration
     dictates whether or not non-home events should be logged. Likewise whether
     or not raw events should be logged.
 
@@ -461,7 +461,7 @@ void onLoggableEvent(PrinterPlugin plugin, const ref IRCEvent event)
         plugin = The current [PrinterPlugin].
 
     See_Also:
-        [kameloso.plugins.printer.logging.commitLog]
+        [kameloso.plugins.printer.logging.commitLog|printer.logging.commitLog]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.PING)
@@ -628,9 +628,9 @@ import kameloso.thread : Sendable;
 
 // onBusMessage
 /++
-    Receives a passed [kameloso.thread.BusMessage] with the "`printer`" header,
+    Receives a passed [kameloso.thread.BusMessage|BusMessage] with the "`printer`" header,
     listening for cues to ignore the next events caused by the
-    [kameloso.plugins.services.chanqueries.ChanQueriesService] querying current channel
+    [kameloso.plugins.services.chanqueries.ChanQueriesService|ChanQueriesService] querying current channel
     for information on the channels and their users.
 
     Params:

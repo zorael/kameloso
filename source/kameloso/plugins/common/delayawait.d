@@ -6,8 +6,8 @@
     This was all in one `plugins/common.d` file that just grew too big.
 
     See_Also:
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.common.delayawait;
 
@@ -27,9 +27,9 @@ public:
 /++
     Queues a [core.thread.fiber.Fiber|Fiber] to be called at a point `duration`
     later, by appending it to the `plugin`'s
-    [kameloso.plugins.common.core.IRCPluginState.scheduledFibers].
+    [kameloso.plugins.common.core.IRCPluginState.scheduledFibers|IRCPluginState.scheduledFibers].
 
-    Updates the [kameloso.plugins.common.core.IRCPluginState.nextScheduledTimestamp]
+    Updates the [kameloso.plugins.common.core.IRCPluginState.nextScheduledTimestamp|IRCPluginState.nextScheduledFibers]
     timestamp so that the main loop knows when to next process the array of
     [kameloso.thread.ScheduledFiber|ScheduledFiber]s.
 
@@ -57,8 +57,8 @@ in ((fiber !is null), "Tried to delay a null Fiber")
 /++
     Queues a [core.thread.fiber.Fiber|Fiber] to be called at a point `duration`
     later, by appending it to the `plugin`'s
-    [kameloso.plugins.common.core.IRCPluginState.scheduledFibers].
-    Overload that implicitly queues [core.thread.fiber.Fiber.getThis].
+    [kameloso.plugins.common.core.IRCPluginState.scheduledFibers|IRCPluginState.scheduledFibers].
+    Overload that implicitly queues [core.thread.fiber.Fiber.getThis|Fiber.getThis].
 
     Params:
         plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
@@ -80,11 +80,11 @@ in (Fiber.getThis, "Tried to delay the current Fiber outside of a Fiber")
 /++
     Queues a `void delegate()` delegate to be called at a point `duration`
     later, by appending it to the `plugin`'s
-    [kameloso.plugins.common.core.IRCPluginState.scheduledDelegates].
+    [kameloso.plugins.common.core.IRCPluginState.scheduledDelegates|IRCPluginState.scheduledDelegates].
 
-    Updates the [kameloso.plugins.common.core.IRCPluginState.nextScheduledTimestamp]
+    Updates the [kameloso.plugins.common.core.IRCPluginState.nextScheduledTimestamp|IRCPluginState.nextScheduledFibers]
     timestamp so that the main loop knows when to next process the array of
-    [kameloso.thread.ScheduledDelegate]s.
+    [kameloso.thread.ScheduledDelegate|ScheduledDelegate]s.
 
     Params:
         plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
@@ -111,7 +111,7 @@ in ((dg !is null), "Tried to delay a null delegate")
     Removes a [core.thread.fiber.Fiber|Fiber] from being called at any point later.
 
     Updates the `nextScheduledTimestamp` UNIX timestamp (by way of
-    [kameloso.plugins.common.core.IRCPluginState.updateSchedule]) so that the
+    [kameloso.plugins.common.core.IRCPluginState.updateSchedule|IRCPluginState.updateSchedule]) so that the
     main loop knows when to process the array of [core.thread.fiber.Fiber|Fiber]s.
 
     Do not destroy and free the removed [core.thread.fiber.Fiber|Fiber], as it may be reused.
@@ -151,7 +151,7 @@ in ((fiber !is null), "Tried to remove a delayed null Fiber")
 // removeDelayedFiber
 /++
     Removes a [core.thread.fiber.Fiber|Fiber] from being called at any point later.
-    Overload that implicitly removes [core.thread.fiber.Fiber.getThis].
+    Overload that implicitly removes [core.thread.fiber.Fiber.getThis|Fiber.getThis].
 
     Params:
         plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
@@ -230,7 +230,7 @@ in ((type != IRCEvent.Type.UNSET), "Tried to set up a Fiber to await `IRCEvent.T
     Queues a [core.thread.fiber.Fiber|Fiber] to be called whenever the next parsed and
     triggering [dialect.defs.IRCEvent|IRCEvent] matches the passed
     [dialect.defs.IRCEvent.Type|IRCEvent.Type] type.
-    Overload that implicitly queues [core.thread.fiber.Fiber.getThis].
+    Overload that implicitly queues [core.thread.fiber.Fiber.getThis|Fiber.getThis].
 
     Params:
         plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
@@ -284,7 +284,7 @@ in ((fiber !is null), "Tried to set up a null Fiber to await events")
     Queues a [core.thread.fiber.Fiber|Fiber] to be called whenever the next parsed and
     triggering [dialect.defs.IRCEvent|IRCEvent] matches any of the passed
     [dialect.defs.IRCEvent.Type|IRCEvent.Type] types.
-    Overload that implicitly queues [core.thread.fiber.Fiber.getThis].
+    Overload that implicitly queues [core.thread.fiber.Fiber.getThis|Fiber.getThis].
 
     Params:
         plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
@@ -450,7 +450,7 @@ void unawait(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
     Dequeues a [core.thread.fiber.Fiber|Fiber] from being called whenever the next parsed and
     triggering [dialect.defs.IRCEvent|IRCEvent] matches the passed
     [dialect.defs.IRCEvent.Type|IRCEvent.Type] type. Overload that implicitly dequeues
-    [core.thread.fiber.Fiber.getThis].
+    [core.thread.fiber.Fiber.getThis|Fiber.getThis].
 
     Params:
         plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
@@ -497,7 +497,7 @@ void unawait(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
     Dequeues a [core.thread.fiber.Fiber|Fiber] from being called whenever the next parsed and
     triggering [dialect.defs.IRCEvent|IRCEvent] matches any of the passed
     [dialect.defs.IRCEvent.Type|IRCEvent.Type] types. Overload that implicitly dequeues
-    [core.thread.fiber.Fiber.getThis].
+    [core.thread.fiber.Fiber.getThis|Fiber.getThis].
 
     Params:
         plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].

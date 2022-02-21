@@ -2,8 +2,8 @@
     Functions for generating a Twitch API key.
 
     See_Also:
-        [kameloso.plugins.twitchbot.base]
-        [kameloso.plugins.twitchbot.api]
+        [kameloso.plugins.twitchbot.base|twitchbot.base]
+        [kameloso.plugins.twitchbot.api|twitchbot.api]
  +/
 module kameloso.plugins.twitchbot.keygen;
 
@@ -21,11 +21,11 @@ package:
 // generateKey
 /++
     Start the captive key generation routine at the earliest possible moment,
-    which are the CAP events.
+    which are the [dialect.defs.IRCEvent.Type.CAP|CAP] events.
 
-    Invoked by [kameloso.plugins.twitchbot.base.onCAP] during capability negotiation.
+    Invoked by [kameloso.plugins.twitchbot.base.onCAP|onCAP] during capability negotiation.
 
-    We can't do it in [kameloso.plugins.twitchbot.base.start] since the calls to
+    We can't do it in [kameloso.plugins.twitchbot.base.start|start] since the calls to
     save and exit would go unheard, as `start` happens before the main loop starts.
     It would then immediately fail to read if too much time has passed,
     and nothing would be saved.

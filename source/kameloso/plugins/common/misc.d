@@ -3,7 +3,7 @@
     without which they will *not* function.
 
     See_Also:
-        [kameloso.plugins.common.core]
+        [kameloso.plugins.common.core|plugins.common.core]
  +/
 module kameloso.plugins.common.misc;
 
@@ -220,7 +220,7 @@ unittest
 /++
     Exception thrown when an IRC plugin failed to have its settings set.
 
-    A normal [object.Exception], which only differs in the sense that we can deduce
+    A normal [object.Exception|Exception], which only differs in the sense that we can deduce
     what went wrong by its type.
  +/
 final class IRCPluginSettingsException : Exception
@@ -240,7 +240,7 @@ final class IRCPluginSettingsException : Exception
 /++
     Exception thrown when an IRC plugin failed to initialise itself or its resources.
 
-    A normal [object.Exception], which only differs in the sense that we can deduce
+    A normal [object.Exception|Exception], which only differs in the sense that we can deduce
     what went wrong by its type.
  +/
 final class IRCPluginInitialisationException : Exception
