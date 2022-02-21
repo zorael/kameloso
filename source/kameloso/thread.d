@@ -303,7 +303,7 @@ unittest
     ---
 
     Params:
-        T = Type to embed into the `CarryingFiber` as the type of `CarryingFiber.payload`.
+        T = Type to embed into the class as the type of [CarryingFiber.payload].
  +/
 final class CarryingFiber(T) : Fiber
 {

@@ -127,7 +127,7 @@ unittest
 // longestUnserialisableMemberName
 /++
     Gets the name of the longest member in one or more aggregate types, including
-    [lu.uda.Unserialisable] ones.
+    [lu.uda.Unserialisable|Unserialisable] ones.
 
     This is used for formatting terminal output of objects, so that columns line up.
 

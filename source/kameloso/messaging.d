@@ -19,7 +19,7 @@
     ---
 
     Having to supply the [kameloso.plugins.common.core.IRCPluginState|IRCPluginState] on every call
-    can be avoided for plugins, by mixing in [kameloso.plugins.common.mixins.MessagingProxy]
+    can be avoided for plugins, by mixing in [kameloso.plugins.common.mixins.MessagingProxy|MessagingProxy]
     and placing the messaging function calls inside a `with (plugin)` block.
 
     Example:
@@ -249,7 +249,7 @@ unittest
     the arguments passed to it.
 
     This reflects how channel messages and private messages are both the
-    underlying same type; [dialect.defs.IRCEvent.Type.PRIVMSG].
+    underlying same type; [dialect.defs.IRCEvent.Type.PRIVMSG|PRIVMSG].
 
     Params:
         priority = Whether or not to send the message as a priority message,
@@ -1056,7 +1056,7 @@ alias immediateline = immediate;
     terminal, instead of doing it directly.
 
     Params:
-        logLevel = The [std.experimental.logging.LogLevel] at which to log the message.
+        logLevel = The [std.experimental.logger.LogLevel|LogLevel] at which to log the message.
         state = Current [kameloso.plugins.common.core.IRCPluginState|IRCPluginState], used to send
             the concurrency message to the main thread.
         line = The text body to ask the main thread to display.

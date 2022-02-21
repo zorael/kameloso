@@ -51,7 +51,7 @@ private import kameloso.common : Tint, logger;
 // [std.datetime.systime] for the [std.datetime.systime.Clock], to update times with.
 private import std.datetime.systime : Clock;
 
-// [std.typecons] for [std.typecons.Flag] and its friends.
+// [std.typecons] for [std.typecons.Flag|Flag] and its friends.
 private import std.typecons : Flag, No, Yes;
 
 // [core.time] for [core.time.seconds], with which we can delay some actions.

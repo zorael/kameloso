@@ -85,8 +85,8 @@ public:
     {
         // tint
         /++
-            Returns the corresponding [kameloso.terminal.TerminalForeground] for the
-            supplied [std.experimental.logger.LogLevel],
+            Returns the corresponding [kameloso.terminal.TerminalForeground|TerminalForeground] for the
+            supplied [std.experimental.logger.LogLevel|LogLevel],
             taking into account whether the terminal is said to be bright or not.
 
             This is merely a convenient wrapping for [logcoloursBright] and
@@ -99,12 +99,12 @@ public:
             ---
 
             Params:
-                level = The [std.experimental.logger.LogLevel] of the colour we want to scry.
+                level = The [std.experimental.logger.LogLevel|LogLevel] of the colour we want to scry.
                 bright = Whether the colour should be for a bright terminal
                     background or a dark one.
 
             Returns:
-                A [kameloso.terminal.TerminalForeground] of the right colour. Use with
+                A [kameloso.terminal.TerminalForeground|TerminalForeground] of the right colour. Use with
                 [kameloso.terminal.colour] to get a string.
          +/
         static auto tint(const LogLevel level, const Flag!"brightTerminal" bright) pure nothrow @nogc @safe
@@ -144,7 +144,7 @@ public:
             making easy aliases for the log level.
 
             Params:
-                level = Compile-time [std.experimental.logger.LogLevel].
+                level = Compile-time [std.experimental.logger.LogLevel|LogLevel].
 
             Returns:
                 A tint string.
@@ -169,7 +169,7 @@ public:
 
 
         /+
-            Generate *tint functions for each [std.experimental.logger.LogLevel].
+            Generate *tint functions for each [std.experimental.logger.LogLevel|LogLevel].
          +/
         static foreach (const lv; EnumMembers!LogLevel)
         {
@@ -182,7 +182,7 @@ public:
 
         /++
             Synonymous alias to `alltint`, as a workaround for
-            [std.experimental.logger.LogLevel.all] not being named `LogLevel.log`.
+            [std.experimental.logger.LogLevel.all|LogLevel.all] not being named `LogLevel.log`.
          +/
         alias logtint = alltint;
     }
@@ -192,7 +192,7 @@ public:
         Outputs the header of a logger message.
 
         Params:
-            logLevel = The [std.experimental.logger.LogLevel] to treat this
+            logLevel = The [std.experimental.logger.LogLevel|LogLevel] to treat this
                 message as being of.
      +/
     private void beginLogMsg(const LogLevel logLevel) @safe
@@ -259,7 +259,7 @@ public:
         [std.conv.to].
 
         Params:
-            logLevel = The [std.experimental.logger.LogLevel] to treat this
+            logLevel = The [std.experimental.logger.LogLevel|LogLevel] to treat this
                 message as being of.
             args = Variadic arguments to compose the output message with.
      +/
@@ -343,11 +343,11 @@ public:
         Prints a timestamped log message to screen as per the passed runtime pattern,
         in `printf` style. Implementation function.
 
-        Uses [std.format.formattedWrite] to coerce the passed arguments as
+        Uses [std.format.formattedWrite|formattedWrite] to coerce the passed arguments as
         the format pattern dictates.
 
         Params:
-            logLevel = The [std.experimental.logger.LogLevel] to treat this
+            logLevel = The [std.experimental.logger.LogLevel|LogLevel] to treat this
                 message as being of.
             pattern = Runtime pattern to format the output with.
             args = Variadic arguments to compose the output message with.
@@ -372,7 +372,7 @@ public:
         Prints a timestamped log message to screen as per the passed compile-time pattern,
         in `printf` style. Implementation function.
 
-        Uses [std.format.formattedWrite] to coerce the passed arguments as
+        Uses [std.format.formattedWrite|formattedWrite] to coerce the passed arguments as
         the format pattern dictates.
 
         If on D version 2.074 or later, passes the pattern as a compile-time
@@ -381,7 +381,7 @@ public:
 
         Params:
             pattern = Compile-time pattern to validate the arguments and format the output with.
-            logLevel = The [std.experimental.logger.LogLevel] to treat this
+            logLevel = The [std.experimental.logger.LogLevel|LogLevel] to treat this
                 message as being of.
             args = Variadic arguments to compose the output message with.
      +/
@@ -430,13 +430,13 @@ void " ~ Enum!LogLevel.toString(lv) ~ "f(string pattern, Args...)(auto ref Args 
 
     /++
         Synonymous alias to [KamelosoLogger.all], as a workaround for
-        [std.experimental.logger.LogLevel.all] not being named [LogLevel.log].
+        [std.experimental.logger.LogLevel.all|LogLevel.all] not being named [LogLevel.log].
      +/
     alias log = all;
 
     /++
         Synonymous alias to [KamelosoLogger.allf], as a workaround for
-        [std.experimental.logger.LogLevel.all] not being named `LogLevel.log`.
+        [std.experimental.logger.LogLevel.all|LogLevel.all] not being named `LogLevel.log`.
      +/
     alias logf = allf;
 }

@@ -159,7 +159,7 @@ void signalHandler(int sig) nothrow @nogc @system
     means the bot should exit or not.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso].
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
  +/
 void messageFiber(ref Kameloso instance)
 {
@@ -682,22 +682,22 @@ void messageFiber(ref Kameloso instance)
 
 // mainLoop
 /++
-    This loops creates a [std.concurrency.Generator] [core.thread.fiber.Fiber|Fiber] to loop
-    over the connected [std.socket.Socket].
+    This loops creates a [std.concurrency.Generator|Generator] [core.thread.fiber.Fiber|Fiber] to loop
+    over the connected [std.socket.Socket|Socket].
 
-    Full lines are stored in [kameloso.net.ListenAttempt]s, which are
-    yielded in the [std.concurrency.Generator] to be caught here, consequently
+    Full lines are stored in [kameloso.net.ListenAttempt|ListenAttempt]s, which are
+    yielded in the [std.concurrency.Generator|Generator] to be caught here, consequently
     parsed into [dialect.defs.IRCEvent|IRCEvent]s, and then dispatched to all plugins.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso].
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
 
     Returns:
-        [lu.common.Next.returnFailure] if circumstances mean the bot
+        [lu.common.Next.returnFailure|Next.returnFailure] if circumstances mean the bot
         should exit with a non-zero exit code,
-        [lu.common.Next.returnSuccess] if it should exit by returning `0`,
-        [lu.common.Next.retry] if the bot should reconnect to the server.
-        [lu.common.Next.continue_] is never returned.
+        [lu.common.Next.returnSuccess|Next.returnSuccess] if it should exit by returning `0`,
+        [lu.common.Next.retry|Next.retry] if the bot should reconnect to the server.
+        [lu.common.Next.continue_|Next.continue_] is never returned.
  +/
 Next mainLoop(ref Kameloso instance)
 {
@@ -959,7 +959,7 @@ Next mainLoop(ref Kameloso instance)
     Broken out of [mainLoop] to make it more legible.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso].
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
 
     Returns:
         How many milliseconds until the next message in the buffers should be sent.
@@ -1007,16 +1007,16 @@ import kameloso.net : ListenAttempt;
 
 // listenAttemptToNext
 /++
-    Translates the [kameloso.net.ListenAttempt.State] received from a
-    [std.concurrency.Generator] into a [lu.common.Next], while also providing
+    Translates the [kameloso.net.ListenAttempt.State|ListenAttempt.State] received from a
+    [std.concurrency.Generator|Generator] into a [lu.common.Next|Next], while also providing
     warnings and error messages.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso].
-        attempt = The [kameloso.net.ListenAttempt] to map the `.state` value of.
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        attempt = The [kameloso.net.ListenAttempt|ListenAttempt] to map the `.state` value of.
 
     Returns:
-        A [lu.common.Next] describing what action [mainLoop] should take next.
+        A [lu.common.Next|Next] describing what action [mainLoop] should take next.
  +/
 Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
 {
@@ -1106,7 +1106,7 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
     and dispatches it to all plugins.
 
     Params:
-        instance = The current [kameloso.kameloso.Kameloso] instance.
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
         raw = A raw line as read from the server.
         nowInUnix = Current timestamp in UNIX time.
  +/
@@ -1710,10 +1710,10 @@ void processReadyReplays(ref Kameloso instance, IRCPlugin plugin)
 /++
     Takes a queue of pending [kameloso.plugins.common.core.Replay|Replay] objects and
     issues WHOIS queries for each one, unless it has already been done recently (within
-    [kameloso.constants.Timeout.whoisRetry] seconds).
+    [kameloso.constants.Timeout.whoisRetry|Timeout.whoisRetry] seconds).
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso].
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
         plugin = The relevant [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
  +/
 void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
@@ -1823,13 +1823,13 @@ void resetSignals() nothrow @nogc
     Attempt handling `getopt`, wrapped in try-catch blocks.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso].
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
         args = The arguments passed to the program.
         customSettings = Out reference to the dynamic array of custom settings as
             specified with `--set plugin.setting=value` on the command line.
 
     Returns:
-        [lu.common.Next].* depending on what action the calling site should take.
+        [lu.common.Next|Next].* depending on what action the calling site should take.
  +/
 Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings)
 {
@@ -1891,15 +1891,15 @@ Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings
 // tryConnect
 /++
     Tries to connect to the IPs in [kameloso.kameloso.Kameloso.conn.ips] by
-    leveraging [kameloso.net.connectFiber], reacting on the
-    [kameloso.net.ConnectAttempt]s it yields to provide feedback to the user.
+    leveraging [kameloso.net.connectFiber|connectFiber], reacting on the
+    [kameloso.net.ConnectAttempt|ConnectAttempt]s it yields to provide feedback to the user.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso].
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
 
     Returns:
-        [lu.common.Next.continue_] if connection succeeded,
-        [lu.common.Next.returnFailure] if connection failed and the
+        [lu.common.Next.continue_|Next.continue_] if connection succeeded,
+        [lu.common.Next.returnFailure|Next.returnFailure] if connection failed and the
         program should exit.
  +/
 Next tryConnect(ref Kameloso instance)
@@ -2115,17 +2115,17 @@ Next tryConnect(ref Kameloso instance)
 
 // tryResolve
 /++
-    Tries to resolve the address in [instance.parser.server] to IPs, by
-    leveraging [kameloso.net.resolveFiber], reacting on the
-    [kameloso.net.ResolveAttempt]s it yields to provide feedback to the user.
+    Tries to resolve the address in [kameloso.kameloso.Kameloso.parser.server|Kameloso.parser.server] to IPs, by
+    leveraging [kameloso.net.resolveFiber|resolveFiber], reacting on the
+    [kameloso.net.ResolveAttempt|ResolveAttempt]s it yields to provide feedback to the user.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso].
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
         firstConnect = Whether or not this is the first time we're attempting a connection.
 
     Returns:
-        [lu.common.Next.continue_] if resolution succeeded,
-        [lu.common.Next.returnFailure] if it failed and the program should exit.
+        [lu.common.Next.continue_|Next.continue_] if resolution succeeded,
+        [lu.common.Next.returnFailure|Next.returnFailure] if it failed and the program should exit.
  +/
 Next tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
 {
@@ -2230,7 +2230,7 @@ Next tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
     This is called very early during execution.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso] instance.
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso] instance.
  +/
 void postInstanceSetup(ref Kameloso instance)
 {
@@ -2296,10 +2296,11 @@ void expandPaths(ref CoreSettings settings)
     This is called after command-line arguments have been parsed.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso].
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
 
     Returns:
-        [lu.common.Next.returnFailure] if the program should exit, [lu.common.Next.continue_] otherwise.
+        [lu.common.Next.returnFailure|Next.returnFailure] if the program should exit,
+        [lu.common.Next.continue_|Next.continue_] otherwise.
  +/
 Next verifySettings(ref Kameloso instance)
 {
@@ -2372,7 +2373,7 @@ Next verifySettings(ref Kameloso instance)
     This is called after settings have been verified, before plugins are initialised.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso].
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
  +/
 void resolveResourceDirectory(ref Kameloso instance)
 {
@@ -2413,7 +2414,7 @@ void resolveResourceDirectory(ref Kameloso instance)
     It resolves and connects to servers, then hands off execution to [mainLoop].
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso].
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
         attempt = [AttemptState] aggregate of state variables used when connecting.
  +/
 void startBot(ref Kameloso instance, ref AttemptState attempt)
@@ -2696,7 +2697,7 @@ void printEventDebugDetails(const ref IRCEvent event,
     Prints a summary of the connection(s) made and events parsed this execution.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso].
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
  +/
 void printSummary(const ref Kameloso instance)
 {
@@ -2756,7 +2757,7 @@ struct AttemptState
     Next next;
 
     /++
-        An array for [handleGetopt] to fill by ref with custom settings
+        An array for [kameloso.config.handleGetopt|handleGetopt] to fill by ref with custom settings
         set on the command-line using `--set plugin.setting=value`.
      +/
     string[] customSettings;

@@ -56,7 +56,7 @@ private:
 
 public:
     /++
-        The [kameloso.net.Connection] that houses and wraps the socket we use to connect
+        The [kameloso.net.Connection|Connection] that houses and wraps the socket we use to connect
         to, write to and read from the server.
      +/
     Connection conn;
@@ -310,7 +310,7 @@ public:
         state.abort = abort;
 
         // Instantiate all plugin classes found when introspecting the modules
-        // listed in the [kameloso.plugins.PluginModules] AliasSeq.
+        // listed in the `kameloso.plugins.PluginModules` AliasSeq.
 
         plugins.reserve(PluginModules.length);
 
@@ -406,7 +406,7 @@ public:
     /++
         Initialises all plugins' resource files.
 
-        This merely calls [kameloso.plugins.common.core.IRCPlugin.initResources] on
+        This merely calls [kameloso.plugins.common.core.IRCPlugin.initResources|IRCPlugin.initResources] on
         each plugin.
      +/
     void initPluginResources() @system
@@ -503,7 +503,7 @@ public:
         [parser], and to all plugins.
 
         Params:
-            plugin = The plugin whose [kameloso.plugin.common.core.IRCPluginState]s
+            plugin = The plugin whose [kameloso.plugins.common.core.IRCPluginState|IRCPluginState]s
                 member structs to inspect for updates.
      +/
     void checkPluginForUpdates(IRCPlugin plugin)
@@ -546,7 +546,7 @@ public:
     // propagate
     /++
         Propgates an updated struct, to `this`, [parser], and to each plugins'
-        [kameloso.plugin.common.core.IRCPluginState]s, overwriting existing such.
+        [kameloso.plugins.common.core.IRCPluginState|IRCPluginState]s, overwriting existing such.
 
         Params:
             thing = Struct object to propagate.
@@ -634,7 +634,7 @@ public:
 
     version(TwitchSupport)
     {
-        /// Set when an `IRCEvent.Type.RPL_WELCOME` event was encountered.
+        /// Set when an [dialect.defs.IRCEvent.Type.RPL_WELCOME|RPL_WELCOME] event was encountered.
         bool sawWelcome;
     }
 }
