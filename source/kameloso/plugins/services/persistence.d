@@ -21,7 +21,6 @@ version(WithPersistenceService):
 private:
 
 import kameloso.plugins.common.core;
-import kameloso.plugins.common.awareness : Awareness;
 import dialect.defs;
 
 
@@ -127,13 +126,15 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
             none available, tries to set one that seems to apply based on what
             the user looks like.
          +/
-        static void applyClassifiers(PersistenceService service,
+        static void applyClassifiers(
+            PersistenceService service,
             const ref IRCEvent event,
             ref IRCUser user)
         {
-            if (user.class_ == IRCUser.Class.admin)
+            if ((user.class_ == IRCUser.Class.admin) && (user.account != "*"))
             {
                 // Do nothing, admin is permanent and program-wide
+                // unless it's someone logging out
                 return;
             }
 
@@ -182,20 +183,18 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
             service.userClassChannelCache[user.nickname] = event.channel;
         }
 
-        auto stored = user.nickname in service.state.users;
-        immutable persistentCacheMiss = stored is null;
-        if (service.state.settings.preferHostmasks) user.account = string.init;
-
         // Save cache lookups so we don't do them more than once.
         string* cachedChannel;
 
-        if (persistentCacheMiss)
-        {
-            service.state.users[user.nickname] = user;
-            stored = user.nickname in service.state.users;
-        }
+        auto stored = user.nickname in service.state.users;
+        immutable persistentCacheMiss = stored is null;
 
-        if (!service.state.settings.preferHostmasks)
+        if (service.state.settings.preferHostmasks)
+        {
+            // Ignore any account that may have been parsed
+            user.account = string.init;
+        }
+        else /*if (!service.state.settings.preferHostmasks)*/
         {
             if (service.state.server.daemon != IRCServer.Daemon.twitch)
             {
@@ -213,7 +212,8 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
                     break;
 
                 default:
-                    if (user.account.length && (user.account != "*") && !stored.account.length)
+                    if ((user.account.length && (user.account != "*")) ||
+                        (!persistentCacheMiss && !stored.account.length))
                     {
                         // Unexpected event bearing new account
                         // These can be whatever if the "account-tag" capability is set
@@ -224,35 +224,43 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
             }
         }
 
-        import lu.meld : MeldingStrategy, meldInto;
-
-        // Meld into the stored user, and store the union in the event
-        // Skip if the current stored is just a direct copy of user
-        // Store initial class and restore after meld. The origin user.class_
-        // can ever only be IRCUser.Class.unset UNLESS altered in the switch above.
-        // Additionally snapshot the .updated value and restore it after melding
-        if (!persistentCacheMiss)
+        if (persistentCacheMiss)
         {
+            service.state.users[user.nickname] = user;
+            stored = user.nickname in service.state.users;
+        }
+        else
+        {
+            import lu.meld : MeldingStrategy, meldInto;
+            // Meld into the stored user, and store the union in the event
+            // Skip if the current stored is just a direct copy of user
+            // Store initial class and restore after meld. The origin user.class_
+            // can ever only be IRCUser.Class.unset UNLESS altered in the switch above.
+            // Additionally snapshot the .updated value and restore it after melding
+
             version(TwitchSupport)
             {
-                if (stored.class_ == IRCUser.Class.admin)
+                if (service.state.server.daemon == IRCServer.Daemon.twitch)
                 {
-                    // Admin is a sticky class and nothing special needs to be done.
-                }
-                else if (stored.badges.length && !user.badges.length)
-                {
-                    // The current user doesn't have any badges and the stored one
-                    // does, potentially for a different channel. Look it up and
-                    // save the AA lookup pointer for later checks, in case we
-                    // have to do this again down below.
-
-                    /*const*/ cachedChannel = stored.nickname in service.userClassChannelCache;
-
-                    if (!cachedChannel || (*cachedChannel != event.channel))
+                    if (stored.class_ == IRCUser.Class.admin)
                     {
-                        // Current event has no badges but the stored one has
-                        // and for a different channel. Clear them.
-                        stored.badges = string.init;
+                        // Admin is a sticky class and nothing special needs to be done.
+                    }
+                    else if (stored.badges.length && !user.badges.length)
+                    {
+                        // The current user doesn't have any badges and the stored one
+                        // does, potentially for a different channel. Look it up and
+                        // save the AA lookup pointer for later checks, in case we
+                        // have to do this again down below.
+
+                        /*const*/ cachedChannel = stored.nickname in service.userClassChannelCache;
+
+                        if (!cachedChannel || (*cachedChannel != event.channel))
+                        {
+                            // Current event has no badges but the stored one has
+                            // and for a different channel. Clear them.
+                            stored.badges = string.init;
+                        }
                     }
                 }
             }
@@ -325,9 +333,10 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
             }
         }
 
-        if (stored.class_ == IRCUser.Class.admin)
+        if ((stored.class_ == IRCUser.Class.admin) && (stored.account != "*"))
         {
             // Do nothing, admin is permanent and program-wide
+            // unless it's someone logging out
         }
         else if (!event.channel.length)
         {

@@ -98,9 +98,9 @@ public:
         Tid mainThread;
         IRCUser[string] users;
         IRCChannel[string] channels;
-        Replay[][string] replays;
-        bool hasReplays;
-        Repeat[] repeats;
+        Replay[][string] pendingReplays;
+        bool hasPendingReplays;
+        Replay[] readyReplays;
         Fiber[][] awaitingFibers;
         void delegate(const IRCEvent)[][] awaitingDelegates;
         ScheduledFiber[] scheduledFibers;
@@ -149,25 +149,29 @@ public:
         way we can access detailed information about any known channel, given
         only their name.
 
-    * [kameloso.plugins.common.core.IRCPluginState.replays] is also an
+    * [kameloso.plugins.common.core.IRCPluginState.pendingReplays] is also an
         associative array into which we place [kameloso.plugins.common.core.Replay]s.
         The main loop will pick up on these and call WHOIS on the nickname in the key.
         A [kameloso.plugins.common.core.Replay] is otherwise just an
         [dialect.defs.IRCEvent] to be played back when the WHOIS results
-        return, as well as a function pointer to call with that event. This is
+        return, as well as a delegate that invokes the function that was originally
+        to be called. Constructing a [kameloso.plugins.common.Replay] is
         all wrapped in a function [kameloso.plugins.common.misc.enqueue], with the
         queue management handled behind the scenes.
 
-    * [kameloso.plugins.common.core.IRCPluginState.hasReplays] is merely a bool
+    * [kameloso.plugins.common.core.IRCPluginState.hasPendingReplays] is merely a bool
         of whether or not there currently are any [kameloso.plugins.common.core.Replay]s
-        in [kameloso.plugins.common.core.IRCPluginState.replays], cached to avoid
+        in [kameloso.plugins.common.core.IRCPluginState.pendingReplays], cached to avoid
         associative array length lookups.
 
-    * [kameloso.plugins.common.core.IRCPluginState.repeats] is an array of
-        [kameloso.plugins.common.core.Repeat]s, which is instrumental in repeating
-        events from the context of the main event loop. This allows us to update
-        information in the event, such as details on its sender, before repeating
-        it again. This can only be done outside of plugins.
+    * [kameloso.plugins.common.core.IRCPluginState.readyReplays] is an array of
+        [kameloso.plugins.common.core.Replay]s that have seen their WHOIS request
+        issued and the result received. Moving one from
+        [kameloso.plugins.common.core.IRCPluginState.pendingReplays] to
+        [kameloso.plugins.common.core.IRCPluginState.readyReplays] will make the
+        main loop pick it up, *update* the [dialect.defs.IRCEvent] stored within
+        it with what we now know of the sender and/or target, and then replay
+        the event by invoking its delegate.
 
     * [kameloso.plugins.common.core.IRCPluginState.awaitingFibers] is an
         array of [core.thread.fiber.Fiber]s indexed by [dialect.ircdefs.IRCEvent.Type]s' numeric values.
@@ -984,7 +988,7 @@ void onWelcome(SeenPlugin plugin)
         IRCEvent.Type.ERR_NOMOTD,
     ];
 
-    void endOfMotdDg(const IRCEvent _)
+    void endOfMotdDg(const IRCEvent)
     {
         import kameloso.plugins.common.delayawait : unawait;
         import lu.string : plurality;

@@ -335,12 +335,32 @@ enum Timeout
     connectionRetry = 10,
 
     /++
+        The amount of seconds to wait before retrying to connect after an instant
+        failure to register on Twitch.
+     +/
+    twitchRegistrationFailConnectionRetryMsecs = 500,
+
+    /++
         How long to wait before allowing to re-issue a WHOIS query for a user.
 
         This is merely to stop us from spamming queries for the same person
         without hysteresis.
      +/
     whoisRetry = 30,
+
+    /++
+        How long a replayable event is expected to be relevant. Before this it
+        will be replayed, after this it will be discarded.
+
+        Note: WHOIS-replays will break if the ping toward the server reaches this value.
+     +/
+    whoisDiscard = 10,
+
+    /++
+        The length of the window in which replays may be queued before the timer
+        towards [whoisRetry] kicks in.
+     +/
+    whoisGracePeriod = 3,
 
     /++
         How long to wait after encountering an error when reading from the server,
@@ -361,6 +381,92 @@ enum Timeout
         Timeout for HTTP GET requests.
      +/
     httpGET = 10,
+}
+
+
+// Periodicals
+/++
+    Timings and timeouts of various periodical events.
+ +/
+enum Periodicals
+{
+    /++
+        How often to rehash plugins' `users` associative arrays for more efficient lookups.
+     +/
+    userAARehashMinutes = 60,
+}
+
+
+// ShellReturnValue
+/++
+    Magic number shell exit codes.
+ +/
+enum ShellReturnValue
+{
+    /++
+        Success. No error encountered.
+     +/
+    success = 0,
+
+    /++
+        Generic error.
+     +/
+    failure = 1,
+
+    /++
+        Failure encountered during `getopt`.
+     +/
+    getoptFailure = 2,
+
+    /++
+        Failure encountered when setting up terminal buffering.
+     +/
+    terminalSetupFailure = 3,
+
+    /++
+        Settings verification failed.
+     +/
+    settingsVerificationFailure = 4,
+
+    /++
+        `--set` argument syntax error.
+     +/
+    customConfigSyntaxFailure = 5,
+
+    /++
+        `--set` other failure.
+     +/
+    customConfigFailure = 6,
+
+    /++
+        Failure encountered during host address resolution.
+     +/
+    resolutionFailure = 21,
+
+    /++
+        Failure encountered during connection attempt.
+     +/
+    connectionFailure = 22,
+
+    /++
+        Failure encountered when a plugin tried to load resources.
+     +/
+    pluginResourceLoadFailure = 31,
+
+    /++
+        Generic exception was thrown when a plugin tried to load resources.
+     +/
+    pluginResourceLoadException = 32,
+
+    /++
+        Failure encountered during plugin startup.
+     +/
+    pluginStartFailure = 33,
+
+    /++
+        Generic exception was thrown when a plugin tried to start up.
+     +/
+    pluginStartException = 34,
 }
 
 

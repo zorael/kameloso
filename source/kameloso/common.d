@@ -350,6 +350,7 @@ void timeSinceInto(uint numUnits = 7, uint truncateUnits = 0, Sink)
     const Flag!"roundUp" roundUp = Yes.roundUp) pure
 if (isOutputRange!(Sink, char[]))
 {
+    import lu.conv : toAlphaInto;
     import lu.string : plurality;
     import std.algorithm.comparison : min;
     import std.format : formattedWrite;
@@ -485,14 +486,18 @@ if (isOutputRange!(Sink, char[]))
     {
         if (years)
         {
+            years.toAlphaInto(sink);
+
             if (abbreviate)
             {
-                sink.formattedWrite("%dy", years);
+                //sink.formattedWrite("%dy", years);
+                sink.put('y');
             }
             else
             {
-                sink.formattedWrite("%d %s", years,
-                    years.plurality("year", "years"));
+                /*sink.formattedWrite("%d %s", years,
+                    years.plurality("year", "years"));*/
+                sink.put(years.plurality(" year", " years"));
             }
 
             putSomething = true;
@@ -510,7 +515,9 @@ if (isOutputRange!(Sink, char[]))
                     if (putSomething) sink.put(' ');
                 }
 
-                sink.formattedWrite("%dm", months);
+                //sink.formattedWrite("%dm", months);
+                months.toAlphaInto(sink);
+                sink.put('m');
             }
             else
             {
@@ -533,8 +540,10 @@ if (isOutputRange!(Sink, char[]))
                     }
                 }
 
-                sink.formattedWrite("%d %s", months,
-                    months.plurality("month", "months"));
+                /*sink.formattedWrite("%d %s", months,
+                    months.plurality("month", "months"));*/
+                months.toAlphaInto(sink);
+                sink.put(months.plurality(" month", " months"));
             }
 
             putSomething = true;
@@ -552,7 +561,9 @@ if (isOutputRange!(Sink, char[]))
                     if (putSomething) sink.put(' ');
                 }
 
-                sink.formattedWrite("%dw", weeks);
+                //sink.formattedWrite("%dw", weeks);
+                weeks.toAlphaInto(sink);
+                sink.put('w');
             }
             else
             {
@@ -574,8 +585,10 @@ if (isOutputRange!(Sink, char[]))
                     }
                 }
 
-                sink.formattedWrite("%d %s", weeks,
-                    weeks.plurality("week", "weeks"));
+                /*sink.formattedWrite("%d %s", weeks,
+                    weeks.plurality("week", "weeks"));*/
+                weeks.toAlphaInto(sink);
+                sink.put(weeks.plurality(" week", " weeks"));
             }
 
             putSomething = true;
@@ -593,7 +606,9 @@ if (isOutputRange!(Sink, char[]))
                     if (putSomething) sink.put(' ');
                 }
 
-                sink.formattedWrite("%dd", days);
+                //sink.formattedWrite("%dd", days);
+                days.toAlphaInto(sink);
+                sink.put('d');
             }
             else
             {
@@ -614,8 +629,10 @@ if (isOutputRange!(Sink, char[]))
                     }
                 }
 
-                sink.formattedWrite("%d %s", days,
-                    days.plurality("day", "days"));
+                /*sink.formattedWrite("%d %s", days,
+                    days.plurality("day", "days"));*/
+                days.toAlphaInto(sink);
+                sink.put(days.plurality(" day", " days"));
             }
 
             putSomething = true;
@@ -633,7 +650,9 @@ if (isOutputRange!(Sink, char[]))
                     if (putSomething) sink.put(' ');
                 }
 
-                sink.formattedWrite("%dh", hours);
+                //sink.formattedWrite("%dh", hours);
+                hours.toAlphaInto(sink);
+                sink.put('h');
             }
             else
             {
@@ -653,8 +672,10 @@ if (isOutputRange!(Sink, char[]))
                     }
                 }
 
-                sink.formattedWrite("%d %s", hours,
-                    hours.plurality("hour", "hours"));
+                /*sink.formattedWrite("%d %s", hours,
+                    hours.plurality("hour", "hours"));*/
+                hours.toAlphaInto(sink);
+                sink.put(hours.plurality(" hour", " hours"));
             }
 
             putSomething = true;
@@ -672,7 +693,9 @@ if (isOutputRange!(Sink, char[]))
                     if (putSomething) sink.put(' ');
                 }
 
-                sink.formattedWrite("%dm", minutes);
+                //sink.formattedWrite("%dm", minutes);
+                minutes.toAlphaInto(sink);
+                sink.put('m');
             }
             else
             {
@@ -691,8 +714,10 @@ if (isOutputRange!(Sink, char[]))
                     }
                 }
 
-                sink.formattedWrite("%d %s", minutes,
-                    minutes.plurality("minute", "minutes"));
+                /*sink.formattedWrite("%d %s", minutes,
+                    minutes.plurality("minute", "minutes"));*/
+                minutes.toAlphaInto(sink);
+                sink.put(minutes.plurality(" minute", " minutes"));
             }
 
             putSomething = true;
@@ -708,7 +733,9 @@ if (isOutputRange!(Sink, char[]))
                 sink.put(' ');
             }
 
-            sink.formattedWrite("%ds", diff.seconds);
+            //sink.formattedWrite("%ds", diff.seconds);
+            diff.seconds.toAlphaInto(sink);
+            sink.put('s');
         }
         else
         {
@@ -717,8 +744,10 @@ if (isOutputRange!(Sink, char[]))
                 sink.put(" and ");
             }
 
-            sink.formattedWrite("%d %s", diff.seconds,
-                diff.seconds.plurality("second", "seconds"));
+            /*sink.formattedWrite("%d %s", diff.seconds,
+                diff.seconds.plurality("second", "seconds"));*/
+            diff.seconds.toAlphaInto(sink);
+            sink.put(diff.seconds.plurality(" second", " seconds"));
         }
     }
 }

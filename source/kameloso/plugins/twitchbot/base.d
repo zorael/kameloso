@@ -342,22 +342,68 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
                 immutable chattersJSON = getChatters(plugin, event.channel[1..$]);
                 if (chattersJSON.type != JSONType.object) return;
 
+                // https://twitchinsights.net/bots
+                // https://twitchbots.info/bots
+                static immutable botBlacklist =
+                [
+                    //"nightbot",
+                    "streamlabs",
+                    "streamelements",
+                    "soundalerts",
+                    //"moobot",
+                    "anotherttvviewer",
+                    "kaxips06",
+                    "la_kaylee",
+                    "commanderroot",
+                    "rogueg1rl",
+                    "midsooooooooon",
+                    "lanarayyyy",
+                    "itzemmaaaaaaa",
+                    "aliengathering",
+                    "elysian",
+                    "lurxx",
+                    "feet",
+                    "aten",
+                    "spiketrapclair",
+                    "soundalerts",
+                    "ffxivstyx",
+                    "curvaceous_natalia",
+                    "viewer_of_irl",
+                    "frw33ds_kitten",
+                    "fashionable_camille",
+                    "lurking_miku",
+                    "stixffxiv",
+                    "eatsaoe",
+                    "wafflebudder",
+                    "elbretweets",
+                    "underworldnaiad",
+                    "beardedstrumerwaitingroom",
+                    "icantcontrolit",
+                    "nerdydreams",
+                    "uncle_spawn",
+                    "hades_osiris",
+                ];
+
+                uint chatterCount;
+
                 foreach (immutable viewerJSON; chattersJSON["chatters"]["viewers"].array)
                 {
+                    import std.algorithm.searching : canFind, endsWith;
+
                     immutable viewer = viewerJSON.str;
-                    if (viewer == plugin.state.client.nickname) continue;
+
+                    if ((viewer == plugin.state.client.nickname) ||
+                        (viewer == event.channel[1..$]) ||
+                        (viewer.endsWith("bot")) ||
+                        botBlacklist.canFind(viewer)) continue;
+
                     room.broadcast.chattersSeen[viewer] = true;
+                    ++chatterCount;
                 }
 
-                // Don't count the bot nor the broadcaster as a viewer.
-                immutable chatterCount = cast(int)chattersJSON["chatter_count"].integer;
-                immutable int numCurrentViewers = chattersJSON["chatters"]["broadcaster"].array.length ?
-                    (chatterCount - 2) :  // sans broadcaster + bot
-                    (chatterCount - 1);   // sans only bot
-
-                if (numCurrentViewers > room.broadcast.maxConcurrentChatters)
+                if (chatterCount > room.broadcast.maxConcurrentChatters)
                 {
-                    room.broadcast.maxConcurrentChatters = numCurrentViewers;
+                    room.broadcast.maxConcurrentChatters = chatterCount;
                 }
 
                 delay(plugin, plugin.chattersCheckPeriodicity, Yes.yield);
@@ -1183,9 +1229,12 @@ void onMyInfo(TwitchBotPlugin plugin)
         {
             while (true)
             {
-                foreach (immutable channelName, room; plugin.rooms)
+                if (plugin.isEnabled)
                 {
-                    room.follows = getFollows(plugin, room.id);
+                    foreach (immutable channelName, room; plugin.rooms)
+                    {
+                        room.follows = getFollows(plugin, room.id);
+                    }
                 }
 
                 immutable now = Clock.currTime;

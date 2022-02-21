@@ -543,9 +543,6 @@ public:
     }
 
 
-    private import lu.traits : isStruct;
-    private import std.meta : allSatisfy;
-
     // propagate
     /++
         Propgates an updated struct, to `this`, [parser], and to each plugins'
@@ -556,7 +553,7 @@ public:
      +/
     //pragma(inline, true)
     void propagate(Thing)(Thing thing) pure nothrow @nogc
-    if (allSatisfy!(isStruct, Thing))
+    if (is(Thing == struct))
     {
         import std.meta : AliasSeq;
 
@@ -588,6 +585,24 @@ public:
                     continue pluginloop;
                 }
             }
+        }
+    }
+
+
+    // propagateWhoisTimestamps
+    /++
+        Propagates the [previousWhoisTimestamps] associative array to all plugins.
+
+        Makes a copy of it before passing it onwards; this way, plugins cannot
+        modify the original.
+     +/
+    void propagateWhoisTimestamps() pure
+    {
+        auto copy = previousWhoisTimestamps.dup;
+
+        foreach (plugin; plugins)
+        {
+            plugin.state.previousWhoisTimestamps = copy;
         }
     }
 

@@ -56,39 +56,6 @@ public:
 @safe:
 
 
-// Awareness
-/++
-    Annotation denoting that a function is part of an awareness mixin, and at
-    what point it should be processed.
- +/
-enum Awareness
-{
-    /++
-        First stage: setup. The annotated event handlers will process first,
-        setting the stage for the following [Awareness.early]-annotated handlers.
-     +/
-    setup,
-
-    /++
-        Second stage: early. The annotated event handlers will have their chance
-        to process before the plugin-specific handlers will.
-     +/
-    early,
-
-    /++
-        Fourth stage: late. The annotated event handlers will process after
-        the plugin-specific handlers have all processed.
-     +/
-    late,
-
-    /++
-        Fifth and last stage: cleanup. The annotated event handlers will process
-        after everything else has been called.
-     +/
-    cleanup,
-}
-
-
 // MinimalAuthentication
 /++
     Implements triggering of queued events in a plugin module.
@@ -186,32 +153,33 @@ mixin template MinimalAuthentication(
 void onMinimalAuthenticationAccountInfoTarget(IRCPlugin plugin, const ref IRCEvent event) @system
 {
     import kameloso.plugins.common.misc : catchUser;
-    import kameloso.plugins.common.mixins : Repeater;
 
     // Catch the user here, before replaying anything.
     plugin.catchUser(event.target);
 
     // See if there are any queued replays to trigger
-    auto replaysForNickname = event.target.nickname in plugin.state.replays;
+    auto replaysForNickname = event.target.nickname in plugin.state.pendingReplays;
     if (!replaysForNickname) return;
 
     scope(exit)
     {
-        plugin.state.replays.remove(event.target.nickname);
-        plugin.state.hasReplays = (plugin.state.replays.length > 0);
+        plugin.state.pendingReplays.remove(event.target.nickname);
+        plugin.state.hasPendingReplays = (plugin.state.pendingReplays.length > 0);
     }
 
     if (!replaysForNickname.length) return;
-
-    mixin Repeater;
 
     foreach (immutable i, replay; *replaysForNickname)
     {
         import kameloso.constants : Timeout;
 
-        if ((event.time - replay.when) <= Timeout.whoisRetry)
+        if ((event.time - replay.timestamp) >= Timeout.whoisDiscard)
         {
-            repeat(replay);
+            // Stale entry
+        }
+        else
+        {
+            plugin.state.readyReplays ~= replay;
         }
     }
 }
@@ -226,8 +194,6 @@ void onMinimalAuthenticationAccountInfoTarget(IRCPlugin plugin, const ref IRCEve
  +/
 void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const ref IRCEvent event) @system
 {
-    import kameloso.plugins.common.mixins : Repeater;
-
     if (event.aux != "WHOIS") return;
 
     // We're on a server that doesn't support WHOIS
@@ -235,18 +201,16 @@ void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const ref IRCE
     // they're just Permissions.ignore plus a WHOIS lookup just in case
     // Then clear everything
 
-    mixin Repeater;
-
-    foreach (replaysForNickname; plugin.state.replays)
+    foreach (replaysForNickname; plugin.state.pendingReplays)
     {
         foreach (replay; replaysForNickname)
         {
-            repeat(replay);
+            plugin.state.readyReplays ~= replay;
         }
     }
 
-    plugin.state.replays.clear();
-    plugin.state.hasReplays = false;
+    plugin.state.pendingReplays.clear();
+    plugin.state.hasPendingReplays = false;
 }
 
 
@@ -432,9 +396,9 @@ mixin template UserAwareness(
         .when(Timing.early)
         .chainable(true)
     )
-    void onUserAwarenessPingMixin(IRCPlugin plugin) @system
+    void onUserAwarenessPingMixin(IRCPlugin plugin, const ref IRCEvent event) @system
     {
-        return kameloso.plugins.common.awareness.onUserAwarenessPing(plugin);
+        return kameloso.plugins.common.awareness.onUserAwarenessPing(plugin, event);
     }
 }
 
@@ -640,29 +604,28 @@ void onUserAwarenessEndOfList(IRCPlugin plugin, const ref IRCEvent event) @syste
     The number of hours is so far hardcoded but can be made configurable if
     there's a use-case for it.
  +/
-void onUserAwarenessPing(IRCPlugin plugin) @system
+void onUserAwarenessPing(IRCPlugin plugin, const ref IRCEvent event) @system
 {
     import std.datetime.systime : Clock;
 
     enum minutesBeforeInitialRehash = 5;
-    enum hoursBetweenRehashes = 12;
 
     static long pingRehash = 0L;
-    immutable now = Clock.currTime.toUnixTime;
 
     if (pingRehash == 0L)
     {
         // First PING encountered
         // Delay rehashing to let the client join all channels
-        pingRehash = now + (minutesBeforeInitialRehash * 60);
+        pingRehash = event.time + (minutesBeforeInitialRehash * 60);
     }
-    else if (now >= pingRehash)
+    else if (event.time >= pingRehash)
     {
+        import kameloso.constants : Periodicals;
         import kameloso.plugins.common.misc : rehashUsers;
 
-        // Once every `hoursBetweenRehashes` hours, rehash the `users` array.
+        // Once every `userAARehashMinutes` minutes, rehash the `users` array.
         plugin.rehashUsers();
-        pingRehash = now + (hoursBetweenRehashes * 3600);
+        pingRehash = event.time + (Periodicals.userAARehashMinutes * 60);
     }
 }
 
@@ -1011,8 +974,9 @@ void onChannelAwarenessSelfpart(IRCPlugin plugin, const ref IRCEvent event)
     nickloop:
     foreach (immutable nickname; channel.users.byKey)
     {
-        foreach (const stateChannel; plugin.state.channels)
+        foreach (immutable stateChannelName, const stateChannel; plugin.state.channels)
         {
+            if (stateChannelName == event.channel) continue;
             if (nickname in stateChannel.users) continue nickloop;
         }
 

@@ -69,7 +69,7 @@ versions \
     "WithTwitchBotPlugin" \
     "OmniscientAdmin" \
     "PrintStacktraces" \
-    "ExplainRepeat" \
+    "ExplainReplay" \
     "TwitchWarnings" \
     "OSXTMPDIR" \
     "OmniscientQueries" \

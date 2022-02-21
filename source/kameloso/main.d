@@ -249,8 +249,16 @@ void messageFiber(ref Kameloso instance)
         /++
             Applies a `plugin.setting=value` change in setting to whichever plugin
             matches the expression.
+
+            For some reason the sending site really really wants the delegate to
+            be `@safe`, so we'll just have to cater to its whims:
+
+            Main thread message fiber received unknown Variant:
+            std.typecons.Tuple!(kameloso.thread.ThreadMessage.ChangeSetting,
+                shared(void delegate(bool) @safe), immutable(char)[]).Tuple
          +/
-        void changeSetting(ThreadMessage.ChangeSetting, shared void delegate(bool) dg, string expression)
+        void changeSetting(ThreadMessage.ChangeSetting,
+            shared(void delegate(bool) @safe) dg, string expression)
         {
             import kameloso.plugins.common.misc : applyCustomSettings;
 
@@ -474,6 +482,7 @@ void messageFiber(ref Kameloso instance)
 
                     line = "WHOIS " ~ m.event.target.nickname;
                     instance.previousWhoisTimestamps[m.event.target.nickname] = now;
+                    instance.propagateWhoisTimestamps();
                 }
                 else
                 {
@@ -742,8 +751,9 @@ Next mainLoop(ref Kameloso instance)
             return Next.retry;
         }
 
-        immutable nowInUnix = Clock.currTime.toUnixTime;
-        immutable nowInHnsecs = Clock.currStdTime;
+        immutable now = Clock.currTime;
+        immutable nowInUnix = now.toUnixTime;
+        immutable nowInHnsecs = now.stdTime;
 
         /// The timestamp of the next scheduled delegate or fiber across all plugins.
         long nextGlobalScheduledTimestamp;
@@ -792,6 +802,7 @@ Next mainLoop(ref Kameloso instance)
         if ((nowInUnix % 86_400) == 0)
         {
             instance.previousWhoisTimestamps = null;
+            instance.propagateWhoisTimestamps();
         }
 
         // Call the generator, query it for event lines
@@ -1139,13 +1150,13 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
         catch (UTFException e)
         {
             event = instance.parser.toIRCEvent(sanitize(raw));
-            event.errors ~= (event.errors.length ? ". " : string.init) ~
+            event.errors ~= (event.errors.length ? " | " : string.init) ~
                 "UTFException: " ~ e.msg;
         }
         catch (UnicodeException e)
         {
             event = instance.parser.toIRCEvent(sanitize(raw));
-            event.errors ~= (event.errors.length ? ". " : string.init) ~
+            event.errors ~= (event.errors.length ? " | " : string.init) ~
                 "UnicodeException: " ~ e.msg;
         }
 
@@ -1230,8 +1241,8 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
             try
             {
                 plugin.onEvent(event);
-                if (plugin.state.hasReplays) processReplays(instance, plugin);
-                if (plugin.state.repeats.length) processRepeats(instance, plugin);
+                if (plugin.state.hasPendingReplays) processPendingReplays(instance, plugin);
+                if (plugin.state.readyReplays.length) processReadyReplays(instance, plugin);
                 processAwaitingDelegates(plugin, event);
                 processAwaitingFibers(plugin, event);
                 if (*instance.abort) return;  // handled in mainLoop listenerloop
@@ -1601,16 +1612,16 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
 }
 
 
-// processRepeats
+// processReadyReplays
 /++
-    Handles the repeat queue, repeating events from the current (main loop)
-    context, outside of any plugin, *after* re-postprocessing them.
+    Handles the queue of ready-to-replay objects, re-postprocessing events from the
+    current (main loop) context, outside of any plugin.
 
     Params:
         instance = Reference to the current bot instance.
         plugin = The current [kameloso.plugins.common.core.IRCPlugin].
  +/
-void processRepeats(ref Kameloso instance, IRCPlugin plugin)
+void processReadyReplays(ref Kameloso instance, IRCPlugin plugin)
 {
     import lu.string : NomException;
     import std.utf : UTFException;
@@ -1618,93 +1629,89 @@ void processRepeats(ref Kameloso instance, IRCPlugin plugin)
     import core.memory : GC;
     import core.thread : Fiber;
 
-    foreach (immutable i, repeat; plugin.state.repeats)
+    foreach (immutable i, replay; plugin.state.readyReplays)
     {
         version(WithPersistenceService)
         {
             // Postprocessing will reapply class, but not if there is already
             // a custom class (assuming channel cache hit)
-            repeat.replay.event.sender.class_ = IRCUser.Class.unset;
-            repeat.replay.event.target.class_ = IRCUser.Class.unset;
+            replay.event.sender.class_ = IRCUser.Class.unset;
+            replay.event.target.class_ = IRCUser.Class.unset;
         }
 
         try
         {
             foreach (postprocessor; instance.plugins)
             {
-                postprocessor.postprocess(repeat.replay.event);
+                postprocessor.postprocess(replay.event);
             }
         }
         catch (NomException e)
         {
-            enum pattern = "Nom Exception postprocessing %s.state.repeats[%d]: " ~
+            enum pattern = "Nom Exception postprocessing %s.state.readyReplays[%d]: " ~
                 `tried to nom "%s%s%s" with "%3$s%6$s%5$s"`;
             logger.warningf(pattern, plugin.name, i, Tint.log, e.haystack, Tint.warning, e.needle);
-            printEventDebugDetails(repeat.replay.event, repeat.replay.event.raw);
+            printEventDebugDetails(replay.event, replay.event.raw);
             version(PrintStacktraces) logger.trace(e.info);
+            continue;
         }
         catch (UTFException e)
         {
-            enum pattern = "UTFException postprocessing %s.state.repeats[%d]: %s%s";
+            enum pattern = "UTFException postprocessing %s.state.readyReplays[%d]: %s%s";
             logger.warningf(pattern, plugin.name, i, Tint.log, e.msg);
             version(PrintStacktraces) logger.trace(e.info);
+            continue;
         }
         catch (UnicodeException e)
         {
-            enum pattern = "UnicodeException postprocessing %s.state.repeats[%d]: %s%s";
+            enum pattern = "UnicodeException postprocessing %s.state.readyReplays[%d]: %s%s";
             logger.warningf(pattern, plugin.name, i, Tint.log, e.msg);
             version(PrintStacktraces) logger.trace(e.info);
+            continue;
         }
         catch (Exception e)
         {
-            enum pattern = "Exception postprocessing %s.state.repeats[%d]: %s%s";
+            enum pattern = "Exception postprocessing %s.state.readyReplays[%d]: %s%s";
             logger.warningf(pattern, plugin.name, i, Tint.log, e.msg);
-            printEventDebugDetails(repeat.replay.event, repeat.replay.event.raw);
+            printEventDebugDetails(replay.event, replay.event.raw);
             version(PrintStacktraces) logger.trace(e);
+            continue;
         }
 
-        if (repeat.isCarrying)
-        {
-            repeat.carryingFiber.payload = repeat;
-        }
+        // If we're here no exceptions were thrown
 
         try
         {
-            repeat.fiber.call();
+            replay.dg(replay);
         }
         catch (Exception e)
         {
-            enum pattern = "Exception %s.state.repeats[%d]: %s%s";
+            enum pattern = "Exception %s.state.readyReplays[%d]: %s%s";
             logger.warningf(pattern, plugin.name, i, Tint.log, e.msg);
-            printEventDebugDetails(repeat.replay.event, repeat.replay.event.raw);
+            printEventDebugDetails(replay.event, replay.event.raw);
             version(PrintStacktraces) logger.trace(e);
         }
-
-        assert((repeat.fiber.state == Fiber.State.TERM), "Undead Repeater Fiber");
-
-        destroy(repeat);
-        GC.free(&repeat);
     }
 
-    // All repeats guaranteed exhausted
-    plugin.state.repeats = null;
+    // All ready replays guaranteed exhausted
+    plugin.state.readyReplays = null;
 }
 
 
-// processReplays
+// processPendingReplay
 /++
-    Takes a queue of [kameloso.plugins.common.core.Replay] objects and issues WHOIS queries for each one,
-    unless it has already been done recently (within
+    Takes a queue of pending [kameloso.plugins.common.core.Replay] objects and
+    issues WHOIS queries for each one, unless it has already been done recently (within
     [kameloso.constants.Timeout.whoisRetry] seconds).
 
     Params:
         instance = Reference to the current [kameloso.kameloso.Kameloso].
         plugin = The relevant [kameloso.plugins.common.core.IRCPlugin].
  +/
-void processReplays(ref Kameloso instance, IRCPlugin plugin)
+void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
 {
-    import kameloso.common : OutgoingLine;
     import kameloso.constants : Timeout;
+    import kameloso.messaging : whois;
     import std.datetime.systime : Clock;
 
     // Walk through replays and call WHOIS on those that haven't been
@@ -1712,10 +1719,8 @@ void processReplays(ref Kameloso instance, IRCPlugin plugin)
 
     immutable now = Clock.currTime.toUnixTime;
 
-    foreach (immutable nickname, const replaysForNickname; plugin.state.replays)
+    foreach (immutable nickname, replaysForNickname; plugin.state.pendingReplays)
     {
-        assert(nickname.length, "Empty nickname in replay queue");
-
         version(TraceWhois)
         {
             import std.stdio : writef, writefln, writeln;
@@ -1731,24 +1736,27 @@ void processReplays(ref Kameloso instance, IRCPlugin plugin)
             }
         }
 
-        immutable then = instance.previousWhoisTimestamps.get(nickname, 0);
+        immutable lastWhois = instance.previousWhoisTimestamps.get(nickname, 0L);
 
-        if ((now - then) > Timeout.whoisRetry)
+        if ((now - lastWhois) > Timeout.whoisRetry)
         {
             version(TraceWhois)
             {
                 if (!instance.settings.headless) writeln(" ...and actually issuing.");
             }
 
-            instance.outbuffer.put(OutgoingLine("WHOIS " ~ nickname,
+            /*instance.outbuffer.put(OutgoingLine("WHOIS " ~ nickname,
                 cast(Flag!"quiet")instance.settings.hideOutgoing));
             instance.previousWhoisTimestamps[nickname] = now;
+            instance.propagateWhoisTimestamps();*/
+
+            whois(plugin.state, nickname, Yes.force, Yes.quiet);
         }
         else
         {
             version(TraceWhois)
             {
-                writefln(" ...but already issued %d seconds ago.", (now - then));
+                writefln(" ...but already issued %d seconds ago.", (now - lastWhois));
             }
         }
     }
@@ -2402,6 +2410,7 @@ void resolveResourceDirectory(ref Kameloso instance)
  +/
 void startBot(ref Kameloso instance, ref AttemptState attempt)
 {
+    import kameloso.constants : ShellReturnValue;
     import kameloso.terminal : TerminalToken, isTTY;
     import std.algorithm.comparison : among;
 
@@ -2453,7 +2462,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                 {
                     // We probably saw an instant disconnect before even getting to RPL_WELCOME
                     // Quickly attempt again
-                    gracePeriodBeforeReconnect = 500.msecs;
+                    gracePeriodBeforeReconnect = Timeout.twitchRegistrationFailConnectionRetryMsecs.msecs;
                 }
             }
 
@@ -2512,12 +2521,12 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
 
         case returnFailure:
             // No need to teardown; the scopeguard does it for us.
-            attempt.retval = 1;
+            attempt.retval = ShellReturnValue.resolutionFailure;
             break outerloop;
 
         case returnSuccess:
             // Ditto
-            attempt.retval = 0;
+            attempt.retval = ShellReturnValue.success;
             break outerloop;
 
         case crash:
@@ -2541,7 +2550,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
 
         case returnFailure:
             // No need to saveOnExit, the scopeguard takes care of that
-            attempt.retval = 1;
+            attempt.retval = ShellReturnValue.connectionFailure;
             break outerloop;
 
         case crash:
@@ -2567,7 +2576,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             logger.warningf(pattern, Tint.log, e.file.baseName[0..$-2], Tint.warning,
                 e.msg, e.file.baseName, e.line, bell);
             version(PrintStacktraces) logger.trace(e.info);
-            attempt.retval = 1;
+            attempt.retval = ShellReturnValue.pluginResourceLoadFailure;
             break outerloop;
         }
         catch (Exception e)
@@ -2580,7 +2589,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             logger.warningf(pattern, Tint.log, e.file.baseName[0..$-2], Tint.warning,
                 e.msg, e.file, e.line, bell);
             version(PrintStacktraces) logger.trace(e);
-            attempt.retval = 1;
+            attempt.retval = ShellReturnValue.pluginResourceLoadException;
             break outerloop;
         }
 
@@ -2603,7 +2612,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             logger.warningf(pattern, Tint.log, e.file.baseName[0..$-2], Tint.warning,
                 e.msg, e.file.baseName, e.line, bell);
             version(PrintStacktraces) logger.trace(e.info);
-            attempt.retval = 1;
+            attempt.retval = ShellReturnValue.pluginStartFailure;
             break outerloop;
         }
         catch (Exception e)
@@ -2615,7 +2624,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             logger.warningf(pattern, Tint.log, e.file.baseName[0..$-2], Tint.warning,
                 e.msg, e.file.baseName, e.line, bell);
             version(PrintStacktraces) logger.trace(e);
-            attempt.retval = 1;
+            attempt.retval = ShellReturnValue.pluginStartException;
             break outerloop;
         }
 
@@ -2778,6 +2787,7 @@ int run(string[] args)
 {
     static import kameloso.common;
     import kameloso.common : initLogger;
+    import kameloso.constants : ShellReturnValue;
     import std.exception : ErrnoException;
     import core.stdc.errno : errno;
 
@@ -2833,10 +2843,10 @@ int run(string[] args)
         assert(0, "`tryGetopt` returned `Next.retry`");
 
     case returnSuccess:
-        return 0;
+        return ShellReturnValue.success;
 
     case returnFailure:
-        return 1;
+        return ShellReturnValue.getoptFailure;
 
     case crash:
         assert(0, "`tryGetopt` returned `Next.crash`");
@@ -2853,7 +2863,7 @@ int run(string[] args)
     {
         import std.stdio : writeln;
         if (!instance.settings.headless) writeln("Failed to set stdout buffer mode/size! errno:", errno);
-        if (!instance.settings.force) return 1;
+        if (!instance.settings.force) return ShellReturnValue.terminalSetupFailure;
     }
     catch (Exception e)
     {
@@ -2864,7 +2874,7 @@ int run(string[] args)
             writeln(e);
         }
 
-        if (!instance.settings.force) return 1;
+        if (!instance.settings.force) return ShellReturnValue.terminalSetupFailure;
     }
 
     // Apply some defaults to empty members, as stored in `kameloso.constants`.
@@ -2926,10 +2936,10 @@ int run(string[] args)
         assert(0, "`verifySettings` returned `Next.retry`");
 
     case returnSuccess:
-        return 0;
+        return ShellReturnValue.success;
 
     case returnFailure:
-        return 1;
+        return ShellReturnValue.settingsVerificationFailure;
 
     case crash:
         assert(0, "`verifySettings` returned `Next.crash`");
@@ -2966,13 +2976,13 @@ int run(string[] args)
     {
         // Configuration file/--set argument syntax error
         logger.error(e.msg);
-        if (!instance.settings.force) return 1;
+        if (!instance.settings.force) return ShellReturnValue.customConfigSyntaxFailure;
     }
     catch (IRCPluginSettingsException e)
     {
         // --set plugin/setting name error
         logger.error(e.msg);
-        if (!instance.settings.force) return 1;
+        if (!instance.settings.force) return ShellReturnValue.customConfigFailure;
     }
 
     // Save the original nickname *once*, outside the connection loop.
@@ -3059,48 +3069,53 @@ int run(string[] args)
         }
     }
 
-    if (!instance.settings.headless && instance.settings.exitSummary && instance.connectionHistory.length)
+    if (!instance.settings.headless)
     {
-        instance.printSummary();
-    }
-
-    version(GCStatsOnExit)
-    {
-        import core.memory : GC;
-
-        immutable stats = GC.stats();
-
-        static if (__VERSION__ >= 2087L)
+        if (instance.settings.exitSummary && instance.connectionHistory.length)
         {
-            immutable allocated = stats.allocatedInCurrentThread;
-            enum pattern = "Allocated in current thread: %s%,d%s bytes";
-            logger.infof(pattern, Tint.log, allocated, Tint.info);
+            instance.printSummary();
         }
 
-        enum memoryUsedPattern = "Memory used: %s%,d%s bytes, free: %1$s%4$,d%3$s bytes";
-        logger.infof(memoryUsedPattern, Tint.log, stats.usedSize, Tint.info, stats.freeSize);
+        version(GCStatsOnExit)
+        {
+            import core.memory : GC;
+
+            immutable stats = GC.stats();
+
+            static if (__VERSION__ >= 2087L)
+            {
+                immutable allocated = stats.allocatedInCurrentThread;
+                enum pattern = "Allocated in current thread: %s%,d%s bytes";
+                logger.infof(pattern, Tint.log, allocated, Tint.info);
+            }
+
+            enum memoryUsedPattern = "Memory used: %s%,d%s bytes, free: %1$s%4$,d%3$s bytes";
+            logger.infof(memoryUsedPattern, Tint.log, stats.usedSize, Tint.info, stats.freeSize);
+        }
+
+        if (*instance.abort)
+        {
+            logger.error("Aborting...");
+        }
+        else if (!attempt.silentExit)
+        {
+            logger.info("Exiting...");
+        }
     }
 
     if (*instance.abort)
     {
         // Ctrl+C
-        logger.error("Aborting...");
-
         version(Posix)
         {
-            // Even if no signal raised attempt.retval may already be 1,
-            // but double-set it to be sure
-            attempt.retval = (signalRaised > 0) ? (128 + signalRaised) : 1;
+            if (signalRaised > 0) attempt.retval = (128 + signalRaised);
         }
-        else
+
+        if (attempt.retval == 0)
         {
-            // Ditto
-            attempt.retval = 1;
+            // Pass through any specific values, set to failure if unset
+            attempt.retval = ShellReturnValue.failure;
         }
-    }
-    else if (!attempt.silentExit)
-    {
-        logger.info("Exiting...");
     }
 
     return attempt.retval;

@@ -59,10 +59,8 @@ bool applyCustomSettings(IRCPlugin[] plugins,
             continue;
         }
 
-        import std.uni : toLower;
-
         string slice = line;  // mutable
-        string pluginstring = slice.nom!(Yes.decode)(".").toLower;  // mutable
+        string pluginstring = slice.nom!(Yes.decode)(".");  // mutable
         immutable setting = slice.nom!(Yes.inherit, Yes.decode)('=');
         immutable value = slice;
 
@@ -205,8 +203,7 @@ unittest
     }
     else
     {
-        import std.math : approxEqual;
-        alias isClose = approxEqual;
+        import std.math : isClose = approxEqual;
     }
 
     import std.conv : text;
@@ -294,27 +291,25 @@ void catchUser(IRCPlugin plugin, const IRCUser newUser) @safe
     replay the event upon receiving the results.
 
     Params:
-        plugin = Current [kameloso.plugins.common.core.IRCPlugin] as a base class.
-        subPlugin = Subclass [kameloso.plugins.common.core.IRCPlugin] to replay the
-            function pointer `fn` with as first argument.
+        plugin = Subclass [kameloso.plugins.common.core.IRCPlugin] to replay the
+            function pointer `fun` with as first argument.
         event = [dialect.defs.IRCEvent] to queue up to replay.
         permissionsRequired = Permissions level to match the results from the WHOIS query with.
-        fn = Function/delegate pointer to call when the results return.
+        fun = Function/delegate pointer to call when the results return.
         caller = String name of the calling function, or something else that gives context.
  +/
-void enqueue(SubPlugin, Fn)
-    (IRCPlugin plugin,
-    SubPlugin subPlugin,
+void enqueue(Plugin, Fun)
+    (Plugin plugin,
     const ref IRCEvent event,
     const Permissions permissionsRequired,
-    Fn fn,
+    Fun fun,
     const string caller = __FUNCTION__)
 in ((event != IRCEvent.init), "Tried to `enqueue` with an init IRCEvent")
-in ((fn !is null), "Tried to `enqueue` with a null function pointer")
+in ((fun !is null), "Tried to `enqueue` with a null function pointer")
 {
     import std.traits : isSomeFunction;
 
-    static assert (isSomeFunction!Fn, "Tried to `enqueue` with a non-function function");
+    static assert (isSomeFunction!Fun, "Tried to `enqueue` with a non-function function");
 
     version(TwitchSupport)
     {
@@ -341,67 +336,264 @@ in ((fn !is null), "Tried to `enqueue` with a null function pointer")
     immutable user = event.sender.isServer ? event.target : event.sender;
     assert(user.nickname.length, "Bad user derived in `enqueue` (no nickname)");
 
-    static if (is(SubPlugin == typeof(null)))
+    version(ExplainReplay)
     {
-        plugin.state.replays[user.nickname] ~=
-            replay(event, permissionsRequired, fn, caller);
-    }
-    else
-    {
-        plugin.state.replays[user.nickname] ~=
-            replay(subPlugin, event, permissionsRequired, fn, caller);
+        import kameloso.common : Tint, logger;
+        import lu.string : beginsWith;
+
+        immutable callerSlice = caller.beginsWith("kameloso.plugins.") ?
+            caller[17..$] :
+            caller;
     }
 
-    plugin.state.hasReplays = true;
+    if (const previousWhoisTimestamp = user.nickname in plugin.state.previousWhoisTimestamps)
+    {
+        import kameloso.constants : Timeout;
+        import std.datetime.systime : Clock;
+
+        immutable now = Clock.currTime.toUnixTime;
+        immutable delta = (now - *previousWhoisTimestamp);
+
+        if ((delta < Timeout.whoisRetry) && (delta > Timeout.whoisGracePeriod))
+        {
+            version(ExplainReplay)
+            {
+                version(Colours)
+                {
+                    enum pattern = "%s%s%s plugin %6$sNOT%3$s queueing an event to be replayed " ~
+                        "on behalf of %1$s%4$s%3$s; delta time %1$s%5$d%3$s is too recent";
+
+                    logger.logf(pattern,
+                        Tint.info, plugin.name, Tint.log,
+                        callerSlice,
+                        delta,
+                        Tint.warning);
+                }
+                else
+                {
+                    enum pattern = "%s plugin NOT queueing an event to be replayed " ~
+                        "on behalf of %s; delta time %d is too recent";
+
+                    logger.logf(pattern,
+                        plugin.name,
+                        callerSlice,
+                        delta);
+                }
+            }
+            return;
+        }
+    }
+
+    version(ExplainReplay)
+    {
+        version(Colours)
+        {
+            enum pattern = "%s%s%s plugin queueing an event to be replayed on behalf of %1$s%4$s%3$s";
+            logger.logf(pattern, Tint.info, plugin.name, Tint.log, callerSlice);
+        }
+        else
+        {
+            enum pattern = "%s plugin queueing an event to be replayed on behalf of %s";
+            logger.logf(pattern, plugin.name, callerSlice);
+        }
+    }
+
+    plugin.state.pendingReplays[user.nickname] ~=
+        replay(plugin, event, fun, permissionsRequired, caller);
+    plugin.state.hasPendingReplays = true;
 }
 
 
-// enqueue
+// replay
 /++
-    Construct and enqueue a function replay in the plugin's queue of such.
-    Overload that does not take an [kameloso.plugins.common.core.IRCPlugin] subclass parameter.
-
-    The main loop will catch up on it and issue WHOIS queries as necessary, then
-    replay the event upon receiving the results.
+    Convenience function that returns a [ReplayImpl] of the right type,
+    *with* a subclass plugin reference attached.
 
     Params:
-        plugin = Current [kameloso.plugins.common.core.IRCPlugin] as a base class.
-        event = [dialect.defs.IRCEvent] to queue up to replay.
-        permissionsRequired = Permissions level to match the results from the WHOIS query with.
-        fn = Function/delegate pointer to call when the results return.
+        plugin = Subclass [kameloso.plugins.common.core.IRCPlugin] to call the
+            function pointer `fun` with as first argument, when the WHOIS results return.
+        event = [dialect.defs.IRCEvent] that instigated the WHOIS lookup.
+        fun = Function/delegate pointer to call upon receiving the results.
+        permissionsRequired = The permissions level policy to apply to the WHOIS results.
         caller = String name of the calling function, or something else that gives context.
+
+    Returns:
+        A [Replay] with template parameters inferred from the arguments
+        passed to this function.
+
+    See_Also:
+        [kameloso.plugins.common.core.Replay]
  +/
-void enqueue(Fn)
-    (IRCPlugin plugin,
-    const ref IRCEvent event,
-    const Permissions permissionsRequired,
-    Fn fn,
-    const string caller = __FUNCTION__)
+Replay replay(Plugin, Fun)(Plugin plugin, const ref IRCEvent event,
+    Fun fun, const Permissions permissionsRequired, const string caller = __FUNCTION__)
 {
-    return enqueue(plugin, null, event, permissionsRequired, fn, caller);
-}
+    void dg(Replay replay)
+    {
+        version(ExplainReplay)
+        void explainReplay()
+        {
+            import kameloso.common : Tint, logger;
+            import lu.string : beginsWith;
 
+            immutable caller = replay.caller.beginsWith("kameloso.plugins.") ?
+                replay.caller[17..$] :
+                replay.caller;
 
-// repeat
-/++
-    Queues a [core.thread.fiber.Fiber] (actually a [kameloso.thread.CarryingFiber]
-    with a [kameloso.plugins.common.core.Repeat] payload) to repeat a passed [kameloso.plugins.common.core.Replay] from the
-    context of the main loop after postprocessing the event once more.
+            version(Colours)
+            {
+                enum pattern = "%s%s%s replaying %1$s%4$s%3$s-level event (invoking %1$s%5$s%3$s) " ~
+                    "based on WHOIS results: user %1$s%6$s%3$s is %1$s%7$s%3$s class";
 
-    Params:
-        plugin = The current [kameloso.plugins.common.core.IRCPlugin].
-        dg = Delegate/function pointer to wrap the [core.thread.fiber.Fiber] around.
-        replay = The [kameloso.plugins.common.core.Replay] to repeat.
- +/
-void repeat(Dg)(IRCPlugin plugin, Dg dg, Replay replay)
-if (isSomeFunction!Dg)
-in ((dg !is null), "Tried to queue a repeat with a null delegate pointer")
-in ((replay.event != IRCEvent.init), "Tried to queue a repeat of an init `Replay`")
-{
-    import kameloso.constants : BufferSize;
-    import kameloso.thread : CarryingFiber;
+                logger.logf(pattern,
+                    Tint.info, plugin.name, Tint.log,
+                    replay.permissionsRequired,
+                    caller,
+                    replay.event.sender.nickname,
+                    replay.event.sender.class_);
+            }
+            else
+            {
+                enum pattern = "%s replaying %s-level event (invoking %s) " ~
+                    "based on WHOIS results: user %s is %s class";
 
-    plugin.state.repeats ~= Repeat(new CarryingFiber!Repeat(dg, BufferSize.fiberStack), replay);
+                logger.logf(pattern,
+                    plugin.name,
+                    replay.permissionsRequired,
+                    caller,
+                    replay.event.sender.nickname,
+                    replay.event.sender.class_);
+            }
+        }
+
+        version(ExplainReplay)
+        void explainRefuse()
+        {
+            import kameloso.common : Tint, logger;
+            import lu.string : beginsWith;
+
+            immutable caller = replay.caller.beginsWith("kameloso.plugins.") ?
+                replay.caller[17..$] :
+                replay.caller;
+
+            version(Colours)
+            {
+                enum pattern = "%s%s%s %8$sNOT%3$s replaying %1$s%4$s%3$s-level event " ~
+                    "(which would have invoked %1$s%5$s%3$s) " ~
+                    "based on WHOIS results: user %1$s%6$s%3$s is insufficient %1$s%7$s%3$s class";
+
+                logger.logf(pattern,
+                    Tint.info, plugin.name, Tint.log,
+                    replay.permissionsRequired,
+                    caller,
+                    replay.event.sender.nickname,
+                    replay.event.sender.class_,
+                    Tint.warning);
+            }
+            else
+            {
+                enum pattern = "%s NOT replaying %s-level event " ~
+                    "(which would have invoked %s) " ~
+                    "based on WHOIS results: user %s is insufficient %s class";
+
+                logger.logf(pattern,
+                    plugin.name,
+                    replay.permissionsRequired,
+                    caller,
+                    replay.event.sender.nickname,
+                    replay.event.sender.class_);
+            }
+        }
+
+        with (Permissions)
+        final switch (permissionsRequired)
+        {
+        case admin:
+            if (replay.event.sender.class_ >= IRCUser.Class.admin)
+            {
+                goto case ignore;
+            }
+            break;
+
+        case staff:
+            if (replay.event.sender.class_ >= IRCUser.Class.staff)
+            {
+                goto case ignore;
+            }
+            break;
+
+        case operator:
+            if (replay.event.sender.class_ >= IRCUser.Class.operator)
+            {
+                goto case ignore;
+            }
+            break;
+
+        case whitelist:
+            if (replay.event.sender.class_ >= IRCUser.Class.whitelist)
+            {
+                goto case ignore;
+            }
+            break;
+
+        case registered:
+            if (replay.event.sender.account.length)
+            {
+                goto case ignore;
+            }
+            break;
+
+        case anyone:
+            if (replay.event.sender.class_ >= IRCUser.Class.anyone)
+            {
+                goto case ignore;
+            }
+
+            // event.sender.class_ is Class.blacklist here (or unset)
+            // Do nothing and drop down
+            break;
+
+        case ignore:
+
+            import lu.traits : TakesParams;
+            import std.meta : AliasSeq;
+            import std.traits : arity;
+
+            version(ExplainReplay) explainReplay();
+
+            static if (
+                TakesParams!(fun, AliasSeq!(Plugin, IRCEvent)) ||
+                TakesParams!(fun, AliasSeq!(IRCPlugin, IRCEvent)))
+            {
+                fun(plugin, replay.event);
+            }
+            else static if (
+                TakesParams!(fun, Plugin) ||
+                TakesParams!(fun, IRCPlugin))
+            {
+                fun(plugin);
+            }
+            else static if (
+                TakesParams!(fun, IRCEvent))
+            {
+                fun(replay.event);
+            }
+            else static if (arity!fun == 0)
+            {
+                fun();
+            }
+            else
+            {
+                // onEventImpl.call should already have statically asserted all
+                // event handlers are of the types above
+                static assert(0);
+            }
+            return;
+        }
+
+        version(ExplainReplay) explainRefuse();
+    }
+
+    return Replay(&dg, event, permissionsRequired, caller);
 }
 
 
@@ -553,7 +745,7 @@ in (user.nickname.length, "Tried to get `idOf` a user with an empty nickname")
     See_Also:
         [getUser]
  +/
-string idOf()(IRCPlugin plugin, const string nickname) pure @safe /*nothrow*/ @nogc
+auto idOf(IRCPlugin plugin, const string nickname)
 {
     immutable user = getUser(plugin, nickname);
     return idOf(user);
@@ -601,7 +793,7 @@ unittest
         passed plugin's arrays. A minimally viable [dialect.defs.IRCUser] if
         none was found.
  +/
-IRCUser getUser()(IRCPlugin plugin, const string nickname) pure @safe /*nothrow*/ @nogc
+auto getUser(IRCPlugin plugin, const string nickname)
 {
     if (const user = nickname in plugin.state.users)
     {

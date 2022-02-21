@@ -1065,7 +1065,7 @@ void askToOutputImpl(string logLevel)(IRCPluginState state, const string line)
 {
     import kameloso.thread : ThreadMessage;
     import std.concurrency : prioritySend;
-    mixin("state.mainThread.prioritySend(ThreadMessage.TerminalOutput." ~ logLevel ~ ", line);");
+    mixin("state.mainThread.prioritySend(ThreadMessage.TerminalOutput.", logLevel, ", line);");
 }
 
 /// Sends a concurrency message to the main thread asking to print text to the local terminal.

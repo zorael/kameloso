@@ -66,7 +66,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     static if ((paramNames.length == 0) || !is(typeof(mixin(paramNames[0])) : IRCPlugin))
     {
         static assert(0, "`WHOISFiberDelegate` should be mixed into the context of an event handler. " ~
-            "(First parameter of `" ~ __FUNCTION__ ~ "` is not an `IRCPlugin`)");
+            "(First parameter of `" ~ __FUNCTION__ ~ "` is not an `IRCPlugin` or subclass)");
     }
     else
     {
@@ -455,6 +455,15 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             slice.nom('!') :
             slice;
 
+        version(WithPrinterPlugin)
+        {
+            import kameloso.thread : ThreadMessage, busMessage;
+            import std.concurrency : send;
+
+            plugin.state.mainThread.send(ThreadMessage.BusMessage(),
+                "printer", busMessage("squelch " ~ nicknamePart));
+        }
+
         if (issueWhois)
         {
             if (background)
@@ -819,205 +828,5 @@ unittest
         askToWarn(string.init);
         askToWarning(string.init);
         askToError(string.init);
-    }
-}
-
-
-// Repeater
-/++
-    Implements queueing of events to repeat.
-
-    This allows us to deal with triggers both in [dialect.defs.IRCEvent.Type.RPL_WHOISACCOUNT]
-    and [dialect.defs.IRCEvent.Type.ERR_UNKNOWNCOMMAND] while keeping the code
-    in one place.
-
-    Params:
-        debug_ = Whether or not to print debug output to the terminal.
- +/
-mixin template Repeater(
-    Flag!"debug_" debug_ = No.debug_,
-    string module_ = __MODULE__)
-{
-    import kameloso.plugins.common.core : Repeat, Replay;
-    import dialect.defs : IRCUser;
-    import lu.traits : MixinConstraints, MixinScope;
-    import std.conv : text;
-    import std.traits : isSomeFunction;
-
-    mixin MixinConstraints!(MixinScope.function_, "Repeater");
-
-    static if (__traits(compiles, hasRepeater))
-    {
-        import std.format : format;
-        enum pattern = "Double mixin of `%s` in `%s`";
-        static assert(0, pattern.format("Repeater", __FUNCTION__));
-    }
-    else
-    {
-        /// Flag denoting that [Repeater] has been mixed in.
-        enum hasRepeater = true;
-    }
-
-    static if (__traits(compiles, plugin))
-    {
-        alias context = plugin;
-        enum contextName = "plugin";
-    }
-    else static if (__traits(compiles, service))
-    {
-        alias context = service;
-        enum contextName = "service";
-    }
-    else
-    {
-        static assert(0, "`Repeater` should be mixed into the context " ~
-            "of an event handler. (Could not access variables named neither " ~
-            "`plugin` nor `service` from within `" ~ __FUNCTION__ ~ "`)");
-    }
-
-
-    // explainRepeat
-    /++
-        Verbosely explains a repeat, including what
-        [kameloso.plugins.common.core.Permissions] and
-        [dialect.defs.IRCUser.Class] were involved.
-
-        Gated behind version `ExplainRepeat`.
-     +/
-    version(ExplainRepeat)
-    void explainRepeat(const Repeat repeat)
-    {
-        import kameloso.common : Tint, logger;
-        import lu.conv : Enum;
-        import lu.string : beginsWith;
-
-        enum pattern = "%s%s%s %s repeating %1$s%5$s%3$s-level event (invoking %1$s%6$s%3$s) " ~
-            "based on WHOIS results: user %1$s%7$s%3$s is %1$s%8$s%3$s class";
-
-        immutable caller = repeat.replay.caller.beginsWith("kameloso.plugins.") ?
-            repeat.replay.caller[17..$] :
-            repeat.replay.caller;
-
-        logger.logf(pattern,
-            Tint.info, context.name, Tint.log, contextName,
-            repeat.replay.permissionsRequired,
-            caller,
-            repeat.replay.event.sender.nickname,
-            repeat.replay.event.sender.class_);
-    }
-
-
-    // explainRefuse
-    /++
-        Verbosely explains why a repeat is not repeated.
-
-        Gated behind version `ExplainRepeat`.
-     +/
-    version(ExplainRepeat)
-    void explainRefuse(const Repeat repeat)
-    {
-        import kameloso.common : Tint, logger;
-        import lu.conv : Enum;
-        import lu.string : beginsWith;
-
-        enum pattern = "%s%s%s %s is %9$sNOT%3$s repeating %1$s%5$s%3$s-level event " ~
-            "(which would have invoked %1$s%6$s%3$s) " ~
-            "based on WHOIS results: user %1$s%7$s%3$s is insufficient %1$s%8$s%3$s class";
-
-        immutable caller = repeat.replay.caller.beginsWith("kameloso.plugins.") ?
-            repeat.replay.caller[17..$] :
-            repeat.replay.caller;
-
-        logger.logf(pattern,
-            Tint.info, context.name, Tint.log, contextName,
-            repeat.replay.permissionsRequired,
-            caller,
-            repeat.replay.event.sender.nickname,
-            repeat.replay.event.sender.class_,
-            Tint.warning);
-    }
-
-
-    // repeaterDelegate
-    /++
-        Delegate to call from inside a [kameloso.thread.CarryingFiber].
-     +/
-    void repeaterDelegate()
-    {
-        import kameloso.thread : CarryingFiber;
-        import core.thread : Fiber;
-
-        auto thisFiber = cast(CarryingFiber!Repeat)(Fiber.getThis);
-        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
-        assert((thisFiber.payload != thisFiber.payload.init),
-            "Uninitialised `payload` in " ~ typeof(thisFiber).stringof);
-
-        Repeat repeat = thisFiber.payload;
-
-        with (Permissions)
-        final switch (repeat.replay.permissionsRequired)
-        {
-        case admin:
-            if (repeat.replay.event.sender.class_ >= IRCUser.Class.admin)
-            {
-                goto case ignore;
-            }
-            break;
-
-        case staff:
-            if (repeat.replay.event.sender.class_ >= IRCUser.Class.staff)
-            {
-                goto case ignore;
-            }
-            break;
-
-        case operator:
-            if (repeat.replay.event.sender.class_ >= IRCUser.Class.operator)
-            {
-                goto case ignore;
-            }
-            break;
-
-        case whitelist:
-            if (repeat.replay.event.sender.class_ >= IRCUser.Class.whitelist)
-            {
-                goto case ignore;
-            }
-            break;
-
-        case registered:
-            if (repeat.replay.event.sender.account.length)
-            {
-                goto case ignore;
-            }
-            break;
-
-        case anyone:
-            if (repeat.replay.event.sender.class_ >= IRCUser.Class.anyone)
-            {
-                goto case ignore;
-            }
-
-            // repeat.replay.event.sender.class_ is Class.blacklist here (or unset)
-            // Do nothing an drop down
-            break;
-
-        case ignore:
-            version(ExplainRepeat) explainRepeat(repeat);
-            repeat.replay.trigger();
-            return;
-        }
-
-        version(ExplainRepeat) explainRefuse(repeat);
-    }
-
-    /++
-        Queues the delegate [repeaterDelegate] with the passed
-        [kameloso.plugins.common.core.Replay] attached to it.
-     +/
-    void repeat(Replay replay)
-    {
-        import kameloso.plugins.common.misc : repeat;
-        context.repeat(&repeaterDelegate, replay);
     }
 }

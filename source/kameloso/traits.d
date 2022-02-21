@@ -306,3 +306,89 @@ unittest
     enum longestUnserialisable = longestUnserialisableMemberTypeName!S1;
     assert((longestUnserialisable == "string[][string]"), longestUnserialisable);
 }
+
+
+// Wrap
+/++
+    Wraps a value by generating a mutator with a specified name.
+
+    The wrapper returns `this` by reference, allowing for chaining calls.
+    Values are assigned, arrays are appended to.
+
+    Params:
+        newName = Name of mutator symbol to generate and mix in.
+        symbol = Symbol to wrap.
+ +/
+mixin template Wrap(string newName, alias symbol)
+{
+    private import std.traits : isArray, isSomeString;
+
+    static if (!__traits(compiles, __traits(identifier, symbol)))
+    {
+        static assert(0, "Failed to wrap symbol: symbol could not be resolved");
+    }
+    else static if (!newName.length)
+    {
+        static assert(0, "Failed to wrap symbol: name to generate is empty");
+    }
+    else static if (__traits(compiles, mixin(newName)))
+    {
+        static assert(0, "Failed to wrap symbol: symbol `" ~ newName ~ "` already exists");
+    }
+
+    static if (isArray!(typeof(symbol)) && !isSomeString!(typeof(symbol)))
+    {
+        private import std.range.primitives : ElementEncodingType;
+        private import std.traits : fullyQualifiedName;
+
+        mixin(
+"ref auto " ~ newName ~ '(' ~ fullyQualifiedName!(ElementEncodingType!(typeof(symbol))) ~ " newVal)
+{
+    " ~ __traits(identifier, symbol) ~ " ~= newVal;
+    return this;
+}");
+    }
+    else
+    {
+        mixin(
+"ref auto " ~ newName ~ '(' ~ typeof(symbol).stringof ~ " newVal)
+{
+    " ~ __traits(identifier, symbol) ~ " = newVal;
+    return this;
+}");
+    }
+}
+
+///
+unittest
+{
+    //import dialect.defs : IRCEvent;
+
+    struct Foo
+    {
+        IRCEvent.Type[] _acceptedEventTypes;
+        bool _verbose;
+        bool _chainable;
+
+        mixin Wrap!("onEvent", _acceptedEventTypes);
+        mixin Wrap!("verbose", _verbose);
+        mixin Wrap!("chainable", _chainable);
+    }
+
+    auto f = Foo()
+        .onEvent(IRCEvent.Type.CHAN)
+        .onEvent(IRCEvent.Type.EMOTE)
+        .onEvent(IRCEvent.Type.QUERY)
+        .chainable(true)
+        .verbose(false);
+
+    assert(f._acceptedEventTypes == [ IRCEvent.Type.CHAN, IRCEvent.Type.EMOTE, IRCEvent.Type.QUERY ]);
+    assert(f._chainable);
+    assert(!f._verbose);
+}
+
+// So the above unittest works.
+version(unittest)
+{
+    import dialect.defs;
+}

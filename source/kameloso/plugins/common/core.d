@@ -434,19 +434,33 @@ mixin template IRCPluginImpl(
     // onEventImpl
     /++
         Pass on the supplied [dialect.defs.IRCEvent] to module-level functions
-        annotated with the matching [dialect.defs.IRCEvent.Type]s.
+        annotated with an [kameloso.plugins.common.core.IRCEventHandler], registered
+        with the matching [dialect.defs.IRCEvent.Type]s.
 
-        It also does checks for [kameloso.plugins.common.core.ChannelPolicy],
-        [kameloso.plugins.common.core.Permissions], [kameloso.plugins.common.core.PrefixPolicy],
-        [kameloso.plugins.common.core.IRCEventHandler.Command], [kameloso.plugins.common.core.IRCEventHandler.Regex]
+        It also does checks for
+        [kameloso.plugins.common.core.ChannelPolicy],
+        [kameloso.plugins.common.core.Permissions],
+        [kameloso.plugins.common.core.PrefixPolicy],
+        [kameloso.plugins.common.core.IRCEventHandler.Command],
+        [kameloso.plugins.common.core.IRCEventHandler.Regex],
+        [kameloso.plugins.common.core.Chainable]
         etc; where such is applicable.
 
+        This function is private, but since it's part of a mixin template it will
+        be visible at the mixin site. Plugins can as such override
+        [kameloso.plugins.common.core.IRCPlugin.onEvent] with their own code and
+        invoke [onEventImpl] as a fallback.
+
         Params:
-            origEvent = Parsed [dialect.defs.IRCEvent] to dispatch to event handlers.
+            origEvent = Parsed [dialect.defs.IRCEvent] to dispatch to event handlers,
+                taken by value so we have an object we can modify.
+
+        See_Also:
+            [kameloso.plugins.common.core.IRCPluginImpl.onEvent]
      +/
-    private void onEventImpl(/*const*/ IRCEvent origEvent) @system
+    private void onEventImpl(/*const ref*/ IRCEvent origEvent) @system
     {
-        mixin("static import thisModule = " ~ module_ ~ ";");
+        mixin("static import thisModule = ", module_, ";");
 
         /++
             Verifies that annotations are as expected.
@@ -466,9 +480,9 @@ mixin template IRCPluginImpl(
                 static assert(0, pattern.format(fullyQualifiedName!fun));
             }
 
-            enum uda = handlerAnnotations[0];
+            static immutable uda = handlerAnnotations[0];
 
-            static foreach (immutable type; uda.given.acceptedEventTypes)
+            static foreach (immutable type; uda._acceptedEventTypes)
             {{
                 static if (type == IRCEvent.Type.UNSET)
                 {
@@ -497,7 +511,7 @@ mixin template IRCPluginImpl(
                     static assert(0, pattern.format(fullyQualifiedName!fun));
                 }
 
-                static if (uda.given.commands.length || uda.given.regexes.length)
+                static if (uda._commands.length || uda._regexes.length)
                 {
                     static if (
                         (type != IRCEvent.Type.CHAN) &&
@@ -517,13 +531,13 @@ mixin template IRCPluginImpl(
                 }
             }}
 
-            static if (uda.given.commands.length)
+            static if (uda._commands.length)
             {
                 import lu.string : contains;
 
-                static foreach (immutable command; uda.given.commands)
+                static foreach (immutable command; uda._commands)
                 {
-                    static if (!command.given.word.length)
+                    static if (!command._word.length)
                     {
                         import std.format : format;
 
@@ -531,23 +545,23 @@ mixin template IRCPluginImpl(
                             "listening for a `Command` with an empty trigger word";
                         static assert(0, pattern.format(fullyQualifiedName!fun));
                     }
-                    else static if (command.given.word.contains(' '))
+                    else static if (command._word.contains(' '))
                     {
                         import std.format : format;
 
                         enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                             "listening for a `Command` whose trigger " ~
                             `word "%s" contains a space character`;
-                        static assert(0, pattern.format(fullyQualifiedName!fun, command.given.word));
+                        static assert(0, pattern.format(fullyQualifiedName!fun, command._word));
                     }
                 }
             }
 
-            static if (uda.given.regexes.length)
+            static if (uda._regexes.length)
             {
-                static foreach (immutable regex; uda.given.regexes)
+                static foreach (immutable regex; uda._regexes)
                 {
-                    static if (!regex.given.expression.length)
+                    static if (!regex._expression.length)
                     {
                         import std.format : format;
 
@@ -558,7 +572,7 @@ mixin template IRCPluginImpl(
                 }
             }
 
-            static if ((uda.given.permissionsRequired != Permissions.ignore) &&
+            static if ((uda._permissionsRequired != Permissions.ignore) &&
                 !__traits(compiles, .hasMinimalAuthentication))
             {
                 import std.format : format;
@@ -566,6 +580,17 @@ mixin template IRCPluginImpl(
                 enum pattern = "`%s` is missing a `MinimalAuthentication` " ~
                     "mixin (needed for `Permissions` checks)";
                 static assert(0, pattern.format(module_));
+            }
+
+            static if (uda._verbose && (__VERSION__ < 2096L))
+            {
+                import std.format : format;
+
+                enum pattern = "Warning: `%s` is marked as `verbose`, but " ~
+                    "your compiler is too old to support this (<2.096). " ~
+                    "Mix in the whole of `MinimalAuthentication` with `Yes.debug_` " ~
+                    "as a workaround; or better yet, update your compiler";
+                pragma(msg, pattern.format(fullyQualifiedName!fun));
             }
 
             return true;
@@ -576,63 +601,57 @@ mixin template IRCPluginImpl(
          +/
         void call(Fun)(Fun fun, ref IRCEvent event)
         {
-            import std.meta : AliasSeq, staticMap;
-            import std.traits : Parameters, Unqual, arity;
+            import lu.traits : TakesParams;
+            import std.meta : AliasSeq;
+            import std.traits : ParameterStorageClass, Parameters, arity;
 
-            alias Params = staticMap!(Unqual, Parameters!fun);
+            /++
+                Statically asserts that a parameter storage class is neither `out` nor `ref`.
+
+                Take the storage class as a template parameter and statically
+                assert inside this function, unlike how `udaSanityCheck` returns
+                false on failure, so we can format and print the error message
+                once here (instead of at all call sites upon receiving false).
+             +/
+            static void assertNotRefNorOut(ParameterStorageClass storageClass)()
+            {
+                static if (
+                    (storageClass & ParameterStorageClass.ref_) ||
+                    (storageClass & ParameterStorageClass.out_))
+                {
+                    import std.format : format;
+
+                    enum pattern = "`%s` has a `%s` event handler that takes an " ~
+                        "`IRCEvent` of an unsupported storage class; " ~
+                        "may not be mutable `ref` or `out`";
+                    static assert(0, pattern.format(module_, Fun.stringof));
+                }
+            }
 
             static if (
-                is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
-                is(Params : AliasSeq!(IRCPlugin, IRCEvent)))
+                TakesParams!(fun, AliasSeq!(typeof(this), IRCEvent)) ||
+                TakesParams!(fun, AliasSeq!(IRCPlugin, IRCEvent)))
             {
                 static if (!is(Parameters!fun[1] == const))
                 {
-                    import std.traits : ParameterStorageClass, ParameterStorageClassTuple;
-
-                    alias SC = ParameterStorageClass;
-                    alias paramClasses = ParameterStorageClassTuple!fun;
-
-                    static if (
-                        (paramClasses[1] & SC.ref_) ||
-                        (paramClasses[1] & SC.out_))
-                    {
-                        import std.format : format;
-
-                        enum pattern = "`%s` has a `%s` event handler takes an " ~
-                            "`IRCEvent` of an unsupported storage class; " ~
-                            "may not be mutable `ref` or `out`";
-                        static assert(0, pattern.format(module_, Fun.stringof));
-                    }
+                    import std.traits : ParameterStorageClassTuple;
+                    assertNotRefNorOut!(ParameterStorageClassTuple!fun[1]);
                 }
 
                 fun(this, event);
             }
             else static if (
-                is(Params : AliasSeq!(typeof(this))) ||
-                is(Params : AliasSeq!IRCPlugin))
+                TakesParams!(fun, typeof(this)) ||
+                TakesParams!(fun, IRCPlugin))
             {
                 fun(this);
             }
-            else static if (is(Params : AliasSeq!IRCEvent))
+            else static if (TakesParams!(fun, IRCEvent))
             {
                 static if (!is(Parameters!fun[0] == const))
                 {
-                    import std.traits : ParameterStorageClass, ParameterStorageClassTuple;
-
-                    alias SC = ParameterStorageClass;
-                    alias paramClasses = ParameterStorageClassTuple!fun;
-
-                    static if (
-                        (paramClasses[0] & SC.ref_) ||
-                        (paramClasses[0] & SC.out_))
-                    {
-                        import std.format : format;
-
-                        enum pattern = "`%s` has a `%s` event handler takes an " ~
-                            "`IRCEvent` of an unsupported storage class; " ~
-                            "may not be mutable `ref` or `out`";
-                        static assert(0, pattern.format(module_, Fun.stringof));
-                    }
+                    import std.traits : ParameterStorageClassTuple;
+                    assertNotRefNorOut!(ParameterStorageClassTuple!fun[0]);
                 }
 
                 fun(event);
@@ -675,26 +694,26 @@ mixin template IRCPluginImpl(
                 import std.stdio : writeln, writefln;
             }
 
-            if (!uda.given.acceptedEventTypes.canFind(IRCEvent.Type.ANY))
+            if (!uda._acceptedEventTypes.canFind(IRCEvent.Type.ANY))
             {
-                if (!uda.given.acceptedEventTypes.canFind(event.type)) return NextStep.continue_;
+                if (!uda._acceptedEventTypes.canFind(event.type)) return NextStep.continue_;
             }
 
             static if (verbose)
             {
                 writeln("-- ", funName, " @ ", Enum!(IRCEvent.Type).toString(event.type));
-                writeln("   ...", Enum!ChannelPolicy.toString(uda.given.channelPolicy));
+                writeln("   ...", Enum!ChannelPolicy.toString(uda._channelPolicy));
             }
 
             if (event.channel.length)
             {
                 bool channelMatch;
 
-                if (uda.given.channelPolicy == ChannelPolicy.home)
+                if (uda._channelPolicy == ChannelPolicy.home)
                 {
                     channelMatch = state.bot.homeChannels.canFind(event.channel);
                 }
-                else if (uda.given.channelPolicy == ChannelPolicy.guest)
+                else if (uda._channelPolicy == ChannelPolicy.guest)
                 {
                     channelMatch = !state.bot.homeChannels.canFind(event.channel);
                 }
@@ -716,23 +735,17 @@ mixin template IRCPluginImpl(
             }
 
             // Snapshot content and aux for later restoration
-            string origContent = event.content;
-            string origAux = event.aux;
-
-            /// Whether or not a Command or Regex matched.
-            bool commandMatch;
+            immutable origContent = event.content;
+            immutable origAux = event.aux;
 
             scope(exit)
             {
-                if (commandMatch)
-                {
-                    // Restore content and aux as they were definitely altered
-                    event.content = origContent;
-                    event.aux = origAux;
-                }
+                // Restore content and aux as they may have been altered
+                event.content = origContent;
+                event.aux = origAux;
             }
 
-            if (uda.given.commands.length || uda.given.regexes.length)
+            if (uda._commands.length || uda._regexes.length)
             {
                 import lu.string : strippedLeft;
 
@@ -746,22 +759,23 @@ mixin template IRCPluginImpl(
                 }
             }
 
-            // Evaluate each Command UDAs with the current event
-            if (uda.given.commands.length)
-            {
-                foreach (immutable command; uda.given.commands)
-                {
-                    if (commandMatch) break;
+            /// Whether or not a Command or Regex matched.
+            bool commandMatch;
 
+            // Evaluate each Command UDAs with the current event
+            if (uda._commands.length)
+            {
+                foreach (immutable command; uda._commands)
+                {
                     static if (verbose)
                     {
-                        writefln(`   ...Command "%s"`, command.given.word);
+                        writefln(`   ...Command "%s"`, command._word);
                     }
 
                     bool policyMismatch;
 
                     if (!event.prefixPolicyMatches!verbose
-                        (command.given.policy, state.client, state.settings.prefix))
+                        (command._policy, state.client, state.settings.prefix))
                     {
                         static if (verbose)
                         {
@@ -784,7 +798,7 @@ mixin template IRCPluginImpl(
 
                         immutable thisCommand = event.content
                             .nom!(Yes.inherit, Yes.decode)(' ');
-                        immutable lowerWord = command.given.word.toLower;
+                        immutable lowerWord = command._word.toLower;
 
                         if (thisCommand.asLowerCase.equal(lowerWord))
                         {
@@ -807,19 +821,19 @@ mixin template IRCPluginImpl(
             }
 
             // Iff no match from Commands, evaluate Regexes
-            if (uda.given.regexes.length && !commandMatch)
+            if (uda._regexes.length && !commandMatch)
             {
-                foreach (const regex; uda.given.regexes)
+                foreach (const regex; uda._regexes)
                 {
                     static if (verbose)
                     {
-                        writeln("   ...Regex: `", regex.given.expression, "`");
+                        writeln("   ...Regex: `", regex._expression, "`");
                     }
 
                     bool policyMismatch;
 
                     if (!event.prefixPolicyMatches!verbose
-                        (regex.given.policy, state.client, state.settings.prefix))
+                        (regex._policy, state.client, state.settings.prefix))
                     {
                         static if (verbose)
                         {
@@ -839,7 +853,7 @@ mixin template IRCPluginImpl(
                         {
                             import std.regex : matchFirst;
 
-                            const hits = event.content.matchFirst(regex.given.engine);
+                            const hits = event.content.matchFirst(regex._engine);
 
                             if (!hits.empty)
                             {
@@ -857,7 +871,7 @@ mixin template IRCPluginImpl(
                                 static if (verbose)
                                 {
                                     writefln(`   ...matching "%s" against expression "%s" failed.`,
-                                        event.content, regex.given.expression);
+                                        event.content, regex._expression);
                                 }
                             }
                         }
@@ -873,7 +887,7 @@ mixin template IRCPluginImpl(
                 }
             }
 
-            if (uda.given.commands.length || uda.given.regexes.length)
+            if (uda._commands.length || uda._regexes.length)
             {
                 if (!commandMatch)
                 {
@@ -887,15 +901,15 @@ mixin template IRCPluginImpl(
                 }
             }
 
-            if (uda.given.permissionsRequired != Permissions.ignore)
+            if (uda._permissionsRequired != Permissions.ignore)
             {
                 static if (verbose)
                 {
                     writeln("   ...Permissions.",
-                        Enum!Permissions.toString(uda.given.permissionsRequired));
+                        Enum!Permissions.toString(uda._permissionsRequired));
                 }
 
-                immutable result = this.allow(event, uda.given.permissionsRequired);
+                immutable result = this.allow(event, uda._permissionsRequired);
 
                 static if (verbose)
                 {
@@ -909,31 +923,27 @@ mixin template IRCPluginImpl(
                 else if (result == FilterResult.whois)
                 {
                     import kameloso.plugins.common.misc : enqueue;
-                    import std.meta : AliasSeq, staticMap;
-                    import std.traits : Parameters, Unqual, arity;
-
-                    alias Params = staticMap!(Unqual, Parameters!Fun);
+                    import lu.traits : TakesParams;
+                    import std.meta : AliasSeq;
+                    import std.traits : arity;
 
                     static if (verbose)
                     {
                         writefln("   ...%s WHOIS", typeof(this).stringof);
                     }
 
-                    static if (is(Params : AliasSeq!IRCEvent) || (arity!fun == 0))
-                    {
-                        this.enqueue(event, uda.given.permissionsRequired, fun, funName);
-                        return uda.given.chainable ? NextStep.continue_ : NextStep.return_;
-                    }
-                    else static if (
-                        is(Params : AliasSeq!(typeof(this), IRCEvent)) ||
-                        is(Params : AliasSeq!(IRCPlugin, IRCEvent)) ||
-                        is(Params : AliasSeq!(typeof(this))) ||
-                        is(Params : AliasSeq!(IRCPlugin)))
+                    static if (
+                        TakesParams!(fun, AliasSeq!(typeof(this), IRCEvent)) ||
+                        TakesParams!(fun, AliasSeq!(IRCPlugin, IRCEvent)) ||
+                        TakesParams!(fun, AliasSeq!(typeof(this))) ||
+                        TakesParams!(fun, IRCPlugin) ||
+                        TakesParams!(fun, IRCEvent) ||
+                        (arity!fun == 0))
                     {
                         // Unsure why we need to specifically specify IRCPlugin
                         // now despite typeof(this) being a subclass...
-                        this.enqueue(this, event, uda.given.permissionsRequired, fun, funName);
-                        return uda.given.chainable ? NextStep.continue_ : NextStep.return_;
+                        enqueue(this, event, uda._permissionsRequired, fun, funName);
+                        return uda._chainable ? NextStep.continue_ : NextStep.return_;
                     }
                     else
                     {
@@ -944,7 +954,7 @@ mixin template IRCPluginImpl(
                 }
                 else /*if (result == FilterResult.fail)*/
                 {
-                    return uda.given.chainable ? NextStep.continue_ : NextStep.return_;
+                    return uda._chainable ? NextStep.continue_ : NextStep.return_;
                 }
             }
 
@@ -955,7 +965,7 @@ mixin template IRCPluginImpl(
 
             call(fun, event);
 
-            if (uda.given.chainable)
+            if (uda._chainable)
             {
                 // onEvent found an event and triggered a function, but
                 // it's Chainable and there may be more, so keep looking.
@@ -970,7 +980,7 @@ mixin template IRCPluginImpl(
         }
 
         /// Sanitise and try again once on UTF/Unicode exceptions
-        static void sanitizeEvent(ref IRCEvent event)
+        static void sanitiseEvent(ref IRCEvent event)
         {
             import std.encoding : sanitize;
             import std.range : only;
@@ -980,7 +990,8 @@ mixin template IRCPluginImpl(
             event.content = sanitize(event.content);
             event.aux = sanitize(event.aux);
             event.tags = sanitize(event.tags);
-            event.errors ~= event.errors.length ? ". Sanitized" : "Sanitized";
+            event.errors = sanitize(event.errors);
+            event.errors ~= event.errors.length ? " | Sanitised" : "Sanitised";
 
             foreach (user; only(&event.sender, &event.target))
             {
@@ -1001,14 +1012,55 @@ mixin template IRCPluginImpl(
         /// Wrap all the functions in the passed `funlist` in try-catch blocks.
         void tryProcess(funlist...)(ref IRCEvent event)
         {
-            foreach (fun; funlist)
+            static if (__VERSION__ < 2096L)
+            {
+                /+
+                    Pre-2.096 needs an ugly workaround so as to not allocate an
+                    array literal every funlist (likely due to containing dynamic
+                    arrays, as an enum).
+
+                    Compose an array of all UDAs in this funlist, at compile-time.
+                    This gives us static immutables to work with instead of enums,
+                    and as such we don't suffer the array literal allocations
+                    the latter impose.
+
+                    The drawback to this is that `IRCEventHandler.verbose` won't
+                    work anymore (on a per-function basis). Regrettable but it
+                    can't be helped.
+                 +/
+                static immutable ctUDAArray = ()
+                {
+                    IRCEventHandler[] udas;
+                    udas.length = funlist.length;
+
+                    foreach (immutable i, fun; funlist)
+                    {
+                        udas[i] = getUDAs!(fun, IRCEventHandler)[0];
+                    }
+
+                    return udas;
+                }();
+            }
+
+            foreach (immutable i, fun; funlist)
             {
                 import std.traits : getUDAs;
 
                 static assert(udaSanityCheck!fun);
-                enum uda = getUDAs!(fun, IRCEventHandler)[0];
-                enum verbose = (uda.given.verbose || debug_);
-                enum funName = __traits(identifier, fun);
+
+                static if (__VERSION__ >= 2096L)
+                {
+                    static immutable uda = getUDAs!(fun, IRCEventHandler)[0];
+                    enum verbose = (uda._verbose || debug_);
+                }
+                else
+                {
+                    // Can't do static immutable and enum allocates an array literal...
+                    immutable uda = ctUDAArray[i];
+                    enum verbose = (/*uda._verbose ||*/ debug_);  // regrettable
+                }
+
+                enum funName = module_ ~ '.' ~ __traits(identifier, fun);
 
                 try
                 {
@@ -1049,7 +1101,7 @@ mixin template IRCPluginImpl(
 
                     if (!isRecoverableException) throw e;
 
-                    sanitizeEvent(event);
+                    sanitiseEvent(event);
 
                     // Copy-paste, not much we can do otherwise
                     immutable next = process!verbose(&fun, funName, uda, event);
@@ -1083,10 +1135,10 @@ mixin template IRCPluginImpl(
         import std.meta : Filter, templateNot, templateOr;
         import std.traits : getUDAs, isSomeFunction;
 
-        enum isSetupFun(alias T) = (getUDAs!(T, IRCEventHandler)[0].given.when == Timing.setup);
-        enum isEarlyFun(alias T) = (getUDAs!(T, IRCEventHandler)[0].given.when == Timing.early);
-        enum isLateFun(alias T) = (getUDAs!(T, IRCEventHandler)[0].given.when == Timing.late);
-        enum isCleanupFun(alias T) = (getUDAs!(T, IRCEventHandler)[0].given.when == Timing.cleanup);
+        enum isSetupFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.setup);
+        enum isEarlyFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.early);
+        enum isLateFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.late);
+        enum isCleanupFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.cleanup);
         alias hasSpecialTiming = templateOr!(isSetupFun, isEarlyFun,
             isLateFun, isCleanupFun);
         alias isNormalEventHandler = templateNot!hasSpecialTiming;
@@ -1122,20 +1174,24 @@ mixin template IRCPluginImpl(
     public this(IRCPluginState state) @system
     {
         import lu.traits : isSerialisable;
-        import std.traits : EnumMembers, hasUDA;
+        import std.traits : hasUDA;
 
-        enum numEventTypes = EnumMembers!(IRCEvent.Type).length;
+        enum numEventTypes = __traits(allMembers, IRCEvent.Type).length;
 
+        // Inherit select members of state by zeroing out what we don't want
         this.state = state;
-        this.state.awaitingFibers = state.awaitingFibers.dup;
+        this.state.awaitingFibers = null;
         this.state.awaitingFibers.length = numEventTypes;
-        this.state.awaitingDelegates = state.awaitingDelegates.dup;
+        this.state.awaitingDelegates = null;
         this.state.awaitingDelegates.length = numEventTypes;
-        this.state.replays = state.replays.dup;
-        this.state.hasReplays = state.hasReplays;
-        this.state.repeats = state.repeats.dup;
-        this.state.scheduledFibers = state.scheduledFibers.dup;
-        this.state.scheduledDelegates = state.scheduledDelegates.dup;
+        this.state.pendingReplays = null;
+        this.state.hasPendingReplays = false;
+        this.state.readyReplays = null;
+        this.state.scheduledFibers = null;
+        this.state.scheduledDelegates = null;
+        this.state.nextScheduledTimestamp = long.max;
+        //this.state.previousWhoisTimestamps = null;  // keep
+        this.state.updates = IRCPluginState.Update.nothing;
 
         foreach (immutable i, ref member; this.tupleof)
         {
@@ -1406,15 +1462,6 @@ mixin template IRCPluginImpl(
                 didSomething = true;
                 break;
             }
-            else static if (hasUDA!(this.tupleof[i], Settings))
-            {
-                import std.format : format;
-                import std.traits : fullyQualifiedName;
-
-                // Warn here but nowhere else about this.
-                enum pattern = "`%s` is annotated `@Settings` but is not a `struct`";
-                static assert(0, pattern.format(fullyQualifiedName!(this.tupleof[i])));
-            }
         }
 
         return didSomething;
@@ -1489,7 +1536,8 @@ mixin template IRCPluginImpl(
 
             string slice = module_[17..$];  // mutable
             immutable dotPos = slice.indexOf('.');
-            return (dotPos == -1) ? slice : slice[0..dotPos];
+            if (dotPos == -1) return slice;
+            return (slice[dotPos+1..$] == "base") ? slice[0..dotPos] : slice[dotPos+1..$];
         }
         else
         {
@@ -1523,7 +1571,7 @@ mixin template IRCPluginImpl(
             import std.meta : Filter;
             import std.traits : getUDAs, isSomeFunction;
 
-            mixin("static import thisModule = " ~ module_ ~ ";");
+            mixin("static import thisModule = ", module_, ";");
 
             alias funs = Filter!(isSomeFunction, getSymbolsByUDA!(thisModule, IRCEventHandler));
 
@@ -1533,21 +1581,21 @@ mixin template IRCPluginImpl(
             {
                 enum uda = getUDAs!(fun, IRCEventHandler)[0];
 
-                static foreach (immutable command; uda.given.commands)
+                static foreach (immutable command; uda._commands)
                 {{
-                    enum key = command.given.word;
+                    enum key = command._word;
                     commandAA[key] = IRCPlugin.CommandMetadata
-                        (command.given.description, command.given.syntax, command.given.hidden);
+                        (command._description, command._syntax, command._hidden);
 
-                    static if (command.given.description.length)
+                    static if (command._description.length)
                     {
-                        static if (command.given.policy == PrefixPolicy.nickname)
+                        static if (command._policy == PrefixPolicy.nickname)
                         {
-                            static if (command.given.syntax.length)
+                            static if (command._syntax.length)
                             {
                                 // Prefix the command with the bot's nickname,
                                 // as that's how it's actually used.
-                                commandAA[key].syntax = "$nickname: " ~ command.given.syntax;
+                                commandAA[key].syntax = "$nickname: " ~ command._syntax;
                             }
                             else
                             {
@@ -1557,42 +1605,42 @@ mixin template IRCPluginImpl(
                             }
                         }
                     }
-                    else static if (!command.given.hidden)
+                    else static if (!command._hidden)
                     {
                         import std.format : format;
                         import std.traits : fullyQualifiedName;
                         pragma(msg, "Warning: `%s` non-hidden command word \"%s\" is missing a description"
-                            .format(fullyQualifiedName!fun, command.given.word));
+                            .format(fullyQualifiedName!fun, command._word));
                     }
                 }}
 
-                static foreach (immutable regex; uda.given.regexes)
+                static foreach (immutable regex; uda._regexes)
                 {{
                     enum key = `r"` ~ regex.expression ~ `"`;
                         commandAA[key] = IRCPlugin.CommandMetadata(regex.description, regex.hidden);
 
                     static if (regex.description.length)
                     {
-                        static if (regex.given.policy == PrefixPolicy.direct)
+                        static if (regex._policy == PrefixPolicy.direct)
                         {
-                            commandAA[key].syntax = regex.given.expression;
+                            commandAA[key].syntax = regex._expression;
                         }
-                        else static if (regex.given.policy == PrefixPolicy.prefix)
+                        else static if (regex._policy == PrefixPolicy.prefix)
                         {
-                            commandAA[key].syntax = "$prefix" ~ regex.given.expression;
+                            commandAA[key].syntax = "$prefix" ~ regex._expression;
                         }
-                        else static if (regex.given.policy == PrefixPolicy.nickname)
+                        else static if (regex._policy == PrefixPolicy.nickname)
                         {
-                            commandAA[key].syntax = "$nickname: " ~ regex.given.expression;
+                            commandAA[key].syntax = "$nickname: " ~ regex._expression;
                         }
                     }
-                    else static if (!regex.given.hidden)
+                    else static if (!regex._hidden)
                     {
                         import std.format : format;
                         import std.traits : fullyQualifiedName;
 
                         enum pattern = "Warning: `%s` non-hidden expression \"%s\" is missing a description";
-                        pragma(msg, pattern.format(fullyQualifiedName!fun, regex.given.expression));
+                        pragma(msg, pattern.format(fullyQualifiedName!fun, regex._expression));
                     }
                 }}
             }
@@ -2041,7 +2089,7 @@ public:
      +/
     IRCChannel[string] channels;
 
-    // replays
+    // pendingReplays
     /++
         Queued [dialect.defs.IRCEvent]s to replay.
 
@@ -2049,19 +2097,19 @@ public:
         as to know what nicks the plugin wants a WHOIS for. After the WHOIS
         response returns, the event bundled with the [Replay] will be replayed.
      +/
-    Replay[][string] replays;
+    Replay[][string] pendingReplays;
 
     // hasReplays
     /++
-        Whether or not [replays] has elements (i.e. is not empty).
+        Whether or not [pendingReplays] has elements (i.e. is not empty).
      +/
-    bool hasReplays;
+    bool hasPendingReplays;
 
-    // repeats
+    // readyReplays
     /++
-        This plugin's array of [Repeat]s to let the main loop play back.
+        [Replay]s primed and ready to be replayed.
      +/
-    Repeat[] repeats;
+    Replay[] readyReplays;
 
     // awaitingFibers
     /++
@@ -2094,7 +2142,7 @@ public:
         The UNIX timestamp of when the next scheduled
         [kameloso.thread.ScheduledFiber] or delegate should be triggered.
      +/
-    long nextScheduledTimestamp;
+    long nextScheduledTimestamp = long.max;
 
     // updateSchedule
     /++
@@ -2125,6 +2173,14 @@ public:
         }
     }
 
+    // previousWhoisTimestamps
+    /++
+        A copy of the main thread's `previousWhoisTimestamps` associative arrays
+        of UNIX timestamps of when someone had a WHOIS query aimed at them, keyed
+        by nickname.
+     +/
+    long[string] previousWhoisTimestamps;
+
     // updates
     /++
         Bitfield of in what way the plugin state was altered during postprocessing
@@ -2152,14 +2208,10 @@ public:
 
 // Replay
 /++
-    A queued event to be replayed upon a WHOIS query response.
-
-    It is abstract; all objects must be of a concrete [ReplayImpl] type.
-
-    See_Also:
-        [ReplayImpl]
+    Embodies the notion of an event to be replayed, once we know more about a user
+    (meaning after a WHOIS query response).
  +/
-abstract class Replay
+struct Replay
 {
     // caller
     /++
@@ -2179,305 +2231,31 @@ abstract class Replay
      +/
     Permissions permissionsRequired;
 
-    // when
+    // dg
+    /++
+        Delegate, whose context includes the plugin to whom this [Replay] relates.
+     +/
+    void delegate(Replay) dg;
+
+    // timestamp
     /++
         When this request was issued.
      +/
-    long when;
-
-    // trigger
-    /++
-        Replay the stored event.
-     +/
-    void trigger();
+    long timestamp;
 
     /++
         Creates a new [Replay] with a timestamp of the current time.
      +/
-    this() @safe
-    {
-        import std.datetime.systime : Clock;
-        when = Clock.currTime.toUnixTime;
-    }
-}
-
-
-// ReplayImpl
-/++
-    Implementation of the notion of a function call with a bundled payload
-    [dialect.defs.IRCEvent], used to replay a previous event.
-
-    It functions like a Command pattern object in that it stores a payload and
-    a function pointer, which we queue and issue a WHOIS query. When the response
-    returns we trigger the object and the original [dialect.defs.IRCEvent]
-    is replayed.
-
-    Params:
-        F = Some function type.
-        Payload = Optional payload type.
-
-    See_Also:
-        [Replay]
-        [replay]
- +/
-private final class ReplayImpl(Fun, Payload = typeof(null)) : Replay
-{
-@safe:
-    // fun
-    /++
-        Stored function pointer/delegate.
-     +/
-    Fun fun;
-
-    static if (!is(Payload == typeof(null)))
-    {
-        // payload
-        /++
-            Command payload aside from the [dialect.defs.IRCEvent].
-         +/
-        Payload payload;
-
-        /++
-            Create a new [ReplayImpl] with the passed variables.
-
-            Params:
-                payload = Payload of templated type `Payload` to attach to this [ReplayImpl].
-                event = [dialect.defs.IRCEvent] to attach to this [ReplayImpl].
-                permissionsRequired = The permissions level required to replay the
-                    passed function.
-                fun = Function pointer to call with the attached payloads when
-                    the replay is triggered.
-                caller = String of calling function.
-         +/
-        this(
-            Payload payload,
-            const IRCEvent event,
-            const Permissions permissionsRequired,
-            Fun fun,
-            const string caller)
-        {
-            super();
-
-            this.payload = payload;
-            this.event = event;
-            this.permissionsRequired = permissionsRequired;
-            this.fun = fun;
-            this.caller = caller;
-        }
-    }
-    else
-    {
-        /++
-            Create a new [ReplayImpl] with the passed variables.
-
-            Params:
-                event = [dialect.defs.IRCEvent] to attach to this [ReplayImpl].
-                permissionsRequired = The permissions level required to replay the
-                    passed function.
-                fun = Function pointer to call with the attached payloads when
-                    the replay is triggered.
-                caller = String of calling function.
-         +/
-        this(
-            const IRCEvent event,
-            const Permissions permissionsRequired,
-            Fun fun,
-            const string caller)
-        {
-            super();
-
-            this.event = event;
-            this.permissionsRequired = permissionsRequired;
-            this.fun = fun;
-            this.caller = caller;
-        }
-    }
-
-    // trigger
-    /++
-        Call the passed function/delegate pointer, optionally with the stored
-        [dialect.defs.IRCEvent] and/or `Payload`.
-     +/
-    override void trigger() @system
-    {
-        import lu.traits : TakesParams;
-        import std.meta : AliasSeq;
-        import std.traits : arity;
-
-        assert((fun !is null), "null fun in `" ~ typeof(this).stringof ~ '`');
-
-        static if (TakesParams!(fun, AliasSeq!(Payload, IRCEvent)))
-        {
-            fun(payload, event);
-        }
-        else static if (TakesParams!(fun, AliasSeq!Payload))
-        {
-            fun(payload);
-        }
-        else static if (TakesParams!(fun, AliasSeq!IRCEvent))
-        {
-            fun(event);
-        }
-        else static if (TakesParams!(fun, AliasSeq!(IRCPlugin, IRCEvent)))  // FIXME
-        {
-            fun(payload, event);
-        }
-        else static if (TakesParams!(fun, AliasSeq!IRCPlugin))  // FIXME
-        {
-            fun(payload);
-        }
-        else static if (arity!fun == 0)
-        {
-            fun();
-        }
-        else
-        {
-            import std.format : format;
-
-            enum pattern = "`ReplayImpl` instantiated with an invalid " ~
-                "replay function signature: `%s`";
-            static assert(0, pattern.format(Fun.stringof));
-        }
-    }
-}
-
-unittest
-{
-    Replay[] queue;
-
-    IRCEvent event;
-    event.target.nickname = "kameloso";
-    event.content = "hirrpp";
-    event.sender.nickname = "zorael";
-    Permissions pl = Permissions.admin;
-
-    // delegate()
-
-    int i = 5;
-
-    void dg()
-    {
-        ++i;
-    }
-
-    Replay reqdg = new ReplayImpl!(void delegate())(event, pl, &dg, "test");
-    queue ~= reqdg;
-
-    with (reqdg.event)
-    {
-        assert((target.nickname == "kameloso"), target.nickname);
-        assert((content == "hirrpp"), content);
-        assert((sender.nickname == "zorael"), sender.nickname);
-    }
-
-    assert(i == 5);
-    reqdg.trigger();
-    assert(i == 6);
-
-    // function()
-
-    static void fn() { }
-
-    auto reqfn = replay(event, pl, &fn);
-    queue ~= reqfn;
-
-    // delegate(ref IRCEvent)
-
-    void dg2(ref IRCEvent thisEvent)
-    {
-        thisEvent.content = "blah";
-    }
-
-    auto reqdg2 = replay(event, pl, &dg2);
-    queue ~= reqdg2;
-
-    assert((reqdg2.event.content == "hirrpp"), event.content);
-    reqdg2.trigger();
-    assert((reqdg2.event.content == "blah"), event.content);
-
-    // function(IRCEvent)
-
-    static void fn2(IRCEvent _) { }
-
-    auto reqfn2 = replay(event, pl, &fn2);
-    queue ~= reqfn2;
-}
-
-
-// Repeat
-/++
-    An event to be repeated from the context of the main loop after having
-    re-postprocessed it.
-
-    With this plugins get an ability to postprocess on demand, which is needed
-    to apply user classes to stored events, such as those saved before issuing
-    WHOIS queries.
- +/
-struct Repeat
-{
-private:
-    import kameloso.thread : CarryingFiber;
-    import core.thread : Fiber;
-
-    alias This = typeof(this);
-
-public:
-    // fiber
-    /++
-        [core.thread.fiber.Fiber] to call to invoke this repeat.
-     +/
-    Fiber fiber;
-
-    // carryingFiber
-    /++
-        Returns [fiber] as a [kameloso.thread.CarryingFiber], blindly assuming
-        it can be cast thus.
-
-        Returns:
-            [fiber], cast as a [kameloso.thread.CarryingFiber]![Repeat].
-     +/
-    CarryingFiber!This carryingFiber() pure inout @nogc @property
-    {
-        auto carrying = cast(CarryingFiber!This)fiber;
-        assert(carrying, "Tried to get a `CarryingFiber!Repeat` out of a normal Fiber");
-        return carrying;
-    }
-
-    // isCarrying
-    /++
-        Returns whether or not [fiber] is actually a
-        [kameloso.thread.CarryingFiber]![Repeat].
-
-        Returns:
-            `true` if it is of such a subclass, `false` if not.
-     +/
-    bool isCarrying() const pure @nogc @property
-    {
-        return cast(CarryingFiber!This)fiber !is null;
-    }
-
-    // replay
-    /++
-        The [Replay] to repeat.
-     +/
-    Replay replay;
-
-    // created
-    /++
-        UNIX timestamp of when this repeat event was created.
-     +/
-    long created;
-
-    /++
-        Constructor taking a [core.thread.fiber.Fiber] and a [Replay].
-     +/
-    this(Fiber fiber, Replay replay) @safe
+    this(void delegate(Replay) dg, const ref IRCEvent event,
+        const Permissions permissionsRequired, const string caller)
     {
         import std.datetime.systime : Clock;
 
-        created = Clock.currTime.toUnixTime;
-        this.fiber = fiber;
-        this.replay = replay;
+        timestamp = Clock.currTime.toUnixTime;
+        this.dg = dg;
+        this.event = event;
+        this.permissionsRequired = permissionsRequired;
+        this.caller = caller;
     }
 }
 
@@ -2622,65 +2400,6 @@ enum Permissions
 }
 
 
-// replay
-/++
-    Convenience function that returns a [ReplayImpl] of the right type,
-    *with* a subclass plugin reference attached.
-
-    Params:
-        subPlugin = Subclass [IRCPlugin] to call the function pointer `fun` with
-            as first argument, when the WHOIS results return.
-        event = [dialect.defs.IRCEvent] that instigated the WHOIS lookup.
-        permissionsRequired = The permissions level policy to apply to the WHOIS results.
-        fun = Function/delegate pointer to call upon receiving the results.
-        caller = String name of the calling function, or something else that gives context.
-
-    Returns:
-        A [Replay] with template parameters inferred from the arguments
-        passed to this function.
-
-    See_Also:
-        [Replay]
- +/
-Replay replay(Fun, SubPlugin)
-    (SubPlugin subPlugin,
-    const ref IRCEvent event,
-    const Permissions permissionsRequired,
-    Fun fun,
-    const string caller = __FUNCTION__) @safe
-{
-    return new ReplayImpl!(Fun, SubPlugin)(subPlugin, event, permissionsRequired, fun, caller);
-}
-
-
-// replay
-/++
-    Convenience function that returns a [ReplayImpl] of the right type,
-    *without* a subclass plugin reference attached.
-
-    Params:
-        event = [dialect.defs.IRCEvent] that instigated the WHOIS lookup.
-        permissionsRequired = The permissions level policy to apply to the WHOIS results.
-        fun = Function/delegate pointer to call upon receiving the results.
-        caller = String name of the calling function, or something else that gives context.
-
-    Returns:
-        A [Replay] with template parameters inferred from the arguments
-        passed to this function.
-
-    See_Also:
-        [Replay]
- +/
-Replay replay(Fun)
-    (const ref IRCEvent event,
-    const Permissions permissionsRequired,
-    Fun fun,
-    const string caller = __FUNCTION__) @safe
-{
-    return new ReplayImpl!Fun(event, permissionsRequired, fun, caller);
-}
-
-
 // Timing
 /++
     Declaration of what order event handler function should be given with respects
@@ -2722,73 +2441,62 @@ enum Timing
  +/
 struct IRCEventHandler
 {
-    // GivenValues
+    private import kameloso.traits : Wrap;
+
+    // acceptedEventTypes
     /++
-        Aggregate of given values, to keep them in a separate namespace from the mutators/setters.
+        Array of types of [dialect.defs.IRCEvent] that the annotated event
+        handler function should accept.
      +/
-    static struct GivenValues
-    {
-        // acceptedEventTypes
-        /++
-            Array of types of [dialect.defs.IRCEvent] that the annotated event
-            handler function should accept.
-         +/
-        IRCEvent.Type[] acceptedEventTypes;
+    IRCEvent.Type[] _acceptedEventTypes;
 
-        // permissionsRequired
-        /++
-            Permissions required of instigating user, below which the annotated
-            event handler function should not be triggered.
-         +/
-        Permissions permissionsRequired = Permissions.ignore;
-
-        // channelPolicy
-        /++
-            What kind of channel the annotated event handler function may be
-            triggered in; homes or mere guest channels.
-         +/
-        ChannelPolicy channelPolicy = ChannelPolicy.home;
-
-        // commands
-        /++
-            Array of [IRCEventHandler.Command]s the bot should pick up and listen for.
-         +/
-        Command[] commands;
-
-        // regexes
-        /++
-            Array of [IRCEventHandler.Regex]es the bot should pick up and listen for.
-         +/
-        Regex[] regexes;
-
-        // chainable
-        /++
-            Whether or not the annotated event handler function should allow other
-            functions to fire after it. If not set (default false), it will
-            terminate and move on to the next plugin after the function returns.
-         +/
-        bool chainable;
-
-        // verbose
-        /++
-            Whether or not additional information should be output to the local
-            terminal as the function is (or is not) triggered.
-         +/
-        bool verbose;
-
-        // when
-        /++
-            Special instruction related to the order of which event handler functions
-            within a plugin module are triggered.
-         +/
-        Timing when;
-    }
-
-    // given
+    // permissionsRequired
     /++
-        The given settings this instance of [IRCEventHandler] holds.
+        Permissions required of instigating user, below which the annotated
+        event handler function should not be triggered.
      +/
-    GivenValues given;
+    Permissions _permissionsRequired = Permissions.ignore;
+
+    // channelPolicy
+    /++
+        What kind of channel the annotated event handler function may be
+        triggered in; homes or mere guest channels.
+     +/
+    ChannelPolicy _channelPolicy = ChannelPolicy.home;
+
+    // commands
+    /++
+        Array of [IRCEventHandler.Command]s the bot should pick up and listen for.
+     +/
+    Command[] _commands;
+
+    // regexes
+    /++
+        Array of [IRCEventHandler.Regex]es the bot should pick up and listen for.
+     +/
+    Regex[] _regexes;
+
+    // chainable
+    /++
+        Whether or not the annotated event handler function should allow other
+        functions to fire after it. If not set (default false), it will
+        terminate and move on to the next plugin after the function returns.
+     +/
+    bool _chainable;
+
+    // verbose
+    /++
+        Whether or not additional information should be output to the local
+        terminal as the function is (or is not) triggered.
+     +/
+    bool _verbose;
+
+    // when
+    /++
+        Special instruction related to the order of which event handler functions
+        within a plugin module are triggered.
+     +/
+    Timing _when;
 
     // onEvent
     /++
@@ -2801,11 +2509,7 @@ struct IRCEventHandler
         Returns:
             A `this` reference to the current struct instance.
      +/
-    ref auto onEvent(const IRCEvent.Type type)
-    {
-        this.given.acceptedEventTypes ~= type;
-        return this;
-    }
+    mixin Wrap!("onEvent", _acceptedEventTypes);
 
     // permissionsRequired
     /++
@@ -2818,11 +2522,7 @@ struct IRCEventHandler
         Returns:
             A `this` reference to the current struct instance.
      +/
-    ref auto permissionsRequired(const Permissions permissionsRequired)
-    {
-        this.given.permissionsRequired = permissionsRequired;
-        return this;
-    }
+    mixin Wrap!("permissionsRequired", _permissionsRequired);
 
     // channelPolicy
     /++
@@ -2835,11 +2535,7 @@ struct IRCEventHandler
         Returns:
             A `this` reference to the current struct instance.
      +/
-    ref auto channelPolicy(const ChannelPolicy channelPolicy)
-    {
-        this.given.channelPolicy = channelPolicy;
-        return this;
-    }
+    mixin Wrap!("channelPolicy", _channelPolicy);
 
     // addCommand
     /++
@@ -2852,11 +2548,7 @@ struct IRCEventHandler
         Returns:
             A `this` reference to the current struct instance.
      +/
-    ref auto addCommand(const Command command)
-    {
-        this.given.commands ~= command;
-        return this;
-    }
+    mixin Wrap!("addCommand", _commands);
 
     // addRegex
     /++
@@ -2869,11 +2561,7 @@ struct IRCEventHandler
         Returns:
             A `this` reference to the current struct instance.
      +/
-    ref auto addRegex(/*const*/ Regex regex)
-    {
-        this.given.regexes ~= regex;
-        return this;
-    }
+    mixin Wrap!("addRegex", _regexes);
 
     // chainable
     /++
@@ -2888,11 +2576,7 @@ struct IRCEventHandler
         Returns:
             A `this` reference to the current struct instance.
      +/
-    ref auto chainable(const bool chainable)
-    {
-        this.given.chainable = chainable;
-        return this;
-    }
+    mixin Wrap!("chainable", _chainable);
 
     // verbose
     /++
@@ -2905,11 +2589,7 @@ struct IRCEventHandler
         Returns:
             A `this` reference to the current struct instance.
      +/
-    ref auto verbose(const bool verbose)
-    {
-        this.given.verbose = verbose;
-        return this;
-    }
+    mixin Wrap!("verbose", _verbose);
 
     // when
     /++
@@ -2923,11 +2603,7 @@ struct IRCEventHandler
         Returns:
             A `this` reference to the current struct instance.
      +/
-    ref auto when(const Timing when)
-    {
-        this.given.when = when;
-        return this;
-    }
+    mixin Wrap!("when", _when);
 
     // Command
     /++
@@ -2935,52 +2611,39 @@ struct IRCEventHandler
      +/
     static struct Command
     {
-        // GivenValues
+        // policy
         /++
-            Aggregate of given values, to keep them in a separate namespace from the mutators/setters.
+            In what way the message is required to start for the annotated function to trigger.
          +/
-        static struct GivenValues
-        {
-            // policy
-            /++
-                In what way the message is required to start for the annotated function to trigger.
-             +/
-            PrefixPolicy policy = PrefixPolicy.prefixed;
+        PrefixPolicy _policy = PrefixPolicy.prefixed;
 
-            // word
-            /++
-                The command word, without spaces.
-            +/
-            string word;
-
-            // description
-            /++
-                Describes the functionality of the event handler function the parent
-                [IRCEventHandler] annotates, and by extension, this [IRCEventHandler.Command].
-
-                Specifically this is used to describe functions triggered by
-                [IRCEventHandler.Command]s, in the help listing routine in [kameloso.plugins.chatbot].
-             +/
-            string description;
-
-            // syntax
-            /++
-                Command usage syntax help string.
-             +/
-            string syntax;
-
-            // hidden
-            /++
-                Whether this is a hidden command or if it should show up in help listings.
-             +/
-            bool hidden;
-        }
-
-        // given
+        // word
         /++
-            The given settings this instance of [IRCEventHandler.Command] holds.
+            The command word, without spaces.
          +/
-        GivenValues given;
+        string _word;
+
+        // description
+        /++
+            Describes the functionality of the event handler function the parent
+            [IRCEventHandler] annotates, and by extension, this [IRCEventHandler.Command].
+
+            Specifically this is used to describe functions triggered by
+            [IRCEventHandler.Command]s, in the help listing routine in [kameloso.plugins.chatbot].
+         +/
+        string _description;
+
+        // syntax
+        /++
+            Command usage syntax help string.
+         +/
+        string _syntax;
+
+        // hidden
+        /++
+            Whether this is a hidden command or if it should show up in help listings.
+         +/
+        bool _hidden;
 
         // policy
         /++
@@ -2993,11 +2656,7 @@ struct IRCEventHandler
             Returns:
                 A `this` reference to the current struct instance.
          +/
-        ref auto policy(const PrefixPolicy policy)
-        {
-            this.given.policy = policy;
-            return this;
-        }
+        mixin Wrap!("policy", _policy);
 
         // word
         /++
@@ -3009,11 +2668,7 @@ struct IRCEventHandler
             Returns:
                 A `this` reference to the current struct instance.
          +/
-        ref auto word(const string word)
-        {
-            this.given.word = word;
-            return this;
-        }
+        mixin Wrap!("word", _word);
 
         // description
         /++
@@ -3030,11 +2685,7 @@ struct IRCEventHandler
             Returns:
                 A `this` reference to the current struct instance.
          +/
-        ref auto description(const string description)
-        {
-            this.given.description = description;
-            return this;
-        }
+        mixin Wrap!("description", _description);
 
         // syntax
         /++
@@ -3049,11 +2700,7 @@ struct IRCEventHandler
             Returns:
                 A `this` reference to the current struct instance.
          +/
-        ref auto syntax(const string syntax)
-        {
-            this.given.syntax = syntax;
-            return this;
-        }
+        mixin Wrap!("syntax", _syntax);
 
         // hidden
         /++
@@ -3069,11 +2716,7 @@ struct IRCEventHandler
             Returns:
                 A `this` reference to the current struct instance.
          +/
-        ref auto hidden(const bool hidden)
-        {
-            this.given.hidden = hidden;
-            return this;
-        }
+        mixin Wrap!("hidden", _hidden);
     }
 
     // Regex
@@ -3084,52 +2727,39 @@ struct IRCEventHandler
     {
         import std.regex : StdRegex = Regex;
 
-        // GivenValues
+        // policy
         /++
-            Aggregate of given values, to keep them in a separate namespace from the mutators/setters.
-         +/
-        static struct GivenValues
-        {
-            // policy
-            /++
-                In what way the message is required to start for the annotated function to trigger.
-             +/
-            PrefixPolicy policy = PrefixPolicy.direct;
+            In what way the message is required to start for the annotated function to trigger.
+            +/
+        PrefixPolicy _policy = PrefixPolicy.direct;
 
-            // engine
-            /++
-                Regex engine to match incoming messages with.
-             +/
-            StdRegex!char engine;
-
-            // expression
-            /++
-                The regular expression in string form.
-             +/
-            string expression;
-
-            // description
-            /++
-                Describes the functionality of the event handler function the parent
-                [IRCEventHandler] annotates, and by extension, this [IRCEventHandler.Regex].
-
-                Specifically this is used to describe functions triggered by
-                [IRCEventHandler.Command]s, in the help listing routine in [kameloso.plugins.chatbot].
-             +/
-            string description;
-
-            // hidden
-            /++
-                Whether this is a hidden command or if it should show up in help listings.
-             +/
-            bool hidden;
-        }
-
-        // given
+        // engine
         /++
-            The given settings this instance of [IRCEventHandler.Regex] holds.
-         +/
-        GivenValues given;
+            Regex engine to match incoming messages with.
+            +/
+        StdRegex!char _engine;
+
+        // expression
+        /++
+            The regular expression in string form.
+            +/
+        string _expression;
+
+        // description
+        /++
+            Describes the functionality of the event handler function the parent
+            [IRCEventHandler] annotates, and by extension, this [IRCEventHandler.Regex].
+
+            Specifically this is used to describe functions triggered by
+            [IRCEventHandler.Command]s, in the help listing routine in [kameloso.plugins.chatbot].
+            +/
+        string _description;
+
+        // hidden
+        /++
+            Whether this is a hidden command or if it should show up in help listings.
+            +/
+        bool _hidden;
 
         // policy
         /++
@@ -3142,11 +2772,7 @@ struct IRCEventHandler
             Returns:
                 A `this` reference to the current struct instance.
          +/
-        ref auto policy(const PrefixPolicy policy)
-        {
-            this.given.policy = policy;
-            return this;
-        }
+        mixin Wrap!("policy", _policy);
 
         // expression
         /++
@@ -3171,10 +2797,12 @@ struct IRCEventHandler
         {
             import std.regex : regex;
 
-            this.given.expression = expression;
-            this.given.engine = expression.regex;
+            this._expression = expression;
+            this._engine = expression.regex;
             return this;
         }
+
+        //mixin Wrap!("expression", _expression);
 
         // description
         /++
@@ -3191,11 +2819,7 @@ struct IRCEventHandler
             Returns:
                 A `this` reference to the current struct instance.
          +/
-        ref auto description(const string description)
-        {
-            this.given.description = description;
-            return this;
-        }
+        mixin Wrap!("description", _description);
 
         // hidden
         /++
@@ -3211,11 +2835,7 @@ struct IRCEventHandler
             Returns:
                 A `this` reference to the current struct instance.
          +/
-        ref auto hidden(const bool hidden)
-        {
-            this.given.hidden = hidden;
-            return this;
-        }
+        mixin Wrap!("hidden", _hidden);
     }
 }
 
