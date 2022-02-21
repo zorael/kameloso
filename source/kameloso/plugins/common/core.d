@@ -482,7 +482,7 @@ mixin template IRCPluginImpl(
 
             static immutable uda = handlerAnnotations[0];
 
-            static foreach (immutable type; uda.given.acceptedEventTypes)
+            static foreach (immutable type; uda._acceptedEventTypes)
             {{
                 static if (type == IRCEvent.Type.UNSET)
                 {
@@ -511,7 +511,7 @@ mixin template IRCPluginImpl(
                     static assert(0, pattern.format(fullyQualifiedName!fun));
                 }
 
-                static if (uda.given.commands.length || uda.given.regexes.length)
+                static if (uda._commands.length || uda._regexes.length)
                 {
                     static if (
                         (type != IRCEvent.Type.CHAN) &&
@@ -531,13 +531,13 @@ mixin template IRCPluginImpl(
                 }
             }}
 
-            static if (uda.given.commands.length)
+            static if (uda._commands.length)
             {
                 import lu.string : contains;
 
-                static foreach (immutable command; uda.given.commands)
+                static foreach (immutable command; uda._commands)
                 {
-                    static if (!command.given.word.length)
+                    static if (!command._word.length)
                     {
                         import std.format : format;
 
@@ -545,23 +545,23 @@ mixin template IRCPluginImpl(
                             "listening for a `Command` with an empty trigger word";
                         static assert(0, pattern.format(fullyQualifiedName!fun));
                     }
-                    else static if (command.given.word.contains(' '))
+                    else static if (command._word.contains(' '))
                     {
                         import std.format : format;
 
                         enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                             "listening for a `Command` whose trigger " ~
                             `word "%s" contains a space character`;
-                        static assert(0, pattern.format(fullyQualifiedName!fun, command.given.word));
+                        static assert(0, pattern.format(fullyQualifiedName!fun, command._word));
                     }
                 }
             }
 
-            static if (uda.given.regexes.length)
+            static if (uda._regexes.length)
             {
-                static foreach (immutable regex; uda.given.regexes)
+                static foreach (immutable regex; uda._regexes)
                 {
-                    static if (!regex.given.expression.length)
+                    static if (!regex._expression.length)
                     {
                         import std.format : format;
 
@@ -572,7 +572,7 @@ mixin template IRCPluginImpl(
                 }
             }
 
-            static if ((uda.given.permissionsRequired != Permissions.ignore) &&
+            static if ((uda._permissionsRequired != Permissions.ignore) &&
                 !__traits(compiles, .hasMinimalAuthentication))
             {
                 import std.format : format;
@@ -582,7 +582,7 @@ mixin template IRCPluginImpl(
                 static assert(0, pattern.format(module_));
             }
 
-            static if (uda.given.verbose && (__VERSION__ < 2096L))
+            static if (uda._verbose && (__VERSION__ < 2096L))
             {
                 import std.format : format;
 
@@ -694,26 +694,26 @@ mixin template IRCPluginImpl(
                 import std.stdio : writeln, writefln;
             }
 
-            if (!uda.given.acceptedEventTypes.canFind(IRCEvent.Type.ANY))
+            if (!uda._acceptedEventTypes.canFind(IRCEvent.Type.ANY))
             {
-                if (!uda.given.acceptedEventTypes.canFind(event.type)) return NextStep.continue_;
+                if (!uda._acceptedEventTypes.canFind(event.type)) return NextStep.continue_;
             }
 
             static if (verbose)
             {
                 writeln("-- ", funName, " @ ", Enum!(IRCEvent.Type).toString(event.type));
-                writeln("   ...", Enum!ChannelPolicy.toString(uda.given.channelPolicy));
+                writeln("   ...", Enum!ChannelPolicy.toString(uda._channelPolicy));
             }
 
             if (event.channel.length)
             {
                 bool channelMatch;
 
-                if (uda.given.channelPolicy == ChannelPolicy.home)
+                if (uda._channelPolicy == ChannelPolicy.home)
                 {
                     channelMatch = state.bot.homeChannels.canFind(event.channel);
                 }
-                else if (uda.given.channelPolicy == ChannelPolicy.guest)
+                else if (uda._channelPolicy == ChannelPolicy.guest)
                 {
                     channelMatch = !state.bot.homeChannels.canFind(event.channel);
                 }
@@ -745,7 +745,7 @@ mixin template IRCPluginImpl(
                 event.aux = origAux;
             }
 
-            if (uda.given.commands.length || uda.given.regexes.length)
+            if (uda._commands.length || uda._regexes.length)
             {
                 import lu.string : strippedLeft;
 
@@ -763,19 +763,19 @@ mixin template IRCPluginImpl(
             bool commandMatch;
 
             // Evaluate each Command UDAs with the current event
-            if (uda.given.commands.length)
+            if (uda._commands.length)
             {
-                foreach (immutable command; uda.given.commands)
+                foreach (immutable command; uda._commands)
                 {
                     static if (verbose)
                     {
-                        writefln(`   ...Command "%s"`, command.given.word);
+                        writefln(`   ...Command "%s"`, command._word);
                     }
 
                     bool policyMismatch;
 
                     if (!event.prefixPolicyMatches!verbose
-                        (command.given.policy, state.client, state.settings.prefix))
+                        (command._policy, state.client, state.settings.prefix))
                     {
                         static if (verbose)
                         {
@@ -798,7 +798,7 @@ mixin template IRCPluginImpl(
 
                         immutable thisCommand = event.content
                             .nom!(Yes.inherit, Yes.decode)(' ');
-                        immutable lowerWord = command.given.word.toLower;
+                        immutable lowerWord = command._word.toLower;
 
                         if (thisCommand.asLowerCase.equal(lowerWord))
                         {
@@ -821,19 +821,19 @@ mixin template IRCPluginImpl(
             }
 
             // Iff no match from Commands, evaluate Regexes
-            if (uda.given.regexes.length && !commandMatch)
+            if (uda._regexes.length && !commandMatch)
             {
-                foreach (const regex; uda.given.regexes)
+                foreach (const regex; uda._regexes)
                 {
                     static if (verbose)
                     {
-                        writeln("   ...Regex: `", regex.given.expression, "`");
+                        writeln("   ...Regex: `", regex._expression, "`");
                     }
 
                     bool policyMismatch;
 
                     if (!event.prefixPolicyMatches!verbose
-                        (regex.given.policy, state.client, state.settings.prefix))
+                        (regex._policy, state.client, state.settings.prefix))
                     {
                         static if (verbose)
                         {
@@ -853,7 +853,7 @@ mixin template IRCPluginImpl(
                         {
                             import std.regex : matchFirst;
 
-                            const hits = event.content.matchFirst(regex.given.engine);
+                            const hits = event.content.matchFirst(regex._engine);
 
                             if (!hits.empty)
                             {
@@ -871,7 +871,7 @@ mixin template IRCPluginImpl(
                                 static if (verbose)
                                 {
                                     writefln(`   ...matching "%s" against expression "%s" failed.`,
-                                        event.content, regex.given.expression);
+                                        event.content, regex._expression);
                                 }
                             }
                         }
@@ -887,7 +887,7 @@ mixin template IRCPluginImpl(
                 }
             }
 
-            if (uda.given.commands.length || uda.given.regexes.length)
+            if (uda._commands.length || uda._regexes.length)
             {
                 if (!commandMatch)
                 {
@@ -901,15 +901,15 @@ mixin template IRCPluginImpl(
                 }
             }
 
-            if (uda.given.permissionsRequired != Permissions.ignore)
+            if (uda._permissionsRequired != Permissions.ignore)
             {
                 static if (verbose)
                 {
                     writeln("   ...Permissions.",
-                        Enum!Permissions.toString(uda.given.permissionsRequired));
+                        Enum!Permissions.toString(uda._permissionsRequired));
                 }
 
-                immutable result = this.allow(event, uda.given.permissionsRequired);
+                immutable result = this.allow(event, uda._permissionsRequired);
 
                 static if (verbose)
                 {
@@ -942,8 +942,8 @@ mixin template IRCPluginImpl(
                     {
                         // Unsure why we need to specifically specify IRCPlugin
                         // now despite typeof(this) being a subclass...
-                        enqueue(this, event, uda.given.permissionsRequired, fun, funName);
-                        return uda.given.chainable ? NextStep.continue_ : NextStep.return_;
+                        enqueue(this, event, uda._permissionsRequired, fun, funName);
+                        return uda._chainable ? NextStep.continue_ : NextStep.return_;
                     }
                     else
                     {
@@ -954,7 +954,7 @@ mixin template IRCPluginImpl(
                 }
                 else /*if (result == FilterResult.fail)*/
                 {
-                    return uda.given.chainable ? NextStep.continue_ : NextStep.return_;
+                    return uda._chainable ? NextStep.continue_ : NextStep.return_;
                 }
             }
 
@@ -965,7 +965,7 @@ mixin template IRCPluginImpl(
 
             call(fun, event);
 
-            if (uda.given.chainable)
+            if (uda._chainable)
             {
                 // onEvent found an event and triggered a function, but
                 // it's Chainable and there may be more, so keep looking.
@@ -1051,13 +1051,13 @@ mixin template IRCPluginImpl(
                 static if (__VERSION__ >= 2096L)
                 {
                     static immutable uda = getUDAs!(fun, IRCEventHandler)[0];
-                    enum verbose = (uda.given.verbose || debug_);
+                    enum verbose = (uda._verbose || debug_);
                 }
                 else
                 {
                     // Can't do static immutable and enum allocates an array literal...
                     immutable uda = ctUDAArray[i];
-                    enum verbose = (/*uda.given.verbose ||*/ debug_);  // regrettable
+                    enum verbose = (/*uda._verbose ||*/ debug_);  // regrettable
                 }
 
                 enum funName = module_ ~ '.' ~ __traits(identifier, fun);
@@ -1135,10 +1135,10 @@ mixin template IRCPluginImpl(
         import std.meta : Filter, templateNot, templateOr;
         import std.traits : getUDAs, isSomeFunction;
 
-        enum isSetupFun(alias T) = (getUDAs!(T, IRCEventHandler)[0].given.when == Timing.setup);
-        enum isEarlyFun(alias T) = (getUDAs!(T, IRCEventHandler)[0].given.when == Timing.early);
-        enum isLateFun(alias T) = (getUDAs!(T, IRCEventHandler)[0].given.when == Timing.late);
-        enum isCleanupFun(alias T) = (getUDAs!(T, IRCEventHandler)[0].given.when == Timing.cleanup);
+        enum isSetupFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.setup);
+        enum isEarlyFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.early);
+        enum isLateFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.late);
+        enum isCleanupFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.cleanup);
         alias hasSpecialTiming = templateOr!(isSetupFun, isEarlyFun,
             isLateFun, isCleanupFun);
         alias isNormalEventHandler = templateNot!hasSpecialTiming;
@@ -1581,21 +1581,21 @@ mixin template IRCPluginImpl(
             {
                 enum uda = getUDAs!(fun, IRCEventHandler)[0];
 
-                static foreach (immutable command; uda.given.commands)
+                static foreach (immutable command; uda._commands)
                 {{
-                    enum key = command.given.word;
+                    enum key = command._word;
                     commandAA[key] = IRCPlugin.CommandMetadata
-                        (command.given.description, command.given.syntax, command.given.hidden);
+                        (command._description, command._syntax, command._hidden);
 
-                    static if (command.given.description.length)
+                    static if (command._description.length)
                     {
-                        static if (command.given.policy == PrefixPolicy.nickname)
+                        static if (command._policy == PrefixPolicy.nickname)
                         {
-                            static if (command.given.syntax.length)
+                            static if (command._syntax.length)
                             {
                                 // Prefix the command with the bot's nickname,
                                 // as that's how it's actually used.
-                                commandAA[key].syntax = "$nickname: " ~ command.given.syntax;
+                                commandAA[key].syntax = "$nickname: " ~ command._syntax;
                             }
                             else
                             {
@@ -1605,42 +1605,42 @@ mixin template IRCPluginImpl(
                             }
                         }
                     }
-                    else static if (!command.given.hidden)
+                    else static if (!command._hidden)
                     {
                         import std.format : format;
                         import std.traits : fullyQualifiedName;
                         pragma(msg, "Warning: `%s` non-hidden command word \"%s\" is missing a description"
-                            .format(fullyQualifiedName!fun, command.given.word));
+                            .format(fullyQualifiedName!fun, command._word));
                     }
                 }}
 
-                static foreach (immutable regex; uda.given.regexes)
+                static foreach (immutable regex; uda._regexes)
                 {{
                     enum key = `r"` ~ regex.expression ~ `"`;
                         commandAA[key] = IRCPlugin.CommandMetadata(regex.description, regex.hidden);
 
                     static if (regex.description.length)
                     {
-                        static if (regex.given.policy == PrefixPolicy.direct)
+                        static if (regex._policy == PrefixPolicy.direct)
                         {
-                            commandAA[key].syntax = regex.given.expression;
+                            commandAA[key].syntax = regex._expression;
                         }
-                        else static if (regex.given.policy == PrefixPolicy.prefix)
+                        else static if (regex._policy == PrefixPolicy.prefix)
                         {
-                            commandAA[key].syntax = "$prefix" ~ regex.given.expression;
+                            commandAA[key].syntax = "$prefix" ~ regex._expression;
                         }
-                        else static if (regex.given.policy == PrefixPolicy.nickname)
+                        else static if (regex._policy == PrefixPolicy.nickname)
                         {
-                            commandAA[key].syntax = "$nickname: " ~ regex.given.expression;
+                            commandAA[key].syntax = "$nickname: " ~ regex._expression;
                         }
                     }
-                    else static if (!regex.given.hidden)
+                    else static if (!regex._hidden)
                     {
                         import std.format : format;
                         import std.traits : fullyQualifiedName;
 
                         enum pattern = "Warning: `%s` non-hidden expression \"%s\" is missing a description";
-                        pragma(msg, pattern.format(fullyQualifiedName!fun, regex.given.expression));
+                        pragma(msg, pattern.format(fullyQualifiedName!fun, regex._expression));
                     }
                 }}
             }
@@ -2441,73 +2441,62 @@ enum Timing
  +/
 struct IRCEventHandler
 {
-    // GivenValues
+    private import kameloso.traits : Wrap;
+
+    // acceptedEventTypes
     /++
-        Aggregate of given values, to keep them in a separate namespace from the mutators/setters.
+        Array of types of [dialect.defs.IRCEvent] that the annotated event
+        handler function should accept.
      +/
-    static struct GivenValues
-    {
-        // acceptedEventTypes
-        /++
-            Array of types of [dialect.defs.IRCEvent] that the annotated event
-            handler function should accept.
-         +/
-        IRCEvent.Type[] acceptedEventTypes;
+    IRCEvent.Type[] _acceptedEventTypes;
 
-        // permissionsRequired
-        /++
-            Permissions required of instigating user, below which the annotated
-            event handler function should not be triggered.
-         +/
-        Permissions permissionsRequired = Permissions.ignore;
-
-        // channelPolicy
-        /++
-            What kind of channel the annotated event handler function may be
-            triggered in; homes or mere guest channels.
-         +/
-        ChannelPolicy channelPolicy = ChannelPolicy.home;
-
-        // commands
-        /++
-            Array of [IRCEventHandler.Command]s the bot should pick up and listen for.
-         +/
-        Command[] commands;
-
-        // regexes
-        /++
-            Array of [IRCEventHandler.Regex]es the bot should pick up and listen for.
-         +/
-        Regex[] regexes;
-
-        // chainable
-        /++
-            Whether or not the annotated event handler function should allow other
-            functions to fire after it. If not set (default false), it will
-            terminate and move on to the next plugin after the function returns.
-         +/
-        bool chainable;
-
-        // verbose
-        /++
-            Whether or not additional information should be output to the local
-            terminal as the function is (or is not) triggered.
-         +/
-        bool verbose;
-
-        // when
-        /++
-            Special instruction related to the order of which event handler functions
-            within a plugin module are triggered.
-         +/
-        Timing when;
-    }
-
-    // given
+    // permissionsRequired
     /++
-        The given settings this instance of [IRCEventHandler] holds.
+        Permissions required of instigating user, below which the annotated
+        event handler function should not be triggered.
      +/
-    GivenValues given;
+    Permissions _permissionsRequired = Permissions.ignore;
+
+    // channelPolicy
+    /++
+        What kind of channel the annotated event handler function may be
+        triggered in; homes or mere guest channels.
+     +/
+    ChannelPolicy _channelPolicy = ChannelPolicy.home;
+
+    // commands
+    /++
+        Array of [IRCEventHandler.Command]s the bot should pick up and listen for.
+     +/
+    Command[] _commands;
+
+    // regexes
+    /++
+        Array of [IRCEventHandler.Regex]es the bot should pick up and listen for.
+     +/
+    Regex[] _regexes;
+
+    // chainable
+    /++
+        Whether or not the annotated event handler function should allow other
+        functions to fire after it. If not set (default false), it will
+        terminate and move on to the next plugin after the function returns.
+     +/
+    bool _chainable;
+
+    // verbose
+    /++
+        Whether or not additional information should be output to the local
+        terminal as the function is (or is not) triggered.
+     +/
+    bool _verbose;
+
+    // when
+    /++
+        Special instruction related to the order of which event handler functions
+        within a plugin module are triggered.
+     +/
+    Timing _when;
 
     // onEvent
     /++
@@ -2520,11 +2509,7 @@ struct IRCEventHandler
         Returns:
             A `this` reference to the current struct instance.
      +/
-    ref auto onEvent(const IRCEvent.Type type)
-    {
-        this.given.acceptedEventTypes ~= type;
-        return this;
-    }
+    mixin Wrap!("onEvent", _acceptedEventTypes);
 
     // permissionsRequired
     /++
@@ -2537,11 +2522,7 @@ struct IRCEventHandler
         Returns:
             A `this` reference to the current struct instance.
      +/
-    ref auto permissionsRequired(const Permissions permissionsRequired)
-    {
-        this.given.permissionsRequired = permissionsRequired;
-        return this;
-    }
+    mixin Wrap!("permissionsRequired", _permissionsRequired);
 
     // channelPolicy
     /++
@@ -2554,11 +2535,7 @@ struct IRCEventHandler
         Returns:
             A `this` reference to the current struct instance.
      +/
-    ref auto channelPolicy(const ChannelPolicy channelPolicy)
-    {
-        this.given.channelPolicy = channelPolicy;
-        return this;
-    }
+    mixin Wrap!("channelPolicy", _channelPolicy);
 
     // addCommand
     /++
@@ -2571,11 +2548,7 @@ struct IRCEventHandler
         Returns:
             A `this` reference to the current struct instance.
      +/
-    ref auto addCommand(const Command command)
-    {
-        this.given.commands ~= command;
-        return this;
-    }
+    mixin Wrap!("addCommand", _commands);
 
     // addRegex
     /++
@@ -2588,11 +2561,7 @@ struct IRCEventHandler
         Returns:
             A `this` reference to the current struct instance.
      +/
-    ref auto addRegex(/*const*/ Regex regex)
-    {
-        this.given.regexes ~= regex;
-        return this;
-    }
+    mixin Wrap!("addRegex", _regexes);
 
     // chainable
     /++
@@ -2607,11 +2576,7 @@ struct IRCEventHandler
         Returns:
             A `this` reference to the current struct instance.
      +/
-    ref auto chainable(const bool chainable)
-    {
-        this.given.chainable = chainable;
-        return this;
-    }
+    mixin Wrap!("chainable", _chainable);
 
     // verbose
     /++
@@ -2624,11 +2589,7 @@ struct IRCEventHandler
         Returns:
             A `this` reference to the current struct instance.
      +/
-    ref auto verbose(const bool verbose)
-    {
-        this.given.verbose = verbose;
-        return this;
-    }
+    mixin Wrap!("verbose", _verbose);
 
     // when
     /++
@@ -2642,11 +2603,7 @@ struct IRCEventHandler
         Returns:
             A `this` reference to the current struct instance.
      +/
-    ref auto when(const Timing when)
-    {
-        this.given.when = when;
-        return this;
-    }
+    mixin Wrap!("when", _when);
 
     // Command
     /++
@@ -2654,52 +2611,39 @@ struct IRCEventHandler
      +/
     static struct Command
     {
-        // GivenValues
+        // policy
         /++
-            Aggregate of given values, to keep them in a separate namespace from the mutators/setters.
+            In what way the message is required to start for the annotated function to trigger.
          +/
-        static struct GivenValues
-        {
-            // policy
-            /++
-                In what way the message is required to start for the annotated function to trigger.
-             +/
-            PrefixPolicy policy = PrefixPolicy.prefixed;
+        PrefixPolicy _policy = PrefixPolicy.prefixed;
 
-            // word
-            /++
-                The command word, without spaces.
-            +/
-            string word;
-
-            // description
-            /++
-                Describes the functionality of the event handler function the parent
-                [IRCEventHandler] annotates, and by extension, this [IRCEventHandler.Command].
-
-                Specifically this is used to describe functions triggered by
-                [IRCEventHandler.Command]s, in the help listing routine in [kameloso.plugins.chatbot].
-             +/
-            string description;
-
-            // syntax
-            /++
-                Command usage syntax help string.
-             +/
-            string syntax;
-
-            // hidden
-            /++
-                Whether this is a hidden command or if it should show up in help listings.
-             +/
-            bool hidden;
-        }
-
-        // given
+        // word
         /++
-            The given settings this instance of [IRCEventHandler.Command] holds.
+            The command word, without spaces.
          +/
-        GivenValues given;
+        string _word;
+
+        // description
+        /++
+            Describes the functionality of the event handler function the parent
+            [IRCEventHandler] annotates, and by extension, this [IRCEventHandler.Command].
+
+            Specifically this is used to describe functions triggered by
+            [IRCEventHandler.Command]s, in the help listing routine in [kameloso.plugins.chatbot].
+         +/
+        string _description;
+
+        // syntax
+        /++
+            Command usage syntax help string.
+         +/
+        string _syntax;
+
+        // hidden
+        /++
+            Whether this is a hidden command or if it should show up in help listings.
+         +/
+        bool _hidden;
 
         // policy
         /++
@@ -2712,11 +2656,7 @@ struct IRCEventHandler
             Returns:
                 A `this` reference to the current struct instance.
          +/
-        ref auto policy(const PrefixPolicy policy)
-        {
-            this.given.policy = policy;
-            return this;
-        }
+        mixin Wrap!("policy", _policy);
 
         // word
         /++
@@ -2728,11 +2668,7 @@ struct IRCEventHandler
             Returns:
                 A `this` reference to the current struct instance.
          +/
-        ref auto word(const string word)
-        {
-            this.given.word = word;
-            return this;
-        }
+        mixin Wrap!("word", _word);
 
         // description
         /++
@@ -2749,11 +2685,7 @@ struct IRCEventHandler
             Returns:
                 A `this` reference to the current struct instance.
          +/
-        ref auto description(const string description)
-        {
-            this.given.description = description;
-            return this;
-        }
+        mixin Wrap!("description", _description);
 
         // syntax
         /++
@@ -2768,11 +2700,7 @@ struct IRCEventHandler
             Returns:
                 A `this` reference to the current struct instance.
          +/
-        ref auto syntax(const string syntax)
-        {
-            this.given.syntax = syntax;
-            return this;
-        }
+        mixin Wrap!("syntax", _syntax);
 
         // hidden
         /++
@@ -2788,11 +2716,7 @@ struct IRCEventHandler
             Returns:
                 A `this` reference to the current struct instance.
          +/
-        ref auto hidden(const bool hidden)
-        {
-            this.given.hidden = hidden;
-            return this;
-        }
+        mixin Wrap!("hidden", _hidden);
     }
 
     // Regex
@@ -2803,52 +2727,39 @@ struct IRCEventHandler
     {
         import std.regex : StdRegex = Regex;
 
-        // GivenValues
+        // policy
         /++
-            Aggregate of given values, to keep them in a separate namespace from the mutators/setters.
-         +/
-        static struct GivenValues
-        {
-            // policy
-            /++
-                In what way the message is required to start for the annotated function to trigger.
-             +/
-            PrefixPolicy policy = PrefixPolicy.direct;
+            In what way the message is required to start for the annotated function to trigger.
+            +/
+        PrefixPolicy _policy = PrefixPolicy.direct;
 
-            // engine
-            /++
-                Regex engine to match incoming messages with.
-             +/
-            StdRegex!char engine;
-
-            // expression
-            /++
-                The regular expression in string form.
-             +/
-            string expression;
-
-            // description
-            /++
-                Describes the functionality of the event handler function the parent
-                [IRCEventHandler] annotates, and by extension, this [IRCEventHandler.Regex].
-
-                Specifically this is used to describe functions triggered by
-                [IRCEventHandler.Command]s, in the help listing routine in [kameloso.plugins.chatbot].
-             +/
-            string description;
-
-            // hidden
-            /++
-                Whether this is a hidden command or if it should show up in help listings.
-             +/
-            bool hidden;
-        }
-
-        // given
+        // engine
         /++
-            The given settings this instance of [IRCEventHandler.Regex] holds.
-         +/
-        GivenValues given;
+            Regex engine to match incoming messages with.
+            +/
+        StdRegex!char _engine;
+
+        // expression
+        /++
+            The regular expression in string form.
+            +/
+        string _expression;
+
+        // description
+        /++
+            Describes the functionality of the event handler function the parent
+            [IRCEventHandler] annotates, and by extension, this [IRCEventHandler.Regex].
+
+            Specifically this is used to describe functions triggered by
+            [IRCEventHandler.Command]s, in the help listing routine in [kameloso.plugins.chatbot].
+            +/
+        string _description;
+
+        // hidden
+        /++
+            Whether this is a hidden command or if it should show up in help listings.
+            +/
+        bool _hidden;
 
         // policy
         /++
@@ -2861,11 +2772,7 @@ struct IRCEventHandler
             Returns:
                 A `this` reference to the current struct instance.
          +/
-        ref auto policy(const PrefixPolicy policy)
-        {
-            this.given.policy = policy;
-            return this;
-        }
+        mixin Wrap!("policy", _policy);
 
         // expression
         /++
@@ -2890,10 +2797,12 @@ struct IRCEventHandler
         {
             import std.regex : regex;
 
-            this.given.expression = expression;
-            this.given.engine = expression.regex;
+            this._expression = expression;
+            this._engine = expression.regex;
             return this;
         }
+
+        //mixin Wrap!("expression", _expression);
 
         // description
         /++
@@ -2910,11 +2819,7 @@ struct IRCEventHandler
             Returns:
                 A `this` reference to the current struct instance.
          +/
-        ref auto description(const string description)
-        {
-            this.given.description = description;
-            return this;
-        }
+        mixin Wrap!("description", _description);
 
         // hidden
         /++
@@ -2930,11 +2835,7 @@ struct IRCEventHandler
             Returns:
                 A `this` reference to the current struct instance.
          +/
-        ref auto hidden(const bool hidden)
-        {
-            this.given.hidden = hidden;
-            return this;
-        }
+        mixin Wrap!("hidden", _hidden);
     }
 }
 

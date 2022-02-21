@@ -561,23 +561,23 @@ Replay replay(Plugin, Fun)(Plugin plugin, const ref IRCEvent event,
             version(ExplainReplay) explainReplay();
 
             static if (
-                TakesParams!(Fun, AliasSeq!(Plugin, IRCEvent)) ||
-                TakesParams!(Fun, AliasSeq!(IRCPlugin, IRCEvent)))
+                TakesParams!(fun, AliasSeq!(Plugin, IRCEvent)) ||
+                TakesParams!(fun, AliasSeq!(IRCPlugin, IRCEvent)))
             {
                 fun(plugin, replay.event);
             }
             else static if (
-                TakesParams!(Fun, Plugin) ||
-                TakesParams!(Fun, IRCPlugin))
+                TakesParams!(fun, Plugin) ||
+                TakesParams!(fun, IRCPlugin))
             {
                 fun(plugin);
             }
             else static if (
-                TakesParams!(Fun, IRCEvent))
+                TakesParams!(fun, IRCEvent))
             {
                 fun(replay.event);
             }
-            else static if (arity!Fun == 0)
+            else static if (arity!fun == 0)
             {
                 fun();
             }
