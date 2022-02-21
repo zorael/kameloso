@@ -3,7 +3,7 @@
 
     To send a server message some information is needed; like
     message type, message target, perhaps channel, content and such.
-    [dialect.defs.IRCEvent] has all of this, so it lends itself to repurposing
+    [dialect.defs.IRCEvent|IRCEvent] has all of this, so it lends itself to repurposing
     it to aggregate and carry them, through concurrency messages. These are caught by the
     concurrency message-reading parts of the main loop, which reversely parses
     them into strings and sends them on to the server.
@@ -60,7 +60,7 @@ public:
 
 // Message
 /++
-    An [dialect.defs.IRCEvent] with some metadata, to be used when crafting an
+    An [dialect.defs.IRCEvent|IRCEvent] with some metadata, to be used when crafting an
     outgoing message to the server.
  +/
 struct Message
@@ -79,7 +79,7 @@ struct Message
     }
 
     /++
-        The [dialect.defs.IRCEvent] that contains the information we want to send to the server.
+        The [dialect.defs.IRCEvent|IRCEvent] that contains the information we want to send to the server.
      +/
     IRCEvent event;
 

@@ -3,7 +3,7 @@
     which you can pipe text and have it be sent verbatim to the server.
 
     It has no commands; indeed, it doesn't listen to
-    [dialect.defs.IRCEvent]s at all, only to what is sent to it via the
+    [dialect.defs.IRCEvent|IRCEvent]s at all, only to what is sent to it via the
     named FIFO pipe.
 
     This requires version `Posix`, which is true for UNIX-like systems (like

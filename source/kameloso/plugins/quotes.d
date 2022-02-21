@@ -196,7 +196,7 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
 
     Params:
         plugin = The current [QuotesPlugin].
-        event = The instigating [dialect.defs.IRCEvent].
+        event = The instigating [dialect.defs.IRCEvent|IRCEvent].
         id = The specified nickname or (preferably) account.
         rawLine = The quote string to add.
  +/
@@ -259,7 +259,7 @@ in (rawLine.length, "Tried to add an empty quote")
 
     Params:
         plugin = The current [QuotesPlugin].
-        event = The triggering [dialect.defs.IRCEvent].
+        event = The triggering [dialect.defs.IRCEvent|IRCEvent].
         id = The identifier (nickname or account) of the quoted user.
         index = The index of the quote to modify or remove.
         newText = Optional new text to assign to the quote index; implies
@@ -530,7 +530,7 @@ void onCommandModQuote(QuotesPlugin plugin, const ref IRCEvent event)
 
     Params:
         plugin = The current [QuotesPlugin].
-        event = The triggering [dialect.defs.IRCEvent].
+        event = The triggering [dialect.defs.IRCEvent|IRCEvent].
         action = What action to take; add (or replay), modify or remove.
  +/
 void manageQuoteImpl(QuotesPlugin plugin,

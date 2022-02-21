@@ -182,7 +182,7 @@ void onCommandBash(ChatbotPlugin plugin, const ref IRCEvent event)
         sState = A `shared` [kameloso.plugins.common.core.IRCPluginState] containing
             necessary information to pass messages to send messages to the main
             thread, to send text to the server or display text on the screen.
-        event = The [dialect.defs.IRCEvent] in flight.
+        event = The [dialect.defs.IRCEvent|IRCEvent] in flight.
         colouredOutgoing = Whether or not to tint messages going to the server
             with mIRC colouring.
  +/

@@ -22,8 +22,8 @@ public:
 /++
     Functionality for catching WHOIS results and calling passed function aliases
     with the resulting account information that was divined from it, in the form
-    of the actual [dialect.defs.IRCEvent], the target
-    [dialect.defs.IRCUser] within it, the user's `account` field, or merely
+    of the actual [dialect.defs.IRCEvent|IRCEvent], the target
+    [dialect.defs.IRCUser|IRCUser] within it, the user's `account` field, or merely
     alone as an arity-0 function.
 
     The mixed in function to call is named `enqueueAndWHOIS`. It will construct
@@ -283,7 +283,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
     // enqueueAndWHOIS
     /++
-        Constructs a [kameloso.thread.CarryingFiber] carrying a [dialect.defs.IRCEvent]
+        Constructs a [kameloso.thread.CarryingFiber] carrying a [dialect.defs.IRCEvent|IRCEvent]
         and enqueues it into the [kameloso.plugins.common.core.IRCPluginState.awaitingFibers]
         associative array, then issues a WHOIS query (unless overridden via
         the `issueWhois` parameter).

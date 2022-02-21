@@ -47,12 +47,12 @@ import dialect.defs;
     To work around this we construct an array of
     `kameloso.thread.CarryingFiber!(kameloso.plugins.common.core.IRCPlugin)`s and send it
     to the main thread. It will attach the client-global `plugins` array of
-    [kameloso.plugins.common.core.IRCPlugin]s to it, and invoke the Fiber.
+    [kameloso.plugins.common.core.IRCPlugin|IRCPlugin]s to it, and invoke the Fiber.
     The delegate inside will then process the list as if it had taken the array
     as an argument.
 
     Once we have the list we format it nicely and send it back to the requester,
-    which we remember since we saved the original [dialect.defs.IRCEvent].
+    which we remember since we saved the original [dialect.defs.IRCEvent|IRCEvent].
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -258,7 +258,7 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
         plugin = The current [HelpPlugin].
         otherPluginName = The name of the plugin that hosts the command we're to
             send the help text for.
-        event = The triggering [dialect.defs.IRCEvent].
+        event = The triggering [dialect.defs.IRCEvent|IRCEvent].
         command = String of the command we're to send help text for (sans prefix).
         description = The description text that the event handler function is annotated with.
         syntax = The declared syntax of the command.

@@ -28,7 +28,7 @@ import std.typecons : No, Yes;
 version(OmniscientQueries)
 {
     /++
-        The [kameloso.plugins.common.core.ChannelPolicy] to mix in awareness with depending
+        The [kameloso.plugins.common.core.ChannelPolicy|ChannelPolicy] to mix in awareness with depending
         on whether version `OmniscientQueries` is set or not.
      +/
     enum omniscientChannelPolicy = ChannelPolicy.any;

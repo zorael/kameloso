@@ -1282,7 +1282,7 @@ unittest
 
     Params:
         line = String to replace tokens in.
-        client = The current [dialect.defs.IRCClient].
+        client = The current [dialect.defs.IRCClient|IRCClient].
 
     Returns:
         A modified string with token occurrences replaced.
@@ -1332,7 +1332,7 @@ unittest
 // replaceTokens
 /++
     Apply some common text replacements. Used on part and quit reasons.
-    Overload that doesn't take an [dialect.defs.IRCClient] and as such can't
+    Overload that doesn't take an [dialect.defs.IRCClient|IRCClient] and as such can't
     replace `$nickname`.
 
     Params:

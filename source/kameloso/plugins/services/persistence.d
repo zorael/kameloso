@@ -1,14 +1,14 @@
 /++
     The Persistence service keeps track of all encountered users, gathering as much
     information about them as possible, then injects them into
-    [dialect.defs.IRCEvent]s when information about them is incomplete.
+    [dialect.defs.IRCEvent|IRCEvent]s when information about them is incomplete.
 
     This means that even if a service only refers to a user by nickname, things
     like its ident and address will be available to plugins as well, assuming
     the Persistence service had seen that previously.
 
     It has no commands. It only does post-processing and doesn't handle
-    [dialect.defs.IRCEvent]s in the normal sense at all.
+    [dialect.defs.IRCEvent|IRCEvent]s in the normal sense at all.
 
     See_Also:
         [kameloso.plugins.common.core]
@@ -26,7 +26,7 @@ import dialect.defs;
 
 // postprocess
 /++
-    Hijacks a reference to a [dialect.defs.IRCEvent] after parsing and
+    Hijacks a reference to a [dialect.defs.IRCEvent|IRCEvent] after parsing and
     fleshes out the [dialect.defs.IRCEvent.sender] and/or
     [dialect.defs.IRCEvent.target] fields, so that things like account names
     that are only sent sometimes carry over.
@@ -393,9 +393,9 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
 
 // onQuit
 /++
-    Removes a user's [dialect.defs.IRCUser] entry from the `users`
+    Removes a user's [dialect.defs.IRCUser|IRCUser] entry from the `users`
     associative array of the current [PersistenceService]'s
-    [kameloso.plugins.common.core.IRCPluginState] upon them disconnecting.
+    [kameloso.plugins.common.core.IRCPluginState|IRCPluginState] upon them disconnecting.
 
     Additionally from the nickname-channel cache.
  +/
@@ -780,13 +780,13 @@ public:
 
 // PersistenceService
 /++
-    The Persistence service melds new [dialect.defs.IRCUser]s (from
-    post-processing new [dialect.defs.IRCEvent]s) with old records of themselves.
+    The Persistence service melds new [dialect.defs.IRCUser|IRCUser]s (from
+    post-processing new [dialect.defs.IRCEvent|IRCEvent]s) with old records of themselves.
 
     Sometimes the only bit of information about a sender (or target) embedded in
-    an [dialect.defs.IRCEvent] may be his/her nickname, even though the
+    an [dialect.defs.IRCEvent|IRCEvent] may be his/her nickname, even though the
     event before detailed everything, even including their account name. With
-    this service we aim to complete such [dialect.defs.IRCUser] entries as
+    this service we aim to complete such [dialect.defs.IRCUser|IRCUser] entries as
     the union of everything we know from previous events.
 
     It only needs part of [kameloso.plugins.common.awareness.UserAwareness] for minimal

@@ -1287,7 +1287,7 @@ void teardown(TwitchBotPlugin plugin)
 
 // postprocess
 /++
-    Hijacks a reference to a [dialect.defs.IRCEvent] and modifies the sender and
+    Hijacks a reference to a [dialect.defs.IRCEvent|IRCEvent] and modifies the sender and
     target class based on their badges (and the current settings).
  +/
 void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)

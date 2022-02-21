@@ -2,7 +2,7 @@
     Implementation of Printer plugin functionality that concerns logging.
     For internal use.
 
-    The [dialect.defs.IRCEvent]-annotated handlers must be in the same module
+    The [dialect.defs.IRCEvent|IRCEvent]-annotated handlers must be in the same module
     as the [kameloso.plugins.admin.base.AdminPlugin], but these implementation
     functions can be offloaded here to limit module size a bit.
 

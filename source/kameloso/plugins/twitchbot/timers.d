@@ -1,7 +1,7 @@
 /++
     Implementation of Twitch bot timers. For internal use.
 
-    The [dialect.defs.IRCEvent]-annotated handlers must be in the same module
+    The [dialect.defs.IRCEvent|IRCEvent]-annotated handlers must be in the same module
     as the [kameloso.plugins.twitchbot.TwitchBotPlugin], but these implementation
     functions can be offloaded here to limit module size a bit.
 
@@ -159,7 +159,7 @@ Fiber createTimerFiber(TwitchBotPlugin plugin,
 
     Params:
         plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin].
-        event = The triggering [dialect.defs.IRCEvent].
+        event = The triggering [dialect.defs.IRCEvent|IRCEvent].
         targetChannel = The channel we're handling timers for.
  +/
 void handleTimerCommand(TwitchBotPlugin plugin,

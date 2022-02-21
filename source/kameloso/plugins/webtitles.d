@@ -92,7 +92,7 @@ struct TitleLookupRequest
     /// The context state of the requesting plugin instance.
     IRCPluginState state;
 
-    /// The [dialect.defs.IRCEvent] that instigated the lookup.
+    /// The [dialect.defs.IRCEvent|IRCEvent] that instigated the lookup.
     IRCEvent event;
 
     /// URL to look up.

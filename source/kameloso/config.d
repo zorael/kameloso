@@ -4,7 +4,7 @@
 
     Employs the standard [std.getopt] to read arguments from the command line
     to construct and populate instances of the structs needed for the bot to
-    function, like [dialect.defs.IRCClient], [dialect.defs.IRCServer],
+    function, like [dialect.defs.IRCClient|IRCClient], [dialect.defs.IRCServer],
     [kameloso.kameloso.IRCBot] and [kameloso.kameloso.CoreSettings].
 
     See_Also:
@@ -69,7 +69,7 @@ void printHelp(GetoptResult results) @system
 
     Params:
         instance = Reference to the current [kameloso.kameloso.Kameloso].
-        client = Reference to the current [dialect.defs.IRCClient].
+        client = Reference to the current [dialect.defs.IRCClient|IRCClient].
         server = Reference to the current [dialect.defs.IRCServer].
         bot = Reference to the current [kameloso.kameloso.IRCBot].
         customSettings = const string array to all the custom settings set
@@ -955,7 +955,7 @@ void notifyAboutIncompleteConfiguration(const string configFile, const string bi
     (and [kameloso.constants.KamelosoDefaultIntegers]).
 
     Params:
-        client = Reference to the [dialect.defs.IRCClient] to complete.
+        client = Reference to the [dialect.defs.IRCClient|IRCClient] to complete.
         server = Reference to the [dialect.defs.IRCServer] to complete.
         bot = Reference to the [kameloso.kameloso.IRCBot] to complete.
  +/

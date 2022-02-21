@@ -687,7 +687,7 @@ void messageFiber(ref Kameloso instance)
 
     Full lines are stored in [kameloso.net.ListenAttempt]s, which are
     yielded in the [std.concurrency.Generator] to be caught here, consequently
-    parsed into [dialect.defs.IRCEvent]s, and then dispatched to all plugins.
+    parsed into [dialect.defs.IRCEvent|IRCEvent]s, and then dispatched to all plugins.
 
     Params:
         instance = Reference to the current [kameloso.kameloso.Kameloso].
@@ -1102,7 +1102,7 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
 
 // processLineFromServer
 /++
-    Processes a line read from the server, constructing an [dialect.defs.IRCEvent]
+    Processes a line read from the server, constructing an [dialect.defs.IRCEvent|IRCEvent]
     and dispatches it to all plugins.
 
     Params:
@@ -1375,15 +1375,15 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
 
 // processAwaitingDelegates
 /++
-    Processes the awaiting delegates of an [kameloso.plugins.common.core.IRCPlugin].
+    Processes the awaiting delegates of an [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
 
     Does not remove delegates after calling them. They are expected to remove
     themselves after finishing if they aren't awaiting any further events.
 
     Params:
-        plugin = The [kameloso.plugins.common.core.IRCPlugin] whose
+        plugin = The [kameloso.plugins.common.core.IRCPlugin|IRCPlugin] whose
             [dialect.defs.IRCEvent.Type]-awaiting delegates to iterate and process.
-        event = The triggering const [dialect.defs.IRCEvent].
+        event = The triggering const [dialect.defs.IRCEvent|IRCEvent].
  +/
 void processAwaitingDelegates(IRCPlugin plugin, const ref IRCEvent event)
 {
@@ -1427,15 +1427,15 @@ void processAwaitingDelegates(IRCPlugin plugin, const ref IRCEvent event)
 // processAwaitingFibers
 /++
     Processes the awaiting [core.thread.fiber.Fiber]s of an
-    [kameloso.plugins.common.core.IRCPlugin].
+    [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
 
     Don't delete [core.thread.fiber.Fiber]s, as they can be reset and reused.
 
     Params:
-        plugin = The [kameloso.plugins.common.core.IRCPlugin] whose
+        plugin = The [kameloso.plugins.common.core.IRCPlugin|IRCPlugin] whose
             [dialect.defs.IRCEvent.Type]-awaiting [core.thread.fiber.Fiber]s to
             iterate and process.
-        event = The triggering [dialect.defs.IRCEvent].
+        event = The triggering [dialect.defs.IRCEvent|IRCEvent].
  +/
 void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
 {
@@ -1529,10 +1529,10 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
 // processScheduledDelegates
 /++
     Processes the queued [kameloso.thread.ScheduledDelegate]s of an
-    [kameloso.plugins.common.core.IRCPlugin].
+    [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
 
     Params:
-        plugin = The [kameloso.plugins.common.core.IRCPlugin] whose queued
+        plugin = The [kameloso.plugins.common.core.IRCPlugin|IRCPlugin] whose queued
             [kameloso.thread.ScheduledDelegate]s to iterate and process.
         nowInHnsecs = Current timestamp to compare the [kameloso.thread.ScheduledDelegate]'s
             timestamp with.
@@ -1572,13 +1572,13 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledDelegate`s with an uns
 
 // processScheduledFibers
 /++
-    Processes the queued [kameloso.thread.ScheduledFiber]s of an
-    [kameloso.plugins.common.core.IRCPlugin].
+    Processes the queued [kameloso.thread.ScheduledFiber|ScheduledFiber]s of an
+    [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
 
     Params:
-        plugin = The [kameloso.plugins.common.core.IRCPlugin] whose queued
-            [kameloso.thread.ScheduledFiber]s to iterate and process.
-        nowInHnsecs = Current timestamp to compare the [kameloso.thread.ScheduledFiber]'s
+        plugin = The [kameloso.plugins.common.core.IRCPlugin|IRCPlugin] whose queued
+            [kameloso.thread.ScheduledFiber|ScheduledFiber]s to iterate and process.
+        nowInHnsecs = Current timestamp to compare the [kameloso.thread.ScheduledFiber|ScheduledFiber]'s
             timestamp with.
  +/
 void processScheduledFibers(IRCPlugin plugin, const long nowInHnsecs)
@@ -1627,7 +1627,7 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
 
     Params:
         instance = Reference to the current bot instance.
-        plugin = The current [kameloso.plugins.common.core.IRCPlugin].
+        plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
  +/
 void processReadyReplays(ref Kameloso instance, IRCPlugin plugin)
 {
@@ -1708,13 +1708,13 @@ void processReadyReplays(ref Kameloso instance, IRCPlugin plugin)
 
 // processPendingReplay
 /++
-    Takes a queue of pending [kameloso.plugins.common.core.Replay] objects and
+    Takes a queue of pending [kameloso.plugins.common.core.Replay|Replay] objects and
     issues WHOIS queries for each one, unless it has already been done recently (within
     [kameloso.constants.Timeout.whoisRetry] seconds).
 
     Params:
         instance = Reference to the current [kameloso.kameloso.Kameloso].
-        plugin = The relevant [kameloso.plugins.common.core.IRCPlugin].
+        plugin = The relevant [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
  +/
 void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
 {
@@ -2652,9 +2652,9 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
     Print what we know about an event, from an error perspective.
 
     Params:
-        event = The [dialect.defs.IRCEvent] in question.
+        event = The [dialect.defs.IRCEvent|IRCEvent] in question.
         raw = The raw string that `event` was parsed from, as read from the IRC server.
-        eventWasInitialised = Whether the [dialect.defs.IRCEvent] was initialised
+        eventWasInitialised = Whether the [dialect.defs.IRCEvent|IRCEvent] was initialised
             or if it was only ever set to `void`.
  +/
 void printEventDebugDetails(const ref IRCEvent event,

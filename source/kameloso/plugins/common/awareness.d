@@ -40,8 +40,8 @@
     ---
 
     See_Also:
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.common.awareness;
 
@@ -63,10 +63,10 @@ public:
     Most of the time a plugin doesn't require a full [UserAwareness]; only
     those that need looking up users outside of the current event do. The
     persistency service allows for plugins to just read the information from
-    the [dialect.defs.IRCUser] embedded in the event directly, and that's
+    the [dialect.defs.IRCUser|IRCUser] embedded in the event directly, and that's
     often enough.
 
-    General rule: if a plugin doesn't access [kameloso.plugins.common.core.IRCPluginState.users],
+    General rule: if a plugin doesn't access [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users],
     it's probably going to be enough with only [MinimalAuthentication].
 
     Params:
@@ -98,10 +98,10 @@ mixin template MinimalAuthentication(
 
     // onMinimalAuthenticationAccountInfoTargetMixin
     /++
-        Proxies to [kameloso.plugins.common.awareness.onMinimalAuthenticationAccountInfoTarget].
+        Proxies to [kameloso.plugins.common.awareness.onMinimalAuthenticationAccountInfoTarget|onMinimalAuthenticationAccountInfoTarget].
 
         See_Also:
-            [kameloso.plugins.common.awareness.onMinimalAuthenticationAccountInfoTarget]
+            [kameloso.plugins.common.awareness.onMinimalAuthenticationAccountInfoTarget|onMinimalAuthenticationAccountInfoTarget]
      +/
     @(IRCEventHandler()
         .onEvent(IRCEvent.Type.RPL_WHOISACCOUNT)
@@ -118,10 +118,10 @@ mixin template MinimalAuthentication(
 
     // onMinimalAuthenticationUnknownCommandWHOISMixin
     /++
-        Proxies to [kameloso.plugins.common.awareness.onMinimalAuthenticationUnknownCommandWHOIS].
+        Proxies to [kameloso.plugins.common.awareness.onMinimalAuthenticationUnknownCommandWHOIS|onMinimalAuthenticationUnknownCommandWHOIS].
 
         See_Also:
-            [kameloso.plugins.common.awareness.onMinimalAuthenticationUnknownCommandWHOIS]
+            [kameloso.plugins.common.awareness.onMinimalAuthenticationUnknownCommandWHOIS|onMinimalAuthenticationUnknownCommandWHOIS]
      +/
     @(IRCEventHandler()
         .onEvent(IRCEvent.Type.ERR_UNKNOWNCOMMAND)
@@ -137,10 +137,10 @@ mixin template MinimalAuthentication(
 
 // onMinimalAuthenticationAccountInfoTarget
 /++
-    Replays any queued [kameloso.plugins.common.core.Replay]s awaiting the result
+    Replays any queued [kameloso.plugins.common.core.Replay|Replay]s awaiting the result
     of a WHOIS query. Before that, records the user's services account by
-    saving it to the user's [dialect.defs.IRCClient] in the [kameloso.plugins.common.core.IRCPlugin]'s
-    [kameloso.plugins.common.core.IRCPluginState.users] associative array.
+    saving it to the user's [dialect.defs.IRCClient|IRCClient] in the [kameloso.plugins.common.core.IRCPlugin|IRCPlugin]'s
+    [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users] associative array.
 
     [dialect.defs.IRCEvent.Type.RPL_ENDOFWHOIS] is also handled, to
     cover the case where a user without an account triggering
@@ -187,7 +187,7 @@ void onMinimalAuthenticationAccountInfoTarget(IRCPlugin plugin, const ref IRCEve
 
 // onMinimalAuthenticationUnknownCommandWHOIS
 /++
-    Clears all queued [kameloso.plugins.common.core.Replay]s if the server says
+    Clears all queued [kameloso.plugins.common.core.Replay|Replay]s if the server says
     it doesn't support WHOIS at all.
 
     This is the case with Twitch servers.
@@ -226,7 +226,7 @@ void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const ref IRCE
     where applicable, annotated appropriately.
 
     Params:
-        channelPolicy = What [kameloso.plugins.common.core.ChannelPolicy] to
+        channelPolicy = What [kameloso.plugins.common.core.ChannelPolicy|ChannelPolicy] to
             apply to enwrapped event handlers.
         debug_ = Whether or not to include debugging output.
         module_ = String name of the mixing-in module; generally leave as-is.
@@ -405,7 +405,7 @@ mixin template UserAwareness(
 
 // onUserAwarenessQuit
 /++
-    Removes a user's [dialect.defs.IRCUser] entry from a plugin's user
+    Removes a user's [dialect.defs.IRCUser|IRCUser] entry from a plugin's user
     list upon them disconnecting.
  +/
 void onUserAwarenessQuit(IRCPlugin plugin, const ref IRCEvent event)
@@ -417,8 +417,8 @@ void onUserAwarenessQuit(IRCPlugin plugin, const ref IRCEvent event)
 // onUserAwarenessNick
 /++
     Upon someone changing nickname, update their entry in the
-    [kameloso.plugins.common.core.IRCPlugin]'s
-    [kameloso.plugins.common.core.IRCPluginState.users] array to point to the new nickname.
+    [kameloso.plugins.common.core.IRCPlugin|IRCPlugin]'s
+    [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users] array to point to the new nickname.
 
     Removes the old entry after assigning it to the new key.
  +/
@@ -441,7 +441,7 @@ void onUserAwarenessNick(IRCPlugin plugin, const ref IRCEvent event)
 // onUserAwarenessCatchTarget
 /++
     Catches a user's information and saves it in the plugin's
-    [kameloso.plugins.common.core.IRCPluginState.users] array of [dialect.defs.IRCUser]s.
+    [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users] array of [dialect.defs.IRCUser|IRCUser]s.
 
     [dialect.defs.IRCEvent.Type.RPL_WHOISUSER] events carry values in
     the [dialect.defs.IRCUser.updated] field that we want to store.
@@ -458,8 +458,8 @@ void onUserAwarenessCatchTarget(IRCPlugin plugin, const ref IRCEvent event)
 
 // onUserAwarenessCatchSender
 /++
-    Adds a user to the [kameloso.plugins.common.core.IRCPlugin]'s
-    [kameloso.plugins.common.core.IRCPluginState.users] array,
+    Adds a user to the [kameloso.plugins.common.core.IRCPlugin|IRCPlugin]'s
+    [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users] array,
     potentially including their services account name.
 
     Servers with the (enabled) capability `extended-join` will include the
@@ -574,8 +574,8 @@ void onUserAwarenessNamesReply(IRCPlugin plugin, const ref IRCEvent event)
 
 // onUserAwarenessEndOfList
 /++
-    Rehashes, or optimises, the [kameloso.plugins.common.core.IRCPlugin]'s
-    [kameloso.plugins.common.core.IRCPluginState.users]
+    Rehashes, or optimises, the [kameloso.plugins.common.core.IRCPlugin|IRCPlugin]'s
+    [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users]
     associative array upon the end of a WHO or a NAMES list.
 
     These replies can list hundreds of users depending on the size of the
@@ -594,12 +594,12 @@ void onUserAwarenessEndOfList(IRCPlugin plugin, const ref IRCEvent event) @syste
 
 // onUserAwarenessPingMixin
 /++
-    Rehash the internal [kameloso.plugins.common.core.IRCPluginState.users] associative array of
-    [dialect.defs.IRCUser]s, once every `hoursBetweenRehashes` hours.
+    Rehash the internal [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users] associative array of
+    [dialect.defs.IRCUser|IRCUser]s, once every `hoursBetweenRehashes` hours.
 
     We ride the periodicity of [dialect.defs.IRCEvent.Type.PING] to get
     a natural cadence without having to resort to queued
-    [kameloso.thread.ScheduledFiber]s.
+    [kameloso.thread.ScheduledFiber|ScheduledFiber]s.
 
     The number of hours is so far hardcoded but can be made configurable if
     there's a use-case for it.
@@ -647,7 +647,7 @@ void onUserAwarenessPing(IRCPlugin plugin, const ref IRCEvent event) @system
     already (and avoid range errors).
 
     Params:
-        channelPolicy = What [kameloso.plugins.common.core.ChannelPolicy]
+        channelPolicy = What [kameloso.plugins.common.core.ChannelPolicy|ChannelPolicy]
             to apply to enwrapped event handlers.
         debug_ = Whether or not to include debugging output.
         module_ = String name of the mixing-in module; generally leave as-is.
@@ -941,7 +941,7 @@ mixin template ChannelAwareness(
 
 // onChannelAwarenessSelfjoin
 /++
-    Create a new [dialect.defs.IRCChannel] in the the [kameloso.plugins.common.core.IRCPlugin]'s
+    Create a new [dialect.defs.IRCChannel] in the the [kameloso.plugins.common.core.IRCPlugin|IRCPlugin]'s
     [kameloso.plugins.common.core.IRCPluginState.channels] associative array
     when the bot joins a channel.
  +/
@@ -1060,12 +1060,12 @@ void onChannelAwarenessPart(IRCPlugin plugin, const ref IRCEvent event)
 // onChannelAwarenessNick
 /++
     Upon someone changing nickname, update their entry in the
-    [kameloso.plugins.common.core.IRCPluginState.users] associative array to
+    [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users] associative array to
     point to the new nickname.
 
     Does *not* add a new entry if one doesn't exits, to counter the fact
     that [dialect.defs.IRCEvent.Type.NICK] events don't belong to a channel,
-    and as such can't be regulated with [kameloso.plugins.common.core.ChannelPolicy]
+    and as such can't be regulated with [kameloso.plugins.common.core.ChannelPolicy|ChannelPolicy]
     annotations. This way the user will only be moved if it was already added elsewhere.
     Else we'll leak users.
 
@@ -1349,12 +1349,12 @@ void onChannelAwarenessChannelModeIs(IRCPlugin plugin, const ref IRCEvent event)
     There is a chance of a user leak, if parting users are not broadcast. As
     such we mark when the user was last seen in the
     [dialect.defs.IRCUser.updated] member, which opens up the possibility
-    of pruning the plugin's [kameloso.plugins.common.core.IRCPluginState.users] array of old entries.
+    of pruning the plugin's [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users] array of old entries.
 
     Twitch awareness needs channel awareness, or it is meaningless.
 
     Params:
-        channelPolicy = What [kameloso.plugins.common.core.ChannelPolicy]
+        channelPolicy = What [kameloso.plugins.common.core.ChannelPolicy|ChannelPolicy]
             to apply to enwrapped event handlers.
         debug_ = Whether or not to include debugging output.
         module_ = String name of the mixing-in module; generally leave as-is.

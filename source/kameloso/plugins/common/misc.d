@@ -27,7 +27,7 @@ public:
     [kameloso.plugins.common.core.IRCPlugin.setSettingByName] methods.
 
     Params:
-        plugins = Array of all [kameloso.plugins.common.core.IRCPlugin]s.
+        plugins = Array of all [kameloso.plugins.common.core.IRCPlugin|IRCPlugin]s.
         customSettings = Array of custom settings to apply to plugins' own
             setting, in the string forms of "`plugin.setting=value`".
         copyOfSettings = A copy of the program-wide [kameloso.kameloso.CoreSettings].
@@ -258,14 +258,14 @@ final class IRCPluginInitialisationException : Exception
 
 // catchUser
 /++
-    Catch an [dialect.defs.IRCUser], saving it to the [kameloso.plugins.common.core.IRCPlugin]'s
-    [kameloso.plugins.common.core.IRCPluginState.users] array.
+    Catch an [dialect.defs.IRCUser|IRCUser], saving it to the [kameloso.plugins.common.core.IRCPlugin|IRCPlugin]'s
+    [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users] array.
 
     If a user already exists, meld the new information into the old one.
 
     Params:
-        plugin = Current [kameloso.plugins.common.core.IRCPlugin].
-        newUser = The [dialect.defs.IRCUser] to catch.
+        plugin = Current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
+        newUser = The [dialect.defs.IRCUser|IRCUser] to catch.
  +/
 void catchUser(IRCPlugin plugin, const IRCUser newUser) @safe
 {
@@ -291,9 +291,9 @@ void catchUser(IRCPlugin plugin, const IRCUser newUser) @safe
     replay the event upon receiving the results.
 
     Params:
-        plugin = Subclass [kameloso.plugins.common.core.IRCPlugin] to replay the
+        plugin = Subclass [kameloso.plugins.common.core.IRCPlugin|IRCPlugin] to replay the
             function pointer `fun` with as first argument.
-        event = [dialect.defs.IRCEvent] to queue up to replay.
+        event = [dialect.defs.IRCEvent|IRCEvent] to queue up to replay.
         permissionsRequired = Permissions level to match the results from the WHOIS query with.
         fun = Function/delegate pointer to call when the results return.
         caller = String name of the calling function, or something else that gives context.
@@ -410,9 +410,9 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
     *with* a subclass plugin reference attached.
 
     Params:
-        plugin = Subclass [kameloso.plugins.common.core.IRCPlugin] to call the
+        plugin = Subclass [kameloso.plugins.common.core.IRCPlugin|IRCPlugin] to call the
             function pointer `fun` with as first argument, when the WHOIS results return.
-        event = [dialect.defs.IRCEvent] that instigated the WHOIS lookup.
+        event = [dialect.defs.IRCEvent|IRCEvent] that instigated the WHOIS lookup.
         fun = Function/delegate pointer to call upon receiving the results.
         permissionsRequired = The permissions level policy to apply to the WHOIS results.
         caller = String name of the calling function, or something else that gives context.
@@ -422,7 +422,7 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
         passed to this function.
 
     See_Also:
-        [kameloso.plugins.common.core.Replay]
+        [kameloso.plugins.common.core.Replay|Replay]
  +/
 Replay replay(Plugin, Fun)(Plugin plugin, const ref IRCEvent event,
     Fun fun, const Permissions permissionsRequired, const string caller = __FUNCTION__)
@@ -599,15 +599,15 @@ Replay replay(Plugin, Fun)(Plugin plugin, const ref IRCEvent event,
 
 // rehashUsers
 /++
-    Rehashes a plugin's users, both the ones in the [kameloso.plugins.common.core.IRCPluginState.users]
+    Rehashes a plugin's users, both the ones in the [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users]
     associative array and the ones in each [dialect.defs.IRCChannel.users] associative arrays.
 
     This optimises lookup and should be done every so often,
 
     Params:
-        plugin = The current [kameloso.plugins.common.core.IRCPlugin].
+        plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
         channelName = Optional name of the channel to rehash for. If none given
-            it will rehash the main [kameloso.plugins.common.core.IRCPluginState.users]
+            it will rehash the main [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users]
             associative array instead.
  +/
 void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
@@ -632,7 +632,7 @@ void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
     If not version `TwitchSupport` then it always returns the nickname.
 
     Params:
-        user = [dialect.defs.IRCUser] to examine.
+        user = [dialect.defs.IRCUser|IRCUser] to examine.
 
     Returns:
         The nickname of the user if there is no alias known, else the alias.
@@ -679,12 +679,12 @@ unittest
 /++
     Returns either the nickname or the display name of a user, depending on whether the
     display name is known or not. Overload that looks up the passed nickname in
-    the passed plugin's `users` associative array of [dialect.defs.IRCUser]s.
+    the passed plugin's `users` associative array of [dialect.defs.IRCUser|IRCUser]s.
 
     If not version `TwitchSupport` then it always returns the nickname.
 
     Params:
-        plugin = The current [kameloso.plugins.common.core.IRCPlugin], whatever it is.
+        plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin], whatever it is.
         nickname = The name of a user to look up.
 
     Returns:
@@ -713,7 +713,7 @@ string nameOf(const IRCPlugin plugin, const string nickname) pure @safe nothrow 
     the account is known.
 
     Params:
-        user = [dialect.defs.IRCUser] to examine.
+        user = [dialect.defs.IRCUser|IRCUser] to examine.
 
     Returns:
         The nickname or account of the passed user.
@@ -730,12 +730,12 @@ in (user.nickname.length, "Tried to get `idOf` a user with an empty nickname")
 /++
     Returns either the nickname or the account of a user, depending on whether
     the account is known. Overload that looks up the passed nickname in
-    the passed plugin's `users` associative array of [dialect.defs.IRCUser]s.
+    the passed plugin's `users` associative array of [dialect.defs.IRCUser|IRCUser]s.
 
     Merely wraps [getUser] with [idOf].
 
     Params:
-        plugin = The current [kameloso.plugins.common.core.IRCPlugin], whatever it is.
+        plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin], whatever it is.
         nickname = The name of a user to look up.
 
     Returns:
@@ -777,20 +777,20 @@ unittest
 
 // getUser
 /++
-    Retrieves an [dialect.defs.IRCUser] from the passed plugin's `users`
-    associative array. If none exists, returns a minimally viable [dialect.defs.IRCUser]
+    Retrieves an [dialect.defs.IRCUser|IRCUser] from the passed plugin's `users`
+    associative array. If none exists, returns a minimally viable [dialect.defs.IRCUser|IRCUser]
     with the passed nickname as its only value.
 
     On Twitch, if no user was found, it additionally tries to look up the passed
     nickname as if it was a display name.
 
     Params:
-        plugin = The current [kameloso.plugins.common.core.IRCPlugin], whatever it is.
+        plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin], whatever it is.
         nickname = The name of a user to look up.
 
     Returns:
-        An [dialect.defs.IRCUser] that matches the passed nickname, from the
-        passed plugin's arrays. A minimally viable [dialect.defs.IRCUser] if
+        An [dialect.defs.IRCUser|IRCUser] that matches the passed nickname, from the
+        passed plugin's arrays. A minimally viable [dialect.defs.IRCUser|IRCUser] if
         none was found.
  +/
 auto getUser(IRCPlugin plugin, const string nickname)
@@ -866,7 +866,7 @@ version(WithWebtitlesPlugin)
 version(WithTwitchBotPlugin)
 struct EventURLs
 {
-    /// The [dialect.defs.IRCEvent] that should trigger a Webtitles lookup.
+    /// The [dialect.defs.IRCEvent|IRCEvent] that should trigger a Webtitles lookup.
     IRCEvent event;
 
     /// The URLs discovered inside [dialect.defs.IRCEvent.content].

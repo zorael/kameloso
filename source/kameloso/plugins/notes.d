@@ -96,7 +96,7 @@ void onWhoReply(NotesPlugin plugin, const /*ref*/ IRCEvent event)
 
     Params:
         plugin = The current [NotesPlugin].
-        givenUser = The [dialect.defs.IRCUser] for whom we want to replay notes.
+        givenUser = The [dialect.defs.IRCUser|IRCUser] for whom we want to replay notes.
         givenChannel = Name of the channel we want the notes related to.
         background = Whether or not to issue WHOIS queries as low-priority background messages.
  +/

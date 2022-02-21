@@ -60,7 +60,7 @@ private import core.time : seconds;
 
 /+
     Most of the module can (and ideally should) be kept private. Our surface
-    area here will be restricted to only one [kameloso.plugins.common.core.IRCPlugin]
+    area here will be restricted to only one [kameloso.plugins.common.core.IRCPlugin|IRCPlugin]
     class, and the usual pattern used is to have the private bits first and that
     public class last. We'll turn that around here to make it easier to visually parse.
  +/
@@ -137,9 +137,9 @@ public:
         the server by way of concurrency messages, but it is usually not something
         you will have to deal with directly.
 
-    * [kameloso.plugins.common.core.IRCPluginState.users] is an associative array
+    * [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users] is an associative array
         keyed with users' nicknames. The value to that key is an
-        [dialect.defs.IRCUser] representing that user in terms of nickname,
+        [dialect.defs.IRCUser|IRCUser] representing that user in terms of nickname,
         address, ident, services account name, and much more. This is a way to keep track of
         users by more than merely their name. It is however not saved at the end
         of the program; as everything else it is merely state and transient.
@@ -150,26 +150,26 @@ public:
         only their name.
 
     * [kameloso.plugins.common.core.IRCPluginState.pendingReplays] is also an
-        associative array into which we place [kameloso.plugins.common.core.Replay]s.
+        associative array into which we place [kameloso.plugins.common.core.Replay|Replay]s.
         The main loop will pick up on these and call WHOIS on the nickname in the key.
-        A [kameloso.plugins.common.core.Replay] is otherwise just an
-        [dialect.defs.IRCEvent] to be played back when the WHOIS results
+        A [kameloso.plugins.common.core.Replay|Replay] is otherwise just an
+        [dialect.defs.IRCEvent|IRCEvent] to be played back when the WHOIS results
         return, as well as a delegate that invokes the function that was originally
         to be called. Constructing a [kameloso.plugins.common.Replay] is
         all wrapped in a function [kameloso.plugins.common.misc.enqueue], with the
         queue management handled behind the scenes.
 
     * [kameloso.plugins.common.core.IRCPluginState.hasPendingReplays] is merely a bool
-        of whether or not there currently are any [kameloso.plugins.common.core.Replay]s
+        of whether or not there currently are any [kameloso.plugins.common.core.Replay|Replay]s
         in [kameloso.plugins.common.core.IRCPluginState.pendingReplays], cached to avoid
         associative array length lookups.
 
     * [kameloso.plugins.common.core.IRCPluginState.readyReplays] is an array of
-        [kameloso.plugins.common.core.Replay]s that have seen their WHOIS request
+        [kameloso.plugins.common.core.Replay|Replay]s that have seen their WHOIS request
         issued and the result received. Moving one from
         [kameloso.plugins.common.core.IRCPluginState.pendingReplays] to
         [kameloso.plugins.common.core.IRCPluginState.readyReplays] will make the
-        main loop pick it up, *update* the [dialect.defs.IRCEvent] stored within
+        main loop pick it up, *update* the [dialect.defs.IRCEvent|IRCEvent] stored within
         it with what we now know of the sender and/or target, and then replay
         the event by invoking its delegate.
 
@@ -193,7 +193,7 @@ public:
         array of delegates, to be triggered at a later point in time.
 
     * [kameloso.plugins.common.core.IRCPluginState.nextScheduledTimestamp] is also a
-        UNIX timestamp, here of when the next [kameloso.thread.ScheduledFiber] in
+        UNIX timestamp, here of when the next [kameloso.thread.ScheduledFiber|ScheduledFiber] in
         [kameloso.plugins.common.core.IRCPluginState.scheduledFibers] *or* the next
         [kameloso.thread.ScheduledDelegate] in
         [kameloso.plugins.common.core.IRCPluginState.scheduledDelegates] is due to be
@@ -270,7 +270,7 @@ private:  // Module-level private.
     // IRCPluginImpl
     /++
         This mixes in functions that fully implement an
-        [kameloso.plugins.common.core.IRCPlugin]. They don't do much by themselves
+        [kameloso.plugins.common.core.IRCPlugin|IRCPlugin]. They don't do much by themselves
         other than call the module's functions, as well as implement things like
         functions that return the plugin's name, its list of bot command words, etc.
         It does this by introspecting the module and implementing itself as it sees fit.
@@ -345,7 +345,7 @@ version(OmniscientSeen)
 {
     // omniscientChannelPolicy
     /++
-        The [kameloso.plugins.common.core.ChannelPolicy] annotation dictates
+        The [kameloso.plugins.common.core.ChannelPolicy|ChannelPolicy] annotation dictates
         whether or not an annotated function should be called based on the *channel*
         the event took place in, if applicable.
 
@@ -376,7 +376,7 @@ else
     Whenever a user does something, record this user as having been seen at the
     current time.
 
-    This function will be called whenever an [dialect.defs.IRCEvent] is
+    This function will be called whenever an [dialect.defs.IRCEvent|IRCEvent] is
     being processed of the [dialect.defs.IRCEvent.Type]s that we annotate
     the function with.
 
@@ -439,7 +439,7 @@ else
     This particular function doesn't care at all, so it is
     [kameloso.plugins.common.core.Permissions.ignore].
 
-    The [kameloso.plugins.common.core.ChannelPolicy] here is the same
+    The [kameloso.plugins.common.core.ChannelPolicy|ChannelPolicy] here is the same
     [omniscientChannelPolicy] we defined earlier, versioned to have a different
     value based on the dub build configuration. By default, it's
     [kameloso.plugins.common.core.ChannelPolicy.home].
@@ -655,7 +655,7 @@ void onEndOfList(SeenPlugin plugin)
     message, the `kameloso:` prefix will have been removed. In either case, we're
     left with only the parts we're interested in, and the rest sliced off.
 
-    As a result, the [dialect.defs.IRCEvent] `event` would look something like this
+    As a result, the [dialect.defs.IRCEvent|IRCEvent] `event` would look something like this
     (given a user `foo` querying "`!seen Joe`" or "`kameloso: seen Joe`"):
 
     ---

@@ -2,12 +2,12 @@
     Implementation of Admin plugin functionality that borders on debugging.
     For internal use.
 
-    The [dialect.defs.IRCEvent]-annotated handlers must be in the same module
+    The [dialect.defs.IRCEvent|IRCEvent]-annotated handlers must be in the same module
     as the [kameloso.plugins.admin.base.AdminPlugin], but these implementation
     functions can be offloaded here to limit module size a bit.
 
     See_Also:
-        [kameloso.plugins.admin.base]
+        [kameloso.plugins.admin.base|admin.base]
  +/
 module kameloso.plugins.admin.debugging;
 
@@ -63,7 +63,7 @@ void onAnyEventImpl(AdminPlugin plugin, const ref IRCEvent event)
 /++
     Prints the details of one or more specific, supplied users to the local terminal.
 
-    It basically prints the matching [dialect.defs.IRCUser].
+    It basically prints the matching [dialect.defs.IRCUser|IRCUser].
  +/
 void onCommandShowUserImpl(AdminPlugin plugin, const ref IRCEvent event)
 {
@@ -91,7 +91,7 @@ void onCommandShowUserImpl(AdminPlugin plugin, const ref IRCEvent event)
 // onCommandShowUsersImpl
 /++
     Prints out the current `users` array of the [kameloso.plugins.admin.base.AdminPlugin]'s
-    [kameloso.plugins.common.core.IRCPluginState] to the local terminal.
+    [kameloso.plugins.common.core.IRCPluginState|IRCPluginState] to the local terminal.
  +/
 void onCommandShowUsersImpl(AdminPlugin plugin)
 {

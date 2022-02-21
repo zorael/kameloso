@@ -63,7 +63,7 @@ public:
 
     /++
         A runtime array of all plugins. We iterate these when we have finished
-        parsing an [dialect.defs.IRCEvent], and call the relevant event
+        parsing an [dialect.defs.IRCEvent|IRCEvent], and call the relevant event
         handlers of each.
      +/
     IRCPlugin[] plugins;

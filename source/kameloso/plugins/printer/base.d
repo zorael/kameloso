@@ -1,9 +1,9 @@
 /++
-    The Printer plugin takes incoming [dialect.defs.IRCEvent]s, formats them
+    The Printer plugin takes incoming [dialect.defs.IRCEvent|IRCEvent]s, formats them
     into something easily readable and prints them to the screen, optionally with colours.
     It also supports logging to disk.
 
-    It has no commands; all [dialect.defs.IRCEvent]s will be parsed and
+    It has no commands; all [dialect.defs.IRCEvent|IRCEvent]s will be parsed and
     printed, excluding certain types that were deemed too spammy. Print them as
     well by disabling `filterMost`, in the configuration file under the header `[Printer]`.
 
@@ -134,7 +134,7 @@ public:
 
     Buffer output in an [std.array.Appender].
 
-    Mutable [dialect.defs.IRCEvent] parameter so as to make fewer internal copies
+    Mutable [dialect.defs.IRCEvent|IRCEvent] parameter so as to make fewer internal copies
     (as this is a hotspot).
  +/
 @(IRCEventHandler()
@@ -795,7 +795,7 @@ public:
 
 // PrinterPlugin
 /++
-    The Printer plugin takes all [dialect.defs.IRCEvent]s and prints them to
+    The Printer plugin takes all [dialect.defs.IRCEvent|IRCEvent]s and prints them to
     the local terminal, formatted and optionally in colour. Alternatively to disk
     as logs.
 

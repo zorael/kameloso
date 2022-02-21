@@ -108,8 +108,8 @@ void onSelfpart(ConnectService service, const ref IRCEvent event)
 
 // onSelfjoin
 /++
-    Records a channel in the `channels` array in the [dialect.defs.IRCClient] of
-    the current [ConnectService]'s [kameloso.plugins.common.core.IRCPluginState] upon joining it.
+    Records a channel in the `channels` array in the [dialect.defs.IRCClient|IRCClient] of
+    the current [ConnectService]'s [kameloso.plugins.common.core.IRCPluginState|IRCPluginState] upon joining it.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.SELFJOIN)
@@ -133,7 +133,7 @@ void onSelfjoin(ConnectService service, const ref IRCEvent event)
 /++
     Joins all channels listed as home channels *and* guest channels in the arrays in
     [kameoso.kameloso.IRCBot] of the current [ConnectService]'s
-    [kameloso.plugins.common.core.IRCPluginState].
+    [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
 
     Params:
         service = The current [ConnectService].
@@ -173,7 +173,7 @@ void joinChannels(ConnectService service)
 // onToConnectType
 /++
     Responds to [dialect.defs.IRCEvent.Type.ERR_NEEDPONG] events by sending
-    the text supplied as content in the [dialect.defs.IRCEvent] to the server.
+    the text supplied as content in the [dialect.defs.IRCEvent|IRCEvent] to the server.
 
     "Also known as [dialect.defs.IRCEvent.Type.ERR_NEEDPONG] (Unreal/Ultimate)
     for use during registration, however it's not used in Unreal (and might not
