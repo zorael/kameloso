@@ -129,7 +129,6 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         import lu.conv : Enum;
         import lu.traits : TakesParams;
         import std.algorithm.searching : canFind;
-        import std.meta : AliasSeq;
         import std.traits : arity;
         import core.thread : Fiber;
 
@@ -151,15 +150,15 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
              +/
             void callOnSuccess()
             {
-                static if (TakesParams!(onSuccess, AliasSeq!IRCEvent))
+                static if (TakesParams!(onSuccess, IRCEvent))
                 {
                     return onSuccess(whoisEvent);
                 }
-                else static if (TakesParams!(onSuccess, AliasSeq!IRCUser))
+                else static if (TakesParams!(onSuccess, IRCUser))
                 {
                     return onSuccess(whoisEvent.target);
                 }
-                else static if (TakesParams!(onSuccess, AliasSeq!string))
+                else static if (TakesParams!(onSuccess, string))
                 {
                     return onSuccess(whoisEvent.target.account);
                 }
@@ -185,15 +184,15 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             {
                 static if (!is(typeof(onFailure) == typeof(null)))
                 {
-                    static if (TakesParams!(onFailure, AliasSeq!IRCEvent))
+                    static if (TakesParams!(onFailure, IRCEvent))
                     {
                         return onFailure(whoisEvent);
                     }
-                    else static if (TakesParams!(onFailure, AliasSeq!IRCUser))
+                    else static if (TakesParams!(onFailure, IRCUser))
                     {
                         return onFailure(whoisEvent.target);
                     }
-                    else static if (TakesParams!(onFailure, AliasSeq!string))
+                    else static if (TakesParams!(onFailure, string))
                     {
                         // Never called when using hostmasks
                         return onFailure(whoisEvent.target.account);
@@ -306,7 +305,6 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         import kameloso.thread : CarryingFiber;
         import lu.string : contains, nom;
         import lu.traits : TakesParams;
-        import std.meta : AliasSeq;
         import std.traits : arity;
         import std.typecons : Flag, No, Yes;
         import core.thread : Fiber;
@@ -333,18 +331,18 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                 {
                     if (const user = nickname in context.state.users)
                     {
-                        static if (TakesParams!(onSuccess, AliasSeq!IRCEvent))
+                        static if (TakesParams!(onSuccess, IRCEvent))
                         {
                             // Can't WHOIS on Twitch
                             throw new Exception("Tried to enqueue a `" ~
                                 typeof(onSuccess).stringof ~ " onSuccess` function " ~
                                 "when on Twitch (can't WHOIS)");
                         }
-                        else static if (TakesParams!(onSuccess, AliasSeq!IRCUser))
+                        else static if (TakesParams!(onSuccess, IRCUser))
                         {
                             return onSuccess(*user);
                         }
-                        else static if (TakesParams!(onSuccess, AliasSeq!string))
+                        else static if (TakesParams!(onSuccess, string))
                         {
                             return onSuccess(user.account);
                         }
@@ -359,15 +357,15 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                     }
                 }
 
-                static if (TakesParams!(onSuccess, AliasSeq!IRCEvent) ||
-                    TakesParams!(onSuccess, AliasSeq!IRCUser))
+                static if (TakesParams!(onSuccess, IRCEvent) ||
+                    TakesParams!(onSuccess, IRCUser))
                 {
                     // Can't WHOIS on Twitch
                     throw new Exception("Tried to enqueue a `" ~
                         typeof(onSuccess).stringof ~ " onSuccess` function " ~
                         "when on Twitch without `UserAwareness` (can't WHOIS)");
                 }
-                else static if (TakesParams!(onSuccess, AliasSeq!string))
+                else static if (TakesParams!(onSuccess, string))
                 {
                     return onSuccess(nickname);
                 }
@@ -388,15 +386,15 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             {
                 if (user.account.length)
                 {
-                    static if (TakesParams!(onSuccess, AliasSeq!IRCEvent))
+                    static if (TakesParams!(onSuccess, IRCEvent))
                     {
                         // No can do, drop down and WHOIS
                     }
-                    else static if (TakesParams!(onSuccess, AliasSeq!IRCUser))
+                    else static if (TakesParams!(onSuccess, IRCUser))
                     {
                         return onSuccess(*user);
                     }
-                    else static if (TakesParams!(onSuccess, AliasSeq!string))
+                    else static if (TakesParams!(onSuccess, string))
                     {
                         return onSuccess(user.account);
                     }
@@ -418,15 +416,15 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
                         if ((Clock.currTime.toUnixTime - user.updated) <= Timeout.whoisRetry)
                         {
-                            static if (TakesParams!(onFailure, AliasSeq!IRCEvent))
+                            static if (TakesParams!(onFailure, IRCEvent))
                             {
                                 // No can do, drop down and WHOIS
                             }
-                            else static if (TakesParams!(onFailure, AliasSeq!IRCUser))
+                            else static if (TakesParams!(onFailure, IRCUser))
                             {
                                 return onFailure(*user);
                             }
-                            else static if (TakesParams!(onFailure, AliasSeq!string))
+                            else static if (TakesParams!(onFailure, string))
                             {
                                 return onFailure(user.account);
                             }

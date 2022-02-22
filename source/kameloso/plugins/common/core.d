@@ -614,7 +614,6 @@ mixin template IRCPluginImpl(
         void call(Fun)(Fun fun, ref IRCEvent event)
         {
             import lu.traits : TakesParams;
-            import std.meta : AliasSeq;
             import std.traits : ParameterStorageClass, Parameters, arity;
 
             /++
@@ -641,8 +640,8 @@ mixin template IRCPluginImpl(
             }
 
             static if (
-                TakesParams!(fun, AliasSeq!(typeof(this), IRCEvent)) ||
-                TakesParams!(fun, AliasSeq!(IRCPlugin, IRCEvent)))
+                TakesParams!(fun, typeof(this), IRCEvent) ||
+                TakesParams!(fun, IRCPlugin, IRCEvent))
             {
                 static if (!is(Parameters!fun[1] == const))
                 {
@@ -936,7 +935,6 @@ mixin template IRCPluginImpl(
                 {
                     import kameloso.plugins.common.misc : enqueue;
                     import lu.traits : TakesParams;
-                    import std.meta : AliasSeq;
                     import std.traits : arity;
 
                     static if (verbose)
@@ -945,9 +943,9 @@ mixin template IRCPluginImpl(
                     }
 
                     static if (
-                        TakesParams!(fun, AliasSeq!(typeof(this), IRCEvent)) ||
-                        TakesParams!(fun, AliasSeq!(IRCPlugin, IRCEvent)) ||
-                        TakesParams!(fun, AliasSeq!(typeof(this))) ||
+                        TakesParams!(fun, typeof(this), IRCEvent) ||
+                        TakesParams!(fun, IRCPlugin, IRCEvent) ||
+                        TakesParams!(fun, typeof(this)) ||
                         TakesParams!(fun, IRCPlugin) ||
                         TakesParams!(fun, IRCEvent) ||
                         (arity!fun == 0))

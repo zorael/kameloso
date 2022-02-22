@@ -558,14 +558,13 @@ Replay replay(Plugin, Fun)(Plugin plugin, const ref IRCEvent event,
         case ignore:
 
             import lu.traits : TakesParams;
-            import std.meta : AliasSeq;
             import std.traits : arity;
 
             version(ExplainReplay) explainReplay();
 
             static if (
-                TakesParams!(fun, AliasSeq!(Plugin, IRCEvent)) ||
-                TakesParams!(fun, AliasSeq!(IRCPlugin, IRCEvent)))
+                TakesParams!(fun, Plugin, IRCEvent) ||
+                TakesParams!(fun, IRCPlugin, IRCEvent))
             {
                 fun(plugin, replay.event);
             }
