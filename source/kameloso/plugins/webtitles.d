@@ -659,6 +659,7 @@ unittest
 
     Throws:
         [object.Exception|Exception] if the YouTube ID was invalid and could not be queried.
+
         [std.json.JSONException|JSONException] if the JSON response could not be parsed.
  +/
 JSONValue getYouTubeInfo(const string url)

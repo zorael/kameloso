@@ -263,11 +263,13 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
         filename = String filename of FIFO to create.
 
     Throws:
-        [kameloso.common.ReturnValueException|ReturnValuException] if the FIFO
+        [kameloso.common.ReturnValueException|ReturnValueException] if the FIFO
         could not be created.
+
         [kameloso.common.FileExistsException|FileExistsException] if a FIFO with
         the same filename already exists, suggesting concurrent conflicting
         instances of the program (or merely a zombie FIFO after a crash).
+
         [kameloso.common.FileTypeMismatchException|FileTypeMismatchException] if a file or directory
         exists with the same name as the FIFO we want to create.
  +/

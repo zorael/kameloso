@@ -373,6 +373,7 @@ void giveConfigurationMinimalIntructions()
         [lu.common.FileTypeMismatchException|FileTypeMismatchException] if the
         configuration file is a directory, a character file or any other non-file
         type we can't write to.
+
         [lu.serialisation.ConfigurationFileReadFailureException|ConfigurationFileReadFailureException]
         if the reading and decoding of the configuration file failed.
  +/
