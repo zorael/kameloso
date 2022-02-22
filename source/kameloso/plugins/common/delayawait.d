@@ -316,7 +316,7 @@ in (Fiber.getThis, "Tried to `await` the current Fiber outside of a Fiber")
 
 // await
 /++
-    Queues a `void delegate(const IRCEvent)` delegate to be called whenever the
+    Queues a `void delegate(IRCEvent)` delegate to be called whenever the
     next parsed and triggering const [dialect.defs.IRCEvent|IRCEvent] matches the
     passed [dialect.defs.IRCEvent.Type|IRCEvent.Type] type.
 
@@ -332,7 +332,7 @@ in (Fiber.getThis, "Tried to `await` the current Fiber outside of a Fiber")
     See_Also:
         [unawait]
  +/
-void await(IRCPlugin plugin, void delegate(const IRCEvent) dg, const IRCEvent.Type type)
+void await(IRCPlugin plugin, void delegate(IRCEvent) dg, const IRCEvent.Type type)
 in ((dg !is null), "Tried to set up a null delegate to await events")
 in ((type != IRCEvent.Type.UNSET), "Tried to set up a delegate to await `IRCEvent.Type.UNSET`")
 {
@@ -342,7 +342,7 @@ in ((type != IRCEvent.Type.UNSET), "Tried to set up a delegate to await `IRCEven
 
 // await
 /++
-    Queues a `void delegate(const IRCEvent)` delegate to be called whenever the
+    Queues a `void delegate(IRCEvent)` delegate to be called whenever the
     next parsed and triggering const [dialect.defs.IRCEvent|IRCEvent] matches
     the passed [dialect.defs.IRCEvent.Type|IRCEvent.Type] types. Overload that
     takes an array of types.
@@ -359,7 +359,7 @@ in ((type != IRCEvent.Type.UNSET), "Tried to set up a delegate to await `IRCEven
     See_Also:
         [unawait]
  +/
-void await(IRCPlugin plugin, void delegate(const IRCEvent) dg, const IRCEvent.Type[] types)
+void await(IRCPlugin plugin, void delegate(IRCEvent) dg, const IRCEvent.Type[] types)
 in ((dg !is null), "Tried to set up a null delegate to await events")
 {
     foreach (immutable type; types)
@@ -524,7 +524,7 @@ void unawait(IRCPlugin plugin, const IRCEvent.Type[] types)
 
 // unawait
 /++
-    Dequeues a `void delegate(const IRCEvent)` delegate from being called whenever
+    Dequeues a `void delegate(IRCEvent)` delegate from being called whenever
     the next parsed and triggering [dialect.defs.IRCEvent|IRCEvent] matches the passed
     [dialect.defs.IRCEvent.Type|IRCEvent.Type] type.
 
@@ -538,7 +538,7 @@ void unawait(IRCPlugin plugin, const IRCEvent.Type[] types)
     See_Also:
         [unawaitImpl]
  +/
-void unawait(IRCPlugin plugin, void delegate(const IRCEvent) dg, const IRCEvent.Type type)
+void unawait(IRCPlugin plugin, void delegate(IRCEvent) dg, const IRCEvent.Type type)
 {
     return unawaitImpl(dg, plugin.state.awaitingDelegates, type);
 }
@@ -546,7 +546,7 @@ void unawait(IRCPlugin plugin, void delegate(const IRCEvent) dg, const IRCEvent.
 
 // unawait
 /++
-    Dequeues a `void delegate(const IRCEvent)` delegate from being called whenever
+    Dequeues a `void delegate(IRCEvent)` delegate from being called whenever
     the next parsed and triggering [dialect.defs.IRCEvent|IRCEvent] matches any
     of the passed [dialect.defs.IRCEvent.Type|IRCEvent.Type] types. Overload that
     takes a array of types.
@@ -561,7 +561,7 @@ void unawait(IRCPlugin plugin, void delegate(const IRCEvent) dg, const IRCEvent.
     See_Also:
         [unawaitImpl]
  +/
-void unawait(IRCPlugin plugin, void delegate(const IRCEvent) dg, const IRCEvent.Type[] types)
+void unawait(IRCPlugin plugin, void delegate(IRCEvent) dg, const IRCEvent.Type[] types)
 {
     foreach (immutable type; types)
     {

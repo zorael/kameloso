@@ -2123,10 +2123,10 @@ public:
 
     // awaitingDelegates
     /++
-        The list of awaiting `void delegate(const IRCEvent)` delegates, keyed by
+        The list of awaiting `void delegate(IRCEvent)` delegates, keyed by
         [dialect.defs.IRCEvent.Type|IRCEvent.Type].
      +/
-    void delegate(const IRCEvent)[][] awaitingDelegates;
+    void delegate(IRCEvent)[][] awaitingDelegates;
 
     // scheduledFibers
     /++

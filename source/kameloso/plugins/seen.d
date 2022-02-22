@@ -104,7 +104,7 @@ public:
         bool hasPendingReplays;
         Replay[] readyReplays;
         Fiber[][] awaitingFibers;
-        void delegate(const IRCEvent)[][] awaitingDelegates;
+        void delegate(IRCEvent)[][] awaitingDelegates;
         ScheduledFiber[] scheduledFibers;
         ScheduledDelegate[] scheduledDelegates;
         long nextScheduledTimestamp;
@@ -1014,7 +1014,7 @@ void onWelcome(SeenPlugin plugin)
         IRCEvent.Type.ERR_NOMOTD,
     ];
 
-    void endOfMotdDg(const IRCEvent)
+    void endOfMotdDg(IRCEvent)
     {
         import kameloso.plugins.common.delayawait : unawait;
         import lu.string : plurality;

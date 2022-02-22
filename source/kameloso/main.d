@@ -1393,12 +1393,10 @@ void processAwaitingDelegates(IRCPlugin plugin, const ref IRCEvent event)
 {
     import core.thread : Fiber;
 
-    alias Dg = void delegate(const IRCEvent);
-
     /++
         Handle awaiting delegates of a specified type.
      +/
-    static void processImpl(IRCPlugin plugin, const ref IRCEvent event, Dg[] dgsForType)
+    static void processImpl(IRCPlugin plugin, const ref IRCEvent event, void delegate(IRCEvent)[] dgsForType)
     {
         foreach (immutable i, dg; dgsForType)
         {
