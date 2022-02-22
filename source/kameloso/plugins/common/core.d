@@ -422,12 +422,13 @@ mixin template IRCPluginImpl(
 
     // onEvent
     /++
-        Pass on the supplied [dialect.defs.IRCEvent|IRCEvent] to
+        Forwards the supplied [dialect.defs.IRCEvent|IRCEvent] to
         [kameloso.plugins.common.core.IRCPluginImpl.onEventImpl|IRCPluginImpl.onEventImpl].
 
         This is made a separate function to allow plugins to override it and
-        insert their own code, while still leveraging [onEventImpl] for the
-        actual dirty work.
+        insert their own code, while still leveraging
+        [kameloso.plugins.common.core.IRCPluginImpl.onEventImpl|IRCPluginImpl.onEventImpl]
+        for the actual dirty work.
 
         Params:
             event = Parsed [dialect.defs.IRCEvent|IRCEvent] to pass onto
@@ -1571,7 +1572,7 @@ mixin template IRCPluginImpl(
             [kameloso.plugins.common.core.IRCPlugin.CommandMetadata|IRCPlugin.CommandMetadata]s,
             one for each soft command active in the passed channel.
      +/
-    override public IRCPlugin.CommandMetadata[string] channelSpecificCommands(const string) @system
+    override public IRCPlugin.CommandMetadata[string] channelSpecificCommands(const string channelName) @system
     {
         return null;
     }
