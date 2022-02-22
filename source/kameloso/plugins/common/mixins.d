@@ -283,8 +283,9 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
     // enqueueAndWHOIS
     /++
-        Constructs a [kameloso.thread.CarryingFiber] carrying a [dialect.defs.IRCEvent|IRCEvent]
-        and enqueues it into the [kameloso.plugins.common.core.IRCPluginState.awaitingFibers|IRCPluginState.awaitingFibers]
+        Constructs a [kameloso.thread.CarryingFiber|CarryingFiber] carrying a
+        [dialect.defs.IRCEvent|IRCEvent] and enqueues it into the
+        [kameloso.plugins.common.core.IRCPluginState.awaitingFibers|IRCPluginState.awaitingFibers]
         associative array, then issues a WHOIS query (unless overridden via
         the `issueWhois` parameter).
 
@@ -776,7 +777,8 @@ private:
             Generated `askToVerb` function. Asks the main thread to output text
             to the local terminal.
 
-            No need for any annotation; [kameloso.messaging.askToOutputImpl|askToOutputImpl] is
+            No need for any annotation;
+            [kameloso.messaging.askToOutputImpl|askToOutputImpl] is
             `@system` and nothing else.
          +/
         mixin(q{

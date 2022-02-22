@@ -74,9 +74,10 @@ public:
     It is to be run in a separate thread.
 
     Params:
-        newState = The [kameloso.plugins.common.core.IRCPluginState|IRCPluginState] of the original
-            [PipelinePlugin], to provide the main thread's [core.thread.Tid] for
-            concurrency messages, made `shared` to allow being sent between threads.
+        newState = The [kameloso.plugins.common.core.IRCPluginState|IRCPluginState]
+            of the original [PipelinePlugin], to provide the main thread's
+            [core.thread.Tid|Tid] for concurrency messages, made `shared` to
+            allow being sent between threads.
         filename = String filename of the FIFO to read from.
         monochrome = Whether or not output should be in monochrome text.
         brightTerminal = Whether or not the terminal has a bright background
@@ -262,10 +263,11 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
         filename = String filename of FIFO to create.
 
     Throws:
-        [kameloso.common.ReturnValueException|ReturnValuException] if the FIFO could not be created.
-        [kameloso.common.FileExistsException|FileExistsException] if a FIFO with the same filename
-        already exists, suggesting concurrent conflicting instances of the program
-        (or merely a stale FIFO).
+        [kameloso.common.ReturnValueException|ReturnValuException] if the FIFO
+        could not be created.
+        [kameloso.common.FileExistsException|FileExistsException] if a FIFO with
+        the same filename already exists, suggesting concurrent conflicting
+        instances of the program (or merely a zombie FIFO after a crash).
         [kameloso.common.FileTypeMismatchException|FileTypeMismatchException] if a file or directory
         exists with the same name as the FIFO we want to create.
  +/

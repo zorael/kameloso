@@ -49,7 +49,10 @@ public:
     /// Whether or not to bell on important events, like subscriptions.
     bool bellOnImportant = false;
 
-    /// Whether or not broadcasters are always implicitly class [dialect.defs.IRCUser.Class.staff|IRCUser.Class.staff].
+    /++
+        Whether or not broadcasters are always implicitly class
+        [dialect.defs.IRCUser.Class.staff|IRCUser.Class.staff].
+     +/
     bool promoteBroadcasters = true;
 
     /++
@@ -1287,8 +1290,8 @@ void teardown(TwitchBotPlugin plugin)
 
 // postprocess
 /++
-    Hijacks a reference to a [dialect.defs.IRCEvent|IRCEvent] and modifies the sender and
-    target class based on their badges (and the current settings).
+    Hijacks a reference to a [dialect.defs.IRCEvent|IRCEvent] and modifies the
+    sender and target class based on their badges (and the current settings).
  +/
 void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
 {
@@ -1457,7 +1460,10 @@ package:
      +/
     static immutable timerPeriodicity = 15.seconds;
 
-    /// [kameloso.terminal.TerminalToken.bell|TerminalToken.bell] as string, for use as bell.
+    /++
+        [kameloso.terminal.TerminalToken.bell|TerminalToken.bell] as string,
+        for use as bell.
+     +/
     private enum bellString = ("" ~ cast(char)(TerminalToken.bell));
 
     /// Effective bell after [kameloso.terminal.isTTY|isTTY] checks.
@@ -1494,8 +1500,8 @@ package:
         enum approximateQueryGrowthMultiplier = 1.1;
 
         /++
-            The divisor of how much to wait before retrying a query, after the timed waited
-            turned out to be a bit short.
+            The divisor of how much to wait before retrying a query, after the
+            timed waited turned out to be a bit short.
          +/
         enum approximateQueryRetryTimeDivisor = 3;
 
@@ -1538,8 +1544,9 @@ package:
 
     // isEnabled
     /++
-        Override [kameloso.plugins.common.core.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled] and inject
-        a server check, so this plugin only works on Twitch, in addition
+        Override
+        [kameloso.plugins.common.core.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled]
+        and inject a server check, so this plugin only works on Twitch, in addition
         to doing nothing when [TwitchbotSettings.enabled] is false.
 
         Returns:

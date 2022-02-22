@@ -1,9 +1,9 @@
 /++
     Implementation of Twitch bot timers. For internal use.
 
-    The [dialect.defs.IRCEvent|IRCEvent]-annotated handlers must be in the same module
-    as the [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin], but these implementation
-    functions can be offloaded here to limit module size a bit.
+    The [dialect.defs.IRCEvent|IRCEvent]-annotated handlers must be in the same
+    module as the [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin],
+    but these implementation functions can be offloaded here to limit module size a bit.
 
     See_Also:
         [kameloso.plugins.twitchbot.base|twitchbot.base]
@@ -409,7 +409,8 @@ JSONStorage timerDefsToJSON(TwitchBotPlugin plugin)
 
 // populateTimers
 /++
-    Populates the [kameloso.plugins.twitchbot.base.TwitchBotPlugin.timerDefsByChannel|TwitchBotPlugin.timerDefsPerChannel]
+    Populates the
+    [kameloso.plugins.twitchbot.base.TwitchBotPlugin.timerDefsByChannel|TwitchBotPlugin.timerDefsPerChannel]
     associative array with the timer definitions in the passed JSON file.
 
     This reads the JSON values from disk and creates the [TimerDefinition]s

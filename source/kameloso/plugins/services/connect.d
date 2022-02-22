@@ -109,7 +109,8 @@ void onSelfpart(ConnectService service, const ref IRCEvent event)
 // onSelfjoin
 /++
     Records a channel in the `channels` array in the [dialect.defs.IRCClient|IRCClient] of
-    the current [ConnectService]'s [kameloso.plugins.common.core.IRCPluginState|IRCPluginState] upon joining it.
+    the current [ConnectService]'s
+    [kameloso.plugins.common.core.IRCPluginState|IRCPluginState] upon joining it.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.SELFJOIN)
@@ -196,8 +197,8 @@ void onToConnectType(ConnectService service, const ref IRCEvent event)
 
     Ping with the sender as target, and not the necessarily
     the server as saved in the [dialect.defs.IRCServer|IRCServer] struct. For
-    example, [dialect.defs.IRCEvent.Type.ERR_NEEDPONG|ERR_NEEDPONG] generally wants you to
-    ping a random number or string.
+    example, [dialect.defs.IRCEvent.Type.ERR_NEEDPONG|ERR_NEEDPONG] generally
+    wants you to ping a random number or string.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.PING)
@@ -828,8 +829,9 @@ void onSASLAuthenticate(ConnectService service)
 
         `base64(account \0 account \0 password)`
 
-    ...where [kameloso.kameloso.IRCBot.account|IRCBot.account] is the services account name and
-    [kameloso.kameloso.IRCBot.password|IRCBot.password] is the account password.
+    ...where [kameloso.kameloso.IRCBot.account|IRCBot.account] is the services
+    account name and [kameloso.kameloso.IRCBot.password|IRCBot.password] is the
+    account password.
 
     Params:
         service = The current [ConnectService].
@@ -1147,8 +1149,8 @@ void onQuit(ConnectService service, const ref IRCEvent event)
 /++
     Joins channels and prints some Twitch warnings on end of MOTD.
 
-    Do this then instead of on [dialect.defs.IRCEvent.Type.RPL_WELCOME|RPL_WELCOME] for better timing,
-    and to avoid having the message drown in MOTD.
+    Do this then instead of on [dialect.defs.IRCEvent.Type.RPL_WELCOME|RPL_WELCOME]
+    for better timing, and to avoid having the message drown in MOTD.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_ENDOFMOTD)
@@ -1586,8 +1588,8 @@ private:
         Temporary: the nickname that we had to rename to, to successfully
         register on the server.
 
-        This is to avoid modifying [dialect.defs.IRCClient.nickname|IRCClient.nickname] before the
-        nickname is actually changed, yet still carry information about the
+        This is to avoid modifying [dialect.defs.IRCClient.nickname|IRCClient.nickname]
+        before the nickname is actually changed, yet still carry information about the
         incremental rename throughout calls of [onNickInUse].
      +/
     string renameDuringRegistration;

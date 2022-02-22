@@ -353,7 +353,8 @@ void queryTwitchImpl(const string url,
 
     Returns:
         A singular user or channel regardless of how many were asked for in the URL.
-        If nothing was found, an empty [std.json.JSONValue|JSONValue].init is returned instead.
+        If nothing was found, an empty [std.json.JSONValue|JSONValue].init is
+        returned instead.
  +/
 JSONValue getTwitchEntity(TwitchBotPlugin plugin, const string url)
 in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
@@ -392,7 +393,8 @@ in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
 
     Returns:
         A [std.json.JSONValue|JSONValue] with "`chatters`" and "`chatter_count`" keys.
-        If nothing was found, an empty [std.json.JSONValue|JSONValue].init is returned instead.
+        If nothing was found, an empty [std.json.JSONValue|JSONValue].init is
+        returned instead.
  +/
 JSONValue getChatters(TwitchBotPlugin plugin, const string broadcaster)
 in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
@@ -547,8 +549,8 @@ in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
 
     The old value is given a weight of
     [kameloso.plugins.twitchbot.base.TwitchBotPlugin.approximateQueryAveragingWeight|approximateQueryAveragingWeight]
-    and the new measurement a weight of 1. Additionally the measurement is padded
-    by [kameloso.plugins.twitchbot.base.TwitchBotPlugin.approximateQueryMeasurementPadding|approximateQueryMeasurementPadding]
+    and the new measurement a weight of 1. Additionally the measurement is padded by
+    [kameloso.plugins.twitchbot.base.TwitchBotPlugin.approximateQueryMeasurementPadding|approximateQueryMeasurementPadding]
     to be on the safe side.
 
     Params:

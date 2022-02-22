@@ -131,7 +131,7 @@ version(Posix)
  +/
 struct ThreadMessage
 {
-    /// Concurrency message type asking for a to-server [dialect.defs.IRCEvent.Type.PONG] event.
+    /// Concurrency message type asking for a to-server [dialect.defs.IRCEvent.Type.PONG|PONG] event.
     static struct Pong {}
 
     /// Concurrency message type asking to verbosely send a line to the server.
@@ -229,7 +229,8 @@ final class BusMessage(T) : Sendable
 
 // busMessage
 /++
-    Constructor function to create a `shared` [BusMessage] with an unqualified template type.
+    Constructor function to create a `shared` [BusMessage] with an unqualified
+    template type.
 
     Example:
     ---
@@ -281,8 +282,8 @@ unittest
 /++
     A [core.thread.fiber.Fiber|Fiber] carrying a payload of type `T`.
 
-    Used interchangeably with [core.thread.fiber.Fiber|Fiber], but allows for casting to true
-    `CarryingFiber!T`-ness to access the `payload` member.
+    Used interchangeably with [core.thread.fiber.Fiber|Fiber], but allows for
+    casting to true `CarryingFiber!T`-ness to access the `payload` member.
 
     Example:
     ---

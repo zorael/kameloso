@@ -107,8 +107,8 @@ struct TitleLookupRequest
 /++
     Parses a message to see if the message contains one or more URLs.
 
-    It uses a simple state machine in [kameloso.common.findURLs|findURLs] to exhaustively
-    try to look up every URL returned by it.
+    It uses a simple state machine in [kameloso.common.findURLs|findURLs] to
+    exhaustively try to look up every URL returned by it.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -428,8 +428,9 @@ void worker(shared TitleLookupRequest sRequest,
     Returns:
         A finished [TitleLookupResults].
 
-    Throws: [object.Exception|Exception] if URL could not be fetched, or if no title could be
-        divined from it.
+    Throws:
+        [object.Exception|Exception] if URL could not be fetched, or if no title
+        could be divined from it.
  +/
 TitleLookupResults lookupTitle(const string url, const Flag!"descriptions" descriptions)
 {
@@ -709,7 +710,8 @@ JSONValue getYouTubeInfo(const string url)
 
 // TitleFetchException
 /++
-    A normal [object.Exception|Exception] but with an HTTP status code and a cURL error code attached.
+    A normal [object.Exception|Exception] but with an HTTP status code and a cURL
+    error code attached.
  +/
 final class TitleFetchException : Exception
 {

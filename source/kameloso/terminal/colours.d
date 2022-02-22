@@ -924,7 +924,8 @@ unittest
 
     Params:
         word = String to hash and base colour on.
-        bright = Whether or not the colour should be appropriate for a bright terminal background.
+        bright = Whether or not the colour should be appropriate for a bright
+            terminal background.
 
     Returns:
         A [TerminalForeground] based on the passed string.

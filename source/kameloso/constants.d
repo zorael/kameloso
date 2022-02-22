@@ -295,8 +295,8 @@ enum BufferSize
     vbufStdout = 16_384,
 
     /++
-        How large to make [core.thread.fiber.Fiber|Fiber] stacks, so they don't overflow
-        (which they seem to have a knack for doing).
+        How large to make [core.thread.fiber.Fiber|Fiber] stacks, so they don't
+        overflow (which they seem to have a knack for doing).
      +/
     fiberStack = 32_768,
 }
@@ -309,12 +309,14 @@ enum BufferSize
 enum Timeout
 {
     /++
-        The send attempt timeout as set as a [std.socket.SocketOption|SocketOption], in milliseconds.
+        The send attempt timeout as set as a [std.socket.SocketOption|SocketOption],
+        in milliseconds.
      +/
     sendMsecs = 15_000,
 
     /++
-        The receive attempt timeout as set as a [std.socket.SocketOption|SocketOption], in milliseconds.
+        The receive attempt timeout as set as a [std.socket.SocketOption|SocketOption],
+        in milliseconds.
      +/
     receiveMsecs = 1000,
 
@@ -491,10 +493,16 @@ public:
      +/
     enum TimestampColour : TerminalForeground
     {
-        /// For dark terminal backgrounds. Was [kameloso.terminal.TerminalForeground.white_|TerminalForeground.white_].
+        /++
+            For dark terminal backgrounds. Was
+            [kameloso.terminal.TerminalForeground.white_|TerminalForeground.white_].
+         +/
         dark = TF.default_,
 
-        /// For bright terminal backgrounds. Was [kameloso.terminal.TerminalForeground.black_|TerminalForeground.black_].
+        /++
+            For bright terminal backgrounds. Was
+            [kameloso.terminal.TerminalForeground.black_|TerminalForeground.black_].
+         +/
         bright = TF.default_,
     }
 

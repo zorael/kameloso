@@ -179,9 +179,10 @@ void onCommandBash(ChatbotPlugin plugin, const ref IRCEvent event)
     Supposed to be run in its own, short-lived thread.
 
     Params:
-        sState = A `shared` [kameloso.plugins.common.core.IRCPluginState|IRCPluginState] containing
-            necessary information to pass messages to send messages to the main
-            thread, to send text to the server or display text on the screen.
+        sState = A `shared` [kameloso.plugins.common.core.IRCPluginState|IRCPluginState]
+            containing necessary information to pass messages to send messages
+            to the main thread, to send text to the server or display text on
+            the screen.
         event = The [dialect.defs.IRCEvent|IRCEvent] in flight.
         colouredOutgoing = Whether or not to tint messages going to the server
             with mIRC colouring.
@@ -360,8 +361,10 @@ public:
 
 // Chatbot
 /++
-    The Chatbot plugin provides common chat functionality. Currently this includes magic
-    8ball, `bash.org` quotes and some other trivial miscellanea.
+    The Chatbot plugin provides common chat functionality.
+
+    Currently this includes magic 8ball, `bash.org` quotes and some other
+    trivial miscellanea.
  +/
 final class ChatbotPlugin : IRCPlugin
 {

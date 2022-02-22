@@ -315,8 +315,9 @@ final class CTCPService : IRCPlugin
 private:
     // isEnabled
     /++
-        Override [kameloso.plugins.common.core.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled] and inject
-        a server check, so this service does nothing on Twitch servers.
+        Override
+        [kameloso.plugins.common.core.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled]
+        and inject a server check, so this service does nothing on Twitch servers.
 
         Returns:
             `true` if this service should react to events; `false` if not.

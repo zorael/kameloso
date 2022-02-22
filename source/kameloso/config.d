@@ -167,8 +167,8 @@ void printSettings(ref Kameloso instance, const string[] customSettings) @system
             passed to [writeConfig] when writing to the configuration file.
 
     Throws:
-        [object.Exception|Exception] on unexpected platforms where we did not know how to
-        open the configuration file in a text editor.
+        [object.Exception|Exception] on unexpected platforms where we did not
+        know how to open the configuration file in a text editor.
  +/
 void manageConfigFile(ref Kameloso instance,
     const bool shouldWriteConfig,
@@ -340,7 +340,8 @@ void writeToDisk(const string filename,
     Displays a hint on how to complete a minimal configuration file.
 
     It assumes that the bot's [kameloso.kameloso.IRCBot.admins|IRCBot.admins] and
-    [kameloso.kameloso.IRCBot.homeChannels|IRCBot.homeChannels] are both empty. (Else it should not have been called.)
+    [kameloso.kameloso.IRCBot.homeChannels|IRCBot.homeChannels] are both empty.
+    (Else it should not have been called.)
  +/
 void giveConfigurationMinimalIntructions()
 {
@@ -369,10 +370,11 @@ void giveConfigurationMinimalIntructions()
         The contents of the supplied file.
 
     Throws:
-        [lu.common.FileTypeMismatchException|FileTypeMismatchException] if the configuration file is a directory, a
-        character file or any other non-file type we can't write to.
-        [lu.serialisation.ConfigurationFileReadFailureException|ConfigurationFileReadFailureException] if the reading and decoding of
-        the configuration file failed.
+        [lu.common.FileTypeMismatchException|FileTypeMismatchException] if the
+        configuration file is a directory, a character file or any other non-file
+        type we can't write to.
+        [lu.serialisation.ConfigurationFileReadFailureException|ConfigurationFileReadFailureException]
+        if the reading and decoding of the configuration file failed.
  +/
 string configurationText(const string configFile)
 {
@@ -432,12 +434,12 @@ public:
             the settings read from the configuration file.
 
     Returns:
-        [lu.common.Next.continue_|Next.continue_] or [lu.common.Next.returnSuccess|Next.returnSuccess]
-        depending on whether the arguments chosen mean the program should
-        proceed or not.
+        [lu.common.Next.continue_|Next.continue_] or
+        [lu.common.Next.returnSuccess|Next.returnSuccess] depending on whether
+        the arguments chosen mean the program should proceed or not.
 
     Throws:
-        [std.getopt.GetOptException] if an unknown flag is passed.
+        [std.getopt.GetOptException|GetOptException] if an unknown flag is passed.
  +/
 Next handleGetopt(ref Kameloso instance,
     string[] args,

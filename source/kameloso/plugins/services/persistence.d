@@ -419,7 +419,8 @@ void onQuit(PersistenceService service, const ref IRCEvent event)
     Removes old user entries when someone changes nickname. The old nickname
     no longer exists and the storage arrrays should reflect that.
 
-    Annotated [kameloso.plugins.common.core.Timing.cleanup|Timing.cleanup] to delay execution.
+    Annotated [kameloso.plugins.common.core.Timing.cleanup|Timing.cleanup] to
+    delay execution.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.NICK)
@@ -617,13 +618,15 @@ void initResources(PersistenceService service)
     Reads, completes and saves the user classification JSON file, creating one
     if one doesn't exist. Removes any duplicate entries.
 
-    This ensures there will be "whitelist", "operator", "staff" and "blacklist" arrays in it.
+    This ensures there will be "whitelist", "operator", "staff" and "blacklist"
+    arrays in it.
 
     Params:
         service = The current [PersistenceService].
 
-    Throws: [kameloso.plugins.common.misc.IRCPluginInitialisationException|IRCPluginInitialisationException] on
-        failure loading the `user.json` file.
+    Throws:
+        [kameloso.plugins.common.misc.IRCPluginInitialisationException|IRCPluginInitialisationException]
+        on failure loading the `user.json` file.
  +/
 void initAccountResources(PersistenceService service)
 {
@@ -729,8 +732,9 @@ void initAccountResources(PersistenceService service)
     Reads, completes and saves the hostmasks JSON file, creating one if it
     doesn't exist.
 
-    Throws: [kameloso.plugins.common.misc.IRCPluginInitialisationException|IRCPluginInitialisationException] on
-        failure loading the `hostmasks.json` file.
+    Throws:
+        [kameloso.plugins.common.misc.IRCPluginInitialisationException|IRCPluginInitialisationException]
+        on failure loading the `hostmasks.json` file.
  +/
 void initHostmaskResources(PersistenceService service)
 {
@@ -789,9 +793,9 @@ public:
     this service we aim to complete such [dialect.defs.IRCUser|IRCUser] entries as
     the union of everything we know from previous events.
 
-    It only needs part of [kameloso.plugins.common.awareness.UserAwareness|UserAwareness] for minimal
-    bookkeeping, not the full package, so we only copy/paste the relevant bits
-    to stay slim.
+    It only needs part of [kameloso.plugins.common.awareness.UserAwareness|UserAwareness]
+    for minimal bookkeeping, not the full package, so we only copy/paste the
+    relevant bits to stay slim.
  +/
 final class PersistenceService : IRCPlugin
 {

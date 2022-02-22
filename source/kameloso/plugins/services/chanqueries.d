@@ -6,7 +6,8 @@
 
     It is qualified as a service, so while it is not technically mandatory, it
     is highly recommended if you plan on mixing in
-    [kameloso.plugins.common.awareness.ChannelAwareness|ChannelAwareness] into your plugins.
+    [kameloso.plugins.common.awareness.ChannelAwareness|ChannelAwareness] into
+    your plugins.
 
     See_Also:
         [kameloso.plugins.common.core|plugins.common.core]
@@ -28,8 +29,8 @@ import std.typecons : No, Yes;
 version(OmniscientQueries)
 {
     /++
-        The [kameloso.plugins.common.core.ChannelPolicy|ChannelPolicy] to mix in awareness with depending
-        on whether version `OmniscientQueries` is set or not.
+        The [kameloso.plugins.common.core.ChannelPolicy|ChannelPolicy] to mix in
+        awareness with depending on whether version `OmniscientQueries` is set or not.
      +/
     enum omniscientChannelPolicy = ChannelPolicy.any;
 }
@@ -495,8 +496,9 @@ private:
 
     // isEnabled
     /++
-        Override [kameloso.plugins.common.core.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled] and inject
-        a server check, so this service does nothing on Twitch servers.
+        Override
+        [kameloso.plugins.common.core.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled]
+        and inject a server check, so this service does nothing on Twitch servers.
 
         Returns:
             `true` if this service should react to events; `false` if not.

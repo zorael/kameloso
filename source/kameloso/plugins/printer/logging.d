@@ -29,7 +29,9 @@ package:
 /++
     A struct containing lines to write to a log file when next committing such.
 
-    This is only relevant if [kameloso.plugins.printer.base.PrinterSettings.bufferedWrites|PrinterSettings.bufferedWrites] is set.
+    This is only relevant if
+    [kameloso.plugins.printer.base.PrinterSettings.bufferedWrites|PrinterSettings.bufferedWrites]
+    is set.
 
     As a micro-optimisation an [std.array.Appender|Appender] is used to store the lines,
     instead of a normal `string[]`.
@@ -87,9 +89,9 @@ public:
 /++
     Logs an event to disk.
 
-    It is set to [kameloso.plugins.common.core.ChannelPolicy.any|ChannelPolicy.any], and configuration
-    dictates whether or not non-home events should be logged. Likewise whether
-    or not raw events should be logged.
+    It is set to [kameloso.plugins.common.core.ChannelPolicy.any|ChannelPolicy.any],
+    and configuration dictates whether or not non-home events should be logged.
+    Likewise whether or not raw events should be logged.
 
     Lines will either be saved immediately to disk, opening a [std.stdio.File|File]
     with appending privileges for each event as they occur, or buffered by

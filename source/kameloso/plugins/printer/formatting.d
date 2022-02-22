@@ -1422,7 +1422,8 @@ unittest
     getting false positives from similar nicknames.
 
     Tries to detect nicknames enclosed in terminal formatting. As such, call this
-    *after* having translated IRC- to terminal such with [kameloso.irccolours.mapEffects|irccolours.mapEffects].
+    *after* having translated IRC- to terminal such with
+    [kameloso.irccolours.mapEffects|irccolours.mapEffects].
 
     Uses [std.string.indexOf|indexOf] internally with hopes of being more resilient to
     weird UTF-8.

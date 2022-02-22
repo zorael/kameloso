@@ -239,7 +239,8 @@ unittest
 // ircColourByHash
 /++
     Returns the passed string coloured with an IRC colour depending on the hash
-    of the string, making for good "random" (uniformly distributed) nick colours in IRC messages.
+    of the string, making for good "random" (uniformly distributed) nick colours
+    in IRC messages.
 
     Params:
         word = String to tint.

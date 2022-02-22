@@ -591,9 +591,10 @@ private:
 
     // isEnabled
     /++
-        Override [kameloso.plugins.common.core.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled] and inject
-        a server check, so this plugin does nothing on Twitch servers, in addition
-        to doing nothing when [AutomodeSettings.enabled] is false.
+        Override
+        [kameloso.plugins.common.core.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled]
+        and inject a server check, so this plugin does nothing on Twitch servers,
+        in addition to doing nothing when [AutomodeSettings.enabled] is false.
 
         Returns:
             `true` if this plugin should react to events; `false` if not.

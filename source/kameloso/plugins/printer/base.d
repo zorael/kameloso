@@ -416,7 +416,8 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 
         if (plugin.linebuffer.data.length)
         {
-            // The linebuffer is empty if the sender was blacklisted (and settings are to hide those)
+            // The linebuffer is empty if the sender was blacklisted
+            // (and settings are to hide those)
             // so only write it out if there's something to write
             writeln(plugin.linebuffer.data);
         }
@@ -429,11 +430,11 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 /++
     Logs an event to disk.
 
-    It is set to [kameloso.plugins.common.core.ChannelPolicy.any|ChannelPolicy.any], and configuration
-    dictates whether or not non-home events should be logged. Likewise whether
-    or not raw events should be logged.
+    It is set to [kameloso.plugins.common.core.ChannelPolicy.any|ChannelPolicy.any],
+    and configuration dictates whether or not non-home events should be logged.
+    Likewise whether or not raw events should be logged.
 
-    Lines will either be saved immediately to disk, opening a [std.stdio.File]
+    Lines will either be saved immediately to disk, opening a [std.stdio.File|File]
     with appending privileges for each event as they occur, or buffered by
     populating arrays of lines to be written in bulk, once in a while.
 
@@ -475,9 +476,10 @@ void commitAllLogs(PrinterPlugin plugin)
 // onISUPPORT
 /++
     Prints information about the current server as we gain details of it from an
-    [dialect.defs.IRCEvent.Type.RPL_ISUPPORT] event.
+    [dialect.defs.IRCEvent.Type.RPL_ISUPPORT|RPL_ISUPPORT] event.
 
-    Set a flag so we only print this information once; (ISUPPORTS can/do stretch
+    Set a flag so we only print this information once;
+    ([dialect.defs.IRCEvent.Type.RPL_ISUPPORT|RPL_ISUPPORT] can/do stretch
     across several events.)
  +/
 @(IRCEventHandler()
@@ -630,8 +632,8 @@ import kameloso.thread : Sendable;
 /++
     Receives a passed [kameloso.thread.BusMessage|BusMessage] with the "`printer`" header,
     listening for cues to ignore the next events caused by the
-    [kameloso.plugins.services.chanqueries.ChanQueriesService|ChanQueriesService] querying current channel
-    for information on the channels and their users.
+    [kameloso.plugins.services.chanqueries.ChanQueriesService|ChanQueriesService]
+    querying current channel for information on the channels and their users.
 
     Params:
         plugin = The current [PrinterPlugin].
@@ -740,9 +742,11 @@ void clearTargetNicknameIfUs(ref IRCEvent event, const IRCPluginState state)
     }
     else if (event.target.nickname == "*")
     {
-        // Some events have an asterisk in what we consider the target nickname field. Sometimes.
-        // [loggedin] wolfe.freenode.net (*): "You are now logged in as kameloso." (#900)
-        // Clear it if so, since it conveys no information we care about.
+        /++
+            Some events have an asterisk in what we consider the target nickname field. Sometimes.
+            [loggedin] wolfe.freenode.net (*): "You are now logged in as kameloso." (#900)
+            Clear it if so, since it conveys no information we care about.
+         +/
         event.target.nickname = string.init;
     }
 }

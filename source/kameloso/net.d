@@ -1,13 +1,13 @@
 /++
     Functionality related to connecting to a server over the Internet.
 
-    Includes [core.thread.fiber.Fiber|Fiber]s that help with resolving the address of,
-    connecting to, and reading full string lines from a server.
+    Includes [core.thread.fiber.Fiber|Fiber]s that help with resolving the
+    address of, connecting to, and reading full string lines from a server.
 
-    Having them as [core.thread.fiber.Fiber|Fiber]s means a program can do address resolution,
-    connecting and reading while retaining the ability to do other stuff
-    concurrently. This means you can conveniently run code inbetween each
-    connection attempt, for instance, without breaking the program's flow.
+    Having them as [core.thread.fiber.Fiber|Fiber]s means a program can do
+    address resolution, connecting and reading while retaining the ability to do
+    other stuff concurrently. This means you can conveniently run code inbetween
+    each connection attempt, for instance, without breaking the program's flow.
 
     Example:
     ---
@@ -80,7 +80,8 @@ public:
 /++
     Functions and state needed to maintain a connection.
 
-    This is simply to decrease the amount of globals and to create some convenience functions.
+    This is simply to decrease the amount of globals and to create some
+    convenience functions.
  +/
 struct Connection
 {
@@ -108,8 +109,8 @@ private:
 
     // setTimemout
     /++
-        Sets the [std.socket.SocketOption.RCVTIMEO|SocketOption.RCVTIMEO] of the *current*
-        [std.socket.Socket|Socket] [socket] to the specified duration.
+        Sets the [std.socket.SocketOption.RCVTIMEO|SocketOption.RCVTIMEO] of the
+        *current* [std.socket.Socket|Socket] [socket] to the specified duration.
 
         Params:
             option = The [std.socket.SocketOption|SocketOption] to set.
@@ -129,7 +130,8 @@ private:
 
 public:
     /++
-        Pointer to the socket of the [std.socket.AddressFamily|AddressFamily] we want to connect with.
+        Pointer to the socket of the [std.socket.AddressFamily|AddressFamily] we
+        want to connect with.
      +/
     Socket socket;
 
@@ -142,8 +144,8 @@ public:
     Address[] ips;
 
     /++
-        Implicitly proxies calls to the current [std.socket.Socket|Socket]. This successfully
-        proxies to [std.socket.Socket.receive|Socket.receive].
+        Implicitly proxies calls to the current [std.socket.Socket|Socket].
+        This successfully proxies to [std.socket.Socket.receive|Socket.receive].
      +/
     alias socket this;
 
@@ -285,8 +287,8 @@ public:
 
     // setDefaultOptions
     /++
-        Sets up sockets with the [std.socket.SocketOption|SocketOption]s needed. These
-        include timeouts and buffer sizes.
+        Sets up sockets with the [std.socket.SocketOption|SocketOption]s needed.
+        These include timeouts and buffer sizes.
 
         Params:
             socketToSetup = Reference to the [std.socket.Socket|Socket] to modify.
@@ -508,10 +510,10 @@ struct ListenAttempt
     /// The last read line of text sent by the server.
     string line;
 
-    /// The [std.socket.lastSocketError] at the last point of error.
+    /// The [std.socket.lastSocketError|lastSocketError] at the last point of error.
     string error;
 
-    /// [core.stdc.errno.errno] at time of read.
+    /// [core.stdc.errno.errno|errno] at time of read.
     int errno;
 
     /// The amount of bytes received this attempt.
@@ -521,8 +523,8 @@ struct ListenAttempt
 
 // listenFiber
 /++
-    A [std.socket.Socket|Socket]-reading [std.concurrency.Generator|Generator]. It reads and
-    yields full string lines.
+    A [std.socket.Socket|Socket]-reading [std.concurrency.Generator|Generator].
+    It reads and yields full string lines.
 
     It maintains its own buffer into which it receives from the server, though
     not necessarily full lines. It thus keeps filling the buffer until it
@@ -576,13 +578,14 @@ struct ListenAttempt
     ---
 
     Params:
-        bufferSize = What size static array to use as buffer. Defaults to
-            twice of [kameloso.constants.BufferSize.socketReceive|BufferSize.socketReceive] for now.
+        bufferSize = What size static array to use as buffer. Defaults to twice of
+            [kameloso.constants.BufferSize.socketReceive|BufferSize.socketReceive] for now.
         conn = [Connection] whose [std.socket.Socket|Socket] it reads from the server with.
         abort = Reference "abort" flag, which -- if set -- should make the
             function return and the [core.thread.fiber.Fiber|Fiber] terminate.
         connectionLost = How many seconds may pass before we consider the connection lost.
-            Optional, defaults to [kameloso.constants.Timeout.connectionLost|Timeout.connectionLost].
+            Optional, defaults to
+            [kameloso.constants.Timeout.connectionLost|Timeout.connectionLost].
 
     Yields:
         [ListenAttempt]s with information about the line receieved in its member values.
@@ -818,7 +821,7 @@ struct ConnectionAttempt
     /// The error message as thrown by an exception.
     string error;
 
-    /// [core.stdc.errno.errno] at time of connect.
+    /// [core.stdc.errno.errno|errno] at time of connect.
     int errno;
 
     /// The number of retries so far towards this [ip].
@@ -1098,7 +1101,7 @@ struct ResolveAttempt
     /// The error message as thrown by an exception.
     string error;
 
-    /// [core.stdc.errno.errno] at time of resolve.
+    /// [core.stdc.errno.errno|errno] at time of resolve.
     int errno;
 
     /// The number of retries so far towards this address.
