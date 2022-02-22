@@ -88,14 +88,20 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
             return;
         }
 
+        /+
+            We need to check both hardcoded and soft channel-specific commands
+            for conflicts.
+         +/
+
         import kameloso.thread : ThreadMessage;
         import std.concurrency : send;
-        import core.thread : Fiber;
 
-        void dg(IRCPlugin.CommandMetadata[string][string] allPluginCommands)
+        bool triggerConflicts(const IRCPlugin.CommandMetadata[string][string] aa)
         {
-            foreach (immutable pluginName, pluginCommands; allPluginCommands)
+            foreach (immutable pluginName, pluginCommands; aa)
             {
+                if (!pluginCommands.length || (pluginName == "counter")) continue;
+
                 if (slice in pluginCommands)
                 {
                     enum pattern = `Counter word "%s" conflicts with a command of the %s plugin.`;
@@ -105,9 +111,15 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
                         pattern.format(slice, pluginName);
 
                     chan(plugin.state, event.channel, message);
-                    return;
+                    return true;
                 }
             }
+            return false;
+        }
+
+        void channelSpecificDg(IRCPlugin.CommandMetadata[string][string] channelSpecificAA)
+        {
+            if (triggerConflicts(channelSpecificAA)) return;
 
             // If we're here there were no conflicts
             enum pattern = "Counter %s added! Access it with %s.";
@@ -120,6 +132,13 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
             plugin.counters[event.channel][slice] = 0;
             chan(plugin.state, event.channel, message);
             saveResourceToDisk(plugin.counters, plugin.countersFile);
+        }
+
+        void dg(IRCPlugin.CommandMetadata[string][string] aa)
+        {
+            if (triggerConflicts(aa)) return;
+            plugin.state.mainThread.send(ThreadMessage.PeekCommands(),
+                cast(shared)&channelSpecificDg, event.channel);
         }
 
         plugin.state.mainThread.send(ThreadMessage.PeekCommands(), cast(shared)&dg);
@@ -447,6 +466,35 @@ private:
 
     /// Filename of file with persistent counters.
     @Resource string countersFile = "counters.json";
+
+    // channelSpecificCommands
+    /++
+        Compile a list of our runtime counter commands.
+
+        Params:
+            channelName = Name of channel whose commands we want to summarise.
+
+        Returns:
+            An associative array of
+            [kameloso.plugins.common.core.IRCPlugin.CommandMetadata|IRCPlugin.CommandMetadata]s,
+            one for each counter active in the passed channel.
+     +/
+    override public IRCPlugin.CommandMetadata[string] channelSpecificCommands(const string channelName) @system
+    {
+        IRCPlugin.CommandMetadata[string] aa;
+
+        const channelCounters = channelName in counters;
+        if (!channelCounters) return aa;
+
+        foreach (immutable trigger, immutable _; *channelCounters)
+        {
+            IRCPlugin.CommandMetadata metadata;
+            metadata.description = "A counter";
+            aa[trigger] = metadata;
+        }
+
+        return aa;
+    }
 
     mixin IRCPluginImpl;
 }
