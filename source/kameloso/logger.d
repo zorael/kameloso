@@ -105,7 +105,7 @@ public:
 
             Returns:
                 A [kameloso.terminal.TerminalForeground|TerminalForeground] of the right colour. Use with
-                [kameloso.terminal.colour] to get a string.
+                [kameloso.terminal.colours.colour|colour] to get a string.
          +/
         static auto tint(const LogLevel level, const Flag!"brightTerminal" bright) pure nothrow @nogc @safe
         {

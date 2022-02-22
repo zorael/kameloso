@@ -1457,10 +1457,10 @@ package:
      +/
     static immutable timerPeriodicity = 15.seconds;
 
-    /// [kameloso.terminal.TerminalToken.bell] as string, for use as bell.
+    /// [kameloso.terminal.TerminalToken.bell|TerminalToken.bell] as string, for use as bell.
     private enum bellString = ("" ~ cast(char)(TerminalToken.bell));
 
-    /// Effective bell after [kameloso.terminal.isTTY] checks.
+    /// Effective bell after [kameloso.terminal.isTTY|isTTY] checks.
     string bell = bellString;
 
     version(TwitchAPIFeatures)

@@ -38,8 +38,8 @@ import std.typecons : Flag, No, Yes;
 version(OmniscientAdmin)
 {
     /++
-        The [kameloso.plugins.common.core.ChannelPolicy|ChannelPolicy] to mix in awareness with depending
-        on whether version `OmniscientAdmin` is set or not.
+        The [kameloso.plugins.common.core.ChannelPolicy|ChannelPolicy] to mix in
+        awareness with depending on whether version `OmniscientAdmin` is set or not.
      +/
     enum omniscientChannelPolicy = ChannelPolicy.any;
 }
@@ -240,9 +240,9 @@ void onCommandQuit(AdminPlugin plugin, const ref IRCEvent event)
 
 // onCommandHome
 /++
-    Adds or removes channels to/from the list of currently active home channels, in the
-    [kameloso.kameloso.IRCBot.homeChannels|IRCBot.homeChannels] array of the current [AdminPlugin]'s
-    [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
+    Adds or removes channels to/from the list of currently active home channels,
+    in the [kameloso.kameloso.IRCBot.homeChannels|IRCBot.homeChannels] array of
+    the current [AdminPlugin]'s [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
 
     Merely passes on execution to [addHome] and [delHome].
  +/
@@ -303,10 +303,11 @@ void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
 // addHome
 /++
     Adds a channel to the list of currently active home channels, in the
-    [kameloso.kameloso.IRCBot.homeChannels|IRCBot.homeChannels] array of the current [AdminPlugin]'s
-    [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
+    [kameloso.kameloso.IRCBot.homeChannels|IRCBot.homeChannels] array of the
+    current [AdminPlugin]'s [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
 
-    Follows up with a [core.thread.fiber.Fiber|Fiber] to verify that the channel was actually joined.
+    Follows up with a [core.thread.fiber.Fiber|Fiber] to verify that the channel
+    was actually joined.
 
     Params:
         plugin = The current [AdminPlugin].
@@ -450,8 +451,8 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
 // delHome
 /++
     Removes a channel from the list of currently active home channels, from the
-    [kameloso.kameloso.IRCBot.homeChannels|IRCBot.homeChannels] array of the current [AdminPlugin]'s
-    [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
+    [kameloso.kameloso.IRCBot.homeChannels|IRCBot.homeChannels] array of the
+    current [AdminPlugin]'s [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
  +/
 void delHome(AdminPlugin plugin, const ref IRCEvent event, const string rawChannel)
 in (rawChannel.length, "Tried to delete a home but the channel string was empty")
@@ -495,8 +496,8 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
 // onCommandWhitelist
 /++
     Adds a nickname to the list of users who may trigger the bot, to the current
-    [dialect.defs.IRCClient.Class.whitelist|IRCClient.Class.whitelist] of the current [AdminPlugin]'s
-    [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
+    [dialect.defs.IRCClient.Class.whitelist|IRCClient.Class.whitelist] of the
+    current [AdminPlugin]'s [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
 
     This is on a [kameloso.plugins.common.core.Permissions.operator|Permissions.operator] level.
  +/
@@ -791,7 +792,8 @@ void onSetCommand(AdminPlugin plugin, const ref IRCEvent event)
 
 // onCommandAuth
 /++
-    Asks the [kameloso.plugins.connect.ConnectService|ConnectService] to (re-)authenticate to services.
+    Asks the [kameloso.plugins.connect.ConnectService|ConnectService] to
+    (re-)authenticate to services.
  +/
 version(WithConnectService)
 @(IRCEventHandler()
@@ -1158,8 +1160,8 @@ import kameloso.thread : Sendable;
 
 // onBusMessage
 /++
-    Receives a passed [kameloso.thread.BusMessage|BusMessage] with the "`admin`" header,
-    and calls functions based on the payload message.
+    Receives a passed [kameloso.thread.BusMessage|BusMessage] with the "`admin`"
+    header, and calls functions based on the payload message.
 
     This is used in the Pipeline plugin, to allow us to trigger admin verbs via
     the command-line pipe.

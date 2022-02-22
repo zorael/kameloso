@@ -3,7 +3,7 @@
     For internal use.
 
     The [dialect.defs.IRCEvent|IRCEvent]-annotated handlers must be in the same module
-    as the [kameloso.plugins.admin.base.AdminPlugin], but these implementation
+    as the [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin], but these implementation
     functions can be offloaded here to limit module size a bit.
 
     See_Also:

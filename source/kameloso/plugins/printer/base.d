@@ -842,10 +842,10 @@ package:
     /// Where to save logs.
     @Resource string logDirectory = "logs";
 
-    /// [kameloso.terminal.TerminalToken.bell] as string, for use as bell.
+    /// [kameloso.terminal.TerminalToken.bell|TerminalToken.bell] as string, for use as bell.
     private enum bellString = ("" ~ cast(char)(TerminalToken.bell));
 
-    /// Effective bell after [kameloso.terminal.isTTY] checks.
+    /// Effective bell after [kameloso.terminal.isTTY|isTTY] checks.
     string bell = bellString;
 
     mixin IRCPluginImpl;

@@ -1890,7 +1890,7 @@ Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings
 
 // tryConnect
 /++
-    Tries to connect to the IPs in [kameloso.kameloso.Kameloso.conn.ips] by
+    Tries to connect to the IPs in [kameloso.kameloso.Kameloso.conn.ips|Kameloso.conn.ips] by
     leveraging [kameloso.net.connectFiber|connectFiber], reacting on the
     [kameloso.net.ConnectAttempt|ConnectAttempt]s it yields to provide feedback to the user.
 

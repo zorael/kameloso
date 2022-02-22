@@ -544,7 +544,7 @@ void onBanned(ConnectService service)
 
 // onPassMismatch
 /++
-    Quits the program if we supplied a bad [kameloso.kameloso.IRCBot.pass].
+    Quits the program if we supplied a bad [kameloso.kameloso.IRCBot.pass|IRCBot.pass].
 
     There's no point in reconnecting.
  +/

@@ -434,7 +434,7 @@ mixin template IRCPluginImpl(
     // onEventImpl
     /++
         Pass on the supplied [dialect.defs.IRCEvent|IRCEvent] to module-level functions
-        annotated with an [kameloso.plugins.common.core.IRCEventHandler], registered
+        annotated with an [kameloso.plugins.common.core.IRCEventHandler|IRCEventHandler], registered
         with the matching [dialect.defs.IRCEvent.Type|IRCEvent.Type]s.
 
         It also does checks for

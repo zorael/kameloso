@@ -264,10 +264,10 @@ mixin template UserAwareness(
 
     // onUserAwarenessQuitMixin
     /++
-        Proxies to [kameloso.plugins.common.awareness.onUserAwarenessQuit].
+        Proxies to [kameloso.plugins.common.awareness.onUserAwarenessQuit|onUserAwarenessQuit].
 
         See_Also:
-            [kameloso.plugins.common.awareness.onUserAwarenessQuit]
+            [kameloso.plugins.common.awareness.onUserAwarenessQuit|onUserAwarenessQuit]
      +/
     @(IRCEventHandler()
         .onEvent(IRCEvent.Type.QUIT)
@@ -282,10 +282,10 @@ mixin template UserAwareness(
 
     // onUserAwarenessNickMixin
     /++
-        Proxies to [kameloso.plugins.common.awareness.onUserAwarenessNick].
+        Proxies to [kameloso.plugins.common.awareness.onUserAwarenessNick|onUserAwarenessNick].
 
         See_Also:
-            [kameloso.plugins.common.awareness.onUserAwarenessNick]
+            [kameloso.plugins.common.awareness.onUserAwarenessNick|onUserAwarenessNick]
      +/
     @(IRCEventHandler()
         .onEvent(IRCEvent.Type.NICK)
@@ -300,10 +300,10 @@ mixin template UserAwareness(
 
     // onUserAwarenessCatchTargetMixin
     /++
-        Proxies to [kameloso.plugins.common.awareness.onUserAwarenessCatchTarget].
+        Proxies to [kameloso.plugins.common.awareness.onUserAwarenessCatchTarget|onUserAwarenessCatchTarget].
 
         See_Also:
-            [kameloso.plugins.common.awareness.onUserAwarenessCatchTarget]
+            [kameloso.plugins.common.awareness.onUserAwarenessCatchTarget|onUserAwarenessCatchTarget]
      +/
     @(IRCEventHandler()
         .onEvent(IRCEvent.Type.RPL_WHOISUSER)
@@ -323,10 +323,10 @@ mixin template UserAwareness(
 
     // onUserAwarenessCatchSenderMixin
     /++
-        Proxies to [kameloso.plugins.common.awareness.onUserAwarenessCatchSender].
+        Proxies to [kameloso.plugins.common.awareness.onUserAwarenessCatchSender|onUserAwarenessCatchSender].
 
         See_Also:
-            [kameloso.plugins.common.awareness.onUserAwarenessCatchSender]
+            [kameloso.plugins.common.awareness.onUserAwarenessCatchSender|onUserAwarenessCatchSender]
      +/
     @(IRCEventHandler()
         .onEvent(IRCEvent.Type.JOIN)
@@ -347,10 +347,10 @@ mixin template UserAwareness(
 
     // onUserAwarenessNamesReplyMixin
     /++
-        Proxies to [kameloso.plugins.common.awareness.onUserAwarenessNamesReply].
+        Proxies to [kameloso.plugins.common.awareness.onUserAwarenessNamesReply|onUserAwarenessNamesReply].
 
         See_Also:
-            [kameloso.plugins.common.awareness.onUserAwarenessNamesReply]
+            [kameloso.plugins.common.awareness.onUserAwarenessNamesReply|onUserAwarenessNamesReply]
      +/
     @(IRCEventHandler()
         .onEvent(IRCEvent.Type.RPL_NAMREPLY)
@@ -366,10 +366,10 @@ mixin template UserAwareness(
 
     // onUserAwarenessEndOfListMixin
     /++
-        Proxies to [kameloso.plugins.common.awareness.onUserAwarenessEndOfList].
+        Proxies to [kameloso.plugins.common.awareness.onUserAwarenessEndOfList|onUserAwarenessEndOfList].
 
         See_Also:
-            [kameloso.plugins.common.awareness.onUserAwarenessEndOfList]
+            [kameloso.plugins.common.awareness.onUserAwarenessEndOfList|onUserAwarenessEndOfList]
      +/
     @(IRCEventHandler()
         .onEvent(IRCEvent.Type.RPL_ENDOFNAMES)
@@ -386,10 +386,10 @@ mixin template UserAwareness(
 
     // onUserAwarenessPingMixin
     /++
-        Proxies to [kameloso.plugins.common.awareness.onUserAwarenessPing].
+        Proxies to [kameloso.plugins.common.awareness.onUserAwarenessPing|onUserAwarenessPing].
 
         See_Also:
-            [kameloso.plugins.common.awareness.onUserAwarenessPing]
+            [kameloso.plugins.common.awareness.onUserAwarenessPing|onUserAwarenessPing]
      +/
     @(IRCEventHandler()
         .onEvent(IRCEvent.Type.PING)

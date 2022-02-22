@@ -33,7 +33,7 @@ module kameloso.plugins.seen;
 // We only want to compile this if we're compiling specifically this plugin.
 version(WithSeenPlugin):
 
-// We need the definition of an [kameloso.plugin.core.IRCPlugin] and other crucial things.
+// We need the definition of an [kameloso.plugins.core.IRCPlugin|IRCPlugin] and other crucial things.
 private import kameloso.plugins.common.core;
 
 // Awareness mixins, for plumbing.
@@ -128,7 +128,7 @@ public:
         about how the bot should output text, whether or not to always save to
         disk upon program exit, and some other program-wide settings.
 
-    * [kameloso.plugins.common.core.IRCPluginState.connSettings] is like `settings`,
+    * [kameloso.plugins.common.core.IRCPluginState.connSettings|IRCPluginState.connSettings] is like `settings`,
         except for values relating to the connection to the server; whether
         to use IPv6, paths to any certificates, and the such.
 
@@ -155,8 +155,8 @@ public:
         A [kameloso.plugins.common.core.Replay|Replay] is otherwise just an
         [dialect.defs.IRCEvent|IRCEvent] to be played back when the WHOIS results
         return, as well as a delegate that invokes the function that was originally
-        to be called. Constructing a [kameloso.plugins.common.Replay] is
-        all wrapped in a function [kameloso.plugins.common.misc.enqueue], with the
+        to be called. Constructing a [kameloso.plugins.common.core.Replay|Replay] is
+        all wrapped in a function [kameloso.plugins.common.misc.enqueue|enqueue], with the
         queue management handled behind the scenes.
 
     * [kameloso.plugins.common.core.IRCPluginState.hasPendingReplays|IRCPluginState.hasPendingReplays] is merely a bool
@@ -186,8 +186,7 @@ public:
         [core.thread.fiber.Fiber|Fiber]s, but not one keyed on or indexed by event types.
         Instead they are tuples of a [core.thread.fiber.Fiber|Fiber] and a `long`
         timestamp of when they should be run.
-        Use [kameloso.plugins.common.delayFiber] to enqueue, or
-        [kameloso.plugins.common.delayFiberMsecs] for greater granularity.
+        Use [kameloso.plugins.common.delayawait.delayFiber|delayFiber] to enqueue.
 
     * [kameloso.plugins.common.core.IRCPluginState.scheduledDelegates|IRCPluginState.scheduledDelegates] is likewise an
         array of delegates, to be triggered at a later point in time.

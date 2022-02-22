@@ -367,7 +367,7 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
 // timerDefsToJSON
 /++
     Expresses the [FiberDefinition] associative array
-    ([kameloso.plugins.twitchbot.base.TwitchBotPlugin.fiberDefsByChannel])
+    ([kameloso.plugins.twitchbot.base.TwitchBotPlugin.fiberDefsByChannel|TwitchBotPlugin.fiberDefsByChannel])
     in JSON form, for easier saving to and loading from disk.
 
     Using [std.json.JSONValue|JSONValue] directly fails with an error.

@@ -287,7 +287,7 @@ public:
                 of unexpected configuration entries that did not belong.
 
         Throws:
-            [kameloso.plugins.common.IRCPluginSettingsException] on failure to apply custom settings.
+            [kameloso.plugins.common.misc.IRCPluginSettingsException|IRCPluginSettingsException] on failure to apply custom settings.
      +/
     void initPlugins(const string[] customSettings,
         out string[][string] missingEntries,

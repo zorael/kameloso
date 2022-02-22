@@ -776,7 +776,7 @@ private:
             Generated `askToVerb` function. Asks the main thread to output text
             to the local terminal.
 
-            No need for any annotation; [kameloso.messaging.askToOutputImpl] is
+            No need for any annotation; [kameloso.messaging.askToOutputImpl|askToOutputImpl] is
             `@system` and nothing else.
          +/
         mixin(q{
