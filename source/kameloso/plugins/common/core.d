@@ -193,6 +193,16 @@ public:
      +/
     CommandMetadata[string] commands() pure nothrow @property const;
 
+    // channelSpecificCommands
+    /++
+        Returns an array of the descriptions of the channel-specific commands a
+        plugin offers.
+
+        Returns:
+            An associative [CommandMetadata] array keyed by string.
+     +/
+    CommandMetadata[string] channelSpecificCommands(const string) @system;
+
     // reload
     /++
         Reloads the plugin, where such is applicable.
@@ -1547,6 +1557,23 @@ mixin template IRCPluginImpl(
             enum pattern = "Plugin module `%s` is not under `kameloso.plugins`";
             static assert(0, pattern.format(module_));
         }
+    }
+
+    // channelSpecificCommands
+    /++
+        Compile a list of our a plugin's oneliner commands.
+
+        Params:
+            channelName = Name of channel whose commands we want to summarise.
+
+        Returns:
+            An associative array of
+            [kameloso.plugins.common.core.IRCPlugin.CommandMetadata|IRCPlugin.CommandMetadata]s,
+            one for each soft command active in the passed channel.
+     +/
+    override public IRCPlugin.CommandMetadata[string] channelSpecificCommands(const string) @system
+    {
+        return null;
     }
 
     // commands
