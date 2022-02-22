@@ -247,6 +247,24 @@ void messageFiber(ref Kameloso instance)
         }
 
         /++
+            Constructs an associative array of all channel-specific soft commands
+            of all plugins and calls the passed delegate with it as argument.
+         +/
+        void peekChannelSpecificCommands(ThreadMessage.PeekCommands,
+            shared void delegate(IRCPlugin.CommandMetadata[string][string]) dg,
+            string channelName)
+        {
+            IRCPlugin.CommandMetadata[string][string] commandAA;
+
+            foreach (plugin; instance.plugins)
+            {
+                commandAA[plugin.name] = plugin.channelSpecificCommands(channelName);
+            }
+
+            dg(commandAA);
+        }
+
+        /++
             Applies a `plugin.setting=value` change in setting to whichever plugin
             matches the expression.
          +/
@@ -654,6 +672,7 @@ void messageFiber(ref Kameloso instance)
                 &reloadPlugins,
                 &reloadSpecificPlugin,
                 &peekCommands,
+                &peekChannelSpecificCommands,
                 &changeSetting,
                 &changeSettingSafeDg,
                 &reconnect,
