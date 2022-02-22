@@ -29,8 +29,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#sedreplace
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.sedreplace;
 
@@ -470,7 +470,7 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
 // onWelcome
 /++
     Sets up a Fiber to periodically clear the lists of previous messages from
-    users once every [SedReplacePlugin.timeBetweenPurges].
+    users once every [SedReplacePlugin.timeBetweenPurges|timeBetweenPurges].
 
     This is to prevent the lists from becoming huge over time.
  +/

@@ -5,8 +5,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#help
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.help;
 
@@ -41,18 +41,20 @@ import dialect.defs;
 
     Plugins don't know about other plugins; the only thing they know of the
     outside world is the thread ID of the main thread ID (stored in
-    [kameloso.plugins.common.core.IRCPluginState,mainThread]). As such, we can't easily query
-    each plugin for their [kameloso.plugins.common.core.IRCEventHandler.Command]-annotated functions.
+    [kameloso.plugins.common.core.IRCPluginState.mainThread|IRCPluginState.mainThread]).
+    As such, we can't easily query each plugin for their
+    [kameloso.plugins.common.core.IRCEventHandler.Command|IRCEventHandler.Command]-annotated
+    functions.
 
     To work around this we construct an array of
     `kameloso.thread.CarryingFiber!(kameloso.plugins.common.core.IRCPlugin)`s and send it
     to the main thread. It will attach the client-global `plugins` array of
-    [kameloso.plugins.common.core.IRCPlugin]s to it, and invoke the Fiber.
+    [kameloso.plugins.common.core.IRCPlugin|IRCPlugin]s to it, and invoke the Fiber.
     The delegate inside will then process the list as if it had taken the array
     as an argument.
 
     Once we have the list we format it nicely and send it back to the requester,
-    which we remember since we saved the original [dialect.defs.IRCEvent].
+    which we remember since we saved the original [dialect.defs.IRCEvent|IRCEvent].
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -258,7 +260,7 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
         plugin = The current [HelpPlugin].
         otherPluginName = The name of the plugin that hosts the command we're to
             send the help text for.
-        event = The triggering [dialect.defs.IRCEvent].
+        event = The triggering [dialect.defs.IRCEvent|IRCEvent].
         command = String of the command we're to send help text for (sans prefix).
         description = The description text that the event handler function is annotated with.
         syntax = The declared syntax of the command.

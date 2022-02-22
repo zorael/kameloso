@@ -10,8 +10,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#admin
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.admin.base;
 
@@ -38,8 +38,8 @@ import std.typecons : Flag, No, Yes;
 version(OmniscientAdmin)
 {
     /++
-        The [kameloso.plugins.common.core.ChannelPolicy] to mix in awareness with depending
-        on whether version `OmniscientAdmin` is set or not.
+        The [kameloso.plugins.common.core.ChannelPolicy|ChannelPolicy] to mix in
+        awareness with depending on whether version `OmniscientAdmin` is set or not.
      +/
     enum omniscientChannelPolicy = ChannelPolicy.any;
 }
@@ -108,7 +108,7 @@ void onAnyEvent(AdminPlugin plugin, const ref IRCEvent event)
 /++
     Prints the details of one or more specific, supplied users to the local terminal.
 
-    It basically prints the matching [dialect.defs.IRCUser].
+    It basically prints the matching [dialect.defs.IRCUser|IRCUsers].
  +/
 debug
 @(IRCEventHandler()
@@ -163,7 +163,7 @@ void onCommandSave(AdminPlugin plugin, const ref IRCEvent event)
 // onCommandShowUsers
 /++
     Prints out the current `users` array of the [AdminPlugin]'s
-    [kameloso.plugins.common.core.IRCPluginState] to the local terminal.
+    [kameloso.plugins.common.core.IRCPluginState|IRCPluginState] to the local terminal.
  +/
 debug
 @(IRCEventHandler()
@@ -213,7 +213,7 @@ void onCommandSudo(AdminPlugin plugin, const ref IRCEvent event)
 
 // onCommandQuit
 /++
-    Sends a [dialect.defs.IRCEvent.Type.QUIT] event to the server.
+    Sends a [dialect.defs.IRCEvent.Type.QUIT|IRCEvent.Type.QUIT] event to the server.
 
     If any extra text is following the "quit" command, it uses that as the quit
     reason. Otherwise it falls back to what is specified in the configuration file.
@@ -240,9 +240,9 @@ void onCommandQuit(AdminPlugin plugin, const ref IRCEvent event)
 
 // onCommandHome
 /++
-    Adds or removes channels to/from the list of currently active home channels, in the
-    [kameloso.kameloso.IRCBot.homeChannels] array of the current [AdminPlugin]'s
-    [kameloso.plugins.common.core.IRCPluginState].
+    Adds or removes channels to/from the list of currently active home channels,
+    in the [kameloso.kameloso.IRCBot.homeChannels|IRCBot.homeChannels] array of
+    the current [AdminPlugin]'s [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
 
     Merely passes on execution to [addHome] and [delHome].
  +/
@@ -303,14 +303,15 @@ void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
 // addHome
 /++
     Adds a channel to the list of currently active home channels, in the
-    [kameloso.kameloso.IRCBot.homeChannels] array of the current [AdminPlugin]'s
-    [kameloso.plugins.common.core.IRCPluginState].
+    [kameloso.kameloso.IRCBot.homeChannels|IRCBot.homeChannels] array of the
+    current [AdminPlugin]'s [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
 
-    Follows up with a [core.thread.fiber.Fiber] to verify that the channel was actually joined.
+    Follows up with a [core.thread.fiber.Fiber|Fiber] to verify that the channel
+    was actually joined.
 
     Params:
         plugin = The current [AdminPlugin].
-        event = The triggering [dialect.defs.IRCEvent].
+        event = The triggering [dialect.defs.IRCEvent|IRCEvent].
         rawChannel = The channel to be added, potentially in unstripped, cased form.
  +/
 void addHome(AdminPlugin plugin, const ref IRCEvent event, const string rawChannel)
@@ -450,8 +451,8 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
 // delHome
 /++
     Removes a channel from the list of currently active home channels, from the
-    [kameloso.kameloso.IRCBot.homeChannels] array of the current [AdminPlugin]'s
-    [kameloso.plugins.common.core.IRCPluginState].
+    [kameloso.kameloso.IRCBot.homeChannels|IRCBot.homeChannels] array of the
+    current [AdminPlugin]'s [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
  +/
 void delHome(AdminPlugin plugin, const ref IRCEvent event, const string rawChannel)
 in (rawChannel.length, "Tried to delete a home but the channel string was empty")
@@ -495,10 +496,10 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
 // onCommandWhitelist
 /++
     Adds a nickname to the list of users who may trigger the bot, to the current
-    [dialect.defs.IRCClient.Class.whitelist] of the current [AdminPlugin]'s
-    [kameloso.plugins.common.core.IRCPluginState].
+    [dialect.defs.IRCClient.Class.whitelist|IRCClient.Class.whitelist] of the
+    current [AdminPlugin]'s [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
 
-    This is on a [kameloso.plugins.common.core.Permissions.operator] level.
+    This is on a [kameloso.plugins.common.core.Permissions.operator|Permissions.operator] level.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -571,9 +572,9 @@ void onCommandStaff(AdminPlugin plugin, const ref IRCEvent event)
 // onCommandBlacklist
 /++
     Adds a nickname to the list of users who may not trigger the bot whatsoever,
-    except on actions annotated [kameloso.plugins.common.core.Permissions.ignore].
+    except on actions annotated [kameloso.plugins.common.core.Permissions.ignore|Permissions.ignore].
 
-    This is on a [kameloso.plugins.common.core.Permissions.operator] level.
+    This is on a [kameloso.plugins.common.core.Permissions.operator|Permissions.operator] level.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -791,7 +792,8 @@ void onSetCommand(AdminPlugin plugin, const ref IRCEvent event)
 
 // onCommandAuth
 /++
-    Asks the [kameloso.plugins.connect.ConnectService] to (re-)authenticate to services.
+    Asks the [kameloso.plugins.connect.ConnectService|ConnectService] to
+    (re-)authenticate to services.
  +/
 version(WithConnectService)
 @(IRCEventHandler()
@@ -1078,7 +1080,7 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
 
     Params:
         plugin = The current [AdminPlugin].
-        event = The instigating [dialect.defs.IRCEvent].
+        event = The instigating [dialect.defs.IRCEvent|IRCEvent].
  +/
 void listHostmaskDefinitions(AdminPlugin plugin, const ref IRCEvent event)
 {
@@ -1158,8 +1160,8 @@ import kameloso.thread : Sendable;
 
 // onBusMessage
 /++
-    Receives a passed [kameloso.thread.BusMessage] with the "`admin`" header,
-    and calls functions based on the payload message.
+    Receives a passed [kameloso.thread.BusMessage|BusMessage] with the "`admin`"
+    header, and calls functions based on the payload message.
 
     This is used in the Pipeline plugin, to allow us to trigger admin verbs via
     the command-line pipe.
@@ -1374,7 +1376,7 @@ public:
 /++
     The Admin plugin is a plugin aimed for adḿinistrative use and debugging.
 
-    It was historically part of the [kameloso.plugins.chatbot.ChatbotPlugin].
+    It was historically part of the [kameloso.plugins.chatbot.ChatbotPlugin|ChatbotPlugin].
  +/
 final class AdminPlugin : IRCPlugin
 {
@@ -1384,10 +1386,10 @@ package:
     /// All Admin options gathered.
     AdminSettings adminSettings;
 
-    /// File with user definitions. Must be the same as in persistence.d.
+    /// File with user definitions. Must be the same as in `persistence.d`.
     @Resource string userFile = KamelosoFilenames.users;
 
-    /// File with hostmasks definitions. Must be the same as in persistence.d
+    /// File with hostmasks definitions. Must be the same as in `persistence.d`.
     @Resource string hostmasksFile = KamelosoFilenames.hostmasks;
 
     mixin IRCPluginImpl;

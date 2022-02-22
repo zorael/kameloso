@@ -5,8 +5,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#automode
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.automode;
 
@@ -92,7 +92,7 @@ void initResources(AutomodePlugin plugin)
     Potentially applies an automode, depending on the definitions and the user
     triggering the function.
 
-    Different [dialect.defs.IRCEvent.Type]s have to be handled differently,
+    Different [dialect.defs.IRCEvent.Type|IRCEvent.Type]s have to be handled differently,
     as the triggering user may be either the sender or the target.
 
     Additionally none of these events carry a channel, so we'll have to make
@@ -591,9 +591,10 @@ private:
 
     // isEnabled
     /++
-        Override [kameloso.plugins.common.core.IRCPluginImpl.isEnabled] and inject
-        a server check, so this plugin does nothing on Twitch servers, in addition
-        to doing nothing when [AutomodeSettings.enabled] is false.
+        Override
+        [kameloso.plugins.common.core.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled]
+        and inject a server check, so this plugin does nothing on Twitch servers,
+        in addition to doing nothing when [AutomodeSettings.enabled] is false.
 
         Returns:
             `true` if this plugin should react to events; `false` if not.

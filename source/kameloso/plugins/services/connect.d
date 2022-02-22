@@ -1,14 +1,14 @@
 /++
     The Connect service handles logging onto IRC servers after having connected,
     as well as managing authentication to services. It also manages responding
-    to [dialect.defs.IRCEvent.Type.PING] requests, and capability negotiations.
+    to [dialect.defs.IRCEvent.Type.PING|PING] requests, and capability negotiations.
 
     The actual connection logic is in the [kameloso.net] module.
 
     See_Also:
         [kameloso.net]
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.services.connect;
 
@@ -108,8 +108,9 @@ void onSelfpart(ConnectService service, const ref IRCEvent event)
 
 // onSelfjoin
 /++
-    Records a channel in the `channels` array in the [dialect.defs.IRCClient] of
-    the current [ConnectService]'s [kameloso.plugins.common.core.IRCPluginState] upon joining it.
+    Records a channel in the `channels` array in the [dialect.defs.IRCClient|IRCClient] of
+    the current [ConnectService]'s
+    [kameloso.plugins.common.core.IRCPluginState|IRCPluginState] upon joining it.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.SELFJOIN)
@@ -132,8 +133,8 @@ void onSelfjoin(ConnectService service, const ref IRCEvent event)
 // joinChannels
 /++
     Joins all channels listed as home channels *and* guest channels in the arrays in
-    [kameoso.kameloso.IRCBot] of the current [ConnectService]'s
-    [kameloso.plugins.common.core.IRCPluginState].
+    [kameloso.kameloso.IRCBot|IRCBot] of the current [ConnectService]'s
+    [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
 
     Params:
         service = The current [ConnectService].
@@ -172,10 +173,10 @@ void joinChannels(ConnectService service)
 
 // onToConnectType
 /++
-    Responds to [dialect.defs.IRCEvent.Type.ERR_NEEDPONG] events by sending
-    the text supplied as content in the [dialect.defs.IRCEvent] to the server.
+    Responds to [dialect.defs.IRCEvent.Type.ERR_NEEDPONG|ERR_NEEDPONG] events by sending
+    the text supplied as content in the [dialect.defs.IRCEvent|IRCEvent] to the server.
 
-    "Also known as [dialect.defs.IRCEvent.Type.ERR_NEEDPONG] (Unreal/Ultimate)
+    "Also known as [dialect.defs.IRCEvent.Type.ERR_NEEDPONG|ERR_NEEDPONG] (Unreal/Ultimate)
     for use during registration, however it's not used in Unreal (and might not
     be used in Ultimate either)."
 
@@ -192,12 +193,12 @@ void onToConnectType(ConnectService service, const ref IRCEvent event)
 
 // onPing
 /++
-    Pongs the server upon [dialect.defs.IRCEvent.Type.PING].
+    Pongs the server upon [dialect.defs.IRCEvent.Type.PING|PING].
 
     Ping with the sender as target, and not the necessarily
-    the server as saved in the [dialect.defs.IRCServer] struct. For
-    example, [dialect.defs.IRCEvent.Type.ERR_NEEDPONG] generally wants you to
-    ping a random number or string.
+    the server as saved in the [dialect.defs.IRCServer|IRCServer] struct. For
+    example, [dialect.defs.IRCEvent.Type.ERR_NEEDPONG|ERR_NEEDPONG] generally
+    wants you to ping a random number or string.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.PING)
@@ -466,7 +467,7 @@ void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
     Modifies the nickname by appending characters to the end of it.
 
     Don't modify [IRCPluginState.client.nickname] as the nickname only changes
-    when the [dialect.defs.IRCEvent.Type.RPL_LOGGEDIN] event actually occurs.
+    when the [dialect.defs.IRCEvent.Type.RPL_LOGGEDIN|RPL_LOGGEDIN] event actually occurs.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ERR_NICKNAMEINUSE)
@@ -544,7 +545,7 @@ void onBanned(ConnectService service)
 
 // onPassMismatch
 /++
-    Quits the program if we supplied a bad [kameloso.kameloso.IRCBot.pass].
+    Quits the program if we supplied a bad [kameloso.kameloso.IRCBot.pass|IRCBot.pass].
 
     There's no point in reconnecting.
  +/
@@ -820,15 +821,17 @@ void onSASLAuthenticate(ConnectService service)
 // trySASLPlain
 /++
     Constructs a SASL plain authentication token from the bot's
-    [kameloso.kameloso.IRCBot.account] and [kameloso.kameloso.IRCBot.password],
+    [kameloso.kameloso.IRCBot.account|IRCBot.account] and
+    [kameloso.kameloso.IRCBot.password|IRCBot.password],
     then sends it to the server, during registration.
 
     A SASL plain authentication token is composed like so:
 
         `base64(account \0 account \0 password)`
 
-    ...where [kameloso.kameloso.IRCBot.account] is the services account name and
-    [kameloso.kameloso.IRCBot.password] is the account password.
+    ...where [kameloso.kameloso.IRCBot.account|IRCBot.account] is the services
+    account name and [kameloso.kameloso.IRCBot.password|IRCBot.password] is the
+    account password.
 
     Params:
         service = The current [ConnectService].
@@ -873,7 +876,7 @@ bool trySASLPlain(ConnectService service)
 // onSASLSuccess
 /++
     On SASL authentication success, calls a `CAP END` to finish the
-    [dialect.defs.IRCEvent.Type.CAP] negotiations.
+    [dialect.defs.IRCEvent.Type.CAP|CAP] negotiations.
 
     Flags the client as having finished registering and authing, allowing the
     main loop to pick it up and propagate it to all other plugins.
@@ -916,7 +919,7 @@ void onSASLSuccess(ConnectService service)
 // onSASLFailure
 /++
     On SASL authentication failure, calls a `CAP END` to finish the
-    [dialect.defs.IRCEvent.Type.CAP] negotiations and finish registration.
+    [dialect.defs.IRCEvent.Type.CAP|CAP] negotiations and finish registration.
 
     Flags the client as having finished registering, allowing the main loop to
     pick it up and propagate it to all other plugins.
@@ -960,7 +963,7 @@ void onSASLFailure(ConnectService service)
 
 // onWelcome
 /++
-    Marks registration as completed upon [dialect.defs.IRCEvent.Type.RPL_WELCOME]
+    Marks registration as completed upon [dialect.defs.IRCEvent.Type.RPL_WELCOME|RPL_WELCOME]
     (numeric `001`).
 
     Additionally performs post-connect routines (authenticates if not already done,
@@ -1104,7 +1107,7 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
 
 // onSelfnickSuccessOrFailure
 /++
-    Resets [kameloso.plugins.printer.base.PrinterPlugin] squelching upon a
+    Resets [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin] squelching upon a
     successful or failed nick change. This so as to be squelching as little as possible.
  +/
 version(WithPrinterPlugin)
@@ -1146,8 +1149,8 @@ void onQuit(ConnectService service, const ref IRCEvent event)
 /++
     Joins channels and prints some Twitch warnings on end of MOTD.
 
-    Do this then instead of on [IRCEvent.Type.RPL_WELCOME] for better timing,
-    and to avoid having the message drown in MOTD.
+    Do this then instead of on [dialect.defs.IRCEvent.Type.RPL_WELCOME|RPL_WELCOME]
+    for better timing, and to avoid having the message drown in MOTD.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_ENDOFMOTD)
@@ -1235,9 +1238,7 @@ void onISUPPORT(ConnectService service, const ref IRCEvent event)
     Disconnects and reconnects to the server.
 
     This is a "benign" disconnect. We need to reconnect preemptively instead of
-    waiting for the server to disconnect us, as it would otherwise constitute
-    an error and the program would exit if
-    [kameloso.kameloso.CoreSettings.endlesslyConnect] isn't set.
+    waiting for the server to disconnect us, as it would otherwise constitute an error.
  +/
 version(TwitchSupport)
 @(IRCEventHandler()
@@ -1495,7 +1496,7 @@ import kameloso.thread : BusMessage, Sendable;
 
 // onBusMessage
 /++
-    Receives a passed [kameloso.thread.BusMessage] with the "`connect`" header,
+    Receives a passed [kameloso.thread.BusMessage|BusMessage] with the "`connect`" header,
     and calls functions based on the payload message.
 
     This is used to let other plugins trigger re-authentication with services.
@@ -1587,8 +1588,8 @@ private:
         Temporary: the nickname that we had to rename to, to successfully
         register on the server.
 
-        This is to avoid modifying [IRCPluginState.client.nickname] before the
-        nickname is actually changed, yet still carry information about the
+        This is to avoid modifying [dialect.defs.IRCClient.nickname|IRCClient.nickname]
+        before the nickname is actually changed, yet still carry information about the
         incremental rename throughout calls of [onNickInUse].
      +/
     string renameDuringRegistration;

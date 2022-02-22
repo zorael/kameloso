@@ -4,8 +4,8 @@
 
     Employs the standard [std.getopt] to read arguments from the command line
     to construct and populate instances of the structs needed for the bot to
-    function, like [dialect.defs.IRCClient], [dialect.defs.IRCServer],
-    [kameloso.kameloso.IRCBot] and [kameloso.kameloso.CoreSettings].
+    function, like [dialect.defs.IRCClient|IRCClient], [dialect.defs.IRCServer|IRCServer],
+    [kameloso.kameloso.IRCBot|IRCBot] and [kameloso.kameloso.CoreSettings|CoreSettings].
 
     See_Also:
         [kameloso.kameloso]
@@ -26,9 +26,9 @@ import std.typecons : Flag, No, Yes;
 
 // printHelp
 /++
-    Prints the [std.getopt.getopt] "helpWanted" help table to screen.
+    Prints the [std.getopt.getopt|getopt] "helpWanted" help table to screen.
 
-    Merely leverages [std.getopt.defaultGetoptPrinter] for the printing.
+    Merely leverages [std.getopt.defaultGetoptPrinter|defaultGetoptPrinter] for the printing.
 
     Example:
     ---
@@ -45,7 +45,7 @@ import std.typecons : Flag, No, Yes;
     ---
 
     Params:
-        results = Results from a [std.getopt.getopt] call.
+        results = Results from a [std.getopt.getopt|getopt] call.
  +/
 void printHelp(GetoptResult results) @system
 {
@@ -68,12 +68,12 @@ void printHelp(GetoptResult results) @system
     settings default values..
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso].
-        client = Reference to the current [dialect.defs.IRCClient].
-        server = Reference to the current [dialect.defs.IRCServer].
-        bot = Reference to the current [kameloso.kameloso.IRCBot].
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        client = Reference to the current [dialect.defs.IRCClient|IRCClient].
+        server = Reference to the current [dialect.defs.IRCServer|IRCServer].
+        bot = Reference to the current [kameloso.kameloso.IRCBot|IRCBot].
         customSettings = const string array to all the custom settings set
-            via [std.getopt.getopt], to apply to things before saving to disk.
+            via [std.getopt.getopt|getopt], to apply to things before saving to disk.
         giveInstructions = Whether or not to give instructions to edit the
             generated file and supply admins and/or home channels.
  +/
@@ -127,9 +127,9 @@ void writeConfig(ref Kameloso instance,
     Prints the core settings and all plugins' settings to screen.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso].
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
         customSettings = Array of all the custom settings set
-            via [std.getopt.getopt], to apply to things before saving to disk.
+            via [std.getopt.getopt|getopt], to apply to things before saving to disk.
  +/
 void printSettings(ref Kameloso instance, const string[] customSettings) @system
 {
@@ -154,10 +154,10 @@ void printSettings(ref Kameloso instance, const string[] customSettings) @system
     Writes and/or edits the configuration file. Broken out into a separate
     function to lower the size of [handleGetopt].
 
-    Takes bool parameters instead of [std.typecons.Flag]s to work with getopt bools.
+    Takes bool parameters instead of [std.typecons.Flag|Flag]s to work with getopt bools.
 
     Params:
-        instance = The current [kameloso.kameloso.Kameloso] instance.
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
         shouldWriteConfig = Writing to the configuration file was requested.
         shouldOpenTerminalEditor = Opening the configuration file in a
             terminal text editor was requested.
@@ -167,8 +167,8 @@ void printSettings(ref Kameloso instance, const string[] customSettings) @system
             passed to [writeConfig] when writing to the configuration file.
 
     Throws:
-        [object.Exception] on unexpected platforms where we did not know how to
-        open the configuration file in a text editor.
+        [object.Exception|Exception] on unexpected platforms where we did not
+        know how to open the configuration file in a text editor.
  +/
 void manageConfigFile(ref Kameloso instance,
     const bool shouldWriteConfig,
@@ -339,8 +339,9 @@ void writeToDisk(const string filename,
 /++
     Displays a hint on how to complete a minimal configuration file.
 
-    It assumes that the bot's [kameloso.kameloso.IRCBot.admins] and
-    [kameloso.kameloso.IRCBot.homeChannels] are both empty. (Else it should not have been called.)
+    It assumes that the bot's [kameloso.kameloso.IRCBot.admins|IRCBot.admins] and
+    [kameloso.kameloso.IRCBot.homeChannels|IRCBot.homeChannels] are both empty.
+    (Else it should not have been called.)
  +/
 void giveConfigurationMinimalIntructions()
 {
@@ -369,10 +370,12 @@ void giveConfigurationMinimalIntructions()
         The contents of the supplied file.
 
     Throws:
-        [lu.common.FileTypeMismatchException] if the configuration file is a directory, a
-        character file or any other non-file type we can't write to.
-        [lu.serialisation.ConfigurationFileReadFailureException] if the reading and decoding of
-        the configuration file failed.
+        [lu.common.FileTypeMismatchException|FileTypeMismatchException] if the
+        configuration file is a directory, a character file or any other non-file
+        type we can't write to.
+
+        [lu.serialisation.ConfigurationFileReadFailureException|ConfigurationFileReadFailureException]
+        if the reading and decoding of the configuration file failed.
  +/
 string configurationText(const string configFile)
 {
@@ -426,18 +429,18 @@ public:
     ---
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso].
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
         args = The command-line arguments the program was called with.
         customSettings = Out array of custom settings to apply on top of
             the settings read from the configuration file.
 
     Returns:
-        [lu.common.Next.continue_] or [lu.common.Next.returnSuccess]
-        depending on whether the arguments chosen mean the program should
-        proceed or not.
+        [lu.common.Next.continue_|Next.continue_] or
+        [lu.common.Next.returnSuccess|Next.returnSuccess] depending on whether
+        the arguments chosen mean the program should proceed or not.
 
     Throws:
-        [std.getopt.GetOptException] if an unknown flag is passed.
+        [std.getopt.GetOptException|GetOptException] if an unknown flag is passed.
  +/
 Next handleGetopt(ref Kameloso instance,
     string[] args,
@@ -830,7 +833,7 @@ Next handleGetopt(ref Kameloso instance,
     ---
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso],
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso],
             with all its plugins and settings.
         filename = String filename of the file to write to.
  +/
@@ -951,13 +954,13 @@ void notifyAboutIncompleteConfiguration(const string configFile, const string bi
 
     Nickname, user, GECOS/"real name", server address and server port are
     required. If there is no nickname, generate a random one. For any other empty values,
-    update them with relevant such from [kameloso.constants.KamelosoDefaults]
-    (and [kameloso.constants.KamelosoDefaultIntegers]).
+    update them with relevant such from [kameloso.constants.KamelosoDefaults|KamelosoDefaults]
+    (and [kameloso.constants.KamelosoDefaultIntegers|KamelosoDefaultIntegers]).
 
     Params:
-        client = Reference to the [dialect.defs.IRCClient] to complete.
-        server = Reference to the [dialect.defs.IRCServer] to complete.
-        bot = Reference to the [kameloso.kameloso.IRCBot] to complete.
+        client = Reference to the [dialect.defs.IRCClient|IRCClient] to complete.
+        server = Reference to the [dialect.defs.IRCServer|IRCServer] to complete.
+        bot = Reference to the [kameloso.kameloso.IRCBot|IRCBot] to complete.
  +/
 void applyDefaults(ref IRCClient client, ref IRCServer server, ref IRCBot bot)
 out (; (client.nickname.length), "Empty client nickname")
@@ -980,7 +983,7 @@ out (; (bot.partReason.length), "Empty bot part reason")
         bot.hasGuestNickname = true;
     }
 
-    // If no client.user set, inherit from [kameloso.constants.KamelosoDefaults].
+    // If no client.user set, inherit from [kameloso.constants.KamelosoDefaults|KamelosoDefaults].
     if (!client.user.length)
     {
         client.user = KamelosoDefaults.user;
@@ -998,7 +1001,7 @@ out (; (bot.partReason.length), "Empty bot part reason")
         server.address = KamelosoDefaults.serverAddress;
     }
 
-    // Ditto but [kameloso.constants.KamelosoDefaultIntegers].
+    // Ditto but [kameloso.constants.KamelosoDefaultIntegers|KamelosoDefaultIntegers].
     if (server.port == 0)
     {
         server.port = KamelosoDefaultIntegers.port;
@@ -1055,7 +1058,7 @@ unittest
     Exception, to be thrown when the specified configuration file could not be
     read, for whatever reason.
 
-    It is a normal [object.Exception] but with an attached filename string.
+    It is a normal [object.Exception|Exception] but with an attached filename string.
  +/
 final class ConfigurationFileReadFailureException : Exception
 {

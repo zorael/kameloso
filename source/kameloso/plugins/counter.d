@@ -7,8 +7,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#counter
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.counter;
 
@@ -179,9 +179,11 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
 /++
     Allows users to increment, decrement, and set counters.
 
-    This function fakes [kameloso.plugins.core.IRCEventHandler.Command]s by listening for
-    prefixes (and the bot's nickname), and treating whatever comes after it as
-    a command word. If it doesn't match a previously added counter, it is ignored.
+    This function fakes
+    [kameloso.plugins.core.IRCEventHandler.Command|IRCEventHandler.Command]s by
+    listening for prefixes (and the bot's nickname), and treating whatever comes
+    after it as a command word. If it doesn't match a previously added counter,
+    it is ignored.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)

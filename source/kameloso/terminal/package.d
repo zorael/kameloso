@@ -104,7 +104,8 @@ version(Posix)
         terminal; otherwise 0 is returned, and errno is set to indicate the error."
 
         Returns:
-            `true` if the current environment appears to be a terminal; `false` if not (e.g. pager).
+            `true` if the current environment appears to be a terminal;
+            `false` if not (e.g. pager or certain IDEs with terminal windows).
      +/
     bool isTTY() //@safe
     {

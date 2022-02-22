@@ -153,7 +153,7 @@ enum isAColourCode(T) =
 /++
     Takes a mix of a [TerminalForeground], a [TerminalBackground], a
     [TerminalFormat] and/or a [TerminalReset] and composes them into a single
-    terminal format code token. Overload that creates an [std.array.Appender]
+    terminal format code token. Overload that creates an [std.array.Appender|Appender]
     and fills it with the return value of the output range version of `colour`.
 
     Example:
@@ -924,7 +924,8 @@ unittest
 
     Params:
         word = String to hash and base colour on.
-        bright = Whether or not the colour should be appropriate for a bright terminal background.
+        bright = Whether or not the colour should be appropriate for a bright
+            terminal background.
 
     Returns:
         A [TerminalForeground] based on the passed string.

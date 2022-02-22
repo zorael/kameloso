@@ -119,7 +119,7 @@ unittest
 /++
     Colour-codes the passed string with mIRC colouring, foreground and background.
     Direct overload that leverages the output range version to colour an internal
-    [std.array.Appender], and returns the resulting string.
+    [std.array.Appender|Appender], and returns the resulting string.
 
     Params:
         line = Line to tint.
@@ -239,7 +239,8 @@ unittest
 // ircColourByHash
 /++
     Returns the passed string coloured with an IRC colour depending on the hash
-    of the string, making for good "random" (uniformly distributed) nick colours in IRC messages.
+    of the string, making for good "random" (uniformly distributed) nick colours
+    in IRC messages.
 
     Params:
         word = String to tint.

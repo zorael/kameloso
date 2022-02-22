@@ -2,12 +2,12 @@
     Implementation of Admin plugin functionality regarding user classifiers.
     For internal use.
 
-    The [dialect.defs.IRCEvent]-annotated handlers must be in the same module
-    as the [kameloso.plugins.admin.base.AdminPlugin], but these implementation
+    The [dialect.defs.IRCEvent|IRCEvent]-annotated handlers must be in the same module
+    as the [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin], but these implementation
     functions can be offloaded here to limit module size a bit.
 
     See_Also:
-        [kameloso.plugins.admin.base]
+        [kameloso.plugins.admin.base|admin.base]
  +/
 module kameloso.plugins.admin.classifiers;
 
@@ -33,8 +33,8 @@ package:
     Common code for whitelisting and blacklisting nicknames/accounts.
 
     Params:
-        plugin = The current [kameloso.pluins.admin.baseAdminPlugin].
-        event = The triggering [dialect.defs.IRCEvent].
+        plugin = The current [kameloso.pluins.admin.base.AdminPlugin|AdminPlugin].
+        event = The triggering [dialect.defs.IRCEvent|IRCEvent].
         list = Which list to add/remove from, "whitelist", "operator" or "blacklist".
  +/
 void manageClassLists(AdminPlugin plugin,
@@ -88,10 +88,10 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
     blacklist to the querying user or channel.
 
     Params:
-        plugin = The current [kameloso.plugins.admin.base.AdminPlugin].
+        plugin = The current [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin].
         channel = The channel the list relates to.
         list = Which list to list; "whitelist", "operator", "staff" or "blacklist".
-        event = Optional [dialect.defs.IRCEvent] that instigated the listing.
+        event = Optional [dialect.defs.IRCEvent|IRCEvent] that instigated the listing.
  +/
 void listList(AdminPlugin plugin,
     const string channel,
@@ -139,11 +139,11 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
     Passes the `list` parameter to [alterAccountClassifier], for list selection.
 
     Params:
-        plugin = The current [kameloso.plugins.admin.base.AdminPlugin].
+        plugin = The current [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin].
         specified = The nickname or account to white-/blacklist.
         list = Which of "whitelist", "operator", "staff" or "blacklist" to add to.
         channel = Which channel the enlisting relates to.
-        event = Optional instigating [dialect.defs.IRCEvent].
+        event = Optional instigating [dialect.defs.IRCEvent|IRCEvent].
  +/
 void lookupEnlist(AdminPlugin plugin,
     const string specified,
@@ -357,11 +357,11 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
     Passes the `list` parameter to [alterAccountClassifier], for list selection.
 
     Params:
-        plugin = The current [kameloso.plugins.admin.base.AdminPlugin].
+        plugin = The current [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin].
         account = The account to delist as whitelisted/blacklisted or as operator.
         list = Which of "whitelist", "operator", "staff" or "blacklist" to remove from.
         channel = Which channel the enlisting relates to.
-        event = Optional instigating [dialect.defs.IRCEvent].
+        event = Optional instigating [dialect.defs.IRCEvent|IRCEvent].
  +/
 void delist(AdminPlugin plugin,
     const string account,
@@ -479,7 +479,7 @@ enum AlterationResult
     and reloads all plugins to make them read the updated lists.
 
     Params:
-        plugin = The current [kameloso.plugins.admin.base.AdminPlugin].
+        plugin = The current [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin].
         add = Whether to add to or remove from lists.
         list = Which list to add to or remove from; `whitelist`, `operator` or `blacklist`.
         account = Services account name to add or remove.
@@ -575,11 +575,11 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
     Adds or removes hostmasks used to identify users on servers that don't employ services.
 
     Params:
-        plugin = The current [kameloso.plugins.admin.base.AdminPlugin].
+        plugin = The current [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin].
         add = Whether to add or to remove the hostmask.
         account = Account the hostmask will equate to. May be empty if `add` is false.
         mask = String "nickname!ident@address.tld" hostmask.
-        event = Instigating [dialect.defs.IRCEvent].
+        event = Instigating [dialect.defs.IRCEvent|IRCEvent].
  +/
 void modifyHostmaskDefinition(AdminPlugin plugin,
     const Flag!"add" add,

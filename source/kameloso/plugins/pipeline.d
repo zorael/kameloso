@@ -3,7 +3,7 @@
     which you can pipe text and have it be sent verbatim to the server.
 
     It has no commands; indeed, it doesn't listen to
-    [dialect.defs.IRCEvent]s at all, only to what is sent to it via the
+    [dialect.defs.IRCEvent|IRCEvent]s at all, only to what is sent to it via the
     named FIFO pipe.
 
     This requires version `Posix`, which is true for UNIX-like systems (like
@@ -11,8 +11,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#pipeline
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.pipeline;
 
@@ -74,9 +74,10 @@ public:
     It is to be run in a separate thread.
 
     Params:
-        newState = The [kameloso.plugins.common.core.IRCPluginState] of the original
-            [PipelinePlugin], to provide the main thread's [core.thread.Tid] for
-            concurrency messages, made `shared` to allow being sent between threads.
+        newState = The [kameloso.plugins.common.core.IRCPluginState|IRCPluginState]
+            of the original [PipelinePlugin], to provide the main thread's
+            [core.thread.Tid|Tid] for concurrency messages, made `shared` to
+            allow being sent between threads.
         filename = String filename of the FIFO to read from.
         monochrome = Whether or not output should be in monochrome text.
         brightTerminal = Whether or not the terminal has a bright background
@@ -262,11 +263,14 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
         filename = String filename of FIFO to create.
 
     Throws:
-        [kameloso.common.ReturnValueException] if the FIFO could not be created.
-        [kameloso.common.FileExistsException] if a FIFO with the same filename
-        already exists, suggesting concurrent conflicting instances of the program
-        (or merely a stale FIFO).
-        [kameloso.common.FileTypeMismatchException] if a file or directory
+        [kameloso.common.ReturnValueException|ReturnValueException] if the FIFO
+        could not be created.
+
+        [kameloso.common.FileExistsException|FileExistsException] if a FIFO with
+        the same filename already exists, suggesting concurrent conflicting
+        instances of the program (or merely a zombie FIFO after a crash).
+
+        [kameloso.common.FileTypeMismatchException|FileTypeMismatchException] if a file or directory
         exists with the same name as the FIFO we want to create.
  +/
 void createFIFO(const string filename)
@@ -458,7 +462,7 @@ import kameloso.thread : Sendable;
 
 // onBusMessage
 /++
-    Receives a passed [kameloso.thread.BusMessage] with the "`pipeline`" header,
+    Receives a passed [kameloso.thread.BusMessage|BusMessage] with the "`pipeline`" header,
     and performs actions based on the payload message.
 
     This is used to let the worker thread signal the main context that it halted.

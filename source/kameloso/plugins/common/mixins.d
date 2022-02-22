@@ -4,8 +4,8 @@
     This was all in one `plugins/common.d` file that just grew too big.
 
     See_Also:
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.common.mixins;
 
@@ -22,8 +22,8 @@ public:
 /++
     Functionality for catching WHOIS results and calling passed function aliases
     with the resulting account information that was divined from it, in the form
-    of the actual [dialect.defs.IRCEvent], the target
-    [dialect.defs.IRCUser] within it, the user's `account` field, or merely
+    of the actual [dialect.defs.IRCEvent|IRCEvent], the target
+    [dialect.defs.IRCUser|IRCUser] within it, the user's `account` field, or merely
     alone as an arity-0 function.
 
     The mixed in function to call is named `enqueueAndWHOIS`. It will construct
@@ -148,7 +148,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
             /++
                 Invoke `onSuccess`.
-            +/
+             +/
             void callOnSuccess()
             {
                 static if (TakesParams!(onSuccess, AliasSeq!IRCEvent))
@@ -180,7 +180,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
             /++
                 Invoke `onFailure`, if it's available.
-            +/
+             +/
             void callOnFailure()
             {
                 static if (!is(typeof(onFailure) == typeof(null)))
@@ -283,8 +283,9 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
     // enqueueAndWHOIS
     /++
-        Constructs a [kameloso.thread.CarryingFiber] carrying a [dialect.defs.IRCEvent]
-        and enqueues it into the [kameloso.plugins.common.core.IRCPluginState.awaitingFibers]
+        Constructs a [kameloso.thread.CarryingFiber|CarryingFiber] carrying a
+        [dialect.defs.IRCEvent|IRCEvent] and enqueues it into the
+        [kameloso.plugins.common.core.IRCPluginState.awaitingFibers|IRCPluginState.awaitingFibers]
         associative array, then issues a WHOIS query (unless overridden via
         the `issueWhois` parameter).
 
@@ -294,7 +295,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             background = Whether or not to issue queries as low-priority background messages.
 
         Throws:
-            [object.Exception] if a success of failure function was to trigger
+            [object.Exception|Exception] if a success of failure function was to trigger
             in an impossible scenario, such as on WHOIS results on Twitch.
      +/
     void enqueueAndWHOIS(const string nickname,
@@ -776,7 +777,8 @@ private:
             Generated `askToVerb` function. Asks the main thread to output text
             to the local terminal.
 
-            No need for any annotation; [kameloso.messaging.askToOutputImpl] is
+            No need for any annotation;
+            [kameloso.messaging.askToOutputImpl|askToOutputImpl] is
             `@system` and nothing else.
          +/
         mixin(q{

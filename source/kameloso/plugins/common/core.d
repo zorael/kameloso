@@ -3,7 +3,7 @@
     mixins to fully implement it.
 
     Event handlers can then be module-level functions, annotated with
-    [dialect.defs.IRCEvent.Type]s.
+    [dialect.defs.IRCEvent.Type|IRCEvent.Type]s.
 
     Example:
     ---
@@ -37,7 +37,7 @@
     ---
 
     See_Also:
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.common.core;
 
@@ -70,8 +70,8 @@ private:
 public:
     // CommandMetadata
     /++
-        Metadata about a [kameloso.plugins.common.core.IRCEventHandler.Command]- and/or
-        [kameloso.plugins.common.core.IRCEventHandler.Regex]-annotated event handler.
+        Metadata about a [kameloso.plugins.common.core.IRCEventHandler.Command|IRCEventHandler.Command]- and/or
+        [kameloso.plugins.common.core.IRCEventHandler.Regex|IRCEventHandler.Regex]-annotated event handler.
 
         See_Also:
             [commands]
@@ -100,7 +100,7 @@ public:
 
     // state
     /++
-        An [kameloso.plugins.common.core.IRCPluginState] instance containing
+        An [kameloso.plugins.common.core.IRCPluginState|IRCPluginState] instance containing
         variables and arrays that represent the current state of the plugin.
         Should generally be passed by reference.
      +/
@@ -165,7 +165,7 @@ public:
     // printSettings
     /++
         Called when we want a plugin to print its
-        [kameloso.plugins.common.core.Settings]-annotated struct of settings.
+        [kameloso.plugins.common.core.Settings|Settings]-annotated struct of settings.
      +/
     void printSettings() @system const;
 
@@ -223,7 +223,7 @@ public:
 
 // IRCPluginImpl
 /++
-    Mixin that fully implements an [kameloso.plugins.common.core.IRCPlugin].
+    Mixin that fully implements an [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
 
     Uses compile-time introspection to call module-level functions to extend behaviour.
 
@@ -243,7 +243,7 @@ public:
     ---
 
     See_Also:
-        [kameloso.plugins.common.core.IRCPlugin]
+        [kameloso.plugins.common.core.IRCPlugin|IRCPlugin]
  +/
 mixin template IRCPluginImpl(
     Flag!"debug_" debug_ = No.debug_,
@@ -287,8 +287,8 @@ mixin template IRCPluginImpl(
     // isEnabled
     /++
         Introspects the current plugin, looking for a
-        [kameloso.plugins.common.core.Settings]-annotated struct
-        member that has a bool annotated with [kameloso.plugins.common.core.Enabler],
+        [kameloso.plugins.common.core.Settings|Settings]-annotated struct
+        member that has a bool annotated with [kameloso.plugins.common.core.Enabler|Enabler],
         which denotes it as the bool that toggles a plugin on and off.
 
         It then returns its value.
@@ -348,14 +348,15 @@ mixin template IRCPluginImpl(
     // allow
     /++
         Judges whether an event may be triggered, based on the event itself and
-        the annotated required [kameloso.plugins.common.core.Permissions] of the
+        the annotated required [kameloso.plugins.common.core.Permissions|Permissions] of the
         handler in question. Wrapper function that merely calls
-        [kameloso.plugins.common.core.IRCPluginImpl.allowImpl]. The point behind it is to make something
-        that can be overridden and still allow it to call the original logic (below).
+        [kameloso.plugins.common.core.IRCPluginImpl.allowImpl|IRCPluginImpl.allowImpl].
+        The point behind it is to make something that can be overridden and still
+        allow it to call the original logic (below).
 
         Params:
-            event = [dialect.defs.IRCEvent] to allow, or not.
-            permissionsRequired = Required [kameloso.plugins.common.core.Permissions]
+            event = [dialect.defs.IRCEvent|IRCEvent] to allow, or not.
+            permissionsRequired = Required [kameloso.plugins.common.core.Permissions|Permissions]
                 of the handler in question.
 
         Returns:
@@ -370,19 +371,19 @@ mixin template IRCPluginImpl(
     // allowImpl
     /++
         Judges whether an event may be triggered, based on the event itself and
-        the annotated [kameloso.plugins.common.core.Permissions] of the
+        the annotated [kameloso.plugins.common.core.Permissions|Permissions] of the
         handler in question. Implementation function.
 
         Params:
-            event = [dialect.defs.IRCEvent] to allow, or not.
-            permissionsRequired = Required [kameloso.plugins.common.core.Permissions]
+            event = [dialect.defs.IRCEvent|IRCEvent] to allow, or not.
+            permissionsRequired = Required [kameloso.plugins.common.core.Permissions|Permissions]
                 of the handler in question.
 
         Returns:
             `true` if the event should be allowed to trigger, `false` if not.
 
         See_Also:
-            [kameloso.plugins.common.core.filterSender]
+            [kameloso.plugins.common.core.filterSender|filterSender]
      +/
     private FilterResult allowImpl(const ref IRCEvent event, const Permissions permissionsRequired)
     {
@@ -411,19 +412,19 @@ mixin template IRCPluginImpl(
 
     // onEvent
     /++
-        Pass on the supplied [dialect.defs.IRCEvent] to
-        [kameloso.plugins.common.core.IRCPluginImpl.onEventImpl].
+        Pass on the supplied [dialect.defs.IRCEvent|IRCEvent] to
+        [kameloso.plugins.common.core.IRCPluginImpl.onEventImpl|IRCPluginImpl.onEventImpl].
 
         This is made a separate function to allow plugins to override it and
         insert their own code, while still leveraging [onEventImpl] for the
         actual dirty work.
 
         Params:
-            event = Parsed [dialect.defs.IRCEvent] to pass onto
-                [kameloso.plugins.common.core.IRCPluginImpl.onEventImpl].
+            event = Parsed [dialect.defs.IRCEvent|IRCEvent] to pass onto
+                [kameloso.plugins.common.core.IRCPluginImpl.onEventImpl|IRCPluginImpl.onEventImpl].
 
         See_Also:
-            [kameloso.plugins.common.core.IRCPluginImpl.onEventImpl]
+            [kameloso.plugins.common.core.IRCPluginImpl.onEventImpl|IRCPluginImpl.onEventImpl]
      +/
     pragma(inline, true)
     override public void onEvent(const ref IRCEvent event) @system
@@ -433,30 +434,30 @@ mixin template IRCPluginImpl(
 
     // onEventImpl
     /++
-        Pass on the supplied [dialect.defs.IRCEvent] to module-level functions
-        annotated with an [kameloso.plugins.common.core.IRCEventHandler], registered
-        with the matching [dialect.defs.IRCEvent.Type]s.
+        Pass on the supplied [dialect.defs.IRCEvent|IRCEvent] to module-level functions
+        annotated with an [kameloso.plugins.common.core.IRCEventHandler|IRCEventHandler],
+        registered with the matching [dialect.defs.IRCEvent.Type|IRCEvent.Type]s.
 
         It also does checks for
-        [kameloso.plugins.common.core.ChannelPolicy],
-        [kameloso.plugins.common.core.Permissions],
-        [kameloso.plugins.common.core.PrefixPolicy],
-        [kameloso.plugins.common.core.IRCEventHandler.Command],
-        [kameloso.plugins.common.core.IRCEventHandler.Regex],
-        [kameloso.plugins.common.core.Chainable]
+        [kameloso.plugins.common.core.ChannelPolicy|ChannelPolicy],
+        [kameloso.plugins.common.core.Permissions|Permissions],
+        [kameloso.plugins.common.core.PrefixPolicy|PrefixPolicy],
+        [kameloso.plugins.common.core.IRCEventHandler.Command|IRCEventHandler.Command],
+        [kameloso.plugins.common.core.IRCEventHandler.Regex|IRCEventHandler.Regex],
+        [kameloso.plugins.common.core.Chainable|Chainable]
         etc; where such is applicable.
 
         This function is private, but since it's part of a mixin template it will
         be visible at the mixin site. Plugins can as such override
-        [kameloso.plugins.common.core.IRCPlugin.onEvent] with their own code and
-        invoke [onEventImpl] as a fallback.
+        [kameloso.plugins.common.core.IRCPlugin.onEvent|IRCPlugin.onEvent] with
+        their own code and invoke [onEventImpl] as a fallback.
 
         Params:
-            origEvent = Parsed [dialect.defs.IRCEvent] to dispatch to event handlers,
-                taken by value so we have an object we can modify.
+            origEvent = Parsed [dialect.defs.IRCEvent|IRCEvent] to dispatch to
+                event handlers, taken by value so we have an object we can modify.
 
         See_Also:
-            [kameloso.plugins.common.core.IRCPluginImpl.onEvent]
+            [kameloso.plugins.common.core.IRCPluginImpl.onEvent|IRCPluginImpl.onEvent]
      +/
     private void onEventImpl(/*const ref*/ IRCEvent origEvent) @system
     {
@@ -1231,11 +1232,11 @@ mixin template IRCPluginImpl(
 
     // postprocess
     /++
-        Lets a plugin modify an [dialect.defs.IRCEvent] while it's begin
+        Lets a plugin modify an [dialect.defs.IRCEvent|IRCEvent] while it's begin
         constructed, before it's finalised and passed on to be handled.
 
         Params:
-            event = The [dialect.defs.IRCEvent] in flight.
+            event = The [dialect.defs.IRCEvent|IRCEvent] in flight.
      +/
     override public void postprocess(ref IRCEvent event) @system
     {
@@ -1303,7 +1304,7 @@ mixin template IRCPluginImpl(
         Loads configuration for this plugin from disk.
 
         This does not proxy a call but merely loads configuration from disk for
-        all struct variables annotated [kameloso.plugins.common.core.Settings].
+        all struct variables annotated [kameloso.plugins.common.core.Settings|Settings].
 
         "Returns" two associative arrays for missing entries and invalid
         entries via its two out parameters.
@@ -1350,7 +1351,7 @@ mixin template IRCPluginImpl(
 
     // setSettingByName
     /++
-        Change a plugin's [kameloso.plugins.common.core.Settings]-annotated
+        Change a plugin's [kameloso.plugins.common.core.Settings|Settings]-annotated
         settings struct member by their string name.
 
         This is used to allow for command-line argument to set any plugin's
@@ -1401,7 +1402,7 @@ mixin template IRCPluginImpl(
 
     // printSettings
     /++
-        Prints the plugin's [kameloso.plugins.common.core.Settings]-annotated settings struct.
+        Prints the plugin's [kameloso.plugins.common.core.Settings|Settings]-annotated settings struct.
      +/
     override public void printSettings() const
     {
@@ -1437,7 +1438,7 @@ mixin template IRCPluginImpl(
         ---
 
         Params:
-            sink = Reference [std.array.Appender] to fill with plugin-specific
+            sink = Reference [std.array.Appender|Appender] to fill with plugin-specific
                 settings text.
 
         Returns:
@@ -1550,17 +1551,19 @@ mixin template IRCPluginImpl(
 
     // commands
     /++
-        Collects all [kameloso.plugins.common.core.IRCEventHandler.Command] command words and
-        [kameloso.plugins.common.core.IRCEventHandler.Regex] regex expressions
-        that this plugin offers at compile time, then at runtime returns them
-        alongside their [Description]s and their visibility, as an associative
-        array of [kameloso.plugins.common.core.IRCPlugin.CommandMetadata]s
+        Collects all [kameloso.plugins.common.core.IRCEventHandler.Command|IRCEventHandler.Command]
+        command words and [kameloso.plugins.common.core.IRCEventHandler.Regex|IRCEventHandler.Regex]
+        regex expressions that this plugin offers at compile time, then at runtime
+        returns them alongside their [Description]s and their visibility, as an associative
+        array of [kameloso.plugins.common.core.IRCPlugin.CommandMetadata|IRCPlugin.CommandMetadata]s
         keyed by command name strings.
 
         Returns:
-            Associative array of tuples of all [kameloso.plugins.common.core.Descriptions]
-            and whether they are hidden, keyed by [kameloso.plugins.common.core.IRCEventHandler.Command.word]s
-            and [kameloso.plugins.common.core.IRCEventHandler.Regex.expression]s.
+            Associative array of tuples of all
+            [kameloso.plugins.common.core.Description|Description]s and whether
+            they are hidden, keyed by
+            [kameloso.plugins.common.core.IRCEventHandler.Command.word|IRCEventHandler.Command.word]s
+            and [kameloso.plugins.common.core.IRCEventHandler.Regex.expression|IRCEventHandler.Regex.expression]s.
      +/
     override public IRCPlugin.CommandMetadata[string] commands() pure nothrow @property const
     {
@@ -1752,9 +1755,9 @@ unittest
 
     Params:
         verbose = Whether or not to output verbose debug information to the local terminal.
-        event = Reference to the mutable [dialect.defs.IRCEvent] we're considering.
+        event = Reference to the mutable [dialect.defs.IRCEvent|IRCEvent] we're considering.
         policy = Policy to apply.
-        client = [dialect.defs.IRCClient] of the calling [IRCPlugin]'s [IRCPluginState].
+        client = [dialect.defs.IRCClient|IRCClient] of the calling [IRCPlugin]'s [IRCPluginState].
         prefix = The prefix as set in the program-wide settings.
 
     Returns:
@@ -1879,7 +1882,7 @@ bool prefixPolicyMatches(bool verbose = false)
     This requires the Persistence service to be active to work.
 
     Params:
-        event = [dialect.defs.IRCEvent] to filter.
+        event = [dialect.defs.IRCEvent|IRCEvent] to filter.
         permissionsRequired = The [Permissions] context in which this user should be filtered.
         preferHostmasks = Whether to rely on hostmasks for user identification,
             or to use services account logins, which need to be issued WHOIS
@@ -2040,34 +2043,34 @@ public:
 
     // client
     /++
-        The current [dialect.defs.IRCClient], containing information pertaining
-        to the bot in the context of a client connected to an IRC server.
+        The current [dialect.defs.IRCClient|IRCClient], containing information
+        pertaining to the bot in the context of a client connected to an IRC server.
      +/
     IRCClient client;
 
     // server
     /++
-        The current [dialect.defs.IRCServer], containing information pertaining
-        to the bot in the context of an IRC server.
+        The current [dialect.defs.IRCServer|IRCServer], containing information
+        pertaining to the bot in the context of an IRC server.
      +/
     IRCServer server;
 
     // bot
     /++
-        The current [kameloso.kameloso.IRCBot], containing information pertaining
-        to the bot in the context of an IRC bot.
+        The current [kameloso.kameloso.IRCBot|IRCBot], containing information
+        pertaining to the bot in the context of an IRC bot.
      +/
     IRCBot bot;
 
     // settings
     /++
-        The current program-wide [kameloso.kameloso.CoreSettings].
+        The current program-wide [kameloso.kameloso.CoreSettings|CoreSettings].
      +/
     CoreSettings settings;
 
     // connSettings
     /++
-        The current program-wide [kameloso.kameloso.ConnectionSettings].
+        The current program-wide [kameloso.kameloso.ConnectionSettings|ConnectionSettings].
      +/
     ConnectionSettings connSettings;
 
@@ -2091,7 +2094,7 @@ public:
 
     // pendingReplays
     /++
-        Queued [dialect.defs.IRCEvent]s to replay.
+        Queued [dialect.defs.IRCEvent|IRCEvent]s to replay.
 
         The main loop iterates this after processing all on-event functions so
         as to know what nicks the plugin wants a WHOIS for. After the WHOIS
@@ -2113,21 +2116,21 @@ public:
 
     // awaitingFibers
     /++
-        The list of awaiting [core.thread.fiber.Fiber]s, keyed by
-        [dialect.defs.IRCEvent.Type].
+        The list of awaiting [core.thread.fiber.Fiber|Fiber]s, keyed by
+        [dialect.defs.IRCEvent.Type|IRCEvent.Type].
      +/
     Fiber[][] awaitingFibers;
 
     // awaitingDelegates
     /++
         The list of awaiting `void delegate(const IRCEvent)` delegates, keyed by
-        [dialect.defs.IRCEvent.Type].
+        [dialect.defs.IRCEvent.Type|IRCEvent.Type].
      +/
     void delegate(const IRCEvent)[][] awaitingDelegates;
 
     // scheduledFibers
     /++
-        The list of scheduled [core.thread.fiber.Fiber], UNIX time tuples.
+        The list of scheduled [core.thread.fiber.Fiber|Fiber], UNIX time tuples.
      +/
     ScheduledFiber[] scheduledFibers;
 
@@ -2140,14 +2143,14 @@ public:
     // nextScheduledTimetamp
     /++
         The UNIX timestamp of when the next scheduled
-        [kameloso.thread.ScheduledFiber] or delegate should be triggered.
+        [kameloso.thread.ScheduledFiber|ScheduledFiber] or delegate should be triggered.
      +/
     long nextScheduledTimestamp = long.max;
 
     // updateSchedule
     /++
         Updates the saved UNIX timestamp of when the next scheduled
-        [core.thread.fiber.Fiber] or delegate should be triggered.
+        [core.thread.fiber.Fiber|Fiber] or delegate should be triggered.
      +/
     void updateSchedule() pure nothrow @nogc
     {
@@ -2221,7 +2224,7 @@ struct Replay
 
     // event
     /++
-        Stored [dialect.defs.IRCEvent] to replay.
+        Stored [dialect.defs.IRCEvent|IRCEvent] to replay.
      +/
     IRCEvent event;
 
@@ -2286,29 +2289,31 @@ enum FilterResult
 
 // PrefixPolicy
 /++
-    In what way the contents of a [dialect.defs.IRCEvent] must start (be "prefixed")
-    for an annotated function to be allowed to trigger.
+    In what way the contents of a [dialect.defs.IRCEvent|IRCEvent] must start
+    (be "prefixed") for an annotated function to be allowed to trigger.
  +/
 enum PrefixPolicy
 {
     /++
-        The annotated event handler will not examine the [dialect.defs.IRCEvent.content]
+        The annotated event handler will not examine the [dialect.defs.IRCEvent.content|IRCEvent.content]
         member at all and will always trigger, as long as all other annotations match.
      +/
     direct,
 
     /++
-        The annotated event handler will only trigger if the [dialect.defs.IRCEvent.content]
-        member starts with the [kameloso.kameloso.CoreSettings.prefix] (e.g. "!").
+        The annotated event handler will only trigger if the
+        [dialect.defs.IRCEvent.content|IRCEvent.content] member starts with the
+        [kameloso.kameloso.CoreSettings.prefix|CoreSettings.prefix] (e.g. "!").
         All other annotations must also match.
      +/
     prefixed,
 
     /++
-        The annotated event handler will only trigger if the [dialect.defs.IRCEvent.content]
-        member starts with the bot's name, as if addressed to it.
+        The annotated event handler will only trigger if the
+        [dialect.defs.IRCEvent.content|IRCEvent.content] member starts with the
+        bot's name, as if addressed to it.
 
-        In [dialect.defs.IRCEvent.Type.QUERY] events this instead behaves as
+        In [dialect.defs.IRCEvent.Type.QUERY|QUERY] events this instead behaves as
         [PrefixPolicy.direct].
      +/
     nickname,
@@ -2360,7 +2365,8 @@ enum Permissions
     ignore = 0,
 
     /++
-        Anyone not explicitly blacklisted (with a [dialect.defs.IRCClient.Class.blacklist]
+        Anyone not explicitly blacklisted (with a
+        [dialect.defs.IRCClient.Class.blacklist|IRCClient.Class.blacklist]
         classifier) may trigger the annotated function. As such, to know if they're
         blacklisted, unknown users will first be looked up with a WHOIS query
         before allowing the function to trigger.
@@ -2373,22 +2379,24 @@ enum Permissions
     registered = 20,
 
     /++
-        Only users with a [dialect.defs.IRCClient.Class.whitelist] classifier
-        may trigger the annotated function.
+        Only users with a [dialect.defs.IRCClient.Class.whitelist|IRCClient.Class.whitelist]
+        classifier (or higher) may trigger the annotated function.
      +/
     whitelist = 30,
 
     /++
-        Only users with a [dialect.defs.IRCClient.Class.operator] classifier
-        may trigger the annotated function.
+        Only users with a [dialect.defs.IRCClient.Class.operator|IRCClient.Class.operator]
+        classifier (or higiher) may trigger the annotated function.
 
         Note: this does not mean IRC "+o" operators.
      +/
     operator = 40,
 
     /++
-        Only users with a [dialect.defs.IRCClient.Class.staff] classifier may
-        trigger the annotated function. These are channel owners.
+        Only users with a [dialect.defs.IRCClient.Class.staff|IRCClient.Class.staff]
+        classifier (or higher) may trigger the annotated function.
+
+        These are channel owners.
      +/
     staff = 50,
 
@@ -2500,11 +2508,11 @@ struct IRCEventHandler
 
     // onEvent
     /++
-        Adds an [dialect.defs.IRCEvent.Type] to the array of types that the
-        annotated event handler function should accept.
+        Adds an [dialect.defs.IRCEvent.Type|IRCEvent.Type] to the array of types
+        that the annotated event handler function should accept.
 
         Params:
-            type = New [dialect.defs.IRCEvent.Type] to listen for.
+            type = New [dialect.defs.IRCEvent.Type|IRCEvent.Type] to listen for.
 
         Returns:
             A `this` reference to the current struct instance.
@@ -2730,19 +2738,19 @@ struct IRCEventHandler
         // policy
         /++
             In what way the message is required to start for the annotated function to trigger.
-            +/
+         +/
         PrefixPolicy _policy = PrefixPolicy.direct;
 
         // engine
         /++
             Regex engine to match incoming messages with.
-            +/
+         +/
         StdRegex!char _engine;
 
         // expression
         /++
             The regular expression in string form.
-            +/
+         +/
         string _expression;
 
         // description
@@ -2752,13 +2760,13 @@ struct IRCEventHandler
 
             Specifically this is used to describe functions triggered by
             [IRCEventHandler.Command]s, in the help listing routine in [kameloso.plugins.chatbot].
-            +/
+         +/
         string _description;
 
         // hidden
         /++
             Whether this is a hidden command or if it should show up in help listings.
-            +/
+         +/
         bool _hidden;
 
         // policy
