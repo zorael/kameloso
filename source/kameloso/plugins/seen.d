@@ -14,7 +14,8 @@
     channels for full lists of users upon joining new ones, including the
     ones we join upon connecting. Elsewise, a completely silent user will never
     be recorded as having been seen, as they would never be triggering any of
-    the functions we define to listen to.
+    the functions we define to listen to. (There's a setting to ignore non-chatty
+    events, as we'll see later.)
 
     kameloso does primarily not use callbacks, but instead annotates functions
     with `UDA`s of IRC event *types*. When an event is incoming it will trigger
@@ -375,6 +376,17 @@ private:
         lets us easily enable or disable the plugin without having checks everywhere.
      +/
     @Enabler bool enabled = true;
+
+    /++
+        Toggles whether or not non-chat events, such as
+        [dialect.defs.IRCEvent.Type.JOIN|JOIN]s,
+        [dialect.defs.IRCEvent.Type.PART|PART]s and the such, should be considered
+        as observations. If set, only chatty events will count as being seen.
+
+        This might make sense to enable on Twitch, but in most other cases it can
+        be safely left disabled.
+     +/
+    bool ignoreNonChatEvents;
 }
 
 
@@ -530,7 +542,41 @@ void onSomeAction(SeenPlugin plugin, const ref IRCEvent event)
 
         There's no need to check for whether the sender/target is us, as
         [updateUser] will do it more thoroughly (by stripping any extra modesigns).
+
+        Don't count non-chatty events if the settings say to ignore them.
      +/
+
+    with (IRCEvent.Type)
+    switch (event.type)
+    {
+    case CHAN:
+    case QUERY:
+    case EMOTE:
+        // Chatty event. Drop down
+        break;
+
+    version(TwitchSupport)
+    {
+        case TWITCH_BULKGIFT:
+        case TWITCH_CHARITY:
+        case TWITCH_EXTENDSUB:
+        case TWITCH_GIFTCHAIN:
+        case TWITCH_PAYFORWARD:
+        case TWITCH_REWARDGIFT:
+        case TWITCH_RITUAL:
+        case TWITCH_SUB:
+        case TWITCH_SUBGIFT:
+        case TWITCH_SUBUPGRADE:
+            // Consider these as chatty events too
+            // targets might be caught in the crossfire in some cases
+            goto case CHAN;
+    }
+
+    default:
+        if (plugin.seenSettings.ignoreNonChatEvents) return;
+        // Drop down
+        break;
+    }
 
     if (event.sender.nickname)
     {
