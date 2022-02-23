@@ -1,20 +1,20 @@
 # kameloso [![Linux/macOS/Windows](https://img.shields.io/github/workflow/status/zorael/kameloso/D?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/actions?query=workflow%3AD) [![Linux](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?logo=circleci&style=flat&maxAge=3600)](https://circleci.com/gh/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?logo=appveyor&style=flat&maxAge=3600)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v3.0.0-beta.3.svg?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/compare/v3.0.0-beta.3...master)
 
-**kameloso** idles in your channels and listens to commands and events, like bots generally do.
+**kameloso** is an IRC bot.
 
 ## Current functionality includes:
 
-* chat monitoring in bedazzling colours like it's the 90s
+* chat monitoring in bedazzling colours (or mesmerising monochrome)
 * automatic mode sets (e.g. auto `+o` on join)
 * logs
-* reporting titles of pasted URLs
+* reporting titles of pasted URLs, YouTube video information fetch
 * **sed**-replacement of messages (`s/this/that/` substitution)
 * saving notes to offline users that get played back when they come online
-* channel polls
+* channel polls, `!seen`, counters, stopwatches
 * works on **Twitch** with some common Twitch bot features
 * [more random stuff and gimmicks](https://github.com/zorael/kameloso/wiki/Current-plugins)
 
-All of the above are plugins and can be runtime-disabled or compiled out. It is modular and easily extensible. A skeletal Hello World plugin is [25 lines of code](source/kameloso/plugins/hello.d).
+All of the above are plugins and can be disabled at runtime or omitted from compilation entirely. It is modular and easy to extend. A skeletal Hello World plugin is [25 lines of code](source/kameloso/plugins/hello.d).
 
 Testing is primarily done on [**Libera.Chat**](https://libera.chat) and on [**Twitch**](https://dev.twitch.tv/docs/irc/guide) servers, so support and coverage is best there.
 
