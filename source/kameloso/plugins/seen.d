@@ -652,25 +652,6 @@ void onNamesReply(SeenPlugin plugin, const ref IRCEvent event)
 }
 
 
-// onEndOfList
-/++
-    Optimise the lookups in the associative array of seen users.
-
-    At the end of a long listing of users in a channel, when we're reasonably
-    sure we've added users to our associative array of seen users, *rehashes* it.
-    This balances the hash map and allows for more efficient reads.
- +/
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.RPL_ENDOFNAMES)
-    .onEvent(IRCEvent.Type.RPL_ENDOFWHO)
-    .channelPolicy(omniscientChannelPolicy)
-)
-void onEndOfList(SeenPlugin plugin)
-{
-    plugin.maybeRehash();
-}
-
-
 // onCommandSeen
 /++
     Whenever someone says "!seen" in a [dialect.defs.IRCEvent.Type.CHAN|CHAN] or
