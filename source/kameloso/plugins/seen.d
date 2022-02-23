@@ -271,6 +271,39 @@ private:  // Module-level private.
     static immutable timeBetweenSaves = 300.seconds;
 
 
+    // rehashThresholdMultiplier
+    /++
+        The multiplier to multiply the length of [seenUsers] with; if the number
+        of users added since the last rehash exceeds this value, rehash again.
+
+        ---
+        if (plugin.addedSinceLastRehash >
+            (plugin.seenUsers.length * plugin.rehashThresholdMultiplier))
+        {
+            plugin.seenUsers = plugin.seenUsers.rehash();
+            plugin.addedSinceLastRehash = 0;
+        }
+        ---
+
+        See_Also:
+            [addedSinceLastRehash]
+     +/
+    enum rehashThresholdMultiplier = 0.5;
+
+
+    // addedSinceLastRehash
+    /++
+        How many users have been added to [seenUsers] since the last rehash.
+
+        If this is below the number of entries in [seenUsers] multiplied by
+        [rehashThresholdMultiplier], don't rehash, since there's no need.
+
+        See_Also:
+            [rehashThresholdMultiplier]
+     +/
+    uint addedSinceLastRehash;
+
+
     // IRCPluginImpl
     /++
         This mixes in functions that fully implement an
@@ -634,7 +667,7 @@ void onNamesReply(SeenPlugin plugin, const ref IRCEvent event)
 )
 void onEndOfList(SeenPlugin plugin)
 {
-    plugin.seenUsers = plugin.seenUsers.rehash();
+    plugin.maybeRehash();
 }
 
 
@@ -864,7 +897,37 @@ in (signed.length, "Tried to update a user with an empty (signed) nickname")
     // Make sure to strip the modesign, so `@foo` is the same person as `foo`.
     immutable nickname = skipModesignStrip ? signed : signed.stripModesign(plugin.state.server);
     if (nickname == plugin.state.client.nickname) return;
-    plugin.seenUsers[nickname] = time;
+
+    if (auto nicknameSeen = nickname in plugin.seenUsers)
+    {
+        // User exists in seenUsers; merely update the time
+        *nicknameSeen = time;
+    }
+    else
+    {
+        // New user; add an entry and bump the added counter
+        plugin.seenUsers[nickname] = time;
+        ++plugin.addedSinceLastRehash;
+    }
+}
+
+
+// maybeRehash
+/++
+    Rehash the [SeenPlugin.seenUsers|seenUsers] associative array if we deem
+    enough new users have been added to it since the last rehash to warrant it.
+
+    Params:
+        plugin = Current [SeenPlugin].
+ +/
+void maybeRehash(SeenPlugin plugin)
+{
+    if (plugin.addedSinceLastRehash >
+        (plugin.seenUsers.length * plugin.rehashThresholdMultiplier))
+    {
+        plugin.seenUsers = plugin.seenUsers.rehash();
+        plugin.addedSinceLastRehash = 0;
+    }
 }
 
 
@@ -996,7 +1059,7 @@ void onWelcome(SeenPlugin plugin)
         while (true)
         {
             plugin.updateAllObservedUsers();
-            plugin.seenUsers = plugin.seenUsers.rehash();
+            plugin.maybeRehash();
             plugin.seenUsers.saveSeen(plugin.seenFile);
             delay(plugin, plugin.timeBetweenSaves, Yes.yield);
         }
