@@ -90,7 +90,6 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
         import kameloso.irccolours : ircBold;
         import lu.string : beginsWith, contains, nom;
         import std.algorithm.sorting : sort;
-        import std.array : array;
         import std.format : format;
         import std.typecons : No, Yes;
 
@@ -184,7 +183,10 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
 
                     enum width = 12;
                     enum pattern = "* %-*s %-([%s]%| %)";
-                    const keys = nonhiddenCommands.keys.sort.array;
+                    const keys = nonhiddenCommands
+                        .keys
+                        .sort
+                        .release;
 
                     immutable message = plugin.state.settings.colouredOutgoing ?
                         pattern.format(width, specifiedPlugin.ircBold, keys) :
@@ -228,7 +230,10 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
 
                 enum width = 12;
                 enum pattern = "* %-*s %-([%s]%| %)";
-                const keys = nonhiddenCommands.keys.sort.array;
+                const keys = nonhiddenCommands
+                    .keys
+                    .sort
+                    .release;
 
                 immutable message = plugin.state.settings.colouredOutgoing ?
                     pattern.format(width, pluginName.ircBold, keys) :
