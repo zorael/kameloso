@@ -68,12 +68,13 @@ If there's anyone talking it should show up on your screen.
     * [**Except nothing happens**](#except-nothing-happens)
   * [Twitch](#twitch)
     * [Caveats](#caveats)
-    * [Fails to authenticate: *Improperly formatted auth*](#fails-to-authenticate-improperly-formatted-auth)
+    * [Fails to authenticate: "*Improperly formatted auth*"](#fails-to-authenticate-improperly-formatted-auth)
     * [Example configuration](#example-configuration)
     * [Streamer assistant bot](#streamer-assistant-bot)
   * [Further help](#further-help)
 * [Known issues](#known-issues)
   * [Windows](#windows)
+  * [Linux, MacOS or other Posix](#linux-macos-or-other-posix)
 * [Roadmap](#roadmap)
 * [Built with](#built-with)
 * [License](#license)
@@ -91,13 +92,7 @@ Grab a pre-compiled binary from under [Releases](https://github.com/zorael/kamel
 
 You need one based on D version **2.084** or later (January 2019). For **ldc** this is version **1.14**. Sadly, the stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently based on version **2.076** and is thus too old to be used.
 
-> [**Compiling with ldc on Windows is currently broken**](https://github.com/ldc-developers/ldc/issues/3913) and requires a modified compiler with a larger stack to build. This should hopefully be resolved in **ldc 1.29**. Until such time please use **dmd** or download a pre-compiled binary.
->
-> Likewise, if **ldc** won't compile on Linux or MacOS, ensure that the stack size is set high enough with `ulimit -s`.
-> ```sh
-> $ ulimit -s 16384
-> $ dub build --compiler=ldc2
-> ```
+> [**Compiling with ldc on Windows is currently broken**](https://github.com/ldc-developers/ldc/issues/3913) and requires a modified compiler with a larger stack to build. See the [known issues](#known-issues) section for more details.
 
 If your repositories (or other software sources) don't have compilers new enough, you can use the official [`install.sh`](https://dlang.org/install.html) installation script to download current ones, or any version of choice.
 
@@ -354,6 +349,7 @@ Properly enabled and assuming a prefix of `!`, commands to test are:
 * `!start`, `!uptime`, `!stop`
 * `!timer`
 * `!followage`
+* `!shoutout`
 
 ...alongside `!operator`, `!whitelist`, `!blacklist`, `!oneliner`, `!poll`, `!counter`, `!stopwatch`, and other non-Twitch-specific commands.
 
@@ -372,20 +368,30 @@ If you still can't find what you're looking for, or if you have suggestions on h
 
 # Known issues
 
-Compiling in a non-`debug` build mode *may* fail (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026)). Try `--build-mode=singleFile`, which compiles one file at a time and as such lowers memory requirements, but drastically increases build times.
-
 ## Windows
+
+[**Compiling with ldc on Windows is currently broken**](https://github.com/ldc-developers/ldc/issues/3913) and requires a modified compiler with a larger stack to build. This should hopefully be resolved in **ldc 1.29**. Until such time please use **dmd** or download a pre-compiled binary.
 
 If SSL doesn't work at all, you may simply be missing the required libraries. Download and install **OpenSSL** "Light" from [here](https://slproweb.com/products/Win32OpenSSL.html), and opt to install to system directories when asked.
 
 Even with SSL seemingly properly set up you may see errors of *"Peer certificates cannot be authenticated with given CA certificates"*. If this happens, download this [`cacert.pem`](https://curl.haxx.se/ca/cacert.pem) file, place it somewhere reasonable, and edit your configuration file to point to it; `caBundleFile` under `[Connection]`.
+
+## Linux, MacOS or other Posix
+
+If **ldc** won't compile on Linux or MacOS, ensure that the stack size is set high enough with `ulimit -s`.
+
+```sh
+$ ulimit -s 16384
+$ dub build --compiler=ldc2
+```
+
+`16384` should be enough, but go overboard and set it to `32768` if it isn't.
 
 # Roadmap
 
 * pipedream zero: **no compiler segfaults** ([#18026](https://issues.dlang.org/show_bug.cgi?id=18026), [#20562](https://issues.dlang.org/show_bug.cgi?id=20562))
 * pipedream: DCC
 * non-blocking FIFO
-* make plugins enabled/disabled on per-channel basis
 * more pairs of eyes
 
 # Built with
