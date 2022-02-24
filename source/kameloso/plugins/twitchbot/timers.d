@@ -83,9 +83,6 @@ Fiber createTimerFiber(TwitchBotPlugin plugin,
         /// The timestamp at the last successful trigger.
         long lastTimestamp = creation;
 
-        /// Whether or not stagger has passed, so we don't evaluate it every single time.
-        bool staggerDone;
-
         version(TwitchAPIFeatures)
         {
             immutable streamer = room.broadcasterDisplayName;
@@ -98,23 +95,23 @@ Fiber createTimerFiber(TwitchBotPlugin plugin,
 
         while (true)
         {
-            if (!staggerDone)
+            // Stagger
+            immutable now = Clock.currTime.toUnixTime;
+
+            if ((now - creation) < timerDef.stagger)
             {
-                immutable now = Clock.currTime.toUnixTime;
-
-                if ((now - creation) < timerDef.stagger)
-                {
-                    // Reset counters so it starts fresh after stagger
-                    lastMessageCount = room.messageCount;
-                    lastTimestamp = now;
-                    Fiber.yield();
-                    continue;
-                }
+                // Reset counters so it starts fresh after stagger
+                lastMessageCount = room.messageCount;
+                lastTimestamp = now;
+                Fiber.yield();
+                continue;
             }
+            // ended, so break and join the next loop
+            break;
+        }
 
-            // Avoid evaluating current UNIX time after stagger is done
-            staggerDone = true;
-
+        while (true)
+        {
             if (room.messageCount < (lastMessageCount + timerDef.messageCountThreshold))
             {
                 Fiber.yield();
