@@ -1280,6 +1280,110 @@ unittest
 }
 
 
+// expandTags
+/++
+    String-replaces `<tags>` in a string with the results from calls to `Tint`.
+
+    `<tags>` are the lowercase first letter of all
+    [std.experimental.logger.LogLevel|LogLevel]s; `<a>`, `<l>`, `<t>`, `<i>`,
+    `<w>`, `<e>`, `<c>` and `<f>`.
+
+    `</>` equals [std.experimental.logger.LogLevel.off|LogLevel.off] and terminates
+    the colour sequence.
+
+    This should hopefully make highlighted strings more readable.
+
+    Example:
+    ---
+    enum keyPattern = "
+        %1$sYour private authorisation key is: %2$s%3$s%4$s
+        It should be entered as %2$spass%4$s under %2$s[IRCBot]%4$s.
+        ";
+
+    enum keyPatternWithColoured = "
+        <l>Your private authorisation key is: <i>%s</>
+        It should be entered as <i>pass</> under <i>[IRCBot]</>
+        ";
+    ---
+
+    Params:
+        line = A line of text.
+ +/
+T expandTags(T)(/*const*/ T line) @safe
+{
+    import lu.string : contains;
+    import std.array : replace;
+
+    bool hasEscapes;
+
+    if (line.contains(`\<`))
+    {
+        // Avoid escaped tags by string replacing escapes into nonsense
+        hasEscapes = true;
+        line = line
+            .replace("\\\\", "\0\0")
+            .replace(`\<`, "\1\1");
+    }
+
+    line = line
+        //.replace("<a>", Tint.log)  // all...
+        .replace("<l>", Tint.log)
+        .replace("<t>", Tint.trace)
+        .replace("<i>", Tint.info)
+        .replace("<w>", Tint.warning)
+        .replace("<e>", Tint.error)
+        .replace("<c>", Tint.critical)
+        .replace("<f>", Tint.fatal)
+        .replace("</>", Tint.off);
+
+    if (hasEscapes)
+    {
+        // Restore nonsense to escapes
+        line = line
+            .replace("\0\0", "\\")
+            .replace("\1\1", `<`);
+    }
+
+    return line;
+}
+
+///
+unittest
+{
+    import std.conv : text, to;
+
+    {
+        immutable line = "This is a <l>log</> line.";
+        immutable replaced = line.expandTags;
+        immutable expected = text("This is a ", Tint.log, "log", Tint.off, " line.");
+        assert((replaced == expected), replaced);
+    }
+    {
+        import std.conv : wtext;
+
+        immutable line = "This is a <l>log</> line."w;
+        immutable replaced = line.expandTags;
+        immutable expected = wtext("This is a "w, Tint.log, "log"w, Tint.off, " line."w);
+        assert((replaced == expected), replaced.to!string);
+    }
+    {
+        import std.conv : dtext;
+
+        immutable line = "This is a <l>log</> line."d;
+        immutable replaced = line.expandTags;
+        immutable expected = dtext("This is a "d, Tint.log, "log"d, Tint.off, " line."d);
+        assert((replaced == expected), replaced.to!string);
+    }
+    {
+        immutable line = `<i>info</>nothing<c>critical</>nothing\<w>not warning`;
+        immutable replaced = line.expandTags;
+        immutable expected = text(Tint.info, "info", Tint.off, "nothing",
+            Tint.critical, "critical", Tint.off, "nothing<w>not warning");
+        assert((replaced == expected), replaced);
+    }
+}
+
+
 // replaceTokens
 /++
     Apply some common text replacements. Used on part and quit reasons.
