@@ -379,10 +379,6 @@ public:
         Uses [std.format.formattedWrite|formattedWrite] to coerce the passed
         arguments as the format pattern dictates.
 
-        If on D version 2.074 or later, passes the pattern as a compile-time
-        parameter to it, to validate that the pattern matches the arguments.
-        If earlier it passes execution to the other, runtime-pattern [printfImpl] overload.
-
         Params:
             pattern = Compile-time pattern to validate the arguments and format
                 the output with.
