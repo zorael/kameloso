@@ -1367,7 +1367,14 @@ unittest
         assert((replaced == expected), replaced);
     }
 
-    static if ((LuSemVer.majorVersion >= 2) && (LuSemVer.minorVersion >= 5))
+    static if (
+        (LuSemVer.majorVersion == 1) &&
+        (LuSemVer.minorVersion == 1) &&
+        (LuSemVer.patchVersion <= 4))
+    {
+        // lu.string.contains is broken for wstring and dstring on lu 1.1.4 and earlier
+    }
+    else
     {
         {
             import std.conv : wtext;
