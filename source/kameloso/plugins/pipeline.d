@@ -110,8 +110,8 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
         if (!monochrome)
         {
             import kameloso.constants : DefaultColours;
+            import kameloso.logger : LogLevel;
             import kameloso.terminal.colours : colour;
-            import std.experimental.logger : LogLevel;
 
             // We don't have a logger instance so we have to access the
             // DefaultColours.logcolours{Bright,Dark} tables manually

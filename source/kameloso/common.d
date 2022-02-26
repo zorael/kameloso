@@ -1205,11 +1205,11 @@ struct Tint
         // opDispatch
         /++
             Provides the string that corresponds to the tint of the
-            [std.experimental.logger.core.LogLevel|LogLevel] that was passed in string form
+            [kameloso.logger.core.LogLevel|LogLevel] that was passed in string form
             as the `tint` `opDispatch` template parameter.
 
             This saves us the boilerplate of copy/pasting one function for each
-            [std.experimental.logger.core.LogLevel|LogLevel].
+            [kameloso.logger.core.LogLevel|LogLevel].
          +/
         pragma(inline, true)
         static string opDispatch(string tint)()
