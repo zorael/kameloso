@@ -32,7 +32,7 @@ package:
  +/
 void generateKey(TwitchBotPlugin plugin)
 {
-    import kameloso.common : Tint, logger;
+    import kameloso.common : expandTags, logger;
     import kameloso.thread : ThreadMessage;
     import lu.string : contains, nom, stripped;
     import std.process : Pid, ProcessException, wait;
@@ -52,17 +52,17 @@ void generateKey(TwitchBotPlugin plugin)
 Attempting to open a Twitch login page in your default web browser. Follow the
 instructions and log in to authorise the use of this program with your account.
 
-%1$sThen paste the address of the page you are redirected to afterwards here.%2$s
+<l>Then paste the address of the page you are redirected to afterwards here.</>
 
-* The redirected address should start with %3$shttp://localhost%2$s.
-* It will probably say "%1$sthis site can't be reached%2$s".
+* The redirected address should start with <i>http://localhost</>.
+* It will probably say "<l>this site can't be reached</>".
 * If your browser is already logged in on Twitch, it will likely immediately
   lead you to this page without asking for login credentials. If you want to
   generate a key for a different account, first log out and retry.
-* If you are running local web server on port %3$s80%2$s, you may have to
+* If you are running local web server on port <i>80</>, you may have to
   temporarily disable it for this to work.
 `;
-    writefln(attemptToOpenPattern, Tint.log, Tint.off, Tint.info);
+    writeln(attemptToOpenPattern.expandTags);
 
     static immutable scopes =
     [
@@ -126,17 +126,16 @@ instructions and log in to authorise the use of this program with your account.
 
     void printManualURL()
     {
-        enum scissors = "8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<";
         enum copyPastePattern = `
-%1$sCopy and paste this link manually into your browser, and log in as asked:%2$s
+<l>Copy and paste this link manually into your browser, and log in as asked:
 
-%3$s%4$s%2$s
+<i>8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<</>
 
-%5$s
+%s
 
-%3$s%4$s%2$s
+<i>8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<</>
 `;
-        writefln(copyPastePattern, Tint.log, Tint.off, Tint.info, scissors, url);
+        writefln(copyPastePattern.expandTags, url);
     }
 
     if (plugin.state.settings.force)
@@ -219,10 +218,10 @@ instructions and log in to authorise the use of this program with your account.
     {
         import std.stdio : writef;
 
-        enum pattern = "%1$sPaste the addresss of the page you were redirected to here (empty line exits):%2$s
+        enum pattern = "<l>Paste the address of the page you were redirected to here (empty line exits):</>
 
 > ";
-        writef(pattern, Tint.log, Tint.off);
+        write(pattern.expandTags);
         stdout.flush();
 
         stdin.flush();
@@ -261,10 +260,10 @@ instructions and log in to authorise the use of this program with your account.
     plugin.state.updates |= typeof(plugin.state.updates).bot;
 
     enum keyPattern = "
-%1$sYour private authorisation key is: %2$s%3$s%4$s
-It should be entered as %2$spass%4$s under %2$s[IRCBot]%4$s.
+<l>Your private authorisation key is: <i>%s</>
+It should be entered as <i>pass</> under <i>[IRCBot]</>.
 ";
-    writefln(keyPattern, Tint.log, Tint.info, key, Tint.off);
+    writefln(keyPattern.expandTags, key);
 
     if (!plugin.state.settings.saveOnExit)
     {
@@ -282,20 +281,20 @@ It should be entered as %2$spass%4$s under %2$s[IRCBot]%4$s.
         }
         else
         {
-            enum keyAddPattern = "\n* Make sure to add it to %s%s%s, then.";
-            writefln(keyAddPattern, Tint.info, plugin.state.settings.configFile, Tint.off);
+            enum keyAddPattern = "\n* Make sure to add it to <i>%s</>, then.";
+            writefln(keyAddPattern.expandTags, plugin.state.settings.configFile);
         }
     }
 
     enum issuePattern = "
 --------------------------------------------------------------------------------
 
-All done! Restart the program (without %1$s--set twitchbot.keygen%2$s) and it should
+All done! Restart the program (without <i>--set twitchbot.keygen</>) and it should
 just work. If it doesn't, please file an issue at:
 
-    %1$shttps://github.com/zorael/kameloso/issues/new%2$s
+    <i>https://github.com/zorael/kameloso/issues/new</>
 
-%3$sNote: keys are valid for 60 days, after which this process needs to be repeated.%2$s
+<l>Note: keys are valid for 60 days, after which this process needs to be repeated.</>
 ";
-    writefln(issuePattern, Tint.info, Tint.off, Tint.log);
+    writeln(issuePattern.expandTags);
 }

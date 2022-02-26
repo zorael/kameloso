@@ -18,7 +18,7 @@ private:
 import kameloso.plugins.admin.base;
 
 import kameloso.plugins.common.misc : nameOf;
-import kameloso.common : Tint, logger;
+import kameloso.common : Tint, expandTags, logger;
 import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
 import kameloso.messaging;
 import dialect.defs;
@@ -208,8 +208,8 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
             final switch (result)
             {
             case success:
-                enum pattern = "Added %s%s%s as %s in %s.";
-                logger.logf(pattern, Tint.info, id, Tint.log, asWhat, channel);
+                enum pattern = "Added <i>%s<l> as %s in %s.";
+                logger.logf(pattern.expandTags, id, asWhat, channel);
                 break;
 
             case noSuchAccount:
@@ -217,8 +217,8 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
                 assert(0, "Invalid enlist-only `AlterationResult` passed to `lookupEnlist.report`");
 
             case alreadyInList:
-                enum pattern = "%s%s%s is already %s in %s.";
-                logger.logf(pattern, Tint.info, id, Tint.log, asWhat, channel);
+                enum pattern = "<i>%s<l> is already %s in %s.";
+                logger.logf(pattern.expandTags, id, asWhat, channel);
                 break;
             }
         }
@@ -439,18 +439,18 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
             assert(0, "Invalid enlist-only `AlterationResult` returned to `delist`");
 
         case noSuchAccount:
-            enum pattern = "No such account %s%s%s was found as %s in %s.";
-            logger.logf(pattern, Tint.info, account, Tint.log, asWhat, channel);
+            enum pattern = "No such account <i>%s<l> was found as %s in %s.";
+            logger.logf(pattern.expandTags, account, asWhat, channel);
             break;
 
         case noSuchChannel:
-            enum pattern = "Account %s%s%s isn't %s in %s.";
-            logger.logf(pattern, Tint.info, account, Tint.log, asWhat, channel);
+            enum pattern = "Account <i>%s<l> isn't %s in %s.";
+            logger.logf(pattern.expandTags, account, asWhat, channel);
             break;
 
         case success:
-            enum pattern = "Removed %s%s%s as %s in %s";
-            logger.logf(pattern, Tint.info, account, Tint.log, asWhat, channel);
+            enum pattern = "Removed <i>%s<l> as %s in %s.";
+            logger.logf(pattern.expandTags, account, asWhat, channel);
             break;
         }
     }
@@ -631,9 +631,9 @@ in (mask.length, "Tried to add an empty hostmask definition")
         {
             if (event == IRCEvent.init)
             {
-                enum pattern = `Invalid hostmask: "%s%s%s"; must be in the form ` ~
-                    `"%1$snickname!ident@address%3$s".`;
-                logger.warningf(pattern, Tint.log, mask, Tint.warning);
+                enum pattern = `Invalid hostmask "<l>%s<w>"; must be in the form ` ~
+                    `"<l>nickname!ident@address<w>".`;
+                logger.warningf(pattern.expandTags, mask);
             }
             else
             {
@@ -650,12 +650,11 @@ in (mask.length, "Tried to add an empty hostmask definition")
         // Remove any placeholder example since there should now be at least one true entry
         aa.remove(examplePlaceholderKey);
 
-        immutable colouredAccount = colourByHash(account, brightFlag);
-
         if (event == IRCEvent.init)
         {
-            enum pattern = `Added hostmask "%s%s%s", mapped to account %4$s%3$s.`;
-            logger.infof(pattern, Tint.log, mask, Tint.info, colouredAccount);
+            immutable colouredAccount = colourByHash(account, brightFlag);
+            enum pattern = `Added hostmask "<l>%s<i>", mapped to account <l>%s.`;
+            logger.infof(pattern.expandTags, mask, colouredAccount);
         }
         else
         {
@@ -675,8 +674,8 @@ in (mask.length, "Tried to add an empty hostmask definition")
 
             if (event == IRCEvent.init)
             {
-                enum pattern = `Removed hostmask "%s%s%s".`;
-                logger.infof(pattern, Tint.log, mask, Tint.info);
+                enum pattern = `Removed hostmask "<l>%s<i>".`;
+                logger.infof(pattern.expandTags, mask);
             }
             else
             {
@@ -688,8 +687,8 @@ in (mask.length, "Tried to add an empty hostmask definition")
         {
             if (event == IRCEvent.init)
             {
-                enum pattern = `No such hostmask "%s%s%s" on file.`;
-                logger.warningf(pattern, Tint.log, mask, Tint.warning);
+                enum pattern = `No such hostmask "<l>%s<w>" on file.`;
+                logger.warningf(pattern.expandTags, mask);
             }
             else
             {

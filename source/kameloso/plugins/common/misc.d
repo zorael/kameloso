@@ -43,7 +43,7 @@ bool applyCustomSettings(IRCPlugin[] plugins,
     const string[] customSettings,
     CoreSettings copyOfSettings)
 {
-    import kameloso.common : Tint, logger;
+    import kameloso.common : Tint, expandTags, logger;
     import lu.string : contains, nom;
     import std.conv : ConvException;
 
@@ -54,8 +54,8 @@ bool applyCustomSettings(IRCPlugin[] plugins,
     {
         if (!line.contains!(Yes.decode)('.'))
         {
-            enum pattern = `Bad %splugin%s.%1$ssetting%2$s=%1$svalue%2$s format. (%1$s%3$s%2$s)`;
-            logger.warningf(pattern, Tint.log, Tint.warning, line);
+            enum pattern = `Bad <l>plugin<w>.<l>setting<w>=<l>value<w> format. (<l>%s<w>)`;
+            logger.warningf(pattern.expandTags, line);
             noErrors = false;
             continue;
         }
@@ -78,8 +78,8 @@ bool applyCustomSettings(IRCPlugin[] plugins,
 
                 if (!success)
                 {
-                    enum pattern = "No such %score%s setting: %1$s%3$s";
-                    logger.warningf(pattern, Tint.log, Tint.warning, setting);
+                    enum pattern = "No such <l>core<w> setting: <l>%s";
+                    logger.warningf(pattern.expandTags, setting);
                     noErrors = false;
                 }
                 else
@@ -101,16 +101,16 @@ bool applyCustomSettings(IRCPlugin[] plugins,
             }
             catch (SetMemberException e)
             {
-                enum pattern = "Failed to set %score%s.%1$s%3$s%2$s: " ~
-                    "it requires a value and none was supplied";
-                logger.warningf(pattern, Tint.log, Tint.warning, setting);
+                enum pattern = "Failed to set <l>core<w>.<l>%s<w>: " ~
+                    "it requires a value and none was supplied.";
+                logger.warningf(pattern.expandTags, setting);
                 version(PrintStacktraces) logger.trace(e.info);
                 noErrors = false;
             }
             catch (ConvException e)
             {
-                enum pattern = `Invalid value for %score%s.%1$s%3$s%2$s: "%1$s%4$s%2$s"`;
-                logger.warningf(pattern, Tint.log, Tint.warning, setting, value);
+                enum pattern = `Invalid value for <l>core<w>.<l>%s<w>: "<l>%s<w>"`;
+                logger.warningf(pattern.expandTags, setting, value);
                 noErrors = false;
             }
 
@@ -131,15 +131,15 @@ bool applyCustomSettings(IRCPlugin[] plugins,
 
                     if (!success)
                     {
-                        enum pattern = "No such %s%s%s plugin setting: %1$s%4$s";
-                        logger.warningf(pattern, Tint.log, pluginstring, Tint.warning, setting);
+                        enum pattern = "No such <l>%s<w> plugin setting: <l>%s";
+                        logger.warningf(pattern.expandTags, pluginstring, setting);
                         noErrors = false;
                     }
                 }
                 catch (ConvException e)
                 {
-                    enum pattern = `Invalid value for %s%s%s.%1$s%4$s%3$s: "%1$s%5$s%3$s"`;
-                    logger.warningf(pattern, Tint.log, pluginstring, Tint.warning, setting, value);
+                    enum pattern = `Invalid value for <l>%s<w>.<l>%s<w>: "<l>%s<w>"`;
+                    logger.warningf(pattern.expandTags, pluginstring, setting, value);
                     noErrors = false;
 
                     //version(PrintStacktraces) logger.trace(e.info);
@@ -340,7 +340,7 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
 
     version(ExplainReplay)
     {
-        import kameloso.common : Tint, logger;
+        import kameloso.common : expandTags, logger;
         import lu.string : beginsWith;
 
         immutable callerSlice = caller.beginsWith("kameloso.plugins.") ?
@@ -360,27 +360,9 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
         {
             version(ExplainReplay)
             {
-                version(Colours)
-                {
-                    enum pattern = "%s%s%s plugin %6$sNOT%3$s queueing an event to be replayed " ~
-                        "on behalf of %1$s%4$s%3$s; delta time %1$s%5$d%3$s is too recent";
-
-                    logger.logf(pattern,
-                        Tint.info, plugin.name, Tint.log,
-                        callerSlice,
-                        delta,
-                        Tint.warning);
-                }
-                else
-                {
-                    enum pattern = "%s plugin NOT queueing an event to be replayed " ~
-                        "on behalf of %s; delta time %d is too recent";
-
-                    logger.logf(pattern,
-                        plugin.name,
-                        callerSlice,
-                        delta);
-                }
+                enum pattern = "<i>%s<l> plugin <w>NOT<l> queueing an event to be replayed " ~
+                    "on behalf of <i>%s<l>; delta time <i>%d<l> is too recent";
+                logger.logf(pattern.expandTags, plugin.name, callerSlice, delta);
             }
             return;
         }
@@ -388,16 +370,8 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
 
     version(ExplainReplay)
     {
-        version(Colours)
-        {
-            enum pattern = "%s%s%s plugin queueing an event to be replayed on behalf of %1$s%4$s%3$s";
-            logger.logf(pattern, Tint.info, plugin.name, Tint.log, callerSlice);
-        }
-        else
-        {
-            enum pattern = "%s plugin queueing an event to be replayed on behalf of %s";
-            logger.logf(pattern, plugin.name, callerSlice);
-        }
+        enum pattern = "<i>%s<l> plugin queueing an event to be replayed on behalf of <i>%s";
+        logger.logf(pattern.expandTags, plugin.name, callerSlice);
     }
 
     plugin.state.pendingReplays[user.nickname] ~=
@@ -432,79 +406,43 @@ Replay replay(Plugin, Fun)(Plugin plugin, const ref IRCEvent event,
 {
     void dg(Replay replay)
     {
+        import kameloso.common : expandTags, logger;
+        import lu.conv : Enum;
+        import lu.string : beginsWith;
+
         version(ExplainReplay)
         void explainReplay()
         {
-            import kameloso.common : Tint, logger;
-            import lu.string : beginsWith;
-
             immutable caller = replay.caller.beginsWith("kameloso.plugins.") ?
                 replay.caller[17..$] :
                 replay.caller;
 
-            version(Colours)
-            {
-                enum pattern = "%s%s%s replaying %1$s%4$s%3$s-level event (invoking %1$s%5$s%3$s) " ~
-                    "based on WHOIS results: user %1$s%6$s%3$s is %1$s%7$s%3$s class";
-
-                logger.logf(pattern,
-                    Tint.info, plugin.name, Tint.log,
-                    replay.permissionsRequired,
-                    caller,
-                    replay.event.sender.nickname,
-                    replay.event.sender.class_);
-            }
-            else
-            {
-                enum pattern = "%s replaying %s-level event (invoking %s) " ~
-                    "based on WHOIS results: user %s is %s class";
-
-                logger.logf(pattern,
-                    plugin.name,
-                    replay.permissionsRequired,
-                    caller,
-                    replay.event.sender.nickname,
-                    replay.event.sender.class_);
-            }
+            enum pattern = "<i>%s<l> replaying <i>%s<l>-level event (invoking <i>%s<l>) " ~
+                "based on WHOIS results; user <i>%s<l> is <i>%s<l> class";
+            logger.logf(pattern.expandTags,
+                plugin.name,
+                Enum!Permissions.toString(replay.permissionsRequired),
+                caller,
+                replay.event.sender.nickname,
+                Enum!(IRCUser.Class).toString(replay.event.sender.class_));
         }
 
         version(ExplainReplay)
         void explainRefuse()
         {
-            import kameloso.common : Tint, logger;
-            import lu.string : beginsWith;
-
             immutable caller = replay.caller.beginsWith("kameloso.plugins.") ?
                 replay.caller[17..$] :
                 replay.caller;
 
-            version(Colours)
-            {
-                enum pattern = "%s%s%s %8$sNOT%3$s replaying %1$s%4$s%3$s-level event " ~
-                    "(which would have invoked %1$s%5$s%3$s) " ~
-                    "based on WHOIS results: user %1$s%6$s%3$s is insufficient %1$s%7$s%3$s class";
-
-                logger.logf(pattern,
-                    Tint.info, plugin.name, Tint.log,
-                    replay.permissionsRequired,
-                    caller,
-                    replay.event.sender.nickname,
-                    replay.event.sender.class_,
-                    Tint.warning);
-            }
-            else
-            {
-                enum pattern = "%s NOT replaying %s-level event " ~
-                    "(which would have invoked %s) " ~
-                    "based on WHOIS results: user %s is insufficient %s class";
-
-                logger.logf(pattern,
-                    plugin.name,
-                    replay.permissionsRequired,
-                    caller,
-                    replay.event.sender.nickname,
-                    replay.event.sender.class_);
-            }
+            enum pattern = "<i>%s<l> plugin <w>NOT<l> replaying <i>%s<l>-level event " ~
+                "(which would have invoked <i>%s<l>) " ~
+                "based on WHOIS results: user <i>%s<l> is <i>%s<l> class";
+            logger.logf(pattern.expandTags,
+                plugin.name,
+                Enum!Permissions.toString(replay.permissionsRequired),
+                caller,
+                replay.event.sender.nickname,
+                Enum!(IRCUser.Class).toString(replay.event.sender.class_));
         }
 
         with (Permissions)

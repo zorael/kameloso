@@ -18,7 +18,7 @@ private:
 
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : UserAwareness;
-import kameloso.common : Tint, logger;
+import kameloso.common : expandTags, logger;
 import kameloso.messaging;
 import dialect.defs;
 import lu.json : JSONStorage;
@@ -246,8 +246,8 @@ in (rawLine.length, "Tried to add an empty quote")
     }
     catch (JSONException e)
     {
-        enum pattern = "Could not add quote for %s%s%s: %1$s%4$s";
-        logger.errorf(pattern, Tint.log, id, Tint.error, e.msg);
+        enum pattern = "Could not add quote for <l>%s<e>: <l>%s";
+        logger.errorf(pattern.expandTags, id, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
 }
@@ -333,8 +333,8 @@ void modQuoteAndReport(QuotesPlugin plugin,
     }
     catch (JSONException e)
     {
-        enum pattern = "Could not remove quote for %s%s%s: %1$s%4$s";
-        logger.errorf(pattern, Tint.log, id, Tint.error, e.msg);
+        enum pattern = "Could not remove quote for <l>%s<e>: <l>%s";
+        logger.errorf(pattern.expandTags, id, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
 }
@@ -750,8 +750,8 @@ void manageQuoteImpl(QuotesPlugin plugin,
     }
     catch (JSONException e)
     {
-        enum pattern = "Could not quote %s%s%s: %1$s%4$s";
-        logger.errorf(pattern, Tint.log, specified, Tint.error, e.msg);
+        enum pattern = "Could not quote <l>%s<e>: <l>%s";
+        logger.errorf(pattern.expandTags, specified, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
 }

@@ -25,7 +25,7 @@ debug import kameloso.plugins.admin.debugging;
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.misc : applyCustomSettings;
 import kameloso.plugins.common.awareness;
-import kameloso.common : Tint, logger;
+import kameloso.common : expandTags, logger;
 import kameloso.constants : BufferSize;
 import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
 import kameloso.messaging;
@@ -1242,8 +1242,8 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 
         if (slice.length)
         {
-            enum pattern = "Reloading plugin \"%s%s%s\".";
-            logger.logf(pattern, Tint.info, slice, Tint.log);
+            enum pattern = `Reloading plugins "<i>%s<l>".`;
+            logger.logf(pattern.expandTags, slice);
         }
         else
         {

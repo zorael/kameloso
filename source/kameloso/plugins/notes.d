@@ -15,7 +15,7 @@ private:
 
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
-import kameloso.common : Tint, logger;
+import kameloso.common : expandTags, logger;
 import kameloso.irccolours : ircBold, ircColourByHash;
 import kameloso.messaging;
 import dialect.defs;
@@ -106,7 +106,7 @@ void playbackNotes(NotesPlugin plugin,
     const string givenChannel,
     const Flag!"background" background = No.background)
 {
-    import kameloso.common : timeSince;
+    import kameloso.common : Tint, timeSince;
     import dialect.common : toLowerCase;
     import std.datetime.systime : Clock;
     import std.exception : ErrnoException;
@@ -193,8 +193,8 @@ void playbackNotes(NotesPlugin plugin,
             catch (JSONException e)
             {
                 enum pattern = "Failed to fetch, replay and clear notes for " ~
-                    "%s%s%s on %1$s%4$s%3$s: %1$s%5$s";
-                logger.errorf(pattern, Tint.log, id, Tint.error,
+                    "<l>%s<e> on <l>%s<e>: <l>%s";
+                logger.errorf(pattern.expandTags, id,
                     (channelName.length ? channelName : "<no channel>"), e.msg);
 
                 if (e.msg == "JSONValue is not an object")
@@ -429,9 +429,6 @@ in (id.length, "Tried to clear notes for an empty id")
             return;
         }
 
-        /*enum pattern = "Clearing stored notes for %s%s%s in %1$s%4$s%3$s.";
-        logger.logf(pattern, Tint.info, id, Tint.log,
-            channel.length ? channel : "(private messages)");*/
         plugin.notes[channel].object.remove(id);
         plugin.pruneNotes();
     }
