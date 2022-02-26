@@ -405,12 +405,13 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
         else
         {
             immutable rtArrayPattern = args.elemIsCharacter ?
-                "%s%*s %s%-*s %s[%(%s, %)]%s(%d)\n" :
-                "%s%*s %s%-*s %s%s%s(%d)\n";
+                "%s%*s %s%-*s %s%s[%(%s, %)]%s(%d)\n" :
+                "%s%*s %s%-*s %s%s%s%s(%d)\n";
 
             sink.formattedWrite(rtArrayPattern,
                 typeCode.colour, args.typewidth, args.typestring,
                 memberCode.colour, args.namewidth, args.memberstring,
+                (content.length ? string.init : " "),
                 valueCode.colour, content,
                 lengthCode.colour, content.length);
         }
@@ -432,12 +433,13 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
         else
         {
             immutable rtArrayPattern = args.elemIsCharacter ?
-                "%*s %-*s [%(%s, %)](%d)\n" :
-                "%*s %-*s %s(%d)\n";
+                "%*s %-*s %s[%(%s, %)](%d)\n" :
+                "%*s %-*s %s%s(%d)\n";
 
             sink.formattedWrite(rtArrayPattern,
                 args.typewidth, args.typestring,
                 args.namewidth, args.memberstring,
+                (content.length ? string.init : " "),
                 content,
                 content.length);
         }
@@ -486,11 +488,12 @@ private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
         }
         else
         {
-            enum aaPattern = "%s%*s %s%-*s %s%s%s(%d)\n";
+            enum aaPattern = "%s%*s %s%-*s %s%s%s%s(%d)\n";
 
             sink.formattedWrite(aaPattern,
                 typeCode.colour, args.typewidth, args.typestring,
                 memberCode.colour, args.namewidth, args.memberstring,
+                (content.length ? string.init : " "),
                 valueCode.colour, content.keys,
                 lengthCode.colour, content.length);
         }
@@ -499,7 +502,7 @@ private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
     {
         if (content.length > truncateAfter)
         {
-            enum aaPattern = "%*s %-*s %s(%d)\n";
+            enum aaPattern = "%*s %-*s %s ... (%d)\n";
 
             sink.formattedWrite(aaPattern,
                 args.typewidth, args.typestring,
@@ -509,11 +512,12 @@ private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
         }
         else
         {
-            enum aaPattern = "%*s %-*s %s(%d)\n";
+            enum aaPattern = "%*s %-*s %s%s(%d)\n";
 
             sink.formattedWrite(aaPattern,
                 args.typewidth, args.typestring,
                 args.namewidth, args.memberstring,
+                (content.length ? string.init : " "),
                 content,
                 content.length);
         }
@@ -878,7 +882,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
       float f                           3.14
      double d                           99.9
      char[] c                          ['a', 'b', 'c'](3)
-     char[] emptyC                     [](0)
+     char[] emptyC                      [](0)
    string[] dynA                       ["foo", "bar", "baz"](3)
       int[] iA                         [1, 2, 3, 4](4)
  char[char] cC                         ['b':'b', 'a':'a'](2)
@@ -926,10 +930,10 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
       float f                           3.14
      double d                           99.9
      char[] c                          ['a', 'b', 'c'](3)
-     char[] emptyC                     [](0)
+     char[] emptyC                      [](0)
    string[] dynA                       ["foo", "bar", "baz"](3)
       int[] iA                         [1, 2, 3, 4](4)
- char[char] cC                         [](0)
+ char[char] cC                          [](0)
 `;
 
     assert((sink.data == classNameSerialised), '\n' ~ sink.data);
@@ -1155,7 +1159,7 @@ unittest
 `-- State
     Client client                     <struct> (init)
     Server server                     <struct> (init)
- Reparse[] reparses                   [](0)
+ Reparse[] reparses                    [](0)
       bool hasReplays                  false
 `), '\n' ~ formattedState);
 }
