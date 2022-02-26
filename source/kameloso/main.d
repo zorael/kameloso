@@ -2116,7 +2116,7 @@ Next tryConnect(ref Kameloso instance)
             version(Posix)
             {
                 import kameloso.common : errnoStrings;
-                enum pattern = "Failed to connect: <l>%s<e> <l>%s<e>)";
+                enum pattern = "Failed to connect: <l>%s<e> (<l>%s<e>)";
                 logger.errorf(pattern.expandTags, errorString, errnoStrings[attempt.errno]);
             }
             else version(Windows)

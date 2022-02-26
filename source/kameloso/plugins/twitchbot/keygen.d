@@ -218,7 +218,7 @@ instructions and log in to authorise the use of this program with your account.
     {
         import std.stdio : writef;
 
-        enum pattern = "<l>Paste the addresss of the page you were redirected to here (empty line exits):</>
+        enum pattern = "<l>Paste the address of the page you were redirected to here (empty line exits):</>
 
 > ";
         write(pattern.expandTags);
