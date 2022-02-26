@@ -1362,7 +1362,6 @@ unittest
 
     static if ((LuSemVer.majorVersion >= 2) && (LuSemVer.minorVersion >= 5))
     {
-        pragma(msg, "blerp");
         {
             import std.conv : wtext;
 
