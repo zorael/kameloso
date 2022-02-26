@@ -1392,6 +1392,16 @@ unittest
             Tint.critical, "critical", Tint.off, "nothing<w>not warning");
         assert((replaced == expected), replaced);
     }
+    {
+        immutable line = "This is a line with no tags";
+        immutable replaced = line.expandTags;
+        assert(line is replaced);
+    }
+    {
+        immutable emptyLine = string.init;
+        immutable replaced = emptyLine.expandTags;
+        assert(replaced is emptyLine);
+    }
 }
 
 
