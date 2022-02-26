@@ -543,7 +543,8 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
 
     try
     {
-        import std.algorithm.iteration : joiner, map;
+        import std.algorithm.iteration : map;
+        import std.array : join;
         import std.encoding : sanitize;
         import std.file : exists, isDir, mkdirRecurse;
         import std.stdio : File, writeln;
@@ -563,7 +564,7 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
         // Write all in one go
         const lines = buffer.lines.data
             .map!sanitize
-            .joiner("\n");
+            .join("\n");
 
         File file = File(buffer.file, "a");
         file.writeln(lines);
