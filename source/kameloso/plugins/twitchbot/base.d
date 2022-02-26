@@ -203,11 +203,11 @@ void onUserstate(const ref IRCEvent event)
     if (!event.target.badges.contains("moderator/") &&
         !event.target.badges.contains("broadcaster/"))
     {
-        import kameloso.common : Tint;
+        import kameloso.common : expandTags;
 
-        enum pattern = "The bot is not a moderator of home channel %s%s%s. " ~
+        enum pattern = "The bot is not a moderator of home channel <l>%s<w>. " ~
             "Consider elevating it to such to avoid being as rate-limited.";
-        logger.warningf(pattern, Tint.log, event.channel, Tint.warning);
+        logger.warningf(pattern.expandTags, event.channel);
     }
 }
 
@@ -1019,7 +1019,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
 
         void validationDg()
         {
-            import kameloso.common : Tint;
+            import kameloso.common : expandTags;
             import lu.string : plurality;
             import std.conv : to;
             import std.datetime.systime : Clock, SysTime;
@@ -1075,17 +1075,17 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                 {
                     // More than a week away, just .info
                     enum pattern = "Your Twitch authorisation key will expire " ~
-                        "in %s%d days%s on %1$s%4$02d-%5$02d-%6$02d%3$s.";
-                    logger.infof(pattern, Tint.log, numDays, Tint.info,
+                        "in <l>%d days<i> on <l>%4d-%02d-%02d<i>.";
+                    logger.infof(pattern.expandTags, numDays,
                         expiresWhen.year, expiresWhen.month, expiresWhen.day);
                 }
                 else if (delta > 1.days)
                 {
                     // A week or less, more than a day; warning
                     enum pattern = "Warning: Your Twitch authorisation key will expire " ~
-                        "in %s%d %s%s on %1$s%5$02d-%6$02d-%7$02d %8$02d:%9$02d3$%s.";
-                    logger.warningf(pattern, Tint.log, numDays,
-                        numDays.plurality("day", "days"), Tint.warning,
+                        "in <l>%d %s<w> on <l>%4d-%02d-%02d %02d:%02d<w>.";
+                    logger.warningf(pattern.expandTags,
+                        numDays, numDays.plurality("day", "days"),
                         expiresWhen.year, expiresWhen.month, expiresWhen.day,
                         expiresWhen.hour, expiresWhen.minute);
                 }
@@ -1093,10 +1093,10 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                 {
                     // Less than a day; warning
                     immutable numHours = delta.total!"hours";
-                    enum pattern = "Warning: Your Twitch authorisation key will expire " ~
-                        "in %s%d %s%s at %5$02d:%6$02d3$%s.";
-                    logger.warningf(pattern, Tint.log, numHours,
-                        numHours.plurality("hour", "hours"), Tint.warning,
+                    enum pattern = "WARNING: Your Twitch authorisation key will expire " ~
+                        "in <l>%d %s<w> at <l>%02d:%02d<w>.";
+                    logger.warningf(pattern.expandTags,
+                        numHours, numHours.plurality("hour", "hours"),
                         expiresWhen.hour, expiresWhen.minute);
                 }
             }
@@ -1106,15 +1106,15 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                 import etc.c.curl : CurlError;
 
                 // Something is deeply wrong.
-                enum pattern = "Failed to validate Twitch API keys: %s (%s%s%s) (%2$s%5$s%4$s)";
-                logger.errorf(pattern, e.msg, Tint.log, e.error, Tint.error, curlErrorStrings[e.errorCode]);
+                enum pattern = "Failed to validate Twitch API keys: <l>%s<e> (<l>%s<e>) (<l>%s<e>)";
+                logger.errorf(pattern.expandTags, e.msg, e.error, curlErrorStrings[e.errorCode]);
 
                 if (e.errorCode == CurlError.ssl_cacert)
                 {
                     // Peer certificate cannot be authenticated with given CA certificates
                     enum caBundlePattern = "You may need to supply a CA bundle file " ~
-                        "(e.g. %scacert.pem%s) in the configuration file.";
-                    logger.errorf(caBundlePattern, Tint.log, Tint.error);
+                        "(e.g. <l>cacert.pem<e>) in the configuration file.";
+                    logger.error(caBundlePattern.expandTags);
                 }
 
                 logger.error("Disabling API features.");

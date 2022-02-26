@@ -103,7 +103,7 @@ public:
 void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.printer.formatting : formatMessageMonochrome;
-    import kameloso.common : Tint, logger;
+    import kameloso.common : Tint, expandTags, logger;
     import std.typecons : Flag, No, Yes;
 
     if (!plugin.printerSettings.logs) return;
@@ -307,15 +307,15 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                 import kameloso.common : errnoStrings;
                 import core.stdc.errno : errno;
 
-                enum pattern = "ErrnoException (%s%s%s) caught when writing to log: %1$s%4$s";
-                logger.warningf(pattern, Tint.log, errnoStrings[errno], Tint.warning, e.msg);
+                enum pattern = "ErrnoException (<l>%s<w>) caught when writing to log: <l>%s";
+                logger.warningf(pattern.expandTags, errnoStrings[errno], e.msg);
             }
             else version(Windows)
             {
                 import core.stdc.errno : errno;
 
-                enum pattern = "ErrnoException (%s%ds%s) caught when writing to log: %1$s%4$s";
-                logger.warningf(pattern, Tint.log, errno, Tint.warning, e.msg);
+                enum pattern = "ErrnoException (<l>%d<w>) caught when writing to log: <l>%s";
+                logger.warningf(pattern.expandTags, errno, e.msg);
             }
             else
             {
@@ -462,7 +462,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
  +/
 bool establishLogLocation(PrinterPlugin plugin, const string logLocation)
 {
-    import kameloso.common : Tint, logger;
+    import kameloso.common : Tint, expandTags, logger;
     import std.file : exists, isDir;
 
     if (logLocation.exists)
@@ -471,8 +471,8 @@ bool establishLogLocation(PrinterPlugin plugin, const string logLocation)
 
         if (!plugin.naggedAboutDir)
         {
-            enum pattern = "Specified log directory (%s%s%s) is not a directory.";
-            logger.warningf(pattern, Tint.log, logLocation, Tint.warning);
+            enum pattern = "Specified log directory (<l>%s<w>) is not a directory.";
+            logger.warningf(pattern.expandTags, logLocation);
             plugin.naggedAboutDir = true;
         }
 
@@ -531,7 +531,7 @@ void commitAllLogsImpl(PrinterPlugin plugin)
  +/
 void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
 {
-    import kameloso.common : Tint, logger;
+    import kameloso.common : expandTags, logger;
     import std.exception : ErrnoException;
     import std.file : FileException;
     import std.utf : UTFException;
@@ -572,8 +572,8 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
     }
     catch (FileException e)
     {
-        enum pattern = "File exception caught when committing log %s%s%s: %1$s%4$s%5$s";
-        logger.warningf(pattern, Tint.log, buffer.file, Tint.warning, e.msg, plugin.bell);
+        enum pattern = "File exception caught when committing log <l>%s<w>: <l>%s%s";
+        logger.warningf(pattern.expandTags, buffer.file, e.msg, plugin.bell);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (ErrnoException e)
@@ -581,25 +581,22 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
         version(Posix)
         {
             import kameloso.common : errnoStrings;
-            enum pattern = "ErrnoException %s%s%s caught when committing " ~
-                "log to %1$s%4$s%3$s: %1$s%5$s%6$s";
-            logger.warningf(pattern, Tint.log, errnoStrings[e.errno], Tint.warning,
+            enum pattern = "ErrnoException <l>%s<w> caught when committing log to <l>%s<w>: <l>%s%s";
+            logger.warningf(pattern.expandTags, errnoStrings[e.errno],
                 buffer.file, e.msg, plugin.bell);
         }
         else
         {
-            enum pattern = "ErrnoException %s%d%s caught when committing " ~
-                "log to %1$s%4$s%3$s: %1$s%5$s%6$s";
-            logger.warningf(pattern, Tint.log, e.errno, Tint.warning,
-                buffer.file, e.msg, plugin.bell);
+            enum pattern = "ErrnoException <l>%d<w> caught when committing log to <l>%s<w>: <l>%s%s";
+            logger.warningf(pattern.expandTags, e.errno, buffer.file, e.msg, plugin.bell);
         }
 
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (Exception e)
     {
-        enum pattern = "Unexpected exception caught when committing log %s%s%s: %1$s%4$s%5$s";
-        logger.warningf(pattern, Tint.log, buffer.file, Tint.warning, e.msg, plugin.bell);
+        enum pattern = "Unexpected exception caught when committing log <l>%s<w>: <l>%s%s";
+        logger.warningf(pattern.expandTags, buffer.file, e.msg, plugin.bell);
         version(PrintStacktraces) logger.trace(e);
     }
 }

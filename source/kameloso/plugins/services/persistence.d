@@ -592,9 +592,9 @@ void reloadHostmasksFromDisk(PersistenceService service)
         }
         catch (FormatException e)
         {
-            import kameloso.common : Tint, logger;
-            enum pattern = "Malformed hostmask in %s%s%s: %1$s%4$s";
-            logger.warningf(pattern, Tint.log, service.hostmasksFile, Tint.warning, hostmask);
+            import kameloso.common : expandTags, logger;
+            enum pattern =`Malformed hostmask in <l>%s<w>: "<l>%s<w>"`;
+            logger.warningf(pattern.expandTags, service.hostmasksFile, hostmask);
         }
     }
 }

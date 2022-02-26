@@ -16,7 +16,7 @@ private:
 
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
-import kameloso.common : Tint, logger;
+import kameloso.common : expandTags, logger;
 import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
 import kameloso.messaging;
 import dialect.defs;
@@ -231,9 +231,9 @@ in (account.length, "Tried to apply automodes to an empty account")
 
     if (!channel.ops.canFind(plugin.state.client.nickname))
     {
-        enum pattern = "Could not apply %s+%s%s %1$s%4$s%3$s in %1$s%5$s%3$s " ~
+        enum pattern = "Could not apply <i>+%s<l> <i>%s<l> in <i>%s<l> " ~
             "because we are not an operator in the channel.";
-        logger.logf(pattern, Tint.info, missingModes, Tint.log, nickname, channelName);
+        logger.logf(pattern.expandTags, missingModes, nickname, channelName);
         return;
     }
 

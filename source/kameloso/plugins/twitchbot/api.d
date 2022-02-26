@@ -65,9 +65,9 @@ if (isSomeFunction!dg)
     }
     catch (TwitchQueryException e)
     {
-        import kameloso.common : Tint, curlErrorStrings, logger;
-        enum pattern = "Failed to query Twitch: %s (%s%s%s) (%2$s%5$s%4$s)";
-        logger.errorf(pattern, e.msg, Tint.log, e.error, Tint.error, curlErrorStrings[e.errorCode]);
+        import kameloso.common : curlErrorStrings, expandTags, logger;
+        enum pattern = "Failed to query Twitch: <l>%s<e> (<l>%s<e>) (<l>%s<e>)";
+        logger.errorf(pattern.expandTags, e.msg, e.error, curlErrorStrings[e.errorCode]);
     }
 }
 

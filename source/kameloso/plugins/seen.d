@@ -48,8 +48,8 @@ private import dialect.defs;
 // [kameloso.irccolours] for some IRC colouring and formatting.
 private import kameloso.irccolours : ircBold, ircColourByHash;
 
-// [kameloso.common] for some globals.
-private import kameloso.common : Tint, logger;
+// [kameloso.common] for some globals and helpers.
+private import kameloso.common : expandTags, logger;
 
 // [std.datetime.systime] for the [std.datetime.systime.Clock|Clock], to update times with.
 private import std.datetime.systime : Clock;
@@ -1010,8 +1010,8 @@ long[string] loadSeen(const string filename)
 
     if (!filename.exists || !filename.isFile)
     {
-        enum pattern = "%s%s%s does not exist or is not a file";
-        logger.warningf(pattern, Tint.log, filename, Tint.warning);
+        enum pattern = "<l>%s<w> does not exist or is not a file";
+        logger.warningf(pattern.expandTags, filename);
         return aa;
     }
 
@@ -1027,6 +1027,7 @@ long[string] loadSeen(const string filename)
     }
     catch (JSONException e)
     {
+        import kameloso.common : Tint;
         logger.error("Could not load seen JSON from file: ", Tint.log, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
@@ -1113,8 +1114,8 @@ void onWelcome(SeenPlugin plugin)
 
         // Reports statistics on how many users are registered as having been seen
 
-        enum pattern = "Currently %s%d%s %s seen.";
-        logger.logf(pattern, Tint.info, plugin.seenUsers.length, Tint.log,
+        enum pattern = "Currently <i>%d<l> %s seen.";
+        logger.logf(pattern.expandTags, plugin.seenUsers.length,
             plugin.seenUsers.length.plurality("user", "users"));
     }
 

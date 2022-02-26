@@ -311,13 +311,13 @@ void startChannelQueries(ChanQueriesService service)
 
                         if (++consecutiveUnknownCommands >= maxConsecutiveUnknownCommands)
                         {
-                            import kameloso.common : Tint;
+                            import kameloso.common : expandTags;
 
                             // Cannot WHOIS on this server (assume)
                             logger.error("Error: This server does not seem " ~
                                 "to support user accounts?");
-                            enum pattern = "Consider enabling %sCore%s.%1$spreferHostmasks%2$s.";
-                            logger.errorf(pattern, Tint.log, Tint.warning);
+                            enum pattern = "Consider enabling <l>Core<e>.<l>preferHostmasks<e>.";
+                            logger.error(pattern.expandTags);
                             service.serverSupportsWHOIS = false;
                             return;
                         }

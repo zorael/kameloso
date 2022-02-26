@@ -487,7 +487,7 @@ void commitAllLogs(PrinterPlugin plugin)
 )
 void onISUPPORT(PrinterPlugin plugin)
 {
-    import kameloso.common : Tint, logger;
+    import kameloso.common : expandTags, logger;
 
     if (plugin.printedISUPPORT || !plugin.state.server.network.length)
     {
@@ -497,11 +497,9 @@ void onISUPPORT(PrinterPlugin plugin)
 
     plugin.printedISUPPORT = true;
 
-    enum pattern = "Detected %s%s%s running daemon %s%s%s (%s)";
-    logger.logf(pattern,
-        Tint.info, plugin.state.server.network, Tint.log,
-        Tint.info, plugin.state.server.daemon,
-        Tint.off, plugin.state.server.daemonstring);
+    enum pattern = "Detected <i>%s<l> running daemon <i>%s<l> (<i>%s<l>)";
+    logger.logf(pattern.expandTags, plugin.state.server.network,
+        plugin.state.server.daemon, plugin.state.server.daemonstring);
 }
 
 
