@@ -2226,7 +2226,7 @@ Next tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
 
         case error:
             enum pattern = "Could not resolve server address: <l>%s<e> (<l>%d<e>)";
-            logger.errorf(pattern, errorString, attempt.errno);
+            logger.errorf(pattern.expandTags, errorString, attempt.errno);
 
             if (firstConnect)
             {
