@@ -1319,6 +1319,8 @@ T expandTags(T)(/*const*/ T line) @safe
     import lu.string : contains;
     import std.array : replace;
 
+    if (!line.length || !line.contains('<')) return line;
+
     bool hasEscapes;
 
     if (line.contains(`\<`))
