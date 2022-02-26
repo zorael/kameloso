@@ -3120,7 +3120,7 @@ int run(string[] args)
             static if (__VERSION__ >= 2087L)
             {
                 immutable allocated = stats.allocatedInCurrentThread;
-                enum pattern = "Allocated in current thread: <l>%,d<%i> bytes";
+                enum pattern = "Allocated in current thread: <l>%,d<i> bytes";
                 logger.infof(pattern.expandTags, allocated);
             }
 
