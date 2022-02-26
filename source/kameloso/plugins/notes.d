@@ -429,9 +429,6 @@ in (id.length, "Tried to clear notes for an empty id")
             return;
         }
 
-        /*enum pattern = "Clearing stored notes for %s%s%s in %1$s%4$s%3$s.";
-        logger.logf(pattern, Tint.info, id, Tint.log,
-            channel.length ? channel : "(private messages)");*/
         plugin.notes[channel].object.remove(id);
         plugin.pruneNotes();
     }
