@@ -1283,13 +1283,14 @@ unittest
 // expandTags
 /++
     String-replaces `<tags>` in a string with the results from calls to `Tint`.
+    Also works with `dstring`s and `wstring`s.
 
     `<tags>` are the lowercase first letter of all
-    [std.experimental.logger.LogLevel|LogLevel]s; `<a>`, `<l>`, `<t>`, `<i>`,
-    `<w>`, `<e>`, `<c>` and `<f>`.
+    [std.experimental.logger.LogLevel|LogLevel]s; `<l>`, `<t>`, `<i>`, `<w>`
+    `<e>`, `<c>` and `<f>`. `<a>` is not included.
 
     `</>` equals [std.experimental.logger.LogLevel.off|LogLevel.off] and terminates
-    the colour sequence.
+    any colour sequence.
 
     This should hopefully make highlighted strings more readable.
 
@@ -1307,7 +1308,11 @@ unittest
     ---
 
     Params:
-        line = A line of text.
+        line = A line of text, presumably with `<tags>`.
+
+    Returns:
+        The passsed `line` but with any `<tags>` replaced with ANSI colour sequences.
+        The original string is passed back if there was nothing to replace.
  +/
 T expandTags(T)(/*const*/ T line) @safe
 {
