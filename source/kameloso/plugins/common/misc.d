@@ -406,12 +406,13 @@ Replay replay(Plugin, Fun)(Plugin plugin, const ref IRCEvent event,
 {
     void dg(Replay replay)
     {
+        import kameloso.common : expandTags, logger;
+        import lu.conv : Enum;
+        import lu.string : beginsWith;
+
         version(ExplainReplay)
         void explainReplay()
         {
-            import kameloso.common : expandTags, logger;
-            import lu.string : beginsWith;
-
             immutable caller = replay.caller.beginsWith("kameloso.plugins.") ?
                 replay.caller[17..$] :
                 replay.caller;
@@ -429,9 +430,6 @@ Replay replay(Plugin, Fun)(Plugin plugin, const ref IRCEvent event,
         version(ExplainReplay)
         void explainRefuse()
         {
-            import kameloso.common : expandTags, logger;
-            import lu.string : beginsWith;
-
             immutable caller = replay.caller.beginsWith("kameloso.plugins.") ?
                 replay.caller[17..$] :
                 replay.caller;
