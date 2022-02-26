@@ -145,8 +145,11 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                 }
 
                 // Insert an empty space if the file exists, to separate old content from new
+                // Cache .exists, because opening the file creates it
+                // (and thus a non-existing file would still get the spacing writeln)
+                immutable fileExists = buffer.file.exists;
                 File file = File(buffer.file, "a");
-                if (buffer.file.exists) file.writeln();
+                if (fileExists) file.writeln();
                 file.writeln(datestamp);
                 file.flush();
             }
