@@ -1350,6 +1350,7 @@ T expandTags(T)(/*const*/ T line) @safe
 ///
 unittest
 {
+    import lu.semver;
     import std.conv : text, to;
 
     {
@@ -1358,22 +1359,28 @@ unittest
         immutable expected = text("This is a ", Tint.log, "log", Tint.off, " line.");
         assert((replaced == expected), replaced);
     }
-    {
-        import std.conv : wtext;
 
-        immutable line = "This is a <l>log</> line."w;
-        immutable replaced = line.expandTags;
-        immutable expected = wtext("This is a "w, Tint.log, "log"w, Tint.off, " line."w);
-        assert((replaced == expected), replaced.to!string);
-    }
+    static if ((LuSemVer.majorVersion >= 2) && (LuSemVer.minorVersion >= 5))
     {
-        import std.conv : dtext;
+        pragma(msg, "blerp");
+        {
+            import std.conv : wtext;
 
-        immutable line = "This is a <l>log</> line."d;
-        immutable replaced = line.expandTags;
-        immutable expected = dtext("This is a "d, Tint.log, "log"d, Tint.off, " line."d);
-        assert((replaced == expected), replaced.to!string);
+            immutable line = "This is a <l>log</> line."w;
+            immutable replaced = line.expandTags;
+            immutable expected = wtext("This is a "w, Tint.log, "log"w, Tint.off, " line."w);
+            assert((replaced == expected), replaced.to!string);
+        }
+        {
+            import std.conv : dtext;
+
+            immutable line = "This is a <l>log</> line."d;
+            immutable replaced = line.expandTags;
+            immutable expected = dtext("This is a "d, Tint.log, "log"d, Tint.off, " line."d);
+            assert((replaced == expected), replaced.to!string);
+        }
     }
+
     {
         immutable line = `<i>info</>nothing<c>critical</>nothing\<w>not warning`;
         immutable replaced = line.expandTags;
