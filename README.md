@@ -68,7 +68,6 @@ If there's anyone talking it should show up on your screen.
     * [**Except nothing happens**](#except-nothing-happens)
   * [Twitch](#twitch)
     * [Caveats](#caveats)
-    * [Fails to authenticate: "*Improperly formatted auth*"](#fails-to-authenticate-improperly-formatted-auth)
     * [Example configuration](#example-configuration)
     * [Streamer assistant bot](#streamer-assistant-bot)
   * [Further help](#further-help)
@@ -306,10 +305,6 @@ https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr
 Most of the bot's features will work on Twitch. The **Automode** plugin is an exception (as modes are not really applicable on Twitch), and it will auto-disable itself appropriately.
 
 That said, in many ways Twitch chat does not behave as a full IRC server. Most common IRC commands go unrecognised. Joins and parts are not always advertised, and when they are they come in delayed batches and cannot be relied upon. You can also only join channels for which a corresponding Twitch user account exists.
-
-### Fails to authenticate: *Improperly formatted auth*
-
-Provided no other message was output about the pass being missing or malformed, the bot was likely not compiled with Twitch support enabled. Build the `twitch` configuration with with the `-c twitch` flag.
 
 ### Example configuration
 
