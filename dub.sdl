@@ -56,7 +56,9 @@ versions \
  */
 versions \
     "Colours" \
-    "TwitchAPIFeatures"
+    "TwitchAPIFeatures" \
+    "PreciseGC" \
+    "ConcurrentGC"
 
 /**
     Non-default features.

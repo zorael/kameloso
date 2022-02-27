@@ -20,35 +20,77 @@ import lu.common : Next;
 import std.typecons : Flag, No, Yes;
 
 
-version(ProfileGC)
+// gcOptions
+/++
+    A value line for [rt_options] to fine-tune the garbage collector.
+
+    Older compilers don't support all the garbeage collector options newer
+    compilers do (breakpoints being at `2.085` for the precise garbage collector
+    and cleanup behaviour, and `2.098` for the forking one). So in one way or
+    another we need to specialise for compiler versions. This is one way.
+
+    See_Also:
+        [rt_options]
+        https://dlang.org/spec/garbage.html
+ +/
+enum gcOptions = ()
 {
+    import std.array : Appender;
+
+    Appender!(char[]) sink;
+    sink.reserve(128);
+    sink.put("gcopt=");
+
+    version(ProfileGC)
+    {
+        sink.put("profile:1 ");
+    }
+
     static if (__VERSION__ >= 2085L)
     {
-        /++
-            Set some flags to tune the garbage collector and have it print
-            profiling information at program exit, iff version `ProfileGC`.
-            Enables the precise garbage collector.
-         +/
-        extern(C)
-        public __gshared string[] rt_options =
-        [
-            "gcopt=profile:1 gc:precise",
-            "scanDataSeg=precise",
-        ];
+        sink.put("cleanup:finalize ");
+
+        version(PreciseGC)
+        {
+            sink.put("gc:precise ");
+        }
     }
-    else
+
+    static if (__VERSION__ >= 2098L)
     {
-        /++
-            Set some flags to tune the garbage collector and have it print
-            profiling information at program exit, iff version `ProfileGC`.
-         +/
-        extern(C)
-        public __gshared string[] rt_options =
-        [
-            "gcopt=profile:1",
-        ];
+        version(ConcurrentGC)
+        {
+            sink.put("fork:1 ");
+        }
     }
-}
+
+    // Tweak these numbers as we see fit
+    sink.put("initReserve:32 minPoolSize:32 incPoolSize:16");
+
+    return sink.data;
+}().idup;
+
+
+/++
+    Fine-tune the garbage collector.
+
+    See_Also:
+        [gcOptions]
+        https://dlang.org/spec/garbage.html
+ +/
+extern(C) public __gshared const string[] rt_options =
+[
+    /++
+        Garbage collector options.
+     +/
+    gcOptions,
+
+    /++
+        Tells the garbage collector to scan the DATA and TLS segments precisely,
+        on Windows.
+     +/
+    "scanDataSeg=precise",
+];
 
 
 // globalAbort
