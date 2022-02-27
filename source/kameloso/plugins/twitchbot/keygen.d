@@ -86,7 +86,7 @@ instructions and log in to authorise the use of this program with your account.
         //"channel:read:predictions",
         //"channel:read:redemptions",
         //"channel:read:stream_key",
-        "channel:read:subscriptions",
+        //"channel:read:subscriptions",
         //"clips:edit",
         //"moderation:read",
         //"moderator:manage:banned_users",
