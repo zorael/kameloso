@@ -36,10 +36,14 @@ else
         scope(exit)
         {
             import std.stdio : stdout;
+            import core.thread : thread_joinAll;
 
             // Unsure if this is ever needed, but just in case the buffer isn't
             // flushing on linebreaks and wouldn't get flushed on exit
             stdout.flush();
+
+            // To be tidy, join threads.
+            thread_joinAll();
         }
 
         return run(args);
