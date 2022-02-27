@@ -67,42 +67,69 @@ instructions and log in to authorise the use of this program with your account.
     static immutable scopes =
     [
         // New Twitch API
-
+        // --------------------------
         //"analytics:read:extension",
         //"analytics:read:games",
-        "bits:read",
-        "channel:edit:commercial",
+        //"bits:read",
+        //"channel:edit:commercial",
+        //"channel:manage:broadcast",
+        //"channel:manage:extensions"
+        //"channel:manage:polls",
+        //"channel:manage:predictions",
+        //"channel:manage:redemptions",
+        //"channel:manage:schedule",
+        //"channel:manage:videos",
+        //"channel:read:editors",
+        //"channel:read:goals",
+        //"channel:read:hype_train",
+        //"channel:read:polls",
+        //"channel:read:predictions",
+        //"channel:read:redemptions",
+        //"channel:read:stream_key",
         "channel:read:subscriptions",
         //"clips:edit",
-        "user:edit",
-        "user:edit:broadcast",  // implies user:read:broadcast
+        //"moderation:read",
+        //"moderator:manage:banned_users",
+        //"moderator:read:blocked_terms",
+        //"moderator:manage:blocked_terms",
+        //"moderator:manage:automod",
+        //"moderator:read:automod_settings",
+        //"moderator:manage:automod_settings",
+        //"moderator:read:chat_settings",
+        //"moderator:manage:chat_settings",
+        //"user:edit",
         //"user:edit:follows",
+        //"user:manage:blocked_users",
+        //"user:read:blocked_users",
         //"user:read:broadcast",
         //"user:read:email",
+        //"user:read:follows",
+        //"user:read:subscriptions"
+        //"user:edit:broadcast",    // removed/undocumented? implied user:read:broadcast
 
         // Twitch APIv5
-
-        //"channel_check_subscription",
-        //"channel_commercial",
-        "channel_editor",
-        //"channel_feed_edit",
-        //"channel_feed_read",
-        //"channel_read",
-        //"channel_stream",
+        // --------------------------
+        //"channel_check_subscription",  // removed/undocumented?
         //"channel_subscriptions",
-        //"collections_edit",
-        //"communities_edit",
-        //"communities_moderate",
-        //"openid",
-        "user_blocks_edit",
-        "user_blocks_read",
-        "user_follows_edit",
+        //"channel_commercial",
+        //"channel_editor",
+        //"channel_feed_edit",      // removed/undocumented?
+        //"channel_feed_read",      // removed/undocumented?
+        //"user_follows_edit",
+        //"channel_read",
+        //"channel_stream",         // removed/undocumented?
+        //"collections_edit",       // removed/undocumented?
+        //"communities_edit",       // removed/undocumented?
+        //"communities_moderate",   // removed/undocumented?
+        //"openid",                 // removed/undocumented?
         //"user_read",
-        //"user_subscriptions",
-        //"viewing_activity_read",
+        //"user_blocks_read",
+        //"user_blocks_edit",
+        //"user_subscriptions",     // removed/undocumented?
+        //"viewing_activity_read",  // removed/undocumented?
 
         // Chat and PubSub
-
+        // --------------------------
         "channel:moderate",
         "chat:edit",
         "chat:read",
