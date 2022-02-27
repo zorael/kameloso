@@ -398,67 +398,77 @@ void onAuthEnd(ConnectService service, const ref IRCEvent event)
 // onTwitchAuthFailure
 /++
     On Twitch, if the OAuth pass is wrong or malformed, abort and exit the program.
+    Only deal with it if we're currently registering.
+
+    If the bot was compiled without Twitch support, mention this and quit.
  +/
-version(TwitchSupport)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.NOTICE)
-    .chainable(true)
 )
 void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
 {
-    import kameloso.thread : ThreadMessage;
     import std.algorithm.searching : endsWith;
-    import std.concurrency : prioritySend;
     import std.typecons : Flag, No, Yes;
 
-    with (IRCServer.Daemon)
-    switch (service.state.server.daemon)
+    if ((service.state.server.daemon != IRCServer.Daemon.unset) ||
+        !service.state.server.address.endsWith(".twitch.tv"))
     {
-    case unset:
-        if (service.state.server.address.endsWith(".twitch.tv")) goto case twitch;
-        return;
-
-    case twitch:
-        // Drop down
-        break;
-
-    default:
+        // Not early Twitch registration
         return;
     }
 
-    switch (event.content)
+    // We're registering on Twitch and we got a NOTICE, probably an error
+
+    version(TwitchSupport)
     {
-    case "Improperly formatted auth":
-        if (!service.state.bot.pass.length)
+        switch (event.content)
         {
-            logger.error("You *need* a pass to join this server.");
+        case "Improperly formatted auth":
+            if (!service.state.bot.pass.length)
+            {
+                logger.error("You *need* a pass to join this server.");
+                enum pattern = "Run the program with <i>--set twitchbot.keygen<l> to generate a new one.";
+                logger.log(pattern.expandTags);
+            }
+            else
+            {
+                logger.error("Client pass is malformed, cannot authenticate. " ~
+                    "Please make sure it is entered correctly.");
+            }
+            break;
+
+        case "Login authentication failed":
+            logger.error("Incorrect client pass. Please make sure it is valid and has not expired.");
             enum pattern = "Run the program with <i>--set twitchbot.keygen<l> to generate a new one.";
             logger.log(pattern.expandTags);
+            break;
+
+        case "Login unsuccessful":
+            logger.error("Client pass probably has insufficient privileges.");
+            break;
+
+        default:
+            // Just some notice; return
+            return;
         }
-        else
-        {
-            logger.error("Client pass is malformed, cannot authenticate. " ~
-                "Please make sure it is entered correctly.");
-        }
-        break;
 
-    case "Login authentication failed":
-        logger.error("Incorrect client pass. Please make sure it is valid and has not expired.");
-        enum pattern = "Run the program with <i>--set twitchbot.keygen<l> to generate a new one.";
-        logger.log(pattern.expandTags);
-        break;
-
-    case "Login unsuccessful":
-        logger.error("Client pass probably has insufficient privileges.");
-        break;
-
-    default:
-        // Just some notice; return
-        return;
+        // Exit and let the user tend to it.
+        quit!(Yes.priority)(service.state, event.content, No.quiet);
     }
+    else
+    {
+        switch (event.content)
+        {
+        case "Improperly formatted auth":
+        case "Login authentication failed":
+        case "Login unsuccessful":
+            logger.error("The bot was not compiled with Twitch support enabled.");
+            return quit!(Yes.priority)(service.state, "Missing Twitch support", No.quiet);
 
-    // Exit and let the user tend to it.
-    quit!(Yes.priority)(service.state, event.content, No.quiet);
+        default:
+            return;
+        }
+    }
 }
 
 
