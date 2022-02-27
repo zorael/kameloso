@@ -139,7 +139,8 @@ instructions and log in to authorise the use of this program with your account.
 
     import std.array : join;
 
-    enum ctBaseURL = "https://id.twitch.tv/oauth2/authorize?response_type=token" ~
+    enum authNode = "https://id.twitch.tv/oauth2/authorize?response_type=token";
+    enum ctBaseURL = authNode ~
         "&client_id=" ~ TwitchBotPlugin.clientID ~
         "&redirect_uri=http://localhost" ~
         "&scope=" ~ scopes.join('+') ~
@@ -264,8 +265,19 @@ instructions and log in to authorise the use of this program with your account.
 
         if (!readURL.contains("access_token="))
         {
+            import lu.string : beginsWith;
+
             writeln();
-            logger.error("Could not make sense of URL. Try again or file a bug.");
+
+            if (readURL.beginsWith(authNode))
+            {
+                logger.error("Not that page; the one you're lead to after clicking <l>Authorize<e>.".expandTags);
+            }
+            else
+            {
+                logger.error("Could not make sense of URL. Try again or file a bug.");
+            }
+
             writeln();
             continue;
         }
