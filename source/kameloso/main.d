@@ -65,7 +65,7 @@ enum gcOptions = ()
     }
 
     // Tweak these numbers as we see fit
-    sink.put("initReserve:32 minPoolSize:32 incPoolSize:16");
+    sink.put("initReserve:8 minPoolSize:8 incPoolSize:8");
 
     return sink.data;
 }().idup;
