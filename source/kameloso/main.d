@@ -846,6 +846,8 @@ Next mainLoop(ref Kameloso instance)
                 plugin.state.updateSchedule();  // Something is always removed
                 instance.conn.socket.blocking = false;  // Instantly timeout read to check messages
                 socketBlockingDisabled = true;
+
+                if (*instance.abort) return Next.returnFailure;
             }
 
             if (!nextGlobalScheduledTimestamp ||
@@ -918,6 +920,7 @@ Next mainLoop(ref Kameloso instance)
         try
         {
             messenger.call();
+            if (*instance.abort) return Next.returnFailure;
         }
         catch (Exception e)
         {
