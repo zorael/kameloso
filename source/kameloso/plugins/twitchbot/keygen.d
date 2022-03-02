@@ -55,12 +55,12 @@ instructions and log in to authorise the use of this program with your account.
 <l>Then paste the address of the page you are redirected to afterwards here.</>
 
 * The redirected address should start with <i>http://localhost</>.
-* It will probably say "<l>this site can't be reached</>".
-* If your browser is already logged in on Twitch, it will likely immediately
-  lead you to this page without asking for login credentials. If you want to
-  generate a key for a different account, first log out and retry.
-* If you are running local web server on port <i>80</>, you may have to
-  temporarily disable it for this to work.
+* It will probably say "<l>this site can't be reached</>" or "<l>unable to connect</>".
+* If you are logged into your main Twitch account and you want the bot to use a
+  separate account, you will have to log out and log in as that first, before
+  attempting this. <l>The key generated is one for the account currently logged in.</>
+* If you are running local web server on port <i>80</>, you may have to temporarily
+  disable it for this to work.
 `;
     writeln(attemptToOpenPattern.expandTags);
 
