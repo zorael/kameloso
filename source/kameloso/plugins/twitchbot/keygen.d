@@ -216,11 +216,10 @@ instructions and log in to authorise the use of this program with your account.
                     .format(plugin.state.client.nickname);
                 immutable urlFileName = buildPath(tempDir, urlBasename);
 
-                auto urlFile = File(urlFileName, "w");
-
-                urlFile.writeln("[InternetShortcut]");
-                urlFile.writeln("URL=", url);
-                urlFile.flush();
+                {
+                    auto urlFile = File(urlFileName, "w");
+                    urlFile.writeln("[InternetShortcut]\nURL=", url);
+                }
 
                 immutable string[2] browserCommand = [ "explorer", urlFileName ];
                 auto nulFile = File("NUL", "r+");
