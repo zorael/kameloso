@@ -304,30 +304,31 @@ void worker(shared TitleLookupRequest sRequest,
                     import kameloso.common : curlErrorStrings;
 
                     // cURL error
-                    request.state.askToError("Webtitles worker cURL exception %s: %s"
-                        .format(curlErrorStrings[e.errorCode], e.msg));
+                    enum pattern = "Webtitles worker cURL exception <l>%s<e>: <l>%s";
+                    request.state.askToError(pattern.format(curlErrorStrings[e.errorCode], e.msg));
                 }
                 else if (e.httpCode >= 400)
                 {
                     // Simply failed to fetch
-                    request.state.askToWarn("Webtitles worker saw HTTP %d.".format(e.httpCode));
+                    enum pattern = "Webtitles worker saw HTTP <l>%d<w>.";
+                    request.state.askToWarn(pattern.format(e.httpCode));
                 }
                 else
                 {
-                    request.state.askToWarn("Error fetching YouTube video information: " ~ e.msg);
+                    request.state.askToWarn("Error fetching YouTube video information: <l>" ~ e.msg);
                     //version(PrintStacktraces) request.state.askToTrace(e.info);
                     // Drop down
                 }
             }
             catch (JSONException e)
             {
-                request.state.askToWarn("Failed to parse YouTube video information: " ~ e.msg);
+                request.state.askToWarn("Failed to parse YouTube video information: <l>" ~ e.msg);
                 //version(PrintStacktraces) request.state.askToTrace(e.info);
                 // Drop down
             }
             catch (Exception e)
             {
-                request.state.askToError("Unexpected exception fetching YouTube video information: " ~ e.msg);
+                request.state.askToError("Unexpected exception fetching YouTube video information: <l>" ~ e.msg);
                 version(PrintStacktraces) request.state.askToTrace(e.toString);
                 // Drop down
             }
@@ -367,13 +368,14 @@ void worker(shared TitleLookupRequest sRequest,
                     import kameloso.common : curlErrorStrings;
 
                     // cURL error
-                    request.state.askToError("Webtitles worker cURL exception %s: %s"
-                        .format(curlErrorStrings[e.errorCode], e.msg));
+                    enum pattern = "Webtitles worker cURL exception <l>%s<e>: <l>%s";
+                    request.state.askToError(pattern.format(curlErrorStrings[e.errorCode], e.msg));
                 }
                 else if (e.httpCode >= 400)
                 {
                     // Simply failed to fetch
-                    request.state.askToWarn("Webtitles worker saw HTTP %d.".format(e.httpCode));
+                    enum pattern = "Webtitles worker saw HTTP <l>%d<w>.";
+                    request.state.askToWarn(pattern.format(e.httpCode));
                 }
                 else
                 {
@@ -398,13 +400,15 @@ void worker(shared TitleLookupRequest sRequest,
             }
             catch (UnicodeException e)
             {
-                request.state.askToError("Webtitles worker Unicode exception: " ~
-                    e.msg ~ " (link is probably to an image or similar)");
+                import std.format : format;
+                enum pattern = "Webtitles worker Unicode exception: <l>%s<e> " ~
+                    "(link is probably to an image or similar)";
+                request.state.askToError(pattern.format(e.msg));
                 //version(PrintStacktraces) request.state.askToTrace(e.info);
             }
             catch (Exception e)
             {
-                request.state.askToWarn("Webtitles saw unexpected exception: " ~ e.msg);
+                request.state.askToWarn("Webtitles saw unexpected exception: <l>" ~ e.msg);
                 version(PrintStacktraces) request.state.askToTrace(e.toString);
             }
 
