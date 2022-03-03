@@ -769,6 +769,12 @@ void onNamesReply(SeenPlugin plugin, const ref IRCEvent event)
             .description("Queries the bot when it last saw a specified nickname online.")
             .syntax("$command [nickname]")
     )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("lastseen")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
 )
 void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
 {
