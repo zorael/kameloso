@@ -151,7 +151,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                 File file = File(buffer.file, "a");
                 if (fileExists) file.writeln();
                 file.writeln(datestamp);
-                file.flush();
+                //file.flush();
             }
 
             if (!errors)
@@ -203,13 +203,12 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                             return;
                         }
 
-                        auto file = File(buffer.file, "a");
-
                         plugin.formatMessageMonochrome(plugin.linebuffer, event,
                             No.bellOnMention, No.bellOnError, No.hideBlacklistedUsers);
+                        scope(exit) plugin.linebuffer.clear();
+
+                        auto file = File(buffer.file, "a");
                         file.writeln(plugin.linebuffer);
-                        file.flush();
-                        plugin.linebuffer.clear();
                     }
                 }
                 else
@@ -225,7 +224,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 
                         auto file = File(buffer.file, "a");
                         file.writeln(event.raw);
-                        file.flush();
+                        //file.flush();
                     }
                 }
             }
@@ -294,7 +293,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 
                     errFile.writeln("/////////////////////////////////////" ~
                         "///////////////////////////////////////////\n");  // 80c
-                    errFile.flush();
+                    //errFile.flush();
                 }
             }
         }
@@ -566,9 +565,10 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
             .map!sanitize
             .join("\n");
 
-        File file = File(buffer.file, "a");
-        file.writeln(lines);
-        file.flush();
+        {
+            File file = File(buffer.file, "a");
+            file.writeln(lines);
+        }
 
         // If we're here, no exceptions were thrown
         // Only clear if we managed to write everything, otherwise accumulate

@@ -1063,7 +1063,7 @@ in (filename.length, "Tried to save seen users to an empty filename")
 
     auto file = File(filename, "w");
     file.writeln(JSONValue(seenUsers).toPrettyString);
-    file.flush();
+    //file.flush();
 }
 
 
