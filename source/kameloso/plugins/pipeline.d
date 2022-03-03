@@ -24,9 +24,7 @@ private:
 import kameloso.plugins.common.core;
 import kameloso.common : expandTags, logger;
 import kameloso.messaging;
-import kameloso.thread : ThreadMessage;
 import dialect.defs;
-import std.concurrency : Tid;
 import std.typecons : Flag, No, Yes;
 
 
@@ -79,19 +77,15 @@ public:
             [core.thread.Tid|Tid] for concurrency messages, made `shared` to
             allow being sent between threads.
         filename = String filename of the FIFO to read from.
-        monochrome = Whether or not output should be in monochrome text.
-        brightTerminal = Whether or not the terminal has a bright background
-            and colours should be adjusted to suit.
  +/
 void pipereader(shared IRCPluginState newState,
-    const string filename,
-    const Flag!"monochrome" monochrome,
-    const Flag!"brightTerminal" brightTerminal)
+    const string filename)
 in (filename.length, "Tried to set up a pipereader with an empty filename")
 {
-    import std.concurrency : OwnerTerminated, receiveTimeout, send, spawn;
-    import std.conv : text;
-    import std.file : FileException, exists, remove;
+    import kameloso.thread : ThreadMessage;
+    import std.concurrency : OwnerTerminated, receiveTimeout, send;
+    import std.file : exists, remove;
+    import std.format : format;
     import std.stdio : File;
     import std.variant : Variant;
 
@@ -103,53 +97,12 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
 
     auto state = cast()newState;
 
-    string infotint, logtint;
-
-    version(Colours)
-    {
-        if (!monochrome)
-        {
-            import kameloso.constants : DefaultColours;
-            import kameloso.logger : LogLevel;
-            import kameloso.terminal.colours : colour;
-
-            // We don't have a logger instance so we have to access the
-            // DefaultColours.logcolours{Bright,Dark} tables manually
-
-            if (brightTerminal)
-            {
-                enum infotintColourBright = DefaultColours.logcoloursBright[LogLevel.info]
-                    .colour
-                    .idup;
-                enum logtintColourBright = DefaultColours.logcoloursBright[LogLevel.all]
-                    .colour
-                    .idup;
-
-                infotint = infotintColourBright;
-                logtint = logtintColourBright;
-            }
-            else
-            {
-                enum infotintColourDark = DefaultColours.logcoloursDark[LogLevel.info]
-                    .colour
-                    .idup;
-                enum logtintColourDark = DefaultColours.logcoloursDark[LogLevel.all]
-                    .colour
-                    .idup;
-
-                infotint = infotintColourDark;
-                logtint = logtintColourDark;
-            }
-        }
-    }
-
-    import std.format : format;
-    state.askToLog("Pipe text to the %s%s%s file to send raw commands to the server."
-        .format(infotint, filename, logtint));
-
     // Creating the File struct blocks, so do it after reporting.
     File fifo = File(filename, "r");
     scope(exit) if (filename.exists) remove(filename);
+
+    enum pattern = "Pipe text to the <i>%s<l> file to send raw commands to the server.";
+    state.askToLog(pattern.format(filename));
 
     toploop:
     while (true)
@@ -166,7 +119,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
 
             if (line[0] == ':')
             {
-                import kameloso.thread : ThreadMessage, busMessage;
+                import kameloso.thread : busMessage;
                 import lu.string : contains, nom;
 
                 if (line.contains(' '))
@@ -180,7 +133,6 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
                 {
                     state.mainThread.send(ThreadMessage.BusMessage(), line[1..$]);
                 }
-
                 break;
             }
 
@@ -194,14 +146,12 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
                 {
                     quit(state);
                 }
-
                 break toploop;
             }
             else
             {
                 raw(state, line);
             }
-
             break;
         }
 
@@ -222,7 +172,8 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
             },
             (Variant v)
             {
-                state.askToError(text("Pipeline plugin received Variant: ", logtint, v.toString));
+                enum variantPattern = "Pipeline plugin received Variant: <l>%s";
+                state.askToError(variantPattern.format(v.toString));
                 state.mainThread.send(ThreadMessage.BusMessage(), "pipeline", busMessage("halted"));
                 halt = true;
             }
@@ -238,7 +189,8 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
         }
         catch (ErrnoException e)
         {
-            state.askToError(text("Pipeline plugin failed to reopen FIFO: ", logtint, e.msg));
+            enum fifoPattern = "Pipeline plugin failed to reopen FIFO: <l>%s";
+            state.askToError(fifoPattern.format(e.msg));
             version(PrintStacktraces) state.askToTrace(e.info.toString);
             state.mainThread.send(ThreadMessage.BusMessage(), "pipeline", busMessage("halted"));
             break toploop;
@@ -407,9 +359,7 @@ in (!plugin.workerRunning, "Tried to double-initialise the pipereader")
         import std.concurrency : spawn;
 
         createFIFO(plugin.fifoFilename);
-        plugin.fifoThread = spawn(&pipereader, cast(shared)plugin.state, plugin.fifoFilename,
-            cast(Flag!"monochrome")plugin.state.settings.monochrome,
-            cast(Flag!"brightTerminal")plugin.state.settings.brightTerminal);
+        plugin.fifoThread = spawn(&pipereader, cast(shared)plugin.state, plugin.fifoFilename);
         plugin.workerRunning = true;
     }
     catch (ReturnValueException e)
@@ -441,6 +391,7 @@ in (!plugin.workerRunning, "Tried to double-initialise the pipereader")
  +/
 void teardown(PipelinePlugin plugin)
 {
+    import kameloso.thread : ThreadMessage;
     import std.concurrency : send;
     import std.file : exists, isDir;
     import std.stdio : File;
@@ -504,6 +455,8 @@ public:
 final class PipelinePlugin : IRCPlugin
 {
 private:
+    import std.concurrency : Tid;
+
     /// All Pipeline settings gathered.
     PipelineSettings pipelineSettings;
 

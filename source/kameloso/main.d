@@ -624,9 +624,11 @@ void messageFiber(ref Kameloso instance)
         }
 
         /// Proxies the passed message to the [kameloso.common.logger].
-        void proxyLoggerMessages(ThreadMessage.TerminalOutput logLevel, string message) scope
+        void proxyLoggerMessages(ThreadMessage.TerminalOutput logLevel, string taggedMessage) scope
         {
             if (instance.settings.headless) return;
+
+            immutable message = taggedMessage.expandTags;
 
             with (ThreadMessage.TerminalOutput)
             final switch (logLevel)
