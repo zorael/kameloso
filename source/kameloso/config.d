@@ -723,7 +723,7 @@ Next handleGetopt(ref Kameloso instance,
                     &shouldOpenGraphicalEditor,
                 "headless",
                     quiet ? string.init :
-                        "Enables headless mode, disabling all terminal output",
+                        "Enable headless mode, disabling all terminal output",
                     &settings.headless,
                 "version",
                     quiet ? string.init :
