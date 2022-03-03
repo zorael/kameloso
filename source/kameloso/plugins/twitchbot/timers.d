@@ -83,16 +83,6 @@ Fiber createTimerFiber(TwitchBotPlugin plugin,
         /// The timestamp at the last successful trigger.
         long lastTimestamp = creation;
 
-        version(TwitchAPIFeatures)
-        {
-            immutable streamer = room.broadcasterDisplayName;
-        }
-        else
-        {
-            import kameloso.plugins.common.misc : nameOf;
-            immutable streamer = plugin.nameOf(channelName[1..$]);
-        }
-
         while (true)
         {
             // Stagger
@@ -131,7 +121,7 @@ Fiber createTimerFiber(TwitchBotPlugin plugin,
             import std.random : uniform;
 
             immutable line = timerDef.line
-                .replace("$streamer", streamer)
+                .replace("$streamer", room.broadcasterDisplayName)
                 .replace("$channel", channelName[1..$])
                 .replace("$bot", plugin.state.client.nickname)
                 .replace("$random", uniform!"(]"(0, 100).text);

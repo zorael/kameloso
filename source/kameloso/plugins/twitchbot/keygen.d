@@ -9,7 +9,6 @@ module kameloso.plugins.twitchbot.keygen;
 
 version(TwitchSupport):
 version(WithTwitchBotPlugin):
-version(TwitchAPIFeatures):
 
 private:
 
