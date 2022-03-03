@@ -53,7 +53,7 @@
 
     enum timeoutSeconds = 600;
 
-    auto listener = new Generator!ListenAttempt(() => listeFiber(conn, abort, timeoutSecond));
+    auto listener = new Generator!ListenAttempt(() => listenFiber(conn, abort, timeoutSecond));
 
     listener.call();
 
