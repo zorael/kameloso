@@ -417,7 +417,7 @@ void onQuit(PersistenceService service, const ref IRCEvent event)
 // onNick
 /++
     Removes old user entries when someone changes nickname. The old nickname
-    no longer exists and the storage arrrays should reflect that.
+    no longer exists and the storage arrays should reflect that.
 
     Annotated [kameloso.plugins.common.core.Timing.cleanup|Timing.cleanup] to
     delay execution.

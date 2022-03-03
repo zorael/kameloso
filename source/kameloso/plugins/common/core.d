@@ -2166,7 +2166,7 @@ public:
      +/
     ScheduledDelegate[] scheduledDelegates;
 
-    // nextScheduledTimetamp
+    // nextScheduledTimestamp
     /++
         The UNIX timestamp of when the next scheduled
         [kameloso.thread.ScheduledFiber|ScheduledFiber] or delegate should be triggered.
@@ -2360,7 +2360,7 @@ enum ChannelPolicy
     home,
 
     /++
-        The annotated function will only be allowed to triger if the event
+        The annotated function will only be allowed to trigger if the event
         happened in a guest channel, where applicable. Not all events carry channels.
      +/
     guest,
@@ -2810,7 +2810,7 @@ struct IRCEventHandler
 
         // expression
         /++
-            The regular expession this [IRCEventHandler.Regex] embodies, in string form.
+            The regular expression this [IRCEventHandler.Regex] embodies, in string form.
 
             Upon setting this a regex engine is also created.
 

@@ -861,7 +861,7 @@ if (isOutputRange!(Sink, char[]))
         if (!event.sender.isServer && !event.sender.nickname.length)
         {
             // PING or ERROR likely
-            sink.put(content);  // No need for delimeter space
+            sink.put(content);  // No need for delimiter space
             return;
         }
 

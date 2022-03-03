@@ -2670,7 +2670,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         }
         catch (Exception e)
         {
-            enum pattern = "An unexpected error occured while initialising the <l>%s<w> " ~
+            enum pattern = "An unexpected error occurred while initialising the <l>%s<w> " ~
                 "plugin's resources: <l>%s<w> (at <l>%s<w>:<l>%d<w>)%s";
             logger.warningf(pattern.expandTags, e.file.baseName[0..$-2],
                 e.msg, e.file, e.line, bell);
@@ -2701,7 +2701,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         }
         catch (Exception e)
         {
-            enum pattern = "An unexpected error occured while starting the <l>%s<w> plugin: " ~
+            enum pattern = "An unexpected error occurred while starting the <l>%s<w> plugin: " ~
                 "<l>%s<w> (at <l>%s<w>:<l>%d<w>)%s";
             logger.warningf(pattern.expandTags, e.file.baseName[0..$-2],
                 e.msg, e.file, e.line, bell);

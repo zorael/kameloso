@@ -520,7 +520,7 @@ void commitAllLogsImpl(PrinterPlugin plugin)
 /++
     Writes a single log buffer to disk.
 
-    This is a way of queuing writes so that they can be committed seldomly and
+    This is a way of queuing writes so that they can be committed seldom and
     in bulk, supposedly being nicer to the hardware at the cost of the risk of
     losing uncommitted lines in a catastrophical crash.
 

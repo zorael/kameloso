@@ -281,7 +281,7 @@ void onWelcome(PipelinePlugin plugin)
 /++
     Reloads the plugin, initialising the fifo pipe if it was not already initialised.
 
-    This lets us remedy the "A FIFO with that name alraedy exists" error.
+    This lets us remedy the "A FIFO with that name already exists" error.
  +/
 void reload(PipelinePlugin plugin)
 {

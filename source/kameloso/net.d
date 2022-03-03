@@ -6,7 +6,7 @@
 
     Having them as [core.thread.fiber.Fiber|Fiber]s means a program can do
     address resolution, connecting and reading while retaining the ability to do
-    other stuff concurrently. This means you can conveniently run code inbetween
+    other stuff concurrently. This means you can conveniently run code in between
     each connection attempt, for instance, without breaking the program's flow.
 
     Example:
@@ -588,7 +588,7 @@ struct ListenAttempt
             [kameloso.constants.Timeout.connectionLost|Timeout.connectionLost].
 
     Yields:
-        [ListenAttempt]s with information about the line receieved in its member values.
+        [ListenAttempt]s with information about the line received in its member values.
  +/
 void listenFiber(size_t bufferSize = BufferSize.socketReceive*2)
     (Connection conn,
@@ -833,7 +833,7 @@ struct ConnectionAttempt
 /++
     Fiber function that tries to connect to IPs in the `ips` array of the passed
     [Connection], yielding at certain points throughout the process to let the
-    calling function do stuff inbetween connection attempts.
+    calling function do stuff in between connection attempts.
 
     Example:
     ---

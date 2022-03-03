@@ -62,7 +62,7 @@ void onReplayEvent(NotesPlugin plugin, const /*ref*/ IRCEvent event)
 
 // onWhoReply
 /++
-    Plays backs notes upon replies of a WHO query.
+    Plays back notes upon replies of a WHO query.
 
     These carry a sender, so it's possible we know the account without lookups.
 

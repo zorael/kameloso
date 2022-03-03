@@ -116,7 +116,7 @@ void writeConfig(ref Kameloso instance,
         {
             logger.trace();
             logger.log("Edit it and make sure it contains at least one of the following:");
-            giveConfigurationMinimalIntructions();
+            giveConfigurationMinimalInstructions();
         }
     }
 }
@@ -342,7 +342,7 @@ void writeToDisk(const string filename,
     [kameloso.kameloso.IRCBot.homeChannels|IRCBot.homeChannels] are both empty.
     (Else it should not have been called.)
  +/
-void giveConfigurationMinimalIntructions()
+void giveConfigurationMinimalInstructions()
 {
     import kameloso.common : expandTags, logger;
 
@@ -713,7 +713,7 @@ Next handleGetopt(ref Kameloso instance,
                     quiet ? string.init :
                         ("Open the configuration file in a *terminal* text editor " ~
                             "(or the application defined in the <i>$EDITOR</> " ~
-                            "envirionment varible)").expandTags ~ editorVariableValue,
+                            "environment variable)").expandTags ~ editorVariableValue,
                     &shouldOpenTerminalEditor,
                 "gedit",
                     quiet ? string.init :
@@ -952,7 +952,7 @@ void notifyAboutIncompleteConfiguration(const string configFile, const string bi
     {
         enum pattern = "Edit <i>%s<l> and make sure it has at least one of the following:";
         logger.logf(pattern.expandTags, configFile);
-        giveConfigurationMinimalIntructions();
+        giveConfigurationMinimalInstructions();
     }
     else
     {
