@@ -27,7 +27,6 @@ import kameloso.plugins.printer.logging;
 
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
-import kameloso.irccolours;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 

@@ -23,15 +23,11 @@ import kameloso.plugins.admin.classifiers;
 debug import kameloso.plugins.admin.debugging;
 
 import kameloso.plugins.common.core;
-import kameloso.plugins.common.misc : applyCustomSettings;
 import kameloso.plugins.common.awareness;
 import kameloso.common : expandTags, logger;
-import kameloso.constants : BufferSize;
-import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
 import kameloso.messaging;
 import dialect.defs;
 import std.concurrency : send;
-import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;
 
 
@@ -443,6 +439,8 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
         }*/
     }
 
+    import kameloso.constants : BufferSize;
+
     Fiber fiber = new CarryingFiber!IRCEvent(&dg, BufferSize.fiberStack);
     await(plugin, fiber, joinTypes);
 }
@@ -467,6 +465,7 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
 
     if (homeIndex == -1)
     {
+        import kameloso.irccolours : ircBold;
         import std.format : format;
 
         enum pattern = "Channel %s was not listed as a home.";
@@ -983,6 +982,8 @@ void cycle(AdminPlugin plugin,
         }
     }
 
+    import kameloso.constants : BufferSize;
+
     Fiber fiber = new CarryingFiber!IRCEvent(&dg, BufferSize.fiberStack);
     await(plugin, fiber, IRCEvent.Type.SELFPART);
     part(plugin.state, channelName, "Cycling");
@@ -1110,7 +1111,9 @@ void listHostmaskDefinitions(AdminPlugin plugin, const ref IRCEvent event)
         }
         else
         {
+            import kameloso.irccolours : ircBold;
             import std.conv : text;
+
             privmsg(plugin.state, event.channel, event.sender.nickname,
                 "Current hostmasks: " ~ aa.text.ircBold);
         }

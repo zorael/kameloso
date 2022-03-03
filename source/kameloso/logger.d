@@ -19,10 +19,6 @@
  +/
 module kameloso.logger;
 
-private:
-
-import std.range.primitives : isOutputRange;
-
 public:
 
 

@@ -16,7 +16,6 @@ private:
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.common : expandTags, logger;
-import kameloso.irccolours : ircBold, ircColourByHash;
 import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
@@ -107,6 +106,7 @@ void playbackNotes(NotesPlugin plugin,
     const Flag!"background" background = No.background)
 {
     import kameloso.common : Tint, timeSince;
+    import kameloso.irccolours : ircBold, ircColourByHash;
     import dialect.common : toLowerCase;
     import std.datetime.systime : Clock;
     import std.exception : ErrnoException;

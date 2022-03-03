@@ -442,7 +442,6 @@ TitleLookupResults lookupTitle(const string url, const Flag!"descriptions" descr
     import lu.string : beginsWith, contains, nom;
     import arsd.dom : Document;
     import std.array : Appender;
-    import std.exception : assumeUnique;
     import std.net.curl : HTTP;
     import std.uni : toLower;
     import core.time : seconds;

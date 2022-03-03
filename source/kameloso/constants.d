@@ -8,7 +8,6 @@ module kameloso.constants;
 private:
 
 import kameloso.semver : KamelosoSemVer, KamelosoSemVerPrerelease;
-import std.format : format;
 
 
 version(DigitalMars)

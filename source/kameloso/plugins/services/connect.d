@@ -19,7 +19,6 @@ private:
 import kameloso.plugins.common.core;
 import kameloso.common : expandTags, logger;
 import kameloso.messaging;
-import kameloso.thread : ThreadMessage;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
@@ -205,6 +204,7 @@ void onToConnectType(ConnectService service, const ref IRCEvent event)
 )
 void onPing(ConnectService service, const ref IRCEvent event)
 {
+    import kameloso.thread : ThreadMessage;
     import std.concurrency : prioritySend;
 
     immutable target = event.content.length ? event.content : event.sender.address;
@@ -1256,6 +1256,7 @@ version(TwitchSupport)
 )
 void onReconnect(ConnectService service)
 {
+    import kameloso.thread : ThreadMessage;
     import std.concurrency : send;
 
     logger.info("Reconnecting upon server request.");

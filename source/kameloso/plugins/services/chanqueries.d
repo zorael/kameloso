@@ -23,7 +23,7 @@ import kameloso.plugins.common.core;
 import kameloso.plugins.common.delayawait;
 import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
 import dialect.defs;
-import std.typecons : No, Yes;
+import std.typecons : Flag, No, Yes;
 
 
 version(OmniscientQueries)

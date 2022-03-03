@@ -21,7 +21,6 @@ import kameloso.plugins.common.awareness : UserAwareness;
 import kameloso.common : expandTags, logger;
 import kameloso.messaging;
 import dialect.defs;
-import lu.json : JSONStorage;
 import std.typecons : Flag, No, Yes;
 
 
@@ -913,6 +912,8 @@ public:
 final class QuotesPlugin : IRCPlugin
 {
 private:
+    import lu.json : JSONStorage;
+
     /// All Quotes plugin settings gathered.
     QuotesSettings quotesSettings;
 

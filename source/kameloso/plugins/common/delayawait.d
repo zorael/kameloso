@@ -15,7 +15,6 @@ private:
 
 import kameloso.plugins.common.core : IRCPlugin;
 import dialect.defs;
-import std.traits : isSomeFunction;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 import core.time : Duration;
