@@ -240,7 +240,8 @@ void worker(shared IRCPluginState sState,
             import std.string : fromStringz;
             import etc.c.curl : curl_easy_strerror;
 
-            askToError(state, "Chatbot got cURL error %s (%d) when fetching %s: %s"
+            enum pattern = "Chatbot got cURL error <l>%s<e> (<l>%d<e>) when fetching <l>%s<e>: <l>%s";
+            askToError(state, pattern
                 .format(curlErrorStrings[errorCode], errorCode, url,
                     fromStringz(curl_easy_strerror(errorCode))));
             return;
@@ -293,7 +294,8 @@ void worker(shared IRCPluginState sState,
     }
     catch (Exception e)
     {
-        askToWarn(state, "Chatbot could not fetch bash.org quote at %s: %s".format(url, e.msg));
+        enum pattern = "Chatbot could not fetch bash.org quote at <l>%s<w>: <l>%s";
+        askToWarn(state, pattern.format(url, e.msg));
         version(PrintStacktraces) askToTrace(state, e.toString);
     }
 }
