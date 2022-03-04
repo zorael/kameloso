@@ -67,11 +67,6 @@ public:
      +/
     bool promoteVIPs = true;
 
-    /++
-        Whether or not promotion based on badges should be done in guest channels too.
-     +/
-    bool promoteEverywhere = false;
-
     version(Windows)
     {
         /++
@@ -1296,8 +1291,11 @@ void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
 
     if (!event.sender.nickname.length || !event.channel.length) return;
 
-    if (!plugin.twitchBotSettings.promoteEverywhere &&
-        !plugin.state.bot.homeChannels.canFind(event.channel)) return;
+    version(TwitchPromoteEverywhere) {}
+    else
+    {
+        if (!plugin.state.bot.homeChannels.canFind(event.channel)) return;
+    }
 
     static void postprocessImpl(const TwitchBotPlugin plugin,
         const ref IRCEvent event, ref IRCUser user)

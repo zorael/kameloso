@@ -73,6 +73,7 @@ versions \
     "PrintStacktraces" \
     "ExplainReplay" \
     "TwitchWarnings" \
+    "TwitchPromoteEverywhere" \
     "OSXTMPDIR" \
     "OmniscientQueries" \
     "TraceWhois" \
