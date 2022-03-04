@@ -276,7 +276,7 @@ void messageFiber(ref Kameloso instance)
            calls the passed delegate with it as argument.
          +/
         void peekCommands(ThreadMessage.PeekCommands,
-            shared void delegate(IRCPlugin.CommandMetadata[string][string]) dg)
+            shared void delegate(IRCPlugin.CommandMetadata[string][string]) dg) scope
         {
             IRCPlugin.CommandMetadata[string][string] commandAA;
 
@@ -294,7 +294,7 @@ void messageFiber(ref Kameloso instance)
          +/
         void peekChannelSpecificCommands(ThreadMessage.PeekCommands,
             shared void delegate(IRCPlugin.CommandMetadata[string][string]) dg,
-            string channelName)
+            string channelName) scope
         {
             IRCPlugin.CommandMetadata[string][string] commandAA;
 
@@ -311,7 +311,7 @@ void messageFiber(ref Kameloso instance)
             matches the expression.
          +/
         void changeSetting(ThreadMessage.ChangeSetting,
-            shared(void delegate(bool)) dg, string expression)
+            shared(void delegate(bool)) dg, string expression) scope
         {
             import kameloso.plugins.common.misc : applyCustomSettings;
 
@@ -330,7 +330,7 @@ void messageFiber(ref Kameloso instance)
                 shared(void delegate(bool) @safe), immutable(char)[]).Tuple
          +/
         void changeSettingSafeDg(ThreadMessage.ChangeSetting,
-            shared(void delegate(bool) @safe) dg, string expression)
+            shared(void delegate(bool) @safe) dg, string expression) scope
         {
             changeSetting(ThreadMessage.ChangeSetting(), dg, expression);
         }
