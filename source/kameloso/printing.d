@@ -724,14 +724,14 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
             visibleAndNotDeprecated!(Thing, memberstring) &&
             !typeOrFunctionOrTemplate!(Thing, memberstring) &&
             (all ||
-                (isSerialisable!(__traits(getMember, thing, memberstring)) &&
-                !hasUDA!(__traits(getMember, thing, memberstring), Hidden) &&
-                !hasUDA!(__traits(getMember, thing, memberstring), Unserialisable))))
+                (isSerialisable!(__traits(getMember, Thing, memberstring)) &&
+                !hasUDA!(__traits(getMember, Thing, memberstring), Hidden) &&
+                !hasUDA!(__traits(getMember, Thing, memberstring), Unserialisable))))
         {
             import lu.traits : isTrulyString;
             import std.traits : isAggregateType, isArray, isAssociativeArray;
 
-            alias T = Unqual!(typeof(__traits(getMember, thing, memberstring)));
+            alias T = Unqual!(typeof(__traits(getMember, Thing, memberstring)));
 
             static if (isTrulyString!T)
             {
