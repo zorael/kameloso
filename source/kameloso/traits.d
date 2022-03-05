@@ -14,9 +14,64 @@ module kameloso.traits;
 
 private:
 
+import std.traits : isAggregateType;
 import std.typecons : Flag, No, Yes;
 
 public:
+
+// visibleAndNotDeprecated
+/++
+    Eponymous template; aliases itself to `true` if the passed member of the
+    passed aggregate `Thing` is not `private` and not `deprecated`.
+
+    Compilers previous to 2.096 need to flip the order of the checks (visibility
+    first, deprecations second), whereas it doesn't matter for compilers 2.096
+    onwards. If the order isn't flipped though we get deprecation warnings.
+    Having it this way means we get the visibility/deprecation check we want on
+    all (supported) compiler versions, but regrettably deprecation messages
+    on older compilers. Unsure where the breakpoint is.
+
+    Params:
+        Thing = Some aggregate.
+        memberstring = String name of the member of `Thing` that we want to check
+            the visibility and deprecationness of.
+ +/
+template visibleAndNotDeprecated(Thing, string memberstring)
+if (isAggregateType!Thing)
+{
+    static if (__VERSION__ < 2096L)
+    {
+        static if (
+            (memberstring != "this") &&
+            (memberstring != "__ctor") &&
+            (memberstring != "__dtor") &&
+            (__traits(getProtection, __traits(getMember, Thing, memberstring)) != "private") &&
+            !__traits(isDeprecated, __traits(getMember, Thing, memberstring)))
+        {
+            enum visibleAndNotDeprecated = true;
+        }
+        else
+        {
+            enum visibleAndNotDeprecated = false;
+        }
+    }
+    else
+    {
+        static if (
+            (memberstring != "this") &&
+            (memberstring != "__ctor") &&
+            (memberstring != "__dtor") &&
+            !__traits(isDeprecated, __traits(getMember, Thing, memberstring)) &&
+            (__traits(getVisibility, __traits(getMember, Thing, memberstring)) != "private"))
+        {
+            enum visibleAndNotDeprecated = true;
+        }
+        else
+        {
+            enum visibleAndNotDeprecated = false;
+        }
+    }
+}
 
 
 // longestMemberNameImpl
@@ -47,10 +102,7 @@ if (Things.length > 0)
                 foreach (immutable memberstring; __traits(derivedMembers, Thing))
                 {
                     static if (
-                        (memberstring != "this") &&
-                        (memberstring != "__ctor") &&
-                        (memberstring != "__dtor") &&
-                        !__traits(isDeprecated, __traits(getMember, Thing, memberstring)) &&
+                        visibleAndNotDeprecated!(Thing, memberstring) &&
                         !isType!(__traits(getMember, Thing, memberstring)) &&
                         !isSomeFunction!(__traits(getMember, Thing, memberstring)) &&
                         !__traits(isTemplate, __traits(getMember, Thing, memberstring)) &&
@@ -196,10 +248,7 @@ if (Things.length > 0)
                 foreach (immutable memberstring; __traits(derivedMembers, Thing))
                 {
                     static if (
-                        (memberstring != "this") &&
-                        (memberstring != "__ctor") &&
-                        (memberstring != "__dtor") &&
-                        !__traits(isDeprecated, __traits(getMember, Thing, memberstring)) &&
+                        visibleAndNotDeprecated!(Thing, memberstring) &&
                         !isType!(__traits(getMember, Thing, memberstring)) &&
                         !isSomeFunction!(__traits(getMember, Thing, memberstring)) &&
                         !__traits(isTemplate, __traits(getMember, Thing, memberstring)) &&
