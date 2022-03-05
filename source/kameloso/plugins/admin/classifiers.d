@@ -155,7 +155,14 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
 {
     import dialect.common : isValidNickname;
     import lu.string : beginsWith, contains;
-    import std.range : only;
+
+    static immutable listTypes =
+    [
+        "staff",
+        "operator",
+        "whitelist",
+        "blacklist",
+    ];
 
     immutable asWhat =
         (list == "operator") ? "an operator" :
@@ -229,7 +236,7 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
     if (user && user.account.length)
     {
         // user.nickname == specified
-        foreach (immutable thisList; only("staff", "operator", "whitelist", "blacklist"))
+        foreach (immutable thisList; listTypes)
         {
             if (thisList == list) continue;
             plugin.alterAccountClassifier(No.add, thisList, user.account, channel);
@@ -283,7 +290,7 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
 
                 if (const userInList = id in plugin.state.users)
                 {
-                    foreach (immutable thisList; only("staff", "operator", "whitelist", "blacklist"))
+                    foreach (immutable thisList; listTypes)
                     {
                         if (thisList == list) continue;
                         plugin.alterAccountClassifier(No.add, thisList, id, channel);
@@ -300,7 +307,7 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
 
                 if (!usersWithThisDisplayName.empty)
                 {
-                    foreach (immutable thisList; only("staff", "operator", "whitelist", "blacklist"))
+                    foreach (immutable thisList; listTypes)
                     {
                         if (thisList == list) continue;
 
@@ -317,7 +324,7 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
             }
         }
 
-        foreach (immutable thisList; only("staff", "operator", "whitelist", "blacklist"))
+        foreach (immutable thisList; listTypes)
         {
             if (thisList == list) continue;
             plugin.alterAccountClassifier(No.add, thisList, id, channel);

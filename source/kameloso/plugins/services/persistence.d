@@ -502,10 +502,16 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
     service.channelUsers.clear();
 
     import lu.conv : Enum;
-    import std.range : only;
 
-    foreach (class_; only(IRCUser.Class.staff, IRCUser.Class.operator,
-        IRCUser.Class.whitelist, IRCUser.Class.blacklist))
+    static immutable classes =
+    [
+        IRCUser.Class.staff,
+        IRCUser.Class.operator,
+        IRCUser.Class.whitelist,
+        IRCUser.Class.blacklist,
+    ];
+
+    foreach (class_; classes)
     {
         immutable list = Enum!(IRCUser.Class).toString(class_);
         const listFromJSON = list in json;
@@ -701,9 +707,17 @@ void initAccountResources(PersistenceService service)
         assert((users == JSONValue([ "bar", "baz", "foo" ])), users.array.text);
     }+/
 
-    import std.range : only;
+    //import std.range : only;
 
-    foreach (liststring; only("staff", "operator", "whitelist", "blacklist"))
+    static immutable listTypes =
+    [
+        "staff",
+        "operator",
+        "whitelist",
+        "blacklist",
+    ];
+
+    foreach (liststring; listTypes)
     {
         enum examplePlaceholderKey = "<#channel>";
 
