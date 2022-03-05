@@ -309,8 +309,8 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 
     if (room.broadcast.active)
     {
-        immutable streamer = room.broadcasterDisplayName;
-        chan(plugin.state, event.channel, streamer ~ " is already live.");
+        chan(plugin.state, event.channel,
+            room.broadcasterDisplayName ~ " is already live.");
         return;
     }
 
@@ -326,7 +326,7 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             import kameloso.plugins.common.delayawait : delay;
             import std.json : JSONType;
 
-            immutable chattersJSON = getChatters(plugin, event.channel[1..$]);
+            immutable chattersJSON = getChatters(plugin, room.broadcasterName);
             if (chattersJSON.type != JSONType.object) return;
 
             // https://twitchinsights.net/bots
@@ -380,7 +380,7 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
                 immutable viewer = viewerJSON.str;
 
                 if ((viewer == plugin.state.client.nickname) ||
-                    (viewer == event.channel[1..$]) ||
+                    (viewer == room.broadcasterName) ||
                     (viewer.endsWith("bot")) ||
                     botBlacklist.canFind(viewer)) continue;
 
@@ -478,8 +478,6 @@ void reportStreamTime(TwitchBotPlugin plugin,
     import std.format : format;
     import core.time : msecs;
 
-    immutable streamer = room.broadcasterDisplayName;
-
     if (room.broadcast.active)
     {
         assert(!justNowEnded, "Tried to report ended stream time on an active stream");
@@ -495,14 +493,16 @@ void reportStreamTime(TwitchBotPlugin plugin,
             enum pattern = "%s has been live for %s, so far with %d unique viewers. " ~
                 "(max at any one time has so far been %d viewers)";
 
-            chan(plugin.state, room.name, pattern.format(streamer, timestring,
-                room.broadcast.chattersSeen.length,
-                room.broadcast.maxConcurrentChatters));
+            chan(plugin.state, room.channelName,
+                pattern.format(room.broadcasterDisplayName, timestring,
+                    room.broadcast.chattersSeen.length,
+                    room.broadcast.maxConcurrentChatters));
         }
         else
         {
             enum pattern = "%s has been live for %s.";
-            chan(plugin.state, room.name, pattern.format(streamer, timestring));
+            chan(plugin.state, room.channelName,
+                pattern.format(room.broadcasterDisplayName, timestring));
         }
     }
     else
@@ -522,14 +522,16 @@ void reportStreamTime(TwitchBotPlugin plugin,
                     enum pattern = "%s streamed for %s, with %d unique viewers. " ~
                         "(max at any one time was %d viewers)";
 
-                    chan(plugin.state, room.name, pattern.format(streamer, timestring,
-                        room.broadcast.numViewersLastStream,
-                        room.broadcast.maxConcurrentChatters));
+                    chan(plugin.state, room.channelName,
+                        pattern.format(room.broadcasterDisplayName, timestring,
+                            room.broadcast.numViewersLastStream,
+                            room.broadcast.maxConcurrentChatters));
                 }
                 else
                 {
                     enum pattern = "%s streamed for %s.";
-                    chan(plugin.state, room.name, pattern.format(streamer, timestring));
+                    chan(plugin.state, room.channelName,
+                        pattern.format(room.broadcasterDisplayName, timestring));
                 }
             }
             else
@@ -537,8 +539,9 @@ void reportStreamTime(TwitchBotPlugin plugin,
                 enum pattern = "%s is currently not streaming. " ~
                     "Previous session ended %d-%02d-%02d %02d:%02d with an uptime of %s.";
 
-                chan(plugin.state, room.name, pattern.format(streamer,
-                    end.year, end.month, end.day, end.hour, end.minute, timestring));
+                chan(plugin.state, room.channelName,
+                    pattern.format(room.broadcasterDisplayName,
+                        end.year, end.month, end.day, end.hour, end.minute, timestring));
             }
         }
         else
@@ -547,7 +550,8 @@ void reportStreamTime(TwitchBotPlugin plugin,
                 "but no stop time had been recorded");
 
             // No streams this session
-            chan(plugin.state, room.name, streamer ~ " is currently not streaming.");
+            chan(plugin.state, room.channelName,
+                room.broadcasterDisplayName ~ " is currently not streaming.");
         }
     }
 }
@@ -890,7 +894,7 @@ void onCommandShoutout(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             return;
         }
 
-        immutable broadcasterName = channelJSON["broadcaster_name"].str;
+        immutable broadcasterDisplayName = channelJSON["broadcaster_name"].str;
         immutable gameName = channelJSON["game_name"].str;
         immutable lastSeenPlayingPattern = gameName.length ?
             " (last seen playing %s)" : "%s";
@@ -898,7 +902,8 @@ void onCommandShoutout(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         foreach (immutable i; 0..numTimes)
         {
             immutable pattern = "Shoutout to %s! Visit them at https://twitch.tv/%s!" ~ lastSeenPlayingPattern;
-            chan(plugin.state, event.channel, pattern.format(broadcasterName, login, gameName));
+            chan(plugin.state, event.channel,
+                pattern.format(broadcasterDisplayName, login, gameName));
         }
     }
 
@@ -1397,13 +1402,15 @@ package:
         }
 
         /// Constructor taking a string (channel) name.
-        this(const string name) @safe pure nothrow @nogc
+        this(const string channelName) @safe pure nothrow @nogc
         {
-            this.name = name;
+            this.channelName = channelName;
+            this.broadcasterName = channelName[1..$];
+            this.broadcasterDisplayName = this.broadcasterName;  // until we resolve it
         }
 
         /// Name of the channel.
-        string name;
+        string channelName;
 
         /// Struct instance representing the current broadcast.
         Broadcast broadcast;
@@ -1421,6 +1428,9 @@ package:
 
         /// Timer [core.thread.fiber.Fiber|Fiber]s.
         Fiber[] timers;
+
+        /// Account name of the broadcaster.
+        string broadcasterName;
 
         /// Display name of the broadcaster.
         string broadcasterDisplayName;
