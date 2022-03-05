@@ -1499,48 +1499,48 @@ package:
 
         It tries its best to self-balance the number based on how long queries
         actually take. Start off conservatively.
-        +/
+     +/
     long approximateQueryTime = 700;
 
     /++
         The multiplier of how much the query time should temporarily increase
         when it turned out to be a bit short.
-        +/
+     +/
     enum approximateQueryGrowthMultiplier = 1.1;
 
     /++
         The divisor of how much to wait before retrying a query, after the
         timed waited turned out to be a bit short.
-        +/
+     +/
     enum approximateQueryRetryTimeDivisor = 3;
 
     /++
         By how many milliseconds to pad measurements of how long a query took
         to be on the conservative side.
-        +/
+     +/
     enum approximateQueryMeasurementPadding = 30;
 
     /++
         The weight to assign the current approximate query time before
         making a weighted average based on a new value. This gives the
         averaging some inertia.
-        +/
+     +/
     enum approximateQueryAveragingWeight = 3;
 
     /++
         How many seconds before a Twitch query response times out. Does not
         affect the actual HTTP request, just how long we wait for it to arrive.
-        +/
+     +/
     enum queryResponseTimeout = 15;
 
     /++
         How big a buffer to preallocate when doing HTTP API queries.
-        +/
+     +/
     enum queryBufferSize = 4096;
 
     /++
         When broadcasting, how often to check and enumerate chatters.
-        +/
+     +/
     static immutable chattersCheckPeriodicity = 180.seconds;
 
     /// The thread ID of the persistent worker thread.
