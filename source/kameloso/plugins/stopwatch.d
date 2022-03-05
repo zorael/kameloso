@@ -67,6 +67,7 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
 
     string getDiff(const string id)
     {
+        import kameloso.common : timeSince;
         import core.time : msecs;
 
         assert((event.channel in plugin.stopwatches),
@@ -77,7 +78,7 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
         auto now = Clock.currTime;
         now.fracSecs = 0.msecs;
         immutable diff = now - SysTime.fromUnixTime(plugin.stopwatches[event.channel][id]);
-        return diff.toString;
+        return timeSince(diff);
     }
 
     switch (verb)
