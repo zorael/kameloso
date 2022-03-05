@@ -576,8 +576,15 @@ void reloadHostmasksFromDisk(PersistenceService service)
         import lu.string : contains;
         import std.format : FormatException;
 
-        enum examplePlaceholderKey = "<nickname>!<ident>@<address>";
-        if (hostmask == examplePlaceholderKey) continue;
+        // Copy/pasted from initHostmaskResources...
+        enum examplePlaceholderKey1 = "<nickname1>!<ident>@<address>";
+        enum examplePlaceholderKey2 = "<nickname2>!<ident>@<address>";
+
+        if ((hostmask == examplePlaceholderKey1) ||
+            (hostmask == examplePlaceholderKey2))
+        {
+            continue;
+        }
 
         try
         {
@@ -758,18 +765,26 @@ void initHostmaskResources(PersistenceService service)
         throw new IRCPluginInitialisationException(service.hostmasksFile.baseName ~ " may be malformed.");
     }
 
-    enum examplePlaceholderKey = "<nickname>!<ident>@<address>";
-    enum examplePlaceholderValue = "<account>";
+    enum examplePlaceholderKey1 = "<nickname1>!<ident>@<address>";
+    enum examplePlaceholderKey2 = "<nickname2>!<ident>@<address>";
+    enum examplePlaceholderValue1 = "<account1>";
+    enum examplePlaceholderValue2 = "<account2>";
 
     if (json.object.length == 0)
     {
-        json[examplePlaceholderKey] = null;
-        json[examplePlaceholderKey].str = null;
-        json[examplePlaceholderKey].str = examplePlaceholderValue;
+        json[examplePlaceholderKey1] = null;
+        json[examplePlaceholderKey1].str = null;
+        json[examplePlaceholderKey1].str = examplePlaceholderValue1;
+        json[examplePlaceholderKey2] = null;
+        json[examplePlaceholderKey2].str = null;
+        json[examplePlaceholderKey2].str = examplePlaceholderValue2;
     }
-    else if ((json.object.length > 1) && (examplePlaceholderKey in json))
+    else if ((json.object.length > 2) &&
+        ((examplePlaceholderKey1 in json) ||
+         (examplePlaceholderKey2 in json)))
     {
-        json.object.remove(examplePlaceholderKey);
+        json.object.remove(examplePlaceholderKey1);
+        json.object.remove(examplePlaceholderKey2);
     }
 
     // Let other Exceptions pass.
