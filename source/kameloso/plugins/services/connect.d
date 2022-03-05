@@ -30,7 +30,16 @@ import std.typecons : Flag, No, Yes;
 @Settings struct ConnectSettings
 {
 private:
-    import lu.uda : CannotContainComments, Separator, Unserialisable;
+    import lu.uda : CannotContainComments, /*Separator,*/ Unserialisable;
+
+    /++
+        What to use as delimiter to separate [sendAfterConnect] into different
+        lines to send to the server.
+
+        This is to compensate for not being able to use [lu.uda.Separator] and a
+        `string[]` (because it doesn't work well with getopt).
+     +/
+    enum sendAfterConnectSeparator = ";;";
 
 public:
     /++
@@ -49,9 +58,9 @@ public:
     bool exitOnSASLFailure = false;
 
     /// Lines to send after successfully connecting and registering.
-    @Separator(";;")
+    //@Separator(";;")
     @CannotContainComments
-    string[] sendAfterConnect;
+    string sendAfterConnect;
 }
 
 
@@ -984,6 +993,7 @@ void onSASLFailure(ConnectService service)
 )
 void onWelcome(ConnectService service, const ref IRCEvent event)
 {
+    import std.algorithm.iteration : splitter;
     import std.algorithm.searching : endsWith;
 
     service.registration = Progress.finished;
@@ -997,7 +1007,10 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
         service.state.updates |= typeof(service.state.updates).client;
     }
 
-    foreach (immutable unstripped; service.connectSettings.sendAfterConnect)
+    alias separator = ConnectSettings.sendAfterConnectSeparator;
+    auto toSendRange = service.connectSettings.sendAfterConnect.splitter(separator);
+
+    foreach (immutable unstripped; toSendRange)
     {
         import lu.string : strippedLeft;
         import std.array : replace;
