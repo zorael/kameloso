@@ -713,7 +713,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 
     foreach (immutable memberstring; __traits(derivedMembers, Thing))
     {
-        import kameloso.traits : visibleAndNotDeprecated;
+        import kameloso.traits : typeOrFunctionOrTemplate, visibleAndNotDeprecated;
         import lu.traits : isSerialisable;
         import lu.uda : Hidden, Unserialisable;
         import std.traits : hasUDA, isSomeFunction, isType;
@@ -722,9 +722,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 
         static if (
             visibleAndNotDeprecated!(Thing, memberstring) &&
-            !isType!(__traits(getMember, thing, memberstring)) &&
-            !isSomeFunction!(__traits(getMember, thing, memberstring)) &&
-            !__traits(isTemplate, __traits(getMember, thing, memberstring)) &&
+            !typeOrFunctionOrTemplate!(Thing, memberstring) &&
             (all ||
                 (isSerialisable!(__traits(getMember, thing, memberstring)) &&
                 !hasUDA!(__traits(getMember, thing, memberstring), Hidden) &&

@@ -74,6 +74,27 @@ if (isAggregateType!Thing)
 }
 
 
+// typeOrFunctionOrTemplate
+/++
+    As the name suggests, aliases itself to `true` if the passed member of the
+    passed aggregate `Thing` is a type, a function or a template.
+
+    Params:
+        Thing = Some aggregate.
+        memberstring = String name of the member of `Thing` that we want to
+            determine is a type, a function or a template.
+ +/
+template typeOrFunctionOrTemplate(Thing, string memberstring)
+{
+    import std.traits : isSomeFunction, isType;
+
+    enum typeOrFunctionOrTemplate =
+        isType!(__traits(getMember, Thing, memberstring)) ||
+        isSomeFunction!(__traits(getMember, Thing, memberstring)) ||
+        __traits(isTemplate, __traits(getMember, Thing, memberstring));
+}
+
+
 // longestMemberNameImpl
 /++
     Gets the name of the longest member in one or more aggregate objects.
@@ -91,7 +112,7 @@ if (Things.length > 0)
     {
         import lu.traits : isSerialisable;
         import lu.uda : Hidden, Unserialisable;
-        import std.traits : hasUDA, isAggregateType, isSomeFunction, isType;
+        import std.traits : hasUDA, isAggregateType;
 
         string longest;
 
@@ -103,9 +124,7 @@ if (Things.length > 0)
                 {
                     static if (
                         visibleAndNotDeprecated!(Thing, memberstring) &&
-                        !isType!(__traits(getMember, Thing, memberstring)) &&
-                        !isSomeFunction!(__traits(getMember, Thing, memberstring)) &&
-                        !__traits(isTemplate, __traits(getMember, Thing, memberstring)) &&
+                        !typeOrFunctionOrTemplate!(Thing, memberstring) &&
                         isSerialisable!(__traits(getMember, Thing, memberstring)) &&
                         !hasUDA!(__traits(getMember, Thing, memberstring), Hidden) &&
                         (all || !hasUDA!(__traits(getMember, Thing, memberstring), Unserialisable)))
@@ -237,7 +256,7 @@ if (Things.length > 0)
     {
         import lu.traits : isSerialisable;
         import lu.uda : Hidden, Unserialisable;
-        import std.traits : hasUDA, isAggregateType, isSomeFunction, isType;
+        import std.traits : hasUDA;
 
         string longest;
 
@@ -249,9 +268,7 @@ if (Things.length > 0)
                 {
                     static if (
                         visibleAndNotDeprecated!(Thing, memberstring) &&
-                        !isType!(__traits(getMember, Thing, memberstring)) &&
-                        !isSomeFunction!(__traits(getMember, Thing, memberstring)) &&
-                        !__traits(isTemplate, __traits(getMember, Thing, memberstring)) &&
+                        !typeOrFunctionOrTemplate!(Thing, memberstring) &&
                         isSerialisable!(__traits(getMember, Thing, memberstring)) &&
                         !hasUDA!(__traits(getMember, Thing, memberstring), Hidden) &&
                         (all || !hasUDA!(__traits(getMember, Thing, memberstring), Unserialisable)))
