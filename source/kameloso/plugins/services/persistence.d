@@ -573,8 +573,9 @@ void reloadHostmasksFromDisk(PersistenceService service)
 
     foreach (immutable hostmask, immutable account; accountByHostmask)
     {
+        import kameloso.common : expandTags, logger;
+        import dialect.common : isValidHostmask;
         import lu.string : contains;
-        import std.format : FormatException;
 
         // Copy/pasted from initHostmaskResources...
         enum examplePlaceholderKey1 = "<nickname1>!<ident>@<address>";
@@ -586,6 +587,19 @@ void reloadHostmasksFromDisk(PersistenceService service)
             continue;
         }
 
+        if (!hostmask.isValidHostmask(service.state.server))
+        {
+            enum pattern =`Malformed hostmask in <l>%s<w>: "<l>%s<w>"`;
+            logger.warningf(pattern.expandTags, service.hostmasksFile, hostmask);
+            continue;
+        }
+        else if (!account.length)
+        {
+            enum pattern =`Incomplete hostmask entry in <l>%s<w>: "<l>%s<w>" has empty account`;
+            logger.warningf(pattern.expandTags, service.hostmasksFile, hostmask);
+            continue;
+        }
+
         try
         {
             auto user = IRCUser(hostmask);
@@ -594,14 +608,16 @@ void reloadHostmasksFromDisk(PersistenceService service)
 
             if (user.nickname.length && !user.nickname.contains('*'))
             {
+                // Nickname has length and is not a glob
+                // (adding a glob to hostmaskUsers is okay)
                 service.hostmaskNicknameAccountCache[user.nickname] = user.account;
             }
         }
-        catch (FormatException e)
+        catch (Exception e)
         {
-            import kameloso.common : expandTags, logger;
-            enum pattern =`Malformed hostmask in <l>%s<w>: "<l>%s<w>"`;
-            logger.warningf(pattern.expandTags, service.hostmasksFile, hostmask);
+            enum pattern =`Exception parsing hostmask in <l>%s<w> ("<l>%s<w>"): <l>%s`;
+            logger.warningf(pattern.expandTags, service.hostmasksFile, hostmask, e.msg);
+            version(PrintStacktraces) logger.trace(e);
         }
     }
 }
