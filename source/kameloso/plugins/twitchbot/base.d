@@ -1209,7 +1209,14 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
 void onCAP(TwitchBotPlugin plugin)
 {
     import kameloso.plugins.twitchbot.keygen;
-    if (plugin.twitchBotSettings.keygen) return plugin.generateKey();
+    import std.algorithm.searching : endsWith;
+
+    if (plugin.twitchBotSettings.keygen &&
+        (plugin.state.server.daemon == IRCServer.Daemon.unset) &&
+        plugin.state.server.address.endsWith(".twitch.tv"))
+    {
+        return plugin.generateKey();
+    }
 }
 
 
