@@ -553,6 +553,11 @@ Next handleGetopt(ref Kameloso instance,
                     " (<i>%d</>)".expandTags.format(num);
             }
 
+            void appendCustomSetting(const string _, const string setting)
+            {
+                customSettings ~= setting;
+            }
+
             return getopt(theseArgs,
                 config.caseSensitive,
                 config.bundling,
@@ -653,7 +658,7 @@ Next handleGetopt(ref Kameloso instance,
                 "set",
                     quiet ? string.init :
                         text("Manually change a setting (syntax: ", setSyntax, ')'),
-                    &customSettings,
+                    &appendCustomSetting,
                 "c|config",
                     quiet ? string.init :
                         "Specify a different configuration file [<i>%s</>]"
