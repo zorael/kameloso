@@ -1431,9 +1431,6 @@ package:
         /// Struct instance representing the current broadcast.
         Broadcast broadcast;
 
-        /// ID of the currently ongoing vote, if any (otherwise 0).
-        int voteInstance;
-
         /++
             A counter of how many messages we have seen in the channel.
 
