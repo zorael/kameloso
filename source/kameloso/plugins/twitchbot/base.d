@@ -371,21 +371,37 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
                 "hades_osiris",
             ];
 
+            static immutable chatterTypes =
+            [
+                "admins",
+                //"broadcaster",
+                "global_mods",
+                "moderators",
+                "staff",
+                "viewers",
+                "vips",
+            ];
+
             uint chatterCount;
 
-            foreach (immutable viewerJSON; chattersJSON["chatters"]["viewers"].array)
+            foreach (immutable chatterType; chatterTypes)
             {
-                import std.algorithm.searching : canFind, endsWith;
+                foreach (immutable viewerJSON; chattersJSON["chatters"][chatterType].array)
+                {
+                    import std.algorithm.searching : canFind, endsWith;
 
-                immutable viewer = viewerJSON.str;
+                    immutable viewer = viewerJSON.str;
 
-                if ((viewer == plugin.state.client.nickname) ||
-                    (viewer == room.broadcasterName) ||
-                    (viewer.endsWith("bot")) ||
-                    botBlacklist.canFind(viewer)) continue;
+                    if (viewer.endsWith("bot") ||
+                        botBlacklist.canFind(viewer) ||
+                        (viewer == plugin.state.client.nickname))
+                    {
+                        continue;
+                    }
 
-                room.broadcast.chattersSeen[viewer] = true;
-                ++chatterCount;
+                    room.broadcast.chattersSeen[viewer] = true;
+                    ++chatterCount;
+                }
             }
 
             if (chatterCount > room.broadcast.maxConcurrentChatters)
