@@ -1333,6 +1333,9 @@ void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
             }
         }
 
+        // Stop here if there are no badges to promote
+        if (!user.badges.length) return;
+
         if (plugin.twitchBotSettings.promoteModerators)
         {
             if ((user.class_ < IRCUser.Class.operator) &&
@@ -1363,8 +1366,8 @@ void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
         }
     }
 
-    if (event.sender.badges.length) postprocessImpl(plugin, event, event.sender);
-    if (event.target.badges.length) postprocessImpl(plugin, event, event.target);
+    /*if (event.sender.nickname.length)*/ postprocessImpl(plugin, event, event.sender);
+    if (event.target.nickname.length) postprocessImpl(plugin, event, event.target);
 }
 
 
