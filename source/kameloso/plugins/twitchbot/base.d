@@ -298,26 +298,92 @@ void onCommandUptime(TwitchBotPlugin plugin, const ref IRCEvent event)
             .word("start")
             .policy(PrefixPolicy.prefixed)
             .description("Marks the start of a broadcast.")
+            .syntax("$command [optional HH:MM or MM time already elapsed]")
     )
 )
 void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 {
+    import std.format : format;
     import core.thread : Fiber;
 
     auto room = event.channel in plugin.rooms;
     assert(room, "Tried to start a broadcast on a nonexistent room");
 
-    if (room.broadcast.active)
+    void sendUsage()
     {
-        chan(plugin.state, event.channel,
-            room.broadcasterDisplayName ~ " is already live.");
-        return;
+        enum pattern = "Usage: %s%s [optional HH:MM or MM time already elapsed]";
+        chan(plugin.state, event.channel, pattern.format(plugin.state.settings.prefix, event.aux));
     }
 
-    room.broadcast = typeof(room.broadcast).init;
-    room.broadcast.startTime = event.time;
-    room.broadcast.active = true;
-    chan(plugin.state, event.channel, "Broadcast start registered!");
+    void initBroadcast()
+    {
+        room.broadcast = typeof(room.broadcast).init;
+        room.broadcast.active = true;
+    }
+
+    if (event.content.length)
+    {
+        import lu.string : contains, nom, stripped;
+        import std.conv : ConvException, to;
+
+        /+
+            A time was given. Allow it to override any existing broadcasts.
+         +/
+        try
+        {
+            string slice = event.content.stripped;  // mutable
+
+            if (event.content.contains(':'))
+            {
+                immutable hours = slice.nom(':').to!int;
+                immutable minutes = slice.to!int;
+                if ((hours < 0) || (minutes < 0) || (minutes > 59)) return sendUsage();
+                immutable elapsed = (hours * 3600) + (minutes * 60);
+
+                initBroadcast();
+                room.broadcast.startTime = (event.time - elapsed);
+
+                enum pattern = "Broadcast start registered (as %d:%02d ago)!";
+                chan(plugin.state, event.channel, pattern.format(hours, minutes));
+            }
+            else
+            {
+                immutable minutes = slice.to!int;
+                if (minutes < 0) return sendUsage();
+                immutable elapsed = (minutes * 60);
+
+                initBroadcast();
+                room.broadcast.startTime = (event.time - elapsed);
+
+                /+
+                    Technically we should do `minutes.plurality("minute", "minutes")`
+                    but the chance of minutes being 1 is very slim.
+                 +/
+                enum pattern = "Broadcast start registered (as %d minutes ago)!";
+                chan(plugin.state, event.channel, pattern.format(minutes));
+            }
+        }
+        catch (ConvException e)
+        {
+            return sendUsage();
+        }
+    }
+    else
+    {
+        /+
+            No specific time was given. Refuse if there's already a broadcast active.
+         +/
+        if (room.broadcast.active)
+        {
+            chan(plugin.state, event.channel,
+                room.broadcasterDisplayName ~ " is already live.");
+            return;
+        }
+
+        initBroadcast();
+        room.broadcast.startTime = event.time;
+        chan(plugin.state, event.channel, "Broadcast start registered!");
+    }
 
     void periodicalChattersCheckDg()
     {
