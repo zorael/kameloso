@@ -751,9 +751,6 @@ void onCommandFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 )
 void onRoomState(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import std.datetime.systime : Clock, SysTime;
-    import std.json : JSONType, parseJSON;
-
     auto room = event.channel in plugin.rooms;
 
     if (!room)
