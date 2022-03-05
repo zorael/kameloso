@@ -1182,7 +1182,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                     logger.error(caBundlePattern.expandTags);
                 }
 
-                logger.error("Disabling API features.");
+                logger.error("Disabling API features. Expect breakage.");
                 version(PrintStacktraces) logger.trace(e);
                 plugin.useAPIFeatures = false;
             }
