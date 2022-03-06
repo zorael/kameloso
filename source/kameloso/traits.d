@@ -166,7 +166,7 @@ unittest
             determine is a non-enum mutable.
  +/
 template memberIsMutable(Thing, string memberstring)
-if (isAggregateType!Thing)
+if (isAggregateType!Thing && memberstring.length)
 {
     import std.traits : isMutable;
 
@@ -217,7 +217,7 @@ unittest
             determine is a non-type non-function non-template non-enum value.
  +/
 template memberIsValue(Thing, string memberstring)
-if (isAggregateType!Thing)
+if (isAggregateType!Thing && memberstring.length)
 {
     import std.traits : isSomeFunction, isType;
 
@@ -271,6 +271,7 @@ unittest
         symbol = Symbol to wrap.
  +/
 mixin template Wrap(string newName, alias symbol)
+if (newName.length)
 {
     private import std.traits : isArray, isSomeString;
 
