@@ -19,7 +19,8 @@ import std.typecons : Flag, No, Yes;
 
 public:
 
-// visibleAndNotDeprecated
+
+// memberIsVisibleAndNotDeprecated
 /++
     Eponymous template; aliases itself to `true` if the passed member of the
     passed aggregate `Thing` is not `private` and not `deprecated`.
@@ -36,7 +37,7 @@ public:
         memberstring = String name of the member of `Thing` that we want to check
             the visibility and deprecationness of.
  +/
-template visibleAndNotDeprecated(Thing, string memberstring)
+template memberIsVisibleAndNotDeprecated(Thing, string memberstring)
 if (isAggregateType!Thing)
 {
     static if (__VERSION__ < 2096L)
@@ -46,13 +47,14 @@ if (isAggregateType!Thing)
             (memberstring != "__ctor") &&
             (memberstring != "__dtor") &&
             (__traits(getProtection, __traits(getMember, Thing, memberstring)) != "private") &&
+            (__traits(getProtection, __traits(getMember, Thing, memberstring)) != "package") &&
             !__traits(isDeprecated, __traits(getMember, Thing, memberstring)))
         {
-            enum visibleAndNotDeprecated = true;
+            enum memberIsVisibleAndNotDeprecated = true;
         }
         else
         {
-            enum visibleAndNotDeprecated = false;
+            enum memberIsVisibleAndNotDeprecated = false;
         }
     }
     else
@@ -62,36 +64,150 @@ if (isAggregateType!Thing)
             (memberstring != "__ctor") &&
             (memberstring != "__dtor") &&
             !__traits(isDeprecated, __traits(getMember, Thing, memberstring)) &&
-            (__traits(getVisibility, __traits(getMember, Thing, memberstring)) != "private"))
+            (__traits(getVisibility, __traits(getMember, Thing, memberstring)) != "private") &&
+            (__traits(getVisibility, __traits(getMember, Thing, memberstring)) != "package"))
         {
-            enum visibleAndNotDeprecated = true;
+            enum memberIsVisibleAndNotDeprecated = true;
         }
         else
         {
-            enum visibleAndNotDeprecated = false;
+            enum memberIsVisibleAndNotDeprecated = false;
         }
     }
 }
 
+///
+unittest
+{
+    struct Foo
+    {
+        public int i;
+        private bool b;
+        package string s;
+        deprecated public int di;
+    }
 
-// typeOrFunctionOrTemplate
+    class Bar
+    {
+        public int i;
+        private bool b;
+        package string s;
+        deprecated public int di;
+    }
+
+    static assert( memberIsVisibleAndNotDeprecated!(Foo, "i"));
+    static assert(!memberIsVisibleAndNotDeprecated!(Foo, "b"));
+    static assert(!memberIsVisibleAndNotDeprecated!(Foo, "s"));
+    static assert(!memberIsVisibleAndNotDeprecated!(Foo, "di"));
+
+    static assert( memberIsVisibleAndNotDeprecated!(Bar, "i"));
+    static assert(!memberIsVisibleAndNotDeprecated!(Bar, "b"));
+    static assert(!memberIsVisibleAndNotDeprecated!(Bar, "s"));
+    static assert(!memberIsVisibleAndNotDeprecated!(Bar, "di"));
+}
+
+
+// memberIsMutable
 /++
     As the name suggests, aliases itself to `true` if the passed member of the
-    passed aggregate `Thing` is a type, a function or a template.
+    passed aggregate `Thing` is mutable, which includes that it's not an enum.
 
     Params:
         Thing = Some aggregate.
         memberstring = String name of the member of `Thing` that we want to
-            determine is a type, a function or a template.
+            determine is a non-enum mutable.
  +/
-template typeOrFunctionOrTemplate(Thing, string memberstring)
+template memberIsMutable(Thing, string memberstring)
+if (isAggregateType!Thing)
+{
+    import std.traits : isMutable;
+
+    enum memberIsMutable =
+        isMutable!(typeof(__traits(getMember, Thing, memberstring))) &&
+        __traits(compiles, { Thing thing; auto p = &__traits(getMember, thing, memberstring); });
+}
+
+///
+unittest
+{
+    struct Foo
+    {
+        int i;
+        const bool b;
+        immutable string s;
+        enum float f = 3.14;
+    }
+
+    class Bar
+    {
+        int i;
+        const bool b;
+        immutable string s;
+        enum float f = 3.14;
+    }
+
+    static assert( memberIsMutable!(Foo, "i"));
+    static assert(!memberIsMutable!(Foo, "b"));
+    static assert(!memberIsMutable!(Foo, "s"));
+    static assert(!memberIsMutable!(Foo, "f"));
+
+    static assert( memberIsMutable!(Bar, "i"));
+    static assert(!memberIsMutable!(Bar, "b"));
+    static assert(!memberIsMutable!(Bar, "s"));
+    static assert(!memberIsMutable!(Bar, "f"));
+}
+
+
+// memberIsValue
+/++
+    Aliases itself to `true` if the passed member of the passed aggregate is a
+    value and not a type, a function, a template or an enum.
+
+    Params:
+        Thing = Some aggregate.
+        memberstring = String name of the member of `Thing` that we want to
+            determine is a non-type non-function non-template non-enum value.
+ +/
+template memberIsValue(Thing, string memberstring)
+if (isAggregateType!Thing)
 {
     import std.traits : isSomeFunction, isType;
 
-    enum typeOrFunctionOrTemplate =
-        isType!(__traits(getMember, Thing, memberstring)) ||
-        isSomeFunction!(__traits(getMember, Thing, memberstring)) ||
-        __traits(isTemplate, __traits(getMember, Thing, memberstring));
+    enum memberIsValue =
+        !isType!(__traits(getMember, Thing, memberstring)) &&
+        !isSomeFunction!(__traits(getMember, Thing, memberstring)) &&
+        !__traits(isTemplate, __traits(getMember, Thing, memberstring)) &&
+        !is(__traits(getMember, Thing, memberstring) == enum);
+}
+
+///
+unittest
+{
+    struct Foo
+    {
+        int i;
+        void f() {}
+        template t(T) {}
+        enum E { abc, }
+    }
+
+    class Bar
+    {
+        int i;
+        void f() {}
+        template t(T) {}
+        enum E { abc, }
+    }
+
+    static assert( memberIsValue!(Foo, "i"));
+    static assert(!memberIsValue!(Foo, "f"));
+    static assert(!memberIsValue!(Foo, "t"));
+    static assert(!memberIsValue!(Foo, "E"));
+
+    static assert( memberIsValue!(Bar, "i"));
+    static assert(!memberIsValue!(Bar, "f"));
+    static assert(!memberIsValue!(Bar, "t"));
+    static assert(!memberIsValue!(Bar, "E"));
 }
 
 
@@ -123,8 +239,8 @@ if (Things.length > 0)
                 foreach (immutable memberstring; __traits(derivedMembers, Thing))
                 {
                     static if (
-                        visibleAndNotDeprecated!(Thing, memberstring) &&
-                        !typeOrFunctionOrTemplate!(Thing, memberstring) &&
+                        memberIsVisibleAndNotDeprecated!(Thing, memberstring) &&
+                        memberIsValue!(Thing, memberstring) &&
                         isSerialisable!(__traits(getMember, Thing, memberstring)) &&
                         !hasUDA!(__traits(getMember, Thing, memberstring), Hidden) &&
                         (all || !hasUDA!(__traits(getMember, Thing, memberstring), Unserialisable)))
@@ -267,8 +383,8 @@ if (Things.length > 0)
                 foreach (immutable memberstring; __traits(derivedMembers, Thing))
                 {
                     static if (
-                        visibleAndNotDeprecated!(Thing, memberstring) &&
-                        !typeOrFunctionOrTemplate!(Thing, memberstring) &&
+                        memberIsVisibleAndNotDeprecated!(Thing, memberstring) &&
+                        memberIsValue!(Thing, memberstring) &&
                         isSerialisable!(__traits(getMember, Thing, memberstring)) &&
                         !hasUDA!(__traits(getMember, Thing, memberstring), Hidden) &&
                         (all || !hasUDA!(__traits(getMember, Thing, memberstring), Unserialisable)))
