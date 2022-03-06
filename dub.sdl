@@ -1,7 +1,7 @@
 name "kameloso"
 description "IRC bot"
 authors "JR"
-copyright "Copyright © 2021, JR"
+copyright "Copyright © 2022, JR"
 homepage "https://www.github.com/zorael/kameloso"
 license "MIT"
 
@@ -69,18 +69,18 @@ versions \
 versions \
     "TwitchSupport" \
     "WithTwitchBotPlugin" \
-    "OmniscientAdmin" \
-    "PrintStacktraces" \
-    "ExplainReplay" \
     "TwitchWarnings" \
     "TwitchPromoteEverywhere" \
-    "OSXTMPDIR" \
+    "OmniscientAdmin" \
     "OmniscientQueries" \
-    "TraceWhois" \
+    "OmniscientSeen" \
+    "PrintStacktraces" \
+    "ExplainReplay" \
     "GCStatsOnExit" \
+    "OSXTMPDIR" \
+    "TraceWhois" \
     "PrintAccountNamesToo" \
-    "PrintClassNamesToo" \
-    "OmniscientSeen"
+    "PrintClassNamesToo"
 */
 
 configuration "application" {
@@ -122,9 +122,15 @@ configuration "dev" {
         "TwitchWarnings" \
         "OmniscientAdmin" \
         "PrintStacktraces" \
-        "ExplainRepeat" \
+        "ExplainReplay" \
         "GCStatsOnExit"
+        //"TwitchPromoteEverywhere" \
+        //"OmniscientSeen" \
+        //"OmniscientQueries" \
+        //"OSXTMPDIR" \
         //"TraceWhois" \
+        //"PrintAccountNamesToo" \
+        //"PrintClassNamesToo"
 }
 
 configuration "dev-lowmem" {
@@ -137,9 +143,15 @@ configuration "dev-lowmem" {
         "TwitchWarnings" \
         "OmniscientAdmin" \
         "PrintStacktraces" \
-        "ExplainRepeat" \
+        "ExplainReplay" \
         "GCStatsOnExit"
+        //"TwitchPromoteEverywhere" \
+        //"OmniscientSeen" \
+        //"OmniscientQueries" \
+        //"OSXTMPDIR" \
         //"TraceWhois" \
+        //"PrintAccountNamesToo" \
+        //"PrintClassNamesToo"
 }
 
 configuration "unittest" {
@@ -153,8 +165,13 @@ configuration "unittest" {
         "OmniscientQueries" \
         "OmniscientSeen" \
         "PrintStacktraces" \
-        "ExplainRepeat" \
-        "GCStatsOnExit"
+        "ExplainReplay" \
+        "GCStatsOnExit" \
+        "OSXTMPDIR"
+        //"TraceWhois" \
+        //"TwitchPromoteEverywhere" \
+        //"PrintAccountNamesToo" \
+        //"PrintClassNamesToo"
 }
 
 configuration "unittest-lowmem" {
@@ -169,6 +186,11 @@ configuration "unittest-lowmem" {
         "OmniscientQueries" \
         "OmniscientSeen" \
         "PrintStacktraces" \
-        "ExplainRepeat" \
-        "GCStatsOnExit"
+        "ExplainReplay" \
+        "GCStatsOnExit" \
+        "OSXTMPDIR"
+        //"TraceWhois" \
+        //"TwitchPromoteEverywhere" \
+        //"PrintAccountNamesToo" \
+        //"PrintClassNamesToo"
 }
