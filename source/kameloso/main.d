@@ -41,7 +41,6 @@ enum gcOptions = ()
     sink.reserve(128);
     sink.put("gcopt=");
 
-
     static if (__VERSION__ >= 2085L)
     {
         sink.put("cleanup:finalize ");
@@ -66,6 +65,12 @@ enum gcOptions = ()
         {
             sink.put("fork:1 ");
         }
+    }
+
+    version(unittest)
+    {
+        // Always print profile information on unittest builds
+        sink.put("profile:1 ");
     }
 
     // Tweak these numbers as we see fit
