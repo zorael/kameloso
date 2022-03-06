@@ -66,9 +66,6 @@ if (isAggregateType!Thing)
     static if (__VERSION__ < 2096L)
     {
         static if (
-            (memberstring != "this") &&
-            (memberstring != "__ctor") &&
-            (memberstring != "__dtor") &&
             (__traits(getProtection, __traits(getMember, Thing, memberstring)) != "private") &&
             (__traits(getProtection, __traits(getMember, Thing, memberstring)) != "package") &&
             !__traits(isDeprecated, __traits(getMember, Thing, memberstring)))
@@ -83,9 +80,6 @@ if (isAggregateType!Thing)
     else
     {
         static if (
-            (memberstring != "this") &&
-            (memberstring != "__ctor") &&
-            (memberstring != "__dtor") &&
             !__traits(isDeprecated, __traits(getMember, Thing, memberstring)) &&
             (__traits(getVisibility, __traits(getMember, Thing, memberstring)) != "private") &&
             (__traits(getVisibility, __traits(getMember, Thing, memberstring)) != "package"))
@@ -234,285 +228,6 @@ unittest
 }
 
 
-// longestMemberNameImpl
-/++
-    Gets the name of the longest member in one or more aggregate objects.
-
-    This is used for formatting terminal output of objects, so that columns line up.
-
-    Params:
-        all = Flag of whether to display all members, or only those not hidden.
-        Things = Types to introspect and count member name lengths of.
- +/
-private template longestMemberNameImpl(Flag!"all" all, Things...)
-if (Things.length > 0)
-{
-    enum longestMemberNameImpl = ()
-    {
-        import lu.traits : isSerialisable;
-        import lu.uda : Hidden, Unserialisable;
-        import std.traits : hasUDA, isAggregateType;
-
-        string longest;
-
-        foreach (Thing; Things)
-        {
-            static if (isAggregateType!Thing)
-            {
-                foreach (immutable memberstring; __traits(derivedMembers, Thing))
-                {
-                    static if (
-                        memberIsVisibleAndNotDeprecated!(Thing, memberstring) &&
-                        memberIsValue!(Thing, memberstring) &&
-                        isSerialisable!(__traits(getMember, Thing, memberstring)) &&
-                        !hasUDA!(__traits(getMember, Thing, memberstring), Hidden) &&
-                        (all || !hasUDA!(__traits(getMember, Thing, memberstring), Unserialisable)))
-                    {
-                        enum name = __traits(identifier, __traits(getMember, Thing, memberstring));
-
-                        if (name.length > longest.length)
-                        {
-                            longest = name;
-                        }
-                    }
-                }
-            }
-            else
-            {
-                import std.format : format;
-                enum pattern = "Non-aggregate type `%s` passed to `longestMemberNameImpl`";
-                static assert(0, pattern.format(Thing.stringof));
-            }
-        }
-
-        return longest;
-    }();
-}
-
-
-// longestMemberName
-/++
-    Gets the name of the longest configurable member in one or more aggregate types.
-
-    This is used for formatting terminal output of configuration files, so that
-    columns line up.
-
-    Params:
-        Things = Types to introspect and count member name lengths of.
- +/
-alias longestMemberName(Things...) = longestMemberNameImpl!(No.all, Things);
-
-///
-unittest
-{
-    import lu.uda : Hidden, Unserialisable;
-
-    struct Foo
-    {
-        string veryLongName;
-        int i;
-        @Unserialisable string veryVeryVeryLongNameThatIsInvalid;
-        @Hidden float likewiseWayLongerButInvalid;
-        deprecated bool alsoVeryLongButDeprecated;
-        void aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa();
-        void bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb(T)();
-    }
-
-    struct Bar
-    {
-        string evenLongerName;
-        float f;
-
-        @Unserialisable
-        @Hidden
-        long looooooooooooooooooooooong;
-    }
-
-    static assert(longestMemberName!Foo == "veryLongName");
-    static assert(longestMemberName!Bar == "evenLongerName");
-    static assert(longestMemberName!(Foo, Bar) == "evenLongerName");
-}
-
-
-// longestUnserialisableMemberName
-/++
-    Gets the name of the longest member in one or more aggregate types, including
-    [lu.uda.Unserialisable|Unserialisable] ones.
-
-    This is used for formatting terminal output of objects, so that columns line up.
-
-    Params:
-        Things = Types to introspect and count member name lengths of.
- +/
-alias longestUnserialisableMemberName(Things...) = longestMemberNameImpl!(Yes.all, Things);
-
-///
-unittest
-{
-    import lu.uda : Hidden, Unserialisable;
-
-    struct Foo
-    {
-        string veryLongName;
-        int i;
-        @Unserialisable string veryVeryVeryLongNameThatIsValidNow;
-        @Hidden float likewiseWayLongerButInvalidddddddddddddddddddddddddddddd;
-        deprecated bool alsoVeryLongButDeprecated;
-        void aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa();
-        void bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb(T)();
-    }
-
-    struct Bar
-    {
-        string evenLongerName;
-        float f;
-
-        @Unserialisable
-        @Hidden
-        long looooooooooooooooooooooong;
-    }
-
-    static assert(longestUnserialisableMemberName!Foo == "veryVeryVeryLongNameThatIsValidNow");
-    static assert(longestUnserialisableMemberName!Bar == "evenLongerName");
-    static assert(longestUnserialisableMemberName!(Foo, Bar) == "veryVeryVeryLongNameThatIsValidNow");
-}
-
-
-// longestMemberTypeNameImpl
-/++
-    Gets the name of the longest type of a configurable member in one or more aggregate types.
-
-    This is used for formatting terminal output of objects, so that columns line up.
-
-    Params:
-        all = Whether to consider all members or only those not hidden or Unserialisable.
-        Things = Types to introspect and count member type name lengths of.
- +/
-private template longestMemberTypeNameImpl(Flag!"all" all, Things...)
-if (Things.length > 0)
-{
-    enum longestMemberTypeNameImpl = ()
-    {
-        import lu.traits : isSerialisable;
-        import lu.uda : Hidden, Unserialisable;
-        import std.traits : hasUDA;
-
-        string longest;
-
-        foreach (Thing; Things)
-        {
-            static if (isAggregateType!Thing)
-            {
-                foreach (immutable memberstring; __traits(derivedMembers, Thing))
-                {
-                    static if (
-                        memberIsVisibleAndNotDeprecated!(Thing, memberstring) &&
-                        memberIsValue!(Thing, memberstring) &&
-                        isSerialisable!(__traits(getMember, Thing, memberstring)) &&
-                        !hasUDA!(__traits(getMember, Thing, memberstring), Hidden) &&
-                        (all || !hasUDA!(__traits(getMember, Thing, memberstring), Unserialisable)))
-                    {
-                        import std.traits : isArray, isAssociativeArray;
-
-                        alias T = typeof(__traits(getMember, Thing, memberstring));
-
-                        import lu.traits : isTrulyString;
-
-                        static if (!isTrulyString!T && (isArray!T || isAssociativeArray!T))
-                        {
-                            import lu.traits : UnqualArray;
-                            enum typestring = UnqualArray!T.stringof;
-                        }
-                        else
-                        {
-                            import std.traits : Unqual;
-                            enum typestring = Unqual!T.stringof;
-                        }
-
-                        if (typestring.length > longest.length)
-                        {
-                            longest = typestring;
-                        }
-                    }
-                }
-            }
-            else
-            {
-                import std.format : format;
-                enum pattern = "Non-aggregate type `%s` passed to `longestMemberTypeNameImpl`";
-                static assert(0, pattern.format(Thing.stringof));
-            }
-        }
-
-        return longest;
-    }();
-}
-
-
-// longestMemberTypeName
-/++
-    Gets the name of the longest type of a member in one or more aggregate types.
-
-    This is used for formatting terminal output of configuration files, so that
-    columns line up.
-
-    Params:
-        Things = Types to introspect and count member type name lengths of.
- +/
-alias longestMemberTypeName(Things...) = longestMemberTypeNameImpl!(No.all, Things);
-
-///
-unittest
-{
-    import lu.uda : Unserialisable;
-
-    struct S1
-    {
-        string s;
-        char[][string] css;
-        @Unserialisable string[][string] ss;
-        void aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa();
-        void bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb(T)();
-        string foo(string,string,string,string,string,string,string,string);
-    }
-
-    enum longestConfigurable = longestMemberTypeName!S1;
-    assert((longestConfigurable == "char[][string]"), longestConfigurable);
-}
-
-
-// longestUnserialisableMemberTypeName
-/++
-    Gets the name of the longest type of a member in one or more aggregate types.
-
-    This is used for formatting terminal output of state objects, so that
-    columns line up.
-
-    Params:
-        Things = Types to introspect and count member type name lengths of.
- +/
-alias longestUnserialisableMemberTypeName(Things...) = longestMemberTypeNameImpl!(Yes.all, Things);
-
-///
-unittest
-{
-    import lu.uda : Unserialisable;
-
-    struct S1
-    {
-        string s;
-        char[][string] css;
-        @Unserialisable string[][string] ss;
-        void aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa();
-        void bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb(T)();
-        string foo(string,string,string,string,string,string,string,string);
-    }
-
-    enum longestUnserialisable = longestUnserialisableMemberTypeName!S1;
-    assert((longestUnserialisable == "string[][string]"), longestUnserialisable);
-}
-
-
 // Wrap
 /++
     Wraps a value by generating a mutator with a specified name.
@@ -596,4 +311,206 @@ unittest
 version(unittest)
 {
     import dialect.defs;
+}
+
+
+// longestMemberNames
+/++
+    Introspects one or more aggregate types and determines the name of the
+    longest member found between them, as well as the name of the longest type.
+    Ignores [lu.uda.Unserialisable|Unserialisable] members.
+
+    This is used for formatting terminal output of configuration files, so that
+    columns line up.
+
+    Params:
+        Things = Types to introspect.
+ +/
+alias longestMemberNames(Things...) = longestMemberNamesImpl!(No.unserialisable, Things);
+
+///
+unittest
+{
+    import lu.uda : Hidden, Unserialisable;
+
+    struct Foo
+    {
+        string veryLongName;
+        char[][string] css;
+        @Unserialisable string[][string] veryVeryVeryLongNameThatIsInvalid;
+        @Hidden float likewiseWayLongerButInvalid;
+        deprecated bool alsoVeryLongButDeprecated;
+        void aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa();
+        void bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb(T)();
+        string foo(string,string,string,string,string,string,string,string);
+    }
+
+    struct Bar
+    {
+        string evenLongerName;
+        float f;
+
+        @Unserialisable short shoooooooooooooooort;
+
+        @Unserialisable
+        @Hidden
+        long looooooooooooooooooooooong;
+    }
+
+    alias fooNames = longestMemberNames!Foo;
+    static assert((fooNames.member == "veryLongName"), fooNames.member);
+    static assert((fooNames.type == "char[][string]"), fooNames.type);
+
+    alias barNames = longestMemberNames!Bar;
+    static assert((barNames.member == "evenLongerName"), barNames.member);
+    static assert((barNames.type == "string"), barNames.type);
+
+    alias bothNames = longestMemberNames!(Foo, Bar);
+    static assert((bothNames.member == "evenLongerName"), bothNames.member);
+    static assert((bothNames.type == "char[][string]"), bothNames.type);
+}
+
+
+// longestUnserialisableMemberNames
+/++
+    Introspects one or more aggregate types and determines the name of the
+    longest member found between them, as well as the name of the longest type.
+    Includes [lu.uda.Unserialisable|Unserialisable] members.
+
+    This is used for formatting terminal output of configuration files, so that
+    columns line up.
+
+    Params:
+        Things = Types to introspect.
+ +/
+alias longestUnserialisableMemberNames(Things...) =
+    longestMemberNamesImpl!(Yes.unserialisable, Things);
+
+///
+unittest
+{
+    import lu.uda : Hidden, Unserialisable;
+
+    struct Foo
+    {
+        string veryLongName;
+        char[][string] css;
+        @Unserialisable string[][string] veryVeryVeryLongNameThatIsInvalid;
+        @Hidden float likewiseWayLongerButInvalid;
+        deprecated bool alsoVeryLongButDeprecated;
+        void aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa();
+        void bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb(T)();
+        string foo(string,string,string,string,string,string,string,string);
+    }
+
+    struct Bar
+    {
+        string evenLongerName;
+        float f;
+
+        @Unserialisable short shoooooooooooooooort;
+
+        @Unserialisable
+        @Hidden
+        long looooooooooooooooooooooong;
+    }
+
+    alias fooNames = longestUnserialisableMemberNames!Foo;
+    static assert((fooNames.member == "veryVeryVeryLongNameThatIsInvalid"), fooNames.member);
+    static assert((fooNames.type == "string[][string]"), fooNames.type);
+
+    alias barNames = longestUnserialisableMemberNames!Bar;
+    static assert((barNames.member == "shoooooooooooooooort"), barNames.member);
+    static assert((barNames.type == "string"), barNames.type);
+
+    alias bothNames = longestUnserialisableMemberNames!(Foo, Bar);
+    static assert((bothNames.member == "veryVeryVeryLongNameThatIsInvalid"), bothNames.member);
+    static assert((bothNames.type == "string[][string]"), bothNames.type);
+}
+
+
+// longestMemberNamesImpl
+/++
+    Introspects one or more aggregate types and determines the name of the
+    longest member found between them, as well as the name of the longest type.
+    Only includes [lu.uda.Unserialisable|Unserialisable] members if `unserialisable`
+    is set.
+
+    This is used for formatting terminal output of configuration files, so that
+    columns line up.
+
+    Params:
+        unserialisable = Whether to consider all members or only those not
+            [lu.uda.Unserialisable|Unserialisable].
+        Things = Types to introspect.
+ +/
+private template longestMemberNamesImpl(Flag!"unserialisable" unserialisable, Things...)
+if (Things.length > 0)
+{
+    enum longestMemberNamesImpl = ()
+    {
+        import lu.traits : isSerialisable;
+        import lu.uda : Hidden, Unserialisable;
+        import std.traits : hasUDA, isAggregateType;
+
+        struct Results
+        {
+            string member;
+            string type;
+        }
+
+        Results results;
+
+        foreach (Thing; Things)
+        {
+            static if (isAggregateType!Thing)
+            {
+                foreach (immutable memberstring; __traits(derivedMembers, Thing))
+                {
+                    static if (
+                        !memberstringIsThisCtorOrDtor(memberstring) &&
+                        memberIsVisibleAndNotDeprecated!(Thing, memberstring) &&
+                        memberIsValue!(Thing, memberstring) &&
+                        isSerialisable!(__traits(getMember, Thing, memberstring)) &&
+                        !hasUDA!(__traits(getMember, Thing, memberstring), Hidden) &&
+                        (unserialisable || !hasUDA!(__traits(getMember, Thing, memberstring), Unserialisable)))
+                    {
+                        import lu.traits : isTrulyString;
+                        import std.traits : isArray, isAssociativeArray;
+
+                        alias T = typeof(__traits(getMember, Thing, memberstring));
+
+                        static if (!isTrulyString!T && (isArray!T || isAssociativeArray!T))
+                        {
+                            import lu.traits : UnqualArray;
+                            enum typestring = UnqualArray!T.stringof;
+                        }
+                        else
+                        {
+                            import std.traits : Unqual;
+                            enum typestring = Unqual!T.stringof;
+                        }
+
+                        if (typestring.length > results.type.length)
+                        {
+                            results.type = typestring;
+                        }
+
+                        if (memberstring.length > results.member.length)
+                        {
+                            results.member = memberstring;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                import std.format : format;
+                enum pattern = "Non-aggregate type `%s` passed to `longestNamesImpl`";
+                static assert(0, pattern.format(Thing.stringof));
+            }
+        }
+
+        return results;
+    }();
 }

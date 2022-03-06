@@ -66,18 +66,19 @@ private:
 
     static if (all)
     {
-        import kameloso.traits : longestUnserialisableMemberName,
-            longestUnserialisableMemberTypeName;
+        import kameloso.traits : longestUnserialisableMemberNames;
 
-        public enum type = max(minimumTypeWidth,
-            longestUnserialisableMemberTypeName!Things.length);
-        enum initialWidth = longestUnserialisableMemberName!Things.length;
+        alias names = longestUnserialisableMemberNames!Things;
+        public enum type = max(minimumTypeWidth, names.type.length);
+        enum initialWidth = names.member.length;
     }
     else
     {
-        import kameloso.traits : longestMemberName, longestMemberTypeName;
-        public enum type = max(minimumTypeWidth, longestMemberTypeName!Things.length);
-        enum initialWidth = longestMemberName!Things.length;
+        import kameloso.traits : longestMemberNames;
+
+        alias names = longestMemberNames!Things;
+        public enum type = max(minimumTypeWidth, names.type.length);
+        enum initialWidth = names.member.length;
     }
 
     enum ptrdiff_t compensatedWidth = (type > minimumTypeWidth) ?
@@ -713,7 +714,8 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 
     foreach (immutable memberstring; __traits(derivedMembers, Thing))
     {
-        import kameloso.traits : memberIsMutable, memberIsValue, memberIsVisibleAndNotDeprecated;
+        import kameloso.traits : memberIsMutable, memberIsValue,
+            memberIsVisibleAndNotDeprecated, memberstringIsThisCtorOrDtor;
         import lu.traits : isSerialisable;
         import lu.uda : Hidden, Unserialisable;
         import std.traits : hasUDA;
@@ -721,6 +723,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
         enum namePadding = 2;
 
         static if (
+            !memberstringIsThisCtorOrDtor(memberstring) &&
             memberIsVisibleAndNotDeprecated!(Thing, memberstring) &&
             memberIsValue!(Thing, memberstring) &&
             memberIsMutable!(Thing, memberstring) &&
