@@ -80,8 +80,7 @@ versions \
     "GCStatsOnExit" \
     "PrintAccountNamesToo" \
     "PrintClassNamesToo" \
-    "OmniscientSeen" \
-    "ProfileGC"
+    "OmniscientSeen"
 */
 
 configuration "application" {
@@ -155,8 +154,7 @@ configuration "unittest" {
         "OmniscientSeen" \
         "PrintStacktraces" \
         "ExplainRepeat" \
-        "GCStatsOnExit" \
-        "ProfileGC"
+        "GCStatsOnExit"
 }
 
 configuration "unittest-lowmem" {
@@ -172,6 +170,5 @@ configuration "unittest-lowmem" {
         "OmniscientSeen" \
         "PrintStacktraces" \
         "ExplainRepeat" \
-        "GCStatsOnExit" \
-        "ProfileGC"
+        "GCStatsOnExit"
 }
