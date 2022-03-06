@@ -98,11 +98,11 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
     auto state = cast()newState;
 
     // Creating the File struct blocks, so do it after reporting.
-    File fifo = File(filename, "r");
-    scope(exit) if (filename.exists) remove(filename);
-
     enum pattern = "Pipe text to the <i>%s<l> file to send raw commands to the server.";
     state.askToLog(pattern.format(filename));
+
+    File fifo = File(filename, "r");
+    scope(exit) if (filename.exists) remove(filename);
 
     toploop:
     while (true)
