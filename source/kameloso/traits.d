@@ -20,6 +20,29 @@ import std.typecons : Flag, No, Yes;
 public:
 
 
+// memberstringIsThisCtorOrDtor
+/++
+    Returns whether or not the member name of an aggregate has the special name
+    `this`, `__ctor` or `__dtor`.
+
+    CTFEable.
+
+    Params:
+        memberstring = Aggregate member string to compare.
+
+    Returns:
+        `true` if the member string matches `this`, `__ctor` or `__dtor`;
+        `false` if not.
+ +/
+bool memberstringIsThisCtorOrDtor(const string memberstring) pure @safe nothrow @nogc
+{
+    return
+        (memberstring == "this") ||
+        (memberstring == "__ctor") ||
+        (memberstring == "__dtor");
+}
+
+
 // memberIsVisibleAndNotDeprecated
 /++
     Eponymous template; aliases itself to `true` if the passed member of the
