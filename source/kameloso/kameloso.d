@@ -536,9 +536,12 @@ public:
 
         if (plugin.state.updates & Update.settings)
         {
+            static import kameloso.common;
+
             // Something changed the settings; propagate
             plugin.state.updates ^= Update.settings;
             propagate(plugin.state.settings);
+            *kameloso.common.settings = plugin.state.settings;
         }
 
         assert((plugin.state.updates == Update.nothing),
