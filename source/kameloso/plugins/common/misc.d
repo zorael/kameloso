@@ -93,8 +93,13 @@ bool applyCustomSettings(IRCPlugin[] plugins,
 
                     foreach (plugin; plugins)
                     {
+                        static import kameloso.common;
+
                         plugin.state.settings = copyOfSettings;
-                        plugin.state.updates |= typeof(plugin.state.updates).settings;
+                        *kameloso.common.settings = plugin.state.settings;
+
+                        // No need to flag as updated when we update here manually
+                        //plugin.state.updates |= typeof(plugin.state.updates).settings;
                     }
                 }
             }
