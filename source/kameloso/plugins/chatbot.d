@@ -282,9 +282,7 @@ void worker(shared IRCPluginState sState,
             .splitter('\n');
 
         immutable num = b[0].toString[4..$-4];
-        immutable message = colouredOutgoing ?
-            "[%s] #%s".format("bash.org".ircBold, num) :
-            "[bash.org] #%s".format(num);
+        immutable message = "[<b>bash.org<b>] #%s".format(num);
 
         privmsg(state, event.channel, event.sender.nickname, message);
 
