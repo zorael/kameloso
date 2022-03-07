@@ -1762,6 +1762,20 @@ unittest
         immutable expected = pattern.format(ircColourByHash("zorael"), "5".ircBold);
         assert((expanded == expected), expanded);
     }
+    {
+        immutable line = "Stopwatch stopped after <b>5 seconds<b>.";
+        immutable expanded = line.expandIRCTags;
+        enum pattern = "Stopwatch stopped after %s.";
+        immutable expected = pattern.format("5 seconds".ircBold);
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = "<h>hirrsteff<h> was already <b>whitelist<b> in #garderoben.";
+        immutable expanded = line.expandIRCTags;
+        enum pattern = "%s was already %s in #garderoben.";
+        immutable expected = pattern.format(ircColourByHash("hirrsteff"), "whitelist".ircBold);
+        assert((expanded == expected), expanded);
+    }
 }
 
 
