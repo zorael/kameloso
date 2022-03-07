@@ -1634,8 +1634,10 @@ T expandIRCTags(T)(const T line, const Flag!"strip" strip = No.strip)
 ///
 unittest
 {
+    import kameloso.irccolours : ircBold, ircColourByHash;
     import dialect.common : I = IRCControlCharacter;
     import std.conv : to;
+    import std.format : format;
 
     {
         immutable line = "hello";
@@ -1751,6 +1753,13 @@ unittest
         immutable line = "hello<1>hellohello";
         immutable expanded = line.expandIRCTags(Yes.strip);
         immutable expected = "hellohellohello";
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = "Quote <h>zorael<h> #<b>5<b> saved.";
+        immutable expanded = line.expandIRCTags;
+        enum pattern = "Quote %s #%s saved.";
+        immutable expected = pattern.format(ircColourByHash("zorael"), "5".ircBold);
         assert((expanded == expected), expanded);
     }
 }
