@@ -168,8 +168,7 @@ void onCommandBash(ChatbotPlugin plugin, const ref IRCEvent event)
     plugin.state.mainThread.prioritySend(ThreadMessage.ShortenReceiveTimeout());
 
     // Defer all work to the worker thread
-    spawn(&worker, cast(shared)plugin.state, event,
-        cast(Flag!"colouredOutgoing")plugin.state.settings.colouredOutgoing);
+    spawn(&worker, cast(shared)plugin.state, event);
 }
 
 
@@ -185,12 +184,9 @@ void onCommandBash(ChatbotPlugin plugin, const ref IRCEvent event)
             to the main thread, to send text to the server or display text on
             the screen.
         event = The [dialect.defs.IRCEvent|IRCEvent] in flight.
-        colouredOutgoing = Whether or not to tint messages going to the server
-            with mIRC colouring.
  +/
 void worker(shared IRCPluginState sState,
-    const ref IRCEvent event,
-    const Flag!"colouredOutgoing" colouredOutgoing)
+    const ref IRCEvent event)
 {
     import kameloso.constants : BufferSize, KamelosoInfo, Timeout;
     import kameloso.irccolours : ircBold;
@@ -202,6 +198,7 @@ void worker(shared IRCPluginState sState,
     import std.net.curl : HTTP;
     import core.time : seconds;
     import etc.c.curl : CurlError;
+    static import kameloso.common;
 
     version(Posix)
     {
@@ -210,6 +207,9 @@ void worker(shared IRCPluginState sState,
     }
 
     auto state = cast()sState;
+
+    // Set the global settings so messaging functions don't segfault us
+    kameloso.common.settings = &state.settings;
 
     immutable url = !event.content.length ? "http://bash.org/?random" :
         ("http://bash.org/?" ~ event.content);
