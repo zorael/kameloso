@@ -110,11 +110,11 @@ public:
     /// Whether or not to log server messages.
     bool logServer = false;
 
-    /// Whether or not to log raw events.
-    bool logRaw = false;
-
     @Unserialisable
     {
+        /// Whether or not to log raw events.
+        bool logRaw = false;
+
         /// Whether or not to have the type names be in capital letters.
         bool uppercaseTypes = false;
 
