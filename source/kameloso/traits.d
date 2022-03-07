@@ -273,22 +273,18 @@ unittest
 mixin template Wrap(string newName, alias symbol)
 if (newName.length)
 {
+    private import kameloso.traits : memberstringIsThisCtorOrDtor;
     private import std.traits : isArray, isSomeString;
 
-    static if (!__traits(compiles, __traits(identifier, symbol)))
+    static if (memberstringIsThisCtorOrDtor(newName))
     {
-        static assert(0, "Failed to wrap symbol: symbol could not be resolved");
-    }
-    else static if (!newName.length)
-    {
-        static assert(0, "Failed to wrap symbol: name to generate is empty");
+        static assert(0, "Wrapper name cannot be special names `this`, `__ctor` or `__dtor`");
     }
     else static if (__traits(compiles, mixin(newName)))
     {
         static assert(0, "Failed to wrap symbol: symbol `" ~ newName ~ "` already exists");
     }
-
-    static if (isArray!(typeof(symbol)) && !isSomeString!(typeof(symbol)))
+    else static if (isArray!(typeof(symbol)) && !isSomeString!(typeof(symbol)))
     {
         private import std.range.primitives : ElementEncodingType;
         private import std.traits : fullyQualifiedName;
