@@ -468,11 +468,8 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
         import kameloso.irccolours : ircBold;
         import std.format : format;
 
-        enum pattern = "Channel %s was not listed as a home.";
-
-        immutable message = plugin.state.settings.colouredOutgoing ?
-            pattern.format(channelName.ircBold) :
-            pattern.format(channelName);
+        enum pattern = "Channel <b>%s<b> was not listed as a home.";
+        immutable message = pattern.format(channelName);
 
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
         return;

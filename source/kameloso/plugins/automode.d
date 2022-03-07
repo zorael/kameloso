@@ -334,12 +334,8 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 
         plugin.modifyAutomode(Yes.add, nickname, event.channel, mode);
 
-        enum pattern = "Automode modified! %s on %s: +%s";
-
-        immutable message = plugin.state.settings.colouredOutgoing ?
-            pattern.format(nickname.ircColourByHash.ircBold,
-                event.channel.ircBold, mode.ircBold) :
-            pattern.format(nickname, event.channel, mode);
+        enum pattern = "Automode modified! <h>%s<h> on <b>%s<b>: +<b>%s<b>";
+        immutable message = pattern.format(nickname, event.channel, mode);
 
         chan(plugin.state, event.channel, message);
         break;
@@ -359,11 +355,8 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 
         plugin.modifyAutomode(No.add, nickname, event.channel);
 
-        enum pattern = "Automode for %s cleared.";
-
-        immutable message = plugin.state.settings.colouredOutgoing ?
-            pattern.format(nickname.ircColourByHash.ircBold) :
-            pattern.format(nickname);
+        enum pattern = "Automode for <h>%s<h> cleared.";
+        immutable message = pattern.format(nickname);
 
         chan(plugin.state, event.channel, message);
         break;

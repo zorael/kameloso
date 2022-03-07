@@ -235,11 +235,8 @@ in (rawLine.length, "Tried to add an empty quote")
         plugin.quotes[id].array ~= newQuote;
         plugin.quotes.save(plugin.quotesFile);
 
-        enum pattern = "Quote %s #%s saved.";
-
-        immutable message = plugin.state.settings.colouredOutgoing ?
-            pattern.format(id.ircColourByHash, index.ircBold) :
-            pattern.format(id, index);
+        enum pattern = "Quote <h>%s<h> #<b>%d<b> saved.";
+        immutable message = pattern.format(id, index);
 
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
@@ -279,10 +276,9 @@ void modQuoteAndReport(QuotesPlugin plugin,
     {
         if ((id !in plugin.quotes) || !plugin.quotes[id].array.length)
         {
-            enum pattern = "No quotes on record for user %s.";
-            immutable message = plugin.state.settings.colouredOutgoing ?
-                pattern.format(id.ircColourByHash) :
-                pattern.format(id);
+            enum pattern = "No quotes on record for user <h>%s<h>.";
+            immutable message = pattern.format(id);
+
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
             return;
         }
@@ -291,10 +287,9 @@ void modQuoteAndReport(QuotesPlugin plugin,
 
         if (index >= len)
         {
-            enum pattern = "Index %s is out of range. (%d >= %d)";
-            immutable message = plugin.state.settings.colouredOutgoing ?
-                pattern.format(index.ircBold, index, len) :
-                pattern.format(index, index, len);
+            enum pattern = "Index <b>%d<b> is out of range. (%d >= %d)";
+            immutable message = pattern.format(index);
+
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
             return;
         }
@@ -305,7 +300,7 @@ void modQuoteAndReport(QuotesPlugin plugin,
         {
             // Quote is to be modified
             plugin.quotes[id].array[index]["line"].str = newText;
-            pattern = "Quote %s #%s modified.";
+            pattern = "Quote <h>%s<h> #<b>%d<b> modified.";
         }
         else
         {
@@ -316,17 +311,15 @@ void modQuoteAndReport(QuotesPlugin plugin,
             if (!plugin.quotes[id].array.length)
             {
                 plugin.quotes.object.remove(id);
-                pattern = "Quote %s #%s removed.";
+                pattern = "Quote <h>%s<h> #<b>%d<b> removed.";
             }
             else
             {
-                pattern = "Quote %s #%s removed. Other quotes may have been reordered.";
+                pattern = "Quote <h>%s<h> #<b>%d<b> removed. Other quotes may have been reordered.";
             }
         }
 
-        immutable message = plugin.state.settings.colouredOutgoing ?
-            pattern.format(id.ircColourByHash, index.ircBold) :
-            pattern.format(id, index);
+        immutable message = pattern.format(id, index);
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
         plugin.quotes.save(plugin.quotesFile);
     }
@@ -598,13 +591,11 @@ void manageQuoteImpl(QuotesPlugin plugin,
     if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
         !specified.isValidNickname(plugin.state.server))
     {
-        enum pattern = `"%s" is not a valid account or nickname.`;
+        enum pattern = `"<h>%s<h>" is not a valid account or nickname.`;
+        immutable message = pattern.format(specified);
 
-        immutable message = plugin.state.settings.colouredOutgoing ?
-            pattern.format(specified.ircBold) :
-            pattern.format(specified);
-
-        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        return;
     }
 
     /// Quote a quote
@@ -612,15 +603,12 @@ void manageQuoteImpl(QuotesPlugin plugin,
     {
         import std.datetime.systime : SysTime;
 
-        enum pattern = "#%d [%d-%02d-%02d %02d:%02d] %s | %s";
-
         SysTime when = SysTime.fromUnixTime(quote.timestamp);
 
-        immutable message = plugin.state.settings.colouredOutgoing ?
-            pattern.format(quote.index, when.year, when.month, when.day, when.hour, when.minute,
-                nickname.ircColourByHash, quote.line) :
-            pattern.format(quote.index, when.year, when.month, when.day, when.hour, when.minute,
-                nickname, quote.line);
+        enum pattern = "#%d [%d-%02d-%02d %02d:%02d] <h>%s<h> | %s";
+        immutable message = pattern.format(quote.index,
+            when.year, when.month, when.day, when.hour, when.minute,
+            nickname, quote.line);
 
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
@@ -672,11 +660,8 @@ void manageQuoteImpl(QuotesPlugin plugin,
                         }
                         else
                         {
-                            enum pattern = "No such quote: %s #%s";
-
-                            immutable message = plugin.state.settings.colouredOutgoing ?
-                                pattern.format(id.ircColourByHash, index.ircBold) :
-                                pattern.format(id, index);
+                            enum pattern = "No such quote: <h>%s<h> #<b>%d<b>";
+                            immutable message = pattern.format(id, index);
 
                             privmsg(plugin.state, event.channel, event.sender.nickname, message);
                             return;
@@ -705,11 +690,8 @@ void manageQuoteImpl(QuotesPlugin plugin,
                 }
             }
 
-            enum pattern = "No quote on record for %s.";
-
-            immutable message = plugin.state.settings.colouredOutgoing ?
-                pattern.format(replyUser.nickname.ircColourByHash) :
-                pattern.format(replyUser.nickname);
+            enum pattern = "No quote on record for <h>%s<h>.";
+            immutable message = pattern.format(replyUser.nickname);
 
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
@@ -812,10 +794,9 @@ void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
 
     if ((source !in plugin.quotes) || !plugin.quotes[source].array.length)
     {
-        enum pattern = "%s has no quotes to merge.";
-        immutable message = plugin.state.settings.colouredOutgoing ?
-            pattern.format(source.ircColourByHash) :
-            pattern.format(source);
+        enum pattern = "<h>%s<h> has no quotes to merge.";
+        immutable message = pattern.format(source);
+
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
         return;
     }
@@ -833,11 +814,9 @@ void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
     plugin.quotes.object.remove(source);
     plugin.quotes.save(plugin.quotesFile);
 
-    enum pattern = "%s %s merged from %s into %s.";
+    enum pattern = "<b>%d<b> %s merged from <h>%s<h> into <h>%s<h>.";
     immutable quoteNoun = numToMerge.plurality("quote", "quotes");
-    immutable message = plugin.state.settings.colouredOutgoing ?
-        pattern.format(numToMerge.text.ircBold, quoteNoun, source.ircColourByHash, target.ircColourByHash) :
-        pattern.format(numToMerge, quoteNoun, source, target);
+    immutable message = pattern.format(numToMerge, quoteNoun, source, target);
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
 }
 

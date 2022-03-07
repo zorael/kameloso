@@ -104,11 +104,8 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
 
                 if (slice in pluginCommands)
                 {
-                    enum pattern = `Counter word "%s" conflicts with a command of the %s plugin.`;
-
-                    immutable message = plugin.state.settings.colouredOutgoing ?
-                        pattern.format(slice.ircBold, pluginName.ircBold) :
-                        pattern.format(slice, pluginName);
+                    enum pattern = `Counter word "<b>%s<b>" conflicts with a command of the <b>%s<b> plugin.`;
+                    immutable message = pattern.format(slice, pluginName);
 
                     chan(plugin.state, event.channel, message);
                     return true;
@@ -122,12 +119,8 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
             if (triggerConflicts(channelSpecificAA)) return;
 
             // If we're here there were no conflicts
-            enum pattern = "Counter %s added! Access it with %s.";
-
-            immutable command = plugin.state.settings.prefix ~ slice;
-            immutable message = plugin.state.settings.colouredOutgoing ?
-                pattern.format(slice.ircBold, command.ircBold) :
-                pattern.format(slice, command);
+            enum pattern = "Counter <b>%s<b> added! Access it with <b>%s%s<b>.";
+            immutable message = pattern.format(slice, plugin.state.settings.prefix, slice);
 
             plugin.counters[event.channel][slice] = 0;
             chan(plugin.state, event.channel, message);
@@ -154,11 +147,8 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
             return;
         }
 
-        enum pattern = "Counter %s removed.";
-
-        immutable message = plugin.state.settings.colouredOutgoing ?
-            pattern.format(slice.ircBold) :
-            pattern.format(slice);
+        enum pattern = "Counter <b>%s<b> removed.";
+        immutable message = pattern.format(slice);
 
         plugin.counters[event.channel].remove(slice);
         if (!plugin.counters[event.channel].length) plugin.counters.remove(event.channel);
@@ -176,12 +166,9 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
         }
 
         enum pattern = "Current counters: %s";
-        immutable arrayPattern = "%-(" ~ plugin.state.settings.prefix ~ "%s, %)";
-
+        immutable arrayPattern = "%-(<b>" ~ plugin.state.settings.prefix ~ "%s<b>, %)";
         immutable list = arrayPattern.format(plugin.counters[event.channel].keys);
-        immutable message = plugin.state.settings.colouredOutgoing ?
-            pattern.format(list.ircBold) :
-            pattern.format(list);
+        immutable message = pattern.format(list);
 
         chan(plugin.state, event.channel, message);
         break;
@@ -262,12 +249,10 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
     {
         import std.conv : text;
 
-        enum pattern = "%s count so far: %s";
+        enum pattern = "<b>%s<b> count so far: <b>%s<b>";
 
         immutable countText =  plugin.counters[event.channel][word].text;
-        immutable message = plugin.state.settings.colouredOutgoing ?
-            pattern.format(word.ircBold, countText.ircBold) :
-            pattern.format(word, countText);
+        immutable message = pattern.format(word, countText);
 
         chan(plugin.state, event.channel, message);
         return;
@@ -304,26 +289,20 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
             }
             catch (ConvException e)
             {
-                enum pattern = "Not a number: %s";
-
-                immutable message = plugin.state.settings.colouredOutgoing ?
-                    pattern.format(slice.ircBold) :
-                    pattern.format(slice);
+                enum pattern = "Not a number: <b>%s<b>";
+                immutable message = pattern.format(slice);
 
                 chan(plugin.state, event.channel, message);
                 return;
             }
         }
 
-        enum pattern = "%s %s! Current count: %s";
+        enum pattern = "<b>%s %s<b>! Current count: <b>%d<b>";
 
         *count += step;
 
-        immutable countText = (*count).text;
         immutable stepText = (step >= 0) ? ('+' ~ step.text) : step.text;
-        immutable message = plugin.state.settings.colouredOutgoing ?
-            pattern.format(word.ircBold, stepText.ircBold, countText.ircBold) :
-            pattern.format(word, stepText, countText);
+        immutable message = pattern.format(word, stepText, *count);
 
         chan(plugin.state, event.channel, message);
         saveResourceToDisk(plugin.counters, plugin.countersFile);
@@ -346,22 +325,15 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
         }
         catch (ConvException e)
         {
-            enum pattern = "Not a number: %s";
-
-            immutable message = plugin.state.settings.colouredOutgoing ?
-                pattern.format(slice.ircBold) :
-                pattern.format(slice);
+            enum pattern = "Not a number: <b>%s<b>";
+            immutable message = pattern.format(slice);
 
             chan(plugin.state, event.channel, message);
             return;
         }
 
-        enum pattern = "%s count assigned to %s!";
-
-        immutable countText = newCount.text;
-        immutable message = plugin.state.settings.colouredOutgoing ?
-            pattern.format(word.ircBold, countText.ircBold) :
-            pattern.format(word, countText);
+        enum pattern = "<b>%s<b> count assigned to <b>%s<b>!";
+        immutable message = pattern.format(word, newCount);
 
         *count = newCount;
         chan(plugin.state, event.channel, message);

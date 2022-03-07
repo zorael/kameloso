@@ -183,11 +183,8 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
             final switch (result)
             {
             case success:
-                enum pattern = "Added %s as %s in %s.";
-
-                immutable message = plugin.state.settings.colouredOutgoing ?
-                    pattern.format(id.ircColourByHash.ircBold, asWhat, channel) :
-                    pattern.format(id, asWhat, channel);
+                enum pattern = "Added <h>%s<h> as <b>%s<b> in %s.";
+                immutable message = pattern.format(id, asWhat, channel);
 
                 privmsg(plugin.state, event.channel, event.sender.nickname, message);
                 break;
@@ -197,11 +194,8 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
                 assert(0, "Invalid delist-only `AlterationResult` passed to `lookupEnlist.report`");
 
             case alreadyInList:
-                enum pattern = "%s was already %s in %s.";
-
-                immutable message = plugin.state.settings.colouredOutgoing ?
-                    pattern.format(id.ircColourByHash.ircBold, asWhat, channel) :
-                    pattern.format(id, asWhat, channel);
+                enum pattern = "<h>%s<h> was already <b>%s<b> in %s.";
+                immutable message = pattern.format(id, asWhat, channel);
 
                 privmsg(plugin.state, event.channel, event.sender.nickname, message);
                 break;
@@ -264,11 +258,12 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
     {
         if (event.sender.nickname.length)
         {
+            import std.format : format;
+
             // IRC report
 
-            immutable message = plugin.state.settings.colouredOutgoing ?
-                "Invalid nickname/account: " ~ specified.ircColour(IRCColour.red).ircBold :
-                "Invalid nickname/account: " ~ specified;
+            enum pattern = "Invalid nickname/account: <4>%s<c>";
+            immutable message = pattern.format(specified);
 
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
@@ -415,21 +410,15 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
 
         case noSuchAccount:
         case noSuchChannel:
-            enum pattern = "%s isn't %s in %s.";
-
-            immutable message = plugin.state.settings.colouredOutgoing ?
-                pattern.format(account.ircColourByHash.ircBold, asWhat, channel) :
-                pattern.format(account, asWhat, channel);
+            enum pattern = "<h>%s<h> isn't <b>%s<b> in %s.";
+            immutable message = pattern.format(account, asWhat, channel);
 
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
             break;
 
         case success:
-            enum pattern = "Removed %s as %s in %s.";
-
-            immutable message = plugin.state.settings.colouredOutgoing ?
-                pattern.format(account.ircColourByHash.ircBold, asWhat, channel) :
-                pattern.format(account, asWhat, channel);
+            enum pattern = "Removed <h>%s<h> as <b>%s<b> in %s.";
+            immutable message = pattern.format(account, asWhat, channel);
 
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
             break;
