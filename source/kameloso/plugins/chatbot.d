@@ -33,7 +33,7 @@ import std.typecons : Flag, No, Yes;
     @Enabler bool enabled = true;
 
     /// Enables fetching of `bash.org` quotes.
-    bool bashQuotes = true;
+    bool bashDotOrgQuotes = true;
 }
 
 
