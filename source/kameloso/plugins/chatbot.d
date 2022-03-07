@@ -163,6 +163,8 @@ void onCommandBash(ChatbotPlugin plugin, const ref IRCEvent event)
     import kameloso.thread : ThreadMessage;
     import std.concurrency : prioritySend, spawn;
 
+    if (!plugin.chatbotSettings.bashDotOrgQuotes) return;
+
     plugin.state.mainThread.prioritySend(ThreadMessage.ShortenReceiveTimeout());
 
     // Defer all work to the worker thread
