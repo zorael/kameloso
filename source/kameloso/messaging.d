@@ -45,7 +45,7 @@ module kameloso.messaging;
 private:
 
 import kameloso.plugins.common.core : IRCPluginState;
-import kameloso.common : expandIRCTags;
+import kameloso.irccolours : expandIRCTags;
 import dialect.defs;
 import std.concurrency : Tid, send;
 import std.typecons : Flag, No, Yes;
