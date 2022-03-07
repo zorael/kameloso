@@ -67,7 +67,7 @@ enum IRCColour
     Returns:
         The passed `line` but with tags expanded to formatting and colouring.
  +/
-T expandIRCTags(T)(const T line)
+T expandIRCTags(T)(const T line, const Flag!"strip" strip = No.strip)
 {
     import lu.string : contains, nom;
     import std.array : Appender;
@@ -160,37 +160,40 @@ T expandIRCTags(T)(const T line)
 
                     if ((slice[0] >= '0') && (slice[0] <= '9'))
                     {
-                        static auto getColourChars(S)(S slice)
+                        if (!strip)
                         {
-                            struct Result
+                            static auto getColourChars(S)(S slice)
                             {
-                                immutable S fg;
-                                immutable S bg;
+                                struct Result
+                                {
+                                    immutable S fg;
+                                    immutable S bg;
+                                }
+
+                                immutable commaPos = (cast(T)slice).indexOf(',');
+
+                                if (commaPos != -1)
+                                {
+                                    return Result(slice[0..commaPos], slice[commaPos+1..$]);
+                                }
+                                else
+                                {
+                                    return Result(slice);
+                                }
                             }
 
-                            immutable commaPos = (cast(T)slice).indexOf(',');
+                            immutable colours = getColourChars(slice);
 
-                            if (commaPos != -1)
+                            sink.put(cast(char)IRCControlCharacter.colour);
+                            if (colours.fg.length == 1) sink.put('0');
+                            sink.put(colours.fg);
+
+                            if (colours.bg.length)
                             {
-                                return Result(slice[0..commaPos], slice[commaPos+1..$]);
+                                sink.put(',');
+                                if (colours.bg.length == 1) sink.put('0');
+                                sink.put(colours.bg);
                             }
-                            else
-                            {
-                                return Result(slice);
-                            }
-                        }
-
-                        immutable colours = getColourChars(slice);
-
-                        sink.put(cast(char)IRCControlCharacter.colour);
-                        if (colours.fg.length == 1) sink.put('0');
-                        sink.put(colours.fg);
-
-                        if (colours.bg.length)
-                        {
-                            sink.put(',');
-                            if (colours.bg.length == 1) sink.put('0');
-                            sink.put(colours.bg);
                         }
                     }
                     else
@@ -198,23 +201,23 @@ T expandIRCTags(T)(const T line)
                         switch (slice[0])
                         {
                         case 'b':
-                            sink.put(cast(char)IRCControlCharacter.bold);
+                            if (!strip) sink.put(cast(char)IRCControlCharacter.bold);
                             break;
 
                         case 'c':
-                            sink.put(cast(char)IRCControlCharacter.colour);
+                            if (!strip) sink.put(cast(char)IRCControlCharacter.colour);
                             break;
 
                         case 'i':
-                            sink.put(cast(char)IRCControlCharacter.italics);
+                            if (!strip) sink.put(cast(char)IRCControlCharacter.italics);
                             break;
 
                         case 'u':
-                            sink.put(cast(char)IRCControlCharacter.underlined);
+                            if (!strip) sink.put(cast(char)IRCControlCharacter.underlined);
                             break;
 
                         case '/':
-                            sink.put(cast(char)IRCControlCharacter.reset);
+                            if (!strip) sink.put(cast(char)IRCControlCharacter.reset);
                             break;
 
                         case 'h':
@@ -231,8 +234,15 @@ T expandIRCTags(T)(const T line)
                             }
                             else
                             {
-                                //writeln("|", cast(string)asBytes[i..i+closingHashMarkPos], "|");
-                                sink.put(ircColourByHash(cast(string)asBytes[i..i+closingHashMarkPos]));
+                                if (!strip)
+                                {
+                                    //writeln("|", cast(string)asBytes[i..i+closingHashMarkPos], "|");
+                                    sink.put(ircColourByHash(cast(string)asBytes[i..i+closingHashMarkPos]));
+                                }
+                                else
+                                {
+                                    sink.put(cast(string)asBytes[i..i+closingHashMarkPos]);
+                                }
 
                                 // Don't advance the full "<h>".length 3
                                 // because the for-loop ++i will advance one ahead
@@ -368,6 +378,24 @@ unittest
         immutable expected = "hello"w ~ I.colour ~ "01kameloso"w ~ I.colour ~ "hello"w;
         assert((expanded == expected), expanded.to!string);
     }*/
+    {
+        immutable line = "hello<b>hello<b>hello";
+        immutable expanded = line.expandIRCTags(Yes.strip);
+        immutable expected = "hellohellohello";
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = "hello<99,99<b>hiho</>";
+        immutable expanded = line.expandIRCTags(Yes.strip);
+        immutable expected = "hello<99,99hiho";
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = "hello<1>hellohello";
+        immutable expanded = line.expandIRCTags(Yes.strip);
+        immutable expected = "hellohellohello";
+        assert((expanded == expected), expanded);
+    }
 }
 
 
