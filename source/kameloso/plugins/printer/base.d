@@ -89,9 +89,6 @@ public:
     /// Whether or not to filter WHOIS queries.
     bool filterWhois = true;
 
-    /// Whether or not to send a terminal bell signal when the bot is mentioned in chat.
-    bool bellOnMention = false;
-
     /// Whether or not to bell on parsing errors.
     bool bellOnError = false;
 
@@ -112,6 +109,9 @@ public:
 
     @Unserialisable
     {
+        /// Whether or not to send a terminal bell signal when the bot is mentioned in chat.
+        bool bellOnMention = false;
+
         /// Whether or not to log raw events.
         bool logRaw = false;
 
