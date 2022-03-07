@@ -948,7 +948,7 @@ Next mainLoop(ref Kameloso instance)
         else
         {
             logger.error("Internal error, thread messenger Fiber ended abruptly.");
-            next = Next.returnFailure;
+            return Next.returnFailure;
         }
 
         bool bufferHasMessages = (
@@ -2727,7 +2727,9 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         attempt.next = instance.mainLoop();
         attempt.firstConnect = false;
     }
-    while (!*instance.abort && attempt.next.among!(Next.continue_, Next.retry, Next.returnFailure));
+    while (
+        !*instance.abort &&
+        attempt.next.among!(Next.continue_, Next.retry));
 }
 
 
