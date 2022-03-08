@@ -56,7 +56,6 @@ import std.typecons : Flag, No, Yes;
 )
 void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
 {
-    import kameloso.irccolours : ircBold, ircColourByHash;
     import lu.string : nom, stripped, strippedLeft;
     import std.datetime.systime : Clock, SysTime;
     import std.format : format;

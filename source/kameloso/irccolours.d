@@ -1294,7 +1294,6 @@ T expandIRCTags(T)(const T line, const Flag!"strip" strip = No.strip)
                             {
                                 if (!strip)
                                 {
-                                    import kameloso.irccolours : ircColourByHash;
                                     sink.put(ircColourByHash(cast(string)asBytes[i..i+closingHashMarkPos]));
                                 }
                                 else

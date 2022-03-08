@@ -87,7 +87,6 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
 
     void dg(IRCPlugin.CommandMetadata[string][string] allPluginCommands)
     {
-        import kameloso.irccolours : ircBold;
         import lu.string : beginsWith, contains, nom;
         import std.algorithm.sorting : sort;
         import std.format : format;
@@ -244,7 +243,6 @@ void sendCommandHelp(HelpPlugin plugin,
     const string description,
     const string syntax)
 {
-    import kameloso.irccolours : ircBold;
     import std.conv : text;
     import std.format : format;
 

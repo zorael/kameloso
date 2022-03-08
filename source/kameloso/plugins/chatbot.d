@@ -189,7 +189,6 @@ void worker(shared IRCPluginState sState,
     const ref IRCEvent event)
 {
     import kameloso.constants : BufferSize, KamelosoInfo, Timeout;
-    import kameloso.irccolours : ircBold;
     import arsd.dom : Document, htmlEntitiesDecode;
     import std.algorithm.iteration : splitter;
     import std.array : Appender, replace;

@@ -465,7 +465,6 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
 
     if (homeIndex == -1)
     {
-        import kameloso.irccolours : ircBold;
         import std.format : format;
 
         enum pattern = "Channel <b>%s<b> was not listed as a home.";

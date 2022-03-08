@@ -59,7 +59,6 @@ import std.typecons : Flag, No, Yes;
 void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.constants : BufferSize;
-    import kameloso.irccolours : ircBold;
     import lu.string : nom, stripped, strippedLeft;
     import std.algorithm.comparison : among;
     import std.algorithm.searching : canFind;
@@ -198,7 +197,6 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
 )
 void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 {
-    import kameloso.irccolours : ircBold;
     import lu.string : beginsWith, stripped, strippedLeft, strippedRight;
     import std.conv : ConvException, text, to;
     import std.format : format;

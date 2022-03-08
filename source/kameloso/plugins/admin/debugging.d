@@ -18,7 +18,6 @@ private:
 
 import kameloso.plugins.admin.base : AdminPlugin;
 
-import kameloso.irccolours : IRCColour, ircBold, ircColour;//, ircColourByHash;
 import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;

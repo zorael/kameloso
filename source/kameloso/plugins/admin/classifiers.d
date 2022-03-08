@@ -19,7 +19,6 @@ import kameloso.plugins.admin.base;
 
 import kameloso.plugins.common.misc : nameOf;
 import kameloso.common : Tint, expandTags, logger;
-import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
 import kameloso.messaging;
 import dialect.defs;
 import std.algorithm.comparison : among;

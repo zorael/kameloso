@@ -45,9 +45,6 @@ private import kameloso.plugins.common.awareness : ChannelAwareness, UserAwarene
 // Likewise [dialect.defs], for the definitions of an IRC event.
 private import dialect.defs;
 
-// [kameloso.irccolours] for some IRC colouring and formatting.
-private import kameloso.irccolours : ircBold, ircColourByHash;
-
 // [kameloso.common] for some globals and helpers.
 private import kameloso.common : expandTags, logger;
 

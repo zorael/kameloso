@@ -206,7 +206,6 @@ void addQuoteAndReport(QuotesPlugin plugin,
 in (id.length, "Tried to add a quote for an empty user")
 in (rawLine.length, "Tried to add an empty quote")
 {
-    import kameloso.irccolours : ircBold, ircColourByHash;
     import lu.string : unquoted;
     import std.json : JSONException, JSONValue;
 
@@ -267,7 +266,6 @@ void modQuoteAndReport(QuotesPlugin plugin,
     const size_t index,
     const string newText = string.init)
 {
-    import kameloso.irccolours : ircBold, ircColourByHash;
     import std.algorithm.mutation : SwapStrategy, remove;
     import std.format : format;
     import std.json : JSONException, JSONValue;
@@ -529,7 +527,6 @@ void manageQuoteImpl(QuotesPlugin plugin,
     const /*ref*/ IRCEvent event,
     const ManageQuoteAction action)
 {
-    import kameloso.irccolours : ircBold, ircColourByHash;
     import dialect.common : isValidNickname, stripModesign, toLowerCase;
     import lu.string : beginsWith, nom, stripped, strippedLeft;
     import std.format : format;
@@ -766,7 +763,6 @@ void manageQuoteImpl(QuotesPlugin plugin,
 )
 void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
 {
-    import kameloso.irccolours : ircBold, ircColourByHash;
     import lu.string : SplitResults, plurality, splitInto;
     import std.conv : text;
     import std.format : format;

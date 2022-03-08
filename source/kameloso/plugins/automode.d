@@ -287,7 +287,6 @@ unittest
 )
 void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.irccolours : ircBold, ircColourByHash;
     import dialect.common : isValidNickname;
     import lu.string : SplitResults, beginsWith, nom, splitInto;
     import std.algorithm.searching : count;
