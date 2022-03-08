@@ -1093,10 +1093,33 @@ unittest
 
 // expandIRCTags
 /++
-    FIXME
+    Slightly more complicated but essentially string-replaces `<tags>` in an
+    outgoing IRC string with correlating formatting using
+    [dialect.common.IRCControlCharacter|IRCControlCharacter]s in their syntax.
+
+    `<tags>` are the lowercase first letter of all
+    [dialect.common.IRCControlCharacter|IRCControlCharacter] members;
+    `<b>` for [dialect.common.IRCControlCharacter.bold|IRCControlCharacter.bold],
+    `<c>` for [dialect.common.IRCControlCharacter.colour|IRCControlCharacter.colour],
+    `<i>` for [dialect.common.IRCControlCharacter.italics|IRCControlCharacter.italics],
+    `<u>` for [dialect.common.IRCControlCharacter.underlined|IRCControlCharacter.underlined],
+    and the magic `</>` for [dialect.common.IRCControlCharacter.reset|IRCControlCharacter.reset],
+
+    An additional `<h>` tag is also introduced, which invokes [ircColourByHash]
+    on the content between two of them.
+
+    Example:
+    ---
+    enum pattern = "Quote %s #%s saved.";
+    immutable message = pattern.format(id.ircColourByHash, index.ircBold);
+
+    enum newPattern = "Quote <h>%s<h> #<b>%d<b> saved.";
+    immutable newMessage = newPattern.format(id, index);
+    ---
 
     Params:
         line = String line to expand IRC tags of.
+        strip = Whether to expand tags or strip them from the input line.
 
     Returns:
         The passed `line` but with tags expanded to formatting and colouring.
