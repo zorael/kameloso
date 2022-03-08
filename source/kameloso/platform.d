@@ -56,7 +56,7 @@ auto currentPlatform()
                 immutable uname = execute(unameCommand).output;
                 return uname.length ? uname[0..$-1] : osName;
             }
-            catch (Exception e)
+            catch (Exception _)
             {
                 return osName;
             }
