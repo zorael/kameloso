@@ -634,9 +634,8 @@ in (mask.length, "Tried to add an empty hostmask definition")
             else
             {
                 import std.format : format;
-                enum pattern = `Invalid hostmask: "%s"; must be in the form "%s".`;
-                privmsg(plugin.state, event.channel, event.sender.nickname,
-                    format(pattern, mask.ircBold, "nickname!ident@address".ircBold));
+                enum pattern = `Invalid hostmask: "<b>%s<b>"; must be in the form "<b>nickname!ident@address.tld<b>".`;
+                privmsg(plugin.state, event.channel, event.sender.nickname, pattern.format(mask));
             }
             return;
         }
@@ -654,8 +653,8 @@ in (mask.length, "Tried to add an empty hostmask definition")
         }
         else
         {
-            immutable message = `Added hostmask "%s", mapped to account %s.`
-                .format(mask.ircBold, account.ircColourByHash);
+            enum pattern = `Added hostmask "<b>%s<b>", mapped to account <h>%s<h>.`;
+            immutable message = pattern.format(mask, account);
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
     }
@@ -675,7 +674,8 @@ in (mask.length, "Tried to add an empty hostmask definition")
             }
             else
             {
-                immutable message = `Removed hostmask "%s".`.format(mask.ircBold);
+                enum pattern = `Removed hostmask "<b>%s<b>".`;
+                immutable message = pattern.format(mask);
                 privmsg(plugin.state, event.channel, event.sender.nickname, message);
             }
         }
@@ -688,8 +688,8 @@ in (mask.length, "Tried to add an empty hostmask definition")
             }
             else
             {
-                enum pattern = `No such hostmask "%s" on file.`;
-                immutable message = format(pattern, mask.ircBold);
+                enum pattern = `No such hostmask "<b>%s<b>" on file.`;
+                immutable message = format(pattern, mask);
                 privmsg(plugin.state, event.channel, event.sender.nickname, message);
             }
             return;  // Skip saving and updating below

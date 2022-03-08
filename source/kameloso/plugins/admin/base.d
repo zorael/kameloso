@@ -1108,11 +1108,12 @@ void listHostmaskDefinitions(AdminPlugin plugin, const ref IRCEvent event)
         }
         else
         {
-            import kameloso.irccolours : ircBold;
-            import std.conv : text;
+            import std.format : format;
 
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Current hostmasks: " ~ aa.text.ircBold);
+            enum pattern = "Current hostmasks: <b>%s<b>";
+            immutable message = pattern.format(aa);
+
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
     }
     else

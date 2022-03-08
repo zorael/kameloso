@@ -540,15 +540,11 @@ void reportTitle(TitleLookupRequest request,
 
     if (request.results.domain.length)
     {
-        import kameloso.irccolours : ircBold;
         import std.format : format;
 
         immutable maybePipe = request.results.description.length ? " | " : string.init;
-        enum pattern = "[%s] %s%s%s";
-        line = colouredOutgoing ?
-            format(pattern, request.results.domain.ircBold, request.results.title,
-                maybePipe, request.results.description) :
-            format(pattern, request.results.domain, request.results.title,
+        enum pattern = "[<b>%s<b>] %s%s%s";
+        line = pattern.format(pattern, request.results.domain, request.results.title,
                 maybePipe, request.results.description);
     }
     else
@@ -580,17 +576,12 @@ void reportTitle(TitleLookupRequest request,
 void reportYouTubeTitle(TitleLookupRequest request,
     const Flag!"colouredOutgoing" colouredOutgoing)
 {
-    import kameloso.irccolours : ircColourByHash, ircBold;
     import std.format : format;
 
-    immutable line = colouredOutgoing ?
-        "[%s] %s (uploaded by %s)"
-            .format("youtube.com".ircBold, request.results.youtubeTitle,
-                request.results.youtubeAuthor.ircColourByHash) :
-        "[youtube.com] %s (uploaded by %s)"
-            .format(request.results.youtubeTitle, request.results.youtubeAuthor);
+    enum pattern = "[<b>youtube.com<b>] %s (uploaded by <h>%s<h>)";
+    immutable message = pattern.format(request.results.youtubeTitle, request.results.youtubeAuthor);
 
-    chan(request.state, request.event.channel, line);
+    chan(request.state, request.event.channel, message);
 }
 
 
