@@ -854,6 +854,7 @@ unittest
             via which to send messages to the server.
         reason = Optionally, the reason for quitting.
         quiet = Whether or not to echo what was sent to the local terminal.
+        caller = String name of the calling function, or something else that gives context.
  +/
 void quit(Flag!"priority" priority = Yes.priority)
     (IRCPluginState state,
