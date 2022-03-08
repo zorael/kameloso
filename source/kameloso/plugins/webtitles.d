@@ -167,8 +167,6 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
         request.event = event;
         request.url = url;
 
-        immutable colouredFlag = cast(Flag!"colouredOutgoing")plugin.state.settings.colouredOutgoing;
-
         if (plugin.cache.length) prune(plugin.cache, plugin.expireSeconds);
 
         TitleLookupResults cachedResult;
@@ -188,18 +186,17 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
 
             if (request.results.youtubeTitle.length)
             {
-                reportYouTubeTitle(request, colouredFlag);
+                reportYouTubeTitle(request);
             }
             else
             {
-                reportTitle(request, colouredFlag);
+                reportTitle(request);
             }
             continue;
         }
 
         cast(void)spawn(&worker, cast(shared)request, plugin.cache,
-            (i * plugin.delayMsecs), colouredFlag,
-            cast(Flag!"descriptions")plugin.webtitlesSettings.descriptions);
+            (i * plugin.delayMsecs), cast(Flag!"descriptions")plugin.webtitlesSettings.descriptions);
     }
 
     import kameloso.thread : ThreadMessage;
@@ -223,13 +220,11 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
         cache = Shared cache of previous [TitleLookupRequest]s.
         delayMsecs = Milliseconds to delay before doing the lookup, to allow for
             parallel lookups without bursting all of them at once.
-        colouredFlag = Flag of whether or not to send coloured output to the server.
         descriptions = Whether or not to look up meta descriptions.
  +/
 void worker(shared TitleLookupRequest sRequest,
     shared TitleLookupResults[string] cache,
     const ulong delayMsecs,
-    const Flag!"colouredOutgoing" colouredFlag,
     const Flag!"descriptions" descriptions)
 {
     import lu.string : beginsWith, contains, nom;
@@ -284,7 +279,7 @@ void worker(shared TitleLookupRequest sRequest,
                 request.results.youtubeTitle = decodeEntities(info["title"].str);
                 request.results.youtubeAuthor = info["author_name"].str;
 
-                reportYouTubeTitle(request, colouredFlag);
+                reportYouTubeTitle(request);
 
                 request.results.when = now;
 
@@ -350,7 +345,7 @@ void worker(shared TitleLookupRequest sRequest,
             try
             {
                 request.results = lookupTitle(request.url, descriptions);
-                reportTitle(request, colouredFlag);
+                reportTitle(request);
                 request.results.when = now;
 
                 synchronized //()
@@ -531,10 +526,8 @@ TitleLookupResults lookupTitle(const string url, const Flag!"descriptions" descr
 
     Params:
         request = A [TitleLookupRequest] containing the results of the lookup.
-        colouredOutgoing = Whether or not to send coloured output to the server.
  +/
-void reportTitle(TitleLookupRequest request,
-    const Flag!"colouredOutgoing" colouredOutgoing)
+void reportTitle(TitleLookupRequest request)
 {
     string line;
 
@@ -571,10 +564,8 @@ void reportTitle(TitleLookupRequest request,
 
     Params:
         request = A [TitleLookupRequest] containing the results of the lookup.
-        colouredOutgoing = Whether or not to send coloured output to the server.
  +/
-void reportYouTubeTitle(TitleLookupRequest request,
-    const Flag!"colouredOutgoing" colouredOutgoing)
+void reportYouTubeTitle(TitleLookupRequest request)
 {
     import std.format : format;
 
