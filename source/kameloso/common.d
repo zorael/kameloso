@@ -1507,6 +1507,7 @@ unittest
     import kameloso.terminal.colours : colourByHash;
     import lu.semver;
     import std.conv : text, to;
+    import std.format : format;
     import std.typecons : Flag, No, Yes;
 
     {
@@ -1588,6 +1589,25 @@ unittest
         immutable line = `hello\<harbl>kameloso<h>hello<h>hi`;
         immutable replaced = line.expandTags(Yes.strip);
         immutable expected = "hello<harbl>kamelosohellohi";
+        assert((replaced == expected), replaced);
+    }
+    {
+        enum pattern = "Failed to fetch, replay and clear notes for " ~
+            "<l>%s<e> on <l>%s<e>: <l>%s";
+        immutable line = pattern.format("nickname", "<no channel>", "error");
+        immutable replaced = line.expandTags(No.strip);
+        immutable expected = "Failed to fetch, replay and clear notes for " ~
+            Tint.log ~ "nickname" ~ Tint.error ~ " on " ~ Tint.log ~
+            "<no channel>" ~ Tint.error ~ ": " ~ Tint.log ~ "error";
+        assert((replaced == expected), replaced);
+    }
+    {
+        enum pattern = "Failed to fetch, replay and clear notes for " ~
+            "<l>%s<e> on <l>%s<e>: <l>%s";
+        immutable line = pattern.format("nickname", "<no channel>", "error");
+        immutable replaced = line.expandTags(Yes.strip);
+        immutable expected = "Failed to fetch, replay and clear notes for " ~
+            "nickname on <no channel>: error";
         assert((replaced == expected), replaced);
     }
 }
