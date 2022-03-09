@@ -239,7 +239,7 @@ void worker(shared TitleLookupRequest sRequest,
     }
 
     // Set the global settings so messaging functions don't segfault us
-    kameloso.common.settings = &cast()sRequest.state.settings;
+    kameloso.common.settings = &(cast()sRequest).state.settings;
 
     if (delayMsecs > 0)
     {
