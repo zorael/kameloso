@@ -130,8 +130,7 @@ in (channelName.length, "Tried to send a channel message but no channel was give
 
     m.event.type = IRCEvent.Type.CHAN;
     m.event.channel = channelName;
-    immutable strip = cast(Flag!"strip")!kameloso.common.settings.colouredOutgoing;
-    m.event.content = content.expandIRCTags(strip);
+    m.event.content = content.expandIRCTags;
     m.caller = caller;
 
     if (quiet) m.properties |= Message.Property.quiet;
@@ -215,8 +214,7 @@ in (nickname.length, "Tried to send a private query but no nickname was given")
 
     m.event.type = IRCEvent.Type.QUERY;
     m.event.target.nickname = nickname;
-    immutable strip = cast(Flag!"strip")!kameloso.common.settings.colouredOutgoing;
-    m.event.content = content.expandIRCTags(strip);
+    m.event.content = content.expandIRCTags;
     m.caller = caller;
 
     if (quiet) m.properties |= Message.Property.quiet;
@@ -281,8 +279,7 @@ in ((channel.length || nickname.length), "Tried to send a PRIVMSG but no channel
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
-    immutable strip = cast(Flag!"strip")!kameloso.common.settings.colouredOutgoing;
-    immutable expandedContent = content.expandIRCTags(strip);
+    immutable expandedContent = content.expandIRCTags;
 
     if (channel.length)
     {
@@ -369,8 +366,7 @@ in (emoteTarget.length, "Tried to send an emote but no target was given")
     Message m;
 
     m.event.type = IRCEvent.Type.EMOTE;
-    immutable strip = cast(Flag!"strip")!kameloso.common.settings.colouredOutgoing;
-    m.event.content = content.expandIRCTags(strip);
+    m.event.content = content.expandIRCTags;
     m.caller = caller;
 
     if (quiet) m.properties |= Message.Property.quiet;
@@ -464,8 +460,7 @@ in (channel.length, "Tried to set a mode but no channel was given")
     m.event.type = IRCEvent.Type.MODE;
     m.event.channel = channel;
     m.event.aux = modes.idup;
-    immutable strip = cast(Flag!"strip")!kameloso.common.settings.colouredOutgoing;
-    m.event.content = content.expandIRCTags(strip);
+    m.event.content = content.expandIRCTags;
     m.caller = caller;
 
     if (quiet) m.properties |= Message.Property.quiet;
@@ -529,8 +524,7 @@ in (channel.length, "Tried to set a topic but no channel was given")
 
     m.event.type = IRCEvent.Type.TOPIC;
     m.event.channel = channel;
-    immutable strip = cast(Flag!"strip")!kameloso.common.settings.colouredOutgoing;
-    m.event.content = content.expandIRCTags(strip);
+    m.event.content = content.expandIRCTags;
     m.caller = caller;
 
     if (quiet) m.properties |= Message.Property.quiet;
@@ -723,8 +717,7 @@ in (nickname.length, "Tried to kick someone but no nickname was given")
     m.event.type = IRCEvent.Type.KICK;
     m.event.channel = channel;
     m.event.target.nickname = nickname;
-    immutable strip = cast(Flag!"strip")!kameloso.common.settings.colouredOutgoing;
-    m.event.content = reason.expandIRCTags(strip);
+    m.event.content = reason.expandIRCTags;
     m.caller = caller;
 
     if (quiet) m.properties |= Message.Property.quiet;
@@ -788,8 +781,7 @@ in (channel.length, "Tried to part a channel but no channel was given")
 
     m.event.type = IRCEvent.Type.PART;
     m.event.channel = channel;
-    immutable strip = cast(Flag!"strip")!kameloso.common.settings.colouredOutgoing;
-    m.event.content = reason.length ? reason.expandIRCTags(strip) : state.bot.partReason;
+    m.event.content = reason.length ? reason.expandIRCTags : state.bot.partReason;
     m.caller = caller;
 
     if (quiet) m.properties |= Message.Property.quiet;
@@ -834,7 +826,6 @@ unittest
             via which to send messages to the server.
         reason = Optionally, the reason for quitting.
         quiet = Whether or not to echo what was sent to the local terminal.
-        caller = String name of the calling function, or something else that gives context.
  +/
 void quit(Flag!"priority" priority = Yes.priority)
     (IRCPluginState state,
@@ -971,8 +962,7 @@ void raw(Flag!"priority" priority = No.priority)
     Message m;
 
     m.event.type = IRCEvent.Type.UNSET;
-    immutable strip = cast(Flag!"strip")!kameloso.common.settings.colouredOutgoing;
-    m.event.content = line.expandIRCTags(strip);
+    m.event.content = line.expandIRCTags;
     m.caller = caller;
 
     if (quiet) m.properties |= Message.Property.quiet;
@@ -1032,8 +1022,7 @@ void immediate(IRCPluginState state,
     Message m;
 
     m.event.type = IRCEvent.Type.UNSET;
-    immutable strip = cast(Flag!"strip")!kameloso.common.settings.colouredOutgoing;
-    m.event.content = line.expandIRCTags(strip);
+    m.event.content = line.expandIRCTags;
     m.caller = caller;
     m.properties |= Message.Property.immediate;
 
