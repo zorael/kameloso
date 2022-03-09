@@ -1455,6 +1455,8 @@ private T expandIRCTagsImpl(T)(const T line, const Flag!"strip" strip = No.strip
                     }
                     else
                     {
+                        if (slice.length != 1) break;
+
                         switch (slice[0])
                         {
                         case 'b':
@@ -1478,8 +1480,6 @@ private T expandIRCTagsImpl(T)(const T line, const Flag!"strip" strip = No.strip
                             break;
 
                         case 'h':
-                            if (slice != "h") goto default;
-
                             i += 3;  // advance past "<h>".length
                             immutable closingHashMarkPos = (cast(T)asBytes[i..$]).indexOf("<h>");
 
