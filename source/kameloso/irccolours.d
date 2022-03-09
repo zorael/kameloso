@@ -1093,7 +1093,7 @@ unittest
 
 // expandIRCTags
 /++
-    Slightly more complicated but essentially string-replaces `<tags>` in an
+    Slightly more complicated, but essentially string-replaces `<tags>` in an
     outgoing IRC string with correlating formatting using
     [dialect.common.IRCControlCharacter|IRCControlCharacter]s in their syntax.
 
@@ -1108,13 +1108,21 @@ unittest
     An additional `<h>` tag is also introduced, which invokes [ircColourByHash]
     on the content between two of them.
 
+    If the line is not valid UTF, it is sanitised and the expansion retried.
+
     Example:
     ---
+    // Old
     enum pattern = "Quote %s #%s saved.";
-    immutable message = pattern.format(id.ircColourByHash, index.ircBold);
+    immutable message = plugin.state.settings.colouredOutgoing ?
+        pattern.format(id.ircColourByHash, index.ircBold) :
+        pattern.format(id, index);
+    privmsg(plugin.state, event.channel, event.sender.nickname. message);
 
+    // New
     enum newPattern = "Quote <h>%s<h> #<b>%d<b> saved.";
     immutable newMessage = newPattern.format(id, index);
+    privmsg(plugin.state, event.channel, event.sender.nickname, newMessage);
     ---
 
     Params:
@@ -1124,13 +1132,191 @@ unittest
     Returns:
         The passed `line` but with tags expanded to formatting and colouring.
  +/
-T expandIRCTags(T)(const T line, const Flag!"strip" strip = No.strip)
+T expandIRCTags(T)(const T line, const Flag!"strip" strip = No.strip) @system
+{
+    import std.utf : UTFException;
+
+    try
+    {
+        return expandIRCTagsImpl(line, strip);
+    }
+    catch (UTFException _)
+    {
+        import std.encoding : sanitize;
+        return expandIRCTagsImpl(sanitize(line), strip);
+    }
+}
+
+///
+@system unittest
+{
+    import dialect.common : I = IRCControlCharacter;
+    import std.conv : to;
+    import std.format : format;
+
+    {
+        immutable line = "hello";
+        immutable expanded = line.expandIRCTags;
+        assert((expanded is line), expanded);
+    }
+    {
+        immutable line = string.init;
+        immutable expanded = line.expandIRCTags;
+        assert(expanded is null);
+    }
+    {
+        immutable line = "hello<b>hello<b>hello";
+        immutable expanded = line.expandIRCTags;
+        immutable expected = "hello" ~ I.bold ~ "hello" ~ I.bold ~ "hello";
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = "hello<1>hello<c>hello";
+        immutable expanded = line.expandIRCTags;
+        immutable expected = "hello" ~ I.colour ~ "01hello" ~ I.colour ~ "hello";
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = "hello<3,4>hello<c>hello";
+        immutable expanded = line.expandIRCTags;
+        immutable expected = "hello" ~ I.colour ~ "03,04hello" ~ I.colour ~ "hello";
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = "hello<99,99<b>hiho</>";
+        immutable expanded = line.expandIRCTags;
+        immutable expected = "hello<99,99" ~ I.bold ~ "hiho" ~ I.reset;
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = "hello<99,99><b>hiho</>";
+        immutable expanded = line.expandIRCTags;
+        immutable expected = "hello" ~ I.colour ~ "99,99" ~ I.bold ~ "hiho" ~ I.reset;
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = "hello<99,999><b>hiho</>hey";
+        immutable expanded = line.expandIRCTags;
+        immutable expected = "hello<99,999>" ~ I.bold ~ "hiho" ~ I.reset ~ "hey";
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = `hello\<1,2>hiho`;
+        immutable expanded = line.expandIRCTags;
+        immutable expected = `hello<1,2>hiho`;
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = `hello\\<1,2>hiho`;
+        immutable expanded = line.expandIRCTags;
+        immutable expected = `hello\` ~ I.colour ~ "01,02hiho";
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = "hello<";
+        immutable expanded = line.expandIRCTags;
+        assert((expanded is line), expanded);
+    }
+    {
+        immutable line = "hello<<<<";
+        immutable expanded = line.expandIRCTags;
+        assert((expanded is line), expanded);
+    }
+    {
+        immutable line = "hello<x>hello<z>";
+        immutable expanded = line.expandIRCTags;
+        immutable expected = "hellohello";
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = "hello<h>kameloso<h>hello";
+        immutable expanded = line.expandIRCTags;
+        immutable expected = "hello" ~ I.colour ~ "01kameloso" ~ I.colour ~ "hello";
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = "hello<h>kameloso";
+        immutable expanded = line.expandIRCTags;
+        immutable expected = "hellokameloso";
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = "hello<3,4>hello<c>hello"d;
+        immutable expanded = line.expandIRCTags;
+        immutable expected = "hello"d ~ I.colour ~ "03,04hello"d ~ I.colour ~ "hello"d;
+        assert((expanded == expected), expanded.to!string);
+    }
+    /*{
+        immutable line = "hello<h>kameloso<h>hello"w;
+        immutable expanded = line.expandIRCTags;
+        immutable expected = "hello"w ~ I.colour ~ "01kameloso"w ~ I.colour ~ "hello"w;
+        assert((expanded == expected), expanded.to!string);
+    }*/
+    {
+        immutable line = "hello<b>hello<b>hello";
+        immutable expanded = line.expandIRCTags(Yes.strip);
+        immutable expected = "hellohellohello";
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = "hello<99,99<b>hiho</>";
+        immutable expanded = line.expandIRCTags(Yes.strip);
+        immutable expected = "hello<99,99hiho";
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = "hello<1>hellohello";
+        immutable expanded = line.expandIRCTags(Yes.strip);
+        immutable expected = "hellohellohello";
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = "Quote <h>zorael<h> #<b>5<b> saved.";
+        immutable expanded = line.expandIRCTags;
+        enum pattern = "Quote %s #%s saved.";
+        immutable expected = pattern.format(ircColourByHash("zorael"), "5".ircBold);
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = "Stopwatch stopped after <b>5 seconds<b>.";
+        immutable expanded = line.expandIRCTags;
+        enum pattern = "Stopwatch stopped after %s.";
+        immutable expected = pattern.format("5 seconds".ircBold);
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = "<h>hirrsteff<h> was already <b>whitelist<b> in #garderoben.";
+        immutable expanded = line.expandIRCTags;
+        enum pattern = "%s was already %s in #garderoben.";
+        immutable expected = pattern.format(ircColourByHash("hirrsteff"), "whitelist".ircBold);
+        assert((expanded == expected), expanded);
+    }
+}
+
+
+// expandIRCTagsImpl
+/++
+    Implementation function for [expandIRCTags]. Kept separate so that
+    [std.utf.UTFException|UTFException] can be neatly caught.
+
+    Params:
+        line = String line to expand IRC tags of.
+        strip = Whether to expand tags or strip them from the input line.
+
+    Returns:
+        The passed `line` but with tags expanded to formatting and colouring.
+
+    Throws:
+        [std.string.indexOf] (used internally) throws [std.utf.UTFException|UTFException]
+        if the starting index of a lookup doesn't represent a well-formed codepoint.
+ +/
+private T expandIRCTagsImpl(T)(const T line, const Flag!"strip" strip = No.strip)
 {
     import dialect.common : IRCControlCharacter;
     import lu.string : contains, nom;
     import std.array : Appender;
-    import std.string : representation;
     import std.range : ElementEncodingType;
+    import std.string : representation;
     import std.traits : Unqual;
 
     alias E = Unqual!(ElementEncodingType!T);
@@ -1328,150 +1514,4 @@ T expandIRCTags(T)(const T line, const Flag!"strip" strip = No.strip)
     }
 
     return dirty ? sink.data.idup : line;
-}
-
-///
-unittest
-{
-    import dialect.common : I = IRCControlCharacter;
-    import std.conv : to;
-    import std.format : format;
-
-    {
-        immutable line = "hello";
-        immutable expanded = line.expandIRCTags;
-        assert((expanded is line), expanded);
-    }
-    {
-        immutable line = string.init;
-        immutable expanded = line.expandIRCTags;
-        assert(expanded is null);
-    }
-    {
-        immutable line = "hello<b>hello<b>hello";
-        immutable expanded = line.expandIRCTags;
-        immutable expected = "hello" ~ I.bold ~ "hello" ~ I.bold ~ "hello";
-        assert((expanded == expected), expanded);
-    }
-    {
-        immutable line = "hello<1>hello<c>hello";
-        immutable expanded = line.expandIRCTags;
-        immutable expected = "hello" ~ I.colour ~ "01hello" ~ I.colour ~ "hello";
-        assert((expanded == expected), expanded);
-    }
-    {
-        immutable line = "hello<3,4>hello<c>hello";
-        immutable expanded = line.expandIRCTags;
-        immutable expected = "hello" ~ I.colour ~ "03,04hello" ~ I.colour ~ "hello";
-        assert((expanded == expected), expanded);
-    }
-    {
-        immutable line = "hello<99,99<b>hiho</>";
-        immutable expanded = line.expandIRCTags;
-        immutable expected = "hello<99,99" ~ I.bold ~ "hiho" ~ I.reset;
-        assert((expanded == expected), expanded);
-    }
-    {
-        immutable line = "hello<99,99><b>hiho</>";
-        immutable expanded = line.expandIRCTags;
-        immutable expected = "hello" ~ I.colour ~ "99,99" ~ I.bold ~ "hiho" ~ I.reset;
-        assert((expanded == expected), expanded);
-    }
-    {
-        immutable line = "hello<99,999><b>hiho</>hey";
-        immutable expanded = line.expandIRCTags;
-        immutable expected = "hello<99,999>" ~ I.bold ~ "hiho" ~ I.reset ~ "hey";
-        assert((expanded == expected), expanded);
-    }
-    {
-        immutable line = `hello\<1,2>hiho`;
-        immutable expanded = line.expandIRCTags;
-        immutable expected = `hello<1,2>hiho`;
-        assert((expanded == expected), expanded);
-    }
-    {
-        immutable line = `hello\\<1,2>hiho`;
-        immutable expanded = line.expandIRCTags;
-        immutable expected = `hello\` ~ I.colour ~ "01,02hiho";
-        assert((expanded == expected), expanded);
-    }
-    {
-        immutable line = "hello<";
-        immutable expanded = line.expandIRCTags;
-        assert((expanded is line), expanded);
-    }
-    {
-        immutable line = "hello<<<<";
-        immutable expanded = line.expandIRCTags;
-        assert((expanded is line), expanded);
-    }
-    {
-        immutable line = "hello<x>hello<z>";
-        immutable expanded = line.expandIRCTags;
-        immutable expected = "hellohello";
-        assert((expanded == expected), expanded);
-    }
-    {
-        immutable line = "hello<h>kameloso<h>hello";
-        immutable expanded = line.expandIRCTags;
-        immutable expected = "hello" ~ I.colour ~ "01kameloso" ~ I.colour ~ "hello";
-        assert((expanded == expected), expanded);
-    }
-    {
-        immutable line = "hello<h>kameloso";
-        immutable expanded = line.expandIRCTags;
-        immutable expected = "hellokameloso";
-        assert((expanded == expected), expanded);
-    }
-    {
-        immutable line = "hello<3,4>hello<c>hello"d;
-        immutable expanded = line.expandIRCTags;
-        immutable expected = "hello"d ~ I.colour ~ "03,04hello"d ~ I.colour ~ "hello"d;
-        assert((expanded == expected), expanded.to!string);
-    }
-    /*{
-        immutable line = "hello<h>kameloso<h>hello"w;
-        immutable expanded = line.expandIRCTags;
-        immutable expected = "hello"w ~ I.colour ~ "01kameloso"w ~ I.colour ~ "hello"w;
-        assert((expanded == expected), expanded.to!string);
-    }*/
-    {
-        immutable line = "hello<b>hello<b>hello";
-        immutable expanded = line.expandIRCTags(Yes.strip);
-        immutable expected = "hellohellohello";
-        assert((expanded == expected), expanded);
-    }
-    {
-        immutable line = "hello<99,99<b>hiho</>";
-        immutable expanded = line.expandIRCTags(Yes.strip);
-        immutable expected = "hello<99,99hiho";
-        assert((expanded == expected), expanded);
-    }
-    {
-        immutable line = "hello<1>hellohello";
-        immutable expanded = line.expandIRCTags(Yes.strip);
-        immutable expected = "hellohellohello";
-        assert((expanded == expected), expanded);
-    }
-    {
-        immutable line = "Quote <h>zorael<h> #<b>5<b> saved.";
-        immutable expanded = line.expandIRCTags;
-        enum pattern = "Quote %s #%s saved.";
-        immutable expected = pattern.format(ircColourByHash("zorael"), "5".ircBold);
-        assert((expanded == expected), expanded);
-    }
-    {
-        immutable line = "Stopwatch stopped after <b>5 seconds<b>.";
-        immutable expanded = line.expandIRCTags;
-        enum pattern = "Stopwatch stopped after %s.";
-        immutable expected = pattern.format("5 seconds".ircBold);
-        assert((expanded == expected), expanded);
-    }
-    {
-        immutable line = "<h>hirrsteff<h> was already <b>whitelist<b> in #garderoben.";
-        immutable expanded = line.expandIRCTags;
-        enum pattern = "%s was already %s in #garderoben.";
-        immutable expected = pattern.format(ircColourByHash("hirrsteff"), "whitelist".ircBold);
-        assert((expanded == expected), expanded);
-    }
 }
