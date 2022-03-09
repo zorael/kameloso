@@ -1309,56 +1309,201 @@ unittest
 
     Params:
         line = A line of text, presumably with `<tags>`.
+        strip = Whether or not to expand tags or strip them.
 
     Returns:
         The passsed `line` but with any `<tags>` replaced with ANSI colour sequences.
         The original string is passed back if there was nothing to replace.
  +/
-T expandTags(T)(/*const*/ T line) @safe
+T expandTags(T)(const T line, const Flag!"strip" strip = No.strip) @safe
 {
     import lu.string : contains;
-    import std.array : replace;
+    import std.array : Appender;
+    import std.range : ElementEncodingType;
+    import std.string : representation;
+    import std.traits : Unqual;
+
+    alias E = Unqual!(ElementEncodingType!T);
 
     if (!line.length || !line.contains('<')) return line;
 
-    bool hasEscapes;
+    Appender!(E[]) sink;
+    bool dirty;
+    bool escaping;
 
-    if (line.contains(`\<`))
+    immutable asBytes = line.representation;
+    immutable toReserve = (asBytes.length + 16);
+
+    byteloop:
+    for (size_t i = 0; i<asBytes.length; ++i)
     {
-        // Avoid escaped tags by string replacing escapes into nonsense
-        hasEscapes = true;
-        line = line
-            .replace("\\\\", "\0\0")
-            .replace(`\<`, "\1\1");
+        immutable c = asBytes[i];
+
+        switch (c)
+        {
+        case '\\':
+            if (escaping)
+            {
+                // Always dirty
+                sink.put('\\');
+            }
+            else
+            {
+                if (!dirty)
+                {
+                    sink.reserve(toReserve);
+                    sink.put(asBytes[0..i]);
+                    dirty = true;
+                }
+            }
+
+            escaping = !escaping;
+            break;
+
+        case '<':
+            if (escaping)
+            {
+                // Always dirty
+                sink.put('<');
+                escaping = false;
+            }
+            else
+            {
+                import std.string : indexOf;
+
+                immutable ptrdiff_t closingBracketPos = (cast(T)asBytes[i..$]).indexOf('>');
+
+                if ((closingBracketPos == -1) || (closingBracketPos > 6))
+                {
+                    if (dirty)
+                    {
+                        sink.put(c);
+                    }
+                }
+                else
+                {
+                    // Valid; dirties now if not already dirty
+
+                    if (asBytes.length < i+2)
+                    {
+                        // Too close to the end to have a meaningful tag
+                        // Break and return
+
+                        if (dirty)
+                        {
+                            // Add rest first
+                            sink.put(asBytes[i..$]);
+                        }
+
+                        break byteloop;
+                    }
+
+                    if (!dirty)
+                    {
+                        sink.reserve(toReserve);
+                        sink.put(asBytes[0..i]);
+                        dirty = true;
+                    }
+
+                    immutable slice = asBytes[i+1..i+closingBracketPos];  // mutable
+                    //if (slice.length != 1) break;
+
+                    switch (slice[0])
+                    {
+                    case 'l':
+                        if (!strip) sink.put(Tint.log);
+                        break;
+
+                    case 'i':
+                        if (!strip) sink.put(Tint.info);
+                        break;
+
+                    case 'w':
+                        if (!strip) sink.put(Tint.warning);
+                        break;
+
+                    case 'e':
+                        if (!strip) sink.put(Tint.error);
+                        break;
+
+                    case 't':
+                        if (!strip) sink.put(Tint.trace);
+                        break;
+
+                    case 'c':
+                        if (!strip) sink.put(Tint.critical);
+                        break;
+
+                    case 'f':
+                        if (!strip) sink.put(Tint.fatal);
+                        break;
+
+                    case '/':
+                        if (!strip) sink.put(Tint.off);
+                        break;
+
+                    case 'h':
+                        if (slice != "h") goto default;
+
+                        i += 3;  // advance past "<h>".length
+                        immutable closingHashMarkPos = (cast(T)asBytes[i..$]).indexOf("<h>");
+
+                        if (closingHashMarkPos == -1)
+                        {
+                            // Revert advance
+                            i -= 3;
+                            goto default;
+                        }
+                        else
+                        {
+                            immutable word = cast(string)asBytes[i..i+closingHashMarkPos];
+
+                            if (!strip)
+                            {
+                                import kameloso.terminal.colours : colourByHash;
+                                immutable bright = cast(Flag!"brightTerminal")kameloso.common.settings.brightTerminal;
+                                sink.put(colourByHash(word, bright));
+                            }
+                            else
+                            {
+                                sink.put(word);
+                            }
+
+                            // Don't advance the full "<h>".length 3
+                            // because the for-loop ++i will advance one ahead
+                            i += (closingHashMarkPos+2);
+                            continue;  // Not break
+                        }
+
+                    default:
+                        // Invalid control character, just ignore
+                        break;
+                    }
+
+                    i += closingBracketPos;
+                }
+            }
+            break;
+
+        default:
+            if (dirty)
+            {
+                sink.put(c);
+            }
+            break;
+        }
     }
 
-    line = line
-        //.replace("<a>", Tint.log)  // all...
-        .replace("<l>", Tint.log)
-        .replace("<t>", Tint.trace)
-        .replace("<i>", Tint.info)
-        .replace("<w>", Tint.warning)
-        .replace("<e>", Tint.error)
-        .replace("<c>", Tint.critical)
-        .replace("<f>", Tint.fatal)
-        .replace("</>", Tint.off);
-
-    if (hasEscapes)
-    {
-        // Restore nonsense to escapes
-        line = line
-            .replace("\0\0", "\\")
-            .replace("\1\1", `<`);
-    }
-
-    return line;
+    return dirty ? sink.data.idup : line;
 }
 
 ///
 unittest
 {
+    import kameloso.terminal.colours : colourByHash;
     import lu.semver;
     import std.conv : text, to;
+    import std.typecons : Flag, No, Yes;
 
     {
         immutable line = "This is a <l>log</> line.";
@@ -1410,6 +1555,36 @@ unittest
         immutable emptyLine = string.init;
         immutable replaced = emptyLine.expandTags;
         assert(replaced is emptyLine);
+    }
+    {
+        immutable line = "hello<h>kameloso<h>hello";
+        immutable replaced = line.expandTags;
+        immutable expected = text("hello", colourByHash("kameloso", No.brightTerminal), "hello");
+        assert((replaced == expected), replaced);
+    }
+    {
+        immutable line = "hello<h>kameloso<h>hello";
+        immutable replaced = line.expandTags(Yes.strip);
+        immutable expected = "hellokamelosohello";
+        assert((replaced == expected), replaced);
+    }
+    {
+        immutable line = "hello<h><h>hello";
+        immutable replaced = line.expandTags(Yes.strip);
+        immutable expected = "hellohello";
+        assert((replaced == expected), replaced);
+    }
+    {
+        immutable line = `hello\<harbl>kameloso<h>hello<h>hi`;
+        immutable replaced = line.expandTags;
+        immutable expected = text("hello<harbl>kameloso", colourByHash("hello", No.brightTerminal), "hi");
+        assert((replaced == expected), replaced);
+    }
+    {
+        immutable line = `hello\<harbl>kameloso<h>hello<h>hi`;
+        immutable replaced = line.expandTags(Yes.strip);
+        immutable expected = "hello<harbl>kamelosohellohi";
+        assert((replaced == expected), replaced);
     }
 }
 
