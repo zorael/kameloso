@@ -230,12 +230,16 @@ void worker(shared TitleLookupRequest sRequest,
     import lu.string : beginsWith, contains, nom;
     import std.datetime.systime : Clock;
     import std.typecons : No, Yes;
+    static import kameloso.common;
 
     version(Posix)
     {
         import kameloso.thread : setThreadName;
         setThreadName("webtitles");
     }
+
+    // Set the global settings so messaging functions don't segfault us
+    kameloso.common.settings = &cast()sRequest.state.settings;
 
     if (delayMsecs > 0)
     {
