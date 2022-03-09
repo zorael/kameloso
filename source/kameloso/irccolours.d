@@ -1325,7 +1325,7 @@ T expandIRCTags(T)(const T line, const Flag!"strip" strip = No.strip) @system
 private T expandIRCTagsImpl(T)(const T line, const Flag!"strip" strip = No.strip)
 {
     import dialect.common : IRCControlCharacter;
-    import lu.string : contains, nom;
+    import lu.string : contains;
     import std.array : Appender;
     import std.range : ElementEncodingType;
     import std.string : representation;
