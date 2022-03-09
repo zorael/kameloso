@@ -1292,6 +1292,9 @@ unittest
     `</>` equals [std.experimental.logger.LogLevel.off|LogLevel.off] and terminates
     any colour sequence.
 
+    Lastly, text between two `<h>`s are replaced with the results from a call to
+    [kameloso.terminal.colours|colourByHash|colourByHash].
+
     This should hopefully make highlighted strings more readable.
 
     Example:
@@ -1305,17 +1308,20 @@ unittest
         <l>Your private authorisation key is: <i>%s</>
         It should be entered as <i>pass</> under <i>[IRCBot]</>
         ";
+
+    enum patternWithColouredNickname = "No quotes for nickname <h>%s<h>.";
+    immutable message = patternWithColouredNickname.format(event.sendern.nickname);
     ---
 
     Params:
         line = A line of text, presumably with `<tags>`.
-        strip = Whether or not to expand tags or strip them.
+        strip = Whether to expand tags or strip them.
 
     Returns:
         The passsed `line` but with any `<tags>` replaced with ANSI colour sequences.
         The original string is passed back if there was nothing to replace.
  +/
-T expandTags(T)(const T line, const Flag!"strip" strip = No.strip) @safe
+T expandTags(T)(const T line, const Flag!"strip" strip) @safe
 {
     import lu.string : contains;
     import std.array : Appender;
@@ -1505,7 +1511,7 @@ unittest
 
     {
         immutable line = "This is a <l>log</> line.";
-        immutable replaced = line.expandTags;
+        immutable replaced = line.expandTags(No.strip);
         immutable expected = text("This is a ", Tint.log, "log", Tint.off, " line.");
         assert((replaced == expected), replaced);
     }
@@ -1523,7 +1529,7 @@ unittest
             import std.conv : wtext;
 
             immutable line = "This is a <l>log</> line."w;
-            immutable replaced = line.expandTags;
+            immutable replaced = line.expandTags(No.strip);
             immutable expected = wtext("This is a "w, Tint.log, "log"w, Tint.off, " line."w);
             assert((replaced == expected), replaced.to!string);
         }
@@ -1531,7 +1537,7 @@ unittest
             import std.conv : dtext;
 
             immutable line = "This is a <l>log</> line."d;
-            immutable replaced = line.expandTags;
+            immutable replaced = line.expandTags(No.strip);
             immutable expected = dtext("This is a "d, Tint.log, "log"d, Tint.off, " line."d);
             assert((replaced == expected), replaced.to!string);
         }
@@ -1539,24 +1545,24 @@ unittest
 
     {
         immutable line = `<i>info</>nothing<c>critical</>nothing\<w>not warning`;
-        immutable replaced = line.expandTags;
+        immutable replaced = line.expandTags(No.strip);
         immutable expected = text(Tint.info, "info", Tint.off, "nothing",
             Tint.critical, "critical", Tint.off, "nothing<w>not warning");
         assert((replaced == expected), replaced);
     }
     {
         immutable line = "This is a line with no tags";
-        immutable replaced = line.expandTags;
+        immutable replaced = line.expandTags(No.strip);
         assert(line is replaced);
     }
     {
         immutable emptyLine = string.init;
-        immutable replaced = emptyLine.expandTags;
+        immutable replaced = emptyLine.expandTags(No.strip);
         assert(replaced is emptyLine);
     }
     {
         immutable line = "hello<h>kameloso<h>hello";
-        immutable replaced = line.expandTags;
+        immutable replaced = line.expandTags(No.strip);
         immutable expected = text("hello", colourByHash("kameloso", No.brightTerminal), "hello");
         assert((replaced == expected), replaced);
     }
@@ -1574,7 +1580,7 @@ unittest
     }
     {
         immutable line = `hello\<harbl>kameloso<h>hello<h>hi`;
-        immutable replaced = line.expandTags;
+        immutable replaced = line.expandTags(No.strip);
         immutable expected = text("hello<harbl>kameloso", colourByHash("hello", No.brightTerminal), "hi");
         assert((replaced == expected), replaced);
     }
@@ -1582,6 +1588,39 @@ unittest
         immutable line = `hello\<harbl>kameloso<h>hello<h>hi`;
         immutable replaced = line.expandTags(Yes.strip);
         immutable expected = "hello<harbl>kamelosohellohi";
+        assert((replaced == expected), replaced);
+    }
+}
+
+
+// expandTags
+/++
+    String-replaces `<tags>` in a string with the results from calls to `Tint`.
+    Also works with `dstring`s and `wstring`s. Overload that does not take a
+    `strip` [std.typecons.Flag|Flag].
+
+    Params:
+        line = A line of text, presumably with `<tags>`.
+
+    Returns:
+        The passsed `line` but with any `<tags>` replaced with ANSI colour sequences.
+        The original string is passed back if there was nothing to replace.
+ +/
+T expandTags(T)(const T line) @safe
+{
+    immutable strip = cast(Flag!"strip")kameloso.common.settings.monochrome;
+    return expandTags(line, strip);
+}
+
+///
+unittest
+{
+    import std.conv : text, to;
+
+    {
+        immutable line = "This is a <l>log</> line.";
+        immutable replaced = line.expandTags;
+        immutable expected = text("This is a ", Tint.log, "log", Tint.off, " line.");
         assert((replaced == expected), replaced);
     }
 }
