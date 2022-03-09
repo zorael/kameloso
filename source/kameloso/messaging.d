@@ -124,8 +124,6 @@ void chan(Flag!"priority" priority = No.priority)
     const string caller = __FUNCTION__)
 in (channelName.length, "Tried to send a channel message but no channel was given")
 {
-    debug ensureSettings(caller);
-
     static if (priority) import std.concurrency : send = prioritySend;
 
     Message m;
@@ -211,8 +209,6 @@ void query(Flag!"priority" priority = No.priority)
     const string caller = __FUNCTION__)
 in (nickname.length, "Tried to send a private query but no nickname was given")
 {
-    debug ensureSettings(caller);
-
     static if (priority) import std.concurrency : send = prioritySend;
 
     Message m;
@@ -283,8 +279,6 @@ void privmsg(Flag!"priority" priority = No.priority)
     const string caller = __FUNCTION__)
 in ((channel.length || nickname.length), "Tried to send a PRIVMSG but no channel nor nickname was given")
 {
-    debug ensureSettings(caller);
-
     static if (priority) import std.concurrency : send = prioritySend;
 
     immutable strip = cast(Flag!"strip")!kameloso.common.settings.colouredOutgoing;
@@ -369,8 +363,6 @@ void emote(Flag!"priority" priority = No.priority)
     const string caller = __FUNCTION__)
 in (emoteTarget.length, "Tried to send an emote but no target was given")
 {
-    debug ensureSettings(caller);
-
     static if (priority) import std.concurrency : send = prioritySend;
     import lu.string : contains;
 
@@ -465,8 +457,6 @@ void mode(Flag!"priority" priority = No.priority)
     const string caller = __FUNCTION__)
 in (channel.length, "Tried to set a mode but no channel was given")
 {
-    debug ensureSettings(caller);
-
     static if (priority) import std.concurrency : send = prioritySend;
 
     Message m;
@@ -533,8 +523,6 @@ void topic(Flag!"priority" priority = No.priority)
     const string caller = __FUNCTION__)
 in (channel.length, "Tried to set a topic but no channel was given")
 {
-    debug ensureSettings(caller);
-
     static if (priority) import std.concurrency : send = prioritySend;
 
     Message m;
@@ -600,8 +588,6 @@ void invite(Flag!"priority" priority = No.priority)
 in (channel.length, "Tried to send an invite but no channel was given")
 in (nickname.length, "Tried to send an invite but no nickname was given")
 {
-    debug ensureSettings(caller);
-
     static if (priority) import std.concurrency : send = prioritySend;
 
     Message m;
@@ -665,8 +651,6 @@ void join(Flag!"priority" priority = No.priority)
     const string caller = __FUNCTION__)
 in (channel.length, "Tried to join a channel but no channel was given")
 {
-    debug ensureSettings(caller);
-
     static if (priority) import std.concurrency : send = prioritySend;
 
     Message m;
@@ -732,8 +716,6 @@ void kick(Flag!"priority" priority = No.priority)
 in (channel.length, "Tried to kick someone but no channel was given")
 in (nickname.length, "Tried to kick someone but no nickname was given")
 {
-    debug ensureSettings(caller);
-
     static if (priority) import std.concurrency : send = prioritySend;
 
     Message m;
@@ -800,8 +782,6 @@ void part(Flag!"priority" priority = No.priority)
     const string caller = __FUNCTION__)
 in (channel.length, "Tried to part a channel but no channel was given")
 {
-    debug ensureSettings(caller);
-
     static if (priority) import std.concurrency : send = prioritySend;
 
     Message m;
@@ -859,11 +839,8 @@ unittest
 void quit(Flag!"priority" priority = Yes.priority)
     (IRCPluginState state,
     const string reason = string.init,
-    const Flag!"quiet" quiet = No.quiet,
-    const string caller = __FUNCTION__)
+    const Flag!"quiet" quiet = No.quiet)
 {
-    debug ensureSettings(caller);
-
     static if (priority) import std.concurrency : send = prioritySend;
     import kameloso.thread : ThreadMessage;
 
@@ -917,8 +894,6 @@ void whois(Flag!"priority" priority = No.priority)
     const string caller = __FUNCTION__)
 in (nickname.length, caller ~ " tried to WHOIS but no nickname was given")
 {
-    debug ensureSettings(caller);
-
     static if (priority) import std.concurrency : send = prioritySend;
 
     Message m;
@@ -991,8 +966,6 @@ void raw(Flag!"priority" priority = No.priority)
     const Flag!"background" background = No.background,
     const string caller = __FUNCTION__)
 {
-    debug ensureSettings(caller);
-
     static if (priority) import std.concurrency : send = prioritySend;
 
     Message m;
@@ -1053,8 +1026,6 @@ void immediate(IRCPluginState state,
     const Flag!"quiet" quiet = No.quiet,
     const string caller = __FUNCTION__)
 {
-    debug ensureSettings(caller);
-
     import kameloso.thread : ThreadMessage;
     import std.concurrency : prioritySend;
 
@@ -1185,29 +1156,5 @@ unittest
                 assert(0, "Receive loop test in `messaging.d` failed.");
             }
         );
-    }
-}
-
-
-// ensureSettings
-/++
-    Ensures that [kameloso.common.settings] isn't null, which would otherwise cause
-    a segmentation fault. Reports the nullness to standard out.
-
-    Params:
-        caller = String name of the original calling function.
-        messageFun = String name of the messaging function.
- +/
-debug
-private void ensureSettings(const string caller, const string messageFun = __FUNCTION__)
-{
-    if (kameloso.common.settings is null)
-    {
-        import std.stdio : writefln;
-
-        kameloso.common.settings = new typeof(*kameloso.common.settings);
-
-        writefln("-- Warning: %s attempted to send an outgoing %s message while " ~
-            "`kameloso.common.settings` was null", caller, messageFun);
     }
 }
