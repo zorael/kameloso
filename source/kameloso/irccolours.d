@@ -1199,6 +1199,20 @@ T expandIRCTags(T)(const T line) @system
 {
     static import kameloso.common;
 
+    debug
+    {
+        if (kameloso.common.settings is null)
+        {
+            import std.stdio : writefln;
+
+            // We're likely threading and forgot to initialise global settings
+            kameloso.common.settings = new typeof(*kameloso.common.settings);
+
+            writefln("-- Warning: attempted to expand IRC tags by relying on " ~
+                "global `kameloso.common.settings`, and it was null");
+        }
+    }
+
     immutable strip = cast(Flag!"strip")!kameloso.common.settings.colouredOutgoing;
     return expandIRCTags(line, strip);
 }
