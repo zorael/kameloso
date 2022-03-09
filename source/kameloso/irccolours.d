@@ -1151,7 +1151,7 @@ T expandIRCTags(T)(const T line, const Flag!"strip" strip = No.strip) @system
 @system unittest
 {
     import dialect.common : I = IRCControlCharacter;
-    import std.conv : to;
+    import std.conv : text, to;
     import std.format : format;
 
     {
@@ -1291,6 +1291,18 @@ T expandIRCTags(T)(const T line, const Flag!"strip" strip = No.strip) @system
         immutable expected = pattern.format(ircColourByHash("hirrsteff"), "whitelist".ircBold);
         assert((expanded == expected), expanded);
     }
+    {
+        immutable line = `hello\<h>hello<h>hello<h>hello`;
+        immutable expanded = line.expandIRCTags;
+        immutable expected = text("hello<h>hello", ircColourByHash("hello"), "hello");
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = `hello\<h>hello<h>hello<h>hello`;
+        immutable expanded = line.expandIRCTags(Yes.strip);
+        immutable expected = "hello<h>hellohellohello";
+        assert((expanded == expected), expanded);
+    }
 }
 
 
@@ -1361,6 +1373,7 @@ private T expandIRCTagsImpl(T)(const T line, const Flag!"strip" strip = No.strip
             {
                 // Always dirty
                 sink.put('<');
+                escaping = false;
             }
             else
             {
