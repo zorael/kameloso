@@ -1406,7 +1406,7 @@ T expandTags(T)(const T line, const Flag!"strip" strip = No.strip) @safe
                     }
 
                     immutable slice = asBytes[i+1..i+closingBracketPos];  // mutable
-                    //if (slice.length != 1) break;
+                    if (slice.length != 1) break;
 
                     switch (slice[0])
                     {
@@ -1443,8 +1443,6 @@ T expandTags(T)(const T line, const Flag!"strip" strip = No.strip) @safe
                         break;
 
                     case 'h':
-                        if (slice != "h") goto default;
-
                         i += 3;  // advance past "<h>".length
                         immutable closingHashMarkPos = (cast(T)asBytes[i..$]).indexOf("<h>");
 
