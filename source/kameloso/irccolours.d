@@ -1096,6 +1096,70 @@ unittest
     Slightly more complicated, but essentially string-replaces `<tags>` in an
     outgoing IRC string with correlating formatting using
     [dialect.common.IRCControlCharacter|IRCControlCharacter]s in their syntax.
+    Overload that takes an explicit `strip` [std.typecons.Flag|Flag].
+
+    Params:
+        line = String line to expand IRC tags of.
+        strip = Whether to expand tags or strip them from the input line.
+
+    Returns:
+        The passed `line` but with tags expanded to formatting and colouring.
+ +/
+T expandIRCTags(T)(const T line, const Flag!"strip" strip) @system
+{
+    import std.utf : UTFException;
+
+    try
+    {
+        return expandIRCTagsImpl(line, strip);
+    }
+    catch (UTFException _)
+    {
+        import std.encoding : sanitize;
+        return expandIRCTagsImpl(sanitize(line), strip);
+    }
+}
+
+///
+@system unittest
+{
+    import std.typecons : Flag, No, Yes;
+
+    // See unittests of other overloads for more No.strip tests
+
+    {
+        immutable line = "hello<b>hello<b>hello";
+        immutable expanded = line.expandIRCTags(Yes.strip);
+        immutable expected = "hellohellohello";
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = "hello<99,99<b>hiho</>";
+        immutable expanded = line.expandIRCTags(Yes.strip);
+        immutable expected = "hello<99,99hiho";
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = "hello<1>hellohello";
+        immutable expanded = line.expandIRCTags(Yes.strip);
+        immutable expected = "hellohellohello";
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = `hello\<h>hello<h>hello<h>hello`;
+        immutable expanded = line.expandIRCTags(Yes.strip);
+        immutable expected = "hello<h>hellohellohello";
+        assert((expanded == expected), expanded);
+    }
+}
+
+
+// expandIRCTags
+/++
+    Slightly more complicated, but essentially string-replaces `<tags>` in an
+    outgoing IRC string with correlating formatting using
+    [dialect.common.IRCControlCharacter|IRCControlCharacter]s in their syntax.
+    Overload that does not take a `strip` [std.typecons.Flag|Flag].
 
     `<tags>` are the lowercase first letter of all
     [dialect.common.IRCControlCharacter|IRCControlCharacter] members;
@@ -1127,24 +1191,16 @@ unittest
 
     Params:
         line = String line to expand IRC tags of.
-        strip = Whether to expand tags or strip them from the input line.
 
     Returns:
         The passed `line` but with tags expanded to formatting and colouring.
  +/
-T expandIRCTags(T)(const T line, const Flag!"strip" strip = No.strip) @system
+T expandIRCTags(T)(const T line) @system
 {
-    import std.utf : UTFException;
+    static import kameloso.common;
 
-    try
-    {
-        return expandIRCTagsImpl(line, strip);
-    }
-    catch (UTFException _)
-    {
-        import std.encoding : sanitize;
-        return expandIRCTagsImpl(sanitize(line), strip);
-    }
+    immutable strip = cast(Flag!"strip")!kameloso.common.settings.colouredOutgoing;
+    return expandIRCTags(line, strip);
 }
 
 ///
@@ -1253,24 +1309,6 @@ T expandIRCTags(T)(const T line, const Flag!"strip" strip = No.strip) @system
         assert((expanded == expected), expanded.to!string);
     }*/
     {
-        immutable line = "hello<b>hello<b>hello";
-        immutable expanded = line.expandIRCTags(Yes.strip);
-        immutable expected = "hellohellohello";
-        assert((expanded == expected), expanded);
-    }
-    {
-        immutable line = "hello<99,99<b>hiho</>";
-        immutable expanded = line.expandIRCTags(Yes.strip);
-        immutable expected = "hello<99,99hiho";
-        assert((expanded == expected), expanded);
-    }
-    {
-        immutable line = "hello<1>hellohello";
-        immutable expanded = line.expandIRCTags(Yes.strip);
-        immutable expected = "hellohellohello";
-        assert((expanded == expected), expanded);
-    }
-    {
         immutable line = "Quote <h>zorael<h> #<b>5<b> saved.";
         immutable expanded = line.expandIRCTags;
         enum pattern = "Quote %s #%s saved.";
@@ -1295,12 +1333,6 @@ T expandIRCTags(T)(const T line, const Flag!"strip" strip = No.strip) @system
         immutable line = `hello\<h>hello<h>hello<h>hello`;
         immutable expanded = line.expandIRCTags;
         immutable expected = text("hello<h>hello", ircColourByHash("hello"), "hello");
-        assert((expanded == expected), expanded);
-    }
-    {
-        immutable line = `hello\<h>hello<h>hello<h>hello`;
-        immutable expanded = line.expandIRCTags(Yes.strip);
-        immutable expected = "hello<h>hellohellohello";
         assert((expanded == expected), expanded);
     }
 }
