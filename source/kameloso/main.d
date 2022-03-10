@@ -41,6 +41,11 @@ enum gcOptions = ()
     sink.reserve(128);
     sink.put("gcopt=");
 
+    version(GCStatsOnExit)
+    {
+        sink.put("profile:1 ");
+    }
+
     static if (__VERSION__ >= 2085L)
     {
         sink.put("cleanup:finalize ");
@@ -48,14 +53,6 @@ enum gcOptions = ()
         version(PreciseGC)
         {
             sink.put("gc:precise ");
-        }
-    }
-    else
-    {
-        version(GCStatsOnExit)
-        {
-            // <2.085 doesn't have GC.profileStats, so use profile:1 as a cheap workaround
-            sink.put("profile:1 ");
         }
     }
 
@@ -3174,29 +3171,6 @@ int run(string[] args)
         version(GCStatsOnExit)
         {
             import core.memory : GC;
-
-            static if (__VERSION__ >= 2085L)
-            {
-                immutable profileStats = GC.profileStats();
-
-                enum numCollectionsPattern = "Number of garbage collections: <l>%d";
-                logger.infof(numCollectionsPattern.expandTags, profileStats.numCollections);
-
-                if (profileStats.numCollections > 0)
-                {
-                    enum maxCollectionPattern = "   Max mark time:  <l>%s";
-                    logger.infof(maxCollectionPattern.expandTags, profileStats.maxCollectionTime);
-
-                    enum maxPausePattern = "   Max sweep time: <l>%s";
-                    logger.infof(maxPausePattern.expandTags, profileStats.maxPauseTime);
-
-                    enum totalCollectionTime = "   Total mark time:  <l>%s";
-                    logger.infof(totalCollectionTime.expandTags, profileStats.totalCollectionTime);
-
-                    enum totalPausePattern = "   Total sweep time: <l>%s";
-                    logger.infof(totalPausePattern.expandTags, profileStats.totalPauseTime);
-                }
-            }
 
             immutable stats = GC.stats();
 
