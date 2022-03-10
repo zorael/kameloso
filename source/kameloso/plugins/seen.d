@@ -1229,7 +1229,7 @@ void onBusMessage(SeenPlugin plugin, const string header, shared Sendable conten
         break;
 
     default:
-        logger.error("[seen] Unimplemented bus message verb: ", verb);
+        logger.error("[seen] Unimplemented bus message verb: <i>", verb);
         break;
     }
 }

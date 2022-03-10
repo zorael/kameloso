@@ -261,7 +261,7 @@ void worker(shared IRCPluginState sState,
 
         void reportLayoutError()
         {
-            askToError(state, "Failed to parse bash.org page; unexpected layout.");
+            askToError(state, "Failed to parse <l>bash.org<e> page; unexpected layout.");
         }
 
         auto p = numBlock[0].getElementsByTagName("p");
@@ -295,7 +295,7 @@ void worker(shared IRCPluginState sState,
     }
     catch (Exception e)
     {
-        enum pattern = "Chatbot could not fetch bash.org quote at <l>%s<w>: <l>%s";
+        enum pattern = "Chatbot could not fetch <l>bash.org<w> quote at <l>%s<w>: <l>%s";
         askToWarn(state, pattern.format(url, e.msg));
         version(PrintStacktraces) askToTrace(state, e.toString);
     }

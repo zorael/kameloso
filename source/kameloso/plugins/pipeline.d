@@ -439,7 +439,7 @@ void onBusMessage(PipelinePlugin plugin, const string header, shared Sendable co
     }
     else
     {
-        logger.error("[pipeline] Unimplemented bus message verb: ", message.payload);
+        logger.error("[pipeline] Unimplemented bus message verb: <i>", message.payload);
     }
 }
 

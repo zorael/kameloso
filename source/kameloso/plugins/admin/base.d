@@ -1207,7 +1207,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             }
             else
             {
-                logger.error("No such user: ", slice);
+                logger.error("No such user: <l>", slice);
             }
             break;
 
@@ -1245,7 +1245,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 
         if (slice.length)
         {
-            enum pattern = `Reloading plugins "<i>%s<l>".`;
+            enum pattern = `Reloading plugin "<i>%s<l>".`;
             logger.logf(pattern.expandTags, slice);
         }
         else
@@ -1268,9 +1268,10 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         if (results == SplitResults.underrun)
         {
             // verb_channel_nickname
-            enum pattern = "Invalid bus message syntax; expected %s " ~
-                "[verb] [channel] [nickname if add/del], got \"%s\"";
-            logger.warningf(pattern, verb, message.payload.strippedRight);
+            enum pattern = "Invalid bus message syntax; expected <b>%s%s<b> " ~
+                "[verb] [channel] [nickname if add/del], got \"<b>%s<b>\"";
+            logger.warningf(pattern.expandTags, plugin.state.settings.prefix,
+                verb, message.payload.strippedRight);
             return;
         }
 
@@ -1283,7 +1284,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             if (!user.length)
             {
                 logger.warning("Invalid bus message syntax; no user supplied, " ~
-                    "only channel ", channel);
+                    "only channel <l>", channel);
                 return;
             }
 
@@ -1300,7 +1301,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             return plugin.listList(channel, verb);
 
         default:
-            enum pattern = "Invalid bus message %s subverb: %s";
+            enum pattern = "Invalid bus message <l>%s<w> subverb <l>%s";
             logger.warningf(pattern, verb, subverb);
             break;
         }
@@ -1347,7 +1348,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             return listHostmaskDefinitions(plugin, lvalueEvent);
 
         default:
-            enum pattern = "Invalid bus message %s subverb: %s";
+            enum pattern = "Invalid bus message <l>%s<w> subverb <l>%s";
             logger.warningf(pattern, verb, subverb);
             break;
         }
@@ -1357,7 +1358,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         return plugin.onCommandSummary();
 
     default:
-        logger.error("[admin] Unimplemented bus message verb: ", verb);
+        logger.error("[admin] Unimplemented bus message verb: <l>", verb);
         break;
     }
 }

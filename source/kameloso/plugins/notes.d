@@ -367,14 +367,14 @@ auto getNotes(NotesPlugin plugin, const string channel, const string id)
     {
         if (channelNotes.type != JSONType.object)
         {
-            enum pattern = "Invalid channel notes list type for %s: `%s`";
+            enum pattern = "Invalid channel notes list type for <l>%s<e>: `<l>%s<e>`";
             logger.errorf(pattern, channel, channelNotes.type);
         }
         else if (const nickNotes = id in channelNotes.object)
         {
             if (nickNotes.type != JSONType.array)
             {
-                enum pattern = "Invalid notes list type for %s on %s: `%s`";
+                enum pattern = "Invalid notes list type for <l>%s<e> on <l>%s<e>: `<l>%s<e>`";
                 logger.errorf(pattern, id, channel, nickNotes.type);
                 return noteArray;
             }
@@ -424,7 +424,7 @@ in (id.length, "Tried to clear notes for an empty id")
     {
         if (plugin.notes[channel].type != JSONType.object)
         {
-            enum pattern = "Invalid channel notes list type for %s: `%s`";
+            enum pattern = "Invalid channel notes list type for <l>%s<e>: `<l>%s<e>`";
             logger.errorf(pattern, channel, plugin.notes[channel].type);
             return;
         }
