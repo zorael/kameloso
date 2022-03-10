@@ -9,6 +9,7 @@ import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.plugins.common.delayawait;
 import kameloso.common : logger;
+import kameloso.irccolours : stripEffects;
 import kameloso.messaging;
 import kameloso.thread : CarryingFiber;
 import dialect.defs;
@@ -89,7 +90,7 @@ void onCommandTest(TesterPlugin plugin, const ref IRCEvent event)
 
         awaitReply();
         if (!msg.length) return;
-        enforce((thisFiber.payload.content == msg),
+        enforce((thisFiber.payload.content.stripEffects() == msg),
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
@@ -125,10 +126,10 @@ void onCommandTest(TesterPlugin plugin, const ref IRCEvent event)
         await(plugin, IRCEvent.Type.CHAN, No.yield);
         scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
 
-        disableColours();
-        scope(exit) enableColours();
+        //disableColours();
+        //scope(exit) enableColours();
         expect(string.init); // ignore the echo
-        expect("Setting changed.");
+        //expect("Setting changed.");
 
         runTestAndReport!fun();
     }
@@ -193,10 +194,10 @@ void onCommandTest(TesterPlugin plugin, const ref IRCEvent event)
             await(plugin, IRCEvent.Type.CHAN, No.yield);
             scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
 
-            disableColours();
-            scope(exit) enableColours();
+            //disableColours();
+            //scope(exit) enableColours();
             expect(string.init);  // ignore the echo
-            expect("Setting changed.");
+            //expect("Setting changed.");
 
             static immutable timeInBetween = 10.seconds;
 
@@ -262,7 +263,7 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
         awaitReply();
-        enforce((thisFiber.payload.content == msg),
+        enforce((thisFiber.payload.content.stripEffects() == msg),
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
@@ -386,7 +387,7 @@ in (origEvent.channel.length, "Tried to test Automode with empty channel in orig
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
         awaitReply();
-        enforce((thisFiber.payload.content == msg),
+        enforce((thisFiber.payload.content.stripEffects() == msg),
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
@@ -466,7 +467,7 @@ in (origEvent.channel.length, "Tried to test Chatbot with empty channel in origi
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
         awaitReply();
-        enforce((thisFiber.payload.content == msg),
+        enforce((thisFiber.payload.content.stripEffects() == msg),
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
@@ -554,7 +555,7 @@ in (origEvent.channel.length, "Tried to test Notes with empty channel in origina
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
         awaitReply();
-        enforce((thisFiber.payload.content == msg),
+        enforce((thisFiber.payload.content.stripEffects() == msg),
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
@@ -579,9 +580,10 @@ in (origEvent.channel.length, "Tried to test Notes with empty channel in origina
 
     await(plugin, IRCEvent.Type.CHAN, No.yield);  // awaitReply yields
     awaitReply();
-    enforce(thisFiber.payload.content.beginsWith("%s! %1$s left note"
+    immutable stripped = thisFiber.payload.content.stripEffects();
+    enforce(stripped.beginsWith("%s! %1$s left note"
         .format(plugin.state.client.nickname)) &&
-        thisFiber.payload.content.endsWith("ago: test"),
+        stripped.endsWith("ago: test"),
         thisFiber.payload.content, __FILE__, __LINE__);
 
     return true;
@@ -620,7 +622,7 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
         awaitReply();
-        enforce((thisFiber.payload.content == msg),
+        enforce((thisFiber.payload.content.stripEffects() == msg),
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
@@ -681,7 +683,7 @@ in (origEvent.channel.length, "Tried to test Quotes with empty channel in origin
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
         awaitReply();
-        enforce((thisFiber.payload.content == msg),
+        enforce((thisFiber.payload.content.stripEffects() == msg),
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
@@ -702,7 +704,7 @@ in (origEvent.channel.length, "Tried to test Quotes with empty channel in origin
 
     send("quote flerrp");
     awaitReply();
-    enforce(thisFiber.payload.content.endsWith("] flerrp | flirrp flarrp flurble"),
+    enforce(thisFiber.payload.content.stripEffects().endsWith("] flerrp | flirrp flarrp flurble"),
         thisFiber.payload.content, __FILE__, __LINE__);
 
     send("modquote flerrp 0 KAAS FLAAS");
@@ -710,7 +712,7 @@ in (origEvent.channel.length, "Tried to test Quotes with empty channel in origin
 
     send("modquote flerrp 0");
     awaitReply();
-    enforce(thisFiber.payload.content.endsWith("] flerrp | KAAS FLAAS"),
+    enforce(thisFiber.payload.content.stripEffects().endsWith("] flerrp | KAAS FLAAS"),
         thisFiber.payload.content, __FILE__, __LINE__);
 
     send("mergequotes flerrp flirrp");
@@ -718,7 +720,7 @@ in (origEvent.channel.length, "Tried to test Quotes with empty channel in origin
 
     send("quote flirrp");
     awaitReply();
-    enforce(thisFiber.payload.content.endsWith("] flirrp | KAAS FLAAS"),
+    enforce(thisFiber.payload.content.stripEffects().endsWith("] flirrp | KAAS FLAAS"),
         thisFiber.payload.content, __FILE__, __LINE__);
 
     send("delquote flirrp 0");
@@ -763,7 +765,7 @@ in (origEvent.channel.length, "Tried to test SedReplace with empty channel in or
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
         awaitReply();
-        enforce((thisFiber.payload.content == msg),
+        enforce((thisFiber.payload.content.stripEffects() == msg),
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
@@ -812,7 +814,7 @@ in (origEvent.channel.length, "Tried to test Seen with empty channel in original
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
         awaitReply();
-        enforce((thisFiber.payload.content == msg),
+        enforce((thisFiber.payload.content.stripEffects() == msg),
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
@@ -869,7 +871,7 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
         awaitReply();
-        enforce((thisFiber.payload.content == msg),
+        enforce((thisFiber.payload.content.stripEffects() == msg),
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
@@ -912,9 +914,10 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
 
     send("counter list");
     awaitReply();
-    enforce(thisFiber.payload.content.beginsWith("Current counters: ") &&
-        (thisFiber.payload.content.contains("!blah") &&
-        thisFiber.payload.content.contains("!bluh")), thisFiber.payload.content);
+    immutable stripped = thisFiber.payload.content.stripEffects();
+    enforce(stripped.beginsWith("Current counters: ") &&
+        (stripped.contains("!blah") &&
+        stripped.contains("!bluh")), thisFiber.payload.content);
 
     // ------------ ![word]
 
@@ -1004,7 +1007,7 @@ in (origEvent.channel.length, "Tried to test Stopwatch with empty channel in ori
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
         awaitReply();
-        enforce((thisFiber.payload.content == msg),
+        enforce((thisFiber.payload.content.stripEffects() == msg),
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
@@ -1027,12 +1030,12 @@ in (origEvent.channel.length, "Tried to test Stopwatch with empty channel in ori
 
     send("stopwatch");
     awaitReply();
-    enforce(thisFiber.payload.content.beginsWith("Elapsed time: "),
+    enforce(thisFiber.payload.content.stripEffects().beginsWith("Elapsed time: "),
         thisFiber.payload.content, __FILE__, __LINE__);
 
     send("stopwatch status");
     awaitReply();
-    enforce(thisFiber.payload.content.beginsWith("Elapsed time: "),
+    enforce(thisFiber.payload.content.stripEffects().beginsWith("Elapsed time: "),
         thisFiber.payload.content, __FILE__, __LINE__);
 
     send("stopwatch start");
@@ -1040,7 +1043,7 @@ in (origEvent.channel.length, "Tried to test Stopwatch with empty channel in ori
 
     send("stopwatch stop");
     awaitReply();
-    enforce(thisFiber.payload.content.beginsWith("Stopwatch stopped after "),
+    enforce(thisFiber.payload.content.stripEffects().beginsWith("Stopwatch stopped after "),
         thisFiber.payload.content, __FILE__, __LINE__);
 
     send("stopwatch start");
