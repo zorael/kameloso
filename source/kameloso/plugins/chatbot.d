@@ -168,7 +168,7 @@ void onCommandBash(ChatbotPlugin plugin, const ref IRCEvent event)
     plugin.state.mainThread.prioritySend(ThreadMessage.ShortenReceiveTimeout());
 
     // Defer all work to the worker thread
-    spawn(&worker, cast(shared)plugin.state, event);
+    cast(void)spawn(&worker, cast(shared)plugin.state, event);
 }
 
 
