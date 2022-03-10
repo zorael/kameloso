@@ -1,18 +1,18 @@
 /++
     The Persistence service keeps track of all encountered users, gathering as much
     information about them as possible, then injects them into
-    [dialect.defs.IRCEvent]s when information about them is incomplete.
+    [dialect.defs.IRCEvent|IRCEvent]s when information about them is incomplete.
 
     This means that even if a service only refers to a user by nickname, things
     like its ident and address will be available to plugins as well, assuming
     the Persistence service had seen that previously.
 
     It has no commands. It only does post-processing and doesn't handle
-    [dialect.defs.IRCEvent]s in the normal sense at all.
+    [dialect.defs.IRCEvent|IRCEvent]s in the normal sense at all.
 
     See_Also:
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.services.persistence;
 
@@ -26,7 +26,7 @@ import dialect.defs;
 
 // postprocess
 /++
-    Hijacks a reference to a [dialect.defs.IRCEvent] after parsing and
+    Hijacks a reference to a [dialect.defs.IRCEvent|IRCEvent] after parsing and
     fleshes out the [dialect.defs.IRCEvent.sender] and/or
     [dialect.defs.IRCEvent.target] fields, so that things like account names
     that are only sent sometimes carry over.
@@ -393,9 +393,9 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
 
 // onQuit
 /++
-    Removes a user's [dialect.defs.IRCUser] entry from the `users`
+    Removes a user's [dialect.defs.IRCUser|IRCUser] entry from the `users`
     associative array of the current [PersistenceService]'s
-    [kameloso.plugins.common.core.IRCPluginState] upon them disconnecting.
+    [kameloso.plugins.common.core.IRCPluginState|IRCPluginState] upon them disconnecting.
 
     Additionally from the nickname-channel cache.
  +/
@@ -417,9 +417,10 @@ void onQuit(PersistenceService service, const ref IRCEvent event)
 // onNick
 /++
     Removes old user entries when someone changes nickname. The old nickname
-    no longer exists and the storage arrrays should reflect that.
+    no longer exists and the storage arrays should reflect that.
 
-    Annotated [kameloso.plugins.common.awareness.Awareness.cleanup] to delay execution.
+    Annotated [kameloso.plugins.common.core.Timing.cleanup|Timing.cleanup] to
+    delay execution.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.NICK)
@@ -501,10 +502,16 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
     service.channelUsers.clear();
 
     import lu.conv : Enum;
-    import std.range : only;
 
-    foreach (class_; only(IRCUser.Class.staff, IRCUser.Class.operator,
-        IRCUser.Class.whitelist, IRCUser.Class.blacklist))
+    static immutable classes =
+    [
+        IRCUser.Class.staff,
+        IRCUser.Class.operator,
+        IRCUser.Class.whitelist,
+        IRCUser.Class.blacklist,
+    ];
+
+    foreach (class_; classes)
     {
         immutable list = Enum!(IRCUser.Class).toString(class_);
         const listFromJSON = list in json;
@@ -572,11 +579,32 @@ void reloadHostmasksFromDisk(PersistenceService service)
 
     foreach (immutable hostmask, immutable account; accountByHostmask)
     {
+        import kameloso.common : expandTags, logger;
+        import dialect.common : isValidHostmask;
         import lu.string : contains;
-        import std.format : FormatException;
 
-        enum examplePlaceholderKey = "<nickname>!<ident>@<address>";
-        if (hostmask == examplePlaceholderKey) continue;
+        // Copy/pasted from initHostmaskResources...
+        enum examplePlaceholderKey1 = "<nickname1>!<ident>@<address>";
+        enum examplePlaceholderKey2 = "<nickname2>!<ident>@<address>";
+
+        if ((hostmask == examplePlaceholderKey1) ||
+            (hostmask == examplePlaceholderKey2))
+        {
+            continue;
+        }
+
+        if (!hostmask.isValidHostmask(service.state.server))
+        {
+            enum pattern =`Malformed hostmask in <l>%s<w>: "<l>%s<w>"`;
+            logger.warningf(pattern.expandTags, service.hostmasksFile, hostmask);
+            continue;
+        }
+        else if (!account.length)
+        {
+            enum pattern =`Incomplete hostmask entry in <l>%s<w>: "<l>%s<w>" has empty account`;
+            logger.warningf(pattern.expandTags, service.hostmasksFile, hostmask);
+            continue;
+        }
 
         try
         {
@@ -586,14 +614,16 @@ void reloadHostmasksFromDisk(PersistenceService service)
 
             if (user.nickname.length && !user.nickname.contains('*'))
             {
+                // Nickname has length and is not a glob
+                // (adding a glob to hostmaskUsers is okay)
                 service.hostmaskNicknameAccountCache[user.nickname] = user.account;
             }
         }
-        catch (FormatException e)
+        catch (Exception e)
         {
-            import kameloso.common : Tint, logger;
-            enum pattern = "Malformed hostmask in %s%s%s: %1$s%4$s";
-            logger.warningf(pattern, Tint.log, service.hostmasksFile, Tint.warning, hostmask);
+            enum pattern =`Exception parsing hostmask in <l>%s<w> ("<l>%s<w>"): <l>%s`;
+            logger.warningf(pattern.expandTags, service.hostmasksFile, hostmask, e.msg);
+            version(PrintStacktraces) logger.trace(e);
         }
     }
 }
@@ -617,13 +647,15 @@ void initResources(PersistenceService service)
     Reads, completes and saves the user classification JSON file, creating one
     if one doesn't exist. Removes any duplicate entries.
 
-    This ensures there will be "whitelist", "operator", "staff" and "blacklist" arrays in it.
+    This ensures there will be "whitelist", "operator", "staff" and "blacklist"
+    arrays in it.
 
     Params:
         service = The current [PersistenceService].
 
-    Throws: [kameloso.plugins.common.core.IRCPluginInitialisationException] on
-        failure loading the `user.json` file.
+    Throws:
+        [kameloso.plugins.common.misc.IRCPluginInitialisationException|IRCPluginInitialisationException]
+        on failure loading the `user.json` file.
  +/
 void initAccountResources(PersistenceService service)
 {
@@ -675,9 +707,17 @@ void initAccountResources(PersistenceService service)
         assert((users == JSONValue([ "bar", "baz", "foo" ])), users.array.text);
     }+/
 
-    import std.range : only;
+    //import std.range : only;
 
-    foreach (liststring; only("staff", "operator", "whitelist", "blacklist"))
+    static immutable listTypes =
+    [
+        "staff",
+        "operator",
+        "whitelist",
+        "blacklist",
+    ];
+
+    foreach (liststring; listTypes)
     {
         enum examplePlaceholderKey = "<#channel>";
 
@@ -729,8 +769,9 @@ void initAccountResources(PersistenceService service)
     Reads, completes and saves the hostmasks JSON file, creating one if it
     doesn't exist.
 
-    Throws: [kameloso.plugins.common.core.IRCPluginInitialisationException] on
-        failure loading the `hostmasks.json` file.
+    Throws:
+        [kameloso.plugins.common.misc.IRCPluginInitialisationException|IRCPluginInitialisationException]
+        on failure loading the `hostmasks.json` file.
  +/
 void initHostmaskResources(PersistenceService service)
 {
@@ -754,18 +795,26 @@ void initHostmaskResources(PersistenceService service)
         throw new IRCPluginInitialisationException(service.hostmasksFile.baseName ~ " may be malformed.");
     }
 
-    enum examplePlaceholderKey = "<nickname>!<ident>@<address>";
-    enum examplePlaceholderValue = "<account>";
+    enum examplePlaceholderKey1 = "<nickname1>!<ident>@<address>";
+    enum examplePlaceholderKey2 = "<nickname2>!<ident>@<address>";
+    enum examplePlaceholderValue1 = "<account1>";
+    enum examplePlaceholderValue2 = "<account2>";
 
     if (json.object.length == 0)
     {
-        json[examplePlaceholderKey] = null;
-        json[examplePlaceholderKey].str = null;
-        json[examplePlaceholderKey].str = examplePlaceholderValue;
+        json[examplePlaceholderKey1] = null;
+        json[examplePlaceholderKey1].str = null;
+        json[examplePlaceholderKey1].str = examplePlaceholderValue1;
+        json[examplePlaceholderKey2] = null;
+        json[examplePlaceholderKey2].str = null;
+        json[examplePlaceholderKey2].str = examplePlaceholderValue2;
     }
-    else if ((json.object.length > 1) && (examplePlaceholderKey in json))
+    else if ((json.object.length > 2) &&
+        ((examplePlaceholderKey1 in json) ||
+         (examplePlaceholderKey2 in json)))
     {
-        json.object.remove(examplePlaceholderKey);
+        json.object.remove(examplePlaceholderKey1);
+        json.object.remove(examplePlaceholderKey2);
     }
 
     // Let other Exceptions pass.
@@ -780,18 +829,18 @@ public:
 
 // PersistenceService
 /++
-    The Persistence service melds new [dialect.defs.IRCUser]s (from
-    post-processing new [dialect.defs.IRCEvent]s) with old records of themselves.
+    The Persistence service melds new [dialect.defs.IRCUser|IRCUser]s (from
+    post-processing new [dialect.defs.IRCEvent|IRCEvent]s) with old records of themselves.
 
     Sometimes the only bit of information about a sender (or target) embedded in
-    an [dialect.defs.IRCEvent] may be his/her nickname, even though the
+    an [dialect.defs.IRCEvent|IRCEvent] may be his/her nickname, even though the
     event before detailed everything, even including their account name. With
-    this service we aim to complete such [dialect.defs.IRCUser] entries as
+    this service we aim to complete such [dialect.defs.IRCUser|IRCUser] entries as
     the union of everything we know from previous events.
 
-    It only needs part of [kameloso.plugins.common.awareness.UserAwareness] for minimal
-    bookkeeping, not the full package, so we only copy/paste the relevant bits
-    to stay slim.
+    It only needs part of [kameloso.plugins.common.awareness.UserAwareness|UserAwareness]
+    for minimal bookkeeping, not the full package, so we only copy/paste the
+    relevant bits to stay slim.
  +/
 final class PersistenceService : IRCPlugin
 {

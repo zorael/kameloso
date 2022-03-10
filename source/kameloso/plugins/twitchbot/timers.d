@@ -1,12 +1,12 @@
 /++
     Implementation of Twitch bot timers. For internal use.
 
-    The [dialect.defs.IRCEvent]-annotated handlers must be in the same module
-    as the [kameloso.plugins.twitchbot.TwitchBotPlugin], but these implementation
-    functions can be offloaded here to limit module size a bit.
+    The [dialect.defs.IRCEvent|IRCEvent]-annotated handlers must be in the same
+    module as the [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin],
+    but these implementation functions can be offloaded here to limit module size a bit.
 
     See_Also:
-        [kameloso.plugins.twitchbot.base]
+        [kameloso.plugins.twitchbot.base|twitchbot.base]
  +/
 module kameloso.plugins.twitchbot.timers;
 
@@ -55,10 +55,10 @@ struct TimerDefinition
 // createTimerFiber
 /++
     Given a [TimerDefinition] and a string channel name, creates a
-    [core.thread.fiber.Fiber] that implements the timer.
+    [core.thread.fiber.Fiber|Fiber] that implements the timer.
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
         timerDef = Definition of the timer to apply.
         channelName = String channel to which the timer belongs.
  +/
@@ -83,38 +83,25 @@ Fiber createTimerFiber(TwitchBotPlugin plugin,
         /// The timestamp at the last successful trigger.
         long lastTimestamp = creation;
 
-        /// Whether or not stagger has passed, so we don't evaluate it every single time.
-        bool staggerDone;
+        while (true)
+        {
+            // Stagger
+            immutable now = Clock.currTime.toUnixTime;
 
-        version(TwitchAPIFeatures)
-        {
-            immutable streamer = room.broadcasterDisplayName;
-        }
-        else
-        {
-            import kameloso.plugins.common.misc : nameOf;
-            immutable streamer = plugin.nameOf(channelName[1..$]);
+            if ((now - creation) < timerDef.stagger)
+            {
+                // Reset counters so it starts fresh after stagger
+                lastMessageCount = room.messageCount;
+                lastTimestamp = now;
+                Fiber.yield();
+                continue;
+            }
+            // ended, so break and join the next loop
+            break;
         }
 
         while (true)
         {
-            if (!staggerDone)
-            {
-                immutable now = Clock.currTime.toUnixTime;
-
-                if ((now - creation) < timerDef.stagger)
-                {
-                    // Reset counters so it starts fresh after stagger
-                    lastMessageCount = room.messageCount;
-                    lastTimestamp = now;
-                    Fiber.yield();
-                    continue;
-                }
-            }
-
-            // Avoid evaluating current UNIX time after stagger is done
-            staggerDone = true;
-
             if (room.messageCount < (lastMessageCount + timerDef.messageCountThreshold))
             {
                 Fiber.yield();
@@ -134,7 +121,7 @@ Fiber createTimerFiber(TwitchBotPlugin plugin,
             import std.random : uniform;
 
             immutable line = timerDef.line
-                .replace("$streamer", streamer)
+                .replace("$streamer", room.broadcasterDisplayName)
                 .replace("$channel", channelName[1..$])
                 .replace("$bot", plugin.state.client.nickname)
                 .replace("$random", uniform!"(]"(0, 100).text);
@@ -158,8 +145,8 @@ Fiber createTimerFiber(TwitchBotPlugin plugin,
     Adds, deletes, lists or clears timers for the specified target channel.
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin].
-        event = The triggering [dialect.defs.IRCEvent].
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        event = The triggering [dialect.defs.IRCEvent|IRCEvent].
         targetChannel = The channel we're handling timers for.
  +/
 void handleTimerCommand(TwitchBotPlugin plugin,
@@ -367,10 +354,10 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
 // timerDefsToJSON
 /++
     Expresses the [FiberDefinition] associative array
-    ([kameloso.plugins.twitchbot.base.TwitchBotPlugin.fiberDefsByChannel])
+    ([kameloso.plugins.twitchbot.base.TwitchBotPlugin.fiberDefsByChannel|TwitchBotPlugin.fiberDefsByChannel])
     in JSON form, for easier saving to and loading from disk.
 
-    Using [std.json.JSONValue] directly fails with an error.
+    Using [std.json.JSONValue|JSONValue] directly fails with an error.
  +/
 JSONStorage timerDefsToJSON(TwitchBotPlugin plugin)
 {
@@ -409,14 +396,15 @@ JSONStorage timerDefsToJSON(TwitchBotPlugin plugin)
 
 // populateTimers
 /++
-    Populates the [kameloso.plugins.twitchbot.base.TwitchBotPlugin.timerDefsByChannel]
+    Populates the
+    [kameloso.plugins.twitchbot.base.TwitchBotPlugin.timerDefsByChannel|TwitchBotPlugin.timerDefsPerChannel]
     associative array with the timer definitions in the passed JSON file.
 
     This reads the JSON values from disk and creates the [TimerDefinition]s
     appropriately.
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
         filename = Filename of the JSON file to read definitions from.
  +/
 void populateTimers(TwitchBotPlugin plugin, const string filename)

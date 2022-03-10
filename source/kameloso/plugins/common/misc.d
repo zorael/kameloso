@@ -3,7 +3,7 @@
     without which they will *not* function.
 
     See_Also:
-        [kameloso.plugins.common.core]
+        [kameloso.plugins.common.core|plugins.common.core]
  +/
 module kameloso.plugins.common.misc;
 
@@ -12,7 +12,6 @@ private:
 import kameloso.kameloso : CoreSettings;
 import kameloso.plugins.common.core;
 import dialect.defs;
-import std.traits : isSomeFunction;
 import std.typecons : Flag, No, Yes;
 
 public:
@@ -24,13 +23,14 @@ public:
     setting, in string form.
 
     This merely iterates the passed `plugins` and calls their
-    [kameloso.plugins.common.core.IRCPlugin.setSettingByName] methods.
+    [kameloso.plugins.common.core.IRCPlugin.setSettingByName|IRCPlugin.setSettingByName]
+    methods.
 
     Params:
-        plugins = Array of all [kameloso.plugins.common.core.IRCPlugin]s.
+        plugins = Array of all [kameloso.plugins.common.core.IRCPlugin|IRCPlugin]s.
         customSettings = Array of custom settings to apply to plugins' own
             setting, in the string forms of "`plugin.setting=value`".
-        copyOfSettings = A copy of the program-wide [kameloso.kameloso.CoreSettings].
+        copyOfSettings = A copy of the program-wide [kameloso.kameloso.CoreSettings|CoreSettings].
 
     Returns:
         `true` if no setting name mismatches occurred, `false` if it did.
@@ -42,7 +42,7 @@ bool applyCustomSettings(IRCPlugin[] plugins,
     const string[] customSettings,
     CoreSettings copyOfSettings)
 {
-    import kameloso.common : Tint, logger;
+    import kameloso.common : Tint, expandTags, logger;
     import lu.string : contains, nom;
     import std.conv : ConvException;
 
@@ -53,8 +53,8 @@ bool applyCustomSettings(IRCPlugin[] plugins,
     {
         if (!line.contains!(Yes.decode)('.'))
         {
-            enum pattern = `Bad %splugin%s.%1$ssetting%2$s=%1$svalue%2$s format. (%1$s%3$s%2$s)`;
-            logger.warningf(pattern, Tint.log, Tint.warning, line);
+            enum pattern = `Bad <l>plugin<w>.<l>setting<w>=<l>value<w> format. (<l>%s<w>)`;
+            logger.warningf(pattern.expandTags, line);
             noErrors = false;
             continue;
         }
@@ -77,8 +77,8 @@ bool applyCustomSettings(IRCPlugin[] plugins,
 
                 if (!success)
                 {
-                    enum pattern = "No such %score%s setting: %1$s%3$s";
-                    logger.warningf(pattern, Tint.log, Tint.warning, setting);
+                    enum pattern = "No such <l>core<w> setting: <l>%s";
+                    logger.warningf(pattern.expandTags, setting);
                     noErrors = false;
                 }
                 else
@@ -93,23 +93,28 @@ bool applyCustomSettings(IRCPlugin[] plugins,
 
                     foreach (plugin; plugins)
                     {
+                        static import kameloso.common;
+
                         plugin.state.settings = copyOfSettings;
-                        plugin.state.updates |= typeof(plugin.state.updates).settings;
+                        *kameloso.common.settings = plugin.state.settings;
+
+                        // No need to flag as updated when we update here manually
+                        //plugin.state.updates |= typeof(plugin.state.updates).settings;
                     }
                 }
             }
             catch (SetMemberException e)
             {
-                enum pattern = "Failed to set %score%s.%1$s%3$s%2$s: " ~
-                    "it requires a value and none was supplied";
-                logger.warningf(pattern, Tint.log, Tint.warning, setting);
+                enum pattern = "Failed to set <l>core<w>.<l>%s<w>: " ~
+                    "it requires a value and none was supplied.";
+                logger.warningf(pattern.expandTags, setting);
                 version(PrintStacktraces) logger.trace(e.info);
                 noErrors = false;
             }
             catch (ConvException e)
             {
-                enum pattern = `Invalid value for %score%s.%1$s%3$s%2$s: "%1$s%4$s%2$s"`;
-                logger.warningf(pattern, Tint.log, Tint.warning, setting, value);
+                enum pattern = `Invalid value for <l>core<w>.<l>%s<w>: "<l>%s<w>"`;
+                logger.warningf(pattern.expandTags, setting, value);
                 noErrors = false;
             }
 
@@ -130,15 +135,15 @@ bool applyCustomSettings(IRCPlugin[] plugins,
 
                     if (!success)
                     {
-                        enum pattern = "No such %s%s%s plugin setting: %1$s%4$s";
-                        logger.warningf(pattern, Tint.log, pluginstring, Tint.warning, setting);
+                        enum pattern = "No such <l>%s<w> plugin setting: <l>%s";
+                        logger.warningf(pattern.expandTags, pluginstring, setting);
                         noErrors = false;
                     }
                 }
                 catch (ConvException e)
                 {
-                    enum pattern = `Invalid value for %s%s%s.%1$s%4$s%3$s: "%1$s%5$s%3$s"`;
-                    logger.warningf(pattern, Tint.log, pluginstring, Tint.warning, setting, value);
+                    enum pattern = `Invalid value for <l>%s<w>.<l>%s<w>: "<l>%s<w>"`;
+                    logger.warningf(pattern.expandTags, pluginstring, setting, value);
                     noErrors = false;
 
                     //version(PrintStacktraces) logger.trace(e.info);
@@ -220,8 +225,8 @@ unittest
 /++
     Exception thrown when an IRC plugin failed to have its settings set.
 
-    A normal [object.Exception], which only differs in the sense that we can deduce
-    what went wrong by its type.
+    A normal [object.Exception|Exception], which only differs in the sense that
+    we can deduce what went wrong by its type.
  +/
 final class IRCPluginSettingsException : Exception
 {
@@ -240,8 +245,8 @@ final class IRCPluginSettingsException : Exception
 /++
     Exception thrown when an IRC plugin failed to initialise itself or its resources.
 
-    A normal [object.Exception], which only differs in the sense that we can deduce
-    what went wrong by its type.
+    A normal [object.Exception|Exception], which only differs in the sense that
+    we can deduce what went wrong by its type.
  +/
 final class IRCPluginInitialisationException : Exception
 {
@@ -258,14 +263,15 @@ final class IRCPluginInitialisationException : Exception
 
 // catchUser
 /++
-    Catch an [dialect.defs.IRCUser], saving it to the [kameloso.plugins.common.core.IRCPlugin]'s
-    [kameloso.plugins.common.core.IRCPluginState.users] array.
+    Catch an [dialect.defs.IRCUser|IRCUser], saving it to the
+    [kameloso.plugins.common.core.IRCPlugin|IRCPlugin]'s
+    [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users] array.
 
     If a user already exists, meld the new information into the old one.
 
     Params:
-        plugin = Current [kameloso.plugins.common.core.IRCPlugin].
-        newUser = The [dialect.defs.IRCUser] to catch.
+        plugin = Current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
+        newUser = The [dialect.defs.IRCUser|IRCUser] to catch.
  +/
 void catchUser(IRCPlugin plugin, const IRCUser newUser) @safe
 {
@@ -291,9 +297,9 @@ void catchUser(IRCPlugin plugin, const IRCUser newUser) @safe
     replay the event upon receiving the results.
 
     Params:
-        plugin = Subclass [kameloso.plugins.common.core.IRCPlugin] to replay the
-            function pointer `fun` with as first argument.
-        event = [dialect.defs.IRCEvent] to queue up to replay.
+        plugin = Subclass [kameloso.plugins.common.core.IRCPlugin|IRCPlugin] to
+            replay the function pointer `fun` with as first argument.
+        event = [dialect.defs.IRCEvent|IRCEvent] to queue up to replay.
         permissionsRequired = Permissions level to match the results from the WHOIS query with.
         fun = Function/delegate pointer to call when the results return.
         caller = String name of the calling function, or something else that gives context.
@@ -338,7 +344,7 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
 
     version(ExplainReplay)
     {
-        import kameloso.common : Tint, logger;
+        import kameloso.common : expandTags, logger;
         import lu.string : beginsWith;
 
         immutable callerSlice = caller.beginsWith("kameloso.plugins.") ?
@@ -358,27 +364,9 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
         {
             version(ExplainReplay)
             {
-                version(Colours)
-                {
-                    enum pattern = "%s%s%s plugin %6$sNOT%3$s queueing an event to be replayed " ~
-                        "on behalf of %1$s%4$s%3$s; delta time %1$s%5$d%3$s is too recent";
-
-                    logger.logf(pattern,
-                        Tint.info, plugin.name, Tint.log,
-                        callerSlice,
-                        delta,
-                        Tint.warning);
-                }
-                else
-                {
-                    enum pattern = "%s plugin NOT queueing an event to be replayed " ~
-                        "on behalf of %s; delta time %d is too recent";
-
-                    logger.logf(pattern,
-                        plugin.name,
-                        callerSlice,
-                        delta);
-                }
+                enum pattern = "<i>%s<l> plugin <w>NOT<l> queueing an event to be replayed " ~
+                    "on behalf of <i>%s<l>; delta time <i>%d<l> is too recent";
+                logger.logf(pattern.expandTags, plugin.name, callerSlice, delta);
             }
             return;
         }
@@ -386,16 +374,8 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
 
     version(ExplainReplay)
     {
-        version(Colours)
-        {
-            enum pattern = "%s%s%s plugin queueing an event to be replayed on behalf of %1$s%4$s%3$s";
-            logger.logf(pattern, Tint.info, plugin.name, Tint.log, callerSlice);
-        }
-        else
-        {
-            enum pattern = "%s plugin queueing an event to be replayed on behalf of %s";
-            logger.logf(pattern, plugin.name, callerSlice);
-        }
+        enum pattern = "<i>%s<l> plugin queueing an event to be replayed on behalf of <i>%s";
+        logger.logf(pattern.expandTags, plugin.name, callerSlice);
     }
 
     plugin.state.pendingReplays[user.nickname] ~=
@@ -410,9 +390,10 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
     *with* a subclass plugin reference attached.
 
     Params:
-        plugin = Subclass [kameloso.plugins.common.core.IRCPlugin] to call the
-            function pointer `fun` with as first argument, when the WHOIS results return.
-        event = [dialect.defs.IRCEvent] that instigated the WHOIS lookup.
+        plugin = Subclass [kameloso.plugins.common.core.IRCPlugin|IRCPlugin] to
+            call the function pointer `fun` with as first argument, when the
+            WHOIS results return.
+        event = [dialect.defs.IRCEvent|IRCEvent] that instigated the WHOIS lookup.
         fun = Function/delegate pointer to call upon receiving the results.
         permissionsRequired = The permissions level policy to apply to the WHOIS results.
         caller = String name of the calling function, or something else that gives context.
@@ -422,86 +403,50 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
         passed to this function.
 
     See_Also:
-        [kameloso.plugins.common.core.Replay]
+        [kameloso.plugins.common.core.Replay|Replay]
  +/
 Replay replay(Plugin, Fun)(Plugin plugin, const ref IRCEvent event,
     Fun fun, const Permissions permissionsRequired, const string caller = __FUNCTION__)
 {
     void dg(Replay replay)
     {
+        import kameloso.common : expandTags, logger;
+        import lu.conv : Enum;
+        import lu.string : beginsWith;
+
         version(ExplainReplay)
         void explainReplay()
         {
-            import kameloso.common : Tint, logger;
-            import lu.string : beginsWith;
-
             immutable caller = replay.caller.beginsWith("kameloso.plugins.") ?
                 replay.caller[17..$] :
                 replay.caller;
 
-            version(Colours)
-            {
-                enum pattern = "%s%s%s replaying %1$s%4$s%3$s-level event (invoking %1$s%5$s%3$s) " ~
-                    "based on WHOIS results: user %1$s%6$s%3$s is %1$s%7$s%3$s class";
-
-                logger.logf(pattern,
-                    Tint.info, plugin.name, Tint.log,
-                    replay.permissionsRequired,
-                    caller,
-                    replay.event.sender.nickname,
-                    replay.event.sender.class_);
-            }
-            else
-            {
-                enum pattern = "%s replaying %s-level event (invoking %s) " ~
-                    "based on WHOIS results: user %s is %s class";
-
-                logger.logf(pattern,
-                    plugin.name,
-                    replay.permissionsRequired,
-                    caller,
-                    replay.event.sender.nickname,
-                    replay.event.sender.class_);
-            }
+            enum pattern = "<i>%s<l> replaying <i>%s<l>-level event (invoking <i>%s<l>) " ~
+                "based on WHOIS results; user <i>%s<l> is <i>%s<l> class";
+            logger.logf(pattern.expandTags,
+                plugin.name,
+                Enum!Permissions.toString(replay.permissionsRequired),
+                caller,
+                replay.event.sender.nickname,
+                Enum!(IRCUser.Class).toString(replay.event.sender.class_));
         }
 
         version(ExplainReplay)
         void explainRefuse()
         {
-            import kameloso.common : Tint, logger;
-            import lu.string : beginsWith;
-
             immutable caller = replay.caller.beginsWith("kameloso.plugins.") ?
                 replay.caller[17..$] :
                 replay.caller;
 
-            version(Colours)
-            {
-                enum pattern = "%s%s%s %8$sNOT%3$s replaying %1$s%4$s%3$s-level event " ~
-                    "(which would have invoked %1$s%5$s%3$s) " ~
-                    "based on WHOIS results: user %1$s%6$s%3$s is insufficient %1$s%7$s%3$s class";
-
-                logger.logf(pattern,
-                    Tint.info, plugin.name, Tint.log,
-                    replay.permissionsRequired,
-                    caller,
-                    replay.event.sender.nickname,
-                    replay.event.sender.class_,
-                    Tint.warning);
-            }
-            else
-            {
-                enum pattern = "%s NOT replaying %s-level event " ~
-                    "(which would have invoked %s) " ~
-                    "based on WHOIS results: user %s is insufficient %s class";
-
-                logger.logf(pattern,
-                    plugin.name,
-                    replay.permissionsRequired,
-                    caller,
-                    replay.event.sender.nickname,
-                    replay.event.sender.class_);
-            }
+            enum pattern = "<i>%s<l> plugin <w>NOT<l> replaying <i>%s<l>-level event " ~
+                "(which would have invoked <i>%s<l>) " ~
+                "based on WHOIS results: user <i>%s<l> is <i>%s<l> class";
+            logger.logf(pattern.expandTags,
+                plugin.name,
+                Enum!Permissions.toString(replay.permissionsRequired),
+                caller,
+                replay.event.sender.nickname,
+                Enum!(IRCUser.Class).toString(replay.event.sender.class_));
         }
 
         with (Permissions)
@@ -555,14 +500,13 @@ Replay replay(Plugin, Fun)(Plugin plugin, const ref IRCEvent event,
         case ignore:
 
             import lu.traits : TakesParams;
-            import std.meta : AliasSeq;
             import std.traits : arity;
 
             version(ExplainReplay) explainReplay();
 
             static if (
-                TakesParams!(fun, AliasSeq!(Plugin, IRCEvent)) ||
-                TakesParams!(fun, AliasSeq!(IRCPlugin, IRCEvent)))
+                TakesParams!(fun, Plugin, IRCEvent) ||
+                TakesParams!(fun, IRCPlugin, IRCEvent))
             {
                 fun(plugin, replay.event);
             }
@@ -599,15 +543,17 @@ Replay replay(Plugin, Fun)(Plugin plugin, const ref IRCEvent event,
 
 // rehashUsers
 /++
-    Rehashes a plugin's users, both the ones in the [kameloso.plugins.common.core.IRCPluginState.users]
+    Rehashes a plugin's users, both the ones in the
+    [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users]
     associative array and the ones in each [dialect.defs.IRCChannel.users] associative arrays.
 
     This optimises lookup and should be done every so often,
 
     Params:
-        plugin = The current [kameloso.plugins.common.core.IRCPlugin].
+        plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
         channelName = Optional name of the channel to rehash for. If none given
-            it will rehash the main [kameloso.plugins.common.core.IRCPluginState.users]
+            it will rehash the main
+            [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users]
             associative array instead.
  +/
 void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
@@ -632,7 +578,7 @@ void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
     If not version `TwitchSupport` then it always returns the nickname.
 
     Params:
-        user = [dialect.defs.IRCUser] to examine.
+        user = [dialect.defs.IRCUser|IRCUser] to examine.
 
     Returns:
         The nickname of the user if there is no alias known, else the alias.
@@ -679,12 +625,12 @@ unittest
 /++
     Returns either the nickname or the display name of a user, depending on whether the
     display name is known or not. Overload that looks up the passed nickname in
-    the passed plugin's `users` associative array of [dialect.defs.IRCUser]s.
+    the passed plugin's `users` associative array of [dialect.defs.IRCUser|IRCUser]s.
 
     If not version `TwitchSupport` then it always returns the nickname.
 
     Params:
-        plugin = The current [kameloso.plugins.common.core.IRCPlugin], whatever it is.
+        plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin], whatever it is.
         nickname = The name of a user to look up.
 
     Returns:
@@ -713,7 +659,7 @@ string nameOf(const IRCPlugin plugin, const string nickname) pure @safe nothrow 
     the account is known.
 
     Params:
-        user = [dialect.defs.IRCUser] to examine.
+        user = [dialect.defs.IRCUser|IRCUser] to examine.
 
     Returns:
         The nickname or account of the passed user.
@@ -730,12 +676,12 @@ in (user.nickname.length, "Tried to get `idOf` a user with an empty nickname")
 /++
     Returns either the nickname or the account of a user, depending on whether
     the account is known. Overload that looks up the passed nickname in
-    the passed plugin's `users` associative array of [dialect.defs.IRCUser]s.
+    the passed plugin's `users` associative array of [dialect.defs.IRCUser|IRCUser]s.
 
     Merely wraps [getUser] with [idOf].
 
     Params:
-        plugin = The current [kameloso.plugins.common.core.IRCPlugin], whatever it is.
+        plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin], whatever it is.
         nickname = The name of a user to look up.
 
     Returns:
@@ -777,20 +723,20 @@ unittest
 
 // getUser
 /++
-    Retrieves an [dialect.defs.IRCUser] from the passed plugin's `users`
-    associative array. If none exists, returns a minimally viable [dialect.defs.IRCUser]
-    with the passed nickname as its only value.
+    Retrieves an [dialect.defs.IRCUser|IRCUser] from the passed plugin's `users`
+    associative array. If none exists, returns a minimally viable
+    [dialect.defs.IRCUser|IRCUser] with the passed nickname as its only value.
 
     On Twitch, if no user was found, it additionally tries to look up the passed
     nickname as if it was a display name.
 
     Params:
-        plugin = The current [kameloso.plugins.common.core.IRCPlugin], whatever it is.
+        plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin], whatever it is.
         nickname = The name of a user to look up.
 
     Returns:
-        An [dialect.defs.IRCUser] that matches the passed nickname, from the
-        passed plugin's arrays. A minimally viable [dialect.defs.IRCUser] if
+        An [dialect.defs.IRCUser|IRCUser] that matches the passed nickname, from the
+        passed plugin's arrays. A minimally viable [dialect.defs.IRCUser|IRCUser] if
         none was found.
  +/
 auto getUser(IRCPlugin plugin, const string nickname)
@@ -866,9 +812,9 @@ version(WithWebtitlesPlugin)
 version(WithTwitchBotPlugin)
 struct EventURLs
 {
-    /// The [dialect.defs.IRCEvent] that should trigger a Webtitles lookup.
+    /// The [dialect.defs.IRCEvent|IRCEvent] that should trigger a Webtitles lookup.
     IRCEvent event;
 
-    /// The URLs discovered inside [dialect.defs.IRCEvent.content].
+    /// The URLs discovered inside [dialect.defs.IRCEvent.content|IRCEvent.content].
     string[] urls;
 }

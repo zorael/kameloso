@@ -34,12 +34,12 @@ shared static this()
 
 // logger
 /++
-    Instance of a [kameloso.logger.KamelosoLogger], providing timestamped and
-    coloured logging.
+    Instance of a [kameloso.logger.KamelosoLogger|KamelosoLogger], providing
+    timestamped and coloured logging.
 
     The member functions to use are `log`, `trace`, `info`, `warning`, `error`,
     and `fatal`. It is not `__gshared`, so instantiate a thread-local
-    [kameloso.logger.KamelosoLogger] if threading.
+    [kameloso.logger.KamelosoLogger|KamelosoLogger] if threading.
 
     Having this here is unfortunate; ideally plugins should not use variables
     from other modules, but unsure of any way to fix this other than to have
@@ -50,11 +50,12 @@ KamelosoLogger logger;
 
 // initLogger
 /++
-    Initialises the [kameloso.logger.KamelosoLogger] logger for use in this thread.
+    Initialises the [kameloso.logger.KamelosoLogger|KamelosoLogger] logger for
+    use in this thread.
 
     It needs to be separately instantiated per thread, and even so there may be
-    race conditions. Plugins are encouraged to use [kameloso.thread.ThreadMessage]s
-    to log to screen from other threads.
+    race conditions. Plugins are encouraged to use
+    [kameloso.thread.ThreadMessage|ThreadMessage]s to log to screen from other threads.
 
     Example:
     ---
@@ -80,7 +81,8 @@ out (; (logger !is null), "Failed to initialise logger")
 
 // settings
 /++
-    A [kameloso.kameloso.CoreSettings] struct global, housing certain runtime settings.
+    A [kameloso.kameloso.CoreSettings|CoreSettings] struct global, housing
+    certain runtime settings.
 
     This will be accessed from other parts of the program, via
     [kameloso.common.settings], so they know to use monochrome output or not.
@@ -312,8 +314,9 @@ unittest
 
 // timeSinceInto
 /++
-    Express how much time has passed in a [core.time.Duration], in natural
-    (English) language. Overload that writes the result to the passed output range `sink`.
+    Express how much time has passed in a [core.time.Duration|Duration], in
+    natural (English) language. Overload that writes the result to the passed
+    output range `sink`.
 
     Example:
     ---
@@ -919,7 +922,7 @@ unittest
 
 // timeSince
 /++
-    Express how much time has passed in a [core.time.Duration], in natural
+    Express how much time has passed in a [core.time.Duration|Duration], in natural
     (English) language. Overload that returns the result as a new string.
 
     Example:
@@ -1106,7 +1109,8 @@ unittest
     ---
 
     Params:
-        line = String line prefixed with `prefix`, potentially including separating characters.
+        line = String line prefixed with `prefix`, potentially including
+            separating characters.
         prefix = Prefix to strip.
         demandSep = Makes it a necessity that `line` is followed
             by one of the prefix letters ": !?;". If it isn't, the `line` string
@@ -1177,7 +1181,7 @@ unittest
 // Tint
 /++
     Provides an easy way to access the `*tint` members of our
-    [kameloso.logger.KamelosoLogger] instance [logger].
+    [kameloso.logger.KamelosoLogger|KamelosoLogger] instance [logger].
 
     It still accesses the global [kameloso.common.logger] instance, but is now
     independent of [kameloso.common.settings].
@@ -1201,11 +1205,11 @@ struct Tint
         // opDispatch
         /++
             Provides the string that corresponds to the tint of the
-            [std.experimental.logger.core.LogLevel] that was passed in string form
+            [kameloso.logger.core.LogLevel|LogLevel] that was passed in string form
             as the `tint` `opDispatch` template parameter.
 
             This saves us the boilerplate of copy/pasting one function for each
-            [std.experimental.logger.core.LogLevel].
+            [kameloso.logger.core.LogLevel|LogLevel].
          +/
         pragma(inline, true)
         static string opDispatch(string tint)()
@@ -1276,13 +1280,379 @@ unittest
 }
 
 
+// expandTags
+/++
+    String-replaces `<tags>` in a string with the results from calls to `Tint`.
+    Also works with `dstring`s and `wstring`s.
+
+    `<tags>` are the lowercase first letter of all
+    [std.experimental.logger.LogLevel|LogLevel]s; `<l>`, `<t>`, `<i>`, `<w>`
+    `<e>`, `<c>` and `<f>`. `<a>` is not included.
+
+    `</>` equals [std.experimental.logger.LogLevel.off|LogLevel.off] and terminates
+    any colour sequence.
+
+    Lastly, text between two `<h>`s are replaced with the results from a call to
+    [kameloso.terminal.colours|colourByHash|colourByHash].
+
+    This should hopefully make highlighted strings more readable.
+
+    Example:
+    ---
+    enum keyPattern = "
+        %1$sYour private authorisation key is: %2$s%3$s%4$s
+        It should be entered as %2$spass%4$s under %2$s[IRCBot]%4$s.
+        ";
+
+    enum keyPatternWithColoured = "
+        <l>Your private authorisation key is: <i>%s</>
+        It should be entered as <i>pass</> under <i>[IRCBot]</>
+        ";
+
+    enum patternWithColouredNickname = "No quotes for nickname <h>%s<h>.";
+    immutable message = patternWithColouredNickname.format(event.sendern.nickname);
+    ---
+
+    Params:
+        line = A line of text, presumably with `<tags>`.
+        strip = Whether to expand tags or strip them.
+
+    Returns:
+        The passsed `line` but with any `<tags>` replaced with ANSI colour sequences.
+        The original string is passed back if there was nothing to replace.
+ +/
+T expandTags(T)(const T line, const Flag!"strip" strip) @safe
+{
+    import lu.string : contains;
+    import std.array : Appender;
+    import std.range : ElementEncodingType;
+    import std.string : representation;
+    import std.traits : Unqual;
+
+    alias E = Unqual!(ElementEncodingType!T);
+
+    if (!line.length || !line.contains('<')) return line;
+
+    Appender!(E[]) sink;
+    bool dirty;
+    bool escaping;
+
+    immutable asBytes = line.representation;
+    immutable toReserve = (asBytes.length + 16);
+
+    byteloop:
+    for (size_t i = 0; i<asBytes.length; ++i)
+    {
+        immutable c = asBytes[i];
+
+        switch (c)
+        {
+        case '\\':
+            if (escaping)
+            {
+                // Always dirty
+                sink.put('\\');
+            }
+            else
+            {
+                if (!dirty)
+                {
+                    sink.reserve(toReserve);
+                    sink.put(asBytes[0..i]);
+                    dirty = true;
+                }
+            }
+
+            escaping = !escaping;
+            break;
+
+        case '<':
+            if (escaping)
+            {
+                // Always dirty
+                sink.put('<');
+                escaping = false;
+            }
+            else
+            {
+                import std.string : indexOf;
+
+                immutable ptrdiff_t closingBracketPos = (cast(T)asBytes[i..$]).indexOf('>');
+
+                if ((closingBracketPos == -1) || (closingBracketPos > 6))
+                {
+                    if (dirty)
+                    {
+                        sink.put(c);
+                    }
+                }
+                else
+                {
+                    // Valid; dirties now if not already dirty
+
+                    if (asBytes.length < i+2)
+                    {
+                        // Too close to the end to have a meaningful tag
+                        // Break and return
+
+                        if (dirty)
+                        {
+                            // Add rest first
+                            sink.put(asBytes[i..$]);
+                        }
+
+                        break byteloop;
+                    }
+
+                    if (!dirty)
+                    {
+                        sink.reserve(toReserve);
+                        sink.put(asBytes[0..i]);
+                        dirty = true;
+                    }
+
+                    immutable slice = asBytes[i+1..i+closingBracketPos];  // mutable
+                    if (slice.length != 1) break;
+
+                    switch (slice[0])
+                    {
+                    case 'l':
+                        if (!strip) sink.put(Tint.log);
+                        break;
+
+                    case 'i':
+                        if (!strip) sink.put(Tint.info);
+                        break;
+
+                    case 'w':
+                        if (!strip) sink.put(Tint.warning);
+                        break;
+
+                    case 'e':
+                        if (!strip) sink.put(Tint.error);
+                        break;
+
+                    case 't':
+                        if (!strip) sink.put(Tint.trace);
+                        break;
+
+                    case 'c':
+                        if (!strip) sink.put(Tint.critical);
+                        break;
+
+                    case 'f':
+                        if (!strip) sink.put(Tint.fatal);
+                        break;
+
+                    case '/':
+                        if (!strip) sink.put(Tint.off);
+                        break;
+
+                    case 'h':
+                        i += 3;  // advance past "<h>".length
+                        immutable closingHashMarkPos = (cast(T)asBytes[i..$]).indexOf("<h>");
+
+                        if (closingHashMarkPos == -1)
+                        {
+                            // Revert advance
+                            i -= 3;
+                            goto default;
+                        }
+                        else
+                        {
+                            immutable word = cast(string)asBytes[i..i+closingHashMarkPos];
+
+                            if (!strip)
+                            {
+                                import kameloso.terminal.colours : colourByHash;
+                                immutable bright = cast(Flag!"brightTerminal")kameloso.common.settings.brightTerminal;
+                                sink.put(colourByHash(word, bright));
+                            }
+                            else
+                            {
+                                sink.put(word);
+                            }
+
+                            // Don't advance the full "<h>".length 3
+                            // because the for-loop ++i will advance one ahead
+                            i += (closingHashMarkPos+2);
+                            continue;  // Not break
+                        }
+
+                    default:
+                        // Invalid control character, just ignore
+                        break;
+                    }
+
+                    i += closingBracketPos;
+                }
+            }
+            break;
+
+        default:
+            if (dirty)
+            {
+                sink.put(c);
+            }
+            break;
+        }
+    }
+
+    return dirty ? sink.data.idup : line;
+}
+
+///
+unittest
+{
+    import kameloso.terminal.colours : colourByHash;
+    import lu.semver;
+    import std.conv : text, to;
+    import std.format : format;
+    import std.typecons : Flag, No, Yes;
+
+    {
+        immutable line = "This is a <l>log</> line.";
+        immutable replaced = line.expandTags(No.strip);
+        immutable expected = text("This is a ", Tint.log, "log", Tint.off, " line.");
+        assert((replaced == expected), replaced);
+    }
+
+    static if (
+        (LuSemVer.majorVersion == 1) &&
+        (LuSemVer.minorVersion == 1) &&
+        (LuSemVer.patchVersion <= 4))
+    {
+        // lu.string.contains is broken for wstring and dstring on lu 1.1.4 and earlier
+    }
+    else
+    {
+        {
+            import std.conv : wtext;
+
+            immutable line = "This is a <l>log</> line."w;
+            immutable replaced = line.expandTags(No.strip);
+            immutable expected = wtext("This is a "w, Tint.log, "log"w, Tint.off, " line."w);
+            assert((replaced == expected), replaced.to!string);
+        }
+        {
+            import std.conv : dtext;
+
+            immutable line = "This is a <l>log</> line."d;
+            immutable replaced = line.expandTags(No.strip);
+            immutable expected = dtext("This is a "d, Tint.log, "log"d, Tint.off, " line."d);
+            assert((replaced == expected), replaced.to!string);
+        }
+    }
+
+    {
+        immutable line = `<i>info</>nothing<c>critical</>nothing\<w>not warning`;
+        immutable replaced = line.expandTags(No.strip);
+        immutable expected = text(Tint.info, "info", Tint.off, "nothing",
+            Tint.critical, "critical", Tint.off, "nothing<w>not warning");
+        assert((replaced == expected), replaced);
+    }
+    {
+        immutable line = "This is a line with no tags";
+        immutable replaced = line.expandTags(No.strip);
+        assert(line is replaced);
+    }
+    {
+        immutable emptyLine = string.init;
+        immutable replaced = emptyLine.expandTags(No.strip);
+        assert(replaced is emptyLine);
+    }
+    {
+        immutable line = "hello<h>kameloso<h>hello";
+        immutable replaced = line.expandTags(No.strip);
+        immutable expected = text("hello", colourByHash("kameloso", No.brightTerminal), "hello");
+        assert((replaced == expected), replaced);
+    }
+    {
+        immutable line = "hello<h>kameloso<h>hello";
+        immutable replaced = line.expandTags(Yes.strip);
+        immutable expected = "hellokamelosohello";
+        assert((replaced == expected), replaced);
+    }
+    {
+        immutable line = "hello<h><h>hello";
+        immutable replaced = line.expandTags(Yes.strip);
+        immutable expected = "hellohello";
+        assert((replaced == expected), replaced);
+    }
+    {
+        immutable line = `hello\<harbl>kameloso<h>hello<h>hi`;
+        immutable replaced = line.expandTags(No.strip);
+        immutable expected = text("hello<harbl>kameloso", colourByHash("hello", No.brightTerminal), "hi");
+        assert((replaced == expected), replaced);
+    }
+    {
+        immutable line = `hello\<harbl>kameloso<h>hello<h>hi`;
+        immutable replaced = line.expandTags(Yes.strip);
+        immutable expected = "hello<harbl>kamelosohellohi";
+        assert((replaced == expected), replaced);
+    }
+    {
+        enum pattern = "Failed to fetch, replay and clear notes for " ~
+            "<l>%s<e> on <l>%s<e>: <l>%s";
+        immutable line = pattern.format("nickname", "<no channel>", "error");
+        immutable replaced = line.expandTags(No.strip);
+        immutable expected = "Failed to fetch, replay and clear notes for " ~
+            Tint.log ~ "nickname" ~ Tint.error ~ " on " ~ Tint.log ~
+            "<no channel>" ~ Tint.error ~ ": " ~ Tint.log ~ "error";
+        assert((replaced == expected), replaced);
+    }
+    {
+        enum pattern = "Failed to fetch, replay and clear notes for " ~
+            "<l>%s<e> on <l>%s<e>: <l>%s";
+        immutable line = pattern.format("nickname", "<no channel>", "error");
+        immutable replaced = line.expandTags(Yes.strip);
+        immutable expected = "Failed to fetch, replay and clear notes for " ~
+            "nickname on <no channel>: error";
+        assert((replaced == expected), replaced);
+    }
+}
+
+
+// expandTags
+/++
+    String-replaces `<tags>` in a string with the results from calls to `Tint`.
+    Also works with `dstring`s and `wstring`s. Overload that does not take a
+    `strip` [std.typecons.Flag|Flag].
+
+    Params:
+        line = A line of text, presumably with `<tags>`.
+
+    Returns:
+        The passsed `line` but with any `<tags>` replaced with ANSI colour sequences.
+        The original string is passed back if there was nothing to replace.
+ +/
+T expandTags(T)(const T line) @safe
+{
+    immutable strip = cast(Flag!"strip")kameloso.common.settings.monochrome;
+    return expandTags(line, strip);
+}
+
+///
+unittest
+{
+    import std.conv : text, to;
+
+    {
+        immutable line = "This is a <l>log</> line.";
+        immutable replaced = line.expandTags;
+        immutable expected = text("This is a ", Tint.log, "log", Tint.off, " line.");
+        assert((replaced == expected), replaced);
+    }
+}
+
+
 // replaceTokens
 /++
     Apply some common text replacements. Used on part and quit reasons.
 
     Params:
         line = String to replace tokens in.
-        client = The current [dialect.defs.IRCClient].
+        client = The current [dialect.defs.IRCClient|IRCClient].
 
     Returns:
         A modified string with token occurrences replaced.
@@ -1332,7 +1702,7 @@ unittest
 // replaceTokens
 /++
     Apply some common text replacements. Used on part and quit reasons.
-    Overload that doesn't take an [dialect.defs.IRCClient] and as such can't
+    Overload that doesn't take an [dialect.defs.IRCClient|IRCClient] and as such can't
     replace `$nickname`.
 
     Params:
@@ -1354,7 +1724,7 @@ string replaceTokens(const string line) @safe pure nothrow
 
 // nextMidnight
 /++
-    Returns a [std.datetime.systime.SysTime] of the following midnight.
+    Returns a [std.datetime.systime.SysTime|SysTime] of the following midnight.
 
     Example:
     ---
@@ -1364,11 +1734,11 @@ string replaceTokens(const string line) @safe pure nothrow
     ---
 
     Params:
-        now = A [std.datetime.systime.SysTime] of the base date from which to proceed
-            to the next midnight.
+        now = A [std.datetime.systime.SysTime|SysTime] of the base date from
+            which to proceed to the next midnight.
 
     Returns:
-        A [std.datetime.systime.SysTime] of the midnight following the date
+        A [std.datetime.systime.SysTime|SysTime] of the midnight following the date
         passed as argument.
  +/
 SysTime nextMidnight(const SysTime now)
@@ -1436,7 +1806,7 @@ unittest
 
 // errnoStrings
 /++
-    Reverse mapping of [core.stdc.errno.errno] values to their string names.
+    Reverse mapping of [core.stdc.errno.errno|errno] values to their string names.
 
     Automatically generated by introspecting [core.stdc.errno].
 
@@ -1611,7 +1981,8 @@ static immutable string[134] errnoStrings =
 
 // curlErrorStrings
 /++
-    Reverse mapping of [etc.c.curl.CurlError] member values to their string names.
+    Reverse mapping of [etc.c.curl.CurlError|CurlError] member values to their
+    string names.
 
     Automatically generated by introspecting the enum.
 

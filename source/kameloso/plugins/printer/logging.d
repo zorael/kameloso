@@ -2,13 +2,13 @@
     Implementation of Printer plugin functionality that concerns logging.
     For internal use.
 
-    The [dialect.defs.IRCEvent]-annotated handlers must be in the same module
-    as the [kameloso.plugins.admin.base.AdminPlugin], but these implementation
+    The [dialect.defs.IRCEvent|IRCEvent]-annotated handlers must be in the same module
+    as the [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin], but these implementation
     functions can be offloaded here to limit module size a bit.
 
     See_Also:
-        [kameloso.plugins.printer.base]
-        [kameloso.plugins.printer.formatting]
+        [kameloso.plugins.printer.base|printer.base]
+        [kameloso.plugins.printer.formatting|printer.formatting]
  +/
 module kameloso.plugins.printer.logging;
 
@@ -29,9 +29,11 @@ package:
 /++
     A struct containing lines to write to a log file when next committing such.
 
-    This is only relevant if [kameloso.plugins.printer.base.PrinterSettings.bufferedWrites] is set.
+    This is only relevant if
+    [kameloso.plugins.printer.base.PrinterSettings.bufferedWrites|PrinterSettings.bufferedWrites]
+    is set.
 
-    As a micro-optimisation an [std.array.Appender] is used to store the lines,
+    As a micro-optimisation an [std.array.Appender|Appender] is used to store the lines,
     instead of a normal `string[]`.
  +/
 struct LogLineBuffer
@@ -51,7 +53,7 @@ public:
     Appender!(string[]) lines;
 
     /++
-        Constructor taking a [std.datetime.sytime.SysTime], to save as the date
+        Constructor taking a [std.datetime.sytime.SysTime|SysTime], to save as the date
         the buffer was created.
      +/
     this(const string dir, const SysTime now)
@@ -70,7 +72,7 @@ public:
     }
 
     /++
-        Constructor not taking a [std.datetime.sytime.SysTime], for use with
+        Constructor not taking a [std.datetime.sytime.SysTime|SysTime], for use with
         buffers that should not be dated, such as the error log and the raw log.
      +/
     this(const string dir, const string filename)
@@ -87,11 +89,11 @@ public:
 /++
     Logs an event to disk.
 
-    It is set to [kameloso.plugins.common.core.ChannelPolicy.any], and configuration
-    dictates whether or not non-home events should be logged. Likewise whether
-    or not raw events should be logged.
+    It is set to [kameloso.plugins.common.core.ChannelPolicy.any|ChannelPolicy.any],
+    and configuration dictates whether or not non-home events should be logged.
+    Likewise whether or not raw events should be logged.
 
-    Lines will either be saved immediately to disk, opening a [std.stdio.File]
+    Lines will either be saved immediately to disk, opening a [std.stdio.File|File]
     with appending privileges for each event as they occur, or buffered by
     populating arrays of lines to be written in bulk, once in a while.
 
@@ -101,7 +103,7 @@ public:
 void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.printer.formatting : formatMessageMonochrome;
-    import kameloso.common : Tint, logger;
+    import kameloso.common : Tint, expandTags, logger;
     import std.typecons : Flag, No, Yes;
 
     if (!plugin.printerSettings.logs) return;
@@ -143,10 +145,13 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                 }
 
                 // Insert an empty space if the file exists, to separate old content from new
+                // Cache .exists, because opening the file creates it
+                // (and thus a non-existing file would still get the spacing writeln)
+                immutable fileExists = buffer.file.exists;
                 File file = File(buffer.file, "a");
-                if (buffer.file.exists) file.writeln();
+                if (fileExists) file.writeln();
                 file.writeln(datestamp);
-                file.flush();
+                //file.flush();
             }
 
             if (!errors)
@@ -198,13 +203,12 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                             return;
                         }
 
-                        auto file = File(buffer.file, "a");
-
                         plugin.formatMessageMonochrome(plugin.linebuffer, event,
                             No.bellOnMention, No.bellOnError, No.hideBlacklistedUsers);
+                        scope(exit) plugin.linebuffer.clear();
+
+                        auto file = File(buffer.file, "a");
                         file.writeln(plugin.linebuffer);
-                        file.flush();
-                        plugin.linebuffer.clear();
                     }
                 }
                 else
@@ -220,7 +224,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 
                         auto file = File(buffer.file, "a");
                         file.writeln(event.raw);
-                        file.flush();
+                        //file.flush();
                     }
                 }
             }
@@ -289,7 +293,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 
                     errFile.writeln("/////////////////////////////////////" ~
                         "///////////////////////////////////////////\n");  // 80c
-                    errFile.flush();
+                    //errFile.flush();
                 }
             }
         }
@@ -305,15 +309,15 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                 import kameloso.common : errnoStrings;
                 import core.stdc.errno : errno;
 
-                enum pattern = "ErrnoException (%s%s%s) caught when writing to log: %1$s%4$s";
-                logger.warningf(pattern, Tint.log, errnoStrings[errno], Tint.warning, e.msg);
+                enum pattern = "ErrnoException (<l>%s<w>) caught when writing to log: <l>%s";
+                logger.warningf(pattern.expandTags, errnoStrings[errno], e.msg);
             }
             else version(Windows)
             {
                 import core.stdc.errno : errno;
 
-                enum pattern = "ErrnoException (%s%ds%s) caught when writing to log: %1$s%4$s";
-                logger.warningf(pattern, Tint.log, errno, Tint.warning, e.msg);
+                enum pattern = "ErrnoException (<l>%d<w>) caught when writing to log: <l>%s";
+                logger.warningf(pattern.expandTags, errno, e.msg);
             }
             else
             {
@@ -452,7 +456,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
     ---
 
     Params:
-        plugin = The current [kameloso.plugins.printer.base.PrinterPlugin].
+        plugin = The current [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin].
         logLocation = String of the location directory we want to store logs in.
 
     Returns:
@@ -460,7 +464,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
  +/
 bool establishLogLocation(PrinterPlugin plugin, const string logLocation)
 {
-    import kameloso.common : Tint, logger;
+    import kameloso.common : Tint, expandTags, logger;
     import std.file : exists, isDir;
 
     if (logLocation.exists)
@@ -469,8 +473,8 @@ bool establishLogLocation(PrinterPlugin plugin, const string logLocation)
 
         if (!plugin.naggedAboutDir)
         {
-            enum pattern = "Specified log directory (%s%s%s) is not a directory.";
-            logger.warningf(pattern, Tint.log, logLocation, Tint.warning);
+            enum pattern = "Specified log directory (<l>%s<w>) is not a directory.";
+            logger.warningf(pattern.expandTags, logLocation);
             plugin.naggedAboutDir = true;
         }
 
@@ -496,7 +500,7 @@ bool establishLogLocation(PrinterPlugin plugin, const string logLocation)
     Merely wraps [commitLog] by iterating over all buffers and invoking it.
 
     Params:
-        plugin = The current [kameloso.plugins.printer.base.PrinterPlugin].
+        plugin = The current [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin].
 
     See_Also:
         [commitLog]
@@ -516,12 +520,12 @@ void commitAllLogsImpl(PrinterPlugin plugin)
 /++
     Writes a single log buffer to disk.
 
-    This is a way of queuing writes so that they can be committed seldomly and
+    This is a way of queuing writes so that they can be committed seldom and
     in bulk, supposedly being nicer to the hardware at the cost of the risk of
     losing uncommitted lines in a catastrophical crash.
 
     Params:
-        plugin = The current [kameloso.plugins.printer.base.PrinterPlugin].
+        plugin = The current [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin].
         buffer = [LogLineBuffer] whose lines to commit to disk.
 
     See_Also:
@@ -529,7 +533,7 @@ void commitAllLogsImpl(PrinterPlugin plugin)
  +/
 void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
 {
-    import kameloso.common : Tint, logger;
+    import kameloso.common : expandTags, logger;
     import std.exception : ErrnoException;
     import std.file : FileException;
     import std.utf : UTFException;
@@ -538,7 +542,8 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
 
     try
     {
-        import std.algorithm.iteration : joiner, map;
+        import std.algorithm.iteration : map;
+        import std.array : join;
         import std.encoding : sanitize;
         import std.file : exists, isDir, mkdirRecurse;
         import std.stdio : File, writeln;
@@ -558,11 +563,12 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
         // Write all in one go
         const lines = buffer.lines.data
             .map!sanitize
-            .joiner("\n");
+            .join("\n");
 
-        File file = File(buffer.file, "a");
-        file.writeln(lines);
-        file.flush();
+        {
+            File file = File(buffer.file, "a");
+            file.writeln(lines);
+        }
 
         // If we're here, no exceptions were thrown
         // Only clear if we managed to write everything, otherwise accumulate
@@ -570,8 +576,8 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
     }
     catch (FileException e)
     {
-        enum pattern = "File exception caught when committing log %s%s%s: %1$s%4$s%5$s";
-        logger.warningf(pattern, Tint.log, buffer.file, Tint.warning, e.msg, plugin.bell);
+        enum pattern = "File exception caught when committing log <l>%s<w>: <l>%s%s";
+        logger.warningf(pattern.expandTags, buffer.file, e.msg, plugin.bell);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (ErrnoException e)
@@ -579,25 +585,22 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
         version(Posix)
         {
             import kameloso.common : errnoStrings;
-            enum pattern = "ErrnoException %s%s%s caught when committing " ~
-                "log to %1$s%4$s%3$s: %1$s%5$s%6$s";
-            logger.warningf(pattern, Tint.log, errnoStrings[e.errno], Tint.warning,
+            enum pattern = "ErrnoException <l>%s<w> caught when committing log to <l>%s<w>: <l>%s%s";
+            logger.warningf(pattern.expandTags, errnoStrings[e.errno],
                 buffer.file, e.msg, plugin.bell);
         }
         else
         {
-            enum pattern = "ErrnoException %s%d%s caught when committing " ~
-                "log to %1$s%4$s%3$s: %1$s%5$s%6$s";
-            logger.warningf(pattern, Tint.log, e.errno, Tint.warning,
-                buffer.file, e.msg, plugin.bell);
+            enum pattern = "ErrnoException <l>%d<w> caught when committing log to <l>%s<w>: <l>%s%s";
+            logger.warningf(pattern.expandTags, e.errno, buffer.file, e.msg, plugin.bell);
         }
 
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (Exception e)
     {
-        enum pattern = "Unexpected exception caught when committing log %s%s%s: %1$s%4$s%5$s";
-        logger.warningf(pattern, Tint.log, buffer.file, Tint.warning, e.msg, plugin.bell);
+        enum pattern = "Unexpected exception caught when committing log <l>%s<w>: <l>%s%s";
+        logger.warningf(pattern.expandTags, buffer.file, e.msg, plugin.bell);
         version(PrintStacktraces) logger.trace(e);
     }
 }

@@ -3,7 +3,7 @@
     which you can pipe text and have it be sent verbatim to the server.
 
     It has no commands; indeed, it doesn't listen to
-    [dialect.defs.IRCEvent]s at all, only to what is sent to it via the
+    [dialect.defs.IRCEvent|IRCEvent]s at all, only to what is sent to it via the
     named FIFO pipe.
 
     This requires version `Posix`, which is true for UNIX-like systems (like
@@ -11,8 +11,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#pipeline
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.pipeline;
 
@@ -22,11 +22,9 @@ version(WithPipelinePlugin):
 private:
 
 import kameloso.plugins.common.core;
-import kameloso.common : Tint, logger;
+import kameloso.common : expandTags, logger;
 import kameloso.messaging;
-import kameloso.thread : ThreadMessage;
 import dialect.defs;
-import std.concurrency : Tid;
 import std.typecons : Flag, No, Yes;
 
 
@@ -74,23 +72,20 @@ public:
     It is to be run in a separate thread.
 
     Params:
-        newState = The [kameloso.plugins.common.core.IRCPluginState] of the original
-            [PipelinePlugin], to provide the main thread's [core.thread.Tid] for
-            concurrency messages, made `shared` to allow being sent between threads.
+        newState = The [kameloso.plugins.common.core.IRCPluginState|IRCPluginState]
+            of the original [PipelinePlugin], to provide the main thread's
+            [core.thread.Tid|Tid] for concurrency messages, made `shared` to
+            allow being sent between threads.
         filename = String filename of the FIFO to read from.
-        monochrome = Whether or not output should be in monochrome text.
-        brightTerminal = Whether or not the terminal has a bright background
-            and colours should be adjusted to suit.
  +/
 void pipereader(shared IRCPluginState newState,
-    const string filename,
-    const Flag!"monochrome" monochrome,
-    const Flag!"brightTerminal" brightTerminal)
+    const string filename)
 in (filename.length, "Tried to set up a pipereader with an empty filename")
 {
-    import std.concurrency : OwnerTerminated, receiveTimeout, send, spawn;
-    import std.conv : text;
-    import std.file : FileException, exists, remove;
+    import kameloso.thread : ThreadMessage;
+    import std.concurrency : OwnerTerminated, receiveTimeout, send;
+    import std.file : exists, remove;
+    import std.format : format;
     import std.stdio : File;
     import std.variant : Variant;
 
@@ -102,51 +97,10 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
 
     auto state = cast()newState;
 
-    string infotint, logtint;
-
-    version(Colours)
-    {
-        if (!monochrome)
-        {
-            import kameloso.constants : DefaultColours;
-            import kameloso.terminal.colours : colour;
-            import std.experimental.logger : LogLevel;
-
-            // We don't have a logger instance so we have to access the
-            // DefaultColours.logcolours{Bright,Dark} tables manually
-
-            if (brightTerminal)
-            {
-                enum infotintColourBright = DefaultColours.logcoloursBright[LogLevel.info]
-                    .colour
-                    .idup;
-                enum logtintColourBright = DefaultColours.logcoloursBright[LogLevel.all]
-                    .colour
-                    .idup;
-
-                infotint = infotintColourBright;
-                logtint = logtintColourBright;
-            }
-            else
-            {
-                enum infotintColourDark = DefaultColours.logcoloursDark[LogLevel.info]
-                    .colour
-                    .idup;
-                enum logtintColourDark = DefaultColours.logcoloursDark[LogLevel.all]
-                    .colour
-                    .idup;
-
-                infotint = infotintColourDark;
-                logtint = logtintColourDark;
-            }
-        }
-    }
-
-    import std.format : format;
-    state.askToLog("Pipe text to the %s%s%s file to send raw commands to the server."
-        .format(infotint, filename, logtint));
-
     // Creating the File struct blocks, so do it after reporting.
+    enum pattern = "Pipe text to the <i>%s<l> file to send raw commands to the server.";
+    state.askToLog(pattern.format(filename));
+
     File fifo = File(filename, "r");
     scope(exit) if (filename.exists) remove(filename);
 
@@ -165,7 +119,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
 
             if (line[0] == ':')
             {
-                import kameloso.thread : ThreadMessage, busMessage;
+                import kameloso.thread : busMessage;
                 import lu.string : contains, nom;
 
                 if (line.contains(' '))
@@ -179,7 +133,6 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
                 {
                     state.mainThread.send(ThreadMessage.BusMessage(), line[1..$]);
                 }
-
                 break;
             }
 
@@ -193,14 +146,12 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
                 {
                     quit(state);
                 }
-
                 break toploop;
             }
             else
             {
                 raw(state, line);
             }
-
             break;
         }
 
@@ -221,7 +172,8 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
             },
             (Variant v)
             {
-                state.askToError(text("Pipeline plugin received Variant: ", logtint, v.toString));
+                enum variantPattern = "Pipeline plugin received Variant: <l>%s";
+                state.askToError(variantPattern.format(v.toString));
                 state.mainThread.send(ThreadMessage.BusMessage(), "pipeline", busMessage("halted"));
                 halt = true;
             }
@@ -237,7 +189,8 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
         }
         catch (ErrnoException e)
         {
-            state.askToError(text("Pipeline plugin failed to reopen FIFO: ", logtint, e.msg));
+            enum fifoPattern = "Pipeline plugin failed to reopen FIFO: <l>%s";
+            state.askToError(fifoPattern.format(e.msg));
             version(PrintStacktraces) state.askToTrace(e.info.toString);
             state.mainThread.send(ThreadMessage.BusMessage(), "pipeline", busMessage("halted"));
             break toploop;
@@ -262,11 +215,14 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
         filename = String filename of FIFO to create.
 
     Throws:
-        [kameloso.common.ReturnValueException] if the FIFO could not be created.
-        [kameloso.common.FileExistsException] if a FIFO with the same filename
-        already exists, suggesting concurrent conflicting instances of the program
-        (or merely a stale FIFO).
-        [kameloso.common.FileTypeMismatchException] if a file or directory
+        [kameloso.common.ReturnValueException|ReturnValueException] if the FIFO
+        could not be created.
+
+        [kameloso.common.FileExistsException|FileExistsException] if a FIFO with
+        the same filename already exists, suggesting concurrent conflicting
+        instances of the program (or merely a zombie FIFO after a crash).
+
+        [kameloso.common.FileTypeMismatchException|FileTypeMismatchException] if a file or directory
         exists with the same name as the FIFO we want to create.
  +/
 void createFIFO(const string filename)
@@ -325,7 +281,7 @@ void onWelcome(PipelinePlugin plugin)
 /++
     Reloads the plugin, initialising the fifo pipe if it was not already initialised.
 
-    This lets us remedy the "A FIFO with that name alraedy exists" error.
+    This lets us remedy the "A FIFO with that name already exists" error.
  +/
 void reload(PipelinePlugin plugin)
 {
@@ -403,27 +359,25 @@ in (!plugin.workerRunning, "Tried to double-initialise the pipereader")
         import std.concurrency : spawn;
 
         createFIFO(plugin.fifoFilename);
-        plugin.fifoThread = spawn(&pipereader, cast(shared)plugin.state, plugin.fifoFilename,
-            cast(Flag!"monochrome")plugin.state.settings.monochrome,
-            cast(Flag!"brightTerminal")plugin.state.settings.brightTerminal);
+        plugin.fifoThread = spawn(&pipereader, cast(shared)plugin.state, plugin.fifoFilename);
         plugin.workerRunning = true;
     }
     catch (ReturnValueException e)
     {
-        enum pattern = "Failed to initialise Pipeline plugin: %s (%s%s%s returned %2$s%5$d%4$s)";
-        logger.warningf(pattern, e.msg, Tint.log, e.command, Tint.warning, e.retval);
+        enum pattern = "Failed to initialise the Pipeline plugin: <l>%s<w> (<l>%s<w> returned <l>%d<w>)";
+        logger.warningf(pattern.expandTags, e.msg, e.command, e.retval);
         //version(PrintStacktraces) logger.trace(e.info);
     }
     catch (FileExistsException e)
     {
-        enum pattern = "Failed to initialise Pipeline plugin: %s [%s%s%s]";
-        logger.warningf(pattern, e.msg, Tint.log, e.filename, Tint.warning);
+        enum pattern = "Failed to initialise the Pipeline plugin: <l>%s<w> [<l>%s<w>]";
+        logger.warningf(pattern.expandTags, e.msg, e.filename);
         //version(PrintStacktraces) logger.trace(e.info);
     }
     catch (FileTypeMismatchException e)
     {
-        enum pattern = "Failed to initialise Pipeline plugin: %s [%s%s%s]";
-        logger.warningf(pattern, e.msg, Tint.log, e.filename, Tint.warning);
+        enum pattern = "Failed to initialise the Pipeline plugin: <l>%s<w> [<l>%s<w>]";
+        logger.warningf(pattern.expandTags, e.msg, e.filename);
         //version(PrintStacktraces) logger.trace(e.info);
     }
 
@@ -437,6 +391,7 @@ in (!plugin.workerRunning, "Tried to double-initialise the pipereader")
  +/
 void teardown(PipelinePlugin plugin)
 {
+    import kameloso.thread : ThreadMessage;
     import std.concurrency : send;
     import std.file : exists, isDir;
     import std.stdio : File;
@@ -458,7 +413,7 @@ import kameloso.thread : Sendable;
 
 // onBusMessage
 /++
-    Receives a passed [kameloso.thread.BusMessage] with the "`pipeline`" header,
+    Receives a passed [kameloso.thread.BusMessage|BusMessage] with the "`pipeline`" header,
     and performs actions based on the payload message.
 
     This is used to let the worker thread signal the main context that it halted.
@@ -484,7 +439,7 @@ void onBusMessage(PipelinePlugin plugin, const string header, shared Sendable co
     }
     else
     {
-        logger.error("[pipeline] Unimplemented bus message verb: ", message.payload);
+        logger.error("[pipeline] Unimplemented bus message verb: <i>", message.payload);
     }
 }
 
@@ -500,6 +455,8 @@ public:
 final class PipelinePlugin : IRCPlugin
 {
 private:
+    import std.concurrency : Tid;
+
     /// All Pipeline settings gathered.
     PipelineSettings pipelineSettings;
 

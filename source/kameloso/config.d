@@ -4,8 +4,8 @@
 
     Employs the standard [std.getopt] to read arguments from the command line
     to construct and populate instances of the structs needed for the bot to
-    function, like [dialect.defs.IRCClient], [dialect.defs.IRCServer],
-    [kameloso.kameloso.IRCBot] and [kameloso.kameloso.CoreSettings].
+    function, like [dialect.defs.IRCClient|IRCClient], [dialect.defs.IRCServer|IRCServer],
+    [kameloso.kameloso.IRCBot|IRCBot] and [kameloso.kameloso.CoreSettings|CoreSettings].
 
     See_Also:
         [kameloso.kameloso]
@@ -26,9 +26,9 @@ import std.typecons : Flag, No, Yes;
 
 // printHelp
 /++
-    Prints the [std.getopt.getopt] "helpWanted" help table to screen.
+    Prints the [std.getopt.getopt|getopt] "helpWanted" help table to screen.
 
-    Merely leverages [std.getopt.defaultGetoptPrinter] for the printing.
+    Merely leverages [std.getopt.defaultGetoptPrinter|defaultGetoptPrinter] for the printing.
 
     Example:
     ---
@@ -45,7 +45,7 @@ import std.typecons : Flag, No, Yes;
     ---
 
     Params:
-        results = Results from a [std.getopt.getopt] call.
+        results = Results from a [std.getopt.getopt|getopt] call.
  +/
 void printHelp(GetoptResult results) @system
 {
@@ -68,12 +68,12 @@ void printHelp(GetoptResult results) @system
     settings default values..
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso].
-        client = Reference to the current [dialect.defs.IRCClient].
-        server = Reference to the current [dialect.defs.IRCServer].
-        bot = Reference to the current [kameloso.kameloso.IRCBot].
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        client = Reference to the current [dialect.defs.IRCClient|IRCClient].
+        server = Reference to the current [dialect.defs.IRCServer|IRCServer].
+        bot = Reference to the current [kameloso.kameloso.IRCBot|IRCBot].
         customSettings = const string array to all the custom settings set
-            via [std.getopt.getopt], to apply to things before saving to disk.
+            via [std.getopt.getopt|getopt], to apply to things before saving to disk.
         giveInstructions = Whether or not to give instructions to edit the
             generated file and supply admins and/or home channels.
  +/
@@ -116,7 +116,7 @@ void writeConfig(ref Kameloso instance,
         {
             logger.trace();
             logger.log("Edit it and make sure it contains at least one of the following:");
-            giveConfigurationMinimalIntructions();
+            giveConfigurationMinimalInstructions();
         }
     }
 }
@@ -127,9 +127,9 @@ void writeConfig(ref Kameloso instance,
     Prints the core settings and all plugins' settings to screen.
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso].
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
         customSettings = Array of all the custom settings set
-            via [std.getopt.getopt], to apply to things before saving to disk.
+            via [std.getopt.getopt|getopt], to apply to things before saving to disk.
  +/
 void printSettings(ref Kameloso instance, const string[] customSettings) @system
 {
@@ -154,10 +154,10 @@ void printSettings(ref Kameloso instance, const string[] customSettings) @system
     Writes and/or edits the configuration file. Broken out into a separate
     function to lower the size of [handleGetopt].
 
-    Takes bool parameters instead of [std.typecons.Flag]s to work with getopt bools.
+    Takes bool parameters instead of [std.typecons.Flag|Flag]s to work with getopt bools.
 
     Params:
-        instance = The current [kameloso.kameloso.Kameloso] instance.
+        instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
         shouldWriteConfig = Writing to the configuration file was requested.
         shouldOpenTerminalEditor = Opening the configuration file in a
             terminal text editor was requested.
@@ -167,8 +167,8 @@ void printSettings(ref Kameloso instance, const string[] customSettings) @system
             passed to [writeConfig] when writing to the configuration file.
 
     Throws:
-        [object.Exception] on unexpected platforms where we did not know how to
-        open the configuration file in a text editor.
+        [object.Exception|Exception] on unexpected platforms where we did not
+        know how to open the configuration file in a text editor.
  +/
 void manageConfigFile(ref Kameloso instance,
     const bool shouldWriteConfig,
@@ -176,12 +176,13 @@ void manageConfigFile(ref Kameloso instance,
     const bool shouldOpenGraphicalEditor,
     ref string[] customSettings) @system
 {
+    import kameloso.common : expandTags, logger;
+
     /++
         Opens up the configuration file in a terminal text editor.
      +/
     void openTerminalEditor()
     {
-        import kameloso.common : Tint, logger;
         import std.process : environment, spawnProcess, wait;
 
         // Let exceptions (ProcessExceptions) fall through and get caught
@@ -191,14 +192,13 @@ void manageConfigFile(ref Kameloso instance,
 
         if (!editor.length)
         {
-            enum pattern = "Missing %s$EDITOR%s environment variable; " ~
-                "cannot guess editor.";
-            logger.errorf(pattern, Tint.log, Tint.error);
+            enum pattern = "Missing <l>$EDITOR<e> environment variable; cannot guess editor.";
+            logger.error(pattern.expandTags);
             return;
         }
 
-        enum pattern = "Attempting to open %s%s%s in %1$s%4$s%3$s...";
-        logger.logf(pattern, Tint.info, instance.settings.configFile, Tint.log, editor);
+        enum pattern = "Attempting to open <i>%s<l> in <i>%s<l>...";
+        logger.logf(pattern.expandTags, instance.settings.configFile, editor);
 
         immutable command = [ editor, instance.settings.configFile ];
         spawnProcess(command).wait;
@@ -209,7 +209,6 @@ void manageConfigFile(ref Kameloso instance,
      +/
     void openGraphicalEditor()
     {
-        import kameloso.common : Tint, logger;
         import std.process : execute;
 
         version(OSX)
@@ -247,8 +246,8 @@ void manageConfigFile(ref Kameloso instance,
         // Let exceptions (ProcessExceptions) fall through and get caught
         // by [kameloso.main.tryGetopt].
 
-        enum pattern = "Attempting to open %s%s%s in a graphical text editor...";
-        logger.logf(pattern, Tint.info, instance.settings.configFile, Tint.log);
+        enum pattern = "Attempting to open <i>%s<l> in a graphical text editor...";
+        logger.logf(pattern.expandTags, instance.settings.configFile);
 
         immutable command = [ editor, instance.settings.configFile ];
         execute(command);
@@ -339,17 +338,18 @@ void writeToDisk(const string filename,
 /++
     Displays a hint on how to complete a minimal configuration file.
 
-    It assumes that the bot's [kameloso.kameloso.IRCBot.admins] and
-    [kameloso.kameloso.IRCBot.homeChannels] are both empty. (Else it should not have been called.)
+    It assumes that the bot's [kameloso.kameloso.IRCBot.admins|IRCBot.admins] and
+    [kameloso.kameloso.IRCBot.homeChannels|IRCBot.homeChannels] are both empty.
+    (Else it should not have been called.)
  +/
-void giveConfigurationMinimalIntructions()
+void giveConfigurationMinimalInstructions()
 {
-    import kameloso.common : Tint, logger;
+    import kameloso.common : expandTags, logger;
 
-    enum adminPattern = "...one or more %sadmins%s who get administrative control over the bot.";
-    logger.tracef(adminPattern, Tint.info, Tint.trace);
-    enum homePattern = "...one or more %shomeChannels%s in which to operate.";
-    logger.tracef(homePattern, Tint.info, Tint.trace);
+    enum adminPattern = "...one or more <i>admins<t> who get administrative control over the bot.";
+    logger.trace(adminPattern.expandTags);
+    enum homePattern = "...one or more <i>homeChannels<t> in which to operate.";
+    logger.trace(homePattern.expandTags);
 }
 
 
@@ -369,10 +369,12 @@ void giveConfigurationMinimalIntructions()
         The contents of the supplied file.
 
     Throws:
-        [lu.common.FileTypeMismatchException] if the configuration file is a directory, a
-        character file or any other non-file type we can't write to.
-        [lu.serialisation.ConfigurationFileReadFailureException] if the reading and decoding of
-        the configuration file failed.
+        [lu.common.FileTypeMismatchException|FileTypeMismatchException] if the
+        configuration file is a directory, a character file or any other non-file
+        type we can't write to.
+
+        [lu.serialisation.ConfigurationFileReadFailureException|ConfigurationFileReadFailureException]
+        if the reading and decoding of the configuration file failed.
  +/
 string configurationText(const string configFile)
 {
@@ -426,18 +428,18 @@ public:
     ---
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso].
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
         args = The command-line arguments the program was called with.
         customSettings = Out array of custom settings to apply on top of
             the settings read from the configuration file.
 
     Returns:
-        [lu.common.Next.continue_] or [lu.common.Next.returnSuccess]
-        depending on whether the arguments chosen mean the program should
-        proceed or not.
+        [lu.common.Next.continue_|Next.continue_] or
+        [lu.common.Next.returnSuccess|Next.returnSuccess] depending on whether
+        the arguments chosen mean the program should proceed or not.
 
     Throws:
-        [std.getopt.GetOptException] if an unknown flag is passed.
+        [std.getopt.GetOptException|GetOptException] if an unknown flag is passed.
  +/
 Next handleGetopt(ref Kameloso instance,
     string[] args,
@@ -445,7 +447,7 @@ Next handleGetopt(ref Kameloso instance,
 {
     with (instance)
     {
-        import kameloso.common : Tint, printVersionInfo;
+        import kameloso.common : Tint, expandTags, printVersionInfo;
         import std.getopt : arraySep, config, getopt;
 
         bool shouldWriteConfig;
@@ -522,8 +524,7 @@ Next handleGetopt(ref Kameloso instance,
             import std.range : repeat;
 
             immutable setSyntax = quiet ? string.init :
-                "%s--set plugin%s.%1$ssetting%2$s=%1$svalue%2$s"
-                    .format(Tint.info, Tint.off);
+                "<i>--set plugin</>.<i>setting</>=<i>value</>".expandTags;
 
             immutable nickname = quiet ? string.init :
                 parser.client.nickname.length ? parser.client.nickname : "<random>";
@@ -543,13 +544,18 @@ Next handleGetopt(ref Kameloso instance,
 
             immutable editorVariableValue = quiet ? string.init :
                 editorCommand.length ?
-                    " [%s%s%s]".format(Tint.info, editorCommand, Tint.off) :
+                    " [<i>%s</>]".expandTags.format(editorCommand) :
                     string.init;
 
             string formatNum(const size_t num)
             {
                 return (quiet || (num == 0)) ? string.init :
-                    " (%s%d%s)".format(Tint.info, num, Tint.off);
+                    " (<i>%d</>)".expandTags.format(num);
+            }
+
+            void appendCustomSetting(const string _, const string setting)
+            {
+                customSettings ~= setting;
             }
 
             return getopt(theseArgs,
@@ -557,46 +563,60 @@ Next handleGetopt(ref Kameloso instance,
                 config.bundling,
                 "n|nickname",
                     quiet ? string.init :
-                        "Nickname [%s%s%s]"
-                            .format(Tint.info, nickname, Tint.off),
+                        "Nickname [<i>%s</>]"
+                            .expandTags
+                            .format(nickname),
                     &parser.client.nickname,
                 "s|server",
                     quiet ? string.init :
-                        "Server address [%s%s%s]"
-                            .format(Tint.info, parser.server.address, Tint.off),
+                        "Server address [<i>%s</>]"
+                            .expandTags
+                            .format(parser.server.address),
                     &parser.server.address,
                 "P|port",
                     quiet ? string.init :
-                        "Server port [%s%d%s]"
-                            .format(Tint.info, parser.server.port, Tint.off),
+                        "Server port [<i>%d</>]"
+                            .expandTags
+                            .format(parser.server.port),
                     &parser.server.port,
                 "6|ipv6",
                     quiet ? string.init :
-                        "Use IPv6 when available [%s%s%s]"
-                            .format(Tint.info, connSettings.ipv6, Tint.off),
+                        "Use IPv6 where available [<i>%s</>]"
+                            .expandTags
+                            .format(connSettings.ipv6),
                     &connSettings.ipv6,
                 "ssl",
                     quiet ? string.init :
-                        "Attempt SSL connection [%s%s%s]"
-                            .format(Tint.info, sslText, Tint.off),
+                        "Attempt SSL connection [<i>%s</>]"
+                            .expandTags
+                            .format(sslText),
                     &connSettings.ssl,
                 "A|account",
                     quiet ? string.init :
-                        "Services account name" ~ (bot.account.length ?
-                            " [%s%s%s]".format(Tint.info, bot.account, Tint.off) :
-                            string.init),
+                        "Service account name" ~
+                            (bot.account.length ?
+                                " [<i>%s</>]"
+                                    .expandTags
+                                    .format(bot.account) :
+                                string.init),
                     &bot.account,
                 "p|password",
                     quiet ? string.init :
-                        "Services account password" ~ (bot.password.length ?
-                            " [%s%s%s]".format(Tint.info, passwordMask, Tint.off) :
-                            string.init),
+                        "Service account password" ~
+                            (bot.password.length ?
+                                " [<i>%s</>]"
+                                    .expandTags
+                                    .format(passwordMask) :
+                                string.init),
                     &bot.password,
                 "pass",
                     quiet ? string.init :
-                        "Registration pass" ~ (bot.pass.length ?
-                            " [%s%s%s]".format(Tint.info, passMask, Tint.off) :
-                            string.init),
+                        "Registration pass" ~
+                            (bot.pass.length ?
+                                " [<i>%s</>]"
+                                    .expandTags
+                                    .format(passMask) :
+                                string.init),
                     &bot.pass,
                 "admins",
                     quiet ? string.init :
@@ -605,9 +625,8 @@ Next handleGetopt(ref Kameloso instance,
                     &inputAdmins,
                 "H|homeChannels",
                     quiet ? string.init :
-                        text("Home channels to operate in, comma-separated " ~
-                            "(escape or enquote any octothorpe ",
-                            Tint.info, '#', Tint.off, "s)",
+                        text(("Home channels to operate in, comma-separated " ~
+                            "(escape or enquote any octothorpe <i>#</>s)").expandTags,
                             formatNum(bot.homeChannels.length)),
                     &inputHomeChannels,
                 "C|guestChannels",
@@ -626,33 +645,38 @@ Next handleGetopt(ref Kameloso instance,
                     &shouldShowSettings,
                 "bright",
                     quiet ? string.init :
-                        "Adjust colours for bright terminal backgrounds [%s%s%s]"
-                            .format(Tint.info, settings.brightTerminal, Tint.off),
+                        "Adjust colours for bright terminal backgrounds [<i>%s</>]"
+                            .expandTags
+                            .format(settings.brightTerminal),
                     &settings.brightTerminal,
                 "monochrome",
                     quiet ? string.init :
-                        "Use monochrome output [%s%s%s]"
-                            .format(Tint.info, settings.monochrome, Tint.off),
+                        "Use monochrome output [<i>%s</>]"
+                            .expandTags
+                            .format(settings.monochrome),
                     &settings.monochrome,
                 "set",
                     quiet ? string.init :
                         text("Manually change a setting (syntax: ", setSyntax, ')'),
-                    &customSettings,
+                    &appendCustomSetting,
                 "c|config",
                     quiet ? string.init :
-                        "Specify a different configuration file [%s%s%s]"
-                            .format(Tint.info, settings.configFile, Tint.off),
+                        "Specify a different configuration file [<i>%s</>]"
+                            .expandTags
+                            .format(settings.configFile),
                     &settings.configFile,
                 "r|resourceDir",
                     quiet ? string.init :
-                        "Specify a different resource directory [%s%s%s]"
-                            .format(Tint.info, settings.resourceDirectory, Tint.off),
+                        "Specify a different resource directory [<i>%s</>]"
+                            .expandTags
+                            .format(settings.resourceDirectory),
                     &settings.resourceDirectory,
-                /*"receiveTimeout",
+                /+"receiveTimeout",
                     quiet ? string.init :
-                        "Socket receive timeout in milliseconds; lower numbers " ~
-                            "improve worst-case responsiveness of outgoing messages [%s%d%s]"
-                                .format(Tint.info, connSettings.receiveTimeout, Tint.off),
+                        ("Socket receive timeout in milliseconds; lower numbers " ~
+                            "improve worse-case responsiveness of outgoing messages [<i>%d</>]")
+                                .expandTags
+                                .format(connSettings.receiveTimeout),
                     &connSettings.receiveTimeout,
                 "privateKey",
                     quiet ? string.init :
@@ -664,21 +688,22 @@ Next handleGetopt(ref Kameloso instance,
                     &connSettings.certFile,
                 "cacert",
                     quiet ? string.init :
-                        "Path to %scacert.pem%s certificate bundle, or equivalent"
-                            .format(Tint.info, Tint.off),
-                    &connSettings.caBundleFile,*/
+                        "Path to <i>cacert.pem</> certificate bundle, or equivalent"
+                            .expandTags,
+                    &connSettings.caBundleFile,+/
                 "numeric",
                     quiet ? string.init :
                         "Use numeric output of addresses",
                     &settings.numericAddresses,
                 "summary",
                     quiet ? string.init :
-                        "Show a connection summary on program exit [%s%s%s]"
-                            .format(Tint.info, settings.exitSummary, Tint.off),
+                        "Show a connection summary on program exit [<i>%s</>]"
+                            .expandTags
+                            .format(settings.exitSummary),
                     &settings.exitSummary,
                 "force",
                     quiet ? string.init :
-                        "Force connect (skips some sanity checks)",
+                        "Force connect (skips some checks)",
                     &settings.force,
                 "flush",
                     quiet ? string.init :
@@ -691,19 +716,19 @@ Next handleGetopt(ref Kameloso instance,
                     &shouldWriteConfig,
                 "edit",
                     quiet ? string.init :
-                        text("Open the configuration file in a *terminal* text editor " ~
-                            "(or the application defined in the ", Tint.info,
-                            "$EDITOR", Tint.off, " environment variable)", editorVariableValue),
+                        ("Open the configuration file in a *terminal* text editor " ~
+                            "(or the application defined in the <i>$EDITOR</> " ~
+                            "environment variable)").expandTags ~ editorVariableValue,
                     &shouldOpenTerminalEditor,
                 "gedit",
                     quiet ? string.init :
-                        text("Open the configuration file in a *graphical* text editor " ~
-                            "(or the default application used to open ", Tint.info,
-                            "*.conf", Tint.off, " files on your system)"),
+                        ("Open the configuration file in a *graphical* text editor " ~
+                            "(or the default application used to open <i>*.conf</> files on your system")
+                                .expandTags,
                     &shouldOpenGraphicalEditor,
                 "headless",
                     quiet ? string.init :
-                        "Enables headless mode, disabling all terminal output",
+                        "Enable headless mode, disabling all terminal output",
                     &settings.headless,
                 "version",
                     quiet ? string.init :
@@ -830,7 +855,7 @@ Next handleGetopt(ref Kameloso instance,
     ---
 
     Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso],
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso],
             with all its plugins and settings.
         filename = String filename of the file to write to.
  +/
@@ -889,21 +914,21 @@ void notifyAboutMissingSettings(const string[][string] missingEntries,
     const string binaryPath,
     const string configFile)
 {
-    import kameloso.common : Tint, logger;
+    import kameloso.common : expandTags, logger;
     import std.conv : text;
     import std.path : baseName;
 
     logger.log("Your configuration file is missing the following settings:");
-    immutable rtPattern = text("...under %s[%s%s%s]: %-(", Tint.info, "%s%|", Tint.trace, ", %)");
 
     foreach (immutable section, const sectionEntries; missingEntries)
     {
-        logger.tracef(rtPattern, Tint.log, Tint.info, section, Tint.log, sectionEntries);
+        enum missingPattern = "...under <l>[<i>%s<l>]<t>: %-(<i>%s%|<t>, %)";
+        logger.tracef(missingPattern.expandTags, section, sectionEntries);
     }
 
-    enum pattern = "Use %s%s --save%s to regenerate the file, " ~
-        "updating it with all available configuration. [%1$s%4$s%3$s]";
-    logger.logf(pattern, Tint.info, binaryPath.baseName, Tint.log, configFile);
+    enum pattern = "Use <i>%s --save<l> to regenerate the file, " ~
+        "updating it with all available configuration. [<i>%s<l>]";
+    logger.logf(pattern.expandTags, binaryPath.baseName, configFile);
     logger.warning("Mind that any comments and/or sections belonging to unbuilt plugins will be removed.");
     logger.trace();
 }
@@ -922,7 +947,7 @@ void notifyAboutMissingSettings(const string[][string] missingEntries,
  +/
 void notifyAboutIncompleteConfiguration(const string configFile, const string binaryPath)
 {
-    import kameloso.common : Tint, logger;
+    import kameloso.common : expandTags, logger;
     import std.file : exists;
     import std.path : baseName;
 
@@ -930,14 +955,14 @@ void notifyAboutIncompleteConfiguration(const string configFile, const string bi
 
     if (configFile.exists)
     {
-        enum pattern = "Edit %s%s%s and make sure it has at least one of the following:";
-        logger.logf(pattern, Tint.info, configFile, Tint.log);
-        giveConfigurationMinimalIntructions();
+        enum pattern = "Edit <i>%s<l> and make sure it has at least one of the following:";
+        logger.logf(pattern.expandTags, configFile);
+        giveConfigurationMinimalInstructions();
     }
     else
     {
-        enum pattern = "Use %s%s --save%s to generate a configuration file.";
-        logger.logf(pattern, Tint.info, binaryPath.baseName, Tint.log);
+        enum pattern = "Use <i>%s --save<l> to generate a configuration file.";
+        logger.logf(pattern.expandTags, binaryPath.baseName);
     }
 
     logger.trace();
@@ -951,13 +976,13 @@ void notifyAboutIncompleteConfiguration(const string configFile, const string bi
 
     Nickname, user, GECOS/"real name", server address and server port are
     required. If there is no nickname, generate a random one. For any other empty values,
-    update them with relevant such from [kameloso.constants.KamelosoDefaults]
-    (and [kameloso.constants.KamelosoDefaultIntegers]).
+    update them with relevant such from [kameloso.constants.KamelosoDefaults|KamelosoDefaults]
+    (and [kameloso.constants.KamelosoDefaultIntegers|KamelosoDefaultIntegers]).
 
     Params:
-        client = Reference to the [dialect.defs.IRCClient] to complete.
-        server = Reference to the [dialect.defs.IRCServer] to complete.
-        bot = Reference to the [kameloso.kameloso.IRCBot] to complete.
+        client = Reference to the [dialect.defs.IRCClient|IRCClient] to complete.
+        server = Reference to the [dialect.defs.IRCServer|IRCServer] to complete.
+        bot = Reference to the [kameloso.kameloso.IRCBot|IRCBot] to complete.
  +/
 void applyDefaults(ref IRCClient client, ref IRCServer server, ref IRCBot bot)
 out (; (client.nickname.length), "Empty client nickname")
@@ -980,7 +1005,7 @@ out (; (bot.partReason.length), "Empty bot part reason")
         bot.hasGuestNickname = true;
     }
 
-    // If no client.user set, inherit from [kameloso.constants.KamelosoDefaults].
+    // If no client.user set, inherit from [kameloso.constants.KamelosoDefaults|KamelosoDefaults].
     if (!client.user.length)
     {
         client.user = KamelosoDefaults.user;
@@ -998,7 +1023,7 @@ out (; (bot.partReason.length), "Empty bot part reason")
         server.address = KamelosoDefaults.serverAddress;
     }
 
-    // Ditto but [kameloso.constants.KamelosoDefaultIntegers].
+    // Ditto but [kameloso.constants.KamelosoDefaultIntegers|KamelosoDefaultIntegers].
     if (server.port == 0)
     {
         server.port = KamelosoDefaultIntegers.port;
@@ -1055,7 +1080,7 @@ unittest
     Exception, to be thrown when the specified configuration file could not be
     read, for whatever reason.
 
-    It is a normal [object.Exception] but with an attached filename string.
+    It is a normal [object.Exception|Exception] but with an attached filename string.
  +/
 final class ConfigurationFileReadFailureException : Exception
 {

@@ -2,12 +2,12 @@
     Implementation of Admin plugin functionality that borders on debugging.
     For internal use.
 
-    The [dialect.defs.IRCEvent]-annotated handlers must be in the same module
-    as the [kameloso.plugins.admin.base.AdminPlugin], but these implementation
+    The [dialect.defs.IRCEvent|IRCEvent]-annotated handlers must be in the same module
+    as the [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin], but these implementation
     functions can be offloaded here to limit module size a bit.
 
     See_Also:
-        [kameloso.plugins.admin.base]
+        [kameloso.plugins.admin.base|admin.base]
  +/
 module kameloso.plugins.admin.debugging;
 
@@ -18,7 +18,6 @@ private:
 
 import kameloso.plugins.admin.base : AdminPlugin;
 
-import kameloso.irccolours : IRCColour, ircBold, ircColour;//, ircColourByHash;
 import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
@@ -31,11 +30,11 @@ package:
     Prints incoming events to the local terminal, in forms depending on
     which flags have been set with bot commands.
 
-    If [kameloso.plugins.admin.base.AdminPlugin.printRaw] is set by way of
-    invoking [kameloso.plugins.admin.base.onCommandPrintRaw], prints all incoming server strings.
+    If [kameloso.plugins.admin.base.AdminPlugin.printRaw|AdminPlugin.printRaw] is set by way of
+    invoking [kameloso.plugins.admin.base.onCommandPrintRaw|onCommandPrintRaw], prints all incoming server strings.
 
-    If [kameloso.plugins.admin.base.AdminPlugin.printBytes] is set by way of
-    invoking [kameloso.plugins.admin.base.onCommandPrintBytes], prints all incoming server strings byte by byte.
+    If [kameloso.plugins.admin.base.AdminPlugin.printBytes|AdminPlugin.printBytes] is set by way of
+    invoking [kameloso.plugins.admin.base.onCommandPrintBytes|onCommandPrintBytes], prints all incoming server strings byte by byte.
  +/
 void onAnyEventImpl(AdminPlugin plugin, const ref IRCEvent event)
 {
@@ -63,7 +62,7 @@ void onAnyEventImpl(AdminPlugin plugin, const ref IRCEvent event)
 /++
     Prints the details of one or more specific, supplied users to the local terminal.
 
-    It basically prints the matching [dialect.defs.IRCUser].
+    It basically prints the matching [dialect.defs.IRCUser|IRCUser].
  +/
 void onCommandShowUserImpl(AdminPlugin plugin, const ref IRCEvent event)
 {
@@ -78,9 +77,10 @@ void onCommandShowUserImpl(AdminPlugin plugin, const ref IRCEvent event)
         }
         else
         {
-            immutable message = plugin.state.settings.colouredOutgoing ?
-                "No such user: " ~ username.ircColour(IRCColour.red).ircBold :
-                "No such user: " ~ username;
+            import std.format : format;
+
+            enum pattern = "No such user: <4>%s<c>";
+            immutable message = pattern.format(username);
 
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
@@ -90,8 +90,8 @@ void onCommandShowUserImpl(AdminPlugin plugin, const ref IRCEvent event)
 
 // onCommandShowUsersImpl
 /++
-    Prints out the current `users` array of the [kameloso.plugins.admin.base.AdminPlugin]'s
-    [kameloso.plugins.common.core.IRCPluginState] to the local terminal.
+    Prints out the current `users` array of the [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin]'s
+    [kameloso.plugins.common.core.IRCPluginState|IRCPluginState] to the local terminal.
  +/
 void onCommandShowUsersImpl(AdminPlugin plugin)
 {
@@ -129,12 +129,12 @@ void onCommandSudoImpl(AdminPlugin plugin, const ref IRCEvent event)
 void onCommandPrintRawImpl(AdminPlugin plugin, const ref IRCEvent event)
 {
     import std.conv : text;
+    import std.format : format;
 
     plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;
 
-    immutable message = plugin.state.settings.colouredOutgoing ?
-        "Printing all: " ~ plugin.adminSettings.printRaw.ircBold :
-        "Printing all: " ~ plugin.adminSettings.printRaw.text;
+    enum pattern = "Printing all: <b>%s<b>";
+    immutable message = pattern.format(plugin.adminSettings.printRaw);
 
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
 }
@@ -149,12 +149,12 @@ void onCommandPrintRawImpl(AdminPlugin plugin, const ref IRCEvent event)
 void onCommandPrintBytesImpl(AdminPlugin plugin, const ref IRCEvent event)
 {
     import std.conv : text;
+    import std.format : format;
 
     plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
 
-    immutable message = plugin.state.settings.colouredOutgoing ?
-        "Printing bytes: " ~ plugin.adminSettings.printBytes.ircBold :
-        "Printing bytes: " ~ plugin.adminSettings.printBytes.text;
+    enum pattern = "Printing bytes: <b>%s<b>";
+    immutable message = pattern.format(plugin.adminSettings.printBytes);
 
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
 }

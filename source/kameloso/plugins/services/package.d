@@ -4,10 +4,10 @@
     Removing or disabling any of these may yield adverse results.
 
     See_Also:
-        [kameloso.plugins.services.chanqueries]
-        [kameloso.plugins.services.connect]
-        [kameloso.plugins.services.ctcp]
-        [kameloso.plugins.services.persistence]
+        [kameloso.plugins.services.chanqueries|services.chanqueries]
+        [kameloso.plugins.services.connect|service.connect]
+        [kameloso.plugins.services.ctcp|services.ctcp]
+        [kameloso.plugins.services.persistence|services.persistence]
  +/
 module kameloso.plugins.services;
 

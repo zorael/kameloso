@@ -1,13 +1,13 @@
 /++
     Functionality related to connecting to a server over the Internet.
 
-    Includes [core.thread.fiber.Fiber]s that help with resolving the address of,
-    connecting to, and reading full string lines from a server.
+    Includes [core.thread.fiber.Fiber|Fiber]s that help with resolving the
+    address of, connecting to, and reading full string lines from a server.
 
-    Having them as [core.thread.fiber.Fiber]s means a program can do address resolution,
-    connecting and reading while retaining the ability to do other stuff
-    concurrently. This means you can conveniently run code inbetween each
-    connection attempt, for instance, without breaking the program's flow.
+    Having them as [core.thread.fiber.Fiber|Fiber]s means a program can do
+    address resolution, connecting and reading while retaining the ability to do
+    other stuff concurrently. This means you can conveniently run code in between
+    each connection attempt, for instance, without breaking the program's flow.
 
     Example:
     ---
@@ -53,7 +53,7 @@
 
     enum timeoutSeconds = 600;
 
-    auto listener = new Generator!ListenAttempt(() => listeFiber(conn, abort, timeoutSecond));
+    auto listener = new Generator!ListenAttempt(() => listenFiber(conn, abort, timeoutSecond));
 
     listener.call();
 
@@ -80,7 +80,8 @@ public:
 /++
     Functions and state needed to maintain a connection.
 
-    This is simply to decrease the amount of globals and to create some convenience functions.
+    This is simply to decrease the amount of globals and to create some
+    convenience functions.
  +/
 struct Connection
 {
@@ -108,11 +109,11 @@ private:
 
     // setTimemout
     /++
-        Sets the [std.socket.SocketOption.RCVTIMEO] of the *current*
-        [std.socket.Socket] [socket] to the specified duration.
+        Sets the [std.socket.SocketOption.RCVTIMEO|SocketOption.RCVTIMEO] of the
+        *current* [std.socket.Socket|Socket] [socket] to the specified duration.
 
         Params:
-            option = The [std.socket.SocketOption] to set.
+            option = The [std.socket.SocketOption|SocketOption] to set.
             dur = The duration to assign for the option, in number of milliseconds.
      +/
     void setTimeout(const SocketOption option, const uint dur)
@@ -129,7 +130,8 @@ private:
 
 public:
     /++
-        Pointer to the socket of the [std.socket.AddressFamily] we want to connect with.
+        Pointer to the socket of the [std.socket.AddressFamily|AddressFamily] we
+        want to connect with.
      +/
     Socket socket;
 
@@ -138,12 +140,12 @@ public:
      +/
     bool ssl;
 
-    /// IPs already resolved using [kameloso.net.resolveFiber].
+    /// IPs already resolved using [kameloso.net.resolveFiber|resolveFiber].
     Address[] ips;
 
     /++
-        Implicitly proxies calls to the current [std.socket.Socket]. This successfully
-        proxies to [std.socket.Socket.receive].
+        Implicitly proxies calls to the current [std.socket.Socket|Socket].
+        This successfully proxies to [std.socket.Socket.receive|Socket.receive].
      +/
     alias socket this;
 
@@ -285,11 +287,11 @@ public:
 
     // setDefaultOptions
     /++
-        Sets up sockets with the [std.socket.SocketOptions] needed. These
-        include timeouts and buffer sizes.
+        Sets up sockets with the [std.socket.SocketOption|SocketOption]s needed.
+        These include timeouts and buffer sizes.
 
         Params:
-            socketToSetup = Reference to the [std.socket.Socket] to modify.
+            socketToSetup = Reference to the [std.socket.Socket|Socket] to modify.
      +/
     void setDefaultOptions(Socket socketToSetup)
     {
@@ -508,10 +510,10 @@ struct ListenAttempt
     /// The last read line of text sent by the server.
     string line;
 
-    /// The [std.socket.lastSocketError] at the last point of error.
+    /// The [std.socket.lastSocketError|lastSocketError] at the last point of error.
     string error;
 
-    /// [core.stdc.errno.errno] at time of read.
+    /// [core.stdc.errno.errno|errno] at time of read.
     int errno;
 
     /// The amount of bytes received this attempt.
@@ -521,8 +523,8 @@ struct ListenAttempt
 
 // listenFiber
 /++
-    A [std.socket.Socket]-reading [std.concurrency.Generator]. It reads and
-    yields full string lines.
+    A [std.socket.Socket|Socket]-reading [std.concurrency.Generator|Generator].
+    It reads and yields full string lines.
 
     It maintains its own buffer into which it receives from the server, though
     not necessarily full lines. It thus keeps filling the buffer until it
@@ -576,16 +578,17 @@ struct ListenAttempt
     ---
 
     Params:
-        bufferSize = What size static array to use as buffer. Defaults to
-            twice of [kameloso.constants.BufferSize.socketReceive] for now.
-        conn = [Connection] whose [std.socket.Socket] it reads from the server with.
+        bufferSize = What size static array to use as buffer. Defaults to twice of
+            [kameloso.constants.BufferSize.socketReceive|BufferSize.socketReceive] for now.
+        conn = [Connection] whose [std.socket.Socket|Socket] it reads from the server with.
         abort = Reference "abort" flag, which -- if set -- should make the
-            function return and the [core.thread.fiber.Fiber] terminate.
+            function return and the [core.thread.fiber.Fiber|Fiber] terminate.
         connectionLost = How many seconds may pass before we consider the connection lost.
-            Optional, defaults to [kameloso.constants.Timeout.connectionLost].
+            Optional, defaults to
+            [kameloso.constants.Timeout.connectionLost|Timeout.connectionLost].
 
     Yields:
-        [ListenAttempt]s with information about the line receieved in its member values.
+        [ListenAttempt]s with information about the line received in its member values.
  +/
 void listenFiber(size_t bufferSize = BufferSize.socketReceive*2)
     (Connection conn,
@@ -818,7 +821,7 @@ struct ConnectionAttempt
     /// The error message as thrown by an exception.
     string error;
 
-    /// [core.stdc.errno.errno] at time of connect.
+    /// [core.stdc.errno.errno|errno] at time of connect.
     int errno;
 
     /// The number of retries so far towards this [ip].
@@ -830,7 +833,7 @@ struct ConnectionAttempt
 /++
     Fiber function that tries to connect to IPs in the `ips` array of the passed
     [Connection], yielding at certain points throughout the process to let the
-    calling function do stuff inbetween connection attempts.
+    calling function do stuff in between connection attempts.
 
     Example:
     ---
@@ -882,7 +885,7 @@ struct ConnectionAttempt
         connectionRetries = How many times to attempt to connect before signaling
             that we should move on to the next IP.
         abort = Reference "abort" flag, which -- if set -- should make the
-            function return and the [core.thread.fiber.Fiber] terminate.
+            function return and the [core.thread.fiber.Fiber|Fiber] terminate.
  +/
 void connectFiber(ref Connection conn,
     const uint connectionRetries,
@@ -1098,7 +1101,7 @@ struct ResolveAttempt
     /// The error message as thrown by an exception.
     string error;
 
-    /// [core.stdc.errno.errno] at time of resolve.
+    /// [core.stdc.errno.errno|errno] at time of resolve.
     int errno;
 
     /// The number of retries so far towards this address.
@@ -1109,7 +1112,7 @@ struct ResolveAttempt
 // resolveFiber
 /++
     Given an address and a port, resolves these and populates the array of unique
-    `std.socket.Address` IPs inside the passed [Connection].
+    [std.socket.Address|Address] IPs inside the passed [Connection].
 
     Example:
     ---
@@ -1161,10 +1164,10 @@ struct ResolveAttempt
     Params:
         conn = Reference to the current [Connection].
         address = String address to look up.
-        port = Remote port build into the [std.socket.Address].
+        port = Remote port build into the [std.socket.Address|Address].
         useIPv6 = Whether to include resolved IPv6 addresses or not.
         abort = Reference "abort" flag, which -- if set -- should make the
-            function return and the [core.thread.fiber.Fiber] terminate.
+            function return and the [core.thread.fiber.Fiber|Fiber] terminate.
  +/
 void resolveFiber(ref Connection conn,
     const string address,

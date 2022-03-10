@@ -10,8 +10,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#admin
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.admin.base;
 
@@ -23,23 +23,19 @@ import kameloso.plugins.admin.classifiers;
 debug import kameloso.plugins.admin.debugging;
 
 import kameloso.plugins.common.core;
-import kameloso.plugins.common.misc : applyCustomSettings;
 import kameloso.plugins.common.awareness;
-import kameloso.common : Tint, logger;
-import kameloso.constants : BufferSize;
-import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
+import kameloso.common : expandTags, logger;
 import kameloso.messaging;
 import dialect.defs;
 import std.concurrency : send;
-import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;
 
 
 version(OmniscientAdmin)
 {
     /++
-        The [kameloso.plugins.common.core.ChannelPolicy] to mix in awareness with depending
-        on whether version `OmniscientAdmin` is set or not.
+        The [kameloso.plugins.common.core.ChannelPolicy|ChannelPolicy] to mix in
+        awareness with depending on whether version `OmniscientAdmin` is set or not.
      +/
     enum omniscientChannelPolicy = ChannelPolicy.any;
 }
@@ -108,7 +104,7 @@ void onAnyEvent(AdminPlugin plugin, const ref IRCEvent event)
 /++
     Prints the details of one or more specific, supplied users to the local terminal.
 
-    It basically prints the matching [dialect.defs.IRCUser].
+    It basically prints the matching [dialect.defs.IRCUser|IRCUsers].
  +/
 debug
 @(IRCEventHandler()
@@ -163,7 +159,7 @@ void onCommandSave(AdminPlugin plugin, const ref IRCEvent event)
 // onCommandShowUsers
 /++
     Prints out the current `users` array of the [AdminPlugin]'s
-    [kameloso.plugins.common.core.IRCPluginState] to the local terminal.
+    [kameloso.plugins.common.core.IRCPluginState|IRCPluginState] to the local terminal.
  +/
 debug
 @(IRCEventHandler()
@@ -213,7 +209,7 @@ void onCommandSudo(AdminPlugin plugin, const ref IRCEvent event)
 
 // onCommandQuit
 /++
-    Sends a [dialect.defs.IRCEvent.Type.QUIT] event to the server.
+    Sends a [dialect.defs.IRCEvent.Type.QUIT|IRCEvent.Type.QUIT] event to the server.
 
     If any extra text is following the "quit" command, it uses that as the quit
     reason. Otherwise it falls back to what is specified in the configuration file.
@@ -240,9 +236,9 @@ void onCommandQuit(AdminPlugin plugin, const ref IRCEvent event)
 
 // onCommandHome
 /++
-    Adds or removes channels to/from the list of currently active home channels, in the
-    [kameloso.kameloso.IRCBot.homeChannels] array of the current [AdminPlugin]'s
-    [kameloso.plugins.common.core.IRCPluginState].
+    Adds or removes channels to/from the list of currently active home channels,
+    in the [kameloso.kameloso.IRCBot.homeChannels|IRCBot.homeChannels] array of
+    the current [AdminPlugin]'s [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
 
     Merely passes on execution to [addHome] and [delHome].
  +/
@@ -268,7 +264,7 @@ void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
     void sendUsage()
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Usage: %s%s [add|del|list] [channel]"
+            "Usage: <b>%s%s<b> [add|del|list] [channel]"
                 .format(plugin.state.settings.prefix, event.aux));
     }
 
@@ -290,7 +286,7 @@ void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
 
     case "list":
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Current home channels: %-(%s, %)"
+            "Current home channels: %-(<b>%s<b>, %)"
                 .format(plugin.state.bot.homeChannels));
         return;
 
@@ -303,14 +299,15 @@ void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
 // addHome
 /++
     Adds a channel to the list of currently active home channels, in the
-    [kameloso.kameloso.IRCBot.homeChannels] array of the current [AdminPlugin]'s
-    [kameloso.plugins.common.core.IRCPluginState].
+    [kameloso.kameloso.IRCBot.homeChannels|IRCBot.homeChannels] array of the
+    current [AdminPlugin]'s [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
 
-    Follows up with a [core.thread.fiber.Fiber] to verify that the channel was actually joined.
+    Follows up with a [core.thread.fiber.Fiber|Fiber] to verify that the channel
+    was actually joined.
 
     Params:
         plugin = The current [AdminPlugin].
-        event = The triggering [dialect.defs.IRCEvent].
+        event = The triggering [dialect.defs.IRCEvent|IRCEvent].
         rawChannel = The channel to be added, potentially in unstripped, cased form.
  +/
 void addHome(AdminPlugin plugin, const ref IRCEvent event, const string rawChannel)
@@ -442,6 +439,8 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
         }*/
     }
 
+    import kameloso.constants : BufferSize;
+
     Fiber fiber = new CarryingFiber!IRCEvent(&dg, BufferSize.fiberStack);
     await(plugin, fiber, joinTypes);
 }
@@ -450,8 +449,8 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
 // delHome
 /++
     Removes a channel from the list of currently active home channels, from the
-    [kameloso.kameloso.IRCBot.homeChannels] array of the current [AdminPlugin]'s
-    [kameloso.plugins.common.core.IRCPluginState].
+    [kameloso.kameloso.IRCBot.homeChannels|IRCBot.homeChannels] array of the
+    current [AdminPlugin]'s [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
  +/
 void delHome(AdminPlugin plugin, const ref IRCEvent event, const string rawChannel)
 in (rawChannel.length, "Tried to delete a home but the channel string was empty")
@@ -468,11 +467,8 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
     {
         import std.format : format;
 
-        enum pattern = "Channel %s was not listed as a home.";
-
-        immutable message = plugin.state.settings.colouredOutgoing ?
-            pattern.format(channelName.ircBold) :
-            pattern.format(channelName);
+        enum pattern = "Channel <b>%s<b> was not listed as a home.";
+        immutable message = pattern.format(channelName);
 
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
         return;
@@ -495,10 +491,10 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
 // onCommandWhitelist
 /++
     Adds a nickname to the list of users who may trigger the bot, to the current
-    [dialect.defs.IRCClient.Class.whitelist] of the current [AdminPlugin]'s
-    [kameloso.plugins.common.core.IRCPluginState].
+    [dialect.defs.IRCClient.Class.whitelist|IRCClient.Class.whitelist] of the
+    current [AdminPlugin]'s [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
 
-    This is on a [kameloso.plugins.common.core.Permissions.operator] level.
+    This is on a [kameloso.plugins.common.core.Permissions.operator|Permissions.operator] level.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -571,9 +567,9 @@ void onCommandStaff(AdminPlugin plugin, const ref IRCEvent event)
 // onCommandBlacklist
 /++
     Adds a nickname to the list of users who may not trigger the bot whatsoever,
-    except on actions annotated [kameloso.plugins.common.core.Permissions.ignore].
+    except on actions annotated [kameloso.plugins.common.core.Permissions.ignore|Permissions.ignore].
 
-    This is on a [kameloso.plugins.common.core.Permissions.operator] level.
+    This is on a [kameloso.plugins.common.core.Permissions.operator|Permissions.operator] level.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -618,7 +614,7 @@ void onCommandReload(AdminPlugin plugin, const ref IRCEvent event)
     import std.conv : text;
 
     immutable message = event.content.length ?
-        text("Reloading plugin \"", event.content, "\".") :
+        text("Reloading plugin \"<b>", event.content, "<b>\".") :
         "Reloading plugins.";
 
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
@@ -791,7 +787,8 @@ void onSetCommand(AdminPlugin plugin, const ref IRCEvent event)
 
 // onCommandAuth
 /++
-    Asks the [kameloso.plugins.connect.ConnectService] to (re-)authenticate to services.
+    Asks the [kameloso.plugins.connect.ConnectService|ConnectService] to
+    (re-)authenticate to services.
  +/
 version(WithConnectService)
 @(IRCEventHandler()
@@ -922,8 +919,12 @@ void onCommandCycle(AdminPlugin plugin, const ref IRCEvent event)
     }
     catch (ConvException e)
     {
-        privmsg(plugin.state, event.channel, event.sender.nickname,
-            text(`"`, slice, `" is not a valid number for seconds to delay.`));
+        import std.format : format;
+
+        enum pattern = `"<b>%s<b>" is not a valid number for seconds to delay.`;
+        immutable message = pattern.format(slice);
+
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
         return;
     }
 }
@@ -981,6 +982,8 @@ void cycle(AdminPlugin plugin,
         }
     }
 
+    import kameloso.constants : BufferSize;
+
     Fiber fiber = new CarryingFiber!IRCEvent(&dg, BufferSize.fiberStack);
     await(plugin, fiber, IRCEvent.Type.SELFPART);
     part(plugin.state, channelName, "Cycling");
@@ -1026,7 +1029,7 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
     void sendUsage()
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Usage: %s%s [add|del|list] [args...]"
+            "Usage: <b>%s%s<b> [add|del|list] [args...]"
                 .format(plugin.state.settings.prefix, event.aux));
     }
 
@@ -1044,7 +1047,7 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
         if (results != SplitResults.match)
         {
             privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: %s%s add [account] [hostmask]"
+                "Usage: <b>%s%s<b> add [account] [hostmask]"
                     .format(plugin.state.settings.prefix, event.aux));
             return;
         }
@@ -1056,7 +1059,7 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
         if (!slice.length || slice.contains(' '))
         {
             privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: %s%s del [hostmask]"
+                "Usage: <b>%s%s<b> del [hostmask]"
                     .format(plugin.state.settings.prefix, event.aux));
             return;
         }
@@ -1078,7 +1081,7 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
 
     Params:
         plugin = The current [AdminPlugin].
-        event = The instigating [dialect.defs.IRCEvent].
+        event = The instigating [dialect.defs.IRCEvent|IRCEvent].
  +/
 void listHostmaskDefinitions(AdminPlugin plugin, const ref IRCEvent event)
 {
@@ -1108,9 +1111,12 @@ void listHostmaskDefinitions(AdminPlugin plugin, const ref IRCEvent event)
         }
         else
         {
-            import std.conv : text;
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Current hostmasks: " ~ aa.text.ircBold);
+            import std.format : format;
+
+            enum pattern = "Current hostmasks: <b>%s<b>";
+            immutable message = pattern.format(aa);
+
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
     }
     else
@@ -1158,8 +1164,8 @@ import kameloso.thread : Sendable;
 
 // onBusMessage
 /++
-    Receives a passed [kameloso.thread.BusMessage] with the "`admin`" header,
-    and calls functions based on the payload message.
+    Receives a passed [kameloso.thread.BusMessage|BusMessage] with the "`admin`"
+    header, and calls functions based on the payload message.
 
     This is used in the Pipeline plugin, to allow us to trigger admin verbs via
     the command-line pipe.
@@ -1202,7 +1208,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             }
             else
             {
-                logger.error("No such user: ", slice);
+                logger.error("No such user: <l>", slice);
             }
             break;
 
@@ -1240,8 +1246,8 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 
         if (slice.length)
         {
-            enum pattern = "Reloading plugin \"%s%s%s\".";
-            logger.logf(pattern, Tint.info, slice, Tint.log);
+            enum pattern = `Reloading plugin "<i>%s<l>".`;
+            logger.logf(pattern.expandTags, slice);
         }
         else
         {
@@ -1263,9 +1269,10 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         if (results == SplitResults.underrun)
         {
             // verb_channel_nickname
-            enum pattern = "Invalid bus message syntax; expected %s " ~
-                "[verb] [channel] [nickname if add/del], got \"%s\"";
-            logger.warningf(pattern, verb, message.payload.strippedRight);
+            enum pattern = "Invalid bus message syntax; expected <b>%s%s<b> " ~
+                "[verb] [channel] [nickname if add/del], got \"<b>%s<b>\"";
+            logger.warningf(pattern.expandTags, plugin.state.settings.prefix,
+                verb, message.payload.strippedRight);
             return;
         }
 
@@ -1278,7 +1285,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             if (!user.length)
             {
                 logger.warning("Invalid bus message syntax; no user supplied, " ~
-                    "only channel ", channel);
+                    "only channel <l>", channel);
                 return;
             }
 
@@ -1295,7 +1302,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             return plugin.listList(channel, verb);
 
         default:
-            enum pattern = "Invalid bus message %s subverb: %s";
+            enum pattern = "Invalid bus message <l>%s<w> subverb <l>%s";
             logger.warningf(pattern, verb, subverb);
             break;
         }
@@ -1342,7 +1349,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             return listHostmaskDefinitions(plugin, lvalueEvent);
 
         default:
-            enum pattern = "Invalid bus message %s subverb: %s";
+            enum pattern = "Invalid bus message <l>%s<w> subverb <l>%s";
             logger.warningf(pattern, verb, subverb);
             break;
         }
@@ -1352,7 +1359,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         return plugin.onCommandSummary();
 
     default:
-        logger.error("[admin] Unimplemented bus message verb: ", verb);
+        logger.error("[admin] Unimplemented bus message verb: <l>", verb);
         break;
     }
 }
@@ -1374,7 +1381,7 @@ public:
 /++
     The Admin plugin is a plugin aimed for adḿinistrative use and debugging.
 
-    It was historically part of the [kameloso.plugins.chatbot.ChatbotPlugin].
+    It was historically part of the [kameloso.plugins.chatbot.ChatbotPlugin|ChatbotPlugin].
  +/
 final class AdminPlugin : IRCPlugin
 {
@@ -1384,10 +1391,10 @@ package:
     /// All Admin options gathered.
     AdminSettings adminSettings;
 
-    /// File with user definitions. Must be the same as in persistence.d.
+    /// File with user definitions. Must be the same as in `persistence.d`.
     @Resource string userFile = KamelosoFilenames.users;
 
-    /// File with hostmasks definitions. Must be the same as in persistence.d
+    /// File with hostmasks definitions. Must be the same as in `persistence.d`.
     @Resource string hostmasksFile = KamelosoFilenames.hostmasks;
 
     mixin IRCPluginImpl;

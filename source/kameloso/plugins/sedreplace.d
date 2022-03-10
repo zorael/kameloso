@@ -29,8 +29,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#sedreplace
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.sedreplace;
 
@@ -445,7 +445,10 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
                     import kameloso.messaging : chan;
                     import std.format : format;
 
-                    chan(plugin.state, event.channel, "%s | %s".format(event.sender.nickname, result));
+                    enum pattern = "<h>%s<h> | %s";
+                    immutable message = pattern.format(event.sender.nickname, result);
+                    chan(plugin.state, event.channel, message);
+
                     // Record as last even if there are more lines
                     return recordLineAsLast(plugin, event.sender.nickname, result, event.time);
                 }
@@ -470,7 +473,7 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
 // onWelcome
 /++
     Sets up a Fiber to periodically clear the lists of previous messages from
-    users once every [SedReplacePlugin.timeBetweenPurges].
+    users once every [SedReplacePlugin.timeBetweenPurges|timeBetweenPurges].
 
     This is to prevent the lists from becoming huge over time.
  +/

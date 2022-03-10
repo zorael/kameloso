@@ -1,14 +1,14 @@
 /++
     The Connect service handles logging onto IRC servers after having connected,
     as well as managing authentication to services. It also manages responding
-    to [dialect.defs.IRCEvent.Type.PING] requests, and capability negotiations.
+    to [dialect.defs.IRCEvent.Type.PING|PING] requests, and capability negotiations.
 
     The actual connection logic is in the [kameloso.net] module.
 
     See_Also:
         [kameloso.net]
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.services.connect;
 
@@ -17,9 +17,8 @@ version(WithConnectService):
 private:
 
 import kameloso.plugins.common.core;
-import kameloso.common : Tint, logger;
+import kameloso.common : expandTags, logger;
 import kameloso.messaging;
-import kameloso.thread : ThreadMessage;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
@@ -31,7 +30,16 @@ import std.typecons : Flag, No, Yes;
 @Settings struct ConnectSettings
 {
 private:
-    import lu.uda : CannotContainComments, Separator, Unserialisable;
+    import lu.uda : CannotContainComments, /*Separator,*/ Unserialisable;
+
+    /++
+        What to use as delimiter to separate [sendAfterConnect] into different
+        lines to send to the server.
+
+        This is to compensate for not being able to use [lu.uda.Separator] and a
+        `string[]` (because it doesn't work well with getopt).
+     +/
+    enum sendAfterConnectSeparator = ";;";
 
 public:
     /++
@@ -50,9 +58,9 @@ public:
     bool exitOnSASLFailure = false;
 
     /// Lines to send after successfully connecting and registering.
-    @Separator(";;")
+    //@Separator(";;")
     @CannotContainComments
-    string[] sendAfterConnect;
+    string sendAfterConnect;
 }
 
 
@@ -108,8 +116,9 @@ void onSelfpart(ConnectService service, const ref IRCEvent event)
 
 // onSelfjoin
 /++
-    Records a channel in the `channels` array in the [dialect.defs.IRCClient] of
-    the current [ConnectService]'s [kameloso.plugins.common.core.IRCPluginState] upon joining it.
+    Records a channel in the `channels` array in the [dialect.defs.IRCClient|IRCClient] of
+    the current [ConnectService]'s
+    [kameloso.plugins.common.core.IRCPluginState|IRCPluginState] upon joining it.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.SELFJOIN)
@@ -132,8 +141,8 @@ void onSelfjoin(ConnectService service, const ref IRCEvent event)
 // joinChannels
 /++
     Joins all channels listed as home channels *and* guest channels in the arrays in
-    [kameoso.kameloso.IRCBot] of the current [ConnectService]'s
-    [kameloso.plugins.common.core.IRCPluginState].
+    [kameloso.kameloso.IRCBot|IRCBot] of the current [ConnectService]'s
+    [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
 
     Params:
         service = The current [ConnectService].
@@ -157,8 +166,8 @@ void joinChannels(ConnectService service)
     auto guestlist = service.state.bot.guestChannels.sort.uniq;
     immutable numChans = homelist.walkLength() + guestlist.walkLength();
 
-    enum pattern = "Joining %s%d%s %s...";
-    logger.logf(pattern, Tint.info, numChans, Tint.log, numChans.plurality("channel", "channels"));
+    enum pattern = "Joining <i>%d<l> %s...";
+    logger.logf(pattern.expandTags, numChans, numChans.plurality("channel", "channels"));
 
     // Join in two steps so home channels don't get shoved away by guest channels
     // FIXME: line should split if it reaches 512 characters
@@ -172,10 +181,10 @@ void joinChannels(ConnectService service)
 
 // onToConnectType
 /++
-    Responds to [dialect.defs.IRCEvent.Type.ERR_NEEDPONG] events by sending
-    the text supplied as content in the [dialect.defs.IRCEvent] to the server.
+    Responds to [dialect.defs.IRCEvent.Type.ERR_NEEDPONG|ERR_NEEDPONG] events by sending
+    the text supplied as content in the [dialect.defs.IRCEvent|IRCEvent] to the server.
 
-    "Also known as [dialect.defs.IRCEvent.Type.ERR_NEEDPONG] (Unreal/Ultimate)
+    "Also known as [dialect.defs.IRCEvent.Type.ERR_NEEDPONG|ERR_NEEDPONG] (Unreal/Ultimate)
     for use during registration, however it's not used in Unreal (and might not
     be used in Ultimate either)."
 
@@ -192,18 +201,19 @@ void onToConnectType(ConnectService service, const ref IRCEvent event)
 
 // onPing
 /++
-    Pongs the server upon [dialect.defs.IRCEvent.Type.PING].
+    Pongs the server upon [dialect.defs.IRCEvent.Type.PING|PING].
 
     Ping with the sender as target, and not the necessarily
-    the server as saved in the [dialect.defs.IRCServer] struct. For
-    example, [dialect.defs.IRCEvent.Type.ERR_NEEDPONG] generally wants you to
-    ping a random number or string.
+    the server as saved in the [dialect.defs.IRCServer|IRCServer] struct. For
+    example, [dialect.defs.IRCEvent.Type.ERR_NEEDPONG|ERR_NEEDPONG] generally
+    wants you to ping a random number or string.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.PING)
 )
 void onPing(ConnectService service, const ref IRCEvent event)
 {
+    import kameloso.thread : ThreadMessage;
     import std.concurrency : prioritySend;
 
     immutable target = event.content.length ? event.content : event.sender.address;
@@ -271,9 +281,9 @@ void tryAuth(ConnectService service)
         if (service.state.client.nickname != service.state.client.origNickname)
         {
             enum pattern = "Cannot auth when you have changed your nickname. " ~
-                "(%s%s%s != %1$s%4$s%3$s)";
-            logger.warningf(pattern, Tint.log, service.state.client.nickname,
-                Tint.warning, service.state.client.origNickname);
+                "(<l>%s<w> != <l>%s<w>)";
+            logger.warningf(pattern.expandTags, service.state.client.nickname,
+                service.state.client.origNickname);
 
             service.authentication = Progress.finished;
             return;
@@ -299,8 +309,8 @@ void tryAuth(ConnectService service)
 
         if (!service.state.bot.account.length)
         {
-            enum pattern = "No account specified! Trying %s%s%s...";
-            logger.logf(pattern, Tint.info, service.state.client.origNickname, Tint.log);
+            enum pattern = "No account specified! Trying <i>%s<l>...";
+            logger.logf(pattern.expandTags, service.state.client.origNickname);
             account = service.state.client.origNickname;
         }
 
@@ -397,67 +407,77 @@ void onAuthEnd(ConnectService service, const ref IRCEvent event)
 // onTwitchAuthFailure
 /++
     On Twitch, if the OAuth pass is wrong or malformed, abort and exit the program.
+    Only deal with it if we're currently registering.
+
+    If the bot was compiled without Twitch support, mention this and quit.
  +/
-version(TwitchSupport)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.NOTICE)
-    .chainable(true)
 )
 void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
 {
-    import kameloso.thread : ThreadMessage;
     import std.algorithm.searching : endsWith;
-    import std.concurrency : prioritySend;
     import std.typecons : Flag, No, Yes;
 
-    with (IRCServer.Daemon)
-    switch (service.state.server.daemon)
+    if ((service.state.server.daemon != IRCServer.Daemon.unset) ||
+        !service.state.server.address.endsWith(".twitch.tv"))
     {
-    case unset:
-        if (service.state.server.address.endsWith(".twitch.tv")) goto case twitch;
-        return;
-
-    case twitch:
-        // Drop down
-        break;
-
-    default:
+        // Not early Twitch registration
         return;
     }
 
-    switch (event.content)
+    // We're registering on Twitch and we got a NOTICE, probably an error
+
+    version(TwitchSupport)
     {
-    case "Improperly formatted auth":
-        if (!service.state.bot.pass.length)
+        switch (event.content)
         {
-            logger.error("You *need* a pass to join this server.");
-            enum pattern = "Run the program with %s--set twitchbot.keygen%s to generate a new one.";
-            logger.logf(pattern, Tint.info, Tint.log);
+        case "Improperly formatted auth":
+            if (!service.state.bot.pass.length)
+            {
+                logger.error("You *need* a pass to join this server.");
+                enum pattern = "Run the program with <i>--set twitchbot.keygen<l> to generate a new one.";
+                logger.log(pattern.expandTags);
+            }
+            else
+            {
+                logger.error("Client pass is malformed, cannot authenticate. " ~
+                    "Please make sure it is entered correctly.");
+            }
+            break;
+
+        case "Login authentication failed":
+            logger.error("Incorrect client pass. Please make sure it is valid and has not expired.");
+            enum pattern = "Run the program with <i>--set twitchbot.keygen<l> to generate a new one.";
+            logger.log(pattern.expandTags);
+            break;
+
+        case "Login unsuccessful":
+            logger.error("Client pass probably has insufficient privileges.");
+            break;
+
+        default:
+            // Just some notice; return
+            return;
         }
-        else
-        {
-            logger.error("Client pass is malformed, cannot authenticate. " ~
-                "Please make sure it is entered correctly.");
-        }
-        break;
 
-    case "Login authentication failed":
-        logger.error("Incorrect client pass. Please make sure it is valid and has not expired.");
-        enum pattern = "Run the program with %s--set twitchbot.keygen%s to generate a new one.";
-        logger.logf(pattern, Tint.info, Tint.log);
-        break;
-
-    case "Login unsuccessful":
-        logger.error("Client pass probably has insufficient privileges.");
-        break;
-
-    default:
-        // Just some notice; return
-        return;
+        // Exit and let the user tend to it.
+        quit!(Yes.priority)(service.state, event.content, No.quiet);
     }
+    else
+    {
+        switch (event.content)
+        {
+        case "Improperly formatted auth":
+        case "Login authentication failed":
+        case "Login unsuccessful":
+            logger.error("The bot was not compiled with Twitch support enabled.");
+            return quit!(Yes.priority)(service.state, "Missing Twitch support", No.quiet);
 
-    // Exit and let the user tend to it.
-    quit!(Yes.priority)(service.state, event.content, No.quiet);
+        default:
+            return;
+        }
+    }
 }
 
 
@@ -466,7 +486,7 @@ void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
     Modifies the nickname by appending characters to the end of it.
 
     Don't modify [IRCPluginState.client.nickname] as the nickname only changes
-    when the [dialect.defs.IRCEvent.Type.RPL_LOGGEDIN] event actually occurs.
+    when the [dialect.defs.IRCEvent.Type.RPL_LOGGEDIN|RPL_LOGGEDIN] event actually occurs.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ERR_NICKNAMEINUSE)
@@ -544,7 +564,7 @@ void onBanned(ConnectService service)
 
 // onPassMismatch
 /++
-    Quits the program if we supplied a bad [kameloso.kameloso.IRCBot.pass].
+    Quits the program if we supplied a bad [kameloso.kameloso.IRCBot.pass|IRCBot.pass].
 
     There's no point in reconnecting.
  +/
@@ -576,8 +596,8 @@ void onInvite(ConnectService service, const ref IRCEvent event)
 {
     if (!service.connectSettings.joinOnInvite)
     {
-        enum pattern = "Invited, but %sjoinOnInvite%s is set to false.";
-        logger.logf(pattern, Tint.info, Tint.log);
+        enum pattern = "Invited, but <i>joinOnInvite<l> is set to false.";
+        logger.log(pattern.expandTags);
         return;
     }
 
@@ -820,15 +840,17 @@ void onSASLAuthenticate(ConnectService service)
 // trySASLPlain
 /++
     Constructs a SASL plain authentication token from the bot's
-    [kameloso.kameloso.IRCBot.account] and [kameloso.kameloso.IRCBot.password],
+    [kameloso.kameloso.IRCBot.account|IRCBot.account] and
+    [kameloso.kameloso.IRCBot.password|IRCBot.password],
     then sends it to the server, during registration.
 
     A SASL plain authentication token is composed like so:
 
         `base64(account \0 account \0 password)`
 
-    ...where [kameloso.kameloso.IRCBot.account] is the services account name and
-    [kameloso.kameloso.IRCBot.password] is the account password.
+    ...where [kameloso.kameloso.IRCBot.account|IRCBot.account] is the services
+    account name and [kameloso.kameloso.IRCBot.password|IRCBot.password] is the
+    account password.
 
     Params:
         service = The current [ConnectService].
@@ -862,8 +884,8 @@ bool trySASLPlain(ConnectService service)
     }
     catch (Base64Exception e)
     {
-        enum pattern = "Could not authenticate: malformed password (%s%s%s)";
-        logger.errorf(pattern, Tint.log, e.msg, Tint.error);
+        enum pattern = "Could not authenticate: malformed password (<l>%s<e>)";
+        logger.errorf(pattern.expandTags, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
         return false;
     }
@@ -873,7 +895,7 @@ bool trySASLPlain(ConnectService service)
 // onSASLSuccess
 /++
     On SASL authentication success, calls a `CAP END` to finish the
-    [dialect.defs.IRCEvent.Type.CAP] negotiations.
+    [dialect.defs.IRCEvent.Type.CAP|CAP] negotiations.
 
     Flags the client as having finished registering and authing, allowing the
     main loop to pick it up and propagate it to all other plugins.
@@ -916,7 +938,7 @@ void onSASLSuccess(ConnectService service)
 // onSASLFailure
 /++
     On SASL authentication failure, calls a `CAP END` to finish the
-    [dialect.defs.IRCEvent.Type.CAP] negotiations and finish registration.
+    [dialect.defs.IRCEvent.Type.CAP|CAP] negotiations and finish registration.
 
     Flags the client as having finished registering, allowing the main loop to
     pick it up and propagate it to all other plugins.
@@ -960,7 +982,7 @@ void onSASLFailure(ConnectService service)
 
 // onWelcome
 /++
-    Marks registration as completed upon [dialect.defs.IRCEvent.Type.RPL_WELCOME]
+    Marks registration as completed upon [dialect.defs.IRCEvent.Type.RPL_WELCOME|RPL_WELCOME]
     (numeric `001`).
 
     Additionally performs post-connect routines (authenticates if not already done,
@@ -971,12 +993,13 @@ void onSASLFailure(ConnectService service)
 )
 void onWelcome(ConnectService service, const ref IRCEvent event)
 {
+    import std.algorithm.iteration : splitter;
     import std.algorithm.searching : endsWith;
 
     service.registration = Progress.finished;
     service.renameDuringRegistration = string.init;
 
-    // FIXME: This is done automtically in dialect master so there's no need to do it here
+    // FIXME: This is done automatically in dialect master so there's no need to do it here
     // but wait for a dialect release before removing.
     if (event.target.nickname.length && (service.state.client.nickname != event.target.nickname))
     {
@@ -984,7 +1007,10 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
         service.state.updates |= typeof(service.state.updates).client;
     }
 
-    foreach (immutable unstripped; service.connectSettings.sendAfterConnect)
+    alias separator = ConnectSettings.sendAfterConnectSeparator;
+    auto toSendRange = service.connectSettings.sendAfterConnect.splitter(separator);
+
+    foreach (immutable unstripped; toSendRange)
     {
         import lu.string : strippedLeft;
         import std.array : replace;
@@ -1019,7 +1045,7 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
             IRCEvent.Type.ERR_NOMOTD,
         ];
 
-        void twitchWarningDg(const IRCEvent)
+        void twitchWarningDg(IRCEvent)
         {
             version(TwitchSupport)
             {
@@ -1042,9 +1068,9 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
                 if (service.state.settings.prefix.beginsWith(".") ||
                     service.state.settings.prefix.beginsWith("/"))
                 {
-                    enum pattern =`WARNING: A prefix of "%s%s%s" will *not* work on Twitch servers, ` ~
-                        `as %1$s.%3$s and %1$s/%3$s are reserved for Twitch's own commands.`;
-                    logger.warningf(pattern, Tint.log, service.state.settings.prefix, Tint.warning);
+                    enum pattern = `WARNING: A prefix of "<l>%s<w>" will *not* work on Twitch servers, ` ~
+                        "as <l>.<w> and <l>/<w> are reserved for Twitch's own commands.";
+                    logger.warningf(pattern.expandTags, service.state.settings.prefix);
                 }
             }
             else
@@ -1104,7 +1130,7 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
 
 // onSelfnickSuccessOrFailure
 /++
-    Resets [kameloso.plugins.printer.base.PrinterPlugin] squelching upon a
+    Resets [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin] squelching upon a
     successful or failed nick change. This so as to be squelching as little as possible.
  +/
 version(WithPrinterPlugin)
@@ -1135,8 +1161,8 @@ void onQuit(ConnectService service, const ref IRCEvent event)
         (event.sender.nickname == service.state.client.origNickname))
     {
         // The regain Fiber will end itself when it is next triggered
-        enum pattern = "Attempting to regain nickname %s%s%s...";
-        logger.infof(pattern, Tint.log, service.state.client.origNickname, Tint.info);
+        enum pattern = "Attempting to regain nickname <l>%s<i>...";
+        logger.infof(pattern.expandTags, service.state.client.origNickname);
         raw(service.state, "NICK " ~ service.state.client.origNickname, No.quiet, No.background);
     }
 }
@@ -1146,8 +1172,8 @@ void onQuit(ConnectService service, const ref IRCEvent event)
 /++
     Joins channels and prints some Twitch warnings on end of MOTD.
 
-    Do this then instead of on [IRCEvent.Type.RPL_WELCOME] for better timing,
-    and to avoid having the message drown in MOTD.
+    Do this then instead of on [dialect.defs.IRCEvent.Type.RPL_WELCOME|RPL_WELCOME]
+    for better timing, and to avoid having the message drown in MOTD.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_ENDOFMOTD)
@@ -1235,9 +1261,7 @@ void onISUPPORT(ConnectService service, const ref IRCEvent event)
     Disconnects and reconnects to the server.
 
     This is a "benign" disconnect. We need to reconnect preemptively instead of
-    waiting for the server to disconnect us, as it would otherwise constitute
-    an error and the program would exit if
-    [kameloso.kameloso.CoreSettings.endlesslyConnect] isn't set.
+    waiting for the server to disconnect us, as it would otherwise constitute an error.
  +/
 version(TwitchSupport)
 @(IRCEventHandler()
@@ -1245,6 +1269,7 @@ version(TwitchSupport)
 )
 void onReconnect(ConnectService service)
 {
+    import kameloso.thread : ThreadMessage;
     import std.concurrency : send;
 
     logger.info("Reconnecting upon server request.");
@@ -1265,8 +1290,8 @@ void onUnknownCommand(ConnectService service, const ref IRCEvent event)
     if (service.serverSupportsWHOIS && !service.state.settings.preferHostmasks && (event.aux == "WHOIS"))
     {
         logger.error("Error: This server does not seem to support user accounts.");
-        enum pattern = "Consider enabling %sCore%s.%1$spreferHostmasks%2$s.";
-        logger.errorf(pattern, Tint.log, Tint.warning);
+        enum pattern = "Consider enabling <l>Core<e>.<l>preferHostmasks<e>.";
+        logger.error(pattern.expandTags);
         logger.error("As it is, functionality will be greatly limited.");
         service.serverSupportsWHOIS = false;
     }
@@ -1495,7 +1520,7 @@ import kameloso.thread : BusMessage, Sendable;
 
 // onBusMessage
 /++
-    Receives a passed [kameloso.thread.BusMessage] with the "`connect`" header,
+    Receives a passed [kameloso.thread.BusMessage|BusMessage] with the "`connect`" header,
     and calls functions based on the payload message.
 
     This is used to let other plugins trigger re-authentication with services.
@@ -1587,8 +1612,8 @@ private:
         Temporary: the nickname that we had to rename to, to successfully
         register on the server.
 
-        This is to avoid modifying [IRCPluginState.client.nickname] before the
-        nickname is actually changed, yet still carry information about the
+        This is to avoid modifying [dialect.defs.IRCClient.nickname|IRCClient.nickname]
+        before the nickname is actually changed, yet still carry information about the
         incremental rename throughout calls of [onNickInUse].
      +/
     string renameDuringRegistration;

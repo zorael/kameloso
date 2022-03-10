@@ -6,11 +6,12 @@
 
     It is qualified as a service, so while it is not technically mandatory, it
     is highly recommended if you plan on mixing in
-    [kameloso.plugins.common.awareness.ChannelAwareness] into your plugins.
+    [kameloso.plugins.common.awareness.ChannelAwareness|ChannelAwareness] into
+    your plugins.
 
     See_Also:
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.services.chanqueries;
 
@@ -22,14 +23,14 @@ import kameloso.plugins.common.core;
 import kameloso.plugins.common.delayawait;
 import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
 import dialect.defs;
-import std.typecons : No, Yes;
+import std.typecons : Flag, No, Yes;
 
 
 version(OmniscientQueries)
 {
     /++
-        The [kameloso.plugins.common.core.ChannelPolicy] to mix in awareness with depending
-        on whether version `OmniscientQueries` is set or not.
+        The [kameloso.plugins.common.core.ChannelPolicy|ChannelPolicy] to mix in
+        awareness with depending on whether version `OmniscientQueries` is set or not.
      +/
     enum omniscientChannelPolicy = ChannelPolicy.any;
 }
@@ -61,7 +62,7 @@ enum ChannelState : ubyte
 /++
     Queries channels for information about them and their users.
 
-    Checks an internal list of channels once every [dialect.defs.IRCEvent.Type.PING],
+    Checks an internal list of channels once every [dialect.defs.IRCEvent.Type.PING|PING],
     and if one we inhabit hasn't been queried, queries it.
  +/
 @(IRCEventHandler()
@@ -310,13 +311,13 @@ void startChannelQueries(ChanQueriesService service)
 
                         if (++consecutiveUnknownCommands >= maxConsecutiveUnknownCommands)
                         {
-                            import kameloso.common : Tint;
+                            import kameloso.common : expandTags;
 
                             // Cannot WHOIS on this server (assume)
                             logger.error("Error: This server does not seem " ~
                                 "to support user accounts?");
-                            enum pattern = "Consider enabling %sCore%s.%1$spreferHostmasks%2$s.";
-                            logger.errorf(pattern, Tint.log, Tint.warning);
+                            enum pattern = "Consider enabling <l>Core<e>.<l>preferHostmasks<e>.";
+                            logger.error(pattern.expandTags);
                             service.serverSupportsWHOIS = false;
                             return;
                         }
@@ -495,8 +496,9 @@ private:
 
     // isEnabled
     /++
-        Override [kameloso.plugins.common.core.IRCPluginImpl.isEnabled] and inject
-        a server check, so this service does nothing on Twitch servers.
+        Override
+        [kameloso.plugins.common.core.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled]
+        and inject a server check, so this service does nothing on Twitch servers.
 
         Returns:
             `true` if this service should react to events; `false` if not.

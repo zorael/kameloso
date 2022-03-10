@@ -4,8 +4,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#notes
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.notes;
 
@@ -15,8 +15,7 @@ private:
 
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
-import kameloso.common : Tint, logger;
-import kameloso.irccolours : ircBold, ircColourByHash;
+import kameloso.common : expandTags, logger;
 import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
@@ -63,11 +62,12 @@ void onReplayEvent(NotesPlugin plugin, const /*ref*/ IRCEvent event)
 
 // onWhoReply
 /++
-    Plays backs notes upon replies of a WHO query.
+    Plays back notes upon replies of a WHO query.
 
     These carry a sender, so it's possible we know the account without lookups.
 
-    Do nothing if [kameloso.kameloso.CoreSettings.eagerLookups] is true,
+    Do nothing if
+    [kameloso.kameloso.CoreSettings.eagerLookups|CoreSettings.eagerLookups] is true,
     as we'd collide with ChanQueries' queries.
 
     Pass `Yes.background` to [playbackNotes] to ensure it does low-priority background
@@ -96,7 +96,7 @@ void onWhoReply(NotesPlugin plugin, const /*ref*/ IRCEvent event)
 
     Params:
         plugin = The current [NotesPlugin].
-        givenUser = The [dialect.defs.IRCUser] for whom we want to replay notes.
+        givenUser = The [dialect.defs.IRCUser|IRCUser] for whom we want to replay notes.
         givenChannel = Name of the channel we want the notes related to.
         background = Whether or not to issue WHOIS queries as low-priority background messages.
  +/
@@ -105,7 +105,7 @@ void playbackNotes(NotesPlugin plugin,
     const string givenChannel,
     const Flag!"background" background = No.background)
 {
-    import kameloso.common : timeSince;
+    import kameloso.common : Tint, timeSince;
     import dialect.common : toLowerCase;
     import std.datetime.systime : Clock;
     import std.exception : ErrnoException;
@@ -152,22 +152,15 @@ void playbackNotes(NotesPlugin plugin,
                     const note = noteArray[0];
                     immutable timestamp = (currTime - note.when).timeSince!(7, 1)(No.abbreviate);
 
-                    enum pattern = "%s%s! %s left note %s ago: %s";
-
-                    immutable message = plugin.state.settings.colouredOutgoing ?
-                        pattern.format(atSign, senderName.ircColourByHash.ircBold,
-                            note.sender.ircColourByHash.ircBold, timestamp.ircBold, note.line) :
-                        pattern.format(atSign, senderName, note.sender, timestamp, note.line);
+                    enum pattern = "%s<h>%s<h>! <h>%s<h> left note <b>%s<b> ago: %s";
+                    immutable message = pattern.format(atSign, senderName, note.sender, timestamp, note.line);
 
                     privmsg(plugin.state, channelName, user.nickname, message);
                 }
                 else
                 {
-                    enum pattern = "%s%s! You have %s notes.";
-
-                    immutable message = plugin.state.settings.colouredOutgoing ?
-                        pattern.format(atSign, senderName.ircColourByHash.ircBold, noteArray.length.ircBold) :
-                        pattern.format(atSign, senderName, noteArray.length);
+                    enum pattern = "%s<h>%s<h>! You have <b>%d<b> notes.";
+                    immutable message = pattern.format(atSign, senderName, noteArray.length);
 
                     privmsg(plugin.state, channelName, user.nickname, message);
 
@@ -175,12 +168,8 @@ void playbackNotes(NotesPlugin plugin,
                     {
                         immutable timestamp = (currTime - note.when).timeSince!(7, 1)(Yes.abbreviate);
 
-                        enum entryPattern = "%s %s ago: %s";
-
-                        immutable report = plugin.state.settings.colouredOutgoing ?
-                            entryPattern.format(note.sender.ircColourByHash.ircBold,
-                                timestamp, note.line) :
-                            entryPattern.format(note.sender, timestamp, note.line);
+                        enum entryPattern = "<h>%s<h> %s ago: %s";
+                        immutable report = entryPattern.format(note.sender, timestamp, note.line);
 
                         privmsg(plugin.state, channelName, user.nickname, report);
                     }
@@ -192,8 +181,8 @@ void playbackNotes(NotesPlugin plugin,
             catch (JSONException e)
             {
                 enum pattern = "Failed to fetch, replay and clear notes for " ~
-                    "%s%s%s on %1$s%4$s%3$s: %1$s%5$s";
-                logger.errorf(pattern, Tint.log, id, Tint.error,
+                    "<l>%s<e> on <l>%s<e>: <l>%s";
+                logger.errorf(pattern.expandTags, id,
                     (channelName.length ? channelName : "<no channel>"), e.msg);
 
                 if (e.msg == "JSONValue is not an object")
@@ -292,9 +281,9 @@ void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
 
     if ((results != SplitResults.overrun) || !target.length)
     {
-        privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Usage: %s%s [nickname] [note text]"
-                .format(plugin.state.settings.prefix, event.aux));
+        enum pattern = "Usage: <b>%s%s<b> [nickname] [note text]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
         return;
     }
 
@@ -366,14 +355,14 @@ auto getNotes(NotesPlugin plugin, const string channel, const string id)
     {
         if (channelNotes.type != JSONType.object)
         {
-            enum pattern = "Invalid channel notes list type for %s: `%s`";
+            enum pattern = "Invalid channel notes list type for <l>%s<e>: `<l>%s<e>`";
             logger.errorf(pattern, channel, channelNotes.type);
         }
         else if (const nickNotes = id in channelNotes.object)
         {
             if (nickNotes.type != JSONType.array)
             {
-                enum pattern = "Invalid notes list type for %s on %s: `%s`";
+                enum pattern = "Invalid notes list type for <l>%s<e> on <l>%s<e>: `<l>%s<e>`";
                 logger.errorf(pattern, id, channel, nickNotes.type);
                 return noteArray;
             }
@@ -423,14 +412,11 @@ in (id.length, "Tried to clear notes for an empty id")
     {
         if (plugin.notes[channel].type != JSONType.object)
         {
-            enum pattern = "Invalid channel notes list type for %s: `%s`";
+            enum pattern = "Invalid channel notes list type for <l>%s<e>: `<l>%s<e>`";
             logger.errorf(pattern, channel, plugin.notes[channel].type);
             return;
         }
 
-        /*enum pattern = "Clearing stored notes for %s%s%s in %1$s%4$s%3$s.";
-        logger.logf(pattern, Tint.info, id, Tint.log,
-            channel.length ? channel : "(private messages)");*/
         plugin.notes[channel].object.remove(id);
         plugin.pruneNotes();
     }

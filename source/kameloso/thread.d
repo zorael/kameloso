@@ -1,6 +1,6 @@
 /++
     Structures and functions related to concurrency message passing, threads and
-    [core.thread.fiber.Fiber]s.
+    [core.thread.fiber.Fiber|Fiber]s.
 
     Example:
     ---
@@ -37,10 +37,10 @@ public:
 
 // ScheduledFiber
 /++
-    A [core.thread.fiber.Fiber] paired with a `long` UNIX timestamp.
+    A [core.thread.fiber.Fiber|Fiber] paired with a `long` UNIX timestamp.
 
     If we bundle the two together like this, we can associate a point in time
-    with a [core.thread.fiber.Fiber] without having to to use an associative
+    with a [core.thread.fiber.Fiber|Fiber] without having to to use an associative
     array (with UNIX timestamp keys).
 
     Example:
@@ -131,7 +131,7 @@ version(Posix)
  +/
 struct ThreadMessage
 {
-    /// Concurrency message type asking for a to-server [dialect.defs.IRCEvent.Type.PONG] event.
+    /// Concurrency message type asking for a to-server [dialect.defs.IRCEvent.Type.PONG|PONG] event.
     static struct Pong {}
 
     /// Concurrency message type asking to verbosely send a line to the server.
@@ -229,7 +229,8 @@ final class BusMessage(T) : Sendable
 
 // busMessage
 /++
-    Constructor function to create a `shared` [BusMessage] with an unqualified template type.
+    Constructor function to create a `shared` [BusMessage] with an unqualified
+    template type.
 
     Example:
     ---
@@ -279,10 +280,10 @@ unittest
 
 // CarryingFiber
 /++
-    A [core.thread.fiber.Fiber] carrying a payload of type `T`.
+    A [core.thread.fiber.Fiber|Fiber] carrying a payload of type `T`.
 
-    Used interchangeably with [core.thread.fiber.Fiber], but allows for casting to true
-    `CarryingFiber!T`-ness to access the `payload` member.
+    Used interchangeably with [core.thread.fiber.Fiber|Fiber], but allows for
+    casting to true `CarryingFiber!T`-ness to access the `payload` member.
 
     Example:
     ---
@@ -303,7 +304,7 @@ unittest
     ---
 
     Params:
-        T = Type to embed into the `CarryingFiber` as the type of `CarryingFiber.payload`.
+        T = Type to embed into the class as the type of [CarryingFiber.payload].
  +/
 final class CarryingFiber(T) : Fiber
 {

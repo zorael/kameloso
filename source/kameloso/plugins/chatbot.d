@@ -7,8 +7,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#chatbot
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.chatbot;
 
@@ -18,7 +18,6 @@ private:
 
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
-import kameloso.irccolours : ircBold;
 import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
@@ -34,7 +33,7 @@ import std.typecons : Flag, No, Yes;
     @Enabler bool enabled = true;
 
     /// Enables fetching of `bash.org` quotes.
-    bool bashQuotes = true;
+    bool bashDotOrgQuotes = true;
 }
 
 
@@ -164,11 +163,12 @@ void onCommandBash(ChatbotPlugin plugin, const ref IRCEvent event)
     import kameloso.thread : ThreadMessage;
     import std.concurrency : prioritySend, spawn;
 
+    if (!plugin.chatbotSettings.bashDotOrgQuotes) return;
+
     plugin.state.mainThread.prioritySend(ThreadMessage.ShortenReceiveTimeout());
 
     // Defer all work to the worker thread
-    spawn(&worker, cast(shared)plugin.state, event,
-        cast(Flag!"colouredOutgoing")plugin.state.settings.colouredOutgoing);
+    cast(void)spawn(&worker, cast(shared)plugin.state, event);
 }
 
 
@@ -179,19 +179,16 @@ void onCommandBash(ChatbotPlugin plugin, const ref IRCEvent event)
     Supposed to be run in its own, short-lived thread.
 
     Params:
-        sState = A `shared` [kameloso.plugins.common.core.IRCPluginState] containing
-            necessary information to pass messages to send messages to the main
-            thread, to send text to the server or display text on the screen.
-        event = The [dialect.defs.IRCEvent] in flight.
-        colouredOutgoing = Whether or not to tint messages going to the server
-            with mIRC colouring.
+        sState = A `shared` [kameloso.plugins.common.core.IRCPluginState|IRCPluginState]
+            containing necessary information to pass messages to send messages
+            to the main thread, to send text to the server or display text on
+            the screen.
+        event = The [dialect.defs.IRCEvent|IRCEvent] in flight.
  +/
 void worker(shared IRCPluginState sState,
-    const ref IRCEvent event,
-    const Flag!"colouredOutgoing" colouredOutgoing)
+    const ref IRCEvent event)
 {
     import kameloso.constants : BufferSize, KamelosoInfo, Timeout;
-    import kameloso.irccolours : ircBold;
     import arsd.dom : Document, htmlEntitiesDecode;
     import std.algorithm.iteration : splitter;
     import std.array : Appender, replace;
@@ -200,6 +197,7 @@ void worker(shared IRCPluginState sState,
     import std.net.curl : HTTP;
     import core.time : seconds;
     import etc.c.curl : CurlError;
+    static import kameloso.common;
 
     version(Posix)
     {
@@ -208,6 +206,9 @@ void worker(shared IRCPluginState sState,
     }
 
     auto state = cast()sState;
+
+    // Set the global settings so messaging functions don't segfault us
+    kameloso.common.settings = &state.settings;
 
     immutable url = !event.content.length ? "http://bash.org/?random" :
         ("http://bash.org/?" ~ event.content);
@@ -239,7 +240,8 @@ void worker(shared IRCPluginState sState,
             import std.string : fromStringz;
             import etc.c.curl : curl_easy_strerror;
 
-            askToError(state, "Chatbot got cURL error %s (%d) when fetching %s: %s"
+            enum pattern = "Chatbot got cURL error <l>%s<e> (<l>%d<e>) when fetching <l>%s<e>: <l>%s";
+            askToError(state, pattern
                 .format(curlErrorStrings[errorCode], errorCode, url,
                     fromStringz(curl_easy_strerror(errorCode))));
             return;
@@ -251,14 +253,14 @@ void worker(shared IRCPluginState sState,
 
         if (!numBlock.length)
         {
-            enum message = "No such bash.org quote found.";
+            enum message = "No such <b>bash.org<b> quote found.";
             privmsg(state, event.channel, event.sender.nickname, message);
             return;
         }
 
         void reportLayoutError()
         {
-            askToError(state, "Failed to parse bash.org page; unexpected layout.");
+            askToError(state, "Failed to parse <l>bash.org<e> page; unexpected layout.");
         }
 
         auto p = numBlock[0].getElementsByTagName("p");
@@ -279,9 +281,7 @@ void worker(shared IRCPluginState sState,
             .splitter('\n');
 
         immutable num = b[0].toString[4..$-4];
-        immutable message = colouredOutgoing ?
-            "[%s] #%s".format("bash.org".ircBold, num) :
-            "[bash.org] #%s".format(num);
+        immutable message = "[<b>bash.org<b>] #%s".format(num);
 
         privmsg(state, event.channel, event.sender.nickname, message);
 
@@ -292,7 +292,8 @@ void worker(shared IRCPluginState sState,
     }
     catch (Exception e)
     {
-        askToWarn(state, "Chatbot could not fetch bash.org quote at %s: %s".format(url, e.msg));
+        enum pattern = "Chatbot could not fetch <l>bash.org<w> quote at <l>%s<w>: <l>%s";
+        askToWarn(state, pattern.format(url, e.msg));
         version(PrintStacktraces) askToTrace(state, e.toString);
     }
 }
@@ -360,8 +361,10 @@ public:
 
 // Chatbot
 /++
-    The Chatbot plugin provides common chat functionality. Currently this includes magic
-    8ball, `bash.org` quotes and some other trivial miscellanea.
+    The Chatbot plugin provides common chat functionality.
+
+    Currently this includes magic 8ball, `bash.org` quotes and some other
+    trivial miscellanea.
  +/
 final class ChatbotPlugin : IRCPlugin
 {

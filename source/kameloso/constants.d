@@ -8,7 +8,6 @@ module kameloso.constants;
 private:
 
 import kameloso.semver : KamelosoSemVer, KamelosoSemVerPrerelease;
-import std.format : format;
 
 
 version(DigitalMars)
@@ -36,7 +35,7 @@ else
 // buildCompilerVersionString
 /++
     Replaces the following expression and lowers compilation memory by avoiding
-    use of compile-time [std.format.format].
+    use of compile-time [std.format.format|format].
 
     ---
     enum compilerVersion = format("%d.%03d", (__VERSION__ / 1000), (__VERSION__ % 1000));
@@ -61,7 +60,7 @@ auto buildCompilerVersionString()
 // buildVersionString
 /++
     Replaces the following expression and lowers compilation memory by avoiding
-    use of compile-time [std.format.format].
+    use of compile-time [std.format.format|format].
 
     ---
     enum version_ = "%d.%d.%d%s%s"
@@ -257,12 +256,12 @@ enum ConnectionDefaultFloats : double
 enum BufferSize
 {
     /++
-        The receive buffer size as set as a [std.socket.SocketOption].
+        The receive buffer size as set as a [std.socket.SocketOption|SocketOption].
      +/
     socketOptionReceive = 2048,
 
     /++
-        The send buffer size as set as a [std.socket.SocketOption].
+        The send buffer size as set as a [std.socket.SocketOption|SocketOption].
      +/
     socketOptionSend = 1024,
 
@@ -295,8 +294,8 @@ enum BufferSize
     vbufStdout = 16_384,
 
     /++
-        How large to make [core.thread.fiber.Fiber] stacks, so they don't overflow
-        (which they seem to have a knack for doing).
+        How large to make [core.thread.fiber.Fiber|Fiber] stacks, so they don't
+        overflow (which they seem to have a knack for doing).
      +/
     fiberStack = 32_768,
 }
@@ -309,12 +308,14 @@ enum BufferSize
 enum Timeout
 {
     /++
-        The send attempt timeout as set as a [std.socket.SocketOption], in milliseconds.
+        The send attempt timeout as set as a [std.socket.SocketOption|SocketOption],
+        in milliseconds.
      +/
     sendMsecs = 15_000,
 
     /++
-        The receive attempt timeout as set as a [std.socket.SocketOption], in milliseconds.
+        The receive attempt timeout as set as a [std.socket.SocketOption|SocketOption],
+        in milliseconds.
      +/
     receiveMsecs = 1000,
 
@@ -480,8 +481,8 @@ version(Colours)
 struct DefaultColours
 {
 private:
+    import kameloso.logger : LogLevel;
     import kameloso.terminal.colours : TerminalForeground;
-    import std.experimental.logger : LogLevel;
 
     alias TF = TerminalForeground;
 
@@ -491,10 +492,16 @@ public:
      +/
     enum TimestampColour : TerminalForeground
     {
-        /// For dark terminal backgrounds. Was [kameloso.terminal.TerminalForeground.white_].
+        /++
+            For dark terminal backgrounds. Was
+            [kameloso.terminal.TerminalForeground.white_|TerminalForeground.white_].
+         +/
         dark = TF.default_,
 
-        /// For bright terminal backgrounds. Was [kameloso.terminal.TerminalForeground.black_].
+        /++
+            For bright terminal backgrounds. Was
+            [kameloso.terminal.TerminalForeground.black_|TerminalForeground.black_].
+         +/
         bright = TF.default_,
     }
 

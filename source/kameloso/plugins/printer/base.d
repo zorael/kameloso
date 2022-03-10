@@ -1,9 +1,9 @@
 /++
-    The Printer plugin takes incoming [dialect.defs.IRCEvent]s, formats them
+    The Printer plugin takes incoming [dialect.defs.IRCEvent|IRCEvent]s, formats them
     into something easily readable and prints them to the screen, optionally with colours.
     It also supports logging to disk.
 
-    It has no commands; all [dialect.defs.IRCEvent]s will be parsed and
+    It has no commands; all [dialect.defs.IRCEvent|IRCEvent]s will be parsed and
     printed, excluding certain types that were deemed too spammy. Print them as
     well by disabling `filterMost`, in the configuration file under the header `[Printer]`.
 
@@ -13,8 +13,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#printer
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.printer.base;
 
@@ -27,7 +27,6 @@ import kameloso.plugins.printer.logging;
 
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
-import kameloso.irccolours;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
@@ -55,8 +54,11 @@ public:
         /// Whether or not to display nicks in random colour based on their nickname hash.
         bool randomNickColours = true;
 
-        /// Whether or not two users on the same account should be coloured identically.
-        bool colourByAccount = true;
+        @Unserialisable
+        {
+            /// Whether or not two users on the same account should be coloured identically.
+            bool colourByAccount = true;
+        }
     }
 
     version(TwitchSupport)
@@ -90,9 +92,6 @@ public:
     /// Whether or not to filter WHOIS queries.
     bool filterWhois = true;
 
-    /// Whether or not to send a terminal bell signal when the bot is mentioned in chat.
-    bool bellOnMention = false;
-
     /// Whether or not to bell on parsing errors.
     bool bellOnError = false;
 
@@ -111,11 +110,14 @@ public:
     /// Whether or not to log server messages.
     bool logServer = false;
 
-    /// Whether or not to log raw events.
-    bool logRaw = false;
-
     @Unserialisable
     {
+        /// Whether or not to send a terminal bell signal when the bot is mentioned in chat.
+        bool bellOnMention = false;
+
+        /// Whether or not to log raw events.
+        bool logRaw = false;
+
         /// Whether or not to have the type names be in capital letters.
         bool uppercaseTypes = false;
 
@@ -132,9 +134,9 @@ public:
 /++
     Prints an event to the local terminal.
 
-    Buffer output in an [std.array.Appender].
+    Buffer output in an [std.array.Appender|Appender].
 
-    Mutable [dialect.defs.IRCEvent] parameter so as to make fewer internal copies
+    Mutable [dialect.defs.IRCEvent|IRCEvent] parameter so as to make fewer internal copies
     (as this is a hotspot).
  +/
 @(IRCEventHandler()
@@ -416,7 +418,8 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 
         if (plugin.linebuffer.data.length)
         {
-            // The linebuffer is empty if the sender was blacklisted (and settings are to hide those)
+            // The linebuffer is empty if the sender was blacklisted
+            // (and settings are to hide those)
             // so only write it out if there's something to write
             writeln(plugin.linebuffer.data);
         }
@@ -429,11 +432,11 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 /++
     Logs an event to disk.
 
-    It is set to [kameloso.plugins.common.core.ChannelPolicy.any], and configuration
-    dictates whether or not non-home events should be logged. Likewise whether
-    or not raw events should be logged.
+    It is set to [kameloso.plugins.common.core.ChannelPolicy.any|ChannelPolicy.any],
+    and configuration dictates whether or not non-home events should be logged.
+    Likewise whether or not raw events should be logged.
 
-    Lines will either be saved immediately to disk, opening a [std.stdio.File]
+    Lines will either be saved immediately to disk, opening a [std.stdio.File|File]
     with appending privileges for each event as they occur, or buffered by
     populating arrays of lines to be written in bulk, once in a while.
 
@@ -461,7 +464,7 @@ void onLoggableEvent(PrinterPlugin plugin, const ref IRCEvent event)
         plugin = The current [PrinterPlugin].
 
     See_Also:
-        [kameloso.plugins.printer.logging.commitLog]
+        [kameloso.plugins.printer.logging.commitLog|printer.logging.commitLog]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.PING)
@@ -475,9 +478,10 @@ void commitAllLogs(PrinterPlugin plugin)
 // onISUPPORT
 /++
     Prints information about the current server as we gain details of it from an
-    [dialect.defs.IRCEvent.Type.RPL_ISUPPORT] event.
+    [dialect.defs.IRCEvent.Type.RPL_ISUPPORT|RPL_ISUPPORT] event.
 
-    Set a flag so we only print this information once; (ISUPPORTS can/do stretch
+    Set a flag so we only print this information once;
+    ([dialect.defs.IRCEvent.Type.RPL_ISUPPORT|RPL_ISUPPORT] can/do stretch
     across several events.)
  +/
 @(IRCEventHandler()
@@ -485,7 +489,8 @@ void commitAllLogs(PrinterPlugin plugin)
 )
 void onISUPPORT(PrinterPlugin plugin)
 {
-    import kameloso.common : Tint, logger;
+    import kameloso.common : expandTags, logger;
+    import lu.conv : Enum;
 
     if (plugin.printedISUPPORT || !plugin.state.server.network.length)
     {
@@ -495,11 +500,11 @@ void onISUPPORT(PrinterPlugin plugin)
 
     plugin.printedISUPPORT = true;
 
-    enum pattern = "Detected %s%s%s running daemon %s%s%s (%s)";
-    logger.logf(pattern,
-        Tint.info, plugin.state.server.network, Tint.log,
-        Tint.info, plugin.state.server.daemon,
-        Tint.off, plugin.state.server.daemonstring);
+    enum pattern = "Detected <i>%s<l> running daemon <i>%s<l> (<i>%s<l>)";
+    logger.logf(pattern.expandTags,
+        plugin.state.server.network,
+        Enum!(IRCServer.Daemon).toString(plugin.state.server.daemon),
+        plugin.state.server.daemonstring);
 }
 
 
@@ -628,10 +633,10 @@ import kameloso.thread : Sendable;
 
 // onBusMessage
 /++
-    Receives a passed [kameloso.thread.BusMessage] with the "`printer`" header,
+    Receives a passed [kameloso.thread.BusMessage|BusMessage] with the "`printer`" header,
     listening for cues to ignore the next events caused by the
-    [kameloso.plugins.services.chanqueries.ChanQueriesService] querying current channel
-    for information on the channels and their users.
+    [kameloso.plugins.services.chanqueries.ChanQueriesService|ChanQueriesService]
+    querying current channel for information on the channels and their users.
 
     Params:
         plugin = The current [PrinterPlugin].
@@ -740,9 +745,11 @@ void clearTargetNicknameIfUs(ref IRCEvent event, const IRCPluginState state)
     }
     else if (event.target.nickname == "*")
     {
-        // Some events have an asterisk in what we consider the target nickname field. Sometimes.
-        // [loggedin] wolfe.freenode.net (*): "You are now logged in as kameloso." (#900)
-        // Clear it if so, since it conveys no information we care about.
+        /++
+            Some events have an asterisk in what we consider the target nickname field. Sometimes.
+            [loggedin] wolfe.freenode.net (*): "You are now logged in as kameloso." (#900)
+            Clear it if so, since it conveys no information we care about.
+         +/
         event.target.nickname = string.init;
     }
 }
@@ -795,7 +802,7 @@ public:
 
 // PrinterPlugin
 /++
-    The Printer plugin takes all [dialect.defs.IRCEvent]s and prints them to
+    The Printer plugin takes all [dialect.defs.IRCEvent|IRCEvent]s and prints them to
     the local terminal, formatted and optionally in colour. Alternatively to disk
     as logs.
 
@@ -842,10 +849,10 @@ package:
     /// Where to save logs.
     @Resource string logDirectory = "logs";
 
-    /// [kameloso.terminal.TerminalToken.bell] as string, for use as bell.
+    /// [kameloso.terminal.TerminalToken.bell|TerminalToken.bell] as string, for use as bell.
     private enum bellString = ("" ~ cast(char)(TerminalToken.bell));
 
-    /// Effective bell after [kameloso.terminal.isTTY] checks.
+    /// Effective bell after [kameloso.terminal.isTTY|isTTY] checks.
     string bell = bellString;
 
     mixin IRCPluginImpl;

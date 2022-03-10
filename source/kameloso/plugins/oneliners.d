@@ -7,8 +7,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#oneliners
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.oneliners;
 
@@ -109,7 +109,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
     void sendUsage(const string verb = "[add|del|list]",
         const Flag!"includeText" includeText = Yes.includeText)
     {
-        chan(plugin.state, event.channel, "Usage: %s%s %s [trigger]%s"
+        chan(plugin.state, event.channel, "Usage: <b>%s%s<b> %s [trigger]%s"
             .format(plugin.state.settings.prefix, event.aux, verb,
                 includeText ? " [text]" : string.init));
     }
@@ -125,31 +125,43 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
         import kameloso.thread : ThreadMessage;
         import std.concurrency : send;
 
+        /+
+            We need to check both hardcoded and soft channel-specific commands
+            for conflicts.
+         +/
+
         if (!slice.contains!(Yes.decode)(' ')) return sendUsage(verb, Yes.includeText);
 
         string trigger = slice.nom!(Yes.decode)(' ');
-
         if (!trigger.length) return sendUsage(verb);
 
         if (!plugin.onelinersSettings.caseSensitiveTriggers) trigger = trigger.toLower;
 
-        void dg(IRCPlugin.CommandMetadata[string][string] aa)
+        bool triggerConflicts(const IRCPlugin.CommandMetadata[string][string] aa)
         {
             foreach (immutable pluginName, pluginCommands; aa)
             {
+                if (!pluginCommands.length || (pluginName == "oneliners")) continue;
+
                 foreach (/*mutable*/ word, command; pluginCommands)
                 {
                     if (!plugin.onelinersSettings.caseSensitiveTriggers) word = word.toLower;
 
                     if (word == trigger)
                     {
-                        enum pattern = `Oneliner word "%s" conflicts with a command of the %s plugin.`;
+                        enum pattern = `Oneliner word "<b>%s<b>" conflicts with a command of the <b>%s<b> plugin.`;
                         chan(plugin.state, event.channel,
                             pattern.format(trigger, pluginName));
-                        return;
+                        return true;
                     }
                 }
             }
+            return false;
+        }
+
+        void channelSpecificDg(IRCPlugin.CommandMetadata[string][string] channelSpecificAA)
+        {
+            if (triggerConflicts(channelSpecificAA)) return;
 
             plugin.onelinersByChannel[event.channel][trigger] = slice;
             saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
@@ -160,9 +172,16 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
             immutable wasMadeLowerCase = !plugin.onelinersSettings.caseSensitiveTriggers &&
                 !trigger.equal(trigger.asLowerCase);
 
-            chan(plugin.state, event.channel, "Oneliner %s%s added%s."
+            chan(plugin.state, event.channel, "Oneliner <b>%s%s<b> added%s."
                 .format(plugin.state.settings.prefix, trigger,
                     wasMadeLowerCase ? " (made lowercase)" : string.init));
+        }
+
+        void dg(IRCPlugin.CommandMetadata[string][string] aa)
+        {
+            if (triggerConflicts(aa)) return;
+            plugin.state.mainThread.send(ThreadMessage.PeekCommands(),
+                cast(shared)&channelSpecificDg, event.channel);
         }
 
         plugin.state.mainThread.send(ThreadMessage.PeekCommands(), cast(shared)&dg);
@@ -184,7 +203,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
         plugin.onelinersByChannel[event.channel].remove(trigger);
         saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
 
-        chan(plugin.state, event.channel, "Oneliner %s%s removed."
+        chan(plugin.state, event.channel, "Oneliner <b>%s%s<b> removed."
             .format(plugin.state.settings.prefix, trigger));
         break;
 
@@ -236,7 +255,7 @@ void listCommands(OnelinersPlugin plugin, const string channelName)
 
     if (channelOneliners && channelOneliners.length)
     {
-        immutable rtPattern = "Available commands: %-(" ~ plugin.state.settings.prefix ~ "%s, %)";
+        immutable rtPattern = "Available commands: %-(<b>" ~ plugin.state.settings.prefix ~ "%s<b>, %)";
         chan(plugin.state, channelName, format(rtPattern, channelOneliners.byKey));
     }
     else
@@ -354,6 +373,35 @@ private:
 
     /// Filename of file with oneliners.
     @Resource string onelinerFile = "oneliners.json";
+
+    // channelSpecificCommands
+    /++
+        Compile a list of our runtime oneliner commands.
+
+        Params:
+            channelName = Name of channel whose commands we want to summarise.
+
+        Returns:
+            An associative array of
+            [kameloso.plugins.common.core.IRCPlugin.CommandMetadata|IRCPlugin.CommandMetadata]s,
+            one for each oneliner active in the passed channel.
+     +/
+    override public IRCPlugin.CommandMetadata[string] channelSpecificCommands(const string channelName) @system
+    {
+        IRCPlugin.CommandMetadata[string] aa;
+
+        const channelOneliners = channelName in onelinersByChannel;
+        if (!channelOneliners) return aa;
+
+        foreach (immutable trigger, immutable _; *channelOneliners)
+        {
+            IRCPlugin.CommandMetadata metadata;
+            metadata.description = "A oneliner";
+            aa[trigger] = metadata;
+        }
+
+        return aa;
+    }
 
     mixin IRCPluginImpl;
 }

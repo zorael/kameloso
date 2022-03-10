@@ -2,13 +2,13 @@
     Implementation of Printer plugin functionality that concerns formatting.
     For internal use.
 
-    The [dialect.defs.IRCEvent]-annotated handlers must be in the same module
-    as the [kameloso.plugins.printer.base.PrinterPlugin], but these implementation
+    The [dialect.defs.IRCEvent|IRCEvent]-annotated handlers must be in the same module
+    as the [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin], but these implementation
     functions can be offloaded here to limit module size a bit.
 
     See_Also:
-        [kameloso.plugins.printer.base]
-        [kameloso.plugins.printer.logging]
+        [kameloso.plugins.printer.base|printer.base]
+        [kameloso.plugins.printer.logging|printer.logging]
  +/
 module kameloso.plugins.printer.formatting;
 
@@ -18,7 +18,6 @@ private:
 
 import kameloso.plugins.printer.base;
 
-import kameloso.irccolours;
 import dialect.defs;
 import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;
@@ -164,15 +163,15 @@ unittest
 
 // formatMessageMonochrome
 /++
-    Formats an [dialect.defs.IRCEvent] into an output range sink, in monochrome.
+    Formats an [dialect.defs.IRCEvent|IRCEvent] into an output range sink, in monochrome.
 
     It formats the timestamp, the type of the event, the sender or sender alias,
     the channel or target, the content body, as well as auxiliary information.
 
     Params:
-        plugin = Current [kameloso.plugins.printer.base.PrinterPlugin].
-        sink = Output range to format the [dialect.defs.IRCEvent] into.
-        event = The [dialect.defs.IRCEvent] that is to be formatted.
+        plugin = Current [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin].
+        sink = Output range to format the [dialect.defs.IRCEvent|IRCEvent] into.
+        event = The [dialect.defs.IRCEvent|IRCEvent] that is to be formatted.
         bellOnMention = Whether or not to emit a terminal bell when the bot's
             nickname is mentioned in chat.
         bellOnError = Whether or not to emit a terminal bell when an error occurred.
@@ -187,6 +186,7 @@ void formatMessageMonochrome(Sink)
     const Flag!"hideBlacklistedUsers" hideBlacklistedUsers)
 if (isOutputRange!(Sink, char[]))
 {
+    import kameloso.irccolours : stripEffects;
     import lu.conv : Enum;
     import std.algorithm.comparison : equal;
     import std.datetime : DateTime;
@@ -531,16 +531,16 @@ if (isOutputRange!(Sink, char[]))
 
 // formatMessageColoured
 /++
-    Formats an [dialect.defs.IRCEvent] into an output range sink, coloured.
+    Formats an [dialect.defs.IRCEvent|IRCEvent] into an output range sink, coloured.
 
     It formats the timestamp, the type of the event, the sender or the sender's
     display name, the channel or target, the content body, as well as auxiliary
     information and numbers.
 
     Params:
-        plugin = Current [kameloso.plugins.printer.base.PrinterPlugin].
-        sink = Output range to format the [dialect.defs.IRCEvent] into.
-        event = The [dialect.defs.IRCEvent] that is to be formatted.
+        plugin = Current [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin].
+        sink = Output range to format the [dialect.defs.IRCEvent|IRCEvent] into.
+        event = The [dialect.defs.IRCEvent|IRCEvent] that is to be formatted.
         bellOnMention = Whether or not to emit a terminal bell when the bot's
             nickname is mentioned in chat.
         bellOnError = Whether or not to emit a terminal bell when an error occurred.
@@ -861,7 +861,7 @@ if (isOutputRange!(Sink, char[]))
         if (!event.sender.isServer && !event.sender.nickname.length)
         {
             // PING or ERROR likely
-            sink.put(content);  // No need for delimeter space
+            sink.put(content);  // No need for delimiter space
             return;
         }
 
@@ -876,6 +876,7 @@ if (isOutputRange!(Sink, char[]))
 
         if (plugin.state.server.daemon != IRCServer.Daemon.twitch)
         {
+            import kameloso.irccolours : mapEffects;
             // Twitch chat has no colours or effects, only emotes
             content = mapEffects(content, fgBase);
         }
@@ -1047,7 +1048,7 @@ if (isOutputRange!(Sink, char[]))
 // withoutTypePrefix
 /++
     Slices away any type prefixes from the string of a
-    [dialect.defs.IRCEvent.Type].
+    [dialect.defs.IRCEvent.Type|IRCEvent.Type].
 
     Only for shared use in [formatMessageMonochrome] and
     [formatMessageColoured].
@@ -1065,7 +1066,7 @@ if (isOutputRange!(Sink, char[]))
     ---
 
     Params:
-        typestring = The string form of a [dialect.defs.IRCEvent.Type].
+        typestring = The string form of a [dialect.defs.IRCEvent.Type|IRCEvent.Type].
 
     Returns:
         A slice of the passed `typestring`, excluding any prefixes if present.
@@ -1122,18 +1123,18 @@ unittest
 // highlightEmotes
 /++
     Tints emote strings and highlights Twitch emotes in a ref
-    [dialect.defs.IRCEvent]'s `content` member.
+    [dialect.defs.IRCEvent|IRCEvent]'s `content` member.
 
     Wraps [highlightEmotesImpl].
 
     Params:
-        event = [dialect.defs.IRCEvent] whose content text to highlight.
+        event = [dialect.defs.IRCEvent|IRCEvent] whose content text to highlight.
         colourful = Whether or not emotes should be highlit in colours.
         brightTerminal = Whether or not the terminal has a bright background
             and colours should be adapted to suit.
 
     Returns:
-        A new string of the passed [dialect.defs.IRCEvent]'s `content` member
+        A new string of the passed [dialect.defs.IRCEvent|IRCEvent]'s `content` member
         with any emotes highlighted, or said `content` member as-is if there weren't any.
  +/
 version(Colours)
@@ -1422,9 +1423,10 @@ unittest
     getting false positives from similar nicknames.
 
     Tries to detect nicknames enclosed in terminal formatting. As such, call this
-    *after* having translated IRC- to terminal such with [kameloso.irccolours.mapEffects].
+    *after* having translated IRC- to terminal such with
+    [kameloso.irccolours.mapEffects|irccolours.mapEffects].
 
-    Uses [std.string.indexOf] internally with hopes of being more resilient to
+    Uses [std.string.indexOf|indexOf] internally with hopes of being more resilient to
     weird UTF-8.
 
     Params:

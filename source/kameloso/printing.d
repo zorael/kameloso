@@ -53,7 +53,7 @@ public:
     formatting into neat columns.
 
     Params:
-        all = Whether or not to also include [lu.uda.Unserialisable] members.
+        all = Whether or not to also include [lu.uda.Unserialisable|Unserialisable] members.
         Things = Variadic list of aggregates to inspect.
  +/
 private template Widths(Flag!"all" all, Things...)
@@ -66,18 +66,19 @@ private:
 
     static if (all)
     {
-        import kameloso.traits : longestUnserialisableMemberName,
-            longestUnserialisableMemberTypeName;
+        import kameloso.traits : longestUnserialisableMemberNames;
 
-        public enum type = max(minimumTypeWidth,
-            longestUnserialisableMemberTypeName!Things.length);
-        enum initialWidth = longestUnserialisableMemberName!Things.length;
+        alias names = longestUnserialisableMemberNames!Things;
+        public enum type = max(minimumTypeWidth, names.type.length);
+        enum initialWidth = names.member.length;
     }
     else
     {
-        import kameloso.traits : longestMemberName, longestMemberTypeName;
-        public enum type = max(minimumTypeWidth, longestMemberTypeName!Things.length);
-        enum initialWidth = longestMemberName!Things.length;
+        import kameloso.traits : longestMemberNames;
+
+        alias names = longestMemberNames!Things;
+        public enum type = max(minimumTypeWidth, names.type.length);
+        enum initialWidth = names.member.length;
     }
 
     enum ptrdiff_t compensatedWidth = (type > minimumTypeWidth) ?
@@ -137,8 +138,9 @@ unittest
 
     Params:
         all = Whether or not to also display members marked as
-            [lu.uda.Unserialisable]; usually transitive information that
-            doesn't carry between program runs. Also those annotated [lu.uda.Hidden].
+            [lu.uda.Unserialisable|Unserialisable]; usually transitive
+            information that doesn't carry between program runs.
+            Also those annotated [lu.uda.Hidden|Hidden].
         things = Variadic list of aggregate objects to enumerate.
  +/
 void printObjects(Flag!"all" all = No.all, Things...)
@@ -225,8 +227,9 @@ alias printObject = printObjects;
 
     Params:
         all = Whether or not to also display members marked as
-            [lu.uda.Unserialisable]; usually transitive information that
-            doesn't carry between program runs. Also those annotated [lu.uda.Hidden].
+            [lu.uda.Unserialisable|Unserialisable]; usually transitive
+            information that doesn't carry between program runs.
+            Also those annotated [lu.uda.Hidden|Hidden].
         coloured = Whether to display in colours or not.
         sink = Output range to write to.
         bright = Whether or not to format for a bright terminal background.
@@ -360,7 +363,8 @@ private struct FormatArrayMemberArguments
 
 // formatArrayMemberImpl
 /++
-    Formats the description of an associative array for insertion into a [formatObjects] listing.
+    Formats the description of an associative array for insertion into a
+    [formatObjects] listing.
 
     Broken out of [formatObjects] to reduce template bloat.
 
@@ -402,12 +406,13 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
         else
         {
             immutable rtArrayPattern = args.elemIsCharacter ?
-                "%s%*s %s%-*s %s[%(%s, %)]%s(%d)\n" :
-                "%s%*s %s%-*s %s%s%s(%d)\n";
+                "%s%*s %s%-*s %s%s[%(%s, %)]%s(%d)\n" :
+                "%s%*s %s%-*s %s%s%s%s(%d)\n";
 
             sink.formattedWrite(rtArrayPattern,
                 typeCode.colour, args.typewidth, args.typestring,
                 memberCode.colour, args.namewidth, args.memberstring,
+                (content.length ? string.init : " "),
                 valueCode.colour, content,
                 lengthCode.colour, content.length);
         }
@@ -429,12 +434,13 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
         else
         {
             immutable rtArrayPattern = args.elemIsCharacter ?
-                "%*s %-*s [%(%s, %)](%d)\n" :
-                "%*s %-*s %s(%d)\n";
+                "%*s %-*s %s[%(%s, %)](%d)\n" :
+                "%*s %-*s %s%s(%d)\n";
 
             sink.formattedWrite(rtArrayPattern,
                 args.typewidth, args.typestring,
                 args.namewidth, args.memberstring,
+                (content.length ? string.init : " "),
                 content,
                 content.length);
         }
@@ -483,11 +489,12 @@ private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
         }
         else
         {
-            enum aaPattern = "%s%*s %s%-*s %s%s%s(%d)\n";
+            enum aaPattern = "%s%*s %s%-*s %s%s%s%s(%d)\n";
 
             sink.formattedWrite(aaPattern,
                 typeCode.colour, args.typewidth, args.typestring,
                 memberCode.colour, args.namewidth, args.memberstring,
+                (content.length ? string.init : " "),
                 valueCode.colour, content.keys,
                 lengthCode.colour, content.length);
         }
@@ -496,7 +503,7 @@ private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
     {
         if (content.length > truncateAfter)
         {
-            enum aaPattern = "%*s %-*s %s(%d)\n";
+            enum aaPattern = "%*s %-*s %s ... (%d)\n";
 
             sink.formattedWrite(aaPattern,
                 args.typewidth, args.typestring,
@@ -506,11 +513,12 @@ private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
         }
         else
         {
-            enum aaPattern = "%*s %-*s %s(%d)\n";
+            enum aaPattern = "%*s %-*s %s%s(%d)\n";
 
             sink.formattedWrite(aaPattern,
                 args.typewidth, args.typestring,
                 args.namewidth, args.memberstring,
+                (content.length ? string.init : " "),
                 content,
                 content.length);
         }
@@ -662,8 +670,9 @@ private void formatOtherMemberImpl(Flag!"coloured" coloured, T, Sink)
 
     Params:
         all = Whether or not to also display members marked as
-            [lu.uda.Unserialisable]; usually transitive information that
-            doesn't carry between program runs. Also those annotated [lu.uda.Hidden].
+            [lu.uda.Unserialisable|Unserialisable]; usually transitive
+            information that doesn't carry between program runs.
+            Also those annotated [lu.uda.Hidden|Hidden].
         coloured = Whether to display in colours or not.
         sink = Output range to write to.
         bright = Whether or not to format for a bright terminal background.
@@ -705,29 +714,28 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 
     foreach (immutable memberstring; __traits(derivedMembers, Thing))
     {
+        import kameloso.traits : memberIsMutable, memberIsValue,
+            memberIsVisibleAndNotDeprecated, memberstringIsThisCtorOrDtor;
         import lu.traits : isSerialisable;
         import lu.uda : Hidden, Unserialisable;
-        import std.traits : hasUDA, isSomeFunction, isType;
+        import std.traits : hasUDA;
 
         enum namePadding = 2;
 
         static if (
-            (memberstring != "this") &&
-            (memberstring != "__ctor") &&
-            (memberstring != "__dtor") &&
-            !__traits(isDeprecated, __traits(getMember, thing, memberstring)) &&
-            !isType!(__traits(getMember, thing, memberstring)) &&
-            !isSomeFunction!(__traits(getMember, thing, memberstring)) &&
-            !__traits(isTemplate, __traits(getMember, thing, memberstring)) &&
+            !memberstringIsThisCtorOrDtor(memberstring) &&
+            memberIsVisibleAndNotDeprecated!(Thing, memberstring) &&
+            memberIsValue!(Thing, memberstring) &&
+            memberIsMutable!(Thing, memberstring) &&
             (all ||
-                (isSerialisable!(__traits(getMember, thing, memberstring)) &&
-                !hasUDA!(__traits(getMember, thing, memberstring), Hidden) &&
-                !hasUDA!(__traits(getMember, thing, memberstring), Unserialisable))))
+                (isSerialisable!(__traits(getMember, Thing, memberstring)) &&
+                !hasUDA!(__traits(getMember, Thing, memberstring), Hidden) &&
+                !hasUDA!(__traits(getMember, Thing, memberstring), Unserialisable))))
         {
             import lu.traits : isTrulyString;
             import std.traits : isAggregateType, isArray, isAssociativeArray;
 
-            alias T = Unqual!(typeof(__traits(getMember, thing, memberstring)));
+            alias T = Unqual!(typeof(__traits(getMember, Thing, memberstring)));
 
             static if (isTrulyString!T)
             {
@@ -874,7 +882,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
       float f                           3.14
      double d                           99.9
      char[] c                          ['a', 'b', 'c'](3)
-     char[] emptyC                     [](0)
+     char[] emptyC                      [](0)
    string[] dynA                       ["foo", "bar", "baz"](3)
       int[] iA                         [1, 2, 3, 4](4)
  char[char] cC                         ['b':'b', 'a':'a'](2)
@@ -922,10 +930,10 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
       float f                           3.14
      double d                           99.9
      char[] c                          ['a', 'b', 'c'](3)
-     char[] emptyC                     [](0)
+     char[] emptyC                      [](0)
    string[] dynA                       ["foo", "bar", "baz"](3)
       int[] iA                         [1, 2, 3, 4](4)
- char[char] cC                         [](0)
+ char[char] cC                          [](0)
 `;
 
     assert((sink.data == classNameSerialised), '\n' ~ sink.data);
@@ -1057,8 +1065,9 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 
     Params:
         all = Whether or not to also display members marked as
-            [lu.uda.Unserialisable]; usually transitive information that
-            doesn't carry between program runs. Also those annotated [lu.uda.Hidden].
+            [lu.uda.Unserialisable|Unserialisable]; usually transitive
+            information that doesn't carry between program runs.
+            Also those annotated [lu.uda.Hidden|Hidden].
         coloured = Whether to display in colours or not.
         bright = Whether or not to format for a bright terminal background.
         things = Variadic list of structs to enumerate and format.
@@ -1150,7 +1159,7 @@ unittest
 `-- State
     Client client                     <struct> (init)
     Server server                     <struct> (init)
- Reparse[] reparses                   [](0)
+ Reparse[] reparses                    [](0)
       bool hasReplays                  false
 `), '\n' ~ formattedState);
 }

@@ -2,9 +2,9 @@
     Package for the Admin plugin modules.
 
     See_Also:
-        [kameloso.plugins.admin.base]
-        [kameloso.plugins.admin.classifiers]
-        [kameloso.plugins.admin.debugging]
+        [kameloso.plugins.admin.base|admin.base]
+        [kameloso.plugins.admin.classifiers|admin.classifiers]
+        [kameloso.plugins.admin.debugging|admin.debugging]
  +/
 module kameloso.plugins.admin;
 

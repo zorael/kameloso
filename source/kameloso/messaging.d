@@ -3,10 +3,10 @@
 
     To send a server message some information is needed; like
     message type, message target, perhaps channel, content and such.
-    [dialect.defs.IRCEvent] has all of this, so it lends itself to repurposing
-    it to aggregate and carry them, through concurrency messages. These are caught by the
-    concurrency message-reading parts of the main loop, which reversely parses
-    them into strings and sends them on to the server.
+    [dialect.defs.IRCEvent|IRCEvent] has all of this, so it lends itself to
+    repurposing it to aggregate and carry them, through concurrency messages.
+    These are caught by the concurrency message-reading parts of the main loop,
+    which reversely parses them into strings and sends them on to the server.
 
     Example:
     ---
@@ -18,8 +18,9 @@
     topic(state, "#channel", "I thought what I'd do was, I'd pretend I was one of those deaf-mutes.");
     ---
 
-    Having to supply the [kameloso.plugins.common.core.IRCPluginState] on every call
-    can be avoided for plugins, by mixing in [kameloso.plugins.common.mixins.MessagingProxy]
+    Having to supply the [kameloso.plugins.common.core.IRCPluginState|IRCPluginState]
+    on every call can be avoided for plugins, by mixing in
+    [kameloso.plugins.common.mixins.MessagingProxy|MessagingProxy]
     and placing the messaging function calls inside a `with (plugin)` block.
 
     Example:
@@ -44,9 +45,11 @@ module kameloso.messaging;
 private:
 
 import kameloso.plugins.common.core : IRCPluginState;
+import kameloso.irccolours : expandIRCTags;
 import dialect.defs;
 import std.concurrency : Tid, send;
 import std.typecons : Flag, No, Yes;
+static import kameloso.common;
 
 version(unittest)
 {
@@ -60,8 +63,8 @@ public:
 
 // Message
 /++
-    An [dialect.defs.IRCEvent] with some metadata, to be used when crafting an
-    outgoing message to the server.
+    An [dialect.defs.IRCEvent|IRCEvent] with some metadata, to be used when
+    crafting an outgoing message to the server.
  +/
 struct Message
 {
@@ -79,7 +82,8 @@ struct Message
     }
 
     /++
-        The [dialect.defs.IRCEvent] that contains the information we want to send to the server.
+        The [dialect.defs.IRCEvent|IRCEvent] that contains the information we
+        want to send to the server.
      +/
     IRCEvent event;
 
@@ -103,8 +107,8 @@ struct Message
     Params:
         priority = Whether or not to send the message as a priority message,
             received before other messages are, if there are several.
-        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState], via
-            which to send messages to the server.
+        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+            via which to send messages to the server.
         channelName = Channel in which to send the message.
         content = Message body content to send.
         quiet = Whether or not to echo what was sent to the local terminal.
@@ -126,7 +130,7 @@ in (channelName.length, "Tried to send a channel message but no channel was give
 
     m.event.type = IRCEvent.Type.CHAN;
     m.event.channel = channelName;
-    m.event.content = content;
+    m.event.content = content.expandIRCTags;
     m.caller = caller;
 
     if (quiet) m.properties |= Message.Property.quiet;
@@ -187,8 +191,8 @@ unittest
     Params:
         priority = Whether or not to send the message as a priority message,
             received before other messages are, if there are several.
-        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState], via
-            which to send messages to the server.
+        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+            via which to send messages to the server.
         nickname = Nickname of user to which to send the private message.
         content = Message body content to send.
         quiet = Whether or not to echo what was sent to the local terminal.
@@ -210,7 +214,7 @@ in (nickname.length, "Tried to send a private query but no nickname was given")
 
     m.event.type = IRCEvent.Type.QUERY;
     m.event.target.nickname = nickname;
-    m.event.content = content;
+    m.event.content = content.expandIRCTags;
     m.caller = caller;
 
     if (quiet) m.properties |= Message.Property.quiet;
@@ -249,13 +253,13 @@ unittest
     the arguments passed to it.
 
     This reflects how channel messages and private messages are both the
-    underlying same type; [dialect.defs.IRCEvent.Type.PRIVMSG].
+    underlying same type; [dialect.defs.IRCEvent.Type.PRIVMSG|PRIVMSG].
 
     Params:
         priority = Whether or not to send the message as a priority message,
             received before other messages are, if there are several.
-        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState], via
-            which to send messages to the server.
+        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+            via which to send messages to the server.
         channel = Channel in which to send the message, if applicable.
         nickname = Nickname of user to which to send the message, if applicable.
         content = Message body content to send.
@@ -275,13 +279,15 @@ in ((channel.length || nickname.length), "Tried to send a PRIVMSG but no channel
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
+    immutable expandedContent = content.expandIRCTags;
+
     if (channel.length)
     {
-        return chan!priority(state, channel, content, quiet, background, caller);
+        return chan!priority(state, channel, expandedContent, quiet, background, caller);
     }
     else if (nickname.length)
     {
-        return query!priority(state, nickname, content, quiet, background, caller);
+        return query!priority(state, nickname, expandedContent, quiet, background, caller);
     }
     else
     {
@@ -336,8 +342,8 @@ unittest
     Params:
         priority = Whether or not to send the message as a priority message,
             received before other messages are, if there are several.
-        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState], via
-            which to send messages to the server.
+        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+            via which to send messages to the server.
         emoteTarget = Target of the emote, either a nickname to be sent as a
             private message, or a channel.
         content = Message body content to send.
@@ -360,7 +366,7 @@ in (emoteTarget.length, "Tried to send an emote but no target was given")
     Message m;
 
     m.event.type = IRCEvent.Type.EMOTE;
-    m.event.content = content;
+    m.event.content = content.expandIRCTags;
     m.caller = caller;
 
     if (quiet) m.properties |= Message.Property.quiet;
@@ -428,8 +434,8 @@ unittest
     Params:
         priority = Whether or not to send the message as a priority message,
             received before other messages are, if there are several.
-        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState], via
-            which to send messages to the server.
+        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+            via which to send messages to the server.
         channel = Channel to change the modes of.
         modes = Mode characters to apply to the channel.
         content = Target of mode change, if applicable.
@@ -454,7 +460,7 @@ in (channel.length, "Tried to set a mode but no channel was given")
     m.event.type = IRCEvent.Type.MODE;
     m.event.channel = channel;
     m.event.aux = modes.idup;
-    m.event.content = content;
+    m.event.content = content.expandIRCTags;
     m.caller = caller;
 
     if (quiet) m.properties |= Message.Property.quiet;
@@ -495,8 +501,8 @@ unittest
     Params:
         priority = Whether or not to send the message as a priority message,
             received before other messages are, if there are several.
-        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState], via
-            which to send messages to the server.
+        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+            via which to send messages to the server.
         channel = Channel whose topic to change.
         content = Topic body text.
         quiet = Whether or not to echo what was sent to the local terminal.
@@ -518,7 +524,7 @@ in (channel.length, "Tried to set a topic but no channel was given")
 
     m.event.type = IRCEvent.Type.TOPIC;
     m.event.channel = channel;
-    m.event.content = content;
+    m.event.content = content.expandIRCTags;
     m.caller = caller;
 
     if (quiet) m.properties |= Message.Property.quiet;
@@ -558,8 +564,8 @@ unittest
     Params:
         priority = Whether or not to send the message as a priority message,
             received before other messages are, if there are several.
-        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState], via
-            which to send messages to the server.
+        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+            via which to send messages to the server.
         channel = Channel to which to invite the user.
         nickname = Nickname of user to invite.
         quiet = Whether or not to echo what was sent to the local terminal.
@@ -622,8 +628,8 @@ unittest
     Params:
         priority = Whether or not to send the message as a priority message,
             received before other messages are, if there are several.
-        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState], via
-            which to send messages to the server.
+        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+            via which to send messages to the server.
         channel = Channel to join.
         key = Channel key to join the channel with, if it's locked.
         quiet = Whether or not to echo what was sent to the local terminal.
@@ -684,8 +690,8 @@ unittest
     Params:
         priority = Whether or not to send the message as a priority message,
             received before other messages are, if there are several.
-        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState], via
-            which to send messages to the server.
+        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+            via which to send messages to the server.
         channel = Channel from which to kick the user.
         nickname = Nickname of user to kick.
         reason = Optionally the reason behind the kick.
@@ -711,7 +717,7 @@ in (nickname.length, "Tried to kick someone but no nickname was given")
     m.event.type = IRCEvent.Type.KICK;
     m.event.channel = channel;
     m.event.target.nickname = nickname;
-    m.event.content = reason;
+    m.event.content = reason.expandIRCTags;
     m.caller = caller;
 
     if (quiet) m.properties |= Message.Property.quiet;
@@ -752,8 +758,8 @@ unittest
     Params:
         priority = Whether or not to send the message as a priority message,
             received before other messages are, if there are several.
-        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState], via
-            which to send messages to the server.
+        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+            via which to send messages to the server.
         channel = Channel to leave.
         reason = Optionally, reason behind leaving.
         quiet = Whether or not to echo what was sent to the local terminal.
@@ -775,7 +781,7 @@ in (channel.length, "Tried to part a channel but no channel was given")
 
     m.event.type = IRCEvent.Type.PART;
     m.event.channel = channel;
-    m.event.content = reason.length ? reason : state.bot.partReason;
+    m.event.content = reason.length ? reason.expandIRCTags : state.bot.partReason;
     m.caller = caller;
 
     if (quiet) m.properties |= Message.Property.quiet;
@@ -816,8 +822,8 @@ unittest
         priority = Whether or not to send the message as a priority message,
             received before other messages are, if there are several.
             Default to `Yes.priority`, since we're quitting.
-        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState], via
-            which to send messages to the server.
+        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+            via which to send messages to the server.
         reason = Optionally, the reason for quitting.
         quiet = Whether or not to echo what was sent to the local terminal.
  +/
@@ -863,8 +869,8 @@ unittest
     Params:
         priority = Whether or not to send the message as a priority message,
             received before other messages are, if there are several.
-        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState], via
-            which to send messages to the server.
+        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+            via which to send messages to the server.
         nickname = String nickname to query for.
         force = Whether or not to force the WHOIS, skipping any hysteresis queues.
         quiet = Whether or not to echo what was sent to the local terminal.
@@ -937,8 +943,8 @@ unittest
     Params:
         priority = Whether or not to send the message as a priority message,
             received before other messages are, if there are several.
-        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState], via
-            which to send messages to the server.
+        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+            via which to send messages to the server.
         line = Raw IRC string to send to the server.
         quiet = Whether or not to echo what was sent to the local terminal.
         background = Whether or not to send it as a low-priority background message.
@@ -956,7 +962,7 @@ void raw(Flag!"priority" priority = No.priority)
     Message m;
 
     m.event.type = IRCEvent.Type.UNSET;
-    m.event.content = line;
+    m.event.content = line.expandIRCTags;
     m.caller = caller;
 
     if (quiet) m.properties |= Message.Property.quiet;
@@ -999,8 +1005,8 @@ unittest
         [raw]
 
     Params:
-        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState], via
-            which to send messages to the server.
+        state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+            via which to send messages to the server.
         line = Raw IRC string to send to the server.
         quiet = Whether or not to echo what was sent to the local terminal.
         caller = String name of the calling function, or something else that gives context.
@@ -1016,7 +1022,7 @@ void immediate(IRCPluginState state,
     Message m;
 
     m.event.type = IRCEvent.Type.UNSET;
-    m.event.content = line;
+    m.event.content = line.expandIRCTags;
     m.caller = caller;
     m.properties |= Message.Property.immediate;
 
@@ -1056,9 +1062,9 @@ alias immediateline = immediate;
     terminal, instead of doing it directly.
 
     Params:
-        logLevel = The [std.experimental.logging.LogLevel] at which to log the message.
-        state = Current [kameloso.plugins.common.core.IRCPluginState], used to send
-            the concurrency message to the main thread.
+        logLevel = The [kameloso.logger.LogLevel|LogLevel] at which to log the message.
+        state = Current [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
+            used to send the concurrency message to the main thread.
         line = The text body to ask the main thread to display.
  +/
 void askToOutputImpl(string logLevel)(IRCPluginState state, const string line)

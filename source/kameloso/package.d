@@ -3,7 +3,8 @@
 
     See the [kameloso.plugins] package for available plugins.
 
-    Additionally, see the homepage at https://github.com/zorael/kameloso for help on getting started.
+    Additionally, see the homepage at https://github.com/zorael/kameloso for
+    help on getting started.
  +/
 module kameloso;
 

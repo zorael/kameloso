@@ -4,8 +4,8 @@
     This was all in one `plugins/common.d` file that just grew too big.
 
     See_Also:
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.common.mixins;
 
@@ -22,8 +22,8 @@ public:
 /++
     Functionality for catching WHOIS results and calling passed function aliases
     with the resulting account information that was divined from it, in the form
-    of the actual [dialect.defs.IRCEvent], the target
-    [dialect.defs.IRCUser] within it, the user's `account` field, or merely
+    of the actual [dialect.defs.IRCEvent|IRCEvent], the target
+    [dialect.defs.IRCUser|IRCUser] within it, the user's `account` field, or merely
     alone as an arity-0 function.
 
     The mixed in function to call is named `enqueueAndWHOIS`. It will construct
@@ -129,7 +129,6 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         import lu.conv : Enum;
         import lu.traits : TakesParams;
         import std.algorithm.searching : canFind;
-        import std.meta : AliasSeq;
         import std.traits : arity;
         import core.thread : Fiber;
 
@@ -148,18 +147,18 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
             /++
                 Invoke `onSuccess`.
-            +/
+             +/
             void callOnSuccess()
             {
-                static if (TakesParams!(onSuccess, AliasSeq!IRCEvent))
+                static if (TakesParams!(onSuccess, IRCEvent))
                 {
                     return onSuccess(whoisEvent);
                 }
-                else static if (TakesParams!(onSuccess, AliasSeq!IRCUser))
+                else static if (TakesParams!(onSuccess, IRCUser))
                 {
                     return onSuccess(whoisEvent.target);
                 }
-                else static if (TakesParams!(onSuccess, AliasSeq!string))
+                else static if (TakesParams!(onSuccess, string))
                 {
                     return onSuccess(whoisEvent.target.account);
                 }
@@ -180,20 +179,20 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
             /++
                 Invoke `onFailure`, if it's available.
-            +/
+             +/
             void callOnFailure()
             {
                 static if (!is(typeof(onFailure) == typeof(null)))
                 {
-                    static if (TakesParams!(onFailure, AliasSeq!IRCEvent))
+                    static if (TakesParams!(onFailure, IRCEvent))
                     {
                         return onFailure(whoisEvent);
                     }
-                    else static if (TakesParams!(onFailure, AliasSeq!IRCUser))
+                    else static if (TakesParams!(onFailure, IRCUser))
                     {
                         return onFailure(whoisEvent.target);
                     }
-                    else static if (TakesParams!(onFailure, AliasSeq!string))
+                    else static if (TakesParams!(onFailure, string))
                     {
                         // Never called when using hostmasks
                         return onFailure(whoisEvent.target.account);
@@ -283,8 +282,9 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
     // enqueueAndWHOIS
     /++
-        Constructs a [kameloso.thread.CarryingFiber] carrying a [dialect.defs.IRCEvent]
-        and enqueues it into the [kameloso.plugins.common.core.IRCPluginState.awaitingFibers]
+        Constructs a [kameloso.thread.CarryingFiber|CarryingFiber] carrying a
+        [dialect.defs.IRCEvent|IRCEvent] and enqueues it into the
+        [kameloso.plugins.common.core.IRCPluginState.awaitingFibers|IRCPluginState.awaitingFibers]
         associative array, then issues a WHOIS query (unless overridden via
         the `issueWhois` parameter).
 
@@ -294,7 +294,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             background = Whether or not to issue queries as low-priority background messages.
 
         Throws:
-            [object.Exception] if a success of failure function was to trigger
+            [object.Exception|Exception] if a success of failure function was to trigger
             in an impossible scenario, such as on WHOIS results on Twitch.
      +/
     void enqueueAndWHOIS(const string nickname,
@@ -305,7 +305,6 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         import kameloso.thread : CarryingFiber;
         import lu.string : contains, nom;
         import lu.traits : TakesParams;
-        import std.meta : AliasSeq;
         import std.traits : arity;
         import std.typecons : Flag, No, Yes;
         import core.thread : Fiber;
@@ -332,18 +331,18 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                 {
                     if (const user = nickname in context.state.users)
                     {
-                        static if (TakesParams!(onSuccess, AliasSeq!IRCEvent))
+                        static if (TakesParams!(onSuccess, IRCEvent))
                         {
                             // Can't WHOIS on Twitch
                             throw new Exception("Tried to enqueue a `" ~
                                 typeof(onSuccess).stringof ~ " onSuccess` function " ~
                                 "when on Twitch (can't WHOIS)");
                         }
-                        else static if (TakesParams!(onSuccess, AliasSeq!IRCUser))
+                        else static if (TakesParams!(onSuccess, IRCUser))
                         {
                             return onSuccess(*user);
                         }
-                        else static if (TakesParams!(onSuccess, AliasSeq!string))
+                        else static if (TakesParams!(onSuccess, string))
                         {
                             return onSuccess(user.account);
                         }
@@ -358,15 +357,15 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                     }
                 }
 
-                static if (TakesParams!(onSuccess, AliasSeq!IRCEvent) ||
-                    TakesParams!(onSuccess, AliasSeq!IRCUser))
+                static if (TakesParams!(onSuccess, IRCEvent) ||
+                    TakesParams!(onSuccess, IRCUser))
                 {
                     // Can't WHOIS on Twitch
                     throw new Exception("Tried to enqueue a `" ~
                         typeof(onSuccess).stringof ~ " onSuccess` function " ~
                         "when on Twitch without `UserAwareness` (can't WHOIS)");
                 }
-                else static if (TakesParams!(onSuccess, AliasSeq!string))
+                else static if (TakesParams!(onSuccess, string))
                 {
                     return onSuccess(nickname);
                 }
@@ -387,15 +386,15 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             {
                 if (user.account.length)
                 {
-                    static if (TakesParams!(onSuccess, AliasSeq!IRCEvent))
+                    static if (TakesParams!(onSuccess, IRCEvent))
                     {
                         // No can do, drop down and WHOIS
                     }
-                    else static if (TakesParams!(onSuccess, AliasSeq!IRCUser))
+                    else static if (TakesParams!(onSuccess, IRCUser))
                     {
                         return onSuccess(*user);
                     }
-                    else static if (TakesParams!(onSuccess, AliasSeq!string))
+                    else static if (TakesParams!(onSuccess, string))
                     {
                         return onSuccess(user.account);
                     }
@@ -417,15 +416,15 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
                         if ((Clock.currTime.toUnixTime - user.updated) <= Timeout.whoisRetry)
                         {
-                            static if (TakesParams!(onFailure, AliasSeq!IRCEvent))
+                            static if (TakesParams!(onFailure, IRCEvent))
                             {
                                 // No can do, drop down and WHOIS
                             }
-                            else static if (TakesParams!(onFailure, AliasSeq!IRCUser))
+                            else static if (TakesParams!(onFailure, IRCUser))
                             {
                                 return onFailure(*user);
                             }
-                            else static if (TakesParams!(onFailure, AliasSeq!string))
+                            else static if (TakesParams!(onFailure, string))
                             {
                                 return onFailure(user.account);
                             }
@@ -776,7 +775,8 @@ private:
             Generated `askToVerb` function. Asks the main thread to output text
             to the local terminal.
 
-            No need for any annotation; [kameloso.messaging.askToOutputImpl] is
+            No need for any annotation;
+            [kameloso.messaging.askToOutputImpl|askToOutputImpl] is
             `@system` and nothing else.
          +/
         mixin(q{

@@ -56,14 +56,14 @@ private:
 
 public:
     /++
-        The [kameloso.net.Connection] that houses and wraps the socket we use to connect
-        to, write to and read from the server.
+        The [kameloso.net.Connection|Connection] that houses and wraps the socket
+        we use to connect to, write to and read from the server.
      +/
     Connection conn;
 
     /++
         A runtime array of all plugins. We iterate these when we have finished
-        parsing an [dialect.defs.IRCEvent], and call the relevant event
+        parsing an [dialect.defs.IRCEvent|IRCEvent], and call the relevant event
         handlers of each.
      +/
     IRCPlugin[] plugins;
@@ -287,7 +287,8 @@ public:
                 of unexpected configuration entries that did not belong.
 
         Throws:
-            [kameloso.plugins.common.IRCPluginSettingsException] on failure to apply custom settings.
+            [kameloso.plugins.common.misc.IRCPluginSettingsException|IRCPluginSettingsException]
+            on failure to apply custom settings.
      +/
     void initPlugins(const string[] customSettings,
         out string[][string] missingEntries,
@@ -310,7 +311,7 @@ public:
         state.abort = abort;
 
         // Instantiate all plugin classes found when introspecting the modules
-        // listed in the [kameloso.plugins.PluginModules] AliasSeq.
+        // listed in the `kameloso.plugins.PluginModules` AliasSeq.
 
         plugins.reserve(PluginModules.length);
 
@@ -406,8 +407,9 @@ public:
     /++
         Initialises all plugins' resource files.
 
-        This merely calls [kameloso.plugins.common.core.IRCPlugin.initResources] on
-        each plugin.
+        This merely calls
+        [kameloso.plugins.common.core.IRCPlugin.initResources|IRCPlugin.initResources]
+        on each plugin.
      +/
     void initPluginResources() @system
     {
@@ -503,7 +505,8 @@ public:
         [parser], and to all plugins.
 
         Params:
-            plugin = The plugin whose [kameloso.plugin.common.core.IRCPluginState]s
+            plugin = The plugin whose
+                [kameloso.plugins.common.core.IRCPluginState|IRCPluginState]s
                 member structs to inspect for updates.
      +/
     void checkPluginForUpdates(IRCPlugin plugin)
@@ -533,9 +536,12 @@ public:
 
         if (plugin.state.updates & Update.settings)
         {
+            static import kameloso.common;
+
             // Something changed the settings; propagate
             plugin.state.updates ^= Update.settings;
             propagate(plugin.state.settings);
+            *kameloso.common.settings = plugin.state.settings;
         }
 
         assert((plugin.state.updates == Update.nothing),
@@ -546,7 +552,8 @@ public:
     // propagate
     /++
         Propgates an updated struct, to `this`, [parser], and to each plugins'
-        [kameloso.plugin.common.core.IRCPluginState]s, overwriting existing such.
+        [kameloso.plugins.common.core.IRCPluginState|IRCPluginState]s, overwriting
+        existing such.
 
         Params:
             thing = Struct object to propagate.
@@ -634,7 +641,10 @@ public:
 
     version(TwitchSupport)
     {
-        /// Set when an `IRCEvent.Type.RPL_WELCOME` event was encountered.
+        /++
+            Set when an [dialect.defs.IRCEvent.Type.RPL_WELCOME|RPL_WELCOME]
+            event was encountered.
+         +/
         bool sawWelcome;
     }
 }
@@ -697,14 +707,45 @@ public:
 
     @Unserialisable
     {
-        string configFile;  /// Main configuration file.
-        string resourceDirectory;  /// Path to resource directory.
-        string configDirectory;  /// Path to configuration directory.
-        bool force;  /// Whether or not to force connecting, skipping some sanity checks.
-        bool flush;  /// Whether or not to explicitly set stdout to flush after writing a linebreak to it.
-        bool trace;  /// Whether or not *all* outgoing messages should be echoed to the terminal.
-        bool numericAddresses;  /// Whether to print addresses as IPs or as hostnames (where applicable).
-        bool headless;  /// Whether or not to be "headless", disabling all terminal output.
+        /++
+            Main configuration file.
+         +/
+        string configFile;
+
+        /++
+            Path to resource directory.
+         +/
+        string resourceDirectory;
+
+        /++
+            Path to configuration directory.
+         +/
+        string configDirectory;
+
+        /++
+            Whether or not to force connecting, skipping some sanity checks.
+         +/
+        bool force;
+
+        /++
+            Whether or not to explicitly set stdout to flush after writing a linebreak to it.
+         +/
+        bool flush;
+
+        /++
+            Whether or not *all* outgoing messages should be echoed to the terminal.
+         +/
+        bool trace;
+
+        /++
+            Whether to print addresses as IPs or as hostnames (where applicable).
+         +/
+        bool numericAddresses;
+
+        /++
+            Whether or not to be "headless", disabling all terminal output.
+         +/
+        bool headless;
     }
 }
 

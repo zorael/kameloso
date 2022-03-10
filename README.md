@@ -1,20 +1,20 @@
-# kameloso [![Linux/macOS/Windows](https://img.shields.io/github/workflow/status/zorael/kameloso/D?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/actions?query=workflow%3AD) [![Linux](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?logo=circleci&style=flat&maxAge=3600)](https://circleci.com/gh/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?logo=appveyor&style=flat&maxAge=3600)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v3.0.0-beta.2.svg?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/compare/v3.0.0-beta.2...master)
+# kameloso [![Linux/macOS/Windows](https://img.shields.io/github/workflow/status/zorael/kameloso/D?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/actions?query=workflow%3AD) [![Linux](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?logo=circleci&style=flat&maxAge=3600)](https://circleci.com/gh/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?logo=appveyor&style=flat&maxAge=3600)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v3.0.0-rc.1.svg?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/compare/v3.0.0-rc.1...master)
 
-**kameloso** idles in your channels and listens to commands and events, like bots generally do.
+**kameloso** is an IRC bot.
 
 ## Current functionality includes:
 
-* chat monitoring in bedazzling colours like it's the 90s
+* chat monitoring in bedazzling colours (or mesmerising monochrome)
 * automatic mode sets (e.g. auto `+o` on join)
 * logs
-* reporting titles of pasted URLs
+* reporting titles of pasted URLs, YouTube video information fetch
 * **sed**-replacement of messages (`s/this/that/` substitution)
 * saving notes to offline users that get played back when they come online
-* channel polls
+* channel polls, `!seen`, counters, stopwatches
 * works on **Twitch** with some common Twitch bot features
 * [more random stuff and gimmicks](https://github.com/zorael/kameloso/wiki/Current-plugins)
 
-All of the above are plugins and can be runtime-disabled or compiled out. It is modular and easily extensible. A skeletal Hello World plugin is [25 lines of code](source/kameloso/plugins/hello.d).
+All of the above are plugins and can be disabled at runtime or omitted from compilation entirely. It is modular and easy to extend. A skeletal Hello World plugin is [25 lines of code](source/kameloso/plugins/hello.d).
 
 Testing is primarily done on [**Libera.Chat**](https://libera.chat) and on [**Twitch**](https://dev.twitch.tv/docs/irc/guide) servers, so support and coverage is best there.
 
@@ -68,7 +68,6 @@ If there's anyone talking it should show up on your screen.
     * [**Except nothing happens**](#except-nothing-happens)
   * [Twitch](#twitch)
     * [Caveats](#caveats)
-    * [Fails to authenticate: *Improperly formatted auth*](#fails-to-authenticate-improperly-formatted-auth)
     * [Example configuration](#example-configuration)
     * [Streamer assistant bot](#streamer-assistant-bot)
   * [Further help](#further-help)
@@ -91,14 +90,6 @@ Grab a pre-compiled binary from under [Releases](https://github.com/zorael/kamel
 
 You need one based on D version **2.084** or later (January 2019). For **ldc** this is version **1.14**. Sadly, the stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently based on version **2.076** and is thus too old to be used.
 
-> [**Compiling with ldc on Windows is currently broken**](https://github.com/ldc-developers/ldc/issues/3913) and requires a modified compiler with a larger stack to build. This should hopefully be resolved in **ldc 1.29**. Until such time please use **dmd** or download a pre-compiled binary.
->
-> Likewise, if **ldc** won't compile on Linux or MacOS, ensure that the stack size is set high enough with `ulimit -s`.
-> ```sh
-> $ ulimit -s 16384
-> $ dub build --compiler=ldc2
-> ```
-
 If your repositories (or other software sources) don't have compilers new enough, you can use the official [`install.sh`](https://dlang.org/install.html) installation script to download current ones, or any version of choice.
 
 The package manager [**dub**](https://code.dlang.org) is used to facilitate compilation and dependency management. On Windows it comes bundled in the compiler archive, while on Linux it may need to be installed separately. Refer to your repositories.
@@ -109,7 +100,7 @@ The package manager [**dub**](https://code.dlang.org) is used to facilitate comp
 $ git clone https://github.com/zorael/kameloso.git
 ```
 
-It can also be downloaded [as a `.zip` archive](https://github.com/zorael/kameloso/archive/master.zip).
+It can also be downloaded as a [`.zip` archive](https://github.com/zorael/kameloso/archive/master.zip).
 
 ## Compiling
 
@@ -141,7 +132,7 @@ $ dub build -c twitch
 
 ## Configuration
 
-The bot ideally wants the account name of one or more administrators of the bot, and/or one or more home channels to operate in. Without either it's just a read-only log bot, which is also fine. To define these you can either specify them on the command line, with flags listed by calling the program with `--help`, or generate a configuration file and input them there.
+The bot ideally wants the account name of one or more administrators of the bot, and/or one or more home channels to operate in. Without either it's just a read-only log bot, which is incidentally also fine. To define these you can either specify them on the command line, with flags listed by calling the program with `--help`, or generate a configuration file and input them there.
 
 ```sh
 $ ./kameloso --save
@@ -171,7 +162,7 @@ $ ./kameloso \
 [12:34:56] Configuration written to /home/user/.config/kameloso/kameloso.conf
 ```
 
-Settings not specified at invocations of `--save` keep their values. Mind however that the file is parsed and *rewritten*, so any comments and/or invalid entries in it will be silently removed.
+Other settings not specified at invocations of `--save` keep their values. Mind however that the configuration file is parsed and *rewritten*, so any comments or invalid entries in it will be silently removed.
 
 ### Display settings
 
@@ -227,7 +218,7 @@ MrOffline joined #channel
       you | !info
  kameloso | @you: for more information just use Google
       you | !vods
- kameloso | See See https://twitch.tv/zorael/videos for Channel's on-demand videos (stored temporarily)
+ kameloso | See https://twitch.tv/zorael/videos for Channel's on-demand videos (stored temporarily)
       you | !commands
  kameloso | Available commands: !info, !vods, !source
       you | !oneliner del vods
@@ -262,9 +253,9 @@ MrOffline joined #channel
       you | !stopwatch start
  kameloso | Stopwatch started!
       you | !stopwatch
- kameloso | Elapsed time: 18 mins 42 secs
+ kameloso | Elapsed time: 18 minutes and 42 seconds
       you | !stopwatch stop
- kameloso | Stopwatch stopped after 48 minutes 10 secs.
+ kameloso | Stopwatch stopped after 1 hour, 48 minutes and 10 seconds.
 ```
 
 ### Online help and commands
@@ -278,13 +269,13 @@ The command **prefix** (here `!`) is configurable; refer to your generated confi
 prefix                  "!"
 ```
 
-It can technically be any string and not just one character. It may include spaces if enclosed within quotes, like `"please "` (making it `please note`, `please quote`, ...). Additionally, prefixing commands with the bot's nickname also works, as in `kameloso: seen MrOffline`. This is to be able to disambiguate between several bots in the same channel. Additionally, some administrative commands only work when called this way.
+It can technically be any string and not just one character. It may include spaces if enclosed within quotes, like `"please "` (making it `please note`, `please quote`, ...). Additionally, prefixing commands with the bot's nickname also works, as in `kameloso: seen MrOffline`. This is to be able to disambiguate between several bots in the same channel. Moreover, some administrative commands only work when called this way.
 
 ### **Except nothing happens**
 
 Before allowing *anyone* to trigger any restricted functionality, the bot will query the server for what services account the accessing user is logged onto. For full administrative privileges you will need to be logged in with an account listed in the `admins` field in the configuration file, while other users may be defined in your `users.json` file. If a user is not logged onto services it is considered as not being uniquely identifiable.
 
-> In the case of hostmasks mode, the above still applies but "accounts" are inferred from hostmasks. See the **Admin** plugin `!hostmask` command (and the `hostmasks.json` file) for how to map hostmasks to would-be accounts. Hostmasks are a weaker solution to user identification but not all servers may offer services. See [the wiki entry on hostmasks](https://github.com/zorael/kameloso/wiki/On-servers-without-services-(e.g.-no-NickServ)) for more information.
+> In the case of *hostmasks mode*, the above still applies but "accounts" are inferred from hostmasks. See the **Admin** plugin `!hostmask` command (and the `hostmasks.json` file) for how to map hostmasks to would-be accounts. Hostmasks are a weaker solution to user identification but not all servers may offer services. See [the wiki entry on hostmasks](https://github.com/zorael/kameloso/wiki/On-servers-without-services-(e.g.-no-NickServ)) for more information.
 
 ## Twitch
 
@@ -296,25 +287,19 @@ Run the bot with `--set twitchbot.keygen` to start the captive process of genera
 
 > Note: At no point is the bot privy to your login credentials! The logging-in is wholly done on Twitch's own servers, and no information is sent to any third parties. The code that deals with this is open for audit; [`generateKey` in `twitchbot/keygen.d`](source/kameloso/plugins/twitchbot/keygen.d).
 
-After entering your login and password and clicking **Authorize**, you will be redirected to an empty "this site can't be reached" page. Copy the URL address of it and paste it into the terminal, when asked. It will parse the address, extract your authorisation token, and offer to save it to your configuration file.
-
-> If you are already logged in on Twitch, it will likely immediately lead you to the empty page you should copy the URL of.
+After entering your login and password and clicking **Authorize**, you will be redirected to an empty "`this site can't be reached`" or "`unable to connect`" page. Copy the URL address of it and paste it into the terminal, when asked. It will parse the address, extract your authorisation token, and offer to save it to your configuration file.
 
 If you prefer to generate the token manually, here is the URL you need to follow. The only thing the generation process does is open it for you, and help with saving the end key to disk.
 
 ```
-https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=bits:read+channel:edit:commercial+channel:read:subscriptions+user:edit+user:edit:broadcast+channel_editor+user_blocks_edit+user_blocks_read+user_follows_edit+channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read
+https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true
 ```
 
 ### Caveats
 
-Most of the bot's features will work on Twitch. The **Automode** plugin is an exception (as modes are not really applicable on Twitch), and it will auto-disable itself appropriately.
+Most of the bot's features will work on Twitch. The **Automode** plugin is an exception (as Twitch uses badges instead of modes), and it will auto-disable itself appropriately.
 
 That said, in many ways Twitch chat does not behave as a full IRC server. Most common IRC commands go unrecognised. Joins and parts are not always advertised, and when they are they come in delayed batches and cannot be relied upon. You can also only join channels for which a corresponding Twitch user account exists.
-
-### Fails to authenticate: *Improperly formatted auth*
-
-Provided no other message was output about the pass being missing or malformed, the bot was likely not compiled with Twitch support enabled. Build the `twitch` configuration with with the `-c twitch` flag.
 
 ### Example configuration
 
@@ -354,6 +339,7 @@ Properly enabled and assuming a prefix of `!`, commands to test are:
 * `!start`, `!uptime`, `!stop`
 * `!timer`
 * `!followage`
+* `!shoutout`
 
 ...alongside `!operator`, `!whitelist`, `!blacklist`, `!oneliner`, `!poll`, `!counter`, `!stopwatch`, and other non-Twitch-specific commands.
 
@@ -372,8 +358,6 @@ If you still can't find what you're looking for, or if you have suggestions on h
 
 # Known issues
 
-Compiling in a non-`debug` build mode *may* fail (bug [#18026](https://issues.dlang.org/show_bug.cgi?id=18026)). Try `--build-mode=singleFile`, which compiles one file at a time and as such lowers memory requirements, but drastically increases build times.
-
 ## Windows
 
 If SSL doesn't work at all, you may simply be missing the required libraries. Download and install **OpenSSL** "Light" from [here](https://slproweb.com/products/Win32OpenSSL.html), and opt to install to system directories when asked.
@@ -385,7 +369,6 @@ Even with SSL seemingly properly set up you may see errors of *"Peer certificate
 * pipedream zero: **no compiler segfaults** ([#18026](https://issues.dlang.org/show_bug.cgi?id=18026), [#20562](https://issues.dlang.org/show_bug.cgi?id=20562))
 * pipedream: DCC
 * non-blocking FIFO
-* make plugins enabled/disabled on per-channel basis
 * more pairs of eyes
 
 # Built with

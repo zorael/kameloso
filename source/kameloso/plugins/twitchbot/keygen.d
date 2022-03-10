@@ -2,14 +2,13 @@
     Functions for generating a Twitch API key.
 
     See_Also:
-        [kameloso.plugins.twitchbot.base]
-        [kameloso.plugins.twitchbot.api]
+        [kameloso.plugins.twitchbot.base|twitchbot.base]
+        [kameloso.plugins.twitchbot.api|twitchbot.api]
  +/
 module kameloso.plugins.twitchbot.keygen;
 
 version(TwitchSupport):
 version(WithTwitchBotPlugin):
-version(TwitchAPIFeatures):
 
 private:
 
@@ -21,18 +20,18 @@ package:
 // generateKey
 /++
     Start the captive key generation routine at the earliest possible moment,
-    which are the CAP events.
+    which are the [dialect.defs.IRCEvent.Type.CAP|CAP] events.
 
-    Invoked by [kameloso.plugins.twitchbot.base.onCAP] during capability negotiation.
+    Invoked by [kameloso.plugins.twitchbot.base.onCAP|onCAP] during capability negotiation.
 
-    We can't do it in [kameloso.plugins.twitchbot.base.start] since the calls to
+    We can't do it in [kameloso.plugins.twitchbot.base.start|start] since the calls to
     save and exit would go unheard, as `start` happens before the main loop starts.
     It would then immediately fail to read if too much time has passed,
     and nothing would be saved.
  +/
 void generateKey(TwitchBotPlugin plugin)
 {
-    import kameloso.common : Tint, logger;
+    import kameloso.common : expandTags, logger;
     import kameloso.thread : ThreadMessage;
     import lu.string : contains, nom, stripped;
     import std.process : Pid, ProcessException, wait;
@@ -52,57 +51,84 @@ void generateKey(TwitchBotPlugin plugin)
 Attempting to open a Twitch login page in your default web browser. Follow the
 instructions and log in to authorise the use of this program with your account.
 
-%1$sThen paste the address of the page you are redirected to afterwards here.%2$s
+<l>Then paste the address of the page you are redirected to afterwards here.</>
 
-* The redirected address should start with %3$shttp://localhost%2$s.
-* It will probably say "%1$sthis site can't be reached%2$s".
-* If your browser is already logged in on Twitch, it will likely immediately
-  lead you to this page without asking for login credentials. If you want to
-  generate a key for a different account, first log out and retry.
-* If you are running local web server on port %3$s80%2$s, you may have to
-  temporarily disable it for this to work.
+* The redirected address should start with <i>http://localhost</>.
+* It will probably say "<l>this site can't be reached</>" or "<l>unable to connect</>".
+* If you are logged into your main Twitch account and you want the bot to use a
+  separate account, you will have to log out and log in as that first, before
+  attempting this. <l>The key generated is one for the account currently logged in.</>
+* If you are running local web server on port <i>80</>, you may have to temporarily
+  disable it for this to work.
 `;
-    writefln(attemptToOpenPattern, Tint.log, Tint.off, Tint.info);
+    writeln(attemptToOpenPattern.expandTags);
 
     static immutable scopes =
     [
         // New Twitch API
-
+        // --------------------------
         //"analytics:read:extension",
         //"analytics:read:games",
-        "bits:read",
-        "channel:edit:commercial",
-        "channel:read:subscriptions",
+        //"bits:read",
+        //"channel:edit:commercial",
+        //"channel:manage:broadcast",
+        //"channel:manage:extensions"
+        //"channel:manage:polls",
+        //"channel:manage:predictions",
+        //"channel:manage:redemptions",
+        //"channel:manage:schedule",
+        //"channel:manage:videos",
+        //"channel:read:editors",
+        //"channel:read:goals",
+        //"channel:read:hype_train",
+        //"channel:read:polls",
+        //"channel:read:predictions",
+        //"channel:read:redemptions",
+        //"channel:read:stream_key",
+        //"channel:read:subscriptions",
         //"clips:edit",
-        "user:edit",
-        "user:edit:broadcast",  // implies user:read:broadcast
+        //"moderation:read",
+        //"moderator:manage:banned_users",
+        //"moderator:read:blocked_terms",
+        //"moderator:manage:blocked_terms",
+        //"moderator:manage:automod",
+        //"moderator:read:automod_settings",
+        //"moderator:manage:automod_settings",
+        //"moderator:read:chat_settings",
+        //"moderator:manage:chat_settings",
+        //"user:edit",
         //"user:edit:follows",
+        //"user:manage:blocked_users",
+        //"user:read:blocked_users",
         //"user:read:broadcast",
         //"user:read:email",
+        //"user:read:follows",
+        //"user:read:subscriptions"
+        //"user:edit:broadcast",    // removed/undocumented? implied user:read:broadcast
 
         // Twitch APIv5
-
-        //"channel_check_subscription",
-        //"channel_commercial",
-        "channel_editor",
-        //"channel_feed_edit",
-        //"channel_feed_read",
-        //"channel_read",
-        //"channel_stream",
+        // --------------------------
+        //"channel_check_subscription",  // removed/undocumented?
         //"channel_subscriptions",
-        //"collections_edit",
-        //"communities_edit",
-        //"communities_moderate",
-        //"openid",
-        "user_blocks_edit",
-        "user_blocks_read",
-        "user_follows_edit",
+        //"channel_commercial",
+        //"channel_editor",
+        //"channel_feed_edit",      // removed/undocumented?
+        //"channel_feed_read",      // removed/undocumented?
+        //"user_follows_edit",
+        //"channel_read",
+        //"channel_stream",         // removed/undocumented?
+        //"collections_edit",       // removed/undocumented?
+        //"communities_edit",       // removed/undocumented?
+        //"communities_moderate",   // removed/undocumented?
+        //"openid",                 // removed/undocumented?
         //"user_read",
-        //"user_subscriptions",
-        //"viewing_activity_read",
+        //"user_blocks_read",
+        //"user_blocks_edit",
+        //"user_subscriptions",     // removed/undocumented?
+        //"viewing_activity_read",  // removed/undocumented?
 
         // Chat and PubSub
-
+        // --------------------------
         "channel:moderate",
         "chat:edit",
         "chat:read",
@@ -112,7 +138,8 @@ instructions and log in to authorise the use of this program with your account.
 
     import std.array : join;
 
-    enum ctBaseURL = "https://id.twitch.tv/oauth2/authorize?response_type=token" ~
+    enum authNode = "https://id.twitch.tv/oauth2/authorize?response_type=token";
+    enum ctBaseURL = authNode ~
         "&client_id=" ~ TwitchBotPlugin.clientID ~
         "&redirect_uri=http://localhost" ~
         "&scope=" ~ scopes.join('+') ~
@@ -126,17 +153,16 @@ instructions and log in to authorise the use of this program with your account.
 
     void printManualURL()
     {
-        enum scissors = "8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<";
         enum copyPastePattern = `
-%1$sCopy and paste this link manually into your browser, and log in as asked:%2$s
+<l>Copy and paste this link manually into your browser, and log in as asked:
 
-%3$s%4$s%2$s
+<i>8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<</>
 
-%5$s
+%s
 
-%3$s%4$s%2$s
+<i>8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<</>
 `;
-        writefln(copyPastePattern, Tint.log, Tint.off, Tint.info, scissors, url);
+        writefln(copyPastePattern.expandTags, url);
     }
 
     if (plugin.state.settings.force)
@@ -189,11 +215,10 @@ instructions and log in to authorise the use of this program with your account.
                     .format(plugin.state.client.nickname);
                 immutable urlFileName = buildPath(tempDir, urlBasename);
 
-                auto urlFile = File(urlFileName, "w");
-
-                urlFile.writeln("[InternetShortcut]");
-                urlFile.writeln("URL=", url);
-                urlFile.flush();
+                {
+                    auto urlFile = File(urlFileName, "w");
+                    urlFile.writeln("[InternetShortcut]\nURL=", url);
+                }
 
                 immutable string[2] browserCommand = [ "explorer", urlFileName ];
                 auto nulFile = File("NUL", "r+");
@@ -219,10 +244,10 @@ instructions and log in to authorise the use of this program with your account.
     {
         import std.stdio : writef;
 
-        enum pattern = "%1$sPaste the addresss of the page you were redirected to here (empty line exits):%2$s
+        enum pattern = "<l>Paste the address of the page you were redirected to here (empty line exits):</>
 
 > ";
-        writef(pattern, Tint.log, Tint.off);
+        write(pattern.expandTags);
         stdout.flush();
 
         stdin.flush();
@@ -238,8 +263,19 @@ instructions and log in to authorise the use of this program with your account.
 
         if (!readURL.contains("access_token="))
         {
+            import lu.string : beginsWith;
+
             writeln();
-            logger.error("Could not make sense of URL. Try again or file a bug.");
+
+            if (readURL.beginsWith(authNode))
+            {
+                logger.error("Not that page; the one you're lead to after clicking <l>Authorize<e>.".expandTags);
+            }
+            else
+            {
+                logger.error("Could not make sense of URL. Try again or file a bug.");
+            }
+
             writeln();
             continue;
         }
@@ -261,10 +297,10 @@ instructions and log in to authorise the use of this program with your account.
     plugin.state.updates |= typeof(plugin.state.updates).bot;
 
     enum keyPattern = "
-%1$sYour private authorisation key is: %2$s%3$s%4$s
-It should be entered as %2$spass%4$s under %2$s[IRCBot]%4$s.
+<l>Your private authorisation key is: <i>%s</>
+It should be entered as <i>pass</> under <i>[IRCBot]</>.
 ";
-    writefln(keyPattern, Tint.log, Tint.info, key, Tint.off);
+    writefln(keyPattern.expandTags, key);
 
     if (!plugin.state.settings.saveOnExit)
     {
@@ -282,20 +318,20 @@ It should be entered as %2$spass%4$s under %2$s[IRCBot]%4$s.
         }
         else
         {
-            enum keyAddPattern = "\n* Make sure to add it to %s%s%s, then.";
-            writefln(keyAddPattern, Tint.info, plugin.state.settings.configFile, Tint.off);
+            enum keyAddPattern = "\n* Make sure to add it to <i>%s</>, then.";
+            writefln(keyAddPattern.expandTags, plugin.state.settings.configFile);
         }
     }
 
     enum issuePattern = "
 --------------------------------------------------------------------------------
 
-All done! Restart the program (without %1$s--set twitchbot.keygen%2$s) and it should
+All done! Restart the program (without <i>--set twitchbot.keygen</>) and it should
 just work. If it doesn't, please file an issue at:
 
-    %1$shttps://github.com/zorael/kameloso/issues/new%2$s
+    <i>https://github.com/zorael/kameloso/issues/new</>
 
-%3$sNote: keys are valid for 60 days, after which this process needs to be repeated.%2$s
+<l>Note: keys are valid for 60 days, after which this process needs to be repeated.</>
 ";
-    writefln(issuePattern, Tint.info, Tint.off, Tint.log);
+    writeln(issuePattern.expandTags);
 }

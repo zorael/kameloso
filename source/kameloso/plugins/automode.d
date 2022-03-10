@@ -5,8 +5,8 @@
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#automode
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.automode;
 
@@ -16,8 +16,7 @@ private:
 
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
-import kameloso.common : Tint, logger;
-import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
+import kameloso.common : expandTags, logger;
 import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
@@ -92,7 +91,7 @@ void initResources(AutomodePlugin plugin)
     Potentially applies an automode, depending on the definitions and the user
     triggering the function.
 
-    Different [dialect.defs.IRCEvent.Type]s have to be handled differently,
+    Different [dialect.defs.IRCEvent.Type|IRCEvent.Type]s have to be handled differently,
     as the triggering user may be either the sender or the target.
 
     Additionally none of these events carry a channel, so we'll have to make
@@ -231,9 +230,9 @@ in (account.length, "Tried to apply automodes to an empty account")
 
     if (!channel.ops.canFind(plugin.state.client.nickname))
     {
-        enum pattern = "Could not apply %s+%s%s %1$s%4$s%3$s in %1$s%5$s%3$s " ~
+        enum pattern = "Could not apply <i>+%s<l> <i>%s<l> in <i>%s<l> " ~
             "because we are not an operator in the channel.";
-        logger.logf(pattern, Tint.info, missingModes, Tint.log, nickname, channelName);
+        logger.logf(pattern.expandTags, missingModes, nickname, channelName);
         return;
     }
 
@@ -334,12 +333,8 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 
         plugin.modifyAutomode(Yes.add, nickname, event.channel, mode);
 
-        enum pattern = "Automode modified! %s on %s: +%s";
-
-        immutable message = plugin.state.settings.colouredOutgoing ?
-            pattern.format(nickname.ircColourByHash.ircBold,
-                event.channel.ircBold, mode.ircBold) :
-            pattern.format(nickname, event.channel, mode);
+        enum pattern = "Automode modified! <h>%s<h> on <b>%s<b>: +<b>%s<b>";
+        immutable message = pattern.format(nickname, event.channel, mode);
 
         chan(plugin.state, event.channel, message);
         break;
@@ -359,12 +354,8 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 
         plugin.modifyAutomode(No.add, nickname, event.channel);
 
-        enum pattern = "Automode for %s cleared.";
-
-        immutable message = plugin.state.settings.colouredOutgoing ?
-            pattern.format(nickname.ircColourByHash.ircBold) :
-            pattern.format(nickname);
-
+        enum pattern = "Automode for <h>%s<h> cleared.";
+        immutable message = pattern.format(nickname);
         chan(plugin.state, event.channel, message);
         break;
 
@@ -373,19 +364,21 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 
         if (channelmodes)
         {
-            import std.conv : to;
-            chan(plugin.state, event.channel, "Current automodes: " ~ (*channelmodes).to!string);
+            import std.conv : text;
+            chan(plugin.state, event.channel, text("Current automodes: ", *channelmodes));
         }
         else
         {
-            chan(plugin.state, event.channel, "No automodes defined for channel %s."
-                .format(event.channel));
+            enum pattern = "No automodes defined for channel <b>%s<b>.";
+            immutable message = pattern.format(event.channel);
+            chan(plugin.state, event.channel, message);
         }
         break;
 
     default:
-        chan(plugin.state, event.channel, "Usage: %s%s [add|clear|list] [nickname/account] [mode]"
-            .format(plugin.state.settings.prefix, event.aux));
+        enum pattern = "Usage: <b>%s%s<b> [add|clear|list] [nickname/account] [mode]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
         break;
     }
 }
@@ -591,9 +584,10 @@ private:
 
     // isEnabled
     /++
-        Override [kameloso.plugins.common.core.IRCPluginImpl.isEnabled] and inject
-        a server check, so this plugin does nothing on Twitch servers, in addition
-        to doing nothing when [AutomodeSettings.enabled] is false.
+        Override
+        [kameloso.plugins.common.core.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled]
+        and inject a server check, so this plugin does nothing on Twitch servers,
+        in addition to doing nothing when [AutomodeSettings.enabled] is false.
 
         Returns:
             `true` if this plugin should react to events; `false` if not.
