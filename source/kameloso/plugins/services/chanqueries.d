@@ -113,6 +113,7 @@ void startChannelQueries(ChanQueriesService service)
 
         static immutable secondsBetween = service.secondsBetween.seconds;
 
+        chanloop:
         foreach (immutable i, immutable channelName; querylist)
         {
             if (channelName !in service.channelStates) continue;
@@ -159,8 +160,11 @@ void startChannelQueries(ChanQueriesService service)
             ];
 
             queryAwaitAndUnlist("TOPIC", topicTypes);
+            if (channelName !in service.channelStates) continue chanloop;
             queryAwaitAndUnlist("WHO", IRCEvent.Type.RPL_ENDOFWHO);
+            if (channelName !in service.channelStates) continue chanloop;
             queryAwaitAndUnlist("MODE", IRCEvent.Type.RPL_CHANNELMODEIS);
+            if (channelName !in service.channelStates) continue chanloop;
 
             // MODE generic
 
@@ -172,6 +176,7 @@ void startChannelQueries(ChanQueriesService service)
                 {
                     // Cannot await by event type; there are too many types.
                     delay(service, secondsBetween, Yes.yield);
+                    if (channelName !in service.channelStates) continue chanloop;
                 }
 
                 version(WithPrinterPlugin)
@@ -189,7 +194,7 @@ void startChannelQueries(ChanQueriesService service)
                     string.init, Yes.quiet, Yes.background);
             }
 
-            if (channelName !in service.channelStates) continue;
+            if (channelName !in service.channelStates) continue chanloop;
 
             // Overwrite state with [ChannelState.queried];
             // [ChannelState.topicKnown] etc are no longer relevant.
@@ -441,6 +446,21 @@ void onMyInfo(ChanQueriesService service)
     }
 
     delay(service, &dg, service.timeBeforeInitialQueries);
+}
+
+
+// onNoSuchChannel
+/++
+    If we get an error that a channel doesn't exist, remove it from
+    [ChanQueriesService.channelStates|channelStates]. This stops it from being
+    queried in [startChannelQueries].
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.ERR_NOSUCHCHANNEL)
+)
+void onNoSuchChannel(ChanQueriesService service, const ref IRCEvent event)
+{
+    service.channelStates.remove(event.channel);
 }
 
 
