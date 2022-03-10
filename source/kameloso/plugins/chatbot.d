@@ -253,7 +253,7 @@ void worker(shared IRCPluginState sState,
 
         if (!numBlock.length)
         {
-            enum message = "No such bash.org quote found.";
+            enum message = "No such <b>bash.org<b> quote found.";
             privmsg(state, event.channel, event.sender.nickname, message);
             return;
         }

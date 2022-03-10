@@ -109,7 +109,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
     void sendUsage(const string verb = "[add|del|list]",
         const Flag!"includeText" includeText = Yes.includeText)
     {
-        chan(plugin.state, event.channel, "Usage: %s%s %s [trigger]%s"
+        chan(plugin.state, event.channel, "Usage: <b>%s%s<b> %s [trigger]%s"
             .format(plugin.state.settings.prefix, event.aux, verb,
                 includeText ? " [text]" : string.init));
     }
@@ -149,7 +149,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 
                     if (word == trigger)
                     {
-                        enum pattern = `Oneliner word "%s" conflicts with a command of the %s plugin.`;
+                        enum pattern = `Oneliner word "<b>%s<b>" conflicts with a command of the <b>%s<b> plugin.`;
                         chan(plugin.state, event.channel,
                             pattern.format(trigger, pluginName));
                         return true;
@@ -172,7 +172,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
             immutable wasMadeLowerCase = !plugin.onelinersSettings.caseSensitiveTriggers &&
                 !trigger.equal(trigger.asLowerCase);
 
-            chan(plugin.state, event.channel, "Oneliner %s%s added%s."
+            chan(plugin.state, event.channel, "Oneliner <b>%s%s<b> added%s."
                 .format(plugin.state.settings.prefix, trigger,
                     wasMadeLowerCase ? " (made lowercase)" : string.init));
         }
@@ -203,7 +203,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
         plugin.onelinersByChannel[event.channel].remove(trigger);
         saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
 
-        chan(plugin.state, event.channel, "Oneliner %s%s removed."
+        chan(plugin.state, event.channel, "Oneliner <b>%s%s<b> removed."
             .format(plugin.state.settings.prefix, trigger));
         break;
 
@@ -255,7 +255,7 @@ void listCommands(OnelinersPlugin plugin, const string channelName)
 
     if (channelOneliners && channelOneliners.length)
     {
-        immutable rtPattern = "Available commands: %-(" ~ plugin.state.settings.prefix ~ "%s, %)";
+        immutable rtPattern = "Available commands: %-(<b>" ~ plugin.state.settings.prefix ~ "%s<b>, %)";
         chan(plugin.state, channelName, format(rtPattern, channelOneliners.byKey));
     }
     else

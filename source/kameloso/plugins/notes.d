@@ -281,9 +281,9 @@ void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
 
     if ((results != SplitResults.overrun) || !target.length)
     {
-        privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Usage: %s%s [nickname] [note text]"
-                .format(plugin.state.settings.prefix, event.aux));
+        enum pattern = "Usage: <b>%s%s<b> [nickname] [note text]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
         return;
     }
 

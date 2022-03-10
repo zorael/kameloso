@@ -214,8 +214,10 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
                 privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, message);
             }
 
-            enum message = "Use <b>help<b> [<b>plugin<b>] [<b>command<b>] " ~
+            enum pattern = "Use <b>%s%s<b> [<b>plugin<b>] [<b>command<b>] " ~
                 "for information about a command.";
+            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+
             privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, message);
         }
     }

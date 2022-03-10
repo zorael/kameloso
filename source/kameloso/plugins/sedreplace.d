@@ -445,7 +445,10 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
                     import kameloso.messaging : chan;
                     import std.format : format;
 
-                    chan(plugin.state, event.channel, "%s | %s".format(event.sender.nickname, result));
+                    enum pattern = "<h>%s<h> | %s";
+                    immutable message = pattern.format(event.sender.nickname, result);
+                    chan(plugin.state, event.channel, message);
+
                     // Record as last even if there are more lines
                     return recordLineAsLast(plugin, event.sender.nickname, result, event.time);
                 }

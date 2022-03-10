@@ -264,7 +264,7 @@ void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
     void sendUsage()
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Usage: %s%s [add|del|list] [channel]"
+            "Usage: <b>%s%s<b> [add|del|list] [channel]"
                 .format(plugin.state.settings.prefix, event.aux));
     }
 
@@ -286,7 +286,7 @@ void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
 
     case "list":
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Current home channels: %-(%s, %)"
+            "Current home channels: %-(<b>%s<b>, %)"
                 .format(plugin.state.bot.homeChannels));
         return;
 
@@ -614,7 +614,7 @@ void onCommandReload(AdminPlugin plugin, const ref IRCEvent event)
     import std.conv : text;
 
     immutable message = event.content.length ?
-        text("Reloading plugin \"", event.content, "\".") :
+        text("Reloading plugin \"<b>", event.content, "<b>\".") :
         "Reloading plugins.";
 
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
@@ -919,8 +919,12 @@ void onCommandCycle(AdminPlugin plugin, const ref IRCEvent event)
     }
     catch (ConvException e)
     {
-        privmsg(plugin.state, event.channel, event.sender.nickname,
-            text(`"`, slice, `" is not a valid number for seconds to delay.`));
+        import std.format : format;
+
+        enum pattern = `"<b>%s<b>" is not a valid number for seconds to delay.`;
+        immutable message = pattern.format(slice);
+
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
         return;
     }
 }
@@ -1025,7 +1029,7 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
     void sendUsage()
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Usage: %s%s [add|del|list] [args...]"
+            "Usage: <b>%s%s<b> [add|del|list] [args...]"
                 .format(plugin.state.settings.prefix, event.aux));
     }
 
@@ -1043,7 +1047,7 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
         if (results != SplitResults.match)
         {
             privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: %s%s add [account] [hostmask]"
+                "Usage: <b>%s%s<b> add [account] [hostmask]"
                     .format(plugin.state.settings.prefix, event.aux));
             return;
         }
@@ -1055,7 +1059,7 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
         if (!slice.length || slice.contains(' '))
         {
             privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: %s%s del [hostmask]"
+                "Usage: <b>%s%s<b> del [hostmask]"
                     .format(plugin.state.settings.prefix, event.aux));
             return;
         }

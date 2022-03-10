@@ -49,7 +49,7 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
     {
         import std.format : format;
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Usage: %s%s [add|del|list]".format(plugin.state.settings.prefix, list));
+            "Usage: <b>%s%s<b> [add|del|list]".format(plugin.state.settings.prefix, list));
     }
 
     if (!event.content.length)
@@ -119,14 +119,16 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
         auto userlist = json[list][channel].array
             .map!(jsonEntry => jsonEntry.str);
 
-        privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Current %s in %s: %-(%s, %)"
-                .format(asWhat, channel, userlist));
+        enum pattern = "Current %s in <b>%s<b>: %-(<h>%s<h>, %)";
+        immutable message = pattern.format(asWhat, channel, userlist);
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+
+
     }
     else
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "There are no %s in %s.".format(asWhat, channel));
+            "There are no %s in <b>%s<b>.".format(asWhat, channel));
     }
 }
 

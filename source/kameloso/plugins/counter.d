@@ -77,7 +77,7 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
         {
             chan(plugin.state, event.channel,
                 "Counter words must be unique and may not contain any of " ~
-                "the following characters: [+-=?]");
+                "the following characters: [<b>+-=?<b>]");
             return;
         }
 
@@ -173,7 +173,7 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
         break;
 
     default:
-        chan(plugin.state, event.channel, "Usage: %s%s [add|del|list] [counter word]"
+        chan(plugin.state, event.channel, "Usage: <b>%s%s<b> [add|del|list] [counter word]"
             .format(plugin.state.settings.prefix, event.aux));
         break;
     }

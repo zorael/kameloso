@@ -819,8 +819,8 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
     {
         if (!requestedUser.length)
         {
-            immutable message = "Usage: " ~ plugin.state.settings.prefix ~
-                event.aux ~ " [nickname]";
+            immutable message = "Usage: <b>" ~ plugin.state.settings.prefix ~
+                event.aux ~ "<b> [nickname]";
             privmsg(event.channel, event.sender.nickname, message);
             return;
         }

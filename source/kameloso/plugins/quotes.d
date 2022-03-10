@@ -285,9 +285,8 @@ void modQuoteAndReport(QuotesPlugin plugin,
 
         if (index >= len)
         {
-            enum pattern = "Index <b>%d<b> is out of range. (%d >= %d)";
-            immutable message = pattern.format(index);
-
+            enum pattern = "Index <b>%1$d<b> is out of range. (%1$d >= %2$d)";
+            immutable message = pattern.format(index, len);
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
             return;
         }
@@ -543,15 +542,15 @@ void manageQuoteImpl(QuotesPlugin plugin,
         final switch (action)
         {
         case addOrReplay:
-            pattern = "Usage: %s%s [nickname] [text to add a new quote]";
+            pattern = "Usage: <b>%s%s<b> [nickname] [text to add a new quote]";
             break;
 
         case mod:
-            pattern = "Usage: %s%s [nickname] [quote index to modify] [new quote text]";
+            pattern = "Usage: <b>%s%s<b> [nickname] [quote index to modify] [new quote text]";
             break;
 
         case del:
-            pattern = "Usage: %s%s [nickname] [quote index to remove]";
+            pattern = "Usage: <b>%s%s<b> [nickname] [quote index to remove]";
             break;
         }
 
@@ -775,7 +774,7 @@ void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
 
     if (results != SplitResults.match)
     {
-        enum pattern = "Usage: %s%s [source] [target]";
+        enum pattern = "Usage: <b>%s%s<b> [source] [target]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
         return;
