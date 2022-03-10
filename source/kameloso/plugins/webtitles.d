@@ -541,7 +541,7 @@ void reportTitle(TitleLookupRequest request)
 
         immutable maybePipe = request.results.description.length ? " | " : string.init;
         enum pattern = "[<b>%s<b>] %s%s%s";
-        line = pattern.format(pattern, request.results.domain, request.results.title,
+        line = pattern.format(request.results.domain, request.results.title,
                 maybePipe, request.results.description);
     }
     else
