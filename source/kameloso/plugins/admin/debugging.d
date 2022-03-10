@@ -18,7 +18,6 @@ private:
 
 import kameloso.plugins.admin.base : AdminPlugin;
 
-import kameloso.irccolours : IRCColour, ircBold, ircColour;//, ircColourByHash;
 import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
@@ -78,9 +77,10 @@ void onCommandShowUserImpl(AdminPlugin plugin, const ref IRCEvent event)
         }
         else
         {
-            immutable message = plugin.state.settings.colouredOutgoing ?
-                "No such user: " ~ username.ircColour(IRCColour.red).ircBold :
-                "No such user: " ~ username;
+            import std.format : format;
+
+            enum pattern = "No such user: <4>%s<c>";
+            immutable message = pattern.format(username);
 
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
@@ -129,12 +129,12 @@ void onCommandSudoImpl(AdminPlugin plugin, const ref IRCEvent event)
 void onCommandPrintRawImpl(AdminPlugin plugin, const ref IRCEvent event)
 {
     import std.conv : text;
+    import std.format : format;
 
     plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;
 
-    immutable message = plugin.state.settings.colouredOutgoing ?
-        "Printing all: " ~ plugin.adminSettings.printRaw.ircBold :
-        "Printing all: " ~ plugin.adminSettings.printRaw.text;
+    enum pattern = "Printing all: <b>%s<b>";
+    immutable message = pattern.format(plugin.adminSettings.printRaw);
 
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
 }
@@ -149,12 +149,12 @@ void onCommandPrintRawImpl(AdminPlugin plugin, const ref IRCEvent event)
 void onCommandPrintBytesImpl(AdminPlugin plugin, const ref IRCEvent event)
 {
     import std.conv : text;
+    import std.format : format;
 
     plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
 
-    immutable message = plugin.state.settings.colouredOutgoing ?
-        "Printing bytes: " ~ plugin.adminSettings.printBytes.ircBold :
-        "Printing bytes: " ~ plugin.adminSettings.printBytes.text;
+    enum pattern = "Printing bytes: <b>%s<b>";
+    immutable message = pattern.format(plugin.adminSettings.printBytes);
 
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
 }

@@ -167,8 +167,6 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
         request.event = event;
         request.url = url;
 
-        immutable colouredFlag = cast(Flag!"colouredOutgoing")plugin.state.settings.colouredOutgoing;
-
         if (plugin.cache.length) prune(plugin.cache, plugin.expireSeconds);
 
         TitleLookupResults cachedResult;
@@ -188,18 +186,17 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
 
             if (request.results.youtubeTitle.length)
             {
-                reportYouTubeTitle(request, colouredFlag);
+                reportYouTubeTitle(request);
             }
             else
             {
-                reportTitle(request, colouredFlag);
+                reportTitle(request);
             }
             continue;
         }
 
         cast(void)spawn(&worker, cast(shared)request, plugin.cache,
-            (i * plugin.delayMsecs), colouredFlag,
-            cast(Flag!"descriptions")plugin.webtitlesSettings.descriptions);
+            (i * plugin.delayMsecs), cast(Flag!"descriptions")plugin.webtitlesSettings.descriptions);
     }
 
     import kameloso.thread : ThreadMessage;
@@ -223,24 +220,26 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
         cache = Shared cache of previous [TitleLookupRequest]s.
         delayMsecs = Milliseconds to delay before doing the lookup, to allow for
             parallel lookups without bursting all of them at once.
-        colouredFlag = Flag of whether or not to send coloured output to the server.
         descriptions = Whether or not to look up meta descriptions.
  +/
 void worker(shared TitleLookupRequest sRequest,
     shared TitleLookupResults[string] cache,
     const ulong delayMsecs,
-    const Flag!"colouredOutgoing" colouredFlag,
     const Flag!"descriptions" descriptions)
 {
     import lu.string : beginsWith, contains, nom;
     import std.datetime.systime : Clock;
     import std.typecons : No, Yes;
+    static import kameloso.common;
 
     version(Posix)
     {
         import kameloso.thread : setThreadName;
         setThreadName("webtitles");
     }
+
+    // Set the global settings so messaging functions don't segfault us
+    kameloso.common.settings = &(cast()sRequest).state.settings;
 
     if (delayMsecs > 0)
     {
@@ -284,7 +283,7 @@ void worker(shared TitleLookupRequest sRequest,
                 request.results.youtubeTitle = decodeEntities(info["title"].str);
                 request.results.youtubeAuthor = info["author_name"].str;
 
-                reportYouTubeTitle(request, colouredFlag);
+                reportYouTubeTitle(request);
 
                 request.results.when = now;
 
@@ -350,7 +349,7 @@ void worker(shared TitleLookupRequest sRequest,
             try
             {
                 request.results = lookupTitle(request.url, descriptions);
-                reportTitle(request, colouredFlag);
+                reportTitle(request);
                 request.results.when = now;
 
                 synchronized //()
@@ -531,24 +530,18 @@ TitleLookupResults lookupTitle(const string url, const Flag!"descriptions" descr
 
     Params:
         request = A [TitleLookupRequest] containing the results of the lookup.
-        colouredOutgoing = Whether or not to send coloured output to the server.
  +/
-void reportTitle(TitleLookupRequest request,
-    const Flag!"colouredOutgoing" colouredOutgoing)
+void reportTitle(TitleLookupRequest request)
 {
     string line;
 
     if (request.results.domain.length)
     {
-        import kameloso.irccolours : ircBold;
         import std.format : format;
 
         immutable maybePipe = request.results.description.length ? " | " : string.init;
-        enum pattern = "[%s] %s%s%s";
-        line = colouredOutgoing ?
-            format(pattern, request.results.domain.ircBold, request.results.title,
-                maybePipe, request.results.description) :
-            format(pattern, request.results.domain, request.results.title,
+        enum pattern = "[<b>%s<b>] %s%s%s";
+        line = pattern.format(request.results.domain, request.results.title,
                 maybePipe, request.results.description);
     }
     else
@@ -575,22 +568,15 @@ void reportTitle(TitleLookupRequest request,
 
     Params:
         request = A [TitleLookupRequest] containing the results of the lookup.
-        colouredOutgoing = Whether or not to send coloured output to the server.
  +/
-void reportYouTubeTitle(TitleLookupRequest request,
-    const Flag!"colouredOutgoing" colouredOutgoing)
+void reportYouTubeTitle(TitleLookupRequest request)
 {
-    import kameloso.irccolours : ircColourByHash, ircBold;
     import std.format : format;
 
-    immutable line = colouredOutgoing ?
-        "[%s] %s (uploaded by %s)"
-            .format("youtube.com".ircBold, request.results.youtubeTitle,
-                request.results.youtubeAuthor.ircColourByHash) :
-        "[youtube.com] %s (uploaded by %s)"
-            .format(request.results.youtubeTitle, request.results.youtubeAuthor);
+    enum pattern = "[<b>youtube.com<b>] %s (uploaded by <h>%s<h>)";
+    immutable message = pattern.format(request.results.youtubeTitle, request.results.youtubeAuthor);
 
-    chan(request.state, request.event.channel, line);
+    chan(request.state, request.event.channel, message);
 }
 
 

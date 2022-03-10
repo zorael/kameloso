@@ -14,7 +14,6 @@ private:
 
 import kameloso.plugins.twitchbot.base;
 
-import kameloso.messaging;
 import dialect.defs;
 import std.json : JSONValue;
 import std.traits : isSomeFunction;

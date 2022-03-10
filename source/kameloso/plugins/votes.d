@@ -193,8 +193,9 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
             {
                 if (result.value == 0)
                 {
-                    chan(plugin.state, event.channel,
-                        origChoiceNames[result.key] ~ " : 0 votes");
+                    enum pattern = "<b>%s<b> : 0 votes";
+                    immutable message = pattern.format(origChoiceNames[result.key]);
+                    chan(plugin.state, event.channel, message);
                 }
                 else
                 {
@@ -204,8 +205,9 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
                     immutable double voteRatio = cast(double)result.value / total;
                     immutable double votePercentage = 100 * voteRatio;
 
-                    chan(plugin.state, event.channel, "%s : %d %s (%.1f%%)"
-                        .format(origChoiceNames[result.key], result.value, noun, votePercentage));
+                    enum pattern = "<b>%s<b> : %d %s (%.1f%%)";
+                    immutable message = pattern.format(origChoiceNames[result.key], result.value, noun, votePercentage);
+                    chan(plugin.state, event.channel, message);
                 }
             }
         }
@@ -352,13 +354,17 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
             // An even minute
             immutable minutes = cast(int)(time / 60);
 
-            chan(plugin.state, event.channel, "%d %s! (%-(%s, %))"
-                .format(minutes, minutes.plurality("minute", "minutes"), sortedChoices));
+            enum pattern = "<b>%d<b> %s! (%-(%s, %))";
+            immutable message = pattern.format(minutes,
+                minutes.plurality("minute", "minutes"), sortedChoices);
+            chan(plugin.state, event.channel, message);
         }
         else
         {
-            chan(plugin.state, event.channel, "%d seconds! (%-(%s, %))"
-                .format(time, sortedChoices));
+            enum pattern = "<b>%d<b> seconds! (%-(%s, %))";
+            immutable message = pattern.format(time, sortedChoices);
+            chan(plugin.state, event.channel, message);
+
         }
     }
 
@@ -390,9 +396,9 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
         delay(plugin, (() => dgReminderImpl(10)), (dur-10).seconds);
     }
 
-    chan(plugin.state, event.channel,
-        "Voting commenced! Please place your vote for one of: %-(%s, %) (%d seconds)"
-            .format(sortedChoices, dur));
+    enum pattern = "Voting commenced! Please place your vote for one of: %-(<b>%s<b>, %) (<b>%d<b> seconds)";
+    immutable message = pattern.format(sortedChoices, dur);
+    chan(plugin.state, event.channel, message);
 }
 
 

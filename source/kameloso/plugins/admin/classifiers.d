@@ -19,7 +19,6 @@ import kameloso.plugins.admin.base;
 
 import kameloso.plugins.common.misc : nameOf;
 import kameloso.common : Tint, expandTags, logger;
-import kameloso.irccolours : IRCColour, ircBold, ircColour, ircColourByHash;
 import kameloso.messaging;
 import dialect.defs;
 import std.algorithm.comparison : among;
@@ -50,7 +49,7 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
     {
         import std.format : format;
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Usage: %s%s [add|del|list]".format(plugin.state.settings.prefix, list));
+            "Usage: <b>%s%s<b> [add|del|list]".format(plugin.state.settings.prefix, list));
     }
 
     if (!event.content.length)
@@ -120,14 +119,16 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
         auto userlist = json[list][channel].array
             .map!(jsonEntry => jsonEntry.str);
 
-        privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Current %s in %s: %-(%s, %)"
-                .format(asWhat, channel, userlist));
+        enum pattern = "Current %s in <b>%s<b>: %-(<h>%s<h>, %)";
+        immutable message = pattern.format(asWhat, channel, userlist);
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+
+
     }
     else
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
-            "There are no %s in %s.".format(asWhat, channel));
+            "There are no %s in <b>%s<b>.".format(asWhat, channel));
     }
 }
 
@@ -183,11 +184,8 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
             final switch (result)
             {
             case success:
-                enum pattern = "Added %s as %s in %s.";
-
-                immutable message = plugin.state.settings.colouredOutgoing ?
-                    pattern.format(id.ircColourByHash.ircBold, asWhat, channel) :
-                    pattern.format(id, asWhat, channel);
+                enum pattern = "Added <h>%s<h> as <b>%s<b> in %s.";
+                immutable message = pattern.format(id, asWhat, channel);
 
                 privmsg(plugin.state, event.channel, event.sender.nickname, message);
                 break;
@@ -197,11 +195,8 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
                 assert(0, "Invalid delist-only `AlterationResult` passed to `lookupEnlist.report`");
 
             case alreadyInList:
-                enum pattern = "%s was already %s in %s.";
-
-                immutable message = plugin.state.settings.colouredOutgoing ?
-                    pattern.format(id.ircColourByHash.ircBold, asWhat, channel) :
-                    pattern.format(id, asWhat, channel);
+                enum pattern = "<h>%s<h> was already <b>%s<b> in %s.";
+                immutable message = pattern.format(id, asWhat, channel);
 
                 privmsg(plugin.state, event.channel, event.sender.nickname, message);
                 break;
@@ -264,11 +259,12 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
     {
         if (event.sender.nickname.length)
         {
+            import std.format : format;
+
             // IRC report
 
-            immutable message = plugin.state.settings.colouredOutgoing ?
-                "Invalid nickname/account: " ~ specified.ircColour(IRCColour.red).ircBold :
-                "Invalid nickname/account: " ~ specified;
+            enum pattern = "Invalid nickname/account: <4>%s<c>";
+            immutable message = pattern.format(specified);
 
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
@@ -415,21 +411,15 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
 
         case noSuchAccount:
         case noSuchChannel:
-            enum pattern = "%s isn't %s in %s.";
-
-            immutable message = plugin.state.settings.colouredOutgoing ?
-                pattern.format(account.ircColourByHash.ircBold, asWhat, channel) :
-                pattern.format(account, asWhat, channel);
+            enum pattern = "<h>%s<h> isn't <b>%s<b> in %s.";
+            immutable message = pattern.format(account, asWhat, channel);
 
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
             break;
 
         case success:
-            enum pattern = "Removed %s as %s in %s.";
-
-            immutable message = plugin.state.settings.colouredOutgoing ?
-                pattern.format(account.ircColourByHash.ircBold, asWhat, channel) :
-                pattern.format(account, asWhat, channel);
+            enum pattern = "Removed <h>%s<h> as <b>%s<b> in %s.";
+            immutable message = pattern.format(account, asWhat, channel);
 
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
             break;
@@ -645,9 +635,8 @@ in (mask.length, "Tried to add an empty hostmask definition")
             else
             {
                 import std.format : format;
-                enum pattern = `Invalid hostmask: "%s"; must be in the form "%s".`;
-                privmsg(plugin.state, event.channel, event.sender.nickname,
-                    format(pattern, mask.ircBold, "nickname!ident@address".ircBold));
+                enum pattern = `Invalid hostmask: "<b>%s<b>"; must be in the form "<b>nickname!ident@address.tld<b>".`;
+                privmsg(plugin.state, event.channel, event.sender.nickname, pattern.format(mask));
             }
             return;
         }
@@ -665,8 +654,8 @@ in (mask.length, "Tried to add an empty hostmask definition")
         }
         else
         {
-            immutable message = `Added hostmask "%s", mapped to account %s.`
-                .format(mask.ircBold, account.ircColourByHash);
+            enum pattern = `Added hostmask "<b>%s<b>", mapped to account <h>%s<h>.`;
+            immutable message = pattern.format(mask, account);
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
     }
@@ -686,7 +675,8 @@ in (mask.length, "Tried to add an empty hostmask definition")
             }
             else
             {
-                immutable message = `Removed hostmask "%s".`.format(mask.ircBold);
+                enum pattern = `Removed hostmask "<b>%s<b>".`;
+                immutable message = pattern.format(mask);
                 privmsg(plugin.state, event.channel, event.sender.nickname, message);
             }
         }
@@ -699,8 +689,8 @@ in (mask.length, "Tried to add an empty hostmask definition")
             }
             else
             {
-                enum pattern = `No such hostmask "%s" on file.`;
-                immutable message = format(pattern, mask.ircBold);
+                enum pattern = `No such hostmask "<b>%s<b>" on file.`;
+                immutable message = format(pattern, mask);
                 privmsg(plugin.state, event.channel, event.sender.nickname, message);
             }
             return;  // Skip saving and updating below

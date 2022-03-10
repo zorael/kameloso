@@ -56,7 +56,6 @@ import std.typecons : Flag, No, Yes;
 )
 void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
 {
-    import kameloso.irccolours : ircBold, ircColourByHash;
     import lu.string : nom, stripped, strippedLeft;
     import std.datetime.systime : Clock, SysTime;
     import std.format : format;
@@ -107,11 +106,8 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
             }
             else
             {
-                enum pattern = "There is no such stopwatch running. (%s)";
-
-                immutable message = plugin.state.settings.colouredOutgoing ?
-                    pattern.format(id.ircColourByHash) :
-                    pattern.format(id);
+                enum pattern = "There is no such stopwatch running. (<h>%s<h>)";
+                immutable message = pattern.format(id);
 
                 chan(plugin.state, event.channel, message);
             }
@@ -124,11 +120,8 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
         {
         case "stop":
         case "end":
-            enum pattern = "Stopwatch stopped after %s.";
-
-            immutable message = plugin.state.settings.colouredOutgoing ?
-                pattern.format(diff.ircBold) :
-                pattern.format(diff);
+            enum pattern = "Stopwatch stopped after <b>%s<b>.";
+            immutable message = pattern.format(diff);
 
             chan(plugin.state, event.channel, message);
             plugin.stopwatches[event.channel].remove(id);
@@ -136,11 +129,8 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
 
         case "status":
         case string.init:
-            enum pattern = "Elapsed time: %s";
-
-            immutable message = plugin.state.settings.colouredOutgoing ?
-                pattern.format(diff.ircBold) :
-                pattern.format(diff);
+            enum pattern = "Elapsed time: <b>%s<b>";
+            immutable message = pattern.format(diff);
 
             chan(plugin.state, event.channel, message);
             break;
@@ -151,18 +141,15 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
         break;
 
     case "clear":
-        enum pattern = "Clearing all stopwatches in channel %s.";
-
-        immutable message = plugin.state.settings.colouredOutgoing ?
-            pattern.format(event.channel.ircBold) :
-            pattern.format(event.channel);
+        enum pattern = "Clearing all stopwatches in channel <b>%s<b>.";
+        immutable message = pattern.format(event.channel);
 
         chan(plugin.state, event.channel, message);
         plugin.stopwatches.remove(event.channel);
         break;
 
     default:
-        chan(plugin.state, event.channel, "Usage: %s%s [start|stop|status]"  // hide clear
+        chan(plugin.state, event.channel, "Usage: <b>%s%s<b> [start|stop|status]"  // hide clear
             .format(plugin.state.settings.prefix, event.aux));
         break;
     }

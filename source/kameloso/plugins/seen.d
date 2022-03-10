@@ -45,9 +45,6 @@ private import kameloso.plugins.common.awareness : ChannelAwareness, UserAwarene
 // Likewise [dialect.defs], for the definitions of an IRC event.
 private import dialect.defs;
 
-// [kameloso.irccolours] for some IRC colouring and formatting.
-private import kameloso.irccolours : ircBold, ircColourByHash;
-
 // [kameloso.common] for some globals and helpers.
 private import kameloso.common : expandTags, logger;
 
@@ -822,18 +819,15 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
     {
         if (!requestedUser.length)
         {
-            immutable message = "Usage: " ~ plugin.state.settings.prefix ~
-                event.aux ~ " [nickname]";
+            immutable message = "Usage: <b>" ~ plugin.state.settings.prefix ~
+                event.aux ~ "<b> [nickname]";
             privmsg(event.channel, event.sender.nickname, message);
             return;
         }
         else if (!requestedUser.isValidNickname(plugin.state.server))
         {
             // Nickname contained a space or other invalid character
-            immutable message = plugin.state.settings.colouredOutgoing ?
-                "Invalid user: " ~ requestedUser.ircBold :
-                "Invalid user: " ~ requestedUser;
-
+            immutable message = "Invalid user: <b>" ~ requestedUser ~ "<b>";
             privmsg(event.channel, event.sender.nickname, message);
             return;
         }
@@ -854,12 +848,9 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
         {
             if (requestedUser in channel.users)
             {
-                immutable line = (event.channel.length && (event.channel == channel.name)) ?
-                    " is here right now!" : " is online right now.";
-
-                immutable message = plugin.state.settings.colouredOutgoing ?
-                    requestedUser.ircColourByHash.ircBold ~ line :
-                    requestedUser ~ line;
+                immutable pattern = (event.channel.length && (event.channel == channel.name)) ?
+                    "<h>%s<h> is here right now!" : "<h>%s<h> is online right now.";
+                immutable message = pattern.format(requestedUser);
 
                 privmsg(event.channel, event.sender.nickname, message);
                 return;
@@ -870,26 +861,21 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
 
         if (const userTimestamp = requestedUser in seenUsers)
         {
-            enum pattern =  "I last saw %s %s ago.";
+            enum pattern =  "I last saw <h>%s<h> %s ago.";
 
             immutable timestamp = SysTime.fromUnixTime(*userTimestamp);
             immutable diff = (Clock.currTime - timestamp);
             immutable elapsed = timeSince!(7, 2)(diff);
-
-            immutable message = plugin.state.settings.colouredOutgoing ?
-                pattern.format(requestedUser.ircColourByHash.ircBold, elapsed) :
-                pattern.format(requestedUser, elapsed);
+            immutable message = pattern.format(requestedUser, elapsed);
 
             privmsg(event.channel, event.sender.nickname, message);
         }
         else
         {
-            enum pattern = "I have never seen %s.";
-
             // No matches for nickname `event.content` in `plugin.seenUsers`.
-            immutable message = plugin.state.settings.colouredOutgoing ?
-                pattern.format(requestedUser.ircColourByHash.ircBold) :
-                pattern.format(requestedUser);
+
+            enum pattern = "I have never seen <h>%s<h>.";
+            immutable message = pattern.format(requestedUser);
 
             privmsg(event.channel, event.sender.nickname, message);
         }

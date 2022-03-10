@@ -18,7 +18,6 @@ private:
 
 import kameloso.plugins.printer.base;
 
-import kameloso.irccolours;
 import dialect.defs;
 import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;
@@ -187,6 +186,7 @@ void formatMessageMonochrome(Sink)
     const Flag!"hideBlacklistedUsers" hideBlacklistedUsers)
 if (isOutputRange!(Sink, char[]))
 {
+    import kameloso.irccolours : stripEffects;
     import lu.conv : Enum;
     import std.algorithm.comparison : equal;
     import std.datetime : DateTime;
@@ -876,6 +876,7 @@ if (isOutputRange!(Sink, char[]))
 
         if (plugin.state.server.daemon != IRCServer.Daemon.twitch)
         {
+            import kameloso.irccolours : mapEffects;
             // Twitch chat has no colours or effects, only emotes
             content = mapEffects(content, fgBase);
         }

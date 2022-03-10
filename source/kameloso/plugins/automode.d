@@ -287,7 +287,6 @@ unittest
 )
 void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.irccolours : ircBold, ircColourByHash;
     import dialect.common : isValidNickname;
     import lu.string : SplitResults, beginsWith, nom, splitInto;
     import std.algorithm.searching : count;
@@ -334,12 +333,8 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 
         plugin.modifyAutomode(Yes.add, nickname, event.channel, mode);
 
-        enum pattern = "Automode modified! %s on %s: +%s";
-
-        immutable message = plugin.state.settings.colouredOutgoing ?
-            pattern.format(nickname.ircColourByHash.ircBold,
-                event.channel.ircBold, mode.ircBold) :
-            pattern.format(nickname, event.channel, mode);
+        enum pattern = "Automode modified! <h>%s<h> on <b>%s<b>: +<b>%s<b>";
+        immutable message = pattern.format(nickname, event.channel, mode);
 
         chan(plugin.state, event.channel, message);
         break;
@@ -359,12 +354,8 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 
         plugin.modifyAutomode(No.add, nickname, event.channel);
 
-        enum pattern = "Automode for %s cleared.";
-
-        immutable message = plugin.state.settings.colouredOutgoing ?
-            pattern.format(nickname.ircColourByHash.ircBold) :
-            pattern.format(nickname);
-
+        enum pattern = "Automode for <h>%s<h> cleared.";
+        immutable message = pattern.format(nickname);
         chan(plugin.state, event.channel, message);
         break;
 
@@ -373,19 +364,21 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 
         if (channelmodes)
         {
-            import std.conv : to;
-            chan(plugin.state, event.channel, "Current automodes: " ~ (*channelmodes).to!string);
+            import std.conv : text;
+            chan(plugin.state, event.channel, text("Current automodes: ", *channelmodes));
         }
         else
         {
-            chan(plugin.state, event.channel, "No automodes defined for channel %s."
-                .format(event.channel));
+            enum pattern = "No automodes defined for channel <b>%s<b>.";
+            immutable message = pattern.format(event.channel);
+            chan(plugin.state, event.channel, message);
         }
         break;
 
     default:
-        chan(plugin.state, event.channel, "Usage: %s%s [add|clear|list] [nickname/account] [mode]"
-            .format(plugin.state.settings.prefix, event.aux));
+        enum pattern = "Usage: <b>%s%s<b> [add|clear|list] [nickname/account] [mode]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
         break;
     }
 }

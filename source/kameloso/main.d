@@ -918,7 +918,7 @@ Next mainLoop(ref Kameloso instance)
                 assert(0, "`listenAttemptToNext` returned `Next.returnSuccess`");
 
             case returnFailure:
-                return Next.returnFailure;
+                return Next.retry;
 
             case crash:
                 assert(0, "`listenAttemptToNext` returned `Next.crash`");

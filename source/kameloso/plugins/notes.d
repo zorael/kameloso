@@ -106,7 +106,6 @@ void playbackNotes(NotesPlugin plugin,
     const Flag!"background" background = No.background)
 {
     import kameloso.common : Tint, timeSince;
-    import kameloso.irccolours : ircBold, ircColourByHash;
     import dialect.common : toLowerCase;
     import std.datetime.systime : Clock;
     import std.exception : ErrnoException;
@@ -153,22 +152,15 @@ void playbackNotes(NotesPlugin plugin,
                     const note = noteArray[0];
                     immutable timestamp = (currTime - note.when).timeSince!(7, 1)(No.abbreviate);
 
-                    enum pattern = "%s%s! %s left note %s ago: %s";
-
-                    immutable message = plugin.state.settings.colouredOutgoing ?
-                        pattern.format(atSign, senderName.ircColourByHash.ircBold,
-                            note.sender.ircColourByHash.ircBold, timestamp.ircBold, note.line) :
-                        pattern.format(atSign, senderName, note.sender, timestamp, note.line);
+                    enum pattern = "%s<h>%s<h>! <h>%s<h> left note <b>%s<b> ago: %s";
+                    immutable message = pattern.format(atSign, senderName, note.sender, timestamp, note.line);
 
                     privmsg(plugin.state, channelName, user.nickname, message);
                 }
                 else
                 {
-                    enum pattern = "%s%s! You have %s notes.";
-
-                    immutable message = plugin.state.settings.colouredOutgoing ?
-                        pattern.format(atSign, senderName.ircColourByHash.ircBold, noteArray.length.ircBold) :
-                        pattern.format(atSign, senderName, noteArray.length);
+                    enum pattern = "%s<h>%s<h>! You have <b>%d<b> notes.";
+                    immutable message = pattern.format(atSign, senderName, noteArray.length);
 
                     privmsg(plugin.state, channelName, user.nickname, message);
 
@@ -176,12 +168,8 @@ void playbackNotes(NotesPlugin plugin,
                     {
                         immutable timestamp = (currTime - note.when).timeSince!(7, 1)(Yes.abbreviate);
 
-                        enum entryPattern = "%s %s ago: %s";
-
-                        immutable report = plugin.state.settings.colouredOutgoing ?
-                            entryPattern.format(note.sender.ircColourByHash.ircBold,
-                                timestamp, note.line) :
-                            entryPattern.format(note.sender, timestamp, note.line);
+                        enum entryPattern = "<h>%s<h> %s ago: %s";
+                        immutable report = entryPattern.format(note.sender, timestamp, note.line);
 
                         privmsg(plugin.state, channelName, user.nickname, report);
                     }
@@ -293,9 +281,9 @@ void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
 
     if ((results != SplitResults.overrun) || !target.length)
     {
-        privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Usage: %s%s [nickname] [note text]"
-                .format(plugin.state.settings.prefix, event.aux));
+        enum pattern = "Usage: <b>%s%s<b> [nickname] [note text]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
         return;
     }
 
