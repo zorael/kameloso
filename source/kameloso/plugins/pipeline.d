@@ -88,6 +88,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
     import std.format : format;
     import std.stdio : File;
     import std.variant : Variant;
+    static import kameloso.common;
 
     version(Posix)
     {
@@ -96,6 +97,9 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
     }
 
     auto state = cast()newState;
+
+    // Set the global settings so messaging functions don't segfault us
+    kameloso.common.settings = &state.settings;
 
     // Creating the File struct blocks, so do it after reporting.
     enum pattern = "Pipe text to the <i>%s<l> file to send raw commands to the server.";
