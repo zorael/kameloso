@@ -301,6 +301,7 @@ void tryAuth(ConnectService service)
     case snircd:
     case ircdseven:
     case u2:
+    case solanum:
         import std.conv : text;
 
         // Accepts auth login
