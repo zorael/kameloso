@@ -1303,7 +1303,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 
         default:
             enum pattern = "Invalid bus message <l>%s<w> subverb <l>%s";
-            logger.warningf(pattern, verb, subverb);
+            logger.warningf(pattern.expandTags, verb, subverb);
             break;
         }
         break;
@@ -1350,7 +1350,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 
         default:
             enum pattern = "Invalid bus message <l>%s<w> subverb <l>%s";
-            logger.warningf(pattern, verb, subverb);
+            logger.warningf(pattern.expandTags, verb, subverb);
             break;
         }
         break;
@@ -1359,7 +1359,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         return plugin.onCommandSummary();
 
     default:
-        logger.error("[admin] Unimplemented bus message verb: <l>", verb);
+        logger.error("[admin] Unimplemented bus message verb: <l>".expandTags, verb);
         break;
     }
 }

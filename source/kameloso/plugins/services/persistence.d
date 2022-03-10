@@ -491,7 +491,7 @@ void reload(PersistenceService service)
  +/
 void reloadAccountClassifiersFromDisk(PersistenceService service)
 {
-    import kameloso.common : logger;
+    import kameloso.common : expandTags, logger;
     import lu.json : JSONStorage;
     import std.json : JSONException;
 
@@ -543,14 +543,14 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
         }
         catch (JSONException e)
         {
-            enum pattern = "JSON exception caught when populating %s: %s";
-            logger.warningf(pattern, list, e.msg);
+            enum pattern = "JSON exception caught when populating <l>%s<w>: <l>%s";
+            logger.warningf(pattern.expandTags, list, e.msg);
             version(PrintStacktraces) logger.trace(e.info);
         }
         catch (Exception e)
         {
-            enum pattern = "Unhandled exception caught when populating %s: %s";
-            logger.warningf(pattern, list, e.msg);
+            enum pattern = "Unhandled exception caught when populating <l>%s<w>: <l>%s";
+            logger.warningf(pattern.expandTags, list, e.msg);
             version(PrintStacktraces) logger.trace(e);
         }
     }

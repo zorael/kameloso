@@ -431,6 +431,8 @@ public:
      +/
     void teardownPlugins() @system
     {
+        import kameloso.common : expandTags;
+
         if (!plugins.length) return;
 
         foreach (plugin; plugins)
@@ -456,15 +458,15 @@ public:
                 }
                 else
                 {
-                    enum pattern = "ErrnoException when tearing down %s: %s";
-                    logger.warningf(pattern, plugin.name, e.msg);
+                    enum pattern = "ErrnoException when tearing down <l>%s<w>: <l>%s";
+                    logger.warningf(pattern.expandTags, plugin.name, e.msg);
                     version(PrintStacktraces) logger.trace(e.info);
                 }
             }
             catch (Exception e)
             {
-                enum pattern = "Exception when tearing down %s: %s";
-                logger.warningf(pattern, plugin.name, e.msg);
+                enum pattern = "Exception when tearing down <l>%s<w>: <l>%s";
+                logger.warningf(pattern.expandTags, plugin.name, e.msg);
                 version(PrintStacktraces) logger.trace(e);
             }
 
