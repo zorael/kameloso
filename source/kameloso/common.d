@@ -9,7 +9,7 @@ module kameloso.common;
 
 private:
 
-import kameloso.logger : KamelosoLogger;
+import kameloso.logger : KamelosoLogger, LogLevel;
 import dialect.defs : IRCClient, IRCServer;
 import std.datetime.systime : SysTime;
 import std.range.primitives : isOutputRange;
@@ -1289,8 +1289,8 @@ unittest
     [std.experimental.logger.LogLevel|LogLevel]s; `<l>`, `<t>`, `<i>`, `<w>`
     `<e>`, `<c>` and `<f>`. `<a>` is not included.
 
-    `</>` equals [std.experimental.logger.LogLevel.off|LogLevel.off] and terminates
-    any colour sequence.
+    `</>` equals the passed `baseLevel` and is used to terminate colour sequences,
+    returning to a default.
 
     Lastly, text between two `<h>`s are replaced with the results from a call to
     [kameloso.terminal.colours|colourByHash|colourByHash].
@@ -1315,13 +1315,15 @@ unittest
 
     Params:
         line = A line of text, presumably with `<tags>`.
+        baseLevel = The base [kameloso.logger.LogLevel|LogLevel] to fall back to
+            on `</>` tags.
         strip = Whether to expand tags or strip them.
 
     Returns:
         The passsed `line` but with any `<tags>` replaced with ANSI colour sequences.
         The original string is passed back if there was nothing to replace.
  +/
-T expandTags(T)(const T line, const Flag!"strip" strip) @safe
+T expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" strip) @safe
 {
     import lu.string : contains;
     import std.array : Appender;
@@ -1444,8 +1446,57 @@ T expandTags(T)(const T line, const Flag!"strip" strip) @safe
                         if (!strip) sink.put(Tint.fatal);
                         break;
 
-                    case '/':
+                    case 'o':
                         if (!strip) sink.put(Tint.off);
+                        break;
+
+                    case '/':
+                        if (!strip)
+                        {
+                            with (LogLevel)
+                            final switch (baseLevel)
+                            {
+                            case all:  //log
+                                /*if (!strip) sink.put(Tint.log);
+                                break;*/
+                                goto case 'l';
+
+                            case trace:
+                                /*if (!strip) sink.put(Tint.trace);
+                                break;*/
+                                goto case 't';
+
+                            case info:
+                                /*if (!strip) sink.put(Tint.info);
+                                break;*/
+                                goto case 'i';
+
+                            case warning:
+                                /*if (!strip) sink.put(Tint.warning);
+                                break;*/
+                                goto case 'w';
+
+                            case error:
+                                /*if (!strip) sink.put(Tint.error);
+                                break;*/
+                                goto case 'e';
+
+                            case critical:
+                                /*if (!strip) sink.put(Tint.critical);
+                                break;*/
+                                goto case 'c';
+
+                            case fatal:
+                                /*if (!strip) sink.put(Tint.fatal);
+                                break;*/
+                                goto case 'f';
+
+                            case off:
+                                /*if (!strip) sink.put(Tint.off);
+                                break;*/
+                                goto case 'o';
+                            }
+                        }
                         break;
 
                     case 'h':
@@ -1467,6 +1518,42 @@ T expandTags(T)(const T line, const Flag!"strip" strip) @safe
                                 import kameloso.terminal.colours : colourByHash;
                                 immutable bright = cast(Flag!"brightTerminal")kameloso.common.settings.brightTerminal;
                                 sink.put(colourByHash(word, bright));
+
+                                with (LogLevel)
+                                final switch (baseLevel)
+                                {
+                                case all:  //log
+                                    sink.put(Tint.log);
+                                    break;
+
+                                case trace:
+                                    sink.put(Tint.trace);
+                                    break;
+
+                                case info:
+                                    sink.put(Tint.info);
+                                    break;
+
+                                case warning:
+                                    sink.put(Tint.warning);
+                                    break;
+
+                                case error:
+                                    sink.put(Tint.error);
+                                    break;
+
+                                case critical:
+                                    sink.put(Tint.critical);
+                                    break;
+
+                                case fatal:
+                                    sink.put(Tint.fatal);
+                                    break;
+
+                                case off:
+                                    sink.put(Tint.off);
+                                    break;
+                                }
                             }
                             else
                             {
@@ -1530,7 +1617,7 @@ unittest
             import std.conv : wtext;
 
             immutable line = "This is a <l>log</> line."w;
-            immutable replaced = line.expandTags(No.strip);
+            immutable replaced = line.expandTags(LogLevel.off, No.strip);
             immutable expected = wtext("This is a "w, Tint.log, "log"w, Tint.off, " line."w);
             assert((replaced == expected), replaced.to!string);
         }
@@ -1538,7 +1625,7 @@ unittest
             import std.conv : dtext;
 
             immutable line = "This is a <l>log</> line."d;
-            immutable replaced = line.expandTags(No.strip);
+            immutable replaced = line.expandTags(LogLevel.off, No.strip);
             immutable expected = dtext("This is a "d, Tint.log, "log"d, Tint.off, " line."d);
             assert((replaced == expected), replaced.to!string);
         }
@@ -1546,48 +1633,48 @@ unittest
 
     {
         immutable line = `<i>info</>nothing<c>critical</>nothing\<w>not warning`;
-        immutable replaced = line.expandTags(No.strip);
+        immutable replaced = line.expandTags(LogLevel.off, No.strip);
         immutable expected = text(Tint.info, "info", Tint.off, "nothing",
             Tint.critical, "critical", Tint.off, "nothing<w>not warning");
         assert((replaced == expected), replaced);
     }
     {
         immutable line = "This is a line with no tags";
-        immutable replaced = line.expandTags(No.strip);
+        immutable replaced = line.expandTags(LogLevel.off, No.strip);
         assert(line is replaced);
     }
     {
         immutable emptyLine = string.init;
-        immutable replaced = emptyLine.expandTags(No.strip);
+        immutable replaced = emptyLine.expandTags(LogLevel.off, No.strip);
         assert(replaced is emptyLine);
     }
     {
         immutable line = "hello<h>kameloso<h>hello";
-        immutable replaced = line.expandTags(No.strip);
-        immutable expected = text("hello", colourByHash("kameloso", No.brightTerminal), "hello");
+        immutable replaced = line.expandTags(LogLevel.off, No.strip);
+        immutable expected = text("hello", colourByHash("kameloso", No.brightTerminal), Tint.off, "hello");
         assert((replaced == expected), replaced);
     }
     {
         immutable line = "hello<h>kameloso<h>hello";
-        immutable replaced = line.expandTags(Yes.strip);
+        immutable replaced = line.expandTags(LogLevel.off, Yes.strip);
         immutable expected = "hellokamelosohello";
         assert((replaced == expected), replaced);
     }
     {
         immutable line = "hello<h><h>hello";
-        immutable replaced = line.expandTags(Yes.strip);
+        immutable replaced = line.expandTags(LogLevel.off, Yes.strip);
         immutable expected = "hellohello";
         assert((replaced == expected), replaced);
     }
     {
         immutable line = `hello\<harbl>kameloso<h>hello<h>hi`;
-        immutable replaced = line.expandTags(No.strip);
-        immutable expected = text("hello<harbl>kameloso", colourByHash("hello", No.brightTerminal), "hi");
+        immutable replaced = line.expandTags(LogLevel.off, No.strip);
+        immutable expected = text("hello<harbl>kameloso", colourByHash("hello", No.brightTerminal), Tint.off, "hi");
         assert((replaced == expected), replaced);
     }
     {
         immutable line = `hello\<harbl>kameloso<h>hello<h>hi`;
-        immutable replaced = line.expandTags(Yes.strip);
+        immutable replaced = line.expandTags(LogLevel.off, Yes.strip);
         immutable expected = "hello<harbl>kamelosohellohi";
         assert((replaced == expected), replaced);
     }
@@ -1595,7 +1682,7 @@ unittest
         enum pattern = "Failed to fetch, replay and clear notes for " ~
             "<l>%s<e> on <l>%s<e>: <l>%s";
         immutable line = pattern.format("nickname", "<no channel>", "error");
-        immutable replaced = line.expandTags(No.strip);
+        immutable replaced = line.expandTags(LogLevel.off, No.strip);
         immutable expected = "Failed to fetch, replay and clear notes for " ~
             Tint.log ~ "nickname" ~ Tint.error ~ " on " ~ Tint.log ~
             "<no channel>" ~ Tint.error ~ ": " ~ Tint.log ~ "error";
@@ -1605,10 +1692,38 @@ unittest
         enum pattern = "Failed to fetch, replay and clear notes for " ~
             "<l>%s<e> on <l>%s<e>: <l>%s";
         immutable line = pattern.format("nickname", "<no channel>", "error");
-        immutable replaced = line.expandTags(Yes.strip);
+        immutable replaced = line.expandTags(LogLevel.off, Yes.strip);
         immutable expected = "Failed to fetch, replay and clear notes for " ~
             "nickname on <no channel>: error";
         assert((replaced == expected), replaced);
+    }
+    {
+        enum pattern = "Failed to fetch, replay and clear notes for " ~
+            "<l>%s</> on <l>%s</>: <l>%s";
+        immutable line = pattern.format("nickname", "<no channel>", "error");
+        immutable replaced = line.expandTags(LogLevel.error, No.strip);
+        immutable expected = "Failed to fetch, replay and clear notes for " ~
+            Tint.log ~ "nickname" ~ Tint.error ~ " on " ~ Tint.log ~
+            "<no channel>" ~ Tint.error ~ ": " ~ Tint.log ~ "error";
+        assert((replaced == expected), replaced);
+    }
+    {
+        enum pattern = "Failed to fetch, replay and clear notes for " ~
+            "<l>%s</> on <l>%s</>: <l>%s";
+        immutable line = pattern.format("nickname", "<no channel>", "error");
+        immutable replaced = line.expandTags(LogLevel.error, Yes.strip);
+        immutable expected = "Failed to fetch, replay and clear notes for " ~
+            "nickname on <no channel>: error";
+        assert((replaced == expected), replaced);
+    }
+    {
+        enum origPattern = "Could not apply <i>+%s<l> <i>%s<l> in <i>%s<l> " ~
+            "because we are not an operator in the channel.";
+        enum newPattern = "Could not apply <i>+%s</> <i>%s</> in <i>%s</> " ~
+            "because we are not an operator in the channel.";
+        immutable origLine = origPattern.format("o", "nickname", "#channel").expandTags(No.strip);
+        immutable newLine = newPattern.format("o", "nickname", "#channel").expandTags(LogLevel.all, No.strip);
+        assert((origLine == newLine), newLine);
     }
 }
 
@@ -1616,20 +1731,45 @@ unittest
 // expandTags
 /++
     String-replaces `<tags>` in a string with the results from calls to `Tint`.
-    Also works with `dstring`s and `wstring`s. Overload that does not take a
-    `strip` [std.typecons.Flag|Flag].
+    Also works with `dstring`s and `wstring`s. Overload that does not take Overload that does not take a
+    `baseLevel` [kameloso.logger.LogLevel|LogLevel] but instead passes a default
+    [kameloso.logger.LogLevel.off|LogLevel.off]`.
 
     Params:
         line = A line of text, presumably with `<tags>`.
+        strip = Whether to expand tags or strip them.
 
     Returns:
         The passsed `line` but with any `<tags>` replaced with ANSI colour sequences.
         The original string is passed back if there was nothing to replace.
  +/
-T expandTags(T)(const T line) @safe
+T expandTags(T)(const T line, const Flag!"strip" strip) @safe
+{
+    return expandTags(line, LogLevel.off, strip);
+}
+
+
+// expandTags
+/++
+    String-replaces `<tags>` in a string with the results from calls to `Tint`.
+    Also works with `dstring`s and `wstring`s. Overload that does not take a
+    `strip` [std.typecons.Flag|Flag], nor a `baseLevel`
+    [kameloso.logger.LogLevel|LogLevel] but instead passes a default
+    [kameloso.logger.LogLevel.off|LogLevel.off]`.
+
+    Params:
+        line = A line of text, presumably with `<tags>`.
+        baseLevel = The base [kameloso.logger.LogLevel|LogLevel] to fall back to
+            on `</>` tags; default [kameloso.logger.LogLevel.off|LogLevel.off].
+
+    Returns:
+        The passsed `line` but with any `<tags>` replaced with ANSI colour sequences.
+        The original string is passed back if there was nothing to replace.
+ +/
+T expandTags(T)(const T line, const LogLevel baseLevel = LogLevel.off) @safe
 {
     immutable strip = cast(Flag!"strip")kameloso.common.settings.monochrome;
-    return expandTags(line, strip);
+    return expandTags(line, baseLevel, strip);
 }
 
 ///
