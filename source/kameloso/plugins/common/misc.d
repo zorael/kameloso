@@ -70,6 +70,7 @@ bool applyCustomSettings(IRCPlugin[] plugins,
         {
             import kameloso.common : initLogger;
             import lu.objmanip : SetMemberException, setMemberByName;
+            static import kameloso.common;
 
             try
             {
@@ -93,12 +94,11 @@ bool applyCustomSettings(IRCPlugin[] plugins,
                             cast(Flag!"headless")copyOfSettings.headless);
                     }
 
+                    *kameloso.common.settings = copyOfSettings;
+
                     foreach (plugin; plugins)
                     {
-                        static import kameloso.common;
-
                         plugin.state.settings = copyOfSettings;
-                        *kameloso.common.settings = plugin.state.settings;
 
                         // No need to flag as updated when we update here manually
                         //plugin.state.updates |= typeof(plugin.state.updates).settings;
