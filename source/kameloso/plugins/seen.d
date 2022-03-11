@@ -48,6 +48,9 @@ private import dialect.defs;
 // [kameloso.common] for some globals and helpers.
 private import kameloso.common : expandTags, logger;
 
+// [kameloso.logger] for an enum we need for colouring terminal output.
+private import kameloso.logger : LogLevel;
+
 // [std.datetime.systime] for the [std.datetime.systime.Clock|Clock], to update times with.
 private import std.datetime.systime : Clock;
 
@@ -1002,8 +1005,8 @@ long[string] loadSeen(const string filename)
 
     if (!filename.exists || !filename.isFile)
     {
-        enum pattern = "<l>%s<w> does not exist or is not a file";
-        logger.warningf(pattern.expandTags, filename);
+        enum pattern = "<l>%s</> does not exist or is not a file";
+        logger.warningf(pattern.expandTags(LogLevel.warning), filename);
         return aa;
     }
 
@@ -1106,8 +1109,8 @@ void onWelcome(SeenPlugin plugin)
 
         // Reports statistics on how many users are registered as having been seen
 
-        enum pattern = "Currently <i>%d<l> %s seen.";
-        logger.logf(pattern.expandTags, plugin.seenUsers.length,
+        enum pattern = "Currently <i>%d</> %s seen.";
+        logger.logf(pattern.expandTags(LogLevel.all), plugin.seenUsers.length,
             plugin.seenUsers.length.plurality("user", "users"));
     }
 

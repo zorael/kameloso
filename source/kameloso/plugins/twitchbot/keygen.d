@@ -32,6 +32,7 @@ package:
 void generateKey(TwitchBotPlugin plugin)
 {
     import kameloso.common : expandTags, logger;
+    import kameloso.logger : LogLevel;
     import kameloso.thread : ThreadMessage;
     import lu.string : contains, nom, stripped;
     import std.process : Pid, ProcessException, wait;
@@ -247,7 +248,7 @@ instructions and log in to authorise the use of this program with your account.
         enum pattern = "<l>Paste the address of the page you were redirected to here (empty line exits):</>
 
 > ";
-        write(pattern.expandTags);
+        write(pattern.expandTags(LogLevel.off));
         stdout.flush();
 
         stdin.flush();
@@ -269,7 +270,8 @@ instructions and log in to authorise the use of this program with your account.
 
             if (readURL.beginsWith(authNode))
             {
-                logger.error("Not that page; the one you're lead to after clicking <l>Authorize<e>.".expandTags);
+                enum wrongPagePattern = "Not that page; the one you're lead to after clicking <l>Authorize</>.";
+                logger.error(wrongPagePattern.expandTags(LogLevel.error));
             }
             else
             {
@@ -300,7 +302,7 @@ instructions and log in to authorise the use of this program with your account.
 <l>Your private authorisation key is: <i>%s</>
 It should be entered as <i>pass</> under <i>[IRCBot]</>.
 ";
-    writefln(keyPattern.expandTags, key);
+    writefln(keyPattern.expandTags(LogLevel.off), key);
 
     if (!plugin.state.settings.saveOnExit)
     {
@@ -319,7 +321,7 @@ It should be entered as <i>pass</> under <i>[IRCBot]</>.
         else
         {
             enum keyAddPattern = "\n* Make sure to add it to <i>%s</>, then.";
-            writefln(keyAddPattern.expandTags, plugin.state.settings.configFile);
+            writefln(keyAddPattern.expandTags(LogLevel.off), plugin.state.settings.configFile);
         }
     }
 
@@ -333,5 +335,5 @@ just work. If it doesn't, please file an issue at:
 
 <l>Note: keys are valid for 60 days, after which this process needs to be repeated.</>
 ";
-    writeln(issuePattern.expandTags);
+    writeln(issuePattern.expandTags(LogLevel.off));
 }

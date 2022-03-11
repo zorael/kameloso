@@ -18,6 +18,7 @@ private:
 
 import kameloso.plugins.common.core;
 import kameloso.common : expandTags, logger;
+import kameloso.logger : LogLevel;
 import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
@@ -166,8 +167,8 @@ void joinChannels(ConnectService service)
     auto guestlist = service.state.bot.guestChannels.sort.uniq;
     immutable numChans = homelist.walkLength() + guestlist.walkLength();
 
-    enum pattern = "Joining <i>%d<l> %s...";
-    logger.logf(pattern.expandTags, numChans, numChans.plurality("channel", "channels"));
+    enum pattern = "Joining <i>%d</> %s...";
+    logger.logf(pattern.expandTags(LogLevel.all), numChans, numChans.plurality("channel", "channels"));
 
     // Join in two steps so home channels don't get shoved away by guest channels
     // FIXME: line should split if it reaches 512 characters
@@ -281,8 +282,8 @@ void tryAuth(ConnectService service)
         if (service.state.client.nickname != service.state.client.origNickname)
         {
             enum pattern = "Cannot auth when you have changed your nickname. " ~
-                "(<l>%s<w> != <l>%s<w>)";
-            logger.warningf(pattern.expandTags, service.state.client.nickname,
+                "(<l>%s</> != <l>%s</>)";
+            logger.warningf(pattern.expandTags(LogLevel.warning), service.state.client.nickname,
                 service.state.client.origNickname);
 
             service.authentication = Progress.finished;
@@ -310,8 +311,8 @@ void tryAuth(ConnectService service)
 
         if (!service.state.bot.account.length)
         {
-            enum pattern = "No account specified! Trying <i>%s<l>...";
-            logger.logf(pattern.expandTags, service.state.client.origNickname);
+            enum pattern = "No account specified! Trying <i>%s</>...";
+            logger.logf(pattern.expandTags(LogLevel.all), service.state.client.origNickname);
             account = service.state.client.origNickname;
         }
 
@@ -437,8 +438,8 @@ void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
             if (!service.state.bot.pass.length)
             {
                 logger.error("You *need* a pass to join this server.");
-                enum pattern = "Run the program with <i>--set twitchbot.keygen<l> to generate a new one.";
-                logger.log(pattern.expandTags);
+                enum pattern = "Run the program with <i>--set twitchbot.keygen</> to generate a new one.";
+                logger.log(pattern.expandTags(LogLevel.all));
             }
             else
             {
@@ -449,8 +450,8 @@ void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
 
         case "Login authentication failed":
             logger.error("Incorrect client pass. Please make sure it is valid and has not expired.");
-            enum pattern = "Run the program with <i>--set twitchbot.keygen<l> to generate a new one.";
-            logger.log(pattern.expandTags);
+            enum pattern = "Run the program with <i>--set twitchbot.keygen</> to generate a new one.";
+            logger.log(pattern.expandTags(LogLevel.all));
             break;
 
         case "Login unsuccessful":
@@ -597,8 +598,8 @@ void onInvite(ConnectService service, const ref IRCEvent event)
 {
     if (!service.connectSettings.joinOnInvite)
     {
-        enum pattern = "Invited, but <i>joinOnInvite<l> is set to false.";
-        logger.log(pattern.expandTags);
+        enum pattern = "Invited, but <i>joinOnInvite</> is set to false.";
+        logger.log(pattern.expandTags(LogLevel.all));
         return;
     }
 
@@ -885,8 +886,8 @@ bool trySASLPlain(ConnectService service)
     }
     catch (Base64Exception e)
     {
-        enum pattern = "Could not authenticate: malformed password (<l>%s<e>)";
-        logger.errorf(pattern.expandTags, e.msg);
+        enum pattern = "Could not authenticate: malformed password (<l>%s</>)";
+        logger.errorf(pattern.expandTags(LogLevel.error), e.msg);
         version(PrintStacktraces) logger.trace(e.info);
         return false;
     }
@@ -1069,9 +1070,9 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
                 if (service.state.settings.prefix.beginsWith(".") ||
                     service.state.settings.prefix.beginsWith("/"))
                 {
-                    enum pattern = `WARNING: A prefix of "<l>%s<w>" will *not* work on Twitch servers, ` ~
-                        "as <l>.<w> and <l>/<w> are reserved for Twitch's own commands.";
-                    logger.warningf(pattern.expandTags, service.state.settings.prefix);
+                    enum pattern = `WARNING: A prefix of "<l>%s</>" will *not* work on Twitch servers, ` ~
+                        "as <l>.</> and <l>/</> are reserved for Twitch's own commands.";
+                    logger.warningf(pattern.expandTags(LogLevel.warning), service.state.settings.prefix);
                 }
             }
             else
@@ -1162,8 +1163,8 @@ void onQuit(ConnectService service, const ref IRCEvent event)
         (event.sender.nickname == service.state.client.origNickname))
     {
         // The regain Fiber will end itself when it is next triggered
-        enum pattern = "Attempting to regain nickname <l>%s<i>...";
-        logger.infof(pattern.expandTags, service.state.client.origNickname);
+        enum pattern = "Attempting to regain nickname <l>%s</>...";
+        logger.infof(pattern.expandTags(LogLevel.info), service.state.client.origNickname);
         raw(service.state, "NICK " ~ service.state.client.origNickname, No.quiet, No.background);
     }
 }
@@ -1291,8 +1292,8 @@ void onUnknownCommand(ConnectService service, const ref IRCEvent event)
     if (service.serverSupportsWHOIS && !service.state.settings.preferHostmasks && (event.aux == "WHOIS"))
     {
         logger.error("Error: This server does not seem to support user accounts.");
-        enum pattern = "Consider enabling <l>Core<e>.<l>preferHostmasks<e>.";
-        logger.error(pattern.expandTags);
+        enum pattern = "Consider enabling <l>Core</>.<l>preferHostmasks</>.";
+        logger.error(pattern.expandTags(LogLevel.error));
         logger.error("As it is, functionality will be greatly limited.");
         service.serverSupportsWHOIS = false;
     }

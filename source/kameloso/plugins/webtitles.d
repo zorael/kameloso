@@ -303,13 +303,13 @@ void worker(shared TitleLookupRequest sRequest,
                     import kameloso.common : curlErrorStrings;
 
                     // cURL error
-                    enum pattern = "Webtitles worker cURL exception <l>%s<e>: <l>%s";
+                    enum pattern = "Webtitles worker cURL exception <l>%s</>: <l>%s";
                     request.state.askToError(pattern.format(curlErrorStrings[e.errorCode], e.msg));
                 }
                 else if (e.httpCode >= 400)
                 {
                     // Simply failed to fetch
-                    enum pattern = "Webtitles worker saw HTTP <l>%d<w>.";
+                    enum pattern = "Webtitles worker saw HTTP <l>%d</>.";
                     request.state.askToWarn(pattern.format(e.httpCode));
                 }
                 else
@@ -367,13 +367,13 @@ void worker(shared TitleLookupRequest sRequest,
                     import kameloso.common : curlErrorStrings;
 
                     // cURL error
-                    enum pattern = "Webtitles worker cURL exception <l>%s<e>: <l>%s";
+                    enum pattern = "Webtitles worker cURL exception <l>%s</>: <l>%s";
                     request.state.askToError(pattern.format(curlErrorStrings[e.errorCode], e.msg));
                 }
                 else if (e.httpCode >= 400)
                 {
                     // Simply failed to fetch
-                    enum pattern = "Webtitles worker saw HTTP <l>%d<w>.";
+                    enum pattern = "Webtitles worker saw HTTP <l>%d</>.";
                     request.state.askToWarn(pattern.format(e.httpCode));
                 }
                 else
@@ -400,7 +400,7 @@ void worker(shared TitleLookupRequest sRequest,
             catch (UnicodeException e)
             {
                 import std.format : format;
-                enum pattern = "Webtitles worker Unicode exception: <l>%s<e> " ~
+                enum pattern = "Webtitles worker Unicode exception: <l>%s</> " ~
                     "(link is probably to an image or similar)";
                 request.state.askToError(pattern.format(e.msg));
                 //version(PrintStacktraces) request.state.askToTrace(e.info);

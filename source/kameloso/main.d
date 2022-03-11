@@ -14,6 +14,7 @@ private:
 
 import kameloso.kameloso : Kameloso, CoreSettings;
 import kameloso.common : Tint, expandTags, logger;
+import kameloso.logger : LogLevel;
 import kameloso.plugins.common.core : IRCPlugin, Replay;
 import dialect.defs;
 import lu.common : Next;
@@ -358,8 +359,8 @@ void messageFiber(ref Kameloso instance)
                 }
                 catch (Exception e)
                 {
-                    enum pattern = "The <l>%s<e> plugin threw an exception when reloading: <l>%s";
-                    logger.errorf(pattern.expandTags, plugin.name, e.msg);
+                    enum pattern = "The <l>%s</> plugin threw an exception when reloading: <l>%s";
+                    logger.errorf(pattern.expandTags(LogLevel.error), plugin.name, e.msg);
                     version(PrintStacktraces) logger.trace(e);
                 }
             }
@@ -633,36 +634,36 @@ void messageFiber(ref Kameloso instance)
         /// Proxies the passed message to the [kameloso.common.logger].
         void proxyLoggerMessages(ThreadMessage.TerminalOutput logLevel, string taggedMessage) scope
         {
-            if (instance.settings.headless) return;
+            import kameloso.logger : LogLevel;
 
-            immutable message = taggedMessage.expandTags;
+            if (instance.settings.headless) return;
 
             with (ThreadMessage.TerminalOutput)
             final switch (logLevel)
             {
             case writeln:
                 import std.stdio : writeln;
-                writeln(message);
+                writeln(taggedMessage.expandTags(LogLevel.off));
                 break;
 
             case trace:
-                logger.trace(message);
+                logger.trace(taggedMessage.expandTags(LogLevel.trace));
                 break;
 
             case log:
-                logger.log(message);
+                logger.log(taggedMessage.expandTags(LogLevel.all));
                 break;
 
             case info:
-                logger.info(message);
+                logger.info(taggedMessage.expandTags(LogLevel.info));
                 break;
 
             case warning:
-                logger.warning(message);
+                logger.warning(taggedMessage.expandTags(LogLevel.warning));
                 break;
 
             case error:
-                logger.error(message);
+                logger.error(taggedMessage.expandTags(LogLevel.error));
                 break;
             }
         }
@@ -934,8 +935,8 @@ Next mainLoop(ref Kameloso instance)
         }
         catch (Exception e)
         {
-            enum pattern = "Unhandled messenger exception: <l>%s<w> (at <l>%s<w>:<l>%d<w>)";
-            logger.warningf(pattern.expandTags, e.msg, e.file, e.line);
+            enum pattern = "Unhandled messenger exception: <l>%s</> (at <l>%s</>:<l>%d</>)";
+            logger.warningf(pattern.expandTags(LogLevel.warning), e.msg, e.file, e.line);
             version(PrintStacktraces) logger.trace(e);
         }
 
@@ -1120,18 +1121,18 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
         version(Posix)
         {
             import kameloso.common : errnoStrings;
-            enum pattern = "Connection error! (<l>%s<w>) (<l>%s<w>)";
-            logger.warningf(pattern.expandTags, attempt.error, errnoStrings[attempt.errno]);
+            enum pattern = "Connection error! (<l>%s</>) (<l>%s</>)";
+            logger.warningf(pattern.expandTags(LogLevel.warning), attempt.error, errnoStrings[attempt.errno]);
         }
         else version(Windows)
         {
-            enum pattern = "Connection error! (<l>%s<w>) (<l>%d<w>)";
-            logger.warningf(pattern.expandTags, attempt.error, attempt.errno);
+            enum pattern = "Connection error! (<l>%s</>) (<l>%d</>)";
+            logger.warningf(pattern.expandTags(LogLevel.warning), attempt.error, attempt.errno);
         }
         else
         {
-            enum pattern = "Connection error! (<l>%s<w>)";
-            logger.warningf(pattern.expandTags, attempt.error);
+            enum pattern = "Connection error! (<l>%s</>)";
+            logger.warningf(pattern.expandTags(LogLevel.warning), attempt.error);
         }
 
         // Sleep briefly so it won't flood the screen on chains of errors
@@ -1155,18 +1156,18 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
             version(Posix)
             {
                 import kameloso.common : errnoStrings;
-                enum pattern = "Connection error: invalid server response! (<l>%s<e>) (<l>%s<e>)";
-                logger.errorf(pattern.expandTags, attempt.error, errnoStrings[attempt.errno]);
+                enum pattern = "Connection error: invalid server response! (<l>%s</>) (<l>%s</>)";
+                logger.errorf(pattern.expandTags(LogLevel.error), attempt.error, errnoStrings[attempt.errno]);
             }
             else version(Windows)
             {
-                enum pattern = "Connection error: invalid server response! (<l>%s<e>) (<l>%d<e>)";
-                logger.errorf(pattern.expandTags, attempt.error, attempt.errno);
+                enum pattern = "Connection error: invalid server response! (<l>%s</>) (<l>%d</>)";
+                logger.errorf(pattern.expandTags(LogLevel.error), attempt.error, attempt.errno);
             }
             else
             {
-                enum pattern = "Connection error: invalid server response! (<l>%s<e>)";
-                logger.errorf(pattern.expandTags, attempt.error);
+                enum pattern = "Connection error: invalid server response! (<l>%s</>)";
+                logger.errorf(pattern.expandTags(LogLevel.error), attempt.error);
             }
         }
 
@@ -1284,27 +1285,27 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
             }
             catch (NomException e)
             {
-                enum pattern = `NomException %s.postprocess: tried to nom "<l>%s<w>" with "<l>%s<w>"`;
-                logger.warningf(pattern.expandTags, plugin.name, e.haystack, e.needle);
+                enum pattern = `NomException %s.postprocess: tried to nom "<l>%s</>" with "<l>%s</>"`;
+                logger.warningf(pattern.expandTags(LogLevel.warning), plugin.name, e.haystack, e.needle);
                 printEventDebugDetails(event, raw);
                 version(PrintStacktraces) logger.trace(e.info);
             }
             catch (UTFException e)
             {
                 enum pattern = "UTFException %s.postprocess: <l>%s";
-                logger.warningf(pattern.expandTags, plugin.name, e.msg);
+                logger.warningf(pattern.expandTags(LogLevel.warning), plugin.name, e.msg);
                 version(PrintStacktraces) logger.trace(e.info);
             }
             catch (UnicodeException e)
             {
                 enum pattern = "UnicodeException %s.postprocess: <l>%s";
-                logger.warningf(pattern.expandTags, plugin.name, e.msg);
+                logger.warningf(pattern.expandTags(LogLevel.warning), plugin.name, e.msg);
                 version(PrintStacktraces) logger.trace(e.info);
             }
             catch (Exception e)
             {
                 enum pattern = "Exception %s.postprocess: <l>%s";
-                logger.warningf(pattern.expandTags, plugin.name, e.msg);
+                logger.warningf(pattern.expandTags(LogLevel.warning), plugin.name, e.msg);
                 printEventDebugDetails(event, raw);
                 version(PrintStacktraces) logger.trace(e);
             }
@@ -1333,27 +1334,27 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
             }
             catch (NomException e)
             {
-                enum pattern = `NomException %s: tried to nom "<l>%s<w>" with "<l>%s<w>"`;
-                logger.warningf(pattern.expandTags, plugin.name, e.haystack, e.needle);
+                enum pattern = `NomException %s: tried to nom "<l>%s</>" with "<l>%s</>"`;
+                logger.warningf(pattern.expandTags(LogLevel.warning), plugin.name, e.haystack, e.needle);
                 printEventDebugDetails(event, raw);
                 version(PrintStacktraces) logger.trace(e.info);
             }
             catch (UTFException e)
             {
                 enum pattern = "UTFException %s: <l>%s";
-                logger.warningf(pattern.expandTags, plugin.name, e.msg);
+                logger.warningf(pattern.expandTags(LogLevel.warning), plugin.name, e.msg);
                 version(PrintStacktraces) logger.trace(e.info);
             }
             catch (UnicodeException e)
             {
                 enum pattern = "UnicodeException %s: <l>%s";
-                logger.warningf(pattern.expandTags, plugin.name, e.msg);
+                logger.warningf(pattern.expandTags(LogLevel.warning), plugin.name, e.msg);
                 version(PrintStacktraces) logger.trace(e.info);
             }
             catch (Exception e)
             {
                 enum pattern = "Exception %s: <l>%s";
-                logger.warningf(pattern.expandTags, plugin.name, e.msg);
+                logger.warningf(pattern.expandTags(LogLevel.warning), plugin.name, e.msg);
                 printEventDebugDetails(event, raw);
                 version(PrintStacktraces) logger.trace(e);
             }
@@ -1423,15 +1424,15 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
     }
     catch (IRCParseException e)
     {
-        enum pattern = "IRCParseException: <l>%s<w> (at <l>%s<w>:<l>%d<w>)";
-        logger.warningf(pattern.expandTags, e.msg, e.file, e.line);
+        enum pattern = "IRCParseException: <l>%s</> (at <l>%s</>:<l>%d</>)";
+        logger.warningf(pattern.expandTags(LogLevel.warning), e.msg, e.file, e.line);
         printEventDebugDetails(event, raw);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (NomException e)
     {
-        enum pattern = `NomException: tried to nom "<l>%s<w>" with "<l>%s<w>" (at <l>%s<w>:<l>%d<w>)`;
-        logger.warningf(pattern.expandTags, e.haystack, e.needle, e.file, e.line);
+        enum pattern = `NomException: tried to nom "<l>%s</>" with "<l>%s</>" (at <l>%s</>:<l>%d</>)`;
+        logger.warningf(pattern.expandTags(LogLevel.warning), e.haystack, e.needle, e.file, e.line);
         printEventDebugDetails(event, raw);
         version(PrintStacktraces) logger.trace(e.info);
     }
@@ -1447,8 +1448,8 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
     }
     catch (Exception e)
     {
-        enum pattern = "Unhandled exception: <l>%s<w> (at <l>%s<w>:<l>%d<w>)";
-        logger.warningf(pattern.expandTags, e.msg, e.file, e.line);
+        enum pattern = "Unhandled exception: <l>%s</> (at <l>%s</>:<l>%d</>)";
+        logger.warningf(pattern.expandTags(LogLevel.warning), e.msg, e.file, e.line);
         printEventDebugDetails(event, raw);
         version(PrintStacktraces) logger.trace(e);
     }
@@ -1487,7 +1488,7 @@ void processAwaitingDelegates(IRCPlugin plugin, const ref IRCEvent event)
             catch (Exception e)
             {
                 enum pattern = "Exception %s.awaitingDelegates[%d]: <l>%s";
-                logger.warningf(pattern.expandTags, plugin.name, i, e.msg);
+                logger.warningf(pattern.expandTags(LogLevel.warning), plugin.name, i, e.msg);
                 printEventDebugDetails(event, event.raw);
                 version(PrintStacktraces) logger.trace(e);
             }
@@ -1565,7 +1566,7 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
             catch (Exception e)
             {
                 enum pattern = "Exception %s.awaitingFibers[%d]: <l>%s";
-                logger.warningf(pattern.expandTags, plugin.name, i, e.msg);
+                logger.warningf(pattern.expandTags(LogLevel.warning), plugin.name, i, e.msg);
                 printEventDebugDetails(event, event.raw);
                 version(PrintStacktraces) logger.trace(e);
                 expiredFibers ~= fiber;
@@ -1636,7 +1637,7 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledDelegate`s with an uns
         catch (Exception e)
         {
             enum pattern = "Exception %s.scheduledDelegates[%d]: <l>%s";
-            logger.warningf(pattern.expandTags, plugin.name, i, e.msg);
+            logger.warningf(pattern.expandTags(LogLevel.warning), plugin.name, i, e.msg);
             version(PrintStacktraces) logger.trace(e);
         }
 
@@ -1686,7 +1687,7 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
         catch (Exception e)
         {
             enum pattern = "Exception %s.scheduledFibers[%d]: <l>%s";
-            logger.warningf(pattern.expandTags, plugin.name, i, e.msg);
+            logger.warningf(pattern.expandTags(LogLevel.warning), plugin.name, i, e.msg);
             version(PrintStacktraces) logger.trace(e);
         }
 
@@ -1741,8 +1742,8 @@ void processReadyReplays(ref Kameloso instance, IRCPlugin plugin)
         catch (NomException e)
         {
             enum pattern = "NomException postprocessing %s.state.readyReplays[%d]: " ~
-                `tried to nom "<l>%s<w>" with "<l>%s<w>"`;
-            logger.warningf(pattern.expandTags, plugin.name, i, e.haystack, e.needle);
+                `tried to nom "<l>%s</>" with "<l>%s</>"`;
+            logger.warningf(pattern.expandTags(LogLevel.warning), plugin.name, i, e.haystack, e.needle);
             printEventDebugDetails(replay.event, replay.event.raw);
             version(PrintStacktraces) logger.trace(e.info);
             continue;
@@ -1750,21 +1751,21 @@ void processReadyReplays(ref Kameloso instance, IRCPlugin plugin)
         catch (UTFException e)
         {
             enum pattern = "UTFException postprocessing %s.state.readyReplace[%d]: <l>%s";
-            logger.warningf(pattern.expandTags, plugin.name, i, e.msg);
+            logger.warningf(pattern.expandTags(LogLevel.warning), plugin.name, i, e.msg);
             version(PrintStacktraces) logger.trace(e.info);
             continue;
         }
         catch (UnicodeException e)
         {
             enum pattern = "UnicodeException postprocessing %s.state.readyReplace[%d]: <l>%s";
-            logger.warningf(pattern.expandTags, plugin.name, i, e.msg);
+            logger.warningf(pattern.expandTags(LogLevel.warning), plugin.name, i, e.msg);
             version(PrintStacktraces) logger.trace(e.info);
             continue;
         }
         catch (Exception e)
         {
             enum pattern = "Exception postprocessing %s.state.readyReplace[%d]: <l>%s";
-            logger.warningf(pattern.expandTags, plugin.name, i, e.msg);
+            logger.warningf(pattern.expandTags(LogLevel.warning), plugin.name, i, e.msg);
             printEventDebugDetails(replay.event, replay.event.raw);
             version(PrintStacktraces) logger.trace(e);
             continue;
@@ -1779,7 +1780,7 @@ void processReadyReplays(ref Kameloso instance, IRCPlugin plugin)
         catch (Exception e)
         {
             enum pattern = "Exception %s.state.readyReplays[%d].dg(): <l>%s";
-            logger.warningf(pattern.expandTags, plugin.name, i, e.msg);
+            logger.warningf(pattern.expandTags(LogLevel.warning), plugin.name, i, e.msg);
             printEventDebugDetails(replay.event, replay.event.raw);
             version(PrintStacktraces) logger.trace(e);
         }
@@ -1941,14 +1942,14 @@ Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings
     }
     catch (FileTypeMismatchException e)
     {
-        enum pattern = "Specified configuration file <l>%s<e> is not a file!";
-        logger.errorf(pattern.expandTags, e.filename);
+        enum pattern = "Specified configuration file <l>%s</> is not a file!";
+        logger.errorf(pattern.expandTags(LogLevel.error), e.filename);
         //version(PrintStacktraces) logger.trace(e.info);
     }
     catch (ConfigurationFileReadFailureException e)
     {
-        enum pattern = "Error reading and decoding configuration file [<l>%s<e>]: <l>%s";
-        logger.errorf(pattern.expandTags, e.filename, e.msg);
+        enum pattern = "Error reading and decoding configuration file [<l>%s</>]: <l>%s";
+        logger.errorf(pattern.expandTags(LogLevel.error), e.filename, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (DeserialisationException e)
@@ -1958,8 +1959,8 @@ Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings
     }
     catch (ProcessException e)
     {
-        enum pattern = "Failed to open <l>%s<e> in an editor: <l>%s";
-        logger.errorf(pattern.expandTags, instance.settings.configFile, e.msg);
+        enum pattern = "Failed to open <l>%s</> in an editor: <l>%s";
+        logger.errorf(pattern.expandTags(LogLevel.error), instance.settings.configFile, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (Exception e)
@@ -2021,8 +2022,8 @@ Next tryConnect(ref Kameloso instance)
 
         void verboselyDelay()
         {
-            enum pattern = "Retrying in <i>%d<l> seconds...";
-            logger.logf(pattern.expandTags, incrementedRetryDelay);
+            enum pattern = "Retrying in <i>%d</> seconds...";
+            logger.logf(pattern.expandTags(LogLevel.all), incrementedRetryDelay);
             interruptibleSleep(incrementedRetryDelay.seconds, *instance.abort);
 
             import std.algorithm.comparison : min;
@@ -2033,8 +2034,8 @@ Next tryConnect(ref Kameloso instance)
 
         void verboselyDelayToNextIP()
         {
-            enum pattern = "Failed to connect to IP. Trying next IP in <i>%d<l> seconds.";
-            logger.logf(pattern.expandTags, Timeout.connectionRetry);
+            enum pattern = "Failed to connect to IP. Trying next IP in <i>%d</> seconds.";
+            logger.logf(pattern.expandTags(LogLevel.all), Timeout.connectionRetry);
             incrementedRetryDelay = Timeout.connectionRetry;
             interruptibleSleep(Timeout.connectionRetry.seconds, *instance.abort);
         }
@@ -2070,8 +2071,8 @@ Next tryConnect(ref Kameloso instance)
 
             immutable rtPattern = !resolvedHost.length &&
                 (attempt.ip.addressFamily == AddressFamily.INET6) ?
-                    "Connecting to [<i>%s<l>]:<i>%s<l> %s..." :
-                    "Connecting to <i>%s<l>:<i>%s<l> %s...";
+                    "Connecting to [<i>%s</>]:<i>%s</> %s..." :
+                    "Connecting to <i>%s</>:<i>%s</> %s...";
 
             immutable ssl = instance.conn.ssl ? "(SSL) " : string.init;
 
@@ -2080,7 +2081,7 @@ Next tryConnect(ref Kameloso instance)
                 (sharedDomains(instance.parser.server.address, resolvedHost) < 2)) ?
                 attempt.ip.toAddrString : resolvedHost;
 
-            logger.logf(rtPattern.expandTags, address, attempt.ip.toPortString, ssl);
+            logger.logf(rtPattern.expandTags(LogLevel.all), address, attempt.ip.toPortString, ssl);
             continue;
 
         case connected:
@@ -2112,13 +2113,14 @@ Next tryConnect(ref Kameloso instance)
                 version(Posix)
                 {
                     import kameloso.common : errnoStrings;
-                    enum pattern = "Connection failed with <l>%s<w>: <l>%s";
-                    logger.warningf(pattern.expandTags, errnoStrings[attempt.errno], errorString);
+                    enum pattern = "Connection failed with <l>%s</>: <l>%s";
+                    logger.warningf(pattern.expandTags(LogLevel.warning),
+                        errnoStrings[attempt.errno], errorString);
                 }
                 else version(Windows)
                 {
-                    enum pattern = "Connection failed with error <l>%d<w>: <l>%s";
-                    logger.warningf(pattern.expandTags, attempt.errno, errorString);
+                    enum pattern = "Connection failed with error <l>%d</>: <l>%s";
+                    logger.warningf(pattern.expandTags(LogLevel.warning), attempt.errno, errorString);
                 }
             }
 
@@ -2141,13 +2143,13 @@ Next tryConnect(ref Kameloso instance)
             version(Posix)
             {
                 import kameloso.common : errnoStrings;
-                enum pattern = "IPv6 connection failed with <l>%s<w>: <l>%s";
-                logger.warningf(pattern.expandTags, errnoStrings[attempt.errno], errorString);
+                enum pattern = "IPv6 connection failed with <l>%s</>: <l>%s";
+                logger.warningf(pattern.expandTags(LogLevel.warning), errnoStrings[attempt.errno], errorString);
             }
             else version(Windows)
             {
-                enum pattern = "IPv6 connection failed with error <l>%d<w>: <l>%s";
-                logger.warningf(pattern.expandTags, attempt.errno, errorString);
+                enum pattern = "IPv6 connection failed with error <l>%d</>: <l>%s";
+                logger.warningf(pattern.expandTags(LogLevel.warning), attempt.errno, errorString);
             }
             else
             {
@@ -2172,13 +2174,13 @@ Next tryConnect(ref Kameloso instance)
             version(Posix)
             {
                 import kameloso.common : errnoStrings;
-                enum pattern = "Failed to connect: <l>%s<e> (<l>%s<e>)";
-                logger.errorf(pattern.expandTags, errorString, errnoStrings[attempt.errno]);
+                enum pattern = "Failed to connect: <l>%s</> (<l>%s</>)";
+                logger.errorf(pattern.expandTags(LogLevel.error), errorString, errnoStrings[attempt.errno]);
             }
             else version(Windows)
             {
-                enum pattern = "Failed to connect: <l>%s<e> (<l>%d<e>)";
-                logger.errorf(pattern.expandTags, errorString, attempt.errno);
+                enum pattern = "Failed to connect: <l>%s</> (<l>%d</>)";
+                logger.errorf(pattern.expandTags(LogLevel.error), errorString, attempt.errno);
             }
             else
             {
@@ -2237,8 +2239,8 @@ Next tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
         import std.algorithm.comparison : min;
         import core.time : seconds;
 
-        enum pattern = "Network down? Retrying in <i>%d<l> seconds.";
-        logger.logf(pattern.expandTags, incrementedRetryDelay);
+        enum pattern = "Network down? Retrying in <i>%d</> seconds.";
+        logger.logf(pattern.expandTags(LogLevel.all), incrementedRetryDelay);
         interruptibleSleep(incrementedRetryDelay.seconds, *instance.abort);
         if (*instance.abort) return;
 
@@ -2267,29 +2269,29 @@ Next tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
 
         case success:
             import lu.string : plurality;
-            enum pattern = "<l>%s<i> resolved into <l>%d<i> %s.";
-            logger.infof(pattern.expandTags, instance.parser.server.address,
+            enum pattern = "<l>%s</> resolved into <l>%d</> %s.";
+            logger.infof(pattern.expandTags(LogLevel.info), instance.parser.server.address,
                 instance.conn.ips.length,
                 instance.conn.ips.length.plurality("IP", "IPs"));
             return Next.continue_;
 
         case exception:
-            enum pattern = "Could not resolve server address: <l>%s<w> (<l>%d<w>)";
-            logger.warningf(pattern.expandTags, errorString, attempt.errno);
+            enum pattern = "Could not resolve server address: <l>%s</> (<l>%d</>)";
+            logger.warningf(pattern.expandTags(LogLevel.warning), errorString, attempt.errno);
             delayOnNetworkDown();
             if (*instance.abort) return Next.returnFailure;
             continue;
 
         case error:
-            enum pattern = "Could not resolve server address: <l>%s<e> (<l>%d<e>)";
-            logger.errorf(pattern.expandTags, errorString, attempt.errno);
+            enum pattern = "Could not resolve server address: <l>%s</> (<l>%d</>)";
+            logger.errorf(pattern.expandTags(LogLevel.error), errorString, attempt.errno);
 
             if (firstConnect)
             {
                 // First attempt and a failure; something's wrong, abort
                 enum firstConnectPattern = "Failed to resolve host. Verify that you are " ~
-                    "connected to the Internet and that the server address (<i>%s<l>) is correct.";
-                logger.logf(firstConnectPattern.expandTags, instance.parser.server.address);
+                    "connected to the Internet and that the server address (<i>%s</>) is correct.";
+                logger.logf(firstConnectPattern.expandTags(LogLevel.all), instance.parser.server.address);
                 return Next.returnFailure;
             }
             else
@@ -2448,8 +2450,8 @@ Next verifySettings(ref Kameloso instance)
 
     if (!addressIsResolvable)
     {
-        enum pattern = "Invalid address! [<l>%s<e>]";
-        logger.errorf(pattern.expandTags, instance.parser.server.address);
+        enum pattern = "Invalid address! [<l>%s</e>]";
+        logger.errorf(pattern.expandTags(LogLevel.error), instance.parser.server.address);
         return Next.returnFailure;
     }
 
@@ -2669,9 +2671,9 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         }
         catch (IRCPluginInitialisationException e)
         {
-            enum pattern = "The <l>%s<w> plugin failed to load its resources; " ~
-                "<l>%s<w> (at <l>%s<w>:<l>%d<w>)%s";
-            logger.warningf(pattern.expandTags, e.file.baseName[0..$-2],
+            enum pattern = "The <l>%s</> plugin failed to load its resources; " ~
+                "<l>%s</> (at <l>%s</>:<l>%d</>)%s";
+            logger.warningf(pattern.expandTags(LogLevel.warning), e.file.baseName[0..$-2],
                 e.msg, e.file.baseName, e.line, bell);
             version(PrintStacktraces) logger.trace(e.info);
             attempt.retval = ShellReturnValue.pluginResourceLoadFailure;
@@ -2679,9 +2681,9 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         }
         catch (Exception e)
         {
-            enum pattern = "An unexpected error occurred while initialising the <l>%s<w> " ~
-                "plugin's resources: <l>%s<w> (at <l>%s<w>:<l>%d<w>)%s";
-            logger.warningf(pattern.expandTags, e.file.baseName[0..$-2],
+            enum pattern = "An unexpected error occurred while initialising the <l>%s</> " ~
+                "plugin's resources: <l>%s</> (at <l>%s</>:<l>%d</>)%s";
+            logger.warningf(pattern.expandTags(LogLevel.warning), e.file.baseName[0..$-2],
                 e.msg, e.file, e.line, bell);
             version(PrintStacktraces) logger.trace(e);
             attempt.retval = ShellReturnValue.pluginResourceLoadException;
@@ -2700,9 +2702,9 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         }
         catch (IRCPluginInitialisationException e)
         {
-            enum pattern = "The <l>%s<w> plugin failed to start: <l>%s<w> " ~
-                "(at <l>%s<w>:<l>%d<w>)%s";
-            logger.warningf(pattern.expandTags, e.file.baseName[0..$-2],
+            enum pattern = "The <l>%s</> plugin failed to start: <l>%s</> " ~
+                "(at <l>%s</>:<l>%d</>)%s";
+            logger.warningf(pattern.expandTags(LogLevel.warning), e.file.baseName[0..$-2],
                 e.msg, e.file.baseName, e.line, bell);
             version(PrintStacktraces) logger.trace(e.info);
             attempt.retval = ShellReturnValue.pluginStartFailure;
@@ -2710,9 +2712,9 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         }
         catch (Exception e)
         {
-            enum pattern = "An unexpected error occurred while starting the <l>%s<w> plugin: " ~
-                "<l>%s<w> (at <l>%s<w>:<l>%d<w>)%s";
-            logger.warningf(pattern.expandTags, e.file.baseName[0..$-2],
+            enum pattern = "An unexpected error occurred while starting the <l>%s</> plugin: " ~
+                "<l>%s</> (at <l>%s</>:<l>%d</>)%s";
+            logger.warningf(pattern.expandTags(LogLevel.warning), e.file.baseName[0..$-2],
                 e.msg, e.file, e.line, bell);
             version(PrintStacktraces) logger.trace(e);
             attempt.retval = ShellReturnValue.pluginStartException;
@@ -2750,8 +2752,8 @@ void printEventDebugDetails(const ref IRCEvent event,
 
     if (!eventWasInitialised || (event == IRCEvent.init))
     {
-        enum pattern = `Offending line: "<l>%s<w>"`;
-        logger.warningf(pattern.expandTags, raw);
+        enum pattern = `Offending line: "<l>%s</>"`;
+        logger.warningf(pattern.expandTags(LogLevel.warning), raw);
     }
     else
     {
@@ -2827,8 +2829,8 @@ void printSummary(const ref Kameloso instance)
     }
 
     logger.info("Total time connected: ", Tint.log, totalTime.timeSince!(7, 1));
-    enum pattern = "Total received: <l>%,d<i> bytes";
-    logger.infof(pattern.expandTags, totalBytesReceived);
+    enum pattern = "Total received: <l>%,d</> bytes";
+    logger.infof(pattern.expandTags(LogLevel.info), totalBytesReceived);
 }
 
 
@@ -3156,8 +3158,8 @@ int run(string[] args)
         catch (Exception e)
         {
             enum pattern = "Caught Exception when saving settings: " ~
-                "<l>%s<w> (at <l>%s<w>:<l>%d<w>)";
-            logger.warningf(pattern.expandTags, e.msg, e.file, e.line);
+                "<l>%s</> (at <l>%s</>:<l>%d</>)";
+            logger.warningf(pattern.expandTags(LogLevel.warning), e.msg, e.file, e.line);
             version(PrintStacktraces) logger.trace(e);
         }
     }
@@ -3178,12 +3180,13 @@ int run(string[] args)
             static if (__VERSION__ >= 2087L)
             {
                 immutable allocated = stats.allocatedInCurrentThread;
-                enum pattern = "Allocated in current thread: <l>%,d<i> bytes";
-                logger.infof(pattern.expandTags, allocated);
+                enum pattern = "Allocated in current thread: <l>%,d</> bytes";
+                logger.infof(pattern.expandTags(LogLevel.info), allocated);
             }
 
-            enum memoryUsedPattern = "Memory used: <l>%,d<i> bytes, free <l>%,d<i> bytes";
-            logger.infof(memoryUsedPattern.expandTags, stats.usedSize, stats.freeSize);
+            enum memoryUsedPattern = "Memory used: <l>%,d</> bytes, free <l>%,d</> bytes";
+            logger.infof(memoryUsedPattern.expandTags(LogLevel.info),
+                stats.usedSize, stats.freeSize);
         }
 
         if (*instance.abort)

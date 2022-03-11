@@ -25,6 +25,7 @@ debug import kameloso.plugins.admin.debugging;
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness;
 import kameloso.common : expandTags, logger;
+import kameloso.logger : LogLevel;
 import kameloso.messaging;
 import dialect.defs;
 import std.concurrency : send;
@@ -1246,8 +1247,8 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 
         if (slice.length)
         {
-            enum pattern = `Reloading plugin "<i>%s<l>".`;
-            logger.logf(pattern.expandTags, slice);
+            enum pattern = `Reloading plugin "<i>%s</>".`;
+            logger.logf(pattern.expandTags(LogLevel.all), slice);
         }
         else
         {
@@ -1269,10 +1270,10 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         if (results == SplitResults.underrun)
         {
             // verb_channel_nickname
-            enum pattern = "Invalid bus message syntax; expected <b>%s%s<b> " ~
-                "[verb] [channel] [nickname if add/del], got \"<b>%s<b>\"";
-            logger.warningf(pattern.expandTags, plugin.state.settings.prefix,
-                verb, message.payload.strippedRight);
+            enum pattern = "Invalid bus message syntax; expected <l>%s%s</> " ~
+                "[verb] [channel] [nickname if add/del], got \"<l>%s</>\"";
+            logger.warningf(pattern.expandTags(LogLevel.warning),
+                plugin.state.settings.prefix, verb, message.payload.strippedRight);
             return;
         }
 
@@ -1302,8 +1303,8 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             return plugin.listList(channel, verb);
 
         default:
-            enum pattern = "Invalid bus message <l>%s<w> subverb <l>%s";
-            logger.warningf(pattern.expandTags, verb, subverb);
+            enum pattern = "Invalid bus message <l>%s</> subverb <l>%s";
+            logger.warningf(pattern.expandTags(LogLevel.warning), verb, subverb);
             break;
         }
         break;
@@ -1349,8 +1350,8 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             return listHostmaskDefinitions(plugin, lvalueEvent);
 
         default:
-            enum pattern = "Invalid bus message <l>%s<w> subverb <l>%s";
-            logger.warningf(pattern.expandTags, verb, subverb);
+            enum pattern = "Invalid bus message <l>%s</> subverb <l>%s";
+            logger.warningf(pattern.expandTags(LogLevel.warning), verb, subverb);
             break;
         }
         break;
