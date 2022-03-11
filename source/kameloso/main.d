@@ -338,7 +338,8 @@ void messageFiber(ref Kameloso instance)
         void changeSettingSafeDg(ThreadMessage.ChangeSetting,
             shared(void delegate(bool) @safe) dg, string expression) scope
         {
-            changeSetting(ThreadMessage.ChangeSetting(), dg, expression);
+            changeSetting(ThreadMessage.ChangeSetting(),
+                cast(shared(void delegate(bool)))dg, expression);
         }
 
         /// Reloads a particular plugin, or all if no plugin name passed.
