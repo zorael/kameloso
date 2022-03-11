@@ -1501,7 +1501,7 @@ T expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" strip
 
                     case 'h':
                         i += 3;  // advance past "<h>".length
-                        immutable closingHashMarkPos = (cast(T)asBytes[i..$]).indexOf("<h>");
+                        immutable closingHashMarkPos = (cast(T)asBytes[i..$]).indexOf("</>");
 
                         if (closingHashMarkPos == -1)
                         {
@@ -1649,31 +1649,31 @@ unittest
         assert(replaced is emptyLine);
     }
     {
-        immutable line = "hello<h>kameloso<h>hello";
+        immutable line = "hello<h>kameloso</>hello";
         immutable replaced = line.expandTags(LogLevel.off, No.strip);
         immutable expected = text("hello", colourByHash("kameloso", No.brightTerminal), Tint.off, "hello");
         assert((replaced == expected), replaced);
     }
     {
-        immutable line = "hello<h>kameloso<h>hello";
+        immutable line = "hello<h>kameloso</>hello";
         immutable replaced = line.expandTags(LogLevel.off, Yes.strip);
         immutable expected = "hellokamelosohello";
         assert((replaced == expected), replaced);
     }
     {
-        immutable line = "hello<h><h>hello";
+        immutable line = "hello<h></>hello";
         immutable replaced = line.expandTags(LogLevel.off, Yes.strip);
         immutable expected = "hellohello";
         assert((replaced == expected), replaced);
     }
     {
-        immutable line = `hello\<harbl>kameloso<h>hello<h>hi`;
+        immutable line = `hello\<harbl>kameloso<h>hello</>hi`;
         immutable replaced = line.expandTags(LogLevel.off, No.strip);
         immutable expected = text("hello<harbl>kameloso", colourByHash("hello", No.brightTerminal), Tint.off, "hi");
         assert((replaced == expected), replaced);
     }
     {
-        immutable line = `hello\<harbl>kameloso<h>hello<h>hi`;
+        immutable line = `hello\<harbl>kameloso<h>hello</>hi`;
         immutable replaced = line.expandTags(LogLevel.off, Yes.strip);
         immutable expected = "hello<harbl>kamelosohellohi";
         assert((replaced == expected), replaced);
