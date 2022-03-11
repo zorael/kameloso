@@ -251,14 +251,18 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     case RPL_ENDOFWHOWAS:
     case RPL_WHOISSERVER:
     case RPL_CHARSET:
-        if (!plugin.printerSettings.filterWhois) goto default;
-
         immutable shouldSquelch = plugin.hasSquelches &&
             updateSquelchstamp(plugin, event.time, event.channel,
                 event.sender.nickname, event.target.nickname);
 
-        if (shouldSquelch) break;
-        else goto default;
+        if (!shouldSquelch && !plugin.printerSettings.filterWhois)
+        {
+            goto default;
+        }
+        else
+        {
+            break;
+        }
 
     case RPL_NAMREPLY:
     case RPL_ENDOFNAMES:
