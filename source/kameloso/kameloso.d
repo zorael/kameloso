@@ -544,7 +544,10 @@ public:
             // Something changed the settings; propagate
             plugin.state.updates ^= Update.settings;
             propagate(plugin.state.settings);
-            *kameloso.common.settings = plugin.state.settings;
+            this.settings = plugin.state.settings;
+
+            // This shouldn't be necessary since kameloso.common.settings points to this.settings
+            //*kameloso.common.settings = plugin.state.settings;
         }
 
         assert((plugin.state.updates == Update.nothing),
