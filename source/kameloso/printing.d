@@ -541,8 +541,8 @@ private struct FormatAggregateMemberArguments
     /// Type of member aggregate; one of "struct", "class", "interface" and "union".
     string aggregateType;
 
-    /// Whether or not the aggregate is in an initial state.
-    bool isInit;
+    /// Text snippet indicating whether or not the aggregate is in an initial state.
+    string initText;
 
     /// Width (length) of longest type name.
     uint typewidth;
@@ -571,8 +571,6 @@ private void formatAggregateMemberImpl(Flag!"coloured" coloured, Sink)
 {
     import std.format : formattedWrite;
 
-    immutable initText = args.isInit ? " (init)" : string.init;
-
     static if (coloured)
     {
         import kameloso.terminal.colours : TerminalForeground, colour;
@@ -586,13 +584,13 @@ private void formatAggregateMemberImpl(Flag!"coloured" coloured, Sink)
         sink.formattedWrite(normalPattern,
             typeCode.colour, args.typewidth, args.typestring,
             memberCode.colour, args.namewidth, args.memberstring,
-            valueCode.colour, args.aggregateType, initText);
+            valueCode.colour, args.aggregateType, args.initText);
     }
     else
     {
         enum normalPattern = "%*s %-*s <%s>%s\n";
         sink.formattedWrite(normalPattern, args.typewidth, args.typestring,
-            args.namewidth, args.memberstring, args.aggregateType, initText);
+            args.namewidth, args.memberstring, args.aggregateType,args.initText);
     }
 }
 
@@ -790,19 +788,27 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 
                 static if (is(Thing == struct) && is(T == struct))
                 {
-                    immutable isInit = (__traits(getMember, thing, memberstring) ==
-                        __traits(getMember, Thing.init, memberstring));
+                    immutable initText = (__traits(getMember, thing, memberstring) ==
+                        __traits(getMember, Thing.init, memberstring)) ?
+                            " (init)" :
+                            string.init;
+                }
+                else static if (is(T == class))
+                {
+                    immutable initText = (__traits(getMember, thing, memberstring) is null) ?
+                        " (null)" :
+                        string.init;
                 }
                 else
                 {
-                    enum isInit = false;
+                    enum initText = string.init;
                 }
 
                 FormatAggregateMemberArguments args;
                 args.typestring = T.stringof;
                 args.memberstring = memberstring;
                 args.aggregateType = aggregateType;
-                args.isInit = isInit;
+                args.initText = initText;
                 args.typewidth = typewidth;
                 args.namewidth = namewidth + namePadding;
                 args.bright = bright;
@@ -1137,8 +1143,19 @@ unittest
       int i                           2
    string someLongConfiguration      "acdc adcadcad acacdadc"(22)
     int[] arrMatey                   [1, 2, 3, 42](4)
-   Nested nest                       <class>
+   Nested nest                       <class> (null)
 `), '\n' ~ formattedClass);
+
+    c.nest = new Nested;
+    immutable formattedClass2 = formatObjects!(No.all, No.coloured)(No.brightTerminal, c);
+    assert((formattedClass2 ==
+`-- Class
+   string s                          "arb"(3)
+      int i                           2
+   string someLongConfiguration      "acdc adcadcad acacdadc"(22)
+    int[] arrMatey                   [1, 2, 3, 42](4)
+   Nested nest                       <class>
+`), '\n' ~ formattedClass2);
 
     struct Reparse {}
     struct Client {}
