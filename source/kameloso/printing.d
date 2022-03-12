@@ -458,7 +458,7 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
         coloured = Whether or no to display terminal colours.
         sink = Output range to store output in.
         args = Argument aggregate for easier passing.
-        content = The array we're describing.auto ref
+        content = The array we're describing.
  +/
 private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
     (auto ref Sink sink, const FormatArrayMemberArguments args, const auto ref T content)

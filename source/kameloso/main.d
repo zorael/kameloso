@@ -78,6 +78,7 @@ enum gcOptions = ()
 }().idup;
 
 
+// rt_options
 /++
     Fine-tune the garbage collector.
 
