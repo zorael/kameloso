@@ -172,7 +172,7 @@ if (isAggregateType!Thing && memberstring.length)
 
     enum memberIsMutable =
         isMutable!(typeof(__traits(getMember, Thing, memberstring))) &&
-        __traits(compiles, { Thing thing; auto p = &__traits(getMember, thing, memberstring); });
+        __traits(compiles, __traits(getMember, Thing, memberstring).offsetof);
 }
 
 ///
