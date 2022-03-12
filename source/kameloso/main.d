@@ -569,6 +569,12 @@ void messageFiber(ref Kameloso instance)
                 }
                 break;
 
+            case QUIT:
+                immutable rawReason = m.event.content.length ? m.event.content : instance.bot.quitReason;
+                immutable reason = rawReason.replaceTokens(instance.parser.client);
+                line = "QUIT :" ~ reason;
+                break;
+
             case UNSET:
                 line = m.event.content;
                 break;
