@@ -370,6 +370,7 @@ Even with SSL seemingly properly set up you may see errors of *"Peer certificate
 * pipedream zero: **no compiler segfaults** ([#18026](https://issues.dlang.org/show_bug.cgi?id=18026), [#20562](https://issues.dlang.org/show_bug.cgi?id=20562))
 * pipedream: DCC
 * non-blocking FIFO
+* Twitch `ecount`? `settitle`? `setgame`? `vanish`? `watchtime`? `roulette`?
 * more pairs of eyes
 
 # Built with
