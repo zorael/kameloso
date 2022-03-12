@@ -54,7 +54,7 @@ public:
 
     Params:
         all = Whether or not to also include [lu.uda.Unserialisable|Unserialisable] members.
-        Things = Variadic list of aggregates to inspect.
+        Things = Variadic list of aggregates to introspect.
  +/
 private template Widths(Flag!"all" all, Things...)
 {
@@ -143,8 +143,7 @@ unittest
             Also those annotated [lu.uda.Hidden|Hidden].
         things = Variadic list of aggregate objects to enumerate.
  +/
-void printObjects(Flag!"all" all = No.all, Things...)
-    (auto ref Things things)
+void printObjects(Flag!"all" all = No.all, Things...)(auto ref Things things)
 if ((Things.length > 0) && allSatisfy!(isAggregateType, Things))
 {
     static import kameloso.common;
@@ -303,14 +302,13 @@ private void formatStringMemberImpl(Flag!"coloured" coloured, T, Sink)
 
     static if (coloured)
     {
-        import kameloso.terminal.colours : TerminalForeground, colour;
-        alias F = TerminalForeground;
+        import kameloso.terminal.colours : F = TerminalForeground, colour;
 
         enum stringPattern = `%s%*s %s%-*s %s%s"%s"%s(%d)` ~ '\n';
         immutable memberCode = args.bright ? F.black : F.white;
-        immutable valueCode = args.bright ? F.green : F.lightgreen;
+        immutable valueCode  = args.bright ? F.green : F.lightgreen;
         immutable lengthCode = args.bright ? F.lightgrey : F.darkgrey;
-        immutable typeCode = args.bright ? F.lightcyan : F.cyan;
+        immutable typeCode   = args.bright ? F.lightcyan : F.cyan;
 
         sink.formattedWrite(stringPattern,
             typeCode.colour, args.typewidth, args.typestring,
@@ -383,13 +381,12 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
 
     static if (coloured)
     {
-        import kameloso.terminal.colours : TerminalForeground, colour;
-        alias F = TerminalForeground;
+        import kameloso.terminal.colours : F = TerminalForeground, colour;
 
         immutable memberCode = args.bright ? F.black : F.white;
-        immutable valueCode = args.bright ? F.green : F.lightgreen;
+        immutable valueCode  = args.bright ? F.green : F.lightgreen;
         immutable lengthCode = args.bright ? F.lightgrey : F.darkgrey;
-        immutable typeCode = args.bright ? F.lightcyan : F.cyan;
+        immutable typeCode   = args.bright ? F.lightcyan : F.cyan;
 
         if (content.length > truncateAfter)
         {
@@ -469,13 +466,12 @@ private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
 
     static if (coloured)
     {
-        import kameloso.terminal.colours : TerminalForeground, colour;
-        alias F = TerminalForeground;
+        import kameloso.terminal.colours : F = TerminalForeground, colour;
 
         immutable memberCode = args.bright ? F.black : F.white;
-        immutable valueCode = args.bright ? F.green : F.lightgreen;
+        immutable valueCode  = args.bright ? F.green : F.lightgreen;
         immutable lengthCode = args.bright ? F.lightgrey : F.darkgrey;
-        immutable typeCode = args.bright ? F.lightcyan : F.cyan;
+        immutable typeCode   = args.bright ? F.lightcyan : F.cyan;
 
         if (content.length > truncateAfter)
         {
@@ -573,13 +569,12 @@ private void formatAggregateMemberImpl(Flag!"coloured" coloured, Sink)
 
     static if (coloured)
     {
-        import kameloso.terminal.colours : TerminalForeground, colour;
-        alias F = TerminalForeground;
+        import kameloso.terminal.colours : F = TerminalForeground, colour;
 
         enum normalPattern = "%s%*s %s%-*s %s<%s>%s\n";
         immutable memberCode = args.bright ? F.black : F.white;
-        immutable valueCode = args.bright ? F.green : F.lightgreen;
-        immutable typeCode = args.bright ? F.lightcyan : F.cyan;
+        immutable valueCode  = args.bright ? F.green : F.lightgreen;
+        immutable typeCode   = args.bright ? F.lightcyan : F.cyan;
 
         sink.formattedWrite(normalPattern,
             typeCode.colour, args.typewidth, args.typestring,
@@ -638,8 +633,7 @@ private void formatOtherMemberImpl(Flag!"coloured" coloured, T, Sink)
 
     static if (coloured)
     {
-        import kameloso.terminal.colours : TerminalForeground, colour;
-        alias F = TerminalForeground;
+        import kameloso.terminal.colours : F = TerminalForeground, colour;
 
         enum normalPattern = "%s%*s %s%-*s  %s%s\n";
         immutable memberCode = args.bright ? F.black : F.white;
@@ -689,8 +683,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 {
     static if (coloured)
     {
-        import kameloso.terminal.colours : TerminalForeground, colour;
-        alias F = TerminalForeground;
+        import kameloso.terminal.colours : F = TerminalForeground, colour, colourWith;
     }
 
     import lu.string : stripSuffix;
@@ -702,13 +695,11 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
     static if (coloured)
     {
         immutable titleCode = bright ? F.black : F.white;
-        sink.formattedWrite("%s-- %s\n", titleCode.colour,
-            Thing.stringof.stripSuffix("Settings"));
+        sink.colourWith(titleCode);
+        scope(exit) sink.colourWith(F.default_);
     }
-    else
-    {
-        sink.formattedWrite("-- %s\n", Thing.stringof.stripSuffix("Settings"));
-    }
+
+    sink.formattedWrite("-- %s\n", Thing.stringof.stripSuffix("Settings"));
 
     foreach (immutable memberstring; __traits(derivedMembers, Thing))
     {
@@ -827,12 +818,6 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
                 formatOtherMemberImpl!(coloured, T)(sink, args, __traits(getMember, thing, memberstring));
             }
         }
-    }
-
-    static if (coloured)
-    {
-        enum defaultColour = F.default_.colour.idup;
-        sink.put(defaultColour);
     }
 }
 
