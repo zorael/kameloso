@@ -131,6 +131,10 @@ version(Posix)
  +/
 struct ThreadMessage
 {
+private:
+    import std.uni : toUpper;
+
+public:
     /++
         Different thread message types.
      +/
@@ -234,48 +238,6 @@ struct ThreadMessage
      +/
     bool quiet;
 
-    /// Concurrency message type asking for a to-server [dialect.defs.IRCEvent.Type.PONG|PONG] event.
-    static auto Pong(const string content)
-    {
-        return ThreadMessage(Type.pong, content);
-    }
-
-    /// Concurrency message type asking to verbosely send a line to the server.
-    static auto Sendline(const string content)
-    {
-        return ThreadMessage(Type.sendline, content);
-    }
-
-    /// Concurrency message type asking to quietly send a line to the server.
-    static auto Quietline(const string content)
-    {
-        return ThreadMessage(Type.quietline, content);
-    }
-
-    /// Concurrency message type asking to immediately send a line to the server.
-    static auto Immediateline(const string content)
-    {
-        return ThreadMessage(Type.immediateline, content);
-    }
-
-    /// Concurrency message type asking to quit the server and exit the program.
-    static auto Quit(const string content = string.init)
-    {
-        return ThreadMessage(Type.quit, content);
-    }
-
-    /// Concurrency message type asking for a plugin's worker thread to shut down cleanly.
-    static auto Teardown()
-    {
-        return ThreadMessage(Type.teardown);
-    }
-
-    /// Concurrency message type asking to have plugins' configuration saved.
-    static auto Save()
-    {
-        return ThreadMessage(Type.save);
-    }
-
     /++
         Concurrency message asking for an associative array of a description of
         all plugins' commands.
@@ -287,43 +249,19 @@ struct ThreadMessage
      +/
     static struct ChangeSetting {}
 
-    /// Concurrency message asking plugins to "reload".
-    static auto Reload(const string content = string.init)
-    {
-        return ThreadMessage(Type.reload, content);
-    }
-
-    /// Concurrency message asking to disconnect and reconnect to the server.
-    static auto Reconnect()
-    {
-        return ThreadMessage(Type.reconnect);
-    }
-
-    /// Concurrency message meant to be sent between plugins.
-    static auto BusMessage(const string content = string.init, shared Sendable payload = null)
-    {
-        return ThreadMessage(Type.busMessage, content, payload);
-    }
-
-    /// Concurrency message asking the main thread to print a connection summary.
-    static auto WantLiveSummary()
-    {
-        return ThreadMessage(Type.wantLiveSummary);
-    }
-
-    /// Concurrency message asking the main thread to set the `abort` flag.
-    static auto Abort()
-    {
-        return ThreadMessage(Type.abort);
-    }
-
-    /++
-        Concurrency message asking for the Socket receive timeout to be lowered
-        temporarily, for increased responsiveness.
+    /+
+        Generate a static function for each [Type].
      +/
-    static auto ShortenReceiveTimeout()
+    static foreach (immutable memberstring; __traits(allMembers, Type))
     {
-        return ThreadMessage(Type.shortenReceiveTimeout);
+        mixin(`
+            static auto ` ~ memberstring[0..1].toUpper ~ memberstring[1..$] ~ `
+                (const string content = string.init,
+                shared Sendable payload = null,
+                const bool quiet = false)
+            {
+                return ThreadMessage(Type.` ~ memberstring ~ `, content, payload, quiet);
+            }`);
     }
 }
 
