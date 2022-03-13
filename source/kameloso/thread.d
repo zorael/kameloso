@@ -6,10 +6,10 @@
     ---
     import std.concurrency;
 
-    mainThread.send(ThreadMessage.Sendline(), "Message to send to server");
-    mainThread.send(ThreadMessage.Pong(), "irc.libera.chat");
-    mainThread.send(ThreadMessage.TerminalOutput.writeln, "writeln this for me please");
-    mainThread.send(ThreadMessage.BusMessage(), "header", busMessage("payload"));
+    mainThread.send(ThreadMessage.sendline("Message to send to server"));
+    mainThread.send(ThreadMessage.pong("irc.libera.chat"));
+    mainThread.send(OutputRequest(ThreadMessage.TerminalOutput.writeln, "writeln this for me please"));
+    mainThread.send(ThreadMessage.busMessage("header", busMessage("payload")));
 
     auto fiber = new CarryingFiber!string(&someDelegate, BufferSize.fiberStack);
     fiber.payload = "This string is carried by the Fiber and can be accessed from within it";
@@ -327,9 +327,9 @@ final class BusMessage(T) : Sendable
     Example:
     ---
     IRCEvent event;  // ...
-    mainThread.send(ThreadMessage.BusMessage(), "header", busMessage(event));
-    mainThread.send(ThreadMessage.BusMessage(), "other header", busMessage("text payload"));
-    mainThread.send(ThreadMessage.BusMessage(), "ladida", busMessage(42));
+    mainThread.send(ThreadMessage.busMessage("header", busMessage(event)));
+    mainThread.send(ThreadMessage.busMessage("other header", busMessage("text payload")));
+    mainThread.send(ThreadMessage.busMessage("ladida", busMessage(42)));
     ---
 
     Params:
