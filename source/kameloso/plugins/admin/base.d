@@ -345,7 +345,6 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
 
     if (existingChannelIndex != -1)
     {
-        import kameloso.thread : ThreadMessage, busMessage;
         import std.algorithm.mutation : SwapStrategy, remove;
 
         logger.info("We're already in this channel as a guest. Cycling.");
@@ -812,10 +811,10 @@ void onCommandAuth(AdminPlugin plugin)
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch) return;
     }
 
-    import kameloso.thread : ThreadMessage, busMessage;
+    import kameloso.thread : ThreadMessage, sendable;
     import std.concurrency : send;
 
-    plugin.state.mainThread.send(ThreadMessage.busMessage("connect", busMessage("auth")));
+    plugin.state.mainThread.send(ThreadMessage.busMessage("connect", sendable("auth")));
 }
 
 

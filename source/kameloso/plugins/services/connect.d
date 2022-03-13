@@ -1111,10 +1111,10 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
 
                     version(WithPrinterPlugin)
                     {
-                        import kameloso.thread : ThreadMessage, busMessage;
+                        import kameloso.thread : ThreadMessage, sendable;
                         import std.concurrency : send;
                         service.state.mainThread.send(
-                            ThreadMessage.busMessage("printer", busMessage(squelchVerb)));
+                            ThreadMessage.busMessage("printer", sendable(squelchVerb)));
                     }
 
                     raw(service.state, "NICK " ~ service.state.client.origNickname,
@@ -1142,10 +1142,10 @@ version(WithPrinterPlugin)
 )
 void onSelfnickSuccessOrFailure(ConnectService service)
 {
-    import kameloso.thread : ThreadMessage, busMessage;
+    import kameloso.thread : ThreadMessage, sendable;
     import std.concurrency : send;
     service.state.mainThread.send(
-        ThreadMessage.busMessage("printer", busMessage("unsquelch " ~ service.state.client.origNickname)));
+        ThreadMessage.busMessage("printer", sendable("unsquelch " ~ service.state.client.origNickname)));
 }
 
 

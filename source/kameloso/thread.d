@@ -319,7 +319,7 @@ final class BusMessage(T) : Sendable
 }
 
 
-// busMessage
+// sendable
 /++
     Constructor function to create a `shared` [BusMessage] with an unqualified
     template type.
@@ -339,7 +339,7 @@ final class BusMessage(T) : Sendable
     Returns:
         A `shared` `BusMessage!T` where `T` is the unqualified type of the payload.
  +/
-shared(Sendable) busMessage(T)(T payload)
+shared(Sendable) sendable(T)(T payload)
 {
     import std.traits : Unqual;
     return new shared BusMessage!(Unqual!T)(payload);
@@ -349,20 +349,20 @@ shared(Sendable) busMessage(T)(T payload)
 unittest
 {
     {
-        auto msg = busMessage("asdf");
+        auto msg = sendable("asdf");
         auto asCast = cast(BusMessage!string)msg;
         assert((msg !is null), "Incorrectly cast message: " ~ typeof(asCast).stringof);
         asCast = null;  // silence dscanner
     }
     {
-        auto msg = busMessage(123_456);
+        auto msg = sendable(123_456);
         auto asCast = cast(BusMessage!int)msg;
         assert((msg !is null), "Incorrectly cast message: " ~ typeof(asCast).stringof);
         asCast = null;  // silence dscanner
     }
     {
         struct Foo {}
-        auto msg = busMessage(Foo());
+        auto msg = sendable(Foo());
         auto asCast = cast(BusMessage!Foo)msg;
         assert((msg !is null), "Incorrectly cast message: " ~ typeof(asCast).stringof);
         asCast = null;  // silence dscanner

@@ -124,14 +124,14 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
 
             if (line[0] == ':')
             {
-                import kameloso.thread : busMessage;
+                import kameloso.thread : sendable;
                 import lu.string : contains, nom;
 
                 if (line.contains(' '))
                 {
                     string slice = line[1..$];
                     immutable header = slice.nom(' ');
-                    state.mainThread.send(ThreadMessage.busMessage(header, busMessage(slice)));
+                    state.mainThread.send(ThreadMessage.busMessage(header, sendable(slice)));
                 }
                 else
                 {
@@ -159,7 +159,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
             break;
         }
 
-        import kameloso.thread : busMessage;
+        import kameloso.thread : sendable;
         import core.time : Duration;
 
         static immutable instant = Duration.zero;
@@ -181,7 +181,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
             {
                 enum variantPattern = "Pipeline plugin received Variant: <l>%s";
                 state.askToError(variantPattern.format(v.toString));
-                state.mainThread.send(ThreadMessage.busMessage("pipeline", busMessage("halted")));
+                state.mainThread.send(ThreadMessage.busMessage("pipeline", sendable("halted")));
                 halt = true;
             }
         );
@@ -199,7 +199,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
             enum fifoPattern = "Pipeline plugin failed to reopen FIFO: <l>%s";
             state.askToError(fifoPattern.format(e.msg));
             version(PrintStacktraces) state.askToTrace(e.info.toString);
-            state.mainThread.send(ThreadMessage.busMessage("pipeline", busMessage("halted")));
+            state.mainThread.send(ThreadMessage.busMessage("pipeline", sendable("halted")));
             break toploop;
         }
         catch (Exception e)
