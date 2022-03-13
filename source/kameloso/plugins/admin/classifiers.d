@@ -49,8 +49,10 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
     void sendUsage()
     {
         import std.format : format;
-        privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Usage: <b>%s%s<b> [add|del|list]".format(plugin.state.settings.prefix, list));
+
+        enum pattern = "Usage: <b>%s%s<b> [add|del|list]";
+        immutable message = pattern.format(plugin.state.settings.prefix, list);
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
     if (!event.content.length)
@@ -128,8 +130,9 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
     }
     else
     {
-        privmsg(plugin.state, event.channel, event.sender.nickname,
-            "There are no %s in <b>%s<b>.".format(asWhat, channel));
+        enum pattern = "There are no %s in <b>%s<b>.";
+        immutable message = pattern.format(asWhat, channel);
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 }
 
@@ -637,7 +640,8 @@ in (mask.length, "Tried to add an empty hostmask definition")
             {
                 import std.format : format;
                 enum pattern = `Invalid hostmask: "<b>%s<b>"; must be in the form "<b>nickname!ident@address.tld<b>".`;
-                privmsg(plugin.state, event.channel, event.sender.nickname, pattern.format(mask));
+                immutable message = pattern.format(mask);
+                privmsg(plugin.state, event.channel, event.sender.nickname, message);
             }
             return;
         }

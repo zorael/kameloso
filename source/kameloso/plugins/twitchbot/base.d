@@ -311,7 +311,8 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     void sendUsage()
     {
         enum pattern = "Usage: %s%s [optional HH:MM or MM time already elapsed]";
-        chan(plugin.state, event.channel, pattern.format(plugin.state.settings.prefix, event.aux));
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
     }
 
     void initBroadcast()
@@ -343,7 +344,8 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
                 room.broadcast.startTime = (event.time - elapsed);
 
                 enum pattern = "Broadcast start registered (as %d:%02d ago)!";
-                chan(plugin.state, event.channel, pattern.format(hours, minutes));
+                immutable message = pattern.format(hours, minutes);
+                chan(plugin.state, event.channel, message);
             }
             else
             {
@@ -359,7 +361,8 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
                     but the chance of minutes being 1 is very slim.
                  +/
                 enum pattern = "Broadcast start registered (as %d minutes ago)!";
-                chan(plugin.state, event.channel, pattern.format(minutes));
+                immutable message = pattern.format(minutes);
+                chan(plugin.state, event.channel, message);
             }
         }
         catch (ConvException e)
@@ -573,17 +576,16 @@ void reportStreamTime(TwitchBotPlugin plugin,
         {
             enum pattern = "%s has been live for %s, so far with %d unique viewers. " ~
                 "(max at any one time has so far been %d viewers)";
-
-            chan(plugin.state, room.channelName,
-                pattern.format(room.broadcasterDisplayName, timestring,
-                    room.broadcast.chattersSeen.length,
-                    room.broadcast.maxConcurrentChatters));
+            immutable message = pattern.format(room.broadcasterDisplayName, timestring,
+                room.broadcast.chattersSeen.length,
+                room.broadcast.maxConcurrentChatters);
+            chan(plugin.state, room.channelName, message);
         }
         else
         {
             enum pattern = "%s has been live for %s.";
-            chan(plugin.state, room.channelName,
-                pattern.format(room.broadcasterDisplayName, timestring));
+            immutable message = pattern.format(room.broadcasterDisplayName, timestring);
+            chan(plugin.state, room.channelName, message);
         }
     }
     else
@@ -602,27 +604,25 @@ void reportStreamTime(TwitchBotPlugin plugin,
                 {
                     enum pattern = "%s streamed for %s, with %d unique viewers. " ~
                         "(max at any one time was %d viewers)";
-
-                    chan(plugin.state, room.channelName,
-                        pattern.format(room.broadcasterDisplayName, timestring,
-                            room.broadcast.numViewersLastStream,
-                            room.broadcast.maxConcurrentChatters));
+                    immutable message = pattern.format(room.broadcasterDisplayName, timestring,
+                        room.broadcast.numViewersLastStream,
+                        room.broadcast.maxConcurrentChatters);
+                    chan(plugin.state, room.channelName, message);
                 }
                 else
                 {
                     enum pattern = "%s streamed for %s.";
-                    chan(plugin.state, room.channelName,
-                        pattern.format(room.broadcasterDisplayName, timestring));
+                    immutable message = pattern.format(room.broadcasterDisplayName, timestring);
+                    chan(plugin.state, room.channelName, message);
                 }
             }
             else
             {
                 enum pattern = "%s is currently not streaming. " ~
                     "Previous session ended %d-%02d-%02d %02d:%02d with an uptime of %s.";
-
-                chan(plugin.state, room.channelName,
-                    pattern.format(room.broadcasterDisplayName,
-                        end.year, end.month, end.day, end.hour, end.minute, timestring));
+                immutable message = pattern.format(room.broadcasterDisplayName,
+                    end.year, end.month, end.day, end.hour, end.minute, timestring);
+                chan(plugin.state, room.channelName, message);
             }
         }
         else
@@ -765,13 +765,14 @@ void onCommandFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             if (nameSpecified)
             {
                 enum pattern = "%s has been a follower for %s, since %s.";
-                chan(plugin.state, event.channel, pattern
-                    .format(fromDisplayName, timeline, datestamp));
+                immutable message = pattern.format(fromDisplayName, timeline, datestamp);
+                chan(plugin.state, event.channel, message);
             }
             else
             {
                 enum pattern = "You have been a follower for %s, since %s.";
-                chan(plugin.state, event.channel, pattern.format(timeline, datestamp));
+                immutable message = pattern.format(timeline, datestamp);
+                chan(plugin.state, event.channel, message);
             }
 
         }
@@ -807,12 +808,13 @@ void onCommandFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             import std.format : format;
 
             enum pattern = "%s is currently not a follower.";
-            chan(plugin.state, event.channel, pattern.format(fromDisplayName));
+            immutable message = pattern.format(fromDisplayName);
+            chan(plugin.state, event.channel, message);
         }
         else
         {
-            enum pattern = "You are currently not a follower.";
-            chan(plugin.state, event.channel, pattern);
+            enum message = "You are currently not a follower.";
+            chan(plugin.state, event.channel, message);
         }
     }
 
@@ -908,7 +910,8 @@ void onCommandShoutout(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     void sendUsage()
     {
         enum pattern = "Usage: %s%s [name of streamer] [optional number of times to spam]";
-        chan(plugin.state, event.channel, pattern.format(plugin.state.settings.prefix, event.aux));
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
     }
 
     string slice = event.content.stripped;  // mutable
@@ -976,12 +979,12 @@ void onCommandShoutout(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         immutable gameName = channelJSON["game_name"].str;
         immutable lastSeenPlayingPattern = gameName.length ?
             " (last seen playing %s)" : "%s";
+        immutable pattern = "Shoutout to %s! Visit them at https://twitch.tv/%s!" ~ lastSeenPlayingPattern;
+        immutable message = pattern.format(broadcasterDisplayName, login, gameName);
 
         foreach (immutable i; 0..numTimes)
         {
-            immutable pattern = "Shoutout to %s! Visit them at https://twitch.tv/%s!" ~ lastSeenPlayingPattern;
-            chan(plugin.state, event.channel,
-                pattern.format(broadcasterDisplayName, login, gameName));
+            chan(plugin.state, event.channel, message);
         }
     }
 

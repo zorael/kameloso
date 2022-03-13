@@ -109,9 +109,10 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
     void sendUsage(const string verb = "[add|del|list]",
         const Flag!"includeText" includeText = Yes.includeText)
     {
-        chan(plugin.state, event.channel, "Usage: <b>%s%s<b> %s [trigger]%s"
-            .format(plugin.state.settings.prefix, event.aux, verb,
-                includeText ? " [text]" : string.init));
+        enum pattern = "Usage: <b>%s%s<b> %s [trigger]%s";
+        immutable message = pattern.format(plugin.state.settings.prefix,
+            event.aux, verb, (includeText ? " [text]" : string.init));
+        chan(plugin.state, event.channel, message);
     }
 
     if (!event.content.length) return sendUsage();
@@ -150,8 +151,8 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
                     if (word == trigger)
                     {
                         enum pattern = `Oneliner word "<b>%s<b>" conflicts with a command of the <b>%s<b> plugin.`;
-                        chan(plugin.state, event.channel,
-                            pattern.format(trigger, pluginName));
+                        immutable message = pattern.format(trigger, pluginName);
+                        chan(plugin.state, event.channel, message);
                         return true;
                     }
                 }
@@ -172,9 +173,10 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
             immutable wasMadeLowerCase = !plugin.onelinersSettings.caseSensitiveTriggers &&
                 !trigger.equal(trigger.asLowerCase);
 
-            chan(plugin.state, event.channel, "Oneliner <b>%s%s<b> added%s."
-                .format(plugin.state.settings.prefix, trigger,
-                    wasMadeLowerCase ? " (made lowercase)" : string.init));
+            enum pattern = "Oneliner <b>%s%s<b> added%s.";
+            immutable message = pattern.format(plugin.state.settings.prefix,
+                trigger, (wasMadeLowerCase ? " (made lowercase)" : string.init));
+            chan(plugin.state, event.channel, message);
         }
 
         void dg(IRCPlugin.CommandMetadata[string][string] aa)
@@ -194,17 +196,18 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 
         if (trigger !in plugin.onelinersByChannel[event.channel])
         {
-            import std.conv : text;
-            chan(plugin.state, event.channel,
-                text("No such trigger: ", plugin.state.settings.prefix, slice));
+            enum pattern = "No such trigger: <b>%s%s<b>";
+            immutable message = pattern.format(plugin.state.settings.prefix, slice);
+            chan(plugin.state, event.channel, message);
             return;
         }
 
         plugin.onelinersByChannel[event.channel].remove(trigger);
         saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
 
-        chan(plugin.state, event.channel, "Oneliner <b>%s%s<b> removed."
-            .format(plugin.state.settings.prefix, trigger));
+        enum pattern = "Oneliner <b>%s%s<b> removed.";
+        immutable message = pattern.format(plugin.state.settings.prefix, trigger);
+        chan(plugin.state, event.channel, message);
         break;
 
     case "list":
@@ -256,7 +259,8 @@ void listCommands(OnelinersPlugin plugin, const string channelName)
     if (channelOneliners && channelOneliners.length)
     {
         immutable rtPattern = "Available commands: %-(<b>" ~ plugin.state.settings.prefix ~ "%s<b>, %)";
-        chan(plugin.state, channelName, format(rtPattern, channelOneliners.byKey));
+        immutable message = rtPattern.format(channelOneliners.byKey);
+        chan(plugin.state, channelName, message);
     }
     else
     {

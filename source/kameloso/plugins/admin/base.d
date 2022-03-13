@@ -264,9 +264,9 @@ void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
 
     void sendUsage()
     {
-        privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Usage: <b>%s%s<b> [add|del|list] [channel]"
-                .format(plugin.state.settings.prefix, event.aux));
+        enum pattern = "Usage: <b>%s%s<b> [add|del|list] [channel]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
     if (!event.content.length)
@@ -286,9 +286,9 @@ void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
         return plugin.delHome(event, slice);
 
     case "list":
-        privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Current home channels: %-(<b>%s<b>, %)"
-                .format(plugin.state.bot.homeChannels));
+        enum pattern = "Current home channels: %-(<b>%s<b>, %)";
+        immutable message = pattern.format(plugin.state.bot.homeChannels);
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
         return;
 
     default:
@@ -1028,9 +1028,9 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
 
     void sendUsage()
     {
-        privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Usage: <b>%s%s<b> [add|del|list] [args...]"
-                .format(plugin.state.settings.prefix, event.aux));
+        enum pattern = "Usage: <b>%s%s<b> [add|del|list] [args...]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
     string slice = event.content;  // mutable
@@ -1046,9 +1046,9 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
 
         if (results != SplitResults.match)
         {
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: <b>%s%s<b> add [account] [hostmask]"
-                    .format(plugin.state.settings.prefix, event.aux));
+            enum pattern = "Usage: <b>%s%s<b> add [account] [hostmask]";
+            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
             return;
         }
 
@@ -1058,9 +1058,9 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
     case "remove":
         if (!slice.length || slice.contains(' '))
         {
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: <b>%s%s<b> del [hostmask]"
-                    .format(plugin.state.settings.prefix, event.aux));
+            enum pattern = "Usage: <b>%s%s<b> del [hostmask]";
+            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
             return;
         }
 

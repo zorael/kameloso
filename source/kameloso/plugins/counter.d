@@ -173,8 +173,9 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
         break;
 
     default:
-        chan(plugin.state, event.channel, "Usage: <b>%s%s<b> [add|del|list] [counter word]"
-            .format(plugin.state.settings.prefix, event.aux));
+        enum pattern = "Usage: <b>%s%s<b> [add|del|list] [counter word]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
         break;
     }
 }
@@ -248,9 +249,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
         import std.conv : text;
 
         enum pattern = "<b>%s<b> count so far: <b>%s<b>";
-
-        immutable countText =  plugin.counters[event.channel][word].text;
-        immutable message = pattern.format(word, countText);
+        immutable message = pattern.format(word, plugin.counters[event.channel][word]);
 
         chan(plugin.state, event.channel, message);
         return;
