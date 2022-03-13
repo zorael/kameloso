@@ -93,7 +93,7 @@ void startChannelQueries(ChanQueriesService service)
 
     void dg()
     {
-        import kameloso.thread : CarryingFiber, ThreadMessage, busMessage;
+        import kameloso.thread : CarryingFiber, ThreadMessage, sendable;
         import std.concurrency : send;
         import std.datetime.systime : Clock;
         import std.string : representation;
@@ -140,8 +140,8 @@ void startChannelQueries(ChanQueriesService service)
 
                 version(WithPrinterPlugin)
                 {
-                    service.state.mainThread.send(ThreadMessage.BusMessage(),
-                        "printer", busMessage(squelchMessage));
+                    service.state.mainThread.send(
+                        ThreadMessage.busMessage("printer", sendable(squelchMessage)));
                 }
 
                 raw(service.state, text(command, ' ', channelName), Yes.quiet, Yes.background);
@@ -185,8 +185,8 @@ void startChannelQueries(ChanQueriesService service)
                     // channels for specific modes.
                     // [chanoprivsneeded] [#d] sinisalo.freenode.net: "You're not a channel operator" (#482)
                     // Ask the Printer to squelch those messages too.
-                    service.state.mainThread.send(ThreadMessage.BusMessage(),
-                        "printer", busMessage(squelchMessage));
+                    service.state.mainThread.send(
+                        ThreadMessage.busMessage("printer", sendable(squelchMessage)));
                 }
 
                 import kameloso.messaging : mode;
@@ -244,8 +244,8 @@ void startChannelQueries(ChanQueriesService service)
 
             version(WithPrinterPlugin)
             {
-                service.state.mainThread.send(ThreadMessage.BusMessage(),
-                    "printer", busMessage("unsquelch"));
+                service.state.mainThread.send(
+                    ThreadMessage.busMessage("printer", sendable("unsquelch")));
             }
         }
 
@@ -276,8 +276,8 @@ void startChannelQueries(ChanQueriesService service)
 
             version(WithPrinterPlugin)
             {
-                service.state.mainThread.send(ThreadMessage.BusMessage(),
-                    "printer", busMessage("squelch " ~ nickname));
+                service.state.mainThread.send(
+                    ThreadMessage.busMessage("printer", sendable("squelch " ~ nickname)));
             }
 
             whois(service.state, nickname, No.force, Yes.quiet, Yes.background);

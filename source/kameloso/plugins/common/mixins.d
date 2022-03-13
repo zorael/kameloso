@@ -456,11 +456,10 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
         version(WithPrinterPlugin)
         {
-            import kameloso.thread : ThreadMessage, busMessage;
+            import kameloso.thread : ThreadMessage, sendable;
             import std.concurrency : send;
 
-            plugin.state.mainThread.send(ThreadMessage.BusMessage(),
-                "printer", busMessage("squelch " ~ nicknamePart));
+            plugin.state.mainThread.send(ThreadMessage.busMessage("printer", sendable("squelch " ~ nicknamePart)));
         }
 
         if (issueWhois)
