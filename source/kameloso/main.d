@@ -631,7 +631,7 @@ void messageFiber(ref Kameloso instance)
 
             if (instance.settings.headless) return;
 
-            with (ThreadMessage.TerminalOutput)
+            with (OutputRequest.Level)
             final switch (request.logLevel)
             {
             case writeln:

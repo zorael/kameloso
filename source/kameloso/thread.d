@@ -203,17 +203,6 @@ struct ThreadMessage
         shortenReceiveTimeout,
     }
 
-    /// Concurrency message for writing text to the terminal.
-    enum TerminalOutput
-    {
-        writeln,
-        trace,
-        log,
-        info,
-        warning,
-        error,
-    }
-
     /++
         The [Type] of this thread message.
      +/
@@ -266,21 +255,31 @@ struct ThreadMessage
 /++
     Embodies the notion of a request to output something to the local terminal.
 
-    Merely bundles a [ThreadMessage.TerminalOutput|TerminalOutput] log level and
+    Merely bundles a [OutputRequest.Level|Level] log level and
     a `string` message line. What log level is picked decides what log level is
     passed to the [kameloso.logger.KamelosoLogger|KamelosoLogger] instance, and
     dictates things like what colour to tint the message with (if any).
  +/
 struct OutputRequest
 {
+    /// Output log levels.
+    enum Level
+    {
+        writeln,
+        trace,
+        log,
+        info,
+        warning,
+        error,
+    }
+
     /++
         Log level of the message.
 
         See_Also:
-            [ThreadMessage.TerminalOutput]
             [kameloso.logger.LogLevel]
      +/
-    ThreadMessage.TerminalOutput logLevel;
+    Level logLevel;
 
     /++
         String line to request to be output to the local terminal.

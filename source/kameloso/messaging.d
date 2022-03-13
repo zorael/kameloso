@@ -1080,7 +1080,7 @@ void askToOutputImpl(string logLevel)(IRCPluginState state, const string line)
     import kameloso.thread : OutputRequest, ThreadMessage;
     import std.concurrency : prioritySend;
 
-    mixin("state.mainThread.prioritySend(OutputRequest(ThreadMessage.TerminalOutput.", logLevel, ", line));");
+    mixin("state.mainThread.prioritySend(OutputRequest(OutputRequest.Level.", logLevel, ", line));");
 }
 
 
@@ -1113,7 +1113,7 @@ unittest
     state.askToWarn("warning");
     state.askToError("error");
 
-    alias T = ThreadMessage.TerminalOutput;
+    alias T = OutputRequest.Level;
 
     static immutable T[6] expectedLevels =
     [
