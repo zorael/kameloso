@@ -122,12 +122,13 @@ version(Posix)
 
 // ThreadMessage
 /++
-    Aggregate of thread message types.
+    Collection of static functions used to construct thread messages, for passing
+    information of different kinds yet still as one type, to stop [std.concurrency.send]
+    from requiring so much compilation memory.
 
-    This is a way to make concurrency message passing easier. You could use
-    string literals to differentiate between messages and then have big
-    switches inside the catching function, but with these you can actually
-    have separate concurrency-receiving delegates for each.
+    The type of the message is defined as a [ThreadMessage.Type|Type] in
+    [ThreadMessage.type]. Recipients will have to do a (final) switch over that
+    enum to deal with messages accordingly.
  +/
 struct ThreadMessage
 {
@@ -262,22 +263,24 @@ struct ThreadMessage
  +/
 struct OutputRequest
 {
-    /// Output log levels.
+    /++
+        Output log levels.
+
+        See_Also:
+            [kameloso.logger.LogLevel]
+     +/
     enum Level
     {
-        writeln,
-        trace,
-        log,
-        info,
-        warning,
-        error,
+        writeln,    /// writeln the line.
+        trace,      /// Log at [kameloso.logger.LogLevel.trace].
+        log,        /// Log at [kameloso.logger.LogLevel.all] (log).
+        info,       /// Log at [kameloso.logger.LogLevel.info].
+        warning,    /// Log at [kameloso.logger.LogLevel.warning].
+        error,      /// Log at [kameloso.logger.LogLevel.error].
     }
 
     /++
         Log level of the message.
-
-        See_Also:
-            [kameloso.logger.LogLevel]
      +/
     Level logLevel;
 
