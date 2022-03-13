@@ -218,7 +218,7 @@ void onPing(ConnectService service, const ref IRCEvent event)
     import std.concurrency : prioritySend;
 
     immutable target = event.content.length ? event.content : event.sender.address;
-    service.state.mainThread.prioritySend(ThreadMessage.Pong(), target);
+    service.state.mainThread.prioritySend(ThreadMessage.Pong(target));
 }
 
 
@@ -1113,8 +1113,8 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
                     {
                         import kameloso.thread : ThreadMessage, busMessage;
                         import std.concurrency : send;
-                        service.state.mainThread.send(ThreadMessage.BusMessage(),
-                            "printer", busMessage(squelchVerb));
+                        service.state.mainThread.send(
+                            ThreadMessage.BusMessage("printer", busMessage(squelchVerb)));
                     }
 
                     raw(service.state, "NICK " ~ service.state.client.origNickname,
@@ -1144,8 +1144,8 @@ void onSelfnickSuccessOrFailure(ConnectService service)
 {
     import kameloso.thread : ThreadMessage, busMessage;
     import std.concurrency : send;
-    service.state.mainThread.send(ThreadMessage.BusMessage(),
-        "printer", busMessage("unsquelch " ~ service.state.client.origNickname));
+    service.state.mainThread.send(
+        ThreadMessage.BusMessage("printer", busMessage("unsquelch " ~ service.state.client.origNickname)));
 }
 
 

@@ -619,7 +619,7 @@ void onCommandReload(AdminPlugin plugin, const ref IRCEvent event)
         "Reloading plugins.";
 
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
-    plugin.state.mainThread.send(ThreadMessage.Reload(), event.content);
+    plugin.state.mainThread.send(ThreadMessage.Reload(event.content));
 }
 
 
@@ -815,7 +815,7 @@ void onCommandAuth(AdminPlugin plugin)
     import kameloso.thread : ThreadMessage, busMessage;
     import std.concurrency : send;
 
-    plugin.state.mainThread.send(ThreadMessage.BusMessage(), "connect", busMessage("auth"));
+    plugin.state.mainThread.send(ThreadMessage.BusMessage("connect", busMessage("auth")));
 }
 
 
@@ -1255,7 +1255,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             logger.log("Reloading plugins.");
         }
 
-        return plugin.state.mainThread.send(ThreadMessage.Reload(), slice);
+        return plugin.state.mainThread.send(ThreadMessage.Reload(slice));
 
     case "whitelist":
     case "operator":

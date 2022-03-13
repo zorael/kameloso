@@ -133,7 +133,7 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
                 cast(shared)&channelSpecificDg, event.channel);
         }
 
-        plugin.state.mainThread.send(ThreadMessage.PeekCommands(), cast(shared)&dg);
+        plugin.state.mainThread.send(ThreadMessage.PeekCommands(), cast(shared)&dg, string.init);
         break;
 
     case "remove":

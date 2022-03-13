@@ -131,12 +131,11 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
                 {
                     string slice = line[1..$];
                     immutable header = slice.nom(' ');
-                    state.mainThread.send(ThreadMessage.BusMessage(),
-                        header, busMessage(slice));
+                    state.mainThread.send(ThreadMessage.BusMessage(header, busMessage(slice)));
                 }
                 else
                 {
-                    state.mainThread.send(ThreadMessage.BusMessage(), line[1..$]);
+                    state.mainThread.send(ThreadMessage.BusMessage(line[1..$]));
                 }
                 break;
             }
@@ -167,9 +166,12 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
         bool halt;
 
         cast(void)receiveTimeout(instant,
-            (ThreadMessage.Teardown)
+            (ThreadMessage message)
             {
-                halt = true;
+                if (message.type == ThreadMessage.Type.teardown)
+                {
+                    halt = true;
+                }
             },
             (OwnerTerminated e)
             {
@@ -179,7 +181,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
             {
                 enum variantPattern = "Pipeline plugin received Variant: <l>%s";
                 state.askToError(variantPattern.format(v.toString));
-                state.mainThread.send(ThreadMessage.BusMessage(), "pipeline", busMessage("halted"));
+                state.mainThread.send(ThreadMessage.BusMessage("pipeline", busMessage("halted")));
                 halt = true;
             }
         );
@@ -197,7 +199,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
             enum fifoPattern = "Pipeline plugin failed to reopen FIFO: <l>%s";
             state.askToError(fifoPattern.format(e.msg));
             version(PrintStacktraces) state.askToTrace(e.info.toString);
-            state.mainThread.send(ThreadMessage.BusMessage(), "pipeline", busMessage("halted"));
+            state.mainThread.send(ThreadMessage.BusMessage("pipeline", busMessage("halted")));
             break toploop;
         }
         catch (Exception e)

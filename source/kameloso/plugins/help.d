@@ -222,7 +222,7 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
         }
     }
 
-    plugin.state.mainThread.send(ThreadMessage.PeekCommands(), cast(shared)&dg);
+    plugin.state.mainThread.send(ThreadMessage.PeekCommands(), cast(shared)&dg, string.init);
 }
 
 // sendCommandHelp

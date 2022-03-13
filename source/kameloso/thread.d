@@ -131,26 +131,150 @@ version(Posix)
  +/
 struct ThreadMessage
 {
+    /++
+        Different thread message types.
+     +/
+    enum Type
+    {
+        /++
+            Request to send a server [dialect.defs.IRCEvent.Type.PONG|PONG] response.
+         +/
+        pong,
+
+        /++
+            Request to send an outgoing normal line.
+         +/
+        sendline,
+
+        /++
+            Request to send a quiet normal line.
+         +/
+        quietline,
+
+        /++
+            Request to send a line immediately, bypassing queues.
+         +/
+        immediateline,
+
+        /++
+            Request to quit the program.
+         +/
+        quit,
+
+        /++
+            Request to teardown (destroy) a plugin.
+         +/
+        teardown,
+
+        /++
+            Request to save configuration to file.
+         +/
+        save,
+
+        /++
+            Request to reload resources from disk.
+         +/
+        reload,
+
+        /++
+            Request to disconnect and reconect to the server.
+         +/
+        reconnect,
+
+        /++
+            A bus message.
+         +/
+        busMessage,
+
+        /++
+            Request to print a connection summary to the local terminal.
+         +/
+        wantLiveSummary,
+
+        /++
+            Request to abort and exit the program.
+         +/
+        abort,
+
+        /++
+            Request to lower receive timeout briefly and improve
+            responsiveness/precision during that time.
+         +/
+        shortenReceiveTimeout,
+    }
+
+    /// Concurrency message for writing text to the terminal.
+    enum TerminalOutput
+    {
+        writeln,
+        trace,
+        log,
+        info,
+        warning,
+        error,
+    }
+
+    /++
+        The [Type] of this thread message.
+     +/
+    Type type;
+
+    /++
+        String content body of message, where applicable.
+     +/
+    string content;
+
+    /++
+        Bundled `shared` [Sendable] payload, where applicable.
+     +/
+    shared Sendable payload;
+
+    /++
+        Whether or not the action requested should be done quietly.
+     +/
+    bool quiet;
+
     /// Concurrency message type asking for a to-server [dialect.defs.IRCEvent.Type.PONG|PONG] event.
-    static struct Pong {}
+    static auto Pong(const string content)
+    {
+        return ThreadMessage(Type.pong, content);
+    }
 
     /// Concurrency message type asking to verbosely send a line to the server.
-    static struct Sendline {}
+    static auto Sendline(const string content)
+    {
+        return ThreadMessage(Type.sendline, content);
+    }
 
     /// Concurrency message type asking to quietly send a line to the server.
-    static struct Quietline {}
+    static auto Quietline(const string content)
+    {
+        return ThreadMessage(Type.quietline, content);
+    }
 
     /// Concurrency message type asking to immediately send a line to the server.
-    static struct Immediateline {}
+    static auto Immediateline(const string content)
+    {
+        return ThreadMessage(Type.immediateline, content);
+    }
 
     /// Concurrency message type asking to quit the server and exit the program.
-    static struct Quit {}
+    static auto Quit(const string content = string.init)
+    {
+        return ThreadMessage(Type.quit, content);
+    }
 
     /// Concurrency message type asking for a plugin's worker thread to shut down cleanly.
-    static struct Teardown {}
+    static auto Teardown()
+    {
+        return ThreadMessage(Type.teardown);
+    }
 
     /// Concurrency message type asking to have plugins' configuration saved.
-    static struct Save {}
+    static auto Save()
+    {
+        return ThreadMessage(Type.save);
+    }
 
     /++
         Concurrency message asking for an associative array of a description of
@@ -164,36 +288,43 @@ struct ThreadMessage
     static struct ChangeSetting {}
 
     /// Concurrency message asking plugins to "reload".
-    static struct Reload {}
+    static auto Reload(const string content = string.init)
+    {
+        return ThreadMessage(Type.reload, content);
+    }
 
     /// Concurrency message asking to disconnect and reconnect to the server.
-    static struct Reconnect {}
+    static auto Reconnect()
+    {
+        return ThreadMessage(Type.reconnect);
+    }
 
     /// Concurrency message meant to be sent between plugins.
-    static struct BusMessage {}
-
-    /// Concurrency message for writing text to the terminal.
-    enum TerminalOutput
+    static auto BusMessage(const string content = string.init, shared Sendable payload = null)
     {
-        writeln,
-        trace,
-        log,
-        info,
-        warning,
-        error,
+        return ThreadMessage(Type.busMessage, content, payload);
     }
 
     /// Concurrency message asking the main thread to print a connection summary.
-    static struct WantLiveSummary {}
+    static auto WantLiveSummary()
+    {
+        return ThreadMessage(Type.wantLiveSummary);
+    }
 
     /// Concurrency message asking the main thread to set the `abort` flag.
-    static struct Abort {}
+    static auto Abort()
+    {
+        return ThreadMessage(Type.abort);
+    }
 
     /++
         Concurrency message asking for the Socket receive timeout to be lowered
         temporarily, for increased responsiveness.
      +/
-    static struct ShortenReceiveTimeout {}
+    static auto ShortenReceiveTimeout()
+    {
+        return ThreadMessage(Type.shortenReceiveTimeout);
+    }
 }
 
 

@@ -217,7 +217,7 @@ void onCommandBusImpl(AdminPlugin plugin, const string input)
             writeln("Content: (empty)");
         }
 
-        plugin.state.mainThread.send(ThreadMessage.BusMessage(), input);
+        plugin.state.mainThread.send(ThreadMessage.BusMessage(input));
     }
     else
     {
@@ -231,7 +231,6 @@ void onCommandBusImpl(AdminPlugin plugin, const string input)
             writeln("Content: ", slice);
         }
 
-        plugin.state.mainThread.send(ThreadMessage.BusMessage(),
-            header, busMessage(slice));
+        plugin.state.mainThread.send(ThreadMessage.BusMessage(header, busMessage(slice)));
     }
 }

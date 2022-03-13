@@ -231,30 +231,123 @@ void messageFiber(ref Kameloso instance)
         alias Quiet = Flag!"quiet";
 
         /// Send a message to the server bypassing throttling.
+        version(none)
         void immediateline(ThreadMessage.Immediateline, string line) scope
         {
             instance.immediateBuffer.put(OutgoingLine(line, cast(Quiet)instance.settings.hideOutgoing));
         }
 
         /// Echo a line to the terminal and send it to the server.
+        version(none)
         void sendline(ThreadMessage.Sendline, string line) scope
         {
             instance.outbuffer.put(OutgoingLine(line, cast(Quiet)instance.settings.hideOutgoing));
         }
 
         /// Send a line to the server without echoing it.
+        version(none)
         void quietline(ThreadMessage.Quietline, string line) scope
         {
             instance.outbuffer.put(OutgoingLine(line, Yes.quiet));
         }
 
         /// Respond to `PING` with `PONG` to the supplied text as target.
+        version(none)
         void pong(ThreadMessage.Pong, string target) scope
         {
             instance.outbuffer.put(OutgoingLine("PONG :" ~ target, Yes.quiet));
         }
 
+        void onMessage(ThreadMessage message)
+        {
+            with (ThreadMessage.Type)
+            switch (message.type)
+            {
+            case pong:
+                instance.priorityBuffer.put(OutgoingLine("PONG :" ~ message.content, Yes.quiet));
+                break;
+
+            case sendline:
+                instance.outbuffer.put(OutgoingLine(message.content, cast(Quiet)instance.settings.hideOutgoing));
+                break;
+
+            case quietline:
+                instance.outbuffer.put(OutgoingLine(message.content, Yes.quiet));
+                break;
+
+            case immediateline:
+                instance.immediateBuffer.put(OutgoingLine(message.content, cast(Quiet)instance.settings.hideOutgoing));
+                break;
+
+            case shortenReceiveTimeout:
+                instance.wantReceiveTimeoutShortened = true;
+                break;
+
+            case busMessage:
+                foreach (plugin; instance.plugins)
+                {
+                    plugin.onBusMessage(message.content, message.payload);
+                }
+                break;
+
+            case quit:
+                // This will automatically close the connection.
+                immutable reason = message.content.length ? message.content : instance.bot.quitReason;
+                instance.priorityBuffer.put(OutgoingLine("QUIT :" ~
+                    reason.replaceTokens(instance.parser.client), cast(Quiet)message.quiet));
+                next = Next.returnSuccess;
+                break;
+
+            case reconnect:
+                instance.priorityBuffer.put(OutgoingLine("QUIT :Reconnecting.", No.quiet));
+                next = Next.retry;
+                break;
+
+            case wantLiveSummary:
+                instance.wantLiveSummary = true;
+                break;
+
+            case abort:
+                *instance.abort = true;
+                break;
+
+            case reload:
+                foreach (plugin; instance.plugins)
+                {
+                    if (!plugin.isEnabled) continue;
+
+                    try
+                    {
+                        if (!message.content.length || (plugin.name == message.content))
+                        {
+                            plugin.reload();
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        enum pattern = "The <l>%s</> plugin threw an exception when reloading: <l>%s";
+                        logger.errorf(pattern.expandTags(LogLevel.error), plugin.name, e.msg);
+                        version(PrintStacktraces) logger.trace(e);
+                    }
+                }
+                break;
+
+            case save:
+                import kameloso.config : writeConfigurationFile;
+                instance.writeConfigurationFile(instance.settings.configFile);
+                break;
+
+            default:
+                import std.stdio;
+                enum pattern = "onMessage received unexpected message type: <l>%s";
+                logger.errorf(pattern.expandTags(LogLevel.error), message.type);
+                writeln(message);
+                break;
+            }
+        }
+
         /// Quit the server with the supplied reason, or the default.
+        version(none)
         void quitServer(ThreadMessage.Quit, string givenReason,
             Flag!"quiet" quiet) scope
         {
@@ -266,6 +359,7 @@ void messageFiber(ref Kameloso instance)
         }
 
         /// Disconnects from and reconnects to the server.
+        version(none)
         void reconnect(ThreadMessage.Reconnect) scope
         {
             instance.priorityBuffer.put(OutgoingLine("QUIT :Reconnecting.", No.quiet));
@@ -273,6 +367,7 @@ void messageFiber(ref Kameloso instance)
         }
 
         /// Saves current configuration to disk.
+        version(none)
         void save(ThreadMessage.Save) scope
         {
             import kameloso.config : writeConfigurationFile;
@@ -283,6 +378,7 @@ void messageFiber(ref Kameloso instance)
            Constructs an associative array of all commands of all plugins and
            calls the passed delegate with it as argument.
          +/
+        version(none)
         void peekCommands(ThreadMessage.PeekCommands,
             shared void delegate(IRCPlugin.CommandMetadata[string][string]) dg) scope
         {
@@ -300,7 +396,7 @@ void messageFiber(ref Kameloso instance)
             Constructs an associative array of all channel-specific soft commands
             of all plugins and calls the passed delegate with it as argument.
          +/
-        void peekChannelSpecificCommands(ThreadMessage.PeekCommands,
+        void peekCommands(ThreadMessage.PeekCommands,
             shared void delegate(IRCPlugin.CommandMetadata[string][string]) dg,
             string channelName) scope
         {
@@ -308,7 +404,14 @@ void messageFiber(ref Kameloso instance)
 
             foreach (plugin; instance.plugins)
             {
-                commandAA[plugin.name] = plugin.channelSpecificCommands(channelName);
+                if (channelName.length)
+                {
+                    commandAA[plugin.name] = plugin.channelSpecificCommands(channelName);
+                }
+                else
+                {
+                    commandAA[plugin.name] = plugin.commands;
+                }
             }
 
             dg(commandAA);
@@ -345,6 +448,7 @@ void messageFiber(ref Kameloso instance)
         }
 
         /// Reloads a particular plugin, or all if no plugin name passed.
+        version(none)
         void reloadSpecificPlugin(ThreadMessage.Reload, string pluginToReload) scope
         {
             foreach (plugin; instance.plugins)
@@ -368,12 +472,14 @@ void messageFiber(ref Kameloso instance)
         }
 
         /// Reloads all plugins. Wraps and leverages [reloadSpecificPlugin].
+        version(none)
         void reloadPlugins(ThreadMessage.Reload) scope
         {
             reloadSpecificPlugin(ThreadMessage.Reload(), string.init);
         }
 
         /// Passes a bus message to each plugin. Send to disabled plugins too.
+        version(none)
         void dispatchBusMessage(ThreadMessage.BusMessage, string header, shared Sendable content) scope
         {
             foreach (plugin; instance.plugins)
@@ -383,6 +489,7 @@ void messageFiber(ref Kameloso instance)
         }
 
         /// Passes an empty header-only bus message to each plugin. Send to disabled plugins too.
+        version(none)
         void dispatchEmptyBusMessage(ThreadMessage.BusMessage, string header) scope
         {
             foreach (plugin; instance.plugins)
@@ -678,6 +785,7 @@ void messageFiber(ref Kameloso instance)
         /++
             Lowers the Socket read timeout temporarily, increasing responsiveness.
          +/
+        version(none)
         void shortenReceiveTimeout(ThreadMessage.ShortenReceiveTimeout) scope
         {
             instance.wantReceiveTimeoutShortened = true;
@@ -687,6 +795,7 @@ void messageFiber(ref Kameloso instance)
             Sets the `instance.wantsLiveSummary` flag to true, causing the main
             loop to print a connection summary to the terminal on the next iteration.
          +/
+        version(none)
         void flagWantLiveSummary(ThreadMessage.WantLiveSummary) scope
         {
             instance.wantLiveSummary = true;
@@ -696,6 +805,7 @@ void messageFiber(ref Kameloso instance)
             Sets the `instance.abort` flag to true, signaling the rest of the
             program to abort.
          +/
+        version(none)
         void flagAbort(ThreadMessage.Abort) scope
         {
             *instance.abort = true;
@@ -719,26 +829,27 @@ void messageFiber(ref Kameloso instance)
             import std.variant : Variant;
 
             receivedSomething = receiveTimeout(instant,
-                &sendline,
-                &quietline,
-                &immediateline,
-                &pong,
+                &onMessage,
+                //&sendline,
+                //&quietline,
+                //&immediateline,
+                //&pong,
                 &eventToServer,
                 &proxyLoggerMessages,
-                &shortenReceiveTimeout,
-                &quitServer,
-                &save,
-                &reloadPlugins,
-                &reloadSpecificPlugin,
+                //&shortenReceiveTimeout,
+                //&quitServer,
+                //&save,
+                //&reloadPlugins,
+                //&reloadSpecificPlugin,
                 &peekCommands,
-                &peekChannelSpecificCommands,
+                //&peekChannelSpecificCommands,
                 &changeSetting,
                 &changeSettingSafeDg,
-                &reconnect,
-                &dispatchBusMessage,
-                &dispatchEmptyBusMessage,
-                &flagWantLiveSummary,
-                &flagAbort,
+                //&reconnect,
+                //&dispatchBusMessage,
+                //&dispatchEmptyBusMessage,
+                //&flagWantLiveSummary,
+                //&flagAbort,
                 (Variant v) scope
                 {
                     // Caught an unhandled message
@@ -3114,10 +3225,13 @@ int run(string[] args)
         do
         {
             notEmpty = receiveTimeout(Duration.zero,
-                (ThreadMessage.Quit, string givenReason, Flag!"quiet" givenQuiet) scope
+                (ThreadMessage message) scope
                 {
-                    reason = givenReason;
-                    quiet = givenQuiet;
+                    if (message.type == ThreadMessage.Type.quit)
+                    {
+                        reason = message.content;
+                        quiet = message.quiet;
+                    }
                 },
                 (Variant _) scope {},
             );
