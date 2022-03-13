@@ -1077,10 +1077,12 @@ alias immediateline = immediate;
  +/
 void askToOutputImpl(string logLevel)(IRCPluginState state, const string line)
 {
-    import kameloso.thread : ThreadMessage;
+    import kameloso.thread : OutputRequest, ThreadMessage;
     import std.concurrency : prioritySend;
-    mixin("state.mainThread.prioritySend(ThreadMessage.TerminalOutput.", logLevel, ", line);");
+
+    mixin("state.mainThread.prioritySend(OutputRequest(ThreadMessage.TerminalOutput.", logLevel, ", line));");
 }
+
 
 /// Sends a concurrency message to the main thread asking to print text to the local terminal.
 alias askToWriteln = askToOutputImpl!"writeln";
@@ -1099,7 +1101,7 @@ alias askToError = askToOutputImpl!"error";
 
 unittest
 {
-    import kameloso.thread : ThreadMessage;
+    import kameloso.thread : OutputRequest, ThreadMessage;
 
     IRCPluginState state;
     state.mainThread = thisTid;
@@ -1143,10 +1145,10 @@ unittest
         import core.time : Duration;
 
         receiveTimeout(Duration.zero,
-            (ThreadMessage.TerminalOutput logLevel, string message)
+            (OutputRequest request)
             {
-                assert((logLevel == expectedLevels[i]), logLevel.text);
-                assert((message == expectedMessages[i]), message.text);
+                assert((request.logLevel == expectedLevels[i]), request.logLevel.text);
+                assert((request.line == expectedMessages[i]), request.line);
             },
             (Variant _)
             {

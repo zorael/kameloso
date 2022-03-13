@@ -197,6 +197,33 @@ struct ThreadMessage
 }
 
 
+// OutputRequest
+/++
+    Embodies the notion of a request to output something to the local terminal.
+
+    Merely bundles a [ThreadMessage.TerminalOutput|TerminalOutput] log level and
+    a `string` message line. What log level is picked decides what log level is
+    passed to the [kameloso.logger.KamelosoLogger|KamelosoLogger] instance, and
+    dictates things like what colour to tint the message with (if any).
+ +/
+struct OutputRequest
+{
+    /++
+        Log level of the message.
+
+        See_Also:
+            [ThreadMessage.TerminalOutput]
+            [kameloso.logger.LogLevel]
+     +/
+    ThreadMessage.TerminalOutput logLevel;
+
+    /++
+        String line to request to be output to the local terminal.
+     +/
+    string line;
+}
+
+
 /++
     Interface for a message sendable through the message bus.
  +/

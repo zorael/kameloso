@@ -215,7 +215,7 @@ void messageFiber(ref Kameloso instance)
 {
     import kameloso.common : OutgoingLine, replaceTokens;
     import kameloso.messaging : Message;
-    import kameloso.thread : Sendable, ThreadMessage;
+    import kameloso.thread : OutputRequest, Sendable, ThreadMessage;
     import std.concurrency : yield;
 
     // The Generator we use this function with popFronts the first thing it does
@@ -639,38 +639,38 @@ void messageFiber(ref Kameloso instance)
         }
 
         /// Proxies the passed message to the [kameloso.common.logger].
-        void proxyLoggerMessages(ThreadMessage.TerminalOutput logLevel, string taggedMessage) scope
+        void proxyLoggerMessages(OutputRequest request) scope
         {
             import kameloso.logger : LogLevel;
 
             if (instance.settings.headless) return;
 
             with (ThreadMessage.TerminalOutput)
-            final switch (logLevel)
+            final switch (request.logLevel)
             {
             case writeln:
                 import std.stdio : writeln;
-                writeln(taggedMessage.expandTags(LogLevel.off));
+                writeln(request.line.expandTags(LogLevel.off));
                 break;
 
             case trace:
-                logger.trace(taggedMessage.expandTags(LogLevel.trace));
+                logger.trace(request.line.expandTags(LogLevel.trace));
                 break;
 
             case log:
-                logger.log(taggedMessage.expandTags(LogLevel.all));
+                logger.log(request.line.expandTags(LogLevel.all));
                 break;
 
             case info:
-                logger.info(taggedMessage.expandTags(LogLevel.info));
+                logger.info(request.line.expandTags(LogLevel.info));
                 break;
 
             case warning:
-                logger.warning(taggedMessage.expandTags(LogLevel.warning));
+                logger.warning(request.line.expandTags(LogLevel.warning));
                 break;
 
             case error:
-                logger.error(taggedMessage.expandTags(LogLevel.error));
+                logger.error(request.line.expandTags(LogLevel.error));
                 break;
             }
         }
