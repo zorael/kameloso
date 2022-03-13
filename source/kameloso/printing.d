@@ -280,6 +280,9 @@ private struct FormatStringMemberArguments
 
     /// Whether or not we should compensate for a bright terminal background.
     bool bright;
+
+    /// Whether or not to truncate long lines.
+    bool truncate = true;
 }
 
 
@@ -300,32 +303,65 @@ private void formatStringMemberImpl(Flag!"coloured" coloured, T, Sink)
 {
     import std.format : formattedWrite;
 
+    enum truncateAfter = 128;
+
     static if (coloured)
     {
         import kameloso.terminal.colours : F = TerminalForeground, colour;
 
-        enum stringPattern = `%s%*s %s%-*s %s%s"%s"%s(%d)` ~ '\n';
-        immutable memberCode = args.bright ? F.black : F.white;
-        immutable valueCode  = args.bright ? F.green : F.lightgreen;
-        immutable lengthCode = args.bright ? F.lightgrey : F.darkgrey;
-        immutable typeCode   = args.bright ? F.lightcyan : F.cyan;
+        if (args.truncate && (content.length > truncateAfter))
+        {
+            enum stringPattern = `%s%*s %s%-*s %s"%s"%s ... (%d)` ~ '\n';
+            immutable memberCode = args.bright ? F.black : F.white;
+            immutable valueCode  = args.bright ? F.green : F.lightgreen;
+            immutable lengthCode = args.bright ? F.lightgrey : F.darkgrey;
+            immutable typeCode   = args.bright ? F.lightcyan : F.cyan;
 
-        sink.formattedWrite(stringPattern,
-            typeCode.colour, args.typewidth, args.typestring,
-            memberCode.colour, args.namewidth, args.memberstring,
-            (content.length ? string.init : " "),
-            valueCode.colour, content,
-            lengthCode.colour, content.length);
+            sink.formattedWrite(stringPattern,
+                typeCode.colour, args.typewidth, args.typestring,
+                memberCode.colour, args.namewidth, args.memberstring,
+                //(content.length ? string.init : " "),
+                valueCode.colour, content[0..truncateAfter],
+                lengthCode.colour, content.length);
+        }
+        else
+        {
+            enum stringPattern = `%s%*s %s%-*s %s%s"%s"%s(%d)` ~ '\n';
+            immutable memberCode = args.bright ? F.black : F.white;
+            immutable valueCode  = args.bright ? F.green : F.lightgreen;
+            immutable lengthCode = args.bright ? F.lightgrey : F.darkgrey;
+            immutable typeCode   = args.bright ? F.lightcyan : F.cyan;
+
+            sink.formattedWrite(stringPattern,
+                typeCode.colour, args.typewidth, args.typestring,
+                memberCode.colour, args.namewidth, args.memberstring,
+                (content.length ? string.init : " "),
+                valueCode.colour, content,
+                lengthCode.colour, content.length);
+        }
     }
     else
     {
-        enum stringPattern = `%*s %-*s %s"%s"(%d)` ~ '\n';
-        sink.formattedWrite(stringPattern,
-            args.typewidth, args.typestring,
-            args.namewidth, args.memberstring,
-            (content.length ? string.init : " "),
-            content,
-            content.length);
+        if (args.truncate && (content.length > truncateAfter))
+        {
+            enum stringPattern = `%*s %-*s "%s" ... (%d)` ~ '\n';
+            sink.formattedWrite(stringPattern,
+                args.typewidth, args.typestring,
+                args.namewidth, args.memberstring,
+                //(content.length ? string.init : " "),
+                content[0..truncateAfter],
+                content.length);
+        }
+        else
+        {
+            enum stringPattern = `%*s %-*s %s"%s"(%d)` ~ '\n';
+            sink.formattedWrite(stringPattern,
+                args.typewidth, args.typestring,
+                args.namewidth, args.memberstring,
+                (content.length ? string.init : " "),
+                content,
+                content.length);
+        }
     }
 }
 
@@ -356,6 +392,9 @@ private struct FormatArrayMemberArguments
 
     /// Whether or not we should compensate for a bright terminal background.
     bool bright;
+
+    /// Whether or not to truncate big arrays.
+    bool truncate = true;
 }
 
 
@@ -388,7 +427,7 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
         immutable lengthCode = args.bright ? F.lightgrey : F.darkgrey;
         immutable typeCode   = args.bright ? F.lightcyan : F.cyan;
 
-        if (content.length > truncateAfter)
+        if (args.truncate && (content.length > truncateAfter))
         {
             immutable rtArrayPattern = args.elemIsCharacter ?
                 "%s%*s %s%-*s %s[%(%s, %)]%s ... (%d)\n" :
@@ -416,7 +455,7 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
     }
     else
     {
-        if (content.length > truncateAfter)
+        if (args.truncate && (content.length > truncateAfter))
         {
             immutable rtArrayPattern = args.elemIsCharacter ?
                 "%*s %-*s [%(%s, %)] ... (%d)\n" :
@@ -473,7 +512,7 @@ private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
         immutable lengthCode = args.bright ? F.lightgrey : F.darkgrey;
         immutable typeCode   = args.bright ? F.lightcyan : F.cyan;
 
-        if (content.length > truncateAfter)
+        if (args.truncate && (content.length > truncateAfter))
         {
             enum aaPattern = "%s%*s %s%-*s %s%s%s ... (%d)\n";
 
@@ -497,7 +536,7 @@ private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
     }
     else
     {
-        if (content.length > truncateAfter)
+        if (args.truncate && (content.length > truncateAfter))
         {
             enum aaPattern = "%*s %-*s %s ... (%d)\n";
 
@@ -734,6 +773,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
                 args.typewidth = typewidth;
                 args.namewidth = namewidth + namePadding;
                 args.bright = bright;
+                args.truncate = !all;
                 formatStringMemberImpl!(coloured, T)(sink, args, __traits(getMember, thing, memberstring));
             }
             else static if (isArray!T || isAssociativeArray!T)
@@ -749,6 +789,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
                 args.elemstring = ElemType.stringof;
                 args.typewidth = typewidth;
                 args.namewidth = namewidth + namePadding;
+                args.truncate = !all;
                 args.bright = bright;
 
                 static if (isArray!T)
@@ -784,7 +825,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
                             " (init)" :
                             string.init;
                 }
-                else static if (is(T == class))
+                else static if (is(T == class) || is(T == interface))
                 {
                     immutable initText = (__traits(getMember, thing, memberstring) is null) ?
                         " (null)" :
@@ -842,7 +883,9 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
     {
         Struct struct_;
         int i = 12_345;
-        string s = "foo";
+        string s = "the moon; the sign of hope! it appeared when we left the pain " ~
+            "of the ice desert behind. we faced up to the curse and endured " ~
+            "misery. condemned we are! we brought hope but also lies, and treachery...";
         string p = "!";
         string p2;
         bool b = true;
@@ -862,11 +905,14 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 
     sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, s);
 
+    enum theMoon = `"the moon; the sign of hope! it appeared when we left the ` ~
+        `pain of the ice desert behind. we faced up to the curse and endured mis"`;
+
     enum structNameSerialised =
 `-- StructName
      Struct struct_                    <struct> (init)
         int i                           12345
-     string s                          "foo"(3)
+     string s                          ` ~ theMoon ~ ` ... (198)
      string p                          "!"(1)
      string p2                          ""(0)
        bool b                           true
@@ -1027,6 +1073,45 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
       int i                           42
 `;
     assert((sink.data == cFormatted), '\n' ~ sink.data);
+
+    sink.clear();
+
+    interface I3
+    {
+        void foo();
+    }
+
+    class C3 : I3
+    {
+        void foo() {}
+        int i;
+    }
+
+    class C4
+    {
+        I3 i3;
+        C3 c3;
+        int i = 42;
+    }
+
+    C4 c4 = new C4;
+    //c4.i3 = new C3;
+    c4.c3 = new C3;
+    c4.c3.i = -1;
+
+    sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, c4, c4.i3, c4.c3);
+    enum c4Formatted =
+`-- C4
+       I3 i3                         <interface> (null)
+       C3 c3                         <class>
+      int i                           42
+
+-- I3
+
+-- C3
+      int i                           -1
+`;
+    assert((sink.data == c4Formatted), '\n' ~ sink.data);
 }
 
 
