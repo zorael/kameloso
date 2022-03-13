@@ -131,10 +131,6 @@ version(Posix)
  +/
 struct ThreadMessage
 {
-private:
-    import std.uni : toUpper;
-
-public:
     /++
         Different thread message types.
      +/
@@ -255,7 +251,7 @@ public:
     static foreach (immutable memberstring; __traits(allMembers, Type))
     {
         mixin(`
-            static auto ` ~ memberstring[0..1].toUpper ~ memberstring[1..$] ~ `
+            static auto ` ~ memberstring ~ `
                 (const string content = string.init,
                 shared Sendable payload = null,
                 const bool quiet = false)

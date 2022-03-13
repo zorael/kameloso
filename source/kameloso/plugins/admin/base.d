@@ -153,7 +153,7 @@ void onCommandSave(AdminPlugin plugin, const ref IRCEvent event)
     import kameloso.thread : ThreadMessage;
 
     privmsg(plugin.state, event.channel, event.sender.nickname, "Saving configuration to disk.");
-    plugin.state.mainThread.send(ThreadMessage.Save());
+    plugin.state.mainThread.send(ThreadMessage.save());
 }
 
 
@@ -619,7 +619,7 @@ void onCommandReload(AdminPlugin plugin, const ref IRCEvent event)
         "Reloading plugins.";
 
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
-    plugin.state.mainThread.send(ThreadMessage.Reload(event.content));
+    plugin.state.mainThread.send(ThreadMessage.reload(event.content));
 }
 
 
@@ -815,7 +815,7 @@ void onCommandAuth(AdminPlugin plugin)
     import kameloso.thread : ThreadMessage, busMessage;
     import std.concurrency : send;
 
-    plugin.state.mainThread.send(ThreadMessage.BusMessage("connect", busMessage("auth")));
+    plugin.state.mainThread.send(ThreadMessage.busMessage("connect", busMessage("auth")));
 }
 
 
@@ -864,7 +864,7 @@ void onCommandStatus(AdminPlugin plugin)
 void onCommandSummary(AdminPlugin plugin)
 {
     import kameloso.thread : ThreadMessage;
-    plugin.state.mainThread.send(ThreadMessage.WantLiveSummary());
+    plugin.state.mainThread.send(ThreadMessage.wantLiveSummary());
 }
 
 
@@ -1240,7 +1240,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         import kameloso.thread : ThreadMessage;
 
         logger.log("Saving configuration to disk.");
-        return plugin.state.mainThread.send(ThreadMessage.Save());
+        return plugin.state.mainThread.send(ThreadMessage.save());
 
     case "reload":
         import kameloso.thread : ThreadMessage;
@@ -1255,7 +1255,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             logger.log("Reloading plugins.");
         }
 
-        return plugin.state.mainThread.send(ThreadMessage.Reload(slice));
+        return plugin.state.mainThread.send(ThreadMessage.reload(slice));
 
     case "whitelist":
     case "operator":

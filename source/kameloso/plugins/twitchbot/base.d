@@ -1365,7 +1365,7 @@ void teardown(TwitchBotPlugin plugin)
         (plugin.persistentWorkerTid != Tid.init))
     {
         // It may not have been started if we're aborting very early.
-        plugin.persistentWorkerTid.send(ThreadMessage.Teardown());
+        plugin.persistentWorkerTid.send(ThreadMessage.teardown());
     }
 }
 

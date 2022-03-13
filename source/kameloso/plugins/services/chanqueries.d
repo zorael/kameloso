@@ -141,7 +141,7 @@ void startChannelQueries(ChanQueriesService service)
                 version(WithPrinterPlugin)
                 {
                     service.state.mainThread.send(
-                        ThreadMessage.BusMessage("printer", busMessage(squelchMessage)));
+                        ThreadMessage.busMessage("printer", busMessage(squelchMessage)));
                 }
 
                 raw(service.state, text(command, ' ', channelName), Yes.quiet, Yes.background);
@@ -186,7 +186,7 @@ void startChannelQueries(ChanQueriesService service)
                     // [chanoprivsneeded] [#d] sinisalo.freenode.net: "You're not a channel operator" (#482)
                     // Ask the Printer to squelch those messages too.
                     service.state.mainThread.send(
-                        ThreadMessage.BusMessage("printer", busMessage(squelchMessage)));
+                        ThreadMessage.busMessage("printer", busMessage(squelchMessage)));
                 }
 
                 import kameloso.messaging : mode;
@@ -245,7 +245,7 @@ void startChannelQueries(ChanQueriesService service)
             version(WithPrinterPlugin)
             {
                 service.state.mainThread.send(
-                    ThreadMessage.BusMessage("printer", busMessage("unsquelch")));
+                    ThreadMessage.busMessage("printer", busMessage("unsquelch")));
             }
         }
 
@@ -277,7 +277,7 @@ void startChannelQueries(ChanQueriesService service)
             version(WithPrinterPlugin)
             {
                 service.state.mainThread.send(
-                    ThreadMessage.BusMessage("printer", busMessage("squelch " ~ nickname)));
+                    ThreadMessage.busMessage("printer", busMessage("squelch " ~ nickname)));
             }
 
             whois(service.state, nickname, No.force, Yes.quiet, Yes.background);

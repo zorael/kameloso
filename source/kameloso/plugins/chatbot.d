@@ -165,7 +165,7 @@ void onCommandBash(ChatbotPlugin plugin, const ref IRCEvent event)
 
     if (!plugin.chatbotSettings.bashDotOrgQuotes) return;
 
-    plugin.state.mainThread.prioritySend(ThreadMessage.ShortenReceiveTimeout());
+    plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout());
 
     // Defer all work to the worker thread
     cast(void)spawn(&worker, cast(shared)plugin.state, event);

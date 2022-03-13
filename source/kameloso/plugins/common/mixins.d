@@ -459,7 +459,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             import kameloso.thread : ThreadMessage, busMessage;
             import std.concurrency : send;
 
-            plugin.state.mainThread.send(ThreadMessage.BusMessage("printer", busMessage("squelch " ~ nicknamePart)));
+            plugin.state.mainThread.send(ThreadMessage.busMessage("printer", busMessage("squelch " ~ nicknamePart)));
         }
 
         if (issueWhois)

@@ -316,7 +316,7 @@ It should be entered as <i>pass</> under <i>[IRCBot]</>.
         if (!input.length || (input == "y") || (input == "Y"))
         {
             import std.concurrency : prioritySend;
-            plugin.state.mainThread.prioritySend(ThreadMessage.Save());
+            plugin.state.mainThread.prioritySend(ThreadMessage.save());
         }
         else
         {

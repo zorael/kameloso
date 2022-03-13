@@ -563,7 +563,7 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
     json.save(plugin.userFile);
 
     // Force persistence to reload the file with the new changes
-    plugin.state.mainThread.send(ThreadMessage.Reload());
+    plugin.state.mainThread.send(ThreadMessage.reload());
     return AlterationResult.success;
 }
 
@@ -703,5 +703,5 @@ in (mask.length, "Tried to add an empty hostmask definition")
     json.save!(JSONStorage.KeyOrderStrategy.passthrough)(plugin.hostmasksFile);
 
     // Force persistence to reload the file with the new changes
-    plugin.state.mainThread.send(ThreadMessage.Reload());
+    plugin.state.mainThread.send(ThreadMessage.reload());
 }

@@ -178,7 +178,7 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
 
     SysTime pre;
 
-    plugin.state.mainThread.prioritySend(ThreadMessage.ShortenReceiveTimeout());
+    plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout());
 
     if (plugin.state.settings.trace)
     {
