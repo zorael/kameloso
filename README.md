@@ -1,4 +1,4 @@
-# kameloso [![Linux/macOS/Windows](https://img.shields.io/github/workflow/status/zorael/kameloso/D?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/actions?query=workflow%3AD) [![Linux](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?logo=circleci&style=flat&maxAge=3600)](https://circleci.com/gh/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?logo=appveyor&style=flat&maxAge=3600)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v3.0.0-rc.1.svg?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/compare/v3.0.0-rc.1...master)
+# kameloso [![Linux/macOS/Windows](https://img.shields.io/github/workflow/status/zorael/kameloso/D?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/actions?query=workflow%3AD) [![Linux](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?logo=circleci&style=flat&maxAge=3600)](https://circleci.com/gh/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?logo=appveyor&style=flat&maxAge=3600)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v3.0.0-rc.2.svg?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/compare/v3.0.0-rc.2...master)
 
 **kameloso** is an IRC bot.
 
@@ -7,6 +7,7 @@
 * chat monitoring in bedazzling colours (or mesmerising monochrome)
 * automatic mode sets (e.g. auto `+o` on join)
 * logs
+* bugs
 * reporting titles of pasted URLs, YouTube video information fetch
 * **sed**-replacement of messages (`s/this/that/` substitution)
 * saving notes to offline users that get played back when they come online
@@ -40,7 +41,7 @@ Pre-compiled binaries for Windows and Linux can be found under [Releases](https:
 ```sh
 $ dub run kameloso -- --server irc.libera.chat --guestChannels "#d"
 
-# alternatively
+# alternatively, guaranteed latest
 $ git clone https://github.com/zorael/kameloso.git
 $ cd kameloso
 $ dub build
@@ -140,7 +141,7 @@ $ ./kameloso --save
 
 A new `kameloso.conf` will be created in a directory dependent on your platform.
 
-* **Linux** and other Posix: `~/.config/kameloso` (alternatively where `$XDG_CONFIG_HOME` points)
+* **Linux** and other Posix: `$HOME/.config/kameloso` (alternatively where `$XDG_CONFIG_HOME` points)
 * **Windows**: `%APPDATA%\kameloso`
 * **macOS**: `$HOME/Library/Application Support/kameloso`
 
@@ -172,7 +173,7 @@ An alternative is to disable colours entirely with `--monochrome`.
 
 ### Other files
 
-More server-specific resource files will be created the first time you connect to a server. These include `users.json`, in which you whitelist which accounts get to access the bot's features on a per-channel basis. Where these are stored also depends on platform; in the case of **macOS** and **Windows** they will be put in server-split subdirectories of the same directory as the configuration file, listed above. On **Linux** and other Posix, under `~/.local/share/kameloso` (or wherever `$XDG_DATA_HOME` points to).
+More server-specific resource files will be created the first time you connect to a server. These include `users.json`, in which you whitelist which accounts get to access the bot's features on a per-channel basis. Where these are stored also depends on platform; in the case of **macOS** and **Windows** they will be put in server-split subdirectories of the same directory as the configuration file, listed above. On **Linux** and other Posix, under `$HOME/.local/share/kameloso` (or wherever `$XDG_DATA_HOME` points to).
 
 ## Example use
 
@@ -369,6 +370,7 @@ Even with SSL seemingly properly set up you may see errors of *"Peer certificate
 * pipedream zero: **no compiler segfaults** ([#18026](https://issues.dlang.org/show_bug.cgi?id=18026), [#20562](https://issues.dlang.org/show_bug.cgi?id=20562))
 * pipedream: DCC
 * non-blocking FIFO
+* Twitch `ecount`? `settitle`? `setgame`? `vanish`? `watchtime`? `roulette`?
 * more pairs of eyes
 
 # Built with

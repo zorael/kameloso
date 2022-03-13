@@ -16,6 +16,8 @@ module kameloso.config;
 private:
 
 import kameloso.kameloso : Kameloso, IRCBot;
+import kameloso.common : expandTags, logger;
+import kameloso.logger : LogLevel;
 import dialect.defs : IRCClient, IRCServer;
 import lu.common : Next;
 import std.getopt : GetoptResult;
@@ -176,8 +178,6 @@ void manageConfigFile(ref Kameloso instance,
     const bool shouldOpenGraphicalEditor,
     ref string[] customSettings) @system
 {
-    import kameloso.common : expandTags, logger;
-
     /++
         Opens up the configuration file in a terminal text editor.
      +/
@@ -192,13 +192,13 @@ void manageConfigFile(ref Kameloso instance,
 
         if (!editor.length)
         {
-            enum pattern = "Missing <l>$EDITOR<e> environment variable; cannot guess editor.";
-            logger.error(pattern.expandTags);
+            enum pattern = "Missing <l>$EDITOR</> environment variable; cannot guess editor.";
+            logger.error(pattern.expandTags(LogLevel.error));
             return;
         }
 
-        enum pattern = "Attempting to open <i>%s<l> in <i>%s<l>...";
-        logger.logf(pattern.expandTags, instance.settings.configFile, editor);
+        enum pattern = "Attempting to open <i>%s</> in <i>%s</>...";
+        logger.logf(pattern.expandTags(LogLevel.all), instance.settings.configFile, editor);
 
         immutable command = [ editor, instance.settings.configFile ];
         spawnProcess(command).wait;
@@ -246,8 +246,8 @@ void manageConfigFile(ref Kameloso instance,
         // Let exceptions (ProcessExceptions) fall through and get caught
         // by [kameloso.main.tryGetopt].
 
-        enum pattern = "Attempting to open <i>%s<l> in a graphical text editor...";
-        logger.logf(pattern.expandTags, instance.settings.configFile);
+        enum pattern = "Attempting to open <i>%s</> in a graphical text editor...";
+        logger.logf(pattern.expandTags(LogLevel.all), instance.settings.configFile);
 
         immutable command = [ editor, instance.settings.configFile ];
         execute(command);
@@ -344,12 +344,10 @@ void writeToDisk(const string filename,
  +/
 void giveConfigurationMinimalInstructions()
 {
-    import kameloso.common : expandTags, logger;
-
-    enum adminPattern = "...one or more <i>admins<t> who get administrative control over the bot.";
-    logger.trace(adminPattern.expandTags);
-    enum homePattern = "...one or more <i>homeChannels<t> in which to operate.";
-    logger.trace(homePattern.expandTags);
+    enum adminPattern = "...one or more <i>admins</> who get administrative control over the bot.";
+    logger.trace(adminPattern.expandTags(LogLevel.trace));
+    enum homePattern = "...one or more <i>homeChannels</> in which to operate.";
+    logger.trace(homePattern.expandTags(LogLevel.trace));
 }
 
 
@@ -447,7 +445,7 @@ Next handleGetopt(ref Kameloso instance,
 {
     with (instance)
     {
-        import kameloso.common : Tint, expandTags, printVersionInfo;
+        import kameloso.common : Tint, printVersionInfo;
         import std.getopt : arraySep, config, getopt;
 
         bool shouldWriteConfig;
@@ -524,7 +522,7 @@ Next handleGetopt(ref Kameloso instance,
             import std.range : repeat;
 
             immutable setSyntax = quiet ? string.init :
-                "<i>--set plugin</>.<i>setting</>=<i>value</>".expandTags;
+                "<i>--set plugin</>.<i>setting</>=<i>value</>".expandTags(LogLevel.off);
 
             immutable nickname = quiet ? string.init :
                 parser.client.nickname.length ? parser.client.nickname : "<random>";
@@ -544,13 +542,13 @@ Next handleGetopt(ref Kameloso instance,
 
             immutable editorVariableValue = quiet ? string.init :
                 editorCommand.length ?
-                    " [<i>%s</>]".expandTags.format(editorCommand) :
+                    " [<i>%s</>]".expandTags(LogLevel.trace).format(editorCommand) :
                     string.init;
 
             string formatNum(const size_t num)
             {
                 return (quiet || (num == 0)) ? string.init :
-                    " (<i>%d</>)".expandTags.format(num);
+                    " (<i>%d</>)".expandTags(LogLevel.trace).format(num);
             }
 
             void appendCustomSetting(const string _, const string setting)
@@ -564,31 +562,31 @@ Next handleGetopt(ref Kameloso instance,
                 "n|nickname",
                     quiet ? string.init :
                         "Nickname [<i>%s</>]"
-                            .expandTags
+                            .expandTags(LogLevel.trace)
                             .format(nickname),
                     &parser.client.nickname,
                 "s|server",
                     quiet ? string.init :
                         "Server address [<i>%s</>]"
-                            .expandTags
+                            .expandTags(LogLevel.trace)
                             .format(parser.server.address),
                     &parser.server.address,
                 "P|port",
                     quiet ? string.init :
                         "Server port [<i>%d</>]"
-                            .expandTags
+                            .expandTags(LogLevel.trace)
                             .format(parser.server.port),
                     &parser.server.port,
                 "6|ipv6",
                     quiet ? string.init :
                         "Use IPv6 where available [<i>%s</>]"
-                            .expandTags
+                            .expandTags(LogLevel.trace)
                             .format(connSettings.ipv6),
                     &connSettings.ipv6,
                 "ssl",
                     quiet ? string.init :
                         "Attempt SSL connection [<i>%s</>]"
-                            .expandTags
+                            .expandTags(LogLevel.trace)
                             .format(sslText),
                     &connSettings.ssl,
                 "A|account",
@@ -596,7 +594,7 @@ Next handleGetopt(ref Kameloso instance,
                         "Service account name" ~
                             (bot.account.length ?
                                 " [<i>%s</>]"
-                                    .expandTags
+                                    .expandTags(LogLevel.trace)
                                     .format(bot.account) :
                                 string.init),
                     &bot.account,
@@ -605,7 +603,7 @@ Next handleGetopt(ref Kameloso instance,
                         "Service account password" ~
                             (bot.password.length ?
                                 " [<i>%s</>]"
-                                    .expandTags
+                                    .expandTags(LogLevel.trace)
                                     .format(passwordMask) :
                                 string.init),
                     &bot.password,
@@ -614,7 +612,7 @@ Next handleGetopt(ref Kameloso instance,
                         "Registration pass" ~
                             (bot.pass.length ?
                                 " [<i>%s</>]"
-                                    .expandTags
+                                    .expandTags(LogLevel.trace)
                                     .format(passMask) :
                                 string.init),
                     &bot.pass,
@@ -626,7 +624,7 @@ Next handleGetopt(ref Kameloso instance,
                 "H|homeChannels",
                     quiet ? string.init :
                         text(("Home channels to operate in, comma-separated " ~
-                            "(escape or enquote any octothorpe <i>#</>s)").expandTags,
+                            "(escape or enquote any octothorpe <i>#</>s)").expandTags(LogLevel.trace),
                             formatNum(bot.homeChannels.length)),
                     &inputHomeChannels,
                 "C|guestChannels",
@@ -646,13 +644,13 @@ Next handleGetopt(ref Kameloso instance,
                 "bright",
                     quiet ? string.init :
                         "Adjust colours for bright terminal backgrounds [<i>%s</>]"
-                            .expandTags
+                            .expandTags(LogLevel.trace)
                             .format(settings.brightTerminal),
                     &settings.brightTerminal,
                 "monochrome",
                     quiet ? string.init :
                         "Use monochrome output [<i>%s</>]"
-                            .expandTags
+                            .expandTags(LogLevel.trace)
                             .format(settings.monochrome),
                     &settings.monochrome,
                 "set",
@@ -662,20 +660,20 @@ Next handleGetopt(ref Kameloso instance,
                 "c|config",
                     quiet ? string.init :
                         "Specify a different configuration file [<i>%s</>]"
-                            .expandTags
+                            .expandTags(LogLevel.trace)
                             .format(settings.configFile),
                     &settings.configFile,
                 "r|resourceDir",
                     quiet ? string.init :
                         "Specify a different resource directory [<i>%s</>]"
-                            .expandTags
+                            .expandTags(LogLevel.trace)
                             .format(settings.resourceDirectory),
                     &settings.resourceDirectory,
                 /+"receiveTimeout",
                     quiet ? string.init :
                         ("Socket receive timeout in milliseconds; lower numbers " ~
                             "improve worse-case responsiveness of outgoing messages [<i>%d</>]")
-                                .expandTags
+                                .expandTags(LogLevel.trace)
                                 .format(connSettings.receiveTimeout),
                     &connSettings.receiveTimeout,
                 "privateKey",
@@ -689,7 +687,7 @@ Next handleGetopt(ref Kameloso instance,
                 "cacert",
                     quiet ? string.init :
                         "Path to <i>cacert.pem</> certificate bundle, or equivalent"
-                            .expandTags,
+                            .expandTags(LogLevel.trace),
                     &connSettings.caBundleFile,+/
                 "numeric",
                     quiet ? string.init :
@@ -698,7 +696,7 @@ Next handleGetopt(ref Kameloso instance,
                 "summary",
                     quiet ? string.init :
                         "Show a connection summary on program exit [<i>%s</>]"
-                            .expandTags
+                            .expandTags(LogLevel.trace)
                             .format(settings.exitSummary),
                     &settings.exitSummary,
                 "force",
@@ -718,13 +716,13 @@ Next handleGetopt(ref Kameloso instance,
                     quiet ? string.init :
                         ("Open the configuration file in a *terminal* text editor " ~
                             "(or the application defined in the <i>$EDITOR</> " ~
-                            "environment variable)").expandTags ~ editorVariableValue,
+                            "environment variable)").expandTags(LogLevel.trace) ~ editorVariableValue,
                     &shouldOpenTerminalEditor,
                 "gedit",
                     quiet ? string.init :
                         ("Open the configuration file in a *graphical* text editor " ~
                             "(or the default application used to open <i>*.conf</> files on your system")
-                                .expandTags,
+                                .expandTags(LogLevel.trace),
                     &shouldOpenGraphicalEditor,
                 "headless",
                     quiet ? string.init :
@@ -914,7 +912,6 @@ void notifyAboutMissingSettings(const string[][string] missingEntries,
     const string binaryPath,
     const string configFile)
 {
-    import kameloso.common : expandTags, logger;
     import std.conv : text;
     import std.path : baseName;
 
@@ -922,13 +919,13 @@ void notifyAboutMissingSettings(const string[][string] missingEntries,
 
     foreach (immutable section, const sectionEntries; missingEntries)
     {
-        enum missingPattern = "...under <l>[<i>%s<l>]<t>: %-(<i>%s%|<t>, %)";
-        logger.tracef(missingPattern.expandTags, section, sectionEntries);
+        enum missingPattern = "...under <l>[<i>%s<l>]</>: %-(<i>%s%|</>, %)";
+        logger.tracef(missingPattern.expandTags(LogLevel.trace), section, sectionEntries);
     }
 
-    enum pattern = "Use <i>%s --save<l> to regenerate the file, " ~
-        "updating it with all available configuration. [<i>%s<l>]";
-    logger.logf(pattern.expandTags, binaryPath.baseName, configFile);
+    enum pattern = "Use <i>%s --save</> to regenerate the file, " ~
+        "updating it with all available configuration. [<i>%s</>]";
+    logger.logf(pattern.expandTags(LogLevel.all), binaryPath.baseName, configFile);
     logger.warning("Mind that any comments and/or sections belonging to unbuilt plugins will be removed.");
     logger.trace();
 }
@@ -947,7 +944,6 @@ void notifyAboutMissingSettings(const string[][string] missingEntries,
  +/
 void notifyAboutIncompleteConfiguration(const string configFile, const string binaryPath)
 {
-    import kameloso.common : expandTags, logger;
     import std.file : exists;
     import std.path : baseName;
 
@@ -955,14 +951,14 @@ void notifyAboutIncompleteConfiguration(const string configFile, const string bi
 
     if (configFile.exists)
     {
-        enum pattern = "Edit <i>%s<l> and make sure it has at least one of the following:";
-        logger.logf(pattern.expandTags, configFile);
+        enum pattern = "Edit <i>%s</> and make sure it has at least one of the following:";
+        logger.logf(pattern.expandTags(LogLevel.all), configFile);
         giveConfigurationMinimalInstructions();
     }
     else
     {
-        enum pattern = "Use <i>%s --save<l> to generate a configuration file.";
-        logger.logf(pattern.expandTags, binaryPath.baseName);
+        enum pattern = "Use <i>%s --save</> to generate a configuration file.";
+        logger.logf(pattern.expandTags(LogLevel.all), binaryPath.baseName);
     }
 
     logger.trace();

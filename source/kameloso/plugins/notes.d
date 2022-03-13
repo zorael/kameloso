@@ -16,6 +16,7 @@ private:
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.common : expandTags, logger;
+import kameloso.logger : LogLevel;
 import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
@@ -181,8 +182,8 @@ void playbackNotes(NotesPlugin plugin,
             catch (JSONException e)
             {
                 enum pattern = "Failed to fetch, replay and clear notes for " ~
-                    "<l>%s<e> on <l>%s<e>: <l>%s";
-                logger.errorf(pattern.expandTags, id,
+                    "<l>%s</> on <l>%s</>: <l>%s";
+                logger.errorf(pattern.expandTags(LogLevel.error), id,
                     (channelName.length ? channelName : "<no channel>"), e.msg);
 
                 if (e.msg == "JSONValue is not an object")
@@ -355,15 +356,15 @@ auto getNotes(NotesPlugin plugin, const string channel, const string id)
     {
         if (channelNotes.type != JSONType.object)
         {
-            enum pattern = "Invalid channel notes list type for <l>%s<e>: `<l>%s<e>`";
-            logger.errorf(pattern, channel, channelNotes.type);
+            enum pattern = "Invalid channel notes list type for <l>%s</>: `<l>%s</>`";
+            logger.errorf(pattern.expandTags(LogLevel.error), channel, channelNotes.type);
         }
         else if (const nickNotes = id in channelNotes.object)
         {
             if (nickNotes.type != JSONType.array)
             {
-                enum pattern = "Invalid notes list type for <l>%s<e> on <l>%s<e>: `<l>%s<e>`";
-                logger.errorf(pattern, id, channel, nickNotes.type);
+                enum pattern = "Invalid notes list type for <l>%s</> on <l>%s</>: `<l>%s</>`";
+                logger.errorf(pattern.expandTags(LogLevel.error), id, channel, nickNotes.type);
                 return noteArray;
             }
 
@@ -412,8 +413,8 @@ in (id.length, "Tried to clear notes for an empty id")
     {
         if (plugin.notes[channel].type != JSONType.object)
         {
-            enum pattern = "Invalid channel notes list type for <l>%s<e>: `<l>%s<e>`";
-            logger.errorf(pattern, channel, plugin.notes[channel].type);
+            enum pattern = "Invalid channel notes list type for <l>%s</>: `<l>%s</>`";
+            logger.errorf(pattern.expandTags(LogLevel.error), channel, plugin.notes[channel].type);
             return;
         }
 

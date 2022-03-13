@@ -25,6 +25,7 @@ debug import kameloso.plugins.admin.debugging;
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness;
 import kameloso.common : expandTags, logger;
+import kameloso.logger : LogLevel;
 import kameloso.messaging;
 import dialect.defs;
 import std.concurrency : send;
@@ -152,7 +153,7 @@ void onCommandSave(AdminPlugin plugin, const ref IRCEvent event)
     import kameloso.thread : ThreadMessage;
 
     privmsg(plugin.state, event.channel, event.sender.nickname, "Saving configuration to disk.");
-    plugin.state.mainThread.send(ThreadMessage.Save());
+    plugin.state.mainThread.send(ThreadMessage.save());
 }
 
 
@@ -344,7 +345,6 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
 
     if (existingChannelIndex != -1)
     {
-        import kameloso.thread : ThreadMessage, busMessage;
         import std.algorithm.mutation : SwapStrategy, remove;
 
         logger.info("We're already in this channel as a guest. Cycling.");
@@ -618,7 +618,7 @@ void onCommandReload(AdminPlugin plugin, const ref IRCEvent event)
         "Reloading plugins.";
 
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
-    plugin.state.mainThread.send(ThreadMessage.Reload(), event.content);
+    plugin.state.mainThread.send(ThreadMessage.reload(event.content));
 }
 
 
@@ -811,10 +811,10 @@ void onCommandAuth(AdminPlugin plugin)
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch) return;
     }
 
-    import kameloso.thread : ThreadMessage, busMessage;
+    import kameloso.thread : ThreadMessage, sendable;
     import std.concurrency : send;
 
-    plugin.state.mainThread.send(ThreadMessage.BusMessage(), "connect", busMessage("auth"));
+    plugin.state.mainThread.send(ThreadMessage.busMessage("connect", sendable("auth")));
 }
 
 
@@ -863,7 +863,7 @@ void onCommandStatus(AdminPlugin plugin)
 void onCommandSummary(AdminPlugin plugin)
 {
     import kameloso.thread : ThreadMessage;
-    plugin.state.mainThread.send(ThreadMessage.WantLiveSummary());
+    plugin.state.mainThread.send(ThreadMessage.wantLiveSummary());
 }
 
 
@@ -1239,22 +1239,22 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         import kameloso.thread : ThreadMessage;
 
         logger.log("Saving configuration to disk.");
-        return plugin.state.mainThread.send(ThreadMessage.Save());
+        return plugin.state.mainThread.send(ThreadMessage.save());
 
     case "reload":
         import kameloso.thread : ThreadMessage;
 
         if (slice.length)
         {
-            enum pattern = `Reloading plugin "<i>%s<l>".`;
-            logger.logf(pattern.expandTags, slice);
+            enum pattern = `Reloading plugin "<i>%s</>".`;
+            logger.logf(pattern.expandTags(LogLevel.all), slice);
         }
         else
         {
             logger.log("Reloading plugins.");
         }
 
-        return plugin.state.mainThread.send(ThreadMessage.Reload(), slice);
+        return plugin.state.mainThread.send(ThreadMessage.reload(slice));
 
     case "whitelist":
     case "operator":
@@ -1269,10 +1269,10 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         if (results == SplitResults.underrun)
         {
             // verb_channel_nickname
-            enum pattern = "Invalid bus message syntax; expected <b>%s%s<b> " ~
-                "[verb] [channel] [nickname if add/del], got \"<b>%s<b>\"";
-            logger.warningf(pattern.expandTags, plugin.state.settings.prefix,
-                verb, message.payload.strippedRight);
+            enum pattern = "Invalid bus message syntax; expected <l>%s%s</> " ~
+                "[verb] [channel] [nickname if add/del], got \"<l>%s</>\"";
+            logger.warningf(pattern.expandTags(LogLevel.warning),
+                plugin.state.settings.prefix, verb, message.payload.strippedRight);
             return;
         }
 
@@ -1302,8 +1302,8 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             return plugin.listList(channel, verb);
 
         default:
-            enum pattern = "Invalid bus message <l>%s<w> subverb <l>%s";
-            logger.warningf(pattern, verb, subverb);
+            enum pattern = "Invalid bus message <l>%s</> subverb <l>%s";
+            logger.warningf(pattern.expandTags(LogLevel.warning), verb, subverb);
             break;
         }
         break;
@@ -1349,8 +1349,8 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             return listHostmaskDefinitions(plugin, lvalueEvent);
 
         default:
-            enum pattern = "Invalid bus message <l>%s<w> subverb <l>%s";
-            logger.warningf(pattern, verb, subverb);
+            enum pattern = "Invalid bus message <l>%s</> subverb <l>%s";
+            logger.warningf(pattern.expandTags(LogLevel.warning), verb, subverb);
             break;
         }
         break;
@@ -1359,7 +1359,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         return plugin.onCommandSummary();
 
     default:
-        logger.error("[admin] Unimplemented bus message verb: <l>", verb);
+        logger.error("[admin] Unimplemented bus message verb: <l>".expandTags, verb);
         break;
     }
 }

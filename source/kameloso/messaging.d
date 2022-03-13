@@ -835,30 +835,38 @@ void quit(Flag!"priority" priority = Yes.priority)
     static if (priority) import std.concurrency : send = prioritySend;
     import kameloso.thread : ThreadMessage;
 
-    state.mainThread.send(ThreadMessage.Quit(),
-        reason.length ? reason : state.bot.quitReason, cast()quiet);
+    Message m;
+
+    m.event.type = IRCEvent.Type.QUIT;
+    m.event.content = reason.length ? reason : state.bot.quitReason;
+    m.properties |= (Message.Property.forced | Message.Property.priority);
+
+    if (quiet) m.properties |= Message.Property.quiet;
+
+    state.mainThread.send(m);
 }
 
 ///
 unittest
 {
     import kameloso.thread : ThreadMessage;
-    import std.concurrency : MessageMismatch;
-    import std.typecons : Tuple;
 
     IRCPluginState state;
     state.mainThread = thisTid;
 
-    quit(state, "reason");
+    quit(state, "reason", Yes.quiet);
 
-    try
-    {
-        receiveOnly!(Tuple!(ThreadMessage.Quit, string, Flag!"quiet"))();
-    }
-    catch (MessageMismatch e)
-    {
-        assert(0, "Message mismatch when unit testing `messaging.quit`");
-    }
+    receive(
+        (Message m)
+        {
+            with (m.event)
+            {
+                assert((type == IRCEvent.Type.QUIT), Enum!(IRCEvent.Type).toString(type));
+                assert((content == "reason"), content);
+                assert(m.properties & (Message.Property.forced | Message.Property.priority | Message.Property.quiet));
+            }
+        }
+    );
 }
 
 
@@ -1069,10 +1077,12 @@ alias immediateline = immediate;
  +/
 void askToOutputImpl(string logLevel)(IRCPluginState state, const string line)
 {
-    import kameloso.thread : ThreadMessage;
+    import kameloso.thread : OutputRequest, ThreadMessage;
     import std.concurrency : prioritySend;
-    mixin("state.mainThread.prioritySend(ThreadMessage.TerminalOutput.", logLevel, ", line);");
+
+    mixin("state.mainThread.prioritySend(OutputRequest(OutputRequest.Level.", logLevel, ", line));");
 }
+
 
 /// Sends a concurrency message to the main thread asking to print text to the local terminal.
 alias askToWriteln = askToOutputImpl!"writeln";
@@ -1091,7 +1101,7 @@ alias askToError = askToOutputImpl!"error";
 
 unittest
 {
-    import kameloso.thread : ThreadMessage;
+    import kameloso.thread : OutputRequest, ThreadMessage;
 
     IRCPluginState state;
     state.mainThread = thisTid;
@@ -1103,7 +1113,7 @@ unittest
     state.askToWarn("warning");
     state.askToError("error");
 
-    alias T = ThreadMessage.TerminalOutput;
+    alias T = OutputRequest.Level;
 
     static immutable T[6] expectedLevels =
     [
@@ -1135,10 +1145,10 @@ unittest
         import core.time : Duration;
 
         receiveTimeout(Duration.zero,
-            (ThreadMessage.TerminalOutput logLevel, string message)
+            (OutputRequest request)
             {
-                assert((logLevel == expectedLevels[i]), logLevel.text);
-                assert((message == expectedMessages[i]), message.text);
+                assert((request.logLevel == expectedLevels[i]), request.logLevel.text);
+                assert((request.line == expectedMessages[i]), request.line);
             },
             (Variant _)
             {

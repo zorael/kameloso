@@ -93,7 +93,7 @@ void startChannelQueries(ChanQueriesService service)
 
     void dg()
     {
-        import kameloso.thread : CarryingFiber, ThreadMessage, busMessage;
+        import kameloso.thread : CarryingFiber, ThreadMessage, sendable;
         import std.concurrency : send;
         import std.datetime.systime : Clock;
         import std.string : representation;
@@ -113,6 +113,7 @@ void startChannelQueries(ChanQueriesService service)
 
         static immutable secondsBetween = service.secondsBetween.seconds;
 
+        chanloop:
         foreach (immutable i, immutable channelName; querylist)
         {
             if (channelName !in service.channelStates) continue;
@@ -139,8 +140,8 @@ void startChannelQueries(ChanQueriesService service)
 
                 version(WithPrinterPlugin)
                 {
-                    service.state.mainThread.send(ThreadMessage.BusMessage(),
-                        "printer", busMessage(squelchMessage));
+                    service.state.mainThread.send(
+                        ThreadMessage.busMessage("printer", sendable(squelchMessage)));
                 }
 
                 raw(service.state, text(command, ' ', channelName), Yes.quiet, Yes.background);
@@ -159,8 +160,11 @@ void startChannelQueries(ChanQueriesService service)
             ];
 
             queryAwaitAndUnlist("TOPIC", topicTypes);
+            if (channelName !in service.channelStates) continue chanloop;
             queryAwaitAndUnlist("WHO", IRCEvent.Type.RPL_ENDOFWHO);
+            if (channelName !in service.channelStates) continue chanloop;
             queryAwaitAndUnlist("MODE", IRCEvent.Type.RPL_CHANNELMODEIS);
+            if (channelName !in service.channelStates) continue chanloop;
 
             // MODE generic
 
@@ -172,6 +176,7 @@ void startChannelQueries(ChanQueriesService service)
                 {
                     // Cannot await by event type; there are too many types.
                     delay(service, secondsBetween, Yes.yield);
+                    if (channelName !in service.channelStates) continue chanloop;
                 }
 
                 version(WithPrinterPlugin)
@@ -180,8 +185,8 @@ void startChannelQueries(ChanQueriesService service)
                     // channels for specific modes.
                     // [chanoprivsneeded] [#d] sinisalo.freenode.net: "You're not a channel operator" (#482)
                     // Ask the Printer to squelch those messages too.
-                    service.state.mainThread.send(ThreadMessage.BusMessage(),
-                        "printer", busMessage(squelchMessage));
+                    service.state.mainThread.send(
+                        ThreadMessage.busMessage("printer", sendable(squelchMessage)));
                 }
 
                 import kameloso.messaging : mode;
@@ -189,7 +194,7 @@ void startChannelQueries(ChanQueriesService service)
                     string.init, Yes.quiet, Yes.background);
             }
 
-            if (channelName !in service.channelStates) continue;
+            if (channelName !in service.channelStates) continue chanloop;
 
             // Overwrite state with [ChannelState.queried];
             // [ChannelState.topicKnown] etc are no longer relevant.
@@ -239,8 +244,8 @@ void startChannelQueries(ChanQueriesService service)
 
             version(WithPrinterPlugin)
             {
-                service.state.mainThread.send(ThreadMessage.BusMessage(),
-                    "printer", busMessage("unsquelch"));
+                service.state.mainThread.send(
+                    ThreadMessage.busMessage("printer", sendable("unsquelch")));
             }
         }
 
@@ -271,8 +276,8 @@ void startChannelQueries(ChanQueriesService service)
 
             version(WithPrinterPlugin)
             {
-                service.state.mainThread.send(ThreadMessage.BusMessage(),
-                    "printer", busMessage("squelch " ~ nickname));
+                service.state.mainThread.send(
+                    ThreadMessage.busMessage("printer", sendable("squelch " ~ nickname)));
             }
 
             whois(service.state, nickname, No.force, Yes.quiet, Yes.background);
@@ -312,12 +317,13 @@ void startChannelQueries(ChanQueriesService service)
                         if (++consecutiveUnknownCommands >= maxConsecutiveUnknownCommands)
                         {
                             import kameloso.common : expandTags;
+                            import kameloso.logger : LogLevel;
 
                             // Cannot WHOIS on this server (assume)
                             logger.error("Error: This server does not seem " ~
                                 "to support user accounts?");
-                            enum pattern = "Consider enabling <l>Core<e>.<l>preferHostmasks<e>.";
-                            logger.error(pattern.expandTags);
+                            enum pattern = "Consider enabling <l>Core</>.<l>preferHostmasks</>.";
+                            logger.error(pattern.expandTags(LogLevel.error));
                             service.serverSupportsWHOIS = false;
                             return;
                         }
@@ -441,6 +447,21 @@ void onMyInfo(ChanQueriesService service)
     }
 
     delay(service, &dg, service.timeBeforeInitialQueries);
+}
+
+
+// onNoSuchChannel
+/++
+    If we get an error that a channel doesn't exist, remove it from
+    [ChanQueriesService.channelStates|channelStates]. This stops it from being
+    queried in [startChannelQueries].
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.ERR_NOSUCHCHANNEL)
+)
+void onNoSuchChannel(ChanQueriesService service, const ref IRCEvent event)
+{
+    service.channelStates.remove(event.channel);
 }
 
 

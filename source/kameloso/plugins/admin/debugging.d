@@ -201,7 +201,7 @@ void onCommandStatusImpl(AdminPlugin plugin)
 void onCommandBusImpl(AdminPlugin plugin, const string input)
 {
     import kameloso.common : logger;
-    import kameloso.thread : ThreadMessage, busMessage;
+    import kameloso.thread : ThreadMessage, sendable;
     import lu.string : contains, nom;
     import std.concurrency : send;
     import std.stdio : writeln;
@@ -217,7 +217,7 @@ void onCommandBusImpl(AdminPlugin plugin, const string input)
             writeln("Content: (empty)");
         }
 
-        plugin.state.mainThread.send(ThreadMessage.BusMessage(), input);
+        plugin.state.mainThread.send(ThreadMessage.busMessage(input));
     }
     else
     {
@@ -231,7 +231,6 @@ void onCommandBusImpl(AdminPlugin plugin, const string input)
             writeln("Content: ", slice);
         }
 
-        plugin.state.mainThread.send(ThreadMessage.BusMessage(),
-            header, busMessage(slice));
+        plugin.state.mainThread.send(ThreadMessage.busMessage(header, sendable(slice)));
     }
 }

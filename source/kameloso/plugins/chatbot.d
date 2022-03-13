@@ -165,7 +165,7 @@ void onCommandBash(ChatbotPlugin plugin, const ref IRCEvent event)
 
     if (!plugin.chatbotSettings.bashDotOrgQuotes) return;
 
-    plugin.state.mainThread.prioritySend(ThreadMessage.ShortenReceiveTimeout());
+    plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout());
 
     // Defer all work to the worker thread
     cast(void)spawn(&worker, cast(shared)plugin.state, event);
@@ -240,7 +240,7 @@ void worker(shared IRCPluginState sState,
             import std.string : fromStringz;
             import etc.c.curl : curl_easy_strerror;
 
-            enum pattern = "Chatbot got cURL error <l>%s<e> (<l>%d<e>) when fetching <l>%s<e>: <l>%s";
+            enum pattern = "Chatbot got cURL error <l>%s</> (<l>%d</>) when fetching <l>%s</>: <l>%s";
             askToError(state, pattern
                 .format(curlErrorStrings[errorCode], errorCode, url,
                     fromStringz(curl_easy_strerror(errorCode))));
@@ -260,7 +260,7 @@ void worker(shared IRCPluginState sState,
 
         void reportLayoutError()
         {
-            askToError(state, "Failed to parse <l>bash.org<e> page; unexpected layout.");
+            askToError(state, "Failed to parse <l>bash.org</> page; unexpected layout.");
         }
 
         auto p = numBlock[0].getElementsByTagName("p");
@@ -292,7 +292,7 @@ void worker(shared IRCPluginState sState,
     }
     catch (Exception e)
     {
-        enum pattern = "Chatbot could not fetch <l>bash.org<w> quote at <l>%s<w>: <l>%s";
+        enum pattern = "Chatbot could not fetch <l>bash.org</> quote at <l>%s</>: <l>%s";
         askToWarn(state, pattern.format(url, e.msg));
         version(PrintStacktraces) askToTrace(state, e.toString);
     }

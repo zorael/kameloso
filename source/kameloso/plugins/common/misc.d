@@ -11,6 +11,8 @@ private:
 
 import kameloso.kameloso : CoreSettings;
 import kameloso.plugins.common.core;
+import kameloso.common : expandTags, logger;
+import kameloso.logger : LogLevel;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
@@ -42,7 +44,7 @@ bool applyCustomSettings(IRCPlugin[] plugins,
     const string[] customSettings,
     CoreSettings copyOfSettings)
 {
-    import kameloso.common : Tint, expandTags, logger;
+    import kameloso.common : Tint;
     import lu.string : contains, nom;
     import std.conv : ConvException;
 
@@ -53,8 +55,8 @@ bool applyCustomSettings(IRCPlugin[] plugins,
     {
         if (!line.contains!(Yes.decode)('.'))
         {
-            enum pattern = `Bad <l>plugin<w>.<l>setting<w>=<l>value<w> format. (<l>%s<w>)`;
-            logger.warningf(pattern.expandTags, line);
+            enum pattern = `Bad <l>plugin</>.<l>setting</>=<l>value</> format. (<l>%s</>)`;
+            logger.warningf(pattern.expandTags(LogLevel.warning), line);
             noErrors = false;
             continue;
         }
@@ -68,6 +70,7 @@ bool applyCustomSettings(IRCPlugin[] plugins,
         {
             import kameloso.common : initLogger;
             import lu.objmanip : SetMemberException, setMemberByName;
+            static import kameloso.common;
 
             try
             {
@@ -77,8 +80,8 @@ bool applyCustomSettings(IRCPlugin[] plugins,
 
                 if (!success)
                 {
-                    enum pattern = "No such <l>core<w> setting: <l>%s";
-                    logger.warningf(pattern.expandTags, setting);
+                    enum pattern = "No such <l>core</> setting: <l>%s";
+                    logger.warningf(pattern.expandTags(LogLevel.warning), setting);
                     noErrors = false;
                 }
                 else
@@ -91,12 +94,11 @@ bool applyCustomSettings(IRCPlugin[] plugins,
                             cast(Flag!"headless")copyOfSettings.headless);
                     }
 
+                    *kameloso.common.settings = copyOfSettings;
+
                     foreach (plugin; plugins)
                     {
-                        static import kameloso.common;
-
                         plugin.state.settings = copyOfSettings;
-                        *kameloso.common.settings = plugin.state.settings;
 
                         // No need to flag as updated when we update here manually
                         //plugin.state.updates |= typeof(plugin.state.updates).settings;
@@ -105,16 +107,16 @@ bool applyCustomSettings(IRCPlugin[] plugins,
             }
             catch (SetMemberException e)
             {
-                enum pattern = "Failed to set <l>core<w>.<l>%s<w>: " ~
+                enum pattern = "Failed to set <l>core</>.<l>%s</>: " ~
                     "it requires a value and none was supplied.";
-                logger.warningf(pattern.expandTags, setting);
+                logger.warningf(pattern.expandTags(LogLevel.warning), setting);
                 version(PrintStacktraces) logger.trace(e.info);
                 noErrors = false;
             }
             catch (ConvException e)
             {
-                enum pattern = `Invalid value for <l>core<w>.<l>%s<w>: "<l>%s<w>"`;
-                logger.warningf(pattern.expandTags, setting, value);
+                enum pattern = `Invalid value for <l>core</>.<l>%s</>: "<l>%s</>"`;
+                logger.warningf(pattern.expandTags(LogLevel.warning), setting, value);
                 noErrors = false;
             }
 
@@ -135,15 +137,15 @@ bool applyCustomSettings(IRCPlugin[] plugins,
 
                     if (!success)
                     {
-                        enum pattern = "No such <l>%s<w> plugin setting: <l>%s";
-                        logger.warningf(pattern.expandTags, pluginstring, setting);
+                        enum pattern = "No such <l>%s</> plugin setting: <l>%s";
+                        logger.warningf(pattern.expandTags(LogLevel.warning), pluginstring, setting);
                         noErrors = false;
                     }
                 }
                 catch (ConvException e)
                 {
-                    enum pattern = `Invalid value for <l>%s<w>.<l>%s<w>: "<l>%s<w>"`;
-                    logger.warningf(pattern.expandTags, pluginstring, setting, value);
+                    enum pattern = `Invalid value for <l>%s</>.<l>%s</>: "<l>%s</>"`;
+                    logger.warningf(pattern.expandTags(LogLevel.warning), pluginstring, setting, value);
                     noErrors = false;
 
                     //version(PrintStacktraces) logger.trace(e.info);
@@ -344,7 +346,6 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
 
     version(ExplainReplay)
     {
-        import kameloso.common : expandTags, logger;
         import lu.string : beginsWith;
 
         immutable callerSlice = caller.beginsWith("kameloso.plugins.") ?
@@ -364,9 +365,9 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
         {
             version(ExplainReplay)
             {
-                enum pattern = "<i>%s<l> plugin <w>NOT<l> queueing an event to be replayed " ~
-                    "on behalf of <i>%s<l>; delta time <i>%d<l> is too recent";
-                logger.logf(pattern.expandTags, plugin.name, callerSlice, delta);
+                enum pattern = "<i>%s</> plugin <w>NOT</> queueing an event to be replayed " ~
+                    "on behalf of <i>%s</>; delta time <i>%d</> is too recent";
+                logger.logf(pattern.expandTags(LogLevel.all), plugin.name, callerSlice, delta);
             }
             return;
         }
@@ -374,8 +375,8 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
 
     version(ExplainReplay)
     {
-        enum pattern = "<i>%s<l> plugin queueing an event to be replayed on behalf of <i>%s";
-        logger.logf(pattern.expandTags, plugin.name, callerSlice);
+        enum pattern = "<i>%s</> plugin queueing an event to be replayed on behalf of <i>%s";
+        logger.logf(pattern.expandTags(LogLevel.all), plugin.name, callerSlice);
     }
 
     plugin.state.pendingReplays[user.nickname] ~=
@@ -410,7 +411,6 @@ Replay replay(Plugin, Fun)(Plugin plugin, const ref IRCEvent event,
 {
     void dg(Replay replay)
     {
-        import kameloso.common : expandTags, logger;
         import lu.conv : Enum;
         import lu.string : beginsWith;
 
@@ -421,9 +421,9 @@ Replay replay(Plugin, Fun)(Plugin plugin, const ref IRCEvent event,
                 replay.caller[17..$] :
                 replay.caller;
 
-            enum pattern = "<i>%s<l> replaying <i>%s<l>-level event (invoking <i>%s<l>) " ~
-                "based on WHOIS results; user <i>%s<l> is <i>%s<l> class";
-            logger.logf(pattern.expandTags,
+            enum pattern = "<i>%s</> replaying <i>%s</>-level event (invoking <i>%s</>) " ~
+                "based on WHOIS results; user <i>%s</> is <i>%s</> class";
+            logger.logf(pattern.expandTags(LogLevel.all),
                 plugin.name,
                 Enum!Permissions.toString(replay.permissionsRequired),
                 caller,
@@ -438,10 +438,10 @@ Replay replay(Plugin, Fun)(Plugin plugin, const ref IRCEvent event,
                 replay.caller[17..$] :
                 replay.caller;
 
-            enum pattern = "<i>%s<l> plugin <w>NOT<l> replaying <i>%s<l>-level event " ~
-                "(which would have invoked <i>%s<l>) " ~
-                "based on WHOIS results: user <i>%s<l> is <i>%s<l> class";
-            logger.logf(pattern.expandTags,
+            enum pattern = "<i>%s</> plugin <w>NOT</> replaying <i>%s</>-level event " ~
+                "(which would have invoked <i>%s</>) " ~
+                "based on WHOIS results: user <i>%s</> is <i>%s</> class";
+            logger.logf(pattern.expandTags(LogLevel.all),
                 plugin.name,
                 Enum!Permissions.toString(replay.permissionsRequired),
                 caller,

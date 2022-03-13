@@ -431,6 +431,9 @@ public:
      +/
     void teardownPlugins() @system
     {
+        import kameloso.common : expandTags;
+        import kameloso.logger : LogLevel;
+
         if (!plugins.length) return;
 
         foreach (plugin; plugins)
@@ -456,15 +459,15 @@ public:
                 }
                 else
                 {
-                    enum pattern = "ErrnoException when tearing down %s: %s";
-                    logger.warningf(pattern, plugin.name, e.msg);
+                    enum pattern = "ErrnoException when tearing down <l>%s</>: <l>%s";
+                    logger.warningf(pattern.expandTags(LogLevel.warning), plugin.name, e.msg);
                     version(PrintStacktraces) logger.trace(e.info);
                 }
             }
             catch (Exception e)
             {
-                enum pattern = "Exception when tearing down %s: %s";
-                logger.warningf(pattern, plugin.name, e.msg);
+                enum pattern = "Exception when tearing down <l>%s</>: <l>%s";
+                logger.warningf(pattern.expandTags(LogLevel.warning), plugin.name, e.msg);
                 version(PrintStacktraces) logger.trace(e);
             }
 
@@ -541,7 +544,10 @@ public:
             // Something changed the settings; propagate
             plugin.state.updates ^= Update.settings;
             propagate(plugin.state.settings);
-            *kameloso.common.settings = plugin.state.settings;
+            this.settings = plugin.state.settings;
+
+            // This shouldn't be necessary since kameloso.common.settings points to this.settings
+            //*kameloso.common.settings = plugin.state.settings;
         }
 
         assert((plugin.state.updates == Update.nothing),

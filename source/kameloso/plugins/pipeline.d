@@ -23,6 +23,7 @@ private:
 
 import kameloso.plugins.common.core;
 import kameloso.common : expandTags, logger;
+import kameloso.logger : LogLevel;
 import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
@@ -102,7 +103,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
     kameloso.common.settings = &state.settings;
 
     // Creating the File struct blocks, so do it after reporting.
-    enum pattern = "Pipe text to the <i>%s<l> file to send raw commands to the server.";
+    enum pattern = "Pipe text to the <i>%s</> file to send raw commands to the server.";
     state.askToLog(pattern.format(filename));
 
     File fifo = File(filename, "r");
@@ -123,19 +124,18 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
 
             if (line[0] == ':')
             {
-                import kameloso.thread : busMessage;
+                import kameloso.thread : sendable;
                 import lu.string : contains, nom;
 
                 if (line.contains(' '))
                 {
                     string slice = line[1..$];
                     immutable header = slice.nom(' ');
-                    state.mainThread.send(ThreadMessage.BusMessage(),
-                        header, busMessage(slice));
+                    state.mainThread.send(ThreadMessage.busMessage(header, sendable(slice)));
                 }
                 else
                 {
-                    state.mainThread.send(ThreadMessage.BusMessage(), line[1..$]);
+                    state.mainThread.send(ThreadMessage.busMessage(line[1..$]));
                 }
                 break;
             }
@@ -159,16 +159,19 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
             break;
         }
 
-        import kameloso.thread : busMessage;
+        import kameloso.thread : sendable;
         import core.time : Duration;
 
         static immutable instant = Duration.zero;
         bool halt;
 
         cast(void)receiveTimeout(instant,
-            (ThreadMessage.Teardown)
+            (ThreadMessage message)
             {
-                halt = true;
+                if (message.type == ThreadMessage.Type.teardown)
+                {
+                    halt = true;
+                }
             },
             (OwnerTerminated e)
             {
@@ -178,7 +181,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
             {
                 enum variantPattern = "Pipeline plugin received Variant: <l>%s";
                 state.askToError(variantPattern.format(v.toString));
-                state.mainThread.send(ThreadMessage.BusMessage(), "pipeline", busMessage("halted"));
+                state.mainThread.send(ThreadMessage.busMessage("pipeline", sendable("halted")));
                 halt = true;
             }
         );
@@ -196,7 +199,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
             enum fifoPattern = "Pipeline plugin failed to reopen FIFO: <l>%s";
             state.askToError(fifoPattern.format(e.msg));
             version(PrintStacktraces) state.askToTrace(e.info.toString);
-            state.mainThread.send(ThreadMessage.BusMessage(), "pipeline", busMessage("halted"));
+            state.mainThread.send(ThreadMessage.busMessage("pipeline", sendable("halted")));
             break toploop;
         }
         catch (Exception e)
@@ -368,20 +371,20 @@ in (!plugin.workerRunning, "Tried to double-initialise the pipereader")
     }
     catch (ReturnValueException e)
     {
-        enum pattern = "Failed to initialise the Pipeline plugin: <l>%s<w> (<l>%s<w> returned <l>%d<w>)";
-        logger.warningf(pattern.expandTags, e.msg, e.command, e.retval);
+        enum pattern = "Failed to initialise the Pipeline plugin: <l>%s</> (<l>%s</> returned <l>%d</>)";
+        logger.warningf(pattern.expandTags(LogLevel.warning), e.msg, e.command, e.retval);
         //version(PrintStacktraces) logger.trace(e.info);
     }
     catch (FileExistsException e)
     {
-        enum pattern = "Failed to initialise the Pipeline plugin: <l>%s<w> [<l>%s<w>]";
-        logger.warningf(pattern.expandTags, e.msg, e.filename);
+        enum pattern = "Failed to initialise the Pipeline plugin: <l>%s</> [<l>%s</>]";
+        logger.warningf(pattern.expandTags(LogLevel.warning), e.msg, e.filename);
         //version(PrintStacktraces) logger.trace(e.info);
     }
     catch (FileTypeMismatchException e)
     {
-        enum pattern = "Failed to initialise the Pipeline plugin: <l>%s<w> [<l>%s<w>]";
-        logger.warningf(pattern.expandTags, e.msg, e.filename);
+        enum pattern = "Failed to initialise the Pipeline plugin: <l>%s</> [<l>%s</>]";
+        logger.warningf(pattern.expandTags(LogLevel.warning), e.msg, e.filename);
         //version(PrintStacktraces) logger.trace(e.info);
     }
 
@@ -402,7 +405,7 @@ void teardown(PipelinePlugin plugin)
 
     if (!plugin.workerRunning) return;
 
-    plugin.fifoThread.send(ThreadMessage.Teardown());
+    plugin.fifoThread.send(ThreadMessage.teardown());
 
     if (plugin.fifoFilename.exists && !plugin.fifoFilename.isDir)
     {

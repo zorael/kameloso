@@ -6,10 +6,10 @@
     ---
     import std.concurrency;
 
-    mainThread.send(ThreadMessage.Sendline(), "Message to send to server");
-    mainThread.send(ThreadMessage.Pong(), "irc.libera.chat");
-    mainThread.send(ThreadMessage.TerminalOutput.writeln, "writeln this for me please");
-    mainThread.send(ThreadMessage.BusMessage(), "header", busMessage("payload"));
+    mainThread.send(ThreadMessage.sendline("Message to send to server"));
+    mainThread.send(ThreadMessage.pong("irc.libera.chat"));
+    mainThread.send(OutputRequest(ThreadMessage.TerminalOutput.writeln, "writeln this for me please"));
+    mainThread.send(ThreadMessage.busMessage("header", busMessage("payload")));
 
     auto fiber = new CarryingFiber!string(&someDelegate, BufferSize.fiberStack);
     fiber.payload = "This string is carried by the Fiber and can be accessed from within it";
@@ -122,35 +122,107 @@ version(Posix)
 
 // ThreadMessage
 /++
-    Aggregate of thread message types.
+    Collection of static functions used to construct thread messages, for passing
+    information of different kinds yet still as one type, to stop [std.concurrency.send]
+    from requiring so much compilation memory.
 
-    This is a way to make concurrency message passing easier. You could use
-    string literals to differentiate between messages and then have big
-    switches inside the catching function, but with these you can actually
-    have separate concurrency-receiving delegates for each.
+    The type of the message is defined as a [ThreadMessage.Type|Type] in
+    [ThreadMessage.type]. Recipients will have to do a (final) switch over that
+    enum to deal with messages accordingly.
  +/
 struct ThreadMessage
 {
-    /// Concurrency message type asking for a to-server [dialect.defs.IRCEvent.Type.PONG|PONG] event.
-    static struct Pong {}
+    /++
+        Different thread message types.
+     +/
+    enum Type
+    {
+        /++
+            Request to send a server [dialect.defs.IRCEvent.Type.PONG|PONG] response.
+         +/
+        pong,
 
-    /// Concurrency message type asking to verbosely send a line to the server.
-    static struct Sendline {}
+        /++
+            Request to send an outgoing normal line.
+         +/
+        sendline,
 
-    /// Concurrency message type asking to quietly send a line to the server.
-    static struct Quietline {}
+        /++
+            Request to send a quiet normal line.
+         +/
+        quietline,
 
-    /// Concurrency message type asking to immediately send a line to the server.
-    static struct Immediateline {}
+        /++
+            Request to send a line immediately, bypassing queues.
+         +/
+        immediateline,
 
-    /// Concurrency message type asking to quit the server and exit the program.
-    static struct Quit {}
+        /++
+            Request to quit the program.
+         +/
+        quit,
 
-    /// Concurrency message type asking for a plugin's worker thread to shut down cleanly.
-    static struct Teardown {}
+        /++
+            Request to teardown (destroy) a plugin.
+         +/
+        teardown,
 
-    /// Concurrency message type asking to have plugins' configuration saved.
-    static struct Save {}
+        /++
+            Request to save configuration to file.
+         +/
+        save,
+
+        /++
+            Request to reload resources from disk.
+         +/
+        reload,
+
+        /++
+            Request to disconnect and reconect to the server.
+         +/
+        reconnect,
+
+        /++
+            A bus message.
+         +/
+        busMessage,
+
+        /++
+            Request to print a connection summary to the local terminal.
+         +/
+        wantLiveSummary,
+
+        /++
+            Request to abort and exit the program.
+         +/
+        abort,
+
+        /++
+            Request to lower receive timeout briefly and improve
+            responsiveness/precision during that time.
+         +/
+        shortenReceiveTimeout,
+    }
+
+    /++
+        The [Type] of this thread message.
+     +/
+    Type type;
+
+    /++
+        String content body of message, where applicable.
+     +/
+    string content;
+
+    /++
+        Bundled `shared` [Sendable] payload, where applicable.
+     +/
+    shared Sendable payload;
+
+    /++
+        Whether or not the action requested should be done quietly.
+     +/
+    bool quiet;
 
     /++
         Concurrency message asking for an associative array of a description of
@@ -163,37 +235,59 @@ struct ThreadMessage
      +/
     static struct ChangeSetting {}
 
-    /// Concurrency message asking plugins to "reload".
-    static struct Reload {}
-
-    /// Concurrency message asking to disconnect and reconnect to the server.
-    static struct Reconnect {}
-
-    /// Concurrency message meant to be sent between plugins.
-    static struct BusMessage {}
-
-    /// Concurrency message for writing text to the terminal.
-    enum TerminalOutput
+    /+
+        Generate a static function for each [Type].
+     +/
+    static foreach (immutable memberstring; __traits(allMembers, Type))
     {
-        writeln,
-        trace,
-        log,
-        info,
-        warning,
-        error,
+        mixin(`
+            static auto ` ~ memberstring ~ `
+                (const string content = string.init,
+                shared Sendable payload = null,
+                const bool quiet = false)
+            {
+                return ThreadMessage(Type.` ~ memberstring ~ `, content, payload, quiet);
+            }`);
+    }
+}
+
+
+// OutputRequest
+/++
+    Embodies the notion of a request to output something to the local terminal.
+
+    Merely bundles a [OutputRequest.Level|Level] log level and
+    a `string` message line. What log level is picked decides what log level is
+    passed to the [kameloso.logger.KamelosoLogger|KamelosoLogger] instance, and
+    dictates things like what colour to tint the message with (if any).
+ +/
+struct OutputRequest
+{
+    /++
+        Output log levels.
+
+        See_Also:
+            [kameloso.logger.LogLevel]
+     +/
+    enum Level
+    {
+        writeln,    /// writeln the line.
+        trace,      /// Log at [kameloso.logger.LogLevel.trace].
+        log,        /// Log at [kameloso.logger.LogLevel.all] (log).
+        info,       /// Log at [kameloso.logger.LogLevel.info].
+        warning,    /// Log at [kameloso.logger.LogLevel.warning].
+        error,      /// Log at [kameloso.logger.LogLevel.error].
     }
 
-    /// Concurrency message asking the main thread to print a connection summary.
-    static struct WantLiveSummary {}
-
-    /// Concurrency message asking the main thread to set the `abort` flag.
-    static struct Abort {}
+    /++
+        Log level of the message.
+     +/
+    Level logLevel;
 
     /++
-        Concurrency message asking for the Socket receive timeout to be lowered
-        temporarily, for increased responsiveness.
+        String line to request to be output to the local terminal.
      +/
-    static struct ShortenReceiveTimeout {}
+    string line;
 }
 
 
@@ -227,7 +321,7 @@ final class BusMessage(T) : Sendable
 }
 
 
-// busMessage
+// sendable
 /++
     Constructor function to create a `shared` [BusMessage] with an unqualified
     template type.
@@ -235,9 +329,9 @@ final class BusMessage(T) : Sendable
     Example:
     ---
     IRCEvent event;  // ...
-    mainThread.send(ThreadMessage.BusMessage(), "header", busMessage(event));
-    mainThread.send(ThreadMessage.BusMessage(), "other header", busMessage("text payload"));
-    mainThread.send(ThreadMessage.BusMessage(), "ladida", busMessage(42));
+    mainThread.send(ThreadMessage.busMessage("header", busMessage(event)));
+    mainThread.send(ThreadMessage.busMessage("other header", busMessage("text payload")));
+    mainThread.send(ThreadMessage.busMessage("ladida", busMessage(42)));
     ---
 
     Params:
@@ -247,7 +341,7 @@ final class BusMessage(T) : Sendable
     Returns:
         A `shared` `BusMessage!T` where `T` is the unqualified type of the payload.
  +/
-shared(Sendable) busMessage(T)(T payload)
+shared(Sendable) sendable(T)(T payload)
 {
     import std.traits : Unqual;
     return new shared BusMessage!(Unqual!T)(payload);
@@ -257,20 +351,20 @@ shared(Sendable) busMessage(T)(T payload)
 unittest
 {
     {
-        auto msg = busMessage("asdf");
+        auto msg = sendable("asdf");
         auto asCast = cast(BusMessage!string)msg;
         assert((msg !is null), "Incorrectly cast message: " ~ typeof(asCast).stringof);
         asCast = null;  // silence dscanner
     }
     {
-        auto msg = busMessage(123_456);
+        auto msg = sendable(123_456);
         auto asCast = cast(BusMessage!int)msg;
         assert((msg !is null), "Incorrectly cast message: " ~ typeof(asCast).stringof);
         asCast = null;  // silence dscanner
     }
     {
         struct Foo {}
-        auto msg = busMessage(Foo());
+        auto msg = sendable(Foo());
         auto asCast = cast(BusMessage!Foo)msg;
         assert((msg !is null), "Incorrectly cast message: " ~ typeof(asCast).stringof);
         asCast = null;  // silence dscanner

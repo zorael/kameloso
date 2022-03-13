@@ -17,6 +17,7 @@ private:
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
 import kameloso.common : expandTags, logger;
+import kameloso.logger : LogLevel;
 import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
@@ -230,9 +231,9 @@ in (account.length, "Tried to apply automodes to an empty account")
 
     if (!channel.ops.canFind(plugin.state.client.nickname))
     {
-        enum pattern = "Could not apply <i>+%s<l> <i>%s<l> in <i>%s<l> " ~
+        enum pattern = "Could not apply <i>+%s</> <i>%s</> in <i>%s</> " ~
             "because we are not an operator in the channel.";
-        logger.logf(pattern.expandTags, missingModes, nickname, channelName);
+        logger.logf(pattern.expandTags(LogLevel.all), missingModes, nickname, channelName);
         return;
     }
 

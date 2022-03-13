@@ -64,8 +64,11 @@ if (isSomeFunction!dg)
     catch (TwitchQueryException e)
     {
         import kameloso.common : curlErrorStrings, expandTags, logger;
-        enum pattern = "Failed to query Twitch: <l>%s<e> (<l>%s<e>) (<l>%s<e>)";
-        logger.errorf(pattern.expandTags, e.msg, e.error, curlErrorStrings[e.errorCode]);
+        import kameloso.logger : LogLevel;
+
+        enum pattern = "Failed to query Twitch: <l>%s</> (<l>%s</>) (<l>%s</>)";
+        logger.errorf(pattern.expandTags(LogLevel.error), e.msg, e.error,
+            curlErrorStrings[e.errorCode]);
     }
 }
 
@@ -112,9 +115,12 @@ void persistentQuerier(shared QueryResponse[string] bucket,
             {
                 queryTwitchImpl(url, authToken, timeout, bucket, caBundleFile);
             },
-            (ThreadMessage.Teardown) scope
+            (ThreadMessage message) scope
             {
-                halt = true;
+                if (message.type == ThreadMessage.Type.teardown)
+                {
+                    halt = true;
+                }
             },
             (OwnerTerminated _) scope
             {
@@ -172,7 +178,7 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
 
     SysTime pre;
 
-    plugin.state.mainThread.prioritySend(ThreadMessage.ShortenReceiveTimeout());
+    plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout());
 
     if (plugin.state.settings.trace)
     {

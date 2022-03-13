@@ -21,6 +21,8 @@ version(WithPersistenceService):
 private:
 
 import kameloso.plugins.common.core;
+import kameloso.common : expandTags, logger;
+import kameloso.logger : LogLevel;
 import dialect.defs;
 
 
@@ -491,7 +493,6 @@ void reload(PersistenceService service)
  +/
 void reloadAccountClassifiersFromDisk(PersistenceService service)
 {
-    import kameloso.common : logger;
     import lu.json : JSONStorage;
     import std.json : JSONException;
 
@@ -543,14 +544,14 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
         }
         catch (JSONException e)
         {
-            enum pattern = "JSON exception caught when populating %s: %s";
-            logger.warningf(pattern, list, e.msg);
+            enum pattern = "JSON exception caught when populating <l>%s</>: <l>%s";
+            logger.warningf(pattern.expandTags(LogLevel.warning), list, e.msg);
             version(PrintStacktraces) logger.trace(e.info);
         }
         catch (Exception e)
         {
-            enum pattern = "Unhandled exception caught when populating %s: %s";
-            logger.warningf(pattern, list, e.msg);
+            enum pattern = "Unhandled exception caught when populating <l>%s</>: <l>%s";
+            logger.warningf(pattern.expandTags(LogLevel.warning), list, e.msg);
             version(PrintStacktraces) logger.trace(e);
         }
     }
@@ -579,7 +580,6 @@ void reloadHostmasksFromDisk(PersistenceService service)
 
     foreach (immutable hostmask, immutable account; accountByHostmask)
     {
-        import kameloso.common : expandTags, logger;
         import dialect.common : isValidHostmask;
         import lu.string : contains;
 
@@ -595,14 +595,14 @@ void reloadHostmasksFromDisk(PersistenceService service)
 
         if (!hostmask.isValidHostmask(service.state.server))
         {
-            enum pattern =`Malformed hostmask in <l>%s<w>: "<l>%s<w>"`;
-            logger.warningf(pattern.expandTags, service.hostmasksFile, hostmask);
+            enum pattern =`Malformed hostmask in <l>%s</>: "<l>%s</>"`;
+            logger.warningf(pattern.expandTags(LogLevel.warning), service.hostmasksFile, hostmask);
             continue;
         }
         else if (!account.length)
         {
-            enum pattern =`Incomplete hostmask entry in <l>%s<w>: "<l>%s<w>" has empty account`;
-            logger.warningf(pattern.expandTags, service.hostmasksFile, hostmask);
+            enum pattern =`Incomplete hostmask entry in <l>%s</>: "<l>%s</>" has empty account`;
+            logger.warningf(pattern.expandTags(LogLevel.warning), service.hostmasksFile, hostmask);
             continue;
         }
 
@@ -621,8 +621,8 @@ void reloadHostmasksFromDisk(PersistenceService service)
         }
         catch (Exception e)
         {
-            enum pattern =`Exception parsing hostmask in <l>%s<w> ("<l>%s<w>"): <l>%s`;
-            logger.warningf(pattern.expandTags, service.hostmasksFile, hostmask, e.msg);
+            enum pattern =`Exception parsing hostmask in <l>%s</> ("<l>%s</>"): <l>%s`;
+            logger.warningf(pattern.expandTags(LogLevel.warning), service.hostmasksFile, hostmask, e.msg);
             version(PrintStacktraces) logger.trace(e);
         }
     }

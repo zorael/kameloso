@@ -8,9 +8,9 @@ import dialect.defs;
 
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)  // This function should be called on channel messages
-    .addCommand(
+    .addCommand(                  // ...that are commands (e.g. content begins with a ! or similar prefix)
         IRCEventHandler.Command()
-            .word("hello")        // ...with the contents "!hello"
+            .word("hello")        // ...where the command is "hello" (e.g. message content is "!hello")
             .description("Says hello.")
     )
 )
