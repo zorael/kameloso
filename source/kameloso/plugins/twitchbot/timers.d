@@ -162,9 +162,9 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
 
     void sendUsage(const string verb = "[add|del|list|clear]")
     {
-        privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Usage: %s%s %s [message threshold] [time threshold] [stagger seconds] [text]"
-                .format(plugin.state.settings.prefix, event.aux, verb));
+        enum pattern = "Usage: %s%s %s [message threshold] [time threshold] [stagger seconds] [text]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux, verb);
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
     switch (verb)
@@ -228,8 +228,9 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
     case "del":
         if (!slice.length)
         {
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Usage: %s%s del [timer index]".format(plugin.state.settings.prefix, event.aux));
+            enum pattern = "Usage: %s%s del [timer index]";
+            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
             return;
         }
 
@@ -255,9 +256,9 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
                 }
                 else
                 {
-                    privmsg(plugin.state, event.channel, event.sender.nickname,
-                        "Timer index %s out of range. (max %d)"
-                            .format(slice, room.timers.length));
+                    enum pattern = "Timer index %s out of range. (max %d)";
+                    immutable message = pattern.format(slice, room.timers.length);
+                    privmsg(plugin.state, event.channel, event.sender.nickname, message);
                     return;
                 }
             }
@@ -308,27 +309,27 @@ in (targetChannel.length, "Tried to handle timers with an empty target channel s
                 }
                 catch (ConvException e)
                 {
-                    privmsg(plugin.state, event.channel, event.sender.nickname,
-                        "Usage: %s%s list [optional starting position number]"
-                            .format(plugin.state.settings.prefix, event.aux));
+                    enum pattern = "Usage: %s%s list [optional starting position number]";
+                    immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+                    privmsg(plugin.state, event.channel, event.sender.nickname, message);
                     return;
                 }
             }
 
             immutable end = min(start+toDisplay, timers.length);
 
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Current timers (%d-%d of %d)"
-                    .format(start+1, end, timers.length));
+            enum headerPattern = "Current timers (%d-%d of %d)";
+            immutable headerMessage = headerPattern.format(start+1, end, timers.length);
+            privmsg(plugin.state, event.channel, event.sender.nickname, headerMessage);
 
             foreach (immutable i, const timer; (*timers)[start..end])
             {
                 immutable maxLen = min(timer.line.length, maxLineLength);
                 enum pattern = "%d: %s%s (%d:%d:%d)";
-                privmsg(plugin.state, event.channel, event.sender.nickname,
-                    format(pattern, start+i+1, timer.line[0..maxLen],
-                        (timer.line.length > maxLen) ? " ...  [truncated]" : string.init,
-                        timer.messageCountThreshold, timer.timeThreshold, timer.stagger));
+                immutable message = pattern.format(start+i+1, timer.line[0..maxLen],
+                    ((timer.line.length > maxLen) ? " ...  [truncated]" : string.init),
+                    timer.messageCountThreshold, timer.timeThreshold, timer.stagger);
+                privmsg(plugin.state, event.channel, event.sender.nickname, message);
             }
         }
         else

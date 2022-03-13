@@ -149,8 +149,9 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
         break;
 
     default:
-        chan(plugin.state, event.channel, "Usage: <b>%s%s<b> [start|stop|status]"  // hide clear
-            .format(plugin.state.settings.prefix, event.aux));
+        enum pattern = "Usage: <b>%s%s<b> [start|stop|status]";  // hide clear
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
         break;
     }
 }
