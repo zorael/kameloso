@@ -1218,7 +1218,7 @@ void onWHOISUser(ConnectService service, const ref IRCEvent event)
 {
     if (event.target.nickname != service.state.client.nickname) return;
 
-    if (!service.state.client.ident.length)
+    if (service.state.client.ident != event.target.ident)
     {
         service.state.client.ident = event.target.ident;
         service.state.updates |= typeof(service.state.updates).client;
