@@ -1436,7 +1436,6 @@ void register(ConnectService service)
             {
                 logger.warning("CAP timeout. Does the server not support capabilities?");
                 negotiateNick(service);
-                service.issuedNICK = true;
             }
         }
 
