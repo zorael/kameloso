@@ -1192,9 +1192,10 @@ void onEndOfMotd(ConnectService service)
     {
         tryAuth(service);
     }
-    else if ((service.authentication == Progress.finished) ||
+    else if (((service.authentication == Progress.finished) ||
         !service.state.bot.password.length ||
-        (service.state.server.daemon == IRCServer.Daemon.twitch))
+        (service.state.server.daemon == IRCServer.Daemon.twitch)) &&
+        !service.joinedChannels)
     {
         // tryAuth finished early with an unsuccessful login, else
         // `service.authentication` would be set much later.
