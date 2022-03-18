@@ -996,14 +996,6 @@ void onWelcome(ConnectService service, const ref IRCEvent event)
     service.registration = Progress.finished;
     service.renameDuringRegistration = string.init;
 
-    // FIXME: This is done automatically in dialect master so there's no need to do it here
-    // but wait for a dialect release before removing.
-    if (event.target.nickname.length && (service.state.client.nickname != event.target.nickname))
-    {
-        service.state.client.nickname = event.target.nickname;
-        service.state.updates |= typeof(service.state.updates).client;
-    }
-
     alias separator = ConnectSettings.sendAfterConnectSeparator;
     auto toSendRange = service.connectSettings.sendAfterConnect.splitter(separator);
 
