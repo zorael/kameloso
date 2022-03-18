@@ -17,7 +17,7 @@
 
 All of the above are plugins and can be disabled at runtime or omitted from compilation entirely. It is modular and easy to extend. A skeletal Hello World plugin is [25 lines of code](source/kameloso/plugins/hello.d).
 
-Testing is primarily done on [**Libera.Chat**](https://libera.chat) and on [**Twitch**](https://dev.twitch.tv/docs/irc/guide) servers, so support and coverage is best there.
+Testing is primarily done on [**Libera.Chat**](https://libera.chat) servers and on [**Twitch**](https://dev.twitch.tv/docs/irc/guide), so support and coverage is best there.
 
 **Please report bugs. Unreported bugs can only be fixed by accident.**
 
@@ -33,7 +33,7 @@ Testing is primarily done on [**Libera.Chat**](https://libera.chat) and on [**Tw
 -H   --homeChannels Home channels to operate in, comma-separated
 -C  --guestChannels Non-home channels to idle in, comma-separated
        --monochrome Use monochrome output
--w           --save Write configuration to file
+             --save Write configuration to file
 ```
 
 Pre-compiled binaries for Windows and Linux can be found under [Releases](https://github.com/zorael/kameloso/releases).
@@ -56,6 +56,7 @@ If there's anyone talking it should show up on your screen.
 
 * [Getting started](#getting-started)
   * [Prerequisites](#prerequisites)
+     * [SSL libraries](#ssl-libraries)
   * [Downloading](#downloading)
   * [Compiling](#compiling)
     * [Build configurations](#build-configurations)
@@ -94,6 +95,10 @@ You need one based on D version **2.084** or later (January 2019). For **ldc** t
 If your repositories (or other software sources) don't have compilers new enough, you can use the official [`install.sh`](https://dlang.org/install.html) installation script to download current ones, or any version of choice.
 
 The package manager [**dub**](https://code.dlang.org) is used to facilitate compilation and dependency management. On Windows it comes bundled in the compiler archive, while on Linux it may need to be installed separately. Refer to your repositories.
+
+### SSL libraries
+
+**kameloso** uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard SSL library in the Posix sphere (Linux, macOS, ...), but not so on Windows. If you run into errors about missing libraries when connecting on Windows, download and install **Win64/32 OpenSSL v3.0.x Light** from [here](https://slproweb.com/products/Win32OpenSSL.html), and opt to install to system directories when asked. It's a one-time thing. (The alternative is to just use non-SSL connections.)
 
 ## Downloading
 
@@ -361,16 +366,16 @@ If you still can't find what you're looking for, or if you have suggestions on h
 
 ## Windows
 
-If SSL doesn't work at all, you may simply be missing the required libraries. Download and install **OpenSSL** "Light" from [here](https://slproweb.com/products/Win32OpenSSL.html), and opt to install to system directories when asked.
+If you run into errors about missing libraries when connecting on Windows, download and install **Win64/32 OpenSSL v3.0.x Light** from [here](https://slproweb.com/products/Win32OpenSSL.html), and opt to install to system directories when asked.
 
-Even with SSL seemingly properly set up you may see errors of *"Peer certificates cannot be authenticated with given CA certificates"*. If this happens, download this [`cacert.pem`](https://curl.haxx.se/ca/cacert.pem) file, place it somewhere reasonable, and edit your configuration file to point to it; `caBundleFile` under `[Connection]`.
+Even with SSL seemingly properly set up you may see errors of *"Peer certificates cannot be authenticated with given CA certificates"*, particularly on older versions of Windows. If this happens, download this [`cacert.pem`](https://curl.haxx.se/ca/cacert.pem) file, place it somewhere reasonable, and edit your configuration file to point to it; `caBundleFile` under `[Connection]`.
 
 # Roadmap
 
 * pipedream zero: **no compiler segfaults** ([#18026](https://issues.dlang.org/show_bug.cgi?id=18026), [#20562](https://issues.dlang.org/show_bug.cgi?id=20562))
-* pipedream: DCC
-* non-blocking FIFO
-* Twitch `ecount`? `settitle`? `setgame`? `vanish`? `watchtime`? `roulette`?
+* please send help: Windows Secure Channel SSL
+* split Twitch timers into own plugin
+* Twitch `ecount`, `settitle`, `setgame`, `vanish`, `watchtime`, `roulette`?
 * more pairs of eyes
 
 # Built with
