@@ -506,11 +506,6 @@ void onNickInUse(ConnectService service)
             import kameloso.constants : KamelosoDefaults;
             service.renameDuringRegistration = service.state.client.nickname ~
                 KamelosoDefaults.altNickSeparator;
-
-            static if (ConnectService.appendAltNickSignSeparately)
-            {
-                return;
-            }
         }
 
         service.renameDuringRegistration ~= uniform(0, 10).text;
@@ -1588,12 +1583,6 @@ private:
         and we had to rename ourselves during registration.
      +/
     static immutable nickRegainPeriodicity = 600.seconds;
-
-    /++
-        Whether or not to append the alt nick sign as a separate step, or to
-        do it in combination with adding the incremented number.
-     +/
-    enum appendAltNickSignSeparately = false;
 
     /// At what step we're currently at with regards to authentication.
     Progress authentication;
