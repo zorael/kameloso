@@ -708,7 +708,7 @@ Next handleGetopt(ref Kameloso instance,
                         "Set terminal mode to flush screen output after each line written to it. " ~
                             "(Use this if the screen only occasionally updates)",
                     &settings.flush,
-                "w|save",
+                "save",
                     quiet ? string.init :
                         "Write configuration to file",
                     &shouldWriteConfig,
