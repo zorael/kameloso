@@ -205,10 +205,13 @@ void onCTCPs(CTCPService service, const ref IRCEvent event)
     else
     {
         import dialect.common : I = IRCControlCharacter;
+
+        enum pattern = "NOTICE %s :%c%s%2$c";
         immutable target = event.sender.isServer ?
             event.sender.address: event.sender.nickname;
-        enum pattern = "NOTICE %s :%c%s%2$c";
-        raw(service.state, format(pattern, target, cast(char)I.ctcp, line), Yes.quiet);
+        immutable message = pattern.format(target, cast(char)I.ctcp, line);
+
+        raw(service.state, message, Yes.quiet);
     }
 }
 
