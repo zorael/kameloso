@@ -160,13 +160,23 @@ void joinChannels(ConnectService service)
 
     import kameloso.messaging : joinChannel = join;
     import lu.string : plurality;
-    import std.algorithm.iteration : uniq;
+    import std.algorithm.iteration : filter, uniq;
     import std.algorithm.sorting : sort;
-    import std.array : join;
+    import std.array : array, join;
     import std.range : walkLength;
 
-    auto homelist = service.state.bot.homeChannels.sort.uniq;
-    auto guestlist = service.state.bot.guestChannels.sort.uniq;
+    auto homelist = service.state.bot.homeChannels
+        .filter!(channelName => (channelName != "-"))
+        .array
+        .sort
+        .uniq;
+
+    auto guestlist = service.state.bot.guestChannels
+        .filter!(channelName => (channelName != "-"))
+        .array
+        .sort
+        .uniq;
+
     immutable numChans = homelist.walkLength() + guestlist.walkLength();
 
     enum pattern = "Joining <i>%d</> %s...";
