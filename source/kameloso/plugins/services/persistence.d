@@ -846,10 +846,10 @@ final class PersistenceService : IRCPlugin
 {
 private:
     import kameloso.constants : KamelosoFilenames;
-    import core.time : seconds;
+    import core.time : hours;
 
     /// How often to rehash associative arrays, optimising access.
-    enum timeBetweenRehashes = (3 * 3600).seconds;
+    enum timeBetweenRehashes = 6.hours;
 
     /// File with user definitions.
     @Resource string userFile = KamelosoFilenames.users;
