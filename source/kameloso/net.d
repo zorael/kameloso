@@ -379,107 +379,58 @@ public:
         conn.sendline("NICK foobar");
         conn.sendline("PRIVMSG #channel :text");
         conn.sendline("PRIVMSG " ~ channel ~ " :" ~ content);
-        conn.sendline("PRIVMSG ", channel, " :", content);  // Identical to above
         conn.sendline(longerLine, 1024L);  // Now with custom line lengths
         ---
 
         Params:
-            data = Variadic list of strings or characters to send. May contain
-                complete substrings separated by newline characters.
+            rawline = Line to send. May contain substrings separated by newline
+                characters. A final linebreak is added to the end of the send.
             maxLineLength = Maximum line length before the sent message will be truncated.
+            linebreak = Characters to use as linebreak, marking the end of a line to send.
      +/
-    void sendline(Data...)(const Data data, const uint maxLineLength = 512) @system
+    void sendline(
+        const string rawline,
+        const uint maxLineLength = 512,
+        const string linebreak = "\r\n") @system
     in (connected, "Tried to send a line on an unconnected `Connection`")
     {
-        int remainingMaxLength = (maxLineLength - 2);
-        bool justSentNewline;
+        import std.algorithm.iteration : splitter;
+        import std.string : indexOf;
 
-        foreach (immutable piece; data)
+        if (!rawline.length) return;
+
+        immutable maxAvailableLength = (maxLineLength - linebreak.length);
+
+        void sendlineImpl(const string line)
         {
-            import std.range.primitives : hasLength;
-            import std.traits : isSomeString;
+            import std.algorithm.comparison : min;
 
-            alias T = typeof(piece);
+            immutable length = min(line.length, maxAvailableLength);
 
-            if (!data.length) continue;
-
-            static if (isSomeString!T || hasLength!T)
-            {
-                import std.algorithm.iteration : splitter;
-                import std.string : indexOf;
-
-                if (piece.indexOf('\n') != -1)
-                {
-                    // Line is made up of smaller sublines
-                    foreach (immutable line; piece.splitter("\n"))
-                    {
-                        import std.algorithm.comparison : min;
-
-                        immutable end = min(line.length, remainingMaxLength);
-
-                        if (ssl)
-                        {
-                            openssl.SSL_write(sslInstance, cast(void*)&line[0], cast(int)end);
-                            openssl.SSL_write(sslInstance, cast(void*)&"\r\n"[0], 2);
-                        }
-                        else
-                        {
-                            socket.send(line[0..end]);
-                            socket.send("\r\n");
-                        }
-
-                        justSentNewline = true;
-                        remainingMaxLength = (maxLineLength - 1);  // sent newline; reset
-                    }
-                }
-                else
-                {
-                    // Plain line *or* part of a line
-                    import std.algorithm.comparison : min;
-
-                    immutable end = min(piece.length, remainingMaxLength);
-
-                    if (ssl)
-                    {
-                        openssl.SSL_write(sslInstance, cast(void*)&piece[0], cast(int)end);
-                    }
-                    else
-                    {
-                        socket.send(piece[0..end]);
-                    }
-
-                    justSentNewline = false;
-                    remainingMaxLength -= end;
-                }
-            }
-            else
-            {
-                if (ssl)
-                {
-                    openssl.SSL_write(sslInstance, cast(void*)&piece[0], cast(int)piece.length);
-                }
-                else
-                {
-                    socket.send(piece);
-                }
-
-                justSentNewline = false;
-                --remainingMaxLength;
-            }
-
-            if (remainingMaxLength <= 0) break;
-        }
-
-        if (!justSentNewline)
-        {
             if (ssl)
             {
-                openssl.SSL_write(sslInstance, cast(void*)&"\r\n"[0], 2);
+                openssl.SSL_write(sslInstance, cast(void*)&line[0], cast(int)length);
+                openssl.SSL_write(sslInstance, cast(void*)&linebreak[0], cast(int)linebreak.length);
             }
             else
             {
-                socket.send("\r\n");
+                socket.send(line[0..length]);
+                socket.send(linebreak);
             }
+        }
+
+        if (rawline.indexOf('\n') != -1)
+        {
+            // Line is made up of smaller sublines
+            foreach (immutable subline; rawline.splitter("\n"))
+            {
+                sendlineImpl(subline);
+            }
+        }
+        else
+        {
+            // Plain line
+            sendlineImpl(rawline);
         }
     }
 }
