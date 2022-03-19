@@ -316,6 +316,12 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
             goto default;
         }
 
+    version(WithConnectService)
+    {
+        case ERR_NICKNAMEINUSE:  // When failing to regain nickname
+            goto case;
+    }
+
     case RPL_WHOREPLY:
     case RPL_ENDOFWHO:
     case RPL_TOPICWHOTIME:
@@ -341,32 +347,25 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     case ENDOFMODELIST:
     case RPL_ENDOFQLIST:
     case RPL_ENDOFALIST:
+    case RPL_TOPIC:
+    case RPL_NOTOPIC:
+    case ERR_NOSUCHNICK:
+    case ERR_NOSUCHCHANNEL:
         // Error: switch skips declaration of variable shouldSquelch
         {
             immutable shouldSquelch = plugin.hasSquelches &&
                 updateSquelchstamp(plugin, event.time, event.channel,
                     event.sender.nickname, event.target.nickname);
 
-            if (shouldSquelch) break;
-            else goto case RPL_NAMREPLY;  // Obey normal filterMost rules for unsquelched
+            if (!shouldSquelch && !plugin.printerSettings.filterMost)
+            {
+                goto default;
+            }
+            else
+            {
+                break;
+            }
         }
-
-    version(WithConnectService)
-    {
-        case ERR_NICKNAMEINUSE:  // When failing to regain nickname
-            goto case;
-    }
-
-    case RPL_TOPIC:
-    case RPL_NOTOPIC:
-    case ERR_NOSUCHNICK:
-    case ERR_NOSUCHCHANNEL:
-        immutable shouldSquelch = plugin.hasSquelches &&
-            updateSquelchstamp(plugin, event.time, event.channel,
-                event.sender.nickname, event.target.nickname);
-
-        if (shouldSquelch) break;
-        else goto default;
 
     case USERSTATE: // Once per channel join?
     case PONG:
