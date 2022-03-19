@@ -1325,10 +1325,16 @@ void register(ConnectService service)
         ".acc.umu.se",
         ".irchighway.net",
         ".oftc.net",
-        ".irc.rizon.net",
+        ".rizon.net",
         ".snoonet.org",
         ".spotchat.org",
         ".swiftirc.net",
+        ".efnet.org",
+        ".netbsd.se",
+        ".geekshed.net",
+        ".moep.net",
+        ".esper.net",
+        ".europnet.org",
     ];
 
     // Server networks we know to not support capabilities
@@ -1341,6 +1347,7 @@ void register(ConnectService service)
         ".ircnet.net",
         ".undernet.org",
         ".team17.com",
+        ".link-net.be",
     ];
 
     immutable serverToLower = service.state.server.address.toLower;
