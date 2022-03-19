@@ -221,7 +221,7 @@ unittest
     IRCPluginState state;
     auto service = new CTCPService(state);
 
-    foreach (immutable type; getUDAs!(onCTCPs, IRCEvent.Type))
+    foreach (immutable type; getUDAs!(onCTCPs, IRCEventHandler)[0]._acceptedEventTypes)
     {
         IRCEvent event;
         event.type = type;
@@ -243,7 +243,7 @@ unittest
 )
 void onCTCPClientinfo(CTCPService service, const ref IRCEvent event)
 {
-    import dialect.common : IRCControlCharacter;
+    import dialect.common : I = IRCControlCharacter;
     import std.format : format;
 
     /*  This metadata query returns a list of the CTCP messages that this
@@ -256,44 +256,50 @@ void onCTCPClientinfo(CTCPService service, const ref IRCEvent event)
         Response:  CLIENTINFO ACTION DCC CLIENTINFO FINGER PING SOURCE TIME USERINFO VERSION
      */
 
+    // Don't forget to add ACTION, it's handed elsewhere
+    enum responseSkeleton = "CLIENTINFO ACTION CLIENTINFO";
+
     enum allCTCPTypes = ()
     {
-        import lu.string : beginsWith, strippedRight;
+        import lu.string : beginsWith;
         import lu.traits : getSymbolsByUDA;
+        import std.array : Appender;
         import std.traits : getUDAs, isSomeFunction;
 
         mixin("import thisModule = ", __MODULE__, ";");
 
-        string allTypes;
+        Appender!(char[]) sink;
+        sink.reserve(128);  // ~95
+        sink.put(responseSkeleton);
 
-        foreach (fun; getSymbolsByUDA!(thisModule, IRCEvent.Type))
+        foreach (sym; getSymbolsByUDA!(thisModule, IRCEventHandler))
         {
-            static if (isSomeFunction!(fun))
+            static if (isSomeFunction!sym)
             {
-                foreach (immutable type; getUDAs!(fun, IRCEvent.Type))
-                {
+                static foreach (immutable type; getUDAs!(sym, IRCEventHandler)[0]._acceptedEventTypes)
+                {{
                     import lu.conv : Enum;
+
                     enum typestring = Enum!(IRCEvent.Type).toString(type);
 
                     static if (typestring.beginsWith("CTCP_"))
                     {
-                        allTypes ~= typestring[5..$] ~ " ";
+                        sink.put(' ');
+                        sink.put(typestring[5..$]);
                     }
-                }
+                }}
             }
         }
 
-        return allTypes.strippedRight;
+        return sink.data;
     }().idup;
 
-    // Don't forget to add ACTION, it's handed elsewhere
+    static assert((allCTCPTypes.length > responseSkeleton.length),
+        "Concatenated CTCP type list is empty");
 
-    with (IRCControlCharacter)
-    {
-        import std.conv : text;
-        raw(service.state, text("NOTICE %s :", cast(char)ctcp, "CLIENTINFO ACTION %s", cast(char)ctcp)
-            .format(event.sender.nickname, allCTCPTypes));
-    }
+    enum pattern = "NOTICE %s :%c%s%2$c";
+    immutable message = pattern.format(event.sender.nickname, cast(char)I.ctcp, allCTCPTypes);
+    raw(service.state, message);
 }
 
 
