@@ -367,7 +367,12 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
             }
         }
 
-    case USERSTATE: // Once per channel join?
+    version(TwitchSupport)
+    {
+        case USERSTATE: // Once per channel join? Once per message sent?
+            break;
+    }
+
     case PONG:
         break;
 
