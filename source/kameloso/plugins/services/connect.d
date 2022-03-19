@@ -150,6 +150,8 @@ void onSelfjoin(ConnectService service, const ref IRCEvent event)
  +/
 void joinChannels(ConnectService service)
 {
+    scope(exit) service.joinedChannels = true;
+
     if (!service.state.bot.homeChannels.length && !service.state.bot.guestChannels.length)
     {
         logger.warning("No channels, no purpose...");
@@ -371,7 +373,6 @@ void tryAuth(ConnectService service)
         if (!service.joinedChannels)
         {
             service.joinChannels();
-            service.joinedChannels = true;
         }
     }
 
@@ -399,7 +400,6 @@ void onAuthEnd(ConnectService service, const ref IRCEvent event)
         if (!service.joinedChannels)
         {
             service.joinChannels();
-            service.joinedChannels = true;
         }
     }
 }
@@ -1201,7 +1201,6 @@ void onEndOfMotd(ConnectService service)
         // Twitch servers can't auth so join immediately
         // but don't do anything if we already joined channels.
         service.joinChannels();
-        service.joinedChannels = true;
     }
 }
 
