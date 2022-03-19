@@ -7,8 +7,7 @@
     like its ident and address will be available to plugins as well, assuming
     the Persistence service had seen that previously.
 
-    It has no commands. It only does post-processing and doesn't handle
-    [dialect.defs.IRCEvent|IRCEvent]s in the normal sense at all.
+    It has no commands.
 
     See_Also:
         [kameloso.plugins.common.core|plugins.common.core]
