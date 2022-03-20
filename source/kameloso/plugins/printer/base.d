@@ -148,6 +148,8 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 {
     if (!plugin.printerSettings.monitor || plugin.state.settings.headless) return;
 
+    if (plugin.printerSettings.hideBlacklistedUsers && (event.sender.class_ == IRCUser.Class.blacklist)) return;
+
     // For many types there's no need to display the target nickname when it's the bot's
     // Clear event.target.nickname for those types.
     event.clearTargetNicknameIfUs(plugin.state);
@@ -400,7 +402,6 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 
         alias BellOnMention = Flag!"bellOnMention";
         alias BellOnError = Flag!"bellOnError";
-        alias HideBlacklistedUsers = Flag!"hideBlacklistedUsers";
 
         scope(exit) plugin.linebuffer.clear();
 
@@ -410,8 +411,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
             {
                 plugin.formatMessageColoured(plugin.linebuffer, event,
                     cast(BellOnMention)plugin.printerSettings.bellOnMention,
-                    cast(BellOnError)plugin.printerSettings.bellOnError,
-                    cast(HideBlacklistedUsers)plugin.printerSettings.hideBlacklistedUsers);
+                    cast(BellOnError)plugin.printerSettings.bellOnError);
                 put = true;
             }
         }
@@ -420,17 +420,10 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         {
             plugin.formatMessageMonochrome(plugin.linebuffer, event,
                 cast(BellOnMention)plugin.printerSettings.bellOnMention,
-                cast(BellOnError)plugin.printerSettings.bellOnError,
-                cast(HideBlacklistedUsers)plugin.printerSettings.hideBlacklistedUsers);
+                cast(BellOnError)plugin.printerSettings.bellOnError);
         }
 
-        if (plugin.linebuffer.data.length)
-        {
-            // The linebuffer is empty if the sender was blacklisted
-            // (and settings are to hide those)
-            // so only write it out if there's something to write
-            writeln(plugin.linebuffer.data);
-        }
+        writeln(plugin.linebuffer.data);
         break;
     }
 }

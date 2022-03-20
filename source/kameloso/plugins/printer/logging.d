@@ -186,7 +186,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                     {
                         // Normal log
                         plugin.formatMessageMonochrome(plugin.linebuffer, event,
-                            No.bellOnMention, No.bellOnError, No.hideBlacklistedUsers);
+                            No.bellOnMention, No.bellOnError);
                         buffer.lines ~= plugin.linebuffer.data.idup;
                         plugin.linebuffer.clear();
                     }
@@ -206,7 +206,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                         }
 
                         plugin.formatMessageMonochrome(plugin.linebuffer, event,
-                            No.bellOnMention, No.bellOnError, No.hideBlacklistedUsers);
+                            No.bellOnMention, No.bellOnError);
                         scope(exit) plugin.linebuffer.clear();
 
                         auto file = File(buffer.file, "a");

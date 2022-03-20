@@ -175,15 +175,13 @@ unittest
         bellOnMention = Whether or not to emit a terminal bell when the bot's
             nickname is mentioned in chat.
         bellOnError = Whether or not to emit a terminal bell when an error occurred.
-        hideBlacklistedUsers = Whether or not to hide events from blacklisted users.
  +/
 void formatMessageMonochrome(Sink)
     (PrinterPlugin plugin,
     auto ref Sink sink,
     const ref IRCEvent event,
     const Flag!"bellOnMention" bellOnMention,
-    const Flag!"bellOnError" bellOnError,
-    const Flag!"hideBlacklistedUsers" hideBlacklistedUsers)
+    const Flag!"bellOnError" bellOnError)
 if (isOutputRange!(Sink, char[]))
 {
     import kameloso.irccolours : stripEffects;
@@ -192,8 +190,6 @@ if (isOutputRange!(Sink, char[]))
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
     import std.uni : asLowerCase, asUpperCase;
-
-    if (hideBlacklistedUsers && (event.sender.class_ == IRCUser.Class.blacklist)) return;
 
     immutable typestring = Enum!(IRCEvent.Type).toString(event.type).withoutTypePrefix;
     string content = stripEffects(event.content);  // mutable
@@ -472,7 +468,7 @@ if (isOutputRange!(Sink, char[]))
     event.type = IRCEvent.Type.JOIN;
     event.channel = "#channel";
 
-    plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError, No.hideBlacklistedUsers);
+    plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError);
     immutable joinLine = sink.data[11..$].idup;
     version(TwitchSupport) assert((joinLine == "[join] [#channel] Nickname"), joinLine);
     else assert((joinLine == "[join] [#channel] nickname"), joinLine);
@@ -481,7 +477,7 @@ if (isOutputRange!(Sink, char[]))
     event.type = IRCEvent.Type.CHAN;
     event.content = "Harbl snarbl";
 
-    plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError, No.hideBlacklistedUsers);
+    plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError);
     immutable chanLine = sink.data[11..$].idup;
     version(TwitchSupport) assert((chanLine == `[chan] [#channel] Nickname: "Harbl snarbl"`), chanLine);
     else assert((chanLine == `[chan] [#channel] nickname: "Harbl snarbl"`), chanLine);
@@ -492,7 +488,7 @@ if (isOutputRange!(Sink, char[]))
         event.sender.badges = "broadcaster/0,moderator/1,subscriber/9";
         //colour = "#3c507d";
 
-        plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError, No.hideBlacklistedUsers);
+        plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError);
         immutable twitchLine = sink.data[11..$].idup;
         assert((twitchLine == `[chan] [#channel] Nickname [broadcaster/0,moderator/1,subscriber/9]: "Harbl snarbl"`),
             twitchLine);
@@ -506,7 +502,7 @@ if (isOutputRange!(Sink, char[]))
     event.sender.account = "n1ckn4m3";
     event.aux = "n1ckn4m3";
 
-    plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError, No.hideBlacklistedUsers);
+    plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError);
     immutable accountLine = sink.data[11..$].idup;
     version(TwitchSupport) assert((accountLine == "[account] Nickname (n1ckn4m3)"), accountLine);
     else assert((accountLine == "[account] nickname (n1ckn4m3)"), accountLine);
@@ -519,7 +515,7 @@ if (isOutputRange!(Sink, char[]))
     event.aux = string.init;
     event.type = IRCEvent.Type.ERROR;
 
-    plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError, No.hideBlacklistedUsers);
+    plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError);
     immutable errorLine = sink.data[11..$].idup;
     version(TwitchSupport) assert((errorLine == `[error] Nickname: "Blah balah" {-42} (#666) ` ~
         "! DANGER WILL ROBINSON !"), errorLine);
@@ -544,7 +540,6 @@ if (isOutputRange!(Sink, char[]))
         bellOnMention = Whether or not to emit a terminal bell when the bot's
             nickname is mentioned in chat.
         bellOnError = Whether or not to emit a terminal bell when an error occurred.
-        hideBlacklistedUsers = Whether or not to hide events from blacklisted users.
  +/
 version(Colours)
 void formatMessageColoured(Sink)
@@ -552,8 +547,7 @@ void formatMessageColoured(Sink)
     auto ref Sink sink,
     const ref IRCEvent event,
     const Flag!"bellOnMention" bellOnMention,
-    const Flag!"bellOnError" bellOnError,
-    const Flag!"hideBlacklistedUsers" hideBlacklistedUsers)
+    const Flag!"bellOnError" bellOnError)
 if (isOutputRange!(Sink, char[]))
 {
     import kameloso.constants : DefaultColours;
@@ -566,8 +560,6 @@ if (isOutputRange!(Sink, char[]))
     alias Bright = EventPrintingBright;
     alias Dark = EventPrintingDark;
     alias Timestamp = DefaultColours.TimestampColour;
-
-    if (hideBlacklistedUsers && (event.sender.class_ == IRCUser.Class.blacklist)) return;
 
     immutable rawTypestring = Enum!(IRCEvent.Type).toString(event.type);
     immutable typestring = rawTypestring.withoutTypePrefix;
