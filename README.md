@@ -376,6 +376,7 @@ Even with SSL seemingly properly set up you may see errors of *"Peer certificate
 * please send help: Windows Secure Channel SSL
 * split Twitch timers into own plugin
 * Twitch `ecount`, `settitle`, `setgame`, `vanish`, `watchtime`, `roulette`?
+* help plugin descriptions? multiple syntax entries?
 * more pairs of eyes
 
 # Built with

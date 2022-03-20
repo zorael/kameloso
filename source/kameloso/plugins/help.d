@@ -225,6 +225,7 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
     plugin.state.mainThread.send(ThreadMessage.PeekCommands(), cast(shared)&dg, string.init);
 }
 
+
 // sendCommandHelp
 /++
     Sends the help text for a command to the querying channel or user.

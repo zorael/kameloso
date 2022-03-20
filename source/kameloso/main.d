@@ -2800,6 +2800,7 @@ void printSummary(const ref Kameloso instance)
 }
 
 
+// AttemptState
 /++
     Aggregate of state values used in an execution of the program.
  +/

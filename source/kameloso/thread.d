@@ -291,6 +291,7 @@ struct OutputRequest
 }
 
 
+// Sendable
 /++
     Interface for a message sendable through the message bus.
  +/
