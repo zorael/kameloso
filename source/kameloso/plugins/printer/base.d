@@ -387,6 +387,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         break;
 
     default:
+        import kameloso.terminal : TerminalToken;
         import lu.string : strippedRight;
         import std.array : replace;
         import std.stdio : writeln;
@@ -395,7 +396,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         // Strip right to get rid of trailing whitespace
         // Do it in this order in case bells hide whitespace.
         event.content = event.content
-            .replace(cast(ubyte)7, string.init)
+            .replace(cast(ubyte)TerminalToken.bell, string.init)
             .strippedRight;
 
         bool put;
