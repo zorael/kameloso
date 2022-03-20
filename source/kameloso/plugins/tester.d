@@ -52,7 +52,7 @@ version(DigitalMars)
             .description("Runs tests.")
     )
 )
-void onCommandTest(TesterPlugin plugin, const ref IRCEvent event)
+void onCommandTest(TesterPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : SplitResults, splitInto;
     import core.thread : Fiber;
