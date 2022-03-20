@@ -212,8 +212,8 @@ instructions and log in to authorise the use of this program with your account.
                 import std.path : buildPath;
                 import std.process : spawnProcess;
 
-                immutable urlBasename = "kameloso-twitch-%s.url"
-                    .format(plugin.state.client.nickname);
+                enum pattern = "kameloso-twitch-%s.url";
+                immutable urlBasename = pattern.format(plugin.state.client.nickname);
                 immutable urlFileName = buildPath(tempDir, urlBasename);
 
                 {

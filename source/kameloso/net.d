@@ -1008,9 +1008,9 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
                 {
                     import std.format : format;
 
+                    enum pattern = "%s (%s)";
                     attempt.state = State.sslFailure;
-                    attempt.error = "%s (%s)"
-                        .format(e.msg, conn.getSSLErrorMessage(e.code));
+                    attempt.error = pattern.format(e.msg, conn.getSSLErrorMessage(e.code));
                     yield(attempt);
                     continue attemptloop;
                 }

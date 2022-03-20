@@ -241,9 +241,9 @@ void worker(shared IRCPluginState sState,
             import etc.c.curl : curl_easy_strerror;
 
             enum pattern = "Chatbot got cURL error <l>%s</> (<l>%d</>) when fetching <l>%s</>: <l>%s";
-            askToError(state, pattern
-                .format(curlErrorStrings[errorCode], errorCode, url,
-                    fromStringz(curl_easy_strerror(errorCode))));
+            immutable message = pattern.format(curlErrorStrings[errorCode],
+                errorCode, url, fromStringz(curl_easy_strerror(errorCode)));
+            askToError(state, message);
             return;
         }
 
@@ -280,8 +280,9 @@ void worker(shared IRCPluginState sState,
             .htmlEntitiesDecode
             .splitter('\n');
 
+        enum pattern = "[<b>bash.org<b>] #%s";
         immutable num = b[0].toString[4..$-4];
-        immutable message = "[<b>bash.org<b>] #%s".format(num);
+        immutable message = pattern.format(num);
 
         privmsg(state, event.channel, event.sender.nickname, message);
 

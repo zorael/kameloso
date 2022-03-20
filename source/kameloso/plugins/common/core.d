@@ -1587,8 +1587,8 @@ mixin template IRCPluginImpl(
                     {
                         import std.format : format;
                         import std.traits : fullyQualifiedName;
-                        pragma(msg, "Warning: `%s` non-hidden command word \"%s\" is missing a description"
-                            .format(fullyQualifiedName!fun, command._word));
+                        enum pattern = "Warning: `%s` non-hidden command word \"%s\" is missing a description";
+                        pragma(msg, pattern.format(fullyQualifiedName!fun, command._word));
                     }
                 }}
 

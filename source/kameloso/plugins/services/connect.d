@@ -1495,8 +1495,10 @@ void negotiateNick(ConnectService service)
                 O - local operator flag;
                 s - marks a user for receipt of server notices.
          +/
-        immediate(service.state, "USER %s 8 * :%s".format(service.state.client.user,
-            service.state.client.realName.replaceTokens(service.state.client)));
+        enum pattern = "USER %s 8 * :%s";
+        immutable message = pattern.format(service.state.client.user,
+            service.state.client.realName.replaceTokens(service.state.client));
+        immediate(service.state, message);
     }
 
     immediate(service.state, "NICK " ~ service.state.client.nickname);

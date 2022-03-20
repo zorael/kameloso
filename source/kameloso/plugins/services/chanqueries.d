@@ -170,7 +170,8 @@ void startChannelQueries(ChanQueriesService service)
 
             foreach (immutable n, immutable modechar; service.state.server.aModes.representation)
             {
-                import std.format : format;
+                import kameloso.messaging : mode;
+                import std.conv : text;
 
                 if (n > 0)
                 {
@@ -189,8 +190,7 @@ void startChannelQueries(ChanQueriesService service)
                         ThreadMessage.busMessage("printer", sendable(squelchMessage)));
                 }
 
-                import kameloso.messaging : mode;
-                mode(service.state, channelName, "+%c".format((cast(char)modechar)),
+                mode(service.state, channelName, text('+', cast(char)modechar),
                     string.init, Yes.quiet, Yes.background);
             }
 

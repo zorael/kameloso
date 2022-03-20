@@ -66,8 +66,8 @@ void onCTCPs(CTCPService service, const ref IRCEvent event)
             Response:  VERSION WeeChat 1.5-rc2 (git: v1.5-rc2-1-gc1441b1) (Apr 25 2016)
          */
 
-        line = "VERSION kameloso %s, built %s, running on %s"
-            .format(cast(string)KamelosoInfo.version_, cast(string)KamelosoInfo.built, os);
+        enum pattern = "VERSION kameloso %s, built %s, running on %s";
+        line = pattern.format(cast(string)KamelosoInfo.version_, cast(string)KamelosoInfo.built, os);
         break;
 
     case CTCP_FINGER:
@@ -150,7 +150,8 @@ void onCTCPs(CTCPService service, const ref IRCEvent event)
             Query:     USERINFO
             Response:  USERINFO fred (Fred Foobar)
          */
-        line = "USERINFO %s (%s)".format(service.state.client.nickname, service.state.client.realName);
+        enum pattern = "USERINFO %s (%s)";
+        line = pattern.format(service.state.client.nickname, service.state.client.realName);
         break;
 
     case CTCP_DCC:

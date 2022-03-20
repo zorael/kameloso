@@ -410,7 +410,8 @@ void messageFiber(ref Kameloso instance)
             switch (m.event.type)
             {
             case CHAN:
-                prelude = "PRIVMSG %s :".format(m.event.channel);
+                enum pattern = "PRIVMSG %s :";
+                prelude = pattern.format(m.event.channel);
                 lines = m.event.content.splitLineAtPosition(' ', maxIRCLineLength-prelude.length);
                 break;
 
@@ -425,12 +426,13 @@ void messageFiber(ref Kameloso instance)
                             return;
                         }*/
 
-                        prelude = "PRIVMSG #%s :/w %s "
-                            .format(instance.parser.client.nickname, m.event.target.nickname);
+                        enum pattern = "PRIVMSG #%s :/w %s ";
+                        prelude = pattern.format(instance.parser.client.nickname, m.event.target.nickname);
                     }
                 }
 
-                if (!prelude.length) prelude = "PRIVMSG %s :".format(m.event.target.nickname);
+                enum pattern = "PRIVMSG %s :";
+                if (!prelude.length) prelude = pattern.format(m.event.target.nickname);
                 lines = m.event.content.splitLineAtPosition(' ', maxIRCLineLength-prelude.length);
                 break;
 
@@ -442,7 +444,8 @@ void messageFiber(ref Kameloso instance)
                 {
                     if (instance.parser.server.daemon == IRCServer.Daemon.twitch)
                     {
-                        prelude = "PRIVMSG %s :/me ".format(emoteTarget);
+                        enum pattern = "PRIVMSG %s :/me ";
+                        prelude = pattern.format(emoteTarget);
                         lines = m.event.content.splitLineAtPosition(' ', maxIRCLineLength-prelude.length);
                     }
                 }
@@ -463,11 +466,13 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             case TOPIC:
-                line = "TOPIC %s :%s".format(m.event.channel, m.event.content);
+                enum pattern = "TOPIC %s :%s";
+                line = pattern.format(m.event.channel, m.event.content);
                 break;
 
             case INVITE:
-                line = "INVITE %s %s".format(m.event.channel, m.event.target.nickname);
+                enum pattern = "INVITE %s %s";
+                line = pattern.format(m.event.channel, m.event.target.nickname);
                 break;
 
             case JOIN:

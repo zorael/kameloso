@@ -997,7 +997,8 @@ out (; (bot.partReason.length), "Empty bot part reason")
         import std.format : format;
         import std.random : uniform;
 
-        client.nickname = "guest%03d".format(uniform(0, 1000));
+        enum pattern = "guest%03d";
+        client.nickname = pattern.format(uniform(0, 1000));
         bot.hasGuestNickname = true;
     }
 
