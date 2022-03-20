@@ -113,9 +113,7 @@ auto configurationBaseDirectory()
     }
     else
     {
-        pragma(msg, "Unsupported platform? Cannot divine default config file path.");
-        pragma(msg, "Configuration file will be placed in the working directory.");
-        return ".";
+        static assert(0, "Unexpected platform, please file a bug");
     }
 }
 
@@ -187,9 +185,7 @@ auto resourceBaseDirectory()
     }
     else
     {
-        pragma(msg, "Unsupported platform? Cannot divine default resource prefix.");
-        pragma(msg, "Resource files will be placed in the working directory.");
-        return ".";
+        static assert(0, "Unexpected platform, please file a bug");
     }
 }
 
