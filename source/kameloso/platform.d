@@ -153,7 +153,7 @@ unittest
     we're currently running.
 
     On non-macOS Posix it defaults to `$XDG_DATA_HOME` and falls back to
-    `~/.local/share` if no `XDG_DATA_HOME` environment variable present.
+    `$HOME/.local/share` if no `$XDG_DATA_HOME` environment variable present.
 
     On macOS it defaults to `$HOME/Library/Application Support`.
 

@@ -280,7 +280,7 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
 
     spawn&(&queryTwitchImpl, url, plugin.authorizationBearer,
         plugin.queryResponseTimeout, plugin.bucket, caBundleFile);
-    delay(plugin, plugin.approximateQueryTime, Yes.msecs, Yes.yield);
+    delay(plugin, plugin.approximateQueryTime.msecs, Yes.yield);
     immutable response = waitForQueryResponse(plugin, url);
     // response.str is the response body
     ---
