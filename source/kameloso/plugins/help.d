@@ -190,9 +190,10 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
         {
             import kameloso.constants : KamelosoInfo;
 
-            enum banner = "kameloso IRC bot <b>v%s<b>, built %s"
-                .format(cast(string)KamelosoInfo.version_,
-                    cast(string)KamelosoInfo.built);
+            enum banner = "kameloso IRC bot <b>v" ~
+                cast(string)KamelosoInfo.version_ ~
+                "<b>, built " ~
+                cast(string)KamelosoInfo.built;
 
             privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, banner);
             privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, "Available bot commands per plugin:");
