@@ -1789,7 +1789,10 @@ void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
         {
             version(TraceWhois)
             {
-                if (!instance.settings.headless) writeln(" ...and actually issuing.");
+                if (!instance.settings.headless)
+                {
+                    writeln(" ...and actually issuing.");
+                }
             }
 
             /*instance.outbuffer.put(OutgoingLine("WHOIS " ~ nickname,
@@ -1803,7 +1806,10 @@ void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
         {
             version(TraceWhois)
             {
-                writefln(" ...but already issued %d seconds ago.", (now - lastWhois));
+                if (!instance.settings.headless)
+                {
+                    writefln(" ...but already issued %d seconds ago.", (now - lastWhois));
+                }
             }
         }
     }
