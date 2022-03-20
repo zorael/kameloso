@@ -1320,6 +1320,7 @@ void register(ConnectService service)
     // Ditto
     static immutable capabilityServerWhitelistSuffix =
     [
+        ".libera.chat",
         ".freenode.net",
         ".twitch.tv",
         ".acc.umu.se",
