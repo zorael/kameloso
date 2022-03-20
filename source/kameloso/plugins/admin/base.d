@@ -129,6 +129,47 @@ void onCommandShowUser(AdminPlugin plugin, const ref IRCEvent event)
 }
 
 
+// onCommandWhoami
+/++
+    Sends what we know of the inquiring user.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .permissionsRequired(Permissions.anyone)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("whoami")
+            .policy(PrefixPolicy.prefixed)
+            .description("Sends what we know of the inquiring user.")
+    )
+)
+void onCommandWhoami(AdminPlugin plugin, const ref IRCEvent event)
+{
+    import lu.conv : Enum;
+    import std.format : format;
+
+    immutable account = event.sender.account.length ? event.sender.account : "*";
+    string message;  // mutable
+
+    if (event.channel.length)
+    {
+        enum pattern = "You are <h>%s<h>@<b>%s<b> (%s), class:<b>%s<b> in the scope of <b>%s<b>.";
+        message = pattern.format(event.sender.nickname, account, event.sender.hostmask,
+            Enum!(IRCUser.Class).toString(event.sender.class_), event.channel);
+    }
+    else
+    {
+        enum pattern = "You are <h>%s<h>@<b>%s<b> (%s), class:<b>%s<b> in a global scope.";
+        message = pattern.format(event.sender.nickname, account, event.sender.hostmask,
+            Enum!(IRCUser.Class).toString(event.sender.class_));
+    }
+
+    privmsg(plugin.state, event.channel, event.sender.nickname, message);
+}
+
+
 // onCommandSave
 /++
     Saves current configuration to disk.
