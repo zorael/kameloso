@@ -1431,7 +1431,10 @@ void processAwaitingDelegates(IRCPlugin plugin, const ref IRCEvent event)
     /++
         Handle awaiting delegates of a specified type.
      +/
-    static void processImpl(IRCPlugin plugin, const ref IRCEvent event, void delegate(IRCEvent)[] dgsForType)
+    static void processImpl(
+        IRCPlugin plugin,
+        const ref IRCEvent event,
+        void delegate(IRCEvent)[] dgsForType)
     {
         foreach (immutable i, dg; dgsForType)
         {
@@ -1481,8 +1484,11 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
     /++
         Handle awaiting Fibers of a specified type.
      +/
-    static void processAwaitingFibersImpl(IRCPlugin plugin, const ref IRCEvent event,
-        Fiber[] fibersForType, ref Fiber[] expiredFibers)
+    static void processAwaitingFibersImpl(
+        IRCPlugin plugin,
+        const ref IRCEvent event,
+        Fiber[] fibersForType,
+        ref Fiber[] expiredFibers)
     {
         foreach (immutable i, fiber; fibersForType)
         {
