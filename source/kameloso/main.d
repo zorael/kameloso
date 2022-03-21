@@ -2131,14 +2131,18 @@ Next tryConnect(ref Kameloso instance)
             if (!lastRetry) goto case delayThenNextIP;
             continue;
 
-        case sslFailure:
-            // This can be transient?
+        case transientSSLFailure:
             // "Failed to establish SSL connection after successful connect (system lib)"
             // "Failed to establish SSL connection after successful connect" --> attempted SSL on non-SSL server
             logger.error("Failed to connect: ", Tint.log, attempt.error);
             if (*instance.abort) return Next.returnFailure;
             if (!lastRetry) verboselyDelay();
             continue;
+
+        case fatalSSLFailure:
+            enum pattern = "Failed to connect: <l>%s</>";
+            logger.errorf(pattern.expandTags, attempt.error);
+            return Next.returnFailure;
 
         case invalidConnectionError:
         case error:

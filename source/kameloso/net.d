@@ -758,7 +758,8 @@ struct ConnectionAttempt
         delayThenNextIP,         /// Failed to reconnect several times; next IP.
         //noMoreIPs,             /// Exhausted all IPs and could not connect.
         ipv6Failure,             /// IPv6 connection failed.
-        sslFailure,              /// Failure establishing an SSL connection.
+        transientSSLFailure,     /// Transient failure establishing an SSL connection, safe to retry.
+        fatalSSLFailure,         /// Fatal failure establishing an SSL connection, should abort.
         invalidConnectionError,  /// The current IP cannot be connected to.
         error,                   /// Error connecting; should abort.
     }
@@ -1009,7 +1010,7 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
                     import std.format : format;
 
                     enum pattern = "%s (%s)";
-                    attempt.state = State.sslFailure;
+                    attempt.state = State.transientSSLFailure;
                     attempt.error = pattern.format(e.msg, conn.getSSLErrorMessage(e.code));
                     yield(attempt);
                     continue attemptloop;
