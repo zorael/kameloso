@@ -2434,16 +2434,16 @@ Next verifySettings(ref Kameloso instance)
 }
 
 
-// resolveResourceDirectory
+// resolveDirectories
 /++
-    Resolves resource directories verbosely.
+    Resolves resource directory and configuration directory semi-verbosely.
 
     This is called after settings have been verified, before plugins are initialised.
 
     Params:
         instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
  +/
-void resolveResourceDirectory(ref Kameloso instance)
+void resolveDirectories(ref Kameloso instance)
 {
     import std.file : exists;
     import std.path : buildNormalizedPath, dirName;
@@ -2452,13 +2452,15 @@ void resolveResourceDirectory(ref Kameloso instance)
     version(Windows)
     {
         import std.string : replace;
-        instance.settings.resourceDirectory = buildNormalizedPath(instance.settings.resourceDirectory,
-            "server", instance.parser.server.address.replace(":", "_"));
+        instance.settings.resourceDirectory =
+            buildNormalizedPath(instance.settings.resourceDirectory,
+                "server", instance.parser.server.address.replace(":", "_"));
     }
     else
     {
-        instance.settings.resourceDirectory = buildNormalizedPath(instance.settings.resourceDirectory,
-            "server", instance.parser.server.address);
+        instance.settings.resourceDirectory =
+            buildNormalizedPath(instance.settings.resourceDirectory,
+                "server", instance.parser.server.address);
     }
 
     instance.settings.configDirectory = instance.settings.configFile.dirName;
@@ -3016,8 +3018,8 @@ int run(string[] args)
         assert(0, "`verifySettings` returned `Next.crash`");
     }
 
-    // Resolve resource directory paths.
-    instance.resolveResourceDirectory();
+    // Resolve resource and configuration directory paths.
+    instance.resolveDirectories();
     instance.conn.configDirectory = instance.settings.configDirectory;
 
     // Save the original nickname *once*, outside the connection loop and before
