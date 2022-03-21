@@ -2159,7 +2159,7 @@ Next tryConnect(ref Kameloso instance)
             }
             else
             {
-                logger.error("Failed to connect: ", Tint.log, errorString);
+                static assert(0, "Unsupported platform, please file a bug.");
             }
 
             if (attempt.state == invalidConnectionError)
