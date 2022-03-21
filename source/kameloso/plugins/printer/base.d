@@ -253,6 +253,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     case RPL_ENDOFWHOWAS:
     case RPL_WHOISSERVER:
     case RPL_CHARSET:
+    case RPL_STATSRLINE:
         immutable shouldSquelch = plugin.hasSquelches &&
             updateSquelchstamp(plugin, event.time, event.channel,
                 event.sender.nickname, event.target.nickname);
@@ -725,6 +726,7 @@ void clearTargetNicknameIfUs(ref IRCEvent event, const IRCPluginState state)
         case RPL_WHOISACTUALLY:
         case RPL_WHOISMODES:
         case RPL_WHOWASIP:
+        case RPL_STATSRLINE:
             // Keep bot's nickname as target for these event types.
             break;
 
