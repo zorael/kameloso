@@ -5,13 +5,13 @@
 ## Current functionality includes:
 
 * chat monitoring in bedazzling colours (or mesmerising monochrome)
-* automatic mode sets (e.g. auto `+o` on join)
-* logs
-* bugs
 * reporting titles of pasted URLs, YouTube video information fetch
 * **sed**-replacement of messages (`s/this/that/` substitution)
 * saving notes to offline users that get played back when they come online
+* logs
+* bugs
 * channel polls, `!seen`, counters, stopwatches
+* automatic mode sets (e.g. auto `+o` on join)
 * works on **Twitch** with some common Twitch bot features
 * [more random stuff and gimmicks](https://github.com/zorael/kameloso/wiki/Current-plugins)
 
