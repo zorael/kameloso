@@ -1291,3 +1291,34 @@ final class SSLException : Exception
         super(msg, file, line, nextInChain);
     }
 }
+
+
+// SSLFileException
+/++
+    Exception thrown when a certificate or a private key file could not be found.
+ +/
+final class SSLFileException : Exception
+{
+    /// Filename that doesn't exist.
+    string filename;
+
+    /// Constructor attaching an error code.
+    this(const string msg,
+        const string filename,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        this.filename = filename;
+        super(msg, file, line, nextInChain);
+    }
+
+    /// Passthrough constructor.
+    this(const string msg,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        super(msg, file, line, nextInChain);
+    }
+}
