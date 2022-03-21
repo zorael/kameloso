@@ -164,6 +164,11 @@ public:
      +/
     string privateKeyFile;
 
+    /++
+        Path to configuration directory.
+     +/
+    string configDirectory;
+
 
     // sendTimeout
     /++
@@ -321,13 +326,14 @@ public:
 
         Throws:
             [SSLException] if the SSL context could not be set up.
+            [SSLFileException] if any specified certificate or private key could not be found.
      +/
     void setupSSL() @system
     in (ssl, "Tried to set up SSL context on a non-SSL `Connection`")
     {
-        import std.algorithm.searching : endsWith;
+        import std.file : exists;
+        import std.path : absolutePath, buildNormalizedPath, expandTilde, extension, isAbsolute;
         import std.string : toStringz;
-        import std.uni : toLower;
 
         sslContext = openssl.SSL_CTX_new(openssl.TLS_method);
         openssl.SSL_CTX_set_verify(sslContext, 0, null);
@@ -335,18 +341,40 @@ public:
         if (certFile.length)
         {
             // Before SSL_new
-            immutable filetype = certFile.toLower.endsWith(".pem") ? 1 : 0;
+            immutable certFileExpanded = certFile.expandTilde;
+            immutable certFilePath = configDirectory.isAbsolute ?
+                absolutePath(certFileExpanded, configDirectory) :
+                buildNormalizedPath(configDirectory, certFileExpanded);
+
+            if (!certFilePath.exists)
+            {
+                throw new SSLFileException("No such certificate file",
+                    certFilePath, __FILE__, __LINE__);
+            }
+
+            immutable filetype = (certFilePath.extension == ".pem") ? 1 : 0;
             immutable code = openssl.SSL_CTX_use_certificate_file(sslContext,
-                toStringz(certFile), filetype);
+                toStringz(certFilePath), filetype);
             if (code != 1) throw new SSLException("Failed to set certificate", code);
         }
 
         if (privateKeyFile.length)
         {
             // Ditto
-            immutable filetype = privateKeyFile.toLower.endsWith(".pem") ? 1 : 0;
+            immutable privateKeyFileExpanded = privateKeyFile.expandTilde;
+            immutable privateKeyFilePath = configDirectory.isAbsolute ?
+                absolutePath(privateKeyFileExpanded, configDirectory) :
+                buildNormalizedPath(configDirectory, privateKeyFileExpanded);
+
+            if (!privateKeyFilePath.exists)
+            {
+                throw new SSLFileException("No such private key file",
+                    privateKeyFilePath, __FILE__, __LINE__);
+            }
+
+            immutable filetype = (privateKeyFilePath.extension == ".pem") ? 1 : 0;
             immutable code = openssl.SSL_CTX_use_PrivateKey_file(sslContext,
-                toStringz(privateKeyFile), filetype);
+                toStringz(privateKeyFilePath), filetype);
             if (code != 1) throw new SSLException("Failed to set private key", code);
         }
 
@@ -1012,6 +1040,16 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
                     enum pattern = "%s (%s)";
                     attempt.state = State.transientSSLFailure;
                     attempt.error = pattern.format(e.msg, conn.getSSLErrorMessage(e.code));
+                    yield(attempt);
+                    continue attemptloop;
+                }
+                catch (SSLFileException e)
+                {
+                    import std.format : format;
+
+                    enum pattern = "%s: %s";
+                    attempt.state = State.fatalSSLFailure;
+                    attempt.error = pattern.format(e.msg, e.filename);
                     yield(attempt);
                     continue attemptloop;
                 }

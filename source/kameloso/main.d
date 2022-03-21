@@ -3018,6 +3018,7 @@ int run(string[] args)
 
     // Resolve resource directory paths.
     instance.resolveResourceDirectory();
+    instance.conn.configDirectory = instance.settings.configDirectory;
 
     // Save the original nickname *once*, outside the connection loop and before
     // initialising plugins (who will make a copy of it). Knowing this is useful
