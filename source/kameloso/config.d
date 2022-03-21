@@ -738,6 +738,13 @@ Next handleGetopt(ref Kameloso instance,
         // No need to catch the return value, only used for --help
         cast(void)callGetopt(args, Yes.quiet);
 
+        // Expand tilde on resource directory, on Posix
+        version(Posix)
+        {
+            import std.path : expandTilde;
+            settings.resourceDirectory = settings.resourceDirectory.expandTilde;
+        }
+
         // Save the user from themselves. (A receive timeout of 0 breaks all sorts of things.)
         if (connSettings.receiveTimeout == 0)
         {

@@ -1156,17 +1156,15 @@ mixin template IRCPluginImpl(
         {
             static if (isSerialisable!member)
             {
+                import std.path : buildNormalizedPath;
+
                 static if (hasUDA!(this.tupleof[i], Resource))
                 {
-                    import std.path : buildNormalizedPath, expandTilde;
-                    member = buildNormalizedPath(state.settings.resourceDirectory, member)
-                        .expandTilde;
+                    member = buildNormalizedPath(state.settings.resourceDirectory, member);
                 }
                 else static if (hasUDA!(this.tupleof[i], Configuration))
                 {
-                    import std.path : buildNormalizedPath, expandTilde;
-                    member = buildNormalizedPath(state.settings.configDirectory, member)
-                        .expandTilde;
+                    member = buildNormalizedPath(state.settings.configDirectory, member);
                 }
             }
         }
