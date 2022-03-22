@@ -233,11 +233,9 @@ string[] findURLs(const string line) @safe pure
         }
         else if ((slice[7] == ' ') || (slice[8] == ' '))
         {
-            break;
-        }
-        else if (!slice[8..$].contains('.'))
-        {
-            break;
+            slice = slice[7..$];
+            httpPos = slice.indexOf("http");
+            continue;
         }
         else if (!slice.contains(' ') &&
             (slice[10..$].contains("http://") ||
@@ -249,7 +247,8 @@ string[] findURLs(const string line) @safe pure
 
         // nom until the next space if there is one, otherwise just inherit slice
         // Also strip away common punctuation
-        hits ~= slice.nom!(Yes.inherit)(' ').strippedRight(wordBoundaryTokens);
+        immutable hit = slice.nom!(Yes.inherit)(' ').strippedRight(wordBoundaryTokens);
+        if (hit.contains('.')) hits ~= hit;
         httpPos = slice.indexOf("http");
     }
 
@@ -272,8 +271,8 @@ unittest
         assert((urls == [ "https://a.com", "http://b.com", "https://d.asdf.asdf.asdf" ]), urls.text);
     }
     {
-        const urls = findURLs("http:// http://asdf https:// asdfhttpasdf http");
-        assert(!urls.length, urls.text);
+        const urls = findURLs("http:// http://asdf https:// asdfhttpasdf http://google.com");
+        assert((urls.length == 1), urls.text);
     }
     {
         const urls = findURLs("http://a.sehttp://a.shttp://a.http://http:");
