@@ -602,6 +602,20 @@ public:
     }
 
 
+    // propagateWhoisTimestamp
+    /++
+        Propagates a single update to the the [previousWhoisTimestamps]
+        associative array to all plugins.
+     +/
+    void propagateWhoisTimestamp(const string nickname, const long now) pure
+    {
+        foreach (plugin; plugins)
+        {
+            plugin.state.previousWhoisTimestamps[nickname] = now;
+        }
+    }
+
+
     // propagateWhoisTimestamps
     /++
         Propagates the [previousWhoisTimestamps] associative array to all plugins.
