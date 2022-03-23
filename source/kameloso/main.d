@@ -240,7 +240,19 @@ void messageFiber(ref Kameloso instance)
             switch (message.type)
             {
             case pong:
-                instance.priorityBuffer.put(OutgoingLine("PONG :" ~ message.content, Yes.quiet));
+                /+
+                    PONGs literally always have the same content, so micro-optimise
+                    this a bit by only allocating the string once and keeping it
+                    if the contents don't change.
+                 +/
+                static string pongline;
+
+                if (!pongline.length || (pongline[6..$] != message.content))
+                {
+                    pongline = "PONG :" ~ message.content;
+                }
+
+                instance.priorityBuffer.put(OutgoingLine(pongline, Yes.quiet));
                 break;
 
             case sendline:
