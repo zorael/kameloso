@@ -760,7 +760,7 @@ private:
         return kameloso.messaging.immediate(state, line, quiet, caller);
     }
 
-    import std.format : format;
+
     import std.meta : AliasSeq;
 
     /+
@@ -778,11 +778,11 @@ private:
             [kameloso.messaging.askToOutputImpl|askToOutputImpl] is
             `@system` and nothing else.
          +/
-        mixin(q{
-void askTo%s(const string line)
+        mixin("
+void askTo" ~ verb ~ "(const string line)
 {
-    return kameloso.messaging.askTo%1$s(state, line);
-}}.format(verb));
+    return kameloso.messaging.askTo" ~ verb ~ "(state, line);
+}");
     }
 }
 
