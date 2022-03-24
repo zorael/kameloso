@@ -437,8 +437,8 @@ public:
 
             if (ssl)
             {
-                openssl.SSL_write(sslInstance, cast(void*)&line[0], cast(int)length);
-                openssl.SSL_write(sslInstance, cast(void*)&linebreak[0], cast(int)linebreak.length);
+                openssl.SSL_write(sslInstance, line.ptr, cast(int)length);
+                openssl.SSL_write(sslInstance, linebreak.ptr, cast(int)linebreak.length);
             }
             else
             {
