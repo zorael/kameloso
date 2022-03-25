@@ -314,23 +314,18 @@ mixin template IRCPluginImpl(
         top:
         foreach (immutable i, _; this.tupleof)
         {
-            import std.meta : Alias;
             import std.traits : hasUDA;
 
-            alias member = Alias!(this.tupleof[i]);
-
             static if (
-                hasUDA!(member, Settings) ||
-                (is(typeof(member) == struct) &&
-                    hasUDA!(typeof(member), Settings)))
+                is(typeof(this.tupleof[i]) == struct) &&
+                (hasUDA!(this.tupleof[i], Settings) ||
+                    hasUDA!(typeof(this.tupleof[i]), Settings)))
             {
-                foreach (immutable n, _2; member.tupleof)
+                foreach (immutable n, _2; this.tupleof[i].tupleof)
                 {
-                    alias settingsStructMember = Alias!(member.tupleof[n]);
-
-                    static if (hasUDA!(settingsStructMember, Enabler))
+                    static if (hasUDA!(this.tupleof[i].tupleof[n], Enabler))
                     {
-                        alias ThisEnabler = typeof(settingsStructMember);
+                        alias ThisEnabler = typeof(this.tupleof[i].tupleof[n]);
 
                         static if (!is(ThisEnabler : bool))
                         {
@@ -345,7 +340,7 @@ mixin template IRCPluginImpl(
                                 __traits(identifier, this.tupleof[i].tupleof[n])));
                         }
 
-                        retval = member.tupleof[n];
+                        retval = this.tupleof[i].tupleof[n];
                         break top;
                     }
                 }
