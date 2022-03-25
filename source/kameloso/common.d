@@ -1244,8 +1244,9 @@ struct Tint
         alias info = log;
         alias warning = log;
         alias error = log;
-        alias fatal = log;
         alias trace = log;
+        alias critical = log;
+        alias fatal = log;
         alias off = log;
     }
 }
@@ -1514,44 +1515,51 @@ T expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" strip
 
                             if (!strip)
                             {
-                                import kameloso.terminal.colours : colourByHash;
-                                immutable bright = cast(Flag!"brightTerminal")kameloso.common.settings.brightTerminal;
-                                sink.put(colourByHash(word, bright));
-
-                                with (LogLevel)
-                                final switch (baseLevel)
+                                version(Colours)
                                 {
-                                case all:  //log
-                                    sink.put(Tint.log);
-                                    break;
+                                    import kameloso.terminal.colours : colourByHash;
+                                    immutable bright = cast(Flag!"brightTerminal")kameloso.common.settings.brightTerminal;
+                                    sink.put(colourByHash(word, bright));
 
-                                case trace:
-                                    sink.put(Tint.trace);
-                                    break;
+                                    with (LogLevel)
+                                    final switch (baseLevel)
+                                    {
+                                    case all:  //log
+                                        sink.put(Tint.log);
+                                        break;
 
-                                case info:
-                                    sink.put(Tint.info);
-                                    break;
+                                    case trace:
+                                        sink.put(Tint.trace);
+                                        break;
 
-                                case warning:
-                                    sink.put(Tint.warning);
-                                    break;
+                                    case info:
+                                        sink.put(Tint.info);
+                                        break;
 
-                                case error:
-                                    sink.put(Tint.error);
-                                    break;
+                                    case warning:
+                                        sink.put(Tint.warning);
+                                        break;
 
-                                case critical:
-                                    sink.put(Tint.critical);
-                                    break;
+                                    case error:
+                                        sink.put(Tint.error);
+                                        break;
 
-                                case fatal:
-                                    sink.put(Tint.fatal);
-                                    break;
+                                    case critical:
+                                        sink.put(Tint.critical);
+                                        break;
 
-                                case off:
-                                    sink.put(Tint.off);
-                                    break;
+                                    case fatal:
+                                        sink.put(Tint.fatal);
+                                        break;
+
+                                    case off:
+                                        sink.put(Tint.off);
+                                        break;
+                                    }
+                                }
+                                else
+                                {
+                                    sink.put(word);
                                 }
                             }
                             else
@@ -1590,7 +1598,6 @@ T expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" strip
 ///
 unittest
 {
-    import kameloso.terminal.colours : colourByHash;
     import lu.semver;
     import std.conv : text, to;
     import std.format : format;
@@ -1629,7 +1636,6 @@ unittest
             assert((replaced == expected), replaced.to!string);
         }
     }
-
     {
         immutable line = `<i>info</>nothing<c>critical</>nothing\<w>not warning`;
         immutable replaced = line.expandTags(LogLevel.off, No.strip);
@@ -1649,12 +1655,6 @@ unittest
     }
     {
         immutable line = "hello<h>kameloso</>hello";
-        immutable replaced = line.expandTags(LogLevel.off, No.strip);
-        immutable expected = text("hello", colourByHash("kameloso", No.brightTerminal), Tint.off, "hello");
-        assert((replaced == expected), replaced);
-    }
-    {
-        immutable line = "hello<h>kameloso</>hello";
         immutable replaced = line.expandTags(LogLevel.off, Yes.strip);
         immutable expected = "hellokamelosohello";
         assert((replaced == expected), replaced);
@@ -1663,12 +1663,6 @@ unittest
         immutable line = "hello<h></>hello";
         immutable replaced = line.expandTags(LogLevel.off, Yes.strip);
         immutable expected = "hellohello";
-        assert((replaced == expected), replaced);
-    }
-    {
-        immutable line = `hello\<harbl>kameloso<h>hello</>hi`;
-        immutable replaced = line.expandTags(LogLevel.off, No.strip);
-        immutable expected = text("hello<harbl>kameloso", colourByHash("hello", No.brightTerminal), Tint.off, "hi");
         assert((replaced == expected), replaced);
     }
     {
@@ -1723,6 +1717,24 @@ unittest
         immutable origLine = origPattern.format("o", "nickname", "#channel").expandTags(No.strip);
         immutable newLine = newPattern.format("o", "nickname", "#channel").expandTags(LogLevel.all, No.strip);
         assert((origLine == newLine), newLine);
+    }
+
+    version(Colours)
+    {
+        import kameloso.terminal.colours : colourByHash;
+
+        {
+            immutable line = "hello<h>kameloso</>hello";
+            immutable replaced = line.expandTags(LogLevel.off, No.strip);
+            immutable expected = text("hello", colourByHash("kameloso", No.brightTerminal), Tint.off, "hello");
+            assert((replaced == expected), replaced);
+        }
+        {
+            immutable line = `hello\<harbl>kameloso<h>hello</>hi`;
+            immutable replaced = line.expandTags(LogLevel.off, No.strip);
+            immutable expected = text("hello<harbl>kameloso", colourByHash("hello", No.brightTerminal), Tint.off, "hi");
+            assert((replaced == expected), replaced);
+        }
     }
 }
 
