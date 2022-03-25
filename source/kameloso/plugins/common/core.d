@@ -1550,7 +1550,7 @@ mixin template IRCPluginImpl(
 
             foreach (fun; funs)
             {
-                enum uda = getUDAs!(fun, IRCEventHandler)[0];
+                immutable uda = getUDAs!(fun, IRCEventHandler)[0];
 
                 static foreach (immutable command; uda._commands)
                 {{
