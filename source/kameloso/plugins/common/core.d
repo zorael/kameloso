@@ -1283,7 +1283,10 @@ mixin template IRCPluginImpl(
 
         foreach (immutable i, ref symbol; this.tupleof)
         {
-            static if (isSettings!(this.tupleof[i]))
+            static if (
+                is(typeof(this.tupleof[i]) == struct) &&
+                (hasUDA!(this.tupleof[i], Settings) ||
+                    hasUDA!(typeof(this.tupleof[i]), Settings)))
             {
                 if (symbol != typeof(symbol).init)
                 {
@@ -1340,7 +1343,10 @@ mixin template IRCPluginImpl(
 
         foreach (immutable i, ref symbol; this.tupleof)
         {
-            static if (isSettings!(this.tupleof[i]))
+            static if (
+                is(typeof(this.tupleof[i]) == struct) &&
+                (hasUDA!(this.tupleof[i], Settings) ||
+                    hasUDA!(typeof(this.tupleof[i]), Settings)))
             {
                 success = symbol.setMemberByName(setting, value);
                 if (success) break;
@@ -1361,7 +1367,10 @@ mixin template IRCPluginImpl(
 
         foreach (immutable i, const ref symbol; this.tupleof)
         {
-            static if (isSettings!(this.tupleof[i]))
+            static if (
+                is(typeof(this.tupleof[i]) == struct) &&
+                (hasUDA!(this.tupleof[i], Settings) ||
+                    hasUDA!(typeof(this.tupleof[i]), Settings)))
             {
                 import std.typecons : No, Yes;
                 printObject!(No.all)(symbol);
@@ -1399,7 +1408,10 @@ mixin template IRCPluginImpl(
 
         foreach (immutable i, ref symbol; this.tupleof)
         {
-            static if (isSettings!(this.tupleof[i]))
+            static if (
+                is(typeof(this.tupleof[i]) == struct) &&
+                (hasUDA!(this.tupleof[i], Settings) ||
+                    hasUDA!(typeof(this.tupleof[i]), Settings)))
             {
                 import lu.serialisation : serialise;
 
