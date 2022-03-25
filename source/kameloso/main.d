@@ -1572,6 +1572,8 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
     // Clean up processed Fibers
     foreach (expiredFiber; expiredFibers)
     {
+        import core.memory : GC;
+
         foreach (ref fibersByType; plugin.state.awaitingFibers)
         {
             foreach_reverse (immutable i, /*ref*/ fiber; fibersByType)
@@ -1582,6 +1584,9 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
                 {
                     fibersByType = fibersByType.remove!(SwapStrategy.unstable)(i);
                 }
+
+                destroy(fiber);
+                GC.free(&fiber);
             }
         }
     }
@@ -1648,6 +1653,8 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledDelegate`s with an uns
 void processScheduledFibers(IRCPlugin plugin, const long nowInHnsecs)
 in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset timestamp")
 {
+    import core.thread : Fiber;
+
     size_t[] toRemove;
 
     foreach (immutable i, scheduledFiber; plugin.state.scheduledFibers)
@@ -1656,8 +1663,6 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
 
         try
         {
-            import core.thread : Fiber;
-
             if (scheduledFiber.fiber.state == Fiber.State.HOLD)
             {
                 scheduledFiber.fiber.call();
@@ -1668,6 +1673,16 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
             enum pattern = "Exception %s.scheduledFibers[%d]: <l>%s";
             logger.warningf(pattern.expandTags(LogLevel.warning), plugin.name, i, e.msg);
             version(PrintStacktraces) logger.trace(e);
+        }
+        finally
+        {
+            // destroy the Fiber if it has ended
+            if (scheduledFiber.fiber.state == Fiber.State.TERM)
+            {
+                import core.memory : GC;
+                destroy(scheduledFiber.fiber);
+                GC.free(&scheduledFiber.fiber);
+            }
         }
 
         // Always removed a scheduled Fiber after processing
