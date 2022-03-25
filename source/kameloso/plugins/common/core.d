@@ -2850,34 +2850,3 @@ enum Configuration;
     Annotation denoting that a variable enables and disables a plugin.
  +/
 enum Enabler;
-
-
-// isSettings
-/++
-    Aliases itself to `true` if a symbol or the type of a symbol is annotated
-    with [Settings]; `false` if not.
-+/
-template isSettings(alias sym)
-{
-    import std.traits : hasUDA;
-
-    enum isSettings =
-        is(typeof(sym) == struct) &&
-        (hasUDA!(sym, Settings) ||
-            hasUDA!(typeof(sym), Settings));
-}
-
-///
-unittest
-{
-    @Settings struct AnnotatedStruct {}
-    AnnotatedStruct variableOfAnnotated;
-
-    struct NotAnnotatedStruct {}
-    NotAnnotatedStruct variableOfNotAnnotated;
-    @Settings NotAnnotatedStruct annotatedVariableOfNotAnnotated;
-
-    static assert(isSettings!variableOfAnnotated);
-    static assert(!isSettings!variableOfNotAnnotated);
-    static assert(isSettings!annotatedVariableOfNotAnnotated);
-}
