@@ -826,11 +826,13 @@ unittest
             via which to send messages to the server.
         reason = Optionally, the reason for quitting.
         quiet = Whether or not to echo what was sent to the local terminal.
+        caller = String name of the calling function, or something else that gives context.
  +/
 void quit(Flag!"priority" priority = Yes.priority)
     (IRCPluginState state,
     const string reason = string.init,
-    const Flag!"quiet" quiet = No.quiet)
+    const Flag!"quiet" quiet = No.quiet,
+    const string caller = __FUNCTION__)
 {
     static if (priority) import std.concurrency : send = prioritySend;
     import kameloso.thread : ThreadMessage;
@@ -839,6 +841,7 @@ void quit(Flag!"priority" priority = Yes.priority)
 
     m.event.type = IRCEvent.Type.QUIT;
     m.event.content = reason.length ? reason : state.bot.quitReason;
+    m.caller = caller;
     m.properties |= (Message.Property.forced | Message.Property.priority);
 
     if (quiet) m.properties |= Message.Property.quiet;
@@ -863,6 +866,7 @@ unittest
             {
                 assert((type == IRCEvent.Type.QUIT), Enum!(IRCEvent.Type).toString(type));
                 assert((content == "reason"), content);
+                assert(m.caller.length);
                 assert(m.properties & (Message.Property.forced | Message.Property.priority | Message.Property.quiet));
             }
         }

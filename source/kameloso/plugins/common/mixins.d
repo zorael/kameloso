@@ -708,10 +708,12 @@ private:
     /++
         Disconnects from the server, optionally with a quit reason.
      +/
-    void quit(Flag!"priority" priority = No.priority)
-        (const string reason = string.init, const Flag!"quiet" quiet = No.quiet)
+    void quit(Flag!"priority" priority = Yes.priority)
+        (const string reason = string.init,
+        const Flag!"quiet" quiet = No.quiet,
+        const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.quit!priority(state, reason, quiet);
+        return kameloso.messaging.quit!priority(state, reason, quiet, caller);
     }
 
 
