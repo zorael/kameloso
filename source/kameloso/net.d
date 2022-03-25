@@ -326,6 +326,7 @@ public:
 
         Throws:
             [SSLException] if the SSL context could not be set up.
+
             [SSLFileException] if any specified certificate or private key could not be found.
      +/
     void setupSSL() @system

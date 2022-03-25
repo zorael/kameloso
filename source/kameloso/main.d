@@ -233,7 +233,7 @@ void messageFiber(ref Kameloso instance)
         /++
             Handle [kameloso.thread.ThreadMessage]s based on their
             [kameloso.thread.ThreadMessage.Type|Type]s.
-        +/
+         +/
         void onMessage(ThreadMessage message) scope
         {
             with (ThreadMessage.Type)
@@ -1443,8 +1443,6 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
  +/
 void processAwaitingDelegates(IRCPlugin plugin, const ref IRCEvent event)
 {
-    import core.thread : Fiber;
-
     /++
         Handle awaiting delegates of a specified type.
      +/
@@ -1713,7 +1711,6 @@ void processReadyReplays(ref Kameloso instance, IRCPlugin plugin)
     import lu.string : NomException;
     import std.utf : UTFException;
     import core.exception : UnicodeException;
-    import core.memory : GC;
     import core.thread : Fiber;
 
     foreach (immutable i, replay; plugin.state.readyReplays)

@@ -1,10 +1,11 @@
 /++
-    The Pipeline plugin opens a Posix named pipe in the current directory, to
-    which you can pipe text and have it be sent verbatim to the server.
+    The Pipeline plugin opens a Posix named pipe in a temporary directory or
+    the current directory, to which you can pipe text and have it be sent
+    verbatim to the server. There is also syntax to manually send bus messages
+    to plugins.
 
-    It has no commands; indeed, it doesn't listen to
-    [dialect.defs.IRCEvent|IRCEvent]s at all, only to what is sent to it via the
-    named FIFO pipe.
+    It has no commands; it doesn't listen to [dialect.defs.IRCEvent|IRCEvent]s
+    at all, only to what is sent to it via the named FIFO pipe.
 
     This requires version `Posix`, which is true for UNIX-like systems (like
     Linux and macOS).
@@ -79,8 +80,7 @@ public:
             allow being sent between threads.
         filename = String filename of the FIFO to read from.
  +/
-void pipereader(shared IRCPluginState newState,
-    const string filename)
+void pipereader(shared IRCPluginState newState, const string filename)
 in (filename.length, "Tried to set up a pipereader with an empty filename")
 {
     import kameloso.thread : ThreadMessage;

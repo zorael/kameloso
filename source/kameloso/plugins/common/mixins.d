@@ -557,7 +557,8 @@ private:
         Sends a private query message to a user.
      +/
     void query(Flag!"priority" priority = No.priority)
-        (const string nickname, const string content,
+        (const string nickname,
+        const string content,
         const Flag!"quiet" quiet = No.quiet,
         const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
@@ -731,6 +732,7 @@ private:
         return kameloso.messaging.whois!priority(state, nickname, force,
             quiet, background, caller);
     }
+
 
     // raw
     /++

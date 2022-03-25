@@ -6,7 +6,7 @@
 
     It also offers some less debug-y, more administrative functions, like adding
     and removing homes on-the-fly, whitelisting or de-whitelisting account
-    names, adding/removing from the operator list, joining or leaving channels, and such.
+    names, adding/removing from the operator/staff lists, joining or leaving channels, and such.
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#admin
