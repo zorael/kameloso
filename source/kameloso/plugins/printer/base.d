@@ -63,11 +63,11 @@ public:
 
     version(TwitchSupport)
     {
-        /// Whether or not to display Twitch badges next to sender/target names.
-        bool twitchBadges = true;
-
         @Unserialisable
         {
+            /// Whether or not to display Twitch badges next to sender/target names.
+            bool twitchBadges = true;
+
             /// Whether or not to display advanced colours in RRGGBB rather than simple Terminal.
             bool truecolour = true;
 
@@ -92,9 +92,6 @@ public:
     /// Whether or not to filter WHOIS queries.
     bool filterWhois = true;
 
-    /// Whether or not to bell on parsing errors.
-    bool bellOnError = false;
-
     /// Whether or not to hide events from blacklisted users.
     bool hideBlacklistedUsers = false;
 
@@ -104,16 +101,19 @@ public:
     /// Whether or not to log non-home channels.
     bool logGuestChannels = false;
 
-    /// Whether or not to log errors.
-    bool logErrors = true;
-
-    /// Whether or not to log server messages.
-    bool logServer = false;
-
     @Unserialisable
     {
         /// Whether or not to send a terminal bell signal when the bot is mentioned in chat.
         bool bellOnMention = false;
+
+        /// Whether or not to bell on parsing errors.
+        bool bellOnError = false;
+
+        /// Whether or not to log server messages.
+        bool logServer = false;
+
+        /// Whether or not to log errors.
+        bool logErrors = true;
 
         /// Whether or not to log raw events.
         bool logRaw = false;
