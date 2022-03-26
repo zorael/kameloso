@@ -1518,7 +1518,9 @@ T expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" strip
                                 version(Colours)
                                 {
                                     import kameloso.terminal.colours : colourByHash;
-                                    immutable bright = cast(Flag!"brightTerminal")kameloso.common.settings.brightTerminal;
+
+                                    immutable bright =
+                                        cast(Flag!"brightTerminal")kameloso.common.settings.brightTerminal;
                                     sink.put(colourByHash(word, bright));
 
                                     with (LogLevel)
