@@ -1513,9 +1513,9 @@ T expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" strip
                         {
                             immutable word = cast(string)asBytes[i..i+closingHashMarkPos];
 
-                            if (!strip)
+                            version(Colours)
                             {
-                                version(Colours)
+                                if (!strip)
                                 {
                                     import kameloso.terminal.colours : colourByHash;
 
