@@ -1418,86 +1418,90 @@ T expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" strip
 
                     switch (slice[0])
                     {
-                    case 'l':
-                        if (!strip) sink.put(Tint.log);
-                        break;
 
-                    case 'i':
-                        if (!strip) sink.put(Tint.info);
-                        break;
+                    version(Colours)
+                    {
+                        case 'l':
+                            if (!strip) sink.put(Tint.log);
+                            break;
 
-                    case 'w':
-                        if (!strip) sink.put(Tint.warning);
-                        break;
+                        case 'i':
+                            if (!strip) sink.put(Tint.info);
+                            break;
 
-                    case 'e':
-                        if (!strip) sink.put(Tint.error);
-                        break;
+                        case 'w':
+                            if (!strip) sink.put(Tint.warning);
+                            break;
 
-                    case 't':
-                        if (!strip) sink.put(Tint.trace);
-                        break;
+                        case 'e':
+                            if (!strip) sink.put(Tint.error);
+                            break;
 
-                    case 'c':
-                        if (!strip) sink.put(Tint.critical);
-                        break;
+                        case 't':
+                            if (!strip) sink.put(Tint.trace);
+                            break;
 
-                    case 'f':
-                        if (!strip) sink.put(Tint.fatal);
-                        break;
+                        case 'c':
+                            if (!strip) sink.put(Tint.critical);
+                            break;
 
-                    case 'o':
-                        if (!strip) sink.put(Tint.off);
-                        break;
+                        case 'f':
+                            if (!strip) sink.put(Tint.fatal);
+                            break;
 
-                    case '/':
-                        if (!strip)
-                        {
-                            with (LogLevel)
-                            final switch (baseLevel)
+                        case 'o':
+                            if (!strip) sink.put(Tint.off);
+                            break;
+
+                        case '/':
+                            if (!strip)
                             {
-                            case all:  //log
-                                /*if (!strip) sink.put(Tint.log);
-                                break;*/
-                                goto case 'l';
+                                with (LogLevel)
+                                final switch (baseLevel)
+                                {
+                                case all:  //log
+                                    /*if (!strip) sink.put(Tint.log);
+                                    break;*/
+                                    goto case 'l';
 
-                            case trace:
-                                /*if (!strip) sink.put(Tint.trace);
-                                break;*/
-                                goto case 't';
+                                case trace:
+                                    /*if (!strip) sink.put(Tint.trace);
+                                    break;*/
+                                    goto case 't';
 
-                            case info:
-                                /*if (!strip) sink.put(Tint.info);
-                                break;*/
-                                goto case 'i';
+                                case info:
+                                    /*if (!strip) sink.put(Tint.info);
+                                    break;*/
+                                    goto case 'i';
 
-                            case warning:
-                                /*if (!strip) sink.put(Tint.warning);
-                                break;*/
-                                goto case 'w';
+                                case warning:
+                                    /*if (!strip) sink.put(Tint.warning);
+                                    break;*/
+                                    goto case 'w';
 
-                            case error:
-                                /*if (!strip) sink.put(Tint.error);
-                                break;*/
-                                goto case 'e';
+                                case error:
+                                    /*if (!strip) sink.put(Tint.error);
+                                    break;*/
+                                    goto case 'e';
 
-                            case critical:
-                                /*if (!strip) sink.put(Tint.critical);
-                                break;*/
-                                goto case 'c';
+                                case critical:
+                                    /*if (!strip) sink.put(Tint.critical);
+                                    break;*/
+                                    goto case 'c';
 
-                            case fatal:
-                                /*if (!strip) sink.put(Tint.fatal);
-                                break;*/
-                                goto case 'f';
+                                case fatal:
+                                    /*if (!strip) sink.put(Tint.fatal);
+                                    break;*/
+                                    goto case 'f';
 
-                            case off:
-                                /*if (!strip) sink.put(Tint.off);
-                                break;*/
-                                goto case 'o';
+                                case off:
+                                    /*if (!strip) sink.put(Tint.off);
+                                    break;*/
+                                    goto case 'o';
+                                }
                             }
-                        }
-                        break;
+                            break;
+                    }
 
                     case 'h':
                         i += 3;  // advance past "<h>".length
