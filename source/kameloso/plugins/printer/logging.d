@@ -609,77 +609,93 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
 
 // escapedPath
 /++
-    Replaces some characters in a string that don't translate well to paths.
+    Replaces some invalid filenames to something that can be stored on the filesystem.
 
-    This is platform-specific, as Windows uses backslashes as directory
-    separators and percentages for environment variables, whereas Posix uses
-    forward slashes and dollar signs.
-
-    Bugs:
-        Escaped paths can collide with real files named what the original path
-        was escaped to. "%PATH%" may as such collide with "_PATH_", as the
-        former was escaped to an already valid filename.
+    This is really only a problem on Windows, as the Posix
+    [std.path.dirSeparator|dirSeparator] is not a valid IRC character, nor does
+    it have special legacy filenames like `NUL` and `CON`.
 
     Params:
         path = A filesystem path in string form.
 
     Returns:
-        The passed path with some characters replaced.
+        The passed path with some characters potentially added or replaced.
+        The original string is returned as-was if nothing no changes were needed.
  +/
-auto escapedPath(const string path)
+auto escapedPath(/*const*/ string path)
 {
-    import std.array : replace;
-
-    // Replace some characters that don't translate well to paths.
     version(Windows)
     {
+        import std.algorithm.comparison : among;
+        import std.array : replace;
+        import std.uni : toUpper;
+
+        // Tilde is not a valid IRC nickname character, so it's safe to use as placeholder
+        enum replacementCharacter = '~';
+        enum alternateReplacementCharacter = ')';
+
+        if (path.toUpper.among!("CON", "PRN", "AUX", "NUL", "COM1", "COM2",
+            "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1",
+            "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"))
+        {
+            path ~= replacementCharacter;
+        }
+
         return path
-            .replace("\\", "_")
-            .replace("%", "_");
+            .replace('\\', replacementCharacter)
+            .replace('|', alternateReplacementCharacter);  // Don't collide
     }
-    else /*version(Posix)*/
+    else
     {
-        return path
-            .replace("/", "_")
-            .replace("$", "_")
-            .replace("{", "_")
-            .replace("}", "_");
+        return path;
     }
 }
 
 ///
 unittest
 {
-    {
-        immutable before = escapedPath("unchanged");
-        immutable after = "unchanged";
-        assert((before == after), after);
-    }
-
     version(Windows)
     {
         {
-            immutable before = escapedPath("a\\b");
-            immutable after = "a_b";
-            assert((before == after), after);
+            immutable before = "a\\b";
+            immutable after = escapedPath(before);
+            immutable expected = "a_b";
+            assert((after == expected), after);
         }
         {
-            immutable before = escapedPath("a%PATH%b");
-            immutable after = "a_PATH_b";
-            assert((before == after), after);
+            immutable before = "CON";
+            immutable after = escapedPath(before);
+            immutable expected = "CON~";
+            assert((after == expected), after);
+        }
+        {
+            immutable before = "NUL";
+            immutable after = escapedPath(before);
+            immutable expected = "NUL~";
+            assert((after == expected), after);
+        }
+        {
+            immutable before = "aUx";
+            immutable after = escapedPath(before);
+            immutable expected = "auX~";
+            assert((after == expected), after);
+        }
+        {
+            immutable before = "con-";
+            immutable after = escapedPath(before);
+            assert((after is before), after);
+        }
+        {
+            immutable before = "con|";
+            immutable after = escapedPath(before);
+            immutable expected = "con~";
+            assert((after == expected), after);
         }
     }
     else /*version(Posix)*/
     {
-        {
-            immutable before = escapedPath("a/b");
-            immutable after = "a_b";
-            assert((before == after), after);
-        }
-        {
-            immutable before = escapedPath("a${PATH}b");
-            immutable after = "a__PATH_b";
-            assert((before == after), after);
-        }
+        immutable before = "passthrough";
+        immutable after = escapedPath(before);
+        assert((after is before), after);
     }
 }
