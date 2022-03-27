@@ -329,9 +329,7 @@ void queryTwitchImpl(const string url,
 
     if (response.errorCode != CurlError.ok)
     {
-        import std.string : fromStringz;
-        import etc.c.curl : curl_easy_strerror;
-        response.error = fromStringz(curl_easy_strerror(response.errorCode)).idup;
+        response.error = "cURL error";
     }
 
     immutable post = Clock.currTime;

@@ -237,12 +237,9 @@ void worker(shared IRCPluginState sState,
         if (!sink.data.length && (errorCode != CurlError.ok))
         {
             import kameloso.common : curlErrorStrings;
-            import std.string : fromStringz;
-            import etc.c.curl : curl_easy_strerror;
 
-            enum pattern = "Chatbot got cURL error <l>%s</> (<l>%d</>) when fetching <l>%s</>: <l>%s";
-            immutable message = pattern.format(curlErrorStrings[errorCode],
-                errorCode, url, fromStringz(curl_easy_strerror(errorCode)));
+            enum pattern = "Chatbot got cURL error <l>%s</> (<l>%d</>) when fetching <l>%s</>";
+            immutable message = pattern.format(curlErrorStrings[errorCode], errorCode, url);
             askToError(state, message);
             return;
         }

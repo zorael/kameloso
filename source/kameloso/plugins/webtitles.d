@@ -472,10 +472,8 @@ TitleLookupResults lookupTitle(const string url, const Flag!"descriptions" descr
     {
         if (errorCode != CurlError.ok)
         {
-            import std.string : fromStringz;
-            import etc.c.curl : curl_easy_strerror;
-            immutable message = fromStringz(curl_easy_strerror(errorCode)).idup;
-            throw new TitleFetchException(message, url, client.statusLine.code, errorCode);
+            throw new TitleFetchException("Failed to fetch webpage title",
+                url, client.statusLine.code, errorCode);
         }
         else
         {
@@ -681,10 +679,8 @@ JSONValue getYouTubeInfo(const string url)
 
     if (errorCode != CurlError.ok)
     {
-        import std.string : fromStringz;
-        import etc.c.curl : curl_easy_strerror;
-        immutable message = fromStringz(curl_easy_strerror(errorCode)).idup;
-        throw new TitleFetchException(message, url, client.statusLine.code, errorCode);
+        throw new TitleFetchException("Failed to fetch YouTube video information",
+            url, client.statusLine.code, errorCode);
     }
 
     if (sink.data == "Not Found")
