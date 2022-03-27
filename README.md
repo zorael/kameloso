@@ -98,7 +98,9 @@ The package manager [**dub**](https://code.dlang.org) is used to facilitate comp
 
 ### SSL libraries
 
-**kameloso** uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard SSL library in the Posix sphere (Linux, macOS, ...), but not so on Windows. If you run into errors about missing libraries when connecting on Windows, download and install **Win64/32 OpenSSL v3.0.x Light** from [here](https://slproweb.com/products/Win32OpenSSL.html), and opt to install to system directories when asked. It's a one-time thing. (The alternative is to just use non-SSL connections.)
+**kameloso** uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard SSL library in the Posix sphere (Linux, macOS, ...), but not so on Windows. If you run into errors about not being able to *"complete call to TLS_method"* when connecting on Windows, download and install **Win64/32 OpenSSL v3.0.x Light** from [here](https://slproweb.com/products/Win32OpenSSL.html), and opt to install to system directories when asked.
+
+> An alternative is to use any one of **Git for Windows** (Bash shell), **MinGW64**, **MSYS2**, **Cygwin** and **Windows Subsystem for Linux**, which all either include said libraries or at the very least offer the ability to install them. Or just limit yourself to non-SSL connections.
 
 ## Downloading
 
@@ -366,7 +368,7 @@ If you still can't find what you're looking for, or if you have suggestions on h
 
 ## Windows
 
-If you run into errors about missing libraries when connecting on Windows, download and install **Win64/32 OpenSSL v3.0.x Light** from [here](https://slproweb.com/products/Win32OpenSSL.html), and opt to install to system directories when asked.
+See [the SSL libraries section](#ssl-libraries) for information about installing the libraries needed to make encrypted connections.
 
 Even with SSL seemingly properly set up you may see errors of *"Peer certificates cannot be authenticated with given CA certificates"*, particularly on older versions of Windows. If this happens, download this [`cacert.pem`](https://curl.haxx.se/ca/cacert.pem) file, place it somewhere reasonable, and edit your configuration file to point to it; `caBundleFile` under `[Connection]`.
 
