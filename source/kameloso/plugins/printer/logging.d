@@ -677,7 +677,7 @@ unittest
         {
             immutable before = "aUx";
             immutable after = escapedPath(before);
-            immutable expected = "auX~";
+            immutable expected = "aUx~";
             assert((after == expected), after);
         }
         {
