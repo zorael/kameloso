@@ -912,10 +912,11 @@ in (nickname.length, caller ~ " tried to WHOIS but no nickname was given")
 
     version(TraceWhois)
     {
-        import std.stdio : writefln;
+        import std.stdio : stdout, writefln;
         writefln("[TraceWhois] messaging.whois caught request to WHOIS \"%s\" " ~
             "from %s (priority:%s force:%s, quiet:%s, background:%s)",
             nickname, caller, cast(bool)priority, force, quiet, background);
+        if (state.settings.flush) stdout.flush();
     }
 
     state.mainThread.send(m);

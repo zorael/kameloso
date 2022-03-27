@@ -1144,11 +1144,12 @@ void listHostmaskDefinitions(AdminPlugin plugin, const ref IRCEvent event)
         if (event == IRCEvent.init)
         {
             import std.json : JSONValue;
-            import std.stdio : writeln;
+            import std.stdio : stdout, writeln;
 
             logger.log("Current hostmasks:");
             // json can contain the example placeholder, so make a new one out of aa
             writeln(JSONValue(aa).toPrettyString);
+            if (plugin.state.settings.flush) stdout.flush();
         }
         else
         {

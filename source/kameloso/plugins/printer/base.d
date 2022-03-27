@@ -391,7 +391,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         import kameloso.terminal : TerminalToken;
         import lu.string : strippedRight;
         import std.array : replace;
-        import std.stdio : writeln;
+        import std.stdio : stdout, writeln;
 
         // Strip bells so we don't get phantom noise
         // Strip right to get rid of trailing whitespace
@@ -426,6 +426,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         }
 
         writeln(plugin.linebuffer.data);
+        if (plugin.state.settings.flush) stdout.flush();
         break;
     }
 }

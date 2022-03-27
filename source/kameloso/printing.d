@@ -143,13 +143,13 @@ unittest
             Also those annotated [lu.uda.Hidden|Hidden].
         things = Variadic list of aggregate objects to enumerate.
  +/
-void printObjects(Flag!"all" all = No.all, Things...)(auto ref Things things)
+void printObjects(Flag!"all" all = No.all, Things...)(auto ref Things things) @trusted // for stdout.flush()
 if ((Things.length > 0) && allSatisfy!(isAggregateType, Things))
 {
     static import kameloso.common;
     import kameloso.constants : BufferSize;
     import std.array : Appender;
-    import std.stdio : writeln;
+    import std.stdio : stdout, writeln;
 
     alias widths = Widths!(all, Things);
 
@@ -194,6 +194,7 @@ if ((Things.length > 0) && allSatisfy!(isAggregateType, Things))
     }
 
     writeln(outbuffer.data);
+    if (kameloso.common.settings.flush) stdout.flush();
 }
 
 

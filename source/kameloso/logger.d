@@ -109,6 +109,7 @@ private:
     bool monochrome;  /// Whether to use colours or not in logger output.
     bool brightTerminal;  /// Whether or not to use colours for a bright background.
     bool headless;  /// Whether or not to disable all terminal output.
+    bool flush;  /// Whether or not to flush standard out after writing to it.
 
 public:
     /++
@@ -118,15 +119,18 @@ public:
             monochrome = Whether or not to print colours.
             brightTerminal = Bright terminal setting.
             headless = Headless setting.
+            flush = Flush setting.
      +/
     this(const Flag!"monochrome" monochrome,
         const Flag!"brightTerminal" brightTerminal,
-        const Flag!"headless" headless) pure nothrow @safe
+        const Flag!"headless" headless,
+        const Flag!"flush" flush) pure nothrow @safe
     {
         linebuffer.reserve(linebufferInitialSize);
         this.monochrome = monochrome;
         this.brightTerminal = brightTerminal;
         this.headless = headless;
+        this.flush = flush;
     }
 
 
@@ -279,9 +283,9 @@ public:
     /++
         Outputs the tail of a logger message.
      +/
-    private void finishLogMsg() @safe
+    private void finishLogMsg() @trusted  // writeln trusts stdout.flush, so we should be able to too
     {
-        import std.stdio : writeln;
+        import std.stdio : stdout, writeln;
 
         if (headless) return;
 
@@ -295,6 +299,7 @@ public:
         }
 
         writeln(linebuffer.data);
+        if (flush) stdout.flush();
         linebuffer.clear();
     }
 
@@ -533,7 +538,7 @@ unittest
         }
     }
 
-    auto log_ = new KamelosoLogger(Yes.monochrome, No.brightTerminal, No.headless);
+    auto log_ = new KamelosoLogger(Yes.monochrome, No.brightTerminal, No.headless, Yes.flush);
 
     log_.logf!"log: %s"("log");
     log_.infof!"log: %s"("info");
@@ -546,7 +551,7 @@ unittest
 
     version(Colours)
     {
-        log_ = new KamelosoLogger(No.monochrome, Yes.brightTerminal, No.headless);
+        log_ = new KamelosoLogger(No.monochrome, Yes.brightTerminal, No.headless, Yes.flush);
 
         log_.log("log: log");
         log_.info("log: info");
@@ -557,7 +562,7 @@ unittest
         log_.trace("log: trace");
         log_.off("log: off");
 
-        log_ = new KamelosoLogger(No.monochrome, No.brightTerminal, No.headless);
+        log_ = new KamelosoLogger(No.monochrome, No.brightTerminal, No.headless, Yes.flush);
 
         log_.log("log: log");
         log_.info("log: info");

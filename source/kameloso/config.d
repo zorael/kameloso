@@ -21,6 +21,7 @@ import kameloso.logger : LogLevel;
 import dialect.defs : IRCClient, IRCServer;
 import lu.common : Next;
 import std.getopt : GetoptResult;
+import std.stdio : stdout;
 import std.typecons : Flag, No, Yes;
 
 @safe:
@@ -97,6 +98,7 @@ void writeConfig(ref Kameloso instance,
     {
         printVersionInfo();
         writeln();
+        if (instance.settings.flush) stdout.flush();
     }
 
     // If we don't initialise the plugins there'll be no plugins array
@@ -148,6 +150,8 @@ void printSettings(ref Kameloso instance, const string[] customSettings) @system
     instance.initPlugins(customSettings);
 
     foreach (plugin; instance.plugins) plugin.printSettings();
+
+    if (instance.settings.flush) stdout.flush();
 }
 
 
@@ -757,7 +761,8 @@ Next handleGetopt(ref Kameloso instance,
         initLogger(
             cast(Flag!"monochrome")settings.monochrome,
             cast(Flag!"brightTerminal")settings.brightTerminal,
-            cast(Flag!"headless")settings.headless);
+            cast(Flag!"headless")settings.headless,
+            cast(Flag!"flush")settings.flush);
 
         // Manually override or append channels, depending on `shouldAppendChannels`
         if (shouldAppendToArrays)
@@ -822,7 +827,13 @@ Next handleGetopt(ref Kameloso instance,
             // --help|-h was passed, show the help table and quit
             // It's okay to reuse args, it's probably empty save for arg0
             // and we just want the help listing
-            if (!settings.headless) printHelp(callGetopt(args, No.quiet));
+
+            if (!settings.headless)
+            {
+                printHelp(callGetopt(args, No.quiet));
+                if (settings.flush) stdout.flush();
+            }
+
             return Next.returnSuccess;
         }
 
