@@ -659,7 +659,7 @@ unittest
         {
             immutable before = "a\\b";
             immutable after = escapedPath(before);
-            immutable expected = "a_b";
+            immutable expected = "a~b";
             assert((after == expected), after);
         }
         {
