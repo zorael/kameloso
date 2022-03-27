@@ -688,7 +688,7 @@ unittest
         {
             immutable before = "con|";
             immutable after = escapedPath(before);
-            immutable expected = "con~";
+            immutable expected = "con)";
             assert((after == expected), after);
         }
     }
