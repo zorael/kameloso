@@ -166,7 +166,8 @@ void ensureAppropriateBuffering(const Flag!"override_" override_ = No.override_)
     switch (currentPlatform)
     {
     case "Cygwin":  // No longer seems to need this?
-    case "vscode":
+    case "vscode":  // Now identifies itself as just "linux"
+    case "Msys":
         return setLineBufferingMode();
 
     default:
