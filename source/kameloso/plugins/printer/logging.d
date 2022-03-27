@@ -458,13 +458,12 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
     ---
 
     Params:
-        plugin = The current [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin].
         logLocation = String of the location directory we want to store logs in.
 
     Returns:
         A bool whether or not the log location is valid.
  +/
-bool establishLogLocation(PrinterPlugin plugin, const string logLocation)
+bool establishLogLocation(const string logLocation)
 {
     import kameloso.common : Tint;
     import std.file : exists, isDir;
@@ -473,11 +472,13 @@ bool establishLogLocation(PrinterPlugin plugin, const string logLocation)
     {
         if (logLocation.isDir) return true;
 
-        if (!plugin.naggedAboutDir)
+        static bool naggedAboutDir;
+
+        if (!naggedAboutDir)
         {
             enum pattern = "Specified log directory (<l>%s</>) is not a directory.";
             logger.warningf(pattern.expandTags(LogLevel.warning), logLocation);
-            plugin.naggedAboutDir = true;
+            naggedAboutDir = true;
         }
 
         return false;

@@ -496,13 +496,15 @@ void onISUPPORT(PrinterPlugin plugin)
     import kameloso.logger : LogLevel;
     import lu.conv : Enum;
 
-    if (plugin.printedISUPPORT || !plugin.state.server.network.length)
+    static bool printedISUPPORT;
+
+    if (printedISUPPORT || !plugin.state.server.network.length)
     {
         // We already printed this information, or we haven't yet seen NETWORK
         return;
     }
 
-    plugin.printedISUPPORT = true;
+    printedISUPPORT = true;
 
     enum pattern = "Detected <i>%s</> running daemon <i>%s</> (<i>%s</>)";
     logger.logf(pattern.expandTags(LogLevel.all),
@@ -609,7 +611,7 @@ void initResources(PrinterPlugin plugin)
 {
     if (!plugin.printerSettings.logs) return;
 
-    if (!plugin.establishLogLocation(plugin.logDirectory))
+    if (!establishLogLocation(plugin.logDirectory))
     {
         import kameloso.plugins.common.misc : IRCPluginInitialisationException;
         throw new IRCPluginInitialisationException("Could not create log directory");
@@ -838,12 +840,6 @@ package:
 
     /// Whether or not at least one squelch is active; whether [squelches] is non-empty.
     bool hasSquelches;
-
-    /// Whether or not we have nagged about an invalid log directory.
-    bool naggedAboutDir;
-
-    /// Whether or not we have printed daemon-network information.
-    bool printedISUPPORT;
 
     /// Buffers, to clump log file writes together.
     LogLineBuffer[string] buffers;
