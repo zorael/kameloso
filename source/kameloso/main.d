@@ -2110,13 +2110,13 @@ Next tryConnect(ref Kameloso instance)
                 version(Posix)
                 {
                     import kameloso.common : errnoStrings;
-                    enum pattern = "Connection failed with <l>%s</>: <l>%s";
+                    enum pattern = "Connection failed with <l>%s</>: <t>%s";
                     logger.warningf(pattern.expandTags(LogLevel.warning),
                         errnoStrings[attempt.errno], errorString);
                 }
                 else version(Windows)
                 {
-                    enum pattern = "Connection failed with error <l>%d</>: <l>%s";
+                    enum pattern = "Connection failed with error <l>%d</>: <t>%s";
                     logger.warningf(pattern.expandTags(LogLevel.warning), attempt.errno, errorString);
                 }
             }
@@ -2140,12 +2140,12 @@ Next tryConnect(ref Kameloso instance)
             version(Posix)
             {
                 import kameloso.common : errnoStrings;
-                enum pattern = "IPv6 connection failed with <l>%s</>: <l>%s";
+                enum pattern = "IPv6 connection failed with <l>%s</>: <t>%s";
                 logger.warningf(pattern.expandTags(LogLevel.warning), errnoStrings[attempt.errno], errorString);
             }
             else version(Windows)
             {
-                enum pattern = "IPv6 connection failed with error <l>%d</>: <l>%s";
+                enum pattern = "IPv6 connection failed with error <l>%d</>: <t>%s";
                 logger.warningf(pattern.expandTags(LogLevel.warning), attempt.errno, errorString);
             }
             else
