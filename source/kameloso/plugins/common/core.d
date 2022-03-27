@@ -698,6 +698,7 @@ mixin template IRCPluginImpl(
             {
                 writeln("-- ", funName, " @ ", Enum!(IRCEvent.Type).toString(event.type));
                 writeln("   ...", Enum!ChannelPolicy.toString(uda._channelPolicy));
+                if (state.settings.flush) stdout.flush();
             }
 
             if (event.channel.length)
@@ -722,6 +723,7 @@ mixin template IRCPluginImpl(
                     static if (verbose)
                     {
                         writeln("   ...ignore non-matching channel ", event.channel);
+                        if (state.settings.flush) stdout.flush();
                     }
 
                     // channel policy does not match
@@ -775,6 +777,7 @@ mixin template IRCPluginImpl(
                         static if (verbose)
                         {
                             writeln("   ...policy doesn't match; continue next Command");
+                            if (state.settings.flush) stdout.flush();
                         }
 
                         policyMismatch = true;
@@ -800,6 +803,7 @@ mixin template IRCPluginImpl(
                             static if (verbose)
                             {
                                 writeln("   ...command matches!");
+                                if (state.settings.flush) stdout.flush();
                             }
 
                             event.aux = thisCommand;
@@ -823,6 +827,7 @@ mixin template IRCPluginImpl(
                     static if (verbose)
                     {
                         writeln("   ...Regex: `", regex._expression, "`");
+                        if (state.settings.flush) stdout.flush();
                     }
 
                     bool policyMismatch;
@@ -833,6 +838,7 @@ mixin template IRCPluginImpl(
                         static if (verbose)
                         {
                             writeln("   ...policy doesn't match; continue next Regex");
+                            if (state.settings.flush) stdout.flush();
                         }
 
                         policyMismatch = true;
@@ -855,6 +861,7 @@ mixin template IRCPluginImpl(
                                 static if (verbose)
                                 {
                                     writeln("   ...expression matches!");
+                                    if (state.settings.flush) stdout.flush();
                                 }
 
                                 event.aux = hits[0];
@@ -867,6 +874,7 @@ mixin template IRCPluginImpl(
                                 {
                                     writefln(`   ...matching "%s" against expression "%s" failed.`,
                                         event.content, regex._expression);
+                                    if (state.settings.flush) stdout.flush();
                                 }
                             }
                         }
@@ -876,6 +884,7 @@ mixin template IRCPluginImpl(
                             {
                                 writeln("   ...Regex exception: ", e.msg);
                                 version(PrintStacktraces) writeln(e);
+                                if (state.settings.flush) stdout.flush();
                             }
                         }
                     }
@@ -890,6 +899,7 @@ mixin template IRCPluginImpl(
                     static if (verbose)
                     {
                         writeln("   ...no Command nor Regex match; continue funloop");
+                        if (state.settings.flush) stdout.flush();
                     }
 
                     return NextStep.continue_; // next function
@@ -902,6 +912,7 @@ mixin template IRCPluginImpl(
                 {
                     writeln("   ...Permissions.",
                         Enum!Permissions.toString(uda._permissionsRequired));
+                    if (state.settings.flush) stdout.flush();
                 }
 
                 immutable result = this.allow(event, uda._permissionsRequired);
@@ -909,6 +920,7 @@ mixin template IRCPluginImpl(
                 static if (verbose)
                 {
                     writeln("   ...allow result is ", Enum!FilterResult.toString(result));
+                    if (state.settings.flush) stdout.flush();
                 }
 
                 if (result == FilterResult.pass)
@@ -924,6 +936,7 @@ mixin template IRCPluginImpl(
                     static if (verbose)
                     {
                         writefln("   ...%s WHOIS", typeof(this).stringof);
+                        if (state.settings.flush) stdout.flush();
                     }
 
                     static if (
@@ -955,6 +968,7 @@ mixin template IRCPluginImpl(
             static if (verbose)
             {
                 writeln("   ...calling!");
+                if (state.settings.flush) stdout.flush();
             }
 
             call(fun, event);

@@ -18,6 +18,7 @@ import kameloso.logger : LogLevel;
 import kameloso.plugins.common.core : IRCPlugin, Replay;
 import dialect.defs;
 import lu.common : Next;
+import std.stdio : stdout;
 import std.typecons : Flag, No, Yes;
 
 
@@ -330,6 +331,7 @@ void messageFiber(ref Kameloso instance)
                 enum pattern = "onMessage received unexpected message type: <l>%s";
                 logger.errorf(pattern.expandTags(LogLevel.error), message.type);
                 writeln(message);
+                if (instance.settings.flush) stdout.flush();
                 break;
             }
         }
@@ -570,6 +572,11 @@ void messageFiber(ref Kameloso instance)
                         writefln(" ...but already issued %d seconds ago.", (now - then));
                     }
                 }
+
+                version(TraceWhois)
+                {
+                    if (instance.settings.flush) stdout.flush();
+                }
                 break;
 
             case QUIT:
@@ -655,6 +662,7 @@ void messageFiber(ref Kameloso instance)
             case writeln:
                 import std.stdio : writeln;
                 writeln(request.line.expandTags(LogLevel.off));
+                if (instance.settings.flush) stdout.flush();
                 break;
 
             case trace:
@@ -1192,6 +1200,8 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
                 writefln("%3d: '%c'", c, cast(char)c);
             }
         }
+
+        if (instance.settings.flush) stdout.flush();
     }
 
     try
@@ -1848,6 +1858,11 @@ void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
                     writefln(" ...but already issued %d seconds ago.", (now - lastWhois));
                 }
             }
+        }
+
+        version(TraceWhois)
+        {
+            if (instance.settings.flush) stdout.flush();
         }
     }
 }
@@ -2909,7 +2924,8 @@ int run(string[] args)
     initLogger(
         cast(Flag!"monochrome")instance.settings.monochrome,
         cast(Flag!"brightTerminal")instance.settings.brightTerminal,
-        cast(Flag!"headless")instance.settings.headless);
+        cast(Flag!"headless")instance.settings.headless,
+        cast(Flag!"flush")instance.settings.flush);
 
     // Set up signal handling so that we can gracefully catch Ctrl+C.
     setupSignals();
@@ -2975,6 +2991,10 @@ int run(string[] args)
 
         if (!instance.settings.force) return ShellReturnValue.terminalSetupFailure;
     }
+    finally
+    {
+        if (instance.settings.flush) stdout.flush();
+    }
 
     // Apply some defaults to empty members, as stored in `kameloso.constants`.
     // It's done before in tryGetopt but do it again to ensure we don't have an empty nick etc
@@ -3009,6 +3029,7 @@ int run(string[] args)
     {
         printVersionInfo();
         writeln();
+        if (instance.settings.flush) stdout.flush();
 
         // Print the current settings to show what's going on.
         IRCClient prettyClient = instance.parser.client;

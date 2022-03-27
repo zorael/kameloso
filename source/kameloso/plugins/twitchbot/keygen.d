@@ -63,6 +63,7 @@ instructions and log in to authorise the use of this program with your account.
   disable it for this to work.
 `;
     writeln(attemptToOpenPattern.expandTags);
+    if (plugin.state.settings.flush) stdout.flush();
 
     static immutable scopes =
     [
@@ -164,6 +165,7 @@ instructions and log in to authorise the use of this program with your account.
 <i>8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<</>
 `;
         writefln(copyPastePattern.expandTags, url);
+        if (plugin.state.settings.flush) stdout.flush();
     }
 
     if (plugin.state.settings.force)
@@ -245,6 +247,11 @@ instructions and log in to authorise the use of this program with your account.
     {
         import std.stdio : writef;
 
+        scope(exit)
+        {
+            if (plugin.state.settings.flush) stdout.flush();
+        }
+
         enum pattern = "<l>Paste the address of the page you were redirected to here (empty line exits):</>
 
 > ";
@@ -322,6 +329,7 @@ It should be entered as <i>pass</> under <i>[IRCBot]</>.
         {
             enum keyAddPattern = "\n* Make sure to add it to <i>%s</>, then.";
             writefln(keyAddPattern.expandTags(LogLevel.off), plugin.state.settings.configFile);
+            if (plugin.state.settings.flush) stdout.flush();
         }
     }
 
@@ -336,4 +344,5 @@ just work. If it doesn't, please file an issue at:
 <l>Note: keys are valid for 60 days, after which this process needs to be repeated.</>
 ";
     writeln(issuePattern.expandTags(LogLevel.off));
+    if (plugin.state.settings.flush) stdout.flush();
 }

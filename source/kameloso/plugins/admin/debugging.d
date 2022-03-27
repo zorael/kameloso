@@ -20,6 +20,7 @@ import kameloso.plugins.admin.base : AdminPlugin;
 
 import kameloso.messaging;
 import dialect.defs;
+import std.stdio : stdout;
 import std.typecons : Flag, No, Yes;
 
 package:
@@ -55,6 +56,8 @@ void onAnyEventImpl(AdminPlugin plugin, const ref IRCEvent event)
             writefln("[%d] %s : %03d", i, cast(char)c, c);
         }
     }
+
+    if (plugin.state.settings.flush) stdout.flush();
 }
 
 
@@ -105,6 +108,7 @@ void onCommandShowUsersImpl(AdminPlugin plugin)
     }
 
     writeln(plugin.state.users.length, " users.");
+    if (plugin.state.settings.flush) stdout.flush();
 }
 
 
@@ -190,6 +194,8 @@ void onCommandStatusImpl(AdminPlugin plugin)
         writeln(nickname);
         printObject(user);
     }*/
+
+    if (plugin.state.settings.flush) stdout.flush();
 }
 
 
@@ -233,4 +239,6 @@ void onCommandBusImpl(AdminPlugin plugin, const string input)
 
         plugin.state.mainThread.send(ThreadMessage.busMessage(header, sendable(slice)));
     }
+
+    if (plugin.state.settings.flush) stdout.flush();
 }
