@@ -138,7 +138,7 @@ else
     Ensures select non-TTY environments (like Cygwin) are line-buffered.
 
     Params:
-        flush = Reference to Flush bool
+        flush = Reference to the [kameloso.kameloso.CoreSettings.flush|CoreSettings.flush] bool.
  +/
 void ensureAppropriateBuffering(ref bool flush) @system
 {
