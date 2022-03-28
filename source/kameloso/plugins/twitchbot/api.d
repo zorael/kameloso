@@ -291,7 +291,7 @@ void queryTwitchImpl(
     const string caBundleFile)
 {
     import kameloso.constants : KamelosoInfo;
-    import requests : Request;
+    import requests : Response, Request;
     import std.datetime.systime : Clock;
     import std.exception : assumeUnique;
     import core.time : seconds;
@@ -316,19 +316,37 @@ void queryTwitchImpl(
     req.addHeaders(headers);
     if (caBundleFile.length) req.sslSetCaCert(caBundleFile);
     req.timeout = timeout.seconds;
-    req.keepAlive = true;  // wise?
+    req.keepAlive = false;
 
     QueryResponse response;
     immutable pre = Clock.currTime;
+    Response res;
 
-    auto res = req.get(url);
+    try
+    {
+        res = req.get(url);
+    }
+    catch (Exception e)
+    {
+        if (e.msg == "can't complete call to TLS_method")
+        {
+            response.error = "Failed to set up an SSL context";
+        }
+        else
+        {
+            response.error = e.msg;
+        }
+    }
 
     immutable post = Clock.currTime;
     immutable delta = (post - pre);
-
-    response.code = res.code;
     response.msecs = delta.total!"msecs";
-    response.str = assumeUnique(cast(char[])res.responseBody.data);
+
+    if (!response.error.length)
+    {
+        response.code = res.code;
+        response.str = assumeUnique(cast(char[])res.responseBody.data);
+    }
 
     synchronized //()
     {
