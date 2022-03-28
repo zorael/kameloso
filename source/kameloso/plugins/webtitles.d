@@ -305,26 +305,34 @@ void worker(shared TitleLookupRequest sRequest,
                 {
                     // Simply failed to fetch
                     enum pattern = "Webtitles worker saw HTTP <l>%d</>.";
-                    request.state.askToWarn(pattern.format(e.code));
+                    request.state.askToError(pattern.format(e.code));
                 }
                 else
                 {
-                    request.state.askToWarn("Error fetching YouTube video information: <l>" ~ e.msg);
+                    request.state.askToError("Error fetching YouTube video information: <l>" ~ e.msg);
                     //version(PrintStacktraces) request.state.askToTrace(e.info);
                     // Drop down
                 }
             }
             catch (JSONException e)
             {
-                request.state.askToWarn("Failed to parse YouTube video information: <l>" ~ e.msg);
+                request.state.askToError("Failed to parse YouTube video information: <l>" ~ e.msg);
                 //version(PrintStacktraces) request.state.askToTrace(e.info);
                 // Drop down
             }
             catch (Exception e)
             {
-                request.state.askToError("Unexpected exception fetching YouTube video information: <l>" ~ e.msg);
-                version(PrintStacktraces) request.state.askToTrace(e.toString);
-                // Drop down
+                if (e.msg == "ssl connect failed: certificate verify failed")
+                {
+                    request.state.askToError("Failed to fetch YouTube video information: <l>" ~ e.msg);
+                    return;
+                }
+                else
+                {
+                    request.state.askToError("Unexpected exception fetching YouTube video information: <l>" ~ e.msg);
+                    version(PrintStacktraces) request.state.askToTrace(e.toString);
+                    // Drop down
+                }
             }
         }
         else
@@ -392,8 +400,15 @@ void worker(shared TitleLookupRequest sRequest,
             }
             catch (Exception e)
             {
-                request.state.askToWarn("Webtitles saw unexpected exception: <l>" ~ e.msg);
-                version(PrintStacktraces) request.state.askToTrace(e.toString);
+                if (e.msg == "ssl connect failed: certificate verify failed")
+                {
+                    request.state.askToError("Failed to fetch webpage title: <l>" ~ e.msg);
+                }
+                else
+                {
+                    request.state.askToWarn("Webtitles saw unexpected exception: <l>" ~ e.msg);
+                    version(PrintStacktraces) request.state.askToTrace(e.toString);
+                }
             }
 
             // Dropped down; end foreach by returning
