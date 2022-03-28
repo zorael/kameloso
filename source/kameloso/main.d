@@ -1579,6 +1579,9 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
     {
         import core.memory : GC;
 
+        // Detect duplicates that were already destroyed and skip
+        if (!expiredFiber) continue;
+
         foreach (ref fibersByType; plugin.state.awaitingFibers)
         {
             foreach_reverse (immutable i, /*ref*/ fiber; fibersByType)
@@ -1589,11 +1592,11 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
                 {
                     fibersByType = fibersByType.remove!(SwapStrategy.unstable)(i);
                 }
-
-                destroy(fiber);
-                GC.free(&fiber);
             }
         }
+
+        destroy(expiredFiber);
+        GC.free(&expiredFiber);
     }
 }
 
