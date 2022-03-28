@@ -1535,6 +1535,12 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
                     {
                         carryingFiber.payload = event;
                         carryingFiber.call();
+
+                        // We need to reset the payload so that we can differentiate
+                        // between whether the Fiber was called due to an incoming
+                        // (awaited) event or due to a timer. delegates will have
+                        // to cache the event if they don't want it to get reset.
+                        carryingFiber.resetPayload();
                     }
                     else
                     {
