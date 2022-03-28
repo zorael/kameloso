@@ -420,7 +420,7 @@ TitleLookupResults lookupTitle(const string url, const Flag!"descriptions" descr
 {
     import kameloso.constants : KamelosoInfo, Timeout;
     import lu.string : beginsWith, contains, nom;
-    import requests : Request;
+    import requests : Response, Request;
     import arsd.dom : Document;
     import std.array : Appender;
     import std.uni : toLower;
@@ -443,12 +443,30 @@ TitleLookupResults lookupTitle(const string url, const Flag!"descriptions" descr
     req.keepAlive = false;
     req.useStreaming = true;
 
+    Response res;
+
+    try
+    {
+        res = req.get(url);
+    }
+    catch (Exception e)
+    {
+        if (e.msg == "can't complete call to TLS_method")
+        {
+            throw new Exception("Failed to set up an SSL context");
+        }
+        else
+        {
+            throw e;
+        }
+    }
+
     Document doc = new Document;
     doc.parseGarbage("");  // Work around missing null check, causing segfaults on empty pages
+
     Appender!(ubyte[]) sink;
     sink.reserve(1_048_576);  // 1M
 
-    auto res = req.get(url);
     auto stream = res.receiveAsRange();
 
     while (!stream.empty)
@@ -639,7 +657,7 @@ unittest
 JSONValue getYouTubeInfo(const string url)
 {
     import kameloso.constants : KamelosoInfo, Timeout;
-    import requests : Request;
+    import requests : Response, Request;
     import std.array : Appender;
     import std.exception : assumeUnique;
     import std.json : parseJSON;
@@ -663,7 +681,23 @@ JSONValue getYouTubeInfo(const string url)
     req.timeout = Timeout.httpGET.seconds;
     req.keepAlive = false;
 
-    auto res = req.get(youtubeURL);
+    Response res;
+
+    try
+    {
+        res = req.get(youtubeURL);
+    }
+    catch (Exception e)
+    {
+        if (e.msg == "can't complete call to TLS_method")
+        {
+            throw new Exception("Failed to set up an SSL context");
+        }
+        else
+        {
+            throw e;
+        }
+    }
 
     if (res.code >= 400)
     {
