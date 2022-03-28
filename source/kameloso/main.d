@@ -2385,7 +2385,8 @@ Next tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
  +/
 void postInstanceSetup(ref Kameloso instance)
 {
-    import kameloso.terminal : isTTY;
+    import kameloso.constants : KamelosoInfo;
+    import kameloso.terminal : isTTY, setTitle;
 
     version(Windows)
     {
@@ -2401,18 +2402,30 @@ void postInstanceSetup(ref Kameloso instance)
         setThreadName("kameloso");
     }
 
+    enum terminalTitle = "kameloso v" ~ cast(string)KamelosoInfo.version_;
+
     if (isTTY)
     {
-        import kameloso.constants : KamelosoInfo;
-        import kameloso.terminal : setTitle;
-
-        enum terminalTitle = "kameloso v" ~ cast(string)KamelosoInfo.version_;
         setTitle(terminalTitle);
     }
     else
     {
-        // Non-TTYs (eg. pagers) can't show colours
-        instance.settings.monochrome = true;
+        import kameloso.platform : currentPlatform;
+
+        switch (currentPlatform)
+        {
+        case "Msys":
+        case "Cygwin":
+        case "vscode":
+            // Whitelist. Technically not TTYs but can display colours just the same
+            setTitle(terminalTitle);
+            break;
+
+        default:
+            // Non-TTYs (eg. pagers) can't show colours
+            instance.settings.monochrome = true;
+            break;
+        }
     }
 }
 
