@@ -196,7 +196,9 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
         }
 
         cast(void)spawn(&worker, cast(shared)request, plugin.cache,
-            (i * plugin.delayMsecs), cast(Flag!"descriptions")plugin.webtitlesSettings.descriptions);
+            (i * plugin.delayMsecs),
+            cast(Flag!"descriptions")plugin.webtitlesSettings.descriptions,
+            plugin.state.connSettings.caBundleFile);
     }
 
     import kameloso.thread : ThreadMessage;
@@ -221,11 +223,13 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
         delayMsecs = Milliseconds to delay before doing the lookup, to allow for
             parallel lookups without bursting all of them at once.
         descriptions = Whether or not to look up meta descriptions.
+        caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
  +/
 void worker(shared TitleLookupRequest sRequest,
     shared TitleLookupResults[string] cache,
     const ulong delayMsecs,
-    const Flag!"descriptions" descriptions)
+    const Flag!"descriptions" descriptions,
+    const string caBundleFile)
 {
     import lu.string : beginsWith, contains, nom;
     import std.datetime.systime : Clock;
@@ -276,7 +280,7 @@ void worker(shared TitleLookupRequest sRequest,
 
             try
             {
-                immutable info = getYouTubeInfo(request.url);
+                immutable info = getYouTubeInfo(request.url, caBundleFile);
 
                 // Let's assume all YouTube clips have titles and authors
                 // Should we decode the author too?
@@ -338,7 +342,7 @@ void worker(shared TitleLookupRequest sRequest,
         {
             try
             {
-                request.results = lookupTitle(request.url, descriptions);
+                request.results = lookupTitle(request.url, descriptions, caBundleFile);
                 reportTitle(request);
                 request.results.when = now;
 
@@ -408,6 +412,7 @@ void worker(shared TitleLookupRequest sRequest,
     Params:
         url = URL string to look up.
         descriptions = Whether or not to look up meta descriptions.
+        caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
 
     Returns:
         A finished [TitleLookupResults].
@@ -416,7 +421,10 @@ void worker(shared TitleLookupRequest sRequest,
         [object.Exception|Exception] if URL could not be fetched, or if no title
         could be divined from it.
  +/
-TitleLookupResults lookupTitle(const string url, const Flag!"descriptions" descriptions)
+TitleLookupResults lookupTitle(
+    const string url,
+    const Flag!"descriptions" descriptions,
+    const string caBundleFile)
 {
     import kameloso.constants : KamelosoInfo, Timeout;
     import lu.string : beginsWith, contains, nom;
@@ -439,6 +447,7 @@ TitleLookupResults lookupTitle(const string url, const Flag!"descriptions" descr
 
     Request req;
     req.addHeaders(headers);
+    if (caBundleFile.length) req.sslSetCaCert(caBundleFile);
     req.timeout = Timeout.httpGET.seconds;
     req.keepAlive = false;
     req.useStreaming = true;
@@ -645,6 +654,7 @@ unittest
 
     Params:
         url = A YouTube video link string.
+        caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
 
     Returns:
         A [std.json.JSONValue|JSONValue] with fields describing the looked-up video.
@@ -654,7 +664,7 @@ unittest
 
         [std.json.JSONException|JSONException] if the JSON response could not be parsed.
  +/
-JSONValue getYouTubeInfo(const string url)
+JSONValue getYouTubeInfo(const string url, const string caBundleFile)
 {
     import kameloso.constants : KamelosoInfo, Timeout;
     import requests : Response, Request;
@@ -678,6 +688,7 @@ JSONValue getYouTubeInfo(const string url)
 
     Request req;
     req.addHeaders(headers);
+    if (caBundleFile.length) req.sslSetCaCert(caBundleFile);
     req.timeout = Timeout.httpGET.seconds;
     req.keepAlive = false;
 
