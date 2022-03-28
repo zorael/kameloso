@@ -2012,7 +2012,32 @@ Next tryConnect(ref Kameloso instance)
         connectFiber(instance.conn, ConnectionDefaultIntegers.retries, *instance.abort));
     scope(exit) connector.reset();
 
-    connector.call();
+    try
+    {
+        connector.call();
+    }
+    catch (Exception e)
+    {
+        /+
+            We can only detect SSL context creation failure based on the string
+            in the generic Exception thrown, sadly.
+         +/
+        if (e.msg == "can't complete call to TLS_method")
+        {
+            enum pattern = "Connection error: <l>failed to set up an SSL context</> " ~
+                "<t>(are OpenSSL libraries installed?)";
+            enum wikiPattern = "Refer to <l>https://github.com/zorael/kameloso/wiki/OpenSSL</> for more information.";
+            logger.error(pattern.expandTags(LogLevel.error));
+            logger.error(wikiPattern.expandTags(LogLevel.error));
+        }
+        else
+        {
+            enum pattern = "Connection error: <l>%s";
+            logger.errorf(pattern.expandTags(LogLevel.error), e.msg);
+        }
+
+        return Next.returnFailure;
+    }
 
     uint incrementedRetryDelay = Timeout.connectionRetry;
 
