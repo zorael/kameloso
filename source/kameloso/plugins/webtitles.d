@@ -504,6 +504,7 @@ TitleLookupResults lookupTitle(
         sink.put(stream.front);
         doc.parseGarbage((cast(char[])sink.data).idup);
         if (doc.title.length) break;
+        stream.popFront();
     }
 
     if (!doc.title.length)
