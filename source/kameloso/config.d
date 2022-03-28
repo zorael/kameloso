@@ -687,12 +687,12 @@ Next handleGetopt(ref Kameloso instance,
                 "cert",
                     quiet ? string.init :
                         "Path to certificate file, ditto",
-                    &connSettings.certFile,
+                    &connSettings.certFile,+/
                 "cacert",
                     quiet ? string.init :
                         "Path to <i>cacert.pem</> certificate bundle, or equivalent"
                             .expandTags(LogLevel.trace),
-                    &connSettings.caBundleFile,+/
+                    &connSettings.caBundleFile,
                 "numeric",
                     quiet ? string.init :
                         "Use numeric output of addresses",
