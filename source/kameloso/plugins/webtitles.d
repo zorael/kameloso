@@ -296,21 +296,12 @@ void worker(shared TitleLookupRequest sRequest,
             catch (TitleFetchException e)
             {
                 import std.format : format;
-                import etc.c.curl : CurlError;
 
-                if (e.errorCode != CurlError.ok)
-                {
-                    import kameloso.common : curlErrorStrings;
-
-                    // cURL error
-                    enum pattern = "Webtitles worker cURL exception <l>%s</>: <l>%s";
-                    request.state.askToError(pattern.format(curlErrorStrings[e.errorCode], e.msg));
-                }
-                else if (e.httpCode >= 400)
+                if (e.code >= 400)
                 {
                     // Simply failed to fetch
                     enum pattern = "Webtitles worker saw HTTP <l>%d</>.";
-                    request.state.askToWarn(pattern.format(e.httpCode));
+                    request.state.askToWarn(pattern.format(e.code));
                 }
                 else
                 {
@@ -340,7 +331,6 @@ void worker(shared TitleLookupRequest sRequest,
 
     void tryLookup()
     {
-        import std.net.curl : CurlException;
         import std.range : only;
         import core.exception : UnicodeException;
 
@@ -360,21 +350,12 @@ void worker(shared TitleLookupRequest sRequest,
             catch (TitleFetchException e)
             {
                 import std.format : format;
-                import etc.c.curl : CurlError;
 
-                if (e.errorCode != CurlError.ok)
-                {
-                    import kameloso.common : curlErrorStrings;
-
-                    // cURL error
-                    enum pattern = "Webtitles worker cURL exception <l>%s</>: <l>%s";
-                    request.state.askToError(pattern.format(curlErrorStrings[e.errorCode], e.msg));
-                }
-                else if (e.httpCode >= 400)
+                if (e.code >= 400)
                 {
                     // Simply failed to fetch
                     enum pattern = "Webtitles worker saw HTTP <l>%d</>.";
-                    request.state.askToWarn(pattern.format(e.httpCode));
+                    request.state.askToWarn(pattern.format(e.code));
                 }
                 else
                 {
@@ -439,54 +420,61 @@ TitleLookupResults lookupTitle(const string url, const Flag!"descriptions" descr
 {
     import kameloso.constants : KamelosoInfo, Timeout;
     import lu.string : beginsWith, contains, nom;
+    import requests : Request;
     import arsd.dom : Document;
     import std.array : Appender;
-    import std.net.curl : HTTP;
     import std.uni : toLower;
     import core.time : seconds;
-    import etc.c.curl : CurlError;
 
-    enum userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
+    static string[string] headers;
 
-    auto client = HTTP(url);
-    client.operationTimeout = Timeout.httpGET.seconds;
-    client.setUserAgent(userAgent);
-    client.addRequestHeader("Accept", "text/html");
+    if (!headers.length)
+    {
+        headers =
+        [
+            "User-Agent" : "kameloso/" ~ cast(string)KamelosoInfo.version_,
+            "Accept"     : "text/html",
+        ];
+    }
+
+    Request req;
+    req.addHeaders(headers);
+    req.timeout = Timeout.httpGET.seconds;
+    req.keepAlive = false;
+    req.useStreaming = true;
 
     Document doc = new Document;
     doc.parseGarbage("");  // Work around missing null check, causing segfaults on empty pages
-
     Appender!(ubyte[]) sink;
-    sink.reserve(WebtitlesPlugin.lookupBufferSize);
+    sink.reserve(1_048_576);  // 1M
 
-    client.onReceive = (ubyte[] data)
+    auto res = req.get(url);
+    auto stream = res.receiveAsRange();
+
+    while (!stream.empty)
     {
-        sink.put(data);
-        doc.parseGarbage(cast(string)sink.data);
-        return doc.title.length ? HTTP.requestAbort : data.length;
-    };
-
-    immutable errorCode = client.perform(No.throwOnError);
+        sink.put(stream.front);
+        doc.parseGarbage((cast(char[])sink.data).idup);
+        if (doc.title.length) break;
+    }
 
     if (!doc.title.length)
     {
-        if (errorCode != CurlError.ok)
+        if (res.code >= 400)
         {
-            throw new TitleFetchException("Failed to fetch webpage title",
-                url, client.statusLine.code, errorCode);
+            throw new TitleFetchException("Failed to fetch URL",
+                url, res.code, __FILE__, __LINE__);
         }
         else
         {
             throw new TitleFetchException("No title tag found",
-                url, client.statusLine.code, errorCode);
+                url, res.code, __FILE__, __LINE__);
         }
     }
-    else if (client.statusLine.code >= 400)
+    else if (res.code >= 400)
     {
-        // onReceive will never have aborted with HTTP.requestAbort if status >= 400
-        // as such errorCode shouldn't always be CurlError.write_error
         throw new TitleFetchException("Failed to fetch URL",
-            url, client.statusLine.code, errorCode);
+            url, res.code, __FILE__, __LINE__);
     }
 
     string slice = url;  // mutable
@@ -517,7 +505,6 @@ TitleLookupResults lookupTitle(const string url, const Flag!"descriptions" descr
         }
     }
 
-    client.shutdown();
     return results;
 }
 
@@ -651,53 +638,52 @@ unittest
  +/
 JSONValue getYouTubeInfo(const string url)
 {
-    import kameloso.constants : BufferSize, KamelosoInfo, Timeout;
+    import kameloso.constants : KamelosoInfo, Timeout;
+    import requests : Request;
     import std.array : Appender;
     import std.exception : assumeUnique;
     import std.json : parseJSON;
-    import std.net.curl : HTTP;
     import core.time : seconds;
-    import etc.c.curl : CurlError;
 
-    enum userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
+    static string[string] headers;
+
+    if (!headers.length)
+    {
+        headers =
+        [
+            "User-Agent" : "kameloso/" ~ cast(string)KamelosoInfo.version_,
+            "Accept"     : "text/html",
+        ];
+    }
+
     immutable youtubeURL = "https://www.youtube.com/oembed?format=json&url=" ~ url;
 
-    auto client = HTTP(youtubeURL);
-    client.operationTimeout = Timeout.httpGET.seconds;
-    client.setUserAgent(userAgent);
+    Request req;
+    req.addHeaders(headers);
+    req.timeout = Timeout.httpGET.seconds;
+    req.keepAlive = false;
 
-    Appender!(ubyte[]) sink;
-    sink.reserve(8192);  // Magic number for now.
+    auto res = req.get(youtubeURL);
 
-    client.onReceive = (ubyte[] data)
-    {
-        sink.put(data);
-        return data.length;
-    };
-
-    immutable errorCode = client.perform(No.throwOnError);
-
-    if (errorCode != CurlError.ok)
+    if (res.code >= 400)
     {
         throw new TitleFetchException("Failed to fetch YouTube video information",
-            url, client.statusLine.code, errorCode);
+            url, res.code, __FILE__, __LINE__);
     }
-
-    if (sink.data == "Not Found")
+    else if (res.responseBody == "Not Found")
     {
         throw new TitleFetchException("Invalid YouTube video ID",
-            url, client.statusLine.code, errorCode);
+            url, res.code, __FILE__, __LINE__);
     }
 
-    immutable received = assumeUnique(cast(char[])sink.data);
+    immutable received = assumeUnique(cast(char[])res.responseBody.data);
     return parseJSON(received);
 }
 
 
 // TitleFetchException
 /++
-    A normal [object.Exception|Exception] but with an HTTP status code and a cURL
-    error code attached.
+    A normal [object.Exception|Exception] but with an HTTP status code attached.
  +/
 final class TitleFetchException : Exception
 {
@@ -706,25 +692,19 @@ final class TitleFetchException : Exception
     string url;
 
     /// The HTTP status code that was returned when attempting to fetch a title.
-    uint httpCode;
-
-    /// The cURL error code that was returned when attempting to fetch a title.
-    uint errorCode;
+    uint code;
 
     /++
-        Create a new [TitleFetchException], attaching an URL, a HTTP status code and
-        a cURL error code.
+        Create a new [TitleFetchException], attaching an URL and an HTTP status code.
      +/
     this(const string message,
         const string url,
-        const uint httpCode,
-        const uint errorCode,
+        const uint code,
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
     {
-        this.httpCode = httpCode;
-        this.errorCode = errorCode;
+        this.code = code;
         super(message, file, line, nextInChain);
     }
 

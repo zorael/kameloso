@@ -1168,21 +1168,9 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
             }
             catch (TwitchQueryException e)
             {
-                import kameloso.common : curlErrorStrings;
-                import etc.c.curl : CurlError;
-
                 // Something is deeply wrong.
-                enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<l>%s</>)";
-                logger.errorf(pattern.expandTags(LogLevel.error), e.msg, e.error,
-                    curlErrorStrings[e.errorCode]);
-
-                if (e.errorCode == CurlError.ssl_cacert)
-                {
-                    // Peer certificate cannot be authenticated with given CA certificates
-                    enum caBundlePattern = "You may need to supply a CA bundle file " ~
-                        "(e.g. <l>cacert.pem</>) in the configuration file.";
-                    logger.error(caBundlePattern.expandTags(LogLevel.all));
-                }
+                enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
+                logger.errorf(pattern.expandTags(LogLevel.error), e.msg, e.error, e.code);
 
                 logger.error("Disabling API features. Expect breakage.");
                 version(PrintStacktraces) logger.trace(e);

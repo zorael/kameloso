@@ -44,9 +44,6 @@ struct QueryResponse
 
     /// The message of any exception thrown while querying.
     string error;
-
-    /// The cURL error code returned.
-    uint errorCode;
 }
 
 
@@ -63,12 +60,11 @@ if (isSomeFunction!dg)
     }
     catch (TwitchQueryException e)
     {
-        import kameloso.common : curlErrorStrings, expandTags, logger;
+        import kameloso.common : expandTags, logger;
         import kameloso.logger : LogLevel;
 
-        enum pattern = "Failed to query Twitch: <l>%s</> (<l>%s</>) (<l>%s</>)";
-        logger.errorf(pattern.expandTags(LogLevel.error), e.msg, e.error,
-            curlErrorStrings[e.errorCode]);
+        enum pattern = "Failed to query Twitch: <l>%s</> (<l>%s</>) (<t>%d</>)";
+        logger.errorf(pattern.expandTags(LogLevel.error), e.msg, e.error, e.code);
     }
 }
 
@@ -173,7 +169,6 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
     import kameloso.thread : ThreadMessage;
     import std.concurrency : prioritySend, send, spawn;
     import std.datetime.systime : Clock, SysTime;
-    import etc.c.curl : CurlError;
     import core.time : msecs;
 
     SysTime pre;
@@ -225,7 +220,7 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
     if (!response.str.length)
     {
         throw new TwitchQueryException("Empty response", response.str,
-            response.error, response.code, response.errorCode);
+            response.error, response.code);
     }
     else if ((response.code >= 500) && !recursing)
     {
@@ -254,12 +249,7 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
             errorJSON["message"].str.unquoted);
 
         throw new TwitchQueryException(message, response.str,
-            response.error, response.code, response.errorCode);
-    }
-    else if (response.errorCode != CurlError.ok)
-    {
-        throw new TwitchQueryException("cURL error", response.str,
-            response.error, response.code, response.errorCode);
+            response.error, response.code);
     }
 
     return response;
@@ -293,50 +283,52 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
             values keyed by URL.
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
  +/
-void queryTwitchImpl(const string url,
+void queryTwitchImpl(
+    const string url,
     const string authToken,
     const uint timeout,
     shared QueryResponse[string] bucket,
     const string caBundleFile)
 {
-    import std.array : Appender;
-    import std.datetime.systime : Clock, SysTime;
+    import kameloso.constants : KamelosoInfo;
+    import requests : Request;
+    import std.datetime.systime : Clock;
     import std.exception : assumeUnique;
-    import std.net.curl : HTTP;
     import core.time : seconds;
-    import etc.c.curl : CurlError;
 
-    auto client = HTTP(url);
-    client.operationTimeout = timeout.seconds;
-    client.addRequestHeader("Client-ID", TwitchBotPlugin.clientID);
-    client.addRequestHeader("Authorization", authToken);
-    if (caBundleFile.length) client.caInfo = caBundleFile;
+    static string[string] headers;
 
-    Appender!(ubyte[]) sink;
-    sink.reserve(TwitchBotPlugin.queryBufferSize);
-
-    client.onReceive = (ubyte[] data)
+    if (!headers.length)
     {
-        sink.put(data);
-        return data.length;
-    };
+        headers =
+        [
+            "Client-ID"     : TwitchBotPlugin.clientID,
+            "User-Agent"    : "kameloso/" ~ cast(string)KamelosoInfo.version_,
+            "Authorization" : authToken,
+        ];
+    }
+    else if (headers["Authorization"] != authToken)
+    {
+        headers["Authorization"] = authToken;
+    }
+
+    Request req;
+    req.addHeaders(headers);
+    if (caBundleFile.length) req.sslSetCaCert(caBundleFile);
+    req.timeout = timeout.seconds;
+    req.keepAlive = true;  // wise?
 
     QueryResponse response;
     immutable pre = Clock.currTime;
 
-    // Refer to https://curl.haxx.se/libcurl/c/libcurl-errors.html for CURLCode
-    response.errorCode = client.perform(No.throwOnError);
-
-    if (response.errorCode != CurlError.ok)
-    {
-        response.error = "cURL error";
-    }
+    auto res = req.get(url);
 
     immutable post = Clock.currTime;
     immutable delta = (post - pre);
-    response.code = client.statusLine.code;
+
+    response.code = res.code;
     response.msecs = delta.total!"msecs";
-    response.str = assumeUnique(cast(char[])sink.data);
+    response.str = assumeUnique(cast(char[])res.responseBody.data);
 
     synchronized //()
     {
@@ -485,7 +477,7 @@ in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
     if ((validationJSON.type != JSONType.object) || ("client_id" !in validationJSON))
     {
         throw new TwitchQueryException("Failed to validate Twitch authorisation " ~
-            "token; unknown JSON", response.str, response.error, response.code, response.errorCode);
+            "token; unknown JSON", response.str, response.error, response.code);
     }
 
     return validationJSON;
@@ -684,9 +676,6 @@ final class TwitchQueryException : Exception
     /// The HTTP code that was received.
     uint code;
 
-    /// The cURL error code that was returned when performing the query.
-    uint errorCode;
-
     /++
         Create a new [TwitchQueryException], attaching a response body and a
         HTTP return code.
@@ -695,7 +684,6 @@ final class TwitchQueryException : Exception
         const string responseBody,
         const string error,
         const uint code,
-        const uint errorCode,
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
@@ -703,7 +691,6 @@ final class TwitchQueryException : Exception
         this.responseBody = responseBody;
         this.error = error;
         this.code = code;
-        this.errorCode = errorCode;
         super(message, file, line, nextInChain);
     }
 
