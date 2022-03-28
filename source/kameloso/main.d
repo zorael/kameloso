@@ -2971,8 +2971,8 @@ int run(string[] args)
     {
         import kameloso.terminal : ensureAppropriateBuffering;
 
-        // Ensure stdout is buffered by line on Cygwin and vscode.
-        ensureAppropriateBuffering(cast(Flag!"override_")instance.settings.flush);
+        // Ensure stdout is buffered by line if we think it isn't being
+        ensureAppropriateBuffering(instance.settings.flush);
     }
     catch (ErrnoException e)
     {

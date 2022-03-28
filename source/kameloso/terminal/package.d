@@ -136,21 +136,22 @@ else
 // ensureAppropriateBuffering
 /++
     Ensures select non-TTY environments (like Cygwin) are line-buffered.
-    Allows for overriding behaviour and forcing the change in buffer mode.
 
     Params:
-        override_ = Whether or not to override checks and always set line buffering.
+        flush = Reference to Flush bool
  +/
-void ensureAppropriateBuffering(const Flag!"override_" override_ = No.override_) @system
+void ensureAppropriateBuffering(ref bool flush) @system
 {
     import kameloso.platform : currentPlatform;
 
     if (isTTY) return;
 
-    // Some environments require us to flush standard out after writing to it,
-    // or else nothing will appear on screen (until it gets automatically flushed
-    // at an indeterminate point in the future).
-    // Automate this by setting standard out to be line-buffered.
+    /+
+        Some environments require us to flush standard out after writing to it,
+        or else nothing will appear on screen (until it gets automatically flushed
+        at an indeterminate point in the future).
+        Automate this by setting standard out to be line-buffered.
+     +/
 
     static void setLineBufferingMode()
     {
@@ -161,17 +162,19 @@ void ensureAppropriateBuffering(const Flag!"override_" override_ = No.override_)
         stdout.setvbuf(BufferSize.vbufStdout, _IOLBF);  // FIXME
     }
 
-    if (override_) return setLineBufferingMode();
-
     switch (currentPlatform)
     {
+    case "Msys":    // Requires manual flushing despite setvbuf
+        flush = true;
+        goto case;
+
     case "Cygwin":  // No longer seems to need this?
     case "vscode":  // Now identifies itself as just "linux"
-    case "Msys":
         return setLineBufferingMode();
 
     default:
-        // Non-whitelisted non-TTY; just leave as-is.
+        // Non-whitelisted non-TTY; just leave as-is unless flush flag is true
+        if (flush) return setLineBufferingMode();
         break;
     }
 }
