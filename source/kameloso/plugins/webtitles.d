@@ -325,6 +325,9 @@ void worker(shared TitleLookupRequest sRequest,
                 if (e.msg == "ssl connect failed: certificate verify failed")
                 {
                     request.state.askToError("Failed to fetch YouTube video information: <l>" ~ e.msg);
+                    enum wikiURL = "https://github.com/zorael/kameloso/wiki/OpenSSL";
+                    enum wikiPattern = "Refer to <l>" ~ wikiURL ~ "</> for more information.";
+                    request.state.askToError(wikiPattern);
                     return;
                 }
                 else
@@ -403,6 +406,9 @@ void worker(shared TitleLookupRequest sRequest,
                 if (e.msg == "ssl connect failed: certificate verify failed")
                 {
                     request.state.askToError("Failed to fetch webpage title: <l>" ~ e.msg);
+                    enum wikiURL = "https://github.com/zorael/kameloso/wiki/OpenSSL";
+                    enum wikiPattern = "Refer to <l>" ~ wikiURL ~ "</> for more information.";
+                    request.state.askToError(wikiPattern);
                 }
                 else
                 {
