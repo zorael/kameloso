@@ -1533,15 +1533,7 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
 
                     if (auto carryingFiber = cast(CarryingFiber!IRCEvent)fiber)
                     {
-                        // Reset the payload before calling instead of after,
-                        // in case the Fiber is reused as something else
-                        carryingFiber.resetPayload();
-
-                        if (carryingFiber.payload == IRCEvent.init)
-                        {
-                            carryingFiber.payload = event;
-                        }
-
+                        carryingFiber.payload = event;
                         carryingFiber.call();
                     }
                     else
