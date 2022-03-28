@@ -125,11 +125,7 @@ else version(Windows)
 }
 else
 {
-    /// Ditto
-    bool isTTY() //@safe
-    {
-        return true;
-    }
+    static assert(0, "Unsupported platform, please file a bug.");
 }
 
 
