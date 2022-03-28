@@ -767,11 +767,16 @@ Next mainLoop(ref Kameloso instance)
     // Instantiate a Generator to read from the socket and yield lines
     auto listener = new Generator!ListenAttempt(() =>
         listenFiber(instance.conn, *instance.abort, Timeout.connectionLost));
-    scope(exit) listener.reset();
+    auto messenger = new Generator!Next(() => messageFiber(instance));
 
-    auto messenger = new Generator!Next(() =>
-        messageFiber(instance));
-    scope(exit) messenger.reset();
+    scope(exit)
+    {
+        import core.memory : GC;
+        destroy(listener);
+        GC.free(&listener);
+        destroy(messenger);
+        GC.free(&messenger);
+    }
 
     /// The history entry for the current connection.
     Kameloso.ConnectionHistoryEntry* historyEntry;
@@ -2010,7 +2015,13 @@ Next tryConnect(ref Kameloso instance)
 
     auto connector = new Generator!ConnectionAttempt(() =>
         connectFiber(instance.conn, ConnectionDefaultIntegers.retries, *instance.abort));
-    scope(exit) connector.reset();
+
+    scope(exit)
+    {
+        import core.memory : GC;
+        destroy(connector);
+        GC.free(&connector);
+    }
 
     try
     {
@@ -2269,7 +2280,13 @@ Next tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
     auto resolver = new Generator!ResolveAttempt(() =>
         resolveFiber(instance.conn, instance.parser.server.address,
             instance.parser.server.port, instance.connSettings.ipv6, *instance.abort));
-    scope(exit) resolver.reset();
+
+    scope(exit)
+    {
+        import core.memory : GC;
+        destroy(resolver);
+        GC.free(&resolver);
+    }
 
     uint incrementedRetryDelay = Timeout.connectionRetry;
     enum incrementMultiplier = 1.2;
