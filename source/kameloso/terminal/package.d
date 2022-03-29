@@ -143,7 +143,7 @@ else
         monochrome = Reference to monochrome setting bool.
         flush = Reference to flush setting bool.
  +/
-void applyMonochromeAndFlushOverrides(ref bool monochrome, ref bool flush)
+void applyMonochromeAndFlushOverrides(ref bool monochrome, ref bool flush) @system
 {
     import kameloso.platform : currentPlatform;
 
