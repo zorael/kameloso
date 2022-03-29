@@ -2563,7 +2563,7 @@ void resolvePaths(ref Kameloso instance)
         import std.string : replace;
         instance.settings.resourceDirectory =
             buildNormalizedPath(instance.settings.resourceDirectory,
-                "server", instance.parser.server.address.replace(":", "_"));
+                "server", instance.parser.server.address.replace(':', '_'));
     }
     else version(Posix)
     {
