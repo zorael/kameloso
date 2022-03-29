@@ -2528,19 +2528,20 @@ Next verifySettings(ref Kameloso instance)
 }
 
 
-// resolveDirectories
+// resolvePaths
 /++
-    Resolves resource directory and configuration directory semi-verbosely.
+    Resolves resource directory private key/certificate file paths semi-verbosely.
 
     This is called after settings have been verified, before plugins are initialised.
 
     Params:
         instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
  +/
-void resolveDirectories(ref Kameloso instance)
+void resolvePaths(ref Kameloso instance)
 {
     import std.file : exists;
-    import std.path : buildNormalizedPath, dirName;
+    import std.path : absolutePath, buildNormalizedPath, expandTilde, dirName, isAbsolute;
+    import std.range : only;
 
     // Resolve and create the resource directory
     version(Windows)
@@ -2566,6 +2567,31 @@ void resolveDirectories(ref Kameloso instance)
         mkdirRecurse(instance.settings.resourceDirectory);
         logger.log("Created resource directory ", Tint.info,
             instance.settings.resourceDirectory);
+    }
+
+    auto filerange = only(
+        &instance.connSettings.caBundleFile,
+        &instance.connSettings.privateKeyFile,
+        &instance.connSettings.certFile);
+
+    foreach (/*const*/ file; filerange)
+    {
+        if (!file.length) continue;
+
+        *file = (*file).expandTilde;
+
+        if (!(*file).isAbsolute && !(*file).exists)
+        {
+            immutable fullPath = instance.settings.configDirectory.isAbsolute ?
+                absolutePath(*file, instance.settings.configDirectory) :
+                buildNormalizedPath(instance.settings.configDirectory, *file);
+
+            if (fullPath.exists)
+            {
+                *file = fullPath;
+            }
+            // else leave as-is
+        }
     }
 }
 
@@ -3129,8 +3155,8 @@ int run(string[] args)
         assert(0, "`verifySettings` returned `Next.crash`");
     }
 
-    // Resolve resource and configuration directory paths.
-    instance.resolveDirectories();
+    // Resolve resource and private key/certificate paths.
+    instance.resolvePaths();
     instance.conn.configDirectory = instance.settings.configDirectory;
 
     // Save the original nickname *once*, outside the connection loop and before
