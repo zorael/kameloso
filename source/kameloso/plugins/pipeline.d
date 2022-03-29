@@ -83,7 +83,7 @@ public:
 void pipereader(shared IRCPluginState newState, const string filename)
 in (filename.length, "Tried to set up a pipereader with an empty filename")
 {
-    import kameloso.thread : ThreadMessage;
+    import kameloso.thread : ThreadMessage, setThreadName;
     import std.concurrency : OwnerTerminated, receiveTimeout, send;
     import std.file : exists, remove;
     import std.format : format;
@@ -91,11 +91,8 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
     import std.variant : Variant;
     static import kameloso.common;
 
-    version(Posix)
-    {
-        import kameloso.thread : setThreadName;
-        setThreadName("pipeline");
-    }
+    // The whole module is version Posix, no need to encase here
+    setThreadName("pipeline");
 
     auto state = cast()newState;
 
