@@ -1361,9 +1361,9 @@ void onMyInfo(TwitchBotPlugin plugin)
  +/
 void start(TwitchBotPlugin plugin)
 {
-    import kameloso.terminal : isTTY;
+    import kameloso.terminal : isTerminal;
 
-    if (!isTTY)
+    if (!isTerminal)
     {
         // Not a TTY so replace our bell string with an empty one
         plugin.bell = string.init;
@@ -1568,9 +1568,9 @@ package:
         [kameloso.terminal.TerminalToken.bell|TerminalToken.bell] as string,
         for use as bell.
      +/
-    private enum bellString = ("" ~ cast(char)(TerminalToken.bell));
+    private enum bellString = "" ~ cast(char)(TerminalToken.bell);
 
-    /// Effective bell after [kameloso.terminal.isTTY|isTTY] checks.
+    /// Effective bell after [kameloso.terminal.isTerminal|isTerminal] checks.
     string bell = bellString;
 
     /// The Twitch application ID for kameloso.

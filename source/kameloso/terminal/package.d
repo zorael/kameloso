@@ -231,7 +231,6 @@ void ensureAppropriateBuffering() @system
             // Non-whitelisted non-TTY (a pager), leave as-is.
             break;
         }
-
     }
 }
 

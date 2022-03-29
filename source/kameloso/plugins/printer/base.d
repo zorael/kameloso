@@ -551,13 +551,13 @@ void start(PrinterPlugin plugin)
 {
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.constants : BufferSize;
-    import kameloso.terminal : isTTY;
+    import kameloso.terminal : isTerminal;
     import core.thread : Fiber;
     import core.time : Duration;
 
     plugin.linebuffer.reserve(plugin.linebufferInitialSize);
 
-    if (!isTTY)
+    if (!isTerminal)
     {
         // Not a TTY so replace our bell string with an empty one
         plugin.bell = string.init;
@@ -854,7 +854,7 @@ package:
     /// [kameloso.terminal.TerminalToken.bell|TerminalToken.bell] as string, for use as bell.
     private enum bellString = ("" ~ cast(char)(TerminalToken.bell));
 
-    /// Effective bell after [kameloso.terminal.isTTY|isTTY] checks.
+    /// Effective bell after [kameloso.terminal.isTerminal|isTerminal] checks.
     string bell = bellString;
 
     mixin IRCPluginImpl;

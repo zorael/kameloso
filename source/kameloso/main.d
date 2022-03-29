@@ -2397,7 +2397,7 @@ Next tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
 void postInstanceSetup(ref Kameloso instance)
 {
     import kameloso.constants : KamelosoInfo;
-    import kameloso.terminal : isTTY, setTitle;
+    import kameloso.terminal : isTerminal, setTitle;
 
     version(Windows)
     {
@@ -2413,29 +2413,11 @@ void postInstanceSetup(ref Kameloso instance)
         setThreadName("kameloso");
     }
 
-    enum terminalTitle = "kameloso v" ~ cast(string)KamelosoInfo.version_;
-
-    if (isTTY)
+    if (isTerminal)
     {
+        // TTY or whitelisted pseudo-TTY
+        enum terminalTitle = "kameloso v" ~ cast(string)KamelosoInfo.version_;
         setTitle(terminalTitle);
-    }
-    else
-    {
-        import kameloso.platform : currentPlatform;
-
-        switch (currentPlatform)
-        {
-        case "Msys":
-        case "Cygwin":
-        case "vscode":
-            // Whitelist. Technically not TTYs but can(?) display titles just the same
-            setTitle(terminalTitle);
-            break;
-
-        default:
-            // It's a pager, leave as-is
-            break;
-        }
     }
 }
 
@@ -2633,14 +2615,14 @@ void resolvePaths(ref Kameloso instance)
 void startBot(ref Kameloso instance, ref AttemptState attempt)
 {
     import kameloso.constants : ShellReturnValue;
-    import kameloso.terminal : TerminalToken, isTTY;
+    import kameloso.terminal : TerminalToken, isTerminal;
     import std.algorithm.comparison : among;
 
     // Save a backup snapshot of the client, for restoring upon reconnections
     IRCClient backupClient = instance.parser.client;
 
-    enum bellString = ("" ~ cast(char)(TerminalToken.bell));
-    immutable bell = isTTY ? bellString : string.init;
+    enum bellString = "" ~ cast(char)(TerminalToken.bell);
+    immutable bell = isTerminal ? bellString : string.init;
 
     outerloop:
     do
@@ -3034,12 +3016,12 @@ int run(string[] args)
 
     scope(failure)
     {
-        import kameloso.terminal : TerminalToken, isTTY;
+        import kameloso.terminal : TerminalToken, isTerminal;
 
         if (!instance.settings.headless)
         {
-            enum bellString = ("" ~ cast(char)(TerminalToken.bell));
-            immutable bell = isTTY ? bellString : string.init;
+            enum bellString = "" ~ cast(char)(TerminalToken.bell);
+            immutable bell = isTerminal ? bellString : string.init;
             logger.error("We just crashed!", bell);
         }
 
