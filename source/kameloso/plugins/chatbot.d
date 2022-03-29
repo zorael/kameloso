@@ -188,15 +188,14 @@ void onCommandBash(ChatbotPlugin plugin, const ref IRCEvent event)
 void worker(shared IRCPluginState sState,
     const ref IRCEvent event)
 {
-    import kameloso.constants : BufferSize, KamelosoInfo, Timeout;
+    import kameloso.constants : KamelosoInfo, Timeout;
+    import requests : Request;
     import arsd.dom : Document, htmlEntitiesDecode;
     import std.algorithm.iteration : splitter;
-    import std.array : Appender, replace;
+    import std.array : replace;
     import std.exception : assumeUnique;
     import std.format : format;
-    import std.net.curl : HTTP;
     import core.time : seconds;
-    import etc.c.curl : CurlError;
     static import kameloso.common;
 
     version(Posix)
@@ -215,36 +214,26 @@ void worker(shared IRCPluginState sState,
 
     try
     {
-        enum userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
+        static string[string] headers;
 
-        auto client = HTTP(url);
-        client.operationTimeout = Timeout.httpGET.seconds;
-        client.setUserAgent(userAgent);
-        client.addRequestHeader("Accept", "text/html");
-
-        Document doc = new Document;
-        Appender!(ubyte[]) sink;
-        sink.reserve(1_048_576);  // 1M
-
-        client.onReceive = (ubyte[] data)
+        if (!headers.length)
         {
-            sink.put(data);
-            return data.length;
-        };
-
-        immutable errorCode = client.perform(No.throwOnError);
-
-        if (!sink.data.length && (errorCode != CurlError.ok))
-        {
-            import kameloso.common : curlErrorStrings;
-
-            enum pattern = "Chatbot got cURL error <l>%s</> (<l>%d</>) when fetching <l>%s</>";
-            immutable message = pattern.format(curlErrorStrings[errorCode], errorCode, url);
-            askToError(state, message);
-            return;
+            headers =
+            [
+                "User-Agent" : "kameloso/" ~ cast(string)KamelosoInfo.version_,
+                "Accept"     : "text/html",
+            ];
         }
 
-        immutable received = assumeUnique(cast(char[])sink.data);
+        Request req;
+        req.addHeaders(headers);
+        req.timeout = Timeout.httpGET.seconds;
+        req.keepAlive = false;
+
+        auto res = req.get(url);
+        Document doc = new Document;
+
+        immutable received = assumeUnique(cast(char[])res.responseBody.data);
         doc.parseGarbage(received);
         auto numBlock = doc.getElementsByClassName("quote");
 
@@ -290,7 +279,7 @@ void worker(shared IRCPluginState sState,
     }
     catch (Exception e)
     {
-        enum pattern = "Chatbot could not fetch <l>bash.org</> quote at <l>%s</>: <l>%s";
+        enum pattern = "Chatbot could not fetch <l>bash.org</> quote at <l>%s</>: <t>%s";
         askToWarn(state, pattern.format(url, e.msg));
         version(PrintStacktraces) askToTrace(state, e.toString);
     }

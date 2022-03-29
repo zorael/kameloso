@@ -18,6 +18,7 @@ private:
 
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
+import kameloso.constants : MagicErrorStrings;
 import kameloso.messaging;
 import dialect.defs;
 import std.json : JSONValue;
@@ -196,7 +197,9 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
         }
 
         cast(void)spawn(&worker, cast(shared)request, plugin.cache,
-            (i * plugin.delayMsecs), cast(Flag!"descriptions")plugin.webtitlesSettings.descriptions);
+            (i * plugin.delayMsecs),
+            cast(Flag!"descriptions")plugin.webtitlesSettings.descriptions,
+            plugin.state.connSettings.caBundleFile);
     }
 
     import kameloso.thread : ThreadMessage;
@@ -221,11 +224,13 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
         delayMsecs = Milliseconds to delay before doing the lookup, to allow for
             parallel lookups without bursting all of them at once.
         descriptions = Whether or not to look up meta descriptions.
+        caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
  +/
 void worker(shared TitleLookupRequest sRequest,
     shared TitleLookupResults[string] cache,
     const ulong delayMsecs,
-    const Flag!"descriptions" descriptions)
+    const Flag!"descriptions" descriptions,
+    const string caBundleFile)
 {
     import lu.string : beginsWith, contains, nom;
     import std.datetime.systime : Clock;
@@ -276,7 +281,7 @@ void worker(shared TitleLookupRequest sRequest,
 
             try
             {
-                immutable info = getYouTubeInfo(request.url);
+                immutable info = getYouTubeInfo(request.url, caBundleFile);
 
                 // Let's assume all YouTube clips have titles and authors
                 // Should we decode the author too?
@@ -296,40 +301,52 @@ void worker(shared TitleLookupRequest sRequest,
             catch (TitleFetchException e)
             {
                 import std.format : format;
-                import etc.c.curl : CurlError;
 
-                if (e.errorCode != CurlError.ok)
-                {
-                    import kameloso.common : curlErrorStrings;
-
-                    // cURL error
-                    enum pattern = "Webtitles worker cURL exception <l>%s</>: <l>%s";
-                    request.state.askToError(pattern.format(curlErrorStrings[e.errorCode], e.msg));
-                }
-                else if (e.httpCode >= 400)
+                if (e.code >= 400)
                 {
                     // Simply failed to fetch
                     enum pattern = "Webtitles worker saw HTTP <l>%d</>.";
-                    request.state.askToWarn(pattern.format(e.httpCode));
+                    request.state.askToError(pattern.format(e.code));
                 }
                 else
                 {
-                    request.state.askToWarn("Error fetching YouTube video information: <l>" ~ e.msg);
+                    request.state.askToError("Error fetching YouTube video information: <l>" ~ e.msg);
                     //version(PrintStacktraces) request.state.askToTrace(e.info);
                     // Drop down
                 }
             }
             catch (JSONException e)
             {
-                request.state.askToWarn("Failed to parse YouTube video information: <l>" ~ e.msg);
+                request.state.askToError("Failed to parse YouTube video information: <l>" ~ e.msg);
                 //version(PrintStacktraces) request.state.askToTrace(e.info);
                 // Drop down
             }
             catch (Exception e)
             {
-                request.state.askToError("Unexpected exception fetching YouTube video information: <l>" ~ e.msg);
-                version(PrintStacktraces) request.state.askToTrace(e.toString);
-                // Drop down
+                enum wikiURL = "https://github.com/zorael/kameloso/wiki/OpenSSL";
+                enum wikiPattern = "Refer to <l>" ~ wikiURL ~ "</> for more information.";
+
+                if (e.msg == MagicErrorStrings.sslContextCreationFailureRewritten)
+                {
+                    import std.format : format;
+
+                    enum pattern = "Error fetching webpage title: <l>%s</> <t>(are OpenSSL libraries installed?)";
+                    request.state.askToError(pattern.format(e.msg));
+                    request.state.askToError(wikiPattern);
+                    return;
+                }
+                else if (e.msg == MagicErrorStrings.sslCertificateVerificationFailureRewritten)
+                {
+                    request.state.askToError("Error fetching webpage title: <l>" ~ e.msg);
+                    request.state.askToError(wikiPattern);
+                    return;
+                }
+                else
+                {
+                    request.state.askToError("Unexpected exception fetching YouTube video information: <l>" ~ e.msg);
+                    version(PrintStacktraces) request.state.askToTrace(e.toString);
+                    // Drop down
+                }
             }
         }
         else
@@ -340,7 +357,7 @@ void worker(shared TitleLookupRequest sRequest,
 
     void tryLookup()
     {
-        import std.net.curl : CurlException;
+        import std.format : format;
         import std.range : only;
         import core.exception : UnicodeException;
 
@@ -348,7 +365,7 @@ void worker(shared TitleLookupRequest sRequest,
         {
             try
             {
-                request.results = lookupTitle(request.url, descriptions);
+                request.results = lookupTitle(request.url, descriptions, caBundleFile);
                 reportTitle(request);
                 request.results.when = now;
 
@@ -359,22 +376,11 @@ void worker(shared TitleLookupRequest sRequest,
             }
             catch (TitleFetchException e)
             {
-                import std.format : format;
-                import etc.c.curl : CurlError;
-
-                if (e.errorCode != CurlError.ok)
-                {
-                    import kameloso.common : curlErrorStrings;
-
-                    // cURL error
-                    enum pattern = "Webtitles worker cURL exception <l>%s</>: <l>%s";
-                    request.state.askToError(pattern.format(curlErrorStrings[e.errorCode], e.msg));
-                }
-                else if (e.httpCode >= 400)
+                if (e.code >= 400)
                 {
                     // Simply failed to fetch
                     enum pattern = "Webtitles worker saw HTTP <l>%d</>.";
-                    request.state.askToWarn(pattern.format(e.httpCode));
+                    request.state.askToWarn(pattern.format(e.code));
                 }
                 else
                 {
@@ -399,7 +405,6 @@ void worker(shared TitleLookupRequest sRequest,
             }
             catch (UnicodeException e)
             {
-                import std.format : format;
                 enum pattern = "Webtitles worker Unicode exception: <l>%s</> " ~
                     "(link is probably to an image or similar)";
                 request.state.askToError(pattern.format(e.msg));
@@ -407,8 +412,25 @@ void worker(shared TitleLookupRequest sRequest,
             }
             catch (Exception e)
             {
-                request.state.askToWarn("Webtitles saw unexpected exception: <l>" ~ e.msg);
-                version(PrintStacktraces) request.state.askToTrace(e.toString);
+                enum wikiURL = "https://github.com/zorael/kameloso/wiki/OpenSSL";
+                enum wikiPattern = "Refer to <l>" ~ wikiURL ~ "</> for more information.";
+
+                if (e.msg == MagicErrorStrings.sslContextCreationFailureRewritten)
+                {
+                    enum pattern = "Error fetching webpage title: <l>%s</> <t>(are OpenSSL libraries installed?)";
+                    request.state.askToError(pattern.format(e.msg));
+                    request.state.askToError(wikiPattern);
+                }
+                else if (e.msg == MagicErrorStrings.sslCertificateVerificationFailureRewritten)
+                {
+                    request.state.askToError("Error fetching webpage title: <l>" ~ e.msg);
+                    request.state.askToError(wikiPattern);
+                }
+                else
+                {
+                    request.state.askToWarn("Webtitles saw unexpected exception: <l>" ~ e.msg);
+                    version(PrintStacktraces) request.state.askToTrace(e.toString);
+                }
             }
 
             // Dropped down; end foreach by returning
@@ -427,6 +449,7 @@ void worker(shared TitleLookupRequest sRequest,
     Params:
         url = URL string to look up.
         descriptions = Whether or not to look up meta descriptions.
+        caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
 
     Returns:
         A finished [TitleLookupResults].
@@ -435,58 +458,91 @@ void worker(shared TitleLookupRequest sRequest,
         [object.Exception|Exception] if URL could not be fetched, or if no title
         could be divined from it.
  +/
-TitleLookupResults lookupTitle(const string url, const Flag!"descriptions" descriptions)
+TitleLookupResults lookupTitle(
+    const string url,
+    const Flag!"descriptions" descriptions,
+    const string caBundleFile)
 {
     import kameloso.constants : KamelosoInfo, Timeout;
     import lu.string : beginsWith, contains, nom;
+    import requests : Response, Request;
     import arsd.dom : Document;
     import std.array : Appender;
-    import std.net.curl : HTTP;
     import std.uni : toLower;
     import core.time : seconds;
-    import etc.c.curl : CurlError;
 
-    enum userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
+    static string[string] headers;
 
-    auto client = HTTP(url);
-    client.operationTimeout = Timeout.httpGET.seconds;
-    client.setUserAgent(userAgent);
-    client.addRequestHeader("Accept", "text/html");
+    if (!headers.length)
+    {
+        headers =
+        [
+            "User-Agent" : "kameloso/" ~ cast(string)KamelosoInfo.version_,
+            "Accept"     : "text/html",
+        ];
+    }
+
+    Request req;
+    req.addHeaders(headers);
+    if (caBundleFile.length) req.sslSetCaCert(caBundleFile);
+    req.timeout = Timeout.httpGET.seconds;
+    req.keepAlive = false;
+    req.useStreaming = true;
+
+    Response res;
+
+    try
+    {
+        res = req.get(url);
+    }
+    catch (Exception e)
+    {
+        // Reword some exceptions
+        if (e.msg == MagicErrorStrings.sslContextCreationFailure)
+        {
+            e.msg = MagicErrorStrings.sslContextCreationFailureRewritten;
+        }
+        else if (e.msg == MagicErrorStrings.sslCertificateVerificationFailure)
+        {
+            e.msg = MagicErrorStrings.sslCertificateVerificationFailureRewritten;
+        }
+
+        throw e;
+    }
 
     Document doc = new Document;
     doc.parseGarbage("");  // Work around missing null check, causing segfaults on empty pages
 
     Appender!(ubyte[]) sink;
-    sink.reserve(WebtitlesPlugin.lookupBufferSize);
+    sink.reserve(1_048_576);  // 1M
 
-    client.onReceive = (ubyte[] data)
+    auto stream = res.receiveAsRange();
+
+    while (!stream.empty)
     {
-        sink.put(data);
-        doc.parseGarbage(cast(string)sink.data);
-        return doc.title.length ? HTTP.requestAbort : data.length;
-    };
-
-    immutable errorCode = client.perform(No.throwOnError);
+        sink.put(stream.front);
+        doc.parseGarbage((cast(char[])sink.data).idup);
+        if (doc.title.length) break;
+        stream.popFront();
+    }
 
     if (!doc.title.length)
     {
-        if (errorCode != CurlError.ok)
+        if (res.code >= 400)
         {
-            throw new TitleFetchException("Failed to fetch webpage title",
-                url, client.statusLine.code, errorCode);
+            throw new TitleFetchException("Failed to fetch URL",
+                url, res.code, __FILE__, __LINE__);
         }
         else
         {
             throw new TitleFetchException("No title tag found",
-                url, client.statusLine.code, errorCode);
+                url, res.code, __FILE__, __LINE__);
         }
     }
-    else if (client.statusLine.code >= 400)
+    else if (res.code >= 400)
     {
-        // onReceive will never have aborted with HTTP.requestAbort if status >= 400
-        // as such errorCode shouldn't always be CurlError.write_error
         throw new TitleFetchException("Failed to fetch URL",
-            url, client.statusLine.code, errorCode);
+            url, res.code, __FILE__, __LINE__);
     }
 
     string slice = url;  // mutable
@@ -517,7 +573,6 @@ TitleLookupResults lookupTitle(const string url, const Flag!"descriptions" descr
         }
     }
 
-    client.shutdown();
     return results;
 }
 
@@ -640,6 +695,7 @@ unittest
 
     Params:
         url = A YouTube video link string.
+        caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
 
     Returns:
         A [std.json.JSONValue|JSONValue] with fields describing the looked-up video.
@@ -649,55 +705,74 @@ unittest
 
         [std.json.JSONException|JSONException] if the JSON response could not be parsed.
  +/
-JSONValue getYouTubeInfo(const string url)
+JSONValue getYouTubeInfo(const string url, const string caBundleFile)
 {
-    import kameloso.constants : BufferSize, KamelosoInfo, Timeout;
+    import kameloso.constants : KamelosoInfo, Timeout;
+    import requests : Response, Request;
     import std.array : Appender;
     import std.exception : assumeUnique;
     import std.json : parseJSON;
-    import std.net.curl : HTTP;
     import core.time : seconds;
-    import etc.c.curl : CurlError;
 
-    enum userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
+    static string[string] headers;
+
+    if (!headers.length)
+    {
+        headers =
+        [
+            "User-Agent" : "kameloso/" ~ cast(string)KamelosoInfo.version_,
+            "Accept"     : "text/html",
+        ];
+    }
+
     immutable youtubeURL = "https://www.youtube.com/oembed?format=json&url=" ~ url;
 
-    auto client = HTTP(youtubeURL);
-    client.operationTimeout = Timeout.httpGET.seconds;
-    client.setUserAgent(userAgent);
+    Request req;
+    req.addHeaders(headers);
+    if (caBundleFile.length) req.sslSetCaCert(caBundleFile);
+    req.timeout = Timeout.httpGET.seconds;
+    req.keepAlive = false;
 
-    Appender!(ubyte[]) sink;
-    sink.reserve(8192);  // Magic number for now.
+    Response res;
 
-    client.onReceive = (ubyte[] data)
+    try
     {
-        sink.put(data);
-        return data.length;
-    };
+        res = req.get(youtubeURL);
+    }
+    catch (Exception e)
+    {
+        // Reword some exceptions
+        if (e.msg == MagicErrorStrings.sslContextCreationFailure)
+        {
+            e.msg = MagicErrorStrings.sslContextCreationFailureRewritten;
+        }
+        else if (e.msg == MagicErrorStrings.sslCertificateVerificationFailure)
+        {
+            e.msg = MagicErrorStrings.sslCertificateVerificationFailureRewritten;
+        }
 
-    immutable errorCode = client.perform(No.throwOnError);
+        throw e;
+    }
 
-    if (errorCode != CurlError.ok)
+    if (res.code >= 400)
     {
         throw new TitleFetchException("Failed to fetch YouTube video information",
-            url, client.statusLine.code, errorCode);
+            url, res.code, __FILE__, __LINE__);
     }
-
-    if (sink.data == "Not Found")
+    else if (res.responseBody == "Not Found")
     {
         throw new TitleFetchException("Invalid YouTube video ID",
-            url, client.statusLine.code, errorCode);
+            url, res.code, __FILE__, __LINE__);
     }
 
-    immutable received = assumeUnique(cast(char[])sink.data);
+    immutable received = assumeUnique(cast(char[])res.responseBody.data);
     return parseJSON(received);
 }
 
 
 // TitleFetchException
 /++
-    A normal [object.Exception|Exception] but with an HTTP status code and a cURL
-    error code attached.
+    A normal [object.Exception|Exception] but with an HTTP status code attached.
  +/
 final class TitleFetchException : Exception
 {
@@ -706,25 +781,19 @@ final class TitleFetchException : Exception
     string url;
 
     /// The HTTP status code that was returned when attempting to fetch a title.
-    uint httpCode;
-
-    /// The cURL error code that was returned when attempting to fetch a title.
-    uint errorCode;
+    uint code;
 
     /++
-        Create a new [TitleFetchException], attaching an URL, a HTTP status code and
-        a cURL error code.
+        Create a new [TitleFetchException], attaching an URL and an HTTP status code.
      +/
     this(const string message,
         const string url,
-        const uint httpCode,
-        const uint errorCode,
+        const uint code,
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
     {
-        this.httpCode = httpCode;
-        this.errorCode = errorCode;
+        this.code = code;
         super(message, file, line, nextInChain);
     }
 

@@ -490,19 +490,18 @@ Next handleGetopt(ref Kameloso instance,
             return Next.returnSuccess;
         }
 
-        import kameloso.terminal : isTTY;
-
         // Ignore invalid/missing entries here, report them when initialising plugins
         settings.configFile.readConfigInto(parser.client, bot, parser.server, connSettings, settings);
         applyDefaults(parser.client, parser.server, bot);
 
-        if (!isTTY)
-        {
-            // Non-TTYs (eg. pagers) can't show colours
-            instance.settings.monochrome = true;
-        }
+        import kameloso.terminal : applyMonochromeAndFlushOverrides;
 
-        // Get `--monochrome` again; let it overwrite what isTTY and readConfigInto set it to
+        // Non-TTYs (eg. pagers) can't show colours.
+        // Apply overrides here after having read config file
+        applyMonochromeAndFlushOverrides(settings.monochrome, settings.flush);
+
+        // Get `--monochrome` again; let it overwrite what applyMonochromeAndFlushOverrides
+        // and readConfigInto set it to
         cast(void)getopt(argsSlice,
             config.caseSensitive,
             config.bundling,
@@ -687,12 +686,12 @@ Next handleGetopt(ref Kameloso instance,
                 "cert",
                     quiet ? string.init :
                         "Path to certificate file, ditto",
-                    &connSettings.certFile,
+                    &connSettings.certFile,+/
                 "cacert",
                     quiet ? string.init :
                         "Path to <i>cacert.pem</> certificate bundle, or equivalent"
                             .expandTags(LogLevel.trace),
-                    &connSettings.caBundleFile,+/
+                    &connSettings.caBundleFile,
                 "numeric",
                     quiet ? string.init :
                         "Use numeric output of addresses",
@@ -741,13 +740,6 @@ Next handleGetopt(ref Kameloso instance,
 
         // No need to catch the return value, only used for --help
         cast(void)callGetopt(args, Yes.quiet);
-
-        // Expand tilde on resource directory, on Posix
-        version(Posix)
-        {
-            import std.path : expandTilde;
-            settings.resourceDirectory = settings.resourceDirectory.expandTilde;
-        }
 
         // Save the user from themselves. (A receive timeout of 0 breaks all sorts of things.)
         if (connSettings.receiveTimeout == 0)

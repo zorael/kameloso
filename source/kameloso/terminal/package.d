@@ -129,49 +129,80 @@ else
 }
 
 
-// ensureAppropriateBuffering
+// applyMonochromeAndFlushOverrides
 /++
-    Ensures select non-TTY environments (like Cygwin) are line-buffered.
+    Override [kameloso.kameloso.CoreSettings.monochrome|CoreSettings.monochrome] and
+    potentially [kameloso.kameloso.CoreSettings.flush|CoreSettings.flush] if the
+    terminal seems to not truly be a terminal (such as a pager, or a non-whitelisted
+    IDE terminal emulator).
+
+    The idea is to generally override monochrome to true if it's a pager, but
+    keep monochrome and override flush to true if it's a whitelisted environment.
 
     Params:
-        flush = Reference to the [kameloso.kameloso.CoreSettings.flush|CoreSettings.flush] bool.
+        monochrome = Reference to monochrome setting bool.
+        flush = Reference to flush setting bool.
  +/
-void ensureAppropriateBuffering(ref bool flush) @system
+void applyMonochromeAndFlushOverrides(ref bool monochrome, ref bool flush) @system
 {
     import kameloso.platform : currentPlatform;
 
-    if (isTTY) return;
-
-    /+
-        Some environments require us to flush standard out after writing to it,
-        or else nothing will appear on screen (until it gets automatically flushed
-        at an indeterminate point in the future).
-        Automate this by setting standard out to be line-buffered.
-     +/
-
-    static void setLineBufferingMode()
+    if (!isTTY)
     {
-        import kameloso.constants : BufferSize;
-        import std.stdio : stdout;
-        import core.stdc.stdio : _IOLBF;
+        switch (currentPlatform)
+        {
+        case "Msys":
+            // Requires manual flushing despite setvbuf
+            // No need to set monochrome though
+            flush = true;
+            break;
 
-        stdout.setvbuf(BufferSize.vbufStdout, _IOLBF);  // FIXME
+        case "Cygwin":
+        case "vscode":
+            // Probably no longer needs modifications
+            break;
+
+        default:
+            // Non-whitelisted non-TTY; set monochrome
+            monochrome = true;
+            break;
+        }
     }
+}
 
-    switch (currentPlatform)
+
+// ensureAppropriateBuffering
+/++
+    Ensures select non-TTY environments (like Cygwin) are line-buffered.
+ +/
+void ensureAppropriateBuffering() @system
+{
+    import kameloso.constants : BufferSize;
+    import kameloso.platform : currentPlatform;
+    import std.stdio : stdout;
+    import core.stdc.stdio : _IOLBF;
+
+    if (!isTTY)
     {
-    case "Msys":    // Requires manual flushing despite setvbuf
-        flush = true;
-        goto case;
+        switch (currentPlatform)
+        {
+        case "Msys":
+        case "Cygwin":
+        case "vscode":
+            /+
+                Some terminal environments require us to flush standard out after
+                writing to it, as they are likely pagers and not TTYs behind the
+                scene. Whitelist some and set standard out to be line-buffered
+                for those.
+             +/
+            stdout.setvbuf(BufferSize.vbufStdout, _IOLBF);
+            break;
 
-    case "Cygwin":  // No longer seems to need this?
-    case "vscode":  // Now identifies itself as just "linux"
-        return setLineBufferingMode();
+        default:
+            // Non-whitelisted non-TTY (a pager), leave as-is.
+            break;
+        }
 
-    default:
-        // Non-whitelisted non-TTY; just leave as-is unless flush flag is true
-        if (flush) return setLineBufferingMode();
-        break;
     }
 }
 
@@ -206,6 +237,6 @@ void setTitle(const string title) @system
     }
     else
     {
-        // Unexpected platform, do nothing
+        static assert(0, "Unsupported platform, please file a bug.");
     }
 }

@@ -471,6 +471,34 @@ enum ShellReturnValue
 }
 
 
+// MagicErrorStrings
+/++
+    Hardcoded error strings.
+ +/
+enum MagicErrorStrings
+{
+    /++
+        Failed to set up an SSL context, original library line.
+     +/
+    sslContextCreationFailure = "can't complete call to TLS_method",
+
+    /++
+        Failed to set up an SSL context, rewritten line.
+     +/
+    sslContextCreationFailureRewritten = "Failed to set up an SSL context",
+
+    /++
+        Failed to verify SSL certificates, original library line.
+     +/
+    sslCertificateVerificationFailure = "ssl connect failed: certificate verify failed",
+
+    /++
+        Failed to verify SSL certificates, rewritten line.
+     +/
+    sslCertificateVerificationFailureRewritten = "Failed to verify SSL certificates",
+}
+
+
 // DefaultColours
 /++
     Default colours gathered in one struct namespace.

@@ -1168,24 +1168,36 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
             }
             catch (TwitchQueryException e)
             {
-                import kameloso.common : curlErrorStrings;
-                import etc.c.curl : CurlError;
+                import kameloso.constants : MagicErrorStrings;
+
+                enum wikiURL = "https://github.com/zorael/kameloso/wiki/OpenSSL";
+                enum wikiPattern = "Refer to <l>" ~ wikiURL ~ "</> for more information.";
 
                 // Something is deeply wrong.
-                enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<l>%s</>)";
-                logger.errorf(pattern.expandTags(LogLevel.error), e.msg, e.error,
-                    curlErrorStrings[e.errorCode]);
 
-                if (e.errorCode == CurlError.ssl_cacert)
+                if (e.error == MagicErrorStrings.sslContextCreationFailure)
                 {
-                    // Peer certificate cannot be authenticated with given CA certificates
-                    enum caBundlePattern = "You may need to supply a CA bundle file " ~
-                        "(e.g. <l>cacert.pem</>) in the configuration file.";
-                    logger.error(caBundlePattern.expandTags(LogLevel.all));
+                    enum pattern = "Failed to validate Twitch API keys: <l>%s</> " ~
+                        "<t>(are OpenSSL libraries installed?)";
+                    logger.errorf(pattern.expandTags(LogLevel.error),
+                        cast(string)MagicErrorStrings.sslContextCreationFailureRewritten);
+                    logger.error(wikiPattern.expandTags(LogLevel.error));
+                }
+                else if (e.error == MagicErrorStrings.sslCertificateVerificationFailure)
+                {
+                    enum pattern = "Failed to validate Twitch API keys: <l>%s";
+                    logger.errorf(pattern.expandTags(LogLevel.error),
+                        cast(string)MagicErrorStrings.sslCertificateVerificationFailureRewritten);
+                    logger.error(wikiPattern.expandTags(LogLevel.error));
+                }
+                else
+                {
+                    enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
+                    logger.errorf(pattern.expandTags(LogLevel.error), e.msg, e.error, e.code);
                 }
 
-                logger.error("Disabling API features. Expect breakage.");
-                version(PrintStacktraces) logger.trace(e);
+                logger.warning("Disabling API features. Expect breakage.");
+                //version(PrintStacktraces) logger.trace(e);
                 plugin.useAPIFeatures = false;
             }
         }

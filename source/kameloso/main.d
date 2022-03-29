@@ -188,7 +188,11 @@ void signalHandler(int sig) nothrow @nogc @system
         31 : "SYS",   /// Bad system call. (SVr4)
     ];
 
-    if (!globalHeadless) printf("...caught signal SIG%s!\n", signalNames[sig].ptr);
+    if (!globalHeadless && (sig < signalNames.length))
+    {
+        printf("...caught signal SIG%s!\n", signalNames[sig].ptr);
+    }
+
     globalAbort = true;
 
     version(Posix)
@@ -2009,7 +2013,8 @@ Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings
  +/
 Next tryConnect(ref Kameloso instance)
 {
-    import kameloso.constants : ConnectionDefaultIntegers, ConnectionDefaultFloats, Timeout;
+    import kameloso.constants : ConnectionDefaultIntegers,
+        ConnectionDefaultFloats, MagicErrorStrings, Timeout;
     import kameloso.net : ConnectionAttempt, connectFiber;
     import kameloso.thread : interruptibleSleep;
     import std.concurrency : Generator;
@@ -2034,7 +2039,7 @@ Next tryConnect(ref Kameloso instance)
             We can only detect SSL context creation failure based on the string
             in the generic Exception thrown, sadly.
          +/
-        if (e.msg == "can't complete call to TLS_method")
+        if (e.msg == MagicErrorStrings.sslContextCreationFailure)
         {
             enum pattern = "Connection error: <l>failed to set up an SSL context</> " ~
                 "<t>(are OpenSSL libraries installed?)";
@@ -2385,7 +2390,8 @@ Next tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
  +/
 void postInstanceSetup(ref Kameloso instance)
 {
-    import kameloso.terminal : isTTY;
+    import kameloso.constants : KamelosoInfo;
+    import kameloso.terminal : isTTY, setTitle;
 
     version(Windows)
     {
@@ -2401,42 +2407,50 @@ void postInstanceSetup(ref Kameloso instance)
         setThreadName("kameloso");
     }
 
+    enum terminalTitle = "kameloso v" ~ cast(string)KamelosoInfo.version_;
+
     if (isTTY)
     {
-        import kameloso.constants : KamelosoInfo;
-        import kameloso.terminal : setTitle;
-
-        enum terminalTitle = "kameloso v" ~ cast(string)KamelosoInfo.version_;
         setTitle(terminalTitle);
     }
     else
     {
-        // Non-TTYs (eg. pagers) can't show colours
-        instance.settings.monochrome = true;
+        import kameloso.platform : currentPlatform;
+
+        switch (currentPlatform)
+        {
+        case "Msys":
+        case "Cygwin":
+        case "vscode":
+            // Whitelist. Technically not TTYs but can(?) display titles just the same
+            setTitle(terminalTitle);
+            break;
+
+        default:
+            // It's a pager, leave as-is
+            break;
+        }
     }
 }
 
 
-// expandPaths
+// setDefaultDirectories
 /++
-    Sets up the passed [kameloso.kameloso.CoreSettings|CoreSettings], expanding paths.
+    Sets default directories in the passed [kameloso.kameloso.CoreSettings|CoreSettings].
 
     This is called during early execution.
 
     Params:
-        settings = A reference to the [kameloso.kameloso.CoreSettings|CoreSettings]
-            we want to set up.
+        settings = A reference to some [kameloso.kameloso.CoreSettings|CoreSettings].
  +/
-void expandPaths(ref CoreSettings settings)
+void setDefaultDirectories(ref CoreSettings settings)
 {
     import kameloso.constants : KamelosoFilenames;
-    import kameloso.platform : configurationBaseDirectory, resourceBaseDirectory;
+    import kameloso.platform : cbd = configurationBaseDirectory, rbd = resourceBaseDirectory;
     import std.path : buildNormalizedPath;
 
-    // Default values
-    settings.configFile = buildNormalizedPath(configurationBaseDirectory,
-        "kameloso", KamelosoFilenames.configuration);
-    settings.resourceDirectory = buildNormalizedPath(resourceBaseDirectory, "kameloso");
+    settings.configFile = buildNormalizedPath(cbd, "kameloso", KamelosoFilenames.configuration);
+    settings.resourceDirectory = buildNormalizedPath(rbd, "kameloso");
 }
 
 
@@ -2518,19 +2532,20 @@ Next verifySettings(ref Kameloso instance)
 }
 
 
-// resolveDirectories
+// resolvePaths
 /++
-    Resolves resource directory and configuration directory semi-verbosely.
+    Resolves resource directory private key/certificate file paths semi-verbosely.
 
     This is called after settings have been verified, before plugins are initialised.
 
     Params:
         instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
  +/
-void resolveDirectories(ref Kameloso instance)
+void resolvePaths(ref Kameloso instance)
 {
     import std.file : exists;
-    import std.path : buildNormalizedPath, dirName;
+    import std.path : absolutePath, buildNormalizedPath, dirName, expandTilde, isAbsolute;
+    import std.range : only;
 
     // Resolve and create the resource directory
     version(Windows)
@@ -2549,6 +2564,11 @@ void resolveDirectories(ref Kameloso instance)
 
     instance.settings.configDirectory = instance.settings.configFile.dirName;
 
+    version(Posix)
+    {
+        instance.settings.resourceDirectory = instance.settings.resourceDirectory.expandTilde();
+    }
+
     if (!instance.settings.resourceDirectory.exists)
     {
         import std.file : mkdirRecurse;
@@ -2556,6 +2576,31 @@ void resolveDirectories(ref Kameloso instance)
         mkdirRecurse(instance.settings.resourceDirectory);
         logger.log("Created resource directory ", Tint.info,
             instance.settings.resourceDirectory);
+    }
+
+    auto filerange = only(
+        &instance.connSettings.caBundleFile,
+        &instance.connSettings.privateKeyFile,
+        &instance.connSettings.certFile);
+
+    foreach (/*const*/ file; filerange)
+    {
+        if (!file.length) continue;
+
+        *file = (*file).expandTilde;
+
+        if (!(*file).isAbsolute && !(*file).exists)
+        {
+            immutable fullPath = instance.settings.configDirectory.isAbsolute ?
+                absolutePath(*file, instance.settings.configDirectory) :
+                buildNormalizedPath(instance.settings.configDirectory, *file);
+
+            if (fullPath.exists)
+            {
+                *file = fullPath;
+            }
+            // else leave as-is
+        }
     }
 }
 
@@ -2959,8 +3004,8 @@ int run(string[] args)
     // Declare AttemptState instance.
     AttemptState attempt;
 
-    // Set up `kameloso.common.settings`, expanding paths.
-    expandPaths(instance.settings);
+    // Set up default directories in the settings.
+    setDefaultDirectories(instance.settings);
 
     // Initialise the logger immediately so it's always available.
     // handleGetopt re-inits later when we know the settings for monochrome and headless
@@ -3015,7 +3060,7 @@ int run(string[] args)
         import kameloso.terminal : ensureAppropriateBuffering;
 
         // Ensure stdout is buffered by line if we think it isn't being
-        ensureAppropriateBuffering(instance.settings.flush);
+        ensureAppropriateBuffering();
     }
     catch (ErrnoException e)
     {
@@ -3050,19 +3095,16 @@ int run(string[] args)
 
     import std.algorithm.comparison : among;
 
-    // Copy some stuff over to our Connection
-    instance.conn.certFile = instance.connSettings.certFile;
-    instance.conn.privateKeyFile = instance.connSettings.privateKeyFile;
-    instance.conn.ssl = instance.connSettings.ssl;
-
     // Additionally if the port is an SSL-like port, assume SSL,
     // but only if the user isn't forcing settings
     if (!instance.conn.ssl && !instance.settings.force &&
         instance.parser.server.port.among!(6697, 7000, 7001, 7029, 7070, 9999, 443))
     {
-        instance.connSettings.ssl = true;  // Is this wise?
-        instance.conn.ssl = true;
+        instance.connSettings.ssl = true;
     }
+
+    // Copy ssl setting to the Connection after the above
+    instance.conn.ssl = instance.connSettings.ssl;
 
     import kameloso.common : replaceTokens, printVersionInfo;
     import kameloso.printing : printObjects;
@@ -3108,9 +3150,10 @@ int run(string[] args)
         assert(0, "`verifySettings` returned `Next.crash`");
     }
 
-    // Resolve resource and configuration directory paths.
-    instance.resolveDirectories();
-    instance.conn.configDirectory = instance.settings.configDirectory;
+    // Resolve resource and private key/certificate paths.
+    instance.resolvePaths();
+    instance.conn.certFile = instance.connSettings.certFile;
+    instance.conn.privateKeyFile = instance.connSettings.privateKeyFile;
 
     // Save the original nickname *once*, outside the connection loop and before
     // initialising plugins (who will make a copy of it). Knowing this is useful

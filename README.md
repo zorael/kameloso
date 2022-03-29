@@ -96,11 +96,20 @@ If your repositories (or other software sources) don't have compilers new enough
 
 The package manager [**dub**](https://code.dlang.org) is used to facilitate compilation and dependency management. On Windows it comes bundled in the compiler archive, while on Linux it may need to be installed separately. Refer to your repositories.
 
-### SSL libraries
+### SSL Libraries on Windows
 
-**kameloso** uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard SSL library in the Posix sphere (Linux, macOS, ...), but not so on Windows. If you run into errors about *failing to set up an SSL context* when attempting to connect on Windows, download and install **Win64/32 OpenSSL v3.0.x Light** from [here](https://slproweb.com/products/Win32OpenSSL.html), and opt to install to system directories when asked.
+**kameloso** uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard SSL library in the Posix sphere (Linux, macOS, ...), but not so on Windows. If you run into errors about *failing to set up an SSL context* when attempting to connect on Windows, download and install **Win64/32 OpenSSL v1.1.1n Light** from [here](https://slproweb.com/products/Win32OpenSSL.html), and opt to install to Windows system directories when asked.
 
-> An alternative is to use a different shell environment, such as any one of **Git for Windows** (Bash shell), **MinGW64**, **MSYS2**, **Cygwin** and **Windows Subsystem for Linux** (likely among others), all of which either include said libraries or at the very least offer the ability to install them. Or just limit yourself to non-SSL connections.
+> An alternative is to use a different shell environment, such as any one of **Git for Windows** (Bash shell), **MinGW64**, **MSYS2**, **Cygwin** and **Windows Subsystem for Linux** (likely among others), all of which either include said libraries or at the very least offer the ability to install them. Or just limit yourself to non-SSL connections and live without some plugin features.
+
+If you get errors about not being able to verify certificates, you may also need to supply a certificate bundle. Download this [`cacert.pem`](https://curl.haxx.se/ca/cacert.pem) file from the cURL project, place it somewhere reasonable, and edit your configuration file to point to it; `caBundleFile` under `[Connection]`. If you place it in `%APPDATA%\kameloso` (or in the working directory) you only need to enter its filename, otherwise enter a full path.
+
+```ini
+[Connection]
+caBundleFile                cacert.pem
+```
+
+You can also specify one at the command line with `--cacert`.
 
 ## Downloading
 
@@ -368,9 +377,7 @@ If you still can't find what you're looking for, or if you have suggestions on h
 
 ## Windows
 
-See [the SSL libraries section](#ssl-libraries) for information about installing the libraries needed to make encrypted connections.
-
-Even with SSL seemingly properly set up you may see errors of *"Peer certificates cannot be authenticated with given CA certificates"*, particularly on older versions of Windows. If this happens, download this [`cacert.pem`](https://curl.haxx.se/ca/cacert.pem) file, place it somewhere reasonable, and edit your configuration file to point to it; `caBundleFile` under `[Connection]`.
+See the [SSL Libraries on Windows](#ssl-libraries-on-windows) section for information about installing the libraries needed to make encrypted connections and to allow certain plugins to access the web via `https://` addresses.
 
 # Roadmap
 
