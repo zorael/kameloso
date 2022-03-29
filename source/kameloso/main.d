@@ -2430,26 +2430,23 @@ void postInstanceSetup(ref Kameloso instance)
 }
 
 
-// expandPaths
+// setDefaultDirectories
 /++
-    Sets up the passed [kameloso.kameloso.CoreSettings|CoreSettings], expanding paths.
+    Sets default directories in the passed [kameloso.kameloso.CoreSettings|CoreSettings].
 
     This is called during early execution.
 
     Params:
-        settings = A reference to the [kameloso.kameloso.CoreSettings|CoreSettings]
-            we want to set up.
+        settings = A reference to some [kameloso.kameloso.CoreSettings|CoreSettings].
  +/
-void expandPaths(ref CoreSettings settings)
+void setDefaultDirectories(ref CoreSettings settings)
 {
     import kameloso.constants : KamelosoFilenames;
-    import kameloso.platform : configurationBaseDirectory, resourceBaseDirectory;
+    import kameloso.platform : cbd = configurationBaseDirectory, rbd = resourceBaseDirectory;
     import std.path : buildNormalizedPath;
 
-    // Default values
-    settings.configFile = buildNormalizedPath(configurationBaseDirectory,
-        "kameloso", KamelosoFilenames.configuration);
-    settings.resourceDirectory = buildNormalizedPath(resourceBaseDirectory, "kameloso");
+    settings.configFile = buildNormalizedPath(cbd, "kameloso", KamelosoFilenames.configuration);
+    settings.resourceDirectory = buildNormalizedPath(rbd, "kameloso");
 }
 
 
@@ -2972,8 +2969,8 @@ int run(string[] args)
     // Declare AttemptState instance.
     AttemptState attempt;
 
-    // Set up `kameloso.common.settings`, expanding paths.
-    expandPaths(instance.settings);
+    // Set up default directories in the settings.
+    setDefaultDirectories(instance.settings);
 
     // Initialise the logger immediately so it's always available.
     // handleGetopt re-inits later when we know the settings for monochrome and headless
