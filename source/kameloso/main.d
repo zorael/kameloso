@@ -3097,19 +3097,16 @@ int run(string[] args)
 
     import std.algorithm.comparison : among;
 
-    // Copy some stuff over to our Connection
-    instance.conn.certFile = instance.connSettings.certFile;
-    instance.conn.privateKeyFile = instance.connSettings.privateKeyFile;
-    instance.conn.ssl = instance.connSettings.ssl;
-
     // Additionally if the port is an SSL-like port, assume SSL,
     // but only if the user isn't forcing settings
     if (!instance.conn.ssl && !instance.settings.force &&
         instance.parser.server.port.among!(6697, 7000, 7001, 7029, 7070, 9999, 443))
     {
-        instance.connSettings.ssl = true;  // Is this wise?
-        instance.conn.ssl = true;
+        instance.connSettings.ssl = true;
     }
+
+    // Copy ssl setting to the Connection after the above
+    instance.conn.ssl = instance.connSettings.ssl;
 
     import kameloso.common : replaceTokens, printVersionInfo;
     import kameloso.printing : printObjects;
@@ -3157,7 +3154,8 @@ int run(string[] args)
 
     // Resolve resource and private key/certificate paths.
     instance.resolvePaths();
-    instance.conn.configDirectory = instance.settings.configDirectory;
+    instance.conn.certFile = instance.connSettings.certFile;
+    instance.conn.privateKeyFile = instance.connSettings.privateKeyFile;
 
     // Save the original nickname *once*, outside the connection loop and before
     // initialising plugins (who will make a copy of it). Knowing this is useful
