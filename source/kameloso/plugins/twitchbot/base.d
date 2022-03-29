@@ -80,10 +80,14 @@ public:
          +/
         bool singleWorkerThread = true;
     }
-    else
+    else version(Posix)
     {
         /// Ditto
         bool singleWorkerThread = false;
+    }
+    else
+    {
+        static assert(0, "Unsupported platform, please file a bug.");
     }
 
     /++

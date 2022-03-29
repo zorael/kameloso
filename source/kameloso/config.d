@@ -244,7 +244,7 @@ void manageConfigFile(ref Kameloso instance,
         }
         else
         {
-            static assert(0, "Unexpected platform, please file a bug");
+            static assert(0, "Unsupported platform, please file a bug.");
         }
 
         // Let exceptions (ProcessExceptions) fall through and get caught

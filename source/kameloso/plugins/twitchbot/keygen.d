@@ -229,8 +229,7 @@ instructions and log in to authorise the use of this program with your account.
             }
             else
             {
-                // Jump to the catch
-                throw new ProcessException("Unexpected platform");
+                static assert(0, "Unsupported platform, please file a bug.");
             }
         }
         catch (ProcessException e)

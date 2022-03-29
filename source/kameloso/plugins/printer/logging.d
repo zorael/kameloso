@@ -323,7 +323,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
             }
             else
             {
-                logger.warning("ErrnoException caught when writing to log: ", Tint.log, e.msg);
+                static assert(0, "Unsupported platform, please file a bug.");
             }
 
             version(PrintStacktraces) logger.trace(e.info);
@@ -591,10 +591,14 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
             logger.warningf(pattern.expandTags(LogLevel.warning), errnoStrings[e.errno],
                 buffer.file, e.msg, plugin.bell);
         }
-        else
+        else version(Windows)
         {
             enum pattern = "ErrnoException <l>%d</> caught when committing log to <l>%s</>: <l>%s%s";
             logger.warningf(pattern.expandTags(LogLevel.warning), e.errno, buffer.file, e.msg, plugin.bell);
+        }
+        else
+        {
+            static assert(0, "Unsupported platform, please file a bug.");
         }
 
         version(PrintStacktraces) logger.trace(e.info);
@@ -646,9 +650,13 @@ auto escapedPath(/*const*/ string path)
             .replace('\\', replacementCharacter)
             .replace('|', alternateReplacementCharacter);  // Don't collide
     }
-    else
+    else version(Posix)
     {
         return path;
+    }
+    else
+    {
+        static assert(0, "Unsupported platform, please file a bug.");
     }
 }
 
@@ -693,7 +701,7 @@ unittest
             assert((after == expected), after);
         }
     }
-    else /*version(Posix)*/
+    else version(Posix)
     {
         immutable before = "passthrough";
         immutable after = escapedPath(before);

@@ -113,7 +113,7 @@ auto configurationBaseDirectory()
     }
     else
     {
-        static assert(0, "Unexpected platform, please file a bug");
+        static assert(0, "Unsupported platform, please file a bug.");
     }
 }
 
@@ -185,7 +185,7 @@ auto resourceBaseDirectory()
     }
     else
     {
-        static assert(0, "Unexpected platform, please file a bug");
+        static assert(0, "Unsupported platform, please file a bug.");
     }
 }
 

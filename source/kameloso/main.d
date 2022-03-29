@@ -1119,8 +1119,7 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
         }
         else
         {
-            enum pattern = "Connection error! (<l>%s</>)";
-            logger.warningf(pattern.expandTags(LogLevel.warning), attempt.error);
+            static assert(0, "Unsupported platform, please file a bug.");
         }
 
         // Sleep briefly so it won't flood the screen on chains of errors
@@ -1154,8 +1153,7 @@ Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
             }
             else
             {
-                enum pattern = "Connection error: invalid server response! (<l>%s</>)";
-                logger.errorf(pattern.expandTags(LogLevel.error), attempt.error);
+                static assert(0, "Unsupported platform, please file a bug.");
             }
         }
 
@@ -2153,6 +2151,10 @@ Next tryConnect(ref Kameloso instance)
                 import core.sys.windows.winsock2 : WSAEINPROGRESS;
                 enum errnoInProgress = WSAEINPROGRESS;
             }
+            else
+            {
+                static assert(0, "Unsupported platform, please file a bug.");
+            }
 
             if (attempt.errno == errnoInProgress)
             {
@@ -2175,6 +2177,10 @@ Next tryConnect(ref Kameloso instance)
                 {
                     enum pattern = "Connection failed with error <l>%d</>: <t>%s";
                     logger.warningf(pattern.expandTags(LogLevel.warning), attempt.errno, errorString);
+                }
+                else
+                {
+                    static assert(0, "Unsupported platform, please file a bug.");
                 }
             }
 
@@ -2207,7 +2213,7 @@ Next tryConnect(ref Kameloso instance)
             }
             else
             {
-                logger.warning("IPv6 connection failed. Disabling IPv6.");
+                static assert(0, "Unsupported platform, please file a bug.");
             }
 
             if (*instance.abort) return Next.returnFailure;
@@ -2515,10 +2521,14 @@ Next verifySettings(ref Kameloso instance)
             instance.parser.server.address.contains('.') ||
             instance.parser.server.address.contains(':');
     }
-    else
+    else version(Windows)
     {
         // On Windows this doesn't happen, so allow all addresses.
         enum addressIsResolvable = true;
+    }
+    else
+    {
+        static assert(0, "Unsupported platform, please file a bug.");
     }
 
     if (!addressIsResolvable)
@@ -2555,11 +2565,15 @@ void resolvePaths(ref Kameloso instance)
             buildNormalizedPath(instance.settings.resourceDirectory,
                 "server", instance.parser.server.address.replace(":", "_"));
     }
-    else
+    else version(Posix)
     {
         instance.settings.resourceDirectory =
             buildNormalizedPath(instance.settings.resourceDirectory,
                 "server", instance.parser.server.address);
+    }
+    else
+    {
+        static assert(0, "Unsupported platform, please file a bug.");
     }
 
     instance.settings.configDirectory = instance.settings.configFile.dirName;
