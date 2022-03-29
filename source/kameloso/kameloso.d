@@ -650,7 +650,7 @@ public:
         long numEvents;
 
         /// How many bytses were read during this connection.
-        long bytesReceived;
+        ulong bytesReceived;
     }
 
     /// History records of established connections this execution run.

@@ -2893,7 +2893,7 @@ void printSummary(const ref Kameloso instance)
     import core.time : Duration;
 
     Duration totalTime;
-    long totalBytesReceived;
+    ulong totalBytesReceived;
     uint i;
 
     logger.info("-- Connection summary --");
