@@ -2417,12 +2417,12 @@ void postInstanceSetup(ref Kameloso instance)
         case "Msys":
         case "Cygwin":
         case "vscode":
-            // Whitelist. Technically not TTYs but can display colours just the same
+            // Whitelist. Technically not TTYs but can(?) display titles just the same
             setTitle(terminalTitle);
             break;
 
         default:
-            // monochrome and flush is overridden elswhere
+            // It's a pager, leave as-is
             break;
         }
     }
