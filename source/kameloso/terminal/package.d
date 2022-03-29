@@ -129,6 +129,48 @@ else
 }
 
 
+// applyMonochromeAndFlushOverrides
+/++
+    Override [kameloso.kameloso.CoreSettings.monochrome|CoreSettings.monochrome] and
+    potentially [kameloso.kameloso.CoreSettings.flush|CoreSettings.flush] if the
+    terminal seems to not truly be a terminal (such as a pager, or a non-whitelisted
+    IDE terminal emulator).
+
+    The idea is to generally override monochrome to true if it's a pager, but
+    keep monochrome and override flush to true if it's a whitelisted environment.
+
+    Params:
+        monochrome = Reference to monochrome setting bool.
+        flush = Reference to flush setting bool.
+ +/
+void applyMonochromeAndFlushOverrides(ref bool monochrome, ref bool flush)
+{
+    import kameloso.platform : currentPlatform;
+
+    if (!isTTY)
+    {
+        switch (currentPlatform)
+        {
+        case "Msys":
+            // Requires manual flushing despite setvbuf
+            // No need to set monochrome though
+            flush = true;
+            break;
+
+        case "Cygwin":
+        case "vscode":
+            // Probably no longer needs modifications
+            break;
+
+        default:
+            // Non-whitelisted non-TTY; set monochrome
+            monochrome = true;
+            break;
+        }
+    }
+}
+
+
 // ensureAppropriateBuffering
 /++
     Ensures select non-TTY environments (like Cygwin) are line-buffered.
