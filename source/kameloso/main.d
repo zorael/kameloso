@@ -891,7 +891,8 @@ Next mainLoop(ref Kameloso instance)
             final switch (actionAfterListen)
             {
             case continue_:
-                historyEntry.bytesReceived += attempt.bytesReceived;
+                import std.algorithm.comparison : max;
+                historyEntry.bytesReceived += max(attempt.bytesReceived, 0);
                 historyEntry.stopTime = nowInUnix;
                 // Drop down and continue
                 break;
