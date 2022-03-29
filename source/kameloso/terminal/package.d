@@ -129,6 +129,35 @@ else
 }
 
 
+// isTerminal
+/++
+    Determines whether or not the program is being run in a terminal, be it a
+    real TTY or a whitelisted pseudo-TTY such as those employed in IDE terminal
+    emulators.
+
+    Returns:
+        `true` if the environment is either a real TTY or one of a few whitelisted
+        pseudo-TTYs; `false` if not.
+ +/
+bool isTerminal()
+{
+    import kameloso.platform : currentPlatform;
+
+    if (isTTY) return true;
+
+    switch (currentPlatform)
+    {
+    case "Msys":
+    case "Cygwin":
+    case "vscode":
+        return true;
+
+    default:
+        return false;
+    }
+}
+
+
 // applyMonochromeAndFlushOverrides
 /++
     Override [kameloso.kameloso.CoreSettings.monochrome|CoreSettings.monochrome] and
