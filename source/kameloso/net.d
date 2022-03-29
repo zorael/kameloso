@@ -164,12 +164,6 @@ public:
      +/
     string privateKeyFile;
 
-    /++
-        Path to configuration directory.
-     +/
-    string configDirectory;
-
-
     // sendTimeout
     /++
         Accessor; returns the current send timeout.
@@ -333,7 +327,7 @@ public:
     in (ssl, "Tried to set up SSL context on a non-SSL `Connection`")
     {
         import std.file : exists;
-        import std.path : absolutePath, buildNormalizedPath, expandTilde, extension, isAbsolute;
+        import std.path : extension;
         import std.string : toStringz;
 
         sslContext = openssl.SSL_CTX_new(openssl.TLS_method);
@@ -342,40 +336,30 @@ public:
         if (certFile.length)
         {
             // Before SSL_new
-            immutable certFileExpanded = certFile.expandTilde;
-            immutable certFilePath = configDirectory.isAbsolute ?
-                absolutePath(certFileExpanded, configDirectory) :
-                buildNormalizedPath(configDirectory, certFileExpanded);
-
-            if (!certFilePath.exists)
+            if (!certFile.exists)
             {
                 throw new SSLFileException("No such certificate file",
-                    certFilePath, __FILE__, __LINE__);
+                    certFile, __FILE__, __LINE__);
             }
 
-            immutable filetype = (certFilePath.extension == ".pem") ? 1 : 0;
+            immutable filetype = (certFile.extension == ".pem") ? 1 : 0;
             immutable code = openssl.SSL_CTX_use_certificate_file(sslContext,
-                toStringz(certFilePath), filetype);
+                toStringz(certFile), filetype);
             if (code != 1) throw new SSLException("Failed to set certificate", code);
         }
 
         if (privateKeyFile.length)
         {
             // Ditto
-            immutable privateKeyFileExpanded = privateKeyFile.expandTilde;
-            immutable privateKeyFilePath = configDirectory.isAbsolute ?
-                absolutePath(privateKeyFileExpanded, configDirectory) :
-                buildNormalizedPath(configDirectory, privateKeyFileExpanded);
-
-            if (!privateKeyFilePath.exists)
+            if (!privateKeyFile.exists)
             {
                 throw new SSLFileException("No such private key file",
-                    privateKeyFilePath, __FILE__, __LINE__);
+                    privateKeyFile, __FILE__, __LINE__);
             }
 
-            immutable filetype = (privateKeyFilePath.extension == ".pem") ? 1 : 0;
+            immutable filetype = (privateKeyFile.extension == ".pem") ? 1 : 0;
             immutable code = openssl.SSL_CTX_use_PrivateKey_file(sslContext,
-                toStringz(privateKeyFilePath), filetype);
+                toStringz(privateKeyFile), filetype);
             if (code != 1) throw new SSLException("Failed to set private key", code);
         }
 
