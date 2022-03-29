@@ -892,9 +892,11 @@ Next mainLoop(ref Kameloso instance)
             {
             case continue_:
                 import std.algorithm.comparison : max;
+
                 historyEntry.bytesReceived += max(attempt.bytesReceived, 0);
                 historyEntry.stopTime = nowInUnix;
-                // Drop down and continue
+                ++historyEntry.numEvents;
+                instance.processLineFromServer(attempt.line, nowInUnix);
                 break;
 
             case retry:
@@ -911,9 +913,6 @@ Next mainLoop(ref Kameloso instance)
             case crash:
                 assert(0, "`listenAttemptToNext` returned `Next.crash`");
             }
-
-            instance.processLineFromServer(attempt.line, nowInUnix);
-            ++historyEntry.numEvents;
         }
 
         // Check concurrency messages to see if we should exit, else repeat
