@@ -330,14 +330,14 @@ void worker(shared TitleLookupRequest sRequest,
                 {
                     import std.format : format;
 
-                    enum pattern = "Failed to fetch webpage title: <l>%s</> <t>(are OpenSSL libraries installed?)";
+                    enum pattern = "Error fetching webpage title: <l>%s</> <t>(are OpenSSL libraries installed?)";
                     request.state.askToError(pattern.format(e.msg));
                     request.state.askToError(wikiPattern);
                     return;
                 }
                 else if (e.msg == MagicErrorStrings.sslCertificateVerificationFailureRewritten)
                 {
-                    request.state.askToError("Failed to fetch webpage title: <l>" ~ e.msg);
+                    request.state.askToError("Error fetching webpage title: <l>" ~ e.msg);
                     request.state.askToError(wikiPattern);
                     return;
                 }
@@ -417,13 +417,13 @@ void worker(shared TitleLookupRequest sRequest,
 
                 if (e.msg == MagicErrorStrings.sslContextCreationFailureRewritten)
                 {
-                    enum pattern = "Failed to fetch webpage title: <l>%s</> <t>(are OpenSSL libraries installed?)";
+                    enum pattern = "Error fetching webpage title: <l>%s</> <t>(are OpenSSL libraries installed?)";
                     request.state.askToError(pattern.format(e.msg));
                     request.state.askToError(wikiPattern);
                 }
                 else if (e.msg == MagicErrorStrings.sslCertificateVerificationFailureRewritten)
                 {
-                    request.state.askToError("Failed to fetch webpage title: <l>" ~ e.msg);
+                    request.state.askToError("Error fetching webpage title: <l>" ~ e.msg);
                     request.state.askToError(wikiPattern);
                 }
                 else
