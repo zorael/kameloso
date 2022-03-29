@@ -3050,19 +3050,8 @@ int run(string[] args)
     {
         import kameloso.terminal : ensureAppropriateBuffering;
 
-        immutable before = instance.settings.flush;
-
         // Ensure stdout is buffered by line if we think it isn't being
-        ensureAppropriateBuffering(instance.settings.flush);
-
-        if (before != instance.settings.flush)
-        {
-            initLogger(
-                cast(Flag!"monochrome")instance.settings.monochrome,
-                cast(Flag!"brightTerminal")instance.settings.brightTerminal,
-                cast(Flag!"headless")instance.settings.headless,
-                cast(Flag!"flush")instance.settings.flush);
-        }
+        ensureAppropriateBuffering();
     }
     catch (ErrnoException e)
     {
