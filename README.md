@@ -102,7 +102,7 @@ The package manager [**dub**](https://code.dlang.org) is used to facilitate comp
 
 > An alternative is to use a different shell environment, such as any one of **Git for Windows** (Bash shell), **MinGW64**, **MSYS2**, **Cygwin** and **Windows Subsystem for Linux** (likely among others), all of which either include said libraries or at the very least offer the ability to install them. Or just limit yourself to non-SSL connections and live without some plugin features.
 
-If you get errors about not being able to verity certificates, you may also need to supply a certificate bundle. Download this [`cacert.pem`](https://curl.haxx.se/ca/cacert.pem) file from the cURL project, place it somewhere reasonable, and edit your configuration file to point to it; `caBundleFile` under `[Connection]`. If you place it in `%APPDATA%\kameloso` (or in the working directory) you only need to enter its filename, otherwise enter a full path.
+If you get errors about not being able to verify certificates, you may also need to supply a certificate bundle. Download this [`cacert.pem`](https://curl.haxx.se/ca/cacert.pem) file from the cURL project, place it somewhere reasonable, and edit your configuration file to point to it; `caBundleFile` under `[Connection]`. If you place it in `%APPDATA%\kameloso` (or in the working directory) you only need to enter its filename, otherwise enter a full path.
 
 ```ini
 [Connection]

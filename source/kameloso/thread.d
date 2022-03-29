@@ -178,7 +178,7 @@ struct ThreadMessage
         reload,
 
         /++
-            Request to disconnect and reconect to the server.
+            Request to disconnect and reconnect to the server.
          +/
         reconnect,
 

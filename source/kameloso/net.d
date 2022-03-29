@@ -847,7 +847,7 @@ struct ConnectionAttempt
 
     Params:
         conn = Reference to the current, unconnected [Connection].
-        connectionRetries = How many times to attempt to connect before signaling
+        connectionRetries = How many times to attempt to connect before signalling
             that we should move on to the next IP.
         abort = Reference "abort" flag, which -- if set -- should make the
             function return and the [core.thread.fiber.Fiber|Fiber] terminate.

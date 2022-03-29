@@ -495,7 +495,7 @@ enum MagicErrorStrings
     /++
         Failed to verify SSL certificates, rewritten line.
      +/
-    sslCertificateVerificationFailureRewritten = "Failed to verify SSL certficates",
+    sslCertificateVerificationFailureRewritten = "Failed to verify SSL certificates",
 }
 
 
