@@ -12,7 +12,7 @@
 * bugs
 * channel polls, `!seen`, counters, stopwatches
 * automatic mode sets (e.g. auto `+o` on join)
-* works on **Twitch** with some common Twitch bot features
+* works on **Twitch** with some common Twitch bot features (alongside the rest)
 * [more random stuff and gimmicks](https://github.com/zorael/kameloso/wiki/Current-plugins)
 
 All of the above are plugins and can be disabled at runtime or omitted from compilation entirely. It is modular and easy to extend. A skeletal Hello World plugin is [25 lines of code](source/kameloso/plugins/hello.d).
