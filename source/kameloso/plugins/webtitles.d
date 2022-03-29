@@ -18,6 +18,7 @@ private:
 
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
+import kameloso.constants : MagicErrorStrings;
 import kameloso.messaging;
 import dialect.defs;
 import std.json : JSONValue;
@@ -322,11 +323,21 @@ void worker(shared TitleLookupRequest sRequest,
             }
             catch (Exception e)
             {
-                if (e.msg == "ssl connect failed: certificate verify failed")
+                enum wikiURL = "https://github.com/zorael/kameloso/wiki/OpenSSL";
+                enum wikiPattern = "Refer to <l>" ~ wikiURL ~ "</> for more information.";
+
+                if (e.msg == MagicErrorStrings.sslContextCreationFailureRewritten)
                 {
-                    request.state.askToError("Failed to fetch YouTube video information: <l>" ~ e.msg);
-                    enum wikiURL = "https://github.com/zorael/kameloso/wiki/OpenSSL";
-                    enum wikiPattern = "Refer to <l>" ~ wikiURL ~ "</> for more information.";
+                    import std.format : format;
+
+                    enum pattern = "Failed to fetch webpage title: <l>%s</> <t>(are OpenSSL libraries installed?)";
+                    request.state.askToError(pattern.format(e.msg));
+                    request.state.askToError(wikiPattern);
+                    return;
+                }
+                else if (e.msg == MagicErrorStrings.sslCertificateVerificationFailureRewritten)
+                {
+                    request.state.askToError("Failed to fetch webpage title: <l>" ~ e.msg);
                     request.state.askToError(wikiPattern);
                     return;
                 }
@@ -346,6 +357,7 @@ void worker(shared TitleLookupRequest sRequest,
 
     void tryLookup()
     {
+        import std.format : format;
         import std.range : only;
         import core.exception : UnicodeException;
 
@@ -364,8 +376,6 @@ void worker(shared TitleLookupRequest sRequest,
             }
             catch (TitleFetchException e)
             {
-                import std.format : format;
-
                 if (e.code >= 400)
                 {
                     // Simply failed to fetch
@@ -395,7 +405,6 @@ void worker(shared TitleLookupRequest sRequest,
             }
             catch (UnicodeException e)
             {
-                import std.format : format;
                 enum pattern = "Webtitles worker Unicode exception: <l>%s</> " ~
                     "(link is probably to an image or similar)";
                 request.state.askToError(pattern.format(e.msg));
@@ -403,11 +412,18 @@ void worker(shared TitleLookupRequest sRequest,
             }
             catch (Exception e)
             {
-                if (e.msg == "ssl connect failed: certificate verify failed")
+                enum wikiURL = "https://github.com/zorael/kameloso/wiki/OpenSSL";
+                enum wikiPattern = "Refer to <l>" ~ wikiURL ~ "</> for more information.";
+
+                if (e.msg == MagicErrorStrings.sslContextCreationFailureRewritten)
+                {
+                    enum pattern = "Failed to fetch webpage title: <l>%s</> <t>(are OpenSSL libraries installed?)";
+                    request.state.askToError(pattern.format(e.msg));
+                    request.state.askToError(wikiPattern);
+                }
+                else if (e.msg == MagicErrorStrings.sslCertificateVerificationFailureRewritten)
                 {
                     request.state.askToError("Failed to fetch webpage title: <l>" ~ e.msg);
-                    enum wikiURL = "https://github.com/zorael/kameloso/wiki/OpenSSL";
-                    enum wikiPattern = "Refer to <l>" ~ wikiURL ~ "</> for more information.";
                     request.state.askToError(wikiPattern);
                 }
                 else
@@ -481,14 +497,17 @@ TitleLookupResults lookupTitle(
     }
     catch (Exception e)
     {
-        if (e.msg == "can't complete call to TLS_method")
+        // Reword some exceptions
+        if (e.msg == MagicErrorStrings.sslContextCreationFailure)
         {
-            throw new Exception("Failed to set up an SSL context");
+            e.msg = MagicErrorStrings.sslContextCreationFailureRewritten;
         }
-        else
+        else if (e.msg == MagicErrorStrings.sslCertificateVerificationFailure)
         {
-            throw e;
+            e.msg = MagicErrorStrings.sslCertificateVerificationFailureRewritten;
         }
+
+        throw e;
     }
 
     Document doc = new Document;
@@ -722,14 +741,17 @@ JSONValue getYouTubeInfo(const string url, const string caBundleFile)
     }
     catch (Exception e)
     {
-        if (e.msg == "can't complete call to TLS_method")
+        // Reword some exceptions
+        if (e.msg == MagicErrorStrings.sslContextCreationFailure)
         {
-            throw new Exception("Failed to set up an SSL context");
+            e.msg = MagicErrorStrings.sslContextCreationFailureRewritten;
         }
-        else
+        else if (e.msg == MagicErrorStrings.sslCertificateVerificationFailure)
         {
-            throw e;
+            e.msg = MagicErrorStrings.sslCertificateVerificationFailureRewritten;
         }
+
+        throw e;
     }
 
     if (res.code >= 400)
