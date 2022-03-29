@@ -1168,12 +1168,36 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
             }
             catch (TwitchQueryException e)
             {
-                // Something is deeply wrong.
-                enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
-                logger.errorf(pattern.expandTags(LogLevel.error), e.msg, e.error, e.code);
+                import kameloso.constants : MagicErrorStrings;
 
-                logger.error("Disabling API features. Expect breakage.");
-                version(PrintStacktraces) logger.trace(e);
+                enum wikiURL = "https://github.com/zorael/kameloso/wiki/OpenSSL";
+                enum wikiPattern = "Refer to <l>" ~ wikiURL ~ "</> for more information.";
+
+                // Something is deeply wrong.
+
+                if (e.error == MagicErrorStrings.sslContextCreationFailure)
+                {
+                    enum pattern = "Failed to validate Twitch API keys: <l>%s</> " ~
+                        "<t>(are OpenSSL libraries installed?)";
+                    logger.errorf(pattern.expandTags(LogLevel.error),
+                        MagicErrorStrings.sslContextCreationFailureRewritten);
+                    logger.error(wikiPattern);
+                }
+                else if (e.error == MagicErrorStrings.sslCertificateVerificationFailure)
+                {
+                    enum pattern = "Failed to validate Twitch API keys: <l>%s";
+                    logger.errorf(pattern.expandTags(LogLevel.error),
+                        MagicErrorStrings.sslCertificateVerificationFailureRewritten);
+                    logger.error(wikiPattern);
+                }
+                else
+                {
+                    enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
+                    logger.errorf(pattern.expandTags(LogLevel.error), e.msg, e.error, e.code);
+                }
+
+                logger.warning("Disabling API features. Expect breakage.");
+                //version(PrintStacktraces) logger.trace(e);
                 plugin.useAPIFeatures = false;
             }
         }
