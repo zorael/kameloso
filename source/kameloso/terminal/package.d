@@ -237,6 +237,6 @@ void setTitle(const string title) @system
     }
     else
     {
-        // Unexpected platform, do nothing
+        static assert(0, "Unsupported platform, please file a bug.");
     }
 }
