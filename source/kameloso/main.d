@@ -2422,8 +2422,7 @@ void postInstanceSetup(ref Kameloso instance)
             break;
 
         default:
-            // Non-TTYs (eg. pagers) can't show colours
-            instance.settings.monochrome = true;
+            // monochrome and flush is overridden elswhere
             break;
         }
     }

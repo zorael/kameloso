@@ -490,19 +490,18 @@ Next handleGetopt(ref Kameloso instance,
             return Next.returnSuccess;
         }
 
-        import kameloso.terminal : isTTY;
-
         // Ignore invalid/missing entries here, report them when initialising plugins
         settings.configFile.readConfigInto(parser.client, bot, parser.server, connSettings, settings);
         applyDefaults(parser.client, parser.server, bot);
 
-        if (!isTTY)
-        {
-            // Non-TTYs (eg. pagers) can't show colours
-            instance.settings.monochrome = true;
-        }
+        import kameloso.terminal : applyMonochromeAndFlushOverrides;
 
-        // Get `--monochrome` again; let it overwrite what isTTY and readConfigInto set it to
+        // Non-TTYs (eg. pagers) can't show colours.
+        // Apply overrides here after having read config file
+        applyMonochromeAndFlushOverrides(settings.monochrome, settings.flush);
+
+        // Get `--monochrome` again; let it overwrite what applyMonochromeAndFlushOverrides
+        // and readConfigInto set it to
         cast(void)getopt(argsSlice,
             config.caseSensitive,
             config.bundling,
