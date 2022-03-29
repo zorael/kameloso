@@ -2539,7 +2539,7 @@ Next verifySettings(ref Kameloso instance)
 void resolvePaths(ref Kameloso instance)
 {
     import std.file : exists;
-    import std.path : absolutePath, buildNormalizedPath, expandTilde, dirName, isAbsolute;
+    import std.path : absolutePath, buildNormalizedPath, dirName, isAbsolute;
     import std.range : only;
 
     // Resolve and create the resource directory
@@ -2558,6 +2558,12 @@ void resolvePaths(ref Kameloso instance)
     }
 
     instance.settings.configDirectory = instance.settings.configFile.dirName;
+
+    version(Posix)
+    {
+        import std.path : expandTilde;
+        instance.settings.resourceDirectory = instance.settings.resourceDirectory.expandTilde();
+    }
 
     if (!instance.settings.resourceDirectory.exists)
     {
