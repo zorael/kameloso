@@ -1180,14 +1180,14 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                     enum pattern = "Failed to validate Twitch API keys: <l>%s</> " ~
                         "<t>(are OpenSSL libraries installed?)";
                     logger.errorf(pattern.expandTags(LogLevel.error),
-                        MagicErrorStrings.sslContextCreationFailureRewritten);
+                        cast(string)MagicErrorStrings.sslContextCreationFailureRewritten);
                     logger.error(wikiPattern.expandTags(LogLevel.error));
                 }
                 else if (e.error == MagicErrorStrings.sslCertificateVerificationFailure)
                 {
                     enum pattern = "Failed to validate Twitch API keys: <l>%s";
                     logger.errorf(pattern.expandTags(LogLevel.error),
-                        MagicErrorStrings.sslCertificateVerificationFailureRewritten);
+                        cast(string)MagicErrorStrings.sslCertificateVerificationFailureRewritten);
                     logger.error(wikiPattern.expandTags(LogLevel.error));
                 }
                 else
