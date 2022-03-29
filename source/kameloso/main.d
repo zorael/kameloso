@@ -2009,7 +2009,8 @@ Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings
  +/
 Next tryConnect(ref Kameloso instance)
 {
-    import kameloso.constants : ConnectionDefaultIntegers, ConnectionDefaultFloats, Timeout;
+    import kameloso.constants : ConnectionDefaultIntegers,
+        ConnectionDefaultFloats, MagicErrorStrings, Timeout;
     import kameloso.net : ConnectionAttempt, connectFiber;
     import kameloso.thread : interruptibleSleep;
     import std.concurrency : Generator;
@@ -2034,7 +2035,7 @@ Next tryConnect(ref Kameloso instance)
             We can only detect SSL context creation failure based on the string
             in the generic Exception thrown, sadly.
          +/
-        if (e.msg == "can't complete call to TLS_method")
+        if (e.msg == MagicErrorStrings.sslContextCreationFailure)
         {
             enum pattern = "Connection error: <l>failed to set up an SSL context</> " ~
                 "<t>(are OpenSSL libraries installed?)";

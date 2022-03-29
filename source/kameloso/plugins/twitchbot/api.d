@@ -328,9 +328,11 @@ void queryTwitchImpl(
     }
     catch (Exception e)
     {
-        if (e.msg == "can't complete call to TLS_method")
+        import kameloso.constants : MagicErrorStrings;
+
+        if (e.msg == MagicErrorStrings.sslContextCreationFailure)
         {
-            response.error = "Failed to set up an SSL context";
+            response.error = MagicErrorStrings.sslContextCreationFailureRewritten;
         }
         else
         {
