@@ -188,7 +188,11 @@ void signalHandler(int sig) nothrow @nogc @system
         31 : "SYS",   /// Bad system call. (SVr4)
     ];
 
-    if (!globalHeadless) printf("...caught signal SIG%s!\n", signalNames[sig].ptr);
+    if (!globalHeadless && (sig < signalNames.length))
+    {
+        printf("...caught signal SIG%s!\n", signalNames[sig].ptr);
+    }
+
     globalAbort = true;
 
     version(Posix)
