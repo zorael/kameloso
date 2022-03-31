@@ -566,7 +566,7 @@ Next handleGetopt(ref Kameloso instance,
             version(Windows)
             {
                 enum getOpenSSLString = "Open the download page for OpenSSL for Windows in your web browser";
-                enum getCacertString = "Download a <l>cacert.pem</> certificate " ~
+                enum getCacertString = "Download a <i>cacert.pem</> certificate " ~
                     "file from the cURL project with your browser";
             }
             else
@@ -907,15 +907,19 @@ Next handleGetopt(ref Kameloso instance,
 
                 if (shouldDownloadCacert)
                 {
+                    import std.path : buildNormalizedPath;
+
                     enum url = "http://curl.se/ca/cacert.pem";
                     enum pattern = "<l>cacert.pem</>: Save it anywhere, preferably in <l>%s/</>.";
                     enum pathPattern = "That way you don't have to enter its full path " ~
                         "in the configuration file (<l>cacert.pem</> will be enough).";
                     enum configPattern = "(Open the configuration file by passing <l>--gedit</)";
 
-                    logger.infof(pattern.expandTags, cbd);
-                    logger.info(pathPattern.expandTags);
-                    logger.info(configPattern.expandTags);
+                    immutable kamelosoDir = buildNormalizedPath(cbd, "kameloso");
+
+                    logger.infof(pattern.expandTags(LogLevel.info), kamelosoDir);
+                    logger.info(pathPattern.expandTags(LogLevel.info));
+                    logger.info(configPattern.expandTags(LogLevel.info));
 
                     cacertBrowser = openURL(url);
                 }
@@ -926,8 +930,8 @@ Next handleGetopt(ref Kameloso instance,
                     enum versionPattern = "<l>OpenSSL>/>: You want <l>v1.1.1n Light</> (or later), not <l>v3.0.x</>.";
                     enum installPattern = "Remember to install to <l>Windows system directories</> when asked.";
 
-                    logger.info(versionPattern.expandTags);
-                    logger.info(installPattern.expandTags);
+                    logger.info(versionPattern.expandTags(LogLevel.info));
+                    logger.info(installPattern.expandTags(LogLevel.info));
                     openSSLBrowser = openURL(url);
                 }
 
