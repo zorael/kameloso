@@ -567,7 +567,7 @@ Next handleGetopt(ref Kameloso instance,
             {
                 enum getOpenSSLString = "Open the download page for OpenSSL for Windows in your web browser";
                 enum getCacertString = "Download a <i>cacert.pem</> certificate " ~
-                    "file from the cURL project with your browser";
+                    "bundle from the cURL project with your browser";
             }
             else
             {
