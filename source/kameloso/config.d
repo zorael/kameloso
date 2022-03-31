@@ -924,6 +924,11 @@ Next handleGetopt(ref Kameloso instance,
                     cacertBrowser = openURL(url);
                 }
 
+                if (shouldDownloadCacert && shouldDownloadOpenSSL)
+                {
+                    logger.trace("---");
+                }
+
                 if (shouldDownloadOpenSSL)
                 {
                     enum url = "https://slproweb.com/products/Win32OpenSSL.html";
