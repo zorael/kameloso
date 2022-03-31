@@ -910,7 +910,7 @@ Next handleGetopt(ref Kameloso instance,
                     import std.path : buildNormalizedPath;
 
                     enum url = "http://curl.se/ca/cacert.pem";
-                    enum pattern = "<l>cacert.pem</>: Save it anywhere, preferably in <l>%s/</>.";
+                    enum pattern = "<l>cacert.pem</>: Save it anywhere, preferably in <l>%s</>.";
                     enum pathPattern = "That way you don't have to enter its full path " ~
                         "in the configuration file (<l>cacert.pem</> will be enough).";
                     enum configPattern = "(Open the configuration file by passing <l>--gedit</>)";
@@ -927,7 +927,7 @@ Next handleGetopt(ref Kameloso instance,
                 if (shouldDownloadOpenSSL)
                 {
                     enum url = "https://slproweb.com/products/Win32OpenSSL.html";
-                    enum versionPattern = "<l>OpenSSL>/>: You want <l>v1.1.1n Light</> (or later), not <l>v3.0.x</>.";
+                    enum versionPattern = "<l>OpenSSL</>: You want <l>v1.1.1n Light</> (or later), not <l>v3.0.x</>.";
                     enum installPattern = "Remember to install to <l>Windows system directories</> when asked.";
 
                     logger.info(versionPattern.expandTags(LogLevel.info));
