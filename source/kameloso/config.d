@@ -910,10 +910,10 @@ Next handleGetopt(ref Kameloso instance,
                     import std.path : buildNormalizedPath;
 
                     enum url = "http://curl.se/ca/cacert.pem";
-                    enum pattern = "<l>cacert.pem</>: Save it anywhere, preferably in <l>%s</>.";
+                    enum pattern = "<l>cacert.pem</>: Save it anywhere, though preferably in <l>%s</>.";
                     enum pathPattern = "That way you don't have to enter its full path " ~
                         "in the configuration file (<l>cacert.pem</> will be enough).";
-                    enum configPattern = "(Open the configuration file by passing <l>--gedit</>)";
+                    enum configPattern = "Open the configuration file by passing <l>--gedit</>.";
 
                     immutable kamelosoDir = buildNormalizedPath(cbd, "kameloso");
 
