@@ -563,6 +563,18 @@ Next handleGetopt(ref Kameloso instance,
                 customSettings ~= setting;
             }
 
+            version(Windows)
+            {
+                enum getOpenSSLString = "Open the download page for OpenSSL for Windows in your web browser";
+                enum getCacertString = "Download a <l>cacert.pem</> certificate " ~
+                    "file from the cURL project with your browser";
+            }
+            else
+            {
+                enum getOpenSSLString = "(Windows-only)";
+                enum getCacertString = "(Windows-only)";
+            }
+
             return getopt(theseArgs,
                 config.caseSensitive,
                 config.bundling,
@@ -696,6 +708,15 @@ Next handleGetopt(ref Kameloso instance,
                         "Path to <i>cacert.pem</> certificate bundle, or equivalent"
                             .expandTags(LogLevel.trace),
                     &connSettings.caBundleFile,
+                "get-openssl",
+                    quiet ? string.init :
+                        getOpenSSLString,
+                    &shouldDownloadOpenSSL,
+                "get-cacert",
+                    quiet ? string.init :
+                        getCacertString
+                            .expandTags(LogLevel.trace),
+                    &shouldDownloadCacert,
                 "numeric",
                     quiet ? string.init :
                         "Use numeric output of addresses",
