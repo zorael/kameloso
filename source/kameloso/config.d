@@ -913,7 +913,7 @@ Next handleGetopt(ref Kameloso instance,
                     enum pattern = "<l>cacert.pem</>: Save it anywhere, preferably in <l>%s/</>.";
                     enum pathPattern = "That way you don't have to enter its full path " ~
                         "in the configuration file (<l>cacert.pem</> will be enough).";
-                    enum configPattern = "(Open the configuration file by passing <l>--gedit</)";
+                    enum configPattern = "(Open the configuration file by passing <l>--gedit</>)";
 
                     immutable kamelosoDir = buildNormalizedPath(cbd, "kameloso");
 
