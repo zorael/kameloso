@@ -7,9 +7,23 @@ version(Windows):
 
 private:
 
+import std.typecons : Flag, No, Yes;
+
 public:
 
-void downloadWindowsSSL(const bool shouldDownloadCacert, const bool shouldDownloadOpenSSL)
+
+// downloadWindowsSSL
+/++
+    Downloads OpenSSL for Windows and/or a `cacert.pem` certificate bundle from
+    the cURL project, extracted from Mozilla Firefox.
+
+    Params:
+        shouldDownloadCacert = Whether or not `cacert.pem` should be downloaded.
+        shouldDownloadOpenSSL = Whether or not OpenSSL for Windows should be downloaded.
+ +/
+void downloadWindowsSSL(
+    const Flag!"shouldDownloadCacert" shouldDownloadCacert,
+    const Flag!"shouldDownloadOpenSSL" shouldDownloadOpenSSL)
 {
     import kameloso.common : expandTags, logger;
     import kameloso.logger : LogLevel;

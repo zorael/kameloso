@@ -874,7 +874,9 @@ Next handleGetopt(ref Kameloso instance,
             if (shouldDownloadCacert || shouldDownloadOpenSSL)
             {
                 import kameloso.ssldownloads : downloadWindowsSSL;
-                downloadWindowsSSL(shouldDownloadCacert, shouldDownloadOpenSSL);
+                downloadWindowsSSL(
+                    cast(Flag!"shouldDownloadCacert")shouldDownloadCacert,
+                    cast(Flag!"shouldDownloadOpenSSL")shouldDownloadOpenSSL);
                 return Next.returnSuccess;
             }
         }
