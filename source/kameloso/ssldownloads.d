@@ -73,7 +73,7 @@ void downloadWindowsSSL(
         enum pattern = "<l>cacert.pem</>: Save it anywhere, ideally in " ~
             "<l>%%APPDATA%%\\\\kameloso</>. [<l>%s</>]";
         enum pathPattern = "That way you don't have to enter its full path in the configuration file.";
-        enum configPattern = "Tip: Open the configuration file by passing <l>--gedit</>.";
+        enum configPattern = "Tip: Open the configuration file in a text editor by passing <l>--gedit</>.";
 
         immutable kamelosoDir = buildNormalizedPath(cbd, "kameloso");
 
