@@ -1745,6 +1745,12 @@ unittest
             immutable expected = text("hello<harbl>kameloso", colourByHash("hello", No.brightTerminal), Tint.off, "hi");
             assert((replaced == expected), replaced);
         }
+        {
+            immutable line = "<l>%%APPDATA%%\\\\kameloso</>.";
+            immutable replaced = line.expandTags(LogLevel.off, No.strip);
+            immutable expected = Tint.log ~ "%%APPDATA%%\\kameloso" ~ Tint.off ~ ".";
+            assert((replaced == expected), replaced);
+        }
     }
 }
 
