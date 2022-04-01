@@ -71,7 +71,7 @@ void downloadWindowsSSL(
 
         enum url = "https://curl.se/ca/cacert.pem";
         enum pattern = "<l>cacert.pem</>: Save it anywhere, though preferably in " ~
-            "<l>%%APPDATA%%\\kameloso</>. [<l>%s</>]";
+            "<l>%%APPDATA%%\\\\kameloso</>. [<l>%s</>]";
         enum pathPattern = "That way you don't have to enter its full path in the configuration file.";
         enum configPattern = "Tip: Open the configuration file by passing <l>--gedit</>.";
 
@@ -98,4 +98,6 @@ void downloadWindowsSSL(
         logger.info(installPattern.expandTags(LogLevel.info));
         openSSLBrowser = openURL(url);
     }
+
+    logger.trace("---");
 }
