@@ -40,12 +40,16 @@ void downloadWindowsSSL(
 
     static Pid openURL(const string url)
     {
+        import std.array : replace;
         import std.file : tempDir;
         import std.path : buildNormalizedPath;
         import std.process : spawnProcess;
         import std.stdio : File;
 
-        immutable urlFileName = buildNormalizedPath(tempDir, "kameloso", "link.url");
+        // Save the filename as the URL sans "https://"
+        assert(((url.length > 8) && (url[0..8] == "https://")), url);
+        immutable basename = url[8..$].replace('/', '_') ~ ".url";
+        immutable urlFileName = buildNormalizedPath(tempDir, "kameloso", basename);
 
         {
             auto urlFile = File(urlFileName, "w");
