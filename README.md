@@ -102,7 +102,7 @@ The package manager [**dub**](https://code.dlang.org) is used to facilitate comp
 
 > You can open this download page in your web browser by passing `--get-openssl` on the command line.
 
-If you get errors about not being able to verify certificates, you may also need to supply a certificate bundle file. Download this [`cacert.pem`](http://curl.se/ca/cacert.pem) file extracted from Mozilla Firefox by the cURL project, place it somewhere reasonable, and edit your configuration file to point to it; `caBundleFile` under `[Connection]`. If you place it in `%APPDATA%\kameloso` (or in the working directory) you only need to enter its filename, otherwise enter a full path. You can also specify one per-session at the command line with `--cacert`.
+If you get errors about not being able to verify certificates, you may also need to supply a certificate bundle file. Download this [`cacert.pem`](https://curl.se/ca/cacert.pem) file extracted from Mozilla Firefox by the cURL project, place it somewhere reasonable, and edit your configuration file to point to it; `caBundleFile` under `[Connection]`. If you place it in `%APPDATA%\kameloso` (or in the working directory) you only need to enter its filename, otherwise enter a full path. You can also specify one per-session at the command line with `--cacert`.
 
 ```ini
 [Connection]
