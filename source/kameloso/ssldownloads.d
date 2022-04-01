@@ -61,7 +61,8 @@ void downloadWindowsSSL(
         return spawnProcess(browserCommand[], nulFile, nulFile, nulFile);
     }
 
-    logger.info("Opening your web browser to download given files...");
+    logger.log("Opening your web browser to download given files...");
+    logger.trace("---");
 
     if (shouldDownloadCacert)
     {
@@ -69,7 +70,8 @@ void downloadWindowsSSL(
         import std.path : buildNormalizedPath;
 
         enum url = "https://curl.se/ca/cacert.pem";
-        enum pattern = "<l>cacert.pem</>: Save it anywhere, though preferably in <l>%%APPDATA%%/kameloso</>. [<l>%s</>]";
+        enum pattern = "<l>cacert.pem</>: Save it anywhere, though preferably in " ~
+            "<l>%%APPDATA%%\\kameloso</>. [<l>%s</>]";
         enum pathPattern = "That way you don't have to enter its full path in the configuration file.";
         enum configPattern = "Tip: Open the configuration file by passing <l>--gedit</>.";
 
