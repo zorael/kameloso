@@ -1594,6 +1594,11 @@ T expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" strip
             break;
 
         default:
+            if (escaping)
+            {
+                escaping = false;
+            }
+
             if (dirty)
             {
                 sink.put(c);
@@ -1749,6 +1754,12 @@ unittest
             immutable line = "<l>%%APPDATA%%\\\\kameloso</>.";
             immutable replaced = line.expandTags(LogLevel.off, No.strip);
             immutable expected = Tint.log ~ "%%APPDATA%%\\kameloso" ~ Tint.off ~ ".";
+            assert((replaced == expected), replaced);
+        }
+        {
+            immutable line = "<l>herp\\</>herp\\\\herp\\\\<l>herp</>";
+            immutable replaced = line.expandTags(LogLevel.off, No.strip);
+            immutable expected = Tint.log ~ "herp</>herp\\herp\\" ~ Tint.log ~ "herp" ~ Tint.off;
             assert((replaced == expected), replaced);
         }
     }
