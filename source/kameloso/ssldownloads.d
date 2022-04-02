@@ -94,7 +94,8 @@ void downloadWindowsSSL(
     if (shouldDownloadOpenSSL)
     {
         enum url = "https://slproweb.com/products/Win32OpenSSL.html";
-        enum versionPattern = "<l>OpenSSL</>: You want <l>v1.1.1 Light</>, not <l>v3.0.x</>.";
+        enum versionPattern = "<l>OpenSSL</>: You want <l>v1.1.1 Light</>, " ~
+            "not <l>v3.0.x</>. <l>EXE</> or <l>MSI</> doesn't matter.";
         enum installPattern = "Remember to install to <l>Windows system directories</> when asked.";
 
         logger.info(versionPattern.expandTags(LogLevel.info));

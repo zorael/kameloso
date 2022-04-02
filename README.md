@@ -98,7 +98,7 @@ The package manager [**dub**](https://code.dlang.org) is used to facilitate comp
 
 ### SSL Libraries on Windows
 
-**kameloso** uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard SSL library in the Posix sphere (Linux, macOS, ...), but not so on Windows. If you run into errors about *failing to set up an SSL context* when attempting to connect on Windows, download and install **Win64/32 OpenSSL v1.1.1 Light** (not **3.0.x**) from [here](https://slproweb.com/products/Win32OpenSSL.html), and opt to install to Windows system directories when asked.
+**kameloso** uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard SSL library in the Posix sphere (Linux, macOS, ...), but not so on Windows. If you run into errors about *failing to set up an SSL context* when attempting to connect on Windows, download and install **Win64/32 OpenSSL v1.1.1 Light** (not **3.0.x**) from [here](https://slproweb.com/products/Win32OpenSSL.html), and opt to install to Windows system directories when asked. Whether you go with the `EXE` or the `MSI` file doesn't matter.
 
 > You can open this download page in your web browser by passing `--get-openssl` on the command line.
 
