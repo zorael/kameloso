@@ -31,8 +31,6 @@ import std.typecons : Flag, No, Yes;
 /++
     Prints the [std.getopt.getopt|getopt] "helpWanted" help table to screen.
 
-    Merely leverages [std.getopt.defaultGetoptPrinter|defaultGetoptPrinter] for the printing.
-
     Example:
     ---
     auto results = args.getopt(
@@ -43,25 +41,52 @@ import std.typecons : Flag, No, Yes;
 
     if (results.helpWanted)
     {
-        printHelp(results, No.monochrome, No.brightTerminal);
+        printHelp(results);
     }
     ---
 
     Params:
         results = Results from a [std.getopt.getopt|getopt] call.
  +/
-void printHelp(GetoptResult results) @system
+void printHelp(GetoptResult results)
 {
-    import kameloso.common : printVersionInfo;
-    import std.getopt : defaultGetoptPrinter;
+    import std.array : Appender;
+    import std.getopt : Option;
     import std.stdio : writeln;
 
-    printVersionInfo();
+    // Copied from std.getopt
+    static void customGetoptFormatter(Sink)
+        (auto ref Sink sink,
+        const Option[] opt,
+        const string pattern /*= "%*s %*s%*s%s\n"*/)
+    {
+        import std.algorithm.comparison : min, max;
+        import std.format.write : formattedWrite;
 
-    defaultGetoptPrinter(string.init, results.options);
-    writeln();
-    writeln("A dash (-) clears, so -C- translates to no channels, -A- to no account name, etc.");
-    writeln();
+        size_t ls, ll;
+
+        foreach (it; opt)
+        {
+            ls = max(ls, it.optShort.length);
+            ll = max(ll, it.optLong.length);
+        }
+
+        foreach (it; opt)
+        {
+            sink.formattedWrite(pattern, ls, it.optShort, ll, it.optLong, it.help);
+        }
+    }
+
+    enum pattern = "%*s  %*s %s\n";
+
+    Appender!(char[]) sink;
+    sink.reserve(4096);  // ~2398
+
+    sink.put('\n');
+    customGetoptFormatter(sink, results.options, pattern);
+    sink.put("\nA dash (-) clears, so -C- translates to no channels, -A- to no account name, etc.\n");
+
+    writeln(sink.data);
 }
 
 
@@ -861,6 +886,7 @@ Next handleGetopt(ref Kameloso instance,
 
             if (!settings.headless)
             {
+                printVersionInfo();
                 printHelp(callGetopt(args, No.quiet));
                 if (settings.flush) stdout.flush();
             }
