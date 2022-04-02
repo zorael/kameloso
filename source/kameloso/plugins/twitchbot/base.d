@@ -1175,7 +1175,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                 import kameloso.constants : MagicErrorStrings;
 
                 enum wikiURL = "https://github.com/zorael/kameloso/wiki/OpenSSL";
-                enum wikiPattern = "Refer to <l>" ~ wikiURL ~ "</> for more information.";
+                enum wikiPattern = "Visit <l>" ~ wikiURL ~ "</> for more information.";
 
                 // Something is deeply wrong.
 

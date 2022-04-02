@@ -2041,7 +2041,7 @@ Next tryConnect(ref Kameloso instance)
         {
             enum pattern = "Connection error: <l>failed to set up an SSL context</> " ~
                 "<t>(are OpenSSL libraries installed?)";
-            enum wikiPattern = "Refer to <l>https://github.com/zorael/kameloso/wiki/OpenSSL</> for more information.";
+            enum wikiPattern = "Visit <l>https://github.com/zorael/kameloso/wiki/OpenSSL</> for more information.";
             logger.error(pattern.expandTags(LogLevel.error));
             logger.error(wikiPattern.expandTags(LogLevel.error));
         }

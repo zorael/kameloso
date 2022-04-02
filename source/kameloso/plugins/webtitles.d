@@ -324,7 +324,7 @@ void worker(shared TitleLookupRequest sRequest,
             catch (Exception e)
             {
                 enum wikiURL = "https://github.com/zorael/kameloso/wiki/OpenSSL";
-                enum wikiPattern = "Refer to <l>" ~ wikiURL ~ "</> for more information.";
+                enum wikiPattern = "Visit <l>" ~ wikiURL ~ "</> for more information.";
 
                 if (e.msg == MagicErrorStrings.sslContextCreationFailureRewritten)
                 {
@@ -413,7 +413,7 @@ void worker(shared TitleLookupRequest sRequest,
             catch (Exception e)
             {
                 enum wikiURL = "https://github.com/zorael/kameloso/wiki/OpenSSL";
-                enum wikiPattern = "Refer to <l>" ~ wikiURL ~ "</> for more information.";
+                enum wikiPattern = "Visit <l>" ~ wikiURL ~ "</> for more information.";
 
                 if (e.msg == MagicErrorStrings.sslContextCreationFailureRewritten)
                 {
