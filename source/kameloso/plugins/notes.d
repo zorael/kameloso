@@ -25,7 +25,7 @@ import std.typecons : Flag, No, Yes;
 version(WithChanQueriesService) {}
 else
 {
-    pragma(msg, "Note: The `Notes` plugin will work but not well without the `ChanQueries` service.");
+    pragma(msg, "Warning: The `Notes` plugin will work but not well without the `ChanQueries` service.");
 }
 
 
