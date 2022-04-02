@@ -171,6 +171,8 @@ void printSettings(ref Kameloso instance, const string[] customSettings) @system
             graphical text editor was requested.
         customSettings = Custom settings supplied at the command line, to be
             passed to [writeConfig] when writing to the configuration file.
+        force = (Windows) If true, uses `explorer.exe` as the graphical editor,
+            otherwise uses `notepad.exe`.
 
     Throws:
         [object.Exception|Exception] on unexpected platforms where we did not
@@ -180,7 +182,8 @@ void manageConfigFile(ref Kameloso instance,
     const bool shouldWriteConfig,
     const bool shouldOpenTerminalEditor,
     const bool shouldOpenGraphicalEditor,
-    ref string[] customSettings) @system
+    ref string[] customSettings,
+    const bool force) @system
 {
     /++
         Opens up the configuration file in a terminal text editor.
@@ -240,7 +243,7 @@ void manageConfigFile(ref Kameloso instance,
         }
         else version(Windows)
         {
-            enum editor = "explorer.exe";
+            immutable editor = force ? "explorer.exe" : "notepad.exe";
         }
         else
         {
@@ -575,6 +578,10 @@ Next handleGetopt(ref Kameloso instance,
                 enum getCacertString = "(Windows-only)";
             }
 
+            immutable geditProgramString = settings.force ?
+                "[the default application used to open <i>*.conf</> files on your system]" :
+                "[<i>notepad.exe</>]";
+
             return getopt(theseArgs,
                 config.caseSensitive,
                 config.bundling,
@@ -748,9 +755,8 @@ Next handleGetopt(ref Kameloso instance,
                     &shouldOpenTerminalEditor,
                 "gedit",
                     quiet ? string.init :
-                        ("Open the configuration file in a *graphical* text editor " ~
-                            "(or the default application used to open <i>*.conf</> files on your system")
-                                .expandTags(LogLevel.trace),
+                        ("Open the configuration file in a *graphical* text editor " ~ geditProgramString)
+                            .expandTags(LogLevel.trace),
                     &shouldOpenGraphicalEditor,
                 "headless",
                     quiet ? string.init :
@@ -858,7 +864,7 @@ Next handleGetopt(ref Kameloso instance,
         {
             // --save and/or --edit was passed; defer to manageConfigFile
             manageConfigFile(instance, shouldWriteConfig, shouldOpenTerminalEditor,
-                shouldOpenGraphicalEditor, customSettings);
+                shouldOpenGraphicalEditor, customSettings, settings.force);
             return Next.returnSuccess;
         }
 
