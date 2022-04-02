@@ -459,6 +459,10 @@ Next handleGetopt(ref Kameloso instance,
         bool shouldShowSettings;
         bool shouldAppendToArrays;
 
+        // Windows-only but must be declared regardless of platform
+        bool shouldDownloadOpenSSL;
+        bool shouldDownloadCacert;
+
         string[] inputGuestChannels;
         string[] inputHomeChannels;
         string[] inputAdmins;
@@ -557,6 +561,18 @@ Next handleGetopt(ref Kameloso instance,
             void appendCustomSetting(const string _, const string setting)
             {
                 customSettings ~= setting;
+            }
+
+            version(Windows)
+            {
+                enum getOpenSSLString = "Open the download page for OpenSSL for Windows in your web browser";
+                enum getCacertString = "Download a <i>cacert.pem</> certificate " ~
+                    "bundle from the cURL project with your browser";
+            }
+            else
+            {
+                enum getOpenSSLString = "(Windows-only)";
+                enum getCacertString = "(Windows-only)";
             }
 
             return getopt(theseArgs,
@@ -692,6 +708,15 @@ Next handleGetopt(ref Kameloso instance,
                         "Path to <i>cacert.pem</> certificate bundle, or equivalent"
                             .expandTags(LogLevel.trace),
                     &connSettings.caBundleFile,
+                "get-openssl",
+                    quiet ? string.init :
+                        getOpenSSLString,
+                    &shouldDownloadOpenSSL,
+                "get-cacert",
+                    quiet ? string.init :
+                        getCacertString
+                            .expandTags(LogLevel.trace),
+                    &shouldDownloadCacert,
                 "numeric",
                     quiet ? string.init :
                         "Use numeric output of addresses",
@@ -842,6 +867,18 @@ Next handleGetopt(ref Kameloso instance,
             // --settings was passed, show all options and quit
             if (!settings.headless) printSettings(instance, customSettings);
             return Next.returnSuccess;
+        }
+
+        version(Windows)
+        {
+            if (shouldDownloadCacert || shouldDownloadOpenSSL)
+            {
+                import kameloso.ssldownloads : downloadWindowsSSL;
+                downloadWindowsSSL(
+                    cast(Flag!"shouldDownloadCacert")shouldDownloadCacert,
+                    cast(Flag!"shouldDownloadOpenSSL")shouldDownloadOpenSSL);
+                return Next.returnSuccess;
+            }
         }
 
         return Next.continue_;
