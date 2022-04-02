@@ -111,7 +111,7 @@ caBundleFile                cacert.pem
 
 > You can quickly download this file with your web browser by passing `--get-cacert`.
 
-An alternative is to use a different shell environment, such as any one of **Git for Windows** (Bash)/**MinGW64**, **MSYS2**, **Cygwin** and **Windows Subsystem for Linux** (likely among others), all of which either include said libraries or at the very least offer the ability to install them. Or just limit yourself to non-SSL connections and live without some plugin features.
+An alternative is to use a different shell environment, such as any one of **Git for Windows** (Bash)/**MinGW64**, **MSYS2**, **Cygwin** and **Windows Subsystem for Linux** (likely among others), all/most of which either include said libraries or at the very least offer the ability to install them. Or just limit yourself to non-SSL connections and live without some plugin features. Mind that some alternative shells still require you to download a certificate bundle.
 
 ## Downloading
 
