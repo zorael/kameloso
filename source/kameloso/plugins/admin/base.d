@@ -1401,7 +1401,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         return plugin.onCommandSummary();
 
     default:
-        logger.error("[admin] Unimplemented bus message verb: <l>".expandTags, verb);
+        logger.error("[admin] Unimplemented bus message verb: <l>".expandTags(LogLevel.error), verb);
         break;
     }
 }
