@@ -578,9 +578,17 @@ Next handleGetopt(ref Kameloso instance,
                 enum getCacertString = "(Windows-only)";
             }
 
-            immutable geditProgramString = settings.force ?
-                "[the default application used to open <i>*.conf</> files on your system]" :
-                "[<i>notepad.exe</>]";
+            version(Windows)
+            {
+                immutable geditProgramString = settings.force ?
+                    "[the default application used to open <i>*.conf</> files on your system]" :
+                    "[<i>notepad.exe</>]";
+            }
+            else
+            {
+                enum geditProgramString = "[the default application used to open " ~
+                    "<i>*.conf</> files on your system]";
+            }
 
             return getopt(theseArgs,
                 config.caseSensitive,
