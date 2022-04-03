@@ -61,7 +61,7 @@ void printHelp(GetoptResult results)
         const string pattern /*= "%*s %*s%*s%s\n"*/)
     {
         import std.algorithm.comparison : min, max;
-        import std.format.write : formattedWrite;
+        import std.format : formattedWrite;
 
         size_t ls, ll;
 
