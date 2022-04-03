@@ -230,7 +230,7 @@ void joinChannels(ConnectService service)
                 import std.algorithm.mutation : SwapStrategy, remove;
                 import std.algorithm.searching : countUntil;
 
-                enum pattern = "Timed out waiting to join some channels: %-(<l>%s</>, %)";
+                enum pattern = "Timed out waiting to join channels: %-(<l>%s</>, %)";
                 logger.warningf(pattern.expandTags(LogLevel.warning), missingChannels);
 
                 foreach_reverse (immutable channel; missingChannels)
