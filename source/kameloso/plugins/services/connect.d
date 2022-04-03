@@ -257,39 +257,6 @@ void joinChannels(ConnectService service)
 }
 
 
-// onFailureToJoinChannel
-/++
-    On failure to join a channel after connect, make sure any bad entries in
-    [kameloso.kameloso.IRCBot.homeChannels|homeChannels] and/or
-    [kameloso.kameloso.IRCBot.guestChannels|guestChanels] are removed, so we don't
-    proceed under the assumption we're actually in channels we're not in.
- +/
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.ERR_BADCHANNAME)
-    .onEvent(IRCEvent.Type.ERR_BADCHANMASK)  // ?
-    .onEvent(IRCEvent.Type.ERR_BADCHANNELKEY)
-)
-void onFailureToJoinChannel(ConnectService service, const ref IRCEvent event)
-{
-    import std.algorithm.mutation : SwapStrategy, remove;
-    import std.algorithm.searching : countUntil;
-
-    immutable homeIndex = service.state.bot.homeChannels.countUntil(event.channel);
-
-    if (homeIndex != -1)
-    {
-        service.state.bot.homeChannels.remove!(SwapStrategy.unstable)(homeIndex);
-    }
-
-    immutable guestIndex = service.state.bot.guestChannels.countUntil(event.channel);
-
-    if (guestIndex != -1)
-    {
-        service.state.bot.guestChannels.remove!(SwapStrategy.unstable)(guestIndex);
-    }
-}
-
-
 // onToConnectType
 /++
     Responds to [dialect.defs.IRCEvent.Type.ERR_NEEDPONG|ERR_NEEDPONG] events by sending
