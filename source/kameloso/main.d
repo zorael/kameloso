@@ -327,6 +327,7 @@ void messageFiber(ref Kameloso instance)
 
             case save:
                 import kameloso.config : writeConfigurationFile;
+                instance.syncGuestChannels();
                 instance.writeConfigurationFile(instance.settings.configFile);
                 break;
 
@@ -2965,6 +2966,41 @@ struct AttemptState
 }
 
 
+// syncGuestChannels
+/++
+    Syncs currently joined channels with [IRCBot.guestChannels|guestChannels],
+    adding entries in the latter where the former is missing.
+
+    Used when saving to configuration file, to ensure the current state is saved.
+
+    Params:
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+ +/
+void syncGuestChannels(ref Kameloso instance)
+{
+    foreach (plugin; instance.plugins)
+    {
+        // Find a plugin that seems to mixin channel awareness
+        if (plugin.state.channels.length)
+        {
+            foreach (immutable channelName; plugin.state.channels.byKey)
+            {
+                import std.algorithm.searching : canFind;
+
+                if (!instance.bot.homeChannels.canFind(channelName) &&
+                    !instance.bot.guestChannels.canFind(channelName))
+                {
+                    // We're in a channel that isn't tracked as home or guest
+                    // We're also saving, so save it as guest
+                    instance.bot.guestChannels ~= channelName;
+                }
+            }
+            break;
+        }
+    }
+}
+
+
 public:
 
 
@@ -3264,6 +3300,7 @@ int run(string[] args)
         try
         {
             import kameloso.config : writeConfigurationFile;
+            instance.syncGuestChannels();
             instance.writeConfigurationFile(instance.settings.configFile);
         }
         catch (Exception e)
