@@ -168,12 +168,12 @@ void joinChannels(ConnectService service)
             import std.range : chain;
 
             // See if we actually managed to join all channels
-            auto allChannels = chain(service.state.bot.homeChannels, service.state.bot.guestChannels);
+            auto allDefinedChannels = chain(service.state.bot.homeChannels, service.state.bot.guestChannels);
             string[] missingChannels;
 
-            foreach (immutable channel; allChannels)
+            foreach (immutable channel; allDefinedChannels)
             {
-                if (channel !in service.currentActualChannels)
+                if (channel !in service.state.channels)
                 {
                     // We failed to join a channel for some reason. No such user?
                     missingChannels ~= channel;
@@ -1627,12 +1627,6 @@ private:
 
     /// Whether or not the bot has joined its channels at least once.
     bool joinedChannels;
-
-    /++
-        Which channels we are actually in. In most cases this will be the union
-        of our home and our guest channels, except when it isn't.
-     +/
-    bool[string] currentActualChannels;
 
     /// Whether or not the server seems to be supporting WHOIS queries.
     bool serverSupportsWHOIS = true;
