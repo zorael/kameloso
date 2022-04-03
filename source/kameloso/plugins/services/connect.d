@@ -227,28 +227,8 @@ void joinChannels(ConnectService service)
 
             if (missingChannels.length)
             {
-                import std.algorithm.mutation : SwapStrategy, remove;
-                import std.algorithm.searching : countUntil;
-
                 enum pattern = "Timed out waiting to join channels: %-(<l>%s</>, %)";
                 logger.warningf(pattern.expandTags(LogLevel.warning), missingChannels);
-
-                foreach_reverse (immutable channel; missingChannels)
-                {
-                    immutable homeIndex = service.state.bot.homeChannels.countUntil(channel);
-
-                    if (homeIndex != -1)
-                    {
-                        service.state.bot.homeChannels.remove!(SwapStrategy.unstable)(homeIndex);
-                    }
-
-                    immutable guestIndex = service.state.bot.guestChannels.countUntil(channel);
-
-                    if (guestIndex != -1)
-                    {
-                        service.state.bot.guestChannels.remove!(SwapStrategy.unstable)(guestIndex);
-                    }
-                }
             }
         }
 
