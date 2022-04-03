@@ -44,12 +44,6 @@ public:
     /// Whether or not this plugin should react to any events.
     @Enabler bool enabled = true;
 
-    /// Whether or not to bell on every message.
-    bool bellOnMessage = false;
-
-    /// Whether or not to bell on important events, like subscriptions.
-    bool bellOnImportant = false;
-
     /++
         Whether or not broadcasters are always implicitly class
         [dialect.defs.IRCUser.Class.staff|IRCUser.Class.staff].
@@ -90,11 +84,20 @@ public:
         static assert(0, "Unsupported platform, please file a bug.");
     }
 
-    /++
-        Whether or not to start a captive session for generating a Twitch
-        authorisation key. Should not be permanently set in the configuration file!
-     +/
-    @Unserialisable bool keygen = false;
+    @Unserialisable
+    {
+        /// Whether or not to bell on every message.
+        bool bellOnMessage = false;
+
+        /// Whether or not to bell on important events, like subscriptions.
+        bool bellOnImportant = false;
+
+        /++
+            Whether or not to start a captive session for generating a Twitch
+            authorisation key. Should not be permanently set in the configuration file!
+         +/
+        bool keygen = false;
+    }
 }
 
 
