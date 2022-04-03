@@ -87,58 +87,13 @@ enum Progress
 )
 void onSelfpart(ConnectService service, const ref IRCEvent event)
 {
-    import std.algorithm.mutation : SwapStrategy, remove;
     import std.algorithm.searching : countUntil;
 
-    service.currentActualChannels.remove(event.channel);
+    immutable homeIndex = service.state.bot.homeChannels.countUntil(event.channel);
 
-    immutable index = service.state.bot.guestChannels.countUntil(event.channel);
-
-    if (index != -1)
+    if (homeIndex != -1)
     {
-        service.state.bot.guestChannels = service.state.bot.guestChannels
-            .remove!(SwapStrategy.unstable)(index);
-        service.state.updates |= typeof(service.state.updates).bot;
-    }
-    else
-    {
-        immutable homeIndex = service.state.bot.homeChannels.countUntil(event.channel);
-
-        if (homeIndex != -1)
-        {
-            logger.warning("Leaving a home...");
-        }
-        else
-        {
-            // On Twitch SELFPART may occur on untracked channels
-            //logger.warning("Tried to remove a channel that wasn't there: ", event.channel);
-        }
-    }
-}
-
-
-// onSelfjoin
-/++
-    Records a channel in the `channels` array in the [dialect.defs.IRCClient|IRCClient] of
-    the current [ConnectService]'s
-    [kameloso.plugins.common.core.IRCPluginState|IRCPluginState] upon joining it.
- +/
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.SELFJOIN)
-    .channelPolicy(ChannelPolicy.any)
-)
-void onSelfjoin(ConnectService service, const ref IRCEvent event)
-{
-    import std.algorithm.searching : canFind;
-
-    service.currentActualChannels[event.channel] = true;
-
-    if (!service.state.bot.homeChannels.canFind(event.channel) &&
-        !service.state.bot.guestChannels.canFind(event.channel))
-    {
-        // Track new channel in the channels array
-        service.state.bot.guestChannels ~= event.channel;
-        service.state.updates |= typeof(service.state.updates).bot;
+        logger.warning("Leaving a home...");
     }
 }
 
