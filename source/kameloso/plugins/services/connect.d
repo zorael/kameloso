@@ -90,6 +90,8 @@ void onSelfpart(ConnectService service, const ref IRCEvent event)
     import std.algorithm.mutation : SwapStrategy, remove;
     import std.algorithm.searching : countUntil;
 
+    service.currentActualChannels.remove(event.channel);
+
     immutable index = service.state.bot.guestChannels.countUntil(event.channel);
 
     if (index != -1)
@@ -128,6 +130,8 @@ void onSelfpart(ConnectService service, const ref IRCEvent event)
 void onSelfjoin(ConnectService service, const ref IRCEvent event)
 {
     import std.algorithm.searching : canFind;
+
+    service.currentActualChannels[event.channel] = true;
 
     if (!service.state.bot.homeChannels.canFind(event.channel) &&
         !service.state.bot.guestChannels.canFind(event.channel))
@@ -188,6 +192,68 @@ void joinChannels(ConnectService service)
 
     if (service.state.bot.guestChannels.length) joinChannel(service.state,
         guestlist.join(','), string.init, Yes.quiet);
+
+    version(TwitchSupport)
+    {
+        import kameloso.plugins.common.delayawait : delay;
+
+        /+
+            If, on Twitch, an invalid channel was supplied as a home or a guest
+            channel, it will just silently not join it but leave us thinking it has
+            (since the entry in `homeChannels`/`guestChannels` will still be there).
+            Check whether we actually joined them all, after a short delay, and
+            if not, sync the arrays.
+         +/
+
+        // Early return if we're not on Twitch to spare us a level of indentation
+        if (service.state.server.daemon != IRCServer.Daemon.twitch) return;
+
+        void delayedChannelCheckDg()
+        {
+            import std.range : chain;
+
+            // See if we actually managed to join all channels
+            auto allChannels = chain(service.state.bot.homeChannels, service.state.bot.guestChannels);
+            string[] missingChannels;
+
+            foreach (immutable channel; allChannels)
+            {
+                if (channel !in service.currentActualChannels)
+                {
+                    // We failed to join a channel for some reason. No such user?
+                    missingChannels ~= channel;
+                }
+            }
+
+            if (missingChannels.length)
+            {
+                import std.algorithm.mutation : SwapStrategy, remove;
+                import std.algorithm.searching : countUntil;
+
+                enum pattern = "Timed out waiting to join some channels: %-(<l>%s</>, %)";
+                logger.warningf(pattern.expandTags(LogLevel.warning), missingChannels);
+
+                foreach_reverse (immutable channel; missingChannels)
+                {
+                    immutable homeIndex = service.state.bot.homeChannels.countUntil(channel);
+
+                    if (homeIndex != -1)
+                    {
+                        service.state.bot.homeChannels.remove!(SwapStrategy.unstable)(homeIndex);
+                    }
+
+                    immutable guestIndex = service.state.bot.guestChannels.countUntil(channel);
+
+                    if (guestIndex != -1)
+                    {
+                        service.state.bot.guestChannels.remove!(SwapStrategy.unstable)(guestIndex);
+                    }
+                }
+            }
+        }
+
+        delay(service, &delayedChannelCheckDg, service.channelCheckDelay);
+    }
 }
 
 
@@ -1594,6 +1660,11 @@ private:
      +/
     static immutable nickRegainPeriodicity = 600.seconds;
 
+    /++
+        After how much time we should check whether or not we managed to join all channels.
+     +/
+    static immutable channelCheckDelay = 15.seconds;
+
     /// At what step we're currently at with regards to authentication.
     Progress authentication;
 
@@ -1621,6 +1692,12 @@ private:
 
     /// Whether or not the bot has joined its channels at least once.
     bool joinedChannels;
+
+    /++
+        Which channels we are actually in. In most cases this will be the union
+        of our home and our guest channels, except when it isn't.
+     +/
+    bool[string] currentActualChannels;
 
     /// Whether or not the server seems to be supporting WHOIS queries.
     bool serverSupportsWHOIS = true;
