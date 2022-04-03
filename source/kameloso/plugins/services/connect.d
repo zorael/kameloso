@@ -89,6 +89,14 @@ void onSelfpart(ConnectService service, const ref IRCEvent event)
 {
     import std.algorithm.searching : countUntil;
 
+    version(TwitchSupport)
+    {
+        if (service.state.server.daemon == IRCServer.Daemon.twitch)
+        {
+            service.currentActualChannels.remove(event.channel);
+        }
+    }
+
     immutable homeIndex = service.state.bot.homeChannels.countUntil(event.channel);
 
     if (homeIndex != -1)
@@ -188,6 +196,25 @@ void joinChannels(ConnectService service)
         }
 
         delay(service, &delayedChannelCheckDg, service.channelCheckDelay);
+    }
+}
+
+
+// onSelfjoin
+/++
+    Records us as having joined a channel, when we join one. This is to allow
+    us to notice when we silently fail to join something, on Twitch. As it's
+    limited to there, gate it behind version `TwitchSupport`.
+ +/
+version(TwitchSupport)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.SELFJOIN)
+)
+void onSelfjoin(ConnectService service, const ref IRCEvent event)
+{
+    if (service.state.server.daemon == IRCServer.Daemon.twitch)
+    {
+        service.currentActualChannels[event.channel] = true;
     }
 }
 
@@ -1628,11 +1655,14 @@ private:
     /// Whether or not the bot has joined its channels at least once.
     bool joinedChannels;
 
-    /++
-        Which channels we are actually in. In most cases this will be the union
-        of our home and our guest channels, except when it isn't.
-     +/
-    bool[string] currentActualChannels;
+    version(TwitchSupport)
+    {
+        /++
+            Which channels we are actually in. In most cases this will be the union
+            of our home and our guest channels, except when it isn't.
+         +/
+        bool[string] currentActualChannels;
+    }
 
     /// Whether or not the server seems to be supporting WHOIS queries.
     bool serverSupportsWHOIS = true;
