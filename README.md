@@ -69,9 +69,8 @@ If there's anyone talking it should show up on your screen.
     * [Online help and commands](#online-help-and-commands)
     * [**Except nothing happens**](#except-nothing-happens)
   * [Twitch](#twitch)
-    * [Caveats](#caveats)
     * [Example configuration](#example-configuration)
-    * [Streamer assistant bot](#streamer-assistant-bot)
+    * [Twitch bot](#twitch-bot)
   * [Further help](#further-help)
 * [Known issues](#known-issues)
   * [Windows](#windows)
@@ -134,7 +133,7 @@ This will compile the bot in the default *debug* mode, which adds some extra cod
 There are several configurations in which the bot may be built.
 
 * `application`, base configuration
-* `twitch`, additionally includes Twitch chat support and the Twitch streamer plugin
+* `twitch`, additionally includes Twitch chat support and the Twitch bot plugin
 * `dev`, all-inclusive development build equalling everything available, including things like more detailed error messages
 
 All configurations come in a `-lowmem` variant (e.g. `application-lowmem`, `twitch-lowmem`, ...) that lowers compilation memory at the cost of increasing compilation time, but so far they only work with **ldc**. (bug [#20699](https://issues.dlang.org/show_bug.cgi?id=20699))
@@ -145,7 +144,7 @@ List configurations with `dub build --print-configs`. You can specify which to c
 $ dub build -c twitch
 ```
 
-> If you want to customise your own build to only compile the plugins you want to use, see the larger `versions` lists in `dub.sdl`. Simply add or delete a character from the line corresponding to the plugin(s) you want to omit (thus invalidating the version identifier). Mind that disabling any of the "*service*" plugins may break the bot in subtle ways.
+> If you want to customise your own build to only compile the plugins you want to use, see the larger `versions` lists in `dub.sdl`. Simply add or delete a character from the line corresponding to the plugin(s) you want to omit (thus invalidating the version identifier). Mind that disabling any of the *"service"* plugins may/will break the bot in subtle ways.
 
 # How to use
 
@@ -294,7 +293,7 @@ It can technically be any string and not just one character. It may include spac
 
 Before allowing *anyone* to trigger any restricted functionality, the bot will query the server for what services account the accessing user is logged onto. For full administrative privileges you will need to be logged in with an account listed in the `admins` field in the configuration file, while other users may be defined in your `users.json` file. If a user is not logged onto services it is considered as not being uniquely identifiable.
 
-> In the case of *hostmasks mode*, the above still applies but "accounts" are inferred from hostmasks. See the **Admin** plugin `!hostmask` command (and the `hostmasks.json` file) for how to map hostmasks to would-be accounts. Hostmasks are a weaker solution to user identification but not all servers may offer services. See [the wiki entry on hostmasks](https://github.com/zorael/kameloso/wiki/On-servers-without-services-(e.g.-no-NickServ)) for more information.
+> In the case of *hostmasks mode*, the above still applies but "accounts" are inferred from hostmasks. See the **Admin** plugin `!hostmask` command (and the `hostmasks.json` file) for how to map hostmasks to would-be accounts. Hostmasks are a weaker solution to user identification but not all servers may offer services. Also see [the wiki entry on hostmasks](https://github.com/zorael/kameloso/wiki/On-servers-without-services-(e.g.-no-NickServ)) for more information.
 
 ## Twitch
 
@@ -314,12 +313,6 @@ If you prefer to generate the token manually, here is the URL you need to follow
 https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true
 ```
 
-### Caveats
-
-Most of the bot's features will work on Twitch. The **Automode** plugin is an exception (as Twitch uses badges instead of modes), and it will auto-disable itself appropriately.
-
-That said, in many ways Twitch chat does not behave as a full IRC server. Most common IRC commands go unrecognised. Joins and parts are not always advertised, and when they are they come in delayed batches and cannot be relied upon. You can also only join channels for which a corresponding Twitch user account exists.
-
 ### Example configuration
 
 ```ini
@@ -334,33 +327,27 @@ realName            likewise
 pass                personaloauthauthorisationtoken
 admins              mainaccount
 homeChannels        #mainaccount,#botaccount
-guestChannels       #streamer1,#streamer2,#streamer3
+#guestChannels
 
 [IRCServer]
 address             irc.chat.twitch.tv
-port                6667
+port                6697
 ```
 
-The Twitch SSL port is **6697** (or **443**).
+The Twitch SSL port is **6697** (or **443**). For non-encrypted traffic, use the default port **6667**.
 
 See [the wiki page on Twitch](https://github.com/zorael/kameloso/wiki/Twitch) for more information.
 
-### Streamer assistant bot
+### Twitch bot
 
-The streamer bot is enabled by default when built, and can be disabled in the configuration file under the `[TwitchBot]` section. If the section doesn't exist, ensure that you have built a configuration with Twitch support, then regenerate the file with `--save`. Even if enabled it disables itself on non-Twitch servers.
-
-```sh
-$ ./kameloso --set twitchbot.enabled=false --save
-```
-
-Properly enabled and assuming a prefix of `!`, commands to test are:
+Assuming a prefix of `!`, commands to test are:
 
 * `!start`, `!uptime`, `!stop`
 * `!timer`
 * `!followage`
 * `!shoutout`
 
-...alongside `!operator`, `!whitelist`, `!blacklist`, `!oneliner`, `!poll`, `!counter`, `!stopwatch`, and other non-Twitch-specific commands.
+...alongside `!oneliner`, `!counter`, `!poll`, `!stopwatch`, and other non-Twitch-specific commands. Try `!help`.
 
 > Note: dot `.` and slash `/` prefixes will not work on Twitch.
 
@@ -386,9 +373,9 @@ See the [SSL Libraries on Windows](#ssl-libraries-on-windows) section for inform
 * pipedream zero: **no compiler segfaults** ([#18026](https://issues.dlang.org/show_bug.cgi?id=18026), [#20562](https://issues.dlang.org/show_bug.cgi?id=20562))
 * please send help: Windows Secure Channel SSL
 * split Twitch timers into own plugin
-* Twitch `ecount`, `settitle`, `setgame`, `vanish`, `watchtime`, `roulette`?
+* Twitch `ecount`, `settitle`, `setgame`, `vanish`, `watchtime`, `roulette`, `repeat`/`spam`?
 * help plugin descriptions? multiple syntax entries?
-* more pairs of eyes
+* **more pairs of eyes**
 
 # Built with
 
