@@ -563,6 +563,7 @@ void onSomeAction(SeenPlugin plugin, const ref IRCEvent event)
         case TWITCH_SUB:
         case TWITCH_SUBGIFT:
         case TWITCH_SUBUPGRADE:
+        case TWITCH_TIMEOUT:
             // Consider these as chatty events too
             // targets might be caught in the crossfire in some cases
             goto case CHAN;
