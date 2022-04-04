@@ -634,7 +634,7 @@ void onNick(SeenPlugin plugin, const ref IRCEvent event)
     if (seenTimestamp)
     {
         *seenTimestamp = event.time;
-        plugin.seenUsers.remove(event.sender.nickname);
+        //plugin.seenUsers.remove(event.sender.nickname);
     }
 }
 
