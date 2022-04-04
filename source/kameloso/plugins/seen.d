@@ -682,6 +682,9 @@ void onNamesReply(SeenPlugin plugin, const ref IRCEvent event)
 {
     import std.algorithm.iteration : splitter;
 
+    // Don't trust NAMES on Twitch.
+    if (plugin.state.server.daemon == IRCServer.Daemon.twitch) return;
+
     foreach (immutable entry; event.content.splitter(' '))
     {
         import dialect.common : stripModesign;
