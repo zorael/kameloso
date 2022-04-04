@@ -45,7 +45,8 @@ else
     Plays back notes upon someone joining or upon someone authenticating with services.
 
     There's no need to trigger each `CHAN` since we know we enumerate all
-    users in a channel when querying `WHO`.
+    users in a channel when querying `WHO` -- except on Twitch, where there
+    is no `WHO`, no `ACCOUNT`, and where we can't trust `JOIN`.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.JOIN)
@@ -55,6 +56,54 @@ else
 )
 void onReplayEvent(NotesPlugin plugin, const /*ref*/ IRCEvent event)
 {
+    if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+    {
+        // We can't really rely on JOINs on Twitch
+        return;
+    }
+
+    if (event.channel !in plugin.notes) return;
+
+    return plugin.playbackNotes(event.sender, event.channel);
+}
+
+
+// onTwitchChannelEvent
+/++
+    Plays back notes upon someone speaking in a channel.
+
+    This is the only good way we can detect participants on Twitch.
+ +/
+version(TwitchSupport)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.EMOTE)
+    .onEvent(IRCEvent.Type.TWITCH_SUB)
+    .onEvent(IRCEvent.Type.TWITCH_SUBGIFT)
+    .onEvent(IRCEvent.Type.TWITCH_CHEER)
+    .onEvent(IRCEvent.Type.TWITCH_REWARDGIFT)
+    .onEvent(IRCEvent.Type.TWITCH_GIFTCHAIN)
+    .onEvent(IRCEvent.Type.TWITCH_BULKGIFT)
+    .onEvent(IRCEvent.Type.TWITCH_SUBUPGRADE)
+    .onEvent(IRCEvent.Type.TWITCH_CHARITY)
+    .onEvent(IRCEvent.Type.TWITCH_BITSBADGETIER)
+    .onEvent(IRCEvent.Type.TWITCH_RITUAL)
+    .onEvent(IRCEvent.Type.TWITCH_EXTENDSUB)
+    .onEvent(IRCEvent.Type.TWITCH_GIFTRECEIVED)
+    .onEvent(IRCEvent.Type.TWITCH_PAYFORWARD)
+    .onEvent(IRCEvent.Type.TWITCH_RAID)
+    .permissionsRequired(Permissions.ignore)
+    .channelPolicy(ChannelPolicy.home)
+    .chainable(true)
+)
+void onTwitchChannelEvent(NotesPlugin plugin, const /*ref*/ IRCEvent event)
+{
+    if (plugin.state.server.daemon != IRCServer.Daemon.twitch)
+    {
+        // Only do stuff on Twitch
+        return;
+    }
+
     if (event.channel !in plugin.notes) return;
 
     return plugin.playbackNotes(event.sender, event.channel);
