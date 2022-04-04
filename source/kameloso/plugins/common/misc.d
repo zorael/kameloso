@@ -740,25 +740,39 @@ unittest
 
     Params:
         plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin], whatever it is.
-        nickname = The name of a user to look up.
+        specified = The name of a user to look up.
 
     Returns:
         An [dialect.defs.IRCUser|IRCUser] that matches the passed nickname, from the
         passed plugin's arrays. A minimally viable [dialect.defs.IRCUser|IRCUser] if
         none was found.
  +/
-auto getUser(IRCPlugin plugin, const string nickname)
+auto getUser(IRCPlugin plugin, const string specified)
 {
-    if (const user = nickname in plugin.state.users)
+    version(TwitchSupport)
+    {
+        import lu.string : beginsWith;
+
+        immutable isTwitch = (plugin.state.server.daemon == IRCServer.Daemon.twitch);
+        immutable nickname = (isTwitch && specified.beginsWith('@')) ?
+            specified[1..$] :
+            specified;
+    }
+    else
+    {
+        alias nickname = specified;
+    }
+
+    if (auto user = nickname in plugin.state.users)
     {
         return *user;
     }
 
     version(TwitchSupport)
     {
-        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+        if (isTwitch)
         {
-            foreach (const user; plugin.state.users)
+            foreach (user; plugin.state.users)
             {
                 if (user.displayName == nickname)
                 {
@@ -770,6 +784,7 @@ auto getUser(IRCPlugin plugin, const string nickname)
             IRCUser user;
             user.nickname = nickname;
             user.account = nickname;
+            user.class_ = IRCUser.Class.registered;
             //user.displayName = nickname;
             return user;
         }
