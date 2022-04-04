@@ -259,7 +259,7 @@ void manageConfigFile(ref Kameloso instance,
                 environment.get("DISPLAY", string.init).length ||
                 environment.get("WAYLAND_DISPLAY", string.init).length;
 
-            if (!isGraphicalEnvironment && !instance.settings.force)
+            if (!isGraphicalEnvironment)
             {
                 logger.error("No graphical environment appears to be running; " ~
                     "cannot open editor.");
