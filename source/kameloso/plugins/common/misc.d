@@ -633,17 +633,23 @@ unittest
 
     Params:
         plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin], whatever it is.
-        nickname = The name of a user to look up.
+        specified = The name of a user to look up.
 
     Returns:
         The nickname of the user if there is no alias known, else the alias.
  +/
-string nameOf(const IRCPlugin plugin, const string nickname) pure @safe nothrow @nogc
+string nameOf(const IRCPlugin plugin, const string specified) pure @safe nothrow @nogc
 {
     version(TwitchSupport)
     {
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
+            import lu.string : beginsWith;
+
+            immutable nickname = specified.beginsWith('@') ?
+                specified[1..$] :
+                specified;
+
             if (const user = nickname in plugin.state.users)
             {
                 return nameOf(*user);
@@ -651,7 +657,7 @@ string nameOf(const IRCPlugin plugin, const string nickname) pure @safe nothrow 
         }
     }
 
-    return nickname;
+    return specified;
 }
 
 
