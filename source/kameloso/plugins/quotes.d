@@ -5,6 +5,9 @@
     of "`!quote [nickname] [quote text...]`" (assuming a prefix of "`!`").
     A random one can then be replayed by use of the "`!quote [nickname]`" command.
 
+    On Twitch, the `!quote` command does not take a nickname parameter; instead
+    the owner of the channel is assumed to be the target.
+
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#quotes
         [kameloso.plugins.common.core|plugins.common.core]
@@ -216,12 +219,11 @@ in (rawLine.length, "Tried to add an empty quote")
 
     try
     {
-        import std.datetime.systime : Clock;
         import std.format : format;
 
         JSONValue newQuote;
         newQuote["line"] = line;
-        newQuote["timestamp"] = Clock.currTime.toUnixTime;
+        newQuote["timestamp"] = event.time;
 
         if (id !in plugin.quotes)
         {
@@ -237,7 +239,6 @@ in (rawLine.length, "Tried to add an empty quote")
 
         enum pattern = "Quote <h>%s<h> #<b>%d<b> saved.";
         immutable message = pattern.format(id, index);
-
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
     catch (JSONException e)
@@ -277,7 +278,6 @@ void modQuoteAndReport(QuotesPlugin plugin,
         {
             enum pattern = "No quotes on record for user <h>%s<h>.";
             immutable message = pattern.format(id);
-
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
             return;
         }
@@ -303,18 +303,17 @@ void modQuoteAndReport(QuotesPlugin plugin,
         else
         {
             // Quote is to be removed
-            plugin.quotes[id].array = plugin.quotes[id].array
-                .remove!(SwapStrategy.unstable)(index);
-
-            if (!plugin.quotes[id].array.length)
+            if (len == 1)
             {
                 plugin.quotes.object.remove(id);
-                pattern = "Quote <h>%s<h> #<b>%d<b> removed.";
             }
             else
             {
-                pattern = "Quote <h>%s<h> #<b>%d<b> removed. Other quotes may have been reordered.";
+                plugin.quotes[id].array = plugin.quotes[id].array
+                    .remove!(SwapStrategy.stable)(index);
             }
+
+            pattern = "Quote <h>%s<h> #<b>%d<b> removed.";
         }
 
         immutable message = pattern.format(id, index);
@@ -532,6 +531,7 @@ void manageQuoteImpl(QuotesPlugin plugin,
     import std.format : format;
     import std.json : JSONException;
 
+    immutable isTwitch = (plugin.state.server.daemon == IRCServer.Daemon.twitch);
     string slice = event.content.stripped;  // mutable
     if (slice.beginsWith('@')) slice = slice[1..$];
 
@@ -543,15 +543,21 @@ void manageQuoteImpl(QuotesPlugin plugin,
         final switch (action)
         {
         case addOrReplay:
-            pattern = "Usage: <b>%s%s<b> [nickname] [text to add a new quote]";
+            pattern = isTwitch ?
+                "Usage: %s%s [text to add a new quote]" :
+                "Usage: <b>%s%s<b> [nickname] [text to add a new quote]";
             break;
 
         case mod:
-            pattern = "Usage: <b>%s%s<b> [nickname] [quote index to modify] [new quote text]";
+            pattern = isTwitch ?
+                "Usage: %s%s [quote index to modify] [new quote text]" :
+                "Usage: <b>%s%s<b> [nickname] [quote index to modify] [new quote text]";
             break;
 
         case del:
-            pattern = "Usage: <b>%s%s<b> [nickname] [quote index to remove]";
+            pattern = isTwitch ?
+                "Usage: %s%s [quote index to remove]" :
+                "Usage: <b>%s%s<b> [nickname] [quote index to remove]";
             break;
         }
 
@@ -559,14 +565,14 @@ void manageQuoteImpl(QuotesPlugin plugin,
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
-    if (!slice.length && (plugin.state.server.daemon != IRCServer.Daemon.twitch))
+    if (!slice.length && !isTwitch)
     {
         return sendUsage();
     }
 
     version(TwitchSupport)
     {
-        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+        if (isTwitch)
         {
             import kameloso.plugins.common.misc : nameOf;
 
@@ -580,19 +586,16 @@ void manageQuoteImpl(QuotesPlugin plugin,
         }
     }
 
-    immutable specified = (plugin.state.server.daemon == IRCServer.Daemon.twitch) ?
+    immutable specified = isTwitch ?
         event.channel[1..$] :
         slice.nom!(Yes.inherit)(' ').stripModesign(plugin.state.server);
     immutable trailing = slice.strippedLeft;  // Already strippedRight earlier
 
-    if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
-        !specified.isValidNickname(plugin.state.server))
+    if (!isTwitch && !specified.isValidNickname(plugin.state.server))
     {
         enum pattern = `"<h>%s<h>" is not a valid account or nickname.`;
         immutable message = pattern.format(specified);
-
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
-        return;
+        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
     /// Quote a quote
@@ -601,11 +604,21 @@ void manageQuoteImpl(QuotesPlugin plugin,
         import std.datetime.systime : SysTime;
 
         SysTime when = SysTime.fromUnixTime(quote.timestamp);
+        string message;
 
-        enum pattern = "#%d [%d-%02d-%02d %02d:%02d] <h>%s<h> | %s";
-        immutable message = pattern.format(quote.index,
-            when.year, when.month, when.day, when.hour, when.minute,
-            nickname, quote.line);
+        if (isTwitch)
+        {
+            enum pattern = "#%d [%d-%02d-%02d %02d:%02d] %s";
+            message = pattern.format(quote.index,
+                when.year, when.month, when.day, when.hour, when.minute, quote.line);
+        }
+        else
+        {
+            enum pattern = "#%d [%d-%02d-%02d %02d:%02d] <h>%s<h> | %s";
+            message = pattern.format(quote.index,
+                when.year, when.month, when.day, when.hour, when.minute,
+                nickname, quote.line);
+        }
 
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
@@ -614,15 +627,18 @@ void manageQuoteImpl(QuotesPlugin plugin,
     {
         void onSuccess(const IRCUser replyUser)
         {
-            import kameloso.plugins.common.misc : idOf;
+            import kameloso.plugins.common.misc : idOf, nameOf;
             import std.conv : ConvException, to;
 
             immutable id = idOf(replyUser).toLowerCase(plugin.state.server.caseMapping);
+            immutable display = nameOf(replyUser);
 
             with (ManageQuoteAction)
             final switch (action)
             {
             case addOrReplay:
+                import std.algorithm.comparison : among;
+
                 if (trailing.length)
                 {
                     // There is trailing text, assume it was a quote to be added
@@ -630,7 +646,7 @@ void manageQuoteImpl(QuotesPlugin plugin,
                 }
 
                 // No point looking up if we already did before onSuccess
-                if (id != specified)
+                if (specified.among(id, replyUser.nickname, display))
                 {
                     immutable quote = plugin.getRandomQuote(id);
 
@@ -688,8 +704,7 @@ void manageQuoteImpl(QuotesPlugin plugin,
             }
 
             enum pattern = "No quote on record for <h>%s<h>.";
-            immutable message = pattern.format(replyUser.nickname);
-
+            immutable message = pattern.format(display);
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
 
@@ -701,9 +716,11 @@ void manageQuoteImpl(QuotesPlugin plugin,
 
         version(TwitchSupport)
         {
-            if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+            if (isTwitch)
             {
-                return onSuccess(event.sender);
+                import kameloso.plugins.common.misc : getUser;
+                immutable specifiedUser = getUser(plugin, specified);
+                return onSuccess(specifiedUser);
             }
         }
 
@@ -792,7 +809,6 @@ void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
     {
         enum pattern = "<h>%s<h> has no quotes to merge.";
         immutable message = pattern.format(source);
-
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
         return;
     }
