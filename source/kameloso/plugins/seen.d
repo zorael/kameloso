@@ -523,7 +523,6 @@ else
     .onEvent(IRCEvent.Type.TWITCH_SUB)
     .onEvent(IRCEvent.Type.TWITCH_SUBGIFT)
     .onEvent(IRCEvent.Type.TWITCH_SUBUPGRADE)
-    .onEvent(IRCEvent.Type.TWITCH_TIMEOUT)
     .permissionsRequired(Permissions.ignore)
     .channelPolicy(omniscientChannelPolicy)
     .chainable(true)
