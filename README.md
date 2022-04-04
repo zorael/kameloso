@@ -56,12 +56,13 @@ If there's anyone talking it should show up on your screen.
 
 * [Getting started](#getting-started)
   * [Prerequisites](#prerequisites)
-     * [SSL libraries](#ssl-libraries)
+     * [SSL libraries on Windows](#ssl-libraries-on-windows)
   * [Downloading](#downloading)
   * [Compiling](#compiling)
     * [Build configurations](#build-configurations)
 * [How to use](#how-to-use)
   * [Configuration](#configuration)
+    * [Configuration file](#configuration-file)
     * [Command-line arguments](#command-line-arguments)
     * [Display settings](#display-settings)
     * [Other files](#other-files)
@@ -112,6 +113,8 @@ caBundleFile                cacert.pem
 
 An alternative is to use a different shell environment, such as any one of **Git for Windows** (Bash)/**MinGW64**, **MSYS2**, **Cygwin** and **Windows Subsystem for Linux** (likely among others), all/most of which either include said libraries or at the very least offer the ability to install them. Or just limit yourself to non-SSL connections and live without some plugin features. Mind that some alternative shells still require you to download a certificate bundle.
 
+> See the wiki for some copy/paste-friendly [Windows quickstart instructions](https://github.com/zorael/kameloso/wiki/Windows-quickstart-instructions-(copy-paste-friendly)).
+
 ## Downloading
 
 ```sh
@@ -158,6 +161,8 @@ $ ./kameloso --save
 
 A new `kameloso.conf` will be created in a directory dependent on your platform.
 
+### Configuration file
+
 * **Linux** and other Posix: `$HOME/.config/kameloso` (alternatively where `$XDG_CONFIG_HOME` points)
 * **Windows**: `%APPDATA%\kameloso`
 * **macOS**: `$HOME/Library/Application Support/kameloso`
@@ -172,8 +177,8 @@ Settings provided at the command line override any such already defined in your 
 $ ./kameloso \
     --server irc.libera.chat \
     --nickname "kameloso" \
-    --admins "you,friend" \
-    --homeChannels "#mychannel,#elsewhere" \
+    --admins "you" \
+    --homeChannels "#mychannel" \
     --guestChannels "#d,##networking" \
     --save
 
@@ -190,7 +195,7 @@ An alternative is to disable colours entirely with `--monochrome`.
 
 ### Other files
 
-More server-specific resource files will be created the first time you connect to a server. These include `users.json`, in which you whitelist which accounts get to access the bot's features on a per-channel basis. Where these are stored also depends on platform; in the case of **macOS** and **Windows** they will be put in server-split subdirectories of the same directory as the configuration file, listed above. On **Linux** and other Posix, under `$HOME/.local/share/kameloso` (or wherever `$XDG_DATA_HOME` points to).
+More server-specific resource files will be created the first time you connect to a server. These include `users.json`, in which you whitelist which accounts get to access the bot's features on a per-channel basis. Where these are stored also depends on platform; in the case of **macOS** and **Windows** they will be put in server-split subdirectories of the same directory as the configuration file, [listed above](#configuration-file). On **Linux** and other Posix, under `$HOME/.local/share/kameloso` (or wherever `$XDG_DATA_HOME` points to).
 
 ## Example use
 
@@ -340,6 +345,8 @@ See [the wiki page on Twitch](https://github.com/zorael/kameloso/wiki/Twitch) fo
 
 ### Twitch bot
 
+**Please make the bot a moderator to prevent its messages from being as aggressively rate-limited.**
+
 Assuming a prefix of `!`, commands to test are:
 
 * `!start`, `!uptime`, `!stop`
@@ -347,11 +354,9 @@ Assuming a prefix of `!`, commands to test are:
 * `!followage`
 * `!shoutout`
 
-...alongside `!oneliner`, `!counter`, `!poll`, `!stopwatch`, and other non-Twitch-specific commands. Try `!help`.
+...alongside `!oneliner`, `!counter`, `!poll`, `!stopwatch`, and other non-Twitch-specific commands. Try `!help` or [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins).
 
 > Note: dot `.` and slash `/` prefixes will not work on Twitch.
-
-**Please make the bot a moderator to prevent its messages from being as aggressively rate-limited.**
 
 ## Further help
 
