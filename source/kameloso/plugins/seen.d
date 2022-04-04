@@ -382,11 +382,8 @@ private:
         [dialect.defs.IRCEvent.Type.JOIN|JOIN]s,
         [dialect.defs.IRCEvent.Type.PART|PART]s and the such, should be considered
         as observations. If set, only chatty events will count as being seen.
-
-        This might make sense to enable on Twitch, but in most other cases it can
-        be safely left disabled.
      +/
-    bool ignoreNonChatEvents;
+    bool ignoreNonChatEvents = false;
 }
 
 
