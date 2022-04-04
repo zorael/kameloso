@@ -304,7 +304,7 @@ void playbackNotes(NotesPlugin plugin,
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
-    .permissionsRequired(Permissions.whitelist)
+    .permissionsRequired(Permissions.anyone)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
