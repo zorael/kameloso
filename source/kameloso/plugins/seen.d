@@ -578,12 +578,13 @@ void onSomeAction(SeenPlugin plugin, const ref IRCEvent event)
         break;
     }
 
+    // Only count either the sender or the target, never both at the same time
+    // This to stop it from updating seen time when someone is the target of e.g. a sub gift
     if (event.sender.nickname)
     {
         plugin.updateUser(event.sender.nickname, event.time);
     }
-
-    if (event.target.nickname)
+    else if (event.target.nickname)
     {
         plugin.updateUser(event.target.nickname, event.time);
     }
