@@ -780,7 +780,7 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.common : timeSince;
     import dialect.common : isValidNickname;
-    import lu.string : contains;
+    import lu.string : beginsWith, contains;
     import std.algorithm.searching : canFind;
     import std.datetime.systime : SysTime;
     import std.format : format;
@@ -816,7 +816,9 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
         `query` message.
      +/
 
-    immutable requestedUser = event.content;
+    immutable requestedUser = event.content.beginsWith('@') ?
+        event.content[1..$] :
+        event.content;
 
     with (plugin)
     {
