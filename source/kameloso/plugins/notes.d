@@ -204,14 +204,12 @@ void playbackNotes(NotesPlugin plugin,
 
                     enum pattern = "%s<h>%s<h>! <h>%s<h> left note <b>%s<b> ago: %s";
                     immutable message = pattern.format(atSign, senderName, note.sender, timestamp, note.line);
-
                     privmsg(plugin.state, channelName, user.nickname, message);
                 }
                 else
                 {
                     enum pattern = "%s<h>%s<h>! You have <b>%d<b> notes.";
                     immutable message = pattern.format(atSign, senderName, noteArray.length);
-
                     privmsg(plugin.state, channelName, user.nickname, message);
 
                     foreach (const note; noteArray)
@@ -220,7 +218,6 @@ void playbackNotes(NotesPlugin plugin,
 
                         enum entryPattern = "<h>%s<h> %s ago: %s";
                         immutable report = entryPattern.format(note.sender, timestamp, note.line);
-
                         privmsg(plugin.state, channelName, user.nickname, report);
                     }
                 }
@@ -262,14 +259,15 @@ void playbackNotes(NotesPlugin plugin,
             return onSuccess(failureUser);
         }
 
-        version(TwitchSupport)
+        // Functionally the same as the block below, since everyone has accounts on Twitch
+        /*version(TwitchSupport)
         {
             if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
             {
                 onSuccess(givenUser);
                 continue;
             }
-        }
+        }*/
 
         if (givenUser.account.length)
         {
