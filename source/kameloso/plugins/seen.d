@@ -569,6 +569,9 @@ void onSomeAction(SeenPlugin plugin, const ref IRCEvent event)
             goto case CHAN;
     }
 
+    /*case JOIN:
+    case PART:
+    case MODE:*/
     default:
         if (plugin.seenSettings.ignoreNonChatEvents) return;
         // Drop down
@@ -606,9 +609,7 @@ void onSomeAction(SeenPlugin plugin, const ref IRCEvent event)
 )
 void onQuit(SeenPlugin plugin, const ref IRCEvent event)
 {
-    auto seenTimestamp = event.sender.nickname in plugin.seenUsers;
-
-    if (seenTimestamp)
+    if (auto seenTimestamp = event.sender.nickname in plugin.seenUsers)
     {
         *seenTimestamp = event.time;
     }
@@ -629,9 +630,7 @@ void onQuit(SeenPlugin plugin, const ref IRCEvent event)
 )
 void onNick(SeenPlugin plugin, const ref IRCEvent event)
 {
-    auto seenTimestamp = event.sender.nickname in plugin.seenUsers;
-
-    if (seenTimestamp)
+    if (auto seenTimestamp = event.sender.nickname in plugin.seenUsers)
     {
         *seenTimestamp = event.time;
         //plugin.seenUsers.remove(event.sender.nickname);
@@ -854,9 +853,9 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
             if (requestedUser in channel.users)
             {
                 immutable pattern = (event.channel.length && (event.channel == channel.name)) ?
-                    "<h>%s<h> is here right now!" : "<h>%s<h> is online right now.";
+                    "<h>%s<h> is here right now!" :
+                    "<h>%s<h> is online right now.";
                 immutable message = pattern.format(requestedUser);
-
                 privmsg(event.channel, event.sender.nickname, message);
                 return;
             }
@@ -881,7 +880,6 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
 
             enum pattern = "I have never seen <h>%s<h>.";
             immutable message = pattern.format(requestedUser);
-
             privmsg(event.channel, event.sender.nickname, message);
         }
     }
@@ -1105,15 +1103,13 @@ void onWelcome(SeenPlugin plugin)
     void endOfMotdDg(IRCEvent)
     {
         import kameloso.plugins.common.delayawait : unawait;
-        import lu.string : plurality;
 
         unawait(plugin, &endOfMotdDg, endOfMotdEventTypes[]);
 
         // Reports statistics on how many users are registered as having been seen
 
-        enum pattern = "Currently <i>%d</> %s seen.";
-        logger.logf(pattern.expandTags(LogLevel.all), plugin.seenUsers.length,
-            plugin.seenUsers.length.plurality("user", "users"));
+        enum pattern = "Currently <i>%d</> users seen.";
+        logger.logf(pattern.expandTags(LogLevel.all), plugin.seenUsers.length);
     }
 
     await(plugin, &endOfMotdDg, endOfMotdEventTypes[]);
@@ -1254,6 +1250,6 @@ mixin ChannelAwareness!omniscientChannelPolicy;
 
 
 /++
-    This full plugin is <200 source lines of code. (`dscanner --sloc seen.d`)
+    This full plugin is ~200 source lines of code. (`dscanner --sloc seen.d`)
     Even at those numbers it is fairly feature-rich.
  +/
