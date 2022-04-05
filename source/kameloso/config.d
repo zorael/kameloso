@@ -114,7 +114,9 @@ void writeConfig(ref Kameloso instance,
 {
     import kameloso.common : Tint, logger, printVersionInfo;
     import kameloso.constants : KamelosoDefaults;
+    import kameloso.platform : rbd = resourceBaseDirectory;
     import kameloso.printing : printObjects;
+    import std.path : buildNormalizedPath;
     import std.stdio : writeln;
 
     // --save was passed; write configuration to file and quit
@@ -133,6 +135,14 @@ void writeConfig(ref Kameloso instance,
     // applyDefaults because it's a perfectly valid use-case not to have a quit
     // string, and having it there would enforce the default string if none present.
     if (!instance.bot.quitReason.length) instance.bot.quitReason = KamelosoDefaults.quitReason;
+
+    immutable defaultResourceDir = buildNormalizedPath(rbd, "kameloso");
+
+    if (instance.settings.resourceDirectory == defaultResourceDir)
+    {
+        // If the resource directory is the default, write it out as empty
+        instance.settings.resourceDirectory = string.init;
+    }
 
     instance.writeConfigurationFile(instance.settings.configFile);
 
