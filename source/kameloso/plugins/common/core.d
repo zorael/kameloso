@@ -1026,8 +1026,19 @@ mixin template IRCPluginImpl(
 
                 static assert(udaSanityCheck!fun);
 
-                immutable uda = getUDAs!(fun, IRCEventHandler)[0];
-                enum verbose = (getUDAs!(fun, IRCEventHandler)[0]._verbose || debug_);
+                static if (__VERSION__ >= 2096L)
+                {
+                    static immutable uda = getUDAs!(fun, IRCEventHandler)[0];
+                    enum verbose = (uda._verbose || debug_);
+                }
+                else
+                {
+                    // Can't use static immutables before 2.096
+                    // "Declaration uda is already defined in another scope"
+                    immutable uda = getUDAs!(fun, IRCEventHandler)[0];
+                    enum verbose = (getUDAs!(fun, IRCEventHandler)[0]._verbose || debug_);
+                }
+
                 enum funName = module_ ~ '.' ~ __traits(identifier, fun);
 
                 try
