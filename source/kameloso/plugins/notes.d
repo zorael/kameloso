@@ -56,10 +56,13 @@ else
 )
 void onReplayEvent(NotesPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+    version(TwitchSupport)
     {
-        // We can't really rely on JOINs on Twitch
-        return;
+        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+        {
+            // We can't really rely on JOINs on Twitch
+            return;
+        }
     }
 
     if (event.channel !in plugin.notes) return;
