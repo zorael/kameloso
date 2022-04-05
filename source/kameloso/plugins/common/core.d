@@ -1020,7 +1020,35 @@ mixin template IRCPluginImpl(
         /// Wrap all the functions in the passed `funlist` in try-catch blocks.
         void tryProcess(funlist...)(ref IRCEvent event)
         {
-            foreach (fun; funlist)
+            static if (__VERSION__ < 2096L)
+            {
+                /+
+                    Pre-2.096 needs an ugly workaround so as to not allocate an
+                    array literal every `tryProcess`. 2.096 and onward can make the
+                    UDA a static immutable, but this throws an error on the older
+                    compilers; "Declaration uda is already defined in another scope".
+                    Making them enums means we get enums of dynamic arrays, and
+                    the array literal allocations that entails. We really need
+                    them to be static immutable at some level.
+
+                    So compose an array of all UDAs in this funlist, as static
+                    immutables, at compile-time. It seems to work.
+                 +/
+                static immutable ctUDAArray = ()
+                {
+                    IRCEventHandler[] udas;
+                    udas.length = funlist.length;
+
+                    foreach (immutable i, fun; funlist)
+                    {
+                        udas[i] = getUDAs!(fun, IRCEventHandler)[0];
+                    }
+
+                    return udas;
+                }();
+            }
+
+            foreach (immutable i, fun; funlist)
             {
                 import std.traits : getUDAs;
 
@@ -1029,16 +1057,16 @@ mixin template IRCPluginImpl(
                 static if (__VERSION__ >= 2096L)
                 {
                     static immutable uda = getUDAs!(fun, IRCEventHandler)[0];
-                    enum verbose = (uda._verbose || debug_);
                 }
                 else
                 {
                     // Can't use static immutables before 2.096
                     // "Declaration uda is already defined in another scope"
-                    immutable uda = getUDAs!(fun, IRCEventHandler)[0];
-                    enum verbose = (getUDAs!(fun, IRCEventHandler)[0]._verbose || debug_);
+                    // See `ctUDAArray` above.
+                    immutable uda = ctUDAArray[i];
                 }
 
+                enum verbose = (uda._verbose || debug_);
                 enum funName = module_ ~ '.' ~ __traits(identifier, fun);
 
                 try
