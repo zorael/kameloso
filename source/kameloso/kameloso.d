@@ -717,6 +717,11 @@ public:
     bool eagerLookups = false;
 
     /++
+        Path to resource directory.
+     +/
+    string resourceDirectory;
+
+    /++
         Character(s) that prefix a bot chat command.
 
         These decide what bot commands will look like; "!" for "!command",
@@ -731,11 +736,6 @@ public:
             Main configuration file.
          +/
         string configFile;
-
-        /++
-            Path to resource directory.
-         +/
-        string resourceDirectory;
 
         /++
             Path to configuration directory.
