@@ -686,7 +686,7 @@ mixin template IRCPluginImpl(
             static if (verbose)
             {
                 import lu.conv : Enum;
-                import std.stdio : writeln, writefln;
+                import std.stdio : stdout, writeln, writefln;
             }
 
             if (!uda._acceptedEventTypes.canFind(IRCEvent.Type.ANY))
