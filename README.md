@@ -15,7 +15,7 @@
 * works on **Twitch** with some common Twitch bot features (alongside the rest)
 * [more random stuff and gimmicks](https://github.com/zorael/kameloso/wiki/Current-plugins)
 
-All of the above are plugins and can be disabled at runtime or omitted from compilation entirely. It is modular and easy to extend. A skeletal Hello World plugin is [`25` lines of code](source/kameloso/plugins/hello.d).
+All of the above are plugins and can be disabled at runtime or omitted from compilation entirely. It is modular and easy to extend. A skeletal Hello World plugin is [25 lines of code](source/kameloso/plugins/hello.d).
 
 Testing is primarily done on [**Libera.Chat**](https://libera.chat) and on [**Twitch**](https://dev.twitch.tv/docs/irc/guide), so support and coverage is best there.
 
@@ -39,13 +39,13 @@ Testing is primarily done on [**Libera.Chat**](https://libera.chat) and on [**Tw
 Pre-compiled binaries for Windows and Linux can be found under [Releases](https://github.com/zorael/kameloso/releases).
 
 ```sh
-$ dub run kameloso -- --server irc.libera.chat --guestChannels "#d"
+dub run kameloso -- --server irc.libera.chat --guestChannels "#d"
 
 # alternatively, guaranteed latest
-$ git clone https://github.com/zorael/kameloso.git
-$ cd kameloso
-$ dub build
-$ ./kameloso --server irc.libera.chat --guestChannels "#d"
+git clone https://github.com/zorael/kameloso.git
+cd kameloso
+dub build
+./kameloso --server irc.libera.chat --guestChannels "#d"
 ```
 
 If there's anyone talking it should show up on your screen.
@@ -98,7 +98,7 @@ The package manager [**dub**](https://code.dlang.org) is used to facilitate comp
 
 ### SSL Libraries on Windows
 
-**kameloso** uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard SSL library in the Posix sphere (Linux, macOS, ...), but not so on Windows. If you run into errors about *failing to set up an SSL context* when attempting to connect on Windows, download and install **Win64/32 OpenSSL** `v1.1.1` **Light** (not `v3.0.x`) from [here](https://slproweb.com/products/Win32OpenSSL.html), and opt to install to Windows system directories when asked. Whether you go with the `EXE` or the `MSI` file doesn't matter.
+**kameloso** uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard SSL library in the Posix sphere (Linux, macOS, ...), but not so on Windows. If you run into errors about "failing to set up an SSL context" when attempting to connect on Windows, download and install **Win64/32 OpenSSL** `v1.1.1` **Light** (not `v3.0.x`) from [here](https://slproweb.com/products/Win32OpenSSL.html), and opt to install to Windows system directories when asked. Whether you go with the `EXE` or the `MSI` file doesn't matter.
 
 > You can open this download page in your web browser by passing `--get-openssl` on the command line.
 
@@ -118,7 +118,7 @@ An alternative is to use a different shell environment, such as any one of **Git
 ## Downloading
 
 ```sh
-$ git clone https://github.com/zorael/kameloso.git
+git clone https://github.com/zorael/kameloso.git
 ```
 
 It can also be downloaded as a [`.zip` archive](https://github.com/zorael/kameloso/archive/master.zip).
@@ -126,10 +126,10 @@ It can also be downloaded as a [`.zip` archive](https://github.com/zorael/kamelo
 ## Compiling
 
 ```sh
-$ dub build
+dub build
 ```
 
-This will compile the bot in the default **debug** mode, which adds some extra code and debugging symbols. You can automatically omit these and add some optimisations by building it in **release** mode with `dub build -b release`. Mind that build times will increase accordingly. Refer to the output of `dub build --help` for more build types.
+This will compile the bot in the default **debug** mode, which adds some extra code and debugging symbols. You can automatically omit these and perform some optimisations by building it in **release** mode with `dub build -b release`. Mind that build times will increase accordingly. Refer to the output of `dub build --help` for more build types.
 
 ### Build configurations
 
@@ -144,10 +144,10 @@ All configurations come in a `-lowmem` variant (e.g. `application-lowmem`, `twit
 List configurations with `dub build --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default `application` configuration.
 
 ```sh
-$ dub build -c twitch
+dub build -c twitch
 ```
 
-> If you want to customise your own build to only compile the plugins you want to use, see the larger `versions` lists in `dub.sdl`. Simply add or delete a character from the line corresponding to the plugin(s) you want to omit (thus invalidating the version identifier). Mind that disabling any of the *"service"* plugins may/will break the bot in subtle ways.
+> If you want to customise your own build to only compile the plugins you want to use, see the larger `versions` lists in `dub.sdl`. Simply add a character to the line corresponding to the plugin(s) you want to omit, thus invalidating the version identifiers. Mind that disabling any of the "**service**" plugins may/will break the bot in subtle ways.
 
 # How to use
 
@@ -156,7 +156,7 @@ $ dub build -c twitch
 The bot ideally wants the account name of one or more administrators of the bot, and/or one or more home channels to operate in. Without either it's just a read-only log bot, which is incidentally also fine. To define these you can either specify them on the command line, with flags listed by calling the program with `--help`, or generate a configuration file and input them there.
 
 ```sh
-$ ./kameloso --save
+./kameloso --save
 ```
 
 A new `kameloso.conf` will be created in a directory dependent on your platform.
@@ -174,7 +174,7 @@ Open the file in a normal text editor. If you have your system file associations
 Settings provided at the command line override any such already defined in your configuration file. If you specify some and also add `--save`, it will apply the changes to your file in-place.
 
 ```sh
-$ ./kameloso \
+./kameloso \
     --server irc.libera.chat \
     --nickname "kameloso" \
     --admins "you" \
@@ -185,7 +185,7 @@ $ ./kameloso \
 [12:34:56] Configuration written to /home/user/.config/kameloso/kameloso.conf
 ```
 
-Other settings not specified at invocations of `--save` keep their values. Mind however that the configuration file is parsed and *rewritten*, so any comments or invalid entries in it will be silently removed.
+Not specified settings keep their values.
 
 ### Display settings
 
@@ -285,7 +285,7 @@ MrOffline joined #channel
 
 Use the `!help` command for a summary of available bot commands, and `!help [plugin] [command]` for a brief description of a specific one. The shorthand `!help !command` also works.
 
-The command **prefix** (here `!`) is configurable; refer to your generated configuration file. Common alternatives are `.` and `~`, making it `.note` and `~quote` respectively.
+The command **prefix** (here `!`) is configurable; refer to your configuration file. Common alternatives are `.` (dot), `~` (tilde) and `?`, making it `.note`, `~quote` and `?counter` respectively.
 
 ```ini
 [Core]
@@ -298,7 +298,7 @@ It can technically be any string and not just one character. It may include spac
 
 Before allowing *anyone* to trigger any restricted functionality, the bot will query the server for what services account the accessing user is logged onto. For full administrative privileges you will need to be logged in with an account listed in the `admins` field in the configuration file, while other users may be defined in your `users.json` file. If a user is not logged onto services it is considered as not being uniquely identifiable.
 
-> In the case of **hostmasks mode**, the above still applies but "accounts" are inferred from hostmasks. See the **Admin** plugin `!hostmask` command (and the `hostmasks.json` file) for how to map hostmasks to would-be accounts. Hostmasks are a weaker solution to user identification but not all servers may offer services. Also see [the wiki entry on hostmasks](https://github.com/zorael/kameloso/wiki/On-servers-without-services-(e.g.-no-NickServ)) for more information.
+> In the case of **hostmasks mode**, the above still applies but "accounts" are derived from hostmasks. See the **Admin** plugin `!hostmask` command (and the `hostmasks.json` file) for how to map hostmasks to would-be accounts. Hostmasks are a weaker solution to user identification but not all servers may offer services. See [the wiki entry on hostmasks](https://github.com/zorael/kameloso/wiki/On-servers-without-services-(e.g.-no-NickServ)) for more information.
 
 ## Twitch
 
@@ -356,7 +356,7 @@ Assuming a prefix of `!`, commands to test are:
 
 ...alongside `!oneliner`, `!counter`, `!poll`, `!stopwatch`, and other non-Twitch-specific commands. Try `!help` or [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins).
 
-> Note: dot `.` and slash `/` prefixes will not work on Twitch.
+> Note: `.` (dot) and slash `/` prefixes will not work on Twitch.
 
 ## Further help
 
@@ -378,7 +378,7 @@ See the [SSL Libraries on Windows](#ssl-libraries-on-windows) section for inform
 * pipedream zero: **no compiler segfaults** ([#18026](https://issues.dlang.org/show_bug.cgi?id=18026), [#20562](https://issues.dlang.org/show_bug.cgi?id=20562))
 * please send help: Windows Secure Channel SSL
 * split Twitch timers into own plugin
-* Twitch `ecount`, `settitle`, `setgame`, `vanish`, `watchtime`, `roulette`, `repeat`/`spam`?
+* Twitch `ecount`, `settitle`, `setgame`, `vanish`/`poof`, `watchtime`, `roulette`, `repeat`/`spam`?
 * help plugin descriptions? multiple syntax entries?
 * **more pairs of eyes**
 
@@ -398,7 +398,6 @@ This project is licensed under the **MIT** license - see the [LICENSE](LICENSE) 
 # Acknowledgements
 
 * [Kamelåså](https://youtu.be/ykj3Kpm3O0g)
-* [`README.md` template gist](https://gist.github.com/PurpleBooth/109311bb0361f32d87a2)
 * [ikod](https://github.com/ikod) for [`dlang-requests`](https://github.com/ikod/dlang-requests)
 * [Adam D. Ruppe](https://github.com/adamdruppe) for [`arsd`](https://github.com/adamdruppe/arsd)
 * [`#d` on libera.chat](irc://irc.libera.chat:6697/#d)
