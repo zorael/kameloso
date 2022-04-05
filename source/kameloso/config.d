@@ -204,9 +204,9 @@ void printSettings(ref Kameloso instance, const string[] customSettings) @system
         know how to open the configuration file in a text editor.
  +/
 void manageConfigFile(ref Kameloso instance,
-    const bool shouldWriteConfig,
-    const bool shouldOpenTerminalEditor,
-    const bool shouldOpenGraphicalEditor,
+    const Flag!"shouldWriteConfig" shouldWriteConfig,
+    const Flag!"shouldOpenTerminalEditor" shouldOpenTerminalEditor,
+    const Flag!"shouldOpenGraphicalEditor" shouldOpenGraphicalEditor,
     ref string[] customSettings,
     const bool force) @system
 {
@@ -897,8 +897,13 @@ Next handleGetopt(ref Kameloso instance,
         if (shouldWriteConfig || shouldOpenTerminalEditor || shouldOpenGraphicalEditor)
         {
             // --save and/or --edit was passed; defer to manageConfigFile
-            manageConfigFile(instance, shouldWriteConfig, shouldOpenTerminalEditor,
-                shouldOpenGraphicalEditor, customSettings, settings.force);
+            manageConfigFile(
+                instance,
+                cast(Flag!"shouldWriteConfig")shouldWriteConfig,
+                cast(Flag!"shouldOpenTerminalEditor")shouldOpenTerminalEditor,
+                cast(Flag!"shouldOpenGraphicalEditor")shouldOpenGraphicalEditor,
+                customSettings,
+                settings.force);
             return Next.returnSuccess;
         }
 
