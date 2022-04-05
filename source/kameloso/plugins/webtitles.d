@@ -829,7 +829,7 @@ string decodeEntities(const string line)
 
     return line
         .replace("\r", string.init)
-        .replace("\n", " ")
+        .replace('\n', ' ')
         .stripped
         .htmlEntitiesDecode();
 }
