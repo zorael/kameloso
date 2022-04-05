@@ -510,13 +510,10 @@ else
     .onEvent(IRCEvent.Type.JOIN)
     .onEvent(IRCEvent.Type.PART)
     .onEvent(IRCEvent.Type.MODE)
-    .onEvent(IRCEvent.Type.TWITCH_TIMEOUT)
-    .onEvent(IRCEvent.Type.TWITCH_BAN)
     .onEvent(IRCEvent.Type.TWITCH_BULKGIFT)
     .onEvent(IRCEvent.Type.TWITCH_CHARITY)
     .onEvent(IRCEvent.Type.TWITCH_EXTENDSUB)
     .onEvent(IRCEvent.Type.TWITCH_GIFTCHAIN)
-    .onEvent(IRCEvent.Type.TWITCH_GIFTRECEIVED)
     .onEvent(IRCEvent.Type.TWITCH_PAYFORWARD)
     .onEvent(IRCEvent.Type.TWITCH_REWARDGIFT)
     .onEvent(IRCEvent.Type.TWITCH_RITUAL)
@@ -563,7 +560,6 @@ void onSomeAction(SeenPlugin plugin, const ref IRCEvent event)
         case TWITCH_SUB:
         case TWITCH_SUBGIFT:
         case TWITCH_SUBUPGRADE:
-        case TWITCH_TIMEOUT:
             // Consider these as chatty events too
             // targets might be caught in the crossfire in some cases
             goto case CHAN;
