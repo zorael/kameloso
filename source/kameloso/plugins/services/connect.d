@@ -209,6 +209,7 @@ void joinChannels(ConnectService service)
 version(TwitchSupport)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.SELFJOIN)
+    .channelPolicy(ChannelPolicy.any)
 )
 void onSelfjoin(ConnectService service, const ref IRCEvent event)
 {
