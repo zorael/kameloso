@@ -336,7 +336,6 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 
         enum pattern = "Automode modified! <h>%s<h> on <b>%s<b>: +<b>%s<b>";
         immutable message = pattern.format(nickname, event.channel, mode);
-
         chan(plugin.state, event.channel, message);
         break;
 

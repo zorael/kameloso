@@ -108,7 +108,6 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
             {
                 enum pattern = "There is no such stopwatch running. (<h>%s<h>)";
                 immutable message = pattern.format(id);
-
                 chan(plugin.state, event.channel, message);
             }
             return;
@@ -122,7 +121,6 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
         case "end":
             enum pattern = "Stopwatch stopped after <b>%s<b>.";
             immutable message = pattern.format(diff);
-
             chan(plugin.state, event.channel, message);
             plugin.stopwatches[event.channel].remove(id);
             break;
@@ -131,7 +129,6 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
         case string.init:
             enum pattern = "Elapsed time: <b>%s<b>";
             immutable message = pattern.format(diff);
-
             chan(plugin.state, event.channel, message);
             break;
 
@@ -143,7 +140,6 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
     case "clear":
         enum pattern = "Clearing all stopwatches in channel <b>%s<b>.";
         immutable message = pattern.format(event.channel);
-
         chan(plugin.state, event.channel, message);
         plugin.stopwatches.remove(event.channel);
         break;

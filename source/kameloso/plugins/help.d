@@ -142,7 +142,6 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
                     {
                         enum pattern = "No help available for command <b>%s<b> of plugin <b>%s<b>";
                         immutable message = pattern.format(specifiedCommand, specifiedPlugin);
-
                         privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, message);
                     }
                 }
@@ -218,7 +217,6 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
             enum pattern = "Use <b>%s%s<b> [<b>plugin<b>] [<b>command<b>] " ~
                 "for information about a command.";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-
             privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, message);
         }
     }
@@ -252,7 +250,6 @@ void sendCommandHelp(HelpPlugin plugin,
 
     enum pattern = "[<b>%s<b>] <b>%s<b>: %s";
     immutable message = pattern.format(otherPluginName, command, description);
-
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
 
     if (syntax.length)
@@ -270,7 +267,6 @@ void sendCommandHelp(HelpPlugin plugin,
             (syntax.beginsWith("$nickname") || syntax.beginsWith("$prefix")) ?
                 udaSyntax : plugin.state.settings.prefix ~ udaSyntax;
         immutable usage = "<b>Usage<b>: " ~ prefixedSyntax;
-
         privmsg(plugin.state, event.channel, event.sender.nickname, usage);
     }
 }

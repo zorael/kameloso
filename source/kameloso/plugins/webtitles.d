@@ -628,7 +628,6 @@ void reportYouTubeTitle(TitleLookupRequest request)
 
     enum pattern = "[<b>youtube.com<b>] %s (uploaded by <h>%s<h>)";
     immutable message = pattern.format(request.results.youtubeTitle, request.results.youtubeAuthor);
-
     chan(request.state, request.event.channel, message);
 }
 

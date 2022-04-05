@@ -190,7 +190,6 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
             case success:
                 enum pattern = "Added <h>%s<h> as <b>%s<b> in %s.";
                 immutable message = pattern.format(id, asWhat, channel);
-
                 privmsg(plugin.state, event.channel, event.sender.nickname, message);
                 break;
 
@@ -201,7 +200,6 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
             case alreadyInList:
                 enum pattern = "<h>%s<h> was already <b>%s<b> in %s.";
                 immutable message = pattern.format(id, asWhat, channel);
-
                 privmsg(plugin.state, event.channel, event.sender.nickname, message);
                 break;
             }
@@ -269,7 +267,6 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
 
             enum pattern = "Invalid nickname/account: <4>%s<c>";
             immutable message = pattern.format(specified);
-
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
         else
@@ -417,14 +414,12 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
         case noSuchChannel:
             enum pattern = "<h>%s<h> isn't <b>%s<b> in %s.";
             immutable message = pattern.format(account, asWhat, channel);
-
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
             break;
 
         case success:
             enum pattern = "Removed <h>%s<h> as <b>%s<b> in %s.";
             immutable message = pattern.format(account, asWhat, channel);
-
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
             break;
         }

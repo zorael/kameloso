@@ -675,7 +675,6 @@ void manageQuoteImpl(QuotesPlugin plugin,
                         {
                             enum pattern = "No such quote: <h>%s<h> #<b>%d<b>";
                             immutable message = pattern.format(id, index);
-
                             privmsg(plugin.state, event.channel, event.sender.nickname, message);
                             return;
                         }

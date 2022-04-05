@@ -269,7 +269,6 @@ void worker(shared IRCPluginState sState,
         enum pattern = "[<b>bash.org<b>] #%s";
         immutable num = b[0].toString[4..$-4];
         immutable message = pattern.format(num);
-
         privmsg(state, event.channel, event.sender.nickname, message);
 
         foreach (const line; range)

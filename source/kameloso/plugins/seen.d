@@ -868,7 +868,6 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
             immutable diff = (Clock.currTime - timestamp);
             immutable elapsed = timeSince!(7, 2)(diff);
             immutable message = pattern.format(requestedUser, elapsed);
-
             privmsg(event.channel, event.sender.nickname, message);
         }
         else

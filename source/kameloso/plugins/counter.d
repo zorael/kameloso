@@ -105,7 +105,6 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
                 {
                     enum pattern = `Counter word "<b>%s<b>" conflicts with a command of the <b>%s<b> plugin.`;
                     immutable message = pattern.format(slice, pluginName);
-
                     chan(plugin.state, event.channel, message);
                     return true;
                 }
@@ -168,7 +167,6 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
         immutable arrayPattern = "%-(<b>" ~ plugin.state.settings.prefix ~ "%s<b>, %)";
         immutable list = arrayPattern.format(plugin.counters[event.channel].keys);
         immutable message = pattern.format(list);
-
         chan(plugin.state, event.channel, message);
         break;
 
@@ -250,7 +248,6 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 
         enum pattern = "<b>%s<b> count so far: <b>%s<b>";
         immutable message = pattern.format(word, plugin.counters[event.channel][word]);
-
         chan(plugin.state, event.channel, message);
         return;
     }
@@ -288,7 +285,6 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
             {
                 enum pattern = "Not a number: <b>%s<b>";
                 immutable message = pattern.format(slice);
-
                 chan(plugin.state, event.channel, message);
                 return;
             }
@@ -300,7 +296,6 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 
         immutable stepText = (step >= 0) ? ('+' ~ step.text) : step.text;
         immutable message = pattern.format(word, stepText, *count);
-
         chan(plugin.state, event.channel, message);
         saveResourceToDisk(plugin.counters, plugin.countersFile);
         break;
@@ -324,16 +319,14 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
         {
             enum pattern = "Not a number: <b>%s<b>";
             immutable message = pattern.format(slice);
-
             chan(plugin.state, event.channel, message);
             return;
         }
 
         enum pattern = "<b>%s<b> count assigned to <b>%s<b>!";
         immutable message = pattern.format(word, newCount);
-
-        *count = newCount;
         chan(plugin.state, event.channel, message);
+        *count = newCount;
         saveResourceToDisk(plugin.counters, plugin.countersFile);
         break;
 

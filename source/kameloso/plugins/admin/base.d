@@ -510,7 +510,6 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
 
         enum pattern = "Channel <b>%s<b> was not listed as a home.";
         immutable message = pattern.format(channelName);
-
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
         return;
     }
@@ -964,7 +963,6 @@ void onCommandCycle(AdminPlugin plugin, const ref IRCEvent event)
 
         enum pattern = `"<b>%s<b>" is not a valid number for seconds to delay.`;
         immutable message = pattern.format(slice);
-
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
         return;
     }
@@ -1157,7 +1155,6 @@ void listHostmaskDefinitions(AdminPlugin plugin, const ref IRCEvent event)
 
             enum pattern = "Current hostmasks: <b>%s<b>";
             immutable message = pattern.format(aa);
-
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
     }

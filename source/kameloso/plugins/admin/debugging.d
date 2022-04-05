@@ -84,7 +84,6 @@ void onCommandShowUserImpl(AdminPlugin plugin, const ref IRCEvent event)
 
             enum pattern = "No such user: <4>%s<c>";
             immutable message = pattern.format(username);
-
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
     }
@@ -139,7 +138,6 @@ void onCommandPrintRawImpl(AdminPlugin plugin, const ref IRCEvent event)
 
     enum pattern = "Printing all: <b>%s<b>";
     immutable message = pattern.format(plugin.adminSettings.printRaw);
-
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
 }
 
@@ -159,7 +157,6 @@ void onCommandPrintBytesImpl(AdminPlugin plugin, const ref IRCEvent event)
 
     enum pattern = "Printing bytes: <b>%s<b>";
     immutable message = pattern.format(plugin.adminSettings.printBytes);
-
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
 }
 
