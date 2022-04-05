@@ -1038,7 +1038,6 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
                     yield(attempt);
                     continue attemptloop;
                 }
-                break;
             }
 
             // foreach ended; connectionRetries reached.
