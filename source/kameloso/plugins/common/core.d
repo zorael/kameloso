@@ -679,7 +679,7 @@ mixin template IRCPluginImpl(
             Process a function.
          +/
         NextStep process(bool verbose, Fun)(Fun fun, const string funName,
-            const IRCEventHandler uda, ref IRCEvent event)
+            const IRCEventHandler uda, ref IRCEvent event, const bool acceptsAnyType)
         {
             import std.algorithm.searching : canFind;
 
@@ -689,7 +689,7 @@ mixin template IRCPluginImpl(
                 import std.stdio : stdout, writeln, writefln;
             }
 
-            if (!uda._acceptedEventTypes.canFind(IRCEvent.Type.ANY))
+            if (!acceptsAnyType)
             {
                 if (!uda._acceptedEventTypes.canFind(event.type)) return NextStep.continue_;
             }
@@ -1050,6 +1050,7 @@ mixin template IRCPluginImpl(
 
             foreach (immutable i, fun; funlist)
             {
+                import std.algorithm.searching : canFind;
                 import std.traits : getUDAs;
 
                 static assert(udaSanityCheck!fun);
@@ -1069,9 +1070,13 @@ mixin template IRCPluginImpl(
                 enum verbose = (uda._verbose || debug_);
                 enum funName = module_ ~ '.' ~ __traits(identifier, fun);
 
+                // Make a special check for IRCEvent.Type.ANY at compile-time,
+                // so the processing function won't have to walk the array twice
+                enum acceptsAnyType = uda._acceptedEventTypes.canFind(IRCEvent.Type.ANY);
+
                 try
                 {
-                    immutable next = process!verbose(&fun, funName, uda, event);
+                    immutable next = process!verbose(&fun, funName, uda, event, acceptsAnyType);
 
                     if (next == NextStep.continue_)
                     {
@@ -1080,7 +1085,7 @@ mixin template IRCPluginImpl(
                     else if (next == NextStep.repeat)
                     {
                         // only repeat once so we don't endlessly loop
-                        if (process!verbose(&fun, funName, uda, event) == NextStep.continue_)
+                        if (process!verbose(&fun, funName, uda, event, acceptsAnyType) == NextStep.continue_)
                         {
                             continue;
                         }
@@ -1111,7 +1116,7 @@ mixin template IRCPluginImpl(
                     sanitiseEvent(event);
 
                     // Copy-paste, not much we can do otherwise
-                    immutable next = process!verbose(&fun, funName, uda, event);
+                    immutable next = process!verbose(&fun, funName, uda, event, acceptsAnyType);
 
                     if (next == NextStep.continue_)
                     {
@@ -1120,7 +1125,7 @@ mixin template IRCPluginImpl(
                     else if (next == NextStep.repeat)
                     {
                         // only repeat once so we don't endlessly loop
-                        if (process!verbose(&fun, funName, uda, event) == NextStep.continue_)
+                        if (process!verbose(&fun, funName, uda, event, acceptsAnyType) == NextStep.continue_)
                         {
                             continue;
                         }
