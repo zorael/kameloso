@@ -291,44 +291,46 @@ void queryTwitchImpl(
     const string caBundleFile)
 {
     import kameloso.constants : KamelosoInfo;
-    import requests : Response, Request;
+    import arsd.http2 : HttpClient, Uri;
     import std.datetime.systime : Clock;
-    import std.exception : assumeUnique;
     import core.time : seconds;
+    import std.stdio;
 
-    static string[string] headers;
+    static HttpClient client;
+    static string[] headers;
 
-    if (!headers.length)
+    if (!client)
     {
-        headers =
-        [
-            "Client-ID"     : TwitchBotPlugin.clientID,
-            "User-Agent"    : "kameloso/" ~ cast(string)KamelosoInfo.version_,
-            "Authorization" : authToken,
-        ];
-    }
-    else if (headers["Authorization"] != authToken)
-    {
-        headers["Authorization"] = authToken;
+        import kameloso.constants : KamelosoInfo;
+
+        client = new HttpClient;
+        client.useHttp11 = true;
+        client.keepAlive = true;
+        client.acceptGzip = false;
+        client.defaultTimeout = timeout.seconds;
+        client.userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
+        headers = [ "Client-ID: " ~ TwitchBotPlugin.clientID ];
+        //client.setClientCertificate(caBundleFile, caBundleFile);
     }
 
-    Request req;
-    req.addHeaders(headers);
-    if (caBundleFile.length) req.sslSetCaCert(caBundleFile);
-    req.timeout = timeout.seconds;
-    req.keepAlive = false;
+    client.authorization = authToken;
 
     QueryResponse response;
     immutable pre = Clock.currTime;
-    Response res;
 
     try
     {
-        res = req.get(url);
+        auto req = client.request(Uri(url));
+        req.requestParameters.headers = headers;
+	    const res = req.waitForCompletion();
+
+        response.code = res.code;
+        response.error = res.codeText;
+        response.str = res.contentText;
     }
     catch (Exception e)
     {
-        import kameloso.constants : MagicErrorStrings;
+        /+import kameloso.constants : MagicErrorStrings;
 
         if (e.msg == MagicErrorStrings.sslContextCreationFailure)
         {
@@ -337,22 +339,20 @@ void queryTwitchImpl(
         else
         {
             response.error = e.msg;
+        }+/
+
+        response.error = e.msg;
+    }
+    finally
+    {
+        immutable post = Clock.currTime;
+        immutable delta = (post - pre);
+        response.msecs = delta.total!"msecs";
+
+        synchronized //()
+        {
+            bucket[url] = response;  // empty str if code >= 400
         }
-    }
-
-    immutable post = Clock.currTime;
-    immutable delta = (post - pre);
-    response.msecs = delta.total!"msecs";
-
-    if (!response.error.length)
-    {
-        response.code = res.code;
-        response.str = assumeUnique(cast(char[])res.responseBody.data);
-    }
-
-    synchronized //()
-    {
-        bucket[url] = response;  // empty str if code >= 400
     }
 }
 

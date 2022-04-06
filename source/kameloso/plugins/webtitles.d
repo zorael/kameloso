@@ -465,115 +465,93 @@ TitleLookupResults lookupTitle(
 {
     import kameloso.constants : KamelosoInfo, Timeout;
     import lu.string : beginsWith, contains, nom;
-    import requests : Response, Request;
     import arsd.dom : Document;
+    import arsd.http2 : HttpClient, Uri;
     import std.array : Appender;
     import std.uni : toLower;
     import core.time : seconds;
 
-    static string[string] headers;
-
-    if (!headers.length)
-    {
-        headers =
-        [
-            "User-Agent" : "kameloso/" ~ cast(string)KamelosoInfo.version_,
-            "Accept"     : "text/html",
-        ];
-    }
-
-    Request req;
-    req.addHeaders(headers);
-    if (caBundleFile.length) req.sslSetCaCert(caBundleFile);
-    req.timeout = Timeout.httpGET.seconds;
-    req.keepAlive = false;
-    req.useStreaming = true;
-
-    Response res;
+    // No need to keep a static HttpClient since this will be in a new thread every time
+    auto client = new HttpClient;
+    client.useHttp11 = true;
+    client.keepAlive = false;
+    client.acceptGzip = false;
+    client.defaultTimeout = Timeout.httpGET.seconds;  // FIXME
+    client.userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
+    //client.setClientCertificate(caBundleFile, caBundleFile);
 
     try
     {
-        res = req.get(url);
+        auto req = client.request(Uri(url));
+        auto res = req.waitForCompletion();
+
+        auto doc = new Document;
+        doc.parseGarbage("");  // Work around missing null check, causing segfaults on empty pages
+        doc.parseGarbage(res.responseText);
+
+        if (!doc.title.length)
+        {
+            if (res.code >= 400)
+            {
+                throw new TitleFetchException("Failed to fetch URL",
+                    url, res.code, __FILE__, __LINE__);
+            }
+            else
+            {
+                throw new TitleFetchException("No title tag found",
+                    url, res.code, __FILE__, __LINE__);
+            }
+        }
+        else if (res.code >= 400)
+        {
+            throw new TitleFetchException("Failed to fetch URL",
+                url, res.code, __FILE__, __LINE__);
+        }
+
+        string slice = url;  // mutable
+        slice.nom("//");
+        string host = slice.nom!(Yes.inherit)('/').toLower;
+        if (host.beginsWith("www.")) host = host[4..$];
+
+        TitleLookupResults results;
+        results.title = decodeEntities(doc.title);
+        results.domain = host;
+
+        if (descriptions)
+        {
+            import std.algorithm.searching : canFind;
+
+            if (!descriptionExemptions.canFind(host))
+            {
+                auto metaTags = doc.getElementsByTagName("meta");
+
+                foreach (tag; metaTags)
+                {
+                    if (tag.name == "description")
+                    {
+                        results.description = decodeEntities(tag.content);
+                        break;
+                    }
+                }
+            }
+        }
+
+        return results;
     }
     catch (Exception e)
     {
         // Reword some exceptions
-        if (e.msg == MagicErrorStrings.sslContextCreationFailure)
+        /+if (e.msg == MagicErrorStrings.sslContextCreationFailure)
         {
             e.msg = MagicErrorStrings.sslContextCreationFailureRewritten;
         }
         else if (e.msg == MagicErrorStrings.sslCertificateVerificationFailure)
         {
             e.msg = MagicErrorStrings.sslCertificateVerificationFailureRewritten;
-        }
+        }+/
 
         throw e;
     }
-
-    Document doc = new Document;
-    doc.parseGarbage("");  // Work around missing null check, causing segfaults on empty pages
-
-    Appender!(ubyte[]) sink;
-    sink.reserve(1_048_576);  // 1M
-
-    auto stream = res.receiveAsRange();
-
-    while (!stream.empty)
-    {
-        sink.put(stream.front);
-        doc.parseGarbage((cast(char[])sink.data).idup);
-        if (doc.title.length) break;
-        stream.popFront();
-    }
-
-    if (!doc.title.length)
-    {
-        if (res.code >= 400)
-        {
-            throw new TitleFetchException("Failed to fetch URL",
-                url, res.code, __FILE__, __LINE__);
-        }
-        else
-        {
-            throw new TitleFetchException("No title tag found",
-                url, res.code, __FILE__, __LINE__);
-        }
-    }
-    else if (res.code >= 400)
-    {
-        throw new TitleFetchException("Failed to fetch URL",
-            url, res.code, __FILE__, __LINE__);
-    }
-
-    string slice = url;  // mutable
-    slice.nom("//");
-    string host = slice.nom!(Yes.inherit)('/').toLower;
-    if (host.beginsWith("www.")) host = host[4..$];
-
-    TitleLookupResults results;
-    results.title = decodeEntities(doc.title);
-    results.domain = host;
-
-    if (descriptions)
-    {
-        import std.algorithm.searching : canFind;
-
-        if (!descriptionExemptions.canFind(host))
-        {
-            auto metaTags = doc.getElementsByTagName("meta");
-
-            foreach (tag; metaTags)
-            {
-                if (tag.name == "description")
-                {
-                    results.description = decodeEntities(tag.content);
-                    break;
-                }
-            }
-        }
-    }
-
-    return results;
 }
 
 
@@ -707,65 +685,60 @@ unittest
 JSONValue getYouTubeInfo(const string url, const string caBundleFile)
 {
     import kameloso.constants : KamelosoInfo, Timeout;
-    import requests : Response, Request;
+    import arsd.http2 : HttpClient, Uri;
     import std.array : Appender;
     import std.exception : assumeUnique;
     import std.json : parseJSON;
     import core.time : seconds;
 
-    static string[string] headers;
-
-    if (!headers.length)
-    {
-        headers =
-        [
-            "User-Agent" : "kameloso/" ~ cast(string)KamelosoInfo.version_,
-            "Accept"     : "text/html",
-        ];
-    }
+    // No need to keep a static HttpClient since this will be in a new thread every time
+    auto client = new HttpClient;
+    client.useHttp11 = true;
+    client.keepAlive = false;
+    client.acceptGzip = false;
+    client.defaultTimeout = Timeout.httpGET.seconds;  // FIXME
+    client.userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
+    //client.setClientCertificate(caBundleFile, caBundleFile);
 
     immutable youtubeURL = "https://www.youtube.com/oembed?format=json&url=" ~ url;
 
-    Request req;
-    req.addHeaders(headers);
-    if (caBundleFile.length) req.sslSetCaCert(caBundleFile);
-    req.timeout = Timeout.httpGET.seconds;
-    req.keepAlive = false;
-
-    Response res;
-
     try
     {
-        res = req.get(youtubeURL);
+        auto req = client.request(Uri(youtubeURL));
+        auto res = req.waitForCompletion();
+
+        if (res.code >= 400)
+        {
+            throw new TitleFetchException("Failed to fetch YouTube video information",
+                url, res.code, __FILE__, __LINE__);
+        }
+        else if (res.codeText == "Not Found")
+        {
+            throw new TitleFetchException("Invalid YouTube video ID 1",
+                url, res.code, __FILE__, __LINE__);
+        }
+        else if (res.contentText == "Not Found")
+        {
+            throw new TitleFetchException("Invalid YouTube video ID 2",
+                url, res.code, __FILE__, __LINE__);
+        }
+
+        return parseJSON(res.contentText);
     }
     catch (Exception e)
     {
         // Reword some exceptions
-        if (e.msg == MagicErrorStrings.sslContextCreationFailure)
+        /+if (e.msg == MagicErrorStrings.sslContextCreationFailure)
         {
             e.msg = MagicErrorStrings.sslContextCreationFailureRewritten;
         }
         else if (e.msg == MagicErrorStrings.sslCertificateVerificationFailure)
         {
             e.msg = MagicErrorStrings.sslCertificateVerificationFailureRewritten;
-        }
+        }+/
 
         throw e;
     }
-
-    if (res.code >= 400)
-    {
-        throw new TitleFetchException("Failed to fetch YouTube video information",
-            url, res.code, __FILE__, __LINE__);
-    }
-    else if (res.responseBody == "Not Found")
-    {
-        throw new TitleFetchException("Invalid YouTube video ID",
-            url, res.code, __FILE__, __LINE__);
-    }
-
-    immutable received = assumeUnique(cast(char[])res.responseBody.data);
-    return parseJSON(received);
 }
 
 

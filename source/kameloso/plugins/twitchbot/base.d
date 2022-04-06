@@ -62,27 +62,16 @@ public:
      +/
     bool promoteVIPs = true;
 
-    version(Windows)
-    {
-        /++
-            Whether to use one persistent worker for Twitch queries or to use separate subthreads.
+    /++
+        Whether to use one persistent worker for Twitch queries or to use separate subthreads.
 
-            It's a trade-off. A single worker thread obviously spawns fewer threads,
-            which makes it a better choice on Windows systems where creating such is
-            comparatively expensive. On the other hand, it's also slower (likely due to
-            concurrency message passing overhead).
-         +/
-        bool singleWorkerThread = true;
-    }
-    else version(Posix)
-    {
-        /// Ditto
-        bool singleWorkerThread = false;
-    }
-    else
-    {
-        static assert(0, "Unsupported platform, please file a bug.");
-    }
+        It's a trade-off. A single worker thread obviously spawns fewer threads,
+        which makes it a better choice on Windows systems where creating such is
+        comparatively expensive. You also get to enjoy being able to reuse the
+        HTTP client. On the other hand, it's also slower (likely due to
+        concurrency message passing overhead).
+     +/
+    bool singleWorkerThread = true;
 
     @Unserialisable
     {
@@ -1482,6 +1471,7 @@ final class TwitchBotPlugin : IRCPlugin
 {
 private:
     import kameloso.terminal : TerminalToken;
+    import arsd.http2;
     import std.concurrency : Tid;
     import core.time : seconds;
 
