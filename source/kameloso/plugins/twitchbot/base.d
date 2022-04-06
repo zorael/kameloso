@@ -1076,8 +1076,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                 "Double-spawn of Twitch single worker thread");
 
             plugin.persistentWorkerTid = spawn(&persistentQuerier,
-                plugin.bucket, plugin.queryResponseTimeout,
-                plugin.state.connSettings.caBundleFile);
+                plugin.bucket, plugin.state.connSettings.caBundleFile);
         }
 
         void validationDg()
@@ -1610,12 +1609,6 @@ package:
         averaging some inertia.
      +/
     enum approximateQueryAveragingWeight = 3;
-
-    /++
-        How many seconds before a Twitch query response times out. Does not
-        affect the actual HTTP request, just how long we wait for it to arrive.
-     +/
-    enum queryResponseTimeout = 15;
 
     /++
         How big a buffer to preallocate when doing HTTP API queries.

@@ -85,12 +85,9 @@ if (isSomeFunction!dg)
     Params:
         bucket = The shared associative array to put the results in, response
             values keyed by URL.
-        timeout = How long before queries time out.
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
  +/
-void persistentQuerier(shared QueryResponse[string] bucket,
-    const uint timeout,
-    const string caBundleFile)
+void persistentQuerier(shared QueryResponse[string] bucket, const string caBundleFile)
 {
     import kameloso.thread : ThreadMessage;
     import std.concurrency : OwnerTerminated, receive;
@@ -109,7 +106,7 @@ void persistentQuerier(shared QueryResponse[string] bucket,
         receive(
             (string url, string authToken) scope
             {
-                queryTwitchImpl(url, authToken, timeout, bucket, caBundleFile);
+                queryTwitchImpl(url, authToken, bucket, caBundleFile);
             },
             (ThreadMessage message) scope
             {
@@ -189,7 +186,7 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
     else
     {
         spawn(&queryTwitchImpl, url, authorisationHeader,
-            plugin.queryResponseTimeout, plugin.bucket, plugin.state.connSettings.caBundleFile);
+            plugin.bucket, plugin.state.connSettings.caBundleFile);
     }
 
     delay(plugin, plugin.approximateQueryTime.msecs, Yes.yield);
@@ -268,8 +265,7 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
     ---
     immutable url = "https://api.twitch.tv/helix/some/api/url";
 
-    spawn&(&queryTwitchImpl, url, plugin.authorizationBearer,
-        plugin.queryResponseTimeout, plugin.bucket, caBundleFile);
+    spawn&(&queryTwitchImpl, url, plugin.authorizationBearer, plugin.bucket, caBundleFile);
     delay(plugin, plugin.approximateQueryTime.msecs, Yes.yield);
     immutable response = waitForQueryResponse(plugin, url);
     // response.str is the response body
@@ -278,7 +274,6 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
     Params:
         url = URL address to look up.
         authToken = Authorisation token HTTP header to pass.
-        timeout = How long to let the query run before timing out.
         bucket = The shared associative array to put the results in, response
             values keyed by URL.
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
@@ -286,11 +281,10 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
 void queryTwitchImpl(
     const string url,
     const string authToken,
-    const uint timeout,
     shared QueryResponse[string] bucket,
     const string caBundleFile)
 {
-    import kameloso.constants : KamelosoInfo;
+    import kameloso.constants : KamelosoInfo, Timeout;
     import arsd.http2 : HttpClient, Uri;
     import std.datetime.systime : Clock;
     import core.time : seconds;
@@ -307,7 +301,7 @@ void queryTwitchImpl(
         client.useHttp11 = true;
         client.keepAlive = true;
         client.acceptGzip = false;
-        client.defaultTimeout = timeout.seconds;
+        client.defaultTimeout = Timeout.httpGET.seconds;
         client.userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
         headers = [ "Client-ID: " ~ TwitchBotPlugin.clientID ];
         //client.setClientCertificate(caBundleFile, caBundleFile);
@@ -599,8 +593,7 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
     Merely spins and monitors the shared `bucket` associative array for when a
     response has arrived, and then returns it.
 
-    Times out after a hardcoded
-    [kameloso.plugins.twitchbot.base.TwitchBotPlugin.queryResponseTimeout|queryResponseTimeout]
+    Times out after a hardcoded [kameloso.constants.Timeout.httpGET|Timeout.httpGET]
     if nothing was received.
 
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
@@ -616,7 +609,7 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
     else
     {
         spawn(&queryTwitchImpl, url, plugin.authorizationBearer,
-            plugin.queryResponseTimeout, plugin.bucket, plugin.state.connSettings.caBundleFile);
+            plugin.bucket, plugin.state.connSettings.caBundleFile);
     }
 
     delay(plugin, plugin.approximateQueryTime.msecs, Yes.yield);
@@ -638,6 +631,7 @@ QueryResponse waitForQueryResponse(TwitchBotPlugin plugin,
     const bool leaveTimingAlone = true)
 in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 {
+    import kameloso.constants : Timeout;
     import kameloso.plugins.common.delayawait : delay;
     import std.datetime.systime : Clock;
     import core.time : msecs;
@@ -654,7 +648,7 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
         {
             immutable now = Clock.currTime.toUnixTime;
 
-            if ((now - startTime) >= plugin.queryResponseTimeout)
+            if ((now - startTime) >= Timeout.httpGET)
             {
                 response = new shared QueryResponse;
                 break;
