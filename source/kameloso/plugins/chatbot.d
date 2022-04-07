@@ -219,7 +219,7 @@ void worker(shared IRCPluginState sState,
     client.acceptGzip = false;
     client.defaultTimeout = Timeout.httpGET.seconds;  // FIXME
     client.userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
-    //client.setClientCertificate(state.connSettings.caBundleFile, state.connSettings.caBundleFile);
+    client.setClientCertificate(state.connSettings.caBundleFile, state.connSettings.caBundleFile);
 
     try
     {
@@ -273,19 +273,14 @@ void worker(shared IRCPluginState sState,
     }
     catch (Exception e)
     {
-        /+import kameloso.constants : MagicErrorStrings;
+        import kameloso.constants : MagicErrorStrings;
 
-        if (e.msg == MagicErrorStrings.sslContextCreationFailure)
-        {
-            response.error = MagicErrorStrings.sslContextCreationFailureRewritten;
-        }
-        else
-        {
-            response.error = e.msg;
-        }+/
+        immutable message = (e.msg == MagicErrorStrings.sslContextCreationFailure2) ?
+            MagicErrorStrings.sslContextCreationFailureRewritten :
+            e.msg;
 
         enum pattern = "Chatbot could not fetch <l>bash.org</> quote at <l>%s</>: <t>%s";
-        askToWarn(state, pattern.format(url, e.msg));
+        askToWarn(state, pattern.format(url, message));
         version(PrintStacktraces) askToTrace(state, e.toString);
     }
 }

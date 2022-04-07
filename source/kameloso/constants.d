@@ -478,9 +478,14 @@ enum ShellReturnValue
 enum MagicErrorStrings
 {
     /++
-        Failed to set up an SSL context, original library line.
+        Failed to set up an SSL context, original library line ([requests]).
      +/
     sslContextCreationFailure = "can't complete call to TLS_method",
+
+    /++
+        Failed to set up an SSL context, original library line ([arsd.http2]).
+     +/
+    sslContextCreationFailure2 = "libssl library not found",
 
     /++
         Failed to set up an SSL context, rewritten line.

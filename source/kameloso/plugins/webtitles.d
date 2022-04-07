@@ -335,12 +335,6 @@ void worker(shared TitleLookupRequest sRequest,
                     request.state.askToError(wikiPattern);
                     return;
                 }
-                else if (e.msg == MagicErrorStrings.sslCertificateVerificationFailureRewritten)
-                {
-                    request.state.askToError("Error fetching webpage title: <l>" ~ e.msg);
-                    request.state.askToError(wikiPattern);
-                    return;
-                }
                 else
                 {
                     request.state.askToError("Unexpected exception fetching YouTube video information: <l>" ~ e.msg);
@@ -421,11 +415,6 @@ void worker(shared TitleLookupRequest sRequest,
                     request.state.askToError(pattern.format(e.msg));
                     request.state.askToError(wikiPattern);
                 }
-                else if (e.msg == MagicErrorStrings.sslCertificateVerificationFailureRewritten)
-                {
-                    request.state.askToError("Error fetching webpage title: <l>" ~ e.msg);
-                    request.state.askToError(wikiPattern);
-                }
                 else
                 {
                     request.state.askToWarn("Webtitles saw unexpected exception: <l>" ~ e.msg);
@@ -478,7 +467,7 @@ TitleLookupResults lookupTitle(
     client.acceptGzip = false;
     client.defaultTimeout = Timeout.httpGET.seconds;  // FIXME
     client.userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
-    //client.setClientCertificate(caBundleFile, caBundleFile);
+    client.setClientCertificate(caBundleFile, caBundleFile);
 
     try
     {
@@ -541,15 +530,10 @@ TitleLookupResults lookupTitle(
     catch (Exception e)
     {
         // Reword some exceptions
-        /+if (e.msg == MagicErrorStrings.sslContextCreationFailure)
+        if (e.msg == MagicErrorStrings.sslContextCreationFailure2)
         {
             e.msg = MagicErrorStrings.sslContextCreationFailureRewritten;
         }
-        else if (e.msg == MagicErrorStrings.sslCertificateVerificationFailure)
-        {
-            e.msg = MagicErrorStrings.sslCertificateVerificationFailureRewritten;
-        }+/
-
         throw e;
     }
 }
@@ -728,15 +712,10 @@ JSONValue getYouTubeInfo(const string url, const string caBundleFile)
     catch (Exception e)
     {
         // Reword some exceptions
-        /+if (e.msg == MagicErrorStrings.sslContextCreationFailure)
+        if (e.msg == MagicErrorStrings.sslContextCreationFailure2)
         {
             e.msg = MagicErrorStrings.sslContextCreationFailureRewritten;
         }
-        else if (e.msg == MagicErrorStrings.sslCertificateVerificationFailure)
-        {
-            e.msg = MagicErrorStrings.sslCertificateVerificationFailureRewritten;
-        }+/
-
         throw e;
     }
 }

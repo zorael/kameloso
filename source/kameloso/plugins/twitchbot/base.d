@@ -1178,13 +1178,6 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                         cast(string)MagicErrorStrings.sslContextCreationFailureRewritten);
                     logger.error(wikiPattern.expandTags(LogLevel.error));
                 }
-                else if (e.error == MagicErrorStrings.sslCertificateVerificationFailure)
-                {
-                    enum pattern = "Failed to validate Twitch API keys: <l>%s";
-                    logger.errorf(pattern.expandTags(LogLevel.error),
-                        cast(string)MagicErrorStrings.sslCertificateVerificationFailureRewritten);
-                    logger.error(wikiPattern.expandTags(LogLevel.error));
-                }
                 else
                 {
                     enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";

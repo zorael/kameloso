@@ -324,18 +324,16 @@ void queryTwitchImpl(
     }
     catch (Exception e)
     {
-        /+import kameloso.constants : MagicErrorStrings;
+        import kameloso.constants : MagicErrorStrings;
 
-        if (e.msg == MagicErrorStrings.sslContextCreationFailure)
+        if (e.msg == MagicErrorStrings.sslContextCreationFailure2)
         {
             response.error = MagicErrorStrings.sslContextCreationFailureRewritten;
         }
         else
         {
             response.error = e.msg;
-        }+/
-
-        response.error = e.msg;
+        }
     }
     finally
     {
