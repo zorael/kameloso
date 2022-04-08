@@ -311,7 +311,7 @@ void worker(shared TitleLookupRequest sRequest,
                         enum wikiPattern = "Visit <l>" ~ wikiURL ~ "</> for more information.";
                         enum pattern = "Error fetching webpage title: <l>%s</> <t>(are OpenSSL libraries installed?)";
                         request.state.askToError(pattern
-                            .format(MagicErrorStrings.sslLibraryNotFoundRewritten));
+                            .format(cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten));
                         request.state.askToError(wikiPattern);
                     }
                     else
@@ -384,7 +384,7 @@ void worker(shared TitleLookupRequest sRequest,
                         enum wikiPattern = "Visit <l>" ~ wikiURL ~ "</> for more information.";
                         enum pattern = "Error fetching webpage title: <l>%s</> <t>(are OpenSSL libraries installed?)";
                         request.state.askToError(pattern
-                            .format(MagicErrorStrings.sslLibraryNotFoundRewritten));
+                            .format(cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten));
                         request.state.askToError(wikiPattern);
                     }
                     else
