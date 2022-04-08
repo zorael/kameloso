@@ -68,7 +68,7 @@ if (isSomeFunction!dg)
         {
             enum pattern = "Failed to query Twitch: <l>%s</> (<l>%s</>) (<t>%d</>)";
             logger.errorf(pattern.expandTags(LogLevel.error),
-                MagicErrorStrings.sslLibraryNotFoundRewritten, e.error, e.code);
+                cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten, e.error, e.code);
         }
         else
         {
