@@ -316,7 +316,7 @@ void worker(shared TitleLookupRequest sRequest,
                     }
                     else
                     {
-                        enum pattern = "Error fetching webpage title: <l>%s</>";
+                        enum pattern = "Error fetching webpage title: <l>%s";
                         request.state.askToError(pattern.format(e.msg));
                     }
                     return;
@@ -389,7 +389,7 @@ void worker(shared TitleLookupRequest sRequest,
                     }
                     else
                     {
-                        enum pattern = "Error fetching webpage title: <l>%s</> <t>(are OpenSSL libraries installed?)";
+                        enum pattern = "Error fetching webpage title: <l>%s";
                         request.state.askToError(pattern.format(e.msg));
                     }
                     return;
