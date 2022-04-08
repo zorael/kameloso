@@ -309,7 +309,7 @@ void worker(shared TitleLookupRequest sRequest,
                     {
                         enum wikiURL = "https://github.com/zorael/kameloso/wiki/OpenSSL";
                         enum wikiPattern = "Visit <l>" ~ wikiURL ~ "</> for more information.";
-                        enum pattern = "Error fetching webpage title: <l>%s</> <t>(are OpenSSL libraries installed?)";
+                        enum pattern = "Error fetching webpage title: <l>%s</> <t>(is OpenSSL installed?)";
                         request.state.askToError(pattern
                             .format(cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten));
                         request.state.askToError(wikiPattern);
@@ -382,7 +382,7 @@ void worker(shared TitleLookupRequest sRequest,
                     {
                         enum wikiURL = "https://github.com/zorael/kameloso/wiki/OpenSSL";
                         enum wikiPattern = "Visit <l>" ~ wikiURL ~ "</> for more information.";
-                        enum pattern = "Error fetching webpage title: <l>%s</> <t>(are OpenSSL libraries installed?)";
+                        enum pattern = "Error fetching webpage title: <l>%s</> <t>(is OpenSSL installed?)";
                         request.state.askToError(pattern
                             .format(cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten));
                         request.state.askToError(wikiPattern);

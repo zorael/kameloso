@@ -1175,7 +1175,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                     if (e.error == MagicErrorStrings.sslLibraryNotFound)
                     {
                         enum pattern = "Failed to validate Twitch API keys: <l>%s</> " ~
-                            "<t>(are OpenSSL libraries installed?)";
+                            "<t>(is OpenSSL installed?)";
                         logger.errorf(pattern.expandTags(LogLevel.error),
                             cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten);
                     }

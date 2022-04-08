@@ -2042,7 +2042,7 @@ Next tryConnect(ref Kameloso instance)
         {
             enum pattern = "Connection error: <l>" ~
                 MagicErrorStrings.sslLibraryNotFoundRewritten ~
-                " <t>(are OpenSSL libraries installed?)";
+                " <t>(is OpenSSL installed?)";
             enum wikiPattern = "Visit <l>https://github.com/zorael/kameloso/wiki/OpenSSL</> for more information.";
             logger.error(pattern.expandTags(LogLevel.error));
             logger.error(wikiPattern.expandTags(LogLevel.error));
