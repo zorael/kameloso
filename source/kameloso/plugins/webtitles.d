@@ -308,14 +308,15 @@ void worker(shared TitleLookupRequest sRequest,
                     {
                         enum wikiURL = "https://github.com/zorael/kameloso/wiki/OpenSSL";
                         enum wikiPattern = "Visit <l>" ~ wikiURL ~ "</> for more information.";
-                        enum pattern = "Error fetching webpage title: <l>%s</> <t>(is OpenSSL installed?)";
-                        request.state.askToError(pattern
-                            .format(cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten));
+                        enum pattern = "Error fetching YouTube title: <l>" ~
+                            MagicErrorStrings.sslLibraryNotFoundRewritten ~
+                            "</> <t>(is OpenSSL installed?)";
+                        request.state.askToError(pattern);
                         request.state.askToError(wikiPattern);
                     }
                     else
                     {
-                        enum pattern = "Error fetching webpage title: <l>%s";
+                        enum pattern = "Error fetching YouTube title: <l>%s";
                         request.state.askToError(pattern.format(e.msg));
                     }
                     return;
@@ -381,9 +382,10 @@ void worker(shared TitleLookupRequest sRequest,
                     {
                         enum wikiURL = "https://github.com/zorael/kameloso/wiki/OpenSSL";
                         enum wikiPattern = "Visit <l>" ~ wikiURL ~ "</> for more information.";
-                        enum pattern = "Error fetching webpage title: <l>%s</> <t>(is OpenSSL installed?)";
-                        request.state.askToError(pattern
-                            .format(cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten));
+                        enum pattern = "Error fetching webpage title: <l>" ~
+                            MagicErrorStrings.sslLibraryNotFoundRewritten ~
+                            "</> <t>(is OpenSSL installed?)";
+                        request.state.askToError(pattern);
                         request.state.askToError(wikiPattern);
                     }
                     else
