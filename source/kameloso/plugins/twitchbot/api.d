@@ -60,11 +60,21 @@ if (isSomeFunction!dg)
     }
     catch (TwitchQueryException e)
     {
+        import kameloso.constants : MagicErrorStrings;
         import kameloso.common : expandTags, logger;
         import kameloso.logger : LogLevel;
 
-        enum pattern = "Failed to query Twitch: <l>%s</> (<l>%s</>) (<t>%d</>)";
-        logger.errorf(pattern.expandTags(LogLevel.error), e.msg, e.error, e.code);
+        if (e.error == MagicErrorStrings.sslLibraryNotFound)
+        {
+            enum pattern = "Failed to query Twitch: <l>%s</> (<l>%s</>) (<t>%d</>)";
+            logger.errorf(pattern.expandTags(LogLevel.error),
+                MagicErrorStrings.sslLibraryNotFoundRewritten, e.error, e.code);
+        }
+        else
+        {
+            enum pattern = "Failed to query Twitch: <l>%s</> (<l>%s</>) (<t>%d</>)";
+            logger.errorf(pattern.expandTags(LogLevel.error), e.msg, e.error, e.code);
+        }
     }
 }
 
