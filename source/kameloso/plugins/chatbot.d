@@ -228,22 +228,8 @@ void worker(shared IRCPluginState sState,
 
         if (res.code == 2)
         {
-            import kameloso.constants : MagicErrorStrings;
-
-            if (res.codeText == MagicErrorStrings.sslLibraryNotFound)
-            {
-                enum wikiURL = "https://github.com/zorael/kameloso/wiki/OpenSSL";
-                enum wikiPattern = "Visit <l>" ~ wikiURL ~ "</> for more information.";
-                enum pattern = "Chatbot could not fetch <l>bash.org</> quote at " ~
-                    "<l>%s</>: <t>%s (are OpenSSL libraries installed?)";
-                askToWarn(state, pattern.format(url, MagicErrorStrings.sslLibraryNotFoundRewritten));
-                askToWarn(state, wikiPattern);
-            }
-            else
-            {
-                enum pattern = "Chatbot could not fetch <l>bash.org</> quote at <l>%s</>: <t>%s";
-                askToWarn(state, pattern.format(url, res.codeText));
-            }
+            enum pattern = "Chatbot could not fetch <l>bash.org</> quote at <l>%s</>: <t>%s";
+            askToWarn(state, pattern.format(url, res.codeText));
             return;
         }
 
