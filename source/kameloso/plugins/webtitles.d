@@ -303,11 +303,22 @@ void worker(shared TitleLookupRequest sRequest,
             {
                 if (e.code == 2)
                 {
-                    enum wikiURL = "https://github.com/zorael/kameloso/wiki/OpenSSL";
-                    enum wikiPattern = "Visit <l>" ~ wikiURL ~ "</> for more information.";
-                    enum pattern = "Error fetching webpage title: <l>%s</> <t>(are OpenSSL libraries installed?)";
-                    request.state.askToError(pattern.format(e.msg));
-                    request.state.askToError(wikiPattern);
+                    import kameloso.constants : MagicErrorStrings;
+
+                    if (e.msg == MagicErrorStrings.sslLibraryNotFound)
+                    {
+                        enum wikiURL = "https://github.com/zorael/kameloso/wiki/OpenSSL";
+                        enum wikiPattern = "Visit <l>" ~ wikiURL ~ "</> for more information.";
+                        enum pattern = "Error fetching webpage title: <l>%s</> <t>(are OpenSSL libraries installed?)";
+                        request.state.askToError(pattern
+                            .format(MagicErrorStrings.sslLibraryNotFoundRewritten));
+                        request.state.askToError(wikiPattern);
+                    }
+                    else
+                    {
+                        enum pattern = "Error fetching webpage title: <l>%s</> <t>(are OpenSSL libraries installed?)";
+                        request.state.askToError(pattern.format(e.msg));
+                    }
                     return;
                 }
                 else if (e.code >= 400)
@@ -365,11 +376,22 @@ void worker(shared TitleLookupRequest sRequest,
             {
                 if (e.code == 2)
                 {
-                    enum wikiURL = "https://github.com/zorael/kameloso/wiki/OpenSSL";
-                    enum wikiPattern = "Visit <l>" ~ wikiURL ~ "</> for more information.";
-                    enum pattern = "Error fetching webpage title: <l>%s</> <t>(are OpenSSL libraries installed?)";
-                    request.state.askToError(pattern.format(e.msg));
-                    request.state.askToError(wikiPattern);
+                    import kameloso.constants : MagicErrorStrings;
+
+                    if (e.msg == MagicErrorStrings.sslLibraryNotFound)
+                    {
+                        enum wikiURL = "https://github.com/zorael/kameloso/wiki/OpenSSL";
+                        enum wikiPattern = "Visit <l>" ~ wikiURL ~ "</> for more information.";
+                        enum pattern = "Error fetching webpage title: <l>%s</> <t>(are OpenSSL libraries installed?)";
+                        request.state.askToError(pattern
+                            .format(MagicErrorStrings.sslLibraryNotFoundRewritten));
+                        request.state.askToError(wikiPattern);
+                    }
+                    else
+                    {
+                        enum pattern = "Error fetching webpage title: <l>%s</> <t>(are OpenSSL libraries installed?)";
+                        request.state.askToError(pattern.format(e.msg));
+                    }
                     return;
                 }
                 else if (e.code >= 400)
@@ -461,34 +483,24 @@ TitleLookupResults lookupTitle(
     client.userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
     client.setClientCertificate(caBundleFile, caBundleFile);
 
-    TitleLookupResults lookup(const string url, const Flag!"recursing" recursing = No.recursing)
+    TitleLookupResults lookup(const string url, const uint recursionDepth = 0)
     {
         auto req = client.request(Uri(url));
         const res = req.waitForCompletion();
 
-        if (res.code == 2)
-        {
-            import kameloso.constants : MagicErrorStrings;
-
-            immutable msg = (res.codeText == MagicErrorStrings.sslLibraryNotFound) ?
-                MagicErrorStrings.sslLibraryNotFoundRewritten :
-                res.codeText;
-
-            throw new TitleFetchException(msg, url, res.code, __FILE__, __LINE__);
-        }
-        else if (res.code.among!(301, 302, 307, 308))
+        if (res.code.among!(301, 302, 307, 308))
         {
             // Moved
-            if (!recursing && res.location.length)
+            if ((recursionDepth < 5) && res.location.length)
             {
-                return lookup(res.location, Yes.recursing);
+                return lookup(res.location, recursionDepth+1);
             }
             else
             {
                 throw new TitleFetchException(res.codeText, url, res.code, __FILE__, __LINE__);
             }
         }
-        else if ((res.code >= 400) || !res.contentText.length)
+        else if ((res.code == 2) || (res.code >= 400) || !res.contentText.length)
         {
             // res.codeText among Bad Request, probably Not Found, ...
             throw new TitleFetchException(res.codeText, url, res.code, __FILE__, __LINE__);
@@ -686,25 +698,15 @@ JSONValue getYouTubeInfo(const string url, const string caBundleFile)
 
     immutable youtubeURL = "https://www.youtube.com/oembed?format=json&url=" ~ url;
 
-    JSONValue lookup(const string url, const Flag!"recursing" recursing = No.recursing)
+    JSONValue lookup(const string url, const uint recursionDepth = 0)
     {
         auto req = client.request(Uri(url));
         const res = req.waitForCompletion();
 
-        if (res.code == 2)
-        {
-            import kameloso.constants : MagicErrorStrings;
-
-            immutable msg = (res.codeText == MagicErrorStrings.sslLibraryNotFound) ?
-                MagicErrorStrings.sslLibraryNotFoundRewritten :
-                res.codeText;
-
-            throw new TitleFetchException(msg, url, res.code, __FILE__, __LINE__);
-        }
-        else if (res.code.among!(301, 302, 307, 308))
+        if (res.code.among!(301, 302, 307, 308))
         {
             // Moved
-            if (!recursing && res.location.length)
+            if ((recursionDepth < 5) && res.location.length)
             {
                 return lookup(res.location, Yes.recursing);
             }
@@ -713,7 +715,7 @@ JSONValue getYouTubeInfo(const string url, const string caBundleFile)
                 throw new TitleFetchException(res.codeText, url, res.code, __FILE__, __LINE__);
             }
         }
-        else if ((res.code >= 400) || !res.contentText.length)
+        else if ((res.code == 2) || (res.code >= 400) || !res.contentText.length)
         {
             // res.codeText among Bad Request, probably Not Found, ...
             throw new TitleFetchException(res.codeText, url, res.code, __FILE__, __LINE__);
