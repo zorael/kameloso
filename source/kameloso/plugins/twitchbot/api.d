@@ -289,9 +289,9 @@ void queryTwitchImpl(
 {
     import kameloso.constants : KamelosoInfo, Timeout;
     import arsd.http2 : HttpClient, Uri;
+    import std.algorithm.comparison : among;
     import std.datetime.systime : Clock;
     import core.time : seconds;
-    import std.stdio;
 
     static HttpClient client;
     static string[] headers;
@@ -313,11 +313,20 @@ void queryTwitchImpl(
     client.authorization = authToken;
 
     QueryResponse response;
-    immutable pre = Clock.currTime;
+    auto pre = Clock.currTime;
 
     auto req = client.request(Uri(url));
     req.requestParameters.headers = headers;
-    const res = req.waitForCompletion();
+    auto res = req.waitForCompletion();
+
+    if (res.code.among!(301, 302, 307, 308) && res.location.length)
+    {
+        // Moved
+        pre = Clock.currTime;
+        req = client.request(Uri(res.location));
+        req.requestParameters.headers = headers;
+        res = req.waitForCompletion();
+    }
 
     response.code = res.code;
     response.error = res.codeText;
