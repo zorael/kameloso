@@ -226,6 +226,24 @@ void worker(shared IRCPluginState sState,
         auto req = client.request(Uri(url));
         auto res = req.waitForCompletion();
 
+        if (res.code == 2)
+        {
+            import kameloso.constants : MagicErrorStrings;
+
+            enum wikiURL = "https://github.com/zorael/kameloso/wiki/OpenSSL";
+            enum wikiPattern = "Visit <l>" ~ wikiURL ~ "</> for more information.";
+
+            immutable msg = (res.codeText == MagicErrorStrings.sslLibraryNotFound) ?
+                MagicErrorStrings.sslLibraryNotFoundRewritten :
+                res.codeText;
+
+            enum pattern = "Chatbot could not fetch <l>bash.org</> quote at " ~
+                "<l>%s</>: <t>%s (are OpenSSL libraries installed?)";
+            askToWarn(state, pattern.format(url, msg));
+            askToWarn(state, wikiPattern);
+            return;
+        }
+
         auto doc = new Document;
         doc.parseGarbage("");  // Work around missing null check, causing segfaults on empty pages
         doc.parseGarbage(res.responseText);
@@ -273,14 +291,8 @@ void worker(shared IRCPluginState sState,
     }
     catch (Exception e)
     {
-        import kameloso.constants : MagicErrorStrings;
-
-        immutable message = (e.msg == MagicErrorStrings.sslContextCreationFailure2) ?
-            MagicErrorStrings.sslContextCreationFailureRewritten :
-            e.msg;
-
         enum pattern = "Chatbot could not fetch <l>bash.org</> quote at <l>%s</>: <t>%s";
-        askToWarn(state, pattern.format(url, message));
+        askToWarn(state, pattern.format(url, e.msg));
         version(PrintStacktraces) askToTrace(state, e.toString);
     }
 }

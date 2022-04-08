@@ -214,7 +214,11 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
         plugin.averageApproximateQueryTime(response.msecs);
     }
 
-    if (!response.str.length)
+    if (response.code == 2)
+    {
+        throw new TwitchQueryException(response.error, response.str, response.error, response.code);
+    }
+    else if (!response.str.length)
     {
         throw new TwitchQueryException("Empty response", response.str,
             response.error, response.code);
@@ -238,15 +242,14 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
         }
         */
         immutable errorJSON = parseJSON(response.str);
-        enum pattern = "%s %3d: %s";
+        enum pattern = "%3d %s: %s";
 
         immutable message = pattern.format(
-            errorJSON["error"].str.unquoted,
             errorJSON["status"].integer,
+            errorJSON["error"].str.unquoted,
             errorJSON["message"].str.unquoted);
 
-        throw new TwitchQueryException(message, response.str,
-            response.error, response.code);
+        throw new TwitchQueryException(message, response.str, response.error, response.code);
     }
 
     return response;
@@ -304,7 +307,7 @@ void queryTwitchImpl(
         client.defaultTimeout = Timeout.httpGET.seconds;
         client.userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
         headers = [ "Client-ID: " ~ TwitchBotPlugin.clientID ];
-        //client.setClientCertificate(caBundleFile, caBundleFile);
+        client.setClientCertificate(caBundleFile, caBundleFile);
     }
 
     client.authorization = authToken;
@@ -312,39 +315,21 @@ void queryTwitchImpl(
     QueryResponse response;
     immutable pre = Clock.currTime;
 
-    try
-    {
-        auto req = client.request(Uri(url));
-        req.requestParameters.headers = headers;
-	    const res = req.waitForCompletion();
+    auto req = client.request(Uri(url));
+    req.requestParameters.headers = headers;
+    const res = req.waitForCompletion();
 
-        response.code = res.code;
-        response.error = res.codeText;
-        response.str = res.contentText;
-    }
-    catch (Exception e)
-    {
-        import kameloso.constants : MagicErrorStrings;
+    response.code = res.code;
+    response.error = res.codeText;
+    response.str = res.contentText;
 
-        if (e.msg == MagicErrorStrings.sslContextCreationFailure2)
-        {
-            response.error = MagicErrorStrings.sslContextCreationFailureRewritten;
-        }
-        else
-        {
-            response.error = e.msg;
-        }
-    }
-    finally
-    {
-        immutable post = Clock.currTime;
-        immutable delta = (post - pre);
-        response.msecs = delta.total!"msecs";
+    immutable post = Clock.currTime;
+    immutable delta = (post - pre);
+    response.msecs = delta.total!"msecs";
 
-        synchronized //()
-        {
-            bucket[url] = response;  // empty str if code >= 400
-        }
+    synchronized //()
+    {
+        bucket[url] = response;  // empty str if code >= 400
     }
 }
 

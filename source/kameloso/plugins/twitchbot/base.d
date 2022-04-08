@@ -1163,19 +1163,28 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
             }
             catch (TwitchQueryException e)
             {
-                import kameloso.constants : MagicErrorStrings;
-
-                enum wikiURL = "https://github.com/zorael/kameloso/wiki/OpenSSL";
-                enum wikiPattern = "Visit <l>" ~ wikiURL ~ "</> for more information.";
-
                 // Something is deeply wrong.
 
-                if (e.error == MagicErrorStrings.sslContextCreationFailure)
+                if (e.code == 2)
                 {
-                    enum pattern = "Failed to validate Twitch API keys: <l>%s</> " ~
-                        "<t>(are OpenSSL libraries installed?)";
-                    logger.errorf(pattern.expandTags(LogLevel.error),
-                        cast(string)MagicErrorStrings.sslContextCreationFailureRewritten);
+                    import kameloso.constants : MagicErrorStrings;
+
+                    enum wikiURL = "https://github.com/zorael/kameloso/wiki/OpenSSL";
+                    enum wikiPattern = "Visit <l>" ~ wikiURL ~ "</> for more information.";
+
+                    if (e.error == MagicErrorStrings.sslLibraryNotFound)
+                    {
+                        enum pattern = "Failed to validate Twitch API keys: <l>%s</> " ~
+                            "<t>(are OpenSSL libraries installed?)";
+                        logger.errorf(pattern.expandTags(LogLevel.error),
+                            cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten);
+                    }
+                    else
+                    {
+                        enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
+                        logger.errorf(pattern.expandTags(LogLevel.error), e.msg, e.error, e.code);
+                    }
+
                     logger.error(wikiPattern.expandTags(LogLevel.error));
                 }
                 else
