@@ -447,6 +447,7 @@ TitleLookupResults lookupTitle(
     import lu.string : beginsWith, contains, nom;
     import arsd.dom : Document;
     import arsd.http2 : HttpClient, Uri;
+    import std.algorithm.comparison : among;
     import std.array : Appender;
     import std.uni : toLower;
     import core.time : seconds;
@@ -460,63 +461,80 @@ TitleLookupResults lookupTitle(
     client.userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
     client.setClientCertificate(caBundleFile, caBundleFile);
 
-    auto req = client.request(Uri(url));
-    const res = req.waitForCompletion();
-
-    if (res.code == 2)
+    TitleLookupResults lookup(const string url, const Flag!"recursing" recursing = No.recursing)
     {
-        import kameloso.constants : MagicErrorStrings;
+        auto req = client.request(Uri(url));
+        const res = req.waitForCompletion();
 
-        immutable msg = (res.codeText == MagicErrorStrings.sslLibraryNotFound) ?
-            MagicErrorStrings.sslLibraryNotFoundRewritten :
-            res.codeText;
-
-        throw new TitleFetchException(msg, url, res.code, __FILE__, __LINE__);
-    }
-    else if ((res.code >= 400) || !res.contentText.length)
-    {
-        // res.codeText among Bad Request, probably Not Found, ...
-        throw new TitleFetchException(res.codeText, url, res.code, __FILE__, __LINE__);
-    }
-
-    auto doc = new Document;
-    doc.parseGarbage("");  // Work around missing null check, causing segfaults on empty pages
-    doc.parseGarbage(res.responseText);
-
-    if (!doc.title.length)
-    {
-        throw new TitleFetchException("No title tag found", url, res.code, __FILE__, __LINE__);
-    }
-
-    string slice = url;  // mutable
-    slice.nom("//");
-    string host = slice.nom!(Yes.inherit)('/').toLower;
-    if (host.beginsWith("www.")) host = host[4..$];
-
-    TitleLookupResults results;
-    results.title = decodeEntities(doc.title);
-    results.domain = host;
-
-    if (descriptions)
-    {
-        import std.algorithm.searching : canFind;
-
-        if (!descriptionExemptions.canFind(host))
+        if (res.code == 2)
         {
-            auto metaTags = doc.getElementsByTagName("meta");
+            import kameloso.constants : MagicErrorStrings;
 
-            foreach (tag; metaTags)
+            immutable msg = (res.codeText == MagicErrorStrings.sslLibraryNotFound) ?
+                MagicErrorStrings.sslLibraryNotFoundRewritten :
+                res.codeText;
+
+            throw new TitleFetchException(msg, url, res.code, __FILE__, __LINE__);
+        }
+        else if (res.code.among!(301, 302, 307, 308))
+        {
+            // Moved
+            if (!recursing && res.location.length)
             {
-                if (tag.name == "description")
+                return lookup(res.location, Yes.recursing);
+            }
+            else
+            {
+                throw new TitleFetchException(res.codeText, url, res.code, __FILE__, __LINE__);
+            }
+        }
+        else if ((res.code >= 400) || !res.contentText.length)
+        {
+            // res.codeText among Bad Request, probably Not Found, ...
+            throw new TitleFetchException(res.codeText, url, res.code, __FILE__, __LINE__);
+        }
+
+        auto doc = new Document;
+        doc.parseGarbage("");  // Work around missing null check, causing segfaults on empty pages
+        doc.parseGarbage(res.responseText);
+
+        if (!doc.title.length)
+        {
+            throw new TitleFetchException("No title tag found", url, res.code, __FILE__, __LINE__);
+        }
+
+        string slice = url;  // mutable
+        slice.nom("//");
+        string host = slice.nom!(Yes.inherit)('/').toLower;
+        if (host.beginsWith("www.")) host = host[4..$];
+
+        TitleLookupResults results;
+        results.title = decodeEntities(doc.title);
+        results.domain = host;
+
+        if (descriptions)
+        {
+            import std.algorithm.searching : canFind;
+
+            if (!descriptionExemptions.canFind(host))
+            {
+                auto metaTags = doc.getElementsByTagName("meta");
+
+                foreach (tag; metaTags)
                 {
-                    results.description = decodeEntities(tag.content);
-                    break;
+                    if (tag.name == "description")
+                    {
+                        results.description = decodeEntities(tag.content);
+                        break;
+                    }
                 }
             }
         }
+
+        return results;
     }
 
-    return results;
+    return lookup(url);
 }
 
 
@@ -651,6 +669,7 @@ JSONValue getYouTubeInfo(const string url, const string caBundleFile)
 {
     import kameloso.constants : KamelosoInfo, Timeout;
     import arsd.http2 : HttpClient, Uri;
+    import std.algorithm.comparison : among;
     import std.array : Appender;
     import std.exception : assumeUnique;
     import std.json : parseJSON;
@@ -667,26 +686,43 @@ JSONValue getYouTubeInfo(const string url, const string caBundleFile)
 
     immutable youtubeURL = "https://www.youtube.com/oembed?format=json&url=" ~ url;
 
-    auto req = client.request(Uri(youtubeURL));
-    const res = req.waitForCompletion();
-
-    if (res.code == 2)
+    JSONValue lookup(const string url, const Flag!"recursing" recursing = No.recursing)
     {
-        import kameloso.constants : MagicErrorStrings;
+        auto req = client.request(Uri(url));
+        const res = req.waitForCompletion();
 
-        immutable msg = (res.codeText == MagicErrorStrings.sslLibraryNotFound) ?
-            MagicErrorStrings.sslLibraryNotFoundRewritten :
-            res.codeText;
+        if (res.code == 2)
+        {
+            import kameloso.constants : MagicErrorStrings;
 
-        throw new TitleFetchException(msg, url, res.code, __FILE__, __LINE__);
+            immutable msg = (res.codeText == MagicErrorStrings.sslLibraryNotFound) ?
+                MagicErrorStrings.sslLibraryNotFoundRewritten :
+                res.codeText;
+
+            throw new TitleFetchException(msg, url, res.code, __FILE__, __LINE__);
+        }
+        else if (res.code.among!(301, 302, 307, 308))
+        {
+            // Moved
+            if (!recursing && res.location.length)
+            {
+                return lookup(res.location, Yes.recursing);
+            }
+            else
+            {
+                throw new TitleFetchException(res.codeText, url, res.code, __FILE__, __LINE__);
+            }
+        }
+        else if ((res.code >= 400) || !res.contentText.length)
+        {
+            // res.codeText among Bad Request, probably Not Found, ...
+            throw new TitleFetchException(res.codeText, url, res.code, __FILE__, __LINE__);
+        }
+
+        return parseJSON(res.contentText);
     }
-    else if ((res.code >= 400) || !res.contentText.length)
-    {
-        // res.codeText among Bad Request, probably Not Found, ...
-        throw new TitleFetchException(res.codeText, url, res.code, __FILE__, __LINE__);
-    }
 
-    return parseJSON(res.contentText);
+    return lookup(youtubeURL);
 }
 
 
