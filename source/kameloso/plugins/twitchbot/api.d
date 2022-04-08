@@ -322,10 +322,15 @@ void queryTwitchImpl(
     if (res.code.among!(301, 302, 307, 308) && res.location.length)
     {
         // Moved
-        pre = Clock.currTime;
-        req = client.request(Uri(res.location));
-        req.requestParameters.headers = headers;
-        res = req.waitForCompletion();
+        foreach (immutable i; 0..5)
+        {
+            pre = Clock.currTime;
+            req = client.request(Uri(res.location));
+            req.requestParameters.headers = headers;
+            res = req.waitForCompletion();
+
+            if (!res.code.among!(301, 302, 307, 308) || !res.location.length) break;
+        }
     }
 
     response.code = res.code;
