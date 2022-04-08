@@ -483,70 +483,64 @@ TitleLookupResults lookupTitle(
     client.userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
     client.setClientCertificate(caBundleFile, caBundleFile);
 
-    TitleLookupResults lookup(const string url, const uint recursionDepth = 0)
+    auto req = client.request(Uri(url));
+    auto res = req.waitForCompletion();
+
+    if (res.code.among!(301, 302, 307, 308))
     {
-        auto req = client.request(Uri(url));
-        const res = req.waitForCompletion();
-
-        if (res.code.among!(301, 302, 307, 308))
+        // Moved
+        foreach (immutable i; 0..5)
         {
-            // Moved
-            if ((recursionDepth < 5) && res.location.length)
-            {
-                return lookup(res.location, recursionDepth+1);
-            }
-            else
-            {
-                throw new TitleFetchException(res.codeText, url, res.code, __FILE__, __LINE__);
-            }
+            req = client.request(Uri(res.location));
+            res = req.waitForCompletion();
+            if (!res.code.among!(301, 302, 307, 308) || !res.location.length) break;
         }
-        else if ((res.code == 2) || (res.code >= 400) || !res.contentText.length)
+    }
+
+    if ((res.code == 2) || (res.code >= 400) || !res.contentText.length)
+    {
+        // res.codeText among Bad Request, probably Not Found, ...
+        throw new TitleFetchException(res.codeText, url, res.code, __FILE__, __LINE__);
+    }
+
+    auto doc = new Document;
+    doc.parseGarbage("");  // Work around missing null check, causing segfaults on empty pages
+    doc.parseGarbage(res.responseText);
+
+    if (!doc.title.length)
+    {
+        throw new TitleFetchException("No title tag found", url, res.code, __FILE__, __LINE__);
+    }
+
+    string slice = url;  // mutable
+    slice.nom("//");
+    string host = slice.nom!(Yes.inherit)('/').toLower;
+    if (host.beginsWith("www.")) host = host[4..$];
+
+    TitleLookupResults results;
+    results.title = decodeEntities(doc.title);
+    results.domain = host;
+
+    if (descriptions)
+    {
+        import std.algorithm.searching : canFind;
+
+        if (!descriptionExemptions.canFind(host))
         {
-            // res.codeText among Bad Request, probably Not Found, ...
-            throw new TitleFetchException(res.codeText, url, res.code, __FILE__, __LINE__);
-        }
+            auto metaTags = doc.getElementsByTagName("meta");
 
-        auto doc = new Document;
-        doc.parseGarbage("");  // Work around missing null check, causing segfaults on empty pages
-        doc.parseGarbage(res.responseText);
-
-        if (!doc.title.length)
-        {
-            throw new TitleFetchException("No title tag found", url, res.code, __FILE__, __LINE__);
-        }
-
-        string slice = url;  // mutable
-        slice.nom("//");
-        string host = slice.nom!(Yes.inherit)('/').toLower;
-        if (host.beginsWith("www.")) host = host[4..$];
-
-        TitleLookupResults results;
-        results.title = decodeEntities(doc.title);
-        results.domain = host;
-
-        if (descriptions)
-        {
-            import std.algorithm.searching : canFind;
-
-            if (!descriptionExemptions.canFind(host))
+            foreach (tag; metaTags)
             {
-                auto metaTags = doc.getElementsByTagName("meta");
-
-                foreach (tag; metaTags)
+                if (tag.name == "description")
                 {
-                    if (tag.name == "description")
-                    {
-                        results.description = decodeEntities(tag.content);
-                        break;
-                    }
+                    results.description = decodeEntities(tag.content);
+                    break;
                 }
             }
         }
-
-        return results;
     }
 
-    return lookup(url);
+    return results;
 }
 
 
@@ -698,33 +692,27 @@ JSONValue getYouTubeInfo(const string url, const string caBundleFile)
 
     immutable youtubeURL = "https://www.youtube.com/oembed?format=json&url=" ~ url;
 
-    JSONValue lookup(const string url, const uint recursionDepth = 0)
+    auto req = client.request(Uri(youtubeURL));
+    auto res = req.waitForCompletion();
+
+    if (res.code.among!(301, 302, 307, 308))
     {
-        auto req = client.request(Uri(url));
-        const res = req.waitForCompletion();
-
-        if (res.code.among!(301, 302, 307, 308))
+        // Moved
+        foreach (immutable i; 0..5)
         {
-            // Moved
-            if ((recursionDepth < 5) && res.location.length)
-            {
-                return lookup(res.location, Yes.recursing);
-            }
-            else
-            {
-                throw new TitleFetchException(res.codeText, url, res.code, __FILE__, __LINE__);
-            }
+            req = client.request(Uri(res.location));
+            res = req.waitForCompletion();
+            if (!res.code.among!(301, 302, 307, 308) || !res.location.length) break;
         }
-        else if ((res.code == 2) || (res.code >= 400) || !res.contentText.length)
-        {
-            // res.codeText among Bad Request, probably Not Found, ...
-            throw new TitleFetchException(res.codeText, url, res.code, __FILE__, __LINE__);
-        }
-
-        return parseJSON(res.contentText);
     }
 
-    return lookup(youtubeURL);
+    if ((res.code == 2) || (res.code >= 400) || !res.contentText.length)
+    {
+        // res.codeText among Bad Request, probably Not Found, ...
+        throw new TitleFetchException(res.codeText, url, res.code, __FILE__, __LINE__);
+    }
+
+    return parseJSON(res.contentText);
 }
 
 
