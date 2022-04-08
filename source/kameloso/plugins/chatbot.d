@@ -224,7 +224,7 @@ void worker(shared IRCPluginState sState,
     try
     {
         auto req = client.request(Uri(url));
-        auto res = req.waitForCompletion();
+        const res = req.waitForCompletion();
 
         if (res.code == 2)
         {
