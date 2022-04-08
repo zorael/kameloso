@@ -189,7 +189,7 @@ void worker(shared IRCPluginState sState,
     const ref IRCEvent event)
 {
     import kameloso.constants : KamelosoInfo, Timeout;
-    import arsd.dom : htmlEntitiesDecode;
+    import arsd.dom : Document, htmlEntitiesDecode;
     import arsd.http2 : HttpClient, Uri;
     import std.algorithm.iteration : splitter;
     import std.array : replace;
@@ -224,7 +224,7 @@ void worker(shared IRCPluginState sState,
     try
     {
         auto req = client.request(Uri(url));
-        auto res = req.waitForCompletion();
+        const res = req.waitForCompletion();
 
         if (res.code == 2)
         {
@@ -233,7 +233,7 @@ void worker(shared IRCPluginState sState,
             return;
         }
 
-        auto doc = res.contentDom();
+        auto doc = new Document;
         doc.parseGarbage("");  // Work around missing null check, causing segfaults on empty pages
         doc.parseGarbage(res.responseText);
 
