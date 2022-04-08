@@ -466,7 +466,6 @@ TitleLookupResults lookupTitle(
 {
     import kameloso.constants : KamelosoInfo, Timeout;
     import lu.string : beginsWith, contains, nom;
-    import arsd.dom : Document;
     import arsd.http2 : HttpClient, Uri;
     import std.algorithm.comparison : among;
     import std.array : Appender;
@@ -502,7 +501,7 @@ TitleLookupResults lookupTitle(
         throw new TitleFetchException(res.codeText, url, res.code, __FILE__, __LINE__);
     }
 
-    auto doc = new Document;
+    auto doc = res.contentDom();
     doc.parseGarbage("");  // Work around missing null check, causing segfaults on empty pages
     doc.parseGarbage(res.responseText);
 
