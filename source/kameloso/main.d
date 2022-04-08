@@ -2040,8 +2040,9 @@ Next tryConnect(ref Kameloso instance)
          +/
         if (e.msg == MagicErrorStrings.sslContextCreationFailure)
         {
-            enum pattern = "Connection error: <l>failed to set up an SSL context</> " ~
-                "<t>(are OpenSSL libraries installed?)";
+            enum pattern = "Connection error: <l>" ~
+                MagicErrorStrings.sslLibraryNotFoundRewritten ~
+                " <t>(are OpenSSL libraries installed?)";
             enum wikiPattern = "Visit <l>https://github.com/zorael/kameloso/wiki/OpenSSL</> for more information.";
             logger.error(pattern.expandTags(LogLevel.error));
             logger.error(wikiPattern.expandTags(LogLevel.error));
