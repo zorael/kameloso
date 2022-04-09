@@ -54,6 +54,9 @@ struct QueryResponse
 void twitchTryCatchDg(alias dg)()
 if (isSomeFunction!dg)
 {
+    import kameloso.common : expandTags, logger;
+    import kameloso.logger : LogLevel;
+
     try
     {
         dg();
@@ -61,8 +64,6 @@ if (isSomeFunction!dg)
     catch (TwitchQueryException e)
     {
         import kameloso.constants : MagicErrorStrings;
-        import kameloso.common : expandTags, logger;
-        import kameloso.logger : LogLevel;
 
         immutable message = (e.error == MagicErrorStrings.sslLibraryNotFound) ?
             MagicErrorStrings.sslLibraryNotFoundRewritten :
@@ -70,6 +71,11 @@ if (isSomeFunction!dg)
 
         enum pattern = "Failed to query Twitch: <l>%s</> <t>(%s) </>(<t>%d</>)";
         logger.errorf(pattern.expandTags(LogLevel.error), message, e.error, e.code);
+    }
+    catch (Exception e)
+    {
+        enum pattern = "Unforeseen exception thrown when querying Twitch: <l>%s";
+        logger.errorf(pattern.expandTags(LogLevel.error), e.msg);
     }
 }
 
