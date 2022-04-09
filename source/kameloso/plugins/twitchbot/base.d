@@ -1574,7 +1574,7 @@ package:
     string authorizationBearer;
 
     /// Whether or not to use features requiring querying Twitch API.
-    bool useAPIFeatures = true;
+    shared static bool useAPIFeatures = true;
 
     /// The bot's numeric account/ID.
     string userID;
