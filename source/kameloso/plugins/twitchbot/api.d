@@ -79,7 +79,7 @@ if (isSomeFunction!dg)
 
     Example:
     ---
-    spawn(&persistentQuerier, plugin.bucket, plugin.queryResponseTimeout, caBundleFile);
+    spawn(&persistentQuerier, plugin.bucket, caBundleFile);
     ---
 
     Params:
