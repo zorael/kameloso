@@ -219,7 +219,8 @@ void worker(shared IRCPluginState sState,
     client.acceptGzip = false;
     client.defaultTimeout = Timeout.httpGET.seconds;  // FIXME
     client.userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
-    client.setClientCertificate(state.connSettings.caBundleFile, state.connSettings.caBundleFile);
+    immutable caBundleFile = state.connSettings.caBundleFile;
+    if (caBundleFile.length) client.setClientCertificate(caBundleFile, caBundleFile);
 
     try
     {

@@ -482,7 +482,7 @@ TitleLookupResults lookupTitle(
     client.acceptGzip = false;
     client.defaultTimeout = Timeout.httpGET.seconds;  // FIXME
     client.userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
-    client.setClientCertificate(caBundleFile, caBundleFile);
+    if (caBundleFile.length) client.setClientCertificate(caBundleFile, caBundleFile);
 
     auto req = client.request(Uri(url));
     auto res = req.waitForCompletion();
@@ -689,7 +689,7 @@ JSONValue getYouTubeInfo(const string url, const string caBundleFile)
     client.acceptGzip = false;
     client.defaultTimeout = Timeout.httpGET.seconds;  // FIXME
     client.userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
-    client.setClientCertificate(caBundleFile, caBundleFile);
+    if (caBundleFile.length) client.setClientCertificate(caBundleFile, caBundleFile);
 
     immutable youtubeURL = "https://www.youtube.com/oembed?format=json&url=" ~ url;
 

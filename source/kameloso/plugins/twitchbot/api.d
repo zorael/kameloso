@@ -317,7 +317,7 @@ void queryTwitchImpl(
         client.defaultTimeout = Timeout.httpGET.seconds;
         client.userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
         headers = [ "Client-ID: " ~ TwitchBotPlugin.clientID ];
-        client.setClientCertificate(caBundleFile, caBundleFile);
+        if (caBundleFile.length) client.setClientCertificate(caBundleFile, caBundleFile);
     }
 
     client.authorization = authToken;
