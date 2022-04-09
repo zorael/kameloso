@@ -65,6 +65,9 @@ if (isSomeFunction!dg)
     {
         import kameloso.constants : MagicErrorStrings;
 
+        // Hack; don't spam about failed queries if we already know SSL doesn't work
+        if (!TwitchBotPlugin.useAPIFeatures) return;
+
         immutable message = (e.error == MagicErrorStrings.sslLibraryNotFound) ?
             MagicErrorStrings.sslLibraryNotFoundRewritten :
             e.msg;
