@@ -64,17 +64,12 @@ if (isSomeFunction!dg)
         import kameloso.common : expandTags, logger;
         import kameloso.logger : LogLevel;
 
-        if (e.error == MagicErrorStrings.sslLibraryNotFound)
-        {
-            enum pattern = "Failed to query Twitch: <l>%s</> (<l>%s</>) (<t>%d</>)";
-            logger.errorf(pattern.expandTags(LogLevel.error),
-                cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten, e.error, e.code);
-        }
-        else
-        {
-            enum pattern = "Failed to query Twitch: <l>%s</> (<l>%s</>) (<t>%d</>)";
-            logger.errorf(pattern.expandTags(LogLevel.error), e.msg, e.error, e.code);
-        }
+        immutable message = (e.error == MagicErrorStrings.sslLibraryNotFound) ?
+            MagicErrorStrings.sslLibraryNotFoundRewritten :
+            e.msg;
+
+        enum pattern = "Failed to query Twitch: <l>%s</> <t>(%s) </>(<t>%d</>)";
+        logger.errorf(pattern.expandTags(LogLevel.error), message, e.error, e.code);
     }
 }
 
