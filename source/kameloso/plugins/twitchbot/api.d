@@ -384,7 +384,7 @@ in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
     }
     else if (const dataJSON = "data" in responseJSON)
     {
-        if ((dataJSON.type == JSONType.array) ||
+        if ((dataJSON.type == JSONType.array) &&
             (dataJSON.array.length == 1))
         {
             return dataJSON.array[0];
