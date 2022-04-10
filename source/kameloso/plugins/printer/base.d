@@ -567,13 +567,9 @@ void start(PrinterPlugin plugin)
     {
         import kameloso.common : nextMidnight;
         import std.datetime.systime : Clock;
-        import core.time : seconds;
 
         immutable now = Clock.currTime;
-        immutable nowInUnix = now.toUnixTime;
-        immutable nextMidnightTimestamp = now.nextMidnight.toUnixTime;
-
-        return (nextMidnightTimestamp - nowInUnix).seconds;
+        return (now.nextMidnight - now);
     }
 
     void daybreakDg()
