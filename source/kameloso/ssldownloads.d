@@ -7,6 +7,7 @@ version(Windows):
 
 private:
 
+import kameloso.kameloso : ConnectionSettings, CoreSettings;
 import std.typecons : Flag, No, Yes;
 
 public:
@@ -18,90 +19,112 @@ public:
     the cURL project, extracted from Mozilla Firefox.
 
     Params:
+        connSettings = Reference to our connection settings struct.
+        settings = Copy of our settings struct.
         shouldDownloadCacert = Whether or not `cacert.pem` should be downloaded.
         shouldDownloadOpenSSL = Whether or not OpenSSL for Windows should be downloaded.
  +/
-void downloadWindowsSSL(
+bool downloadWindowsSSL(
+    ref ConnectionSettings connSettings,
+    const CoreSettings settings,
     const Flag!"shouldDownloadCacert" shouldDownloadCacert,
     const Flag!"shouldDownloadOpenSSL" shouldDownloadOpenSSL)
 {
     import kameloso.common : expandTags, logger;
     import kameloso.logger : LogLevel;
-    import std.process : Pid, wait;
+    import std.file : mkdirRecurse, tempDir;
+    import std.path : buildNormalizedPath;
 
-    Pid cacertBrowser;
-    Pid openSSLBrowser;
-
-    scope(exit)
+    static int downloadFile(const string url, const string saveAs)
     {
-        if (cacertBrowser) wait(cacertBrowser);
-        if (openSSLBrowser) wait(openSSLBrowser);
-    }
+        import std.format : format;
+        import std.process : executeShell;
 
-    static Pid openURL(const string url)
-    {
-        import std.array : replace;
-        import std.file : mkdirRecurse, tempDir;
-        import std.path : buildNormalizedPath;
-        import std.process : spawnProcess;
-        import std.stdio : File;
+        enum pattern = "Downloading <l>%s</>...";
+        logger.infof(pattern.expandTags(LogLevel.info), url);
 
-        // Save the filename as the URL sans "https://"
-        assert(((url.length > 8) && (url[0..8] == "https://")), url);
-        immutable basename = url[8..$].replace('/', '_') ~ ".url";
-        immutable tempKamelosoDir = buildNormalizedPath(tempDir, "kameloso");
-        immutable urlFileName = buildNormalizedPath(tempKamelosoDir, basename);
+        enum executePattern = `powershell -c "Invoke-Request '%s' -OutFile '%s'"`;
+        immutable result = executeShell(executePattern.format(url, saveAs));
 
-        mkdirRecurse(tempKamelosoDir);
-
+        if (result.status != 0)
         {
-            auto urlFile = File(urlFileName, "w");
-            urlFile.writeln("[InternetShortcut]\nURL=", url);
+            import std.stdio : stdout, writeln;
+            import std.string : chomp;
+
+            enum errorPattern = "Download process failed with status <l>%d</>!";
+            logger.errorf(errorPattern.expandTags(LogLevel.error), result.status);
+
+            version(PrintStacktraces)
+            {
+                writeln(result.output.chomp);
+                stdout.flush();
+            }
         }
 
-        immutable string[2] browserCommand = [ "explorer", urlFileName ];
-        auto nulFile = File("NUL", "r+");
-        return spawnProcess(browserCommand[], nulFile, nulFile, nulFile);
+        return result.status;
     }
 
-    logger.log("Opening your web browser to download given files...");
-    logger.trace("---");
+    bool retval;
 
     if (shouldDownloadCacert)
     {
-        import kameloso.platform : cbd = configurationBaseDirectory;
-        import std.path : buildNormalizedPath;
+        enum cacertURL = "http://curl.se/ca/cacert.pem";
+        immutable cacertFile = buildNormalizedPath(settings.configDirectory, "cacert.pem");
+        immutable result = downloadFile(cacertURL, cacertFile);
 
-        enum url = "https://curl.se/ca/cacert.pem";
-        enum pattern = "<l>cacert.pem</>: Save it anywhere, ideally in " ~
-            "<l>%%APPDATA%%\\\\kameloso</>. [<l>%s</>]";
-        enum pathPattern = "That way you don't have to enter its full path in the configuration file.";
-        enum configPattern = "Tip: Open the configuration file in a text editor by passing <l>--gedit</>.";
-
-        immutable kamelosoDir = buildNormalizedPath(cbd, "kameloso");
-
-        logger.infof(pattern.expandTags(LogLevel.info), kamelosoDir);
-        logger.info(pathPattern.expandTags(LogLevel.info));
-        logger.info(configPattern.expandTags(LogLevel.info));
-        cacertBrowser = openURL(url);
-    }
-
-    if (shouldDownloadCacert && shouldDownloadOpenSSL)
-    {
-        logger.trace("---");
+        if (result == 0)
+        {
+            connSettings.caBundleFile = cacertFile;
+            retval = true;
+        }
     }
 
     if (shouldDownloadOpenSSL)
     {
-        enum url = "https://slproweb.com/products/Win32OpenSSL.html";
-        enum versionPattern = "<l>OpenSSL</>: You want <l>v1.1.1 Light</>, " ~
-            "not <l>v3.0.x</>. <l>EXE</> or <l>MSI</> doesn't matter.";
-        enum installPattern = "Remember to install to <l>Windows system directories</> when asked.";
+        import lu.string : beginsWith;
+        import std.algorithm.searching : endsWith;
+        import std.file : readText;
+        import std.json : parseJSON;
 
-        logger.info(versionPattern.expandTags(LogLevel.info));
-        logger.info(installPattern.expandTags(LogLevel.info));
-        openSSLBrowser = openURL(url);
+        immutable temporaryDir = buildNormalizedPath(tempDir, "kameloso");
+        mkdirRecurse(temporaryDir);
+
+        enum jsonURL = "https://raw.githubusercontent.com/slproweb/opensslhashes/master/win32_openssl_hashes.json";
+        immutable jsonFile = buildNormalizedPath(temporaryDir, "win32_openssl_hashes.json");
+        immutable result = downloadFile(jsonURL, jsonFile);
+        if (result != 0) return retval;
+
+        auto hashesJSON = parseJSON(readText(jsonFile));
+        bool found;
+
+        foreach (immutable filename, fileEntryJSON; hashesJSON["files"].object)
+        {
+            version(Win64)
+            {
+                enum head = "Win64OpenSSL_Light-1_";
+            }
+            else /*version(Win32)*/
+            {
+                enum head = "Win32OpenSSL_Light-1_";
+            }
+
+            if (filename.beginsWith(head) && filename.endsWith(".exe"))
+            {
+                import std.process : spawnProcess, wait;
+
+                found = true;
+                immutable exeFile = buildNormalizedPath(temporaryDir, filename);
+                auto pid = spawnProcess([ exeFile ]);
+                wait(pid);
+                break;
+            }
+        }
+
+        if (!found)
+        {
+            logger.error("Could not find OpenSSL .exe to download");
+        }
     }
 
-    logger.trace("---");
+    return retval;
 }
