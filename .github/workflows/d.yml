@@ -37,12 +37,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: 'Install cURL on Linux'
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        sudo apt update
-        sudo apt install libcurl4-openssl-dev
-
     - name: 'Install D compiler'
       uses: dlang-community/setup-dlang@v1
       with:
