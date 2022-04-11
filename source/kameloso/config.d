@@ -911,7 +911,7 @@ Next handleGetopt(ref Kameloso instance,
                 import kameloso.ssldownloads : downloadWindowsSSL;
 
                 shouldWriteConfig = shouldWriteConfig || downloadWindowsSSL(
-                    instance.connSettings,
+                    instance,
                     cast(Flag!"shouldDownloadCacert")shouldDownloadCacert,
                     cast(Flag!"shouldDownloadOpenSSL")shouldDownloadOpenSSL);
                 if (!shouldWriteConfig) return Next.returnSuccess;

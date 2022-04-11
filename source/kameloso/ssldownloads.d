@@ -7,7 +7,7 @@ version(Windows):
 
 private:
 
-import kameloso.kameloso : ConnectionSettings, CoreSettings;
+import kameloso.kameloso : Kameloso;
 import std.typecons : Flag, No, Yes;
 
 public:
@@ -19,14 +19,12 @@ public:
     the cURL project, extracted from Mozilla Firefox.
 
     Params:
-        connSettings = Reference to our connection settings struct.
-        settings = Copy of our settings struct.
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
         shouldDownloadCacert = Whether or not `cacert.pem` should be downloaded.
         shouldDownloadOpenSSL = Whether or not OpenSSL for Windows should be downloaded.
  +/
 bool downloadWindowsSSL(
-    ref ConnectionSettings connSettings,
-    const CoreSettings settings,
+    ref Kameloso instance,
     const Flag!"shouldDownloadCacert" shouldDownloadCacert,
     const Flag!"shouldDownloadOpenSSL" shouldDownloadOpenSSL)
 {
@@ -69,12 +67,12 @@ bool downloadWindowsSSL(
     if (shouldDownloadCacert)
     {
         enum cacertURL = "http://curl.se/ca/cacert.pem";
-        immutable cacertFile = buildNormalizedPath(settings.configDirectory, "cacert.pem");
+        immutable cacertFile = buildNormalizedPath(instance.settings.configDirectory, "cacert.pem");
         immutable result = downloadFile(cacertURL, cacertFile);
 
         if (result == 0)
         {
-            connSettings.caBundleFile = cacertFile;
+            instance.connSettings.caBundleFile = cacertFile;
             retval = true;
         }
     }
