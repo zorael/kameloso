@@ -104,7 +104,6 @@ bool downloadWindowsSSL(
         try
         {
             const hashesJSON = parseJSON(readText(jsonFile));
-            bool found;
 
             foreach (immutable filename, fileEntryJSON; hashesJSON["files"].object)
             {
@@ -121,22 +120,19 @@ bool downloadWindowsSSL(
                 {
                     import std.process : execute;
 
-                    found = true;
-
                     immutable exeFile = buildNormalizedPath(temporaryDir, filename);
                     immutable downloadResult = downloadFile(fileEntryJSON["url"].str, exeFile);
                     if (downloadResult != 0) break;
 
                     logger.info("Launching OpenSSL installer.");
                     cast(void)execute([ exeFile ]);
-                    break;
+
+                    return retval;
                 }
             }
 
-            if (!found)
-            {
-                logger.error("Could not find OpenSSL .exe to download");
-            }
+            logger.error("Could not find OpenSSL .exe to download");
+            // Drop down and return
         }
         catch (JSONException e)
         {
