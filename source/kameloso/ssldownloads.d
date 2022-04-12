@@ -66,8 +66,10 @@ bool downloadWindowsSSL(
 
     if (shouldDownloadCacert)
     {
+        import std.path : dirName;
+
         enum cacertURL = "http://curl.se/ca/cacert.pem";
-        immutable cacertFile = buildNormalizedPath(instance.settings.configDirectory, "cacert.pem");
+        immutable cacertFile = buildNormalizedPath(instance.settings.configFile.dirName, "cacert.pem");
         immutable result = downloadFile(cacertURL, cacertFile);
 
         if (result == 0)
