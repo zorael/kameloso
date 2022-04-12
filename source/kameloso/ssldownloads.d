@@ -83,6 +83,7 @@ bool downloadWindowsSSL(
         import std.algorithm.searching : endsWith;
         import std.file : readText;
         import std.json : JSONException, parseJSON;
+        import std.process : ProcessException;
 
         immutable temporaryDir = buildNormalizedPath(tempDir, "kameloso");
         mkdirRecurse(temporaryDir);
@@ -128,6 +129,11 @@ bool downloadWindowsSSL(
         catch (JSONException e)
         {
             enum pattern = "Error parsing file containing OpenSSL download links: <l>%s";
+            logger.errorf(pattern.expandTags(LogLevel.error), e.msg);
+        }
+        catch (ProcessException e)
+        {
+            enum pattern = "Error launching process: <l>%s";
             logger.errorf(pattern.expandTags(LogLevel.error), e.msg);
         }
     }
