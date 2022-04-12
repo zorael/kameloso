@@ -69,12 +69,18 @@ bool downloadWindowsSSL(
         import std.path : dirName;
 
         enum cacertURL = "http://curl.se/ca/cacert.pem";
-        immutable cacertFile = buildNormalizedPath(instance.settings.configFile.dirName, "cacert.pem");
+        immutable configDir = instance.settings.configFile.dirName;
+        immutable cacertFile = buildNormalizedPath(configDir, "cacert.pem");
         immutable result = downloadFile(cacertURL, cacertFile);
 
         if (result == 0)
         {
-            instance.connSettings.caBundleFile = cacertFile;
+            if (!instance.settings.force)
+            {
+                enum cacertPattern = "<l>cacert.pem</> saved to <l>%s</>; configuration file updated";
+                logger.infof(cacertPattern.expandTags(LogLevel.info), configDir);
+                instance.connSettings.caBundleFile = "cacert.pem";  // cacertFile
+            }
             retval = true;
         }
     }
