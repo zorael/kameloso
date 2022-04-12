@@ -41,7 +41,7 @@ bool downloadWindowsSSL(
         enum pattern = "Downloading <l>%s</>...";
         logger.infof(pattern.expandTags(LogLevel.info), url);
 
-        enum executePattern = `powershell -c "Invoke-Request '%s' -OutFile '%s'"`;
+        enum executePattern = `powershell -c "Invoke-WebRequest '%s' -OutFile '%s'"`;
         immutable result = executeShell(executePattern.format(url, saveAs));
 
         if (result.status != 0)
