@@ -80,8 +80,13 @@ bool downloadWindowsSSL(
                 enum cacertPattern = "File saved as <l>%s</>; configuration updated.";
                 logger.infof(cacertPattern.expandTags(LogLevel.info), cacertFile);
                 instance.connSettings.caBundleFile = "cacert.pem";  // cacertFile
+                retval = true;
             }
-            retval = true;
+            else
+            {
+                enum cacertPattern = "File saved as <l>%s</>.";
+                logger.infof(cacertPattern.expandTags(LogLevel.info), cacertFile);
+            }
         }
     }
 
