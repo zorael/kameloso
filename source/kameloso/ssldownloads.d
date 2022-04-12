@@ -82,7 +82,7 @@ bool downloadWindowsSSL(
         import lu.string : beginsWith;
         import std.algorithm.searching : endsWith;
         import std.file : readText;
-        import std.json : parseJSON;
+        import std.json : JSONException, parseJSON;
 
         immutable temporaryDir = buildNormalizedPath(tempDir, "kameloso");
         mkdirRecurse(temporaryDir);
@@ -92,35 +92,43 @@ bool downloadWindowsSSL(
         immutable result = downloadFile(jsonURL, jsonFile);
         if (result != 0) return retval;
 
-        auto hashesJSON = parseJSON(readText(jsonFile));
-        bool found;
-
-        foreach (immutable filename, fileEntryJSON; hashesJSON["files"].object)
+        try
         {
-            version(Win64)
+            const hashesJSON = parseJSON(readText(jsonFile));
+            bool found;
+
+            foreach (immutable filename, fileEntryJSON; hashesJSON["files"].object)
             {
-                enum head = "Win64OpenSSL_Light-1_";
-            }
-            else /*version(Win32)*/
-            {
-                enum head = "Win32OpenSSL_Light-1_";
+                version(Win64)
+                {
+                    enum head = "Win64OpenSSL_Light-1_";
+                }
+                else /*version(Win32)*/
+                {
+                    enum head = "Win32OpenSSL_Light-1_";
+                }
+
+                if (filename.beginsWith(head) && filename.endsWith(".exe"))
+                {
+                    import std.process : spawnProcess, wait;
+
+                    found = true;
+                    immutable exeFile = buildNormalizedPath(temporaryDir, filename);
+                    auto pid = spawnProcess([ exeFile ]);
+                    wait(pid);
+                    break;
+                }
             }
 
-            if (filename.beginsWith(head) && filename.endsWith(".exe"))
+            if (!found)
             {
-                import std.process : spawnProcess, wait;
-
-                found = true;
-                immutable exeFile = buildNormalizedPath(temporaryDir, filename);
-                auto pid = spawnProcess([ exeFile ]);
-                wait(pid);
-                break;
+                logger.error("Could not find OpenSSL .exe to download");
             }
         }
-
-        if (!found)
+        catch (JSONException e)
         {
-            logger.error("Could not find OpenSSL .exe to download");
+            enum pattern = "Error parsing file containing OpenSSL download links: <l>%s";
+            logger.errorf(pattern.expandTags(LogLevel.error), e.msg);
         }
     }
 
