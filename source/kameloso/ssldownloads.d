@@ -119,7 +119,7 @@ bool downloadWindowsSSL(
 
                 if (filename.beginsWith(head) && filename.endsWith(".exe"))
                 {
-                    import std.process : spawnProcess, wait;
+                    import std.process : execute;
 
                     found = true;
 
@@ -127,8 +127,7 @@ bool downloadWindowsSSL(
                     immutable downloadResult = downloadFile(fileEntryJSON["url"].str, exeFile);
                     if (downloadResult != 0) break;
 
-                    auto pid = spawnProcess([ exeFile ]);
-                    wait(pid);
+                    cast(void)execute([ exeFile ]);
                     break;
                 }
             }
