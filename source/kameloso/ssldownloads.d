@@ -86,6 +86,8 @@ bool downloadWindowsSSL(
             {
                 enum cacertPattern = "File saved as <l>%s</>.";
                 logger.infof(cacertPattern.expandTags(LogLevel.info), cacertFile);
+                instance.connSettings.caBundleFile = cacertFile;  // absolute path
+                //retval = true;  // let user supply --save
             }
         }
     }
