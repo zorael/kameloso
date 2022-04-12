@@ -603,9 +603,9 @@ Next handleGetopt(ref Kameloso instance,
 
             version(Windows)
             {
-                enum getOpenSSLString = "Open the download page for OpenSSL for Windows in your web browser";
+                enum getOpenSSLString = "Downloads OpenSSL for Windows";
                 enum getCacertString = "Download a <i>cacert.pem</> certificate " ~
-                    "bundle from the cURL project with your browser";
+                    "bundle (implies <i>--save</>)";
             }
             else
             {
@@ -904,6 +904,30 @@ Next handleGetopt(ref Kameloso instance,
             return Next.returnSuccess;
         }
 
+        version(Windows)
+        {
+            if (shouldDownloadCacert || shouldDownloadOpenSSL)
+            {
+                import kameloso.ssldownloads : downloadWindowsSSL;
+
+                immutable settingsTouched = downloadWindowsSSL(
+                    instance,
+                    cast(Flag!"shouldDownloadCacert")shouldDownloadCacert,
+                    cast(Flag!"shouldDownloadOpenSSL")shouldDownloadOpenSSL);
+
+                if (settingsTouched)
+                {
+                    import std.stdio : writeln;
+                    shouldWriteConfig = true;
+                    writeln();
+                }
+                else
+                {
+                    return Next.returnSuccess;
+                }
+            }
+        }
+
         if (shouldWriteConfig || shouldOpenTerminalEditor || shouldOpenGraphicalEditor)
         {
             // --save and/or --edit was passed; defer to manageConfigFile
@@ -922,18 +946,6 @@ Next handleGetopt(ref Kameloso instance,
             // --settings was passed, show all options and quit
             if (!settings.headless) printSettings(instance, customSettings);
             return Next.returnSuccess;
-        }
-
-        version(Windows)
-        {
-            if (shouldDownloadCacert || shouldDownloadOpenSSL)
-            {
-                import kameloso.ssldownloads : downloadWindowsSSL;
-                downloadWindowsSSL(
-                    cast(Flag!"shouldDownloadCacert")shouldDownloadCacert,
-                    cast(Flag!"shouldDownloadOpenSSL")shouldDownloadOpenSSL);
-                return Next.returnSuccess;
-            }
         }
 
         return Next.continue_;
