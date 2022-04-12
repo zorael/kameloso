@@ -77,8 +77,8 @@ bool downloadWindowsSSL(
         {
             if (!instance.settings.force)
             {
-                enum cacertPattern = "<l>cacert.pem</> saved to <l>%s</>; configuration file updated";
-                logger.infof(cacertPattern.expandTags(LogLevel.info), configDir);
+                enum cacertPattern = "File saved as <l>%s</>; configuration updated.";
+                logger.infof(cacertPattern.expandTags(LogLevel.info), cacertFile);
                 instance.connSettings.caBundleFile = "cacert.pem";  // cacertFile
             }
             retval = true;
@@ -127,6 +127,7 @@ bool downloadWindowsSSL(
                     immutable downloadResult = downloadFile(fileEntryJSON["url"].str, exeFile);
                     if (downloadResult != 0) break;
 
+                    logger.info("Launching OpenSSL installer.");
                     cast(void)execute([ exeFile ]);
                     break;
                 }
@@ -144,7 +145,7 @@ bool downloadWindowsSSL(
         }
         catch (ProcessException e)
         {
-            enum pattern = "Error launching process: <l>%s";
+            enum pattern = "Error starting installer: <l>%s";
             logger.errorf(pattern.expandTags(LogLevel.error), e.msg);
         }
     }
