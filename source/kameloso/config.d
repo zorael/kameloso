@@ -915,8 +915,16 @@ Next handleGetopt(ref Kameloso instance,
                     cast(Flag!"shouldDownloadCacert")shouldDownloadCacert,
                     cast(Flag!"shouldDownloadOpenSSL")shouldDownloadOpenSSL);
 
-                shouldWriteConfig |= settingsTouched;
-                if (!shouldWriteConfig) return Next.returnSuccess;
+                if (settingsTouched)
+                {
+                    import std.stdio : writeln;
+                    shouldWriteConfig = true;
+                    writeln();
+                }
+                else
+                {
+                    return Next.returnSuccess;
+                }
             }
         }
 
