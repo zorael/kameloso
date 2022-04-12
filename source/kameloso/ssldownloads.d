@@ -114,7 +114,11 @@ bool downloadWindowsSSL(
                     import std.process : spawnProcess, wait;
 
                     found = true;
+
                     immutable exeFile = buildNormalizedPath(temporaryDir, filename);
+                    immutable downloadResult = downloadFile(fileEntryJSON["url"].str, exeFile);
+                    if (downloadResult != 0) break;
+
                     auto pid = spawnProcess([ exeFile ]);
                     wait(pid);
                     break;
