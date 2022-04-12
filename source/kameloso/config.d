@@ -910,10 +910,12 @@ Next handleGetopt(ref Kameloso instance,
             {
                 import kameloso.ssldownloads : downloadWindowsSSL;
 
-                shouldWriteConfig = shouldWriteConfig || downloadWindowsSSL(
+                immutable settingsTouched = downloadWindowsSSL(
                     instance,
                     cast(Flag!"shouldDownloadCacert")shouldDownloadCacert,
                     cast(Flag!"shouldDownloadOpenSSL")shouldDownloadOpenSSL);
+
+                shouldWriteConfig |= settingsTouched;
                 if (!shouldWriteConfig) return Next.returnSuccess;
             }
         }
