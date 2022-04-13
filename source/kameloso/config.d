@@ -923,7 +923,7 @@ Next handleGetopt(ref Kameloso instance,
                 }
                 else
                 {
-                    return Next.returnSuccess;
+                    if (!shouldWriteConfig) return Next.returnSuccess;
                 }
             }
         }
