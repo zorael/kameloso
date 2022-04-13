@@ -17,9 +17,9 @@
 
 -- IRCBot
    string account                "kameloso"(8)
- string[] admins                ["zorael"](1)
- string[] homeChannels          ["#flerrp"](1)
- string[] guestChannels         ["#d"](1)
+ string[] admins                 ["zorael"](1)
+ string[] homeChannels           ["#flerrp"](1)
+ string[] guestChannels          ["#d"](1)
 
 -- IRCServer
    string address                "irc.libera.chat"(16)
@@ -220,8 +220,8 @@ alias printObject = printObjects;
     Foo foo, bar;
     Appender!(char[]) sink;
 
-    sink.formatObjects!(Yes.coloured)(foo);
-    sink.formatObjects!(No.coloured)(bar);
+    sink.formatObjects!(Yes.all, Yes.coloured)(foo);
+    sink.formatObjects!(No.all, No.coloured)(bar);
     writeln(sink.data);
     ---
 
