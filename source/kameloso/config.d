@@ -609,8 +609,8 @@ Next handleGetopt(ref Kameloso instance,
             }
             else
             {
-                enum getOpenSSLString = "(Windows-only)";
-                enum getCacertString = "(Windows-only)";
+                enum getOpenSSLString = "(Windows only)";
+                enum getCacertString = "(Windows only)";
             }
 
             version(Windows)
@@ -803,7 +803,7 @@ Next handleGetopt(ref Kameloso instance,
                     &shouldOpenGraphicalEditor,
                 "headless",
                     quiet ? string.init :
-                        "Enable headless mode, disabling all terminal output",
+                        "Headless mode, disabling all terminal output",
                     &settings.headless,
                 "version",
                     quiet ? string.init :
