@@ -603,7 +603,7 @@ Next handleGetopt(ref Kameloso instance,
 
             version(Windows)
             {
-                enum getOpenSSLString = "Downloads OpenSSL for Windows";
+                enum getOpenSSLString = "Download OpenSSL for Windows";
                 enum getCacertString = "Download a <i>cacert.pem</> certificate " ~
                     "bundle (implies <i>--save</>)";
             }
