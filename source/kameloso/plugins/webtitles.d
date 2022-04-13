@@ -315,7 +315,7 @@ void worker(shared TitleLookupRequest sRequest,
 
                         version(Windows)
                         {
-                            alias getoptPattern = MagicErrorStrings.getOpenSSLSuggestion;
+                            enum getoptPattern = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
                             request.state.askToError(getoptPattern.expandTags(LogLevel.error));
                         }
                     }
@@ -394,7 +394,7 @@ void worker(shared TitleLookupRequest sRequest,
 
                         version(Windows)
                         {
-                            alias getoptPattern = MagicErrorStrings.getOpenSSLSuggestion;
+                            enum getoptPattern = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
                             request.state.askToError(getoptPattern.expandTags(LogLevel.error));
                         }
                     }

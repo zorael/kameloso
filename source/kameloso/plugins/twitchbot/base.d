@@ -1181,7 +1181,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
 
                         version(Windows)
                         {
-                            alias getoptPattern = MagicErrorStrings.getOpenSSLSuggestion;
+                            enum getoptPattern = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
                             logger.error(getoptPattern.expandTags(LogLevel.error));
                         }
                     }

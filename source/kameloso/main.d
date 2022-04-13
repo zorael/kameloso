@@ -2049,7 +2049,7 @@ Next tryConnect(ref Kameloso instance)
 
             version(Windows)
             {
-                alias getoptPattern = MagicErrorStrings.getOpenSSLSuggestion;
+                enum getoptPattern = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
                 logger.error(getoptPattern.expandTags(LogLevel.error));
             }
         }
