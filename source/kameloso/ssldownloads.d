@@ -30,7 +30,6 @@ bool downloadWindowsSSL(
 {
     import kameloso.common : expandTags, logger;
     import kameloso.logger : LogLevel;
-    import std.file : mkdirRecurse, tempDir;
     import std.path : buildNormalizedPath;
 
     static int downloadFile(const string url, const string saveAs)
@@ -46,14 +45,14 @@ bool downloadWindowsSSL(
 
         if (result.status != 0)
         {
-            import std.stdio : stdout, writeln;
-            import std.string : chomp;
-
             enum errorPattern = "Download process failed with status <l>%d</>!";
             logger.errorf(errorPattern.expandTags(LogLevel.error), result.status);
 
             version(PrintStacktraces)
             {
+                import std.stdio : stdout, writeln;
+                import std.string : chomp;
+
                 writeln(result.output.chomp);
                 stdout.flush();
             }
@@ -94,10 +93,8 @@ bool downloadWindowsSSL(
 
     if (shouldDownloadOpenSSL)
     {
-        import lu.string : beginsWith;
-        import std.algorithm.searching : endsWith;
-        import std.file : readText;
-        import std.json : JSONException, parseJSON;
+        import std.file : mkdirRecurse, tempDir;
+        import std.json : JSONException;
         import std.process : ProcessException;
 
         immutable temporaryDir = buildNormalizedPath(tempDir, "kameloso");
@@ -110,10 +107,16 @@ bool downloadWindowsSSL(
 
         try
         {
+            import std.file : readText;
+            import std.json : parseJSON;
+
             const hashesJSON = parseJSON(readText(jsonFile));
 
             foreach (immutable filename, fileEntryJSON; hashesJSON["files"].object)
             {
+                import lu.string : beginsWith;
+                import std.algorithm.searching : endsWith;
+
                 version(Win64)
                 {
                     enum head = "Win64OpenSSL_Light-1_";
