@@ -18,7 +18,6 @@ private:
 
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
-import kameloso.constants : MagicErrorStrings;
 import kameloso.messaging;
 import dialect.defs;
 import std.json : JSONValue;
@@ -234,6 +233,7 @@ void worker(shared TitleLookupRequest sRequest,
 {
     import lu.string : beginsWith, contains, nom;
     import std.datetime.systime : Clock;
+    import std.format : format;
     import std.typecons : No, Yes;
     static import kameloso.common;
 
@@ -300,13 +300,40 @@ void worker(shared TitleLookupRequest sRequest,
             }
             catch (TitleFetchException e)
             {
-                import std.format : format;
+                if (e.code == 2)
+                {
+                    import kameloso.constants : MagicErrorStrings;
 
-                if (e.code >= 400)
+                    if (e.msg == MagicErrorStrings.sslLibraryNotFound)
+                    {
+                        enum wikiPattern = cast(string)MagicErrorStrings.visitWikiOneliner;
+                        enum pattern = "Error fetching YouTube title: <l>" ~
+                            MagicErrorStrings.sslLibraryNotFoundRewritten ~
+                            "</> <t>(is OpenSSL installed?)";
+                        request.state.askToError(pattern);
+                        request.state.askToError(wikiPattern);
+
+                        version(Windows)
+                        {
+                            import kameloso.common : expandTags;
+                            import kameloso.logger : LogLevel;
+
+                            enum getoptPattern = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
+                            request.state.askToError(getoptPattern.expandTags(LogLevel.error));
+                        }
+                    }
+                    else
+                    {
+                        enum pattern = "Error fetching YouTube title: <l>%s";
+                        request.state.askToError(pattern.format(e.msg));
+                    }
+                    return;
+                }
+                else if (e.code >= 400)
                 {
                     // Simply failed to fetch
-                    enum pattern = "Webtitles worker saw HTTP <l>%d</>.";
-                    request.state.askToError(pattern.format(e.code));
+                    enum pattern = "Webtitles YouTube worker saw HTTP <l>%d</>: <t>%s";
+                    request.state.askToError(pattern.format(e.code, e.msg));
                 }
                 else
                 {
@@ -323,30 +350,9 @@ void worker(shared TitleLookupRequest sRequest,
             }
             catch (Exception e)
             {
-                enum wikiURL = "https://github.com/zorael/kameloso/wiki/OpenSSL";
-                enum wikiPattern = "Visit <l>" ~ wikiURL ~ "</> for more information.";
-
-                if (e.msg == MagicErrorStrings.sslContextCreationFailureRewritten)
-                {
-                    import std.format : format;
-
-                    enum pattern = "Error fetching webpage title: <l>%s</> <t>(are OpenSSL libraries installed?)";
-                    request.state.askToError(pattern.format(e.msg));
-                    request.state.askToError(wikiPattern);
-                    return;
-                }
-                else if (e.msg == MagicErrorStrings.sslCertificateVerificationFailureRewritten)
-                {
-                    request.state.askToError("Error fetching webpage title: <l>" ~ e.msg);
-                    request.state.askToError(wikiPattern);
-                    return;
-                }
-                else
-                {
-                    request.state.askToError("Unexpected exception fetching YouTube video information: <l>" ~ e.msg);
-                    version(PrintStacktraces) request.state.askToTrace(e.toString);
-                    // Drop down
-                }
+                request.state.askToError("Unexpected exception fetching YouTube video information: <l>" ~ e.msg);
+                version(PrintStacktraces) request.state.askToTrace(e.toString);
+                // Drop down
             }
         }
         else
@@ -376,16 +382,46 @@ void worker(shared TitleLookupRequest sRequest,
             }
             catch (TitleFetchException e)
             {
-                if (e.code >= 400)
+                if (e.code == 2)
+                {
+                    import kameloso.constants : MagicErrorStrings;
+
+                    if (e.msg == MagicErrorStrings.sslLibraryNotFound)
+                    {
+                        enum wikiPattern = cast(string)MagicErrorStrings.visitWikiOneliner;
+                        enum pattern = "Error fetching webpage title: <l>" ~
+                            MagicErrorStrings.sslLibraryNotFoundRewritten ~
+                            "</> <t>(is OpenSSL installed?)";
+                        request.state.askToError(pattern);
+                        request.state.askToError(wikiPattern);
+
+                        version(Windows)
+                        {
+                            import kameloso.common : expandTags;
+                            import kameloso.logger : LogLevel;
+
+                            enum getoptPattern = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
+                            request.state.askToError(getoptPattern.expandTags(LogLevel.error));
+                        }
+                    }
+                    else
+                    {
+                        enum pattern = "Error fetching webpage title: <l>%s";
+                        request.state.askToError(pattern.format(e.msg));
+                    }
+                    return;
+                }
+                else if (e.code >= 400)
                 {
                     // Simply failed to fetch
-                    enum pattern = "Webtitles worker saw HTTP <l>%d</>.";
-                    request.state.askToWarn(pattern.format(e.code));
+                    enum pattern = "Webtitles worker saw HTTP <l>%d</>: <l>%s";
+                    request.state.askToWarn(pattern.format(e.code, e.msg));
                 }
                 else
                 {
                     // No title tag found
-                    request.state.askToWarn("No title tag found.");
+                    enum pattern = "No title tag found: <l>%s";
+                    request.state.askToWarn(pattern.format(e.msg));
                 }
 
                 if (firstTime)
@@ -412,25 +448,8 @@ void worker(shared TitleLookupRequest sRequest,
             }
             catch (Exception e)
             {
-                enum wikiURL = "https://github.com/zorael/kameloso/wiki/OpenSSL";
-                enum wikiPattern = "Visit <l>" ~ wikiURL ~ "</> for more information.";
-
-                if (e.msg == MagicErrorStrings.sslContextCreationFailureRewritten)
-                {
-                    enum pattern = "Error fetching webpage title: <l>%s</> <t>(are OpenSSL libraries installed?)";
-                    request.state.askToError(pattern.format(e.msg));
-                    request.state.askToError(wikiPattern);
-                }
-                else if (e.msg == MagicErrorStrings.sslCertificateVerificationFailureRewritten)
-                {
-                    request.state.askToError("Error fetching webpage title: <l>" ~ e.msg);
-                    request.state.askToError(wikiPattern);
-                }
-                else
-                {
-                    request.state.askToWarn("Webtitles saw unexpected exception: <l>" ~ e.msg);
-                    version(PrintStacktraces) request.state.askToTrace(e.toString);
-                }
+                request.state.askToWarn("Webtitles saw unexpected exception: <l>" ~ e.msg);
+                version(PrintStacktraces) request.state.askToTrace(e.toString);
             }
 
             // Dropped down; end foreach by returning
@@ -465,84 +484,49 @@ TitleLookupResults lookupTitle(
 {
     import kameloso.constants : KamelosoInfo, Timeout;
     import lu.string : beginsWith, contains, nom;
-    import requests : Response, Request;
     import arsd.dom : Document;
+    import arsd.http2 : HttpClient, Uri;
+    import std.algorithm.comparison : among;
     import std.array : Appender;
     import std.uni : toLower;
     import core.time : seconds;
 
-    static string[string] headers;
+    // No need to keep a static HttpClient since this will be in a new thread every time
+    auto client = new HttpClient;
+    client.useHttp11 = true;
+    client.keepAlive = false;
+    client.acceptGzip = false;
+    client.defaultTimeout = Timeout.httpGET.seconds;  // FIXME
+    client.userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
+    if (caBundleFile.length) client.setClientCertificate(caBundleFile, caBundleFile);
 
-    if (!headers.length)
+    auto req = client.request(Uri(url));
+    auto res = req.waitForCompletion();
+
+    if (res.code.among!(301, 302, 307, 308))
     {
-        headers =
-        [
-            "User-Agent" : "kameloso/" ~ cast(string)KamelosoInfo.version_,
-            "Accept"     : "text/html",
-        ];
-    }
-
-    Request req;
-    req.addHeaders(headers);
-    if (caBundleFile.length) req.sslSetCaCert(caBundleFile);
-    req.timeout = Timeout.httpGET.seconds;
-    req.keepAlive = false;
-    req.useStreaming = true;
-
-    Response res;
-
-    try
-    {
-        res = req.get(url);
-    }
-    catch (Exception e)
-    {
-        // Reword some exceptions
-        if (e.msg == MagicErrorStrings.sslContextCreationFailure)
+        // Moved
+        foreach (immutable i; 0..5)
         {
-            e.msg = MagicErrorStrings.sslContextCreationFailureRewritten;
+            req = client.request(Uri(res.location));
+            res = req.waitForCompletion();
+            if (!res.code.among!(301, 302, 307, 308) || !res.location.length) break;
         }
-        else if (e.msg == MagicErrorStrings.sslCertificateVerificationFailure)
-        {
-            e.msg = MagicErrorStrings.sslCertificateVerificationFailureRewritten;
-        }
-
-        throw e;
     }
 
-    Document doc = new Document;
+    if ((res.code == 2) || (res.code >= 400) || !res.contentText.length)
+    {
+        // res.codeText among Bad Request, probably Not Found, ...
+        throw new TitleFetchException(res.codeText, url, res.code, __FILE__, __LINE__);
+    }
+
+    auto doc = new Document;
     doc.parseGarbage("");  // Work around missing null check, causing segfaults on empty pages
-
-    Appender!(ubyte[]) sink;
-    sink.reserve(1_048_576);  // 1M
-
-    auto stream = res.receiveAsRange();
-
-    while (!stream.empty)
-    {
-        sink.put(stream.front);
-        doc.parseGarbage((cast(char[])sink.data).idup);
-        if (doc.title.length) break;
-        stream.popFront();
-    }
+    doc.parseGarbage(res.responseText);
 
     if (!doc.title.length)
     {
-        if (res.code >= 400)
-        {
-            throw new TitleFetchException("Failed to fetch URL",
-                url, res.code, __FILE__, __LINE__);
-        }
-        else
-        {
-            throw new TitleFetchException("No title tag found",
-                url, res.code, __FILE__, __LINE__);
-        }
-    }
-    else if (res.code >= 400)
-    {
-        throw new TitleFetchException("Failed to fetch URL",
-            url, res.code, __FILE__, __LINE__);
+        throw new TitleFetchException("No title tag found", url, res.code, __FILE__, __LINE__);
     }
 
     string slice = url;  // mutable
@@ -707,65 +691,45 @@ unittest
 JSONValue getYouTubeInfo(const string url, const string caBundleFile)
 {
     import kameloso.constants : KamelosoInfo, Timeout;
-    import requests : Response, Request;
+    import arsd.http2 : HttpClient, Uri;
+    import std.algorithm.comparison : among;
     import std.array : Appender;
     import std.exception : assumeUnique;
     import std.json : parseJSON;
     import core.time : seconds;
 
-    static string[string] headers;
-
-    if (!headers.length)
-    {
-        headers =
-        [
-            "User-Agent" : "kameloso/" ~ cast(string)KamelosoInfo.version_,
-            "Accept"     : "text/html",
-        ];
-    }
+    // No need to keep a static HttpClient since this will be in a new thread every time
+    auto client = new HttpClient;
+    client.useHttp11 = true;
+    client.keepAlive = false;
+    client.acceptGzip = false;
+    client.defaultTimeout = Timeout.httpGET.seconds;  // FIXME
+    client.userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
+    if (caBundleFile.length) client.setClientCertificate(caBundleFile, caBundleFile);
 
     immutable youtubeURL = "https://www.youtube.com/oembed?format=json&url=" ~ url;
 
-    Request req;
-    req.addHeaders(headers);
-    if (caBundleFile.length) req.sslSetCaCert(caBundleFile);
-    req.timeout = Timeout.httpGET.seconds;
-    req.keepAlive = false;
+    auto req = client.request(Uri(youtubeURL));
+    auto res = req.waitForCompletion();
 
-    Response res;
-
-    try
+    if (res.code.among!(301, 302, 307, 308))
     {
-        res = req.get(youtubeURL);
-    }
-    catch (Exception e)
-    {
-        // Reword some exceptions
-        if (e.msg == MagicErrorStrings.sslContextCreationFailure)
+        // Moved
+        foreach (immutable i; 0..5)
         {
-            e.msg = MagicErrorStrings.sslContextCreationFailureRewritten;
+            req = client.request(Uri(res.location));
+            res = req.waitForCompletion();
+            if (!res.code.among!(301, 302, 307, 308) || !res.location.length) break;
         }
-        else if (e.msg == MagicErrorStrings.sslCertificateVerificationFailure)
-        {
-            e.msg = MagicErrorStrings.sslCertificateVerificationFailureRewritten;
-        }
-
-        throw e;
     }
 
-    if (res.code >= 400)
+    if ((res.code == 2) || (res.code >= 400) || !res.contentText.length)
     {
-        throw new TitleFetchException("Failed to fetch YouTube video information",
-            url, res.code, __FILE__, __LINE__);
-    }
-    else if (res.responseBody == "Not Found")
-    {
-        throw new TitleFetchException("Invalid YouTube video ID",
-            url, res.code, __FILE__, __LINE__);
+        // res.codeText among Bad Request, probably Not Found, ...
+        throw new TitleFetchException(res.codeText, url, res.code, __FILE__, __LINE__);
     }
 
-    immutable received = assumeUnique(cast(char[])res.responseBody.data);
-    return parseJSON(received);
+    return parseJSON(res.contentText);
 }
 
 

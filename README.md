@@ -98,20 +98,11 @@ The package manager [**dub**](https://code.dlang.org) is used to facilitate comp
 
 ### SSL Libraries on Windows
 
-**kameloso** uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard SSL library in the Posix sphere (Linux, macOS, ...), but not so on Windows. If you run into errors about "failing to set up an SSL context" when attempting to connect on Windows, download and install **Win64/32 OpenSSL** `v1.1.1` **Light** (not `v3.0.x`) from [here](https://slproweb.com/products/Win32OpenSSL.html), and opt to install to Windows system directories when asked. Whether you go with the `EXE` or the `MSI` file doesn't matter.
+**kameloso** uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard SSL library in the Posix sphere (Linux, macOS, ...), but not so on Windows. If you run into errors about missing libraries when attempting to connect on Windows, download and install **Win64/32 OpenSSL** `v1.1.1` **Light** (not `v3.0.x`) from [here](https://slproweb.com/products/Win32OpenSSL.html), and opt to install to Windows system directories when asked. Whether you go with the `EXE` or the `MSI` file doesn't matter.
 
 > You can open this download page in your web browser by passing `--get-openssl` on the command line.
 
-If you get errors about not being able to verify certificates, you may also need to supply a certificate bundle file. Download this [`cacert.pem`](https://curl.se/ca/cacert.pem) file extracted from Mozilla Firefox by the cURL project, place it somewhere reasonable, and edit your configuration file to point to it; `caBundleFile` under `[Connection]`. If you place it in `%APPDATA%\kameloso` (or in the working directory) you only need to enter its filename, otherwise enter a full path. You can also specify one per-session at the command line with `--cacert`.
-
-```ini
-[Connection]
-caBundleFile                cacert.pem
-```
-
-> You can quickly download this file with your web browser by passing `--get-cacert`.
-
-An alternative is to use a different shell environment, such as any one of **Git for Windows** (Bash)/**MinGW64**, **MSYS2**, **Cygwin** and **Windows Subsystem for Linux** (likely among others), all/most of which either include said libraries or at the very least offer the ability to install them. Or just limit yourself to non-SSL connections and live without some plugin features. Mind that some alternative shells still require you to download a certificate bundle.
+A possible alternative is to use a different shell environment, such as any one of **Git for Windows** (Bash)/**MinGW64**, **MSYS2**, **Cygwin** and **Windows Subsystem for Linux** (likely among others), which may either include said libraries or offer the ability to install them. Or just limit yourself to non-SSL connections and live without some plugin features.
 
 > See the wiki for some copy/paste-friendly [Windows quickstart instructions](https://github.com/zorael/kameloso/wiki/Quickstart-instructions:-Windows-(copy-paste-friendly)).
 

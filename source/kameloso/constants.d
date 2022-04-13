@@ -478,24 +478,29 @@ enum ShellReturnValue
 enum MagicErrorStrings
 {
     /++
-        Failed to set up an SSL context, original library line.
+        Failed to set up an SSL context, original library line ([requests]).
      +/
     sslContextCreationFailure = "can't complete call to TLS_method",
 
     /++
-        Failed to set up an SSL context, rewritten line.
+        Could not initialise SSL libraries, original line ([arsd.http2]).
      +/
-    sslContextCreationFailureRewritten = "Failed to set up an SSL context",
+    sslLibraryNotFound = "libssl library not found",
 
     /++
-        Failed to verify SSL certificates, original library line.
+        Could not initialise SSL libraries, rewritten line.
      +/
-    sslCertificateVerificationFailure = "ssl connect failed: certificate verify failed",
+    sslLibraryNotFoundRewritten = "SSL libraries not found",
 
     /++
-        Failed to verify SSL certificates, rewritten line.
+        Wiki link oneliner, tagged.
      +/
-    sslCertificateVerificationFailureRewritten = "Failed to verify SSL certificates",
+    visitWikiOneliner = "Visit <l>https://github.com/zorael/kameloso/wiki/OpenSSL</> for more information.",
+
+    /++
+        `--get-openssl` suggestion hint oneliner, tagged.
+     +/
+    getOpenSSLSuggestion = "Suggestion: <l>--get-openssl</> may help.",
 }
 
 

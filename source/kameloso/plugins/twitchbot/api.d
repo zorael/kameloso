@@ -54,17 +54,31 @@ struct QueryResponse
 void twitchTryCatchDg(alias dg)()
 if (isSomeFunction!dg)
 {
+    import kameloso.common : expandTags, logger;
+    import kameloso.logger : LogLevel;
+
     try
     {
         dg();
     }
     catch (TwitchQueryException e)
     {
-        import kameloso.common : expandTags, logger;
-        import kameloso.logger : LogLevel;
+        import kameloso.constants : MagicErrorStrings;
 
-        enum pattern = "Failed to query Twitch: <l>%s</> (<l>%s</>) (<t>%d</>)";
-        logger.errorf(pattern.expandTags(LogLevel.error), e.msg, e.error, e.code);
+        // Hack; don't spam about failed queries if we already know SSL doesn't work
+        if (!TwitchBotPlugin.useAPIFeatures) return;
+
+        immutable message = (e.error == MagicErrorStrings.sslLibraryNotFound) ?
+            MagicErrorStrings.sslLibraryNotFoundRewritten :
+            e.msg;
+
+        enum pattern = "Failed to query Twitch: <l>%s</> <t>(%s) </>(<t>%d</>)";
+        logger.errorf(pattern.expandTags(LogLevel.error), message, e.error, e.code);
+    }
+    catch (Exception e)
+    {
+        enum pattern = "Unforeseen exception thrown when querying Twitch: <l>%s";
+        logger.errorf(pattern.expandTags(LogLevel.error), e.msg);
     }
 }
 
@@ -85,12 +99,9 @@ if (isSomeFunction!dg)
     Params:
         bucket = The shared associative array to put the results in, response
             values keyed by URL.
-        timeout = How long before queries time out.
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
  +/
-void persistentQuerier(shared QueryResponse[string] bucket,
-    const uint timeout,
-    const string caBundleFile)
+void persistentQuerier(shared QueryResponse[string] bucket, const string caBundleFile)
 {
     import kameloso.thread : ThreadMessage;
     import std.concurrency : OwnerTerminated, receive;
@@ -109,7 +120,7 @@ void persistentQuerier(shared QueryResponse[string] bucket,
         receive(
             (string url, string authToken) scope
             {
-                queryTwitchImpl(url, authToken, timeout, bucket, caBundleFile);
+                queryTwitchImpl(url, authToken, bucket, caBundleFile);
             },
             (ThreadMessage message) scope
             {
@@ -189,7 +200,7 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
     else
     {
         spawn(&queryTwitchImpl, url, authorisationHeader,
-            plugin.queryResponseTimeout, plugin.bucket, plugin.state.connSettings.caBundleFile);
+            plugin.bucket, plugin.state.connSettings.caBundleFile);
     }
 
     delay(plugin, plugin.approximateQueryTime.msecs, Yes.yield);
@@ -217,7 +228,11 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
         plugin.averageApproximateQueryTime(response.msecs);
     }
 
-    if (!response.str.length)
+    if (response.code == 2)
+    {
+        throw new TwitchQueryException(response.error, response.str, response.error, response.code);
+    }
+    else if (!response.str.length)
     {
         throw new TwitchQueryException("Empty response", response.str,
             response.error, response.code);
@@ -241,15 +256,14 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
         }
         */
         immutable errorJSON = parseJSON(response.str);
-        enum pattern = "%s %3d: %s";
+        enum pattern = "%3d %s: %s";
 
         immutable message = pattern.format(
-            errorJSON["error"].str.unquoted,
             errorJSON["status"].integer,
+            errorJSON["error"].str.unquoted,
             errorJSON["message"].str.unquoted);
 
-        throw new TwitchQueryException(message, response.str,
-            response.error, response.code);
+        throw new TwitchQueryException(message, response.str, response.error, response.code);
     }
 
     return response;
@@ -268,8 +282,7 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
     ---
     immutable url = "https://api.twitch.tv/helix/some/api/url";
 
-    spawn&(&queryTwitchImpl, url, plugin.authorizationBearer,
-        plugin.queryResponseTimeout, plugin.bucket, caBundleFile);
+    spawn&(&queryTwitchImpl, url, plugin.authorizationBearer, plugin.bucket, caBundleFile);
     delay(plugin, plugin.approximateQueryTime.msecs, Yes.yield);
     immutable response = waitForQueryResponse(plugin, url);
     // response.str is the response body
@@ -278,7 +291,6 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
     Params:
         url = URL address to look up.
         authToken = Authorisation token HTTP header to pass.
-        timeout = How long to let the query run before timing out.
         bucket = The shared associative array to put the results in, response
             values keyed by URL.
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
@@ -286,69 +298,62 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
 void queryTwitchImpl(
     const string url,
     const string authToken,
-    const uint timeout,
     shared QueryResponse[string] bucket,
     const string caBundleFile)
 {
-    import kameloso.constants : KamelosoInfo;
-    import requests : Response, Request;
+    import kameloso.constants : KamelosoInfo, Timeout;
+    import arsd.http2 : HttpClient, Uri;
+    import std.algorithm.comparison : among;
     import std.datetime.systime : Clock;
-    import std.exception : assumeUnique;
     import core.time : seconds;
 
-    static string[string] headers;
+    static HttpClient client;
+    static string[] headers;
 
-    if (!headers.length)
+    if (!client)
     {
-        headers =
-        [
-            "Client-ID"     : TwitchBotPlugin.clientID,
-            "User-Agent"    : "kameloso/" ~ cast(string)KamelosoInfo.version_,
-            "Authorization" : authToken,
-        ];
-    }
-    else if (headers["Authorization"] != authToken)
-    {
-        headers["Authorization"] = authToken;
+        import kameloso.constants : KamelosoInfo;
+
+        client = new HttpClient;
+        client.useHttp11 = true;
+        client.keepAlive = true;
+        client.acceptGzip = false;
+        client.defaultTimeout = Timeout.httpGET.seconds;
+        client.userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
+        headers = [ "Client-ID: " ~ TwitchBotPlugin.clientID ];
+        if (caBundleFile.length) client.setClientCertificate(caBundleFile, caBundleFile);
     }
 
-    Request req;
-    req.addHeaders(headers);
-    if (caBundleFile.length) req.sslSetCaCert(caBundleFile);
-    req.timeout = timeout.seconds;
-    req.keepAlive = false;
+    client.authorization = authToken;
 
     QueryResponse response;
-    immutable pre = Clock.currTime;
-    Response res;
+    auto pre = Clock.currTime;
 
-    try
-    {
-        res = req.get(url);
-    }
-    catch (Exception e)
-    {
-        import kameloso.constants : MagicErrorStrings;
+    auto req = client.request(Uri(url));
+    req.requestParameters.headers = headers;
+    auto res = req.waitForCompletion();
 
-        if (e.msg == MagicErrorStrings.sslContextCreationFailure)
+    if (res.code.among!(301, 302, 307, 308) && res.location.length)
+    {
+        // Moved
+        foreach (immutable i; 0..5)
         {
-            response.error = MagicErrorStrings.sslContextCreationFailureRewritten;
-        }
-        else
-        {
-            response.error = e.msg;
+            pre = Clock.currTime;
+            req = client.request(Uri(res.location));
+            req.requestParameters.headers = headers;
+            res = req.waitForCompletion();
+
+            if (!res.code.among!(301, 302, 307, 308) || !res.location.length) break;
         }
     }
+
+    response.code = res.code;
+    response.error = res.codeText;
+    response.str = res.contentText;
 
     immutable post = Clock.currTime;
     immutable delta = (post - pre);
     response.msecs = delta.total!"msecs";
-
-    if (!response.error.length)
-    {
-        response.code = res.code;
-        response.str = assumeUnique(cast(char[])res.responseBody.data);
-    }
 
     synchronized //()
     {
@@ -599,8 +604,7 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
     Merely spins and monitors the shared `bucket` associative array for when a
     response has arrived, and then returns it.
 
-    Times out after a hardcoded
-    [kameloso.plugins.twitchbot.base.TwitchBotPlugin.queryResponseTimeout|queryResponseTimeout]
+    Times out after a hardcoded [kameloso.constants.Timeout.httpGET|Timeout.httpGET]
     if nothing was received.
 
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
@@ -616,7 +620,7 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
     else
     {
         spawn(&queryTwitchImpl, url, plugin.authorizationBearer,
-            plugin.queryResponseTimeout, plugin.bucket, plugin.state.connSettings.caBundleFile);
+            plugin.bucket, plugin.state.connSettings.caBundleFile);
     }
 
     delay(plugin, plugin.approximateQueryTime.msecs, Yes.yield);
@@ -638,6 +642,7 @@ QueryResponse waitForQueryResponse(TwitchBotPlugin plugin,
     const bool leaveTimingAlone = true)
 in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 {
+    import kameloso.constants : Timeout;
     import kameloso.plugins.common.delayawait : delay;
     import std.datetime.systime : Clock;
     import core.time : msecs;
@@ -654,7 +659,7 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
         {
             immutable now = Clock.currTime.toUnixTime;
 
-            if ((now - startTime) >= plugin.queryResponseTimeout)
+            if ((now - startTime) >= Timeout.httpGET)
             {
                 response = new shared QueryResponse;
                 break;
