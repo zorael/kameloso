@@ -306,13 +306,18 @@ void worker(shared TitleLookupRequest sRequest,
 
                     if (e.msg == MagicErrorStrings.sslLibraryNotFound)
                     {
-                        enum wikiURL = "https://github.com/zorael/kameloso/wiki/OpenSSL";
-                        enum wikiPattern = "Visit <l>" ~ wikiURL ~ "</> for more information.";
+                        enum wikiPattern = cast(string)MagicErrorStrings.visitWikiOneliner;
                         enum pattern = "Error fetching YouTube title: <l>" ~
                             MagicErrorStrings.sslLibraryNotFoundRewritten ~
                             "</> <t>(is OpenSSL installed?)";
                         request.state.askToError(pattern);
                         request.state.askToError(wikiPattern);
+
+                        version(Windows)
+                        {
+                            alias getoptPattern = MagicErrorStrings.getOpenSSLSuggestion;
+                            request.state.askToError(getoptPattern.expandTags(LogLevel.error));
+                        }
                     }
                     else
                     {
@@ -380,13 +385,18 @@ void worker(shared TitleLookupRequest sRequest,
 
                     if (e.msg == MagicErrorStrings.sslLibraryNotFound)
                     {
-                        enum wikiURL = "https://github.com/zorael/kameloso/wiki/OpenSSL";
-                        enum wikiPattern = "Visit <l>" ~ wikiURL ~ "</> for more information.";
+                        enum wikiPattern = cast(string)MagicErrorStrings.visitWikiOneliner;
                         enum pattern = "Error fetching webpage title: <l>" ~
                             MagicErrorStrings.sslLibraryNotFoundRewritten ~
                             "</> <t>(is OpenSSL installed?)";
                         request.state.askToError(pattern);
                         request.state.askToError(wikiPattern);
+
+                        version(Windows)
+                        {
+                            alias getoptPattern = MagicErrorStrings.getOpenSSLSuggestion;
+                            request.state.askToError(getoptPattern.expandTags(LogLevel.error));
+                        }
                     }
                     else
                     {

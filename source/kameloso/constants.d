@@ -491,6 +491,16 @@ enum MagicErrorStrings
         Could not initialise SSL libraries, rewritten line.
      +/
     sslLibraryNotFoundRewritten = "SSL libraries not found",
+
+    /++
+        Wiki link oneliner, tagged.
+     +/
+    visitWikiOneliner = "Visit <l>https://github.com/zorael/kameloso/wiki/OpenSSL</> for more information.",
+
+    /++
+        `--get-openssl` suggestion hint oneliner, tagged.
+     +/
+    getOpenSSLSuggestion = "Suggestion: <l>--get-openssl</> may help.",
 }
 
 

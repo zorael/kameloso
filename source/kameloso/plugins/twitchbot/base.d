@@ -1169,8 +1169,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                 {
                     import kameloso.constants : MagicErrorStrings;
 
-                    enum wikiURL = "https://github.com/zorael/kameloso/wiki/OpenSSL";
-                    enum wikiPattern = "Visit <l>" ~ wikiURL ~ "</> for more information.";
+                    enum wikiPattern = cast(string)MagicErrorStrings.visitWikiOneliner;
 
                     if (e.error == MagicErrorStrings.sslLibraryNotFound)
                     {
@@ -1178,14 +1177,20 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                             "<t>(is OpenSSL installed?)";
                         logger.errorf(pattern.expandTags(LogLevel.error),
                             cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten);
+                        logger.error(wikiPattern.expandTags(LogLevel.error));
+
+                        version(Windows)
+                        {
+                            alias getoptPattern = MagicErrorStrings.getOpenSSLSuggestion;
+                            logger.error(getoptPattern.expandTags(LogLevel.error));
+                        }
                     }
                     else
                     {
                         enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
                         logger.errorf(pattern.expandTags(LogLevel.error), e.msg, e.error, e.code);
+                        logger.error(wikiPattern.expandTags(LogLevel.error));
                     }
-
-                    logger.error(wikiPattern.expandTags(LogLevel.error));
                 }
                 else
                 {
