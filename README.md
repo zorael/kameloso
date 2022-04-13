@@ -98,13 +98,7 @@ The package manager [**dub**](https://code.dlang.org) is used to facilitate comp
 
 ### SSL Libraries on Windows
 
-**kameloso** uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard SSL library in the Posix sphere (Linux, macOS, ...), but not so on Windows. If you run into errors about missing libraries when attempting to connect on Windows, download and install **Win64/32 OpenSSL** `v1.1.1` **Light** (not `v3.0.x`) from [here](https://slproweb.com/products/Win32OpenSSL.html), and opt to install to Windows system directories when asked. Whether you go with the `EXE` or the `MSI` file doesn't matter.
-
-> You can open this download page in your web browser by passing `--get-openssl` on the command line.
-
-A possible alternative is to use a different shell environment, such as any one of **Git for Windows** (Bash)/**MinGW64**, **MSYS2**, **Cygwin** and **Windows Subsystem for Linux** (likely among others), which may either include said libraries or offer the ability to install them. Or just limit yourself to non-SSL connections and live without some plugin features.
-
-> See the wiki for some copy/paste-friendly [Windows quickstart instructions](https://github.com/zorael/kameloso/wiki/Quickstart-instructions:-Windows-(copy-paste-friendly)).
+**kameloso** uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard SSL library in the Posix sphere (Linux, macOS, ...), but not so on Windows. If you run into errors about missing SSL libraries when attempting to connect on Windows, supply the `--get-openssl` flag to download and launch the installer for [**OpenSSL for Windows**](https://slproweb.com/products/Win32OpenSSL.html), and opt to install to Windows system directories when asked.
 
 ## Downloading
 
