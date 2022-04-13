@@ -17,4 +17,4 @@ enum KamelosoSemVer
 
 
 /// Pre-release SemVer subversion of this build.
-enum KamelosoSemVerPrerelease = "rc.4";
+enum KamelosoSemVerPrerelease = "rc.5";
