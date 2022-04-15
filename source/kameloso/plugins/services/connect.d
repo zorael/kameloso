@@ -1527,7 +1527,7 @@ void negotiateNick(ConnectService service)
         enum pattern = "USER %s 8 * :%s";
         immutable message = pattern.format(service.state.client.user,
             service.state.client.realName.replaceTokens(service.state.client));
-        immediate(service.state, message);
+        immediate(service.state, message, Yes.quiet);
     }
 
     immediate(service.state, "NICK " ~ service.state.client.nickname);
