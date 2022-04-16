@@ -32,9 +32,6 @@ import std.typecons : Flag, No, Yes;
     /// Whether or not this plugin should react to any events.
     @Enabler bool enabled = true;
 
-    /// Whether or not merely calling !word bumps, or if a '+' has to be appended.
-    bool wordAloneIncrements = false;
-
     /// User level required to bump a counter.
     IRCUser.Class minimumPermissionsNeeded = IRCUser.Class.whitelist;
 }
@@ -241,8 +238,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 
     slice = (signPos != -1) ? slice[signPos..$] : string.init;
 
-    if ((slice.length && (slice[0] == '?')) ||
-        (!slice.length && !plugin.counterSettings.wordAloneIncrements))
+    if (!slice.length || (slice[0] == '?'))
     {
         import std.conv : text;
 
@@ -255,7 +251,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
     // Limit modifications to the configured class
     if (event.sender.class_ < plugin.counterSettings.minimumPermissionsNeeded) return;
 
-    if (!slice.length) slice = "+";  // implicitly wordAloneIncrements
+    assert(slice.length);
     immutable sign = slice[0];
 
     switch (sign)
