@@ -275,7 +275,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 
             try
             {
-                step = slice.strippedLeft.to!long * step;
+                step = slice.to!long * step;
             }
             catch (ConvException e)
             {
