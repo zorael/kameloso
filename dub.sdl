@@ -1,9 +1,9 @@
 name "kameloso"
 description "IRC bot"
 authors "JR"
-copyright "Copyright © 2022, JR"
+copyright "Copyright © 2016-2022, JR"
 homepage "https://www.github.com/zorael/kameloso"
-license "MIT"
+license "BSL-1.0"
 
 targetType "executable"
 mainSourceFile "source/kameloso/entrypoint.d"
