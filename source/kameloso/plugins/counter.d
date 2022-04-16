@@ -225,7 +225,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 
     ptrdiff_t signPos;
 
-    foreach (immutable sign; aliasSeqOf!"+=-?")  // '-' after '=' to support "!word=-5"
+    foreach (immutable sign; aliasSeqOf!"?=+-")  // '-' after '=' to support "!word=-5"
     {
         signPos = slice.indexOf(sign);
         if (signPos != -1) break;
