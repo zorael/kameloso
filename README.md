@@ -4,7 +4,7 @@
 
 ## Current functionality includes:
 
-* chat monitoring in bedazzling colours (or mesmerising monochrome)
+* chat monitoring in bedazzling colours or mesmerising monochrome
 * reporting titles of pasted URLs, YouTube video information fetch
 * `sed`-replacement of messages (`s/this/that/` substitution)
 * saving notes to offline users that get played back when they come online
@@ -12,7 +12,7 @@
 * bugs
 * channel polls, `!seen`, counters, stopwatches
 * automatic mode sets (e.g. auto `+o` on join)
-* works on **Twitch** with some common Twitch bot features (alongside the rest)
+* works on **Twitch** with some additional common Twitch bot features
 * [more random stuff and gimmicks](https://github.com/zorael/kameloso/wiki/Current-plugins)
 
 All of the above are plugins and can be disabled at runtime or omitted from compilation entirely. It is modular and easy to extend. A skeletal Hello World plugin is [25 lines of code](source/kameloso/plugins/hello.d).
@@ -90,15 +90,15 @@ Grab a pre-compiled binary from under [Releases](https://github.com/zorael/kamel
 
 **kameloso** is written in [**D**](https://dlang.org). It can be built using the reference compiler [**dmd**](https://dlang.org/download.html), which compiles very fast; and the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases), which is slower at compiling but produces faster code. See [here](https://wiki.dlang.org/Compilers) for an overview of the available compiler vendors.
 
-You need one based on D version `2.084` or later (January 2019). For **ldc** this is version `1.14`. Sadly, the stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently based on version `2.076` and is thus too old to be used.
+You need one based on D version **2.084** or later (January 2019). For **ldc** this is version **1.14**. Sadly, the stable release of the GCC-based [**gdc**](https://gdcproject.org/downloads) is currently based on version **2.076** and is thus too old to be used.
 
 If your repositories (or other software sources) don't have compilers new enough, you can use the official [`install.sh`](https://dlang.org/install.html) installation script to download current ones, or any version of choice.
 
 The package manager [**dub**](https://code.dlang.org) is used to facilitate compilation and dependency management. On Windows it comes bundled in the compiler archive, while on Linux it may need to be installed separately. Refer to your repositories.
 
-### SSL Libraries on Windows
+### SSL libraries on Windows
 
-**kameloso** uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard SSL library in the Posix sphere (Linux, macOS, ...), but not so on Windows. If you run into errors about missing SSL libraries when attempting to connect on Windows, supply the `--get-openssl` flag to download and launch the installer for [**OpenSSL for Windows**](https://slproweb.com/products/Win32OpenSSL.html), and opt to install to Windows system directories when asked.
+See the [known issues](#known-issues) section on Windows for information on libraries needed to connect to SSL servers and to allow plugins to access the web via `https://` addresses.
 
 ## Downloading
 
@@ -124,7 +124,7 @@ There are several configurations in which the bot may be built.
 * `twitch`, additionally includes Twitch chat support and the Twitch bot plugin
 * `dev`, all-inclusive development build equalling everything available, including things like more detailed error messages
 
-All configurations come in a `-lowmem` variant (e.g. `application-lowmem`, `twitch-lowmem`, ...) that lowers compilation memory at the cost of increasing compilation time, but so far they only work with **ldc**. (bug [#20699](https://issues.dlang.org/show_bug.cgi?id=20699))
+All configurations come in `-lowmem` variants (e.g. `application-lowmem`, `twitch-lowmem`, ...) that lower compilation memory required at the cost of increasing compilation time, but so far they only work with **ldc**. (bug [#20699](https://issues.dlang.org/show_bug.cgi?id=20699))
 
 List configurations with `dub build --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default `application` configuration.
 
@@ -138,28 +138,30 @@ dub build -c twitch
 
 ## Configuration
 
-The bot ideally wants the account name of one or more administrators of the bot, and/or one or more home channels to operate in. Without either it's just a read-only log bot, which is incidentally also fine. To define these you can either specify them on the command line, with flags listed by calling the program with `--help`, or generate a configuration file and input them there.
+The bot ideally wants the account name of one or more administrators of the bot, and/or one or more home channels to operate in. Without either it's just a read-only log bot, which is also fine. To define these you can either specify them on the command line, with flags listed by calling the program with `--help`, or generate a configuration file with `--save` and enter them there.
 
 ```sh
-./kameloso --save
+kameloso --save
 ```
 
 A new `kameloso.conf` will be created in a directory dependent on your platform.
 
 ### Configuration file
 
-* **Linux** and other Posix: `$HOME/.config/kameloso` (alternatively where `$XDG_CONFIG_HOME` points)
+* **Linux** and other Posix: `$HOME/.config/kameloso` (alternatively where `$XDG_CONFIG_HOME` points to; [XDG standards](https://en.wikipedia.org/wiki/Freedesktop.org#User_directories) are assumed)
 * **Windows**: `%APPDATA%\kameloso`
 * **macOS**: `$HOME/Library/Application Support/kameloso`
 
-Open the file in a normal text editor. If you have your system file associations set up to open `*.conf` files in such, you can pass `--gedit` to attempt to open it in a graphical editor, or `--edit` to open it in your default terminal one (as defined in the `$EDITOR` environment variable).
+Open the file in a normal text editor.
+
+> As a shortcut you can pass `--gedit` to attempt to open it in a graphical editor, or `--edit` to open it in your default terminal one, as defined in the `$EDITOR` environment variable.
 
 ### Command-line arguments
 
-Settings provided at the command line override any such already defined in your configuration file. If you specify some and also add `--save`, it will apply the changes to your file in-place.
+You can make changes to your configuration file in-place by specyfing some at the command line and adding `--save`.
 
 ```sh
-./kameloso \
+kameloso \
     --server irc.libera.chat \
     --nickname "kameloso" \
     --admins "you" \
@@ -170,7 +172,7 @@ Settings provided at the command line override any such already defined in your 
 [12:34:56] Configuration written to /home/user/.config/kameloso/kameloso.conf
 ```
 
-Not specified settings keep their values.
+Settings not touched will keep their values.
 
 ### Display settings
 
@@ -180,7 +182,7 @@ An alternative is to disable colours entirely with `--monochrome`.
 
 ### Other files
 
-More server-specific resource files will be created the first time you connect to a server. These include `users.json`, in which you whitelist which accounts get to access the bot's features on a per-channel basis. Where these are stored also depends on platform; in the case of **macOS** and **Windows** they will be put in server-split subdirectories of the same directory as the configuration file, [listed above](#configuration-file). On **Linux** and other Posix, under `$HOME/.local/share/kameloso` (or wherever `$XDG_DATA_HOME` points to).
+More server-specific resource files will be created the first time you connect to a server. These include `users.json`, in which you whitelist which accounts are allowed to access the bot's features on a per-channel basis. Where these are stored also depends on platform; in the case of **macOS** and **Windows** they will be put in server-split subdirectories of the same directory as the configuration file, [listed above](#configuration-file). On **Linux** and other Posix, under `$HOME/.local/share/kameloso` (or wherever `$XDG_DATA_HOME` points to; [XDG standards](https://en.wikipedia.org/wiki/Freedesktop.org#User_directories) remain assumed).
 
 ## Example use
 
@@ -200,10 +202,11 @@ More server-specific resource files will be created the first time you connect t
       you | !seen MrOffline
  kameloso | I last saw MrOffline 1 hour and 34 minutes ago.
 
-      you | !note MrOffline About the thing you mentioned, yeah no
+ MrOnline | !note MrOffline About the thing you mentioned, yeah no
  kameloso | Note added.
+ MrOnline left #channel
 MrOffline joined #channel
- kameloso | MrOffline! you left note 28 minutes ago: About the thing you mentioned, yeah no
+ kameloso | MrOffline! MrOnline left note 4 hours and 28 minutes ago: About the thing you mentioned, yeah no
 
       you | !operator add bob
  kameloso | Added BOB as an operator in #channel.
@@ -281,7 +284,7 @@ It can technically be any string and not just one character. It may include spac
 
 ### **Except nothing happens**
 
-Before allowing *anyone* to trigger any restricted functionality, the bot will query the server for what services account the accessing user is logged onto. For full administrative privileges you will need to be logged in with an account listed in the `admins` field in the configuration file, while other users may be defined in your `users.json` file. If a user is not logged onto services it is considered as not being uniquely identifiable.
+Before allowing *anyone* to trigger any restricted functionality, the bot will query the server for what services account the accessing user is logged onto, if not already known. For full administrative privileges you will need to be logged in with an account listed in the `admins` field in the configuration file, while other users may be defined in your [`users.json` file](#other-files). If a user is not logged onto services it is considered as not being uniquely identifiable and cannot be resolved to an account.
 
 > In the case of **hostmasks mode**, the above still applies but "accounts" are derived from hostmasks. See the **Admin** plugin `!hostmask` command (and the `hostmasks.json` file) for how to map hostmasks to would-be accounts. Hostmasks are a weaker solution to user identification but not all servers may offer services. See [the wiki entry on hostmasks](https://github.com/zorael/kameloso/wiki/On-servers-without-services-(e.g.-no-NickServ)) for more information.
 
@@ -291,17 +294,13 @@ To connect to Twitch servers you must first build a configuration that includes 
 
 You must also supply an [OAuth token](https://en.wikipedia.org/wiki/OAuth) `pass` (not to be confused with `password`). These authorisation tokens are unique to your user paired with an application. As such, you need a new one for each and every program you want to access Twitch with.
 
-Run the bot with `--set twitchbot.keygen` to start the captive process of generating one. It will open a browser window, in which you are asked to log onto Twitch *on Twitch's own servers*. Verify this by checking the page address; it should end with `.twitch.tv`, with the little lock symbol showing the connection is secure.
+Run the bot with `--set twitch.keygen` to start the captive process of generating one. It will open a browser window, in which you are asked to log onto Twitch *on Twitch's own servers*. Verify this by checking the page address; it should end with `.twitch.tv`, with the little lock symbol showing the connection is secure.
 
-> Note: At no point is the bot privy to your login credentials! The logging-in is wholly done on Twitch's own servers, and no information is sent to any third parties. The code that deals with this is open for audit; [`generateKey` in `twitchbot/keygen.d`](source/kameloso/plugins/twitchbot/keygen.d).
+> Note: At no point is the bot privy to your Twitch login credentials! The logging-in is wholly done on Twitch's own servers, and no information is sent to any third parties. The code that deals with this is open for audit; [`generateKey` in `twitchbot/keygen.d`](source/kameloso/plugins/twitchbot/keygen.d).
 
 After entering your login and password and clicking **Authorize**, you will be redirected to an empty "`this site can't be reached`" or "`unable to connect`" page. Copy the URL address of it and paste it into the terminal, when asked. It will parse the address, extract your authorisation token, and offer to save it to your configuration file.
 
-If you prefer to generate the token manually, here is the URL you need to follow. The only thing the generation process does is open it for you, and help with saving the end key to disk.
-
-```
-https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true
-```
+If you prefer to generate the token manually, [**here is the URL you need to follow**](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true). The only thing the generation process does is open it for you, and automate saving the end key to disk.
 
 ### Example configuration
 
@@ -324,7 +323,7 @@ address             irc.chat.twitch.tv
 port                6697
 ```
 
-The Twitch SSL port is `6697` (or `443`). For non-encrypted traffic, use the default port `6667`.
+The Twitch SSL port is **6697** (and **443**). For non-encrypted traffic, use the default port **6667**.
 
 See [the wiki page on Twitch](https://github.com/zorael/kameloso/wiki/Twitch) for more information.
 
@@ -341,7 +340,7 @@ Assuming a prefix of `!`, commands to test are:
 
 ...alongside `!oneliner`, `!counter`, `!poll`, `!stopwatch`, and other non-Twitch-specific commands. Try `!help` or [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins).
 
-> Note: `.` (dot) and slash `/` prefixes will not work on Twitch.
+> Note: `.` (dot) and `/` (slash) prefixes will not work on Twitch.
 
 ## Further help
 
@@ -356,7 +355,7 @@ If you still can't find what you're looking for, or if you have suggestions on h
 
 ## Windows
 
-See the [SSL Libraries on Windows](#ssl-libraries-on-windows) section for information about installing the libraries needed to make encrypted connections and to allow certain plugins to access the web via `https://` addresses.
+**kameloso** uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard SSL library in the Posix sphere (Linux, macOS, ...), but not so on Windows. If you run into errors about missing SSL libraries when attempting to connect on Windows, supply the `--get-openssl` flag to download and launch the installer for [**OpenSSL for Windows**](https://slproweb.com/products/Win32OpenSSL.html), and opt to install to Windows system directories when asked.
 
 # Roadmap
 
@@ -364,6 +363,7 @@ See the [SSL Libraries on Windows](#ssl-libraries-on-windows) section for inform
 * please send help: Windows Secure Channel SSL
 * split Twitch timers into own plugin
 * Twitch `ecount`, `settitle`, `setgame`, `vanish`/`poof`, `watchtime`, `roulette`, `repeat`/`spam`?
+* Twitch web server to catch auth key
 * help plugin descriptions? multiple syntax entries?
 * **more pairs of eyes**
 
