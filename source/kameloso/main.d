@@ -1939,6 +1939,7 @@ void resetSignals() nothrow @nogc
  +/
 Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings)
 {
+    import kameloso.plugins.common.misc : IRCPluginSettingsException;
     import kameloso.config : ConfigurationFileReadFailureException, handleGetopt;
     import lu.common : FileTypeMismatchException;
     import lu.serialisation : DeserialisationException;
@@ -1982,6 +1983,12 @@ Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings
     {
         enum pattern = "Failed to open <l>%s</> in an editor: <l>%s";
         logger.errorf(pattern.expandTags(LogLevel.error), instance.settings.configFile, e.msg);
+        version(PrintStacktraces) logger.trace(e.info);
+    }
+    catch (IRCPluginSettingsException e)
+    {
+        // Can be thrown from printSettings
+        logger.error(e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (Exception e)
