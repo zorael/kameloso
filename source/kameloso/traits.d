@@ -342,6 +342,82 @@ version(unittest)
 }
 
 
+// UnderscoreOpDispatcher
+/++
+    Mixin template mixing in an `opDispatch` redirecting calls to members whose
+    names match the passed variable string but with an underscore prepended.
+
+    Example:
+    ---
+    struct Foo
+    {
+        int _i;
+        string _s;
+        bool _b;
+
+        mixin UnderscoreOpDispatcher;
+    }
+
+    Foo f;
+    f.i = 42;       // f.opDispatch!"i"(42);
+    f.s = "hello";  // f.opDispatch!"s"("hello");
+    f.b = true;     // f.opDispatch!"b"(true);
+
+    assert(f.i == 42);
+    assert(f.s == "hello");
+    assert(f.b);
+    ---
+ +/
+mixin template UnderscoreOpDispatcher()
+{
+    ref auto opDispatch(string var, T)(T value)
+    {
+        import std.traits : isArray, isSomeString;
+
+        enum realVar = '_' ~ var;
+        alias V = typeof(mixin(realVar));
+
+        static if (isArray!V && !isSomeString!V)
+        {
+            mixin(realVar) ~= value;
+        }
+        else
+        {
+            mixin(realVar) = value;
+        }
+
+        return this;
+    }
+}
+
+///
+unittest
+{
+    import dialect.defs;
+
+    struct Foo
+    {
+        IRCEvent.Type[] _acceptedEventTypes;
+        alias _onEvent = _acceptedEventTypes;
+        bool _verbose;
+        bool _chainable;
+
+        mixin UnderscoreOpDispatcher;
+    }
+
+    auto f = Foo()
+        .onEvent(IRCEvent.Type.CHAN)
+        .onEvent(IRCEvent.Type.EMOTE)
+        .onEvent(IRCEvent.Type.QUERY)
+        .chainable(true)
+        .verbose(false);
+
+    assert(f._acceptedEventTypes == [ IRCEvent.Type.CHAN, IRCEvent.Type.EMOTE, IRCEvent.Type.QUERY ]);
+    assert(f._chainable);
+    assert(!f._verbose);
+}
+
+
 // longestMemberNames
 /++
     Introspects one or more aggregate types and determines the name of the
