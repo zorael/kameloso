@@ -57,8 +57,13 @@ bool downloadWindowsSSL(
                 import std.stdio : stdout, writeln;
                 import std.string : chomp;
 
-                writeln(result.output.chomp);
-                stdout.flush();
+                immutable output = result.output.chomp;
+
+                if (output.length)
+                {
+                    writeln(output);
+                    stdout.flush();
+                }
             }
         }
 
