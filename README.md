@@ -32,6 +32,7 @@ Testing is primarily done on [**Libera.Chat**](https://libera.chat) and on [**Tw
            --admins Administrators' services accounts, comma-separated
 -H   --homeChannels Home channels to operate in, comma-separated
 -C  --guestChannels Non-home channels to idle in, comma-separated
+           --bright Adjust colours for bright terminal backgrounds
        --monochrome Use monochrome output
              --save Write configuration to file
 ```
@@ -167,6 +168,7 @@ kameloso \
     --admins "you" \
     --homeChannels "#mychannel" \
     --guestChannels "#d,##networking" \
+    --monochrome
     --save
 
 [12:34:56] Configuration written to /home/user/.config/kameloso/kameloso.conf
@@ -176,7 +178,7 @@ Settings not touched will keep their values.
 
 ### Display settings
 
-If you have a bright terminal background, text may be difficult to read, depending on your terminal emulator. If so, pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses the full range of [8-colour ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more colours are too dark or bright even with the right `brightTerminal` setting, please refer to your terminal appearance settings. Colouring might not work well with greyish theming.
+**kameloso**'s text colours are by default set to go well with dark terminal backgrounds. If you have a bright background, text may be difficult to read (white on white), depending on your terminal emulator. If so, pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses 7 colours out of [8-colour ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more colours are too dark or bright even with the right `brightTerminal` setting, please refer to your terminal appearance settings.
 
 An alternative is to disable colours entirely with `--monochrome`.
 
@@ -254,10 +256,10 @@ MrOffline joined #channel
  kameloso | Counter deaths added! Access it with !deaths.
       you | !deaths+
  kameloso | deaths +1! Current count: 1
-      you | !deaths+
- kameloso | deaths +1! Current count: 2
+      you | !deaths+3
+ kameloso | deaths +3! Current count: 4
       you | !deaths
- kameloso | Current deaths count: 2
+ kameloso | Current deaths count: 4
       you | !deaths=0
  kameloso | deaths count assigned to 0!
 
@@ -277,7 +279,7 @@ The command **prefix** (here `!`) is configurable; refer to your configuration f
 
 ```ini
 [Core]
-prefix                  "!"
+prefix                      "!"
 ```
 
 It can technically be any string and not just one character. It may include spaces if enclosed within quotes, like `"please "` (making it `please note`, `please quote`, ...). Additionally, prefixing commands with the bot's nickname also works, as in `kameloso: seen MrOffline`. This is to be able to disambiguate between several bots in the same channel. Moreover, some administrative commands only work when called this way.
