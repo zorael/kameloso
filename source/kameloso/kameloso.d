@@ -717,6 +717,16 @@ public:
     bool eagerLookups = false;
 
     /++
+        Whether or not to be "headless", disabling all terminal output.
+     +/
+    bool headless;
+
+    /++
+        Path to resource directory.
+     +/
+    string resourceDirectory;
+
+    /++
         Character(s) that prefix a bot chat command.
 
         These decide what bot commands will look like; "!" for "!command",
@@ -731,11 +741,6 @@ public:
             Main configuration file.
          +/
         string configFile;
-
-        /++
-            Path to resource directory.
-         +/
-        string resourceDirectory;
 
         /++
             Path to configuration directory.
@@ -761,11 +766,6 @@ public:
             Whether to print addresses as IPs or as hostnames (where applicable).
          +/
         bool numericAddresses;
-
-        /++
-            Whether or not to be "headless", disabling all terminal output.
-         +/
-        bool headless;
     }
 }
 

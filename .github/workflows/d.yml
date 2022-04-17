@@ -37,12 +37,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: 'Install cURL on Linux'
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        sudo apt update
-        sudo apt install libcurl4-openssl-dev
-
     - name: 'Install D compiler'
       uses: dlang-community/setup-dlang@v1
       with:
@@ -50,29 +44,29 @@ jobs:
 
     - name: 'Run tests unless Windows'
       if: matrix.os != 'windows-latest'
-      run: dub test
+      run: dub test --arch=x86_64
 
     - name: 'Build tests if Windows'
       if: matrix.os == 'windows-latest'
-      run: dub build -c unittest
+      run: dub build -c unittest --arch=x86_64
 
     - name: 'Build: dev (debug)'
-      run: dub build -c dev -b debug
+      run: dub build -c dev -b debug --arch=x86_64
 
     - name: 'Build: dev (plain)'
-      run: dub build -c dev -b plain
+      run: dub build -c dev -b plain --arch=x86_64
 
     - name: 'Build: dev (release)'
-      run: dub build -c dev -b release
+      run: dub build -c dev -b release --arch=x86_64
 
     - name: 'Build: application (debug)'
-      run: dub build -b debug
+      run: dub build -b debug --arch=x86_64
 
     - name: 'Build: application (plain)'
-      run: dub build -b plain
+      run: dub build -b plain --arch=x86_64
 
     - name: 'Build: application (release)'
-      run: dub build -b release
+      run: dub build -b release --arch=x86_64
 
     - name: 'Generate documenation'
       if: matrix.dc == 'dmd-latest' && matrix.os == 'ubuntu-latest' && success()

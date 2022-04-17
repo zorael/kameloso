@@ -189,8 +189,8 @@ void worker(shared IRCPluginState sState,
     const ref IRCEvent event)
 {
     import kameloso.constants : KamelosoInfo, Timeout;
-    import requests : Request;
     import arsd.dom : Document, htmlEntitiesDecode;
+    import arsd.http2 : HttpClient, Uri;
     import std.algorithm.iteration : splitter;
     import std.array : replace;
     import std.exception : assumeUnique;
@@ -212,29 +212,32 @@ void worker(shared IRCPluginState sState,
     immutable url = !event.content.length ? "http://bash.org/?random" :
         ("http://bash.org/?" ~ event.content);
 
+    // No need to keep a static HttpClient since this will be in a new thread every time
+    auto client = new HttpClient;
+    client.useHttp11 = true;
+    client.keepAlive = false;
+    client.acceptGzip = false;
+    client.defaultTimeout = Timeout.httpGET.seconds;  // FIXME
+    client.userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
+    immutable caBundleFile = state.connSettings.caBundleFile;
+    if (caBundleFile.length) client.setClientCertificate(caBundleFile, caBundleFile);
+
     try
     {
-        static string[string] headers;
+        auto req = client.request(Uri(url));
+        const res = req.waitForCompletion();
 
-        if (!headers.length)
+        if (res.code == 2)
         {
-            headers =
-            [
-                "User-Agent" : "kameloso/" ~ cast(string)KamelosoInfo.version_,
-                "Accept"     : "text/html",
-            ];
+            enum pattern = "Chatbot could not fetch <l>bash.org</> quote at <l>%s</>: <t>%s";
+            askToWarn(state, pattern.format(url, res.codeText));
+            return;
         }
 
-        Request req;
-        req.addHeaders(headers);
-        req.timeout = Timeout.httpGET.seconds;
-        req.keepAlive = false;
+        auto doc = new Document;
+        doc.parseGarbage("");  // Work around missing null check, causing segfaults on empty pages
+        doc.parseGarbage(res.responseText);
 
-        auto res = req.get(url);
-        Document doc = new Document;
-
-        immutable received = assumeUnique(cast(char[])res.responseBody.data);
-        doc.parseGarbage(received);
         auto numBlock = doc.getElementsByClassName("quote");
 
         if (!numBlock.length)

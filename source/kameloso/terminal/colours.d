@@ -304,9 +304,9 @@ private void normaliseColoursBright(ref uint r, ref uint g, ref uint b) pure not
     }
 
     // Darken high colours at high levels
-    r -= ((r <= darkenUpperLimit) & (r > darkenLowerLimit)) * darken;
-    g -= ((g <= darkenUpperLimit) & (g > darkenLowerLimit)) * darken;
-    b -= ((b <= darkenUpperLimit) & (b > darkenLowerLimit)) * darken;
+    r -= ((r <= darkenUpperLimit) && (r > darkenLowerLimit)) * darken;
+    g -= ((g <= darkenUpperLimit) && (g > darkenLowerLimit)) * darken;
+    b -= ((b <= darkenUpperLimit) && (b > darkenLowerLimit)) * darken;
 
     if ((r > pureWhiteRange) && (b > pureWhiteRange) && (g > pureWhiteRange))
     {
@@ -390,9 +390,9 @@ private void normaliseColours(ref uint r, ref uint g, ref uint b) pure nothrow @
     }
 
     // Make bright colours more biased toward one colour
-    r -= ((r > darkenThreshold) & ((r < b) | (r < g))) * darken;
-    g -= ((g > darkenThreshold) & ((g < r) | (g < b))) * darken;
-    b -= ((b > darkenThreshold) & ((b < r) | (b < g))) * darken;
+    r -= ((r > darkenThreshold) && ((r < b) | (r < g))) * darken;
+    g -= ((g > darkenThreshold) && ((g < r) | (g < b))) * darken;
+    b -= ((b > darkenThreshold) && ((b < r) | (b < g))) * darken;
 
     // Sanity check
     if (r > 255) r = 255;

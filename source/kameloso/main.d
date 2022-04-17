@@ -1939,6 +1939,7 @@ void resetSignals() nothrow @nogc
  +/
 Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings)
 {
+    import kameloso.plugins.common.misc : IRCPluginSettingsException;
     import kameloso.config : ConfigurationFileReadFailureException, handleGetopt;
     import lu.common : FileTypeMismatchException;
     import lu.serialisation : DeserialisationException;
@@ -1982,6 +1983,12 @@ Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings
     {
         enum pattern = "Failed to open <l>%s</> in an editor: <l>%s";
         logger.errorf(pattern.expandTags(LogLevel.error), instance.settings.configFile, e.msg);
+        version(PrintStacktraces) logger.trace(e.info);
+    }
+    catch (IRCPluginSettingsException e)
+    {
+        // Can be thrown from printSettings
+        logger.error(e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (Exception e)
@@ -2040,11 +2047,18 @@ Next tryConnect(ref Kameloso instance)
          +/
         if (e.msg == MagicErrorStrings.sslContextCreationFailure)
         {
-            enum pattern = "Connection error: <l>failed to set up an SSL context</> " ~
-                "<t>(are OpenSSL libraries installed?)";
-            enum wikiPattern = "Visit <l>https://github.com/zorael/kameloso/wiki/OpenSSL</> for more information.";
+            enum pattern = "Connection error: <l>" ~
+                MagicErrorStrings.sslLibraryNotFoundRewritten ~
+                " <t>(is OpenSSL installed?)";
+            enum wikiPattern = cast(string)MagicErrorStrings.visitWikiOneliner;
             logger.error(pattern.expandTags(LogLevel.error));
             logger.error(wikiPattern.expandTags(LogLevel.error));
+
+            version(Windows)
+            {
+                enum getoptPattern = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
+                logger.error(getoptPattern.expandTags(LogLevel.error));
+            }
         }
         else
         {
@@ -3087,33 +3101,36 @@ int run(string[] args)
         assert(0, "`tryGetopt` returned `Next.crash`");
     }
 
-    try
+    if (!instance.settings.headless || instance.settings.force)
     {
-        import kameloso.terminal : ensureAppropriateBuffering;
+        try
+        {
+            import kameloso.terminal : ensureAppropriateBuffering;
 
-        // Ensure stdout is buffered by line if we think it isn't being
-        ensureAppropriateBuffering();
-    }
-    catch (ErrnoException e)
-    {
-        import std.stdio : writeln;
-        if (!instance.settings.headless) writeln("Failed to set stdout buffer mode/size! errno:", errno);
-        if (!instance.settings.force) return ShellReturnValue.terminalSetupFailure;
-    }
-    catch (Exception e)
-    {
-        if (!instance.settings.headless)
+            // Ensure stdout is buffered by line if we think it isn't being
+            ensureAppropriateBuffering();
+        }
+        catch (ErrnoException e)
         {
             import std.stdio : writeln;
-            writeln("Failed to set stdout buffer mode/size!");
-            writeln(e);
+            if (!instance.settings.headless) writeln("Failed to set stdout buffer mode/size! errno:", errno);
+            if (!instance.settings.force) return ShellReturnValue.terminalSetupFailure;
         }
+        catch (Exception e)
+        {
+            if (!instance.settings.headless)
+            {
+                import std.stdio : writeln;
+                writeln("Failed to set stdout buffer mode/size!");
+                writeln(e);
+            }
 
-        if (!instance.settings.force) return ShellReturnValue.terminalSetupFailure;
-    }
-    finally
-    {
-        if (instance.settings.flush) stdout.flush();
+            if (!instance.settings.force) return ShellReturnValue.terminalSetupFailure;
+        }
+        finally
+        {
+            if (instance.settings.flush) stdout.flush();
+        }
     }
 
     // Apply some defaults to empty members, as stored in `kameloso.constants`.

@@ -114,7 +114,9 @@ void writeConfig(ref Kameloso instance,
 {
     import kameloso.common : Tint, logger, printVersionInfo;
     import kameloso.constants : KamelosoDefaults;
+    import kameloso.platform : rbd = resourceBaseDirectory;
     import kameloso.printing : printObjects;
+    import std.path : buildNormalizedPath;
     import std.stdio : writeln;
 
     // --save was passed; write configuration to file and quit
@@ -133,6 +135,14 @@ void writeConfig(ref Kameloso instance,
     // applyDefaults because it's a perfectly valid use-case not to have a quit
     // string, and having it there would enforce the default string if none present.
     if (!instance.bot.quitReason.length) instance.bot.quitReason = KamelosoDefaults.quitReason;
+
+    immutable defaultResourceDir = buildNormalizedPath(rbd, "kameloso");
+
+    if (instance.settings.resourceDirectory == defaultResourceDir)
+    {
+        // If the resource directory is the default, write it out as empty
+        instance.settings.resourceDirectory = string.init;
+    }
 
     instance.writeConfigurationFile(instance.settings.configFile);
 
@@ -204,9 +214,9 @@ void printSettings(ref Kameloso instance, const string[] customSettings) @system
         know how to open the configuration file in a text editor.
  +/
 void manageConfigFile(ref Kameloso instance,
-    const bool shouldWriteConfig,
-    const bool shouldOpenTerminalEditor,
-    const bool shouldOpenGraphicalEditor,
+    const Flag!"shouldWriteConfig" shouldWriteConfig,
+    const Flag!"shouldOpenTerminalEditor" shouldOpenTerminalEditor,
+    const Flag!"shouldOpenGraphicalEditor" shouldOpenGraphicalEditor,
     ref string[] customSettings,
     const bool force) @system
 {
@@ -593,14 +603,14 @@ Next handleGetopt(ref Kameloso instance,
 
             version(Windows)
             {
-                enum getOpenSSLString = "Open the download page for OpenSSL for Windows in your web browser";
+                enum getOpenSSLString = "Download OpenSSL for Windows";
                 enum getCacertString = "Download a <i>cacert.pem</> certificate " ~
-                    "bundle from the cURL project with your browser";
+                    "bundle (implies <i>--save</>)";
             }
             else
             {
-                enum getOpenSSLString = "(Windows-only)";
-                enum getCacertString = "(Windows-only)";
+                enum getOpenSSLString = "(Windows only)";
+                enum getCacertString = "(Windows only)";
             }
 
             version(Windows)
@@ -793,7 +803,7 @@ Next handleGetopt(ref Kameloso instance,
                     &shouldOpenGraphicalEditor,
                 "headless",
                     quiet ? string.init :
-                        "Enable headless mode, disabling all terminal output",
+                        "Headless mode, disabling all terminal output",
                     &settings.headless,
                 "version",
                     quiet ? string.init :
@@ -894,11 +904,42 @@ Next handleGetopt(ref Kameloso instance,
             return Next.returnSuccess;
         }
 
+        version(Windows)
+        {
+            if (shouldDownloadCacert || shouldDownloadOpenSSL)
+            {
+                import kameloso.ssldownloads : downloadWindowsSSL;
+
+                immutable settingsTouched = downloadWindowsSSL(
+                    instance,
+                    cast(Flag!"shouldDownloadCacert")shouldDownloadCacert,
+                    cast(Flag!"shouldDownloadOpenSSL")shouldDownloadOpenSSL);
+
+                if (*abort) return Next.returnFailure;
+
+                if (settingsTouched)
+                {
+                    import std.stdio : writeln;
+                    shouldWriteConfig = true;
+                    writeln();
+                }
+                else
+                {
+                    if (!shouldWriteConfig) return Next.returnSuccess;
+                }
+            }
+        }
+
         if (shouldWriteConfig || shouldOpenTerminalEditor || shouldOpenGraphicalEditor)
         {
             // --save and/or --edit was passed; defer to manageConfigFile
-            manageConfigFile(instance, shouldWriteConfig, shouldOpenTerminalEditor,
-                shouldOpenGraphicalEditor, customSettings, settings.force);
+            manageConfigFile(
+                instance,
+                cast(Flag!"shouldWriteConfig")shouldWriteConfig,
+                cast(Flag!"shouldOpenTerminalEditor")shouldOpenTerminalEditor,
+                cast(Flag!"shouldOpenGraphicalEditor")shouldOpenGraphicalEditor,
+                customSettings,
+                settings.force);
             return Next.returnSuccess;
         }
 
@@ -907,18 +948,6 @@ Next handleGetopt(ref Kameloso instance,
             // --settings was passed, show all options and quit
             if (!settings.headless) printSettings(instance, customSettings);
             return Next.returnSuccess;
-        }
-
-        version(Windows)
-        {
-            if (shouldDownloadCacert || shouldDownloadOpenSSL)
-            {
-                import kameloso.ssldownloads : downloadWindowsSSL;
-                downloadWindowsSSL(
-                    cast(Flag!"shouldDownloadCacert")shouldDownloadCacert,
-                    cast(Flag!"shouldDownloadOpenSSL")shouldDownloadOpenSSL);
-                return Next.returnSuccess;
-            }
         }
 
         return Next.continue_;

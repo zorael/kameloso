@@ -62,27 +62,16 @@ public:
      +/
     bool promoteVIPs = true;
 
-    version(Windows)
-    {
-        /++
-            Whether to use one persistent worker for Twitch queries or to use separate subthreads.
+    /++
+        Whether to use one persistent worker for Twitch queries or to use separate subthreads.
 
-            It's a trade-off. A single worker thread obviously spawns fewer threads,
-            which makes it a better choice on Windows systems where creating such is
-            comparatively expensive. On the other hand, it's also slower (likely due to
-            concurrency message passing overhead).
-         +/
-        bool singleWorkerThread = true;
-    }
-    else version(Posix)
-    {
-        /// Ditto
-        bool singleWorkerThread = false;
-    }
-    else
-    {
-        static assert(0, "Unsupported platform, please file a bug.");
-    }
+        It's a trade-off. A single worker thread obviously spawns fewer threads,
+        which makes it a better choice on Windows systems where creating such is
+        comparatively expensive. You also get to enjoy being able to reuse the
+        HTTP client. On the other hand, it's also slower (likely due to
+        concurrency message passing overhead).
+     +/
+    bool singleWorkerThread = true;
 
     @Unserialisable
     {
@@ -1087,8 +1076,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                 "Double-spawn of Twitch single worker thread");
 
             plugin.persistentWorkerTid = spawn(&persistentQuerier,
-                plugin.bucket, plugin.queryResponseTimeout,
-                plugin.state.connSettings.caBundleFile);
+                plugin.bucket, plugin.state.connSettings.caBundleFile);
         }
 
         void validationDg()
@@ -1175,27 +1163,34 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
             }
             catch (TwitchQueryException e)
             {
-                import kameloso.constants : MagicErrorStrings;
-
-                enum wikiURL = "https://github.com/zorael/kameloso/wiki/OpenSSL";
-                enum wikiPattern = "Visit <l>" ~ wikiURL ~ "</> for more information.";
-
                 // Something is deeply wrong.
 
-                if (e.error == MagicErrorStrings.sslContextCreationFailure)
+                if (e.code == 2)
                 {
-                    enum pattern = "Failed to validate Twitch API keys: <l>%s</> " ~
-                        "<t>(are OpenSSL libraries installed?)";
-                    logger.errorf(pattern.expandTags(LogLevel.error),
-                        cast(string)MagicErrorStrings.sslContextCreationFailureRewritten);
-                    logger.error(wikiPattern.expandTags(LogLevel.error));
-                }
-                else if (e.error == MagicErrorStrings.sslCertificateVerificationFailure)
-                {
-                    enum pattern = "Failed to validate Twitch API keys: <l>%s";
-                    logger.errorf(pattern.expandTags(LogLevel.error),
-                        cast(string)MagicErrorStrings.sslCertificateVerificationFailureRewritten);
-                    logger.error(wikiPattern.expandTags(LogLevel.error));
+                    import kameloso.constants : MagicErrorStrings;
+
+                    enum wikiPattern = cast(string)MagicErrorStrings.visitWikiOneliner;
+
+                    if (e.error == MagicErrorStrings.sslLibraryNotFound)
+                    {
+                        enum pattern = "Failed to validate Twitch API keys: <l>%s</> " ~
+                            "<t>(is OpenSSL installed?)";
+                        logger.errorf(pattern.expandTags(LogLevel.error),
+                            cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten);
+                        logger.error(wikiPattern.expandTags(LogLevel.error));
+
+                        version(Windows)
+                        {
+                            enum getoptPattern = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
+                            logger.error(getoptPattern.expandTags(LogLevel.error));
+                        }
+                    }
+                    else
+                    {
+                        enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
+                        logger.errorf(pattern.expandTags(LogLevel.error), e.msg, e.error, e.code);
+                        logger.error(wikiPattern.expandTags(LogLevel.error));
+                    }
                 }
                 else
                 {
@@ -1482,6 +1477,7 @@ final class TwitchBotPlugin : IRCPlugin
 {
 private:
     import kameloso.terminal : TerminalToken;
+    import arsd.http2;
     import std.concurrency : Tid;
     import core.time : seconds;
 
@@ -1583,7 +1579,7 @@ package:
     string authorizationBearer;
 
     /// Whether or not to use features requiring querying Twitch API.
-    bool useAPIFeatures = true;
+    shared static bool useAPIFeatures = true;
 
     /// The bot's numeric account/ID.
     string userID;
@@ -1620,12 +1616,6 @@ package:
         averaging some inertia.
      +/
     enum approximateQueryAveragingWeight = 3;
-
-    /++
-        How many seconds before a Twitch query response times out. Does not
-        affect the actual HTTP request, just how long we wait for it to arrive.
-     +/
-    enum queryResponseTimeout = 15;
 
     /++
         How big a buffer to preallocate when doing HTTP API queries.
