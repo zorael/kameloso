@@ -865,9 +865,6 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
 
     // ------------ ![word]
 
-    send("set counter.wordAloneIncrements=false");
-    expect("Setting changed.");
-
     sendPrefixed("blah");
     expect("blah count so far: 0");
 
