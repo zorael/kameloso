@@ -2475,7 +2475,7 @@ enum Timing
  +/
 struct IRCEventHandler
 {
-    private import kameloso.traits : Wrap;
+    private import kameloso.traits : UnderscoreOpDispatcher;
 
     // acceptedEventTypes
     /++
@@ -2483,6 +2483,13 @@ struct IRCEventHandler
         handler function should accept.
      +/
     IRCEvent.Type[] _acceptedEventTypes;
+
+    // _onEvent
+    /++
+        Alias to make [kameloso.traits.UnderscoreOpDispatcher] redirect calls to
+        [_acceptedEventTypes] but by the name `onEvent`.
+     +/
+    alias _onEvent = _acceptedEventTypes;
 
     // permissionsRequired
     /++
@@ -2504,11 +2511,25 @@ struct IRCEventHandler
      +/
     Command[] _commands;
 
+    // _addCommand
+    /++
+        Alias to make [kameloso.traits.UnderscoreOpDispatcher] redirect calls to
+        [_commands] but by the name `addCommand`.
+     +/
+    alias _addCommand = _commands;
+
     // regexes
     /++
         Array of [IRCEventHandler.Regex]es the bot should pick up and listen for.
      +/
     Regex[] _regexes;
+
+    // _addRegex
+    /++
+        Alias to make [kameloso.traits.UnderscoreOpDispatcher] redirect calls to
+        [_regexes] but by the name `addRegex`.
+     +/
+    alias _addRegex = _regexes;
 
     // chainable
     /++
@@ -2532,112 +2553,7 @@ struct IRCEventHandler
      +/
     Timing _when;
 
-    // onEvent
-    /++
-        Adds an [dialect.defs.IRCEvent.Type|IRCEvent.Type] to the array of types
-        that the annotated event handler function should accept.
-
-        Params:
-            type = New [dialect.defs.IRCEvent.Type|IRCEvent.Type] to listen for.
-
-        Returns:
-            A `this` reference to the current struct instance.
-     +/
-    mixin Wrap!("onEvent", _acceptedEventTypes);
-
-    // permissionsRequired
-    /++
-        Sets the permission level required of an instigating user before the
-        annotated event handler function is allowed to be triggered.
-
-        Params:
-            permissionsRequired = New [Permissions] permissions level.
-
-        Returns:
-            A `this` reference to the current struct instance.
-     +/
-    mixin Wrap!("permissionsRequired", _permissionsRequired);
-
-    // channelPolicy
-    /++
-        Sets the type of channel the annotated event handler function should be
-        allowed to be triggered in.
-
-        Params:
-            channelPolicy = New [ChannelPolicy] channel policy.
-
-        Returns:
-            A `this` reference to the current struct instance.
-     +/
-    mixin Wrap!("channelPolicy", _channelPolicy);
-
-    // addCommand
-    /++
-        Appends an [IRCEventHandler.Command] to the array of commands that the bot
-        should listen for to trigger the annotated event handler function.
-
-        Params:
-            command = New [IRCEventHandler.Command] to append to the commands array.
-
-        Returns:
-            A `this` reference to the current struct instance.
-     +/
-    mixin Wrap!("addCommand", _commands);
-
-    // addRegex
-    /++
-        Appends an [IRCEventHandler.Regex] to the array of regular expressions
-        that the bot should listen for to trigger the annotated event handler function.
-
-        Params:
-            regex = New [IRCEventHandler.Regex] to append to the regex array.
-
-        Returns:
-            A `this` reference to the current struct instance.
-     +/
-    mixin Wrap!("addRegex", _regexes);
-
-    // chainable
-    /++
-        Sets whether or not the annotated function should allow other functions
-        within the same plugin module to be triggered after it. If not (default false)
-        it will signal the bot to proceed to the next plugin after this function returns.
-
-        Params:
-            chainable = Whether or not to allow further event handler functions
-                to trigger within the same module (after this one returns).
-
-        Returns:
-            A `this` reference to the current struct instance.
-     +/
-    mixin Wrap!("chainable", _chainable);
-
-    // verbose
-    /++
-        Sets whether or not to have the bot plumbing give verbose information about
-        what it does as it evaluates and executes the annotated function (or not).
-
-        Params:
-            verbose = Whether or not to enable verbose output.
-
-        Returns:
-            A `this` reference to the current struct instance.
-     +/
-    mixin Wrap!("verbose", _verbose);
-
-    // when
-    /++
-        Sets a [Timing], used to order the evaluation and execution of event
-        handler functions within a module, allowing the author to design subsets
-        of functions that should be run before or after others.
-
-        Params:
-            when = [Timing] setting to give an order to the annotated event handler function.
-
-        Returns:
-            A `this` reference to the current struct instance.
-     +/
-    mixin Wrap!("when", _when);
+    mixin UnderscoreOpDispatcher;
 
     // Command
     /++
@@ -2679,78 +2595,7 @@ struct IRCEventHandler
          +/
         bool _hidden;
 
-        // policy
-        /++
-            Sets what way this [IRCEventHandler.Command] should be expressed.
-
-            Params:
-                policy = New [PrefixPolicy] to dictate how the command word should
-                    be expressed to be picked up by the bot.
-
-            Returns:
-                A `this` reference to the current struct instance.
-         +/
-        mixin Wrap!("policy", _policy);
-
-        // word
-        /++
-            Assigns a word to trigger this [IRCEventHandler.Command].
-
-            Params:
-                word = New word string.
-
-            Returns:
-                A `this` reference to the current struct instance.
-         +/
-        mixin Wrap!("word", _word);
-
-        // description
-        /++
-            Sets a description of what the event handler function the parent
-            [IRCEventHandler] annotates does, and by extension, what this
-            [IRCEventHandler.Command] does.
-
-            This is used to describe the command in help listings.
-
-            Params:
-                description = Command functionality/feature/purpose description
-                    in natural language.
-
-            Returns:
-                A `this` reference to the current struct instance.
-         +/
-        mixin Wrap!("description", _description);
-
-        // syntax
-        /++
-            Describes the syntax with which this [IRCEventHandler.Command] should
-            be used. Some text replacement is applied, such as `$command`.
-
-            This is used to describe the command usage in help listings.
-
-            Params:
-                syntax = A brief syntax description.
-
-            Returns:
-                A `this` reference to the current struct instance.
-         +/
-        mixin Wrap!("syntax", _syntax);
-
-        // hidden
-        /++
-            Whether or not this particular [IRCEventHandler.Command] (but not
-            necessarily that of all commands under this [IRCEventHandler]) should
-            be included in help listings.
-
-            This is used to allow for hidden command aliases.
-
-            Params:
-                hidden = Whether or not to mark this command as hidden.
-
-            Returns:
-                A `this` reference to the current struct instance.
-         +/
-        mixin Wrap!("hidden", _hidden);
+        mixin UnderscoreOpDispatcher;
     }
 
     // Regex
@@ -2795,24 +2640,13 @@ struct IRCEventHandler
          +/
         bool _hidden;
 
-        // policy
-        /++
-            Sets what way this [IRCEventHandler.Command] should be expressed.
-
-            Params:
-                policy = New [PrefixPolicy] to dictate how the command word should
-                    be expressed to be picked up by the bot.
-
-            Returns:
-                A `this` reference to the current struct instance.
-         +/
-        mixin Wrap!("policy", _policy);
-
         // expression
         /++
             The regular expression this [IRCEventHandler.Regex] embodies, in string form.
 
-            Upon setting this a regex engine is also created.
+            Upon setting this a regex engine is also created. Because of this extra step we
+            cannot rely on [kameloso.traits.UnderscoreOpDispatcher|UnderscoreOpDispatcher]
+            to redirect calls.
 
             Example:
             ---
@@ -2836,40 +2670,7 @@ struct IRCEventHandler
             return this;
         }
 
-        //mixin Wrap!("expression", _expression);
-
-        // description
-        /++
-            Sets a description of what the event handler function the parent
-            [IRCEventHandler] annotates does, and by extension, what this
-            [IRCEventHandler.Regex] does.
-
-            This is used to describe the command in help listings.
-
-            Params:
-                description = Command functionality/feature/purpose description
-                    in natural language.
-
-            Returns:
-                A `this` reference to the current struct instance.
-         +/
-        mixin Wrap!("description", _description);
-
-        // hidden
-        /++
-            Whether or not this particular [IRCEventHandler.Regex] (but not
-            necessarily that of all regexes under this [IRCEventHandler]) should
-            be included in help listings.
-
-            This is used to allow for hidden command aliases.
-
-            Params:
-                hidden = Whether or not to mark this Regex as hidden.
-
-            Returns:
-                A `this` reference to the current struct instance.
-         +/
-        mixin Wrap!("hidden", _hidden);
+        mixin UnderscoreOpDispatcher;
     }
 }
 
