@@ -319,11 +319,29 @@ public:
         {
             static if (is(typeof(moduleName) : string) && moduleName.length)
             {
-                static assert(__traits(compiles, { mixin("import ", moduleName, ";"); }),
-                    "Plugin module `" ~ moduleName ~ "` (listed in `plugins/package.d`) " ~
-                    "is missing or fails to compile");
+                static if (__traits(compiles, { mixin("alias thisModule = " ~ moduleName ~ ".base;"); }))
+                {
+                    static if (!__traits(compiles, { mixin("import " ~ moduleName ~ ".base;"); }))
+                    {
+                        import std.format : format;
+                        enum pattern = "Plugin module `%s.base` (inferred from listing `%1$s`" ~
+                            "in `plugins/package.d`) fails to compile";
+                        static assert(0, pattern.format(moduleName));
+                    }
 
-                mixin("import pluginModule = ", moduleName, ";");
+                    mixin("import pluginModule = " ~ moduleName ~ ".base;");
+                }
+                else
+                {
+                    static if (!__traits(compiles, { mixin("import " ~ moduleName ~ ";"); }))
+                    {
+                        import std.format : format;
+                        enum pattern = "Plugin module `%s` (listed in `plugins/package.d`) fails to compile";
+                        static assert(0, pattern.format(moduleName));
+                    }
+
+                    mixin("import pluginModule = " ~ moduleName ~ ";");
+                }
 
                 foreach (member; __traits(allMembers, pluginModule))
                 {
