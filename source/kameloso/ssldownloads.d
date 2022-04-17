@@ -22,6 +22,10 @@ public:
         instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
         shouldDownloadCacert = Whether or not `cacert.pem` should be downloaded.
         shouldDownloadOpenSSL = Whether or not OpenSSL for Windows should be downloaded.
+
+    Returns:
+        `true` if [kameloso.kameloso.Kameloso.settings] were touched and the
+        configuration file should be updated; `false` if not.
  +/
 bool downloadWindowsSSL(
     ref Kameloso instance,
