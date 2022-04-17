@@ -315,7 +315,7 @@ private void formatStringMemberImpl(Flag!"coloured" coloured, T, Sink)
             enum stringPattern = `%s%*s %s%-*s %s"%s"%s ... (%d)` ~ '\n';
             immutable memberCode = args.bright ? F.black : F.white;
             immutable valueCode  = args.bright ? F.green : F.lightgreen;
-            immutable lengthCode = args.bright ? F.lightgrey : F.darkgrey;
+            immutable lengthCode = args.bright ? F.default_ : F.darkgrey;
             immutable typeCode   = args.bright ? F.lightcyan : F.cyan;
 
             sink.formattedWrite(stringPattern,
@@ -330,7 +330,7 @@ private void formatStringMemberImpl(Flag!"coloured" coloured, T, Sink)
             enum stringPattern = `%s%*s %s%-*s %s%s"%s"%s(%d)` ~ '\n';
             immutable memberCode = args.bright ? F.black : F.white;
             immutable valueCode  = args.bright ? F.green : F.lightgreen;
-            immutable lengthCode = args.bright ? F.lightgrey : F.darkgrey;
+            immutable lengthCode = args.bright ? F.default_ : F.darkgrey;
             immutable typeCode   = args.bright ? F.lightcyan : F.cyan;
 
             sink.formattedWrite(stringPattern,
@@ -425,7 +425,7 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
 
         immutable memberCode = args.bright ? F.black : F.white;
         immutable valueCode  = args.bright ? F.green : F.lightgreen;
-        immutable lengthCode = args.bright ? F.lightgrey : F.darkgrey;
+        immutable lengthCode = args.bright ? F.default_ : F.darkgrey;
         immutable typeCode   = args.bright ? F.lightcyan : F.cyan;
 
         if (args.truncate && (content.length > truncateAfter))
@@ -510,7 +510,7 @@ private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
 
         immutable memberCode = args.bright ? F.black : F.white;
         immutable valueCode  = args.bright ? F.green : F.lightgreen;
-        immutable lengthCode = args.bright ? F.lightgrey : F.darkgrey;
+        immutable lengthCode = args.bright ? F.default_ : F.darkgrey;
         immutable typeCode   = args.bright ? F.lightcyan : F.cyan;
 
         if (args.truncate && (content.length > truncateAfter))
@@ -677,8 +677,8 @@ private void formatOtherMemberImpl(Flag!"coloured" coloured, T, Sink)
 
         enum normalPattern = "%s%*s %s%-*s  %s%s\n";
         immutable memberCode = args.bright ? F.black : F.white;
-        immutable valueCode = args.bright ? F.green : F.lightgreen;
-        immutable typeCode = args.bright ? F.lightcyan : F.cyan;
+        immutable valueCode  = args.bright ? F.green : F.lightgreen;
+        immutable typeCode   = args.bright ? F.lightcyan : F.cyan;
 
         sink.formattedWrite(normalPattern,
             typeCode.colour, args.typewidth, args.typestring,
