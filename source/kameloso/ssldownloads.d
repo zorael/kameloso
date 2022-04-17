@@ -24,10 +24,10 @@ public:
         shouldDownloadOpenSSL = Whether or not OpenSSL for Windows should be downloaded.
 
     Returns:
-        `true` if [kameloso.kameloso.Kameloso.settings] were touched and the
-        configuration file should be updated; `false` if not.
+        `Yes.settingsTouched` if [kameloso.kameloso.Kameloso.settings] were touched
+        and the configuration file should be updated; `No.settingsTouched` if not.
  +/
-bool downloadWindowsSSL(
+Flag!"settingsTouched" downloadWindowsSSL(
     ref Kameloso instance,
     const Flag!"shouldDownloadCacert" shouldDownloadCacert,
     const Flag!"shouldDownloadOpenSSL" shouldDownloadOpenSSL)
@@ -70,7 +70,7 @@ bool downloadWindowsSSL(
         return result.status;
     }
 
-    bool retval;
+    typeof(return) retval;
 
     if (shouldDownloadCacert)
     {
@@ -80,7 +80,7 @@ bool downloadWindowsSSL(
         immutable configDir = instance.settings.configFile.dirName;
         immutable cacertFile = buildNormalizedPath(configDir, "cacert.pem");
         immutable result = downloadFile(cacertURL, "certificate bundle", cacertFile);
-        if (*instance.abort) return false;
+        if (*instance.abort) return No.settingsTouched;
 
         if (result == 0)
         {
@@ -89,14 +89,14 @@ bool downloadWindowsSSL(
                 enum cacertPattern = "File saved as <l>%s</>; configuration updated.";
                 logger.infof(cacertPattern.expandTags(LogLevel.info), cacertFile);
                 instance.connSettings.caBundleFile = "cacert.pem";  // cacertFile
-                retval = true;
+                retval = Yes.settingsTouched;
             }
             else
             {
                 enum cacertPattern = "File saved as <l>%s</>.";
                 logger.infof(cacertPattern.expandTags(LogLevel.info), cacertFile);
                 instance.connSettings.caBundleFile = cacertFile;  // absolute path
-                //retval = true;  // let user supply --save
+                //retval = Yes.settingsTouched;  // let user supply --save
             }
         }
     }
@@ -113,7 +113,7 @@ bool downloadWindowsSSL(
         enum jsonURL = "https://raw.githubusercontent.com/slproweb/opensslhashes/master/win32_openssl_hashes.json";
         immutable jsonFile = buildNormalizedPath(temporaryDir, "win32_openssl_hashes.json");
         immutable result = downloadFile(jsonURL, "manifest", jsonFile);
-        if (*instance.abort) return false;
+        if (*instance.abort) return No.settingsTouched;
         if (result != 0) return retval;
 
         try
@@ -143,7 +143,7 @@ bool downloadWindowsSSL(
 
                     immutable exeFile = buildNormalizedPath(temporaryDir, filename);
                     immutable downloadResult = downloadFile(fileEntryJSON["url"].str, "OpenSSL installer", exeFile);
-                    if (*instance.abort) return false;
+                    if (*instance.abort) return No.settingsTouched;
                     if (downloadResult != 0) break;
 
                     logger.info("Launching installer.");
