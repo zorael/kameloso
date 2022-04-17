@@ -915,6 +915,8 @@ Next handleGetopt(ref Kameloso instance,
                     cast(Flag!"shouldDownloadCacert")shouldDownloadCacert,
                     cast(Flag!"shouldDownloadOpenSSL")shouldDownloadOpenSSL);
 
+                if (*abort) return Next.returnFailure;
+
                 if (settingsTouched)
                 {
                     import std.stdio : writeln;

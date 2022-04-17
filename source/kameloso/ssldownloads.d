@@ -80,6 +80,7 @@ bool downloadWindowsSSL(
         immutable configDir = instance.settings.configFile.dirName;
         immutable cacertFile = buildNormalizedPath(configDir, "cacert.pem");
         immutable result = downloadFile(cacertURL, "certificate bundle", cacertFile);
+        if (*instance.abort) return false;
 
         if (result == 0)
         {
@@ -112,6 +113,7 @@ bool downloadWindowsSSL(
         enum jsonURL = "https://raw.githubusercontent.com/slproweb/opensslhashes/master/win32_openssl_hashes.json";
         immutable jsonFile = buildNormalizedPath(temporaryDir, "win32_openssl_hashes.json");
         immutable result = downloadFile(jsonURL, "manifest", jsonFile);
+        if (*instance.abort) return false;
         if (result != 0) return retval;
 
         try
@@ -141,6 +143,7 @@ bool downloadWindowsSSL(
 
                     immutable exeFile = buildNormalizedPath(temporaryDir, filename);
                     immutable downloadResult = downloadFile(fileEntryJSON["url"].str, "OpenSSL installer", exeFile);
+                    if (*instance.abort) return false;
                     if (downloadResult != 0) break;
 
                     logger.info("Launching installer.");
