@@ -18,14 +18,19 @@ public:
     Downloads OpenSSL for Windows and/or a `cacert.pem` certificate bundle from
     the cURL project, extracted from Mozilla Firefox.
 
+    If `--force` was not supplied, the configuration file is updated with "`cacert.pem`"
+    entered as `caBundle`. If it is supplied, the value is still changed but to the
+    absolute path to the file, and the configuration file is not implicitly updated.
+    (`--save` will have to be separately passed.)
+
     Params:
         instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
         shouldDownloadCacert = Whether or not `cacert.pem` should be downloaded.
         shouldDownloadOpenSSL = Whether or not OpenSSL for Windows should be downloaded.
 
     Returns:
-        `Yes.settingsTouched` if [kameloso.kameloso.Kameloso.settings] were touched
-        and the configuration file should be updated; `No.settingsTouched` if not.
+        `Yes.settingsTouched` if [kameloso.kameloso.Kameloso.settings|Kameloso.settings]
+        were touched and the configuration file should be updated; `No.settingsTouched` if not.
  +/
 Flag!"settingsTouched" downloadWindowsSSL(
     ref Kameloso instance,
