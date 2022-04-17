@@ -22,23 +22,23 @@ public:
 
     A plugin can be completely disabled by removing/commenting out its entry here,
     or by adding a `version(none):` or `__EOF__` to the top of the file.
-    The moule declaration *must* be kept however, or the compiler will stop due
+    The module declaration *must* be kept however, or the compiler will stop due
     to the below not being possible to be resolved to valid modules.
  +/
 alias PluginModules = AliasSeq!(
     "kameloso.plugins.services.persistence",
-    "kameloso.plugins.printer.base",
+    "kameloso.plugins.printer", //.base",
     "kameloso.plugins.services.connect",
     "kameloso.plugins.services.chanqueries",
     "kameloso.plugins.services.ctcp",
-    "kameloso.plugins.admin.base",
+    "kameloso.plugins.admin", //.base",
     "kameloso.plugins.chatbot",
     "kameloso.plugins.notes",
     "kameloso.plugins.sedreplace",
     "kameloso.plugins.seen",
     "kameloso.plugins.automode",
     "kameloso.plugins.quotes",
-    "kameloso.plugins.twitchbot.base",
+    "kameloso.plugins.twitchbot", //.base",
     "kameloso.plugins.help",
     "kameloso.plugins.hello",
     "kameloso.plugins.oneliners",
