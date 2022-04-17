@@ -32,13 +32,13 @@ bool downloadWindowsSSL(
     import kameloso.logger : LogLevel;
     import std.path : buildNormalizedPath;
 
-    static int downloadFile(const string url, const string saveAs)
+    static int downloadFile(const string url, const string what, const string saveAs)
     {
         import std.format : format;
         import std.process : executeShell;
 
-        enum pattern = "Downloading <l>%s</>...";
-        logger.infof(pattern.expandTags(LogLevel.info), url);
+        enum pattern = "Downloading %s from <l>%s</>...";
+        logger.infof(pattern.expandTags(LogLevel.info), what, url);
 
         enum executePattern = `powershell -c "Invoke-WebRequest '%s' -OutFile '%s'"`;
         immutable result = executeShell(executePattern.format(url, saveAs));
@@ -70,7 +70,7 @@ bool downloadWindowsSSL(
         enum cacertURL = "http://curl.se/ca/cacert.pem";
         immutable configDir = instance.settings.configFile.dirName;
         immutable cacertFile = buildNormalizedPath(configDir, "cacert.pem");
-        immutable result = downloadFile(cacertURL, cacertFile);
+        immutable result = downloadFile(cacertURL, "certificate bundle", cacertFile);
 
         if (result == 0)
         {
@@ -102,7 +102,7 @@ bool downloadWindowsSSL(
 
         enum jsonURL = "https://raw.githubusercontent.com/slproweb/opensslhashes/master/win32_openssl_hashes.json";
         immutable jsonFile = buildNormalizedPath(temporaryDir, "win32_openssl_hashes.json");
-        immutable result = downloadFile(jsonURL, jsonFile);
+        immutable result = downloadFile(jsonURL, "manifest", jsonFile);
         if (result != 0) return retval;
 
         try
@@ -131,10 +131,10 @@ bool downloadWindowsSSL(
                     import std.process : execute;
 
                     immutable exeFile = buildNormalizedPath(temporaryDir, filename);
-                    immutable downloadResult = downloadFile(fileEntryJSON["url"].str, exeFile);
+                    immutable downloadResult = downloadFile(fileEntryJSON["url"].str, "OpenSSL installer", exeFile);
                     if (downloadResult != 0) break;
 
-                    logger.info("Launching OpenSSL installer.");
+                    logger.info("Launching installer.");
                     cast(void)execute([ exeFile ]);
 
                     return retval;
