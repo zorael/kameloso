@@ -17,8 +17,8 @@ public:
     A list of all plugin modules, by string name so they can be resolved even in
     `singleFile` mode. These will be instantiated in the order listed.
 
-    Care has to be taken to point to `base` plugin modules in cases where the
-    "module" is a package.
+    Plugin packages with a `.base` submodule can just have the package name listed;
+    the presence of the `.base` module will be autodetected and accordingly imported instead.
 
     A plugin can be completely disabled by removing/commenting out its entry here,
     or by adding a `version(none):` or `__EOF__` to the top of the file.
