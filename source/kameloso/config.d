@@ -242,7 +242,7 @@ void manageConfigFile(ref Kameloso instance,
             return;
         }
 
-        enum pattern = "Attempting to open <i>%s</> in <i>%s</>...";
+        enum pattern = "Attempting to open <i>%s</> with <i>%s</>...";
         logger.logf(pattern.expandTags(LogLevel.all), instance.settings.configFile, editor);
 
         immutable command = [ editor, instance.settings.configFile ];
@@ -1044,8 +1044,8 @@ void notifyAboutMissingSettings(const string[][string] missingEntries,
 
     enum pattern = "Use <i>%s --save</> to regenerate the file, " ~
         "updating it with all available configuration. [<i>%s</>]";
-    logger.logf(pattern.expandTags(LogLevel.all), binaryPath.baseName, configFile);
-    logger.warning("Mind that any comments and/or sections belonging to unbuilt plugins will be removed.");
+    logger.trace();
+    logger.tracef(pattern.expandTags(LogLevel.trace), binaryPath.baseName, configFile);
     logger.trace();
 }
 
@@ -1066,7 +1066,8 @@ void notifyAboutIncompleteConfiguration(const string configFile, const string bi
     import std.file : exists;
     import std.path : baseName;
 
-    logger.info("No administrators nor home channels configured!");
+    logger.warning("No administrators nor home channels configured!");
+    logger.trace();
 
     if (configFile.exists)
     {
