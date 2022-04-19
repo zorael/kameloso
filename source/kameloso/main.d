@@ -2530,7 +2530,7 @@ Next verifySettings(ref Kameloso instance)
 
     if (!addressIsResolvable)
     {
-        enum pattern = "Invalid address! [<l>%s</e>]";
+        enum pattern = "Invalid address! [<l>%s</>]";
         logger.errorf(pattern.expandTags(LogLevel.error), instance.parser.server.address);
         return Next.returnFailure;
     }
