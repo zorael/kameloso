@@ -2338,6 +2338,8 @@ Next tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
     {
         import lu.string : beginsWith;
 
+        if (*instance.abort) return Next.returnFailure;
+
         enum getaddrinfoErrorString = "getaddrinfo error: ";
         immutable errorString = attempt.error.length ?
             (attempt.error.beginsWith(getaddrinfoErrorString) ?
