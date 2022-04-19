@@ -1081,6 +1081,31 @@ void notifyAboutIncompleteConfiguration(const string configFile, const string bi
 }
 
 
+// giveBrightTerminalHint
+/++
+    Display a hint about the existence of the `--bright` getopt flag.
+
+    Params:
+        alsoConfigSetting = Whether or not to also give a hint about the
+            possibility of saving the setting to
+            [kameloso.kameloso.CoreSettings.brightTerminal|CoreSettings.brightTerminal].
+ +/
+void giveBrightTerminalHint(
+    const Flag!"alsoAboutConfigSetting" alsoConfigSetting = No.alsoAboutConfigSetting)
+{
+    enum brightPattern = "If text is difficult to read (eg. white on white), " ~
+        "try running the program with <i>--bright</> or <i>--monochrome</>.";
+    logger.trace(brightPattern.expandTags(LogLevel.trace));
+
+    if (alsoConfigSetting)
+    {
+        enum configPattern = "You can make the setting persistent by " ~
+            "(at the same time) also passing <i>--save</>.";
+        logger.trace(configPattern.expandTags(LogLevel.trace));
+    }
+}
+
+
 // applyDefaults
 /++
     Completes a client's, server's and bot's member fields. Empty members are
