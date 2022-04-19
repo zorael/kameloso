@@ -156,7 +156,10 @@ void writeConfig(ref Kameloso instance,
             logger.trace();
             logger.log("Edit it and make sure it contains at least one of the following:");
             giveConfigurationMinimalInstructions();
+            logger.trace();
         }
+
+        giveBrightTerminalHint(Yes.alsoAboutConfigSetting);
     }
 }
 

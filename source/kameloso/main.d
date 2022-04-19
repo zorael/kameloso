@@ -3174,7 +3174,10 @@ int run(string[] args)
 
         if (!instance.bot.homeChannels.length && !instance.bot.admins.length)
         {
-            import kameloso.config : notifyAboutIncompleteConfiguration;
+            import kameloso.config :giveBrightTerminalHint, notifyAboutIncompleteConfiguration;
+
+            giveBrightTerminalHint();
+            logger.trace();
             notifyAboutIncompleteConfiguration(instance.settings.configFile, args[0]);
         }
     }
