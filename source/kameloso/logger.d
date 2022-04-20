@@ -294,7 +294,7 @@ public:
             if (!monochrome)
             {
                 // Reset.blink in case a fatal message was thrown
-                linebuffer.colourWith(TerminalForeground.default_, TerminalReset.blink);
+                linebuffer.colourWith(TerminalReset.all);
             }
         }
 
