@@ -753,6 +753,7 @@ if (isOutputRange!(Sink, char[]))
 
                 default:
                     .put!(Yes.colours)(sink,
+                        TR.all,
                         TerminalForeground(bright ? Bright.badge : Dark.badge),
                         " [", event.sender.badges, ']');
                     break;
@@ -837,6 +838,7 @@ if (isOutputRange!(Sink, char[]))
                 plugin.printerSettings.twitchBadges && event.target.badges.length)
             {
                 .put!(Yes.colours)(sink,
+                    TR.all,
                     TerminalForeground(bright ? Bright.badge : Dark.badge),
                     " [", event.target.badges, ']');
 
