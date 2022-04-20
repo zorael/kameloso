@@ -684,6 +684,8 @@ if (isOutputRange!(Sink, char[]))
 
     void putSender()
     {
+        scope(exit) sink.colourWith(TR.all);
+
         colourUserTruecolour(sink, event.sender);
 
         if (event.sender.isServer)
@@ -761,6 +763,8 @@ if (isOutputRange!(Sink, char[]))
 
     void putTarget()
     {
+        scope(exit) sink.colourWith(TR.all);
+
         bool putArrow;
         bool putDisplayName;
 
@@ -842,6 +846,8 @@ if (isOutputRange!(Sink, char[]))
 
     void putContent()
     {
+        scope(exit) sink.colourWith(TR.all);
+
         immutable FG contentFgBase = bright ? Bright.content : Dark.content;
         immutable FG emoteFgBase = bright ? Bright.emote : Dark.emote;
         immutable isEmote = (event.type == IRCEvent.Type.EMOTE) ||
