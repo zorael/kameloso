@@ -61,6 +61,12 @@ public:
      +/
     bool fifoInWorkingDir = false;
 
+    /++
+        Whether or not to always use a unique filename for the FIFO; if one exists
+        with the wanted name, simply append a number to make a new, unique one.
+     +/
+    bool bumpFilenameIfItExists = true;
+
     /// Custom, full path to use as FIFO filename, specified with --set pipeline.path.
     @Unserialisable string path;
 }
