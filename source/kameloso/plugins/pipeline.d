@@ -362,6 +362,30 @@ in (!plugin.workerRunning, "Tried to double-initialise the pipereader")
         }
     }
 
+    import std.file : exists;
+
+    if (plugin.pipelineSettings.bumpFilenameIfItExists && plugin.fifoFilename.exists)
+    {
+        import std.string : succ;
+
+        plugin.fifoFilename ~= "-1";
+
+        while (plugin.fifoFilename.exists)
+        {
+            plugin.fifoFilename = plugin.fifoFilename.succ;
+
+            if (plugin.fifoFilename[$-2..$] == "-0")
+            {
+                plugin.fifoFilename = plugin.fifoFilename[0..$-2] ~ "10";
+            }
+            else if (plugin.fifoFilename[$-3..$] == "-99")
+            {
+                // Don't infinitely loop, should realistically never happen though
+                break;
+            }
+        }
+    }
+
     import lu.common : FileExistsException, FileTypeMismatchException, ReturnValueException;
 
     try
