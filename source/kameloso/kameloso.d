@@ -148,6 +148,18 @@ public:
         Buffer!(OutgoingLine, No.dynamic, BufferSize.outbuffer*2) fastbuffer;
     }
 
+    /++
+        Associative array of string arrays of expected configuration entries
+        that were missing.
+     +/
+    string[][string] missingConfigurationEntries;
+
+    /++
+        Associative array of string arrays of unexpected configuration entries
+        that did not belong.
+     +/
+    string[][string] invalidConfigurationEntries;
+
     /// Never copy this.
     @disable this(this);
 
@@ -281,18 +293,12 @@ public:
         Params:
             customSettings = String array of custom settings to apply to plugins
                 in addition to those read from the configuration file.
-            missingEntries = Out reference of an associative array of string arrays
-                of expected configuration entries that were missing.
-            invalidEntries = Out reference of an associative array of string arrays
-                of unexpected configuration entries that did not belong.
 
         Throws:
             [kameloso.plugins.common.misc.IRCPluginSettingsException|IRCPluginSettingsException]
             on failure to apply custom settings.
      +/
-    void initPlugins(const string[] customSettings,
-        out string[][string] missingEntries,
-        out string[][string] invalidEntries) @system
+    void initPlugins(const string[] customSettings) @system
     {
         import kameloso.plugins : PluginModules;
         import kameloso.plugins.common.core : IRCPluginState;
@@ -385,12 +391,12 @@ public:
 
             if (theseMissingEntries.length)
             {
-                theseMissingEntries.meldInto(missingEntries);
+                theseMissingEntries.meldInto(this.missingConfigurationEntries);
             }
 
             if (theseInvalidEntries.length)
             {
-                theseInvalidEntries.meldInto(invalidEntries);
+                theseInvalidEntries.meldInto(this.invalidConfigurationEntries);
             }
         }
 
@@ -401,23 +407,6 @@ public:
             import kameloso.plugins.common.misc : IRCPluginSettingsException;
             throw new IRCPluginSettingsException("Some custom plugin settings could not be applied.");
         }
-    }
-
-
-    // initPlugins
-    /++
-        Resets and *minimally* initialises all plugins. Merely wraps the other
-        [initPlugins] overload and distinguishes itself from it by not taking
-        the two `string[][string]` out parameters it does.
-
-        Params:
-            customSettings = String array of custom settings to apply to plugins
-                in addition to those read from the configuration file.
-     +/
-    void initPlugins(const string[] customSettings) @system
-    {
-        string[][string] ignore;
-        return initPlugins(customSettings, ignore, ignore);
     }
 
 

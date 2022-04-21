@@ -1282,17 +1282,17 @@ private import std.meta : allSatisfy;
 
     Params:
         configFile = Filename of file to read from.
-        missingEntries = Out reference of an associative array of string arrays
+        missingEntries = Reference to an associative array of string arrays
             of expected configuration entries that were missing.
-        invalidEntries = Out reference of an associative array of string arrays
+        invalidEntries = Reference to an associative array of string arrays
             of unexpected configuration entries that did not belong.
         things = Reference variadic list of things to set values of, according
             to the text in the configuration file.
  +/
 void readConfigInto(T...)
     (const string configFile,
-    out string[][string] missingEntries,
-    out string[][string] invalidEntries,
+    ref string[][string] missingEntries,
+    ref string[][string] invalidEntries,
     ref T things)
 if (allSatisfy!(isStruct, T))
 {

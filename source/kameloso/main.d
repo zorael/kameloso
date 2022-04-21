@@ -1937,7 +1937,10 @@ void resetSignals() nothrow @nogc
     Returns:
         [lu.common.Next|Next].* depending on what action the calling site should take.
  +/
-Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings)
+Next tryGetopt(
+    ref Kameloso instance,
+    string[] args,
+    out string[] customSettings)
 {
     import kameloso.plugins.common.misc : IRCPluginSettingsException;
     import kameloso.config : ConfigurationFileReadFailureException, handleGetopt;
@@ -3222,15 +3225,15 @@ int run(string[] args)
     {
         import std.file : exists;
 
-        string[][string] missingEntries;
-        string[][string] invalidEntries;
+        instance.initPlugins(attempt.customSettings);
 
-        instance.initPlugins(attempt.customSettings, missingEntries, invalidEntries);
-
-        if (!instance.settings.headless && missingEntries.length && instance.settings.configFile.exists)
+        if (!instance.settings.headless &&
+            instance.missingConfigurationEntries.length &&
+            instance.settings.configFile.exists)
         {
             import kameloso.config : notifyAboutMissingSettings;
-            notifyAboutMissingSettings(missingEntries, args[0], instance.settings.configFile);
+            notifyAboutMissingSettings(instance.missingConfigurationEntries,
+                args[0], instance.settings.configFile);
         }
     }
     catch (ConvException e)
