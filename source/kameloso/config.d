@@ -1109,8 +1109,8 @@ void giveBrightTerminalHint(
 
     if (alsoConfigSetting)
     {
-        enum configPattern = "You can make the setting persistent by " ~
-            "(at the same time) also passing <i>--save</>.";
+        enum configPattern = "The setting will be made persistent if you pass it " ~
+            "at the same time as <i>--save</>.";
         logger.trace(configPattern.expandTags(LogLevel.trace));
     }
 }
