@@ -1817,7 +1817,7 @@ unittest
 
     {
         immutable line = "This is a <l>log</> line.";
-        immutable replaced = line.expandTags;
+        immutable replaced = line.expandTags(LogLevel.off);
         immutable expected = text("This is a ", Tint.log, "log", Tint.off, " line.");
         assert((replaced == expected), replaced);
     }

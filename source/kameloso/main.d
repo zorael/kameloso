@@ -2247,8 +2247,8 @@ Next tryConnect(ref Kameloso instance)
             continue;
 
         case fatalSSLFailure:
-            enum pattern = "Failed to connect: <l>%s</>";
-            logger.errorf(pattern.expandTags, attempt.error);
+            enum pattern = "Failed to connect: <l>%s";
+            logger.errorf(pattern.expandTags(LogLevel.error), attempt.error);
             return Next.returnFailure;
 
         case invalidConnectionError:
