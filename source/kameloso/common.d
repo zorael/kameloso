@@ -1791,8 +1791,8 @@ T expandTags(T)(const T line, const Flag!"strip" strip) @safe
 /++
     String-replaces `<tags>` in a string with the results from calls to `Tint`.
     Also works with `dstring`s and `wstring`s. Overload that does not take a
-    `strip` [std.typecons.Flag|Flag], nor a `baseLevel`
-    [kameloso.logger.LogLevel|LogLevel] but instead passes a default
+    `strip` [std.typecons.Flag|Flag], optionally nor a `baseLevel`
+    [kameloso.logger.LogLevel|LogLevel], instead passing a default
     [kameloso.logger.LogLevel.off|LogLevel.off]`.
 
     Params:
