@@ -116,6 +116,7 @@ void writeConfig(ref Kameloso instance,
     import kameloso.constants : KamelosoDefaults;
     import kameloso.platform : rbd = resourceBaseDirectory;
     import kameloso.printing : printObjects;
+    import std.file : exists;
     import std.path : buildNormalizedPath;
     import std.stdio : writeln;
 
@@ -144,6 +145,11 @@ void writeConfig(ref Kameloso instance,
         instance.settings.resourceDirectory = string.init;
     }
 
+    immutable shouldGiveBrightTerminalHint =
+        !instance.settings.monochrome &&
+        !instance.settings.brightTerminal &&
+        !instance.settings.configFile.exists;
+
     instance.writeConfigurationFile(instance.settings.configFile);
 
     if (!instance.settings.headless)
@@ -159,7 +165,7 @@ void writeConfig(ref Kameloso instance,
             logger.trace();
         }
 
-        giveBrightTerminalHint(Yes.alsoAboutConfigSetting);
+        if (shouldGiveBrightTerminalHint) giveBrightTerminalHint(Yes.alsoAboutConfigSetting);
     }
 }
 
