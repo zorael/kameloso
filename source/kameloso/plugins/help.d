@@ -171,13 +171,15 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
                     }
 
                     enum width = 12;
-                    enum pattern = "* <b>%-*s<b> %-([%s]%| %)";
+                    immutable commandPattern = plugin.helpSettings.includePrefix ?
+                        "* <b>%-*s<b> %-([" ~ plugin.state.settings.prefix ~ "%s]%| %)" :
+                        "* <b>%-*s<b> %-([%s]%| %)";
                     const keys = nonhiddenCommands
                         .keys
                         .sort
                         .release;
 
-                    immutable message = pattern.format(width, specifiedPlugin, keys);
+                    immutable message = commandPattern.format(width, specifiedPlugin, keys);
                     privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, message);
                     return;
                 }
@@ -200,6 +202,10 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
             privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, banner);
             privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, "Available bot commands per plugin:");
 
+            immutable commandPattern = plugin.helpSettings.includePrefix ?
+                "* <b>%-*s<b> %-([" ~ plugin.state.settings.prefix ~ "%s]%| %)" :
+                "* <b>%-*s<b> %-([%s]%| %)";
+
             foreach (immutable pluginName, pluginCommands; allPluginCommands)
             {
                 const nonhiddenCommands = filterHiddenCommands(pluginCommands);
@@ -207,13 +213,12 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
                 if (!nonhiddenCommands.length) continue;
 
                 enum width = 12;
-                enum pattern = "* <b>%-*s<b> %-([%s]%| %)";
                 const keys = nonhiddenCommands
                     .keys
                     .sort
                     .release;
 
-                immutable message = pattern.format(width, pluginName, keys);
+                immutable message = commandPattern.format(width, pluginName, keys);
                 privmsg(plugin.state, mutEvent.channel, mutEvent.sender.nickname, message);
             }
 
