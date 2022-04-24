@@ -175,7 +175,7 @@ Quote getSpecificQuote(QuotesPlugin plugin, const string nickname, const size_t 
         IRCEventHandler.Command()
             .word("quote")
             .policy(PrefixPolicy.prefixed)
-            .description("Fetches and repeats a random quote of a supplied nickname, or adds a new one.")
+            .description("Repeats a random quote of a supplied nickname, or adds a new one.")
             .syntax("$command [nickname] [text if adding new quote]")
     )
     .addCommand(

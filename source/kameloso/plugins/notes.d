@@ -311,7 +311,8 @@ void playbackNotes(NotesPlugin plugin,
         IRCEventHandler.Command()
             .word("note")
             .policy(PrefixPolicy.prefixed)
-            .description("Adds a note and saves it to disk.")
+            .description("Adds a note to send to an offline person when they come online, " ~
+                "or when they show activity if already online.")
             .syntax("$command [account] [note text]")
     )
 )

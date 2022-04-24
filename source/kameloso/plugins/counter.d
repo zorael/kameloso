@@ -49,7 +49,7 @@ import std.typecons : Flag, No, Yes;
         IRCEventHandler.Command()
             .word("counter")
             .policy(PrefixPolicy.prefixed)
-            .description("Manages counters.")
+            .description("Adds, removes or lists counters.")
             .syntax("$command [add|del|list] [counter word]")
     )
 )

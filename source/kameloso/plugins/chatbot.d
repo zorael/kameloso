@@ -52,7 +52,7 @@ import std.typecons : Flag, No, Yes;
         IRCEventHandler.Command()
             .word("say")
             .policy(PrefixPolicy.prefixed)
-            .description("Repeats text to the channel the event was sent to.")
+            .description("Repeats text to the current channel. Amazing.")
             .syntax("$command [text to repeat]")
     )
     .addCommand(
