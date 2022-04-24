@@ -35,7 +35,7 @@ package:
     Params:
         plugin = The current [kameloso.pluins.admin.base.AdminPlugin|AdminPlugin].
         event = The triggering [dialect.defs.IRCEvent|IRCEvent].
-        list = Which list to add/remove from, "whitelist", "operator" or "blacklist".
+        list = Which list to add/remove from; "staff", "whitelist", "operator" or "blacklist".
  +/
 void manageClassLists(AdminPlugin plugin,
     const ref IRCEvent event,
