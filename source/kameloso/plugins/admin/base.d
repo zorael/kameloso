@@ -538,7 +538,6 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .onEvent(IRCEvent.Type.QUERY)
     .permissionsRequired(Permissions.operator)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
@@ -563,7 +562,6 @@ void onCommandWhitelist(AdminPlugin plugin, const ref IRCEvent event)
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .onEvent(IRCEvent.Type.QUERY)
     .permissionsRequired(Permissions.staff)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
@@ -589,7 +587,6 @@ void onCommandOperator(AdminPlugin plugin, const ref IRCEvent event)
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .onEvent(IRCEvent.Type.QUERY)
     .permissionsRequired(Permissions.admin)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
@@ -615,7 +612,6 @@ void onCommandStaff(AdminPlugin plugin, const ref IRCEvent event)
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .onEvent(IRCEvent.Type.QUERY)
     .permissionsRequired(Permissions.operator)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
