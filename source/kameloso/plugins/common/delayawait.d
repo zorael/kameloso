@@ -127,7 +127,6 @@ void removeDelayedFiber(IRCPlugin plugin, Fiber fiber)
 in ((fiber !is null), "Tried to remove a delayed null Fiber")
 {
     import std.algorithm.mutation : SwapStrategy, remove;
-    import std.algorithm.searching : countUntil;
 
     size_t[] toRemove;
 
@@ -180,7 +179,6 @@ void removeDelayedDelegate(IRCPlugin plugin, void delegate() dg)
 in ((dg !is null), "Tried to remove a delayed null delegate")
 {
     import std.algorithm.mutation : SwapStrategy, remove;
-    import std.algorithm.searching : countUntil;
 
     size_t[] toRemove;
 
@@ -395,7 +393,6 @@ in ((type != IRCEvent.Type.UNSET), "Tried to unlist a " ~ Thing.stringof ~
     " from awaiting `IRCEvent.Type.UNSET`")
 {
     import std.algorithm.mutation : SwapStrategy, remove;
-    import std.algorithm.searching : countUntil;
 
     void removeForType(const IRCEvent.Type type)
     {
