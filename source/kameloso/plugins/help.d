@@ -32,6 +32,9 @@ import dialect.defs;
 
     /// Whether or not replies are always sent in queries.
     bool repliesInQuery = true;
+
+    /// Whether or not to include prefix in command listing.
+    bool includePrefix = true;
 }
 
 
