@@ -2359,8 +2359,8 @@ Next tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
 
         case success:
             import lu.string : plurality;
-            enum pattern = "<l>%s</> resolved into <l>%d</> %s.";
-            logger.infof(pattern.expandTags(LogLevel.info), instance.parser.server.address,
+            enum pattern = "<i>%s</> resolved into <i>%d</> %s.";
+            logger.logf(pattern.expandTags(LogLevel.all), instance.parser.server.address,
                 instance.conn.ips.length,
                 instance.conn.ips.length.plurality("IP", "IPs"));
             return Next.continue_;
