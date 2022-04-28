@@ -1360,6 +1360,9 @@ void onMyInfo(TwitchBotPlugin plugin)
 void start(TwitchBotPlugin plugin)
 {
     import kameloso.terminal : isTerminal;
+    import std.concurrency : thisTid;
+
+    plugin.mainThread = cast(shared)thisTid;
 
     if (!isTerminal)
     {
@@ -1629,6 +1632,9 @@ package:
 
     /// The thread ID of the persistent worker thread.
     Tid persistentWorkerTid;
+
+    /// The thread ID of the main thread, for access from threads.
+    shared static Tid mainThread;
 
     /// Associative array of responses from async HTTP queries.
     shared QueryResponse[string] bucket;
