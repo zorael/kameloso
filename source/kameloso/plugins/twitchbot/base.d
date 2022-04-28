@@ -433,6 +433,11 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
                 "nerdydreams",
                 "uncle_spawn",
                 "hades_osiris",
+                "0ax2",
+                "violets_tv",
+                "dankingaround",
+                "erika_fnbr",
+                "comettunes",
             ];
 
             static immutable chatterTypes =
