@@ -1024,7 +1024,7 @@ void onSASLFailure(ConnectService service)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
 )
-void onWelcome(ConnectService service, const ref IRCEvent event)
+void onWelcome(ConnectService service)
 {
     import std.algorithm.iteration : splitter;
     import std.algorithm.searching : endsWith;

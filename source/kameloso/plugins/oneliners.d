@@ -113,7 +113,7 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
             .hidden(true)
     )
 )
-void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
+void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : contains, nom;
     import std.format : format;

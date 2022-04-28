@@ -352,7 +352,7 @@ void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
         event = The triggering [dialect.defs.IRCEvent|IRCEvent].
         rawChannel = The channel to be added, potentially in unstripped, cased form.
  +/
-void addHome(AdminPlugin plugin, const ref IRCEvent event, const string rawChannel)
+void addHome(AdminPlugin plugin, const /*ref*/ IRCEvent event, const string rawChannel)
 in (rawChannel.length, "Tried to add a home but the channel string was empty")
 {
     import kameloso.plugins.common.delayawait : await, unawait;
@@ -922,7 +922,7 @@ void onCommandSummary(AdminPlugin plugin)
             .syntax("$command [optional channel] [optional delay] [optional key(s)]")
     )
 )
-void onCommandCycle(AdminPlugin plugin, const ref IRCEvent event)
+void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : nom;
     import std.conv : ConvException, text, to;

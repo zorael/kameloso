@@ -53,7 +53,7 @@ import std.typecons : Flag, No, Yes;
             .syntax("$command [add|del|list] [counter word]")
     )
 )
-void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
+void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.constants : BufferSize;
     import lu.string : nom, stripped, strippedLeft;
