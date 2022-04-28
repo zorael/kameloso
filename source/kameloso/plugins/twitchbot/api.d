@@ -74,6 +74,28 @@ if (isSomeFunction!dg)
 
         enum pattern = "Failed to query Twitch: <l>%s</> <t>(%s) </>(<t>%d</>)";
         logger.errorf(pattern.expandTags(LogLevel.error), message, e.error, e.code);
+
+        if ((e.code == 401) && (e.error == "Unauthorized"))
+        {
+            import kameloso.messaging : Message;
+            import kameloso.thread : ThreadMessage;
+            import std.concurrency : send = prioritySend;
+
+            // API key expired.
+            // Copy/paste kameloso.messaging.quit, since we don't have access to plugin.state
+
+            enum apiPattern = "Your Twitch API key has expired. " ~
+                "Run the program with <l>--set twitchbot.keygen</> to generate a new one.";
+            logger.error(apiPattern.expandTags(LogLevel.error));
+
+            Message m;
+
+            m.event.type = IRCEvent.Type.QUIT;
+            m.event.content = "Twitch API key expired";
+            m.properties |= (Message.Property.forced | Message.Property.priority);
+
+            (cast()TwitchBotPlugin.mainThread).send(m);
+        }
     }
     catch (Exception e)
     {
