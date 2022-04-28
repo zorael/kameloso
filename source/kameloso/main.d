@@ -2555,34 +2555,41 @@ Next verifySettings(ref Kameloso instance)
  +/
 void resolvePaths(ref Kameloso instance)
 {
+    import kameloso.platform : rbd = resourceBaseDirectory;
     import std.file : exists;
     import std.path : absolutePath, buildNormalizedPath, dirName, expandTilde, isAbsolute;
     import std.range : only;
 
-    // Resolve and create the resource directory
-    version(Windows)
-    {
-        import std.string : replace;
-        instance.settings.resourceDirectory =
-            buildNormalizedPath(instance.settings.resourceDirectory,
-                "server", instance.parser.server.address.replace(':', '_'));
-    }
-    else version(Posix)
-    {
-        instance.settings.resourceDirectory =
-            buildNormalizedPath(instance.settings.resourceDirectory,
-                "server", instance.parser.server.address);
-    }
-    else
-    {
-        static assert(0, "Unsupported platform, please file a bug.");
-    }
-
-    instance.settings.configDirectory = instance.settings.configFile.dirName;
+    immutable defaultResourceDir = buildNormalizedPath(rbd, "kameloso");
 
     version(Posix)
     {
         instance.settings.resourceDirectory = instance.settings.resourceDirectory.expandTilde();
+    }
+
+    // Resolve and create the resource directory
+    // Assume nothing has been entered if it is the default resource dir sans server etc
+    if (instance.settings.resourceDirectory == defaultResourceDir)
+    {
+        version(Windows)
+        {
+            import std.string : replace;
+            instance.settings.resourceDirectory = buildNormalizedPath(
+                defaultResourceDir,
+                "server",
+                instance.parser.server.address.replace(':', '_'));
+        }
+        else version(Posix)
+        {
+            instance.settings.resourceDirectory = buildNormalizedPath(
+                defaultResourceDir,
+                "server",
+                instance.parser.server.address);
+        }
+        else
+        {
+            static assert(0, "Unsupported platform, please file a bug.");
+        }
     }
 
     if (!instance.settings.resourceDirectory.exists)
@@ -2593,6 +2600,8 @@ void resolvePaths(ref Kameloso instance)
         logger.log("Created resource directory ", Tint.info,
             instance.settings.resourceDirectory);
     }
+
+    instance.settings.configDirectory = instance.settings.configFile.dirName;
 
     auto filerange = only(
         &instance.connSettings.caBundleFile,
