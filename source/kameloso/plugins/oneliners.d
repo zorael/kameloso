@@ -106,6 +106,12 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
             .description("Adds or removes a oneliner.")
             .syntax("$command [add|del|list] [text]")
     )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("command")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
 )
 void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 {
