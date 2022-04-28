@@ -117,7 +117,7 @@ void writeConfig(ref Kameloso instance,
     import kameloso.platform : rbd = resourceBaseDirectory;
     import kameloso.printing : printObjects;
     import std.file : exists;
-    import std.path : buildNormalizedPath;
+    import std.path : buildNormalizedPath, expandTilde;
     import std.stdio : writeln;
 
     // --save was passed; write configuration to file and quit
@@ -139,9 +139,37 @@ void writeConfig(ref Kameloso instance,
 
     immutable defaultResourceDir = buildNormalizedPath(rbd, "kameloso");
 
-    if (instance.settings.resourceDirectory == defaultResourceDir)
+    // Copied from kameloso.main.resolvePaths
+    version(Windows)
+    {
+        import std.string : replace;
+        immutable resolvedResourceDir = instance.parser.server.address.length ?
+            buildNormalizedPath(
+                defaultResourceDir,
+                "server",
+                instance.parser.server.address.replace(':', '_')) :
+            string.init;
+    }
+    else version(Posix)
+    {
+        immutable resolvedResourceDir = instance.parser.server.address.length ?
+            buildNormalizedPath(
+                defaultResourceDir,
+                "server",
+                instance.parser.server.address) :
+            string.init;
+    }
+    else
+    {
+        static assert(0, "Unsupported platform, please file a bug.");
+    }
+
+    if ((instance.settings.resourceDirectory == defaultResourceDir) ||
+        (resolvedResourceDir.length &&
+            (instance.settings.resourceDirectory.expandTilde() == resolvedResourceDir)))
     {
         // If the resource directory is the default, write it out as empty
+        // Likewise if it is what would be automatically inferred
         instance.settings.resourceDirectory = string.init;
     }
 
