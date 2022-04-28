@@ -49,35 +49,43 @@ import dialect.defs;
 void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : beginsWith, contains, nom;
+    import std.typecons : Flag, No, Yes;
 
     if (!event.content.beginsWith(plugin.state.settings.prefix)) return;
 
-    immutable slice = event.content[plugin.state.settings.prefix.length..$];
+    string slice = event.content[plugin.state.settings.prefix.length..$];
 
-    // An empty command is invalid, as is one containing spaces
-    if (!slice.length || slice.contains(' ')) return;
+    // An empty command is invalid
+    if (!slice.length) return;
 
     if (const channelOneliners = event.channel in plugin.onelinersByChannel)
     {
         import std.uni : toLower;
 
-        immutable key = plugin.onelinersSettings.caseSensitiveTriggers ? slice : slice.toLower;
+        immutable trigger = slice.nom!(Yes.inherit)(' ');
+        immutable target = slice;
+        immutable key = plugin.onelinersSettings.caseSensitiveTriggers ? trigger : trigger.toLower;
 
         if (const response = key in *channelOneliners)
         {
             import kameloso.plugins.common.misc : nameOf;
             import std.array : replace;
             import std.conv : text;
+            import std.format : format;
             import std.random : uniform;
 
             immutable line = (*response)
                 .replace("$nickname", nameOf(event.sender))
                 .replace("$streamer", plugin.nameOf(event.channel[1..$]))  // Twitch
-                .replace("$bot", plugin.state.client.nickname)
+                .replace("$bot", plugin.nameOf(plugin.state.client.nickname)) // likewise
                 .replace("$channel", event.channel[1..$])
                 .replace("$random", uniform!"(]"(0, 100).text);
 
-            chan(plugin.state, event.channel, line);
+            enum atPattern = "@%s %s";
+            immutable message = target.length ?
+                atPattern.format(plugin.nameOf(target), line) :
+                line;
+            chan(plugin.state, event.channel, message);
         }
     }
 }
