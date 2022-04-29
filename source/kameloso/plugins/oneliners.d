@@ -63,7 +63,9 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
         import std.uni : toLower;
 
         immutable trigger = slice.nom!(Yes.inherit)(' ');
-        immutable target = slice;
+        string target = slice;  // mutable
+        if (target.beginsWith('@')) target = target[1..$];
+
         immutable key = plugin.onelinersSettings.caseSensitiveTriggers ? trigger : trigger.toLower;
 
         if (const response = key in *channelOneliners)
