@@ -502,10 +502,10 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
         void sendRemoved(const string trigger, const Flag!"isEmpty" isEmpty, const size_t pos = 0)
         {
             enum pattern = "Oneliner <b>%s%s<b> removed.";
-            enum sublinePattern = "Oneliner subline <b>%s%s<b>#%d removed.";
+            enum sublinePattern = "Oneliner subline <b>%s<b>#%d removed.";
             immutable message = isEmpty ?
                 pattern.format(plugin.state.settings.prefix, trigger) :
-                sublinePattern.format(plugin.state.settings.prefix, trigger, pos);
+                sublinePattern.format(trigger, pos);
             chan(plugin.state, event.channel, message);
         }
 
