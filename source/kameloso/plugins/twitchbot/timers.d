@@ -150,7 +150,7 @@ Fiber createTimerFiber(TwitchBotPlugin plugin,
         targetChannel = The channel we're handling timers for.
  +/
 void handleTimerCommand(TwitchBotPlugin plugin,
-    const ref IRCEvent event,
+    const /*ref*/ IRCEvent event,
     const string targetChannel)
 in (targetChannel.length, "Tried to handle timers with an empty target channel string")
 {
