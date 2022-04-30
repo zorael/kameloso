@@ -110,16 +110,16 @@ public:
      +/
     long timeThreshold;
 
-    // staggerTime
-    /++
-        Delay in seconds before the timer initially comes into effect.
-     +/
-    long staggerTime;
-
     /++
         Delay in number of messages before the timer initially comes into effect.
      +/
-    long staggerMessageCount;
+    long messageCountStagger;
+
+    // timeStagger
+    /++
+        Delay in seconds before the timer initially comes into effect.
+     +/
+    long timeStagger;
 
     // position
     /++
@@ -208,8 +208,8 @@ public:
         json["condition"] = JSONValue(cast(int)this.condition);
         json["messageCountThreshold"] = JSONValue(this.messageCountThreshold);
         json["timeThreshold"] = JSONValue(this.timeThreshold);
-        json["staggerTime"] = JSONValue(this.staggerTime);
-        json["staggerMessageCount"] = JSONValue(this.staggerTime);
+        json["messageCountStagger"] = JSONValue(this.messageCountStagger);
+        json["timeStagger"] = JSONValue(this.timeStagger);
         json["lines"] = null;
         json["lines"].array = null;
 
@@ -237,8 +237,8 @@ public:
         def.name = json["name"].str;
         def.messageCountThreshold = json["messageCountThreshold"].integer;
         def.timeThreshold = json["timeThreshold"].integer;
-        def.staggerTime = json["staggerTime"].integer;
-        def.staggerMessageCount = json["staggerMessageCount"].integer;
+        def.messageCountStagger = json["messageCountStagger"].integer;
+        def.timeStagger = json["timeStagger"].integer;
         def.type = (json["type"].integer == cast(int)Type.random) ?
             Type.random :
             Type.sequential;
@@ -337,8 +337,8 @@ void handleTimerCommand(
         string type;
         string condition;
         string timeThreshold;
-        string staggerMessageCount;
-        string staggerTime;
+        string messageCountStagger;
+        string timeStagger;
 
         immutable results = slice.splitInto(
             timerDef.name,
@@ -346,8 +346,8 @@ void handleTimerCommand(
             condition,
             messageCountThreshold,
             timeThreshold,
-            staggerMessageCount,
-            staggerTime);
+            messageCountStagger,
+            timeStagger);
 
         with (SplitResults)
         final switch (results)
@@ -390,8 +390,8 @@ void handleTimerCommand(
         {
             timerDef.messageCountThreshold = messageCountThreshold.to!long;
             timerDef.timeThreshold = timeThreshold.to!long;
-            if (staggerMessageCount.length) timerDef.staggerMessageCount = staggerMessageCount.to!long;
-            if (staggerTime.length) timerDef.staggerTime = staggerTime.to!long;
+            if (messageCountStagger.length) timerDef.messageCountStagger = messageCountStagger.to!long;
+            if (timeStagger.length) timerDef.timeStagger = timeStagger.to!long;
         }
         catch (ConvException e)
         {
@@ -400,8 +400,8 @@ void handleTimerCommand(
 
         if ((timerDef.messageCountThreshold < 0) ||
             (timerDef.timeThreshold < 0) ||
-            (timerDef.staggerMessageCount < 0) ||
-            (timerDef.staggerTime < 0))
+            (timerDef.messageCountStagger < 0) ||
+            (timerDef.timeStagger < 0))
         {
             return sendBadNumerics();
         }
@@ -639,8 +639,8 @@ void handleTimerCommand(
                 ((timerDef.condition == TimerDefinition.Condition.both) ? "both" : "either"),
                 timerDef.messageCountThreshold,
                 timerDef.timeThreshold,
-                timerDef.staggerMessageCount,
-                timerDef.staggerTime,
+                timerDef.messageCountStagger,
+                timerDef.timeStagger,
             );
 
             chan(plugin.state, channelName, timerMessage);
@@ -804,7 +804,7 @@ Fiber createTimerFiber(
             {
                 // Stagger messages
                 immutable messageCountUnfulfilled =
-                    ((channel.messageCount - creationMessageCount) < timerDef.staggerMessageCount);
+                    ((channel.messageCount - creationMessageCount) < timerDef.messageCountStagger);
 
                 if (messageCountUnfulfilled)
                 {
@@ -822,7 +822,7 @@ Fiber createTimerFiber(
             {
                 // Stagger time
                 immutable timerUnfulfilled =
-                    ((Clock.currTime.toUnixTime - creationTime) < timerDef.staggerTime);
+                    ((Clock.currTime.toUnixTime - creationTime) < timerDef.timeStagger);
 
                 if (timerUnfulfilled)
                 {
@@ -842,9 +842,9 @@ Fiber createTimerFiber(
             {
                 // Stagger until either is fulfilled
                 immutable messageCountUnfulfilled =
-                    ((channel.messageCount - creationMessageCount) < timerDef.staggerMessageCount);
+                    ((channel.messageCount - creationMessageCount) < timerDef.messageCountStagger);
                 immutable timerUnfulfilled =
-                    ((Clock.currTime.toUnixTime - creationTime) < timerDef.staggerTime);
+                    ((Clock.currTime.toUnixTime - creationTime) < timerDef.timeStagger);
 
                 if (timerUnfulfilled && messageCountUnfulfilled)
                 {
@@ -896,7 +896,7 @@ Fiber createTimerFiber(
                 immutable messageCountUnfulfilled =
                     ((channel.messageCount - lastMessageCount) < timerDef.messageCountThreshold);
                 immutable timerUnfulfilled =
-                    ((now - lastTimestamp) < timerDef.staggerTime);
+                    ((now - lastTimestamp) < timerDef.timeStagger);
 
                 if (timerUnfulfilled && messageCountUnfulfilled)
                 {
