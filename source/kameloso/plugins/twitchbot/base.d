@@ -1,8 +1,7 @@
 /++
     This is an example Twitch streamer bot. It supports querying uptime or how
-    long a streamer has been live, follower age queries, and
-    timered announcements. It can also emit some terminal bells on certain
-    events, to draw attention.
+    long a streamer has been live, follower age queries, etc. It can also emit
+    some terminal bells on certain events, to draw attention.
 
     One immediately obvious venue of expansion is expression bans, such as if a
     message has too many capital letters, etc. There is no protection from spam yet.
@@ -20,7 +19,6 @@ version(WithTwitchBotPlugin):
 private:
 
 import kameloso.plugins.twitchbot.api;
-import kameloso.plugins.twitchbot.timers;
 
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
@@ -148,9 +146,6 @@ void onSelfjoin(TwitchBotPlugin plugin, const ref IRCEvent event)
     Registers a new [TwitchBotPlugin.Room] as we join a channel, so there's
     always a state struct available.
 
-    Creates the timer [core.thread.fiber.Fiber|Fiber]s that there are definitions for in
-    [TwitchBotPlugin.timerDefsByChannel].
-
     Params:
         plugin = The current [TwitchBotPlugin].
         channelName = The name of the channel we're supposedly joining.
@@ -161,19 +156,6 @@ in (channelName.length, "Tried to handle SELFJOIN with an empty channel string")
     if (channelName in plugin.rooms) return;
 
     plugin.rooms[channelName] = TwitchBotPlugin.Room(channelName);
-
-    // Apply the timer definitions we have stored
-    const timerDefs = channelName in plugin.timerDefsByChannel;
-
-    if (timerDefs && timerDefs.length)
-    {
-        auto room = channelName in plugin.rooms;
-
-        foreach (const timerDef; *timerDefs)
-        {
-            room.timers ~= plugin.createTimerFiber(timerDef, channelName);
-        }
-    }
 }
 
 
@@ -219,30 +201,6 @@ void onSelfpart(TwitchBotPlugin plugin, const ref IRCEvent event)
         room.broadcast.active = false;  // In case there is a periodicalChattersDg running
         plugin.rooms.remove(event.channel);
     }
-}
-
-
-// onCommandTimer
-/++
-    Adds, deletes, lists or clears timers for the specified target channel.
-
-    Changes are persistently saved to the [TwitchBotPlugin.timersFile] file.
- +/
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.CHAN)
-    .permissionsRequired(Permissions.operator)
-    .channelPolicy(ChannelPolicy.home)
-    .addCommand(
-        IRCEventHandler.Command()
-            .word("timer")
-            .policy(PrefixPolicy.prefixed)
-            .description("Adds, removes, lists or clears timers.")
-            .syntax("$command [add|del|list|clear]")
-    )
-)
-void onCommandTimer(TwitchBotPlugin plugin, const ref IRCEvent event)
-{
-    return handleTimerCommand(plugin, event, event.channel);
 }
 
 
@@ -996,10 +954,7 @@ void onCommandShoutout(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 
 // onAnyMessage
 /++
-    Performs various actions on incoming messages.
-
-    * Bells on any message, if the [TwitchBotSettings.bellOnMessage] setting is set.
-    * Bumps the message counter for the channel, used by timers.
+    Bells on any message, if the [TwitchBotSettings.bellOnMessage] setting is set.
 
     Belling is useful with small audiences, so you don't miss messages.
  +/
@@ -1020,20 +975,6 @@ void onAnyMessage(TwitchBotPlugin plugin, const ref IRCEvent event)
         write(plugin.bell);
         stdout.flush();
     }
-
-    // Don't do any more than bell on whispers
-    if (event.type == IRCEvent.Type.QUERY) return;
-
-    auto room = event.channel in plugin.rooms;
-
-    if (!room)
-    {
-        // Race...
-        plugin.handleSelfjoin(event.channel);
-        room = event.channel in plugin.rooms;
-    }
-
-    ++room.messageCount;
 }
 
 
@@ -1055,9 +996,6 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
     import lu.string : beginsWith;
     import std.concurrency : Tid;
     import std.typecons : Flag, No, Yes;
-
-    // Timers use a specialised function
-    plugin.populateTimers(plugin.timersFile);
 
     if (plugin.useAPIFeatures)
     {
@@ -1241,58 +1179,9 @@ void onCAP(TwitchBotPlugin plugin)
 }
 
 
-// reload
-/++
-    Reloads resources from disk.
- +/
-void reload(TwitchBotPlugin plugin)
-{
-    import lu.json : JSONStorage, populateFromJSON;
-    import std.typecons : Flag, No, Yes;
-
-    if (plugin.state.server.daemon != IRCServer.Daemon.twitch) return;
-
-    plugin.timerDefsByChannel = null;
-    plugin.populateTimers(plugin.timersFile);
-}
-
-
-// initResources
-/++
-    Reads and writes the file of timers to disk, ensuring
-    that they're there and properly formatted.
- +/
-void initResources(TwitchBotPlugin plugin)
-{
-    import kameloso.plugins.common.misc : IRCPluginInitialisationException;
-    import lu.json : JSONStorage;
-    import std.file : exists;
-    import std.json : JSONException;
-    import std.path : baseName;
-    import std.stdio : File;
-
-    JSONStorage timersJSON;
-
-    try
-    {
-        timersJSON.load(plugin.timersFile);
-    }
-    catch (JSONException e)
-    {
-        version(PrintStacktraces) logger.trace(e);
-        throw new IRCPluginInitialisationException(plugin.timersFile.baseName ~ " may be malformed.");
-    }
-
-    // Let other Exceptions pass.
-
-    timersJSON.save(plugin.timersFile);
-}
-
-
 // onMyInfo
 /++
-    Sets up a Fiber to periodically call timer [core.thread.fiber.Fiber|Fiber]s with a
-    periodicity of [TwitchBotPlugin.timerPeriodicity].
+    Sets up a Fiber to periodically cache followers.
 
     Cannot be done on [dialect.defs.IRCEvent.Type.RPL_WELCOME|RPL_WELCOME] as the server
     daemon isn't known by then.
@@ -1306,32 +1195,6 @@ void onMyInfo(TwitchBotPlugin plugin)
     import kameloso.common : nextMidnight;
     import std.datetime.systime : Clock;
     import core.thread : Fiber;
-
-    void periodicDg()
-    {
-        while (true)
-        {
-            // Walk through channels, trigger fibers
-            foreach (immutable channelName, room; plugin.rooms)
-            {
-                foreach (timer; room.timers)
-                {
-                    if (!timer || (timer.state != Fiber.State.HOLD))
-                    {
-                        logger.error("Dead or busy timer Fiber in channel ", channelName);
-                        continue;
-                    }
-
-                    timer.call();
-                }
-            }
-
-            delay(plugin, plugin.timerPeriodicity, Yes.yield);
-        }
-    }
-
-    Fiber periodicFiber = new Fiber(&periodicDg, BufferSize.fiberStack);
-    delay(plugin, periodicFiber, plugin.timerPeriodicity);
 
     // Clear and re-cache follows once every midnight
     void cacheFollowersDg()
@@ -1529,17 +1392,6 @@ package:
         /// Struct instance representing the current broadcast.
         Broadcast broadcast;
 
-        /++
-            A counter of how many messages we have seen in the channel.
-
-            Used by timers to know when enough activity has passed to warrant
-            re-announcing timers.
-         +/
-        ulong messageCount;
-
-        /// Timer [core.thread.fiber.Fiber|Fiber]s.
-        Fiber[] timers;
-
         /// Account name of the broadcaster.
         string broadcasterName;
 
@@ -1558,18 +1410,6 @@ package:
 
     /// Array of active bot channels' state.
     Room[string] rooms;
-
-    /// Timer definition arrays, keyed by channel string.
-    TimerDefinition[][string] timerDefsByChannel;
-
-    /// Filename of file with timer definitions.
-    @Resource string timersFile = "twitchtimers.json";
-
-    /++
-        How often to check whether timers should fire, in seconds. A smaller
-        number means better precision, but also higher gc pressure.
-     +/
-    static immutable timerPeriodicity = 15.seconds;
 
     /++
         [kameloso.terminal.TerminalToken.bell|TerminalToken.bell] as string,
