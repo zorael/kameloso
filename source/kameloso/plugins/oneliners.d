@@ -312,6 +312,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
     switch (verb)
     {
     case "add":
+    case "new":
         import kameloso.thread : ThreadMessage;
         import lu.conv : Enum;
         import std.algorithm.comparison : among;
