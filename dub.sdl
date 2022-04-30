@@ -39,6 +39,7 @@ versions \
     "WithSeenPlugin" \
     "WithStopwatchPlugin" \
     "WithVotesPlugin" \
+    "WithTimerPlugin" \
     "WithWebtitlesPlugin"
 
 /**
