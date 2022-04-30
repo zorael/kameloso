@@ -153,7 +153,6 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
         break;
 
     case "list":
-    case string.init:
         if (event.channel !in plugin.counters)
         {
             chan(plugin.state, event.channel, "No counters currently active in this channel.");
