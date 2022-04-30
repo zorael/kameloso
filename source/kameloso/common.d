@@ -1465,57 +1465,41 @@ T expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" strip
                                 final switch (baseLevel)
                                 {
                                 case all:  //log
-                                    /*if (!strip) sink.put(Tint.log);
-                                    break;*/
                                     //goto case 'l';
                                     if (!strip) sink.put(Tint.log);
                                     break sliceswitch;
 
                                 case trace:
-                                    /*if (!strip) sink.put(Tint.trace);
-                                    break;*/
                                     //goto case 't';
                                     if (!strip) sink.put(Tint.trace);
                                     break sliceswitch;
 
                                 case info:
-                                    /*if (!strip) sink.put(Tint.info);
-                                    break;*/
                                     //goto case 'i';
                                     if (!strip) sink.put(Tint.info);
                                     break sliceswitch;
 
                                 case warning:
-                                    /*if (!strip) sink.put(Tint.warning);
-                                    break;*/
                                     //goto case 'w';
                                     if (!strip) sink.put(Tint.warning);
                                     break sliceswitch;
 
                                 case error:
-                                    /*if (!strip) sink.put(Tint.error);
-                                    break;*/
                                     //goto case 'e';
                                     if (!strip) sink.put(Tint.error);
                                     break sliceswitch;
 
                                 case critical:
-                                    /*if (!strip) sink.put(Tint.critical);
-                                    break;*/
                                     //goto case 'c';
                                     if (!strip) sink.put(Tint.critical);
                                     break sliceswitch;
 
                                 case fatal:
-                                    /*if (!strip) sink.put(Tint.fatal);
-                                    break;*/
                                     //goto case 'f';
                                     if (!strip) sink.put(Tint.fatal);
                                     break sliceswitch;
 
                                 case off:
-                                    /*if (!strip) sink.put(Tint.off);
-                                    break;*/
                                     //goto case 'o';
                                     if (!strip) sink.put(Tint.off);
                                     break sliceswitch;
