@@ -291,7 +291,7 @@ void onCommandTimer(TimerPlugin plugin, const ref IRCEvent event)
  +/
 void handleTimerCommand(
     TimerPlugin plugin,
-    const ref IRCEvent event,
+    const /*ref*/ IRCEvent event,
     const string channelName)
 {
     import lu.string : SplitResults, contains, nom, splitInto;
