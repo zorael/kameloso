@@ -363,7 +363,6 @@ If you still can't find what you're looking for, or if you have suggestions on h
 
 * pipedream zero: **no compiler segfaults** ([#18026](https://issues.dlang.org/show_bug.cgi?id=18026), [#20562](https://issues.dlang.org/show_bug.cgi?id=20562))
 * please send help: Windows Secure Channel SSL
-* split Twitch timers into own plugin
 * Twitch `ecount`, `settitle`, `setgame`, `vanish`/`poof`, `watchtime`, `roulette`, `repeat`/`spam`?
 * Twitch web server to catch auth key
 * help plugin descriptions? multiple syntax entries?
