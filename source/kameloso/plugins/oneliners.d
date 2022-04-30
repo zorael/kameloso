@@ -320,7 +320,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
 
         void sendAddUsage()
         {
-            enum pattern = "Usage: <b>%s%s<b> add [trigger] [text...]";
+            enum pattern = "Usage: <b>%s%s<b> add [trigger] [type] [text...]";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
             chan(plugin.state, event.channel, message);
         }
