@@ -268,7 +268,7 @@ public:
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
-            .word("timer2")
+            .word("timer")
             .policy(PrefixPolicy.prefixed)
             .description("Adds, removes, lists or clears timers.")
             .syntax("$command [new|add|del|list|clear] ...")
