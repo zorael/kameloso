@@ -104,6 +104,15 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
             break;
         }
     }
+    else
+    {
+        import std.format : format;
+
+        enum pattern = "Usage: %s%s [seconds] [choice1] [choice2] ...";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+        return;
+    }
 
     if (event.channel in plugin.channelVoteInstances)
     {
