@@ -693,18 +693,7 @@ void onWelcome(TimerPlugin plugin)
     import lu.json : JSONStorage;
     import std.datetime.systime : Clock;
 
-    JSONStorage allTimersJSON;
-    allTimersJSON.load(plugin.timerFile);
-
-    foreach (immutable channelName, const timerDefsJSON; allTimersJSON.object)
-    {
-        foreach (const timerDefJSON; timerDefsJSON.array)
-        {
-            plugin.timerDefsByChannel[channelName] ~= TimerDefinition.fromJSON(timerDefJSON);
-        }
-    }
-
-    plugin.timerDefsByChannel = plugin.timerDefsByChannel.rehash();
+    plugin.reload();
 
     void periodicDg()
     {
@@ -1010,6 +999,31 @@ void initResources(TimerPlugin plugin)
     // Let other Exceptions pass.
 
     timersJSON.save(plugin.timerFile);
+}
+
+
+// reload
+/++
+    Reloads resources from disk.
+ +/
+void reload(TimerPlugin plugin)
+{
+    import lu.json : JSONStorage;
+
+    JSONStorage allTimersJSON;
+    allTimersJSON.load(plugin.timerFile);
+
+    plugin.timerDefsByChannel = null;
+
+    foreach (immutable channelName, const timerDefsJSON; allTimersJSON.object)
+    {
+        foreach (const timerDefJSON; timerDefsJSON.array)
+        {
+            plugin.timerDefsByChannel[channelName] ~= TimerDefinition.fromJSON(timerDefJSON);
+        }
+    }
+
+    plugin.timerDefsByChannel = plugin.timerDefsByChannel.rehash();
 }
 
 
