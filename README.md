@@ -367,6 +367,7 @@ If you still can't find what you're looking for, or if you have suggestions on h
 * Twitch `ecount`, `settitle`, `setgame`, `vanish`/`poof`, `watchtime`, `roulette`, `repeat`/`spam`?
 * Twitch web server to catch auth key
 * help plugin descriptions? multiple syntax entries?
+* migrate `8ball` to `oneliners`
 * **more pairs of eyes**
 
 # Built with
