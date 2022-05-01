@@ -369,6 +369,8 @@ Assuming a prefix of `!`, commands to test are:
 * `!start`, `!uptime`, `!stop`
 * `!followage`
 * `!shoutout`
+* `!vanish`
+* `!repeat`
 
 ...alongside `!oneliner`, `!counter`, `!timer`, `!poll`, `!stopwatch`, and other non-Twitch-specific commands. Try `!help` or [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins).
 
@@ -393,7 +395,7 @@ If you still can't find what you're looking for, or if you have suggestions on h
 
 * pipedream zero: **no compiler segfaults** ([#18026](https://issues.dlang.org/show_bug.cgi?id=18026), [#20562](https://issues.dlang.org/show_bug.cgi?id=20562))
 * please send help: Windows Secure Channel SSL
-* Twitch `ecount`, `settitle`, `setgame`, `vanish`/`poof`, `watchtime`, `roulette`, `repeat`/`spam`?
+* Twitch `ecount`, `settitle`, `setgame`, `watchtime`?
 * Twitch web server to catch auth key
 * help plugin descriptions? multiple syntax entries?
 * **more pairs of eyes**
