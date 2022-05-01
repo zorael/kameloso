@@ -84,13 +84,6 @@ public:
          +/
         string description;
 
-        // syntax
-        /++
-            Syntax on how to use the command.
-         +/
-        deprecated("Use `string[] syntaxes` instead")
-        string syntax;
-
         // syntaxes
         /++
             Syntaxes on how to use the command.
@@ -104,16 +97,7 @@ public:
          +/
         bool hidden;
 
-        /// Constructor taking a single syntax string.
-        deprecated("Use constructor taking a `string[]` of syntaxes instead")
-        this(const string description, const string syntax, const bool hidden) pure @safe nothrow @nogc
-        {
-            this.description = description;
-            this.syntax = syntax;
-            this.hidden = hidden;
-        }
-
-        /// Constructor taking a `string[]` of syntaxes.
+        /// Constructor.
         this(const string description, /*const*/ string[] syntaxes, const bool hidden) pure @safe nothrow @nogc
         {
             this.description = description;
@@ -2606,12 +2590,6 @@ struct IRCEventHandler
             [IRCEventHandler.Command]s, in the help listing routine in [kameloso.plugins.chatbot].
          +/
         string _description;
-
-        // syntax
-        /++
-            Command usage syntax help string.
-         +/
-        string _syntax;
 
         // hidden
         /++
