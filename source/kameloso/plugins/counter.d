@@ -50,7 +50,9 @@ import std.typecons : Flag, No, Yes;
             .word("counter")
             .policy(PrefixPolicy.prefixed)
             .description("Adds, removes or lists counters.")
-            .syntax("$command [add|del|list] [counter word]")
+            .addSyntax("$command add [counter word]")
+            .addSyntax("$command del [counter word]")
+            .addSyntax("$command list")
     )
 )
 void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
@@ -153,7 +155,6 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
         break;
 
     case "list":
-    case string.init:
         if (event.channel !in plugin.counters)
         {
             chan(plugin.state, event.channel, "No counters currently active in this channel.");

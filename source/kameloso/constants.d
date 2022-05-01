@@ -297,7 +297,7 @@ enum BufferSize
         How large to make [core.thread.fiber.Fiber|Fiber] stacks, so they don't
         overflow (which they seem to have a knack for doing).
      +/
-    fiberStack = 1_048_576,
+    fiberStack = 131_072,
 }
 
 

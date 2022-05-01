@@ -283,7 +283,9 @@ unittest
             .word("automode")
             .policy(PrefixPolicy.prefixed)
             .description("Adds, lists or removes automode definitions for the current channel.")
-            .syntax("$command [add|list|clear] [account/nickname] [mode]")
+            .addSyntax("$command add [account] [mode]")
+            .addSyntax("$command clear [account]")
+            .addSyntax("$command list")
     )
 )
 void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
@@ -478,14 +480,14 @@ void onCommandOp(AutomodePlugin plugin, const ref IRCEvent event)
 }
 
 
-// onMyInfo
+// onWelcome
 /++
     Populate automodes array after we have successfully logged onto the server.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
 )
-void onMyInfo(AutomodePlugin plugin)
+void onWelcome(AutomodePlugin plugin)
 {
     import lu.json : JSONStorage, populateFromJSON;
 

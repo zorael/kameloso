@@ -1,8 +1,7 @@
 /++
     This is an example Twitch streamer bot. It supports querying uptime or how
-    long a streamer has been live, follower age queries, and
-    timered announcements. It can also emit some terminal bells on certain
-    events, to draw attention.
+    long a streamer has been live, follower age queries, etc. It can also emit
+    some terminal bells on certain events, to draw attention.
 
     One immediately obvious venue of expansion is expression bans, such as if a
     message has too many capital letters, etc. There is no protection from spam yet.
@@ -20,7 +19,6 @@ version(WithTwitchBotPlugin):
 private:
 
 import kameloso.plugins.twitchbot.api;
-import kameloso.plugins.twitchbot.timers;
 
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
@@ -43,6 +41,12 @@ private:
 public:
     /// Whether or not this plugin should react to any events.
     @Enabler bool enabled = true;
+
+    /++
+        Whether or not to count emotes in chat, to be able to respond to `!ecount`
+        queries about how many times a specific one has been seen.
+     +/
+    bool ecount = true;
 
     /++
         Whether or not broadcasters are always implicitly class
@@ -148,9 +152,6 @@ void onSelfjoin(TwitchBotPlugin plugin, const ref IRCEvent event)
     Registers a new [TwitchBotPlugin.Room] as we join a channel, so there's
     always a state struct available.
 
-    Creates the timer [core.thread.fiber.Fiber|Fiber]s that there are definitions for in
-    [TwitchBotPlugin.timerDefsByChannel].
-
     Params:
         plugin = The current [TwitchBotPlugin].
         channelName = The name of the channel we're supposedly joining.
@@ -161,19 +162,6 @@ in (channelName.length, "Tried to handle SELFJOIN with an empty channel string")
     if (channelName in plugin.rooms) return;
 
     plugin.rooms[channelName] = TwitchBotPlugin.Room(channelName);
-
-    // Apply the timer definitions we have stored
-    const timerDefs = channelName in plugin.timerDefsByChannel;
-
-    if (timerDefs && timerDefs.length)
-    {
-        auto room = channelName in plugin.rooms;
-
-        foreach (const timerDef; *timerDefs)
-        {
-            room.timers ~= plugin.createTimerFiber(timerDef, channelName);
-        }
-    }
 }
 
 
@@ -219,30 +207,6 @@ void onSelfpart(TwitchBotPlugin plugin, const ref IRCEvent event)
         room.broadcast.active = false;  // In case there is a periodicalChattersDg running
         plugin.rooms.remove(event.channel);
     }
-}
-
-
-// onCommandTimer
-/++
-    Adds, deletes, lists or clears timers for the specified target channel.
-
-    Changes are persistently saved to the [TwitchBotPlugin.timersFile] file.
- +/
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.CHAN)
-    .permissionsRequired(Permissions.operator)
-    .channelPolicy(ChannelPolicy.home)
-    .addCommand(
-        IRCEventHandler.Command()
-            .word("timer")
-            .policy(PrefixPolicy.prefixed)
-            .description("Adds, removes, lists or clears timers.")
-            .syntax("$command [add|del|list|clear]")
-    )
-)
-void onCommandTimer(TwitchBotPlugin plugin, const ref IRCEvent event)
-{
-    return handleTimerCommand(plugin, event, event.channel);
 }
 
 
@@ -293,7 +257,7 @@ void onCommandUptime(TwitchBotPlugin plugin, const ref IRCEvent event)
             .word("start")
             .policy(PrefixPolicy.prefixed)
             .description("Marks the start of a broadcast.")
-            .syntax("$command [optional HH:MM or MM time already elapsed]")
+            .addSyntax("$command [optional HH:MM or MM time already elapsed]")
     )
 )
 void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
@@ -657,7 +621,7 @@ void reportStreamTime(TwitchBotPlugin plugin,
             .description("Queries the server for how long you have been a follower " ~
                 "of the current channel. Optionally takes a nickname parameter, " ~
                 "to query for someone else.")
-            .syntax("$command [optional nickname]")
+            .addSyntax("$command [optional nickname]")
     )
 )
 void onCommandFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
@@ -891,7 +855,7 @@ void onRoomState(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             .word("shoutout")
             .policy(PrefixPolicy.prefixed)
             .description("Emits a shoutout to another streamer.")
-            .syntax("$command [name of streamer] [optional number of times to spam]")
+            .addSyntax("$command [name of streamer] [optional number of times to spam]")
     )
     .addCommand(
         IRCEventHandler.Command()
@@ -994,12 +958,102 @@ void onCommandShoutout(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 }
 
 
+// onCommandVanish
+/++
+    Hides a user's messages (making them "disappear") by briefly timing them out.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("vanish")
+            .policy(PrefixPolicy.prefixed)
+            .description(`Hides a user's messages (making them "disappear") by briefly timing them out.`)
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("poof")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
+)
+void onCommandVanish(TwitchBotPlugin plugin, const ref IRCEvent event)
+{
+    immutable message = "/timeout " ~ event.sender.nickname ~ " 1";
+    chan(plugin.state, event.channel, message);
+}
+
+
+// onCommandRepeat
+/++
+    Repeats a given message n number of times.
+
+    Requires moderator privileges to work correctly.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("repeat")
+            .policy(PrefixPolicy.prefixed)
+            .description("Repeats a given message n number of times.")
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("spam")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
+)
+void onCommandRepeat(TwitchBotPlugin plugin, const ref IRCEvent event)
+{
+    import lu.string : nom;
+    import std.algorithm.searching : count;
+    import std.algorithm.comparison : min;
+    import std.conv : ConvException, to;
+    import std.format : format;
+
+    void sendUsage()
+    {
+        enum pattern = "Usage: %s%s [number of times] [text...]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+    }
+
+    if (!event.content.length || !event.content.count(' ')) return sendUsage();
+
+    string slice = event.content;  // mutable
+    immutable numTimesString = slice.nom(' ');
+
+    try
+    {
+        enum maxNumTimes = 10;
+        immutable numTimes = min(numTimesString.to!int, maxNumTimes);
+
+        if (numTimes < 1)
+        {
+            enum message = "Number of times must be greater than 0.";
+            chan(plugin.state, event.channel, message);
+            return;
+        }
+
+        foreach (immutable i; 0..numTimes)
+        {
+            chan(plugin.state, event.channel, slice);
+        }
+    }
+    catch (ConvException e)
+    {
+        return sendUsage();
+    }
+}
+
+
 // onAnyMessage
 /++
-    Performs various actions on incoming messages.
-
-    * Bells on any message, if the [TwitchBotSettings.bellOnMessage] setting is set.
-    * Bumps the message counter for the channel, used by timers.
+    Bells on any message, if the [TwitchBotSettings.bellOnMessage] setting is set.
 
     Belling is useful with small audiences, so you don't miss messages.
  +/
@@ -1009,6 +1063,7 @@ void onCommandShoutout(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     .onEvent(IRCEvent.Type.EMOTE)
     .permissionsRequired(Permissions.ignore)
     .channelPolicy(ChannelPolicy.home)
+    .chainable(true)
 )
 void onAnyMessage(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
@@ -1021,19 +1076,38 @@ void onAnyMessage(TwitchBotPlugin plugin, const ref IRCEvent event)
         stdout.flush();
     }
 
-    // Don't do any more than bell on whispers
-    if (event.type == IRCEvent.Type.QUERY) return;
-
-    auto room = event.channel in plugin.rooms;
-
-    if (!room)
+    // ecount!
+    if (plugin.twitchBotSettings.ecount && event.emotes.length)
     {
-        // Race...
-        plugin.handleSelfjoin(event.channel);
-        room = event.channel in plugin.rooms;
-    }
+        import lu.string : nom;
+        import std.algorithm.iteration : splitter;
+        import std.algorithm.searching : count;
+        import std.conv : to;
 
-    ++room.messageCount;
+        foreach (immutable emotestring; event.emotes.splitter('/'))
+        {
+            auto channelcount = event.channel in plugin.ecount;
+
+            if (!channelcount)
+            {
+                plugin.ecount[event.channel][string.init] = 0L;
+                channelcount = event.channel in plugin.ecount;
+                (*channelcount).remove(string.init);
+            }
+
+            string slice = emotestring;  // mutable
+            immutable id = slice.nom(':');//.to!uint;
+            auto thisEmoteCount = id in *channelcount;
+
+            if (!thisEmoteCount)
+            {
+                (*channelcount)[id] = 0L;
+                thisEmoteCount = id in *channelcount;
+            }
+
+            *thisEmoteCount += slice.count(',') + 1;
+        }
+    }
 }
 
 
@@ -1055,9 +1129,6 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
     import lu.string : beginsWith;
     import std.concurrency : Tid;
     import std.typecons : Flag, No, Yes;
-
-    // Timers use a specialised function
-    plugin.populateTimers(plugin.timersFile);
 
     if (plugin.useAPIFeatures)
     {
@@ -1215,6 +1286,75 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
 }
 
 
+// onCommandEcount
+/++
+    `!ecount`; reporting how many times a Twitch emote has been seen.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.anyone)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("ecount")
+            .policy(PrefixPolicy.prefixed)
+            .description("Reports how many times an emote has been used in the channel.")
+            .addSyntax("$command [emote]")
+    )
+)
+void onCommandEcount(TwitchBotPlugin plugin, const ref IRCEvent event)
+{
+    import lu.string : nom, stripped;
+    import std.format : format;
+    import std.conv  : to;
+
+    void sendResults(const long count)
+    {
+        // 425618:3-5
+        string slice = event.emotes;  // mutable
+        slice.nom(':');
+
+        immutable start = slice.nom('-').to!size_t;
+        immutable end = slice
+            .nom!(Yes.inherit)('/')
+            .nom!(Yes.inherit)(',')
+            .to!size_t + 1;  // upper-bound inclusive!
+
+        string rawSlice = event.raw;  // mutable
+        rawSlice.nom(event.channel);
+        rawSlice.nom(" :");
+
+        // Slice it as a dstring to (hopefully) get full characters
+        immutable dline = rawSlice.to!dstring;
+        immutable emote = dline[start..end];
+
+        // No real point using plurality since most emotes should have a count > 1
+        enum pattern = "%s has been used %d times!";
+        immutable message = pattern.format(emote, count);
+        chan(plugin.state, event.channel, message);
+    }
+
+    if (!event.emotes.length)
+    {
+        enum pattern = "Usage: %s%s [emote]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+        return;
+    }
+
+    const channelcounts = event.channel in plugin.ecount;
+    if (!channelcounts) return sendResults(0L);
+
+    string slice = event.emotes;
+    immutable id = slice.nom(':');//.to!uint;
+
+    auto thisEmoteCount = id in *channelcounts;
+    if (!thisEmoteCount) return sendResults(0L);
+
+    sendResults(*thisEmoteCount);
+}
+
+
 // onCAP
 /++
     Start the captive key generation routine at the earliest possible moment,
@@ -1241,58 +1381,9 @@ void onCAP(TwitchBotPlugin plugin)
 }
 
 
-// reload
-/++
-    Reloads resources from disk.
- +/
-void reload(TwitchBotPlugin plugin)
-{
-    import lu.json : JSONStorage, populateFromJSON;
-    import std.typecons : Flag, No, Yes;
-
-    if (plugin.state.server.daemon != IRCServer.Daemon.twitch) return;
-
-    plugin.timerDefsByChannel = null;
-    plugin.populateTimers(plugin.timersFile);
-}
-
-
-// initResources
-/++
-    Reads and writes the file of timers to disk, ensuring
-    that they're there and properly formatted.
- +/
-void initResources(TwitchBotPlugin plugin)
-{
-    import kameloso.plugins.common.misc : IRCPluginInitialisationException;
-    import lu.json : JSONStorage;
-    import std.file : exists;
-    import std.json : JSONException;
-    import std.path : baseName;
-    import std.stdio : File;
-
-    JSONStorage timersJSON;
-
-    try
-    {
-        timersJSON.load(plugin.timersFile);
-    }
-    catch (JSONException e)
-    {
-        version(PrintStacktraces) logger.trace(e);
-        throw new IRCPluginInitialisationException(plugin.timersFile.baseName ~ " may be malformed.");
-    }
-
-    // Let other Exceptions pass.
-
-    timersJSON.save(plugin.timersFile);
-}
-
-
 // onMyInfo
 /++
-    Sets up a Fiber to periodically call timer [core.thread.fiber.Fiber|Fiber]s with a
-    periodicity of [TwitchBotPlugin.timerPeriodicity].
+    Sets up a Fiber to periodically cache followers.
 
     Cannot be done on [dialect.defs.IRCEvent.Type.RPL_WELCOME|RPL_WELCOME] as the server
     daemon isn't known by then.
@@ -1306,32 +1397,6 @@ void onMyInfo(TwitchBotPlugin plugin)
     import kameloso.common : nextMidnight;
     import std.datetime.systime : Clock;
     import core.thread : Fiber;
-
-    void periodicDg()
-    {
-        while (true)
-        {
-            // Walk through channels, trigger fibers
-            foreach (immutable channelName, room; plugin.rooms)
-            {
-                foreach (timer; room.timers)
-                {
-                    if (!timer || (timer.state != Fiber.State.HOLD))
-                    {
-                        logger.error("Dead or busy timer Fiber in channel ", channelName);
-                        continue;
-                    }
-
-                    timer.call();
-                }
-            }
-
-            delay(plugin, plugin.timerPeriodicity, Yes.yield);
-        }
-    }
-
-    Fiber periodicFiber = new Fiber(&periodicDg, BufferSize.fiberStack);
-    delay(plugin, periodicFiber, plugin.timerPeriodicity);
 
     // Clear and re-cache follows once every midnight
     void cacheFollowersDg()
@@ -1355,6 +1420,22 @@ void onMyInfo(TwitchBotPlugin plugin)
 
     Fiber followersFiber = new Fiber(&cacheFollowersDg, BufferSize.fiberStack);
     delay(plugin, followersFiber, now.nextMidnight-now);
+
+    // Load ecounts.
+    plugin.reload();
+
+    // Periodically save ecounts
+    void saveEcountDg()
+    {
+        while (true)
+        {
+            if (plugin.ecount.length) saveResourceToDisk(plugin.ecount, plugin.ecountFile);
+            delay(plugin, plugin.ecountSavePeriodicity, Yes.yield);
+        }
+    }
+
+    Fiber saveEcountFiber = new Fiber(&saveEcountDg, BufferSize.fiberStack);
+    delay(plugin, saveEcountFiber, plugin.ecountSavePeriodicity);
 }
 
 
@@ -1391,6 +1472,11 @@ void teardown(TwitchBotPlugin plugin)
     {
         // It may not have been started if we're aborting very early.
         plugin.persistentWorkerTid.send(ThreadMessage.teardown());
+    }
+
+    if (plugin.ecount.length)
+    {
+        saveResourceToDisk(plugin.ecount, plugin.ecountFile);
     }
 }
 
@@ -1468,6 +1554,83 @@ void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
 }
 
 
+// initResources
+/++
+    Reads and writes the file of emote counters to disk, ensuring that it's
+    there and properly formatted.
+ +/
+void initResources(TwitchBotPlugin plugin)
+{
+    import lu.json : JSONStorage;
+    import std.json : JSONException;
+    import std.path : baseName;
+
+    JSONStorage ecountJSON;
+
+    try
+    {
+        ecountJSON.load(plugin.ecountFile);
+    }
+    catch (JSONException e)
+    {
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+
+        version(PrintStacktraces) logger.trace(e);
+        throw new IRCPluginInitialisationException(plugin.ecountFile.baseName ~ " may be malformed.");
+    }
+
+    // Let other Exceptions pass.
+
+    ecountJSON.save(plugin.ecountFile);
+}
+
+
+// saveResourceToDisk
+/++
+    Saves the passed resource to disk, but in JSON format.
+
+    This is used with the associative arrays for `ecount`.
+
+    Params:
+        aa = The associative array to convert into JSON and save.
+        filename = Filename of the file to write to.
+ +/
+void saveResourceToDisk(const long[string][string] aa, const string filename)
+{
+    import std.json : JSONValue;
+    import std.stdio : File, writeln;
+
+    const json = JSONValue(aa);
+    File(filename, "w").writeln(json.toPrettyString);
+}
+
+
+// reload
+/++
+    Reloads the plugin, loading emote counters from disk.
+ +/
+void reload(TwitchBotPlugin plugin)
+{
+    import lu.json : JSONStorage, populateFromJSON;
+
+    JSONStorage ecountJSON;
+    ecountJSON.load(plugin.ecountFile);
+    plugin.ecount.clear();
+
+    foreach (immutable channelName, const channelcountJSON; ecountJSON.storage.object)
+    {
+        foreach (immutable emoteIDString, const emoteCountJSON; channelcountJSON.object)
+        {
+            //import std.conv : to;
+            //immutable emoteID = emoteIDString.to!uint;
+            plugin.ecount[channelName][emoteIDString] = emoteCountJSON.integer;
+        }
+    }
+
+    plugin.ecount = plugin.ecount.rehash();
+}
+
+
 mixin UserAwareness;
 mixin ChannelAwareness;
 mixin TwitchAwareness;
@@ -1487,7 +1650,7 @@ private:
     import kameloso.terminal : TerminalToken;
     import arsd.http2;
     import std.concurrency : Tid;
-    import core.time : seconds;
+    import core.time : hours, seconds;
 
 package:
     /// Contained state of a channel, so that there can be several alongside each other.
@@ -1529,17 +1692,6 @@ package:
         /// Struct instance representing the current broadcast.
         Broadcast broadcast;
 
-        /++
-            A counter of how many messages we have seen in the channel.
-
-            Used by timers to know when enough activity has passed to warrant
-            re-announcing timers.
-         +/
-        ulong messageCount;
-
-        /// Timer [core.thread.fiber.Fiber|Fiber]s.
-        Fiber[] timers;
-
         /// Account name of the broadcaster.
         string broadcasterName;
 
@@ -1558,18 +1710,6 @@ package:
 
     /// Array of active bot channels' state.
     Room[string] rooms;
-
-    /// Timer definition arrays, keyed by channel string.
-    TimerDefinition[][string] timerDefsByChannel;
-
-    /// Filename of file with timer definitions.
-    @Resource string timersFile = "twitchtimers.json";
-
-    /++
-        How often to check whether timers should fire, in seconds. A smaller
-        number means better precision, but also higher gc pressure.
-     +/
-    static immutable timerPeriodicity = 15.seconds;
 
     /++
         [kameloso.terminal.TerminalToken.bell|TerminalToken.bell] as string,
@@ -1643,6 +1783,15 @@ package:
 
     /// Associative array of responses from async HTTP queries.
     shared QueryResponse[string] bucket;
+
+    /// File to save emote counters to.
+    @Resource ecountFile = "twitch-ecount.json";
+
+    /// Emote counters associative array; counter longs keyed by emote ID string keyed by channel.
+    long[string][string] ecount;
+
+    /// How often to save `ecount`s, to ward against losing information to crashes.
+    static immutable ecountSavePeriodicity = 24.hours;
 
 
     // isEnabled

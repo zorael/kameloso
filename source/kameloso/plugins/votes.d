@@ -47,7 +47,7 @@ import std.typecons : Flag, No, Yes;
             .word("poll")
             .policy(PrefixPolicy.prefixed)
             .description(`Starts or stops a vote. Pass "abort" to abort, or "end" to end early.`)
-            .syntax("$command [seconds] [choice1] [choice2] ...")
+            .addSyntax("$command [seconds] [choice1] [choice2] ...")
     )
     .addCommand(
         IRCEventHandler.Command()
@@ -103,6 +103,15 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
         default:
             break;
         }
+    }
+    else
+    {
+        import std.format : format;
+
+        enum pattern = "Usage: %s%s [seconds] [choice1] [choice2] ...";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+        return;
     }
 
     if (event.channel in plugin.channelVoteInstances)
