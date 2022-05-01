@@ -69,7 +69,7 @@ import dialect.defs;
             .word("help")
             .policy(PrefixPolicy.prefixed)
             .description("Shows a list of all available commands.")
-            .syntax("$command [plugin] [command]")
+            .addSyntax("$command [plugin] [command]")
     )
 )
 void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)

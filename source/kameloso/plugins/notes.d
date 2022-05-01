@@ -313,7 +313,7 @@ void playbackNotes(NotesPlugin plugin,
             .policy(PrefixPolicy.prefixed)
             .description("Adds a note to send to an offline person when they come online, " ~
                 "or when they show activity if already online.")
-            .syntax("$command [account] [note text]")
+            .addSyntax("$command [nickname] [note text...]")
     )
 )
 void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
@@ -333,7 +333,7 @@ void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
 
     if ((results != SplitResults.overrun) || !target.length)
     {
-        enum pattern = "Usage: <b>%s%s<b> [nickname] [note text]";
+        enum pattern = "Usage: <b>%s%s<b> [nickname] [note text...]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
         return;
