@@ -926,6 +926,7 @@ in (signed.length, "Tried to update a user with an empty (signed) nickname")
         // New user; add an entry and bump the added counter
         plugin.seenUsers[nickname] = time;
         ++plugin.addedSinceLastRehash;
+        plugin.maybeRehash();
     }
 }
 
