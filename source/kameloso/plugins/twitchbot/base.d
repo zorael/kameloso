@@ -43,6 +43,12 @@ public:
     @Enabler bool enabled = true;
 
     /++
+        Whether or not to count emotes in chat, to be able to respond to `!ecount`
+        queries about how many times a specific one has been seen.
+     +/
+    bool ecount = true;
+
+    /++
         Whether or not broadcasters are always implicitly class
         [dialect.defs.IRCUser.Class.staff|IRCUser.Class.staff].
      +/
