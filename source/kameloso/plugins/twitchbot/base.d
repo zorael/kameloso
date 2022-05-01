@@ -952,6 +952,33 @@ void onCommandShoutout(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 }
 
 
+// onCommandVanish
+/++
+    Hides a user's messages (making them "disappear") by briefly timing them out.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("vanish")
+            .policy(PrefixPolicy.prefixed)
+            .description(`Hides a user's messages (making them "disappear") by briefly timing them out.`)
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("poof")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
+)
+void onCommandVanish(TwitchBotPlugin plugin, const ref IRCEvent event)
+{
+    immutable message = "/timeout " ~ event.sender.nickname ~ " 1";
+    chan(plugin.state, event.channel, message);
+}
+
+
 // onAnyMessage
 /++
     Bells on any message, if the [TwitchBotSettings.bellOnMessage] setting is set.
