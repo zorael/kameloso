@@ -940,8 +940,10 @@ in (signed.length, "Tried to update a user with an empty (signed) nickname")
  +/
 void maybeRehash(SeenPlugin plugin)
 {
-    if (plugin.addedSinceLastRehash >
-        (plugin.seenUsers.length * plugin.rehashThresholdMultiplier))
+    enum minimumAddedNeededForRehash = 128;
+
+    if ((plugin.addedSinceLastRehash > minimumAddedNeededForRehash) &&
+        (plugin.addedSinceLastRehash > (plugin.seenUsers.length * plugin.rehashThresholdMultiplier)))
     {
         plugin.seenUsers = plugin.seenUsers.rehash();
         plugin.addedSinceLastRehash = 0;
