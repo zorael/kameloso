@@ -42,7 +42,7 @@ private:
 public:
     // Type
     /++
-        The different kinds of[Oneliner|Oneliners]. Either one that yields a
+        The different kinds of [Oneliner]s. Either one that yields a
         [Type.random|random] response each time, or one that yields a
         [Type.sequential|sequential] one.
      +/
