@@ -1336,7 +1336,7 @@ void onCommandEcount(TwitchBotPlugin plugin, const ref IRCEvent event)
 
     if (!event.emotes.length)
     {
-        enum pattern = "Usage: %s%s ecount [emoji]";
+        enum pattern = "Usage: %s%s [emote]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
         chan(plugin.state, event.channel, message);
         return;
