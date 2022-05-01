@@ -1306,6 +1306,7 @@ void onCommandEcount(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : nom, stripped;
     import std.format : format;
+    import std.conv  : to;
 
     void sendResults(const long count)
     {
