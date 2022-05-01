@@ -319,7 +319,7 @@ void handleTimerCommand(
     case "new":
         void sendNewUsage()
         {
-            enum pattern = "Usage: <b>%s%s<b> new [name] [type] [condition] [message threshold] " ~
+            enum pattern = "Usage: <b>%s%s<b> new [name] [type] [condition] [message count threshold] " ~
                 "[time threshold] [stagger message count] [stagger time]";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
             chan(plugin.state, channelName, message);
