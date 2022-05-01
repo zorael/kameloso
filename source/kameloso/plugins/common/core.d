@@ -1632,7 +1632,10 @@ mixin template IRCPluginImpl(
                             {
                                 // Prefix the command with the bot's nickname,
                                 // as that's how it's actually used.
-                                commandAA[key].syntaxes ~= "$nickname: " ~ command._syntax;
+                                foreach (immutable syntax; command._syntaxes)
+                                {
+                                    commandAA[key].syntaxes ~= "$nickname: " ~ syntax;
+                                }
                             }
                             else
                             {
