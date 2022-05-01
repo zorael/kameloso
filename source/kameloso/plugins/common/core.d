@@ -84,11 +84,11 @@ public:
          +/
         string description;
 
-        // syntax
+        // syntaxes
         /++
-            Syntax on how to use the command.
+            Syntaxes on how to use the command.
          +/
-        string syntax;
+        string[] syntaxes;
 
         // hidden
         /++
@@ -96,6 +96,14 @@ public:
             possible to trigger).
          +/
         bool hidden;
+
+        /// Constructor.
+        this(const string description, /*const*/ string[] syntaxes, const bool hidden) pure @safe nothrow @nogc
+        {
+            this.description = description;
+            this.syntaxes = syntaxes;
+            this.hidden = hidden;
+        }
     }
 
     // state
@@ -762,7 +770,7 @@ mixin template IRCPluginImpl(
             // Evaluate each Command UDAs with the current event
             if (uda._commands.length)
             {
-                foreach (immutable command; uda._commands)
+                foreach (const command; uda._commands)
                 {
                     static if (verbose)
                     {
@@ -1610,27 +1618,30 @@ mixin template IRCPluginImpl(
             {
                 immutable uda = getUDAs!(fun, IRCEventHandler)[0];
 
-                static foreach (immutable command; uda._commands)
+                static foreach (const command; uda._commands)
                 {{
                     enum key = command._word;
                     commandAA[key] = IRCPlugin.CommandMetadata
-                        (command._description, command._syntax, command._hidden);
+                        (command._description, command._syntaxes, command._hidden);
 
                     static if (command._description.length)
                     {
                         static if (command._policy == PrefixPolicy.nickname)
                         {
-                            static if (command._syntax.length)
+                            static if (command._syntaxes.length)
                             {
                                 // Prefix the command with the bot's nickname,
                                 // as that's how it's actually used.
-                                commandAA[key].syntax = "$nickname: " ~ command._syntax;
+                                foreach (immutable syntax; command._syntaxes)
+                                {
+                                    commandAA[key].syntaxes ~= "$nickname: " ~ syntax;
+                                }
                             }
                             else
                             {
                                 // Define an empty nickname: command syntax
                                 // to give hint about the nickname prefix
-                                commandAA[key].syntax = "$nickname: $command";
+                                commandAA[key].syntaxes ~= "$nickname: $command";
                             }
                         }
                     }
@@ -1652,15 +1663,15 @@ mixin template IRCPluginImpl(
                     {
                         static if (regex._policy == PrefixPolicy.direct)
                         {
-                            commandAA[key].syntax = regex._expression;
+                            commandAA[key].syntaxes ~= regex._expression;
                         }
                         else static if (regex._policy == PrefixPolicy.prefix)
                         {
-                            commandAA[key].syntax = "$prefix" ~ regex._expression;
+                            commandAA[key].syntaxes ~= "$prefix" ~ regex._expression;
                         }
                         else static if (regex._policy == PrefixPolicy.nickname)
                         {
-                            commandAA[key].syntax = "$nickname: " ~ regex._expression;
+                            commandAA[key].syntaxes ~= "$nickname: " ~ regex._expression;
                         }
                     }
                     else static if (!regex._hidden)
@@ -2583,17 +2594,24 @@ struct IRCEventHandler
          +/
         string _description;
 
-        // syntax
-        /++
-            Command usage syntax help string.
-         +/
-        string _syntax;
-
         // hidden
         /++
             Whether this is a hidden command or if it should show up in help listings.
          +/
         bool _hidden;
+
+        // syntax
+        /++
+            Command usage syntax help strings.
+         +/
+        string[] _syntaxes;
+
+        // _addSyntax
+        /++
+            Alias to make [kameloso.traits.UnderscoreOpDispatcher] redirect calls to
+            [_syntaxes] but by the name `addSyntax`.
+         +/
+        alias _addSyntax = _syntaxes;
 
         mixin UnderscoreOpDispatcher;
     }

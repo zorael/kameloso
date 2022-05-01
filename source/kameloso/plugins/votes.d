@@ -47,7 +47,7 @@ import std.typecons : Flag, No, Yes;
             .word("poll")
             .policy(PrefixPolicy.prefixed)
             .description(`Starts or stops a vote. Pass "abort" to abort, or "end" to end early.`)
-            .syntax("$command [seconds] [choice1] [choice2] ...")
+            .addSyntax("$command [seconds] [choice1] [choice2] ...")
     )
     .addCommand(
         IRCEventHandler.Command()
