@@ -118,7 +118,7 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
                     if (const command = specifiedCommand in pluginCommands)
                     {
                         plugin.sendCommandHelp(pluginName, mutEvent, specifiedCommand,
-                            command.description, command.syntax);
+                            command.description, command.syntaxes);
                         return;
                     }
                 }
@@ -139,7 +139,7 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
                     if (const command = specifiedCommand in *pluginCommands)
                     {
                         plugin.sendCommandHelp(specifiedPlugin, mutEvent, specifiedCommand,
-                            command.description, command.syntax);
+                            command.description, command.syntaxes);
                     }
                     else
                     {
@@ -244,15 +244,17 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
         event = The triggering [dialect.defs.IRCEvent|IRCEvent].
         command = String of the command we're to send help text for (sans prefix).
         description = The description text that the event handler function is annotated with.
-        syntax = The declared syntax of the command.
+        syntaxes = The declared different syntaxes of the command.
  +/
 void sendCommandHelp(HelpPlugin plugin,
     const string otherPluginName,
     const ref IRCEvent event,
     const string command,
     const string description,
-    const string syntax)
+    const string[] syntaxes)
 {
+    import lu.string : beginsWith;
+    import std.array : replace;
     import std.conv : text;
     import std.format : format;
 
@@ -260,21 +262,23 @@ void sendCommandHelp(HelpPlugin plugin,
     immutable message = pattern.format(otherPluginName, command, description);
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
 
-    if (syntax.length)
-    {
-        import lu.string : beginsWith;
-        import std.array : replace;
+    if (!syntaxes.length) return;
 
+    foreach (immutable syntax; syntaxes)
+    {
         immutable udaSyntax = syntax
             .replace("$command", command)
             .replace("$nickname", plugin.state.client.nickname)
             .replace("$prefix", plugin.state.settings.prefix);
 
         // Prepend the prefix to non-PrefixPolicy.nickname commands
-        immutable prefixedSyntax =
-            (syntax.beginsWith("$nickname") || syntax.beginsWith("$prefix")) ?
-                udaSyntax : plugin.state.settings.prefix ~ udaSyntax;
-        immutable usage = "<b>Usage<b>: " ~ prefixedSyntax;
+        immutable prefixedSyntax = (syntax.beginsWith("$nickname") || syntax.beginsWith("$prefix")) ?
+            udaSyntax :
+            plugin.state.settings.prefix ~ udaSyntax;
+        immutable usage = (syntaxes.length == 1) ?
+            "<b>Usage<b>: " ~ prefixedSyntax :
+            "* " ~ prefixedSyntax;
+
         privmsg(plugin.state, event.channel, event.sender.nickname, usage);
     }
 }
