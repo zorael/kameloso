@@ -1063,6 +1063,7 @@ void onCommandRepeat(TwitchBotPlugin plugin, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.EMOTE)
     .permissionsRequired(Permissions.ignore)
     .channelPolicy(ChannelPolicy.home)
+    .chainable(true)
 )
 void onAnyMessage(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
