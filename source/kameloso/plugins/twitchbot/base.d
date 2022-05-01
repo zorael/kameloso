@@ -1074,6 +1074,39 @@ void onAnyMessage(TwitchBotPlugin plugin, const ref IRCEvent event)
         write(plugin.bell);
         stdout.flush();
     }
+
+    // ecount!
+    if (plugin.twitchBotSettings.ecount && event.emotes.length)
+    {
+        import lu.string : nom;
+        import std.algorithm.iteration : splitter;
+        import std.algorithm.searching : count;
+        import std.conv : to;
+
+        foreach (immutable emotestring; event.emotes.splitter('/'))
+        {
+            auto channelcount = event.channel in plugin.ecount;
+
+            if (!channelcount)
+            {
+                plugin.ecount[event.channel][string.init] = 0L;
+                channelcount = event.channel in plugin.ecount;
+                (*channelcount).remove(string.init);
+            }
+
+            string slice = emotestring;  // mutable
+            immutable id = slice.nom(':');//.to!uint;
+            auto thisEmoteCount = id in *channelcount;
+
+            if (!thisEmoteCount)
+            {
+                (*channelcount)[id] = 0L;
+                thisEmoteCount = id in *channelcount;
+            }
+
+            *thisEmoteCount += slice.count(',') + 1;
+        }
+    }
 }
 
 
@@ -1252,6 +1285,74 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
 }
 
 
+// onCommandEcount
+/++
+    `!ecount`; reporting how many times a Twitch emote has been seen.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.anyone)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("ecount")
+            .policy(PrefixPolicy.prefixed)
+            .description("Reports how many times an emote has been used in the channel.")
+            .syntax("$command [emote]")
+    )
+)
+void onCommandEcount(TwitchBotPlugin plugin, const ref IRCEvent event)
+{
+    import lu.string : nom, stripped;
+    import std.format : format;
+
+    void sendResults(const long count)
+    {
+        // 425618:3-5
+        string slice = event.emotes;  // mutable
+        slice.nom(':');
+
+        immutable start = slice.nom('-').to!size_t;
+        immutable end = slice
+            .nom!(Yes.inherit)('/')
+            .nom!(Yes.inherit)(',')
+            .to!size_t + 1;  // upper-bound inclusive!
+
+        string rawSlice = event.raw;  // mutable
+        rawSlice.nom(event.channel);
+        rawSlice.nom(" :");
+
+        // Slice it as a dstring to (hopefully) get full characters
+        immutable dline = rawSlice.to!dstring;
+        immutable emote = dline[start..end];
+
+        // No real point using plurality since most emotes should have a count > 1
+        enum pattern = "%s has been used %d times!";
+        immutable message = pattern.format(emote, count);
+        chan(plugin.state, event.channel, message);
+    }
+
+    if (!event.emotes.length)
+    {
+        enum pattern = "Usage: %s%s ecount [emoji]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+        return;
+    }
+
+    const channelcounts = event.channel in plugin.ecount;
+    if (!channelcounts) return sendResults(0L);
+
+    string slice = event.emotes;
+    immutable id = slice.nom(':');//.to!uint;
+
+    auto thisEmoteCount = id in *channelcounts;
+    if (!thisEmoteCount) return sendResults(0L);
+
+    sendResults(*thisEmoteCount);
+}
+
+
 // onCAP
 /++
     Start the captive key generation routine at the earliest possible moment,
@@ -1317,6 +1418,22 @@ void onMyInfo(TwitchBotPlugin plugin)
 
     Fiber followersFiber = new Fiber(&cacheFollowersDg, BufferSize.fiberStack);
     delay(plugin, followersFiber, now.nextMidnight-now);
+
+    // Load ecounts.
+    plugin.reload();
+
+    // Periodically save ecounts
+    void saveEcountDg()
+    {
+        while (true)
+        {
+            if (plugin.ecount.length) saveResourceToDisk(plugin.ecount, plugin.ecountFile);
+            delay(plugin, plugin.ecountSavePeriodicity, Yes.yield);
+        }
+    }
+
+    Fiber saveEcountFiber = new Fiber(&saveEcountDg, BufferSize.fiberStack);
+    delay(plugin, saveEcountFiber, plugin.ecountSavePeriodicity);
 }
 
 
@@ -1353,6 +1470,11 @@ void teardown(TwitchBotPlugin plugin)
     {
         // It may not have been started if we're aborting very early.
         plugin.persistentWorkerTid.send(ThreadMessage.teardown());
+    }
+
+    if (plugin.ecount.length)
+    {
+        saveResourceToDisk(plugin.ecount, plugin.ecountFile);
     }
 }
 
@@ -1430,6 +1552,83 @@ void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
 }
 
 
+// initResources
+/++
+    Reads and writes the file of emote counters to disk, ensuring that it's
+    there and properly formatted.
+ +/
+void initResources(TwitchBotPlugin plugin)
+{
+    import lu.json : JSONStorage;
+    import std.json : JSONException;
+    import std.path : baseName;
+
+    JSONStorage ecountJSON;
+
+    try
+    {
+        ecountJSON.load(plugin.ecountFile);
+    }
+    catch (JSONException e)
+    {
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+
+        version(PrintStacktraces) logger.trace(e);
+        throw new IRCPluginInitialisationException(plugin.ecountFile.baseName ~ " may be malformed.");
+    }
+
+    // Let other Exceptions pass.
+
+    ecountJSON.save(plugin.ecountFile);
+}
+
+
+// saveResourceToDisk
+/++
+    Saves the passed resource to disk, but in JSON format.
+
+    This is used with the associative arrays for `ecount`.
+
+    Params:
+        aa = The associative array to convert into JSON and save.
+        filename = Filename of the file to write to.
+ +/
+void saveResourceToDisk(const long[string][string] aa, const string filename)
+{
+    import std.json : JSONValue;
+    import std.stdio : File, writeln;
+
+    const json = JSONValue(aa);
+    File(filename, "w").writeln(json.toPrettyString);
+}
+
+
+// reload
+/++
+    Reloads the plugin, loading emote counters from disk.
+ +/
+void reload(TwitchBotPlugin plugin)
+{
+    import lu.json : JSONStorage, populateFromJSON;
+
+    JSONStorage ecountJSON;
+    ecountJSON.load(plugin.ecountFile);
+    plugin.ecount.clear();
+
+    foreach (immutable channelName, const channelcountJSON; ecountJSON.storage.object)
+    {
+        foreach (immutable emoteIDString, const emoteCountJSON; channelcountJSON.object)
+        {
+            //import std.conv : to;
+            //immutable emoteID = emoteIDString.to!uint;
+            plugin.ecount[channelName][emoteIDString] = emoteCountJSON.integer;
+        }
+    }
+
+    plugin.ecount = plugin.ecount.rehash();
+}
+
+
 mixin UserAwareness;
 mixin ChannelAwareness;
 mixin TwitchAwareness;
@@ -1449,7 +1648,7 @@ private:
     import kameloso.terminal : TerminalToken;
     import arsd.http2;
     import std.concurrency : Tid;
-    import core.time : seconds;
+    import core.time : hours, seconds;
 
 package:
     /// Contained state of a channel, so that there can be several alongside each other.
@@ -1582,6 +1781,15 @@ package:
 
     /// Associative array of responses from async HTTP queries.
     shared QueryResponse[string] bucket;
+
+    /// File to save emote counters to.
+    @Resource ecountFile = "twitch-ecount.json";
+
+    /// Emote counters associative array; counter longs keyed by emote ID string keyed by channel.
+    long[string][string] ecount;
+
+    /// How often to save `ecount`s, to ward against losing information to crashes.
+    static immutable ecountSavePeriodicity = 24.hours;
 
 
     // isEnabled
