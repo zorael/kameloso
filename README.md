@@ -397,7 +397,6 @@ If you still can't find what you're looking for, or if you have suggestions on h
 * please send help: Windows Secure Channel SSL
 * Twitch `ecount`, `settitle`, `setgame`, `watchtime`?
 * Twitch web server to catch auth key
-* help plugin descriptions? multiple syntax entries?
 * **more pairs of eyes**
 
 # Built with
