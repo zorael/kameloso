@@ -979,6 +979,72 @@ void onCommandVanish(TwitchBotPlugin plugin, const ref IRCEvent event)
 }
 
 
+// onCommandRepeat
+/++
+    Repeats a given message n number of times.
+
+    Requires moderator privileges to work correctly.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("repeat")
+            .policy(PrefixPolicy.prefixed)
+            .description("Repeats a given message n number of times.")
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("spam")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
+)
+void onCommandRepeat(TwitchBotPlugin plugin, const ref IRCEvent event)
+{
+    import lu.string : nom;
+    import std.algorithm.searching : count;
+    import std.algorithm.comparison : min;
+    import std.conv : ConvException, to;
+    import std.format : format;
+
+    void sendUsage()
+    {
+        enum pattern = "Usage: %s%s [number of times] [text...]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+    }
+
+    if (!event.content.length || !event.content.count(' ')) return sendUsage();
+
+    string slice = event.content;  // mutable
+    immutable numTimesString = slice.nom(' ');
+
+    try
+    {
+        enum maxNumTimes = 10;
+        immutable numTimes = min(numTimesString.to!int, maxNumTimes);
+
+        if (numTimes < 1)
+        {
+            enum message = "Number of times must be greater than 0.";
+            chan(plugin.state, event.channel, message);
+            return;
+        }
+
+        foreach (immutable i; 0..numTimes)
+        {
+            chan(plugin.state, event.channel, slice);
+        }
+    }
+    catch (ConvException e)
+    {
+        return sendUsage();
+    }
+}
+
+
 // onAnyMessage
 /++
     Bells on any message, if the [TwitchBotSettings.bellOnMessage] setting is set.
