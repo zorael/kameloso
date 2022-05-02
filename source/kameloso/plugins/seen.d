@@ -289,7 +289,7 @@ private:  // Module-level private.
         See_Also:
             [addedSinceLastRehash]
      +/
-    enum rehashThresholdMultiplier = 0.5;
+    enum rehashThresholdMultiplier = 1.0;
 
 
     // addedSinceLastRehash
