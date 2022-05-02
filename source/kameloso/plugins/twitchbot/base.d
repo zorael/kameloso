@@ -49,6 +49,12 @@ public:
     bool ecount = true;
 
     /++
+        Whether or not to count the time people spend watching streams, to be
+        able to respond to `!watchtime`.
+     +/
+    bool watchtime = true;
+
+    /++
         Whether or not broadcasters are always implicitly class
         [dialect.defs.IRCUser.Class.staff|IRCUser.Class.staff].
      +/
