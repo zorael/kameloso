@@ -519,6 +519,11 @@ void onCommandStop(TwitchBotPlugin plugin, const ref IRCEvent event)
 
     chan(plugin.state, event.channel, "Broadcast ended!");
     reportStreamTime(plugin, *room, Yes.justNowEnded);
+
+    if (plugin.viewerTimesByChannel.length)
+    {
+        saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
+    }
 }
 
 
