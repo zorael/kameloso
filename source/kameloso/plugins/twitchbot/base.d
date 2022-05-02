@@ -349,6 +349,8 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 
     void periodicalChattersCheckDg()
     {
+        uint addedSinceLastRehash;
+
         while (room.broadcast.active)
         {
             import kameloso.plugins.common.delayawait : delay;
@@ -434,6 +436,35 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 
                     room.broadcast.chattersSeen[viewer] = true;
                     ++chatterCount;
+
+                    static immutable periodicitySeconds = plugin.chattersCheckPeriodicity.total!"seconds";
+
+                    if (auto channelViewerTimes = event.channel in plugin.viewerTimesByChannel)
+                    {
+                        if (auto viewerTime = viewer in *channelViewerTimes)
+                        {
+                            *viewerTime += periodicitySeconds;
+                        }
+                        else
+                        {
+                            (*channelViewerTimes)[viewer] = periodicitySeconds;
+                            ++addedSinceLastRehash;
+
+                            if ((addedSinceLastRehash > 128) &&
+                                (addedSinceLastRehash > channelViewerTimes.length))
+                            {
+                                // channel-viewer times AA doubled in size; rehash
+                                *channelViewerTimes = (*channelViewerTimes).rehash();
+                                addedSinceLastRehash = 0;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        plugin.viewerTimesByChannel[event.channel][viewer] = periodicitySeconds;
+                        ++addedSinceLastRehash;
+                    }
+
                 }
             }
 
@@ -1361,6 +1392,132 @@ void onCommandEcount(TwitchBotPlugin plugin, const ref IRCEvent event)
 }
 
 
+// onCommandWatchtime
+/++
+    Implements `!watchtime`; the ability to query the bot for how long the user
+    (or a specified user) has been watching any of the channel's streams.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.anyone)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("watchtime")
+            .policy(PrefixPolicy.prefixed)
+            .description("Reports how long a user has been watching the channel's streams.")
+            .addSyntax("$command [optional nickname]")
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("wt")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
+)
+void onCommandWatchtime(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+{
+    import kameloso.common : timeSince;
+    import lu.string : beginsWith, nom, stripped;
+    import std.conv : to;
+    import std.format : format;
+    import core.thread : Fiber;
+    import core.time : Duration, seconds;
+
+    void watchtimeDg()
+    {
+        string slice = event.content.stripped;  // mutable
+        immutable nameSpecified = (slice.length > 0);
+
+        //string idString;
+        string nickname;
+        string displayName;
+
+        if (!nameSpecified)
+        {
+            // Assume the user is asking about itself
+            //idString = event.sender.id.to!string;
+            nickname = event.sender.nickname;
+            displayName = event.sender.displayName;
+        }
+        else
+        {
+            string givenName = slice.nom!(Yes.inherit)(' ');  // mutable
+            if (givenName.beginsWith('@')) givenName = givenName[1..$];
+
+            if (const user = givenName in plugin.state.users)
+            {
+                // Stored user
+                //idString = user.id.to!string;
+                nickname = user.nickname;
+                displayName = user.displayName;
+            }
+            else
+            {
+                foreach (const user; plugin.state.users)
+                {
+                    if (user.displayName == givenName)
+                    {
+                        // Found user by displayName
+                        //idString = user.id.to!string;
+                        nickname = user.nickname;
+                        displayName = user.displayName;
+                        break;
+                    }
+                }
+
+                if (!displayName.length)
+                {
+                    import std.json : JSONType;
+
+                    // None on record, look up
+                    immutable userURL = "https://api.twitch.tv/helix/users?login=" ~ givenName;
+                    immutable userJSON = getTwitchEntity(plugin, userURL);
+
+                    if ((userJSON.type != JSONType.object) || ("id" !in userJSON))
+                    {
+                        chan(plugin.state, event.channel, "No such user: " ~ givenName);
+                        return;
+                    }
+
+                    //idString = userJSON["id"].str;
+                    nickname = givenName;
+                    displayName = userJSON["display_name"].str;
+                }
+            }
+        }
+
+        void reportNoViewerTime()
+        {
+            enum pattern = "%s has not been watching this channel's streams.";
+            immutable message = pattern.format(displayName);
+            chan(plugin.state, event.channel, message);
+        }
+
+        void reportViewerTime(const Duration time)
+        {
+            enum pattern = "%s has been a viewer for a total of %s.";
+            immutable message = pattern.format(displayName, timeSince(time));
+            chan(plugin.state, event.channel, message);
+        }
+
+        if (auto channelViewerTimes = event.channel in plugin.viewerTimesByChannel)
+        {
+            if (auto viewerTime = nickname in *channelViewerTimes)
+            {
+                return reportViewerTime((*viewerTime).seconds);
+            }
+        }
+
+        // If we're here, there were no matches
+        reportNoViewerTime();
+    }
+
+    Fiber watchtimeFiber = new Fiber(&twitchTryCatchDg!watchtimeDg, BufferSize.fiberStack);
+    watchtimeFiber.call();
+}
+
+
 // onCAP
 /++
     Start the captive key generation routine at the earliest possible moment,
@@ -1430,18 +1587,27 @@ void onMyInfo(TwitchBotPlugin plugin)
     // Load ecounts.
     plugin.reload();
 
-    // Periodically save ecounts
-    void saveEcountDg()
+    // Periodically save ecounts and viewer times
+    void saveResourcesDg()
     {
         while (true)
         {
-            if (plugin.ecount.length) saveResourceToDisk(plugin.ecount, plugin.ecountFile);
-            delay(plugin, plugin.ecountSavePeriodicity, Yes.yield);
+            if (plugin.ecount.length)
+            {
+                saveResourceToDisk(plugin.ecount, plugin.ecountFile);
+            }
+
+            if (plugin.viewerTimesByChannel.length)
+            {
+                saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
+            }
+
+            delay(plugin, plugin.savePeriodicity, Yes.yield);
         }
     }
 
-    Fiber saveEcountFiber = new Fiber(&saveEcountDg, BufferSize.fiberStack);
-    delay(plugin, saveEcountFiber, plugin.ecountSavePeriodicity);
+    Fiber saveResourcesFiber = new Fiber(&saveResourcesDg, BufferSize.fiberStack);
+    delay(plugin, saveResourcesFiber, plugin.savePeriodicity);
 }
 
 
@@ -1483,6 +1649,11 @@ void teardown(TwitchBotPlugin plugin)
     if (plugin.ecount.length)
     {
         saveResourceToDisk(plugin.ecount, plugin.ecountFile);
+    }
+
+    if (plugin.viewerTimesByChannel.length)
+    {
+        saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
     }
 }
 
@@ -1572,6 +1743,7 @@ void initResources(TwitchBotPlugin plugin)
     import std.path : baseName;
 
     JSONStorage ecountJSON;
+    JSONStorage viewersJSON;
 
     try
     {
@@ -1585,9 +1757,22 @@ void initResources(TwitchBotPlugin plugin)
         throw new IRCPluginInitialisationException(plugin.ecountFile.baseName ~ " may be malformed.");
     }
 
+    try
+    {
+        viewersJSON.load(plugin.viewersFile);
+    }
+    catch (JSONException e)
+    {
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+
+        version(PrintStacktraces) logger.trace(e);
+        throw new IRCPluginInitialisationException(plugin.viewersFile.baseName ~ " may be malformed.");
+    }
+
     // Let other Exceptions pass.
 
     ecountJSON.save(plugin.ecountFile);
+    viewersJSON.save(plugin.viewersFile);
 }
 
 
@@ -1622,18 +1807,14 @@ void reload(TwitchBotPlugin plugin)
     JSONStorage ecountJSON;
     ecountJSON.load(plugin.ecountFile);
     plugin.ecount.clear();
-
-    foreach (immutable channelName, const channelcountJSON; ecountJSON.storage.object)
-    {
-        foreach (immutable emoteIDString, const emoteCountJSON; channelcountJSON.object)
-        {
-            //import std.conv : to;
-            //immutable emoteID = emoteIDString.to!uint;
-            plugin.ecount[channelName][emoteIDString] = emoteCountJSON.integer;
-        }
-    }
-
+    plugin.ecount.populateFromJSON(ecountJSON);
     plugin.ecount = plugin.ecount.rehash();
+
+    JSONStorage viewersJSON;
+    viewersJSON.load(plugin.viewersFile);
+    plugin.viewerTimesByChannel.clear();
+    plugin.viewerTimesByChannel.populateFromJSON(viewersJSON);
+    plugin.viewerTimesByChannel = plugin.viewerTimesByChannel.rehash();
 }
 
 
@@ -1781,6 +1962,9 @@ package:
      +/
     static immutable chattersCheckPeriodicity = 180.seconds;
 
+    /// Associative array of viewer times; seconds keyed by nickname keyed by channel.
+    long[string][string] viewerTimesByChannel;
+
     /// The thread ID of the persistent worker thread.
     Tid persistentWorkerTid;
 
@@ -1793,11 +1977,14 @@ package:
     /// File to save emote counters to.
     @Resource ecountFile = "twitch-ecount.json";
 
+    /// File to save viewer times to.
+    @Resource viewersFile = "twitch-viewers.json";
+
     /// Emote counters associative array; counter longs keyed by emote ID string keyed by channel.
     long[string][string] ecount;
 
-    /// How often to save `ecount`s, to ward against losing information to crashes.
-    static immutable ecountSavePeriodicity = 24.hours;
+    /// How often to save `ecount`s and viewer times, to ward against losing information to crashes.
+    static immutable savePeriodicity = 24.hours;
 
 
     // isEnabled
