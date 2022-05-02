@@ -443,6 +443,9 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
                     room.broadcast.chattersSeen[viewer] = true;
                     ++chatterCount;
 
+                    // continue early if we shouldn't monitor watchtime
+                    if (!plugin.twitchBotSettings.watchtime) continue;
+
                     static immutable periodicitySeconds = plugin.chattersCheckPeriodicity.total!"seconds";
 
                     if (auto channelViewerTimes = event.channel in plugin.viewerTimesByChannel)
@@ -470,7 +473,6 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
                         plugin.viewerTimesByChannel[event.channel][viewer] = periodicitySeconds;
                         ++addedSinceLastRehash;
                     }
-
                 }
             }
 
@@ -526,7 +528,7 @@ void onCommandStop(TwitchBotPlugin plugin, const ref IRCEvent event)
     chan(plugin.state, event.channel, "Broadcast ended!");
     reportStreamTime(plugin, *room, Yes.justNowEnded);
 
-    if (plugin.viewerTimesByChannel.length)
+    if (plugin.twitchBotSettings.watchtime && plugin.viewerTimesByChannel.length)
     {
         saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
     }
@@ -1349,6 +1351,8 @@ void onCommandEcount(TwitchBotPlugin plugin, const ref IRCEvent event)
     import std.format : format;
     import std.conv  : to;
 
+    if (!plugin.twitchBotSettings.ecount) return;
+
     void sendResults(const long count)
     {
         // 425618:3-5
@@ -1433,6 +1437,8 @@ void onCommandWatchtime(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     import std.format : format;
     import core.thread : Fiber;
     import core.time : Duration, seconds;
+
+    if (!plugin.twitchBotSettings.watchtime) return;
 
     void watchtimeDg()
     {
@@ -1636,12 +1642,12 @@ void onMyInfo(TwitchBotPlugin plugin)
     {
         while (true)
         {
-            if (plugin.ecount.length)
+            if (plugin.twitchBotSettings.ecount && plugin.ecount.length)
             {
                 saveResourceToDisk(plugin.ecount, plugin.ecountFile);
             }
 
-            if (plugin.viewerTimesByChannel.length)
+            if (plugin.twitchBotSettings.watchtime && plugin.viewerTimesByChannel.length)
             {
                 saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
             }
@@ -1690,12 +1696,12 @@ void teardown(TwitchBotPlugin plugin)
         plugin.persistentWorkerTid.send(ThreadMessage.teardown());
     }
 
-    if (plugin.ecount.length)
+    if (plugin.twitchBotSettings.ecount && plugin.ecount.length)
     {
         saveResourceToDisk(plugin.ecount, plugin.ecountFile);
     }
 
-    if (plugin.viewerTimesByChannel.length)
+    if (plugin.twitchBotSettings.watchtime && plugin.viewerTimesByChannel.length)
     {
         saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
     }
