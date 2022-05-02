@@ -1495,16 +1495,49 @@ void onCommandWatchtime(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             chan(plugin.state, event.channel, message);
         }
 
+        void reportNoViewerTimeInvoker()
+        {
+            enum message = "You have not been watching this channel's streams.";
+            chan(plugin.state, event.channel, message);
+        }
+
+        void reportViewerTimeInvoker(const Duration time)
+        {
+            enum pattern = "You have been a viewer for a total of %s.";
+            immutable message = pattern.format(timeSince(time));
+            chan(plugin.state, event.channel, message);
+        }
+
+        if (nickname == event.channel[1..$])
+        {
+            if (nameSpecified)
+            {
+                enum pattern = "%s is the streamer though...";
+                immutable message = pattern.format(nickname);
+                chan(plugin.state, event.channel, message);
+            }
+            else
+            {
+                enum message = "You are the streamer though...";
+                chan(plugin.state, event.channel, message);
+            }
+            return;
+        }
+
         if (auto channelViewerTimes = event.channel in plugin.viewerTimesByChannel)
         {
             if (auto viewerTime = nickname in *channelViewerTimes)
             {
-                return reportViewerTime((*viewerTime).seconds);
+                return nameSpecified ?
+                    reportViewerTime((*viewerTime).seconds) :
+                    reportViewerTimeInvoker((*viewerTime).seconds);
             }
         }
 
         // If we're here, there were no matches
-        reportNoViewerTime();
+        return nameSpecified ?
+            reportNoViewerTime() :
+            reportNoViewerTimeInvoker();
     }
 
     Fiber watchtimeFiber = new Fiber(&twitchTryCatchDg!watchtimeDg, BufferSize.fiberStack);
