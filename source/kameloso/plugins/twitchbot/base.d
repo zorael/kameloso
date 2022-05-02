@@ -1156,7 +1156,6 @@ void onAnyMessage(TwitchBotPlugin plugin, const ref IRCEvent event)
 )
 void onEndOfMOTD(TwitchBotPlugin plugin)
 {
-    import lu.json : JSONStorage, populateFromJSON;
     import lu.string : beginsWith;
     import std.concurrency : Tid;
     import std.typecons : Flag, No, Yes;
@@ -1429,14 +1428,12 @@ void onCommandWatchtime(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         string slice = event.content.stripped;  // mutable
         immutable nameSpecified = (slice.length > 0);
 
-        //string idString;
         string nickname;
         string displayName;
 
         if (!nameSpecified)
         {
             // Assume the user is asking about itself
-            //idString = event.sender.id.to!string;
             nickname = event.sender.nickname;
             displayName = event.sender.displayName;
         }
@@ -1448,7 +1445,6 @@ void onCommandWatchtime(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             if (const user = givenName in plugin.state.users)
             {
                 // Stored user
-                //idString = user.id.to!string;
                 nickname = user.nickname;
                 displayName = user.displayName;
             }
@@ -1459,7 +1455,6 @@ void onCommandWatchtime(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
                     if (user.displayName == givenName)
                     {
                         // Found user by displayName
-                        //idString = user.id.to!string;
                         nickname = user.nickname;
                         displayName = user.displayName;
                         break;
@@ -1480,7 +1475,6 @@ void onCommandWatchtime(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
                         return;
                     }
 
-                    //idString = userJSON["id"].str;
                     nickname = givenName;
                     displayName = userJSON["display_name"].str;
                 }
@@ -1835,7 +1829,6 @@ final class TwitchBotPlugin : IRCPlugin
 {
 private:
     import kameloso.terminal : TerminalToken;
-    import arsd.http2;
     import std.concurrency : Tid;
     import core.time : hours, seconds;
 
