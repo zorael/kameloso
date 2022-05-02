@@ -101,6 +101,7 @@ if (isSomeFunction!dg)
     {
         enum pattern = "Unforeseen exception thrown when querying Twitch: <l>%s";
         logger.errorf(pattern.expandTags(LogLevel.error), e.msg);
+        version(PrintStacktraces) logger.trace(e);
     }
 }
 
