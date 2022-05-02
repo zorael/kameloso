@@ -1960,7 +1960,7 @@ package:
     /++
         When broadcasting, how often to check and enumerate chatters.
      +/
-    static immutable chattersCheckPeriodicity = 180.seconds;
+    static immutable chattersCheckPeriodicity = 60.seconds;
 
     /// Associative array of viewer times; seconds keyed by nickname keyed by channel.
     long[string][string] viewerTimesByChannel;
