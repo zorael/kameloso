@@ -1523,6 +1523,12 @@ void onCommandWatchtime(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             }
             return;
         }
+        else if (nickname == plugin.state.client.nickname)
+        {
+            enum message = "I've seen it all.";
+            chan(plugin.state, event.channel, message);
+            return;
+        }
 
         if (auto channelViewerTimes = event.channel in plugin.viewerTimesByChannel)
         {
