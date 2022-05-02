@@ -402,23 +402,30 @@ in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
 {
     import std.json : JSONType, parseJSON;
 
-    immutable response = queryTwitch(plugin, url, plugin.authorizationBearer);
-    immutable responseJSON = parseJSON(response.str);
+    try
+    {
+        immutable response = queryTwitch(plugin, url, plugin.authorizationBearer);
+        immutable responseJSON = parseJSON(response.str);
 
-    if (responseJSON.type != JSONType.object)
+        if (responseJSON.type != JSONType.object)
+        {
+            return JSONValue.init;
+        }
+        else if (const dataJSON = "data" in responseJSON)
+        {
+            if ((dataJSON.type == JSONType.array) &&
+                (dataJSON.array.length == 1))
+            {
+                return dataJSON.array[0];
+            }
+        }
+
+        return JSONValue.init;
+    }
+    catch (TwitchQueryException e)
     {
         return JSONValue.init;
     }
-    else if (const dataJSON = "data" in responseJSON)
-    {
-        if ((dataJSON.type == JSONType.array) &&
-            (dataJSON.array.length == 1))
-        {
-            return dataJSON.array[0];
-        }
-    }
-
-    return JSONValue.init;
 }
 
 
