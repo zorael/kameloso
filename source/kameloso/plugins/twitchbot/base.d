@@ -1334,10 +1334,16 @@ void onCommandEcount(TwitchBotPlugin plugin, const ref IRCEvent event)
         chan(plugin.state, event.channel, message);
     }
 
-    if (!event.emotes.length)
+    if (!event.content.length)
     {
         enum pattern = "Usage: %s%s [emote]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+        return;
+    }
+    else if (!event.emotes.length)
+    {
+        enum message = "That is not a Twitch emote.";
         chan(plugin.state, event.channel, message);
         return;
     }
