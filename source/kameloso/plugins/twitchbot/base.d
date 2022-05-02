@@ -1984,7 +1984,7 @@ package:
     long[string][string] ecount;
 
     /// How often to save `ecount`s and viewer times, to ward against losing information to crashes.
-    static immutable savePeriodicity = 24.hours;
+    static immutable savePeriodicity = 2.hours;
 
 
     // isEnabled
