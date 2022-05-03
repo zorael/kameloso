@@ -1647,9 +1647,21 @@ void onMyInfo(TwitchBotPlugin plugin)
                 saveResourceToDisk(plugin.ecount, plugin.ecountFile);
             }
 
+            /+
+                Only save watchtimes if there's at least one broadcast currently ongoing.
+                Since we save at broadcast stop there won't be anything new to save otherwise.
+             +/
             if (plugin.twitchBotSettings.watchtime && plugin.viewerTimesByChannel.length)
             {
-                saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
+                foreach (const room; plugin.rooms)
+                {
+                    if (room.broadcast.active)
+                    {
+                        // At least one broadcast active
+                        saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
+                        break;
+                    }
+                }
             }
 
             delay(plugin, plugin.savePeriodicity, Yes.yield);
