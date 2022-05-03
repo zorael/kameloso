@@ -1150,6 +1150,7 @@ void onAnyMessage(TwitchBotPlugin plugin, const ref IRCEvent event)
             }
 
             *thisEmoteCount += slice.count(',') + 1;
+            plugin.ecountDirty = true;
         }
     }
 }
@@ -1642,9 +1643,10 @@ void onMyInfo(TwitchBotPlugin plugin)
     {
         while (true)
         {
-            if (plugin.twitchBotSettings.ecount && plugin.ecount.length)
+            if (plugin.twitchBotSettings.ecount && plugin.ecountDirty && plugin.ecount.length)
             {
                 saveResourceToDisk(plugin.ecount, plugin.ecountFile);
+                plugin.ecountDirty = false;
             }
 
             /+
@@ -1708,9 +1710,11 @@ void teardown(TwitchBotPlugin plugin)
         plugin.persistentWorkerTid.send(ThreadMessage.teardown());
     }
 
-    if (plugin.twitchBotSettings.ecount && plugin.ecount.length)
+    if (plugin.twitchBotSettings.ecount && /*plugin.ecountDirty &&*/ plugin.ecount.length)
     {
+        // Might as well always save on exit.
         saveResourceToDisk(plugin.ecount, plugin.ecountFile);
+        //plugin.ecountDirty = false;
     }
 
     if (plugin.twitchBotSettings.watchtime && plugin.viewerTimesByChannel.length)
@@ -2043,6 +2047,9 @@ package:
 
     /// Emote counters associative array; counter longs keyed by emote ID string keyed by channel.
     long[string][string] ecount;
+
+    /// Whether or not [ecount] has been modified and there's a point in saving it to disk.
+    bool ecountDirty;
 
     /// How often to save `ecount`s and viewer times, to ward against losing information to crashes.
     static immutable savePeriodicity = 2.hours;
