@@ -552,6 +552,27 @@ void onAutomaticStop(TwitchBotPlugin plugin, const ref IRCEvent event)
 }
 
 
+// cullBriefViewers
+/++
+    Removes viewers that have only briefly viewed the stream, so as not to clog
+    up the records with drive-by viewers of one minute here, three minutes there.
+
+    Params:
+        viewerTimesByChannel = Ref associative array of viewer times to cull,
+            viewer time keyed by nickname keyed by channel name.
+        cullBelowSeconds = Limit number of seconds under which to cull user entries.
+ +/
+void cullBriefViewers( ref long[string][string] viewerTimesByChannel, const uint cullBelowSeconds)
+{
+    import lu.objmanip : pruneAA;
+
+    foreach (/*immutable channelName,*/ ref viewerTimes; viewerTimesByChannel)
+    {
+        pruneAA!(time => time < cullBelowSeconds)(viewerTimes);
+    }
+}
+
+
 // reportStreamTime
 /++
     Reports how long a broadcast has currently been ongoing, up until now lasted,
@@ -1719,6 +1740,9 @@ void teardown(TwitchBotPlugin plugin)
 
     if (plugin.twitchBotSettings.watchtime && plugin.viewerTimesByChannel.length)
     {
+        // Cull brief viewers at program exit.
+        enum cullBelowSeconds = 300;
+        cullBriefViewers(plugin.viewerTimesByChannel, cullBelowSeconds);
         saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
     }
 }
