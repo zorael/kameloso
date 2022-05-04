@@ -39,6 +39,7 @@ alias PluginModules = AliasSeq!(
     "kameloso.plugins.automode",
     "kameloso.plugins.quotes",
     "kameloso.plugins.twitchbot", //.base",
+    "kameloso.plugins.twitchbot.stub",
     "kameloso.plugins.help",
     "kameloso.plugins.hello",
     "kameloso.plugins.oneliners",

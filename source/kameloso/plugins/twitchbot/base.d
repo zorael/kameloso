@@ -13,27 +13,15 @@
  +/
 module kameloso.plugins.twitchbot.base;
 
-version(TwitchSupport):
-version(WithTwitchBotPlugin):
+// TwitchBotSettings
+/++
+    All Twitch bot plugin runtime settings.
 
-private:
-
-import kameloso.plugins.twitchbot.api;
-
-import kameloso.plugins.common.core;
-import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
-import kameloso.common : expandTags, logger;
-import kameloso.constants : BufferSize;
-import kameloso.logger : LogLevel;
-import kameloso.messaging;
-import dialect.defs;
-import std.json : JSONValue;
-import std.typecons : Flag, No, Yes;
-import core.thread : Fiber;
-
-
-/// All Twitch bot plugin runtime settings.
-@Settings struct TwitchBotSettings
+    Placed outside of the `version` gates to make sure it is always available,
+    even on non-`WithTwitchBotPlugin` builds, so that the Twitch bot stub may
+    import it and provide lines to the configuration file.
+ +/
+package @Settings struct TwitchBotSettings
 {
 private:
     import lu.uda : Unserialisable;
@@ -98,6 +86,25 @@ public:
         bool keygen = false;
     }
 }
+
+private import kameloso.plugins.common.core;
+
+version(TwitchSupport):
+version(WithTwitchBotPlugin):
+
+private:
+
+import kameloso.plugins.twitchbot.api;
+
+import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
+import kameloso.common : expandTags, logger;
+import kameloso.constants : BufferSize;
+import kameloso.logger : LogLevel;
+import kameloso.messaging;
+import dialect.defs;
+import std.json : JSONValue;
+import std.typecons : Flag, No, Yes;
+import core.thread : Fiber;
 
 
 // onImportant

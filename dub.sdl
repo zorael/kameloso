@@ -58,6 +58,7 @@ versions \
  */
 versions \
     "Colours" \
+    "WithTwitchBotPluginStub" \
     "PreciseGC"
     //"ConcurrentGC"
 
