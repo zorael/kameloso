@@ -712,56 +712,28 @@ void onCommandFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         immutable nameSpecified = (slice.length > 0);
 
         string idString;
-        string fromDisplayName;
+        string displayName;
 
         if (!nameSpecified)
         {
             // Assume the user is asking about itself
             idString = event.sender.id.to!string;
-            fromDisplayName = event.sender.displayName;
+            displayName = event.sender.displayName;
         }
         else
         {
             string givenName = slice.nom!(Yes.inherit)(' ');  // mutable
             if (givenName.beginsWith('@')) givenName = givenName[1..$];
+            immutable user = getTwitchUser(plugin, givenName, Yes.searchByDisplayName);
 
-            if (const user = givenName in plugin.state.users)
+            if (!user.nickname.length)
             {
-                // Stored user
-                idString = user.id.to!string;
-                fromDisplayName = user.displayName;
+                chan(plugin.state, event.channel, "No such user: " ~ givenName);
+                return;
             }
-            else
-            {
-                foreach (const user; plugin.state.users)
-                {
-                    if (user.displayName == givenName)
-                    {
-                        // Found user by displayName
-                        idString = user.id.to!string;
-                        fromDisplayName = user.displayName;
-                        break;
-                    }
-                }
 
-                if (!idString.length)
-                {
-                    import std.json : JSONType;
-
-                    // None on record, look up
-                    immutable userURL = "https://api.twitch.tv/helix/users?login=" ~ givenName;
-                    immutable userJSON = getTwitchEntity(plugin, userURL);
-
-                    if ((userJSON.type != JSONType.object) || ("id" !in userJSON))
-                    {
-                        chan(plugin.state, event.channel, "No such user: " ~ givenName);
-                        return;
-                    }
-
-                    idString = userJSON["id"].str;
-                    fromDisplayName = userJSON["display_name"].str;
-                }
-            }
+            idString = user.idString;
+            displayName = user.displayName;
         }
 
         void reportFollowAge(const JSONValue followingUserJSON)
@@ -803,7 +775,7 @@ void onCommandFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             if (nameSpecified)
             {
                 enum pattern = "%s has been a follower for %s, since %s.";
-                immutable message = pattern.format(fromDisplayName, timeline, datestamp);
+                immutable message = pattern.format(displayName, timeline, datestamp);
                 chan(plugin.state, event.channel, message);
             }
             else
@@ -814,8 +786,6 @@ void onCommandFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             }
 
         }
-
-        assert(idString.length, "Empty idString despite lookup");
 
         // Identity ascertained; look up in cached list
 
@@ -846,7 +816,7 @@ void onCommandFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             import std.format : format;
 
             enum pattern = "%s is currently not a follower.";
-            immutable message = pattern.format(fromDisplayName);
+            immutable message = pattern.format(displayName);
             chan(plugin.state, event.channel, message);
         }
         else
@@ -1488,44 +1458,16 @@ void onCommandWatchtime(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         {
             string givenName = slice.nom!(Yes.inherit)(' ');  // mutable
             if (givenName.beginsWith('@')) givenName = givenName[1..$];
+            immutable user = getTwitchUser(plugin, givenName, Yes.searchByDisplayName);
 
-            if (const user = givenName in plugin.state.users)
+            if (!user.nickname.length)
             {
-                // Stored user
-                nickname = user.nickname;
-                displayName = user.displayName;
+                chan(plugin.state, event.channel, "No such user: " ~ givenName);
+                return;
             }
-            else
-            {
-                foreach (const user; plugin.state.users)
-                {
-                    if (user.displayName == givenName)
-                    {
-                        // Found user by displayName
-                        nickname = user.nickname;
-                        displayName = user.displayName;
-                        break;
-                    }
-                }
 
-                if (!displayName.length)
-                {
-                    import std.json : JSONType;
-
-                    // None on record, look up
-                    immutable userURL = "https://api.twitch.tv/helix/users?login=" ~ givenName;
-                    immutable userJSON = getTwitchEntity(plugin, userURL);
-
-                    if ((userJSON.type != JSONType.object) || ("id" !in userJSON))
-                    {
-                        chan(plugin.state, event.channel, "No such user: " ~ givenName);
-                        return;
-                    }
-
-                    nickname = givenName;
-                    displayName = userJSON["display_name"].str;
-                }
-            }
+            nickname = user.nickname;
+            displayName = user.displayName;
         }
 
         void reportNoViewerTime()
