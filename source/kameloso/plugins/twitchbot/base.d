@@ -136,10 +136,11 @@ void onImportant(TwitchBotPlugin plugin)
     import kameloso.terminal : TerminalToken;
     import std.stdio : stdout, write;
 
-    if (!plugin.twitchBotSettings.bellOnImportant) return;
-
-    write(plugin.bell);
-    stdout.flush();
+    if (plugin.twitchBotSettings.bellOnImportant)
+    {
+        write(plugin.bell);
+        stdout.flush();
+    }
 }
 
 
