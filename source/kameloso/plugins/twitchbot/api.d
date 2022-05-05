@@ -712,6 +712,79 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 }
 
 
+// getTwitchUser
+/++
+    Fetches information about a Twitch user and returns it in the form of a
+    Voldemort struct with nickname, display name and account ID (as string) members.
+
+    Params:
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        givenName = Name of user to look up.
+        searchByDisplayName = Whether or not to also attempt to look up `givenName`
+            as a display name.
+
+    Returns:
+        Voldemort aggregate struct with `nickname`, `displayName` and `idString` members.
+ +/
+auto getTwitchUser(
+    TwitchBotPlugin plugin,
+    const string givenName,
+    const Flag!"searchByDisplayName" searchByDisplayName = No.searchByDisplayName)
+{
+    import std.conv : to;
+    import std.json : JSONType;
+
+    struct User
+    {
+        string idString;
+        string nickname;
+        string displayName;
+    }
+
+    User user;
+
+    if (const stored = givenName in plugin.state.users)
+    {
+        // Stored user
+        user.idString = stored.id.to!string;
+        user.nickname = stored.nickname;
+        user.displayName = stored.displayName;
+        return user;
+    }
+
+    // No such luck
+    if (searchByDisplayName)
+    {
+        foreach (const stored; plugin.state.users)
+        {
+            if (stored.displayName == givenName)
+            {
+                // Found user by displayName
+                user.idString = stored.id.to!string;
+                user.nickname = stored.nickname;
+                user.displayName = stored.displayName;
+                return user;
+            }
+        }
+    }
+
+    // None on record, look up
+    immutable userURL = "https://api.twitch.tv/helix/users?login=" ~ givenName;
+    immutable userJSON = getTwitchEntity(plugin, userURL);
+
+    if ((userJSON.type != JSONType.object) || ("id" !in userJSON))
+    {
+        // No such user
+        return user; //User.init;
+    }
+
+    user.idString = userJSON["id"].str;
+    user.nickname = userJSON["login"].str;
+    user.displayName = userJSON["display_name"].str;
+    return user;
+}
+
+
 // TwitchQueryException
 /++
     Exception, to be thrown when an API query to the Twitch servers failed,
