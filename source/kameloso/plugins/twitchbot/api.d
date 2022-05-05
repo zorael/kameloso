@@ -557,37 +557,81 @@ in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
 JSONValue[string] getFollows(TwitchBotPlugin plugin, const string id)
 in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
 {
-    import std.conv : text;
-    import std.json : JSONValue, parseJSON;
-    import core.thread : Fiber;
+    import std.json : JSONType;
 
     immutable url = "https://api.twitch.tv/helix/users/follows?to_id=" ~ id;
+    JSONValue[string] allFollowsJSON;
+    const entitiesArrayJSON = getMultipleTwitchEntities(plugin, url);
 
-    JSONValue[string] allFollows;
+    if (entitiesArrayJSON.type != JSONType.array)
+    {
+        return allFollowsJSON;  // init
+    }
+
+    foreach (entityJSON; entitiesArrayJSON.array)
+    {
+        immutable key = entityJSON.object["from_id"].str;
+        allFollowsJSON[key] = null;
+        allFollowsJSON[key] = entityJSON;
+    }
+
+    return allFollowsJSON;
+}
+
+
+// getMultipleTwitchEntities
+/++
+    By following a passed URL, queries Twitch servers for an array of entities
+    (such as users or channels).
+
+    Params:
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        url = The URL to follow.
+
+    Returns:
+        A [std.json.JSONValue|JSONValue] of type `array` containing all returned
+        entities, over all paginated queries.
+ +/
+JSONValue getMultipleTwitchEntities(TwitchBotPlugin plugin, const string url)
+in (Fiber.getThis, "Tried to call `getMultipleTwitchEntities` from outside a Fiber")
+{
+    import std.json : JSONValue, parseJSON;
+
+    JSONValue allEntitiesJSON;
+    allEntitiesJSON = null;
+    allEntitiesJSON.array = null;
     long total;
     string after;
 
     do
     {
-        immutable paginatedURL = after.length ?
-            text(url, "&after=", after) : url;
-
-        immutable response = queryTwitch(plugin, paginatedURL, plugin.authorizationBearer);
-        immutable followsJSON = parseJSON(response.str);
-        const cursor = "cursor" in followsJSON["pagination"];
-
-        if (!total) total = followsJSON["total"].integer;
-
-        foreach (thisFollowJSON; followsJSON["data"].array)
+        try
         {
-            allFollows[thisFollowJSON["from_id"].str] = thisFollowJSON;
-        }
+            immutable paginatedURL = after.length ?
+                ("&after=" ~ after) :
+                url;
 
-        after = ((allFollows.length != total) && cursor) ? cursor.str : string.init;
+            immutable response = queryTwitch(plugin, paginatedURL, plugin.authorizationBearer);
+            immutable responseJSON = parseJSON(response.str);
+            const cursor = "cursor" in responseJSON["pagination"];
+
+            if (!total) total = responseJSON["total"].integer;
+
+            foreach (thisResponseJSON; responseJSON["data"].array)
+            {
+                allEntitiesJSON.array ~= thisResponseJSON;
+            }
+
+            after = ((allEntitiesJSON.array.length != total) && cursor) ? cursor.str : string.init;
+        }
+        catch (TwitchQueryException e)
+        {
+            return JSONValue.init;
+        }
     }
     while (after.length);
 
-    return allFollows;
+    return allEntitiesJSON;
 }
 
 
