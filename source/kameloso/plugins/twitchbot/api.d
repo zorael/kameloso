@@ -730,6 +730,7 @@ auto getTwitchUser(
     TwitchBotPlugin plugin,
     const string givenName,
     const Flag!"searchByDisplayName" searchByDisplayName = No.searchByDisplayName)
+in (Fiber.getThis, "Tried to call `getTwitchUser` from outside a Fiber")
 {
     import std.conv : to;
     import std.json : JSONType;
