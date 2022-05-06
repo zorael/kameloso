@@ -44,7 +44,7 @@ public:
     /++
         The different kinds of [TimerDefinition]s. Either one that yields a
         [Type.random|random] response each time, or one that yields a
-        [Type.sequential|sequential] one.
+        [Type.ordered|ordered] one.
      +/
     enum Type
     {
@@ -54,9 +54,9 @@ public:
         random = 0,
 
         /++
-            Lines should be yielded sequentially, bumping an internal counter.
+            Lines should be yielded in order, bumping an internal counter.
          +/
-        sequential = 1,
+        ordered = 1,
     }
 
     // Condition
@@ -124,7 +124,7 @@ public:
     // position
     /++
         The current position, kept to keep track of what line should be yielded
-        next in the case of sequential timers.
+        next in the case of ordered timers.
      +/
     size_t position;
 
@@ -141,19 +141,19 @@ public:
     {
         return (type == Type.random) ?
             randomLine() :
-            nextSequentialLine();
+            nextOrderedLine();
     }
 
-    // nextSequentialLine
+    // nextOrderedLine
     /++
-        Yields a sequential line from the [lines] array. Which line is selected
+        Yields an ordered line from the [lines] array. Which line is selected
         depends on the value of [position].
 
         Returns:
             A line string. If the [lines] array is empty, then an empty string
             is returned instead.
      +/
-    string nextSequentialLine()
+    string nextOrderedLine()
     {
         if (!lines.length) return string.init;
 
@@ -241,7 +241,7 @@ public:
         def.timeStagger = json["timeStagger"].integer;
         def.type = (json["type"].integer == cast(int)Type.random) ?
             Type.random :
-            Type.sequential;
+            Type.ordered;
         def.condition = (json["condition"].integer == cast(int)Condition.both) ?
             Condition.both :
             Condition.either;
@@ -380,16 +380,16 @@ void handleTimerCommand(
             timerDef.type = TimerDefinition.Type.random;
             break;
 
+        case "ordered":
+        case "order":
         case "sequential":
         case "seq":
         case "sequence":
-        case "order":
-        case "ordered":
-            timerDef.type = TimerDefinition.Type.sequential;
+            timerDef.type = TimerDefinition.Type.ordered;
             break;
 
         default:
-            enum message = "Type must be one of <b>random<b> or <b>sequential<b>.";
+            enum message = "Type must be one of <b>random<b> or <b>ordered<b>.";
             chan(plugin.state, channelName, message);
             return;
         }
@@ -661,7 +661,7 @@ void handleTimerCommand(
             immutable timerMessage = timerPattern.format(
                 timerDef.name,
                 timerDef.lines.length,
-                ((timerDef.type == TimerDefinition.Type.random) ? "random" : "sequential"),
+                ((timerDef.type == TimerDefinition.Type.random) ? "random" : "ordered"),
                 ((timerDef.condition == TimerDefinition.Condition.both) ? "both" : "either"),
                 timerDef.messageCountThreshold,
                 timerDef.timeThreshold,

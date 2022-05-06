@@ -44,7 +44,7 @@ public:
     /++
         The different kinds of [Oneliner]s. Either one that yields a
         [Type.random|random] response each time, or one that yields a
-        [Type.sequential|sequential] one.
+        [Type.ordered|ordered] one.
      +/
     enum Type
     {
@@ -54,9 +54,9 @@ public:
         random = 0,
 
         /++
-            Responses should be yielded sequentially, bumping an internal counter.
+            Responses should be yielded in order, bumping an internal counter.
          +/
-        sequential = 1,
+        ordered = 1,
     }
 
     // trigger
@@ -74,7 +74,7 @@ public:
     // position
     /++
         The current position, kept to keep track of what response should be
-        yielded next in the case of sequential oneliners.
+        yielded next in the case of ordered oneliners.
      +/
     size_t position;
 
@@ -97,19 +97,19 @@ public:
     {
         return (type == Type.random) ?
             randomResponse() :
-            nextSequentialResponse();
+            nextOrderedResponse();
     }
 
-    // nextSequentialResponse
+    // nextOrderedResponse
     /++
-        Yields a sequential response from the [responses] array. Which response
+        Yields an ordered response from the [responses] array. Which response
         is selected depends on the value of [position].
 
         Returns:
             A response string. If the [responses] array is empty, then an empty
             string is returned instead.
      +/
-    string nextSequentialResponse()
+    string nextOrderedResponse()
     {
         if (!responses.length) return string.init;
 
@@ -182,7 +182,7 @@ public:
         oneliner.trigger = json["trigger"].str;
         oneliner.type = (json["type"].integer == cast(int)Type.random) ?
             Type.random :
-            Type.sequential;
+            Type.ordered;
 
         foreach (const response; json["responses"].array)
         {
@@ -344,16 +344,16 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
             type = Oneliner.Type.random;
             break;
 
+        case "ordered":
+        case "order":
         case "sequential":
         case "seq":
         case "sequence":
-        case "order":
-        case "ordered":
-            type = Oneliner.Type.sequential;
+            type = Oneliner.Type.ordered;
             break;
 
         default:
-            enum message = "Oneliner type must be one of <b>random<b> or <b>sequential<b>";
+            enum message = "Oneliner type must be one of <b>random<b> or <b>ordered<b>";
             chan(plugin.state, event.channel, message);
             return;
         }
