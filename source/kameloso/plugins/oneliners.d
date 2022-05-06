@@ -347,6 +347,8 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
         case "sequential":
         case "seq":
         case "sequence":
+        case "order":
+        case "ordered":
             type = Oneliner.Type.sequential;
             break;
 
