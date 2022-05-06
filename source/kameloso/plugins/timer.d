@@ -372,21 +372,41 @@ void handleTimerCommand(
             return sendNewUsage();
         }
 
-        import std.algorithm.comparison : among;
-
-        if (type.among!("random", "rnd", "rng")) timerDef.type = TimerDefinition.Type.random;
-        else if (type.among!("sequential", "seq", "sequence")) timerDef.type = TimerDefinition.Type.sequential;
-        else
+        switch (type)
         {
+        case "random":
+        case "rnd":
+        case "rng":
+            timerDef.type = TimerDefinition.Type.random;
+            break;
+
+        case "sequential":
+        case "seq":
+        case "sequence":
+        case "order":
+        case "ordered":
+            timerDef.type = TimerDefinition.Type.sequential;
+            break;
+
+        default:
             enum message = "Type must be one of <b>random<b> or <b>sequential<b>.";
             chan(plugin.state, channelName, message);
             return;
         }
 
-        if (condition.among!("both", "and")) timerDef.condition = TimerDefinition.Condition.both;
-        else if (condition.among!("either", "or")) timerDef.condition = TimerDefinition.Condition.either;
-        else
+        switch (condition)
         {
+        case "both":
+        case "and":
+            timerDef.condition = TimerDefinition.Condition.both;
+            break;
+
+        case "either":
+        case "or":
+            timerDef.condition = TimerDefinition.Condition.either;
+            break;
+
+        default:
             enum message = "Condition must be one of <b>both<b> or <b>either<b>.";
             chan(plugin.state, channelName, message);
             return;
