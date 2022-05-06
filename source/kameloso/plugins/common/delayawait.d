@@ -159,6 +159,7 @@ in ((fiber !is null), "Tried to remove a delayed null Fiber")
         plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
  +/
 void removeDelayedFiber(IRCPlugin plugin)
+in (Fiber.getThis, "Tried to call `removeDelayedFiber` from outside a Fiber")
 {
     return plugin.removeDelayedFiber(Fiber.getThis);
 }
@@ -441,6 +442,7 @@ in ((type != IRCEvent.Type.UNSET), "Tried to unlist a " ~ Thing.stringof ~
         [unawaitImpl]
  +/
 void unawait(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
+in (fiber, "Tried to call `unawait` with a null Fiber")
 {
     return unawaitImpl(fiber, plugin.state.awaitingFibers, type);
 }
@@ -462,6 +464,7 @@ void unawait(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
         [unawaitImpl]
  +/
 void unawait(IRCPlugin plugin, const IRCEvent.Type type)
+in (Fiber.getThis, "Tried to call `unawait` from outside a Fiber")
 {
     return unawait(plugin, Fiber.getThis, type);
 }
@@ -485,6 +488,7 @@ void unawait(IRCPlugin plugin, const IRCEvent.Type type)
         [unawaitImpl]
  +/
 void unawait(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
+in (fiber, "Tried to call `unawait` with a null Fiber")
 {
     foreach (immutable type; types)
     {
@@ -510,6 +514,7 @@ void unawait(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
         [unawaitImpl]
  +/
 void unawait(IRCPlugin plugin, const IRCEvent.Type[] types)
+in (Fiber.getThis, "Tried to call `unawait` from outside a Fiber")
 {
     foreach (immutable type; types)
     {
@@ -535,6 +540,7 @@ void unawait(IRCPlugin plugin, const IRCEvent.Type[] types)
         [unawaitImpl]
  +/
 void unawait(IRCPlugin plugin, void delegate(IRCEvent) dg, const IRCEvent.Type type)
+in ((dg !is null), "Tried to call `unawait` with a null delegate")
 {
     return unawaitImpl(dg, plugin.state.awaitingDelegates, type);
 }
@@ -558,6 +564,7 @@ void unawait(IRCPlugin plugin, void delegate(IRCEvent) dg, const IRCEvent.Type t
         [unawaitImpl]
  +/
 void unawait(IRCPlugin plugin, void delegate(IRCEvent) dg, const IRCEvent.Type[] types)
+in ((dg !is null), "Tried to call `unawait` with a null delegate")
 {
     foreach (immutable type; types)
     {
