@@ -228,7 +228,7 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
 
     delay(plugin, plugin.approximateQueryTime.msecs, Yes.yield);
     immutable response = waitForQueryResponse(plugin, url,
-        plugin.twitchBotSettings.singleWorkerThread);
+        cast(Flag!"leaveTimingAlone")plugin.twitchBotSettings.singleWorkerThread);
 
     scope(exit)
     {
@@ -713,7 +713,7 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
  +/
 QueryResponse waitForQueryResponse(TwitchBotPlugin plugin,
     const string url,
-    const bool leaveTimingAlone = true)
+    const Flag!"leaveTimingAlone" leaveTimingAlone = Yes.leaveTimingAlone)
 in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 {
     import kameloso.constants : Timeout;
