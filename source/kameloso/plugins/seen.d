@@ -1011,12 +1011,12 @@ long[string] loadSeen(const string filename)
 
     try
     {
-        const asJSON = parseJSON(filename.readText).object;
+        const asJSON = parseJSON(filename.readText);
 
         // Manually insert each entry from the JSON file into the long[string] AA.
-        foreach (immutable user, const time; asJSON)
+        foreach (immutable user, const timeJSON; asJSON.object)
         {
-            aa[user] = time.integer;
+            aa[user] = timeJSON.integer;
         }
     }
     catch (JSONException e)

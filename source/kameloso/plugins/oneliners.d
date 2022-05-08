@@ -184,9 +184,9 @@ public:
             Type.random :
             Type.ordered;
 
-        foreach (const response; json["responses"].array)
+        foreach (const responseJSON; json["responses"].array)
         {
-            oneliner.responses ~= response.str;
+            oneliner.responses ~= responseJSON.str;
         }
 
         return oneliner;
