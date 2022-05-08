@@ -479,7 +479,7 @@ mixin template IRCPluginImpl(
         /++
             Verifies that annotations are as expected.
          +/
-        bool udaSanityCheck(alias fun)()
+        static bool udaSanityCheck(alias fun)()
         {
             import kameloso.plugins.common.core : IRCEventHandler;
             import std.traits : fullyQualifiedName, getUDAs;
