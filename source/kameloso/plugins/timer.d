@@ -707,7 +707,7 @@ void onAnyMessage(TimerPlugin plugin, const ref IRCEvent event)
 // onWelcome
 /++
     Loads timers from disk. Additionally sets up a Fiber to periodically call
-    timer [core.thread.fiber.Fiber|Fiber]s with a periodicity of [FiberPlugin.timerPeriodicity].
+    timer [core.thread.fiber.Fiber|Fiber]s with a periodicity of [TimerPlugin.timerPeriodicity].
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)

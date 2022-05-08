@@ -33,7 +33,7 @@ package:
     Common code for whitelisting and blacklisting nicknames/accounts.
 
     Params:
-        plugin = The current [kameloso.pluins.admin.base.AdminPlugin|AdminPlugin].
+        plugin = The current [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin].
         event = The triggering [dialect.defs.IRCEvent|IRCEvent].
         list = Which list to add/remove from; "staff", "whitelist", "operator" or "blacklist".
  +/

@@ -2009,7 +2009,7 @@ Next tryGetopt(
     Tries to connect to the IPs in
     [kameloso.kameloso.Kameloso.conn.ips|Kameloso.conn.ips] by leveraging
     [kameloso.net.connectFiber|connectFiber], reacting on the
-    [kameloso.net.ConnectAttempt|ConnectAttempt]s it yields to provide feedback
+    [kameloso.net.ConnectionAttempt|ConnectionAttempt]s it yields to provide feedback
     to the user.
 
     Params:

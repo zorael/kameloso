@@ -458,8 +458,7 @@ mixin template IRCPluginImpl(
         [kameloso.plugins.common.core.PrefixPolicy|PrefixPolicy],
         [kameloso.plugins.common.core.IRCEventHandler.Command|IRCEventHandler.Command],
         [kameloso.plugins.common.core.IRCEventHandler.Regex|IRCEventHandler.Regex],
-        [kameloso.plugins.common.core.Chainable|Chainable]
-        etc; where such is applicable.
+        `chainable` settings etc; where such is applicable.
 
         This function is private, but since it's part of a mixin template it will
         be visible at the mixin site. Plugins can as such override
@@ -1588,14 +1587,13 @@ mixin template IRCPluginImpl(
         Collects all [kameloso.plugins.common.core.IRCEventHandler.Command|IRCEventHandler.Command]
         command words and [kameloso.plugins.common.core.IRCEventHandler.Regex|IRCEventHandler.Regex]
         regex expressions that this plugin offers at compile time, then at runtime
-        returns them alongside their [Description]s and their visibility, as an associative
+        returns them alongside their descriptions and their visibility, as an associative
         array of [kameloso.plugins.common.core.IRCPlugin.CommandMetadata|IRCPlugin.CommandMetadata]s
         keyed by command name strings.
 
         Returns:
-            Associative array of tuples of all
-            [kameloso.plugins.common.core.Description|Description]s and whether
-            they are hidden, keyed by
+            Associative array of tuples of all command metadata (descriptions,
+            syntaxes, and whether they are hidden), keyed by
             [kameloso.plugins.common.core.IRCEventHandler.Command.word|IRCEventHandler.Command.word]s
             and [kameloso.plugins.common.core.IRCEventHandler.Regex.expression|IRCEventHandler.Regex.expression]s.
      +/
@@ -1787,8 +1785,8 @@ unittest
     Evaluates whether or not the message in an event satisfies the [PrefixPolicy]
     specified, as fetched from a [IRCEventHandler.Command] or [IRCEventHandler.Regex] UDA.
 
-    If it doesn't match, the [onEvent] routine shall consider the UDA as not
-    matching and continue with the next one.
+    If it doesn't match, the [IRCPluginImpl.onEventImpl] routine shall consider
+    the UDA as not matching and continue with the next one.
 
     Params:
         verbose = Whether or not to output verbose debug information to the local terminal.

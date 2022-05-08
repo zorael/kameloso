@@ -2034,7 +2034,7 @@ package:
         Override
         [kameloso.plugins.common.core.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled]
         and inject a server check, so this plugin only works on Twitch, in addition
-        to doing nothing when [TwitchbotSettings.enabled] is false.
+        to doing nothing when [TwitchBotSettings.enabled] is false.
 
         Returns:
             `true` if this plugin should react to events; `false` if not.

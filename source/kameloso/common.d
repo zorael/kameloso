@@ -1208,11 +1208,11 @@ struct Tint
         // opDispatch
         /++
             Provides the string that corresponds to the tint of the
-            [kameloso.logger.core.LogLevel|LogLevel] that was passed in string form
+            [kameloso.logger.LogLevel|LogLevel] that was passed in string form
             as the `tint` `opDispatch` template parameter.
 
             This saves us the boilerplate of copy/pasting one function for each
-            [kameloso.logger.core.LogLevel|LogLevel].
+            [kameloso.logger.LogLevel|LogLevel].
          +/
         pragma(inline, true)
         static string opDispatch(string tint)()
@@ -1290,7 +1290,7 @@ unittest
     Also works with `dstring`s and `wstring`s.
 
     `<tags>` are the lowercase first letter of all
-    [std.experimental.logger.LogLevel|LogLevel]s; `<l>`, `<t>`, `<i>`, `<w>`
+    [kameloso.logger.LogLevel|LogLevel]s; `<l>`, `<t>`, `<i>`, `<w>`
     `<e>`, `<c>` and `<f>`. `<a>` is not included.
 
     `</>` equals the passed `baseLevel` and is used to terminate colour sequences,

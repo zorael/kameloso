@@ -10,7 +10,7 @@
     minutes.
 
     We will rely on the
-    [kameloso.plugins.chanqueries.ChanQueriesService|ChanQueriesService] to query
+    [kameloso.plugins.services.chanqueries.ChanQueriesService|ChanQueriesService] to query
     channels for full lists of users upon joining new ones, including the
     ones we join upon connecting. Elsewise, a completely silent user will never
     be recorded as having been seen, as they would never be triggering any of
@@ -191,7 +191,7 @@ public:
         is also an array of [core.thread.fiber.Fiber|Fiber]s, but not one keyed
         on or indexed by event types. Instead they are tuples of a
         [core.thread.fiber.Fiber|Fiber] and a `long` timestamp of when they should be run.
-        Use [kameloso.plugins.common.delayawait.delayFiber|delayFiber] to enqueue.
+        Use [kameloso.plugins.common.delayawait.delay|delay] to enqueue.
 
     * [kameloso.plugins.common.core.IRCPluginState.scheduledDelegates|IRCPluginState.scheduledDelegates]
         is likewise an array of delegates, to be triggered at a later point in time.
@@ -642,7 +642,7 @@ void onNick(SeenPlugin plugin, const ref IRCEvent event)
 
     A WHO request enumerates all members in a channel. It returns several
     replies, one event per each user in the channel. The
-    [kameloso.plugins.chanqueries.ChanQueriesService|ChanQueriesService] services
+    [kameloso.plugins.services.chanqueries.ChanQueriesService|ChanQueriesService] services
     instigates this shortly after having joined one, as a service to other plugins.
  +/
 @(IRCEventHandler()

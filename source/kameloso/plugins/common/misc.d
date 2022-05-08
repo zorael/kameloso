@@ -389,8 +389,8 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
 
 // replay
 /++
-    Convenience function that returns a [ReplayImpl] of the right type,
-    *with* a subclass plugin reference attached.
+    Convenience function that returns a [kameloso.plugins.common.core.Replay] of
+    the right type, *with* a subclass plugin reference attached.
 
     Params:
         plugin = Subclass [kameloso.plugins.common.core.IRCPlugin|IRCPlugin] to
