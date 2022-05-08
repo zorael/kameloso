@@ -10,7 +10,7 @@
 * saving notes to offline users that get played back when they come online
 * logs
 * bugs
-* channel polls, `!seen`, counters, timered announcements, stopwatches
+* channel polls, `!seen`, counters, timed announcements, stopwatches
 * automatic mode sets (e.g. auto `+o` on join)
 * works on **Twitch** with some additional common Twitch bot features
 * [more random stuff and gimmicks](https://github.com/zorael/kameloso/wiki/Current-plugins)
