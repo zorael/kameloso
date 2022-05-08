@@ -839,7 +839,6 @@ void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
  +/
 void reload(QuotesPlugin plugin)
 {
-    //logger.info("Reloading quotes from disk.");
     plugin.quotes.load(plugin.quotesFile);
 }
 
@@ -853,7 +852,7 @@ void reload(QuotesPlugin plugin)
 )
 void onWelcome(QuotesPlugin plugin)
 {
-    plugin.quotes.load(plugin.quotesFile);
+    plugin.reload();
 }
 
 

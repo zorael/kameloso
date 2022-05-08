@@ -370,7 +370,6 @@ void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
  +/
 void reload(NotesPlugin plugin)
 {
-    //logger.info("Reloading notes from disk.");
     plugin.notes.load(plugin.notesFile);
 }
 
@@ -574,7 +573,7 @@ in (line.length, "Tried to add an empty note")
 )
 void onWelcome(NotesPlugin plugin)
 {
-    plugin.notes.load(plugin.notesFile);
+    plugin.reload();
 }
 
 

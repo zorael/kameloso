@@ -624,6 +624,16 @@ void listCommands(OnelinersPlugin plugin, const string channelName)
 )
 void onWelcome(OnelinersPlugin plugin)
 {
+    plugin.reload();
+}
+
+
+// reload
+/++
+    Reloads oneliners from disk.
+ +/
+void reload(OnelinersPlugin plugin)
+{
     import lu.json : JSONStorage;
 
     JSONStorage allOnelinersJSON;
@@ -636,6 +646,7 @@ void onWelcome(OnelinersPlugin plugin)
             plugin.onelinersByChannel[channelName][trigger] = Oneliner.fromJSON(onelinerJSON);
         }
     }
+
     plugin.onelinersByChannel = plugin.onelinersByChannel.rehash();
 }
 

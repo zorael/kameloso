@@ -1074,7 +1074,7 @@ void onWelcome(SeenPlugin plugin)
     import kameloso.constants : BufferSize;
     import core.thread : Fiber;
 
-    plugin.seenUsers = loadSeen(plugin.seenFile);
+    plugin.reload();
 
     void saveDg()
     {
@@ -1117,11 +1117,10 @@ void onWelcome(SeenPlugin plugin)
 
 // reload
 /++
-    Reload seen users from disk.
+    Reloads seen users from disk.
  +/
 void reload(SeenPlugin plugin)
 {
-    //logger.info("Reloading seen users from disk.");
     plugin.seenUsers = loadSeen(plugin.seenFile);
 }
 

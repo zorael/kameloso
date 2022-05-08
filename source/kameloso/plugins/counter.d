@@ -342,11 +342,22 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 )
 void onWelcome(CounterPlugin plugin)
 {
+    plugin.reload();
+}
+
+
+// reload
+/++
+    Reloads counters from disk.
+ +/
+void reload(CounterPlugin plugin)
+{
     import lu.json : JSONStorage, populateFromJSON;
     import std.typecons : Flag, No, Yes;
 
     JSONStorage countersJSON;
     countersJSON.load(plugin.countersFile);
+    plugin.counters.clear();
     plugin.counters.populateFromJSON(countersJSON, No.lowercaseKeys);
     plugin.counters = plugin.counters.rehash();
 }

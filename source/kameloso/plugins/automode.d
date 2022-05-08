@@ -489,11 +489,21 @@ void onCommandOp(AutomodePlugin plugin, const ref IRCEvent event)
 )
 void onWelcome(AutomodePlugin plugin)
 {
+    plugin.reload();
+}
+
+
+// reload
+/++
+    Reloads automode definitions from disk.
+ +/
+void reload(AutomodePlugin plugin)
+{
     import lu.json : JSONStorage, populateFromJSON;
 
     JSONStorage automodesJSON;
     automodesJSON.load(plugin.automodeFile);
-    //plugin.automodes.clear();
+    plugin.automodes.clear();
     plugin.automodes.populateFromJSON(automodesJSON, Yes.lowercaseKeys);
     plugin.automodes = plugin.automodes.rehash();
 }

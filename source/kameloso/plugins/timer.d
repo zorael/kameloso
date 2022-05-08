@@ -1050,6 +1050,23 @@ void reload(TimerPlugin plugin)
     }
 
     plugin.timerDefsByChannel = plugin.timerDefsByChannel.rehash();
+
+    // Recreate timers from definitions
+    foreach (immutable channelName, channel; plugin.channels)
+    {
+        foreach (fiber; channel.timerFibers)
+        {
+            destroy(fiber);
+        }
+
+        if (auto timerDefs = channelName in plugin.timerDefsByChannel)
+        {
+            foreach (timerDef; *timerDefs)
+            {
+                channel.timerFibers ~= plugin.createTimerFiber(timerDef, channelName);
+            }
+        }
+    }
 }
 
 
