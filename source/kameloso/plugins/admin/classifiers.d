@@ -125,8 +125,6 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
         enum pattern = "Current %s in <b>%s<b>: %-(<h>%s<h>, %)";
         immutable message = pattern.format(asWhat, channel, userlist);
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
-
-
     }
     else
     {
