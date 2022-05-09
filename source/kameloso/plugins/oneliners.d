@@ -536,13 +536,17 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
             chan(plugin.state, event.channel, message);
         }
 
-        void sendRemoved(const string trigger, const Flag!"isEmpty" isEmpty, const size_t pos = 0)
+        void sendLineRemoved(const string trigger, const size_t pos)
+        {
+            enum pattern = "Oneliner response <b>%s<b>#%d removed.";
+            immutable message = pattern.format(trigger, pos);
+            chan(plugin.state, event.channel, message);
+        }
+
+        void sendRemoved(const string trigger)
         {
             enum pattern = "Oneliner <b>%s%s<b> removed.";
-            enum sublinePattern = "Oneliner subline <b>%s<b>#%d removed.";
-            immutable message = isEmpty ?
-                pattern.format(plugin.state.settings.prefix, trigger) :
-                sublinePattern.format(trigger, pos);
+            immutable message = pattern.format(plugin.state.settings.prefix, trigger);
             chan(plugin.state, event.channel, message);
         }
 
@@ -558,20 +562,32 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
 
         if (slice.length)
         {
+            if (!oneliner.responses.length)
+            {
+                enum pattern = "Oneliner <b>%s<b> is empty and has no responses to remove.";
+                immutable message = pattern.format(trigger);
+                chan(plugin.state, event.channel, message);
+                return;
+            }
+
             try
             {
                 import std.algorithm.mutation : SwapStrategy, remove;
 
                 immutable pos = slice.to!size_t;
-                oneliner.responses = oneliner.responses.remove!(SwapStrategy.stable)(pos);
-                immutable isEmpty = (oneliner.responses.length == 0);
-                sendRemoved(trigger, cast(Flag!"isEmpty")isEmpty, pos);
 
-                if (isEmpty)
+                if (pos >= oneliner.responses.length)
                 {
-                    (*channelOneliners).remove(trigger);
+                    enum pattern = "Oneliner response index out of bounds. (0-<b>%d<b>)";
+                    immutable message = pattern.format(pos);
+                    chan(plugin.state, event.channel, message);
+                    return;
                 }
-                else if (oneliner.type == Oneliner.Type.ordered)
+
+                oneliner.responses = oneliner.responses.remove!(SwapStrategy.stable)(pos);
+                sendLineRemoved(trigger, pos);
+
+                if (oneliner.type == Oneliner.Type.ordered)
                 {
                     // Reset ordered position to 0 on removals
                     oneliner.position = 0;
@@ -585,7 +601,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
         else
         {
             (*channelOneliners).remove(trigger);
-            sendRemoved(trigger, Yes.isEmpty);
+            sendRemoved(trigger);
         }
 
         saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
