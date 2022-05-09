@@ -258,7 +258,7 @@ public:
 
 // onCommandTimer
 /++
-    Adds, deletes, lists or clears timers for the specified target channel.
+    Adds, deletes or lists timers for the specified target channel.
 
     Changes are persistently saved to the [TimerPlugin.timersFile] file.
  +/
@@ -270,14 +270,13 @@ public:
         IRCEventHandler.Command()
             .word("timer")
             .policy(PrefixPolicy.prefixed)
-            .description("Adds, removes, lists or clears timers.")
+            .description("Adds, removes or lists timers.")
             .addSyntax("$command new [name] [type] [condition] [message count threshold] " ~
                 "[time threshold] [stagger message count] [stagger time]")
             .addSyntax("$command add [timer name] [timer text...]")
             .addSyntax("$command insert [timer name] [position] [timer text...]")
             .addSyntax("$command del [timer name] [optional line number]")
             .addSyntax("$command list")
-            .addSyntax("$command clear")
     )
 )
 void onCommandTimer(TimerPlugin plugin, const ref IRCEvent event)
@@ -288,7 +287,7 @@ void onCommandTimer(TimerPlugin plugin, const ref IRCEvent event)
 
 // handleTimerCommand
 /++
-    Adds, deletes, lists or clears timers for the specified target channel.
+    Adds, deletes or lists timers for the specified target channel.
 
     Params:
         plugin = The current [kameloso.plugins.timer.TimerPlugin|TimerPlugin].
