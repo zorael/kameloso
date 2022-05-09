@@ -85,6 +85,12 @@ public:
      +/
     size_t position;
 
+    // lastTriggered
+    /++
+        UNIX timestamp of when the oneliner last fired.
+     +/
+    long lastTriggered;
+
     // responses
     /++
         Array of responses.
@@ -234,6 +240,20 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
             import std.conv : text;
             import std.format : format;
             import std.random : uniform;
+
+            if (plugin.onelinersSettings.cooldown > 0)
+            {
+                if ((oneliner.lastTriggered + plugin.onelinersSettings.cooldown) > event.time)
+                {
+                    // Too soon
+                    return;
+                }
+                else
+                {
+                    // Record time last fired
+                    oneliner.lastTriggered = event.time;
+                }
+            }
 
             immutable line = oneliner.getResponse()
                 .replace("$nickname", nameOf(event.sender))
