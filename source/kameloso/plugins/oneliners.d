@@ -241,6 +241,14 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
             import std.format : format;
             import std.random : uniform;
 
+            if (!oneliner.responses.length)
+            {
+                enum pattern = "(Empty oneliner; use <b>%soneliner<b> add to add lines.)";
+                immutable message = pattern.format(plugin.state.settings.prefix);
+                chan(plugin.state, event.channel, message);
+                return;
+            }
+
             if (plugin.onelinersSettings.cooldown > 0)
             {
                 if ((oneliner.lastTriggered + plugin.onelinersSettings.cooldown) > event.time)
