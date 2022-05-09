@@ -308,7 +308,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
 
     void sendUsage()
     {
-        enum pattern = "Usage: <b>%s%s<b> [add|insert|append|del|list] ...";
+        enum pattern = "Usage: <b>%s%s<b> [new|insert|add|del|list] ...";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
         chan(plugin.state, event.channel, message);
     }
@@ -336,7 +336,6 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
 
     switch (verb)
     {
-    case "add":
     case "new":
         import kameloso.thread : ThreadMessage;
         import lu.conv : Enum;
@@ -345,7 +344,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
 
         void sendAddUsage()
         {
-            enum pattern = "Usage: <b>%s%s<b> add [trigger] [type] [text...]";
+            enum pattern = "Usage: <b>%s%s<b> new [trigger] [type] [text...]";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
             chan(plugin.state, event.channel, message);
         }
@@ -436,7 +435,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
         break;
 
     case "insert":
-    case "append":
+    case "add":
         enum appendToEndMagicNumber = -1;
 
         void insert(/*const*/ string trigger, const ptrdiff_t pos, const string line)
@@ -499,14 +498,14 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
 
             return insert(trigger, pos, slice);
         }
-        else if (verb == "append")
+        else if (verb == "add")
         {
             string trigger;
 
             immutable results = slice.splitInto(trigger);
             if (results != SplitResults.overrun)
             {
-                enum pattern = "Usage: <b>%s%s<b> append [trigger] [text...]";
+                enum pattern = "Usage: <b>%s%s<b> add [trigger] [text...]";
                 immutable message = pattern.format(plugin.state.settings.prefix);
                 chan(plugin.state, event.channel, message);
                 return;
