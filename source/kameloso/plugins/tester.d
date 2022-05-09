@@ -201,9 +201,9 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
 
     void awaitReply()
     {
-        Fiber.yield();
+        do Fiber.yield();
         while ((thisFiber.payload.channel != origEvent.channel) ||
-            (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
+            (thisFiber.payload.sender.nickname != botNickname));
     }
 
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
@@ -325,9 +325,9 @@ in (origEvent.channel.length, "Tried to test Automode with empty channel in orig
 
     void awaitReply()
     {
-        Fiber.yield();
+        do Fiber.yield();
         while ((thisFiber.payload.channel != origEvent.channel) ||
-            (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
+            (thisFiber.payload.sender.nickname != botNickname));
     }
 
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
@@ -405,9 +405,9 @@ in (origEvent.channel.length, "Tried to test Chatbot with empty channel in origi
 
     void awaitReply()
     {
-        Fiber.yield();
+        do Fiber.yield();
         while ((thisFiber.payload.channel != origEvent.channel) ||
-            (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
+            (thisFiber.payload.sender.nickname != botNickname));
     }
 
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
@@ -493,9 +493,9 @@ in (origEvent.channel.length, "Tried to test Notes with empty channel in origina
 
     void awaitReply()
     {
-        Fiber.yield();
+        do Fiber.yield();
         while ((thisFiber.payload.channel != origEvent.channel) ||
-            (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
+            (thisFiber.payload.sender.nickname != botNickname));
     }
 
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
@@ -560,9 +560,9 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
 
     void awaitReply()
     {
-        Fiber.yield();
+        do Fiber.yield();
         while ((thisFiber.payload.channel != origEvent.channel) ||
-            (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
+            (thisFiber.payload.sender.nickname != botNickname));
     }
 
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
@@ -619,9 +619,9 @@ in (origEvent.channel.length, "Tried to test Quotes with empty channel in origin
 
     void awaitReply()
     {
-        Fiber.yield();
+        do Fiber.yield();
         while ((thisFiber.payload.channel != origEvent.channel) ||
-            (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
+            (thisFiber.payload.sender.nickname != botNickname));
     }
 
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
@@ -701,9 +701,9 @@ in (origEvent.channel.length, "Tried to test SedReplace with empty channel in or
 
     void awaitReply()
     {
-        Fiber.yield();
+        do Fiber.yield();
         while ((thisFiber.payload.channel != origEvent.channel) ||
-            (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
+            (thisFiber.payload.sender.nickname != botNickname));
     }
 
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
@@ -750,9 +750,9 @@ in (origEvent.channel.length, "Tried to test Seen with empty channel in original
 
     void awaitReply()
     {
-        Fiber.yield();
+        do Fiber.yield();
         while ((thisFiber.payload.channel != origEvent.channel) ||
-            (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
+            (thisFiber.payload.sender.nickname != botNickname));
     }
 
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
@@ -807,9 +807,9 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
 
     void awaitReply()
     {
-        Fiber.yield();
+        do Fiber.yield();
         while ((thisFiber.payload.channel != origEvent.channel) ||
-            (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
+            (thisFiber.payload.sender.nickname != botNickname));
     }
 
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
@@ -940,9 +940,9 @@ in (origEvent.channel.length, "Tried to test Stopwatch with empty channel in ori
 
     void awaitReply()
     {
-        Fiber.yield();
+        do Fiber.yield();
         while ((thisFiber.payload.channel != origEvent.channel) ||
-            (thisFiber.payload.sender.nickname != botNickname)) Fiber.yield();
+            (thisFiber.payload.sender.nickname != botNickname));
     }
 
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
