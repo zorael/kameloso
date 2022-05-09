@@ -325,7 +325,7 @@ void handleTimerCommand(
     case "new":
         void sendNewUsage()
         {
-            enum pattern = "Usage: <b>%s%s<b> new [name] [type] [condition] [message count threshold] " ~
+            enum pattern = "Usage: <b>%s%s new<b> [name] [type] [condition] [message count threshold] " ~
                 "[time threshold] [stagger message count] [stagger time]";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
             chan(plugin.state, channelName, message);
@@ -450,7 +450,7 @@ void handleTimerCommand(
     case "insert":
         void sendInsertUsage()
         {
-            enum pattern = "Usage: <b>%s%s<b> insert [timer name] [position] [timer text...]";
+            enum pattern = "Usage: <b>%s%s insert<b> [timer name] [position] [timer text...]";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
             chan(plugin.state, channelName, message);
         }
@@ -500,7 +500,7 @@ void handleTimerCommand(
     case "add":
         void sendAddUsage()
         {
-            enum pattern = "Usage: <b>%s%s<b> add [timer name] [timer text...]";
+            enum pattern = "Usage: <b>%s%s add<b> [timer name] [timer text...]";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
             chan(plugin.state, channelName, message);
         }
@@ -545,7 +545,7 @@ void handleTimerCommand(
 
         void sendDelUsage()
         {
-            enum pattern = "Usage: <b>%s%s<b> del [timer name] [optional line number]";
+            enum pattern = "Usage: <b>%s%s del<b> [timer name] [optional line number]";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
             chan(plugin.state, channelName, message);
         }
