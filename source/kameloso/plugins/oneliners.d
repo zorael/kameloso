@@ -324,8 +324,8 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
     void sendNoSuchOneliner(const string trigger)
     {
         // Sent from more than one place so might as well make it a nested function
-        enum pattern = "No such oneliner: <b>%s%s<b> (use <b>%1$s%3$s<b> new to add a new one.)";
-        immutable message = pattern.format(plugin.state.settings.prefix, trigger, event.aux);
+        enum pattern = "No such oneliner: <b>%s%s<b>";
+        immutable message = pattern.format(plugin.state.settings.prefix, trigger);
         chan(plugin.state, event.channel, message);
     }
 
