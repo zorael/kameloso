@@ -142,8 +142,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
                 }
                 break;
             }
-
-            if (line.asLowerCase.startsWith("quit"))
+            else if (line.asLowerCase.startsWith("quit"))
             {
                 if ((line.length > 6) && (line[4..6] == " :"))
                 {
@@ -157,7 +156,8 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
             }
             else
             {
-                raw(state, line);
+                immutable slice = (line[0] == ' ') ? line[1..$] : line;
+                raw(state, slice);
             }
             break;
         }
