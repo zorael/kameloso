@@ -352,7 +352,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
 
         void sendAddUsage()
         {
-            enum pattern = "Usage: <b>%s%s<b> new [trigger] [type] [text...]";
+            enum pattern = "Usage: <b>%s%s<b> new [trigger] [type]";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
             chan(plugin.state, event.channel, message);
         }
@@ -360,7 +360,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
         string trigger;
         string typestring;
         immutable results = slice.splitInto(trigger, typestring);
-        if (results != SplitResults.overrun) return sendAddUsage();
+        if (results != SplitResults.match) return sendAddUsage();
 
         Oneliner.Type type;
 
@@ -422,13 +422,13 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
             Oneliner oneliner;
             oneliner.trigger = trigger;
             oneliner.type = type;
-            oneliner.responses ~= slice;
+            //oneliner.responses ~= slice;
 
             plugin.onelinersByChannel[event.channel][trigger] = oneliner;
             saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
 
-            enum pattern = "Oneliner <b>%s%s<b> added.";
-            immutable message = pattern.format(plugin.state.settings.prefix, trigger);
+            enum pattern = "Oneliner <b>%s%s<b> created! Use <b>%1$s%3$s<b> add to add lines.";
+            immutable message = pattern.format(plugin.state.settings.prefix, trigger, event.aux);
             chan(plugin.state, event.channel, message);
         }
 
@@ -466,7 +466,9 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
                 oneliner.responses.insertInPlace(pos, line);
             }
 
-            enum message = "Oneliner inserted!";
+            immutable message = (pos == appendToEndMagicNumber) ?
+                "Oneliner added!" :
+                "Oneliner inserted!";
             chan(plugin.state, event.channel, message);
             saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
         }
