@@ -28,6 +28,13 @@ import dialect.defs;
 {
     /// Toggle whether or not this plugin should do anything at all.
     @Enabler bool enabled = true;
+
+    // cooldown
+    /++
+        How many seconds must pass between two invocations of a given oneliner.
+        Introduces an element of hysteresis.
+     +/
+    int cooldown = 3;
 }
 
 
