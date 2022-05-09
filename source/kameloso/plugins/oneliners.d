@@ -115,13 +115,7 @@ public:
 
         size_t i = position++;  // mutable
 
-        if (i >= responses.length)
-        {
-            // Position needs to be zeroed on response removals
-            i = 0;
-            position = 1;
-        }
-        else if (position >= responses.length)
+        if (position >= responses.length)
         {
             position = 0;
         }
@@ -540,6 +534,11 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
                 if (isEmpty)
                 {
                     (*channelOneliners).remove(trigger);
+                }
+                else if (oneliner.type == Oneliner.Type.ordered)
+                {
+                    // Reset ordered position to 0 on removals
+                    oneliner.position = 0;
                 }
             }
             catch (ConvException e)
