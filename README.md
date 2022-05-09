@@ -230,15 +230,15 @@ MrOffline joined #channel
       ray joined #channel
  kameloso sets mode +o ray
 
-      you | !oneliner add
- kameloso | Usage: !oneliner add [trigger] [type] [text...]
-      you | !oneliner add info random @$nickname: for more information just use Google
+      you | !oneliner new
+ kameloso | Usage: !oneliner new [trigger] [type] [text...]
+      you | !oneliner new info random @$nickname: for more information just use Google
  kameloso | Oneliner !info added.
-      you | !oneliner append info @$nickname: for more information just use Bing
+      you | !oneliner add info @$nickname: for more information just use Bing
  kameloso | Oneliner inserted!
-      you | !oneliner add vods sequential See https://twitch.tv/zorael/videos for $streamer's on-demand videos (stored temporarily)
+      you | !oneliner new vods ordered See https://twitch.tv/zorael/videos for $streamer's on-demand videos (stored temporarily)
  kameloso | Oneliner !vods added.
-      you | !oneliner add source sequential I am $bot. Peruse my source at https://github.com/zorael/kameloso
+      you | !oneliner new source ordered I am $bot. Peruse my source at https://github.com/zorael/kameloso
  kameloso | Oneliner !source added.
       you | !info
  kameloso | @you: for more information just use Google
