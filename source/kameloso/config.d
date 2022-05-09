@@ -116,7 +116,8 @@ void writeConfig(ref Kameloso instance,
     import kameloso.constants : KamelosoDefaults;
     import kameloso.platform : rbd = resourceBaseDirectory;
     import kameloso.printing : printObjects;
-    import std.path : buildNormalizedPath;
+    import std.file : exists;
+    import std.path : buildNormalizedPath, expandTilde;
     import std.stdio : writeln;
 
     // --save was passed; write configuration to file and quit
@@ -138,11 +139,44 @@ void writeConfig(ref Kameloso instance,
 
     immutable defaultResourceDir = buildNormalizedPath(rbd, "kameloso");
 
-    if (instance.settings.resourceDirectory == defaultResourceDir)
+    // Copied from kameloso.main.resolvePaths
+    version(Windows)
+    {
+        import std.string : replace;
+        immutable resolvedResourceDir = instance.parser.server.address.length ?
+            buildNormalizedPath(
+                defaultResourceDir,
+                "server",
+                instance.parser.server.address.replace(':', '_')) :
+            string.init;
+    }
+    else version(Posix)
+    {
+        immutable resolvedResourceDir = instance.parser.server.address.length ?
+            buildNormalizedPath(
+                defaultResourceDir,
+                "server",
+                instance.parser.server.address) :
+            string.init;
+    }
+    else
+    {
+        static assert(0, "Unsupported platform, please file a bug.");
+    }
+
+    if ((instance.settings.resourceDirectory == defaultResourceDir) ||
+        (resolvedResourceDir.length &&
+            (instance.settings.resourceDirectory.expandTilde() == resolvedResourceDir)))
     {
         // If the resource directory is the default, write it out as empty
+        // Likewise if it is what would be automatically inferred
         instance.settings.resourceDirectory = string.init;
     }
+
+    immutable shouldGiveBrightTerminalHint =
+        !instance.settings.monochrome &&
+        !instance.settings.brightTerminal &&
+        !instance.settings.configFile.exists;
 
     instance.writeConfigurationFile(instance.settings.configFile);
 
@@ -156,7 +190,10 @@ void writeConfig(ref Kameloso instance,
             logger.trace();
             logger.log("Edit it and make sure it contains at least one of the following:");
             giveConfigurationMinimalInstructions();
+            logger.trace();
         }
+
+        if (shouldGiveBrightTerminalHint) giveBrightTerminalHint(Yes.alsoAboutConfigSetting);
     }
 }
 
@@ -239,7 +276,7 @@ void manageConfigFile(ref Kameloso instance,
             return;
         }
 
-        enum pattern = "Attempting to open <i>%s</> in <i>%s</>...";
+        enum pattern = "Attempting to open <i>%s</> with <i>%s</>...";
         logger.logf(pattern.expandTags(LogLevel.all), instance.settings.configFile, editor);
 
         immutable command = [ editor, instance.settings.configFile ];
@@ -1041,8 +1078,8 @@ void notifyAboutMissingSettings(const string[][string] missingEntries,
 
     enum pattern = "Use <i>%s --save</> to regenerate the file, " ~
         "updating it with all available configuration. [<i>%s</>]";
-    logger.logf(pattern.expandTags(LogLevel.all), binaryPath.baseName, configFile);
-    logger.warning("Mind that any comments and/or sections belonging to unbuilt plugins will be removed.");
+    logger.trace();
+    logger.tracef(pattern.expandTags(LogLevel.trace), binaryPath.baseName, configFile);
     logger.trace();
 }
 
@@ -1063,7 +1100,8 @@ void notifyAboutIncompleteConfiguration(const string configFile, const string bi
     import std.file : exists;
     import std.path : baseName;
 
-    logger.info("No administrators nor home channels configured!");
+    logger.warning("No administrators nor home channels configured!");
+    logger.trace();
 
     if (configFile.exists)
     {
@@ -1078,6 +1116,31 @@ void notifyAboutIncompleteConfiguration(const string configFile, const string bi
     }
 
     logger.trace();
+}
+
+
+// giveBrightTerminalHint
+/++
+    Display a hint about the existence of the `--bright` getopt flag.
+
+    Params:
+        alsoConfigSetting = Whether or not to also give a hint about the
+            possibility of saving the setting to
+            [kameloso.kameloso.CoreSettings.brightTerminal|CoreSettings.brightTerminal].
+ +/
+void giveBrightTerminalHint(
+    const Flag!"alsoAboutConfigSetting" alsoConfigSetting = No.alsoAboutConfigSetting)
+{
+    enum brightPattern = "If text is difficult to read (eg. white on white), " ~
+        "try running the program with <i>--bright</> or <i>--monochrome</>.";
+    logger.trace(brightPattern.expandTags(LogLevel.trace));
+
+    if (alsoConfigSetting)
+    {
+        enum configPattern = "The setting will be made persistent if you pass it " ~
+            "at the same time as <i>--save</>.";
+        logger.trace(configPattern.expandTags(LogLevel.trace));
+    }
 }
 
 
@@ -1253,17 +1316,17 @@ private import std.meta : allSatisfy;
 
     Params:
         configFile = Filename of file to read from.
-        missingEntries = Out reference of an associative array of string arrays
+        missingEntries = Reference to an associative array of string arrays
             of expected configuration entries that were missing.
-        invalidEntries = Out reference of an associative array of string arrays
+        invalidEntries = Reference to an associative array of string arrays
             of unexpected configuration entries that did not belong.
         things = Reference variadic list of things to set values of, according
             to the text in the configuration file.
  +/
 void readConfigInto(T...)
     (const string configFile,
-    out string[][string] missingEntries,
-    out string[][string] invalidEntries,
+    ref string[][string] missingEntries,
+    ref string[][string] invalidEntries,
     ref T things)
 if (allSatisfy!(isStruct, T))
 {

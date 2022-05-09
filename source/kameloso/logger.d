@@ -139,7 +139,7 @@ public:
         // tint
         /++
             Returns the corresponding
-            [kameloso.terminal.TerminalForeground|TerminalForeground] for the [LogLevel],
+            [kameloso.terminal.colours.TerminalForeground|TerminalForeground] for the [LogLevel],
             taking into account whether the terminal is said to be bright or not.
 
             This is merely a convenient wrapping for [logcoloursBright] and
@@ -157,7 +157,7 @@ public:
                     background or a dark one.
 
             Returns:
-                A [kameloso.terminal.TerminalForeground|TerminalForeground] of
+                A [kameloso.terminal.colours.TerminalForeground|TerminalForeground] of
                 the right colour. Use with [kameloso.terminal.colours.colour|colour]
                 to get a string.
          +/
@@ -294,7 +294,7 @@ public:
             if (!monochrome)
             {
                 // Reset.blink in case a fatal message was thrown
-                linebuffer.colourWith(TerminalForeground.default_, TerminalReset.blink);
+                linebuffer.colourWith(TerminalReset.all);
             }
         }
 

@@ -84,11 +84,11 @@ public:
          +/
         string description;
 
-        // syntax
+        // syntaxes
         /++
-            Syntax on how to use the command.
+            Syntaxes on how to use the command.
          +/
-        string syntax;
+        string[] syntaxes;
 
         // hidden
         /++
@@ -96,6 +96,14 @@ public:
             possible to trigger).
          +/
         bool hidden;
+
+        /// Constructor.
+        this(const string description, /*const*/ string[] syntaxes, const bool hidden) pure @safe nothrow @nogc
+        {
+            this.description = description;
+            this.syntaxes = syntaxes;
+            this.hidden = hidden;
+        }
     }
 
     // state
@@ -450,8 +458,7 @@ mixin template IRCPluginImpl(
         [kameloso.plugins.common.core.PrefixPolicy|PrefixPolicy],
         [kameloso.plugins.common.core.IRCEventHandler.Command|IRCEventHandler.Command],
         [kameloso.plugins.common.core.IRCEventHandler.Regex|IRCEventHandler.Regex],
-        [kameloso.plugins.common.core.Chainable|Chainable]
-        etc; where such is applicable.
+        `chainable` settings etc; where such is applicable.
 
         This function is private, but since it's part of a mixin template it will
         be visible at the mixin site. Plugins can as such override
@@ -472,7 +479,7 @@ mixin template IRCPluginImpl(
         /++
             Verifies that annotations are as expected.
          +/
-        bool udaSanityCheck(alias fun)()
+        static bool udaSanityCheck(alias fun)()
         {
             import kameloso.plugins.common.core : IRCEventHandler;
             import std.traits : fullyQualifiedName, getUDAs;
@@ -762,7 +769,7 @@ mixin template IRCPluginImpl(
             // Evaluate each Command UDAs with the current event
             if (uda._commands.length)
             {
-                foreach (immutable command; uda._commands)
+                foreach (const command; uda._commands)
                 {
                     static if (verbose)
                     {
@@ -1580,14 +1587,13 @@ mixin template IRCPluginImpl(
         Collects all [kameloso.plugins.common.core.IRCEventHandler.Command|IRCEventHandler.Command]
         command words and [kameloso.plugins.common.core.IRCEventHandler.Regex|IRCEventHandler.Regex]
         regex expressions that this plugin offers at compile time, then at runtime
-        returns them alongside their [Description]s and their visibility, as an associative
+        returns them alongside their descriptions and their visibility, as an associative
         array of [kameloso.plugins.common.core.IRCPlugin.CommandMetadata|IRCPlugin.CommandMetadata]s
         keyed by command name strings.
 
         Returns:
-            Associative array of tuples of all
-            [kameloso.plugins.common.core.Description|Description]s and whether
-            they are hidden, keyed by
+            Associative array of tuples of all command metadata (descriptions,
+            syntaxes, and whether they are hidden), keyed by
             [kameloso.plugins.common.core.IRCEventHandler.Command.word|IRCEventHandler.Command.word]s
             and [kameloso.plugins.common.core.IRCEventHandler.Regex.expression|IRCEventHandler.Regex.expression]s.
      +/
@@ -1610,27 +1616,30 @@ mixin template IRCPluginImpl(
             {
                 immutable uda = getUDAs!(fun, IRCEventHandler)[0];
 
-                static foreach (immutable command; uda._commands)
+                static foreach (const command; uda._commands)
                 {{
                     enum key = command._word;
                     commandAA[key] = IRCPlugin.CommandMetadata
-                        (command._description, command._syntax, command._hidden);
+                        (command._description, command._syntaxes, command._hidden);
 
                     static if (command._description.length)
                     {
                         static if (command._policy == PrefixPolicy.nickname)
                         {
-                            static if (command._syntax.length)
+                            static if (command._syntaxes.length)
                             {
                                 // Prefix the command with the bot's nickname,
                                 // as that's how it's actually used.
-                                commandAA[key].syntax = "$nickname: " ~ command._syntax;
+                                foreach (immutable syntax; command._syntaxes)
+                                {
+                                    commandAA[key].syntaxes ~= "$nickname: " ~ syntax;
+                                }
                             }
                             else
                             {
                                 // Define an empty nickname: command syntax
                                 // to give hint about the nickname prefix
-                                commandAA[key].syntax = "$nickname: $command";
+                                commandAA[key].syntaxes ~= "$nickname: $command";
                             }
                         }
                     }
@@ -1652,15 +1661,15 @@ mixin template IRCPluginImpl(
                     {
                         static if (regex._policy == PrefixPolicy.direct)
                         {
-                            commandAA[key].syntax = regex._expression;
+                            commandAA[key].syntaxes ~= regex._expression;
                         }
                         else static if (regex._policy == PrefixPolicy.prefix)
                         {
-                            commandAA[key].syntax = "$prefix" ~ regex._expression;
+                            commandAA[key].syntaxes ~= "$prefix" ~ regex._expression;
                         }
                         else static if (regex._policy == PrefixPolicy.nickname)
                         {
-                            commandAA[key].syntax = "$nickname: " ~ regex._expression;
+                            commandAA[key].syntaxes ~= "$nickname: " ~ regex._expression;
                         }
                     }
                     else static if (!regex._hidden)
@@ -1776,8 +1785,8 @@ unittest
     Evaluates whether or not the message in an event satisfies the [PrefixPolicy]
     specified, as fetched from a [IRCEventHandler.Command] or [IRCEventHandler.Regex] UDA.
 
-    If it doesn't match, the [onEvent] routine shall consider the UDA as not
-    matching and continue with the next one.
+    If it doesn't match, the [IRCPluginImpl.onEventImpl] routine shall consider
+    the UDA as not matching and continue with the next one.
 
     Params:
         verbose = Whether or not to output verbose debug information to the local terminal.
@@ -2475,7 +2484,7 @@ enum Timing
  +/
 struct IRCEventHandler
 {
-    private import kameloso.traits : Wrap;
+    private import kameloso.traits : UnderscoreOpDispatcher;
 
     // acceptedEventTypes
     /++
@@ -2483,6 +2492,13 @@ struct IRCEventHandler
         handler function should accept.
      +/
     IRCEvent.Type[] _acceptedEventTypes;
+
+    // _onEvent
+    /++
+        Alias to make [kameloso.traits.UnderscoreOpDispatcher] redirect calls to
+        [_acceptedEventTypes] but by the name `onEvent`.
+     +/
+    alias _onEvent = _acceptedEventTypes;
 
     // permissionsRequired
     /++
@@ -2504,11 +2520,25 @@ struct IRCEventHandler
      +/
     Command[] _commands;
 
+    // _addCommand
+    /++
+        Alias to make [kameloso.traits.UnderscoreOpDispatcher] redirect calls to
+        [_commands] but by the name `addCommand`.
+     +/
+    alias _addCommand = _commands;
+
     // regexes
     /++
         Array of [IRCEventHandler.Regex]es the bot should pick up and listen for.
      +/
     Regex[] _regexes;
+
+    // _addRegex
+    /++
+        Alias to make [kameloso.traits.UnderscoreOpDispatcher] redirect calls to
+        [_regexes] but by the name `addRegex`.
+     +/
+    alias _addRegex = _regexes;
 
     // chainable
     /++
@@ -2532,112 +2562,7 @@ struct IRCEventHandler
      +/
     Timing _when;
 
-    // onEvent
-    /++
-        Adds an [dialect.defs.IRCEvent.Type|IRCEvent.Type] to the array of types
-        that the annotated event handler function should accept.
-
-        Params:
-            type = New [dialect.defs.IRCEvent.Type|IRCEvent.Type] to listen for.
-
-        Returns:
-            A `this` reference to the current struct instance.
-     +/
-    mixin Wrap!("onEvent", _acceptedEventTypes);
-
-    // permissionsRequired
-    /++
-        Sets the permission level required of an instigating user before the
-        annotated event handler function is allowed to be triggered.
-
-        Params:
-            permissionsRequired = New [Permissions] permissions level.
-
-        Returns:
-            A `this` reference to the current struct instance.
-     +/
-    mixin Wrap!("permissionsRequired", _permissionsRequired);
-
-    // channelPolicy
-    /++
-        Sets the type of channel the annotated event handler function should be
-        allowed to be triggered in.
-
-        Params:
-            channelPolicy = New [ChannelPolicy] channel policy.
-
-        Returns:
-            A `this` reference to the current struct instance.
-     +/
-    mixin Wrap!("channelPolicy", _channelPolicy);
-
-    // addCommand
-    /++
-        Appends an [IRCEventHandler.Command] to the array of commands that the bot
-        should listen for to trigger the annotated event handler function.
-
-        Params:
-            command = New [IRCEventHandler.Command] to append to the commands array.
-
-        Returns:
-            A `this` reference to the current struct instance.
-     +/
-    mixin Wrap!("addCommand", _commands);
-
-    // addRegex
-    /++
-        Appends an [IRCEventHandler.Regex] to the array of regular expressions
-        that the bot should listen for to trigger the annotated event handler function.
-
-        Params:
-            regex = New [IRCEventHandler.Regex] to append to the regex array.
-
-        Returns:
-            A `this` reference to the current struct instance.
-     +/
-    mixin Wrap!("addRegex", _regexes);
-
-    // chainable
-    /++
-        Sets whether or not the annotated function should allow other functions
-        within the same plugin module to be triggered after it. If not (default false)
-        it will signal the bot to proceed to the next plugin after this function returns.
-
-        Params:
-            chainable = Whether or not to allow further event handler functions
-                to trigger within the same module (after this one returns).
-
-        Returns:
-            A `this` reference to the current struct instance.
-     +/
-    mixin Wrap!("chainable", _chainable);
-
-    // verbose
-    /++
-        Sets whether or not to have the bot plumbing give verbose information about
-        what it does as it evaluates and executes the annotated function (or not).
-
-        Params:
-            verbose = Whether or not to enable verbose output.
-
-        Returns:
-            A `this` reference to the current struct instance.
-     +/
-    mixin Wrap!("verbose", _verbose);
-
-    // when
-    /++
-        Sets a [Timing], used to order the evaluation and execution of event
-        handler functions within a module, allowing the author to design subsets
-        of functions that should be run before or after others.
-
-        Params:
-            when = [Timing] setting to give an order to the annotated event handler function.
-
-        Returns:
-            A `this` reference to the current struct instance.
-     +/
-    mixin Wrap!("when", _when);
+    mixin UnderscoreOpDispatcher;
 
     // Command
     /++
@@ -2667,90 +2592,26 @@ struct IRCEventHandler
          +/
         string _description;
 
-        // syntax
-        /++
-            Command usage syntax help string.
-         +/
-        string _syntax;
-
         // hidden
         /++
             Whether this is a hidden command or if it should show up in help listings.
          +/
         bool _hidden;
 
-        // policy
-        /++
-            Sets what way this [IRCEventHandler.Command] should be expressed.
-
-            Params:
-                policy = New [PrefixPolicy] to dictate how the command word should
-                    be expressed to be picked up by the bot.
-
-            Returns:
-                A `this` reference to the current struct instance.
-         +/
-        mixin Wrap!("policy", _policy);
-
-        // word
-        /++
-            Assigns a word to trigger this [IRCEventHandler.Command].
-
-            Params:
-                word = New word string.
-
-            Returns:
-                A `this` reference to the current struct instance.
-         +/
-        mixin Wrap!("word", _word);
-
-        // description
-        /++
-            Sets a description of what the event handler function the parent
-            [IRCEventHandler] annotates does, and by extension, what this
-            [IRCEventHandler.Command] does.
-
-            This is used to describe the command in help listings.
-
-            Params:
-                description = Command functionality/feature/purpose description
-                    in natural language.
-
-            Returns:
-                A `this` reference to the current struct instance.
-         +/
-        mixin Wrap!("description", _description);
-
         // syntax
         /++
-            Describes the syntax with which this [IRCEventHandler.Command] should
-            be used. Some text replacement is applied, such as `$command`.
-
-            This is used to describe the command usage in help listings.
-
-            Params:
-                syntax = A brief syntax description.
-
-            Returns:
-                A `this` reference to the current struct instance.
+            Command usage syntax help strings.
          +/
-        mixin Wrap!("syntax", _syntax);
+        string[] _syntaxes;
 
-        // hidden
+        // _addSyntax
         /++
-            Whether or not this particular [IRCEventHandler.Command] (but not
-            necessarily that of all commands under this [IRCEventHandler]) should
-            be included in help listings.
-
-            This is used to allow for hidden command aliases.
-
-            Params:
-                hidden = Whether or not to mark this command as hidden.
-
-            Returns:
-                A `this` reference to the current struct instance.
+            Alias to make [kameloso.traits.UnderscoreOpDispatcher] redirect calls to
+            [_syntaxes] but by the name `addSyntax`.
          +/
-        mixin Wrap!("hidden", _hidden);
+        alias _addSyntax = _syntaxes;
+
+        mixin UnderscoreOpDispatcher;
     }
 
     // Regex
@@ -2795,24 +2656,13 @@ struct IRCEventHandler
          +/
         bool _hidden;
 
-        // policy
-        /++
-            Sets what way this [IRCEventHandler.Command] should be expressed.
-
-            Params:
-                policy = New [PrefixPolicy] to dictate how the command word should
-                    be expressed to be picked up by the bot.
-
-            Returns:
-                A `this` reference to the current struct instance.
-         +/
-        mixin Wrap!("policy", _policy);
-
         // expression
         /++
             The regular expression this [IRCEventHandler.Regex] embodies, in string form.
 
-            Upon setting this a regex engine is also created.
+            Upon setting this a regex engine is also created. Because of this extra step we
+            cannot rely on [kameloso.traits.UnderscoreOpDispatcher|UnderscoreOpDispatcher]
+            to redirect calls.
 
             Example:
             ---
@@ -2836,40 +2686,7 @@ struct IRCEventHandler
             return this;
         }
 
-        //mixin Wrap!("expression", _expression);
-
-        // description
-        /++
-            Sets a description of what the event handler function the parent
-            [IRCEventHandler] annotates does, and by extension, what this
-            [IRCEventHandler.Regex] does.
-
-            This is used to describe the command in help listings.
-
-            Params:
-                description = Command functionality/feature/purpose description
-                    in natural language.
-
-            Returns:
-                A `this` reference to the current struct instance.
-         +/
-        mixin Wrap!("description", _description);
-
-        // hidden
-        /++
-            Whether or not this particular [IRCEventHandler.Regex] (but not
-            necessarily that of all regexes under this [IRCEventHandler]) should
-            be included in help listings.
-
-            This is used to allow for hidden command aliases.
-
-            Params:
-                hidden = Whether or not to mark this Regex as hidden.
-
-            Returns:
-                A `this` reference to the current struct instance.
-         +/
-        mixin Wrap!("hidden", _hidden);
+        mixin UnderscoreOpDispatcher;
     }
 }
 

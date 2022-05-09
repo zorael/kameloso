@@ -1937,7 +1937,10 @@ void resetSignals() nothrow @nogc
     Returns:
         [lu.common.Next|Next].* depending on what action the calling site should take.
  +/
-Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings)
+Next tryGetopt(
+    ref Kameloso instance,
+    string[] args,
+    out string[] customSettings)
 {
     import kameloso.plugins.common.misc : IRCPluginSettingsException;
     import kameloso.config : ConfigurationFileReadFailureException, handleGetopt;
@@ -2006,7 +2009,7 @@ Next tryGetopt(ref Kameloso instance, string[] args, out string[] customSettings
     Tries to connect to the IPs in
     [kameloso.kameloso.Kameloso.conn.ips|Kameloso.conn.ips] by leveraging
     [kameloso.net.connectFiber|connectFiber], reacting on the
-    [kameloso.net.ConnectAttempt|ConnectAttempt]s it yields to provide feedback
+    [kameloso.net.ConnectionAttempt|ConnectionAttempt]s it yields to provide feedback
     to the user.
 
     Params:
@@ -2244,8 +2247,8 @@ Next tryConnect(ref Kameloso instance)
             continue;
 
         case fatalSSLFailure:
-            enum pattern = "Failed to connect: <l>%s</>";
-            logger.errorf(pattern.expandTags, attempt.error);
+            enum pattern = "Failed to connect: <l>%s";
+            logger.errorf(pattern.expandTags(LogLevel.error), attempt.error);
             return Next.returnFailure;
 
         case invalidConnectionError:
@@ -2338,6 +2341,8 @@ Next tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
     {
         import lu.string : beginsWith;
 
+        if (*instance.abort) return Next.returnFailure;
+
         enum getaddrinfoErrorString = "getaddrinfo error: ";
         immutable errorString = attempt.error.length ?
             (attempt.error.beginsWith(getaddrinfoErrorString) ?
@@ -2354,8 +2359,8 @@ Next tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
 
         case success:
             import lu.string : plurality;
-            enum pattern = "<l>%s</> resolved into <l>%d</> %s.";
-            logger.infof(pattern.expandTags(LogLevel.info), instance.parser.server.address,
+            enum pattern = "<i>%s</> resolved into <i>%d</> %s.";
+            logger.logf(pattern.expandTags(LogLevel.all), instance.parser.server.address,
                 instance.conn.ips.length,
                 instance.conn.ips.length.plurality("IP", "IPs"));
             return Next.continue_;
@@ -2530,7 +2535,7 @@ Next verifySettings(ref Kameloso instance)
 
     if (!addressIsResolvable)
     {
-        enum pattern = "Invalid address! [<l>%s</e>]";
+        enum pattern = "Invalid address! [<l>%s</>]";
         logger.errorf(pattern.expandTags(LogLevel.error), instance.parser.server.address);
         return Next.returnFailure;
     }
@@ -2550,34 +2555,41 @@ Next verifySettings(ref Kameloso instance)
  +/
 void resolvePaths(ref Kameloso instance)
 {
+    import kameloso.platform : rbd = resourceBaseDirectory;
     import std.file : exists;
     import std.path : absolutePath, buildNormalizedPath, dirName, expandTilde, isAbsolute;
     import std.range : only;
 
-    // Resolve and create the resource directory
-    version(Windows)
-    {
-        import std.string : replace;
-        instance.settings.resourceDirectory =
-            buildNormalizedPath(instance.settings.resourceDirectory,
-                "server", instance.parser.server.address.replace(':', '_'));
-    }
-    else version(Posix)
-    {
-        instance.settings.resourceDirectory =
-            buildNormalizedPath(instance.settings.resourceDirectory,
-                "server", instance.parser.server.address);
-    }
-    else
-    {
-        static assert(0, "Unsupported platform, please file a bug.");
-    }
-
-    instance.settings.configDirectory = instance.settings.configFile.dirName;
+    immutable defaultResourceDir = buildNormalizedPath(rbd, "kameloso");
 
     version(Posix)
     {
         instance.settings.resourceDirectory = instance.settings.resourceDirectory.expandTilde();
+    }
+
+    // Resolve and create the resource directory
+    // Assume nothing has been entered if it is the default resource dir sans server etc
+    if (instance.settings.resourceDirectory == defaultResourceDir)
+    {
+        version(Windows)
+        {
+            import std.string : replace;
+            instance.settings.resourceDirectory = buildNormalizedPath(
+                defaultResourceDir,
+                "server",
+                instance.parser.server.address.replace(':', '_'));
+        }
+        else version(Posix)
+        {
+            instance.settings.resourceDirectory = buildNormalizedPath(
+                defaultResourceDir,
+                "server",
+                instance.parser.server.address);
+        }
+        else
+        {
+            static assert(0, "Unsupported platform, please file a bug.");
+        }
     }
 
     if (!instance.settings.resourceDirectory.exists)
@@ -2588,6 +2600,8 @@ void resolvePaths(ref Kameloso instance)
         logger.log("Created resource directory ", Tint.info,
             instance.settings.resourceDirectory);
     }
+
+    instance.settings.configDirectory = instance.settings.configFile.dirName;
 
     auto filerange = only(
         &instance.connSettings.caBundleFile,
@@ -3172,7 +3186,10 @@ int run(string[] args)
 
         if (!instance.bot.homeChannels.length && !instance.bot.admins.length)
         {
-            import kameloso.config : notifyAboutIncompleteConfiguration;
+            import kameloso.config :giveBrightTerminalHint, notifyAboutIncompleteConfiguration;
+
+            giveBrightTerminalHint();
+            logger.trace();
             notifyAboutIncompleteConfiguration(instance.settings.configFile, args[0]);
         }
     }
@@ -3217,15 +3234,15 @@ int run(string[] args)
     {
         import std.file : exists;
 
-        string[][string] missingEntries;
-        string[][string] invalidEntries;
+        instance.initPlugins(attempt.customSettings);
 
-        instance.initPlugins(attempt.customSettings, missingEntries, invalidEntries);
-
-        if (!instance.settings.headless && missingEntries.length && instance.settings.configFile.exists)
+        if (!instance.settings.headless &&
+            instance.missingConfigurationEntries.length &&
+            instance.settings.configFile.exists)
         {
             import kameloso.config : notifyAboutMissingSettings;
-            notifyAboutMissingSettings(missingEntries, args[0], instance.settings.configFile);
+            notifyAboutMissingSettings(instance.missingConfigurationEntries,
+                args[0], instance.settings.configFile);
         }
     }
     catch (ConvException e)

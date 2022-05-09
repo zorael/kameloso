@@ -551,7 +551,7 @@ void formatMessageColoured(Sink)
 if (isOutputRange!(Sink, char[]))
 {
     import kameloso.constants : DefaultColours;
-    import kameloso.terminal.colours : FG = TerminalForeground, colourWith;
+    import kameloso.terminal.colours : FG = TerminalForeground, TR = TerminalReset, colourWith;
     import lu.conv : Enum;
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
@@ -684,6 +684,8 @@ if (isOutputRange!(Sink, char[]))
 
     void putSender()
     {
+        scope(exit) sink.colourWith(TR.all);
+
         colourUserTruecolour(sink, event.sender);
 
         if (event.sender.isServer)
@@ -707,9 +709,9 @@ if (isOutputRange!(Sink, char[]))
                 if ((event.sender.displayName != event.sender.nickname) &&
                     !event.sender.displayName.asLowerCase.equal(event.sender.nickname))
                 {
-                    .put!(Yes.colours)(sink, FG.default_, " (");
+                    .put!(Yes.colours)(sink, TR.all, " (");
                     colourUserTruecolour(sink, event.sender);
-                    .put!(Yes.colours)(sink, event.sender.nickname, FG.default_, ')');
+                    .put!(Yes.colours)(sink, event.sender.nickname, TR.all, ')');
                 }
             }
         }
@@ -731,7 +733,7 @@ if (isOutputRange!(Sink, char[]))
             if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
                 event.sender.account.length)
             {
-                .put!(Yes.colours)(sink, FG.default_, '(', event.sender.account, ')');
+                .put!(Yes.colours)(sink, TR.all, '(', event.sender.account, ')');
             }
         }
 
@@ -751,6 +753,7 @@ if (isOutputRange!(Sink, char[]))
 
                 default:
                     .put!(Yes.colours)(sink,
+                        TR.all,
                         TerminalForeground(bright ? Bright.badge : Dark.badge),
                         " [", event.sender.badges, ']');
                     break;
@@ -761,6 +764,8 @@ if (isOutputRange!(Sink, char[]))
 
     void putTarget()
     {
+        scope(exit) sink.colourWith(TR.all);
+
         bool putArrow;
         bool putDisplayName;
 
@@ -771,11 +776,11 @@ if (isOutputRange!(Sink, char[]))
             {
             case TWITCH_GIFTCHAIN:
                 // Add more as they become apparent
-                .put!(Yes.colours)(sink, FG.default_, " <- ");
+                .put!(Yes.colours)(sink, TR.all, " <- ");
                 break;
 
             default:
-                .put!(Yes.colours)(sink, FG.default_, " -> ");
+                .put!(Yes.colours)(sink, TR.all, " -> ");
                 break;
             }
 
@@ -795,7 +800,7 @@ if (isOutputRange!(Sink, char[]))
                 {
                     sink.put(" (");
                     colourUserTruecolour(sink, event.target);
-                    .put!(Yes.colours)(sink, event.target.nickname, FG.default_, ')');
+                    .put!(Yes.colours)(sink, event.target.nickname, TR.all, ')');
                 }
             }
         }
@@ -803,7 +808,7 @@ if (isOutputRange!(Sink, char[]))
         if (!putArrow)
         {
             // No need to check isServer; target is never server
-            .put!(Yes.colours)(sink, FG.default_, " -> ");
+            .put!(Yes.colours)(sink, TR.all, " -> ");
             colourUserTruecolour(sink, event.target);
         }
 
@@ -823,7 +828,7 @@ if (isOutputRange!(Sink, char[]))
             if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
                 event.target.account.length)
             {
-                .put!(Yes.colours)(sink, FG.default_, '(', event.target.account, ')');
+                .put!(Yes.colours)(sink, TR.all, '(', event.target.account, ')');
             }
         }
 
@@ -833,6 +838,7 @@ if (isOutputRange!(Sink, char[]))
                 plugin.printerSettings.twitchBadges && event.target.badges.length)
             {
                 .put!(Yes.colours)(sink,
+                    TR.all,
                     TerminalForeground(bright ? Bright.badge : Dark.badge),
                     " [", event.target.badges, ']');
 
@@ -842,6 +848,8 @@ if (isOutputRange!(Sink, char[]))
 
     void putContent()
     {
+        scope(exit) sink.colourWith(TR.all);
+
         immutable FG contentFgBase = bright ? Bright.content : Dark.content;
         immutable FG emoteFgBase = bright ? Bright.emote : Dark.emote;
         immutable isEmote = (event.type == IRCEvent.Type.EMOTE) ||
@@ -1028,7 +1036,7 @@ if (isOutputRange!(Sink, char[]))
             " ! ", event.errors, " !");
     }
 
-    sink.colourWith(FG.default_);  // same for bright and dark
+    sink.colourWith(TR.all);
 
     shouldBell = shouldBell || ((event.type == IRCEvent.Type.QUERY) && bellOnMention) ||
         (event.errors.length && bellOnError);

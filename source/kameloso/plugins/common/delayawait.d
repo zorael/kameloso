@@ -122,12 +122,14 @@ in ((dg !is null), "Tried to delay a null delegate")
         plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
         fiber = [core.thread.fiber.Fiber|Fiber] to dequeue from being executed
             at a later point in time.
+
+    See_Also:
+        [delay]
  +/
 void removeDelayedFiber(IRCPlugin plugin, Fiber fiber)
 in ((fiber !is null), "Tried to remove a delayed null Fiber")
 {
     import std.algorithm.mutation : SwapStrategy, remove;
-    import std.algorithm.searching : countUntil;
 
     size_t[] toRemove;
 
@@ -158,8 +160,12 @@ in ((fiber !is null), "Tried to remove a delayed null Fiber")
 
     Params:
         plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
+
+    See_Also:
+        [delay]
  +/
 void removeDelayedFiber(IRCPlugin plugin)
+in (Fiber.getThis, "Tried to call `removeDelayedFiber` from outside a Fiber")
 {
     return plugin.removeDelayedFiber(Fiber.getThis);
 }
@@ -175,12 +181,14 @@ void removeDelayedFiber(IRCPlugin plugin)
     Params:
         plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
         dg = Delegate to dequeue from being executed at a later point in time.
+
+    See_Also:
+        [delay]
  +/
 void removeDelayedDelegate(IRCPlugin plugin, void delegate() dg)
 in ((dg !is null), "Tried to remove a delayed null delegate")
 {
     import std.algorithm.mutation : SwapStrategy, remove;
-    import std.algorithm.searching : countUntil;
 
     size_t[] toRemove;
 
@@ -395,7 +403,6 @@ in ((type != IRCEvent.Type.UNSET), "Tried to unlist a " ~ Thing.stringof ~
     " from awaiting `IRCEvent.Type.UNSET`")
 {
     import std.algorithm.mutation : SwapStrategy, remove;
-    import std.algorithm.searching : countUntil;
 
     void removeForType(const IRCEvent.Type type)
     {
@@ -442,8 +449,10 @@ in ((type != IRCEvent.Type.UNSET), "Tried to unlist a " ~ Thing.stringof ~
 
     See_Also:
         [unawaitImpl]
+        [await]
  +/
 void unawait(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
+in (fiber, "Tried to call `unawait` with a null Fiber")
 {
     return unawaitImpl(fiber, plugin.state.awaitingFibers, type);
 }
@@ -463,8 +472,10 @@ void unawait(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type type)
 
     See_Also:
         [unawaitImpl]
+        [await]
  +/
 void unawait(IRCPlugin plugin, const IRCEvent.Type type)
+in (Fiber.getThis, "Tried to call `unawait` from outside a Fiber")
 {
     return unawait(plugin, Fiber.getThis, type);
 }
@@ -486,8 +497,10 @@ void unawait(IRCPlugin plugin, const IRCEvent.Type type)
 
     See_Also:
         [unawaitImpl]
+        [await]
  +/
 void unawait(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
+in (fiber, "Tried to call `unawait` with a null Fiber")
 {
     foreach (immutable type; types)
     {
@@ -511,8 +524,10 @@ void unawait(IRCPlugin plugin, Fiber fiber, const IRCEvent.Type[] types)
 
     See_Also:
         [unawaitImpl]
+        [await]
  +/
 void unawait(IRCPlugin plugin, const IRCEvent.Type[] types)
+in (Fiber.getThis, "Tried to call `unawait` from outside a Fiber")
 {
     foreach (immutable type; types)
     {
@@ -536,8 +551,10 @@ void unawait(IRCPlugin plugin, const IRCEvent.Type[] types)
 
     See_Also:
         [unawaitImpl]
+        [await]
  +/
 void unawait(IRCPlugin plugin, void delegate(IRCEvent) dg, const IRCEvent.Type type)
+in ((dg !is null), "Tried to call `unawait` with a null delegate")
 {
     return unawaitImpl(dg, plugin.state.awaitingDelegates, type);
 }
@@ -559,8 +576,10 @@ void unawait(IRCPlugin plugin, void delegate(IRCEvent) dg, const IRCEvent.Type t
 
     See_Also:
         [unawaitImpl]
+        [await]
  +/
 void unawait(IRCPlugin plugin, void delegate(IRCEvent) dg, const IRCEvent.Type[] types)
+in ((dg !is null), "Tried to call `unawait` with a null delegate")
 {
     foreach (immutable type; types)
     {

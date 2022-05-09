@@ -49,11 +49,13 @@ import std.typecons : Flag, No, Yes;
         IRCEventHandler.Command()
             .word("counter")
             .policy(PrefixPolicy.prefixed)
-            .description("Manages counters.")
-            .syntax("$command [add|del|list] [counter word]")
+            .description("Adds, removes or lists counters.")
+            .addSyntax("$command add [counter word]")
+            .addSyntax("$command del [counter word]")
+            .addSyntax("$command list")
     )
 )
-void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
+void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.constants : BufferSize;
     import lu.string : nom, stripped, strippedLeft;
@@ -153,7 +155,6 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
         break;
 
     case "list":
-    case string.init:
         if (event.channel !in plugin.counters)
         {
             chan(plugin.state, event.channel, "No counters currently active in this channel.");
@@ -181,7 +182,7 @@ void onCommandCounter(CounterPlugin plugin, const ref IRCEvent event)
     Allows users to increment, decrement, and set counters.
 
     This function fakes
-    [kameloso.plugins.core.IRCEventHandler.Command|IRCEventHandler.Command]s by
+    [kameloso.plugins.common.core.IRCEventHandler.Command|IRCEventHandler.Command]s by
     listening for prefixes (and the bot's nickname), and treating whatever comes
     after it as a command word. If it doesn't match a previously added counter,
     it is ignored.
@@ -341,11 +342,22 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 )
 void onWelcome(CounterPlugin plugin)
 {
+    plugin.reload();
+}
+
+
+// reload
+/++
+    Reloads counters from disk.
+ +/
+void reload(CounterPlugin plugin)
+{
     import lu.json : JSONStorage, populateFromJSON;
     import std.typecons : Flag, No, Yes;
 
     JSONStorage countersJSON;
     countersJSON.load(plugin.countersFile);
+    plugin.counters.clear();
     plugin.counters.populateFromJSON(countersJSON, No.lowercaseKeys);
     plugin.counters = plugin.counters.rehash();
 }

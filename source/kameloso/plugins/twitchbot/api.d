@@ -74,11 +74,34 @@ if (isSomeFunction!dg)
 
         enum pattern = "Failed to query Twitch: <l>%s</> <t>(%s) </>(<t>%d</>)";
         logger.errorf(pattern.expandTags(LogLevel.error), message, e.error, e.code);
+
+        if ((e.code == 401) && (e.error == "Unauthorized"))
+        {
+            import kameloso.messaging : Message;
+            import kameloso.thread : ThreadMessage;
+            import std.concurrency : send = prioritySend;
+
+            // API key expired.
+            // Copy/paste kameloso.messaging.quit, since we don't have access to plugin.state
+
+            enum apiPattern = "Your Twitch API key has expired. " ~
+                "Run the program with <l>--set twitchbot.keygen</> to generate a new one.";
+            logger.error(apiPattern.expandTags(LogLevel.error));
+
+            Message m;
+
+            m.event.type = IRCEvent.Type.QUIT;
+            m.event.content = "Twitch API key expired";
+            m.properties |= (Message.Property.forced | Message.Property.priority);
+
+            (cast()TwitchBotPlugin.mainThread).send(m);
+        }
     }
     catch (Exception e)
     {
         enum pattern = "Unforeseen exception thrown when querying Twitch: <l>%s";
         logger.errorf(pattern.expandTags(LogLevel.error), e.msg);
+        version(PrintStacktraces) logger.trace(e);
     }
 }
 
@@ -205,7 +228,7 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
 
     delay(plugin, plugin.approximateQueryTime.msecs, Yes.yield);
     immutable response = waitForQueryResponse(plugin, url,
-        plugin.twitchBotSettings.singleWorkerThread);
+        cast(Flag!"leaveTimingAlone")plugin.twitchBotSettings.singleWorkerThread);
 
     scope(exit)
     {
@@ -380,23 +403,30 @@ in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
 {
     import std.json : JSONType, parseJSON;
 
-    immutable response = queryTwitch(plugin, url, plugin.authorizationBearer);
-    immutable responseJSON = parseJSON(response.str);
+    try
+    {
+        immutable response = queryTwitch(plugin, url, plugin.authorizationBearer);
+        immutable responseJSON = parseJSON(response.str);
 
-    if (responseJSON.type != JSONType.object)
+        if (responseJSON.type != JSONType.object)
+        {
+            return JSONValue.init;
+        }
+        else if (const dataJSON = "data" in responseJSON)
+        {
+            if ((dataJSON.type == JSONType.array) &&
+                (dataJSON.array.length == 1))
+            {
+                return dataJSON.array[0];
+            }
+        }
+
+        return JSONValue.init;
+    }
+    catch (TwitchQueryException e)
     {
         return JSONValue.init;
     }
-    else if (const dataJSON = "data" in responseJSON)
-    {
-        if ((dataJSON.type == JSONType.array) &&
-            (dataJSON.array.length == 1))
-        {
-            return dataJSON.array[0];
-        }
-    }
-
-    return JSONValue.init;
 }
 
 
@@ -527,37 +557,81 @@ in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
 JSONValue[string] getFollows(TwitchBotPlugin plugin, const string id)
 in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
 {
-    import std.conv : text;
-    import std.json : JSONValue, parseJSON;
-    import core.thread : Fiber;
+    import std.json : JSONType;
 
     immutable url = "https://api.twitch.tv/helix/users/follows?to_id=" ~ id;
+    JSONValue[string] allFollowsJSON;
+    const entitiesArrayJSON = getMultipleTwitchEntities(plugin, url);
 
-    JSONValue[string] allFollows;
+    if (entitiesArrayJSON.type != JSONType.array)
+    {
+        return allFollowsJSON;  // init
+    }
+
+    foreach (entityJSON; entitiesArrayJSON.array)
+    {
+        immutable key = entityJSON.object["from_id"].str;
+        allFollowsJSON[key] = null;
+        allFollowsJSON[key] = entityJSON;
+    }
+
+    return allFollowsJSON;
+}
+
+
+// getMultipleTwitchEntities
+/++
+    By following a passed URL, queries Twitch servers for an array of entities
+    (such as users or channels).
+
+    Params:
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        url = The URL to follow.
+
+    Returns:
+        A [std.json.JSONValue|JSONValue] of type `array` containing all returned
+        entities, over all paginated queries.
+ +/
+JSONValue getMultipleTwitchEntities(TwitchBotPlugin plugin, const string url)
+in (Fiber.getThis, "Tried to call `getMultipleTwitchEntities` from outside a Fiber")
+{
+    import std.json : JSONValue, parseJSON;
+
+    JSONValue allEntitiesJSON;
+    allEntitiesJSON = null;
+    allEntitiesJSON.array = null;
     long total;
     string after;
 
     do
     {
-        immutable paginatedURL = after.length ?
-            text(url, "&after=", after) : url;
-
-        immutable response = queryTwitch(plugin, paginatedURL, plugin.authorizationBearer);
-        immutable followsJSON = parseJSON(response.str);
-        const cursor = "cursor" in followsJSON["pagination"];
-
-        if (!total) total = followsJSON["total"].integer;
-
-        foreach (thisFollowJSON; followsJSON["data"].array)
+        try
         {
-            allFollows[thisFollowJSON["from_id"].str] = thisFollowJSON;
-        }
+            immutable paginatedURL = after.length ?
+                ("&after=" ~ after) :
+                url;
 
-        after = ((allFollows.length != total) && cursor) ? cursor.str : string.init;
+            immutable response = queryTwitch(plugin, paginatedURL, plugin.authorizationBearer);
+            immutable responseJSON = parseJSON(response.str);
+            const cursor = "cursor" in responseJSON["pagination"];
+
+            if (!total) total = responseJSON["total"].integer;
+
+            foreach (thisResponseJSON; responseJSON["data"].array)
+            {
+                allEntitiesJSON.array ~= thisResponseJSON;
+            }
+
+            after = ((allEntitiesJSON.array.length != total) && cursor) ? cursor.str : string.init;
+        }
+        catch (TwitchQueryException e)
+        {
+            return JSONValue.init;
+        }
     }
     while (after.length);
 
-    return allFollows;
+    return allEntitiesJSON;
 }
 
 
@@ -639,7 +713,7 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
  +/
 QueryResponse waitForQueryResponse(TwitchBotPlugin plugin,
     const string url,
-    const bool leaveTimingAlone = true)
+    const Flag!"leaveTimingAlone" leaveTimingAlone = Yes.leaveTimingAlone)
 in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 {
     import kameloso.constants : Timeout;
@@ -679,6 +753,80 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
     }
 
     return *response;
+}
+
+
+// getTwitchUser
+/++
+    Fetches information about a Twitch user and returns it in the form of a
+    Voldemort struct with nickname, display name and account ID (as string) members.
+
+    Params:
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        givenName = Name of user to look up.
+        searchByDisplayName = Whether or not to also attempt to look up `givenName`
+            as a display name.
+
+    Returns:
+        Voldemort aggregate struct with `nickname`, `displayName` and `idString` members.
+ +/
+auto getTwitchUser(
+    TwitchBotPlugin plugin,
+    const string givenName,
+    const Flag!"searchByDisplayName" searchByDisplayName = No.searchByDisplayName)
+in (Fiber.getThis, "Tried to call `getTwitchUser` from outside a Fiber")
+{
+    import std.conv : to;
+    import std.json : JSONType;
+
+    struct User
+    {
+        string idString;
+        string nickname;
+        string displayName;
+    }
+
+    User user;
+
+    if (const stored = givenName in plugin.state.users)
+    {
+        // Stored user
+        user.idString = stored.id.to!string;
+        user.nickname = stored.nickname;
+        user.displayName = stored.displayName;
+        return user;
+    }
+
+    // No such luck
+    if (searchByDisplayName)
+    {
+        foreach (const stored; plugin.state.users)
+        {
+            if (stored.displayName == givenName)
+            {
+                // Found user by displayName
+                user.idString = stored.id.to!string;
+                user.nickname = stored.nickname;
+                user.displayName = stored.displayName;
+                return user;
+            }
+        }
+    }
+
+    // None on record, look up
+    immutable userURL = "https://api.twitch.tv/helix/users?login=" ~ givenName;
+    immutable userJSON = getTwitchEntity(plugin, userURL);
+
+    if ((userJSON.type != JSONType.object) || ("id" !in userJSON))
+    {
+        // No such user
+        return user; //User.init;
+    }
+
+    user.idString = userJSON["id"].str;
+    user.nickname = userJSON["login"].str;
+    user.displayName = userJSON["display_name"].str;
+    return user;
 }
 
 

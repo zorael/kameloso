@@ -311,8 +311,9 @@ void playbackNotes(NotesPlugin plugin,
         IRCEventHandler.Command()
             .word("note")
             .policy(PrefixPolicy.prefixed)
-            .description("Adds a note and saves it to disk.")
-            .syntax("$command [account] [note text]")
+            .description("Adds a note to send to an offline person when they come online, " ~
+                "or when they show activity if already online.")
+            .addSyntax("$command [nickname] [note text...]")
     )
 )
 void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
@@ -332,7 +333,7 @@ void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
 
     if ((results != SplitResults.overrun) || !target.length)
     {
-        enum pattern = "Usage: <b>%s%s<b> [nickname] [note text]";
+        enum pattern = "Usage: <b>%s%s<b> [nickname] [note text...]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
         return;
@@ -369,7 +370,6 @@ void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
  +/
 void reload(NotesPlugin plugin)
 {
-    //logger.info("Reloading notes from disk.");
     plugin.notes.load(plugin.notesFile);
 }
 
@@ -402,14 +402,14 @@ auto getNotes(NotesPlugin plugin, const string channel, const string id)
 
     Note[] noteArray;
 
-    if (const channelNotes = channel in plugin.notes)
+    if (const channelNotesJSON = channel in plugin.notes)
     {
-        if (channelNotes.type != JSONType.object)
+        if (channelNotesJSON.type != JSONType.object)
         {
             enum pattern = "Invalid channel notes list type for <l>%s</>: `<l>%s</>`";
-            logger.errorf(pattern.expandTags(LogLevel.error), channel, channelNotes.type);
+            logger.errorf(pattern.expandTags(LogLevel.error), channel, channelNotesJSON.type);
         }
-        else if (const nickNotes = id in channelNotes.object)
+        else if (const nickNotes = id in channelNotesJSON.object)
         {
             if (nickNotes.type != JSONType.array)
             {
@@ -420,15 +420,15 @@ auto getNotes(NotesPlugin plugin, const string channel, const string id)
 
             noteArray.length = nickNotes.array.length;
 
-            foreach (immutable i, note; nickNotes.array)
+            foreach (immutable i, noteJSON; nickNotes.array)
             {
                 import std.base64 : Base64Exception;
-                noteArray[i].sender = note["sender"].str;
-                noteArray[i].when = SysTime.fromUnixTime(note["when"].integer);
+                noteArray[i].sender = noteJSON["sender"].str;
+                noteArray[i].when = SysTime.fromUnixTime(noteJSON["when"].integer);
 
                 try
                 {
-                    noteArray[i].line = decode64(note["line"].str);
+                    noteArray[i].line = decode64(noteJSON["line"].str);
                 }
                 catch (Base64Exception e)
                 {
@@ -488,9 +488,9 @@ void pruneNotes(NotesPlugin plugin)
 {
     string[] garbageKeys;
 
-    foreach (immutable channelName, channelNotes; plugin.notes.object)
+    foreach (immutable channelName, channelNotesJSON; plugin.notes.object)
     {
-        if (!channelNotes.object.length)
+        if (!channelNotesJSON.object.length)
         {
             // Dead channel
             garbageKeys ~= channelName;
@@ -573,7 +573,7 @@ in (line.length, "Tried to add an empty note")
 )
 void onWelcome(NotesPlugin plugin)
 {
-    plugin.notes.load(plugin.notesFile);
+    plugin.reload();
 }
 
 

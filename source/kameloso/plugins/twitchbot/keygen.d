@@ -62,7 +62,7 @@ instructions and log in to authorise the use of this program with your account.
 * If you are running local web server on port <i>80</>, you may have to temporarily
   disable it for this to work.
 `;
-    writeln(attemptToOpenPattern.expandTags);
+    writeln(attemptToOpenPattern.expandTags(LogLevel.off));
     if (plugin.state.settings.flush) stdout.flush();
 
     static immutable scopes =
@@ -164,7 +164,7 @@ instructions and log in to authorise the use of this program with your account.
 
 <i>8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<</>
 `;
-        writefln(copyPastePattern.expandTags, url);
+        writefln(copyPastePattern.expandTags(LogLevel.off), url);
         if (plugin.state.settings.flush) stdout.flush();
     }
 

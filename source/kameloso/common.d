@@ -1208,11 +1208,11 @@ struct Tint
         // opDispatch
         /++
             Provides the string that corresponds to the tint of the
-            [kameloso.logger.core.LogLevel|LogLevel] that was passed in string form
+            [kameloso.logger.LogLevel|LogLevel] that was passed in string form
             as the `tint` `opDispatch` template parameter.
 
             This saves us the boilerplate of copy/pasting one function for each
-            [kameloso.logger.core.LogLevel|LogLevel].
+            [kameloso.logger.LogLevel|LogLevel].
          +/
         pragma(inline, true)
         static string opDispatch(string tint)()
@@ -1290,7 +1290,7 @@ unittest
     Also works with `dstring`s and `wstring`s.
 
     `<tags>` are the lowercase first letter of all
-    [std.experimental.logger.LogLevel|LogLevel]s; `<l>`, `<t>`, `<i>`, `<w>`
+    [kameloso.logger.LogLevel|LogLevel]s; `<l>`, `<t>`, `<i>`, `<w>`
     `<e>`, `<c>` and `<f>`. `<a>` is not included.
 
     `</>` equals the passed `baseLevel` and is used to terminate colour sequences,
@@ -1420,6 +1420,7 @@ T expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" strip
                     immutable slice = asBytes[i+1..i+closingBracketPos];  // mutable
                     if (slice.length != 1) break;
 
+                    sliceswitch:
                     switch (slice[0])
                     {
 
@@ -1464,44 +1465,44 @@ T expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" strip
                                 final switch (baseLevel)
                                 {
                                 case all:  //log
-                                    /*if (!strip) sink.put(Tint.log);
-                                    break;*/
-                                    goto case 'l';
+                                    //goto case 'l';
+                                    if (!strip) sink.put(Tint.log);
+                                    break sliceswitch;
 
                                 case trace:
-                                    /*if (!strip) sink.put(Tint.trace);
-                                    break;*/
-                                    goto case 't';
+                                    //goto case 't';
+                                    if (!strip) sink.put(Tint.trace);
+                                    break sliceswitch;
 
                                 case info:
-                                    /*if (!strip) sink.put(Tint.info);
-                                    break;*/
-                                    goto case 'i';
+                                    //goto case 'i';
+                                    if (!strip) sink.put(Tint.info);
+                                    break sliceswitch;
 
                                 case warning:
-                                    /*if (!strip) sink.put(Tint.warning);
-                                    break;*/
-                                    goto case 'w';
+                                    //goto case 'w';
+                                    if (!strip) sink.put(Tint.warning);
+                                    break sliceswitch;
 
                                 case error:
-                                    /*if (!strip) sink.put(Tint.error);
-                                    break;*/
-                                    goto case 'e';
+                                    //goto case 'e';
+                                    if (!strip) sink.put(Tint.error);
+                                    break sliceswitch;
 
                                 case critical:
-                                    /*if (!strip) sink.put(Tint.critical);
-                                    break;*/
-                                    goto case 'c';
+                                    //goto case 'c';
+                                    if (!strip) sink.put(Tint.critical);
+                                    break sliceswitch;
 
                                 case fatal:
-                                    /*if (!strip) sink.put(Tint.fatal);
-                                    break;*/
-                                    goto case 'f';
+                                    //goto case 'f';
+                                    if (!strip) sink.put(Tint.fatal);
+                                    break sliceswitch;
 
                                 case off:
-                                    /*if (!strip) sink.put(Tint.off);
-                                    break;*/
-                                    goto case 'o';
+                                    //goto case 'o';
+                                    if (!strip) sink.put(Tint.off);
+                                    break sliceswitch;
                                 }
                             }
                             break;
@@ -1791,8 +1792,8 @@ T expandTags(T)(const T line, const Flag!"strip" strip) @safe
 /++
     String-replaces `<tags>` in a string with the results from calls to `Tint`.
     Also works with `dstring`s and `wstring`s. Overload that does not take a
-    `strip` [std.typecons.Flag|Flag], nor a `baseLevel`
-    [kameloso.logger.LogLevel|LogLevel] but instead passes a default
+    `strip` [std.typecons.Flag|Flag], optionally nor a `baseLevel`
+    [kameloso.logger.LogLevel|LogLevel], instead passing a default
     [kameloso.logger.LogLevel.off|LogLevel.off]`.
 
     Params:
@@ -1817,7 +1818,7 @@ unittest
 
     {
         immutable line = "This is a <l>log</> line.";
-        immutable replaced = line.expandTags;
+        immutable replaced = line.expandTags(LogLevel.off);
         immutable expected = text("This is a ", Tint.log, "log", Tint.off, " line.");
         assert((replaced == expected), replaced);
     }

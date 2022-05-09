@@ -61,6 +61,12 @@ public:
      +/
     bool fifoInWorkingDir = false;
 
+    /++
+        Whether or not to always use a unique filename for the FIFO; if one exists
+        with the wanted name, simply append a number to make a new, unique one.
+     +/
+    bool bumpFilenameIfItExists = true;
+
     /// Custom, full path to use as FIFO filename, specified with --set pipeline.path.
     @Unserialisable string path;
 }
@@ -136,8 +142,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
                 }
                 break;
             }
-
-            if (line.asLowerCase.startsWith("quit"))
+            else if (line.asLowerCase.startsWith("quit"))
             {
                 if ((line.length > 6) && (line[4..6] == " :"))
                 {
@@ -151,7 +156,8 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
             }
             else
             {
-                raw(state, line);
+                immutable slice = (line[0] == ' ') ? line[1..$] : line;
+                raw(state, slice);
             }
             break;
         }
@@ -219,14 +225,14 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
         filename = String filename of FIFO to create.
 
     Throws:
-        [kameloso.common.ReturnValueException|ReturnValueException] if the FIFO
+        [lu.common.ReturnValueException|ReturnValueException] if the FIFO
         could not be created.
 
-        [kameloso.common.FileExistsException|FileExistsException] if a FIFO with
+        [lu.common.FileExistsException|FileExistsException] if a FIFO with
         the same filename already exists, suggesting concurrent conflicting
         instances of the program (or merely a zombie FIFO after a crash).
 
-        [kameloso.common.FileTypeMismatchException|FileTypeMismatchException] if a file or directory
+        [lu.common.FileTypeMismatchException|FileTypeMismatchException] if a file or directory
         exists with the same name as the FIFO we want to create.
  +/
 void createFIFO(const string filename)
@@ -353,6 +359,30 @@ in (!plugin.workerRunning, "Tried to double-initialise the pipereader")
 
             import std.path : buildNormalizedPath;
             plugin.fifoFilename = buildNormalizedPath(tempdir, plugin.fifoFilename);
+        }
+    }
+
+    import std.file : exists;
+
+    if (plugin.pipelineSettings.bumpFilenameIfItExists && plugin.fifoFilename.exists)
+    {
+        import std.string : succ;
+
+        plugin.fifoFilename ~= "-1";
+
+        while (plugin.fifoFilename.exists)
+        {
+            plugin.fifoFilename = plugin.fifoFilename.succ;
+
+            if (plugin.fifoFilename[$-2..$] == "-0")
+            {
+                plugin.fifoFilename = plugin.fifoFilename[0..$-2] ~ "10";
+            }
+            else if (plugin.fifoFilename[$-3..$] == "-99")
+            {
+                // Don't infinitely loop, should realistically never happen though
+                break;
+            }
         }
     }
 

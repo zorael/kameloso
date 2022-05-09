@@ -1490,6 +1490,7 @@ mixin template TwitchAwareness(
         .onEvent(IRCEvent.Type.TWITCH_GIFTRECEIVED)
         .onEvent(IRCEvent.Type.TWITCH_PAYFORWARD)
         .onEvent(IRCEvent.Type.CLEARMSG)
+        .onEvent(IRCEvent.Type.GLOBALUSERSTATE)
         .channelPolicy(channelPolicy)
         .when(Timing.early)
         .chainable(true)

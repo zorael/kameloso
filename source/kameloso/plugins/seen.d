@@ -10,7 +10,7 @@
     minutes.
 
     We will rely on the
-    [kameloso.plugins.chanqueries.ChanQueriesService|ChanQueriesService] to query
+    [kameloso.plugins.services.chanqueries.ChanQueriesService|ChanQueriesService] to query
     channels for full lists of users upon joining new ones, including the
     ones we join upon connecting. Elsewise, a completely silent user will never
     be recorded as having been seen, as they would never be triggering any of
@@ -57,8 +57,8 @@ private import std.datetime.systime : Clock;
 // [std.typecons] for [std.typecons.Flag|Flag] and its friends.
 private import std.typecons : Flag, No, Yes;
 
-// [core.time] for [core.time.seconds|seconds], with which we can delay some actions.
-private import core.time : seconds;
+// [core.time] for [core.time.hours|hours], with which we can delay some actions.
+private import core.time : hours;
 
 
 /+
@@ -191,7 +191,7 @@ public:
         is also an array of [core.thread.fiber.Fiber|Fiber]s, but not one keyed
         on or indexed by event types. Instead they are tuples of a
         [core.thread.fiber.Fiber|Fiber] and a `long` timestamp of when they should be run.
-        Use [kameloso.plugins.common.delayawait.delayFiber|delayFiber] to enqueue.
+        Use [kameloso.plugins.common.delayawait.delay|delay] to enqueue.
 
     * [kameloso.plugins.common.core.IRCPluginState.scheduledDelegates|IRCPluginState.scheduledDelegates]
         is likewise an array of delegates, to be triggered at a later point in time.
@@ -267,9 +267,9 @@ private:  // Module-level private.
 
     // timeBetweenSaves
     /++
-        The amount of seconds after which seen users should be saved to disk.
+        The amount of time after which seen users should be saved to disk.
      +/
-    static immutable timeBetweenSaves = 300.seconds;
+    static immutable timeBetweenSaves = 1.hours;
 
 
     // rehashThresholdMultiplier
@@ -289,7 +289,7 @@ private:  // Module-level private.
         See_Also:
             [addedSinceLastRehash]
      +/
-    enum rehashThresholdMultiplier = 0.5;
+    enum rehashThresholdMultiplier = 1.0;
 
 
     // addedSinceLastRehash
@@ -642,7 +642,7 @@ void onNick(SeenPlugin plugin, const ref IRCEvent event)
 
     A WHO request enumerates all members in a channel. It returns several
     replies, one event per each user in the channel. The
-    [kameloso.plugins.chanqueries.ChanQueriesService|ChanQueriesService] services
+    [kameloso.plugins.services.chanqueries.ChanQueriesService|ChanQueriesService] services
     instigates this shortly after having joined one, as a service to other plugins.
  +/
 @(IRCEventHandler()
@@ -763,7 +763,7 @@ void onNamesReply(SeenPlugin plugin, const ref IRCEvent event)
             .word("seen")
             .policy(PrefixPolicy.prefixed)
             .description("Queries the bot when it last saw a specified nickname online.")
-            .syntax("$command [nickname]")
+            .addSyntax("$command [nickname]")
     )
     .addCommand(
         IRCEventHandler.Command()
@@ -926,6 +926,7 @@ in (signed.length, "Tried to update a user with an empty (signed) nickname")
         // New user; add an entry and bump the added counter
         plugin.seenUsers[nickname] = time;
         ++plugin.addedSinceLastRehash;
+        plugin.maybeRehash();
     }
 }
 
@@ -940,8 +941,10 @@ in (signed.length, "Tried to update a user with an empty (signed) nickname")
  +/
 void maybeRehash(SeenPlugin plugin)
 {
-    if (plugin.addedSinceLastRehash >
-        (plugin.seenUsers.length * plugin.rehashThresholdMultiplier))
+    enum minimumAddedNeededForRehash = 128;
+
+    if ((plugin.addedSinceLastRehash > minimumAddedNeededForRehash) &&
+        (plugin.addedSinceLastRehash > (plugin.seenUsers.length * plugin.rehashThresholdMultiplier)))
     {
         plugin.seenUsers = plugin.seenUsers.rehash();
         plugin.addedSinceLastRehash = 0;
@@ -1008,12 +1011,12 @@ long[string] loadSeen(const string filename)
 
     try
     {
-        const asJSON = parseJSON(filename.readText).object;
+        const asJSON = parseJSON(filename.readText);
 
         // Manually insert each entry from the JSON file into the long[string] AA.
-        foreach (immutable user, const time; asJSON)
+        foreach (immutable user, const timeJSON; asJSON.object)
         {
-            aa[user] = time.integer;
+            aa[user] = timeJSON.integer;
         }
     }
     catch (JSONException e)
@@ -1071,7 +1074,7 @@ void onWelcome(SeenPlugin plugin)
     import kameloso.constants : BufferSize;
     import core.thread : Fiber;
 
-    plugin.seenUsers = loadSeen(plugin.seenFile);
+    plugin.reload();
 
     void saveDg()
     {
@@ -1114,11 +1117,10 @@ void onWelcome(SeenPlugin plugin)
 
 // reload
 /++
-    Reload seen users from disk.
+    Reloads seen users from disk.
  +/
 void reload(SeenPlugin plugin)
 {
-    //logger.info("Reloading seen users from disk.");
     plugin.seenUsers = loadSeen(plugin.seenFile);
 }
 

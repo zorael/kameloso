@@ -297,7 +297,7 @@ enum BufferSize
         How large to make [core.thread.fiber.Fiber|Fiber] stacks, so they don't
         overflow (which they seem to have a knack for doing).
      +/
-    fiberStack = 1_048_576,
+    fiberStack = 131_072,
 }
 
 
@@ -321,7 +321,7 @@ enum Timeout
 
     /++
         The amount of time to spend with a shortened receive timeout, in milliseconds.
-        After this, it reverts from [receiveShortenedMsecs] to [receiveMsecs].
+        After this, it reverts to [Timeout.receiveMsecs].
      +/
     maxShortenDurationMsecs = 2000,
 
@@ -359,7 +359,7 @@ enum Timeout
 
     /++
         The length of the window in which replays may be queued before the timer
-        towards [whoisRetry] kicks in.
+        towards [Timeout.whoisRetry] kicks in.
      +/
     whoisGracePeriod = 3,
 
@@ -527,13 +527,13 @@ public:
     {
         /++
             For dark terminal backgrounds. Was
-            [kameloso.terminal.TerminalForeground.white_|TerminalForeground.white_].
+            [kameloso.terminal.colours.TerminalForeground.white_|TerminalForeground.white_].
          +/
         dark = TF.default_,
 
         /++
             For bright terminal backgrounds. Was
-            [kameloso.terminal.TerminalForeground.black_|TerminalForeground.black_].
+            [kameloso.terminal.colours.TerminalForeground.black_|TerminalForeground.black_].
          +/
         bright = TF.default_,
     }

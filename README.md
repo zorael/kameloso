@@ -1,4 +1,4 @@
-# kameloso [![Linux/macOS/Windows](https://img.shields.io/github/workflow/status/zorael/kameloso/D?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/actions?query=workflow%3AD) [![Linux](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?logo=circleci&style=flat&maxAge=3600)](https://circleci.com/gh/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?logo=appveyor&style=flat&maxAge=3600)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v3.0.0-rc.5.svg?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/compare/v3.0.0-rc.5...master)
+# kameloso [![Linux/macOS/Windows](https://img.shields.io/github/workflow/status/zorael/kameloso/D?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/actions?query=workflow%3AD) [![Linux](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?logo=circleci&style=flat&maxAge=3600)](https://circleci.com/gh/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?logo=appveyor&style=flat&maxAge=3600)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v3.0.1.svg?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/compare/v3.0.1...master)
 
 **kameloso** is an IRC bot.
 
@@ -10,7 +10,7 @@
 * saving notes to offline users that get played back when they come online
 * logs
 * bugs
-* channel polls, `!seen`, counters, stopwatches
+* channel polls, `!seen`, counters, timed announcements, stopwatches
 * automatic mode sets (e.g. auto `+o` on join)
 * works on **Twitch** with some additional common Twitch bot features
 * [more random stuff and gimmicks](https://github.com/zorael/kameloso/wiki/Current-plugins)
@@ -188,6 +188,8 @@ More server-specific resource files will be created the first time you connect t
 
 ## Example use
 
+See [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins) for more information.
+
 ```
       you joined #channel
  kameloso sets mode +o you
@@ -196,14 +198,18 @@ More server-specific resource files will be created the first time you connect t
       you | s/fish/snek/
  kameloso | you | I am a snek
 
-      you | !quote kameloso I am a snek
- kameloso | Quote saved. (1 on record)
-      you | !quote kameloso
- kameloso | kameloso | I am a snek
+      you | !quote blarf I am a snek
+ kameloso | Quote saved. (5 on record)
+      you | !quote blarf
+ kameloso | #4 [2022-04-04 23:15] blarf | I am a snek
 
+      you | !seen
+ kameloso | Usage: !seen [nickname]
       you | !seen MrOffline
  kameloso | I last saw MrOffline 1 hour and 34 minutes ago.
 
+ MrOnline | !note
+ kameloso | Usage: !note [nickname] [note text]
  MrOnline | !note MrOffline About the thing you mentioned, yeah no
  kameloso | Note added.
  MrOnline left #channel
@@ -217,19 +223,27 @@ MrOffline joined #channel
       you | !blacklist del steve
  kameloso | Removed steve as a blacklisted user in #channel.
 
+      you | !automode
+ kameloso | Usage: !automode [add|clear|list] [nickname/account] [mode]
       you | !automode add ray +o
  kameloso | Automode modified! ray on #channel: +o
       ray joined #channel
  kameloso sets mode +o ray
 
-      you | !oneliner add info @$nickname: for more information just use Google
+      you | !oneliner new
+ kameloso | Usage: !oneliner new [trigger] [type] [text...]
+      you | !oneliner new info random @$nickname: for more information just use Google
  kameloso | Oneliner !info added.
-      you | !oneliner add vods See https://twitch.tv/zorael/videos for $streamer's on-demand videos (stored temporarily)
+      you | !oneliner add info @$nickname: for more information just use Bing
+ kameloso | Oneliner inserted!
+      you | !oneliner new vods ordered See https://twitch.tv/zorael/videos for $streamer's on-demand videos (stored temporarily)
  kameloso | Oneliner !vods added.
-      you | !oneliner add source I am $bot. Peruse my source at https://github.com/zorael/kameloso
+      you | !oneliner new source ordered I am $bot. Peruse my source at https://github.com/zorael/kameloso
  kameloso | Oneliner !source added.
       you | !info
  kameloso | @you: for more information just use Google
+      you | !info
+ kameloso | @you: for more information just use Bing
       you | !vods
  kameloso | See https://twitch.tv/zorael/videos for Channel's on-demand videos (stored temporarily)
       you | !commands
@@ -237,6 +251,21 @@ MrOffline joined #channel
       you | !oneliner del vods
  kameloso | Oneliner !vods removed.
 
+      you | !timer new
+ kameloso | Usage: !timer new [name] [type] [condition] [message threshold] [time threshold] [stagger message count] [stagger time]
+      you | !timer new mytimer sequential both 100 600 0 0
+ kameloso | New timer added. Use !timer add to add lines.
+      you | !timer add mytimer This is an announcement on a timer
+ kameloso | Line added to timer mytimer.
+      you | !timer add mytimer It is sent after 100 messages have been seen and 600 seconds have passed
+ kameloso | Line added to timer mytimer.
+<time passes, messages get sent>
+ kameloso | This is an announcement on a timer
+<time passes, messages get sent>
+ kameloso | It is sent after 100 messages have been seen and 600 seconds have passed
+
+      you | !poll
+ kameloso | Usage: !poll [seconds] [choice1] [choice2] ...
       you | !poll 60 snek snik
  kameloso | Voting commenced! Please place your vote for one of: snik, snek (60 seconds)
       BOB | snek
@@ -252,6 +281,8 @@ MrOffline joined #channel
  kameloso | [youtube.com] Uti Vår Hage - Kamelåså (HD) (uploaded by Prebstaroni)
 
 <context: playing a video game>
+      you | !counter
+ kameloso | Usage: !counter [add|del|list] [counter word]
       you | !counter add deaths
  kameloso | Counter deaths added! Access it with !deaths.
       you | !deaths+
@@ -336,11 +367,14 @@ See [the wiki page on Twitch](https://github.com/zorael/kameloso/wiki/Twitch) fo
 Assuming a prefix of `!`, commands to test are:
 
 * `!start`, `!uptime`, `!stop`
-* `!timer`
 * `!followage`
 * `!shoutout`
+* `!vanish`
+* `!repeat`
+* `!ecount`
+* `!watchtime`
 
-...alongside `!oneliner`, `!counter`, `!poll`, `!stopwatch`, and other non-Twitch-specific commands. Try `!help` or [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins).
+...alongside `!oneliner`, `!counter`, `!timer`, `!poll`, `!stopwatch`, and other non-Twitch-specific commands. Try `!help` or [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins).
 
 > Note: `.` (dot) and `/` (slash) prefixes will not work on Twitch.
 
@@ -363,10 +397,8 @@ If you still can't find what you're looking for, or if you have suggestions on h
 
 * pipedream zero: **no compiler segfaults** ([#18026](https://issues.dlang.org/show_bug.cgi?id=18026), [#20562](https://issues.dlang.org/show_bug.cgi?id=20562))
 * please send help: Windows Secure Channel SSL
-* split Twitch timers into own plugin
-* Twitch `ecount`, `settitle`, `setgame`, `vanish`/`poof`, `watchtime`, `roulette`, `repeat`/`spam`?
+* Twitch `settitle`, `setgame`? difficult
 * Twitch web server to catch auth key
-* help plugin descriptions? multiple syntax entries?
 * **more pairs of eyes**
 
 # Built with

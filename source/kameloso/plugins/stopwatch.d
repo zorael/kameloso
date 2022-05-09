@@ -44,8 +44,10 @@ import std.typecons : Flag, No, Yes;
         IRCEventHandler.Command()
             .word("stopwatch")
             .policy(PrefixPolicy.prefixed)
-            .description("Manages stopwatches.")
-            .syntax("$command [start|stop|status]")
+            .description("Starts, stops, or shows status of stopwatches.")
+            .addSyntax("$command start")
+            .addSyntax("$command stop")
+            .addSyntax("$command status")
     )
     .addCommand(
         IRCEventHandler.Command()

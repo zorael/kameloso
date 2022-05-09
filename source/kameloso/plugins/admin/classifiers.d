@@ -33,9 +33,9 @@ package:
     Common code for whitelisting and blacklisting nicknames/accounts.
 
     Params:
-        plugin = The current [kameloso.pluins.admin.base.AdminPlugin|AdminPlugin].
+        plugin = The current [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin].
         event = The triggering [dialect.defs.IRCEvent|IRCEvent].
-        list = Which list to add/remove from, "whitelist", "operator" or "blacklist".
+        list = Which list to add/remove from; "staff", "whitelist", "operator" or "blacklist".
  +/
 void manageClassLists(AdminPlugin plugin,
     const ref IRCEvent event,
@@ -125,8 +125,6 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
         enum pattern = "Current %s in <b>%s<b>: %-(<h>%s<h>, %)";
         immutable message = pattern.format(asWhat, channel, userlist);
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
-
-
     }
     else
     {

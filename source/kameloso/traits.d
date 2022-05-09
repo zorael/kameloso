@@ -259,68 +259,67 @@ unittest
 }
 
 
-// Wrap
+// UnderscoreOpDispatcher
 /++
-    Wraps a value by generating a mutator with a specified name.
+    Mixin template mixing in an `opDispatch` redirecting calls to members whose
+    names match the passed variable string but with an underscore prepended.
 
-    The wrapper returns `this` by reference, allowing for chaining calls.
-    Values are assigned, arrays are appended to.
+    Example:
+    ---
+    struct Foo
+    {
+        int _i;
+        string _s;
+        bool _b;
 
-    Params:
-        newName = Name of mutator symbol to generate and mix in.
-        symbol = Symbol to wrap.
+        mixin UnderscoreOpDispatcher;
+    }
+
+    Foo f;
+    f.i = 42;       // f.opDispatch!"i"(42);
+    f.s = "hello";  // f.opDispatch!"s"("hello");
+    f.b = true;     // f.opDispatch!"b"(true);
+
+    assert(f.i == 42);
+    assert(f.s == "hello");
+    assert(f.b);
+    ---
  +/
-mixin template Wrap(string newName, alias symbol)
-if (newName.length)
+mixin template UnderscoreOpDispatcher()
 {
-    private import kameloso.traits : memberstringIsThisCtorOrDtor;
-    private import std.traits : isArray, isSomeString;
+    ref auto opDispatch(string var, T)(T value)
+    {
+        import std.traits : isArray, isSomeString;
 
-    static if (memberstringIsThisCtorOrDtor(newName))
-    {
-        static assert(0, "Wrapper name cannot be special names `this`, `__ctor` or `__dtor`");
-    }
-    else static if (__traits(compiles, mixin(newName)))
-    {
-        static assert(0, "Failed to wrap symbol: symbol `" ~ newName ~ "` already exists");
-    }
-    else static if (isArray!(typeof(symbol)) && !isSomeString!(typeof(symbol)))
-    {
-        private import std.range.primitives : ElementEncodingType;
-        private import std.traits : fullyQualifiedName;
+        enum realVar = '_' ~ var;
+        alias V = typeof(mixin(realVar));
 
-        mixin(
-"ref auto " ~ newName ~ '(' ~ fullyQualifiedName!(ElementEncodingType!(typeof(symbol))) ~ " newVal)
-{
-    " ~ __traits(identifier, symbol) ~ " ~= newVal;
-    return this;
-}");
-    }
-    else
-    {
-        mixin(
-"ref auto " ~ newName ~ '(' ~ typeof(symbol).stringof ~ " newVal)
-{
-    " ~ __traits(identifier, symbol) ~ " = newVal;
-    return this;
-}");
+        static if (isArray!V && !isSomeString!V)
+        {
+            mixin(realVar) ~= value;
+        }
+        else
+        {
+            mixin(realVar) = value;
+        }
+
+        return this;
     }
 }
 
 ///
 unittest
 {
-    //import dialect.defs : IRCEvent;
+    import dialect.defs;
 
     struct Foo
     {
         IRCEvent.Type[] _acceptedEventTypes;
+        alias _onEvent = _acceptedEventTypes;
         bool _verbose;
         bool _chainable;
 
-        mixin Wrap!("onEvent", _acceptedEventTypes);
-        mixin Wrap!("verbose", _verbose);
-        mixin Wrap!("chainable", _chainable);
+        mixin UnderscoreOpDispatcher;
     }
 
     auto f = Foo()
@@ -333,12 +332,6 @@ unittest
     assert(f._acceptedEventTypes == [ IRCEvent.Type.CHAN, IRCEvent.Type.EMOTE, IRCEvent.Type.QUERY ]);
     assert(f._chainable);
     assert(!f._verbose);
-}
-
-// So the above unittest works.
-version(unittest)
-{
-    import dialect.defs;
 }
 
 

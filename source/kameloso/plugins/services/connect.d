@@ -87,7 +87,7 @@ enum Progress
 )
 void onSelfpart(ConnectService service, const ref IRCEvent event)
 {
-    import std.algorithm.searching : countUntil;
+    import std.algorithm.searching : canFind;
 
     version(TwitchSupport)
     {
@@ -97,9 +97,7 @@ void onSelfpart(ConnectService service, const ref IRCEvent event)
         }
     }
 
-    immutable homeIndex = service.state.bot.homeChannels.countUntil(event.channel);
-
-    if (homeIndex != -1)
+    if (service.state.bot.homeChannels.canFind(event.channel))
     {
         logger.warning("Leaving a home...");
     }
@@ -1026,7 +1024,7 @@ void onSASLFailure(ConnectService service)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
 )
-void onWelcome(ConnectService service, const ref IRCEvent event)
+void onWelcome(ConnectService service)
 {
     import std.algorithm.iteration : splitter;
     import std.algorithm.searching : endsWith;
