@@ -483,7 +483,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
             if (results != SplitResults.overrun)
             {
                 enum pattern = "Usage: <b>%s%s<b> insert [trigger] [position] [text...]";
-                immutable message = pattern.format(plugin.state.settings.prefix);
+                immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
                 chan(plugin.state, event.channel, message);
                 return;
             }
@@ -516,7 +516,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
             if (results != SplitResults.overrun)
             {
                 enum pattern = "Usage: <b>%s%s<b> add [trigger] [text...]";
-                immutable message = pattern.format(plugin.state.settings.prefix);
+                immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
                 chan(plugin.state, event.channel, message);
                 return;
             }
