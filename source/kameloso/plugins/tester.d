@@ -856,9 +856,7 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
     // ------------ !counter
 
     send("counter");
-    awaitReply();
-    enforce(((thisFiber.payload.content == "No counters currently active in this channel.") ||
-        thisFiber.payload.content.beginsWith("Current counters: ")), thisFiber.payload.content);
+    expect("Usage: !counter [add|del|list] [counter word]");
 
     send("counter list");
     awaitReply();
