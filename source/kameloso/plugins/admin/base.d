@@ -1091,7 +1091,7 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
 
         if (results != SplitResults.match)
         {
-            enum pattern = "Usage: <b>%s%s<b> add [account] [hostmask]";
+            enum pattern = "Usage: <b>%s%s add<b> [account] [hostmask]";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
             return;
@@ -1103,7 +1103,7 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
     case "remove":
         if (!slice.length || slice.contains(' '))
         {
-            enum pattern = "Usage: <b>%s%s<b> del [hostmask]";
+            enum pattern = "Usage: <b>%s%s del<b> [hostmask]";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
             return;

@@ -243,7 +243,7 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 
             if (!oneliner.responses.length)
             {
-                enum pattern = "(Empty oneliner; use <b>%soneliner<b> add to add lines.)";
+                enum pattern = "(Empty oneliner; use <b>%soneliner add<b> to add lines.)";
                 immutable message = pattern.format(plugin.state.settings.prefix);
                 chan(plugin.state, event.channel, message);
                 return;
@@ -352,7 +352,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
 
         void sendAddUsage()
         {
-            enum pattern = "Usage: <b>%s%s<b> new [trigger] [type]";
+            enum pattern = "Usage: <b>%s%s new<b> [trigger] [type]";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
             chan(plugin.state, event.channel, message);
         }
@@ -427,7 +427,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
             plugin.onelinersByChannel[event.channel][trigger] = oneliner;
             saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
 
-            enum pattern = "Oneliner <b>%s%s<b> created! Use <b>%1$s%3$s<b> add to add lines.";
+            enum pattern = "Oneliner <b>%s%s<b> created! Use <b>%1$s%3$s add<b> to add lines.";
             immutable message = pattern.format(plugin.state.settings.prefix, trigger, event.aux);
             chan(plugin.state, event.channel, message);
         }
@@ -482,7 +482,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
             immutable results = slice.splitInto(trigger, posString);
             if (results != SplitResults.overrun)
             {
-                enum pattern = "Usage: <b>%s%s<b> insert [trigger] [position] [text...]";
+                enum pattern = "Usage: <b>%s%s insert<b> [trigger] [position] [text...]";
                 immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
                 chan(plugin.state, event.channel, message);
                 return;
@@ -515,7 +515,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
             immutable results = slice.splitInto(trigger);
             if (results != SplitResults.overrun)
             {
-                enum pattern = "Usage: <b>%s%s<b> add [trigger] [text...]";
+                enum pattern = "Usage: <b>%s%s add<b> [trigger] [text...]";
                 immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
                 chan(plugin.state, event.channel, message);
                 return;
@@ -531,7 +531,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
     case "del":
         void sendDelUsage()
         {
-            enum pattern = "Usage: <b>%s%s<b> del [trigger] [optional position]";
+            enum pattern = "Usage: <b>%s%s del<b> [trigger] [optional position]";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
             chan(plugin.state, event.channel, message);
         }
