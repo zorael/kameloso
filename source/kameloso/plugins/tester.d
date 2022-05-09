@@ -122,6 +122,7 @@ void onCommandTest(TesterPlugin plugin, const /*ref*/ IRCEvent event)
         testSeenFiber,
         testCounterFiber,
         testStopwatchFiber,
+        testTimerFiber,
     );
 
     top:
@@ -1027,6 +1028,79 @@ in (origEvent.channel.length, "Tried to test Stopwatch with empty channel in ori
 
     send("stopwatch");
     expect("You do not have a stopwatch running.");
+
+    return true;
+}
+
+
+// testTimerFiber
+/++
+ +
+ +/
+bool testTimerFiber(TesterPlugin plugin, const /*ref*/ IRCEvent origEvent, const string botNickname)
+in (origEvent.channel.length, "Tried to test Timer with empty channel in original event")
+{
+    scope(failure) return false;
+
+    auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+    assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
+
+    void send(const string line)
+    {
+        chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
+    }
+
+    void awaitReply()
+    {
+        do Fiber.yield();
+        while ((thisFiber.payload.channel != origEvent.channel) ||
+            (thisFiber.payload.sender.nickname != botNickname));
+    }
+
+    void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
+    {
+        awaitReply();
+        enforce((thisFiber.payload.content.stripEffects() == msg),
+            "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
+    }
+
+    // ------------ !timer
+
+    send("timer");
+    expect("Usage: !timer [new|add|del|list] ...");
+
+    send("timer new");
+    expect("Usage: !timer new [name] [type] [condition] [message count threshold] " ~
+        "[time threshold] [stagger message count] [stagger time]");
+
+    send("timer new hirrsteff ordered both 0 10 0 10");
+    expect("New timer added. Use !timer add to add lines.");
+
+    send("timer add splorf hello");
+    expect("No such timer is defined. Add a new one with !timer new.");
+
+    send("timer add hirrsteff HERLO");
+    expect("Line added to timer hirrsteff.");
+
+    send("timer insert hirrsteff 0 fgsfds");
+    expect("Line added to timer hirrsteff.");
+
+    send("timer list");
+    expect("Current timers for channel %s:".format(origEvent.channel));
+    expect(`["hirrsteff"] lines:2 | type:ordered | condition:both | ` ~
+        "message count threshold:0 | time threshold:10 | stagger message count:0 | stagger time:10");
+
+    logger.info("Wait 3 cycles + 10 seconds...");
+
+    expect("fgsfds");
+    expect("HERLO");
+    expect("fgsfds");
+
+    send("timer del hirrsteff");
+    expect("Timer removed.");
+
+    send("timer del hirrsteff");
+    expect("There is no timer by that name.");
 
     return true;
 }
