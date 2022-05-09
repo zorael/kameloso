@@ -456,7 +456,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
             auto oneliner = trigger in *channelOneliners;
             if (!oneliner) return sendNoSuchOneliner(trigger);
 
-            if (pos == appendToEndMagicNumber)
+            if ((pos == appendToEndMagicNumber) || (pos >= oneliner.responses.length))
             {
                 oneliner.responses ~= line;
             }
