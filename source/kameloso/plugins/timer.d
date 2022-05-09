@@ -498,7 +498,6 @@ void handleTimerCommand(
         return sendNoSuchTimer();
 
     case "add":
-    case "append":
         void sendAddUsage()
         {
             enum pattern = "Usage: <b>%s%s<b> add [timer name] [timer text...]";
