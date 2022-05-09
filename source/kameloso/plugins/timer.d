@@ -309,7 +309,7 @@ void handleTimerCommand(
 
     void sendUsage()
     {
-        enum pattern = "Usage: <b>%s%s<b> [new|add|del|list|clear] ...";
+        enum pattern = "Usage: <b>%s%s<b> [new|add|del|list] ...";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
         chan(plugin.state, channelName, message);
     }
@@ -621,15 +621,6 @@ void handleTimerCommand(
         case overrun:
             return sendDelUsage();
         }
-
-    case "clear":
-        plugin.channels[channelName].timerFibers.length = 0;
-        plugin.timerDefsByChannel.remove(channelName);
-        saveResourceToDisk(plugin.timerDefsByChannel, plugin.timerFile);
-
-        enum message = "All timers cleared.";
-        chan(plugin.state, channelName, message);
-        break;
 
     case "list":
         const timerDefs = channelName in plugin.timerDefsByChannel;
