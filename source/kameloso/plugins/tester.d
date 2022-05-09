@@ -545,6 +545,8 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
 {
     scope(failure) return false;
 
+    immutable prefix = plugin.state.settings.prefix;
+
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
     assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
 
@@ -572,29 +574,61 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
+    send("set oneliners.cooldown=0");
+    expect("Setting changed.");
+
     // ------------ !oneliner
 
     send("commands");
     expect("There are no commands available right now.");
 
     send("oneliner");
-    expect("Usage: %soneliner [add|del|list] [trigger] [text]"
-        .format(plugin.state.settings.prefix));
+    expect("Usage: %soneliner [new|insert|add|del|list] ...".format(prefix));
+
+    send("oneliner add");
+    expect("Usage: %soneliner add [trigger] [text...]".format(prefix));
 
     send("oneliner add herp derp dirp darp");
-    expect("Oneliner %sherp added.".format(plugin.state.settings.prefix));
-
-    send("oneliner list");
-    expect("Available commands: %sherp".format(plugin.state.settings.prefix));
-
-    sendPrefixed("herp");
-    expect("derp dirp darp");
-
-    send("oneliner del hirrp");
-    expect("No such trigger: %shirrp".format(plugin.state.settings.prefix));
+    expect("No such oneliner: %sherp".format(prefix));
 
     send("oneliner del herp");
-    expect("Oneliner %sherp removed.".format(plugin.state.settings.prefix));
+    expect("No such oneliner: %sherp".format(prefix));
+
+    send("oneliner new herp ordered");
+    expect("Oneliner %sherp created! Use %1$soneliner add to add lines.".format(prefix));
+
+    send("oneliner list");
+    expect("Available commands: %sherp".format(prefix));
+
+    sendPrefixed("herp");
+    expect("(Empty oneliner; use %soneliner add to add lines.)".format(prefix));
+
+    send("oneliner add herp 123");
+    expect("Oneliner line added!");
+
+    sendPrefixed("herp");
+    expect("123");
+
+    send("oneliner add herp 456");
+    expect("Oneliner line added!");
+
+    sendPrefixed("herp");
+    expect("123");
+
+    sendPrefixed("herp");
+    expect("456");
+
+    sendPrefixed("herp");
+    expect("123");
+
+    send("oneliner insert herp 0 000");
+    expect("Oneliner line inserted!");
+
+    send("oneliner del hirrp");
+    expect("No such oneliner: %shirrp".format(prefix));
+
+    send("oneliner del herp");
+    expect("Oneliner %sherp removed.".format(prefix));
 
     return true;
 }
