@@ -1,6 +1,6 @@
 # kameloso [![Linux/macOS/Windows](https://img.shields.io/github/workflow/status/zorael/kameloso/D?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/actions?query=workflow%3AD) [![Linux](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?logo=circleci&style=flat&maxAge=3600)](https://circleci.com/gh/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?logo=appveyor&style=flat&maxAge=3600)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v3.0.1.svg?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/compare/v3.0.1...master)
 
-**kameloso** is an IRC bot.
+**kameloso** is an IRC bot. It works as a Twitch bot too.
 
 ## Current functionality includes:
 
@@ -10,9 +10,9 @@
 * saving notes to offline users that get played back when they come online
 * logs
 * bugs
-* channel polls, `!seen`, counters, timed announcements, stopwatches
+* channel polls, `!seen`, counters, oneliners, timed announcements, stopwatches, ...
 * automatic mode sets (e.g. auto `+o` on join)
-* works on **Twitch** with some additional common Twitch bot features
+* some common Twitch bot features [when connected there](#twitch)
 * [more random stuff and gimmicks](https://github.com/zorael/kameloso/wiki/Current-plugins)
 
 All of the above are plugins and can be disabled at runtime or omitted from compilation entirely. It is modular and easy to extend. A skeletal Hello World plugin is [25 lines of code](source/kameloso/plugins/hello.d).
@@ -39,14 +39,14 @@ Testing is primarily done on [**Libera.Chat**](https://libera.chat) and on [**Tw
 
 Pre-compiled binaries for Windows and Linux can be found under [Releases](https://github.com/zorael/kameloso/releases).
 
-```sh
-dub run kameloso -- --server irc.libera.chat --guestChannels "#d"
+```shell
+$ dub run kameloso -- --server irc.libera.chat --homeChannels "#mychannel" --guestChannels "#d"
 
-# alternatively, guaranteed latest
-git clone https://github.com/zorael/kameloso.git
-cd kameloso
-dub build
-./kameloso --server irc.libera.chat --guestChannels "#d"
+## alternatively, guaranteed latest
+$ git clone https://github.com/zorael/kameloso.git
+$ cd kameloso
+$ dub build
+$ ./kameloso --server irc.libera.chat --homeChannels "#mychannel" --guestChannels "#d"
 ```
 
 If there's anyone talking it should show up on your screen.
@@ -103,16 +103,16 @@ See the [known issues](#known-issues) section on Windows for information on libr
 
 ## Downloading
 
-```sh
-git clone https://github.com/zorael/kameloso.git
+```shell
+$ git clone https://github.com/zorael/kameloso.git
 ```
 
 It can also be downloaded as a [`.zip` archive](https://github.com/zorael/kameloso/archive/master.zip).
 
 ## Compiling
 
-```sh
-dub build
+```shell
+$ dub build
 ```
 
 This will compile the bot in the default **debug** mode, which adds some extra code and debugging symbols. You can automatically omit these and perform some optimisations by building it in **release** mode with `dub build -b release`. Mind that build times will increase accordingly. Refer to the output of `dub build --help` for more build types.
@@ -129,8 +129,8 @@ All configurations come in `-lowmem` variants (e.g. `application-lowmem`, `twitc
 
 List configurations with `dub build --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default `application` configuration.
 
-```sh
-dub build -c twitch
+```shell
+$ dub build -c twitch
 ```
 
 > If you want to customise your own build to only compile the plugins you want to use, see the larger `versions` lists in `dub.sdl`. Simply add a character to the line corresponding to the plugin(s) you want to omit, thus invalidating the version identifiers. Mind that disabling any of the "**service**" plugins may/will break the bot in subtle ways.
@@ -141,8 +141,8 @@ dub build -c twitch
 
 The bot ideally wants the account name of one or more administrators of the bot, and/or one or more home channels to operate in. Without either it's just a read-only log bot, which is also fine. To define these you can either specify them on the command line, with flags listed by calling the program with `--help`, or generate a configuration file with `--save` and enter them there.
 
-```sh
-kameloso --save
+```shell
+$ kameloso --save
 ```
 
 A new `kameloso.conf` will be created in a directory dependent on your platform.
@@ -161,8 +161,8 @@ Open the file in a normal text editor.
 
 You can make changes to your configuration file in-place by specyfing some at the command line and adding `--save`.
 
-```sh
-kameloso \
+```shell
+$ kameloso \
     --server irc.libera.chat \
     --nickname "kameloso" \
     --admins "you" \
