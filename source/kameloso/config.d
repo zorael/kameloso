@@ -697,7 +697,7 @@ Next handleGetopt(ref Kameloso instance,
                     &connSettings.ssl,
                 "A|account",
                     quiet ? string.init :
-                        "Service account name" ~
+                        "Services account name" ~
                             (bot.account.length ?
                                 " [<i>%s</>]"
                                     .expandTags(LogLevel.trace)
@@ -706,7 +706,7 @@ Next handleGetopt(ref Kameloso instance,
                     &bot.account,
                 "p|password",
                     quiet ? string.init :
-                        "Service account password" ~
+                        "Services account password" ~
                             (bot.password.length ?
                                 " [<i>%s</>]"
                                     .expandTags(LogLevel.trace)
