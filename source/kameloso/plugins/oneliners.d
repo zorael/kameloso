@@ -18,7 +18,8 @@ private:
 
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
-import kameloso.common : logger;
+import kameloso.common : expandTags, logger;
+import kameloso.logger : LogLevel;
 import kameloso.messaging;
 import dialect.defs;
 
@@ -694,7 +695,17 @@ void reload(OnelinersPlugin plugin)
     {
         foreach (immutable trigger, const onelinerJSON; channelOnelinersJSON.object)
         {
-            plugin.onelinersByChannel[channelName][trigger] = Oneliner.fromJSON(onelinerJSON);
+            import std.json : JSONException;
+
+            try
+            {
+                plugin.onelinersByChannel[channelName][trigger] = Oneliner.fromJSON(onelinerJSON);
+            }
+            catch (JSONException e)
+            {
+                enum pattern = "Failed to load oneliner \"<l>%s</>\"; <l>%s</> is outdated or corrupt.";
+                logger.errorf(pattern.expandTags(LogLevel.error), trigger, plugin.onelinerFile);
+            }
         }
     }
 
