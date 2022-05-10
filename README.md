@@ -39,7 +39,7 @@ Testing is primarily done on [**Libera.Chat**](https://libera.chat) and on [**Tw
 
 Pre-compiled binaries for Windows and Linux can be found under [Releases](https://github.com/zorael/kameloso/releases).
 
-```shell
+```console
 $ dub run kameloso -- --server irc.libera.chat --homeChannels "#mychannel" --guestChannels "#d"
 
 ## alternatively, guaranteed latest
@@ -103,7 +103,7 @@ See the [known issues](#known-issues) section on Windows for information on libr
 
 ## Downloading
 
-```shell
+```console
 $ git clone https://github.com/zorael/kameloso.git
 ```
 
@@ -111,7 +111,7 @@ It can also be downloaded as a [`.zip` archive](https://github.com/zorael/kamelo
 
 ## Compiling
 
-```shell
+```console
 $ dub build
 ```
 
@@ -129,7 +129,7 @@ All configurations come in `-lowmem` variants (e.g. `application-lowmem`, `twitc
 
 List configurations with `dub build --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default `application` configuration.
 
-```shell
+```console
 $ dub build -c twitch
 ```
 
@@ -141,7 +141,7 @@ $ dub build -c twitch
 
 The bot ideally wants the account name of one or more administrators of the bot, and/or one or more home channels to operate in. Without either it's just a read-only log bot, which is also fine. To define these you can either specify them on the command line, with flags listed by calling the program with `--help`, or generate a configuration file with `--save` and enter them there.
 
-```shell
+```console
 $ kameloso --save
 ```
 
@@ -161,7 +161,7 @@ Open the file in a normal text editor.
 
 You can make changes to your configuration file in-place by specyfing some at the command line and adding `--save`.
 
-```shell
+```console
 $ kameloso \
     --server irc.libera.chat \
     --nickname "kameloso" \
@@ -232,14 +232,20 @@ MrOffline joined #channel
 
       you | !oneliner new
  kameloso | Usage: !oneliner new [trigger] [type] [text...]
-      you | !oneliner new info random @$nickname: for more information just use Google
- kameloso | Oneliner !info added.
+      you | !oneliner new info random
+ kameloso | Oneliner !info created! Use !oneliner add to add lines.
+      you | !oneliner add info @$nickname: for more information just use Google
+ kameloso | Oneliner line added.
       you | !oneliner add info @$nickname: for more information just use Bing
- kameloso | Oneliner inserted!
-      you | !oneliner new vods ordered See https://twitch.tv/zorael/videos for $streamer's on-demand videos (stored temporarily)
- kameloso | Oneliner !vods added.
-      you | !oneliner new source ordered I am $bot. Peruse my source at https://github.com/zorael/kameloso
- kameloso | Oneliner !source added.
+ kameloso | Oneliner line added.
+      you | !oneliner new vods ordered
+ kameloso | Oneliner !vods created! Use !oneliner add to add lines.
+      you | !oneliner add vods See https://twitch.tv/zorael/videos for $streamer's on-demand videos (stored temporarily)
+ kameloso | Oneliner line added.
+      you | !oneliner new source ordered
+ kameloso | Oneliner !source created! Use !oneliner add to add lines.
+      you | !oneliner add source I am $bot. Peruse my source at https://github.com/zorael/kameloso
+ kameloso | Oneliner line added.
       you | !info
  kameloso | @you: for more information just use Google
       you | !info
@@ -253,8 +259,8 @@ MrOffline joined #channel
 
       you | !timer new
  kameloso | Usage: !timer new [name] [type] [condition] [message threshold] [time threshold] [stagger message count] [stagger time]
-      you | !timer new mytimer sequential both 100 600 0 0
- kameloso | New timer added. Use !timer add to add lines.
+      you | !timer new mytimer ordered both 100 600 0 0
+ kameloso | New timer added! Use !timer add to add lines.
       you | !timer add mytimer This is an announcement on a timer
  kameloso | Line added to timer mytimer.
       you | !timer add mytimer It is sent after 100 messages have been seen and 600 seconds have passed
@@ -313,7 +319,7 @@ The command **prefix** (here `!`) is configurable; refer to your configuration f
 prefix                      "!"
 ```
 
-It can technically be any string and not just one character. It may include spaces if enclosed within quotes, like `"please "` (making it `please note`, `please quote`, ...). Additionally, prefixing commands with the bot's nickname also works, as in `kameloso: seen MrOffline`. This is to be able to disambiguate between several bots in the same channel. Moreover, some administrative commands only work when called this way.
+It can technically be any string and not just one character. It may include spaces if enclosed within quotes, like `"please "` (making it `please note`, `please quote`, ...). Additionally, prefixing commands with the bot's nickname also works, as in `kameloso: seen MrOffline`. This is to be able to disambiguate between several bots in the same channel. Some administrative commands only work when called this way.
 
 ### **Except nothing happens**
 
@@ -325,13 +331,11 @@ Before allowing *anyone* to trigger any restricted functionality, the bot will q
 
 To connect to Twitch servers you must first build a configuration that includes support for it, which is currently either `twitch` or `dev`.
 
-You must also supply an [OAuth token](https://en.wikipedia.org/wiki/OAuth) `pass` (not to be confused with `password`). These authorisation tokens are unique to your user paired with an application. As such, you need a new one for each and every program you want to access Twitch with.
-
-Run the bot with `--set twitch.keygen` to start the captive process of generating one. It will open a browser window, in which you are asked to log onto Twitch *on Twitch's own servers*. Verify this by checking the page address; it should end with `.twitch.tv`, with the little lock symbol showing the connection is secure.
+You must also supply an [OAuth token](https://en.wikipedia.org/wiki/OAuth) API key. Run the bot with `--set twitch.keygen` to start the captive process of generating one. It will open a browser window, in which you are asked to log onto Twitch *on Twitch's own servers*. Verify this by checking the page address; it should end with `.twitch.tv`, with the little lock symbol showing the connection is secure.
 
 > Note: At no point is the bot privy to your Twitch login credentials! The logging-in is wholly done on Twitch's own servers, and no information is sent to any third parties. The code that deals with this is open for audit; [`generateKey` in `twitchbot/keygen.d`](source/kameloso/plugins/twitchbot/keygen.d).
 
-After entering your login and password and clicking **Authorize**, you will be redirected to an empty "`this site can't be reached`" or "`unable to connect`" page. Copy the URL address of it and paste it into the terminal, when asked. It will parse the address, extract your authorisation token, and offer to save it to your configuration file.
+After entering your login and password and clicking **Authorize**, you will be redirected to an empty "`this site can't be reached`" or "`unable to connect`" page. **Copy the URL address of it** and paste it into the terminal, when asked. It will parse the address, extract your authorisation token, and offer to save it to your configuration file.
 
 If you prefer to generate the token manually, [**here is the URL you need to follow**](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true). The only thing the generation process does is open it for you, and automate saving the end key to disk.
 
@@ -380,7 +384,7 @@ Assuming a prefix of `!`, commands to test are:
 
 ## Further help
 
-For more information and help, first see [the wiki](https://github.com/zorael/kameloso/wiki).
+For more information and help, first refer to [the wiki](https://github.com/zorael/kameloso/wiki).
 
 If you still can't find what you're looking for, or if you have suggestions on how to improve the bot, you can...
 
