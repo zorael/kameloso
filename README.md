@@ -161,7 +161,7 @@ Open the file in a normal text editor.
 
 You can make changes to your configuration file in-place by specyfing some at the command line and adding `--save`.
 
-```console
+```shell
 $ kameloso \
     --server irc.libera.chat \
     --nickname "kameloso" \
