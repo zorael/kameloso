@@ -467,8 +467,8 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
             }
 
             immutable message = (pos == appendToEndMagicNumber) ?
-                "Oneliner line added!" :
-                "Oneliner line inserted!";
+                "Oneliner line added." :
+                "Oneliner line inserted.";
             chan(plugin.state, event.channel, message);
             saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
         }

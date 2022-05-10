@@ -441,7 +441,7 @@ void handleTimerCommand(
         saveResourceToDisk(plugin.timerDefsByChannel, plugin.timerFile);
         plugin.channels[channelName].timerFibers ~= plugin.createTimerFiber(timerDef, channelName);
 
-        enum appendPattern = "New timer added. Use <b>%s%s add<b> to add lines.";
+        enum appendPattern = "New timer added! Use <b>%s%s add<b> to add lines.";
         immutable message = appendPattern.format(plugin.state.settings.prefix, event.aux);
         chan(plugin.state, channelName, message);
         break;
