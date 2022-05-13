@@ -346,13 +346,13 @@ If you prefer to generate the token manually, [**here is the URL you need to fol
 
 If you're on Windows, you must first [install the **OpenSSL** library](#windows). Opt to install to system directories when asked.
 
-```
+```shell
 kameloso --get-openssl
 ```
 
 The rest is common for all platforms:
 
-```console
+```shell
 kameloso --gedit
 kameloso --set twitch.keygen
 kameloso
@@ -368,11 +368,11 @@ The first command creates a configuration file and opens it up in a text editor.
 * You can ignore `nickname`, `user`, `realName`, `account`, `password`; they're not applicable to Twitch.
 * Peruse the file for other settings if you want, you can always get back to it with `--gedit`.
 
-The second command starts the process of requesting a new API key from Twitch; see the [section above](#twitch) for details. Note that it will request a key for **the user you are currently logged in as** in your browser. If you want a key for a different bot user instead, open up a private/incognito window, log in normally to Twitch **with the bot account** there, and open [this link](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true) in that browser window instead. (Then follow the terminal instructions again.)
+The second command starts the process of requesting a new API key from Twitch; see the [section above](#twitch) for details. Note that it will request a key for **the user you are currently logged in as** in your browser. If you want a key for a different bot user instead, open up a private/incognito window, log in normally to Twitch **with the bot account** there, and copy/paste [this link](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true) to that browser window instead. (Then follow the terminal instructions again.)
 
 The third command finally launches the program normally and connects to the server. Provided you successfully managed to get an API key and there were no errors, the bot should now be in your channel. Say something in chat in your browser and it should show in your terminal. If there were errors or snags, [*please* report them](https://github.com/zorael/kameloso/issues/new).
 
-> If you don't like the terminal colouring, `--monochrome` disables them. You can set it persistently in the configuration file, it's `monochrome` under `[Core]`.
+> If you don't like the terminal colouring, `--monochrome` disables them.
 
 ### Example configuration
 
