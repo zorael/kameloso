@@ -1,6 +1,6 @@
 # kameloso [![Linux/macOS/Windows](https://img.shields.io/github/workflow/status/zorael/kameloso/D?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/actions?query=workflow%3AD) [![Linux](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?logo=circleci&style=flat&maxAge=3600)](https://circleci.com/gh/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?logo=appveyor&style=flat&maxAge=3600)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v3.1.0.svg?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/compare/v3.1.0...master)
 
-**kameloso** is an IRC bot. It works as a Twitch bot too.
+**kameloso** is an IRC bot. It works as a Twitch bot too, see [here](#twitch).
 
 ## Current functionality includes:
 
@@ -39,6 +39,8 @@ Testing is primarily done on [**Libera.Chat**](https://libera.chat) and on [**Tw
 
 Pre-compiled binaries for Windows and Linux can be found under [Releases](https://github.com/zorael/kameloso/releases).
 
+To compile it yourself:
+
 ```console
 $ dub run kameloso -- --server irc.libera.chat --homeChannels "#mychannel" --guestChannels "#d"
 
@@ -69,8 +71,9 @@ If there's anyone talking it should show up on your screen.
     * [Other files](#other-files)
   * [Example use](#example-use)
     * [Online help and commands](#online-help-and-commands)
-    * [**Except nothing happens**](#except-nothing-happens)
-  * [Twitch](#twitch)
+    * [*Except nothing happens*](#except-nothing-happens)
+  * [**Twitch**](#twitch)
+    * [**Copy/paste-friendly concrete setup from scratch**](#copy-paste-friendly-concrete-setup-from-scratch)
     * [Example configuration](#example-configuration)
     * [Twitch bot](#twitch-bot)
   * [Further help](#further-help)
@@ -329,9 +332,9 @@ Before allowing *anyone* to trigger any restricted functionality, the bot will q
 
 ## Twitch
 
-To connect to Twitch servers you must first build a configuration that includes support for it, which is currently either `twitch` or `dev`.
+To connect to Twitch servers you must first build a configuration that includes support for it, which is currently either `twitch` or `dev`. **All pre-compiled binaries available from under [Releases](https://github.com/zorael/kameloso/releases) already have this built-in.**
 
-You must also supply an [OAuth token](https://en.wikipedia.org/wiki/OAuth) API key. Run the bot with `--set twitch.keygen` to start the captive process of generating one. It will open a browser window, in which you are asked to log onto Twitch *on Twitch's own servers*. Verify this by checking the page address; it should end with `.twitch.tv`, with the little lock symbol showing the connection is secure.
+You must also supply an [OAuth API key](https://en.wikipedia.org/wiki/OAuth). Assuming you have a configuration file set up to connect to Twitch, run the bot with `--set twitch.keygen` to start the captive process of generating one. It will open a browser window, in which you are asked to log onto Twitch *on Twitch's own servers*. Verify this by checking the page address; it should end with `.twitch.tv`, with the little lock symbol showing the connection is secure.
 
 > Note: At no point is the bot privy to your Twitch login credentials! The logging-in is wholly done on Twitch's own servers, and no information is sent to any third parties. The code that deals with this is open for audit; [`generateKey` in `twitchbot/keygen.d`](source/kameloso/plugins/twitchbot/keygen.d).
 
@@ -339,11 +342,43 @@ After entering your login and password and clicking **Authorize**, you will be r
 
 If you prefer to generate the token manually, [**here is the URL you need to follow**](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true). The only thing the generation process does is open it for you, and automate saving the end key to disk.
 
+### Copy paste-friendly concrete setup from scratch
+
+If you're on Windows, you must first [install the **OpenSSL** library](#windows). Opt to install to system directories when asked.
+
+```
+kameloso --get-openssl
+```
+
+The rest is common for all platforms:
+
+```console
+kameloso --gedit
+kameloso --set twitch.keygen
+kameloso
+```
+
+The first command creates a configuration file and opens it up in a text editor.
+
+**A line with a leading `#` is disabled, so remove any `#`s from the heads of entries you want to enable.**
+
+* Be sure to set the server `address` under `[IRCServer]` to `irc.chat.twitch.tv`.
+* Add your channel to `homeChannels`. Channel names are account names (which are always lowercase) with a `#` in front, so the Twitch user `Streamer123` would have the channel `#streamer123`.
+* Optionally add the name of an account to `admins` to give them global low-level control of the bot. Owners of channels (broadcasters) automatically have high privileges in the scope of their own channels, so it's not strictly needed.
+* You can ignore `nickname`, `user`, `realName`, `account`, `password`; they're not applicable to Twitch.
+* Peruse the file for other settings if you want, you can always get back to it with `--gedit`.
+
+The second command starts the process of requesting a new API key from Twitch; see the [section above](#twitch) for details. Note that it will request a key for **the user you are currently logged in as** in your browser. If you want a key for a different bot user instead, open up a private/incognito window, log in normally to Twitch **with the bot account** there, and open [this link](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true) in that browser window instead. (Then follow the terminal instructions again.)
+
+The third command finally launches the program normally and connects to the server. Provided you successfully managed to get an API key and there were no errors, the bot should now be in your channel. Say something in chat in your browser and it should show in your terminal. If there were errors or snags, [*please* report them](https://github.com/zorael/kameloso/issues/new).
+
+> If you don't like the terminal colouring, `--monochrome` disables them. You can set it persistently in the configuration file, it's `monochrome` under `[Core]`.
+
 ### Example configuration
 
 ```ini
 [IRCClient]
-nickname            botaccount
+nickname            doesntmatter
 user                ignored
 realName            likewise
 
@@ -402,7 +437,6 @@ If you still can't find what you're looking for, or if you have suggestions on h
 * pipedream zero: **no compiler segfaults** ([#18026](https://issues.dlang.org/show_bug.cgi?id=18026), [#20562](https://issues.dlang.org/show_bug.cgi?id=20562))
 * please send help: Windows Secure Channel SSL
 * Twitch `settitle`, `setgame`? difficult
-* Twitch web server to catch auth key
 * **more pairs of eyes**
 
 # Built with
