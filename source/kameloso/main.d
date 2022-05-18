@@ -2802,10 +2802,31 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         }
         catch (IRCPluginInitialisationException e)
         {
-            enum pattern = "The <l>%s</> plugin failed to load its resources; " ~
-                "<l>%s</> (at <l>%s</>:<l>%d</>)%s";
-            logger.warningf(pattern.expandTags(LogLevel.warning), e.file.baseName[0..$-2],
-                e.msg, e.file.baseName, e.line, bell);
+            if (e.malformedFilename.length)
+            {
+                enum pattern = "The <l>%s</> plugin failed to load its resources; " ~
+                    "<l>%s</> is malformed. (at <l>%s</>:<l>%d</>)%s";
+                logger.warningf(
+                    pattern.expandTags(LogLevel.warning),
+                    e.pluginName,
+                    e.malformedFilename,
+                    e.file.baseName,
+                    e.line,
+                    bell);
+            }
+            else
+            {
+                enum pattern = "The <l>%s</> plugin failed to load its resources; " ~
+                    "<l>%s</> (at <l>%s</>:<l>%d</>)%s";
+                logger.warningf(
+                    pattern.expandTags(LogLevel.warning),
+                    e.pluginName,
+                    e.msg,
+                    e.file.baseName,
+                    e.line,
+                    bell);
+            }
+
             version(PrintStacktraces) logger.trace(e.info);
             attempt.retval = ShellReturnValue.pluginResourceLoadFailure;
             break outerloop;
@@ -2833,10 +2854,31 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         }
         catch (IRCPluginInitialisationException e)
         {
-            enum pattern = "The <l>%s</> plugin failed to start: <l>%s</> " ~
-                "(at <l>%s</>:<l>%d</>)%s";
-            logger.warningf(pattern.expandTags(LogLevel.warning), e.file.baseName[0..$-2],
-                e.msg, e.file.baseName, e.line, bell);
+            if (e.malformedFilename.length)
+            {
+                enum pattern = "The <l>%s</> plugin failed to start; " ~
+                    "<l>%s</> is malformed. (at <l>%s</>:<l>%d</>)%s";
+                logger.warningf(
+                    pattern.expandTags(LogLevel.warning),
+                    e.pluginName,
+                    e.malformedFilename,
+                    e.file.baseName,
+                    e.line,
+                    bell);
+            }
+            else
+            {
+                enum pattern = "The <l>%s</> plugin failed to start; " ~
+                    "<l>%s</> (at <l>%s</>:<l>%d</>)%s";
+                logger.warningf(
+                    pattern.expandTags(LogLevel.warning),
+                    e.pluginName,
+                    e.msg,
+                    e.file.baseName,
+                    e.line,
+                    bell);
+            }
+
             version(PrintStacktraces) logger.trace(e.info);
             attempt.retval = ShellReturnValue.pluginStartFailure;
             break outerloop;
