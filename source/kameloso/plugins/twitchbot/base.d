@@ -805,7 +805,7 @@ void onCommandFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             room.followsLastCached = event.time;
         }
 
-        enum minimumTimeBetweenRecaches = 30;
+        enum minimumTimeBetweenRecaches = 10;
 
         if (const thisFollow = idString in room.follows)
         {
