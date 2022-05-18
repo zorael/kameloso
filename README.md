@@ -338,7 +338,7 @@ See [the wiki page on Twitch](https://github.com/zorael/kameloso/wiki/Twitch) fo
 
 ### Copy paste-friendly concrete setup from scratch
 
-If you're on Windows, you must first [install the **OpenSSL** library](#windows). Opt to install to system directories when asked.
+If you're on Windows, you must first [install the **OpenSSL** library](#windows). Run this command to download and launch the installer for it, then opt to install to system directories when asked.
 
 ```shell
 kameloso --get-openssl
@@ -358,7 +358,7 @@ The first command creates a configuration file and opens it up in a text editor.
 
 * Be sure to set the server `address` under `[IRCServer]` to `irc.chat.twitch.tv`.
 * Add your channel to `homeChannels`. Channel names are account names (which are always lowercase) with a `#` in front, so the Twitch user `Streamer123` would have the channel `#streamer123`.
-* Optionally add the name of an account to `admins` to give them global low-level control of the bot. Owners of channels (broadcasters) automatically have high privileges in the scope of their own channels, so it's not strictly needed.
+* Optionally add an account name to `admins` to give them global low-level control of the bot. Owners of channels (broadcasters) automatically have high privileges in the scope of their own channels, so it's not strictly needed.
 * You can ignore `nickname`, `user`, `realName`, `account`, `password`; they're not applicable on Twitch.
 * Peruse the file for other settings if you want, you can always get back to it with `--gedit`.
 
@@ -389,7 +389,7 @@ address             irc.chat.twitch.tv
 port                6697
 ```
 
-The Twitch SSL port is **6697** (and **443**). For non-encrypted traffic, use the default port **6667**.
+The Twitch SSL port is **6697** (or **443**). For non-encrypted traffic, use the default port **6667**.
 
 ### Long story
 
