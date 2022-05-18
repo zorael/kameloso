@@ -131,10 +131,19 @@ import core.thread : Fiber;
     .channelPolicy(ChannelPolicy.home)
     .chainable(true)
 )
-void onImportant(TwitchBotPlugin plugin)
+void onImportant(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.terminal : TerminalToken;
     import std.stdio : stdout, write;
+
+    // Record viewer as active
+    if (auto room = event.channel in plugin.rooms)
+    {
+        if (room.broadcast.active)
+        {
+            room.broadcast.activeViewers[event.sender.nickname] = true;
+        }
+    }
 
     if (plugin.twitchBotSettings.bellOnImportant)
     {
@@ -453,6 +462,9 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 
                     // continue early if we shouldn't monitor watchtime
                     if (!plugin.twitchBotSettings.watchtime) continue;
+
+                    // Exclude lurkers from watchtime monitoring
+                    if (viewer !in room.broadcast.activeViewers) continue;
 
                     static immutable periodicitySeconds = plugin.chattersCheckPeriodicity.total!"seconds";
 
@@ -1164,6 +1176,15 @@ void onAnyMessage(TwitchBotPlugin plugin, const ref IRCEvent event)
 
             *thisEmoteCount += slice.count(',') + 1;
             plugin.ecountDirty = true;
+        }
+    }
+
+    // Record viewer as active
+    if (auto room = event.channel in plugin.rooms)
+    {
+        if (room.broadcast.active)
+        {
+            room.broadcast.activeViewers[event.sender.nickname] = true;
         }
     }
 }
