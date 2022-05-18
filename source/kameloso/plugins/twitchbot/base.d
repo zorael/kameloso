@@ -1807,7 +1807,12 @@ void initResources(TwitchBotPlugin plugin)
         import kameloso.plugins.common.misc : IRCPluginInitialisationException;
 
         version(PrintStacktraces) logger.trace(e);
-        throw new IRCPluginInitialisationException(plugin.ecountFile.baseName ~ " may be malformed.");
+        throw new IRCPluginInitialisationException(
+            "Emote counter file is malformed",
+            plugin.name,
+            plugin.ecountFile,
+            __FILE__,
+            __LINE__);
     }
 
     try
@@ -1819,7 +1824,12 @@ void initResources(TwitchBotPlugin plugin)
         import kameloso.plugins.common.misc : IRCPluginInitialisationException;
 
         version(PrintStacktraces) logger.trace(e);
-        throw new IRCPluginInitialisationException(plugin.viewersFile.baseName ~ " may be malformed.");
+        throw new IRCPluginInitialisationException(
+            "Viewers file is malformed",
+            plugin.name,
+            plugin.viewersFile,
+            __FILE__,
+            __LINE__);
     }
 
     // Let other Exceptions pass.

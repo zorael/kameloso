@@ -1008,7 +1008,12 @@ void initResources(TimerPlugin plugin)
         import kameloso.plugins.common.misc : IRCPluginInitialisationException;
 
         version(PrintStacktraces) logger.trace(e);
-        throw new IRCPluginInitialisationException(plugin.timerFile.baseName ~ " may be malformed.");
+        throw new IRCPluginInitialisationException(
+            "Timer file is malformed",
+            plugin.name,
+            plugin.timerFile,
+            __FILE__,
+            __LINE__);
     }
 
     // Let other Exceptions pass.

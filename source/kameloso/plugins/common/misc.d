@@ -249,11 +249,33 @@ final class IRCPluginSettingsException : Exception
 /++
     Exception thrown when an IRC plugin failed to initialise itself or its resources.
 
-    A normal [object.Exception|Exception], which only differs in the sense that
-    we can deduce what went wrong by its type.
+    A normal [object.Exception|Exception], with a plugin name and optionally the
+    name of a malformed resource file embedded.
  +/
 final class IRCPluginInitialisationException : Exception
 {
+    /// Name of throwing plugin.
+    string pluginName;
+
+    /// Optional name of a malformed file.
+    string malformedFilename;
+
+    /++
+        Constructs an [IRCPluginInitialisationException], embedding a plugin name
+        and the optional name of a malformed resource file.
+     +/
+    this(const string message,
+        const string pluginName,
+        const string malformedFilename,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        this.pluginName = pluginName;
+        this.malformedFilename = malformedFilename;
+        super(message, file, line, nextInChain);
+    }
+
     /// Wraps normal Exception constructors.
     this(const string message,
         const string file = __FILE__,

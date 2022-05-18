@@ -798,7 +798,12 @@ void initResources(OnelinersPlugin plugin)
         import kameloso.plugins.common.misc : IRCPluginInitialisationException;
 
         version(PrintStacktraces) logger.trace(e);
-        throw new IRCPluginInitialisationException(plugin.onelinerFile.baseName ~ " may be malformed.");
+        throw new IRCPluginInitialisationException(
+            "Oneliner file is malformed",
+            plugin.name,
+            plugin.onelinerFile,
+            __FILE__,
+            __LINE__);
     }
 
     // Let other Exceptions pass.
