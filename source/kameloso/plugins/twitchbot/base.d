@@ -1918,6 +1918,9 @@ package:
 
             /// How many users visited the channel during the last stream.
             size_t numViewersLastStream;
+
+            /// Hashmap of active viewers (who have shown activity).
+            bool[string] activeViewers;
         }
 
         /// Constructor taking a string (channel) name.
