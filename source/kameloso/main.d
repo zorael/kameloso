@@ -2791,6 +2791,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         }
 
         import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+        import kameloso.common : pluginNameOfFilename, pluginFileBaseName;
         import std.path : baseName;
 
         // Ensure initialised resources after resolve so we know we have a
@@ -2810,7 +2811,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                     pattern.expandTags(LogLevel.warning),
                     e.pluginName,
                     e.malformedFilename,
-                    e.file.baseName,
+                    e.file.pluginFileBaseName,
                     e.line,
                     bell);
             }
@@ -2822,7 +2823,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                     pattern.expandTags(LogLevel.warning),
                     e.pluginName,
                     e.msg,
-                    e.file.baseName,
+                    e.file.pluginFileBaseName,
                     e.line,
                     bell);
             }
@@ -2835,8 +2836,14 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         {
             enum pattern = "An unexpected error occurred while initialising the <l>%s</> " ~
                 "plugin's resources: <l>%s</> (at <l>%s</>:<l>%d</>)%s";
-            logger.warningf(pattern.expandTags(LogLevel.warning), e.file.baseName[0..$-2],
-                e.msg, e.file, e.line, bell);
+            logger.warningf(
+                pattern.expandTags(LogLevel.warning),
+                e.file.pluginNameOfFilename,
+                e.msg,
+                e.file.pluginFileBaseName,
+                e.line,
+                bell);
+
             version(PrintStacktraces) logger.trace(e);
             attempt.retval = ShellReturnValue.pluginResourceLoadException;
             break outerloop;
@@ -2862,7 +2869,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                     pattern.expandTags(LogLevel.warning),
                     e.pluginName,
                     e.malformedFilename,
-                    e.file.baseName,
+                    e.file.pluginFileBaseName,
                     e.line,
                     bell);
             }
@@ -2874,7 +2881,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                     pattern.expandTags(LogLevel.warning),
                     e.pluginName,
                     e.msg,
-                    e.file.baseName,
+                    e.file.pluginFileBaseName,
                     e.line,
                     bell);
             }
@@ -2887,8 +2894,14 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         {
             enum pattern = "An unexpected error occurred while starting the <l>%s</> plugin: " ~
                 "<l>%s</> (at <l>%s</>:<l>%d</>)%s";
-            logger.warningf(pattern.expandTags(LogLevel.warning), e.file.baseName[0..$-2],
-                e.msg, e.file, e.line, bell);
+            logger.warningf(
+                pattern.expandTags(LogLevel.warning),
+                e.file.pluginNameOfFilename,
+                e.msg,
+                e.file,
+                e.line,
+                bell);
+
             version(PrintStacktraces) logger.trace(e);
             attempt.retval = ShellReturnValue.pluginStartException;
             break outerloop;
