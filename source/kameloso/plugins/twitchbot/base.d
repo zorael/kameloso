@@ -1899,6 +1899,7 @@ final class TwitchBotPlugin : IRCPlugin
 {
 private:
     import kameloso.terminal : TerminalToken;
+    import lu.container : CircularBuffer;
     import std.concurrency : Tid;
     import core.time : hours, seconds;
 
@@ -1959,6 +1960,12 @@ package:
 
         /// Unix timestamp of when [follows] was last cached.
         long followsLastCached;
+
+        /// How many messages to keep in memory, to allow for nuking.
+        enum messageMemory = 64;
+
+        /// The last n messages sent in the channel, used by `nuke`.
+        CircularBuffer!(IRCEvent, No.dynamic, messageMemory) lastNMessages;
     }
 
     /// All Twitch Bot plugin settings.
