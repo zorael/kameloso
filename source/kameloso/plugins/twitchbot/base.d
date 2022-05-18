@@ -802,11 +802,25 @@ void onCommandFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             // !followage queries to sneak in.
             // Luckily we're inside a Fiber so we can cache it ourselves.
             room.follows = getFollows(plugin, room.id);
+            room.followsLastCached = event.time;
         }
+
+        enum minimumTimeBetweenRecaches = 30;
 
         if (const thisFollow = idString in room.follows)
         {
             return reportFollowAge(*thisFollow);
+        }
+        else if (event.time > (room.followsLastCached + minimumTimeBetweenRecaches))
+        {
+            // No match, but minimumTimeBetweenRecaches passed since last recache
+            room.follows = getFollows(plugin, room.id);
+            room.followsLastCached = event.time;
+
+            if (const thisFollow = idString in room.follows)
+            {
+                return reportFollowAge(*thisFollow);
+            }
         }
 
         // If we're here there were no matches.
@@ -876,6 +890,7 @@ void onRoomState(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     void cacheFollowsDg()
     {
         room.follows = getFollows(plugin, room.id);
+        room.followsLastCached = event.time;
     }
 
     Fiber cacheFollowsFiber = new Fiber(&twitchTryCatchDg!cacheFollowsDg, BufferSize.fiberStack);
@@ -1588,15 +1603,17 @@ void onMyInfo(TwitchBotPlugin plugin)
     {
         while (true)
         {
+            immutable now = Clock.currTime;
+
             if (plugin.isEnabled)
             {
                 foreach (immutable channelName, room; plugin.rooms)
                 {
                     room.follows = getFollows(plugin, room.id);
+                    room.followsLastCached = now.toUnixTime;
                 }
             }
 
-            immutable now = Clock.currTime;
             delay(plugin, now.nextMidnight-now, Yes.yield);
         }
     }
@@ -1929,6 +1946,9 @@ package:
 
         /// A JSON list of the followers of the channel.
         JSONValue[string] follows;
+
+        /// Unix timestamp of when [follows] was last cached.
+        long followsLastCached;
     }
 
     /// All Twitch Bot plugin settings.
