@@ -2185,19 +2185,22 @@ in (filename.length, "Empty plugin filename passed to `pluginFileBaseName`")
 unittest
 {
     {
-        enum filename = "plugins/oneliners.d";
+        version(Posix) enum filename = "plugins/oneliners.d";
+        else /*version(Windows)*/ enum filename = "plugins\\oneliners.d";
         immutable expected = "oneliners.d";
         immutable actual = pluginFileBaseName(filename);
         assert((expected == actual), actual);
     }
     {
-        enum filename = "plugins/twitch/base.d";
+        version(Posix) enum filename = "plugins/twitch/base.d";
+        else /*version(Windows)*/ enum filename = "plugins\\twitch\\base.d";
         immutable expected = "twitch/base.d";
         immutable actual = pluginFileBaseName(filename);
         assert((expected == actual), actual);
     }
     {
-        enum filename = "counters.d";
+        version(Posix) enum filename = "plugins/counters.d";
+        else /*version(Windows)*/ enum filename = "plugins\\counters.d";
         immutable expected = "counters.d";
         immutable actual = pluginFileBaseName(filename);
         assert((expected == actual), actual);
@@ -2231,19 +2234,22 @@ in (filename.length, "Empty plugin filename passed to `pluginNameOfFilename`")
 unittest
 {
     {
-        enum filename = "plugins/oneliners.d";
+        version(Posix) enum filename = "plugins/oneliners.d";
+        else /*version(Windows)*/ enum filename = "plugins\\oneliners.d";
         immutable expected = "oneliners";
         immutable actual = pluginNameOfFilename(filename);
         assert((expected == actual), actual);
     }
     {
-        enum filename = "plugins/twitch/base.d";
+        version(Posix) enum filename = "plugins/twitch/base.d";
+        else /*version(Windows)*/ enum filename = "plugins\\twitch\\base.d";
         immutable expected = "twitch";
         immutable actual = pluginNameOfFilename(filename);
         assert((expected == actual), actual);
     }
     {
-        enum filename = "counters.d";
+        version(Posix) enum filename = "plugins/counters.d";
+        else /*version(Windows)*/ enum filename = "plugins\\counters.d";
         immutable expected = "counters";
         immutable actual = pluginNameOfFilename(filename);
         assert((expected == actual), actual);
