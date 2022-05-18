@@ -2192,9 +2192,17 @@ unittest
         assert((expected == actual), actual);
     }
     {
-        version(Posix) enum filename = "plugins/twitch/base.d";
-        else /*version(Windows)*/ enum filename = "plugins\\twitch\\base.d";
-        immutable expected = "twitch/base.d";
+        version(Posix)
+        {
+            enum filename = "plugins/twitch/base.d";
+            immutable expected = "twitch/base.d";
+        }
+        else /*version(Windows)*/
+        {
+            enum filename = "plugins\\twitch\\base.d";
+            immutable expected = "twitch\\base.d";
+        }
+
         immutable actual = pluginFileBaseName(filename);
         assert((expected == actual), actual);
     }
