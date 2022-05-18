@@ -13,6 +13,7 @@
  +/
 module kameloso.plugins.twitchbot.base;
 
+
 // TwitchBotSettings
 /++
     All Twitch bot plugin runtime settings.
@@ -1568,7 +1569,7 @@ void onCommandWatchtime(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 )
 void onCAP(TwitchBotPlugin plugin)
 {
-    import kameloso.plugins.twitchbot.keygen;
+    import kameloso.plugins.twitchbot.keygen : generateKey;
     import std.algorithm.searching : endsWith;
 
     if (plugin.twitchBotSettings.keygen &&

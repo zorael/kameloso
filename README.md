@@ -335,7 +335,6 @@ Before allowing *anyone* to trigger any restricted functionality, the bot will q
 
 See [the wiki page on Twitch](https://github.com/zorael/kameloso/wiki/Twitch) for more information.
 
-
 ### Copy paste-friendly concrete setup from scratch
 
 If you're on Windows, you must first [install the **OpenSSL** library](#windows). Run this command to download and launch the installer for it, then opt to install to system directories when asked.
