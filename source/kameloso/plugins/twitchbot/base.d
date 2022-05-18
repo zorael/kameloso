@@ -1037,7 +1037,7 @@ void onCommandShoutout(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 )
 void onCommandVanish(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
-    immutable message = "/timeout " ~ event.sender.nickname ~ " 1";
+    immutable message = ".timeout " ~ event.sender.nickname ~ " 1";
     chan(plugin.state, event.channel, message);
 }
 
