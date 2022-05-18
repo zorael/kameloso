@@ -570,7 +570,7 @@ void onAutomaticStop(TwitchBotPlugin plugin, const ref IRCEvent event)
             viewer time keyed by nickname keyed by channel name.
         cullBelowSeconds = Limit number of seconds under which to cull user entries.
  +/
-void cullBriefViewers( ref long[string][string] viewerTimesByChannel, const uint cullBelowSeconds)
+void cullBriefViewers(ref long[string][string] viewerTimesByChannel, const uint cullBelowSeconds)
 {
     import lu.objmanip : pruneAA;
 
@@ -784,7 +784,6 @@ void onCommandFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
                 immutable message = pattern.format(timeline, datestamp);
                 chan(plugin.state, event.channel, message);
             }
-
         }
 
         // Identity ascertained; look up in cached list
