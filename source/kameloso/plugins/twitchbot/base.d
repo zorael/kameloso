@@ -1100,9 +1100,62 @@ void onCommandRepeat(TwitchBotPlugin plugin, const ref IRCEvent event)
 }
 
 
+// onCommandNuke
+/++
+    Deletes recent messages containing a supplied word or phrase.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("nuke")
+            .policy(PrefixPolicy.prefixed)
+            .description("Deletes recent messages containing a supplied word or phrase.")
+            .addSyntax("$command [word or phrase]")
+    )
+)
+void onCommandNuke(TwitchBotPlugin plugin, const ref IRCEvent event)
+{
+    import std.uni : toLower;
+
+    auto room = event.channel in plugin.rooms;
+    assert(room, "Tried to nuke a word in a nonexistent room");
+
+    if (!event.content.length)
+    {
+        import std.format : format;
+
+        enum pattern = "Usage: %s%s [word or phrase]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+        return;
+    }
+
+    immutable phraseToLower = event.content.toLower;
+
+    foreach (immutable storedEvent; room.lastNMessages)
+    {
+        import std.algorithm.searching : canFind;
+        import std.uni : asLowerCase;
+
+        if (!storedEvent.content.length) continue;
+        else if (storedEvent.sender.class_ >= IRCUser.Class.operator) continue;
+
+        if (storedEvent.content.asLowerCase.canFind(phraseToLower))
+        {
+            import std.conv : text;
+            chan(plugin.state, event.channel, text(".delete ", storedEvent.id));
+        }
+    }
+}
+
+
 // onAnyMessage
 /++
     Bells on any message, if the [TwitchBotSettings.bellOnMessage] setting is set.
+    Also counts emotes for `ecount` and records active viewers.
 
     Belling is useful with small audiences, so you don't miss messages.
  +/
@@ -1166,6 +1219,8 @@ void onAnyMessage(TwitchBotPlugin plugin, const ref IRCEvent event)
         {
             room.broadcast.activeViewers[event.sender.nickname] = true;
         }
+
+        room.lastNMessages.put(event);
     }
 }
 
