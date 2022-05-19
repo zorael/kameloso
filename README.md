@@ -269,9 +269,9 @@ MrOffline joined #channel
  kameloso | Line added to timer mytimer.
       you | !timer add mytimer It is sent after 100 messages have been seen and 600 seconds have passed
  kameloso | Line added to timer mytimer.
-<time passes, messages get sent>
+(...time passes, messages get sent...)
  kameloso | This is an announcement on a timer
-<time passes, messages get sent>
+(...time passes, messages get sent...)
  kameloso | It is sent after 100 messages have been seen and 600 seconds have passed
 
       you | !poll
@@ -290,7 +290,7 @@ MrOffline joined #channel
       you | https://youtu.be/ykj3Kpm3O0g
  kameloso | [youtube.com] Uti Vår Hage - Kamelåså (HD) (uploaded by Prebstaroni)
 
-<context: playing a video game>
+(context: playing a video game)
       you | !counter
  kameloso | Usage: !counter [add|del|list] [counter word]
       you | !counter add deaths
@@ -415,6 +415,7 @@ Assuming a prefix of `!`, commands to test are:
 * `!repeat`
 * `!ecount`
 * `!watchtime`
+* `!nuke`
 
 ...alongside `!oneliner`, `!counter`, `!timer`, `!poll`, `!stopwatch`, and other non-Twitch-specific commands. Try `!help` or [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins).
 
