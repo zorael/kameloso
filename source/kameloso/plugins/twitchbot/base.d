@@ -1118,6 +1118,7 @@ void onCommandRepeat(TwitchBotPlugin plugin, const ref IRCEvent event)
 )
 void onCommandNuke(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
+    import std.conv : text;
     import std.uni : toLower;
 
     auto room = event.channel in plugin.rooms;
@@ -1145,10 +1146,12 @@ void onCommandNuke(TwitchBotPlugin plugin, const ref IRCEvent event)
 
         if (storedEvent.content.asLowerCase.canFind(phraseToLower))
         {
-            import std.conv : text;
             chan(plugin.state, event.channel, text(".delete ", storedEvent.id));
         }
     }
+
+    // Also nuke the nuking message in case there were spoilers in it
+    chan(plugin.state, event.channel, text(".delete ", event.id));
 }
 
 
