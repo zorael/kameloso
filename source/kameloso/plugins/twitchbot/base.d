@@ -290,7 +290,7 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     import core.thread : Fiber;
 
     auto room = event.channel in plugin.rooms;
-    assert(room, "Tried to start a broadcast on a nonexistent room");
+    assert(room, "Tried to start a broadcast in a nonexistent room");
 
     void sendUsage()
     {
@@ -530,7 +530,7 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 void onCommandStop(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     auto room = event.channel in plugin.rooms;
-    assert(room, "Tried to stop a broadcast on a nonexistent room");
+    assert(room, "Tried to stop a broadcast in a nonexistent room");
 
     if (!room.broadcast.active)
     {
