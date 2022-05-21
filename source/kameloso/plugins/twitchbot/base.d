@@ -375,7 +375,7 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     {
         uint addedSinceLastRehash;
 
-        while (room.broadcast.active)
+        while (room.broadcast.active && plugin.useAPIFeatures)
         {
             import kameloso.plugins.common.delayawait : delay;
             import std.json : JSONType;
@@ -920,6 +920,8 @@ void onCommandShoutout(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     import lu.string : SplitResults, beginsWith, splitInto, stripped;
     import std.format : format;
     import std.json : JSONType, parseJSON;
+
+    if (!plugin.useAPIFeatures) return;
 
     void sendUsage()
     {
@@ -1515,7 +1517,8 @@ void onCommandWatchtime(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     import core.thread : Fiber;
     import core.time : Duration, seconds;
 
-    if (!plugin.twitchBotSettings.watchtime) return;
+    if (!plugin.useAPIFeatures) return;
+    else if (!plugin.twitchBotSettings.watchtime) return;
 
     void watchtimeDg()
     {
@@ -1667,7 +1670,7 @@ void onMyInfo(TwitchBotPlugin plugin)
         {
             immutable now = Clock.currTime;
 
-            if (plugin.isEnabled)
+            if (plugin.isEnabled && plugin.useAPIFeatures)
             {
                 foreach (immutable channelName, room; plugin.rooms)
                 {
