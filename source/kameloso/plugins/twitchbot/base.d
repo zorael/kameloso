@@ -1121,19 +1121,17 @@ void onCommandNuke(TwitchBotPlugin plugin, const ref IRCEvent event)
     import std.conv : text;
     import std.uni : toLower;
 
-    auto room = event.channel in plugin.rooms;
-    assert(room, "Tried to nuke a word in a nonexistent room");
-
     if (!event.content.length)
     {
         import std.format : format;
-
         enum pattern = "Usage: %s%s [word or phrase]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
         chan(plugin.state, event.channel, message);
         return;
     }
 
+    auto room = event.channel in plugin.rooms;
+    assert(room, "Tried to nuke a word in a nonexistent room");
     immutable phraseToLower = event.content.toLower;
 
     foreach (immutable storedEvent; room.lastNMessages)
@@ -1141,8 +1139,8 @@ void onCommandNuke(TwitchBotPlugin plugin, const ref IRCEvent event)
         import std.algorithm.searching : canFind;
         import std.uni : asLowerCase;
 
-        if (!storedEvent.content.length) continue;
-        else if (storedEvent.sender.class_ >= IRCUser.Class.operator) continue;
+        if (storedEvent.sender.class_ >= IRCUser.Class.operator) continue;
+        else if (!storedEvent.content.length) continue;
 
         if (storedEvent.content.asLowerCase.canFind(phraseToLower))
         {
