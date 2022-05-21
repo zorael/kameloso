@@ -1179,6 +1179,12 @@ void onAnyMessage(TwitchBotPlugin plugin, const ref IRCEvent event)
         stdout.flush();
     }
 
+    if (event.type == IRCEvent.Type.QUERY)
+    {
+        // Ignore queries for the rest of this function
+        return;
+    }
+
     // ecount!
     if (plugin.twitchBotSettings.ecount && event.emotes.length)
     {
