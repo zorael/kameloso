@@ -1164,25 +1164,32 @@ void onCommandNuke(TwitchBotPlugin plugin, const ref IRCEvent event)
 
 // onCommandSongRequest
 /++
-    FIXME
+    Implements `!songrequest`, allowing viewers to request songs (actually
+    YouTube videos) to be added to the streamer's playlist.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .permissionsRequired(Permissions.anyone)
+    .permissionsRequired(Permissions.whitelist)
     .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("songrequest")
+            .policy(PrefixPolicy.prefixed)
+            .description("Requests a song.")
+            .addSyntax("$command [YouTube link or video ID]")
+    )
     .addCommand(
         IRCEventHandler.Command()
             .word("sr")
             .policy(PrefixPolicy.prefixed)
-            .description("Requests a song.")
-            .addSyntax("$command [YouTube link or video ID]")
+            .hidden(true)
     )
 )
 void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.constants : KamelosoInfo, Timeout;
     import arsd.http2 : HttpClient, HttpVerb, Uri;
-    import lu.string : contains, nom;
+    import lu.string : contains, nom, stripped;
     import std.format : format;
     import std.stdio;
     import core.time : seconds;
@@ -1216,7 +1223,7 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
     // youtu.be/jW1KXvCg5bY?t=123
     // jW1KXvCg5bY
 
-    string slice = event.content;  // mutable
+    string slice = event.content.stripped;  // mutable
     string videoID;
 
     if (slice.contains("youtube.com/watch?v="))
@@ -1236,16 +1243,23 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
     else
     {
         logger.warning("Malformed video ID?");
-        videoID = slice;
+        return;
     }
 
-    immutable json = addVideoToYouTubePlaylist(*creds, videoID);
-    immutable title = json["snippet"]["title"].str;
-    //immutable position = json["snippet"]["position"].integer;
+    try
+    {
+        immutable json = addVideoToYouTubePlaylist(*creds, videoID);
+        immutable title = json["snippet"]["title"].str;
+        //immutable position = json["snippet"]["position"].integer;
 
-    enum pattern = `"%s" added to playlist.`;
-    immutable message = pattern.format(title);
-    chan(plugin.state, event.channel, message);
+        enum pattern = `"%s" added to playlist.`;
+        immutable message = pattern.format(title);
+        chan(plugin.state, event.channel, message);
+    }
+    catch (Exception e)
+    {
+        chan(plugin.state, event.channel, e.msg);
+    }
 }
 
 
