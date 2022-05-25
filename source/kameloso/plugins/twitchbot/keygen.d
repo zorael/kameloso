@@ -217,7 +217,12 @@ instructions and log in to authorise the use of this program with your account.
             return;
         }
 
-        if (!readURL.contains("access_token="))
+        if (readURL.length == 30)
+        {
+            // As is
+            key = readURL;
+        }
+        else if (!readURL.contains("access_token="))
         {
             import lu.string : beginsWith;
 
