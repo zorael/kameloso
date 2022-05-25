@@ -96,6 +96,7 @@ version(WithTwitchBotPlugin):
 private:
 
 import kameloso.plugins.twitchbot.api;
+import kameloso.plugins.twitchbot.google;
 
 import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
 import kameloso.common : expandTags, logger;
@@ -1155,6 +1156,93 @@ void onCommandNuke(TwitchBotPlugin plugin, const ref IRCEvent event)
 }
 
 
+// onCommandSongRequest
+/++
+    FIXME
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.anyone)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("sr")
+            .policy(PrefixPolicy.prefixed)
+            .description("Requests a song.")
+            .addSyntax("$command [YouTube link or video ID]")
+    )
+)
+void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
+{
+    import kameloso.constants : KamelosoInfo, Timeout;
+    import arsd.http2 : HttpClient, HttpVerb, Uri;
+    import lu.string : contains, nom;
+    import std.format : format;
+    import std.stdio;
+    import core.time : seconds;
+
+    // FIXME: insert soft permissions check
+
+    if (!event.content.length ||
+        event.content.contains(' ') ||
+        (!event.content.contains("youtube.com/") &&
+        !event.content.contains("youtu.be/")))
+    {
+        enum pattern = "Usage: %s%s [YouTube link or video ID]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+        return;
+    }
+
+    auto creds = event.channel in plugin.googleSecretsByChannel;
+
+    if (!creds)
+    {
+        enum message = "Missing Google API credentials.";
+        chan(plugin.state, event.channel, message);
+        return;
+    }
+
+    // Patterns:
+    // https://www.youtube.com/watch?v=jW1KXvCg5bY&t=123
+    // www.youtube.com/watch?v=jW1KXvCg5bY&t=123
+    // https://youtu.be/jW1KXvCg5bY?t=123
+    // youtu.be/jW1KXvCg5bY?t=123
+    // jW1KXvCg5bY
+
+    string slice = event.content;  // mutable
+    string videoID;
+
+    if (slice.contains("youtube.com/watch?v="))
+    {
+        slice.nom("youtube.com/watch?v=");
+        videoID = slice.nom!(Yes.inherit)('&');
+    }
+    else if (slice.contains("youtu.be/"))
+    {
+        slice.nom("youtu.be/");
+        videoID = slice.nom!(Yes.inherit)('?');
+    }
+    else if (!slice.contains(' '))
+    {
+        videoID = slice;
+    }
+    else
+    {
+        logger.warning("Malformed video ID?");
+        videoID = slice;
+    }
+
+    immutable json = addVideoToYouTubePlaylist(*creds, videoID);
+    immutable title = json["snippet"]["title"].str;
+    //immutable position = json["snippet"]["position"].integer;
+
+    enum pattern = `"%s" added to playlist.`;
+    immutable message = pattern.format(title);
+    chan(plugin.state, event.channel, message);
+}
+
+
 // onAnyMessage
 /++
     Bells on any message, if the [TwitchBotSettings.bellOnMessage] setting is set.
@@ -1863,6 +1951,7 @@ void initResources(TwitchBotPlugin plugin)
 
     JSONStorage ecountJSON;
     JSONStorage viewersJSON;
+    JSONStorage secretsJSON;
 
     try
     {
@@ -1898,10 +1987,28 @@ void initResources(TwitchBotPlugin plugin)
             __LINE__);
     }
 
+    try
+    {
+        secretsJSON.load(plugin.secretsFile);
+    }
+    catch (JSONException e)
+    {
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+
+        version(PrintStacktraces) logger.trace(e);
+        throw new IRCPluginInitialisationException(
+            "Secrets file is malformed",
+            plugin.name,
+            plugin.secretsFile,
+            __FILE__,
+            __LINE__);
+    }
+
     // Let other Exceptions pass.
 
     ecountJSON.save(plugin.ecountFile);
     viewersJSON.save(plugin.viewersFile);
+    secretsJSON.save(plugin.secretsFile);
 }
 
 
@@ -1925,6 +2032,30 @@ void saveResourceToDisk(const long[string][string] aa, const string filename)
 }
 
 
+// saveSecretsToDisk
+/++
+    FIXME
+ +/
+package void saveSecretsToDisk(const GoogleCredentials[string] aa, const string filename)
+{
+    import std.json : JSONValue;
+    import std.stdio : File, writeln;
+
+    JSONValue json;
+    json = null;
+    json.object = null;
+
+    foreach (immutable channelName, creds; aa)
+    {
+        json[channelName] = null;
+        json[channelName].object = null;
+        json[channelName] = creds.toJSON();
+    }
+
+    File(filename, "w").writeln(json.toPrettyString);
+}
+
+
 // reload
 /++
     Reloads the plugin, loading emote counters from disk.
@@ -1944,6 +2075,17 @@ void reload(TwitchBotPlugin plugin)
     plugin.viewerTimesByChannel.clear();
     plugin.viewerTimesByChannel.populateFromJSON(viewersJSON);
     plugin.viewerTimesByChannel = plugin.viewerTimesByChannel.rehash();
+
+    JSONStorage secretsJSON;
+    secretsJSON.load(plugin.secretsFile);
+    plugin.googleSecretsByChannel.clear();
+
+    foreach (immutable channelName, credsJSON; secretsJSON.storage.object)
+    {
+        plugin.googleSecretsByChannel[channelName] = GoogleCredentials.fromJSON(credsJSON);
+    }
+
+    plugin.googleSecretsByChannel = plugin.googleSecretsByChannel.rehash();
 }
 
 
@@ -2106,6 +2248,9 @@ package:
     /// Associative array of viewer times; seconds keyed by nickname keyed by channel.
     long[string][string] viewerTimesByChannel;
 
+    /// Google API keys and tokens, keyed by channel.
+    GoogleCredentials[string] googleSecretsByChannel;
+
     /// The thread ID of the persistent worker thread.
     Tid persistentWorkerTid;
 
@@ -2120,6 +2265,9 @@ package:
 
     /// File to save viewer times to.
     @Resource viewersFile = "twitch-viewers.json";
+
+    /// File to save API keys and tokens to.
+    @Resource secretsFile = "twitch-secrets.json";
 
     /// Emote counters associative array; counter longs keyed by emote ID string keyed by channel.
     long[string][string] ecount;

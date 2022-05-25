@@ -140,8 +140,9 @@ instructions and log in to authorise the use of this program with your account.
 
     import std.array : join;
 
-    enum authNode = "https://id.twitch.tv/oauth2/authorize?response_type=token";
+    enum authNode = "https://id.twitch.tv/oauth2/authorize";
     enum ctBaseURL = authNode ~
+        "?response_type=token" ~
         "&client_id=" ~ TwitchBotPlugin.clientID ~
         "&redirect_uri=http://localhost" ~
         "&scope=" ~ scopes.join('+') ~
