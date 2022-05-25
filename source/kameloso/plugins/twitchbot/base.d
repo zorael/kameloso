@@ -1745,11 +1745,27 @@ void onCAP(TwitchBotPlugin plugin)
     import kameloso.plugins.twitchbot.keygen : generateKey;
     import std.algorithm.searching : endsWith;
 
-    if (plugin.twitchBotSettings.keygen &&
-        (plugin.state.server.daemon == IRCServer.Daemon.unset) &&
+    if ((plugin.state.server.daemon == IRCServer.Daemon.unset) &&
         plugin.state.server.address.endsWith(".twitch.tv"))
     {
-        return plugin.generateKey();
+        if (plugin.twitchBotSettings.keygen)
+        {
+            plugin.generateKey();
+        }
+
+        if (*plugin.state.abort) return;
+
+        if (plugin.twitchBotSettings.googleKeygen.length)
+        {
+            if (plugin.twitchBotSettings.googleKeygen[0] != '#')
+            {
+                enum message = "You must pass a channel as value to <l>--set twitch.googleKeygen</>.";
+                logger.error(message.expandTags(LogLevel.error));
+                return;
+            }
+
+            plugin.generateGoogleCode(plugin.twitchBotSettings.googleKeygen);
+        }
     }
 }
 
