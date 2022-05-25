@@ -85,6 +85,12 @@ public:
             authorisation key. Should not be permanently set in the configuration file!
          +/
         bool keygen = false;
+
+        /++
+            Whether or not to start a captive session for generating Google
+            authorisation codes and tokens. The value should be a channel name.
+         +/
+        string googleKeygen;
     }
 }
 
