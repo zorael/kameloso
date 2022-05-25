@@ -82,7 +82,7 @@ public:
 
         /++
             Whether or not to start a captive session for generating a Twitch
-            authorisation key. Should not be permanently set in the configuration file!
+            authorisation key.
          +/
         bool keygen = false;
 

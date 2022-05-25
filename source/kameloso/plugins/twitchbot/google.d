@@ -1,5 +1,9 @@
 /++
     Bits and bobs to get Google API credentials for YouTube playlist management.
+
+    See_Also:
+        [kameloso.plugins.twitchbot.base|twitchbot.base]
+        [kameloso.plugins.twitchbot.api|twitchbot.api]
  +/
 module kameloso.plugins.twitchbot.google;
 
@@ -24,6 +28,9 @@ package:
 /++
     Credentials needed to access the Google Cloud API; specifically, to manage a
     YouTube playlist.
+
+    See_Also:
+        https://console.cloud.google.com/apis/credentials
  +/
 struct GoogleCredentials
 {
@@ -58,7 +65,7 @@ struct GoogleCredentials
     string playlistID;
 
     /++
-        Serialises a [GoogleCredentials] into JSON.
+        Serialises these [GoogleCredentials] into JSON.
 
         Returns:
             `this` represented in JSON.
@@ -66,6 +73,8 @@ struct GoogleCredentials
     JSONValue toJSON() const
     {
         JSONValue json;
+        json = null;
+        json.object = null;
 
         json["secret"] = this.secret;
         json["code"] = this.code;
@@ -85,7 +94,6 @@ struct GoogleCredentials
     static auto fromJSON(const JSONValue json)
     {
         GoogleCredentials creds;
-
         creds.secret = json["secret"].str;
         creds.code = json["code"].str;
         creds.accessToken = json["accessToken"].str;
@@ -119,11 +127,12 @@ void generateGoogleCode(TwitchBotPlugin plugin, const string channel)
         import kameloso.messaging : quit;
         import std.typecons : Flag, No, Yes;
 
+        if (plugin.state.settings.flush) stdout.flush();
         quit!(Yes.priority)(plugin.state, string.init, Yes.quiet);
     }
 
     logger.trace();
-    logger.info("-- Google authorization code generation mode --");
+    logger.info("-- Google authorisation code generation mode --");
     enum message =
 "To access the Google API you need a <i>client ID</> and a <i>client secret</>.
 
@@ -178,7 +187,7 @@ A normal URL to any playlist you can modify will work fine.
 
 Follow the instructions and log in to authorise the use of this program with your account.
 
-<l>Then paste the address of the page you are redirected to afterwards here.</>
+<l>Then paste the address of the empty page you are redirected to afterwards here.</>
 
 * The redirected address should start with <i>http://localhost</>.
 * It will probably say "<l>this site can't be reached</>" or "<l>unable to connect</>".
