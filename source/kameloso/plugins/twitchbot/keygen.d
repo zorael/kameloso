@@ -255,36 +255,11 @@ instructions and log in to authorise the use of this program with your account.
         }
     }
 
+    import std.concurrency : prioritySend;
+
     plugin.state.bot.pass = key;
     plugin.state.updates |= typeof(plugin.state.updates).bot;
-
-    enum keyPattern = "
-<l>Your private authorisation key is: <i>%s</>
-It should be entered as <i>pass</> under <i>[IRCBot]</>.
-";
-    writefln(keyPattern.expandTags(LogLevel.off), key);
-
-    if (!plugin.state.settings.saveOnExit)
-    {
-        write("Do you want to save it there now? [Y/*]: ");
-        stdout.flush();
-
-        stdin.flush();
-        immutable input = readln().stripped;
-        if (*plugin.state.abort) return;
-
-        if (!input.length || (input == "y") || (input == "Y"))
-        {
-            import std.concurrency : prioritySend;
-            plugin.state.mainThread.prioritySend(ThreadMessage.save());
-        }
-        else
-        {
-            enum keyAddPattern = "\n* Make sure to add it to <i>%s</>, then.";
-            writefln(keyAddPattern.expandTags(LogLevel.off), plugin.state.settings.configFile);
-            if (plugin.state.settings.flush) stdout.flush();
-        }
-    }
+    plugin.state.mainThread.prioritySend(ThreadMessage.save());
 
     enum issuePattern = "
 --------------------------------------------------------------------------------
