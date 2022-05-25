@@ -178,60 +178,8 @@ instructions and log in to authorise the use of this program with your account.
     {
         try
         {
-            version(Posix)
-            {
-                import std.process : environment, spawnProcess;
-
-                version(OSX)
-                {
-                    enum open = "open";
-                }
-                else
-                {
-                    // Assume XDG
-                    enum open = "xdg-open";
-                }
-
-                immutable browserExecutable = environment.get("BROWSER", open);
-                string[2] browserCommand = [ browserExecutable, url ];  // mutable
-                auto devNull = File("/dev/null", "r+");
-
-                try
-                {
-                    browser = spawnProcess(browserCommand[], devNull, devNull, devNull);
-                }
-                catch (ProcessException e)
-                {
-                    if (browserExecutable == open) throw e;
-
-                    browserCommand[0] = open;
-                    browser = spawnProcess(browserCommand[], devNull, devNull, devNull);
-                }
-            }
-            else version(Windows)
-            {
-                import std.file : tempDir;
-                import std.format : format;
-                import std.path : buildPath;
-                import std.process : spawnProcess;
-
-                enum pattern = "kameloso-twitch-%s.url";
-                immutable urlBasename = pattern.format(plugin.state.client.nickname);
-                immutable urlFileName = buildPath(tempDir, urlBasename);
-
-                {
-                    auto urlFile = File(urlFileName, "w");
-                    urlFile.writeln("[InternetShortcut]\nURL=", url);
-                }
-
-                immutable string[2] browserCommand = [ "explorer", urlFileName ];
-                auto nulFile = File("NUL", "r+");
-                browser = spawnProcess(browserCommand[], nulFile, nulFile, nulFile);
-            }
-            else
-            {
-                static assert(0, "Unsupported platform, please file a bug.");
-            }
+            import kameloso.platform : openInBrowser;
+            openInBrowser(url);
         }
         catch (ProcessException e)
         {
