@@ -90,7 +90,7 @@ public:
             Whether or not to start a captive session for generating Google
             authorisation codes and tokens. The value should be a channel name.
          +/
-        string googleKeygen;
+        bool googleKeygen = false;
     }
 }
 
@@ -1755,16 +1755,9 @@ void onCAP(TwitchBotPlugin plugin)
 
         if (*plugin.state.abort) return;
 
-        if (plugin.twitchBotSettings.googleKeygen.length)
+        if (plugin.twitchBotSettings.googleKeygen)
         {
-            if (plugin.twitchBotSettings.googleKeygen[0] != '#')
-            {
-                enum message = "You must pass a channel as value to <l>--set twitch.googleKeygen</>.";
-                logger.error(message.expandTags(LogLevel.error));
-                return;
-            }
-
-            plugin.generateGoogleCode(plugin.twitchBotSettings.googleKeygen);
+            plugin.generateGoogleCode();
         }
     }
 }

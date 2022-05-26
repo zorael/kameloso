@@ -111,9 +111,8 @@ struct GoogleCredentials
 
     Params:
         plugin = The current [TwitchBotPlugin].
-        channel = String name of the channel this code relates to.
  +/
-void generateGoogleCode(TwitchBotPlugin plugin, const string channel)
+void generateGoogleCode(TwitchBotPlugin plugin)
 {
     import kameloso.logger : LogLevel;
     import kameloso.thread : ThreadMessage;
