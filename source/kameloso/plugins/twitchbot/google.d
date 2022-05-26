@@ -135,26 +135,32 @@ void generateGoogleCode(TwitchBotPlugin plugin)
     enum message =
 "To access the Google API you need a <i>client ID</> and a <i>client secret</>.
 
-<l>Go here to create a project and generate these credentials:</>
+<l>Go here to create a project and generate said credentials:</>
 
     <i>https://console.cloud.google.com/apis/credentials</>
 
-Additionally you need a <i>YouTube playlist ID</> for song requests to work.
+You also need to supply a channel for which it all relates.
+(Channels are Twitch lowercase account names, prepended with a '<i>#</>' sign.)
+
+Lastly you need a <i>YouTube playlist ID</> for song requests to work.
 A normal URL to any playlist you can modify will work fine.
 ";
     writeln(message.expandTags(LogLevel.off));
 
     GoogleCredentials creds;
 
-    creds.clientID = readNamedString("OAuth client ID", 72L, *plugin.state.abort);
+    immutable channel = readNamedString("Enter your", "#channel", 0L, *plugin.state.abort);
     if (*plugin.state.abort) return;
 
-    creds.secret = readNamedString("OAuth client secret", 35L, *plugin.state.abort);
+    creds.clientID = readNamedString("Copy and paste your", "OAuth client ID", 72L, *plugin.state.abort);
+    if (*plugin.state.abort) return;
+
+    creds.secret = readNamedString("Copy and paste your", "OAuth client secret", 35L, *plugin.state.abort);
     if (*plugin.state.abort) return;
 
     while (!creds.playlistID.length)
     {
-        immutable playlistURL = readNamedString("YouTube playlist URL", 0L, *plugin.state.abort);  // mutable
+        immutable playlistURL = readNamedString("Copy and paste your", "YouTube playlist URL", 0L, *plugin.state.abort);
         if (*plugin.state.abort) return;
 
         if (playlistURL.length == 34L)
@@ -546,6 +552,7 @@ void refreshGoogleToken(HttpClient client, ref GoogleCredentials creds)
     Prompts the user to enter a string.
 
     Params:
+        wording = Wording to use with `name`.
         name = What to call the string to input in the prompt.
         expectedLength = Optional expected length of the input string.
             A value of `0` disables checks.
@@ -554,7 +561,11 @@ void refreshGoogleToken(HttpClient client, ref GoogleCredentials creds)
     Returns:
         A string read from standard in, stripped.
  +/
-string readNamedString(const string name, const size_t expectedLength, ref bool abort)
+private string readNamedString(
+    const string wording,
+    const string name,
+    const size_t expectedLength,
+    ref bool abort)
 {
     import lu.string : stripped;
     import std.stdio : readln, stdin, stdout, writef, writeln;
@@ -565,8 +576,8 @@ string readNamedString(const string name, const size_t expectedLength, ref bool 
     {
         scope(exit) stdout.flush();
 
-        enum pattern = "<l>Copy and paste your <i>%s<l>:</> ";
-        writef(pattern.expandTags(LogLevel.off), name);
+        enum pattern = "<l>%s <i>%s<l>:</> ";
+        writef(pattern.expandTags(LogLevel.off), wording, name);
         stdout.flush();
 
         stdin.flush();
