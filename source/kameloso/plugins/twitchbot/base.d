@@ -135,11 +135,6 @@ package struct Credentials
     string googleClientSecret;
 
     /++
-        Google API authorisation code.
-     +/
-    string googleCode;
-
-    /++
         Google API OAuth access token.
      +/
     string googleAccessToken;
@@ -168,7 +163,6 @@ package struct Credentials
 
         json["googleClientID"] = this.googleClientID;
         json["googleClientSecret"] = this.googleClientSecret;
-        json["googleCode"] = this.googleCode;
         json["googleAccessToken"] = this.googleAccessToken;
         json["googleRefreshToken"] = this.googleRefreshToken;
         json["youtubePlaylistID"] = this.youtubePlaylistID;
@@ -187,7 +181,6 @@ package struct Credentials
         typeof(this) creds;
         creds.googleClientID = json["googleClientID"].str;
         creds.googleClientSecret = json["googleClientSecret"].str;
-        creds.googleCode = json["googleCode"].str;
         creds.googleAccessToken = json["googleAccessToken"].str;
         creds.googleRefreshToken = json["googleRefreshToken"].str;
         creds.youtubePlaylistID = json["youtubePlaylistID"].str;

@@ -169,7 +169,9 @@ Follow the instructions and log in to authorise the use of this program with you
         }
     }
 
-    while (!creds.googleCode.length)
+    string code;
+
+    while (!code.length)
     {
         scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
@@ -179,9 +181,9 @@ Follow the instructions and log in to authorise the use of this program with you
         stdout.flush();
 
         stdin.flush();
-        creds.googleCode = readln().stripped;
+        immutable readCode = readln().stripped;
 
-        if (*plugin.state.abort || !creds.googleCode.length)
+        if (*plugin.state.abort || !readCode.length)
         {
             writeln();
             logger.warning("Aborting.");
@@ -189,13 +191,13 @@ Follow the instructions and log in to authorise the use of this program with you
             return;
         }
 
-        if (!creds.googleCode.contains("code="))
+        if (!readCode.contains("code="))
         {
             import lu.string : beginsWith;
 
             writeln();
 
-            if (creds.googleCode.beginsWith(authNode))
+            if (readCode.beginsWith(authNode))
             {
                 enum wrongPagePattern = "Not that page; the empty page you're " ~
                     "lead to after clicking <l>Allow</>.";
@@ -207,26 +209,25 @@ Follow the instructions and log in to authorise the use of this program with you
             }
 
             writeln();
-            creds.googleCode = string.init;
             continue;
         }
 
-        string slice = creds.googleCode;  // mutable
+        string slice = readCode;  // mutable
         slice.nom("?code=");
-        creds.googleCode = slice.nom!(Yes.inherit)('&');
+        code = slice.nom!(Yes.inherit)('&');
 
-        if (creds.googleCode.length != 73L)
+        if (code.length != 73L)
         {
             writeln();
             logger.error("Invalid code length. Try copying again or file a bug.");
             writeln();
-            creds.googleCode = string.init;  // reset it so the while loop repeats
+            code = string.init;  // reset it so the while loop repeats
         }
     }
 
     // All done, fetch
     auto client = getHTTPClient();
-    getGoogleToken(client, creds);
+    getGoogleTokens(client, creds, code);
 
     if (auto storedCreds = channel in plugin.secretsByChannel)
     {
@@ -388,26 +389,22 @@ package JSONValue addVideoToYouTubePlaylist(
 }
 
 
-// getGoogleToken
+// getGoogleTokens
 /++
-    Request an OAuth API token from Google.
+    Request OAuth API tokens from Google.
 
     Params:
         client = [arsd.http2.HttpClient|HttpClient] to use.
         creds = Credentials aggregate.
+        code = Google authorization code.
  +/
-void getGoogleToken(HttpClient client, ref Credentials creds)
+void getGoogleTokens(HttpClient client, ref Credentials creds, const string code)
 {
     import arsd.http2 : HttpVerb, Uri;
     import std.format : format;
     import std.json : JSONType, parseJSON;
     import std.stdio : writeln;
     import std.string : indexOf;
-
-    if (!creds.googleCode.length || !creds.googleClientSecret.length)
-    {
-        throw new Exception("Missing Google API code or client secret");
-    }
 
     enum pattern = "https://oauth2.googleapis.com/token" ~
         "?client_id=%s" ~
@@ -416,7 +413,7 @@ void getGoogleToken(HttpClient client, ref Credentials creds)
         "&grant_type=authorization_code" ~
         "&redirect_uri=http://localhost";
 
-    immutable url = pattern.format(creds.googleClientID, creds.googleClientSecret, creds.googleCode);
+    immutable url = pattern.format(creds.googleClientID, creds.googleClientSecret, code);
     enum data = cast(ubyte[])"{}";
 
     auto req = client.request(Uri(url), HttpVerb.POST, data);
