@@ -308,13 +308,12 @@ package JSONValue addVideoToYouTubePlaylist(
 
     if (!creds.youtubePlaylistID.length)
     {
-        throw new Exception("Missing YouTube playlist ID.");
+        throw new Exception("Missing YouTube playlist ID");
     }
 
     if (!creds.googleAccessToken.length)
     {
-        logger.info("Requesting Google authorisation code.");
-        getGoogleToken(client, creds);
+        throw new Exception("Missing Google access token");
     }
 
     if (!client.authorization.length) client.authorization = "Bearer " ~ creds.googleAccessToken;
