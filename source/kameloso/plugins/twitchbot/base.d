@@ -44,6 +44,16 @@ public:
     bool watchtime = true;
 
     /++
+        Whether or not to enable taking song requests.
+     +/
+    bool songRequests = true;
+
+    /++
+        What level of user permissions are needed to issue song requests.
+     +/
+    IRCUser.Class songrequestPermsNeeded = IRCUser.Class.whitelist;
+
+    /++
         Whether or not broadcasters are always implicitly class
         [dialect.defs.IRCUser.Class.staff|IRCUser.Class.staff].
      +/
@@ -1268,7 +1278,12 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
     import std.stdio;
     import core.time : seconds;
 
-    // FIXME: insert soft permissions check
+    if (!plugin.twitchBotSettings.songRequests) return;
+    else if (event.sender.class_ < plugin.twitchBotSettings.songrequestPermsNeeded)
+    {
+        // Issue an error?
+        return;
+    }
 
     if (!event.content.length ||
         event.content.contains(' ') ||
