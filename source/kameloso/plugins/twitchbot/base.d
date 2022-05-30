@@ -1315,76 +1315,147 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
     import std.stdio;
     import core.time : seconds;
 
-    if (!plugin.twitchBotSettings.songRequests) return;
+    if (plugin.twitchBotSettings.songRequestMode == SongRequestMode.disabled) return;
     else if (event.sender.class_ < plugin.twitchBotSettings.songrequestPermsNeeded)
     {
         // Issue an error?
+        logger.error("User does not have the needed permissions to issue song requests.");
         return;
     }
 
-    if (!event.content.length ||
-        event.content.contains(' ') ||
-        (!event.content.contains("youtube.com/") &&
-        !event.content.contains("youtu.be/")))
+    if (plugin.twitchBotSettings.songRequestMode == SongRequestMode.youtube)
     {
-        enum pattern = "Usage: %s%s [YouTube link or video ID]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-        chan(plugin.state, event.channel, message);
-        return;
-    }
+        immutable url = event.content.stripped;
 
-    auto creds = event.channel in plugin.secretsByChannel;
+        if (url.length == 11)
+        {
+            // Probably a video ID
+        }
+        else if (!url.length ||
+            url.contains(' ') ||
+            (!url.contains("youtube.com/") &&
+            !url.contains("youtu.be/")))
+        {
+            enum pattern = "Usage: %s%s [YouTube link or video ID]";
+            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+            chan(plugin.state, event.channel, message);
+            return;
+        }
 
-    if (!creds)
-    {
-        enum message = "Missing Google API credentials.";
-        chan(plugin.state, event.channel, message);
-        return;
-    }
+        auto creds = event.channel in plugin.secretsByChannel;
 
-    // Patterns:
-    // https://www.youtube.com/watch?v=jW1KXvCg5bY&t=123
-    // www.youtube.com/watch?v=jW1KXvCg5bY&t=123
-    // https://youtu.be/jW1KXvCg5bY?t=123
-    // youtu.be/jW1KXvCg5bY?t=123
-    // jW1KXvCg5bY
+        if (!creds || !creds.googleAccessToken.length)
+        {
+            enum message = "Missing Google API credentials.";
+            chan(plugin.state, event.channel, message);
+            return;
+        }
 
-    string slice = event.content.stripped;  // mutable
-    string videoID;
+        // Patterns:
+        // https://www.youtube.com/watch?v=jW1KXvCg5bY&t=123
+        // www.youtube.com/watch?v=jW1KXvCg5bY&t=123
+        // https://youtu.be/jW1KXvCg5bY?t=123
+        // youtu.be/jW1KXvCg5bY?t=123
+        // jW1KXvCg5bY
 
-    if (slice.contains("youtube.com/watch?v="))
-    {
-        slice.nom("youtube.com/watch?v=");
-        videoID = slice.nom!(Yes.inherit)('&');
-    }
-    else if (slice.contains("youtu.be/"))
-    {
-        slice.nom("youtu.be/");
-        videoID = slice.nom!(Yes.inherit)('?');
-    }
-    else if (!slice.contains(' '))
-    {
-        videoID = slice;
-    }
-    else
-    {
-        logger.warning("Malformed video ID?");
-        return;
-    }
+        string slice = url;  // mutable
+        string videoID;
 
-    try
-    {
-        immutable json = addVideoToYouTubePlaylist(*creds, videoID);
-        immutable title = json["snippet"]["title"].str;
-        //immutable position = json["snippet"]["position"].integer;
+        if (slice.contains("youtube.com/watch?v="))
+        {
+            slice.nom("youtube.com/watch?v=");
+            videoID = slice.nom!(Yes.inherit)('&');
+        }
+        else if (slice.contains("youtu.be/"))
+        {
+            slice.nom("youtu.be/");
+            videoID = slice.nom!(Yes.inherit)('?');
+        }
+        else if (slice.length == 11)
+        {
+            videoID = slice;
+        }
+        else
+        {
+            logger.warning("Malformed video link?");
+            return;
+        }
 
-        enum pattern = `"%s" added to playlist.`;
-        immutable message = pattern.format(title);
-        chan(plugin.state, event.channel, message);
+        try
+        {
+            immutable json = addVideoToYouTubePlaylist(plugin, *creds, videoID);
+            immutable title = json["snippet"]["title"].str;
+            //immutable position = json["snippet"]["position"].integer;
+
+            enum pattern = `"%s" added to playlist.`;
+            immutable message = pattern.format(title);
+            chan(plugin.state, event.channel, message);
+        }
+        catch (Exception e)
+        {
+            chan(plugin.state, event.channel, e.msg);
+        }
     }
-    catch (Exception e)
+    else if (plugin.twitchBotSettings.songRequestMode == SongRequestMode.spotify)
     {
-        chan(plugin.state, event.channel, e.msg);
+        immutable url = event.content.stripped;
+
+        if (url.length == 22)
+        {
+            // Probably a track ID
+        }
+        else if (!url.length ||
+            url.contains(' ') ||
+            !url.contains("spotify.com/track/"))
+        {
+            enum pattern = "Usage: %s%s [Spotify link or track ID]";
+            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+            chan(plugin.state, event.channel, message);
+            return;
+        }
+
+        auto creds = event.channel in plugin.secretsByChannel;
+
+        if (!creds || !creds.spotifyAccessToken.length)
+        {
+            enum message = "Missing Spotify API credentials.";
+            chan(plugin.state, event.channel, message);
+            return;
+        }
+
+        // Patterns
+        // https://open.spotify.com/track/65EGCfqn3di7gLMllw1Tg0?si=02eb9a0c9d6c4972
+
+        string slice = url;  // mutable
+        string trackID;
+
+        if (slice.contains("spotify.com/track/"))
+        {
+            slice.nom("spotify.com/track/");
+            trackID = slice.nom!(Yes.inherit)('?');
+        }
+        else if (slice.length == 22)
+        {
+            trackID = slice;
+        }
+        else
+        {
+            logger.warning("Malformed track link?");
+            return;
+        }
+
+        try
+        {
+            //immutable json = addTrackToSpotifyPlaylist(*creds, videoID);
+            // FIXME: lookup title, handle errors
+
+            enum message = `Track added to playlist.`;
+            chan(plugin.state, event.channel, message);
+        }
+        catch (Exception e)
+        {
+            chan(plugin.state, event.channel, e.msg);
+        }
     }
 }
 
