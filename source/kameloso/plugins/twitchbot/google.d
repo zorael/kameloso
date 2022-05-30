@@ -21,89 +21,6 @@ import arsd.http2 : HttpClient;
 import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 
-package:
-
-
-// GoogleCredentials
-/++
-    Credentials needed to access the Google Cloud API; specifically, to manage a
-    YouTube playlist.
-
-    See_Also:
-        https://console.cloud.google.com/apis/credentials
- +/
-struct GoogleCredentials
-{
-    /++
-        Google client ID.
-     +/
-    string clientID;
-
-    /++
-        Google client secret.
-     +/
-    string secret;
-
-    /++
-        Google API authorisation code.
-     +/
-    string code;
-
-    /++
-        Google API OAuth access token.
-     +/
-    string accessToken;
-
-    /++
-        Google API OAuth refresh token.
-     +/
-    string refreshToken;
-
-    /++
-        YouTube playlist ID.
-     +/
-    string playlistID;
-
-    /++
-        Serialises these [GoogleCredentials] into JSON.
-
-        Returns:
-            `this` represented in JSON.
-     +/
-    JSONValue toJSON() const
-    {
-        JSONValue json;
-        json = null;
-        json.object = null;
-
-        json["secret"] = this.secret;
-        json["code"] = this.code;
-        json["accessToken"] = this.accessToken;
-        json["refreshToken"] = this.refreshToken;
-        json["playlistID"] = this.playlistID;
-
-        return json;
-    }
-
-    /++
-        Deserialises a [GoogleCredentials] from JSON.
-
-        Params:
-            json = JSON representation of a [GoogleCredentials].
-     +/
-    static auto fromJSON(const JSONValue json)
-    {
-        GoogleCredentials creds;
-        creds.secret = json["secret"].str;
-        creds.code = json["code"].str;
-        creds.accessToken = json["accessToken"].str;
-        creds.refreshToken = json["refreshToken"].str;
-        creds.playlistID = json["playlistID"].str;
-
-        return creds;
-    }
-}
-
 
 // generateGoogleCode
 /++
@@ -112,7 +29,7 @@ struct GoogleCredentials
     Params:
         plugin = The current [TwitchBotPlugin].
  +/
-void generateGoogleCode(TwitchBotPlugin plugin)
+package void generateGoogleCode(TwitchBotPlugin plugin)
 {
     import kameloso.logger : LogLevel;
     import kameloso.thread : ThreadMessage;
@@ -147,32 +64,36 @@ A normal URL to any playlist you can modify will work fine.
 ";
     writeln(message.expandTags(LogLevel.off));
 
-    GoogleCredentials creds;
+    Credentials creds;
 
-    immutable channel = readNamedString("Enter your", "#channel", 0L, *plugin.state.abort);
+    immutable channel = readNamedString("<l>Enter your <i>#channel<l>:</> ",
+        0L, *plugin.state.abort);
     if (*plugin.state.abort) return;
 
-    creds.clientID = readNamedString("Copy and paste your", "OAuth client ID", 72L, *plugin.state.abort);
+    creds.googleClientID = readNamedString("<l>Copy and paste your <i>OAuth client ID<l>:</> ",
+        72L, *plugin.state.abort);
     if (*plugin.state.abort) return;
 
-    creds.secret = readNamedString("Copy and paste your", "OAuth client secret", 35L, *plugin.state.abort);
+    creds.googleClientSecret = readNamedString("<l>Copy and paste your <i>OAuth client secret<l>:</> ",
+        35L, *plugin.state.abort);
     if (*plugin.state.abort) return;
 
-    while (!creds.playlistID.length)
+    while (!creds.youtubePlaylistID.length)
     {
-        immutable playlistURL = readNamedString("Copy and paste your", "YouTube playlist URL", 0L, *plugin.state.abort);
+        immutable playlistURL = readNamedString("<l>Copy and paste your <i>YouTube playlist URL<l>:</> ",
+            0L, *plugin.state.abort);
         if (*plugin.state.abort) return;
 
         if (playlistURL.length == 34L)
         {
             // Likely a playlist ID
-            creds.playlistID = playlistURL;
+            creds.youtubePlaylistID = playlistURL;
         }
         else if (playlistURL.contains("/playlist?list="))
         {
             string slice = playlistURL;  // mutable
             slice.nom("/playlist?list=");
-            creds.playlistID = slice.nom!(Yes.inherit)('&');
+            creds.youtubePlaylistID = slice.nom!(Yes.inherit)('&');
         }
         else
         {
@@ -208,7 +129,7 @@ Follow the instructions and log in to authorise the use of this program with you
         "&redirect_uri=http://localhost" ~
         "&response_type=code" ~
         "&scope=https://www.googleapis.com/auth/youtube";
-    immutable url = urlPattern.format(creds.clientID);
+    immutable url = urlPattern.format(creds.googleClientID);
 
     Pid browser;
     scope(exit) if (browser !is null) wait(browser);
@@ -248,7 +169,7 @@ Follow the instructions and log in to authorise the use of this program with you
         }
     }
 
-    while (!creds.code.length)
+    while (!creds.googleCode.length)
     {
         scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
@@ -258,9 +179,9 @@ Follow the instructions and log in to authorise the use of this program with you
         stdout.flush();
 
         stdin.flush();
-        creds.code = readln().stripped;
+        creds.googleCode = readln().stripped;
 
-        if (*plugin.state.abort || !creds.code.length)
+        if (*plugin.state.abort || !creds.googleCode.length)
         {
             writeln();
             logger.warning("Aborting.");
@@ -268,13 +189,13 @@ Follow the instructions and log in to authorise the use of this program with you
             return;
         }
 
-        if (!creds.code.contains("code="))
+        if (!creds.googleCode.contains("code="))
         {
             import lu.string : beginsWith;
 
             writeln();
 
-            if (creds.code.beginsWith(authNode))
+            if (creds.googleCode.beginsWith(authNode))
             {
                 enum wrongPagePattern = "Not that page; the empty page you're " ~
                     "lead to after clicking <l>Allow</>.";
@@ -286,20 +207,20 @@ Follow the instructions and log in to authorise the use of this program with you
             }
 
             writeln();
-            creds.code = string.init;
+            creds.googleCode = string.init;
             continue;
         }
 
-        string slice = creds.code;  // mutable
+        string slice = creds.googleCode;  // mutable
         slice.nom("?code=");
-        creds.code = slice.nom!(Yes.inherit)('&');
+        creds.googleCode = slice.nom!(Yes.inherit)('&');
 
-        if (creds.code.length != 73L)
+        if (creds.googleCode.length != 73L)
         {
             writeln();
             logger.error("Invalid code length. Try copying again or file a bug.");
             writeln();
-            creds.code = string.init;  // reset it so the while loop repeats
+            creds.googleCode = string.init;  // reset it so the while loop repeats
         }
     }
 
@@ -307,8 +228,17 @@ Follow the instructions and log in to authorise the use of this program with you
     auto client = getHTTPClient();
     getGoogleToken(client, creds);
 
-    plugin.googleSecretsByChannel[channel] = creds;
-    saveSecretsToDisk(plugin.googleSecretsByChannel, plugin.secretsFile);
+    if (auto storedCreds = channel in plugin.secretsByChannel)
+    {
+        import lu.meld : MeldingStrategy, meldInto;
+        creds.meldInto!(MeldingStrategy.aggressive)(*storedCreds);
+    }
+    else
+    {
+        plugin.secretsByChannel[channel] = creds;
+    }
+
+    saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
 
     enum issuePattern = "
 --------------------------------------------------------------------------------
@@ -354,16 +284,15 @@ auto getHTTPClient()
 
 // addVideoToYouTubePlaylist
 /++
-    Adds a video to the YouTube playlist whose ID is stored in the passed
-    [GoogleCredentials].
+    Adds a video to the YouTube playlist whose ID is stored in the passed [Credentials].
 
     Params:
-        creds = Google credentials aggregate.
+        creds = Credentials aggregate.
         videoID = YouTube video ID of the video to add.
         recursing = Whether or not the function is recursing into iself.
  +/
-JSONValue addVideoToYouTubePlaylist(
-    ref GoogleCredentials creds,
+package JSONValue addVideoToYouTubePlaylist(
+    ref Credentials creds,
     const string videoID,
     const Flag!"recursing" recursing = No.recursing)
 {
@@ -375,18 +304,18 @@ JSONValue addVideoToYouTubePlaylist(
     enum url = "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet";
     auto client = getHTTPClient();
 
-    if (!creds.playlistID.length)
+    if (!creds.youtubePlaylistID.length)
     {
         throw new Exception("Missing YouTube playlist ID.");
     }
 
-    if (!creds.accessToken.length)
+    if (!creds.googleAccessToken.length)
     {
         logger.info("Requesting Google authorisation code.");
         getGoogleToken(client, creds);
     }
 
-    if (!client.authorization.length) client.authorization = "Bearer " ~ creds.accessToken;
+    if (!client.authorization.length) client.authorization = "Bearer " ~ creds.googleAccessToken;
 
     //"position": 999,
     enum pattern =
@@ -400,7 +329,7 @@ JSONValue addVideoToYouTubePlaylist(
   }
 }`;
 
-    ubyte[] data = cast(ubyte[])(pattern.format(creds.playlistID, videoID));
+    ubyte[] data = cast(ubyte[])(pattern.format(creds.youtubePlaylistID, videoID));
     auto req = client.request(Uri(url), HttpVerb.POST, data, "application/json");
     auto res = req.waitForCompletion();
 
@@ -465,9 +394,9 @@ JSONValue addVideoToYouTubePlaylist(
 
     Params:
         client = [arsd.http2.HttpClient|HttpClient] to use.
-        creds = Google credentials aggregate.
+        creds = Credentials aggregate.
  +/
-void getGoogleToken(HttpClient client, ref GoogleCredentials creds)
+void getGoogleToken(HttpClient client, ref Credentials creds)
 {
     import arsd.http2 : HttpVerb, Uri;
     import std.format : format;
@@ -475,7 +404,7 @@ void getGoogleToken(HttpClient client, ref GoogleCredentials creds)
     import std.stdio : writeln;
     import std.string : indexOf;
 
-    if (!creds.code.length || !creds.secret.length)
+    if (!creds.googleCode.length || !creds.googleClientSecret.length)
     {
         throw new Exception("Missing Google API code or client secret");
     }
@@ -487,7 +416,7 @@ void getGoogleToken(HttpClient client, ref GoogleCredentials creds)
         "&grant_type=authorization_code" ~
         "&redirect_uri=http://localhost";
 
-    immutable url = pattern.format(creds.clientID, creds.secret, creds.code);
+    immutable url = pattern.format(creds.googleClientID, creds.googleClientSecret, creds.googleCode);
     enum data = cast(ubyte[])"{}";
 
     auto req = client.request(Uri(url), HttpVerb.POST, data);
@@ -507,8 +436,8 @@ void getGoogleToken(HttpClient client, ref GoogleCredentials creds)
     if (json.type != JSONType.object) throw new Exception("unexpected token json");
     if (auto errorJSON = "error" in json) throw new Exception(errorJSON.str);
 
-    creds.accessToken = json["access_token"].str;
-    creds.refreshToken = json["refresh_token"].str;
+    creds.googleAccessToken = json["access_token"].str;
+    creds.googleRefreshToken = json["refresh_token"].str;
 }
 
 
@@ -518,9 +447,9 @@ void getGoogleToken(HttpClient client, ref GoogleCredentials creds)
 
     Params:
         client = [arsd.http2.HttpClient|HttpClient] to use.
-        creds = Google credentials aggregate.
+        creds = Credentials aggregate.
  +/
-void refreshGoogleToken(HttpClient client, ref GoogleCredentials creds)
+void refreshGoogleToken(HttpClient client, ref Credentials creds)
 {
     import arsd.http2 : HttpVerb, Uri;
     import std.format : format;
@@ -533,7 +462,7 @@ void refreshGoogleToken(HttpClient client, ref GoogleCredentials creds)
         "&refresh_token=%s" ~
         "&grant_type=refresh_token";
 
-    immutable url = pattern.format(creds.clientID, creds.secret, creds.refreshToken);
+    immutable url = pattern.format(creds.googleClientID, creds.googleClientSecret, creds.googleRefreshToken);
     enum data = cast(ubyte[])"{}";
 
     auto req = client.request(Uri(url), HttpVerb.POST, data);
@@ -542,7 +471,7 @@ void refreshGoogleToken(HttpClient client, ref GoogleCredentials creds)
     const json = parseJSON(res.contentText);
     if (json.type != JSONType.object) throw new Exception("unexpected refresh json");
 
-    creds.accessToken = json["access_token"].str;
+    creds.googleAccessToken = json["access_token"].str;
     // refreshToken is not present and stays the same as before
 }
 
@@ -552,8 +481,7 @@ void refreshGoogleToken(HttpClient client, ref GoogleCredentials creds)
     Prompts the user to enter a string.
 
     Params:
-        wording = Wording to use with `name`.
-        name = What to call the string to input in the prompt.
+        wording = Wording to use in the prompt.
         expectedLength = Optional expected length of the input string.
             A value of `0` disables checks.
         abort = Abort pointer.
@@ -561,14 +489,13 @@ void refreshGoogleToken(HttpClient client, ref GoogleCredentials creds)
     Returns:
         A string read from standard in, stripped.
  +/
-private string readNamedString(
+string readNamedString(
     const string wording,
-    const string name,
     const size_t expectedLength,
     ref bool abort)
 {
     import lu.string : stripped;
-    import std.stdio : readln, stdin, stdout, writef, writeln;
+    import std.stdio : readln, stdin, stdout, write, writeln;
 
     string string_;
 
@@ -576,8 +503,7 @@ private string readNamedString(
     {
         scope(exit) stdout.flush();
 
-        enum pattern = "<l>%s <i>%s<l>:</> ";
-        writef(pattern.expandTags(LogLevel.off), wording, name);
+        write(wording.expandTags(LogLevel.off));
         stdout.flush();
 
         stdin.flush();
@@ -593,8 +519,8 @@ private string readNamedString(
         else if ((expectedLength > 0) && (string_.length != expectedLength))
         {
             writeln();
-            enum invalidPattern = "Invalid %s length. Try copying again or file a bug.";
-            logger.errorf(invalidPattern.expandTags(LogLevel.error), name);
+            enum invalidMessage = "Invalid length. Try copying again or file a bug.";
+            logger.error(invalidMessage);
             writeln();
             continue;
         }

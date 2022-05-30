@@ -115,6 +115,87 @@ import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 
 
+// Credentials
+/++
+    Credentials needed to access APIs like that of Google and Spotify.
+
+    See_Also:
+        https://console.cloud.google.com/apis/credentials
+ +/
+package struct Credentials
+{
+    /++
+        Google client ID.
+     +/
+    string googleClientID;
+
+    /++
+        Google client secret.
+     +/
+    string googleClientSecret;
+
+    /++
+        Google API authorisation code.
+     +/
+    string googleCode;
+
+    /++
+        Google API OAuth access token.
+     +/
+    string googleAccessToken;
+
+    /++
+        Google API OAuth refresh token.
+     +/
+    string googleRefreshToken;
+
+    /++
+        YouTube playlist ID.
+     +/
+    string youtubePlaylistID;
+
+    /++
+        Serialises these [Credentials] into JSON.
+
+        Returns:
+            `this` represented in JSON.
+     +/
+    JSONValue toJSON() const
+    {
+        JSONValue json;
+        json = null;
+        json.object = null;
+
+        json["googleClientID"] = this.googleClientID;
+        json["googleClientSecret"] = this.googleClientSecret;
+        json["googleCode"] = this.googleCode;
+        json["googleAccessToken"] = this.googleAccessToken;
+        json["googleRefreshToken"] = this.googleRefreshToken;
+        json["youtubePlaylistID"] = this.youtubePlaylistID;
+
+        return json;
+    }
+
+    /++
+        Deserialises some [Credentials] from JSON.
+
+        Params:
+            json = JSON representation of some [Credentials].
+     +/
+    static auto fromJSON(const JSONValue json)
+    {
+        typeof(this) creds;
+        creds.googleClientID = json["googleClientID"].str;
+        creds.googleClientSecret = json["googleClientSecret"].str;
+        creds.googleCode = json["googleCode"].str;
+        creds.googleAccessToken = json["googleAccessToken"].str;
+        creds.googleRefreshToken = json["googleRefreshToken"].str;
+        creds.youtubePlaylistID = json["youtubePlaylistID"].str;
+        return creds;
+    }
+}
+
+
 // onImportant
 /++
     Bells on any important event, like subscriptions, cheers and raids, if the
@@ -1207,7 +1288,7 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
         return;
     }
 
-    auto creds = event.channel in plugin.googleSecretsByChannel;
+    auto creds = event.channel in plugin.secretsByChannel;
 
     if (!creds)
     {
@@ -2065,7 +2146,7 @@ void saveResourceToDisk(const long[string][string] aa, const string filename)
 /++
     FIXME
  +/
-package void saveSecretsToDisk(const GoogleCredentials[string] aa, const string filename)
+package void saveSecretsToDisk(const Credentials[string] aa, const string filename)
 {
     import std.json : JSONValue;
     import std.stdio : File, writeln;
@@ -2107,14 +2188,14 @@ void reload(TwitchBotPlugin plugin)
 
     JSONStorage secretsJSON;
     secretsJSON.load(plugin.secretsFile);
-    plugin.googleSecretsByChannel.clear();
+    plugin.secretsByChannel.clear();
 
     foreach (immutable channelName, credsJSON; secretsJSON.storage.object)
     {
-        plugin.googleSecretsByChannel[channelName] = GoogleCredentials.fromJSON(credsJSON);
+        plugin.secretsByChannel[channelName] = Credentials.fromJSON(credsJSON);
     }
 
-    plugin.googleSecretsByChannel = plugin.googleSecretsByChannel.rehash();
+    plugin.secretsByChannel = plugin.secretsByChannel.rehash();
 }
 
 
@@ -2277,8 +2358,8 @@ package:
     /// Associative array of viewer times; seconds keyed by nickname keyed by channel.
     long[string][string] viewerTimesByChannel;
 
-    /// Google API keys and tokens, keyed by channel.
-    GoogleCredentials[string] googleSecretsByChannel;
+    /// API keys and tokens, keyed by channel.
+    Credentials[string] secretsByChannel;
 
     /// The thread ID of the persistent worker thread.
     Tid persistentWorkerTid;
