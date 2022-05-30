@@ -44,9 +44,9 @@ public:
     bool watchtime = true;
 
     /++
-        Whether or not to enable taking song requests.
+        What kind of song requests to accept, if any.
      +/
-    bool songRequests = true;
+    SongRequestMode songRequestMode = SongRequestMode.youtube;
 
     /++
         What level of user permissions are needed to issue song requests.
@@ -160,6 +160,16 @@ package struct Credentials
     string youtubePlaylistID;
 
     /++
+        Spotify API OAuth access token.
+     +/
+    string spotifyAccessToken;
+
+    /++
+        Spotify API OAuth refresh token.
+     +/
+    string spotifyRefreshToken;
+
+    /++
         Serialises these [Credentials] into JSON.
 
         Returns:
@@ -176,6 +186,8 @@ package struct Credentials
         json["googleAccessToken"] = this.googleAccessToken;
         json["googleRefreshToken"] = this.googleRefreshToken;
         json["youtubePlaylistID"] = this.youtubePlaylistID;
+        json["spotifyAccessToken"] = this.spotifyAccessToken;
+        json["spotifyRefreshToken"] = this.spotifyRefreshToken;
 
         return json;
     }
@@ -194,8 +206,33 @@ package struct Credentials
         creds.googleAccessToken = json["googleAccessToken"].str;
         creds.googleRefreshToken = json["googleRefreshToken"].str;
         creds.youtubePlaylistID = json["youtubePlaylistID"].str;
+        creds.spotifyAccessToken = json["spotifyAccessToken"].str;
+        creds.spotifyRefreshToken = json["spotifyRefreshToken"].str;
         return creds;
     }
+}
+
+
+// SongRequestMode
+/++
+    Song requests may be either disabled, or either in YouTube or Spotify mode.
+ +/
+enum SongRequestMode
+{
+    /++
+        Song requests are disabled.
+     +/
+    disabled,
+
+    /++
+        Song requests relate to a YouTube playlist.
+     +/
+    youtube,
+
+    /++
+        Song requests relatet to a Spotify playlist.
+     +/
+    spotify,
 }
 
 
