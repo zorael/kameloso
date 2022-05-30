@@ -299,6 +299,7 @@ package JSONValue addVideoToYouTubePlaylist(
     const Flag!"recursing" recursing = No.recursing)
 {
     import arsd.http2 : HttpVerb, Uri;
+    import std.algorithm.searching : endsWith;
     import std.format : format;
     import std.json : JSONValue, JSONType, parseJSON;
     import std.stdio : writeln;
@@ -316,7 +317,10 @@ package JSONValue addVideoToYouTubePlaylist(
         throw new Exception("Missing Google access token");
     }
 
-    if (!client.authorization.length) client.authorization = "Bearer " ~ creds.googleAccessToken;
+    if (!client.authorization.length || !client.authorization.endsWith(creds.googleAccessToken))
+    {
+        client.authorization = "Bearer " ~ creds.googleAccessToken;
+    }
 
     //"position": 999,
     enum pattern =
