@@ -289,11 +289,13 @@ auto getHTTPClient()
     Adds a video to the YouTube playlist whose ID is stored in the passed [Credentials].
 
     Params:
+        plugin = The current `TwitchBotPlugin`.
         creds = Credentials aggregate.
         videoID = YouTube video ID of the video to add.
         recursing = Whether or not the function is recursing into iself.
  +/
 package JSONValue addVideoToYouTubePlaylist(
+    TwitchBotPlugin plugin,
     ref Credentials creds,
     const string videoID,
     const Flag!"recursing" recursing = No.recursing)
@@ -382,7 +384,8 @@ package JSONValue addVideoToYouTubePlaylist(
             if (statusJSON.str == "UNAUTHENTICATED")
             {
                 refreshGoogleToken(client, creds);
-                return addVideoToYouTubePlaylist(creds, videoID, Yes.recursing);
+                saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
+                return addVideoToYouTubePlaylist(plugin, creds, videoID, Yes.recursing);
             }
         }
 
