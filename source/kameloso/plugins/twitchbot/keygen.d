@@ -17,7 +17,7 @@ import kameloso.plugins.twitchbot.base;
 package:
 
 
-// generateKey
+// requestTwitchKey
 /++
     Start the captive key generation routine at the earliest possible moment,
     which are the [dialect.defs.IRCEvent.Type.CAP|CAP] events.
@@ -29,7 +29,7 @@ package:
     It would then immediately fail to read if too much time has passed,
     and nothing would be saved.
  +/
-void generateKey(TwitchBotPlugin plugin)
+void requestTwitchKey(TwitchBotPlugin plugin)
 {
     import kameloso.common : expandTags, logger;
     import kameloso.logger : LogLevel;

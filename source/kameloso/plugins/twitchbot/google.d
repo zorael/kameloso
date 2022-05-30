@@ -22,14 +22,15 @@ import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 
 
-// generateGoogleCode
+// requestGoogleKeys
 /++
-    Requests a Google API authorisation code from Google servers.
+    Requests a Google API authorisation code from Google servers, then uses it
+    to obtain an access key and a refresh OAuth key.
 
     Params:
         plugin = The current [TwitchBotPlugin].
  +/
-package void generateGoogleCode(TwitchBotPlugin plugin)
+package void requestGoogleKeys(TwitchBotPlugin plugin)
 {
     import kameloso.logger : LogLevel;
     import kameloso.thread : ThreadMessage;
@@ -48,7 +49,7 @@ package void generateGoogleCode(TwitchBotPlugin plugin)
     }
 
     logger.trace();
-    logger.info("-- Google authorisation code generation mode --");
+    logger.info("-- Google authorisation key generation mode --");
     enum message =
 "To access the Google API you need a <i>client ID</> and a <i>client secret</>.
 

@@ -1816,7 +1816,7 @@ void onCommandWatchtime(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 )
 void onCAP(TwitchBotPlugin plugin)
 {
-    import kameloso.plugins.twitchbot.keygen : generateKey;
+    import kameloso.plugins.twitchbot.keygen : requestTwitchKey;
     import std.algorithm.searching : endsWith;
 
     if ((plugin.state.server.daemon == IRCServer.Daemon.unset) &&
@@ -1824,14 +1824,14 @@ void onCAP(TwitchBotPlugin plugin)
     {
         if (plugin.twitchBotSettings.keygen)
         {
-            plugin.generateKey();
+            plugin.requestTwitchKey();
         }
 
         if (*plugin.state.abort) return;
 
         if (plugin.twitchBotSettings.googleKeygen)
         {
-            plugin.generateGoogleCode();
+            plugin.requestGoogleKeys();
         }
     }
 }
