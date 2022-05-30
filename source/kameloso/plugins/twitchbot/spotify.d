@@ -1,11 +1,11 @@
 /++
-    Bits and bobs to get Google API credentials for YouTube playlist management.
+    Bits and bobs to get Spotify API credentials for playlist management.
 
     See_Also:
         [kameloso.plugins.twitchbot.base|twitchbot.base]
         [kameloso.plugins.twitchbot.api|twitchbot.api]
  +/
-module kameloso.plugins.twitchbot.google;
+module kameloso.plugins.twitchbot.spotify;
 
 version(TwitchSupport):
 version(WithTwitchBotPlugin):
@@ -22,15 +22,15 @@ import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 
 
-// requestGoogleKeys
+// requestSpotifyKeys
 /++
-    Requests a Google API authorisation code from Google servers, then uses it
+    Requests a Spotify API authorisation code from Spotify servers, then uses it
     to obtain an access key and a refresh OAuth key.
 
     Params:
         plugin = The current [TwitchBotPlugin].
  +/
-package void requestGoogleKeys(TwitchBotPlugin plugin)
+package void requestSpotifyKeys(TwitchBotPlugin plugin)
 {
     import kameloso.logger : LogLevel;
     import lu.string : contains, nom, stripped;
@@ -48,18 +48,18 @@ package void requestGoogleKeys(TwitchBotPlugin plugin)
     }
 
     logger.trace();
-    logger.info("-- Google authorisation key generation mode --");
+    logger.info("-- Spotify authorisation key generation mode --");
     enum message =
-"To access the Google API you need a <i>client ID</> and a <i>client secret</>.
+"To access the Spotify API you need a <i>client ID</> and a <i>client secret</>.
 
 <l>Go here to create a project and generate said credentials:</>
 
-    <i>https://console.cloud.google.com/apis/credentials</>
+    <i>https://developer.spotify.com/dashboard</>
 
 You also need to supply a channel for which it all relates.
 (Channels are Twitch lowercase account names, prepended with a '<i>#</>' sign.)
 
-Lastly you need a <i>YouTube playlist ID</> for song requests to work.
+Lastly you need a <i>playlist ID</> for song requests to work.
 A normal URL to any playlist you can modify will work fine.
 ";
     writeln(message.expandTags(LogLevel.off));
@@ -70,35 +70,35 @@ A normal URL to any playlist you can modify will work fine.
         0L, *plugin.state.abort);
     if (*plugin.state.abort) return;
 
-    creds.googleClientID = readNamedString("<l>Copy and paste your <i>OAuth client ID<l>:</> ",
-        72L, *plugin.state.abort);
+    creds.spotifyClientID = readNamedString("<l>Copy and paste your <i>OAuth client ID<l>:</> ",
+        32L, *plugin.state.abort);
     if (*plugin.state.abort) return;
 
-    creds.googleClientSecret = readNamedString("<l>Copy and paste your <i>OAuth client secret<l>:</> ",
-        35L, *plugin.state.abort);
+    creds.spotifyClientSecret = readNamedString("<l>Copy and paste your <i>OAuth client secret<l>:</> ",
+        32L, *plugin.state.abort);
     if (*plugin.state.abort) return;
 
-    while (!creds.youtubePlaylistID.length)
+    while (!creds.spotifyPlaylistID.length)
     {
-        immutable playlistURL = readNamedString("<l>Copy and paste your <i>YouTube playlist URL<l>:</> ",
+        immutable playlistURL = readNamedString("<l>Copy and paste your <i>playlist URL<l>:</> ",
             0L, *plugin.state.abort);
         if (*plugin.state.abort) return;
 
-        if (playlistURL.length == 34L)
+        if (playlistURL.length == 22L)
         {
             // Likely a playlist ID
-            creds.youtubePlaylistID = playlistURL;
+            creds.spotifyPlaylistID = playlistURL;
         }
-        else if (playlistURL.contains("/playlist?list="))
+        else if (playlistURL.contains("spotify.com/playlist/"))
         {
             string slice = playlistURL;  // mutable
-            slice.nom("/playlist?list=");
-            creds.youtubePlaylistID = slice.nom!(Yes.inherit)('&');
+            slice.nom("spotify.com/playlist/");
+            creds.spotifyPlaylistID = slice.nom!(Yes.inherit)('&');
         }
         else
         {
             writeln();
-            enum invalidMessage = "Cannot recognise link as a YouTube playlist URL. " ~
+            enum invalidMessage = "Cannot recognise link as a Spotify playlist URL. " ~
                 "Try copying again or file a bug.";
             logger.error(invalidMessage.expandTags(LogLevel.error));
             writeln();
@@ -109,7 +109,7 @@ A normal URL to any playlist you can modify will work fine.
     enum attemptToOpenPattern = `
 --------------------------------------------------------------------------------
 
-<l>Attempting to open a Google login page in your default web browser.</>
+<l>Attempting to open a Spotify login page in your default web browser.</>
 
 Follow the instructions and log in to authorise the use of this program with your account.
 
@@ -123,13 +123,14 @@ Follow the instructions and log in to authorise the use of this program with you
     writeln(attemptToOpenPattern.expandTags(LogLevel.off));
     if (plugin.state.settings.flush) stdout.flush();
 
-    enum authNode = "https://accounts.google.com/o/oauth2/v2/auth";
+    enum authNode = "https://accounts.spotify.com/authorize";
     enum urlPattern = authNode ~
         "?client_id=%s" ~
+        "&client_secret=%s" ~
         "&redirect_uri=http://localhost" ~
         "&response_type=code" ~
-        "&scope=https://www.googleapis.com/auth/youtube";
-    immutable url = urlPattern.format(creds.googleClientID);
+        "&scope=playlist-modify-private playlist-modify-public";
+    immutable url = urlPattern.format(creds.spotifyClientID, creds.spotifyClientSecret);
 
     Pid browser;
     scope(exit) if (browser !is null) wait(browser);
@@ -214,9 +215,9 @@ Follow the instructions and log in to authorise the use of this program with you
 
         string slice = readCode;  // mutable
         slice.nom("?code=");
-        code = slice.nom!(Yes.inherit)('&');
+        code = slice;
 
-        if (code.length != 73L)
+        if (!code.length)
         {
             writeln();
             logger.error("Invalid code length. Try copying again or file a bug.");
@@ -227,7 +228,7 @@ Follow the instructions and log in to authorise the use of this program with you
 
     // All done, fetch
     auto client = getHTTPClient();
-    getGoogleTokens(client, creds, code);
+    getSpotifyTokens(client, creds, code);
 
     if (auto storedCreds = channel in plugin.secretsByChannel)
     {
@@ -244,7 +245,7 @@ Follow the instructions and log in to authorise the use of this program with you
     enum issuePattern = "
 --------------------------------------------------------------------------------
 
-All done! Restart the program (without <i>--set twitch.googleKeygen</>)
+All done! Restart the program (without <i>--set twitch.spotifyKeygen</>)
 and it should just work. If it doesn't, please file an issue at:
 
     <i>https://github.com/zorael/kameloso/issues/new</>
@@ -254,20 +255,122 @@ and it should just work. If it doesn't, please file an issue at:
 }
 
 
-// addVideoToYouTubePlaylist
+// getSpotifyTokens
 /++
-    Adds a video to the YouTube playlist whose ID is stored in the passed [Credentials].
+    Request OAuth API tokens from Spotify.
+
+    Params:
+        client = [arsd.http2.HttpClient|HttpClient] to use.
+        creds = Credentials aggregate.
+        code = Spotify authorization code.
+ +/
+void getSpotifyTokens(HttpClient client, ref Credentials creds, const string code)
+{
+    import arsd.http2 : FormData, HttpVerb, Uri;
+    import std.format : format;
+    import std.json : JSONType, parseJSON;
+    import std.string : indexOf;
+
+    enum authNode = "https://accounts.spotify.com/api/token";
+    enum urlPattern = authNode ~
+        "?code=%s" ~
+        "&grant_type=authorization_code" ~
+        "&redirect_uri=http://localhost";
+    immutable url = urlPattern.format(code);
+
+    if (!client.authorization.length) client.authorization = getSpotifyBase64Authorization(creds);
+    auto req = client.request(Uri(url), HttpVerb.POST);
+    req.requestParameters.contentType = "application/x-www-form-urlencoded";
+    auto res = req.waitForCompletion();
+
+    /*
+    {
+        "access_token": "[redacted]",
+        "token_type": "Bearer",
+        "expires_in": 3600,
+        "refresh_token": "[redacted]",
+        "scope": "playlist-modify-private playlist-modify-public"
+    }
+    */
+
+    const json = parseJSON(res.contentText);
+    if (json.type != JSONType.object) throw new Exception("unexpected token json");
+    if (auto errorJSON = "error" in json) throw new Exception(errorJSON.str);
+
+    creds.spotifyAccessToken = json["access_token"].str;
+    creds.spotifyRefreshToken = json["refresh_token"].str;
+}
+
+
+// refreshSpotifyToken
+/++
+    Refreshes the OAuth API token in the passed Spotify credentials.
+
+    Params:
+        client = [arsd.http2.HttpClient|HttpClient] to use.
+        creds = Credentials aggregate.
+ +/
+void refreshSpotifyToken(HttpClient client, ref Credentials creds)
+{
+    import arsd.http2 : FormData, HttpVerb, Uri;
+    import std.format : format;
+    import std.json : JSONType, parseJSON;
+    import std.string : indexOf;
+
+    enum authNode = "https://accounts.spotify.com/api/token";
+    enum urlPattern = authNode ~
+        "?refresh_token=%s" ~
+        "&grant_type=refresh_token";
+    immutable url = urlPattern.format(creds.spotifyRefreshToken);
+
+    if (!client.authorization.length) client.authorization = getSpotifyBase64Authorization(creds);
+    auto req = client.request(Uri(url), HttpVerb.POST);
+    req.requestParameters.contentType = "application/x-www-form-urlencoded";
+    auto res = req.waitForCompletion();
+
+    /*
+    {
+        ?
+    }
+    */
+
+    const json = parseJSON(res.contentText);
+    if (json.type != JSONType.object) throw new Exception("unexpected token json");
+    if (auto errorJSON = "error" in json) throw new Exception(errorJSON.str);
+
+    creds.spotifyAccessToken = json["access_token"].str;
+    // refreshToken is not present and stays the same as before
+}
+
+
+// getBase64Authorization
+/++
+    FIXME
+ +/
+auto getSpotifyBase64Authorization(const Credentials creds)
+{
+    import std.base64 : Base64;
+    import std.conv : text;
+
+    auto decoded = cast(ubyte[])text(creds.spotifyClientID, ':', creds.spotifyClientSecret);
+    return "Basic " ~ cast(string)Base64.encode(decoded);
+}
+
+
+// addTrackToSpotifyPlaylist
+/++
+    Adds a track to the Spotify playlist whose ID is stored in the passed [Credentials].
 
     Params:
         plugin = The current `TwitchBotPlugin`.
         creds = Credentials aggregate.
-        videoID = YouTube video ID of the video to add.
+        trackID = Spotify track ID of the track to add.
         recursing = Whether or not the function is recursing into iself.
  +/
-package JSONValue addVideoToYouTubePlaylist(
+package JSONValue addTrackToSpotifyPlaylist(
     TwitchBotPlugin plugin,
     ref Credentials creds,
-    const string videoID,
+    const string trackID,
     const Flag!"recursing" recursing = No.recursing)
 {
     import arsd.http2 : HttpVerb, Uri;
@@ -275,67 +378,33 @@ package JSONValue addVideoToYouTubePlaylist(
     import std.format : format;
     import std.json : JSONValue, JSONType, parseJSON;
 
-    if (!creds.youtubePlaylistID.length)
+    if (!creds.spotifyPlaylistID.length)
     {
-        throw new Exception("Missing YouTube playlist ID");
+        throw new Exception("Missing Spotify playlist ID");
     }
 
-    if (!creds.googleAccessToken.length)
+    if (!creds.spotifyAccessToken.length)
     {
-        throw new Exception("Missing Google access token");
+        throw new Exception("Missing Spotify access token");
     }
 
-    enum url = "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet";
+    // https://api.spotify.com/v1/playlists/0nqAHNphIb3Qhh5CmD7fg5/tracks?uris=spotify:track:594WPgqPOOy0PqLvScovNO
+
+    enum urlPattern = "https://api.spotify.com/v1/playlists/%s/tracks?uris=spotify:track:%s";
+    immutable url = urlPattern.format(creds.spotifyPlaylistID, trackID);
     auto client = getHTTPClient();
 
-    if (!client.authorization.length || !client.authorization.endsWith(creds.googleAccessToken))
+    if (!client.authorization.length || !client.authorization.endsWith(creds.spotifyAccessToken))
     {
-        client.authorization = "Bearer " ~ creds.googleAccessToken;
+        client.authorization = "Bearer " ~ creds.spotifyAccessToken;
     }
 
-    //"position": 999,
-    enum pattern =
-`{
-  "snippet": {
-    "playlistId": "%s",
-    "resourceId": {
-      "kind": "youtube#video",
-      "videoId": "%s"
-    }
-  }
-}`;
-
-    ubyte[] data = cast(ubyte[])(pattern.format(creds.youtubePlaylistID, videoID));
-    auto req = client.request(Uri(url), HttpVerb.POST, data, "application/json");
+    auto req = client.request(Uri(url), HttpVerb.POST);
     auto res = req.waitForCompletion();
 
     /*
     {
-        "kind": "youtube#playlistItem",
-        "etag": "QG1leAsBIlxoG2Y4MxMsV_zIaD8",
-        "id": "UExNNnd5dmt2ME9GTVVfc0IwRUZyWDdUd0pZUHdkMUYwRi4xMkVGQjNCMUM1N0RFNEUx",
-        "snippet": {
-            "publishedAt": "2022-05-24T22:03:44Z",
-            "channelId": "UC_iiOE42xes48ZXeQ4FkKAw",
-            "title": "How Do Sinkholes Form?",
-            "description": "CAN CONTAIN NEWLINES",
-            "thumbnails": {
-                "default": {
-                    "url": "https://i.ytimg.com/vi/e-DVIQPqS8E/default.jpg",
-                    "width": 120,
-                    "height": 90
-                },
-            },
-            "channelTitle": "zorael",
-            "playlistId": "PLM6wyvkv0OFMU_sB0EFrX7TwJYPwd1F0F",
-            "position": 5,
-            "resourceId": {
-                "kind": "youtube#video",
-                "videoId": "e-DVIQPqS8E"
-            },
-            "videoOwnerChannelTitle": "Practical Engineering",
-            "videoOwnerChannelId": "UCMOqf8ab-42UUQIdVoKwjlQ"
-        }
+        ?
     }
     */
 
@@ -352,9 +421,9 @@ package JSONValue addVideoToYouTubePlaylist(
         {
             if (statusJSON.str == "UNAUTHENTICATED")
             {
-                refreshGoogleToken(client, creds);
+                refreshSpotifyToken(client, creds);
                 saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
-                return addVideoToYouTubePlaylist(plugin, creds, videoID, Yes.recursing);
+                return addTrackToSpotifyPlaylist(plugin, creds, trackID, Yes.recursing);
             }
         }
 
@@ -362,86 +431,4 @@ package JSONValue addVideoToYouTubePlaylist(
     }
 
     return json;
-}
-
-
-// getGoogleTokens
-/++
-    Request OAuth API tokens from Google.
-
-    Params:
-        client = [arsd.http2.HttpClient|HttpClient] to use.
-        creds = Credentials aggregate.
-        code = Google authorization code.
- +/
-void getGoogleTokens(HttpClient client, ref Credentials creds, const string code)
-{
-    import arsd.http2 : HttpVerb, Uri;
-    import std.format : format;
-    import std.json : JSONType, parseJSON;
-    import std.string : indexOf;
-
-    enum pattern = "https://oauth2.googleapis.com/token" ~
-        "?client_id=%s" ~
-        "&client_secret=%s" ~
-        "&code=%s" ~
-        "&grant_type=authorization_code" ~
-        "&redirect_uri=http://localhost";
-
-    immutable url = pattern.format(creds.googleClientID, creds.googleClientSecret, code);
-    enum data = cast(ubyte[])"{}";
-
-    auto req = client.request(Uri(url), HttpVerb.POST, data);
-    auto res = req.waitForCompletion();
-
-    /*
-    {
-        "access_token": "[redacted]"
-        "expires_in": 3599,
-        "refresh_token": "[redacted]",
-        "scope": "https://www.googleapis.com/auth/youtube",
-        "token_type": "Bearer"
-    }
-    */
-
-    const json = parseJSON(res.contentText);
-    if (json.type != JSONType.object) throw new Exception("unexpected token json");
-    if (auto errorJSON = "error" in json) throw new Exception(errorJSON.str);
-
-    creds.googleAccessToken = json["access_token"].str;
-    creds.googleRefreshToken = json["refresh_token"].str;
-}
-
-
-// refreshGoogleToken
-/++
-    Refreshes the OAuth API token in the passed Google credentials.
-
-    Params:
-        client = [arsd.http2.HttpClient|HttpClient] to use.
-        creds = Credentials aggregate.
- +/
-void refreshGoogleToken(HttpClient client, ref Credentials creds)
-{
-    import arsd.http2 : HttpVerb, Uri;
-    import std.format : format;
-    import std.json : JSONType, parseJSON;
-
-    enum pattern = "https://oauth2.googleapis.com/token" ~
-        "?client_id=%s" ~
-        "&client_secret=%s" ~
-        "&refresh_token=%s" ~
-        "&grant_type=refresh_token";
-
-    immutable url = pattern.format(creds.googleClientID, creds.googleClientSecret, creds.googleRefreshToken);
-    enum data = cast(ubyte[])"{}";
-
-    auto req = client.request(Uri(url), HttpVerb.POST, data);
-    auto res = req.waitForCompletion();
-
-    const json = parseJSON(res.contentText);
-    if (json.type != JSONType.object) throw new Exception("unexpected refresh json");
-
-    creds.googleAccessToken = json["access_token"].str;
-    // refreshToken is not present and stays the same as before
 }

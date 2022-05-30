@@ -98,9 +98,15 @@ public:
 
         /++
             Whether or not to start a captive session for generating Google
-            authorisation codes and tokens. The value should be a channel name.
+            authorisation codes and tokens.
          +/
         bool googleKeygen = false;
+
+        /++
+            Whether or not to start a captive session for generating Spotify
+            authorisation codes and tokens.
+         +/
+        bool spotifyKeygen = false;
     }
 }
 
@@ -112,7 +118,6 @@ version(WithTwitchBotPlugin):
 private:
 
 import kameloso.plugins.twitchbot.api;
-import kameloso.plugins.twitchbot.google;
 
 import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
 import kameloso.common : expandTags, logger;
@@ -160,6 +165,16 @@ package struct Credentials
     string youtubePlaylistID;
 
     /++
+        Google client ID.
+     +/
+    string spotifyClientID;
+
+    /++
+        Google client secret.
+     +/
+    string spotifyClientSecret;
+
+    /++
         Spotify API OAuth access token.
      +/
     string spotifyAccessToken;
@@ -168,6 +183,11 @@ package struct Credentials
         Spotify API OAuth refresh token.
      +/
     string spotifyRefreshToken;
+
+    /++
+        Spotify playlist ID.
+     +/
+    string spotifyPlaylistID;
 
     /++
         Serialises these [Credentials] into JSON.
@@ -188,6 +208,7 @@ package struct Credentials
         json["youtubePlaylistID"] = this.youtubePlaylistID;
         json["spotifyAccessToken"] = this.spotifyAccessToken;
         json["spotifyRefreshToken"] = this.spotifyRefreshToken;
+        json["spotifyPlaylistID"] = this.spotifyPlaylistID;
 
         return json;
     }
@@ -208,6 +229,7 @@ package struct Credentials
         creds.youtubePlaylistID = json["youtubePlaylistID"].str;
         creds.spotifyAccessToken = json["spotifyAccessToken"].str;
         creds.spotifyRefreshToken = json["spotifyRefreshToken"].str;
+        creds.spotifyPlaylistID = json["spotifyPlaylistID"].str;
         return creds;
     }
 }
@@ -1297,7 +1319,7 @@ void onCommandNuke(TwitchBotPlugin plugin, const ref IRCEvent event)
             .word("songrequest")
             .policy(PrefixPolicy.prefixed)
             .description("Requests a song.")
-            .addSyntax("$command [YouTube link or video ID]")
+            .addSyntax("$command [YouTube link, YouTube video ID, Spotify link or Spotify track ID]")
     )
     .addCommand(
         IRCEventHandler.Command()
@@ -1383,6 +1405,8 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
 
         try
         {
+            import kameloso.plugins.twitchbot.google : addVideoToYouTubePlaylist;
+
             immutable json = addVideoToYouTubePlaylist(plugin, *creds, videoID);
             immutable title = json["snippet"]["title"].str;
             //immutable position = json["snippet"]["position"].integer;
@@ -1446,9 +1470,10 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
 
         try
         {
-            //immutable json = addTrackToSpotifyPlaylist(*creds, videoID);
-            // FIXME: lookup title, handle errors
+            import kameloso.plugins.twitchbot.spotify : addTrackToSpotifyPlaylist;
 
+            immutable json = addTrackToSpotifyPlaylist(plugin, *creds, trackID);
+            // FIXME: lookup title, handle errors
             enum message = `Track added to playlist.`;
             chan(plugin.state, event.channel, message);
         }
@@ -1954,7 +1979,16 @@ void onCAP(TwitchBotPlugin plugin)
 
         if (plugin.twitchBotSettings.googleKeygen)
         {
+            import kameloso.plugins.twitchbot.google : requestGoogleKeys;
             plugin.requestGoogleKeys();
+        }
+
+        if (*plugin.state.abort) return;
+
+        if (plugin.twitchBotSettings.spotifyKeygen)
+        {
+            import kameloso.plugins.twitchbot.spotify : requestSpotifyKeys;
+            plugin.requestSpotifyKeys();
         }
     }
 }
