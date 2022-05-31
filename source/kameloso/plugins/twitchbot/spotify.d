@@ -56,6 +56,10 @@ package void requestSpotifyKeys(TwitchBotPlugin plugin)
 
     <i>https://developer.spotify.com/dashboard</>
 
+Make sure to go into <l>Edit Settings</> and add <i>http://localhost</> as a
+redirect URI. (You need to press the <i>Add</> button for it to save.)
+Additionally, add your user under <l>Users and Access</>.
+
 You also need to supply a channel for which it all relates.
 (Channels are Twitch lowercase account names, prepended with a '<i>#</>' sign.)
 
