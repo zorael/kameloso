@@ -328,7 +328,7 @@ void refreshSpotifyToken(HttpClient client, ref Credentials creds)
         "&grant_type=refresh_token";
     immutable url = urlPattern.format(creds.spotifyRefreshToken);
 
-    if (!client.authorization.length) client.authorization = getSpotifyBase64Authorization(creds);
+    /*if (!client.authorization.length)*/ client.authorization = getSpotifyBase64Authorization(creds);
     auto req = client.request(Uri(url), HttpVerb.POST);
     req.requestParameters.contentType = "application/x-www-form-urlencoded";
     auto res = req.waitForCompletion();
