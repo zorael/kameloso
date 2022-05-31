@@ -1972,6 +1972,14 @@ void onCAP(TwitchBotPlugin plugin)
     if ((plugin.state.server.daemon == IRCServer.Daemon.unset) &&
         plugin.state.server.address.endsWith(".twitch.tv"))
     {
+        if (plugin.twitchBotSettings.keygen ||
+            plugin.twitchBotSettings.googleKeygen ||
+            plugin.twitchBotSettings.spotifyKeygen)
+        {
+            // Some keygen, reload to load secrets so existing ones are read
+            plugin.reload();
+        }
+
         if (plugin.twitchBotSettings.keygen)
         {
             plugin.requestTwitchKey();
