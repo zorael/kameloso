@@ -1488,9 +1488,16 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
         try
         {
             import kameloso.plugins.twitchbot.spotify : addTrackToSpotifyPlaylist;
+            import std.json : JSONType;
 
             immutable json = addTrackToSpotifyPlaylist(plugin, *creds, trackID);
-            // FIXME: lookup title, handle errors
+
+            if ((json.type != JSONType.object)  || "snapshot" !in json)
+            {
+                logger.error("An error occured.");
+                return;
+            }
+
             enum message = `Track added to playlist.`;
             chan(plugin.state, event.channel, message);
         }
