@@ -206,6 +206,7 @@ package struct Credentials
         json["googleAccessToken"] = this.googleAccessToken;
         json["googleRefreshToken"] = this.googleRefreshToken;
         json["youtubePlaylistID"] = this.youtubePlaylistID;
+        json["spotifyClientID"] = this.spotifyClientID;
         json["spotifyAccessToken"] = this.spotifyAccessToken;
         json["spotifyRefreshToken"] = this.spotifyRefreshToken;
         json["spotifyPlaylistID"] = this.spotifyPlaylistID;
@@ -227,6 +228,7 @@ package struct Credentials
         creds.googleAccessToken = json["googleAccessToken"].str;
         creds.googleRefreshToken = json["googleRefreshToken"].str;
         creds.youtubePlaylistID = json["youtubePlaylistID"].str;
+        creds.spotifyClientID = json["spotifyClientID"].str;
         creds.spotifyAccessToken = json["spotifyAccessToken"].str;
         creds.spotifyRefreshToken = json["spotifyRefreshToken"].str;
         creds.spotifyPlaylistID = json["spotifyPlaylistID"].str;
