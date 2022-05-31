@@ -1,7 +1,7 @@
 /++
-    Helper functions for keygen routines.
+    Helper functions for song request modules.
  +/
-module kameloso.plugins.twitchbot.keygenhelpers;
+module kameloso.plugins.twitchbot.songrequesthelpers;
 
 private:
 

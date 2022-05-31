@@ -13,7 +13,7 @@ version(WithTwitchBotPlugin):
 private:
 
 import kameloso.plugins.twitchbot.base;
-import kameloso.plugins.twitchbot.keygenhelpers;
+import kameloso.plugins.twitchbot.songrequesthelpers;
 
 import kameloso.common : expandTags, logger;
 import kameloso.logger : LogLevel;
