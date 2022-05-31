@@ -276,8 +276,8 @@ void getSpotifyTokens(HttpClient client, ref Credentials creds, const string cod
     import std.json : JSONType, parseJSON;
     import std.string : indexOf;
 
-    enum authNode = "https://accounts.spotify.com/api/token";
-    enum urlPattern = authNode ~
+    enum node = "https://accounts.spotify.com/api/token";
+    enum urlPattern = node ~
         "?code=%s" ~
         "&grant_type=authorization_code" ~
         "&redirect_uri=http://localhost";
@@ -322,8 +322,8 @@ void refreshSpotifyToken(HttpClient client, ref Credentials creds)
     import std.json : JSONType, parseJSON;
     import std.string : indexOf;
 
-    enum authNode = "https://accounts.spotify.com/api/token";
-    enum urlPattern = authNode ~
+    enum node = "https://accounts.spotify.com/api/token";
+    enum urlPattern = node ~
         "?refresh_token=%s" ~
         "&grant_type=refresh_token";
     immutable url = urlPattern.format(creds.spotifyRefreshToken);
