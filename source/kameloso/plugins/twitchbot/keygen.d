@@ -213,6 +213,7 @@ instructions and log in to authorise the use of this program with your account.
             writeln();
             logger.warning("Aborting.");
             logger.trace();
+            *plugin.state.abort = true;
             return;
         }
 
