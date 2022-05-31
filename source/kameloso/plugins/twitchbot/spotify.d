@@ -422,9 +422,9 @@ package JSONValue addTrackToSpotifyPlaylist(
         {
             throw new Exception(errorJSON.object["message"].str);
         }
-        else if (auto statusJSON = "status" in errorJSON.object)
+        else if (auto messageJSON = "message" in errorJSON.object)
         {
-            if (statusJSON.str == "UNAUTHENTICATED")
+            if (messageJSON.str == "The access token expired")
             {
                 refreshSpotifyToken(client, creds);
                 saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
