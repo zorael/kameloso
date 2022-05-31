@@ -1351,7 +1351,6 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
     import arsd.http2 : HttpClient, HttpVerb, Uri;
     import lu.string : contains, nom, stripped;
     import std.format : format;
-    import std.stdio;
     import core.time : seconds;
 
     if (plugin.twitchBotSettings.songRequestMode == SongRequestMode.disabled) return;

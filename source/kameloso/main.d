@@ -332,10 +332,8 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             default:
-                import std.stdio;
                 enum pattern = "onMessage received unexpected message type: <l>%s";
                 logger.errorf(pattern.expandTags(LogLevel.error), message.type);
-                writeln(message);
                 if (instance.settings.flush) stdout.flush();
                 break;
             }
