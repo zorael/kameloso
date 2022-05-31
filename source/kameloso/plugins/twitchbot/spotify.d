@@ -97,7 +97,7 @@ A normal URL to any playlist you can modify will work fine.
         {
             string slice = playlistURL;  // mutable
             slice.nom("spotify.com/playlist/");
-            creds.spotifyPlaylistID = slice.nom!(Yes.inherit)('&');
+            creds.spotifyPlaylistID = slice.nom!(Yes.inherit)('?');
         }
         else
         {
