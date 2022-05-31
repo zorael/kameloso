@@ -1284,121 +1284,131 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
             import std.datetime.systime : Clock, SysTime;
             import core.time : days, hours, weeks;
 
-            try
+            enum retriesInCaseOfConnectionErrors = 5;
+
+            while (true)
             {
-                /*
+                try
                 {
-                    "client_id": "tjyryd2ojnqr8a51ml19kn1yi2n0v1",
-                    "expires_in": 5036421,
-                    "login": "zorael",
-                    "scopes": [
-                        "bits:read",
-                        "channel:moderate",
-                        "channel:read:subscriptions",
-                        "channel_editor",
-                        "chat:edit",
-                        "chat:read",
-                        "user:edit:broadcast",
-                        "whispers:edit",
-                        "whispers:read"
-                    ],
-                    "user_id": "22216721"
-                }
-                */
-
-                immutable validationJSON = getValidation(plugin);
-                plugin.userID = validationJSON["user_id"].str;
-                immutable expiresIn = validationJSON["expires_in"].integer;
-
-                /+
-                    The below can probably never happen, as we never get to
-                    connect if the key has expired.
-                 +/
-                /*if (expiresIn == 0L)
-                {
-                    import kameloso.messaging : quit;
-                    import std.typecons : Flag, No, Yes;
-
-                    // Expired.
-                    logger.error("Error: Your Twitch authorisation key has expired.");
-                    quit!(Yes.priority)(plugin.state, string.init, Yes.quiet);
-                    return;
-                }*/
-
-                immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
-                immutable now = Clock.currTime;
-                immutable delta = (expiresWhen - now);
-                immutable numDays = delta.total!"days";
-
-                if (delta > 1.weeks)
-                {
-                    // More than a week away, just .info
-                    enum pattern = "Your Twitch authorisation key will expire " ~
-                        "in <l>%d days</> on <l>%4d-%02d-%02d</>.";
-                    logger.infof(pattern.expandTags(LogLevel.info), numDays,
-                        expiresWhen.year, expiresWhen.month, expiresWhen.day);
-                }
-                else if (delta > 1.days)
-                {
-                    // A week or less, more than a day; warning
-                    enum pattern = "Warning: Your Twitch authorisation key will expire " ~
-                        "in <l>%d %s</> on <l>%4d-%02d-%02d %02d:%02d</>.";
-                    logger.warningf(pattern.expandTags(LogLevel.warning),
-                        numDays, numDays.plurality("day", "days"),
-                        expiresWhen.year, expiresWhen.month, expiresWhen.day,
-                        expiresWhen.hour, expiresWhen.minute);
-                }
-                else
-                {
-                    // Less than a day; warning
-                    immutable numHours = delta.total!"hours";
-                    enum pattern = "WARNING: Your Twitch authorisation key will expire " ~
-                        "in <l>%d %s</> at <l>%02d:%02d</>.";
-                    logger.warningf(pattern.expandTags(LogLevel.warning),
-                        numHours, numHours.plurality("hour", "hours"),
-                        expiresWhen.hour, expiresWhen.minute);
-                }
-            }
-            catch (TwitchQueryException e)
-            {
-                // Something is deeply wrong.
-
-                if (e.code == 2)
-                {
-                    import kameloso.constants : MagicErrorStrings;
-
-                    enum wikiPattern = cast(string)MagicErrorStrings.visitWikiOneliner;
-
-                    if (e.error == MagicErrorStrings.sslLibraryNotFound)
+                    /*
                     {
-                        enum pattern = "Failed to validate Twitch API keys: <l>%s</> " ~
-                            "<t>(is OpenSSL installed?)";
-                        logger.errorf(pattern.expandTags(LogLevel.error),
-                            cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten);
-                        logger.error(wikiPattern.expandTags(LogLevel.error));
+                        "client_id": "tjyryd2ojnqr8a51ml19kn1yi2n0v1",
+                        "expires_in": 5036421,
+                        "login": "zorael",
+                        "scopes": [
+                            "bits:read",
+                            "channel:moderate",
+                            "channel:read:subscriptions",
+                            "channel_editor",
+                            "chat:edit",
+                            "chat:read",
+                            "user:edit:broadcast",
+                            "whispers:edit",
+                            "whispers:read"
+                        ],
+                        "user_id": "22216721"
+                    }
+                    */
 
-                        version(Windows)
+                    immutable validationJSON = getValidation(plugin);
+                    plugin.userID = validationJSON["user_id"].str;
+                    immutable expiresIn = validationJSON["expires_in"].integer;
+
+                    /+
+                        The below can probably never happen, as we never get to
+                        connect if the key has expired.
+                    +/
+                    /*if (expiresIn == 0L)
+                    {
+                        import kameloso.messaging : quit;
+                        import std.typecons : Flag, No, Yes;
+
+                        // Expired.
+                        logger.error("Error: Your Twitch authorisation key has expired.");
+                        quit!(Yes.priority)(plugin.state, string.init, Yes.quiet);
+                        return;
+                    }*/
+
+                    immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
+                    immutable now = Clock.currTime;
+                    immutable delta = (expiresWhen - now);
+                    immutable numDays = delta.total!"days";
+
+                    if (delta > 1.weeks)
+                    {
+                        // More than a week away, just .info
+                        enum pattern = "Your Twitch authorisation key will expire " ~
+                            "in <l>%d days</> on <l>%4d-%02d-%02d</>.";
+                        logger.infof(pattern.expandTags(LogLevel.info), numDays,
+                            expiresWhen.year, expiresWhen.month, expiresWhen.day);
+                    }
+                    else if (delta > 1.days)
+                    {
+                        // A week or less, more than a day; warning
+                        enum pattern = "Warning: Your Twitch authorisation key will expire " ~
+                            "in <l>%d %s</> on <l>%4d-%02d-%02d %02d:%02d</>.";
+                        logger.warningf(pattern.expandTags(LogLevel.warning),
+                            numDays, numDays.plurality("day", "days"),
+                            expiresWhen.year, expiresWhen.month, expiresWhen.day,
+                            expiresWhen.hour, expiresWhen.minute);
+                    }
+                    else
+                    {
+                        // Less than a day; warning
+                        immutable numHours = delta.total!"hours";
+                        enum pattern = "WARNING: Your Twitch authorisation key will expire " ~
+                            "in <l>%d %s</> at <l>%02d:%02d</>.";
+                        logger.warningf(pattern.expandTags(LogLevel.warning),
+                            numHours, numHours.plurality("hour", "hours"),
+                            expiresWhen.hour, expiresWhen.minute);
+                    }
+                }
+                catch (TwitchQueryException e)
+                {
+                    // Something is deeply wrong.
+
+                    if (e.code == 2)
+                    {
+                        import kameloso.constants : MagicErrorStrings;
+
+                        enum wikiPattern = cast(string)MagicErrorStrings.visitWikiOneliner;
+
+                        if (e.error == MagicErrorStrings.sslLibraryNotFound)
                         {
-                            enum getoptPattern = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
-                            logger.error(getoptPattern.expandTags(LogLevel.error));
+                            enum pattern = "Failed to validate Twitch API keys: <l>%s</> " ~
+                                "<t>(is OpenSSL installed?)";
+                            logger.errorf(pattern.expandTags(LogLevel.error),
+                                cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten);
+                            logger.error(wikiPattern.expandTags(LogLevel.error));
+
+                            version(Windows)
+                            {
+                                enum getoptPattern = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
+                                logger.error(getoptPattern.expandTags(LogLevel.error));
+                            }
+                        }
+                        else
+                        {
+                            static int retries;
+                            if (retries++ < retriesInCaseOfConnectionErrors) continue;
+
+                            enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
+                            logger.errorf(pattern.expandTags(LogLevel.error), e.msg, e.error, e.code);
+                            logger.error(wikiPattern.expandTags(LogLevel.error));
                         }
                     }
                     else
                     {
                         enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
                         logger.errorf(pattern.expandTags(LogLevel.error), e.msg, e.error, e.code);
-                        logger.error(wikiPattern.expandTags(LogLevel.error));
                     }
-                }
-                else
-                {
-                    enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
-                    logger.errorf(pattern.expandTags(LogLevel.error), e.msg, e.error, e.code);
+
+                    logger.warning("Disabling API features. Expect breakage.");
+                    //version(PrintStacktraces) logger.trace(e);
+                    plugin.useAPIFeatures = false;
                 }
 
-                logger.warning("Disabling API features. Expect breakage.");
-                //version(PrintStacktraces) logger.trace(e);
-                plugin.useAPIFeatures = false;
+                return;
             }
         }
 
