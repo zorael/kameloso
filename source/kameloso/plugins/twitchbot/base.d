@@ -25,6 +25,7 @@ module kameloso.plugins.twitchbot.base;
 package @Settings struct TwitchBotSettings
 {
 private:
+    import dialect.defs : IRCUser;
     import lu.uda : Unserialisable;
 
 public:
@@ -115,6 +116,30 @@ public:
         bool broadcasterKeygen = false;
     }
 }
+
+
+// SongRequestMode
+/++
+    Song requests may be either disabled, or either in YouTube or Spotify mode.
+ +/
+private enum SongRequestMode
+{
+    /++
+        Song requests are disabled.
+     +/
+    disabled,
+
+    /++
+        Song requests relate to a YouTube playlist.
+     +/
+    youtube,
+
+    /++
+        Song requests relatet to a Spotify playlist.
+     +/
+    spotify,
+}
+
 
 private import kameloso.plugins.common.core;
 
@@ -249,29 +274,6 @@ package struct Credentials
         creds.spotifyPlaylistID = json["spotifyPlaylistID"].str;
         return creds;
     }
-}
-
-
-// SongRequestMode
-/++
-    Song requests may be either disabled, or either in YouTube or Spotify mode.
- +/
-enum SongRequestMode
-{
-    /++
-        Song requests are disabled.
-     +/
-    disabled,
-
-    /++
-        Song requests relate to a YouTube playlist.
-     +/
-    youtube,
-
-    /++
-        Song requests relatet to a Spotify playlist.
-     +/
-    spotify,
 }
 
 
