@@ -60,12 +60,12 @@ package void requestGoogleKeys(TwitchBotPlugin plugin)
 <i>*</> <l>Scopes:</> <i>https://www.googleapis.com/auth/youtube</>
 <i>*</> <l>Test users:</> (your Google account)
 
-Then pick <i>+ <l>Create Credentials</> -> <l>OAuth client ID</>:
+Then pick <i>+ Create Credentials</> -> <i>OAuth client ID</>:
 <i>*</> <l>Application type:</> <i>Desktop app</>
 
 Now you should have a newly-generated client ID and client secret.
 
-<l>Enabled APIs and Services</> tab -> <i>+ <l>Enable APIs and Services</>
+<l>Enabled APIs and Services</> tab -> <i>+ Enable APIs and Services</>
 <i>--></> enter "<i>YouTube Data API v3</>", hit <i>Enable</>
 
 You also need to supply a channel for which it all relates.
