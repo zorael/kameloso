@@ -335,7 +335,10 @@ void refreshSpotifyToken(HttpClient client, ref Credentials creds)
 
     /*
     {
-        ?
+        "access_token": "[redacted]",
+        "token_type": "Bearer",
+        "expires_in": 3600,
+        "scope": "playlist-modify-private playlist-modify-public"
     }
     */
 
@@ -409,7 +412,15 @@ package JSONValue addTrackToSpotifyPlaylist(
 
     /*
     {
-        ?
+        "snapshot_id" : "[redacted]"
+    }
+    */
+    /*
+    {
+        "error": {
+            "status": 401,
+            "message": "The access token expired"
+        }
     }
     */
 
