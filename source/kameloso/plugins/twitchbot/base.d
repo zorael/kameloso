@@ -91,22 +91,28 @@ public:
         bool bellOnImportant = false;
 
         /++
-            Whether or not to start a captive session for generating a Twitch
-            authorisation key.
+            Whether or not to start a captive session for requesting a Twitch
+            access token with normal chat privileges.
          +/
         bool keygen = false;
 
         /++
-            Whether or not to start a captive session for generating Google
-            authorisation codes and tokens.
+            Whether or not to start a captive session for requesting Google
+            access tokens.
          +/
         bool googleKeygen = false;
 
         /++
-            Whether or not to start a captive session for generating Spotify
-            authorisation codes and tokens.
+            Whether or not to start a captive session for requesting Spotify
+            access tokens.
          +/
         bool spotifyKeygen = false;
+
+        /++
+            Whether or not to start a acptive session for requesting a Twitch
+            authorisation token with higher broadcaster privileges.
+         +/
+        bool broadcasterKeygen = false;
     }
 }
 
@@ -139,6 +145,11 @@ import core.thread : Fiber;
  +/
 package struct Credentials
 {
+    /++
+        Broadcaster-level Twitch key.
+     +/
+    string broadcasterKey;
+
     /++
         Google client ID.
      +/
@@ -201,6 +212,7 @@ package struct Credentials
         json = null;
         json.object = null;
 
+        json["broadcasterKey"] = this.broadcasterKey;
         json["googleClientID"] = this.googleClientID;
         json["googleClientSecret"] = this.googleClientSecret;
         json["googleAccessToken"] = this.googleAccessToken;
@@ -223,6 +235,7 @@ package struct Credentials
     static auto fromJSON(const JSONValue json)
     {
         typeof(this) creds;
+        creds.broadcasterKey = json["broadcasterKey"].str;
         creds.googleClientID = json["googleClientID"].str;
         creds.googleClientSecret = json["googleClientSecret"].str;
         creds.googleAccessToken = json["googleAccessToken"].str;
