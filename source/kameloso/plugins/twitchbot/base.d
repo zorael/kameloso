@@ -1493,7 +1493,7 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
 
             immutable json = addTrackToSpotifyPlaylist(plugin, *creds, trackID);
 
-            if ((json.type != JSONType.object)  || "snapshot" !in json)
+            if ((json.type != JSONType.object)  || "snapshot_id" !in json)
             {
                 logger.error("An error occured.");
                 return;
