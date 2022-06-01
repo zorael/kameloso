@@ -1514,7 +1514,7 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
 
         try
         {
-            import kameloso.plugins.twitchbot.spotify : addTrackToSpotifyPlaylist;
+            import kameloso.plugins.twitchbot.spotify;
             import std.json : JSONType;
 
             immutable json = addTrackToSpotifyPlaylist(plugin, *creds, trackID);
@@ -1525,7 +1525,17 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
                 return;
             }
 
-            enum message = `Track added to playlist.`;
+            const trackJSON = getSpotifyTrackByID(*creds, trackID);
+            immutable artist = trackJSON["artists"].array[0].object["name"].str;
+            immutable track = trackJSON["name"].str;
+
+            enum pattern = "%s - %s added to playlist.";
+            immutable message = pattern.format(artist, track);
+            chan(plugin.state, event.channel, message);
+        }
+        catch (SongRequestException e)
+        {
+            enum message = "Invalid Spotify track URL.";
             chan(plugin.state, event.channel, message);
         }
         catch (Exception e)

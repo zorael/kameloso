@@ -470,3 +470,45 @@ package JSONValue addTrackToSpotifyPlaylist(
 
     return json;
 }
+
+
+// getSpotifyTrackByID
+/++
+    Fetches information about a Spotify track by its ID and returns the JSON response.
+
+    Params:
+        creds = Credentials aggregate.
+        trackID = Spotify track ID string.
+
+    Returns:
+        A [std.json.JSONValue|JSONValue] of the response.
+ +/
+package auto getSpotifyTrackByID(Credentials creds, const string trackID)
+{
+    import arsd.http2 : Uri;
+    import std.algorithm.searching : endsWith;
+    import std.format : format;
+    import std.json : JSONType, parseJSON;
+
+    enum urlPattern = "https://api.spotify.com/v1/tracks/%s";
+    immutable url = urlPattern.format(trackID);
+    auto client = getHTTPClient();
+
+    if (!client.authorization.length || !client.authorization.endsWith(creds.spotifyAccessToken))
+    {
+        client.authorization = "Bearer " ~ creds.spotifyAccessToken;
+    }
+
+    auto req = client.request(Uri(url));
+    auto res = req.waitForCompletion();
+
+    auto json = parseJSON(res.contentText);
+
+    if (json.type != JSONType.object)
+    {
+        throw new SongRequestJSONTypeMismatchException(
+            "Wrong JSON type in track request response", json);
+    }
+
+    return json;
+}
