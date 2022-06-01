@@ -47,7 +47,7 @@ public:
     /++
         What kind of song requests to accept, if any.
      +/
-    SongRequestMode songRequestMode = SongRequestMode.youtube;
+    SongRequestMode songrequestMode = SongRequestMode.youtube;
 
     /++
         What level of user permissions are needed to issue song requests.
@@ -1355,7 +1355,7 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
     import std.format : format;
     import core.time : seconds;
 
-    if (plugin.twitchBotSettings.songRequestMode == SongRequestMode.disabled) return;
+    if (plugin.twitchBotSettings.songrequestMode == SongRequestMode.disabled) return;
     else if (event.sender.class_ < plugin.twitchBotSettings.songrequestPermsNeeded)
     {
         // Issue an error?
@@ -1363,7 +1363,7 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
         return;
     }
 
-    if (plugin.twitchBotSettings.songRequestMode == SongRequestMode.youtube)
+    if (plugin.twitchBotSettings.songrequestMode == SongRequestMode.youtube)
     {
         immutable url = event.content.stripped;
 
@@ -1438,7 +1438,7 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
             chan(plugin.state, event.channel, e.msg);
         }
     }
-    else if (plugin.twitchBotSettings.songRequestMode == SongRequestMode.spotify)
+    else if (plugin.twitchBotSettings.songrequestMode == SongRequestMode.spotify)
     {
         immutable url = event.content.stripped;
 
