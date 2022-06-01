@@ -1349,6 +1349,7 @@ void onCommandNuke(TwitchBotPlugin plugin, const ref IRCEvent event)
 )
 void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
+    import kameloso.plugins.twitchbot.songrequesthelpers;
     import kameloso.constants : KamelosoInfo, Timeout;
     import arsd.http2 : HttpClient, HttpVerb, Uri;
     import lu.string : contains, nom, stripped;
@@ -1449,6 +1450,11 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
 
             enum pattern = `"%s" added to playlist.`;
             immutable message = pattern.format(title);
+            chan(plugin.state, event.channel, message);
+        }
+        catch (SongRequestException e)
+        {
+            enum message = "Invalid YouTube video URL.";
             chan(plugin.state, event.channel, message);
         }
         catch (Exception e)
