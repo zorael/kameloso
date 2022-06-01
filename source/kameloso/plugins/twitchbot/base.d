@@ -1402,7 +1402,11 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
         string slice = url;  // mutable
         string videoID;
 
-        if (slice.contains("youtube.com/watch?v="))
+        if (slice.length == 11)
+        {
+            videoID = slice;
+        }
+        else if (slice.contains("youtube.com/watch?v="))
         {
             slice.nom("youtube.com/watch?v=");
             videoID = slice.nom!(Yes.inherit)('&');
@@ -1411,10 +1415,6 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
         {
             slice.nom("youtu.be/");
             videoID = slice.nom!(Yes.inherit)('?');
-        }
-        else if (slice.length == 11)
-        {
-            videoID = slice;
         }
         else
         {
@@ -1474,14 +1474,14 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
         string slice = url;  // mutable
         string trackID;
 
-        if (slice.contains("spotify.com/track/"))
+        if (slice.length == 22)
+        {
+            trackID = slice;
+        }
+        else if (slice.contains("spotify.com/track/"))
         {
             slice.nom("spotify.com/track/");
             trackID = slice.nom!(Yes.inherit)('?');
-        }
-        else if (slice.length == 22)
-        {
-            trackID = slice;
         }
         else
         {
