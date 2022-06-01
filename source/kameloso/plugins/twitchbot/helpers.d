@@ -94,6 +94,30 @@ auto readNamedString(
 }
 
 
+// printManualURL
+/++
+    Prints an URL for manual copy/pasting.
+
+    Params:
+        url = URL string.
+ +/
+void printManualURL(const string url)
+{
+    import std.stdio : writefln;
+
+    enum copyPastePattern = `
+<l>Copy and paste this link manually into your browser, and log in as asked:
+
+<i>8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<</>
+
+%s
+
+<i>8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<</>
+`;
+    writefln(copyPastePattern.expandTags(LogLevel.off), url);
+}
+
+
 // SongRequestException
 /++
     A normal [object.Exception|Exception] but where its type conveys the specifi

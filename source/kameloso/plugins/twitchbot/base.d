@@ -98,6 +98,12 @@ public:
         bool keygen = false;
 
         /++
+            Whether or not to start a captive session for requesting a Twitch
+            access token with broadcaster privileges.
+         +/
+        bool superKeygen = false;
+
+        /++
             Whether or not to start a captive session for requesting Google
             access tokens.
          +/
@@ -2040,13 +2046,13 @@ void onCommandWatchtime(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 )
 void onCAP(TwitchBotPlugin plugin)
 {
-    import kameloso.plugins.twitchbot.keygen : requestTwitchKey;
     import std.algorithm.searching : endsWith;
 
     if ((plugin.state.server.daemon == IRCServer.Daemon.unset) &&
         plugin.state.server.address.endsWith(".twitch.tv"))
     {
-        if (plugin.twitchBotSettings.keygen ||
+        if (/*plugin.twitchBotSettings.keygen ||*/
+            plugin.twitchBotSettings.superKeygen ||
             plugin.twitchBotSettings.googleKeygen ||
             plugin.twitchBotSettings.spotifyKeygen)
         {
@@ -2056,7 +2062,16 @@ void onCAP(TwitchBotPlugin plugin)
 
         if (plugin.twitchBotSettings.keygen)
         {
+            import kameloso.plugins.twitchbot.keygen : requestTwitchKey;
             plugin.requestTwitchKey();
+        }
+
+        if (*plugin.state.abort) return;
+
+        if (plugin.twitchBotSettings.superKeygen)
+        {
+            import kameloso.plugins.twitchbot.keygen : requestTwitchSuperKey;
+            plugin.requestTwitchSuperKey();
         }
 
         if (*plugin.state.abort) return;

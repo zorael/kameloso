@@ -141,25 +141,11 @@ Follow the instructions and log in to authorise the use of this program with you
     Pid browser;
     scope(exit) if (browser !is null) wait(browser);
 
-    void printManualURL()
-    {
-        enum copyPastePattern = `
-<l>Copy and paste this link manually into your browser, and log in as asked:
-
-<i>8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<</>
-
-%s
-
-<i>8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<</>
-`;
-        writefln(copyPastePattern.expandTags(LogLevel.off), url);
-        if (plugin.state.settings.flush) stdout.flush();
-    }
-
     if (plugin.state.settings.force)
     {
         logger.warning("Forcing; not automatically opening browser.");
-        printManualURL();
+        printManualURL(url);
+        if (plugin.state.settings.flush) stdout.flush();
     }
     else
     {
@@ -172,7 +158,8 @@ Follow the instructions and log in to authorise the use of this program with you
         {
             // Probably we got some platform wrong and command was not found
             logger.warning("Error: could not automatically open browser.");
-            printManualURL();
+            printManualURL(url);
+            if (plugin.state.settings.flush) stdout.flush();
         }
     }
 
