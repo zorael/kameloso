@@ -92,3 +92,107 @@ auto readNamedString(
 
     return string_;
 }
+
+
+// SongRequestException
+/++
+    A normal [object.Exception|Exception] but where its type conveys the specifi
+    context of a song request failing in a generic manner.
+ +/
+final class SongRequestException : Exception
+{
+    /++
+        Constructor.
+     +/
+    this(const string message,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        super(message, file, line, nextInChain);
+    }
+}
+
+
+// SongRequestPlaylistException
+/++
+    A normal [object.Exception|Exception] but where its type conveys the specifi
+    context of a playlist ID being missing.
+ +/
+final class SongRequestPlaylistException : Exception
+{
+    /++
+        Constructor.
+     +/
+    this(const string message,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        super(message, file, line, nextInChain);
+    }
+}
+
+
+// SongRequestTokenException
+/++
+    A normal [object.Exception|Exception] but where its type conveys the specifi
+    context of an OAuth access token being missing or failing to be requested.
+ +/
+final class SongRequestTokenException : Exception
+{
+    /++
+        Constructor.
+     +/
+    this(const string message,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        super(message, file, line, nextInChain);
+    }
+}
+
+// SongRequestJSONTypeMismatchException
+/++
+    A normal [object.Exception|Exception] but where its type conveys the specifi
+    context of some JSON being of a wrong [std.json.JSONType|JSONType].
+
+    It optionally embeds the JSON.
+ +/
+final class SongRequestJSONTypeMismatchException : Exception
+{
+private:
+    import std.json : JSONValue;
+
+public:
+    /++
+        [std.json.JSONValue|JSONValue] in question.
+     +/
+    JSONValue json;
+
+    /++
+        Create a new [SongRequesstJSONTypeMismatchException], attaching a
+        [std.json.JSONValue|JSONValue].
+     +/
+    this(const string message,
+        const JSONValue json,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        this.json = json;
+        super(message, file, line, nextInChain);
+    }
+
+    /++
+        Constructor.
+     +/
+    this(const string message,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        super(message, file, line, nextInChain);
+    }
+}
