@@ -422,6 +422,10 @@ Assuming a prefix of `!`, commands to test are:
 
 > Note: `.` (dot) and `/` (slash) prefixes will not work on Twitch.
 
+### Song requests
+
+To get song requests to work, you need to register an application to interface with [Google (YouTube)](https://console.cloud.google.com/projectcreate) and/or [Spotify](https://developer.spotify.com/dashboard) servers. To initiate the guides for this, pass `--set twitch.googleKeygen` for YouTube and `--set twitch.spotifyKeygen` for Spotify, then simply follow the on-screen instructions. (They behave much like `--set twitch.keygen`.)
+
 ## Further help
 
 For more information and help, first refer to [the wiki](https://github.com/zorael/kameloso/wiki).
