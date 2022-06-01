@@ -416,6 +416,7 @@ Assuming a prefix of `!`, commands to test are:
 * `!ecount`
 * `!watchtime`
 * `!nuke`
+* `!songrequest`
 
 ...alongside `!oneliner`, `!counter`, `!timer`, `!poll`, `!stopwatch`, and other non-Twitch-specific commands. Try `!help` or [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins).
 
@@ -440,7 +441,7 @@ If you still can't find what you're looking for, or if you have suggestions on h
 
 * pipedream zero: **no compiler segfaults** ([#18026](https://issues.dlang.org/show_bug.cgi?id=18026), [#20562](https://issues.dlang.org/show_bug.cgi?id=20562))
 * please send help: Windows Secure Channel SSL
-* Twitch `settitle`, `setgame`? difficult
+* Twitch `settitle`, `setgame`? plausible
 * **more pairs of eyes**
 
 # Built with
