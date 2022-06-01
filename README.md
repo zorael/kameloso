@@ -77,6 +77,7 @@ If there's anyone talking it should show up on your screen.
     * [Example configuration](#example-configuration)
     * [Long story](#long-story)
     * [Twitch bot](#twitch-bot)
+      * [Song requests](#song-requests)
   * [Further help](#further-help)
 * [Known issues](#known-issues)
   * [Windows](#windows)
@@ -422,7 +423,7 @@ Assuming a prefix of `!`, commands to test are:
 
 > Note: `.` (dot) and `/` (slash) prefixes will not work on Twitch.
 
-### Song requests
+#### Song requests
 
 To get song requests to work, you need to register an application to interface with [Google (YouTube)](https://console.cloud.google.com/projectcreate) and/or [Spotify](https://developer.spotify.com/dashboard) servers. To initiate the guides for this, pass `--set twitch.googleKeygen` for YouTube and `--set twitch.spotifyKeygen` for Spotify, then simply follow the on-screen instructions. (They behave much like `--set twitch.keygen`.)
 
