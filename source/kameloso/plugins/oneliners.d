@@ -171,6 +171,7 @@ public:
         json["trigger"] = JSONValue(this.trigger);
         json["type"] = JSONValue(cast(int)this.type);
         json["responses"] = JSONValue(this.responses);
+
         return json;
     }
 
@@ -184,7 +185,7 @@ public:
         Returns:
             A new [Oneliner] with values loaded from the passed JSON.
      +/
-    static Oneliner fromJSON(const JSONValue json)
+    static auto fromJSON(const JSONValue json)
     {
         Oneliner oneliner;
         oneliner.trigger = json["trigger"].str;

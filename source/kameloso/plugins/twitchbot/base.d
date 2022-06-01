@@ -25,6 +25,7 @@ module kameloso.plugins.twitchbot.base;
 package @Settings struct TwitchBotSettings
 {
 private:
+    import dialect.defs : IRCUser;
     import lu.uda : Unserialisable;
 
 public:
@@ -42,6 +43,16 @@ public:
         able to respond to `!watchtime`.
      +/
     bool watchtime = true;
+
+    /++
+        What kind of song requests to accept, if any.
+     +/
+    SongRequestMode songrequestMode = SongRequestMode.youtube;
+
+    /++
+        What level of user permissions are needed to issue song requests.
+     +/
+    IRCUser.Class songrequestPermsNeeded = IRCUser.Class.whitelist;
 
     /++
         Whether or not broadcasters are always implicitly class
@@ -81,12 +92,54 @@ public:
         bool bellOnImportant = false;
 
         /++
-            Whether or not to start a captive session for generating a Twitch
-            authorisation key. Should not be permanently set in the configuration file!
+            Whether or not to start a captive session for requesting a Twitch
+            access token with normal chat privileges.
          +/
         bool keygen = false;
+
+        /++
+            Whether or not to start a captive session for requesting Google
+            access tokens.
+         +/
+        bool googleKeygen = false;
+
+        /++
+            Whether or not to start a captive session for requesting Spotify
+            access tokens.
+         +/
+        bool spotifyKeygen = false;
+
+        /++
+            Whether or not to start a acptive session for requesting a Twitch
+            authorisation token with higher broadcaster privileges.
+         +/
+        bool broadcasterKeygen = false;
     }
 }
+
+
+// SongRequestMode
+/++
+    Song requests may be either disabled, or either in YouTube or Spotify mode.
+ +/
+private enum SongRequestMode
+{
+    /++
+        Song requests are disabled.
+     +/
+    disabled,
+
+    /++
+        Song requests relate to a YouTube playlist.
+     +/
+    youtube,
+
+    /++
+        Song requests relatet to a Spotify playlist.
+     +/
+    spotify,
+}
+
 
 private import kameloso.plugins.common.core;
 
@@ -106,6 +159,122 @@ import dialect.defs;
 import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
+
+
+// Credentials
+/++
+    Credentials needed to access APIs like that of Google and Spotify.
+
+    See_Also:
+        https://console.cloud.google.com/apis/credentials
+ +/
+package struct Credentials
+{
+    /++
+        Broadcaster-level Twitch key.
+     +/
+    string broadcasterKey;
+
+    /++
+        Google client ID.
+     +/
+    string googleClientID;
+
+    /++
+        Google client secret.
+     +/
+    string googleClientSecret;
+
+    /++
+        Google API OAuth access token.
+     +/
+    string googleAccessToken;
+
+    /++
+        Google API OAuth refresh token.
+     +/
+    string googleRefreshToken;
+
+    /++
+        YouTube playlist ID.
+     +/
+    string youtubePlaylistID;
+
+    /++
+        Google client ID.
+     +/
+    string spotifyClientID;
+
+    /++
+        Google client secret.
+     +/
+    string spotifyClientSecret;
+
+    /++
+        Spotify API OAuth access token.
+     +/
+    string spotifyAccessToken;
+
+    /++
+        Spotify API OAuth refresh token.
+     +/
+    string spotifyRefreshToken;
+
+    /++
+        Spotify playlist ID.
+     +/
+    string spotifyPlaylistID;
+
+    /++
+        Serialises these [Credentials] into JSON.
+
+        Returns:
+            `this` represented in JSON.
+     +/
+    JSONValue toJSON() const
+    {
+        JSONValue json;
+        json = null;
+        json.object = null;
+
+        json["broadcasterKey"] = this.broadcasterKey;
+        json["googleClientID"] = this.googleClientID;
+        json["googleClientSecret"] = this.googleClientSecret;
+        json["googleAccessToken"] = this.googleAccessToken;
+        json["googleRefreshToken"] = this.googleRefreshToken;
+        json["youtubePlaylistID"] = this.youtubePlaylistID;
+        json["spotifyClientID"] = this.spotifyClientID;
+        json["spotifyClientSecret"] = this.spotifyClientSecret;
+        json["spotifyAccessToken"] = this.spotifyAccessToken;
+        json["spotifyRefreshToken"] = this.spotifyRefreshToken;
+        json["spotifyPlaylistID"] = this.spotifyPlaylistID;
+
+        return json;
+    }
+
+    /++
+        Deserialises some [Credentials] from JSON.
+
+        Params:
+            json = JSON representation of some [Credentials].
+     +/
+    static auto fromJSON(const JSONValue json)
+    {
+        typeof(this) creds;
+        creds.broadcasterKey = json["broadcasterKey"].str;
+        creds.googleClientID = json["googleClientID"].str;
+        creds.googleClientSecret = json["googleClientSecret"].str;
+        creds.googleAccessToken = json["googleAccessToken"].str;
+        creds.googleRefreshToken = json["googleRefreshToken"].str;
+        creds.youtubePlaylistID = json["youtubePlaylistID"].str;
+        creds.spotifyClientID = json["spotifyClientID"].str;
+        creds.spotifyClientSecret = json["spotifyClientSecret"].str;
+        creds.spotifyAccessToken = json["spotifyAccessToken"].str;
+        creds.spotifyRefreshToken = json["spotifyRefreshToken"].str;
+        creds.spotifyPlaylistID = json["spotifyPlaylistID"].str;
+        return creds;
+    }
+}
 
 
 // onImportant
@@ -1155,6 +1324,213 @@ void onCommandNuke(TwitchBotPlugin plugin, const ref IRCEvent event)
 }
 
 
+// onCommandSongRequest
+/++
+    Implements `!songrequest`, allowing viewers to request songs (actually
+    YouTube videos) to be added to the streamer's playlist.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.anyone)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("songrequest")
+            .policy(PrefixPolicy.prefixed)
+            .description("Requests a song.")
+            .addSyntax("$command [YouTube link, YouTube video ID, Spotify link or Spotify track ID]")
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("sr")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
+)
+void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
+{
+    import kameloso.constants : KamelosoInfo, Timeout;
+    import arsd.http2 : HttpClient, HttpVerb, Uri;
+    import lu.string : contains, nom, stripped;
+    import std.format : format;
+    import core.time : seconds;
+
+    if (plugin.twitchBotSettings.songrequestMode == SongRequestMode.disabled) return;
+    else if (event.sender.class_ < plugin.twitchBotSettings.songrequestPermsNeeded)
+    {
+        // Issue an error?
+        logger.error("User does not have the needed permissions to issue song requests.");
+        return;
+    }
+
+    if (event.sender.class_ < IRCUser.class_.operator)
+    {
+        const room = event.channel in plugin.rooms;
+        assert(room, "Tried to make a song request in a nonexistent room");
+
+        if (const lastRequestTimestamp = event.sender.nickname in room.songrequestHistory)
+        {
+            if ((event.time - *lastRequestTimestamp) < TwitchBotPlugin.Room.minimumTimeBetweenSongRequests)
+            {
+                enum pattern = "At least %d seconds must pass between song requests.";
+                immutable message = pattern.format(TwitchBotPlugin.Room.minimumTimeBetweenSongRequests);
+                chan(plugin.state, event.channel, message);
+                return;
+            }
+        }
+    }
+
+    if (plugin.twitchBotSettings.songrequestMode == SongRequestMode.youtube)
+    {
+        immutable url = event.content.stripped;
+
+        if (url.length == 11)
+        {
+            // Probably a video ID
+        }
+        else if (!url.length ||
+            url.contains(' ') ||
+            (!url.contains("youtube.com/") &&
+            !url.contains("youtu.be/")))
+        {
+            enum pattern = "Usage: %s%s [YouTube link or video ID]";
+            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+            chan(plugin.state, event.channel, message);
+            return;
+        }
+
+        auto creds = event.channel in plugin.secretsByChannel;
+
+        if (!creds || !creds.googleAccessToken.length)
+        {
+            enum message = "Missing Google API credentials. " ~
+                "Run the program with <l>--set twitch.googleKeygen</> to set up.";
+            logger.error(message.expandTags(LogLevel.error));
+            return;
+        }
+
+        // Patterns:
+        // https://www.youtube.com/watch?v=jW1KXvCg5bY&t=123
+        // www.youtube.com/watch?v=jW1KXvCg5bY&t=123
+        // https://youtu.be/jW1KXvCg5bY?t=123
+        // youtu.be/jW1KXvCg5bY?t=123
+        // jW1KXvCg5bY
+
+        string slice = url;  // mutable
+        string videoID;
+
+        if (slice.length == 11)
+        {
+            videoID = slice;
+        }
+        else if (slice.contains("youtube.com/watch?v="))
+        {
+            slice.nom("youtube.com/watch?v=");
+            videoID = slice.nom!(Yes.inherit)('&');
+        }
+        else if (slice.contains("youtu.be/"))
+        {
+            slice.nom("youtu.be/");
+            videoID = slice.nom!(Yes.inherit)('?');
+        }
+        else
+        {
+            logger.warning("Malformed video link?");
+            return;
+        }
+
+        try
+        {
+            import kameloso.plugins.twitchbot.google : addVideoToYouTubePlaylist;
+
+            immutable json = addVideoToYouTubePlaylist(plugin, *creds, videoID);
+            immutable title = json["snippet"]["title"].str;
+            //immutable position = json["snippet"]["position"].integer;
+
+            enum pattern = `"%s" added to playlist.`;
+            immutable message = pattern.format(title);
+            chan(plugin.state, event.channel, message);
+        }
+        catch (Exception e)
+        {
+            logger.error(e.msg);
+            version(PrintStacktraces) logger.trace(e);
+        }
+    }
+    else if (plugin.twitchBotSettings.songrequestMode == SongRequestMode.spotify)
+    {
+        immutable url = event.content.stripped;
+
+        if (url.length == 22)
+        {
+            // Probably a track ID
+        }
+        else if (!url.length ||
+            url.contains(' ') ||
+            !url.contains("spotify.com/track/"))
+        {
+            enum pattern = "Usage: %s%s [Spotify link or track ID]";
+            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+            chan(plugin.state, event.channel, message);
+            return;
+        }
+
+        auto creds = event.channel in plugin.secretsByChannel;
+
+        if (!creds || !creds.spotifyAccessToken.length)
+        {
+            enum message = "Missing Spotify API credentials. " ~
+                "Run the program with <l>--set twitch.spotifyKeygen</> to set up.";
+            logger.error(message.expandTags(LogLevel.error));
+            return;
+        }
+
+        // Patterns
+        // https://open.spotify.com/track/65EGCfqn3di7gLMllw1Tg0?si=02eb9a0c9d6c4972
+
+        string slice = url;  // mutable
+        string trackID;
+
+        if (slice.length == 22)
+        {
+            trackID = slice;
+        }
+        else if (slice.contains("spotify.com/track/"))
+        {
+            slice.nom("spotify.com/track/");
+            trackID = slice.nom!(Yes.inherit)('?');
+        }
+        else
+        {
+            logger.warning("Malformed track link?");
+            return;
+        }
+
+        try
+        {
+            import kameloso.plugins.twitchbot.spotify : addTrackToSpotifyPlaylist;
+            import std.json : JSONType;
+
+            immutable json = addTrackToSpotifyPlaylist(plugin, *creds, trackID);
+
+            if ((json.type != JSONType.object)  || "snapshot_id" !in json)
+            {
+                logger.error("An error occurred.\n", json.toPrettyString);
+                return;
+            }
+
+            enum message = `Track added to playlist.`;
+            chan(plugin.state, event.channel, message);
+        }
+        catch (Exception e)
+        {
+            logger.error(e.msg);
+            version(PrintStacktraces) logger.trace(e);
+        }
+    }
+}
+
+
 // onAnyMessage
 /++
     Bells on any message, if the [TwitchBotSettings.bellOnMessage] setting is set.
@@ -1644,14 +2020,40 @@ void onCommandWatchtime(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 )
 void onCAP(TwitchBotPlugin plugin)
 {
-    import kameloso.plugins.twitchbot.keygen : generateKey;
+    import kameloso.plugins.twitchbot.keygen : requestTwitchKey;
     import std.algorithm.searching : endsWith;
 
-    if (plugin.twitchBotSettings.keygen &&
-        (plugin.state.server.daemon == IRCServer.Daemon.unset) &&
+    if ((plugin.state.server.daemon == IRCServer.Daemon.unset) &&
         plugin.state.server.address.endsWith(".twitch.tv"))
     {
-        return plugin.generateKey();
+        if (plugin.twitchBotSettings.keygen ||
+            plugin.twitchBotSettings.googleKeygen ||
+            plugin.twitchBotSettings.spotifyKeygen)
+        {
+            // Some keygen, reload to load secrets so existing ones are read
+            plugin.reload();
+        }
+
+        if (plugin.twitchBotSettings.keygen)
+        {
+            plugin.requestTwitchKey();
+        }
+
+        if (*plugin.state.abort) return;
+
+        if (plugin.twitchBotSettings.googleKeygen)
+        {
+            import kameloso.plugins.twitchbot.google : requestGoogleKeys;
+            plugin.requestGoogleKeys();
+        }
+
+        if (*plugin.state.abort) return;
+
+        if (plugin.twitchBotSettings.spotifyKeygen)
+        {
+            import kameloso.plugins.twitchbot.spotify : requestSpotifyKeys;
+            plugin.requestSpotifyKeys();
+        }
     }
 }
 
@@ -1873,6 +2275,7 @@ void initResources(TwitchBotPlugin plugin)
 
     JSONStorage ecountJSON;
     JSONStorage viewersJSON;
+    JSONStorage secretsJSON;
 
     try
     {
@@ -1908,10 +2311,28 @@ void initResources(TwitchBotPlugin plugin)
             __LINE__);
     }
 
+    try
+    {
+        secretsJSON.load(plugin.secretsFile);
+    }
+    catch (JSONException e)
+    {
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+
+        version(PrintStacktraces) logger.trace(e);
+        throw new IRCPluginInitialisationException(
+            "Secrets file is malformed",
+            plugin.name,
+            plugin.secretsFile,
+            __FILE__,
+            __LINE__);
+    }
+
     // Let other Exceptions pass.
 
     ecountJSON.save(plugin.ecountFile);
     viewersJSON.save(plugin.viewersFile);
+    secretsJSON.save(plugin.secretsFile);
 }
 
 
@@ -1935,6 +2356,30 @@ void saveResourceToDisk(const long[string][string] aa, const string filename)
 }
 
 
+// saveSecretsToDisk
+/++
+    FIXME
+ +/
+package void saveSecretsToDisk(const Credentials[string] aa, const string filename)
+{
+    import std.json : JSONValue;
+    import std.stdio : File, writeln;
+
+    JSONValue json;
+    json = null;
+    json.object = null;
+
+    foreach (immutable channelName, creds; aa)
+    {
+        json[channelName] = null;
+        json[channelName].object = null;
+        json[channelName] = creds.toJSON();
+    }
+
+    File(filename, "w").writeln(json.toPrettyString);
+}
+
+
 // reload
 /++
     Reloads the plugin, loading emote counters from disk.
@@ -1954,6 +2399,17 @@ void reload(TwitchBotPlugin plugin)
     plugin.viewerTimesByChannel.clear();
     plugin.viewerTimesByChannel.populateFromJSON(viewersJSON);
     plugin.viewerTimesByChannel = plugin.viewerTimesByChannel.rehash();
+
+    JSONStorage secretsJSON;
+    secretsJSON.load(plugin.secretsFile);
+    plugin.secretsByChannel.clear();
+
+    foreach (immutable channelName, credsJSON; secretsJSON.storage.object)
+    {
+        plugin.secretsByChannel[channelName] = Credentials.fromJSON(credsJSON);
+    }
+
+    plugin.secretsByChannel = plugin.secretsByChannel.rehash();
 }
 
 
@@ -2041,6 +2497,18 @@ package:
 
         /// The last n messages sent in the channel, used by `nuke`.
         CircularBuffer!(IRCEvent, No.dynamic, messageMemory) lastNMessages;
+
+        /++
+            The minimum amount of time in seconds that must have passed between
+            two song requests by one person.
+
+            Users of class [dialect.defs.IRCUser.Class.operator|operator] or
+            higher are exempt.
+         +/
+        enum minimumTimeBetweenSongRequests = 60;
+
+        /// Song request history; UNIX timestamps keyed by nickname.
+        long[string] songrequestHistory;
     }
 
     /// All Twitch Bot plugin settings.
@@ -2116,6 +2584,9 @@ package:
     /// Associative array of viewer times; seconds keyed by nickname keyed by channel.
     long[string][string] viewerTimesByChannel;
 
+    /// API keys and tokens, keyed by channel.
+    Credentials[string] secretsByChannel;
+
     /// The thread ID of the persistent worker thread.
     Tid persistentWorkerTid;
 
@@ -2130,6 +2601,9 @@ package:
 
     /// File to save viewer times to.
     @Resource viewersFile = "twitch-viewers.json";
+
+    /// File to save API keys and tokens to.
+    @Resource secretsFile = "twitch-secrets.json";
 
     /// Emote counters associative array; counter longs keyed by emote ID string keyed by channel.
     long[string][string] ecount;

@@ -85,7 +85,7 @@ if (isSomeFunction!dg)
             // Copy/paste kameloso.messaging.quit, since we don't have access to plugin.state
 
             enum apiPattern = "Your Twitch API key has expired. " ~
-                "Run the program with <l>--set twitchbot.keygen</> to generate a new one.";
+                "Run the program with <l>--set twitch.keygen</> to generate a new one.";
             logger.error(apiPattern.expandTags(LogLevel.error));
 
             Message m;

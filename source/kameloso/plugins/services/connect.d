@@ -474,7 +474,7 @@ void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
             if (!service.state.bot.pass.length)
             {
                 logger.error("You *need* a pass to join this server.");
-                enum pattern = "Run the program with <i>--set twitchbot.keygen</> to generate a new one.";
+                enum pattern = "Run the program with <i>--set twitch.keygen</> to generate a new one.";
                 logger.log(pattern.expandTags(LogLevel.all));
             }
             else
@@ -486,7 +486,7 @@ void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
 
         case "Login authentication failed":
             logger.error("Incorrect client pass. Please make sure it is valid and has not expired.");
-            enum pattern = "Run the program with <i>--set twitchbot.keygen</> to generate a new one.";
+            enum pattern = "Run the program with <i>--set twitch.keygen</> to generate a new one.";
             logger.log(pattern.expandTags(LogLevel.all));
             break;
 

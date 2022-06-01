@@ -231,7 +231,7 @@ public:
         Returns:
             A new [TimerDefinition] with values loaded from the passed JSON.
      +/
-    static TimerDefinition fromJSON(const JSONValue json)
+    static auto fromJSON(const JSONValue json)
     {
         TimerDefinition def;
         def.name = json["name"].str;

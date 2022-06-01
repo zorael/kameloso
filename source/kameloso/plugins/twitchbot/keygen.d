@@ -17,7 +17,7 @@ import kameloso.plugins.twitchbot.base;
 package:
 
 
-// generateKey
+// requestTwitchKey
 /++
     Start the captive key generation routine at the earliest possible moment,
     which are the [dialect.defs.IRCEvent.Type.CAP|CAP] events.
@@ -29,7 +29,7 @@ package:
     It would then immediately fail to read if too much time has passed,
     and nothing would be saved.
  +/
-void generateKey(TwitchBotPlugin plugin)
+void requestTwitchKey(TwitchBotPlugin plugin)
 {
     import kameloso.common : expandTags, logger;
     import kameloso.logger : LogLevel;
@@ -43,6 +43,7 @@ void generateKey(TwitchBotPlugin plugin)
         import kameloso.messaging : quit;
         import std.typecons : Flag, No, Yes;
 
+        if (plugin.state.settings.flush) stdout.flush();
         quit!(Yes.priority)(plugin.state, string.init, Yes.quiet);
     }
 
@@ -140,17 +141,18 @@ instructions and log in to authorise the use of this program with your account.
 
     import std.array : join;
 
-    enum authNode = "https://id.twitch.tv/oauth2/authorize?response_type=token";
+    enum authNode = "https://id.twitch.tv/oauth2/authorize";
     enum ctBaseURL = authNode ~
+        "?response_type=token" ~
         "&client_id=" ~ TwitchBotPlugin.clientID ~
         "&redirect_uri=http://localhost" ~
         "&scope=" ~ scopes.join('+') ~
         "&force_verify=true" ~
         "&state=kameloso-";
 
-    Pid browser;
     immutable url = ctBaseURL ~ plugin.state.client.nickname;
 
+    Pid browser;
     scope(exit) if (browser !is null) wait(browser);
 
     void printManualURL()
@@ -177,60 +179,8 @@ instructions and log in to authorise the use of this program with your account.
     {
         try
         {
-            version(Posix)
-            {
-                import std.process : environment, spawnProcess;
-
-                version(OSX)
-                {
-                    enum open = "open";
-                }
-                else
-                {
-                    // Assume XDG
-                    enum open = "xdg-open";
-                }
-
-                immutable browserExecutable = environment.get("BROWSER", open);
-                string[2] browserCommand = [ browserExecutable, url ];  // mutable
-                auto devNull = File("/dev/null", "r+");
-
-                try
-                {
-                    browser = spawnProcess(browserCommand[], devNull, devNull, devNull);
-                }
-                catch (ProcessException e)
-                {
-                    if (browserExecutable == open) throw e;
-
-                    browserCommand[0] = open;
-                    browser = spawnProcess(browserCommand[], devNull, devNull, devNull);
-                }
-            }
-            else version(Windows)
-            {
-                import std.file : tempDir;
-                import std.format : format;
-                import std.path : buildPath;
-                import std.process : spawnProcess;
-
-                enum pattern = "kameloso-twitch-%s.url";
-                immutable urlBasename = pattern.format(plugin.state.client.nickname);
-                immutable urlFileName = buildPath(tempDir, urlBasename);
-
-                {
-                    auto urlFile = File(urlFileName, "w");
-                    urlFile.writeln("[InternetShortcut]\nURL=", url);
-                }
-
-                immutable string[2] browserCommand = [ "explorer", urlFileName ];
-                auto nulFile = File("NUL", "r+");
-                browser = spawnProcess(browserCommand[], nulFile, nulFile, nulFile);
-            }
-            else
-            {
-                static assert(0, "Unsupported platform, please file a bug.");
-            }
+            import kameloso.platform : openInBrowser;
+            openInBrowser(url);
         }
         catch (ProcessException e)
         {
@@ -244,14 +194,12 @@ instructions and log in to authorise the use of this program with your account.
 
     while (!key.length)
     {
-        import std.stdio : writef;
-
         scope(exit)
         {
             if (plugin.state.settings.flush) stdout.flush();
         }
 
-        enum pattern = "<l>Paste the address of the page you were redirected to here (empty line exits):</>
+        enum pattern = "<l>Paste the address of empty the page you were redirected to here (empty line exits):</>
 
 > ";
         write(pattern.expandTags(LogLevel.off));
@@ -263,12 +211,18 @@ instructions and log in to authorise the use of this program with your account.
         if (!readURL.length || *plugin.state.abort)
         {
             writeln();
-            logger.warning("Aborting key generation.");
+            logger.warning("Aborting.");
             logger.trace();
+            *plugin.state.abort = true;
             return;
         }
 
-        if (!readURL.contains("access_token="))
+        if (readURL.length == 30)
+        {
+            // As is
+            key = readURL;
+        }
+        else if (!readURL.contains("access_token="))
         {
             import lu.string : beginsWith;
 
@@ -276,12 +230,13 @@ instructions and log in to authorise the use of this program with your account.
 
             if (readURL.beginsWith(authNode))
             {
-                enum wrongPagePattern = "Not that page; the one you're lead to after clicking <l>Authorize</>.";
+                enum wrongPagePattern = "Not that page; the empty page you're " ~
+                    "lead to after clicking <l>Authorize</>.";
                 logger.error(wrongPagePattern.expandTags(LogLevel.error));
             }
             else
             {
-                logger.error("Could not make sense of URL. Try again or file a bug.");
+                logger.error("Could not make sense of URL. Try copying again or file a bug.");
             }
 
             writeln();
@@ -301,41 +256,16 @@ instructions and log in to authorise the use of this program with your account.
         }
     }
 
+    import std.concurrency : prioritySend;
+
     plugin.state.bot.pass = key;
     plugin.state.updates |= typeof(plugin.state.updates).bot;
-
-    enum keyPattern = "
-<l>Your private authorisation key is: <i>%s</>
-It should be entered as <i>pass</> under <i>[IRCBot]</>.
-";
-    writefln(keyPattern.expandTags(LogLevel.off), key);
-
-    if (!plugin.state.settings.saveOnExit)
-    {
-        write("Do you want to save it there now? [Y/*]: ");
-        stdout.flush();
-
-        stdin.flush();
-        immutable input = readln().stripped;
-        if (*plugin.state.abort) return;
-
-        if (!input.length || (input == "y") || (input == "Y"))
-        {
-            import std.concurrency : prioritySend;
-            plugin.state.mainThread.prioritySend(ThreadMessage.save());
-        }
-        else
-        {
-            enum keyAddPattern = "\n* Make sure to add it to <i>%s</>, then.";
-            writefln(keyAddPattern.expandTags(LogLevel.off), plugin.state.settings.configFile);
-            if (plugin.state.settings.flush) stdout.flush();
-        }
-    }
+    plugin.state.mainThread.prioritySend(ThreadMessage.save());
 
     enum issuePattern = "
 --------------------------------------------------------------------------------
 
-All done! Restart the program (without <i>--set twitchbot.keygen</>) and it should
+All done! Restart the program (without <i>--set twitch.keygen</>) and it should
 just work. If it doesn't, please file an issue at:
 
     <i>https://github.com/zorael/kameloso/issues/new</>
@@ -343,5 +273,4 @@ just work. If it doesn't, please file an issue at:
 <l>Note: keys are valid for 60 days, after which this process needs to be repeated.</>
 ";
     writeln(issuePattern.expandTags(LogLevel.off));
-    if (plugin.state.settings.flush) stdout.flush();
 }
