@@ -276,6 +276,9 @@ and it should just work. If it doesn't, please file an issue at:
         creds = Credentials aggregate.
         videoID = YouTube video ID of the video to add.
         recursing = Whether or not the function is recursing into iself.
+
+    Returns:
+        A [std.json.JSONValue|JSONValue] of the response.
  +/
 package JSONValue addVideoToYouTubePlaylist(
     TwitchBotPlugin plugin,

@@ -365,7 +365,14 @@ void refreshSpotifyToken(HttpClient client, ref Credentials creds)
 
 // getBase64Authorization
 /++
-    FIXME
+    Construts a `Basic` OAuth authorisation string based on the Spotify client ID
+    and client secret.
+
+    Params:
+        creds = Credentials aggregate.
+
+    Returns:
+        A string to be used as a `Basic` authorisation token.
  +/
 auto getSpotifyBase64Authorization(const Credentials creds)
 {
@@ -386,6 +393,9 @@ auto getSpotifyBase64Authorization(const Credentials creds)
         creds = Credentials aggregate.
         trackID = Spotify track ID of the track to add.
         recursing = Whether or not the function is recursing into iself.
+
+    Returns:
+        A [std.json.JSONValue|JSONValue] of the response.
  +/
 package JSONValue addTrackToSpotifyPlaylist(
     TwitchBotPlugin plugin,
