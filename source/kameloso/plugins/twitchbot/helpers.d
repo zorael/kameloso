@@ -1,7 +1,7 @@
 /++
     Helper functions for song request modules.
  +/
-module kameloso.plugins.twitchbot.songrequesthelpers;
+module kameloso.plugins.twitchbot.helpers;
 
 private:
 

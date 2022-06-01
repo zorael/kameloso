@@ -1349,7 +1349,7 @@ void onCommandNuke(TwitchBotPlugin plugin, const ref IRCEvent event)
 )
 void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
-    import kameloso.plugins.twitchbot.songrequesthelpers;
+    import kameloso.plugins.twitchbot.helpers;
     import kameloso.constants : KamelosoInfo, Timeout;
     import arsd.http2 : HttpClient, HttpVerb, Uri;
     import lu.string : contains, nom, stripped;

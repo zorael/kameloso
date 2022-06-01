@@ -13,6 +13,9 @@ version(WithTwitchBotPlugin):
 private:
 
 import kameloso.plugins.twitchbot.base;
+import kameloso.plugins.twitchbot.helpers;
+import kameloso.common : expandTags, logger;
+import kameloso.logger : LogLevel;
 
 package:
 
