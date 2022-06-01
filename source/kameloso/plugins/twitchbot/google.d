@@ -289,7 +289,7 @@ package JSONValue addVideoToYouTubePlaylist(
     import arsd.http2 : HttpVerb, Uri;
     import std.algorithm.searching : endsWith;
     import std.format : format;
-    import std.json : JSONValue, JSONType, parseJSON;
+    import std.json : JSONType, parseJSON;
 
     if (!creds.youtubePlaylistID.length)
     {
