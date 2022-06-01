@@ -54,7 +54,7 @@ package void requestGoogleKeys(TwitchBotPlugin plugin)
 
 <l>Go here to create a project:</>
 
-    <i>https://console.cloud.google.com/apis/credentials</>
+    <i>https://console.cloud.google.com/projectcreate</>
 
 <l>OAuth consent screen</> tab (choose <i>External</>), follow instructions.
 <i>*</> <l>Scopes:</> <i>https://www.googleapis.com/auth/youtube</>
