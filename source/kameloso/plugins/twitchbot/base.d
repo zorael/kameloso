@@ -1450,7 +1450,7 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
             immutable title = json["snippet"]["title"].str;
             //immutable position = json["snippet"]["position"].integer;
 
-            enum pattern = `"%s" added to playlist.`;
+            enum pattern = "%s added to playlist.";
             immutable message = pattern.format(title);
             chan(plugin.state, event.channel, message);
         }
