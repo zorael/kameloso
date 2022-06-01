@@ -293,11 +293,6 @@ package JSONValue addVideoToYouTubePlaylist(
         throw new SongRequestPlaylistException("Missing YouTube playlist ID");
     }
 
-    if (!creds.googleAccessToken.length)
-    {
-        throw new SongRequestTokenException("Missing Google access token");
-    }
-
     enum url = "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet";
     auto client = getHTTPClient();
 

@@ -403,11 +403,6 @@ package JSONValue addTrackToSpotifyPlaylist(
         throw new SongRequestPlaylistException("Missing Spotify playlist ID");
     }
 
-    if (!creds.spotifyAccessToken.length)
-    {
-        throw new SongRequestTokenException("Missing Spotify access token");
-    }
-
     // https://api.spotify.com/v1/playlists/0nqAHNphIb3Qhh5CmD7fg5/tracks?uris=spotify:track:594WPgqPOOy0PqLvScovNO
 
     enum urlPattern = "https://api.spotify.com/v1/playlists/%s/tracks?uris=spotify:track:%s";
