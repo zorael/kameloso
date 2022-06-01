@@ -28,7 +28,7 @@ import std.typecons : Flag, No, Yes;
     to obtain an access key and a refresh OAuth key.
 
     Params:
-        plugin = The current [TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
  +/
 package void requestSpotifyKeys(TwitchBotPlugin plugin)
 {
@@ -391,7 +391,7 @@ auto getSpotifyBase64Authorization(const Credentials creds)
     Adds a track to the Spotify playlist whose ID is stored in the passed [Credentials].
 
     Params:
-        plugin = The current `TwitchBotPlugin`.
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
         creds = Credentials aggregate.
         trackID = Spotify track ID of the track to add.
         recursing = Whether or not the function is recursing into iself.

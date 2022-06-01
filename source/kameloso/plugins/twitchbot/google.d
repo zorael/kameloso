@@ -28,7 +28,7 @@ import std.typecons : Flag, No, Yes;
     to obtain an access key and a refresh OAuth key.
 
     Params:
-        plugin = The current [TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
  +/
 package void requestGoogleKeys(TwitchBotPlugin plugin)
 {
@@ -274,7 +274,7 @@ and it should just work. If it doesn't, please file an issue at:
     Adds a video to the YouTube playlist whose ID is stored in the passed [Credentials].
 
     Params:
-        plugin = The current `TwitchBotPlugin`.
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
         creds = Credentials aggregate.
         videoID = YouTube video ID of the video to add.
         recursing = Whether or not the function is recursing into iself.
