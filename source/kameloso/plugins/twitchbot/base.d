@@ -1385,7 +1385,9 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
     {
         immutable url = event.content.stripped;
 
-        if (url.length == 11)
+        enum videoIDLength = 11;
+
+        if (url.length == videoIDLength)
         {
             // Probably a video ID
         }
@@ -1420,7 +1422,7 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
         string slice = url;  // mutable
         string videoID;
 
-        if (slice.length == 11)
+        if (slice.length == videoIDLength)
         {
             videoID = slice;
         }
@@ -1467,7 +1469,9 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
     {
         immutable url = event.content.stripped;
 
-        if (url.length == 22)
+        enum trackIDLength = 22;
+
+        if (url.length == trackIDLength)
         {
             // Probably a track ID
         }
@@ -1497,7 +1501,7 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
         string slice = url;  // mutable
         string trackID;
 
-        if (slice.length == 22)
+        if (slice.length == trackIDLength)
         {
             trackID = slice;
         }

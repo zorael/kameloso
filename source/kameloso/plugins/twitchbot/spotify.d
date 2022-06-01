@@ -84,11 +84,13 @@ A normal URL to any playlist you can modify will work fine.
 
     while (!creds.spotifyPlaylistID.length)
     {
+        enum playlistIDLength = 22;
+
         immutable playlistURL = readNamedString("<l>Copy and paste your <i>playlist URL<l>:</> ",
             0L, *plugin.state.abort);
         if (*plugin.state.abort) return;
 
-        if (playlistURL.length == 22L)
+        if (playlistURL.length == playlistIDLength)
         {
             // Likely a playlist ID
             creds.spotifyPlaylistID = playlistURL;

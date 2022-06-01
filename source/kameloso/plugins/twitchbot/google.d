@@ -92,11 +92,13 @@ A normal URL to any playlist you can modify will work fine.
 
     while (!creds.youtubePlaylistID.length)
     {
+        enum playlistIDLength = 34;
+
         immutable playlistURL = readNamedString("<l>Copy and paste your <i>YouTube playlist URL<l>:</> ",
             0L, *plugin.state.abort);
         if (*plugin.state.abort) return;
 
-        if (playlistURL.length == 34L)
+        if (playlistURL.length == playlistIDLength)
         {
             // Likely a playlist ID
             creds.youtubePlaylistID = playlistURL;
