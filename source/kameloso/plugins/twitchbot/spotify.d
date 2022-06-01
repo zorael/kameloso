@@ -299,8 +299,14 @@ void getSpotifyTokens(HttpClient client, ref Credentials creds, const string cod
     */
 
     const json = parseJSON(res.contentText);
-    if (json.type != JSONType.object) throw new Exception("unexpected token json");
-    if (auto errorJSON = "error" in json) throw new Exception(errorJSON.str);
+
+    if (json.type != JSONType.object)
+    {
+        throw new SongRequestJSONTypeMismatchException(
+            "Wrong JSON type in token request response", json);
+    }
+
+    if (auto errorJSON = "error" in json) throw new SongRequestTokenException(errorJSON.str);
 
     creds.spotifyAccessToken = json["access_token"].str;
     creds.spotifyRefreshToken = json["refresh_token"].str;
@@ -343,8 +349,14 @@ void refreshSpotifyToken(HttpClient client, ref Credentials creds)
     */
 
     const json = parseJSON(res.contentText);
-    if (json.type != JSONType.object) throw new Exception("unexpected token json");
-    if (auto errorJSON = "error" in json) throw new Exception(errorJSON.str);
+
+    if (json.type != JSONType.object)
+    {
+        throw new SongRequestJSONTypeMismatchException(
+            "Wrong JSON type in token refresh response", json);
+    }
+
+    if (auto errorJSON = "error" in json) throw new SongRequestTokenException(errorJSON.str);
 
     creds.spotifyAccessToken = json["access_token"].str;
     // refreshToken is not present and stays the same as before
@@ -388,12 +400,12 @@ package JSONValue addTrackToSpotifyPlaylist(
 
     if (!creds.spotifyPlaylistID.length)
     {
-        throw new Exception("Missing Spotify playlist ID");
+        throw new SongRequestPlaylistException("Missing Spotify playlist ID");
     }
 
     if (!creds.spotifyAccessToken.length)
     {
-        throw new Exception("Missing Spotify access token");
+        throw new SongRequestTokenException("Missing Spotify access token");
     }
 
     // https://api.spotify.com/v1/playlists/0nqAHNphIb3Qhh5CmD7fg5/tracks?uris=spotify:track:594WPgqPOOy0PqLvScovNO
@@ -425,13 +437,18 @@ package JSONValue addTrackToSpotifyPlaylist(
     */
 
     const json = parseJSON(res.contentText);
-    if (json.type != JSONType.object) throw new Exception("unexpected token json");
+
+    if (json.type != JSONType.object)
+    {
+        throw new SongRequestJSONTypeMismatchException(
+            "Wrong JSON type in playlist append response", json);
+    }
 
     if (auto errorJSON = "error" in json)
     {
         if (recursing)
         {
-            throw new Exception(errorJSON.object["message"].str);
+            throw new SongRequestException(errorJSON.object["message"].str);
         }
         else if (auto messageJSON = "message" in errorJSON.object)
         {
@@ -443,7 +460,7 @@ package JSONValue addTrackToSpotifyPlaylist(
             }
         }
 
-        throw new Exception(errorJSON.object["message"].str);
+        throw new SongRequestException(errorJSON.object["message"].str);
     }
 
     return json;

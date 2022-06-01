@@ -290,12 +290,12 @@ package JSONValue addVideoToYouTubePlaylist(
 
     if (!creds.youtubePlaylistID.length)
     {
-        throw new Exception("Missing YouTube playlist ID");
+        throw new SongRequestPlaylistException("Missing YouTube playlist ID");
     }
 
     if (!creds.googleAccessToken.length)
     {
-        throw new Exception("Missing Google access token");
+        throw new SongRequestTokenException("Missing Google access token");
     }
 
     enum url = "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet";
@@ -353,13 +353,18 @@ package JSONValue addVideoToYouTubePlaylist(
     */
 
     const json = parseJSON(res.contentText);
-    if (json.type != JSONType.object) throw new Exception("unexpected token json");
+
+    if (json.type != JSONType.object)
+    {
+        throw new SongRequestJSONTypeMismatchException(
+            "Wrong JSON type in playlist append response", json);
+    }
 
     if (auto errorJSON = "error" in json)
     {
         if (recursing)
         {
-            throw new Exception(errorJSON.object["message"].str);
+            throw new SongRequestException(errorJSON.object["message"].str);
         }
         else if (auto statusJSON = "status" in errorJSON.object)
         {
@@ -371,7 +376,7 @@ package JSONValue addVideoToYouTubePlaylist(
             }
         }
 
-        throw new Exception(errorJSON.object["message"].str);
+        throw new SongRequestException(errorJSON.object["message"].str);
     }
 
     return json;
@@ -418,8 +423,14 @@ void getGoogleTokens(HttpClient client, ref Credentials creds, const string code
     */
 
     const json = parseJSON(res.contentText);
-    if (json.type != JSONType.object) throw new Exception("unexpected token json");
-    if (auto errorJSON = "error" in json) throw new Exception(errorJSON.str);
+
+    if (json.type != JSONType.object)
+    {
+        throw new SongRequestJSONTypeMismatchException(
+            "Wrong JSON type in token request response", json);
+    }
+
+    if (auto errorJSON = "error" in json) throw new SongRequestTokenException(errorJSON.str);
 
     creds.googleAccessToken = json["access_token"].str;
     creds.googleRefreshToken = json["refresh_token"].str;
@@ -451,9 +462,15 @@ void refreshGoogleToken(HttpClient client, ref Credentials creds)
 
     auto req = client.request(Uri(url), HttpVerb.POST, data);
     auto res = req.waitForCompletion();
-
     const json = parseJSON(res.contentText);
-    if (json.type != JSONType.object) throw new Exception("unexpected refresh json");
+
+    if (json.type != JSONType.object)
+    {
+        throw new SongRequestJSONTypeMismatchException(
+            "Wrong JSON type in token refresh response", json);
+    }
+
+    if (auto errorJSON = "error" in json) throw new SongRequestTokenException(errorJSON.str);
 
     creds.googleAccessToken = json["access_token"].str;
     // refreshToken is not present and stays the same as before
