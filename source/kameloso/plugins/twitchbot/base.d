@@ -1386,8 +1386,9 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
 
         if (!creds || !creds.googleAccessToken.length)
         {
-            enum message = "Missing Google API credentials.";
-            chan(plugin.state, event.channel, message);
+            enum message = "Missing Google API credentials. " ~
+                "Run the program with <l>--set twitch.googleKeygen</> to set up.";
+            logger.error(message.expandTags(LogLevel.error));
             return;
         }
 
@@ -1435,7 +1436,8 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
         }
         catch (Exception e)
         {
-            chan(plugin.state, event.channel, e.msg);
+            logger.error(e.msg);
+            version(PrintStacktraces) logger.trace(e);
         }
     }
     else if (plugin.twitchBotSettings.songrequestMode == SongRequestMode.spotify)
@@ -1460,8 +1462,9 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
 
         if (!creds || !creds.spotifyAccessToken.length)
         {
-            enum message = "Missing Spotify API credentials.";
-            chan(plugin.state, event.channel, message);
+            enum message = "Missing Spotify API credentials. " ~
+                "Run the program with <l>--set twitch.spotifyKeygen</> to set up.";
+            logger.error(message.expandTags(LogLevel.error));
             return;
         }
 
@@ -1495,7 +1498,7 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
 
             if ((json.type != JSONType.object)  || "snapshot_id" !in json)
             {
-                logger.error("An error occured.");
+                logger.error("An error occurred.\n", json.toPrettyString);
                 return;
             }
 
@@ -1504,7 +1507,8 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
         }
         catch (Exception e)
         {
-            chan(plugin.state, event.channel, e.msg);
+            logger.error(e.msg);
+            version(PrintStacktraces) logger.trace(e);
         }
     }
 }
