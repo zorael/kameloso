@@ -1363,6 +1363,23 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
         return;
     }
 
+    if (event.sender.class_ < IRCUser.class_.operator)
+    {
+        const room = event.channel in plugin.rooms;
+        assert(room, "Tried to make a song request in a nonexistent room");
+
+        if (const lastRequestTimestamp = event.sender.nickname in room.songrequestHistory)
+        {
+            if ((event.time - *lastRequestTimestamp) < TwitchBotPlugin.Room.minimumTimeBetweenSongRequests)
+            {
+                enum pattern = "At least %d seconds must pass between song requests.";
+                immutable message = pattern.format(TwitchBotPlugin.Room.minimumTimeBetweenSongRequests);
+                chan(plugin.state, event.channel, message);
+                return;
+            }
+        }
+    }
+
     if (plugin.twitchBotSettings.songrequestMode == SongRequestMode.youtube)
     {
         immutable url = event.content.stripped;
@@ -2480,6 +2497,18 @@ package:
 
         /// The last n messages sent in the channel, used by `nuke`.
         CircularBuffer!(IRCEvent, No.dynamic, messageMemory) lastNMessages;
+
+        /++
+            The minimum amount of time in seconds that must have passed between
+            two song requests by one person.
+
+            Users of class [dialect.defs.IRCUser.Class.operator|operator] or
+            higher are exempt.
+         +/
+        enum minimumTimeBetweenSongRequests = 60;
+
+        /// Song request history; UNIX timestamps keyed by nickname.
+        long[string] songrequestHistory;
     }
 
     /// All Twitch Bot plugin settings.
