@@ -915,3 +915,33 @@ final class TwitchQueryException : Exception
         super(message, file, line, nextInChain);
     }
 }
+
+
+// getUniqueNumericalID
+/++
+    Generates a unique numerical ID for use as key in the passed associative array bucket.
+
+    Params:
+        bucket = Shared associative array of responses from async HTTP queries.
+
+    Returns:
+        A unique integer for use as bucket key.
+ +/
+auto getUniqueNumericalID(shared QueryResponse[int] bucket)
+{
+    import std.random : uniform;
+
+    int id = uniform(0, 1000);
+
+    synchronized //()
+    {
+        while (id in bucket)
+        {
+            id = uniform(0, 1000);
+        }
+
+        bucket[id] = QueryResponse.init;  // reserve it
+    }
+
+    return id;
+}
