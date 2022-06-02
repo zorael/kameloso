@@ -2036,7 +2036,10 @@ void onCommandSetTitle(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 {
     void setTitleDg()
     {
-        modifyChannel(plugin, event.channel, event.content, string.init);
+        import std.array : replace;
+
+        immutable title = event.content.replace(`"`, `\"`);
+        modifyChannel(plugin, event.channel, title, string.init);
     }
 
     Fiber setTitleFiber = new Fiber(&twitchTryCatchDg!setTitleDg, BufferSize.fiberStack);
@@ -2065,10 +2068,11 @@ void onCommandSetGame(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     void setGameDg()
     {
         import lu.string : stripped;
+        import std.array : replace;
         import std.string : isNumeric;
         import std.uri : encodeComponent;
 
-        immutable specified = event.content.stripped;
+        immutable specified = event.content.stripped.replace(`"`, `\"`);
         string id;
 
         if (specified.isNumeric)
