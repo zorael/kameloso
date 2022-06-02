@@ -949,3 +949,74 @@ auto getUniqueNumericalID(shared QueryResponse[int] bucket)
 
     return id;
 }
+
+
+// modifyChannel
+/++
+    Modifies a channel's title or currently played game.
+
+    Params:
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        channelName = Name of channel to modify.
+        title = Optional channel title to set.
+        gameID = Optional game ID to set the channel as playing.
+ +/
+void modifyChannel(
+    TwitchBotPlugin plugin,
+    const string channelName,
+    const string title,
+    const string gameID)
+in (Fiber.getThis, "Tried to call `modifyChannel` from outside a Fiber")
+{
+    import std.array : Appender;
+
+    static string[string] authorizationByChannel;
+
+    auto room = channelName in plugin.rooms;
+    assert(room);
+    immutable broadcasterIDString = room.id;
+
+    auto authorizationBearer = channelName in authorizationByChannel;
+
+    if (!authorizationBearer)
+    {
+        if (auto creds = channelName in plugin.secretsByChannel)
+        {
+            if (creds.broadcasterKey.length)
+            {
+                authorizationByChannel[channelName] = "Bearer " ~ creds.broadcasterKey;
+                authorizationBearer = channelName in authorizationByChannel;
+            }
+        }
+    }
+
+    if (!authorizationBearer)
+    {
+        throw new Exception("Missing broadcaster key");
+    }
+
+    immutable url = "https://api.twitch.tv/helix/channels?broadcaster_id=" ~ broadcasterIDString;
+
+    Appender!(char[]) sink;
+    sink.put('{');
+
+    if (title.length)
+    {
+        sink.put(`"title":"`);
+        sink.put(title);
+        sink.put('"');
+        if (gameID.length) sink.put(',');
+    }
+
+    if (gameID.length)
+    {
+        sink.put(`"game_id":"`);
+        sink.put(gameID);
+        sink.put('"');
+    }
+
+    sink.put('}');
+
+    cast(void)sendHTTPRequest(plugin, url, *authorizationBearer,
+        HttpVerb.PATCH, cast(ubyte[])sink.data, "application/json");
+}
