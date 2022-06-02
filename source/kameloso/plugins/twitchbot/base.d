@@ -2016,6 +2016,87 @@ void onCommandWatchtime(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 }
 
 
+// onCommandSetTitle
+/++
+    Changes the title of the current channel.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("settitle")
+            .policy(PrefixPolicy.prefixed)
+            .description("Sets the channel title.")
+            .addSyntax("$command [title]")
+    )
+)
+void onCommandSetTitle(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+{
+    void setTitleDg()
+    {
+        modifyChannel(plugin, event.channel, event.content, string.init);
+    }
+
+    Fiber setTitleFiber = new Fiber(&twitchTryCatchDg!setTitleDg, BufferSize.fiberStack);
+    setTitleFiber.call();
+}
+
+
+// onCommandSetGame
+/++
+    Changes the game of the current channel.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("setgame")
+            .policy(PrefixPolicy.prefixed)
+            .description("Sets the channel game.")
+            .addSyntax("$command [game name]")
+    )
+)
+void onCommandSetGame(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+{
+    void setGameDg()
+    {
+        import lu.string : stripped;
+        import std.string : isNumeric;
+        import std.uri : encodeComponent;
+
+        immutable specified = event.content.stripped;
+        string id;
+
+        if (specified.isNumeric)
+        {
+            id = specified;
+        }
+        else
+        {
+            immutable gameInfo = getTwitchGame(plugin, specified.encodeComponent);
+
+            if (!gameInfo.id.length)
+            {
+                enum message = "Could not find a game by that name.";
+                chan(plugin.state, event.channel, message);
+                return;
+            }
+
+            id = gameInfo.id;
+        }
+
+        modifyChannel(plugin, event.channel, string.init, id);
+    }
+
+    Fiber setGameFiber = new Fiber(&twitchTryCatchDg!setGameDg, BufferSize.fiberStack);
+    setGameFiber.call();
+}
+
+
 // onCAP
 /++
     Start the captive key generation routine at the earliest possible moment,
