@@ -779,7 +779,7 @@ in (Fiber.getThis, "Tried to call `getTwitchUser` from outside a Fiber")
     import std.conv : to;
     import std.json : JSONType;
 
-    struct User
+    static struct User
     {
         string idString;
         string nickname;
