@@ -14,6 +14,7 @@ private:
 
 import kameloso.plugins.twitchbot.base;
 
+import arsd.http2 : HttpVerb;
 import dialect.defs;
 import std.json : JSONValue;
 import std.traits : isSomeFunction;
@@ -121,10 +122,10 @@ if (isSomeFunction!dg)
 
     Params:
         bucket = The shared associative array to put the results in, response
-            values keyed by URL.
+            values keyed by a unique numerical ID.
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
  +/
-void persistentQuerier(shared QueryResponse[string] bucket, const string caBundleFile)
+void persistentQuerier(shared QueryResponse[int] bucket, const string caBundleFile)
 {
     import kameloso.thread : ThreadMessage;
     import std.concurrency : OwnerTerminated, receive;
@@ -141,9 +142,9 @@ void persistentQuerier(shared QueryResponse[string] bucket, const string caBundl
     while (!halt)
     {
         receive(
-            (string url, string authToken) scope
+            (int id, string url, string authToken, HttpVerb verb, immutable(ubyte)[] body_, string contentType) scope
             {
-                queryTwitchImpl(url, authToken, bucket, caBundleFile);
+                sendHTTPRequestImpl(id, url, authToken, bucket, caBundleFile, verb, cast(ubyte[])body_, contentType);
             },
             (ThreadMessage message) scope
             {
@@ -156,18 +157,20 @@ void persistentQuerier(shared QueryResponse[string] bucket, const string caBundl
             {
                 halt = true;
             },
-            /*(Variant _) scope
+            (Variant v) scope
             {
                 // It's technically an error but do nothing for now
-            },*/
+                import std.stdio;
+                writeln("Twitch worker received unknown Variant: ", v);
+            }
         );
     }
 }
 
 
-// queryTwitch
+// sendHTTPRequest
 /++
-    Wraps [queryTwitchImpl] by either starting it in a subthread, or by calling it normally.
+    Wraps [sendHTTPRequestImpl] by either starting it in a subthread, or by calling it normally.
 
     Once the query returns, the response body is checked to see whether or not
     an error occurred. If so, it throws an exception with a descriptive message.
@@ -176,13 +179,14 @@ void persistentQuerier(shared QueryResponse[string] bucket, const string caBundl
 
     Example:
     ---
-    immutable QueryResponse = queryTwitch(plugin, "https://id.twitch.tv/oauth2/validate", "OAuth 30letteroauthstring");
+    immutable QueryResponse = sendHTTPRequest(plugin, "https://id.twitch.tv/oauth2/validate", "OAuth 30letteroauthstring");
     ---
 
     Params:
         plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
         url = The URL to query.
         authorisationHeader = Authorisation HTTP header to pass.
+        id = Numerical ID to use instead of generating a new one.
         recursing = Whether or not this is a recursive call and another one should
             not be attempted.
 
@@ -193,11 +197,15 @@ void persistentQuerier(shared QueryResponse[string] bucket, const string caBundl
     Throws:
         [TwitchQueryException] if there were unrecoverable errors.
  +/
-QueryResponse queryTwitch(TwitchBotPlugin plugin,
+QueryResponse sendHTTPRequest(TwitchBotPlugin plugin,
     const string url,
     const string authorisationHeader,
+    /*const*/ HttpVerb verb = HttpVerb.GET,
+    /*const*/ ubyte[] body_ = null,
+    const string contentType = string.init,
+    int id = -1,
     const Flag!"recursing" recursing = No.recursing)
-in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
+in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
 {
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.thread : ThreadMessage;
@@ -205,95 +213,90 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
     import std.datetime.systime : Clock, SysTime;
     import core.time : msecs;
 
-    SysTime pre;
-
-    plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout());
-
     if (plugin.state.settings.trace)
     {
         import kameloso.common : Tint, logger;
         logger.trace("GET: ", Tint.info, url);
     }
 
-    if (plugin.twitchBotSettings.singleWorkerThread)
-    {
-        pre = Clock.currTime;
-        plugin.persistentWorkerTid.send(url, authorisationHeader);
-    }
-    else
-    {
-        spawn(&queryTwitchImpl, url, authorisationHeader,
-            plugin.bucket, plugin.state.connSettings.caBundleFile);
-    }
+    plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout());
+
+    immutable pre = Clock.currTime;
+    if (id == -1) id = getUniqueNumericalID(plugin.bucket);
+    plugin.persistentWorkerTid.send(id, url, authorisationHeader, verb, body_.idup, contentType);
 
     delay(plugin, plugin.approximateQueryTime.msecs, Yes.yield);
-    immutable response = waitForQueryResponse(plugin, url,
-        cast(Flag!"leaveTimingAlone")plugin.twitchBotSettings.singleWorkerThread);
+    immutable response = waitForQueryResponse(plugin, id);
 
     scope(exit)
     {
         synchronized //()
         {
             // Always remove, otherwise there'll be stale entries
-            plugin.bucket.remove(url);
+            plugin.bucket.remove(id);
         }
     }
 
-    if (plugin.twitchBotSettings.singleWorkerThread)
-    {
-        immutable post = Clock.currTime;
-        immutable diff = (post - pre);
-        immutable msecs_ = diff.total!"msecs";
-        plugin.averageApproximateQueryTime(msecs_);
-    }
-    else
-    {
-        plugin.averageApproximateQueryTime(response.msecs);
-    }
+    immutable post = Clock.currTime;
+    immutable diff = (post - pre);
+    immutable msecs_ = diff.total!"msecs";
+    plugin.averageApproximateQueryTime(msecs_);
 
     if (response.code == 2)
     {
         throw new TwitchQueryException(response.error, response.str, response.error, response.code);
     }
-    else if (!response.str.length)
+    else if (response.code == 0) //(!response.str.length)
     {
         throw new TwitchQueryException("Empty response", response.str,
             response.error, response.code);
     }
     else if ((response.code >= 500) && !recursing)
     {
-        return queryTwitch(plugin, url, authorisationHeader, Yes.recursing);
+        return sendHTTPRequest(plugin, url, authorisationHeader, verb,
+            body_, contentType, id, Yes.recursing);
     }
     else if (response.code >= 400)
     {
-        import lu.string : unquoted;
         import std.format : format;
-        import std.json : parseJSON;
+        import std.json : JSONException;
 
-        // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
-        /*
+        try
         {
-            "error": "Unauthorized",
-            "message": "Client ID and OAuth token do not match",
-            "status": 401
+            import lu.string : unquoted;
+            import std.json : parseJSON;
+
+            // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
+            /*
+            {
+                "error": "Unauthorized",
+                "message": "Client ID and OAuth token do not match",
+                "status": 401
+            }
+            */
+            immutable errorJSON = parseJSON(response.str);
+            enum pattern = "%3d %s: %s";
+
+            immutable message = pattern.format(
+                errorJSON["status"].integer,
+                errorJSON["error"].str.unquoted,
+                errorJSON["message"].str.unquoted);
+
+            throw new TwitchQueryException(message, response.str, response.error, response.code);
         }
-        */
-        immutable errorJSON = parseJSON(response.str);
-        enum pattern = "%3d %s: %s";
-
-        immutable message = pattern.format(
-            errorJSON["status"].integer,
-            errorJSON["error"].str.unquoted,
-            errorJSON["message"].str.unquoted);
-
-        throw new TwitchQueryException(message, response.str, response.error, response.code);
+        catch (JSONException)
+        {
+            enum pattern = `%3d: "%s"`;
+            immutable message = pattern.format(response.code, response.str);
+            throw new Exception(message);
+        }
     }
 
     return response;
 }
 
 
-// queryTwitchImpl
+// sendHTTPRequestImpl
 /++
     Sends a HTTP GET request to the passed URL, and "returns" the response by
     adding it to the shared `bucket` associative array.
@@ -305,24 +308,33 @@ in (Fiber.getThis, "Tried to call `queryTwitch` from outside a Fiber")
     ---
     immutable url = "https://api.twitch.tv/helix/some/api/url";
 
-    spawn&(&queryTwitchImpl, url, plugin.authorizationBearer, plugin.bucket, caBundleFile);
+    spawn&(&sendHTTPRequestImpl, url, plugin.authorizationBearer, plugin.bucket, caBundleFile);
     delay(plugin, plugin.approximateQueryTime.msecs, Yes.yield);
     immutable response = waitForQueryResponse(plugin, url);
     // response.str is the response body
     ---
 
     Params:
+        id = Unique ID to use as key when storing the returned
+            value in `bucket`.
         url = URL address to look up.
         authToken = Authorisation token HTTP header to pass.
         bucket = The shared associative array to put the results in, response
             values keyed by URL.
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
+        verb = What HTTP verb to pass.
+        body_ = Body contents in `POST`/`PATCH` requests.
+        contentType = "Content-Type" HTTP header to use.
  +/
-void queryTwitchImpl(
+void sendHTTPRequestImpl(
+    const int id,
     const string url,
     const string authToken,
-    shared QueryResponse[string] bucket,
-    const string caBundleFile)
+    shared QueryResponse[int] bucket,
+    const string caBundleFile,
+    /*const*/ HttpVerb verb = HttpVerb.GET,
+    /*const*/ ubyte[] body_ = null,
+    /*const*/ string contentType = string.init)
 {
     import kameloso.constants : KamelosoInfo, Timeout;
     import arsd.http2 : HttpClient, Uri;
@@ -351,9 +363,9 @@ void queryTwitchImpl(
 
     QueryResponse response;
     auto pre = Clock.currTime;
-
-    auto req = client.request(Uri(url));
+    auto req = client.request(Uri(url), verb, body_, contentType);
     req.requestParameters.headers = headers;
+    //req.requestParameters.contentType = contentType;  // necessary?
     auto res = req.waitForCompletion();
 
     if (res.code.among!(301, 302, 307, 308) && res.location.length)
@@ -362,8 +374,9 @@ void queryTwitchImpl(
         foreach (immutable i; 0..5)
         {
             pre = Clock.currTime;
-            req = client.request(Uri(res.location));
+            req = client.request(Uri(res.location), verb, body_, contentType);
             req.requestParameters.headers = headers;
+            //req.requestParameters.contentType = contentType;  // as above
             res = req.waitForCompletion();
 
             if (!res.code.among!(301, 302, 307, 308) || !res.location.length) break;
@@ -380,7 +393,7 @@ void queryTwitchImpl(
 
     synchronized //()
     {
-        bucket[url] = response;  // empty str if code >= 400
+        bucket[id] = response;  // empty str if code >= 400
     }
 }
 
@@ -405,7 +418,7 @@ in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
 
     try
     {
-        immutable response = queryTwitch(plugin, url, plugin.authorizationBearer);
+        immutable response = sendHTTPRequest(plugin, url, plugin.authorizationBearer);
         immutable responseJSON = parseJSON(response.str);
 
         if (responseJSON.type != JSONType.object)
@@ -452,8 +465,7 @@ in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
     import std.json : JSONType, parseJSON;
 
     immutable chattersURL = text("https://tmi.twitch.tv/group/user/", broadcaster, "/chatters");
-
-    immutable response = queryTwitch(plugin, chattersURL, plugin.authorizationBearer);
+    immutable response = sendHTTPRequest(plugin, chattersURL, plugin.authorizationBearer);
     immutable responseJSON = parseJSON(response.str);
 
     /*
@@ -526,7 +538,7 @@ in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
         plugin.state.bot.pass;
     immutable authorizationHeader = "OAuth " ~ pass;
 
-    immutable response = queryTwitch(plugin, url, authorizationHeader);
+    immutable response = sendHTTPRequest(plugin, url, authorizationHeader);
     immutable validationJSON = parseJSON(response.str);
 
     if ((validationJSON.type != JSONType.object) || ("client_id" !in validationJSON))
@@ -611,7 +623,7 @@ in (Fiber.getThis, "Tried to call `getMultipleTwitchEntities` from outside a Fib
                 ("&after=" ~ after) :
                 url;
 
-            immutable response = queryTwitch(plugin, paginatedURL, plugin.authorizationBearer);
+            immutable response = sendHTTPRequest(plugin, paginatedURL, plugin.authorizationBearer);
             immutable responseJSON = parseJSON(response.str);
             const cursor = "cursor" in responseJSON["pagination"];
 
@@ -686,16 +698,7 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
     Example:
     ---
     immutable url = "https://api.twitch.tv/helix/users?login=zorael";
-
-    if (plugin.twitchBotSettings.singleWorkerThread)
-    {
-        plugin.persistentWorkerTid.send(url, plugin.authorizationBearer);
-    }
-    else
-    {
-        spawn(&queryTwitchImpl, url, plugin.authorizationBearer,
-            plugin.bucket, plugin.state.connSettings.caBundleFile);
-    }
+    plugin.persistentWorkerTid.send(url, plugin.authorizationBearer);
 
     delay(plugin, plugin.approximateQueryTime.msecs, Yes.yield);
     immutable response = waitForQueryResponse(plugin, url);
@@ -704,7 +707,7 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
 
     Params:
         plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
-        url = The URL that was queried prior to calling this function. Must match precisely.
+        id = Numerical ID to use as key when storing the response in the bucket AA.
         leaveTimingAlone = Whether or not to adjust the approximate query time.
             Enabled by default but can be disabled if the caller wants to do it.
 
@@ -712,7 +715,7 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
         A [QueryResponse] as constructed by other parts of the program.
  +/
 QueryResponse waitForQueryResponse(TwitchBotPlugin plugin,
-    const string url,
+    const int id,
     const Flag!"leaveTimingAlone" leaveTimingAlone = Yes.leaveTimingAlone)
 in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 {
@@ -725,9 +728,9 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
     shared QueryResponse* response;
     double accumulatingTime = plugin.approximateQueryTime;
 
-    while (!response)
+    do
     {
-        response = url in plugin.bucket;
+        response = id in plugin.bucket;
 
         if (!response)
         {
@@ -749,8 +752,9 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 
         // Make the new approximate query time a weighted average
         if (!leaveTimingAlone) plugin.averageApproximateQueryTime(response.msecs);
-        plugin.bucket.remove(url);
+        plugin.bucket.remove(id);
     }
+    while (!response);
 
     return *response;
 }
@@ -940,7 +944,7 @@ auto getUniqueNumericalID(shared QueryResponse[int] bucket)
             id = uniform(0, 1000);
         }
 
-        bucket[id] = QueryResponse.init;  // reserve it
+        //bucket[id] = QueryResponse.init;  // reserve it
     }
 
     return id;

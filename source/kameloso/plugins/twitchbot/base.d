@@ -72,17 +72,6 @@ public:
      +/
     bool promoteVIPs = true;
 
-    /++
-        Whether to use one persistent worker for Twitch queries or to use separate subthreads.
-
-        It's a trade-off. A single worker thread obviously spawns fewer threads,
-        which makes it a better choice on Windows systems where creating such is
-        comparatively expensive. You also get to enjoy being able to reuse the
-        HTTP client. On the other hand, it's also slower (likely due to
-        concurrency message passing overhead).
-     +/
-    bool singleWorkerThread = true;
-
     @Unserialisable
     {
         /// Whether or not to bell on every message.
@@ -1651,7 +1640,7 @@ void onAnyMessage(TwitchBotPlugin plugin, const ref IRCEvent event)
 void onEndOfMOTD(TwitchBotPlugin plugin)
 {
     import lu.string : beginsWith;
-    import std.concurrency : Tid;
+    import std.concurrency : Tid, spawn;
     import std.typecons : Flag, No, Yes;
 
     if (plugin.useAPIFeatures)
@@ -1664,17 +1653,12 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
 
         if (plugin.bucket is null)
         {
-            plugin.bucket[string.init] = QueryResponse.init;
-            plugin.bucket.remove(string.init);
+            plugin.bucket[0] = QueryResponse.init;
+            plugin.bucket.remove(0);
         }
 
-        if (plugin.twitchBotSettings.singleWorkerThread)
+        if (plugin.persistentWorkerTid == Tid.init)
         {
-            import std.concurrency : spawn;
-
-            assert((plugin.persistentWorkerTid == Tid.init),
-                "Double-spawn of Twitch single worker thread");
-
             plugin.persistentWorkerTid = spawn(&persistentQuerier,
                 plugin.bucket, plugin.state.connSettings.caBundleFile);
         }
@@ -2203,8 +2187,7 @@ void teardown(TwitchBotPlugin plugin)
     import kameloso.thread : ThreadMessage;
     import std.concurrency : Tid, send;
 
-    if (plugin.twitchBotSettings.singleWorkerThread &&
-        (plugin.persistentWorkerTid != Tid.init))
+    if (plugin.persistentWorkerTid != Tid.init)
     {
         // It may not have been started if we're aborting very early.
         plugin.persistentWorkerTid.send(ThreadMessage.teardown());
@@ -2629,7 +2612,7 @@ package:
     shared static Tid mainThread;
 
     /// Associative array of responses from async HTTP queries.
-    shared QueryResponse[string] bucket;
+    shared QueryResponse[int] bucket;
 
     /// File to save emote counters to.
     @Resource ecountFile = "twitch-ecount.json";
