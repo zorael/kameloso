@@ -2036,9 +2036,22 @@ void onCommandSetTitle(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 {
     void setTitleDg()
     {
+        import lu.string : stripped;
         import std.array : replace;
 
-        immutable title = event.content.replace(`"`, `\"`);
+        immutable unescapedTitle = event.content.stripped;
+
+        if (!unescapedTitle.length)
+        {
+            import std.format : format;
+
+            enum pattern = "Usage: %s%s [title]";
+            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+            chan(plugin.state, event.channel, message);
+            return;
+        }
+
+        immutable title = unescapedTitle.replace(`"`, `\"`);
         modifyChannel(plugin, event.channel, title, string.init);
     }
 
@@ -2072,7 +2085,19 @@ void onCommandSetGame(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         import std.string : isNumeric;
         import std.uri : encodeComponent;
 
-        immutable specified = event.content.stripped.replace(`"`, `\"`);
+        immutable unescapedGameName = event.content.stripped;
+
+        if (!unescapedGameName.length)
+        {
+            import std.format : format;
+
+            enum pattern = "Usage: %s%s [game name]";
+            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+            chan(plugin.state, event.channel, message);
+            return;
+        }
+
+        immutable specified = unescapedGameName.replace(`"`, `\"`);
         string id;
 
         if (specified.isNumeric)
