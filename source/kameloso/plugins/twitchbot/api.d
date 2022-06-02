@@ -830,6 +830,43 @@ in (Fiber.getThis, "Tried to call `getTwitchUser` from outside a Fiber")
 }
 
 
+// getTwitchGame
+/++
+    Fetches information about a game; notably its numerical ID.
+
+    Params:
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        name = Name of game to look up.
+
+    Returns:
+        Voldemort aggregate struct with `id` and `name` members.
+ +/
+auto getTwitchGame(TwitchBotPlugin plugin, const string name)
+in (Fiber.getThis, "Tried to call `getTwitchGame` from outside a Fiber")
+{
+    static struct Game
+    {
+        string id;
+        string name;
+    }
+
+    /*
+    {
+        "id": "512953",
+        "name": "Elden Ring",
+        "box_art_url": "https://static-cdn.jtvnw.net/ttv-boxart/512953_IGDB-{width}x{height}.jpg"
+    }
+    */
+
+    immutable gameURL = "https://api.twitch.tv/helix/games?name=" ~ name;
+    immutable gameJSON = getTwitchEntity(plugin, gameURL);
+
+    return (gameJSON == JSONValue.init) ?
+        Game.init :
+        Game(gameJSON["id"].str, gameJSON["name"].str);
+}
+
+
 // TwitchQueryException
 /++
     Exception, to be thrown when an API query to the Twitch servers failed,
