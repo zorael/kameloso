@@ -224,9 +224,9 @@ void requestTwitchSuperKey(TwitchBotPlugin plugin)
     logger.trace();
     logger.info("-- Twitch authorisation super key generation mode --");
     enum message =
-`To access certain Twitch functionality like changing channel settings (what
-game is currently being played, etc), the program needs an authorisation key that
-corresponds to the owner of that channel.
+`To access certain Twitch functionality like changing channel settings
+(what game is currently being played, etc), the program needs an authorisation
+key that corresponds to the owner of that channel.
 
 In the instructions that follow, it is essential that you are logged into the
 <i>STREAMER</> account in your browser.
