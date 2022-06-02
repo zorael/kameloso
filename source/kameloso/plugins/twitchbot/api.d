@@ -972,8 +972,7 @@ in (Fiber.getThis, "Tried to call `modifyChannel` from outside a Fiber")
 
     static string[string] authorizationByChannel;
 
-    auto room = channelName in plugin.rooms;
-    assert(room);
+    const room = channelName in plugin.rooms;
     immutable broadcasterIDString = room.id;
 
     auto authorizationBearer = channelName in authorizationByChannel;
