@@ -1488,9 +1488,9 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
 
         auto creds = event.channel in plugin.secretsByChannel;
 
-        if (!creds || !creds.spotifyAccessToken.length)
+        if (!creds || !creds.spotifyAccessToken.length || !creds.spotifyPlaylistID)
         {
-            enum message = "Missing Spotify API credentials. " ~
+            enum message = "Missing Spotify API credentials and/or playlist ID. " ~
                 "Run the program with <l>--set twitch.spotifyKeygen</> to set up.";
             logger.error(message.expandTags(LogLevel.error));
             return;
