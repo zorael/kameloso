@@ -418,6 +418,9 @@ Assuming a prefix of `!`, commands to test are:
 * `!watchtime`
 * `!nuke`
 * `!songrequest`
+* `!settitle`
+* `!setgame`
+* `!commercial`
 
 ...alongside `!oneliner`, `!counter`, `!timer`, `!poll`, `!stopwatch`, and other non-Twitch-specific commands. Try `!help` or [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins).
 
