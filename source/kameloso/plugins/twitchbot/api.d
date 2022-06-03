@@ -387,8 +387,8 @@ void sendHTTPRequestImpl(
     QueryResponse response;
     auto pre = Clock.currTime;
     auto req = client.request(Uri(url), verb, body_, contentType);
+    // The Twitch Client-ID header leaks into Google and Spotify requests. Worth dealing with?
     req.requestParameters.headers = headers;
-    //req.requestParameters.contentType = contentType;  // necessary?
     auto res = req.waitForCompletion();
 
     if (res.code.among!(301, 302, 307, 308) && res.location.length)
@@ -399,7 +399,6 @@ void sendHTTPRequestImpl(
             pre = Clock.currTime;
             req = client.request(Uri(res.location), verb, body_, contentType);
             req.requestParameters.headers = headers;
-            //req.requestParameters.contentType = contentType;  // as above
             res = req.waitForCompletion();
 
             if (!res.code.among!(301, 302, 307, 308) || !res.location.length) break;
