@@ -1019,3 +1019,46 @@ in (Fiber.getThis, "Tried to call `modifyChannel` from outside a Fiber")
     cast(void)sendHTTPRequest(plugin, url, *authorizationBearer,
         HttpVerb.PATCH, cast(ubyte[])sink.data, "application/json");
 }
+
+
+// getBroadcasterAuthorisation
+/++
+    Returns a broadcaster-level "Bearer" authorisation token for a channel,
+    where such exist.
+
+    Params:
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        channelName = Name of channel to return token for.
+
+    Returns:
+        A "Bearer" OAuth token string for use in HTTP headers.
+
+    Throws:
+        [core.object.Exception|Exception] if there were no broadcaster key for
+        the supplied channel in the secrets storage.
+ +/
+auto getBroadcasterAuthorisation(TwitchBotPlugin plugin, const string channelName)
+{
+    static string[string] authorizationByChannel;
+
+    auto authorizationBearer = channelName in authorizationByChannel;
+
+    if (!authorizationBearer)
+    {
+        if (auto creds = channelName in plugin.secretsByChannel)
+        {
+            if (creds.broadcasterKey.length)
+            {
+                authorizationByChannel[channelName] = "Bearer " ~ creds.broadcasterKey;
+                authorizationBearer = channelName in authorizationByChannel;
+            }
+        }
+    }
+
+    if (!authorizationBearer)
+    {
+        throw new Exception("Missing broadcaster key");
+    }
+
+    return *authorizationBearer;
+}
