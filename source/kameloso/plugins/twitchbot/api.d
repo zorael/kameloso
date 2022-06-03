@@ -144,8 +144,21 @@ void persistentQuerier(shared QueryResponse[int] bucket, const string caBundleFi
             (int id, string url, string authToken, HttpVerb verb,
                 immutable(ubyte)[] body_, string contentType) scope
             {
+                version(BenchmarkHTTPRequests)
+                {
+                    import std.datetime.systime : Clock;
+                    import std.stdio;
+                    immutable pre = Clock.currTime;
+                }
+
                 sendHTTPRequestImpl(id, url, authToken, bucket, caBundleFile,
                     verb, cast(ubyte[])body_, contentType);
+
+                version(BenchmarkHTTPRequests)
+                {
+                    immutable post = Clock.currTime;
+                    writefln("%s (%s)", post-pre, url);
+                }
             },
             (int id, string url, string authToken) scope
             {

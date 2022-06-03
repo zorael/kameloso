@@ -132,7 +132,8 @@ configuration "dev" {
         //"OSXTMPDIR" \
         //"TraceWhois" \
         //"PrintAccountNamesToo" \
-        //"PrintClassNamesToo"
+        //"PrintClassNamesToo" \
+        //"BenchmarkHTTPRequests"
 }
 
 configuration "dev-lowmem" {
@@ -153,7 +154,8 @@ configuration "dev-lowmem" {
         //"OSXTMPDIR" \
         //"TraceWhois" \
         //"PrintAccountNamesToo" \
-        //"PrintClassNamesToo"
+        //"PrintClassNamesToo" \
+        //"BenchmarkHTTPRequests"
 }
 
 configuration "unittest" {
@@ -173,7 +175,8 @@ configuration "unittest" {
         //"TraceWhois" \
         //"TwitchPromoteEverywhere" \
         //"PrintAccountNamesToo" \
-        //"PrintClassNamesToo"
+        //"PrintClassNamesToo" \
+        //"BenchmarkHTTPRequests"
 }
 
 configuration "unittest-lowmem" {
@@ -194,5 +197,6 @@ configuration "unittest-lowmem" {
         //"TraceWhois" \
         //"TwitchPromoteEverywhere" \
         //"PrintAccountNamesToo" \
-        //"PrintClassNamesToo"
+        //"PrintClassNamesToo" \
+        //"BenchmarkHTTPRequests"
 }
