@@ -4,6 +4,8 @@
     See_Also:
         [kameloso.plugins.twitchbot.base|twitchbot.base]
         [kameloso.plugins.twitchbot.keygen|twitchbot.keygen]
+        [kameloso.plugins.twitchbot.keygen|twitchbot.google]
+        [kameloso.plugins.twitchbot.keygen|twitchbot.spotify]
  +/
 module kameloso.plugins.twitchbot.api;
 
@@ -112,9 +114,6 @@ if (isSomeFunction!dg)
     Persistent worker issuing Twitch API queries based on the concurrency messages
     sent to it.
 
-    Possibly best used on Windows where spawning new threads is comparatively expensive
-    compared to on Posix platforms.
-
     Example:
     ---
     spawn(&persistentQuerier, plugin.bucket, caBundleFile);
@@ -170,7 +169,8 @@ void persistentQuerier(shared QueryResponse[int] bucket, const string caBundleFi
 
 // sendHTTPRequest
 /++
-    Wraps [sendHTTPRequestImpl] by either starting it in a subthread, or by calling it normally.
+    Wraps [sendHTTPRequestImpl] by proxying calls to it via the
+    [persistentQuerier] subthread.
 
     Once the query returns, the response body is checked to see whether or not
     an error occurred. If so, it throws an exception with a descriptive message.
@@ -186,6 +186,9 @@ void persistentQuerier(shared QueryResponse[int] bucket, const string caBundleFi
         plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
         url = The URL to query.
         authorisationHeader = Authorisation HTTP header to pass.
+        verb = What HTTP verb to pass.
+        body_ = Request body to send in case of verbs like `POST` and `PATCH`.
+        contentType = "Content-Type" HTTP header to pass.
         id = Numerical ID to use instead of generating a new one.
         recursing = Whether or not this is a recursive call and another one should
             not be attempted.
@@ -298,19 +301,19 @@ in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
 
 // sendHTTPRequestImpl
 /++
-    Sends a HTTP GET request to the passed URL, and "returns" the response by
-    adding it to the shared `bucket` associative array.
+    Sends a HTTP request of the passed verb to the passed URL, and "returns" the
+    response by adding it to the shared `bucket` associative array.
 
-    Callers can as such spawn this function as a new thread and asynchronously
-    monitor the `bucket` for when the results arrive.
+    Callers can as such spawn this function as a new or separate thread and
+    asynchronously monitor the `bucket` for when the results arrive.
 
     Example:
     ---
     immutable url = "https://api.twitch.tv/helix/some/api/url";
 
-    spawn&(&sendHTTPRequestImpl, url, plugin.authorizationBearer, plugin.bucket, caBundleFile);
+    spawn&(&sendHTTPRequestImpl, 12345, url, plugin.authorizationBearer, plugin.bucket, caBundleFile);
     delay(plugin, plugin.approximateQueryTime.msecs, Yes.yield);
-    immutable response = waitForQueryResponse(plugin, url);
+    immutable response = waitForQueryResponse(plugin, 12345);
     // response.str is the response body
     ---
 
@@ -323,7 +326,7 @@ in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
             values keyed by URL.
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
         verb = What HTTP verb to pass.
-        body_ = Body contents in `POST`/`PATCH` requests.
+        body_ = Request body to send in case of verbs like `POST` and `PATCH`.
         contentType = "Content-Type" HTTP header to use.
  +/
 void sendHTTPRequestImpl(
@@ -504,7 +507,7 @@ in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
         }
     }
 
-    // Don't return `chatterJSON`, as we would lose "chatter_count".
+    // Don't return `chattersJSON`, as we would lose "chatter_count".
     return responseJSON;
 }
 
@@ -512,6 +515,8 @@ in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
 // getValidation
 /++
     Validates the current access key, retrieving information about it.
+
+    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
         plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
@@ -595,6 +600,8 @@ in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
 /++
     By following a passed URL, queries Twitch servers for an array of entities
     (such as users or channels).
+
+    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
         plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
@@ -697,11 +704,12 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
 
     Example:
     ---
+    immutable id = getUniqueNumericalID(plugin.bucket);
     immutable url = "https://api.twitch.tv/helix/users?login=zorael";
-    plugin.persistentWorkerTid.send(url, plugin.authorizationBearer);
+    plugin.persistentWorkerTid.send(id, url, plugin.authorizationBearer);
 
     delay(plugin, plugin.approximateQueryTime.msecs, Yes.yield);
-    immutable response = waitForQueryResponse(plugin, url);
+    immutable response = waitForQueryResponse(plugin, id, url);
     // response.str is the response body
     ---
 
@@ -764,6 +772,8 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 /++
     Fetches information about a Twitch user and returns it in the form of a
     Voldemort struct with nickname, display name and account ID (as string) members.
+
+    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
         plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
@@ -837,6 +847,8 @@ in (Fiber.getThis, "Tried to call `getTwitchUser` from outside a Fiber")
 // getTwitchGame
 /++
     Fetches information about a game; notably its numerical ID.
+
+    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
         plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
@@ -955,6 +967,8 @@ auto getUniqueNumericalID(shared QueryResponse[int] bucket)
 /++
     Modifies a channel's title or currently played game.
 
+    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
+
     Params:
         plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
         channelName = Name of channel to modify.
@@ -1047,6 +1061,8 @@ auto getBroadcasterAuthorisation(TwitchBotPlugin plugin, const string channelNam
 // startCommercial
 /++
     Starts a commercial in the specified channel.
+
+    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
         plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
