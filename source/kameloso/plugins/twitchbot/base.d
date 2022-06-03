@@ -1437,28 +1437,34 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
             return;
         }
 
-        try
+        void addVideoDg()
         {
-            import kameloso.plugins.twitchbot.google : addVideoToYouTubePlaylist;
+            try
+            {
+                import kameloso.plugins.twitchbot.google : addVideoToYouTubePlaylist;
 
-            immutable json = addVideoToYouTubePlaylist(plugin, *creds, videoID);
-            immutable title = json["snippet"]["title"].str;
-            //immutable position = json["snippet"]["position"].integer;
+                immutable json = addVideoToYouTubePlaylist(plugin, *creds, videoID);
+                immutable title = json["snippet"]["title"].str;
+                //immutable position = json["snippet"]["position"].integer;
 
-            enum pattern = "%s added to playlist.";
-            immutable message = pattern.format(title);
-            chan(plugin.state, event.channel, message);
+                enum pattern = "%s added to playlist.";
+                immutable message = pattern.format(title);
+                chan(plugin.state, event.channel, message);
+            }
+            catch (SongRequestException e)
+            {
+                enum message = "Invalid YouTube video URL.";
+                chan(plugin.state, event.channel, message);
+            }
+            catch (Exception e)
+            {
+                logger.error(e.msg);
+                version(PrintStacktraces) logger.trace(e);
+            }
         }
-        catch (SongRequestException e)
-        {
-            enum message = "Invalid YouTube video URL.";
-            chan(plugin.state, event.channel, message);
-        }
-        catch (Exception e)
-        {
-            logger.error(e.msg);
-            version(PrintStacktraces) logger.trace(e);
-        }
+
+        Fiber addVideoFiber = new Fiber(&twitchTryCatchDg!addVideoDg, BufferSize.fiberStack);
+        addVideoFiber.call();
     }
     else if (plugin.twitchBotSettings.songrequestMode == SongRequestMode.spotify)
     {
