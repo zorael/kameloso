@@ -2126,6 +2126,80 @@ void onCommandSetGame(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 }
 
 
+// onCommandCommercial
+/++
+    Starts a commercial in the current channel.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("commercial")
+            .policy(PrefixPolicy.prefixed)
+            .description("Starts a commercial in the current channel.")
+            .addSyntax("$command [commercial length; valid values are 30, 60, 90, 120, 150 and 180]")
+    )
+)
+void onCommandCommercial(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+{
+    void commercialDg()
+    {
+        import lu.string : stripped;
+        import std.algorithm.comparison : among;
+        import std.format : format;
+
+        immutable lengthString = event.content.stripped;
+
+        if (!lengthString.length)
+        {
+            enum pattern = "Usage: %s%s [commercial length; valid values are 30, 60, 90, 120, 150 and 180]";
+            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+            chan(plugin.state, event.channel, message);
+            return;
+        }
+
+        const room = event.channel in plugin.rooms;
+
+        if (!room.broadcast.active)
+        {
+            enum pattern = "Broadcast start was never marked with %sstart.";
+            immutable message = pattern.format(plugin.state.settings.prefix);
+            chan(plugin.state, event.channel, message);
+            return;
+        }
+
+        if (lengthString.among!("30", "60", "90", "120", "180"))
+        {
+            try
+            {
+                startCommercial(plugin, event.channel, lengthString);
+            }
+            catch (TwitchQueryException e)
+            {
+                if ((e.code == 400) && (e.error == "Bad Request"))
+                {
+                    chan(plugin.state, event.channel, e.msg);
+                }
+                else
+                {
+                    throw e;
+                }
+            }
+        }
+        else
+        {
+            enum message = "Commercial length must be one of 30, 60, 90, 120, 150 or 180.";
+            chan(plugin.state, event.channel, message);
+        }
+    }
+
+    Fiber commercialFiber = new Fiber(&twitchTryCatchDg!commercialDg, BufferSize.fiberStack);
+    commercialFiber.call();
+}
+
+
 // onCAP
 /++
     Start the captive key generation routine at the earliest possible moment,
