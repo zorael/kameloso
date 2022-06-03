@@ -141,9 +141,17 @@ void persistentQuerier(shared QueryResponse[int] bucket, const string caBundleFi
     while (!halt)
     {
         receive(
-            (int id, string url, string authToken, HttpVerb verb, immutable(ubyte)[] body_, string contentType) scope
+            (int id, string url, string authToken, HttpVerb verb,
+                immutable(ubyte)[] body_, string contentType) scope
             {
-                sendHTTPRequestImpl(id, url, authToken, bucket, caBundleFile, verb, cast(ubyte[])body_, contentType);
+                sendHTTPRequestImpl(id, url, authToken, bucket, caBundleFile,
+                    verb, cast(ubyte[])body_, contentType);
+            },
+            (int id, string url, string authToken) scope
+            {
+                // Shorthand
+                sendHTTPRequestImpl(id, url, authToken, bucket, caBundleFile,
+                    HttpVerb.GET, null, string.init);
             },
             (ThreadMessage message) scope
             {
@@ -158,8 +166,7 @@ void persistentQuerier(shared QueryResponse[int] bucket, const string caBundleFi
             },
             (Variant v) scope
             {
-                // It's technically an error but do nothing for now
-                import std.stdio;
+                import std.stdio : writeln;
                 writeln("Twitch worker received unknown Variant: ", v);
             }
         );
