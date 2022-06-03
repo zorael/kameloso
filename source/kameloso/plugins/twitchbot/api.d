@@ -1042,3 +1042,33 @@ auto getBroadcasterAuthorisation(TwitchBotPlugin plugin, const string channelNam
 
     return *authorizationBearer;
 }
+
+
+// startCommercial
+/++
+    Starts a commercial in the specified channel.
+
+    Params:
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        channelName = Name of channel to run commercials for.
+        lengthString = Length to play the commercial for, as a string.
+ +/
+void startCommercial(TwitchBotPlugin plugin, const string channelName, const string lengthString)
+in (Fiber.getThis, "Tried to call `startCommercial` from outside a Fiber")
+{
+    import std.format : format;
+
+    enum url = "https://api.twitch.tv/helix/channels/commercial";
+    enum pattern = `
+{
+    "broadcaster_id": "%s",
+    "length": %s
+}`;
+
+    const room = channelName in plugin.rooms;
+    immutable body_ = pattern.format(room.id, lengthString);
+    immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
+
+    cast(void)sendHTTPRequest(plugin, url, authorizationBearer,
+        HttpVerb.POST, cast(ubyte[])body_, "application/json");
+}
