@@ -1517,37 +1517,43 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
             return;
         }
 
-        try
+        void addTrackDg()
         {
-            import kameloso.plugins.twitchbot.spotify;
-            import std.json : JSONType;
-
-            immutable json = addTrackToSpotifyPlaylist(plugin, *creds, trackID);
-
-            if ((json.type != JSONType.object)  || "snapshot_id" !in json)
+            try
             {
-                logger.error("An error occurred.\n", json.toPrettyString);
-                return;
+                import kameloso.plugins.twitchbot.spotify;
+                import std.json : JSONType;
+
+                immutable json = addTrackToSpotifyPlaylist(plugin, *creds, trackID);
+
+                if ((json.type != JSONType.object)  || "snapshot_id" !in json)
+                {
+                    logger.error("An error occurred.\n", json.toPrettyString);
+                    return;
+                }
+
+                const trackJSON = getSpotifyTrackByID(*creds, trackID);
+                immutable artist = trackJSON["artists"].array[0].object["name"].str;
+                immutable track = trackJSON["name"].str;
+
+                enum pattern = "%s - %s added to playlist.";
+                immutable message = pattern.format(artist, track);
+                chan(plugin.state, event.channel, message);
             }
+            catch (SongRequestException e)
+            {
+                enum message = "Invalid Spotify track URL.";
+                chan(plugin.state, event.channel, message);
+            }
+            catch (Exception e)
+            {
+                logger.error(e.msg);
+                version(PrintStacktraces) logger.trace(e);
+            }
+        }
 
-            const trackJSON = getSpotifyTrackByID(*creds, trackID);
-            immutable artist = trackJSON["artists"].array[0].object["name"].str;
-            immutable track = trackJSON["name"].str;
-
-            enum pattern = "%s - %s added to playlist.";
-            immutable message = pattern.format(artist, track);
-            chan(plugin.state, event.channel, message);
-        }
-        catch (SongRequestException e)
-        {
-            enum message = "Invalid Spotify track URL.";
-            chan(plugin.state, event.channel, message);
-        }
-        catch (Exception e)
-        {
-            logger.error(e.msg);
-            version(PrintStacktraces) logger.trace(e);
-        }
+        Fiber addTrackFiber = new Fiber(&twitchTryCatchDg!addTrackDg, BufferSize.fiberStack);
+        addTrackFiber.call();
     }
 }
 
