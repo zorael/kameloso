@@ -78,6 +78,7 @@ If there's anyone talking it should show up on your screen.
     * [Long story](#long-story)
     * [Twitch bot](#twitch-bot)
       * [Song requests](#song-requests)
+      * [Certain commands require higher permissions](#certain-commands-require-higher-permissions)
   * [Further help](#further-help)
 * [Known issues](#known-issues)
   * [Windows](#windows)
@@ -429,6 +430,16 @@ Assuming a prefix of `!`, commands to test are:
 #### Song requests
 
 To get song requests to work, you need to register an application to interface with [Google (YouTube)](https://console.cloud.google.com/projectcreate) and/or [Spotify](https://developer.spotify.com/dashboard) servers. To initiate the guides for this, pass `--set twitch.googleKeygen` for YouTube and `--set twitch.spotifyKeygen` for Spotify, then simply follow the on-screen instructions. (They behave much like `--set twitch.keygen`.)
+
+#### Certain commands require higher permissions
+
+Some functionality, such as setting the channel title or currently played game, require credentials with the permissions of the channel owner. As such, if you want to use such commands you will need to generate OAuth access tokens for the main account (with `--set twitch.superKeygen`), much as you generated some for the bot account (with `--set twitch.keygen`). This will request keys from Twitch with more permissions, and the authorisation screen should reflect this.
+
+```shell
+$ kameloso --set twitch.superKeygen
+```
+
+> Note: Mind that need to be logged in as your main account while doing this, or the tokens will be ones for the wrong channel.
 
 ## Further help
 
