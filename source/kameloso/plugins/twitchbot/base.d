@@ -1399,9 +1399,9 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
 
         auto creds = event.channel in plugin.secretsByChannel;
 
-        if (!creds || !creds.googleAccessToken.length)
+        if (!creds || !creds.googleAccessToken.length || !creds.youtubePlaylistID.length)
         {
-            enum message = "Missing Google API credentials. " ~
+            enum message = "Missing Google API credentials and/or YouTube playlist ID. " ~
                 "Run the program with <l>--set twitch.googleKeygen</> to set up.";
             logger.error(message.expandTags(LogLevel.error));
             return;
