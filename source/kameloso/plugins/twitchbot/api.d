@@ -970,33 +970,13 @@ in (Fiber.getThis, "Tried to call `modifyChannel` from outside a Fiber")
 {
     import std.array : Appender;
 
-    static string[string] authorizationByChannel;
-
     const room = channelName in plugin.rooms;
-    immutable broadcasterIDString = room.id;
-
-    auto authorizationBearer = channelName in authorizationByChannel;
-
-    if (!authorizationBearer)
-    {
-        if (auto creds = channelName in plugin.secretsByChannel)
-        {
-            if (creds.broadcasterKey.length)
-            {
-                authorizationByChannel[channelName] = "Bearer " ~ creds.broadcasterKey;
-                authorizationBearer = channelName in authorizationByChannel;
-            }
-        }
-    }
-
-    if (!authorizationBearer)
-    {
-        throw new Exception("Missing broadcaster key");
-    }
-
-    immutable url = "https://api.twitch.tv/helix/channels?broadcaster_id=" ~ broadcasterIDString;
+    immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
+    immutable url = "https://api.twitch.tv/helix/channels?broadcaster_id=" ~ room.id;
 
     Appender!(char[]) sink;
+    sink.reserve(128);
+
     sink.put('{');
 
     if (title.length)
@@ -1016,7 +996,7 @@ in (Fiber.getThis, "Tried to call `modifyChannel` from outside a Fiber")
 
     sink.put('}');
 
-    cast(void)sendHTTPRequest(plugin, url, *authorizationBearer,
+    cast(void)sendHTTPRequest(plugin, url, authorizationBearer,
         HttpVerb.PATCH, cast(ubyte[])sink.data, "application/json");
 }
 
