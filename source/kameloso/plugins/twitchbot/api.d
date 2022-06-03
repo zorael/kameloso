@@ -218,7 +218,11 @@ void persistentQuerier(shared QueryResponse[int] bucket, const string caBundleFi
         as having been received from the server.
 
     Throws:
-        [TwitchQueryException] if there were unrecoverable errors.
+        [TwitchQueryException] if there were unrecoverable errors with the body
+        describing it being in JSON Form.
+
+        [core.object.Exception|Exception] if there were unrecoverable errors but
+        where the sent body was not in JSON form.
  +/
 QueryResponse sendHTTPRequest(TwitchBotPlugin plugin,
     const string url,

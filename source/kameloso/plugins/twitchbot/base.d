@@ -838,6 +838,9 @@ void reportStreamTime(TwitchBotPlugin plugin,
     (or a specified user) have been a follower of the current channel.
 
     Lookups are done asynchronously in subthreads.
+
+    See_Also:
+        [kameloso.plugins.twitchbot.api.getFollows]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -1269,6 +1272,9 @@ void onCommandRepeat(TwitchBotPlugin plugin, const ref IRCEvent event)
 // onCommandNuke
 /++
     Deletes recent messages containing a supplied word or phrase.
+
+    See_Also:
+        [TwitchBotPlugin.Room.lastNMessages]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -1323,6 +1329,10 @@ void onCommandNuke(TwitchBotPlugin plugin, const ref IRCEvent event)
 /++
     Implements `!songrequest`, allowing viewers to request songs (actually
     YouTube videos) to be added to the streamer's playlist.
+
+    See_Also:
+        [kameloso.plugins.twitchbot.google.addVideoToYouTubePlaylist]
+        [kameloso.plugins.twitchbot.spotify.addTrackToSpotifyPlaylist]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -1819,6 +1829,9 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
 // onCommandEcount
 /++
     `!ecount`; reporting how many times a Twitch emote has been seen.
+
+    See_Also:
+        [TwitchBotPlugin.ecount]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -2031,6 +2044,9 @@ void onCommandWatchtime(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 // onCommandSetTitle
 /++
     Changes the title of the current channel.
+
+    See_Also:
+        [kameloso.plugins.twitchbot.api.modifyChannel]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -2075,6 +2091,9 @@ void onCommandSetTitle(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 // onCommandSetGame
 /++
     Changes the game of the current channel.
+
+    See_Also:
+        [kameloso.plugins.twitchbot.api.modifyChannel]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -2141,6 +2160,9 @@ void onCommandSetGame(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 // onCommandCommercial
 /++
     Starts a commercial in the current channel.
+
+    See_Also:
+        [kameloso.plugins.twitchbot.api.startCommercial]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
