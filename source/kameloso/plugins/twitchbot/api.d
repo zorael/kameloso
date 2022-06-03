@@ -722,9 +722,7 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
     Returns:
         A [QueryResponse] as constructed by other parts of the program.
  +/
-QueryResponse waitForQueryResponse(TwitchBotPlugin plugin,
-    const int id,
-    const Flag!"leaveTimingAlone" leaveTimingAlone = Yes.leaveTimingAlone)
+QueryResponse waitForQueryResponse(TwitchBotPlugin plugin, const int id)
 in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 {
     import kameloso.constants : Timeout;
@@ -759,7 +757,7 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
         }
 
         // Make the new approximate query time a weighted average
-        if (!leaveTimingAlone) plugin.averageApproximateQueryTime(response.msecs);
+        plugin.averageApproximateQueryTime(response.msecs);
         plugin.bucket.remove(id);
     }
     while (!response);
