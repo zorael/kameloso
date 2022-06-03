@@ -138,26 +138,6 @@ final class SongRequestException : Exception
 }
 
 
-// SongRequestPlaylistException
-/++
-    A normal [object.Exception|Exception] but where its type conveys the specifi
-    context of a playlist ID being missing.
- +/
-final class SongRequestPlaylistException : Exception
-{
-    /++
-        Constructor.
-     +/
-    this(const string message,
-        const string file = __FILE__,
-        const size_t line = __LINE__,
-        Throwable nextInChain = null) pure nothrow @nogc @safe
-    {
-        super(message, file, line, nextInChain);
-    }
-}
-
-
 // SongRequestTokenException
 /++
     A normal [object.Exception|Exception] but where its type conveys the specifi
