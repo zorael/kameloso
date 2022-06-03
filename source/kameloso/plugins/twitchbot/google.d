@@ -13,13 +13,14 @@ version(WithTwitchBotPlugin):
 private:
 
 import kameloso.plugins.twitchbot.base;
-import kameloso.plugins.twitchbot.songrequesthelpers;
+import kameloso.plugins.twitchbot.helpers;
 
 import kameloso.common : expandTags, logger;
 import kameloso.logger : LogLevel;
 import arsd.http2 : HttpClient;
 import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
+import core.thread : Fiber;
 
 
 // requestGoogleKeys
@@ -28,7 +29,7 @@ import std.typecons : Flag, No, Yes;
     to obtain an access key and a refresh OAuth key.
 
     Params:
-        plugin = The current [TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
  +/
 package void requestGoogleKeys(TwitchBotPlugin plugin)
 {
@@ -148,25 +149,11 @@ Follow the instructions and log in to authorise the use of this program with you
     Pid browser;
     scope(exit) if (browser !is null) wait(browser);
 
-    void printManualURL()
-    {
-        enum copyPastePattern = `
-<l>Copy and paste this link manually into your browser, and log in as asked:
-
-<i>8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<</>
-
-%s
-
-<i>8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<</>
-`;
-        writefln(copyPastePattern.expandTags(LogLevel.off), url);
-        if (plugin.state.settings.flush) stdout.flush();
-    }
-
     if (plugin.state.settings.force)
     {
         logger.warning("Forcing; not automatically opening browser.");
-        printManualURL();
+        printManualURL(url);
+        if (plugin.state.settings.flush) stdout.flush();
     }
     else
     {
@@ -179,7 +166,8 @@ Follow the instructions and log in to authorise the use of this program with you
         {
             // Probably we got some platform wrong and command was not found
             logger.warning("Error: could not automatically open browser.");
-            printManualURL();
+            printManualURL(url);
+            if (plugin.state.settings.flush) stdout.flush();
         }
     }
 
@@ -273,8 +261,10 @@ and it should just work. If it doesn't, please file an issue at:
 /++
     Adds a video to the YouTube playlist whose ID is stored in the passed [Credentials].
 
+    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
+
     Params:
-        plugin = The current `TwitchBotPlugin`.
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
         creds = Credentials aggregate.
         videoID = YouTube video ID of the video to add.
         recursing = Whether or not the function is recursing into iself.
@@ -287,26 +277,34 @@ package JSONValue addVideoToYouTubePlaylist(
     ref Credentials creds,
     const string videoID,
     const Flag!"recursing" recursing = No.recursing)
+in (Fiber.getThis, "Tried to call `addVideoToYouTubePlaylist` from outside a Fiber")
 {
-    import arsd.http2 : HttpVerb, Uri;
+    import kameloso.plugins.twitchbot.api : getUniqueNumericalID, waitForQueryResponse;
+    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.thread : ThreadMessage;
+    import arsd.http2 : HttpVerb;
     import std.algorithm.searching : endsWith;
+    import std.concurrency : prioritySend, send;
     import std.format : format;
     import std.json : JSONType, parseJSON;
-
-    if (!creds.youtubePlaylistID.length)
-    {
-        throw new SongRequestPlaylistException("Missing YouTube playlist ID");
-    }
+    import std.string : representation;
+    import core.time : msecs;
 
     enum url = "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet";
-    auto client = getHTTPClient();
 
-    if (!client.authorization.length || !client.authorization.endsWith(creds.googleAccessToken))
+    if (plugin.state.settings.trace)
     {
-        client.authorization = "Bearer " ~ creds.googleAccessToken;
+        import kameloso.common : Tint, logger;
+        logger.trace("GET: ", Tint.info, url);
     }
 
-    //"position": 999,
+    static string authorizationBearer;
+
+    if (!authorizationBearer.length || !authorizationBearer.endsWith(creds.googleAccessToken))
+    {
+        authorizationBearer = "Bearer " ~ creds.googleAccessToken;
+    }
+
     enum pattern =
 `{
   "snippet": {
@@ -318,9 +316,13 @@ package JSONValue addVideoToYouTubePlaylist(
   }
 }`;
 
-    ubyte[] data = cast(ubyte[])(pattern.format(creds.youtubePlaylistID, videoID));
-    auto req = client.request(Uri(url), HttpVerb.POST, data, "application/json");
-    auto res = req.waitForCompletion();
+    immutable data = pattern.format(creds.youtubePlaylistID, videoID).representation;
+    /*immutable*/ int id = getUniqueNumericalID(plugin.bucket);
+    plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout());
+    plugin.persistentWorkerTid.send(id, url, authorizationBearer, HttpVerb.POST, data, "application/json");
+    static immutable guesstimatePeriodToWaitForCompletion = 600.msecs;
+    delay(plugin, guesstimatePeriodToWaitForCompletion, Yes.yield);
+    immutable response = waitForQueryResponse(plugin, id);
 
     /*
     {
@@ -352,7 +354,7 @@ package JSONValue addVideoToYouTubePlaylist(
     }
     */
 
-    const json = parseJSON(res.contentText);
+    const json = parseJSON(response.str);
 
     if (json.type != JSONType.object)
     {
@@ -370,7 +372,7 @@ package JSONValue addVideoToYouTubePlaylist(
         {
             if (statusJSON.str == "UNAUTHENTICATED")
             {
-                refreshGoogleToken(client, creds);
+                refreshGoogleToken(getHTTPClient(), creds);
                 saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
                 return addVideoToYouTubePlaylist(plugin, creds, videoID, Yes.recursing);
             }

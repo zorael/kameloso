@@ -1,7 +1,10 @@
 /++
     Helper functions for song request modules.
  +/
-module kameloso.plugins.twitchbot.songrequesthelpers;
+module kameloso.plugins.twitchbot.helpers;
+
+version(TwitchSupport):
+version(WithTwitchBotPlugin):
 
 private:
 
@@ -94,32 +97,36 @@ auto readNamedString(
 }
 
 
+// printManualURL
+/++
+    Prints an URL for manual copy/pasting.
+
+    Params:
+        url = URL string.
+ +/
+void printManualURL(const string url)
+{
+    import std.stdio : writefln;
+
+    enum copyPastePattern = `
+<l>Copy and paste this link manually into your browser, and log in as asked:
+
+<i>8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<</>
+
+%s
+
+<i>8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<</>
+`;
+    writefln(copyPastePattern.expandTags(LogLevel.off), url);
+}
+
+
 // SongRequestException
 /++
     A normal [object.Exception|Exception] but where its type conveys the specifi
     context of a song request failing in a generic manner.
  +/
 final class SongRequestException : Exception
-{
-    /++
-        Constructor.
-     +/
-    this(const string message,
-        const string file = __FILE__,
-        const size_t line = __LINE__,
-        Throwable nextInChain = null) pure nothrow @nogc @safe
-    {
-        super(message, file, line, nextInChain);
-    }
-}
-
-
-// SongRequestPlaylistException
-/++
-    A normal [object.Exception|Exception] but where its type conveys the specifi
-    context of a playlist ID being missing.
- +/
-final class SongRequestPlaylistException : Exception
 {
     /++
         Constructor.

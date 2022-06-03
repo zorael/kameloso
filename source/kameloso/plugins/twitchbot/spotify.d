@@ -13,13 +13,14 @@ version(WithTwitchBotPlugin):
 private:
 
 import kameloso.plugins.twitchbot.base;
-import kameloso.plugins.twitchbot.songrequesthelpers;
+import kameloso.plugins.twitchbot.helpers;
 
 import kameloso.common : expandTags, logger;
 import kameloso.logger : LogLevel;
 import arsd.http2 : HttpClient;
 import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
+import core.thread : Fiber;
 
 
 // requestSpotifyKeys
@@ -28,7 +29,7 @@ import std.typecons : Flag, No, Yes;
     to obtain an access key and a refresh OAuth key.
 
     Params:
-        plugin = The current [TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
  +/
 package void requestSpotifyKeys(TwitchBotPlugin plugin)
 {
@@ -141,25 +142,11 @@ Follow the instructions and log in to authorise the use of this program with you
     Pid browser;
     scope(exit) if (browser !is null) wait(browser);
 
-    void printManualURL()
-    {
-        enum copyPastePattern = `
-<l>Copy and paste this link manually into your browser, and log in as asked:
-
-<i>8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<</>
-
-%s
-
-<i>8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<</>
-`;
-        writefln(copyPastePattern.expandTags(LogLevel.off), url);
-        if (plugin.state.settings.flush) stdout.flush();
-    }
-
     if (plugin.state.settings.force)
     {
         logger.warning("Forcing; not automatically opening browser.");
-        printManualURL();
+        printManualURL(url);
+        if (plugin.state.settings.flush) stdout.flush();
     }
     else
     {
@@ -172,7 +159,8 @@ Follow the instructions and log in to authorise the use of this program with you
         {
             // Probably we got some platform wrong and command was not found
             logger.warning("Error: could not automatically open browser.");
-            printManualURL();
+            printManualURL(url);
+            if (plugin.state.settings.flush) stdout.flush();
         }
     }
 
@@ -390,8 +378,10 @@ auto getSpotifyBase64Authorization(const Credentials creds)
 /++
     Adds a track to the Spotify playlist whose ID is stored in the passed [Credentials].
 
+    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
+
     Params:
-        plugin = The current `TwitchBotPlugin`.
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
         creds = Credentials aggregate.
         trackID = Spotify track ID of the track to add.
         recursing = Whether or not the function is recursing into iself.
@@ -404,30 +394,43 @@ package JSONValue addTrackToSpotifyPlaylist(
     ref Credentials creds,
     const string trackID,
     const Flag!"recursing" recursing = No.recursing)
+in (Fiber.getThis, "Tried to call `addVideoToSpotifyPlaylist` from outside a Fiber")
 {
-    import arsd.http2 : HttpVerb, Uri;
+    import kameloso.plugins.twitchbot.api : getUniqueNumericalID, waitForQueryResponse;
+    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.thread : ThreadMessage;
+    import arsd.http2 : HttpVerb;
     import std.algorithm.searching : endsWith;
+    import std.concurrency : prioritySend, send;
     import std.format : format;
     import std.json : JSONType, parseJSON;
-
-    if (!creds.spotifyPlaylistID.length)
-    {
-        throw new SongRequestPlaylistException("Missing Spotify playlist ID");
-    }
+    import core.time : msecs;
 
     // https://api.spotify.com/v1/playlists/0nqAHNphIb3Qhh5CmD7fg5/tracks?uris=spotify:track:594WPgqPOOy0PqLvScovNO
 
     enum urlPattern = "https://api.spotify.com/v1/playlists/%s/tracks?uris=spotify:track:%s";
     immutable url = urlPattern.format(creds.spotifyPlaylistID, trackID);
-    auto client = getHTTPClient();
 
-    if (!client.authorization.length || !client.authorization.endsWith(creds.spotifyAccessToken))
+    if (plugin.state.settings.trace)
     {
-        client.authorization = "Bearer " ~ creds.spotifyAccessToken;
+        import kameloso.common : Tint, logger;
+        logger.trace("GET: ", Tint.info, url);
     }
 
-    auto req = client.request(Uri(url), HttpVerb.POST);
-    auto res = req.waitForCompletion();
+    static string authorizationBearer;
+
+    if (!authorizationBearer.length || !authorizationBearer.endsWith(creds.spotifyAccessToken))
+    {
+        authorizationBearer = "Bearer " ~ creds.spotifyAccessToken;
+    }
+
+    immutable ubyte[] data;
+    /*immutable*/ int id = getUniqueNumericalID(plugin.bucket);
+    plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout());
+    plugin.persistentWorkerTid.send(id, url, authorizationBearer, HttpVerb.POST, data, string.init);
+    static immutable guesstimatePeriodToWaitForCompletion = 300.msecs;
+    delay(plugin, guesstimatePeriodToWaitForCompletion, Yes.yield);
+    immutable response = waitForQueryResponse(plugin, id);
 
     /*
     {
@@ -443,7 +446,7 @@ package JSONValue addTrackToSpotifyPlaylist(
     }
     */
 
-    const json = parseJSON(res.contentText);
+    const json = parseJSON(response.str);
 
     if (json.type != JSONType.object)
     {
@@ -461,7 +464,7 @@ package JSONValue addTrackToSpotifyPlaylist(
         {
             if (messageJSON.str == "The access token expired")
             {
-                refreshSpotifyToken(client, creds);
+                refreshSpotifyToken(getHTTPClient(), creds);
                 saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
                 return addTrackToSpotifyPlaylist(plugin, creds, trackID, Yes.recursing);
             }

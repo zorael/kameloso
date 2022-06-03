@@ -474,7 +474,7 @@ if (Things.length > 0)
         import lu.uda : Hidden, Unserialisable;
         import std.traits : hasUDA, isAggregateType;
 
-        struct Results
+        static struct Results
         {
             string member;
             string type;

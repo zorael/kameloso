@@ -72,17 +72,6 @@ public:
      +/
     bool promoteVIPs = true;
 
-    /++
-        Whether to use one persistent worker for Twitch queries or to use separate subthreads.
-
-        It's a trade-off. A single worker thread obviously spawns fewer threads,
-        which makes it a better choice on Windows systems where creating such is
-        comparatively expensive. You also get to enjoy being able to reuse the
-        HTTP client. On the other hand, it's also slower (likely due to
-        concurrency message passing overhead).
-     +/
-    bool singleWorkerThread = true;
-
     @Unserialisable
     {
         /// Whether or not to bell on every message.
@@ -96,6 +85,12 @@ public:
             access token with normal chat privileges.
          +/
         bool keygen = false;
+
+        /++
+            Whether or not to start a captive session for requesting a Twitch
+            access token with broadcaster privileges.
+         +/
+        bool superKeygen = false;
 
         /++
             Whether or not to start a captive session for requesting Google
@@ -843,6 +838,9 @@ void reportStreamTime(TwitchBotPlugin plugin,
     (or a specified user) have been a follower of the current channel.
 
     Lookups are done asynchronously in subthreads.
+
+    See_Also:
+        [kameloso.plugins.twitchbot.api.getFollows]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -1274,6 +1272,9 @@ void onCommandRepeat(TwitchBotPlugin plugin, const ref IRCEvent event)
 // onCommandNuke
 /++
     Deletes recent messages containing a supplied word or phrase.
+
+    See_Also:
+        [TwitchBotPlugin.Room.lastNMessages]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -1328,6 +1329,10 @@ void onCommandNuke(TwitchBotPlugin plugin, const ref IRCEvent event)
 /++
     Implements `!songrequest`, allowing viewers to request songs (actually
     YouTube videos) to be added to the streamer's playlist.
+
+    See_Also:
+        [kameloso.plugins.twitchbot.google.addVideoToYouTubePlaylist]
+        [kameloso.plugins.twitchbot.spotify.addTrackToSpotifyPlaylist]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -1349,7 +1354,7 @@ void onCommandNuke(TwitchBotPlugin plugin, const ref IRCEvent event)
 )
 void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
-    import kameloso.plugins.twitchbot.songrequesthelpers;
+    import kameloso.plugins.twitchbot.helpers;
     import kameloso.constants : KamelosoInfo, Timeout;
     import arsd.http2 : HttpClient, HttpVerb, Uri;
     import lu.string : contains, nom, stripped;
@@ -1404,9 +1409,9 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
 
         auto creds = event.channel in plugin.secretsByChannel;
 
-        if (!creds || !creds.googleAccessToken.length)
+        if (!creds || !creds.googleAccessToken.length || !creds.youtubePlaylistID.length)
         {
-            enum message = "Missing Google API credentials. " ~
+            enum message = "Missing Google API credentials and/or YouTube playlist ID. " ~
                 "Run the program with <l>--set twitch.googleKeygen</> to set up.";
             logger.error(message.expandTags(LogLevel.error));
             return;
@@ -1442,28 +1447,34 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
             return;
         }
 
-        try
+        void addVideoDg()
         {
-            import kameloso.plugins.twitchbot.google : addVideoToYouTubePlaylist;
+            try
+            {
+                import kameloso.plugins.twitchbot.google : addVideoToYouTubePlaylist;
 
-            immutable json = addVideoToYouTubePlaylist(plugin, *creds, videoID);
-            immutable title = json["snippet"]["title"].str;
-            //immutable position = json["snippet"]["position"].integer;
+                immutable json = addVideoToYouTubePlaylist(plugin, *creds, videoID);
+                immutable title = json["snippet"]["title"].str;
+                //immutable position = json["snippet"]["position"].integer;
 
-            enum pattern = "%s added to playlist.";
-            immutable message = pattern.format(title);
-            chan(plugin.state, event.channel, message);
+                enum pattern = "%s added to playlist.";
+                immutable message = pattern.format(title);
+                chan(plugin.state, event.channel, message);
+            }
+            catch (SongRequestException e)
+            {
+                enum message = "Invalid YouTube video URL.";
+                chan(plugin.state, event.channel, message);
+            }
+            catch (Exception e)
+            {
+                logger.error(e.msg);
+                version(PrintStacktraces) logger.trace(e);
+            }
         }
-        catch (SongRequestException e)
-        {
-            enum message = "Invalid YouTube video URL.";
-            chan(plugin.state, event.channel, message);
-        }
-        catch (Exception e)
-        {
-            logger.error(e.msg);
-            version(PrintStacktraces) logger.trace(e);
-        }
+
+        Fiber addVideoFiber = new Fiber(&twitchTryCatchDg!addVideoDg, BufferSize.fiberStack);
+        addVideoFiber.call();
     }
     else if (plugin.twitchBotSettings.songrequestMode == SongRequestMode.spotify)
     {
@@ -1487,9 +1498,9 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
 
         auto creds = event.channel in plugin.secretsByChannel;
 
-        if (!creds || !creds.spotifyAccessToken.length)
+        if (!creds || !creds.spotifyAccessToken.length || !creds.spotifyPlaylistID)
         {
-            enum message = "Missing Spotify API credentials. " ~
+            enum message = "Missing Spotify API credentials and/or playlist ID. " ~
                 "Run the program with <l>--set twitch.spotifyKeygen</> to set up.";
             logger.error(message.expandTags(LogLevel.error));
             return;
@@ -1516,37 +1527,43 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
             return;
         }
 
-        try
+        void addTrackDg()
         {
-            import kameloso.plugins.twitchbot.spotify;
-            import std.json : JSONType;
-
-            immutable json = addTrackToSpotifyPlaylist(plugin, *creds, trackID);
-
-            if ((json.type != JSONType.object)  || "snapshot_id" !in json)
+            try
             {
-                logger.error("An error occurred.\n", json.toPrettyString);
-                return;
+                import kameloso.plugins.twitchbot.spotify;
+                import std.json : JSONType;
+
+                immutable json = addTrackToSpotifyPlaylist(plugin, *creds, trackID);
+
+                if ((json.type != JSONType.object)  || "snapshot_id" !in json)
+                {
+                    logger.error("An error occurred.\n", json.toPrettyString);
+                    return;
+                }
+
+                const trackJSON = getSpotifyTrackByID(*creds, trackID);
+                immutable artist = trackJSON["artists"].array[0].object["name"].str;
+                immutable track = trackJSON["name"].str;
+
+                enum pattern = "%s - %s added to playlist.";
+                immutable message = pattern.format(artist, track);
+                chan(plugin.state, event.channel, message);
             }
+            catch (SongRequestException e)
+            {
+                enum message = "Invalid Spotify track URL.";
+                chan(plugin.state, event.channel, message);
+            }
+            catch (Exception e)
+            {
+                logger.error(e.msg);
+                version(PrintStacktraces) logger.trace(e);
+            }
+        }
 
-            const trackJSON = getSpotifyTrackByID(*creds, trackID);
-            immutable artist = trackJSON["artists"].array[0].object["name"].str;
-            immutable track = trackJSON["name"].str;
-
-            enum pattern = "%s - %s added to playlist.";
-            immutable message = pattern.format(artist, track);
-            chan(plugin.state, event.channel, message);
-        }
-        catch (SongRequestException e)
-        {
-            enum message = "Invalid Spotify track URL.";
-            chan(plugin.state, event.channel, message);
-        }
-        catch (Exception e)
-        {
-            logger.error(e.msg);
-            version(PrintStacktraces) logger.trace(e);
-        }
+        Fiber addTrackFiber = new Fiber(&twitchTryCatchDg!addTrackDg, BufferSize.fiberStack);
+        addTrackFiber.call();
     }
 }
 
@@ -1645,7 +1662,7 @@ void onAnyMessage(TwitchBotPlugin plugin, const ref IRCEvent event)
 void onEndOfMOTD(TwitchBotPlugin plugin)
 {
     import lu.string : beginsWith;
-    import std.concurrency : Tid;
+    import std.concurrency : Tid, spawn;
     import std.typecons : Flag, No, Yes;
 
     if (plugin.useAPIFeatures)
@@ -1658,17 +1675,12 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
 
         if (plugin.bucket is null)
         {
-            plugin.bucket[string.init] = QueryResponse.init;
-            plugin.bucket.remove(string.init);
+            plugin.bucket[0] = QueryResponse.init;
+            plugin.bucket.remove(0);
         }
 
-        if (plugin.twitchBotSettings.singleWorkerThread)
+        if (plugin.persistentWorkerTid == Tid.init)
         {
-            import std.concurrency : spawn;
-
-            assert((plugin.persistentWorkerTid == Tid.init),
-                "Double-spawn of Twitch single worker thread");
-
             plugin.persistentWorkerTid = spawn(&persistentQuerier,
                 plugin.bucket, plugin.state.connSettings.caBundleFile);
         }
@@ -1817,6 +1829,9 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
 // onCommandEcount
 /++
     `!ecount`; reporting how many times a Twitch emote has been seen.
+
+    See_Also:
+        [TwitchBotPlugin.ecount]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -2026,6 +2041,199 @@ void onCommandWatchtime(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 }
 
 
+// onCommandSetTitle
+/++
+    Changes the title of the current channel.
+
+    See_Also:
+        [kameloso.plugins.twitchbot.api.modifyChannel]
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("settitle")
+            .policy(PrefixPolicy.prefixed)
+            .description("Sets the channel title.")
+            .addSyntax("$command [title]")
+    )
+)
+void onCommandSetTitle(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+{
+    void setTitleDg()
+    {
+        import lu.string : stripped;
+        import std.array : replace;
+
+        immutable unescapedTitle = event.content.stripped;
+
+        if (!unescapedTitle.length)
+        {
+            import std.format : format;
+
+            enum pattern = "Usage: %s%s [title]";
+            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+            chan(plugin.state, event.channel, message);
+            return;
+        }
+
+        immutable title = unescapedTitle.replace(`"`, `\"`);
+        modifyChannel(plugin, event.channel, title, string.init);
+    }
+
+    Fiber setTitleFiber = new Fiber(&twitchTryCatchDg!setTitleDg, BufferSize.fiberStack);
+    setTitleFiber.call();
+}
+
+
+// onCommandSetGame
+/++
+    Changes the game of the current channel.
+
+    See_Also:
+        [kameloso.plugins.twitchbot.api.modifyChannel]
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("setgame")
+            .policy(PrefixPolicy.prefixed)
+            .description("Sets the channel game.")
+            .addSyntax("$command [game name]")
+    )
+)
+void onCommandSetGame(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+{
+    void setGameDg()
+    {
+        import lu.string : stripped;
+        import std.array : replace;
+        import std.string : isNumeric;
+        import std.uri : encodeComponent;
+
+        immutable unescapedGameName = event.content.stripped;
+
+        if (!unescapedGameName.length)
+        {
+            import std.format : format;
+
+            enum pattern = "Usage: %s%s [game name]";
+            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+            chan(plugin.state, event.channel, message);
+            return;
+        }
+
+        immutable specified = unescapedGameName.replace(`"`, `\"`);
+        string id;
+
+        if (specified.isNumeric)
+        {
+            id = specified;
+        }
+        else
+        {
+            immutable gameInfo = getTwitchGame(plugin, specified.encodeComponent);
+
+            if (!gameInfo.id.length)
+            {
+                enum message = "Could not find a game by that name.";
+                chan(plugin.state, event.channel, message);
+                return;
+            }
+
+            id = gameInfo.id;
+        }
+
+        modifyChannel(plugin, event.channel, string.init, id);
+    }
+
+    Fiber setGameFiber = new Fiber(&twitchTryCatchDg!setGameDg, BufferSize.fiberStack);
+    setGameFiber.call();
+}
+
+
+// onCommandCommercial
+/++
+    Starts a commercial in the current channel.
+
+    See_Also:
+        [kameloso.plugins.twitchbot.api.startCommercial]
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("commercial")
+            .policy(PrefixPolicy.prefixed)
+            .description("Starts a commercial in the current channel.")
+            .addSyntax("$command [commercial length; valid values are 30, 60, 90, 120, 150 and 180]")
+    )
+)
+void onCommandCommercial(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+{
+    void commercialDg()
+    {
+        import lu.string : stripped;
+        import std.algorithm.comparison : among;
+        import std.format : format;
+
+        immutable lengthString = event.content.stripped;
+
+        if (!lengthString.length)
+        {
+            enum pattern = "Usage: %s%s [commercial length; valid values are 30, 60, 90, 120, 150 and 180]";
+            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+            chan(plugin.state, event.channel, message);
+            return;
+        }
+
+        const room = event.channel in plugin.rooms;
+
+        if (!room.broadcast.active)
+        {
+            enum pattern = "Broadcast start was never marked with %sstart.";
+            immutable message = pattern.format(plugin.state.settings.prefix);
+            chan(plugin.state, event.channel, message);
+            return;
+        }
+
+        if (lengthString.among!("30", "60", "90", "120", "180"))
+        {
+            try
+            {
+                startCommercial(plugin, event.channel, lengthString);
+            }
+            catch (TwitchQueryException e)
+            {
+                if ((e.code == 400) && (e.error == "Bad Request"))
+                {
+                    chan(plugin.state, event.channel, e.msg);
+                }
+                else
+                {
+                    throw e;
+                }
+            }
+        }
+        else
+        {
+            enum message = "Commercial length must be one of 30, 60, 90, 120, 150 or 180.";
+            chan(plugin.state, event.channel, message);
+        }
+    }
+
+    Fiber commercialFiber = new Fiber(&twitchTryCatchDg!commercialDg, BufferSize.fiberStack);
+    commercialFiber.call();
+}
+
+
 // onCAP
 /++
     Start the captive key generation routine at the earliest possible moment,
@@ -2040,13 +2248,13 @@ void onCommandWatchtime(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 )
 void onCAP(TwitchBotPlugin plugin)
 {
-    import kameloso.plugins.twitchbot.keygen : requestTwitchKey;
     import std.algorithm.searching : endsWith;
 
     if ((plugin.state.server.daemon == IRCServer.Daemon.unset) &&
         plugin.state.server.address.endsWith(".twitch.tv"))
     {
-        if (plugin.twitchBotSettings.keygen ||
+        if (/*plugin.twitchBotSettings.keygen ||*/
+            plugin.twitchBotSettings.superKeygen ||
             plugin.twitchBotSettings.googleKeygen ||
             plugin.twitchBotSettings.spotifyKeygen)
         {
@@ -2056,7 +2264,16 @@ void onCAP(TwitchBotPlugin plugin)
 
         if (plugin.twitchBotSettings.keygen)
         {
+            import kameloso.plugins.twitchbot.keygen : requestTwitchKey;
             plugin.requestTwitchKey();
+        }
+
+        if (*plugin.state.abort) return;
+
+        if (plugin.twitchBotSettings.superKeygen)
+        {
+            import kameloso.plugins.twitchbot.keygen : requestTwitchSuperKey;
+            plugin.requestTwitchSuperKey();
         }
 
         if (*plugin.state.abort) return;
@@ -2188,8 +2405,7 @@ void teardown(TwitchBotPlugin plugin)
     import kameloso.thread : ThreadMessage;
     import std.concurrency : Tid, send;
 
-    if (plugin.twitchBotSettings.singleWorkerThread &&
-        (plugin.persistentWorkerTid != Tid.init))
+    if (plugin.persistentWorkerTid != Tid.init)
     {
         // It may not have been started if we're aborting very early.
         plugin.persistentWorkerTid.send(ThreadMessage.teardown());
@@ -2614,7 +2830,7 @@ package:
     shared static Tid mainThread;
 
     /// Associative array of responses from async HTTP queries.
-    shared QueryResponse[string] bucket;
+    shared QueryResponse[int] bucket;
 
     /// File to save emote counters to.
     @Resource ecountFile = "twitch-ecount.json";
