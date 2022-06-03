@@ -3,6 +3,9 @@
  +/
 module kameloso.plugins.twitchbot.helpers;
 
+version(TwitchSupport):
+version(WithTwitchBotPlugin):
+
 private:
 
 import kameloso.common : expandTags, logger;
