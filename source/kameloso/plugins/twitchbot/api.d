@@ -1109,3 +1109,112 @@ in (Fiber.getThis, "Tried to call `startCommercial` from outside a Fiber")
     cast(void)sendHTTPRequest(plugin, url, authorizationBearer,
         HttpVerb.POST, cast(ubyte[])body_, "application/json");
 }
+
+
+// getPoll
+/++
+    FIXME
+ +/
+auto getPoll(TwitchBotPlugin plugin, const string channelName)
+in (Fiber.getThis, "Tried to call `getPoll` from outside a Fiber")
+{
+    import std.format : format;
+    import std.json : parseJSON;
+
+    enum url = "https://api.twitch.tv/helix/polls";
+    enum pattern = `
+{
+    "broadcaster_id": "%s"
+}`;
+
+    const room = channelName in plugin.rooms;
+    immutable body_ = pattern.format(room.id);
+    immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
+
+    immutable response = sendHTTPRequest(plugin, url, authorizationBearer,
+        HttpVerb.GET, cast(ubyte[])body_, "application/json");
+
+    return parseJSON(response.str);
+}
+
+
+// createPoll
+/++
+    FIXME
+ +/
+auto createPoll(
+    TwitchBotPlugin plugin,
+    const string channelName,
+    const string title,
+    const string durationString,
+    const string[] choices)
+in (Fiber.getThis, "Tried to call `createPoll` from outside a Fiber")
+{
+    import std.array : Appender, replace;
+    import std.format : format;
+    import std.json : parseJSON;
+
+    enum url = "https://api.twitch.tv/helix/polls";
+    enum pattern = `
+{
+    "broadcaster_id": "%s",
+    "title": "%s",
+    "choices":[
+%s
+    ],
+    "duration": %s
+}`;
+
+    Appender!(char[]) sink;
+    sink.reserve(256);
+
+    foreach (immutable i, immutable choice; choices)
+    {
+        if (i > 0) sink.put(',');
+        sink.put(`{"title":"`);
+        sink.put(choice.replace(`"`, `\"`));
+        sink.put(`"}`);
+    }
+
+    const room = channelName in plugin.rooms;
+    immutable escapedTitle = title.replace(`"`, `\"`);
+    immutable body_ = pattern.format(room.id, escapedTitle, sink.data, durationString);
+    immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
+
+    immutable response = sendHTTPRequest(plugin, url, authorizationBearer,
+        HttpVerb.POST, cast(ubyte[])body_, "application/json");
+    return parseJSON(response.str);
+}
+
+
+// endPoll
+/++
+    FIXME
+ +/
+auto endPoll(
+    TwitchBotPlugin plugin,
+    const string channelName,
+    const string voteID,
+    const Flag!"terminate" terminate)
+in (Fiber.getThis, "Tried to call `endPoll` from outside a Fiber")
+{
+    import std.format : format;
+    import std.json : parseJSON;
+
+    enum url = "https://api.twitch.tv/helix/polls";
+    enum pattern = `
+{
+    "broadcaster_id": "%s",
+    "id": "%s",
+    "status": "%s"
+}`;
+
+    const room = channelName in plugin.rooms;
+    immutable status = terminate ? "TERMINATED" : "ARCHIVED";
+    immutable body_ = pattern.format(room.id, voteID, status);
+    immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
+
+    immutable response = sendHTTPRequest(plugin, url, authorizationBearer,
+        HttpVerb.PATCH, cast(ubyte[])body_, "application/json");
+    return parseJSON(response.str);
+}

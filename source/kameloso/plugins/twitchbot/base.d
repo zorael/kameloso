@@ -1568,6 +1568,106 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
 }
 
 
+// onCommandStartPoll
+/++
+    FIXME
+
+    See_Also:
+        [kameloso.plugins.twitchbot.api.createPoll]
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("startpoll")
+            .policy(PrefixPolicy.prefixed)
+            .description("Starts a Twitch poll.")
+            .addSyntax(`$command "[poll title]" [seconds] [choice1] [choice2] ...`)
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("startvote")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
+)
+void onCommandStartPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+{
+    import kameloso.common : splitWithQuotes;
+    import lu.string : stripped;
+
+    immutable args = splitWithQuotes(event.content.stripped);
+
+    if (args.length < 4)
+    {
+        import std.format : format;
+        enum pattern = `Usage: %s%s "[poll title]" [seconds] [choice1] [choice2] ...`;
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+        return;
+    }
+
+    void startPollDg()
+    {
+        immutable title = args[0];
+        immutable durationString = args[1];
+        immutable choices = args[2..$];
+        immutable response = createPoll(plugin, event.channel, title, durationString, choices);
+
+        import std.stdio;
+        writeln(response.toPrettyString);
+    }
+
+    Fiber startPollFiber = new Fiber(&twitchTryCatchDg!startPollDg, BufferSize.fiberStack);
+    startPollFiber.call();
+}
+
+
+// onCommandEndPoll
+/++
+    FIXME
+
+    See_Also:
+        [kameloso.plugins.twitchbot.api.endPoll]
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("endpoll")
+            .policy(PrefixPolicy.prefixed)
+            .description("Ends a Twitch poll.")
+            //.addSyntax("$command [terminating]")
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("endvote")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
+)
+void onCommandEndPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+{
+    void endPollDg()
+    {
+        immutable pollInfo = getPoll(plugin, event.channel);
+
+        import std.stdio;
+        writeln(pollInfo.toPrettyString);
+        immutable voteID = pollInfo["data"].array[0].object["id"].str;
+        immutable response = endPoll(plugin, event.channel, voteID, Yes.terminate);
+        writeln(response.toPrettyString);
+    }
+
+    Fiber endPollFiber = new Fiber(&twitchTryCatchDg!endPollDg, BufferSize.fiberStack);
+    endPollFiber.call();
+}
+
+
 // onAnyMessage
 /++
     Bells on any message, if the [TwitchBotSettings.bellOnMessage] setting is set.
