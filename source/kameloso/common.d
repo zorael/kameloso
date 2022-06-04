@@ -2299,3 +2299,119 @@ in (filename.length, "Empty plugin filename passed to `pluginFilenameSlicerImpl`
 
     return getPluginName ? slice[0..$-2] : slice;
 }
+
+
+// splitWithQuotes
+/++
+    Splits a string into an array of strings by whitespace, but honours quotes.
+
+    Example:
+    ---
+    string s = `title "this is my title" author "john doe"`;
+    immutable splitUp = splitWithQuotes(s);
+    assert(splitUp == [ "title", "this is my title", "author", "john doe" ]);
+    ---
+
+    TODO:
+        Rewrite as a state machine. The pathological case allocates a lot.
+
+    Params:
+        line = Input string.
+
+    Returns:
+        A `string[]` composed of the input string split up into substrings,
+        deliminated by whitespace. Quoted sections are treated as one substring.
+ +/
+auto splitWithQuotes(const string line)
+{
+    import std.algorithm.iteration : splitter;
+    import std.array : Appender, replace;
+    import std.functional : equalTo;
+
+    enum backslashPlaceholder = "\1";
+    enum escapedQuotePlaceholder = "\2";
+    enum quotePlaceholder = "\3";
+
+    static string replaceWithPlaceholders(const string line)
+    {
+        return line
+            .replace(`\\`, backslashPlaceholder)
+            .replace(`\"`, escapedQuotePlaceholder)
+            .replace(`"`, quotePlaceholder);
+    }
+
+    static string revertPlaceholders(const string line)
+    {
+        return line
+            .replace(backslashPlaceholder, string.init)
+            .replace(escapedQuotePlaceholder, `"`);
+            //.replace(quotePlaceholder, `"`);
+    }
+
+    Appender!(string[]) sink;
+    sink.reserve(16);
+
+    bool quoting;
+
+    immutable replaced = replaceWithPlaceholders(line);
+    auto range = replaced.splitter!(equalTo, Yes.keepSeparators)(quotePlaceholder);
+
+    foreach (substring; range)
+    {
+        if (substring == quotePlaceholder)
+        {
+            quoting = !quoting;
+            continue;
+        }
+        else if (quoting)
+        {
+            sink.put(revertPlaceholders(substring));
+        }
+        else
+        {
+            foreach (subsub; substring.splitter(' '))
+            {
+                if (!subsub.length) continue;
+                sink.put(revertPlaceholders(subsub));
+            }
+        }
+    }
+
+    return sink.data;
+}
+
+///
+unittest
+{
+    import std.conv : text;
+
+    {
+        enum input = `title "this is my title" author "john doe"`;
+        immutable splitUp = splitWithQuotes(input);
+        immutable expected =
+        [
+            "title",
+            "this is my title",
+            "author",
+            "john doe"
+        ];
+        assert(splitUp == expected, splitUp.text);
+    }
+    {
+        enum input = `string without quotes`;
+        immutable splitUp = splitWithQuotes(input);
+        immutable expected =
+        [
+            "string",
+            "without",
+            "quotes",
+        ];
+        assert(splitUp == expected, splitUp.text);
+    }
+    {
+        enum input = string.init;
+        immutable splitUp = splitWithQuotes(input);
+        immutable expected = (string[]).init;
+        assert(splitUp == expected, splitUp.text);
+    }
+}
