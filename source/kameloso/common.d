@@ -2324,58 +2324,95 @@ in (filename.length, "Empty plugin filename passed to `pluginFilenameSlicerImpl`
  +/
 auto splitWithQuotes(const string line)
 {
-    import std.algorithm.iteration : splitter;
-    import std.array : Appender, replace;
+    import std.array : Appender;
+    import std.string : representation;
 
-    enum backslashPlaceholder = "\1";
-    enum escapedQuotePlaceholder = "\2";
-    enum quotePlaceholder = "\3";
-
-    static string replaceWithPlaceholders(const string line)
-    {
-        return line
-            .replace(`\\`, backslashPlaceholder)
-            .replace(`\"`, escapedQuotePlaceholder)
-            .replace(`"`, quotePlaceholder);
-    }
-
-    static string revertPlaceholders(const string line)
-    {
-        return line
-            .replace(backslashPlaceholder, string.init)
-            .replace(escapedQuotePlaceholder, `"`);
-            //.replace(quotePlaceholder, `"`);
-    }
+    if (!line.length) return null;
 
     Appender!(string[]) sink;
-    sink.reserve(16);
+    sink.reserve(8);
 
-    bool quoting;
+    size_t start;
+    bool betweenQuotes;
+    bool escaping;
+    bool escapedAQuote;
+    bool escapedABackslash;
 
-    immutable replaced = replaceWithPlaceholders(line);
-    auto range = replaced.splitter!("a == b", Yes.keepSeparators)(quotePlaceholder);
-
-    foreach (substring; range)
+    foreach (immutable i, immutable c; line.representation)
     {
-        if (substring == quotePlaceholder)
+        if (escaping)
         {
-            quoting = !quoting;
-            continue;
-        }
-        else if (quoting)
-        {
-            sink.put(revertPlaceholders(substring));
-        }
-        else
-        {
-            foreach (subsub; substring.splitter(' '))
+            if (c == '\\')
             {
-                if (!subsub.length) continue;
-                sink.put(revertPlaceholders(subsub));
+                escapedABackslash = true;
+            }
+            else if (c == '"')
+            {
+                escapedAQuote = true;
+            }
+
+            escaping = false;
+        }
+        else if (c == ' ')
+        {
+            if (betweenQuotes)
+            {
+                // do nothing
+            }
+            else if (i == start)
+            {
+                ++start;
+            }
+            else
+            {
+                // commit
+                sink.put(line[start..i]);
+                start = i+1;
+            }
+        }
+        else if (c == '\\')
+        {
+            escaping = true;
+        }
+        else if (c == '"')
+        {
+            if (betweenQuotes)
+            {
+                if (escapedAQuote || escapedABackslash)
+                {
+                    import std.array : replace;
+
+                    // commit
+                    string escaped = line[start+1..i];
+                    if (escapedABackslash) escaped = escaped.replace(`\\`, "\1\1");
+                    if (escapedAQuote) escaped = escaped.replace(`\"`, `"`);
+                    if (escapedABackslash) escaped = escaped.replace("\1\1", `\`);
+                    sink.put(escaped);
+                    escapedAQuote = false;
+                    escapedABackslash = false;
+                }
+                else
+                {
+                    sink.put(line[start+1..i]);
+                }
+
+                betweenQuotes = false;
+                start = i+1;
+            }
+            else if (i > start)
+            {
+                sink.put(line[start..i]);
+                start = i+1;
+                betweenQuotes = true;
+            }
+            else
+            {
+                betweenQuotes = true;
             }
         }
     }
 
+    if (start != line.length) sink.put(line[start..$]);
     return sink.data;
 }
 
