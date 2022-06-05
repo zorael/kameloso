@@ -2326,7 +2326,6 @@ auto splitWithQuotes(const string line)
 {
     import std.algorithm.iteration : splitter;
     import std.array : Appender, replace;
-    import std.functional : equalTo;
 
     enum backslashPlaceholder = "\1";
     enum escapedQuotePlaceholder = "\2";
@@ -2354,7 +2353,7 @@ auto splitWithQuotes(const string line)
     bool quoting;
 
     immutable replaced = replaceWithPlaceholders(line);
-    auto range = replaced.splitter!(equalTo, Yes.keepSeparators)(quotePlaceholder);
+    auto range = replaced.splitter!("a == b", Yes.keepSeparators)(quotePlaceholder);
 
     foreach (substring; range)
     {
