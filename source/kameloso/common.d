@@ -2305,15 +2305,15 @@ in (filename.length, "Empty plugin filename passed to `pluginFilenameSlicerImpl`
 /++
     Splits a string into an array of strings by whitespace, but honours quotes.
 
+    Intended to be used with ASCII strings; may or may not work with more
+    elaborate UTF-8 strings.
+
     Example:
     ---
     string s = `title "this is my title" author "john doe"`;
     immutable splitUp = splitWithQuotes(s);
     assert(splitUp == [ "title", "this is my title", "author", "john doe" ]);
     ---
-
-    TODO:
-        Rewrite as a state machine. The pathological case allocates a lot.
 
     Params:
         line = Input string.
@@ -2337,6 +2337,17 @@ auto splitWithQuotes(const string line)
     bool escaping;
     bool escapedAQuote;
     bool escapedABackslash;
+
+    string replaceEscaped(const string line)
+    {
+        import std.array : replace;
+
+        string slice = line;  // mutable
+        if (escapedABackslash) slice = slice.replace(`\\`, "\1\1");
+        if (escapedAQuote) slice = slice.replace(`\"`, `"`);
+        if (escapedABackslash) slice = slice.replace("\1\1", `\`);
+        return slice;
+    }
 
     foreach (immutable i, immutable c; line.representation)
     {
@@ -2380,18 +2391,11 @@ auto splitWithQuotes(const string line)
             {
                 if (escapedAQuote || escapedABackslash)
                 {
-                    import std.array : replace;
-
-                    // commit
-                    string escaped = line[start+1..i];
-                    if (escapedABackslash) escaped = escaped.replace(`\\`, "\1\1");
-                    if (escapedAQuote) escaped = escaped.replace(`\"`, `"`);
-                    if (escapedABackslash) escaped = escaped.replace("\1\1", `\`);
-                    sink.put(escaped);
+                    sink.put(replaceEscaped(line[start+1..i]));
                     escapedAQuote = false;
                     escapedABackslash = false;
                 }
-                else
+                else if (i > start+1)
                 {
                     sink.put(line[start+1..i]);
                 }
@@ -2399,11 +2403,11 @@ auto splitWithQuotes(const string line)
                 betweenQuotes = false;
                 start = i+1;
             }
-            else if (i > start)
+            else if (i > start+1)
             {
-                sink.put(line[start..i]);
-                start = i+1;
+                sink.put(line[start+1..i]);
                 betweenQuotes = true;
+                start = i+1;
             }
             else
             {
@@ -2412,7 +2416,24 @@ auto splitWithQuotes(const string line)
         }
     }
 
-    if (start != line.length) sink.put(line[start..$]);
+    if (line.length > start+1)
+    {
+        if (betweenQuotes)
+        {
+            if (escapedAQuote || escapedABackslash)
+            {
+                sink.put(replaceEscaped(line[start+1..$]));
+            }
+            else
+            {
+                sink.put(line[start+1..$]);
+            }
+        }
+        else
+        {
+            sink.put(line[start..$]);
+        }
+    }
     return sink.data;
 }
 
