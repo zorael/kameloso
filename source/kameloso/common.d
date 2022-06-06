@@ -2308,6 +2308,8 @@ in (filename.length, "Empty plugin filename passed to `pluginFilenameSlicerImpl`
     Intended to be used with ASCII strings; may or may not work with more
     elaborate UTF-8 strings.
 
+    TODO: Replace with [lu.string.splitWithQuotes] after its next release.
+
     Example:
     ---
     string s = `title "this is my title" author "john doe"`;
@@ -2434,6 +2436,7 @@ auto splitWithQuotes(const string line)
             sink.put(line[start..$]);
         }
     }
+
     return sink.data;
 }
 
