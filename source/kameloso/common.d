@@ -2471,4 +2471,58 @@ unittest
         immutable expected = (string[]).init;
         assert(splitUp == expected, splitUp.text);
     }
+    {
+        enum input = `title "this is \"my\" title" author "john\\" doe`;
+        immutable splitUp = splitWithQuotes(input);
+        immutable expected =
+        [
+            "title",
+            `this is "my" title`,
+            "author",
+            `john\`,
+            "doe"
+        ];
+        assert(splitUp == expected, splitUp.text);
+    }
+    {
+        enum input = `title "this is \"my\" title" author "john\\\" doe`;
+        immutable splitUp = splitWithQuotes(input);
+        immutable expected =
+        [
+            "title",
+            `this is "my" title`,
+            "author",
+            `john\" doe`
+        ];
+        assert(splitUp == expected, splitUp.text);
+    }
+    {
+        enum input = `this has "unbalanced quotes`;
+        immutable splitUp = splitWithQuotes(input);
+        immutable expected =
+        [
+            "this",
+            "has",
+            "unbalanced quotes"
+        ];
+        assert(splitUp == expected, splitUp.text);
+    }
+    {
+        enum input = `""`;
+        immutable splitUp = splitWithQuotes(input);
+        immutable expected = (string[]).init;
+        assert(splitUp == expected, splitUp.text);
+    }
+    {
+        enum input = `"`;
+        immutable splitUp = splitWithQuotes(input);
+        immutable expected = (string[]).init;
+        assert(splitUp == expected, splitUp.text);
+    }
+    {
+        enum input = `"""""""""""`;
+        immutable splitUp = splitWithQuotes(input);
+        immutable expected = (string[]).init;
+        assert(splitUp == expected, splitUp.text);
+    }
 }
