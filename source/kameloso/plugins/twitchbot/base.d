@@ -1570,7 +1570,9 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
 
 // onCommandStartPoll
 /++
-    FIXME
+    Starts a Twitch poll.
+
+    Note: Experimental, since we cannot try it out ourselves.
 
     See_Also:
         [kameloso.plugins.twitchbot.api.createPoll]
@@ -1609,15 +1611,35 @@ void onCommandStartPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         return;
     }
 
+    immutable title = args[0];
+    immutable durationString = args[1];
+    immutable choices = args[2..$];
+
+    if (choices.length < 2)
+    {
+        enum message = "Insufficient number of choices, must be two or more.";
+        chan(plugin.state, event.channel, message);
+        return;
+    }
+
     void startPollDg()
     {
-        immutable title = args[0];
-        immutable durationString = args[1];
-        immutable choices = args[2..$];
-        immutable response = createPoll(plugin, event.channel, title, durationString, choices);
+        import std.json : JSONType;
+        import std.format : format;
 
-        import std.stdio;
-        writeln(response.toPrettyString);
+        immutable responseJSON = createPoll(plugin, event.channel, title, durationString, choices);
+
+        if (responseJSON.type != JSONType.array)
+        {
+            import std.stdio;
+            logger.error("Unexpected response from server when creating a poll");
+            writeln(responseJSON.toPrettyString);
+            return;
+        }
+
+        enum pattern = `Poll "%s" created.`;
+        immutable message = pattern.format(responseJSON.array[0].object["title"]);
+        chan(plugin.state, event.channel, message);
     }
 
     Fiber startPollFiber = new Fiber(&twitchTryCatchDg!startPollDg, BufferSize.fiberStack);
@@ -1627,7 +1649,11 @@ void onCommandStartPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 
 // onCommandEndPoll
 /++
-    FIXME
+    Ends a Twitch poll.
+
+    Currently ends the first active poll if there are several.
+
+    Note: Experimental, since we cannot try it out ourselves.
 
     See_Also:
         [kameloso.plugins.twitchbot.api.endPoll]
@@ -1652,15 +1678,58 @@ void onCommandStartPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 )
 void onCommandEndPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 {
+    /*static struct Choice
+    {
+        string title;
+        long votes;
+    }*/
+
     void endPollDg()
     {
-        immutable pollInfo = getPoll(plugin, event.channel);
+        import std.json : JSONType;
+        import std.stdio : writeln;
 
-        import std.stdio;
-        writeln(pollInfo.toPrettyString);
-        immutable voteID = pollInfo["data"].array[0].object["id"].str;
-        immutable response = endPoll(plugin, event.channel, voteID, Yes.terminate);
-        writeln(response.toPrettyString);
+        immutable pollInfoJSON = getPolls(plugin, event.channel);
+
+        if (pollInfoJSON.type != JSONType.array)
+        {
+            logger.error("Unexpected JSON type from server when fetching polls");
+            writeln(pollInfoJSON.toPrettyString);
+            return;
+        }
+
+        immutable voteID = pollInfoJSON.array[0].object["id"].str;
+        immutable endResponseJSON = endPoll(plugin, event.channel, voteID, Yes.terminate);
+
+        if ((endResponseJSON.type != JSONType.object) ||
+            ("choices" !in endResponseJSON) ||
+            (endResponseJSON["choices"].array.length < 2))
+        {
+            // Invalid response in some way
+            logger.error("Unexpected response from server when ending a poll");
+            writeln(endResponseJSON.toPrettyString);
+            return;
+        }
+
+        /*Choice[] choices;
+        long totalVotes;
+
+        foreach (immutable i, const choiceJSON; endResponseJSON["choices"].array)
+        {
+            Choice choice;
+            choice.title = choiceJSON["title"].str;
+            choice.votes =
+                choiceJSON["votes"].integer +
+                choiceJSON["channel_points_votes"].integer +
+                choiceJSON["bits_votes"].integer;
+            choices ~= choice;
+            totalVotes += choice.votes;
+        }
+
+        auto sortedChoices = choices.sort!((a,b) => a.votes > b.votes);*/
+
+        enum message = "Poll ended.";
+        chan(plugin.state, event.channel, message);
     }
 
     Fiber endPollFiber = new Fiber(&twitchTryCatchDg!endPollDg, BufferSize.fiberStack);
