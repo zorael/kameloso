@@ -1316,7 +1316,7 @@ void onCommandNuke(TwitchBotPlugin plugin, const ref IRCEvent event)
 
         if (storedEvent.content.asLowerCase.canFind(phraseToLower))
         {
-            chan(plugin.state, event.channel, text(".delete ", storedEvent.id));
+            chan!(Yes.priority)(plugin.state, event.channel, text(".delete ", storedEvent.id));
         }
     }
 
