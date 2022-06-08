@@ -2305,15 +2305,17 @@ in (filename.length, "Empty plugin filename passed to `pluginFilenameSlicerImpl`
 /++
     Splits a string into an array of strings by whitespace, but honours quotes.
 
+    Intended to be used with ASCII strings; may or may not work with more
+    elaborate UTF-8 strings.
+
+    TODO: Replace with [lu.string.splitWithQuotes] after its next release.
+
     Example:
     ---
     string s = `title "this is my title" author "john doe"`;
     immutable splitUp = splitWithQuotes(s);
     assert(splitUp == [ "title", "this is my title", "author", "john doe" ]);
     ---
-
-    TODO:
-        Rewrite as a state machine. The pathological case allocates a lot.
 
     Params:
         line = Input string.
@@ -2324,56 +2326,114 @@ in (filename.length, "Empty plugin filename passed to `pluginFilenameSlicerImpl`
  +/
 auto splitWithQuotes(const string line)
 {
-    import std.algorithm.iteration : splitter;
-    import std.array : Appender, replace;
-    import std.functional : equalTo;
+    import std.array : Appender;
+    import std.string : representation;
 
-    enum backslashPlaceholder = "\1";
-    enum escapedQuotePlaceholder = "\2";
-    enum quotePlaceholder = "\3";
-
-    static string replaceWithPlaceholders(const string line)
-    {
-        return line
-            .replace(`\\`, backslashPlaceholder)
-            .replace(`\"`, escapedQuotePlaceholder)
-            .replace(`"`, quotePlaceholder);
-    }
-
-    static string revertPlaceholders(const string line)
-    {
-        return line
-            .replace(backslashPlaceholder, string.init)
-            .replace(escapedQuotePlaceholder, `"`);
-            //.replace(quotePlaceholder, `"`);
-    }
+    if (!line.length) return null;
 
     Appender!(string[]) sink;
-    sink.reserve(16);
+    sink.reserve(8);
 
-    bool quoting;
+    size_t start;
+    bool betweenQuotes;
+    bool escaping;
+    bool escapedAQuote;
+    bool escapedABackslash;
 
-    immutable replaced = replaceWithPlaceholders(line);
-    auto range = replaced.splitter!(equalTo, Yes.keepSeparators)(quotePlaceholder);
-
-    foreach (substring; range)
+    string replaceEscaped(const string line)
     {
-        if (substring == quotePlaceholder)
+        import std.array : replace;
+
+        string slice = line;  // mutable
+        if (escapedABackslash) slice = slice.replace(`\\`, "\1\1");
+        if (escapedAQuote) slice = slice.replace(`\"`, `"`);
+        if (escapedABackslash) slice = slice.replace("\1\1", `\`);
+        return slice;
+    }
+
+    foreach (immutable i, immutable c; line.representation)
+    {
+        if (escaping)
         {
-            quoting = !quoting;
-            continue;
+            if (c == '\\')
+            {
+                escapedABackslash = true;
+            }
+            else if (c == '"')
+            {
+                escapedAQuote = true;
+            }
+
+            escaping = false;
         }
-        else if (quoting)
+        else if (c == ' ')
         {
-            sink.put(revertPlaceholders(substring));
+            if (betweenQuotes)
+            {
+                // do nothing
+            }
+            else if (i == start)
+            {
+                ++start;
+            }
+            else
+            {
+                // commit
+                sink.put(line[start..i]);
+                start = i+1;
+            }
+        }
+        else if (c == '\\')
+        {
+            escaping = true;
+        }
+        else if (c == '"')
+        {
+            if (betweenQuotes)
+            {
+                if (escapedAQuote || escapedABackslash)
+                {
+                    sink.put(replaceEscaped(line[start+1..i]));
+                    escapedAQuote = false;
+                    escapedABackslash = false;
+                }
+                else if (i > start+1)
+                {
+                    sink.put(line[start+1..i]);
+                }
+
+                betweenQuotes = false;
+                start = i+1;
+            }
+            else if (i > start+1)
+            {
+                sink.put(line[start+1..i]);
+                betweenQuotes = true;
+                start = i+1;
+            }
+            else
+            {
+                betweenQuotes = true;
+            }
+        }
+    }
+
+    if (line.length > start+1)
+    {
+        if (betweenQuotes)
+        {
+            if (escapedAQuote || escapedABackslash)
+            {
+                sink.put(replaceEscaped(line[start+1..$]));
+            }
+            else
+            {
+                sink.put(line[start+1..$]);
+            }
         }
         else
         {
-            foreach (subsub; substring.splitter(' '))
-            {
-                if (!subsub.length) continue;
-                sink.put(revertPlaceholders(subsub));
-            }
+            sink.put(line[start..$]);
         }
     }
 
@@ -2410,6 +2470,60 @@ unittest
     }
     {
         enum input = string.init;
+        immutable splitUp = splitWithQuotes(input);
+        immutable expected = (string[]).init;
+        assert(splitUp == expected, splitUp.text);
+    }
+    {
+        enum input = `title "this is \"my\" title" author "john\\" doe`;
+        immutable splitUp = splitWithQuotes(input);
+        immutable expected =
+        [
+            "title",
+            `this is "my" title`,
+            "author",
+            `john\`,
+            "doe"
+        ];
+        assert(splitUp == expected, splitUp.text);
+    }
+    {
+        enum input = `title "this is \"my\" title" author "john\\\" doe`;
+        immutable splitUp = splitWithQuotes(input);
+        immutable expected =
+        [
+            "title",
+            `this is "my" title`,
+            "author",
+            `john\" doe`
+        ];
+        assert(splitUp == expected, splitUp.text);
+    }
+    {
+        enum input = `this has "unbalanced quotes`;
+        immutable splitUp = splitWithQuotes(input);
+        immutable expected =
+        [
+            "this",
+            "has",
+            "unbalanced quotes"
+        ];
+        assert(splitUp == expected, splitUp.text);
+    }
+    {
+        enum input = `""`;
+        immutable splitUp = splitWithQuotes(input);
+        immutable expected = (string[]).init;
+        assert(splitUp == expected, splitUp.text);
+    }
+    {
+        enum input = `"`;
+        immutable splitUp = splitWithQuotes(input);
+        immutable expected = (string[]).init;
+        assert(splitUp == expected, splitUp.text);
+    }
+    {
+        enum input = `"""""""""""`;
         immutable splitUp = splitWithQuotes(input);
         immutable expected = (string[]).init;
         assert(splitUp == expected, splitUp.text);

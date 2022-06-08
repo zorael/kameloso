@@ -1316,7 +1316,7 @@ void onCommandNuke(TwitchBotPlugin plugin, const ref IRCEvent event)
 
         if (storedEvent.content.asLowerCase.canFind(phraseToLower))
         {
-            chan(plugin.state, event.channel, text(".delete ", storedEvent.id));
+            chan!(Yes.priority)(plugin.state, event.channel, text(".delete ", storedEvent.id));
         }
     }
 
@@ -1765,164 +1765,163 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
     import std.concurrency : Tid, spawn;
     import std.typecons : Flag, No, Yes;
 
-    if (plugin.useAPIFeatures)
+    if (!plugin.useAPIFeatures) return;
+
+    // Concatenate the Bearer and OAuth headers once.
+    immutable pass = plugin.state.bot.pass.beginsWith("oauth:") ?
+        plugin.state.bot.pass[6..$] :
+        plugin.state.bot.pass;
+    plugin.authorizationBearer = "Bearer " ~ pass;
+
+    if (plugin.bucket is null)
     {
-        // Concatenate the Bearer and OAuth headers once.
-        immutable pass = plugin.state.bot.pass.beginsWith("oauth:") ?
-            plugin.state.bot.pass[6..$] :
-            plugin.state.bot.pass;
-        plugin.authorizationBearer = "Bearer " ~ pass;
+        plugin.bucket[0] = QueryResponse.init;
+        plugin.bucket.remove(0);
+    }
 
-        if (plugin.bucket is null)
+    if (plugin.persistentWorkerTid == Tid.init)
+    {
+        plugin.persistentWorkerTid = spawn(&persistentQuerier,
+            plugin.bucket, plugin.state.connSettings.caBundleFile);
+    }
+
+    void validationDg()
+    {
+        import lu.string : plurality;
+        import std.conv : to;
+        import std.datetime.systime : Clock, SysTime;
+        import core.time : days, hours, weeks;
+
+        enum retriesInCaseOfConnectionErrors = 5;
+
+        while (true)
         {
-            plugin.bucket[0] = QueryResponse.init;
-            plugin.bucket.remove(0);
-        }
-
-        if (plugin.persistentWorkerTid == Tid.init)
-        {
-            plugin.persistentWorkerTid = spawn(&persistentQuerier,
-                plugin.bucket, plugin.state.connSettings.caBundleFile);
-        }
-
-        void validationDg()
-        {
-            import lu.string : plurality;
-            import std.conv : to;
-            import std.datetime.systime : Clock, SysTime;
-            import core.time : days, hours, weeks;
-
-            enum retriesInCaseOfConnectionErrors = 5;
-
-            while (true)
+            try
             {
-                try
+                /*
                 {
-                    /*
-                    {
-                        "client_id": "tjyryd2ojnqr8a51ml19kn1yi2n0v1",
-                        "expires_in": 5036421,
-                        "login": "zorael",
-                        "scopes": [
-                            "bits:read",
-                            "channel:moderate",
-                            "channel:read:subscriptions",
-                            "channel_editor",
-                            "chat:edit",
-                            "chat:read",
-                            "user:edit:broadcast",
-                            "whispers:edit",
-                            "whispers:read"
-                        ],
-                        "user_id": "22216721"
-                    }
-                    */
-
-                    immutable validationJSON = getValidation(plugin);
-                    plugin.userID = validationJSON["user_id"].str;
-                    immutable expiresIn = validationJSON["expires_in"].integer;
-
-                    /+
-                        The below can probably never happen, as we never get to
-                        connect if the key has expired.
-                    +/
-                    /*if (expiresIn == 0L)
-                    {
-                        import kameloso.messaging : quit;
-                        import std.typecons : Flag, No, Yes;
-
-                        // Expired.
-                        logger.error("Error: Your Twitch authorisation key has expired.");
-                        quit!(Yes.priority)(plugin.state, string.init, Yes.quiet);
-                        return;
-                    }*/
-
-                    immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
-                    immutable now = Clock.currTime;
-                    immutable delta = (expiresWhen - now);
-                    immutable numDays = delta.total!"days";
-
-                    if (delta > 1.weeks)
-                    {
-                        // More than a week away, just .info
-                        enum pattern = "Your Twitch authorisation key will expire " ~
-                            "in <l>%d days</> on <l>%4d-%02d-%02d</>.";
-                        logger.infof(pattern.expandTags(LogLevel.info), numDays,
-                            expiresWhen.year, expiresWhen.month, expiresWhen.day);
-                    }
-                    else if (delta > 1.days)
-                    {
-                        // A week or less, more than a day; warning
-                        enum pattern = "Warning: Your Twitch authorisation key will expire " ~
-                            "in <l>%d %s</> on <l>%4d-%02d-%02d %02d:%02d</>.";
-                        logger.warningf(pattern.expandTags(LogLevel.warning),
-                            numDays, numDays.plurality("day", "days"),
-                            expiresWhen.year, expiresWhen.month, expiresWhen.day,
-                            expiresWhen.hour, expiresWhen.minute);
-                    }
-                    else
-                    {
-                        // Less than a day; warning
-                        immutable numHours = delta.total!"hours";
-                        enum pattern = "WARNING: Your Twitch authorisation key will expire " ~
-                            "in <l>%d %s</> at <l>%02d:%02d</>.";
-                        logger.warningf(pattern.expandTags(LogLevel.warning),
-                            numHours, numHours.plurality("hour", "hours"),
-                            expiresWhen.hour, expiresWhen.minute);
-                    }
+                    "client_id": "tjyryd2ojnqr8a51ml19kn1yi2n0v1",
+                    "expires_in": 5036421,
+                    "login": "zorael",
+                    "scopes": [
+                        "bits:read",
+                        "channel:moderate",
+                        "channel:read:subscriptions",
+                        "channel_editor",
+                        "chat:edit",
+                        "chat:read",
+                        "user:edit:broadcast",
+                        "whispers:edit",
+                        "whispers:read"
+                    ],
+                    "user_id": "22216721"
                 }
-                catch (TwitchQueryException e)
+                */
+
+                immutable validationJSON = getValidation(plugin);
+                plugin.userID = validationJSON["user_id"].str;
+                immutable expiresIn = validationJSON["expires_in"].integer;
+
+                /+
+                    The below can probably never happen, as we never get to
+                    connect if the key has expired.
+                +/
+                /*if (expiresIn == 0L)
                 {
-                    // Something is deeply wrong.
+                    import kameloso.messaging : quit;
+                    import std.typecons : Flag, No, Yes;
 
-                    if (e.code == 2)
+                    // Expired.
+                    logger.error("Error: Your Twitch authorisation key has expired.");
+                    quit!(Yes.priority)(plugin.state, string.init, Yes.quiet);
+                    return;
+                }*/
+
+                immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
+                immutable now = Clock.currTime;
+                immutable delta = (expiresWhen - now);
+                immutable numDays = delta.total!"days";
+
+                if (delta > 1.weeks)
+                {
+                    // More than a week away, just .info
+                    enum pattern = "Your Twitch authorisation key will expire " ~
+                        "in <l>%d days</> on <l>%4d-%02d-%02d</>.";
+                    logger.infof(pattern.expandTags(LogLevel.info), numDays,
+                        expiresWhen.year, expiresWhen.month, expiresWhen.day);
+                }
+                else if (delta > 1.days)
+                {
+                    // A week or less, more than a day; warning
+                    enum pattern = "Warning: Your Twitch authorisation key will expire " ~
+                        "in <l>%d %s</> on <l>%4d-%02d-%02d %02d:%02d</>.";
+                    logger.warningf(pattern.expandTags(LogLevel.warning),
+                        numDays, numDays.plurality("day", "days"),
+                        expiresWhen.year, expiresWhen.month, expiresWhen.day,
+                        expiresWhen.hour, expiresWhen.minute);
+                }
+                else
+                {
+                    // Less than a day; warning
+                    immutable numHours = delta.total!"hours";
+                    enum pattern = "WARNING: Your Twitch authorisation key will expire " ~
+                        "in <l>%d %s</> at <l>%02d:%02d</>.";
+                    logger.warningf(pattern.expandTags(LogLevel.warning),
+                        numHours, numHours.plurality("hour", "hours"),
+                        expiresWhen.hour, expiresWhen.minute);
+                }
+            }
+            catch (TwitchQueryException e)
+            {
+                // Something is deeply wrong.
+
+                if (e.code == 2)
+                {
+                    import kameloso.constants : MagicErrorStrings;
+
+                    enum wikiPattern = cast(string)MagicErrorStrings.visitWikiOneliner;
+
+                    if (e.error == MagicErrorStrings.sslLibraryNotFound)
                     {
-                        import kameloso.constants : MagicErrorStrings;
+                        enum pattern = "Failed to validate Twitch API keys: <l>%s</> " ~
+                            "<t>(is OpenSSL installed?)";
+                        logger.errorf(pattern.expandTags(LogLevel.error),
+                            cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten);
+                        logger.error(wikiPattern.expandTags(LogLevel.error));
 
-                        enum wikiPattern = cast(string)MagicErrorStrings.visitWikiOneliner;
-
-                        if (e.error == MagicErrorStrings.sslLibraryNotFound)
+                        version(Windows)
                         {
-                            enum pattern = "Failed to validate Twitch API keys: <l>%s</> " ~
-                                "<t>(is OpenSSL installed?)";
-                            logger.errorf(pattern.expandTags(LogLevel.error),
-                                cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten);
-                            logger.error(wikiPattern.expandTags(LogLevel.error));
-
-                            version(Windows)
-                            {
-                                enum getoptPattern = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
-                                logger.error(getoptPattern.expandTags(LogLevel.error));
-                            }
-                        }
-                        else
-                        {
-                            static int retries;
-                            if (retries++ < retriesInCaseOfConnectionErrors) continue;
-
-                            enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
-                            logger.errorf(pattern.expandTags(LogLevel.error), e.msg, e.error, e.code);
-                            logger.error(wikiPattern.expandTags(LogLevel.error));
+                            enum getoptPattern = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
+                            logger.error(getoptPattern.expandTags(LogLevel.error));
                         }
                     }
                     else
                     {
+                        static int retries;
+                        if (retries++ < retriesInCaseOfConnectionErrors) continue;
+
                         enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
                         logger.errorf(pattern.expandTags(LogLevel.error), e.msg, e.error, e.code);
+                        logger.error(wikiPattern.expandTags(LogLevel.error));
                     }
-
-                    logger.warning("Disabling API features. Expect breakage.");
-                    //version(PrintStacktraces) logger.trace(e);
-                    plugin.useAPIFeatures = false;
+                }
+                else
+                {
+                    enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
+                    logger.errorf(pattern.expandTags(LogLevel.error), e.msg, e.error, e.code);
                 }
 
-                return;
+                logger.warning("Disabling API features. Expect breakage.");
+                //version(PrintStacktraces) logger.trace(e);
+                plugin.useAPIFeatures = false;
             }
-        }
 
-        Fiber validationFiber = new Fiber(&validationDg, BufferSize.fiberStack);
-        validationFiber.call();
+            return;
+        }
     }
+
+    Fiber validationFiber = new Fiber(&validationDg, BufferSize.fiberStack);
+    validationFiber.call();
 }
 
 
@@ -2162,24 +2161,27 @@ void onCommandWatchtime(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 )
 void onCommandSetTitle(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 {
+    import lu.string : stripped;
+    import std.array : replace;
+
+    if (!plugin.useAPIFeatures) return;
+
+    immutable unescapedTitle = event.content.stripped;
+
+    if (!unescapedTitle.length)
+    {
+        import std.format : format;
+
+        enum pattern = "Usage: %s%s [title]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+        return;
+    }
+
+    immutable title = unescapedTitle.replace(`"`, `\"`);
+
     void setTitleDg()
     {
-        import lu.string : stripped;
-        import std.array : replace;
-
-        immutable unescapedTitle = event.content.stripped;
-
-        if (!unescapedTitle.length)
-        {
-            import std.format : format;
-
-            enum pattern = "Usage: %s%s [title]";
-            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-            chan(plugin.state, event.channel, message);
-            return;
-        }
-
-        immutable title = unescapedTitle.replace(`"`, `\"`);
         modifyChannel(plugin, event.channel, title, string.init);
     }
 
@@ -2209,46 +2211,48 @@ void onCommandSetTitle(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 )
 void onCommandSetGame(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    void setGameDg()
+    import lu.string : stripped;
+    import std.array : replace;
+    import std.string : isNumeric;
+    import std.uri : encodeComponent;
+
+    if (!plugin.useAPIFeatures) return;
+
+    immutable unescapedGameName = event.content.stripped;
+
+    if (!unescapedGameName.length)
     {
-        import lu.string : stripped;
-        import std.array : replace;
-        import std.string : isNumeric;
-        import std.uri : encodeComponent;
+        import std.format : format;
 
-        immutable unescapedGameName = event.content.stripped;
+        enum pattern = "Usage: %s%s [game name]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+        return;
+    }
 
-        if (!unescapedGameName.length)
+    immutable specified = unescapedGameName.replace(`"`, `\"`);
+    string id;
+
+    if (specified.isNumeric)
+    {
+        id = specified;
+    }
+    else
+    {
+        immutable gameInfo = getTwitchGame(plugin, specified.encodeComponent);
+
+        if (!gameInfo.id.length)
         {
-            import std.format : format;
-
-            enum pattern = "Usage: %s%s [game name]";
-            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+            enum message = "Could not find a game by that name.";
             chan(plugin.state, event.channel, message);
             return;
         }
 
-        immutable specified = unescapedGameName.replace(`"`, `\"`);
-        string id;
+        id = gameInfo.id;
+    }
 
-        if (specified.isNumeric)
-        {
-            id = specified;
-        }
-        else
-        {
-            immutable gameInfo = getTwitchGame(plugin, specified.encodeComponent);
-
-            if (!gameInfo.id.length)
-            {
-                enum message = "Could not find a game by that name.";
-                chan(plugin.state, event.channel, message);
-                return;
-            }
-
-            id = gameInfo.id;
-        }
-
+    void setGameDg()
+    {
         modifyChannel(plugin, event.channel, string.init, id);
     }
 
@@ -2278,54 +2282,53 @@ void onCommandSetGame(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 )
 void onCommandCommercial(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 {
+    import lu.string : stripped;
+    import std.algorithm.comparison : among;
+    import std.format : format;
+
+    immutable lengthString = event.content.stripped;
+
+    if (!lengthString.length)
+    {
+        enum pattern = "Usage: %s%s [commercial length; valid values are 30, 60, 90, 120, 150 and 180]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+        return;
+    }
+
+    const room = event.channel in plugin.rooms;
+
+    if (!room.broadcast.active)
+    {
+        enum pattern = "Broadcast start was never marked with %sstart.";
+        immutable message = pattern.format(plugin.state.settings.prefix);
+        chan(plugin.state, event.channel, message);
+        return;
+    }
+
+    if (!lengthString.among!("30", "60", "90", "120", "150", "180"))
+    {
+        enum message = "Commercial length must be one of 30, 60, 90, 120, 150 or 180.";
+        chan(plugin.state, event.channel, message);
+        return;
+    }
+
     void commercialDg()
     {
-        import lu.string : stripped;
-        import std.algorithm.comparison : among;
-        import std.format : format;
-
-        immutable lengthString = event.content.stripped;
-
-        if (!lengthString.length)
+        try
         {
-            enum pattern = "Usage: %s%s [commercial length; valid values are 30, 60, 90, 120, 150 and 180]";
-            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-            chan(plugin.state, event.channel, message);
-            return;
+            startCommercial(plugin, event.channel, lengthString);
         }
-
-        const room = event.channel in plugin.rooms;
-
-        if (!room.broadcast.active)
+        catch (TwitchQueryException e)
         {
-            enum pattern = "Broadcast start was never marked with %sstart.";
-            immutable message = pattern.format(plugin.state.settings.prefix);
-            chan(plugin.state, event.channel, message);
-            return;
-        }
-
-        if (lengthString.among!("30", "60", "90", "120", "180"))
-        {
-            try
+            if ((e.code == 400) && (e.error == "Bad Request"))
             {
-                startCommercial(plugin, event.channel, lengthString);
+                chan(plugin.state, event.channel, e.msg);
             }
-            catch (TwitchQueryException e)
+            else
             {
-                if ((e.code == 400) && (e.error == "Bad Request"))
-                {
-                    chan(plugin.state, event.channel, e.msg);
-                }
-                else
-                {
-                    throw e;
-                }
+                throw e;
             }
-        }
-        else
-        {
-            enum message = "Commercial length must be one of 30, 60, 90, 120, 150 or 180.";
-            chan(plugin.state, event.channel, message);
         }
     }
 
