@@ -367,7 +367,7 @@ The second command starts the process of requesting a new API key from Twitch; s
 
 The third command finally launches the program normally and connects to the server. Provided you successfully managed to get an API key and there were no errors, the bot should now enter your channel. Say something in chat in your browser and it should show in your terminal. If there were errors or snags, [*please* report them](https://github.com/zorael/kameloso/issues/new).
 
-> If you don't like the terminal colouring, `--monochrome` disables them.
+> If you don't like the terminal colouring, `--monochrome` disables it.
 
 ### Example configuration
 
@@ -422,8 +422,9 @@ Assuming a prefix of `!`, commands to test are:
 * `!settitle`
 * `!setgame`
 * `!commercial`
+* `!startpoll`/`!endpoll` (Twitch poll, *highly experimental*)
 
-...alongside `!oneliner`, `!counter`, `!timer`, `!poll`, `!stopwatch`, and other non-Twitch-specific commands. Try `!help` or [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins).
+...alongside `!oneliner`, `!counter`, `!timer`, `!poll` (chat poll), `!stopwatch`, and other non-Twitch-specific commands. Try `!help` or [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins).
 
 > Note: `.` (dot) and `/` (slash) prefixes will not work on Twitch.
 
