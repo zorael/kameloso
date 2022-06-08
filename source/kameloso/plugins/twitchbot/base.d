@@ -1627,19 +1627,34 @@ void onCommandStartPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         import std.json : JSONType;
         import std.format : format;
 
-        immutable responseJSON = createPoll(plugin, event.channel, title, durationString, choices);
-
-        if (responseJSON.type != JSONType.array)
+        try
         {
-            import std.stdio;
-            logger.error("Unexpected response from server when creating a poll");
-            writeln(responseJSON.toPrettyString);
-            return;
-        }
+            immutable responseJSON = createPoll(plugin, event.channel, title, durationString, choices);
 
-        enum pattern = `Poll "%s" created.`;
-        immutable message = pattern.format(responseJSON.array[0].object["title"]);
-        chan(plugin.state, event.channel, message);
+            if (responseJSON.type != JSONType.array)
+            {
+                import std.stdio;
+                logger.error("Unexpected response from server when creating a poll");
+                writeln(responseJSON.toPrettyString);
+                return;
+            }
+
+            enum pattern = `Poll "%s" created.`;
+            immutable message = pattern.format(responseJSON.array[0].object["title"]);
+            chan(plugin.state, event.channel, message);
+        }
+        catch (TwitchQueryException e)
+        {
+            import std.algorithm.searching : endsWith;
+
+            if ((e.code == 403) &&
+                (e.error == "Forbidden") &&
+                e.msg.endsWith("is not a partner or affiliate"))
+            {
+                enum message = "You must be a partner or affiliate to use Twitch polls.";
+                chan(plugin.state, event.channel, message);
+            }
+        }
     }
 
     Fiber startPollFiber = new Fiber(&twitchTryCatchDg!startPollDg, BufferSize.fiberStack);
@@ -1695,6 +1710,13 @@ void onCommandEndPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         {
             logger.error("Unexpected JSON type from server when fetching polls");
             writeln(pollInfoJSON.toPrettyString);
+            return;
+        }
+
+        if (!pollInfoJSON.array.length)
+        {
+            enum message = "There are no active polls to end.";
+            chan(plugin.state, event.channel, message);
             return;
         }
 

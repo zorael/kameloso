@@ -1134,30 +1134,14 @@ auto getPolls(
     const string idString = string.init)
 in (Fiber.getThis, "Tried to call `getPolls` from outside a Fiber")
 {
-    import std.array : Appender;
     import std.json : JSONType, parseJSON;
 
-    enum url = "https://api.twitch.tv/helix/polls";
-    immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
+    enum baseURL = "https://api.twitch.tv/helix/polls?broadcaster_id=";
     const room = channelName in plugin.rooms;
+    immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
 
-    Appender!(char[]) sink;
-    sink.reserve(128);
-
-    sink.put(`{"broadcaster_id":"`);
-    sink.put(room.id);
-    sink.put('"');
-
-    if (idString.length)
-    {
-        sink.put(`,"id":"`);
-        sink.put(idString);
-        sink.put('"');
-    }
-
-    const initialBody = sink.data ~ '}';
-    sink.put(`,"after":"%s"}`);
-    const paginationPattern = sink.data;
+    string url = baseURL ~ room.id;  // mutable;
+    if (idString.length) url ~= "id=" ~ idString;
 
     JSONValue allPollsJSON;
     allPollsJSON = null;
@@ -1166,14 +1150,14 @@ in (Fiber.getThis, "Tried to call `getPolls` from outside a Fiber")
 
     do
     {
-        import std.format : format;
-
-        const body_ = after.length ? paginationPattern.format(after) : initialBody;
-        immutable response = sendHTTPRequest(plugin, url, authorizationBearer,
-            HttpVerb.GET, cast(ubyte[])body_, "application/json");
+        immutable paginatedURL = after.length ? (url ~ "&after=" ~ after) : url;
+        immutable response = sendHTTPRequest(plugin, paginatedURL, authorizationBearer,
+            HttpVerb.GET, cast(ubyte[])null, "application/json");
         immutable responseJSON = parseJSON(response.str);
 
-        if ((responseJSON.type != JSONType.object) || ("data" !in responseJSON))
+        if ((responseJSON.type != JSONType.object) ||
+            ("data" !in responseJSON) ||
+            responseJSON["data"].type == JSONType.null_)
         {
             // Invalid response in some way
             break;
