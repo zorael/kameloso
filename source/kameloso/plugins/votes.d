@@ -66,6 +66,8 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
     import std.uni : toLower;
     import core.thread : Fiber;
 
+    enum endVoteEarlyMagicNumber = -1;
+
     if (event.content.length)
     {
         switch (event.content)
@@ -92,7 +94,7 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
             {
                 // Signal that the vote should end early by giving the vote instance
                 // a value of -1. Catch it later in the vote Fiber delegate.
-                *currentVoteInstance = -1;
+                *currentVoteInstance = endVoteEarlyMagicNumber;
             }
             else
             {
@@ -256,7 +258,7 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
             {
                 return;  // Aborted
             }
-            else if (*currentVoteInstance == -1)
+            else if (*currentVoteInstance == endVoteEarlyMagicNumber)
             {
                 // Magic number, end early
                 reportResults();
