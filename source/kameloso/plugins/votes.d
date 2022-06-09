@@ -295,9 +295,11 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
                 break;
 
             case CHAN:
+                import lu.string : stripped;
+
                 if (thisFiber.payload.channel != event.channel) break;
 
-                immutable vote = thisFiber.payload.content;
+                immutable vote = thisFiber.payload.content.stripped;
                 immutable nickname = thisFiber.payload.sender.nickname;
 
                 if (!vote.length || vote.contains!(Yes.decode)(' '))
