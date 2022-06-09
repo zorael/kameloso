@@ -239,11 +239,7 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
     {
         import kameloso.plugins.common.delayawait : unawait;
 
-        if (plugin.state.server.daemon != IRCServer.Daemon.twitch)
-        {
-            unawait(plugin, nonTwitchVoteEventTypes[]);
-        }
-
+        unawait(plugin, nonTwitchVoteEventTypes[]);
         unawait(plugin, IRCEvent.Type.CHAN);
         plugin.channelVoteInstances.remove(event.channel);
     }
