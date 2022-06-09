@@ -2529,3 +2529,138 @@ unittest
         assert(splitUp == expected, splitUp.text);
     }
 }
+
+
+// abbreviatedDuration
+/++
+    Constructs a [core.time.Duration|Duration] from a string, assumed to be in a
+    `*d*h*m*s` pattern.
+
+    Params:
+        line = Abbreviated string line.
+
+    Returns:
+        A [core.time.Duration|Duration] as described in the input string.
+ +/
+auto abbreviatedDuration(const string line)
+{
+    import lu.string : contains, nom;
+    import std.conv : to;
+    import core.time : days, hours, minutes, seconds;
+
+    static int getAbbreviatedValue(ref string slice, const char c)
+    {
+        if (slice.contains(c))
+        {
+            immutable valueString = slice.nom(c);
+            immutable value = valueString.length ? valueString.to!int : 0;
+            if (value < 0) throw new Exception("Cannot have a negative value mid-string");
+            return value;
+        }
+        return 0;
+    }
+
+    string slice = line; // mutable
+    int sign = 1;
+
+    if (slice.length && (slice[0] == '-'))
+    {
+        sign = -1;
+        slice = slice[1..$];
+    }
+
+    immutable numDays = getAbbreviatedValue(slice, 'd');
+    immutable numHours = getAbbreviatedValue(slice, 'h');
+    immutable numMinutes = getAbbreviatedValue(slice, 'm');
+    int numSeconds;
+
+    if (slice.length)
+    {
+        immutable valueString = slice.nom!(Yes.inherit)('s');
+        if (!valueString.length) throw new Exception("Invalid duration pattern");
+        numSeconds = valueString.length ? valueString.to!int : 0;
+    }
+
+    if ((numDays < 0) || (numHours < 0) || (numMinutes < 0) || (numSeconds < 0))
+    {
+        throw new Exception("Time values must not be individually negative");
+    }
+
+    return sign * (numDays.days + numHours.hours + numMinutes.minutes + numSeconds.seconds);
+}
+
+///
+unittest
+{
+    import std.conv : text;
+    import std.exception : assertThrown;
+    import core.time : days, hours, minutes, seconds;
+
+    {
+        enum line = "30";
+        immutable actual = abbreviatedDuration(line);
+        immutable expected = 30.seconds;
+        assert((actual == expected), actual.text);
+    }
+    {
+        enum line = "30s";
+        immutable actual = abbreviatedDuration(line);
+        immutable expected = 30.seconds;
+        assert((actual == expected), actual.text);
+    }
+    {
+        enum line = "1h30s";
+        immutable actual = abbreviatedDuration(line);
+        immutable expected = 1.hours + 30.seconds;
+        assert((actual == expected), actual.text);
+    }
+    {
+        enum line = "5h";
+        immutable actual = abbreviatedDuration(line);
+        immutable expected = 5.hours;
+        assert((actual == expected), actual.text);
+    }
+    {
+        enum line = "1d12h39m40s";
+        immutable actual = abbreviatedDuration(line);
+        immutable expected = 1.days + 12.hours + 39.minutes + 40.seconds;
+        assert((actual == expected), actual.text);
+    }
+    {
+        enum line = "1d4s";
+        immutable actual = abbreviatedDuration(line);
+        immutable expected = 1.days + 4.seconds;
+        assert((actual == expected), actual.text);
+    }
+    {
+        enum line = "30s";
+        immutable actual = abbreviatedDuration(line);
+        immutable expected = 30.seconds;
+        assert((actual == expected), actual.text);
+    }
+    {
+        enum line = "-30s";
+        immutable actual = abbreviatedDuration(line);
+        immutable expected = (-30).seconds;
+        assert((actual == expected), actual.text);
+    }
+    {
+        import core.time : Duration;
+        enum line = string.init;
+        immutable actual = abbreviatedDuration(line);
+        immutable expected = Duration.zero;
+        assert((actual == expected), actual.text);
+    }
+    {
+        enum line = "s";
+        assertThrown(abbreviatedDuration(line));
+    }
+    {
+        enum line = "1d1h1m1z";
+        assertThrown(abbreviatedDuration(line));
+    }
+    {
+        enum line = "2h-30m";
+        assertThrown(abbreviatedDuration(line));
+    }
+}
