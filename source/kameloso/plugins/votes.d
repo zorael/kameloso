@@ -246,6 +246,8 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
 
     void dg()
     {
+        scope(exit) cleanup();
+
         while (true)
         {
             const currentVoteInstance = event.channel in plugin.channelVoteInstances;
@@ -258,7 +260,6 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
             {
                 // Magic number, end early
                 reportResults();
-                cleanup();
                 return;
             }
             else if (*currentVoteInstance != id)
@@ -273,7 +274,6 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
             {
                 // Invoked by timer, not by event
                 reportResults();
-                cleanup();
                 return;  // End Fiber
             }
 
