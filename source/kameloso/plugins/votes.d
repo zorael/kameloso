@@ -351,56 +351,70 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
 
     void dgReminderImpl(const long time)
     {
+        import lu.string : plurality;
+
         const currentVoteInstance = event.channel in plugin.channelVoteInstances;
         if (!currentVoteInstance || (*currentVoteInstance != id)) return;  // Aborted
 
-        if ((time % 60) == 0)
-        {
-            import lu.string : plurality;
+        enum pattern = "<b>%d<b> %s! (%-(%s, %))";
 
+        if ((time % 3600) == 0)
+        {
+            // An even hour
+            immutable hours = cast(int)(time / 3600);
+            immutable message = pattern.format(
+                hours,
+                hours.plurality("hour", "hours"),
+                sortedChoices);
+            chan(plugin.state, event.channel, message);
+        }
+        else if ((time % 60) == 0)
+        {
             // An even minute
             immutable minutes = cast(int)(time / 60);
-
-            enum pattern = "<b>%d<b> %s! (%-(%s, %))";
-            immutable message = pattern.format(minutes,
-                minutes.plurality("minute", "minutes"), sortedChoices);
+            immutable message = pattern.format(
+                minutes,
+                minutes.plurality("minute", "minutes"),
+                sortedChoices);
             chan(plugin.state, event.channel, message);
         }
         else
         {
-            enum pattern = "<b>%d<b> seconds! (%-(%s, %))";
-            immutable message = pattern.format(time, sortedChoices);
+            enum secondsPattern = "<b>%d<b> seconds! (%-(%s, %))";
+            immutable message = secondsPattern.format(time, sortedChoices);
             chan(plugin.state, event.channel, message);
-
         }
     }
 
-    // Warn once at 600 seconds if the vote was for at least 1200 seconds
-    // also 600/300, 240/60, 60/30 and 20/10.
+    // Warn about the vote ending at certain points, depending on how long the duration is.
 
-    if (dur >= 1200)
+    void generateReminder(const uint seconds_)
     {
-        delay(plugin, (() => dgReminderImpl(600)), (dur-600).seconds);
+        if (dur >= seconds_)
+        {
+            delay(plugin, (() => dgReminderImpl(600)), (dur-seconds_/2).seconds);
+        }
     }
 
-    if (dur >= 600)
-    {
-        delay(plugin, (() => dgReminderImpl(300)), (dur-300).seconds);
-    }
+    static immutable uint[12] reminderPoints =
+    [
+        48*3600,
+        24*3600,
+        12*3600,
+        6*3600,
+        2*3600,
+        3600,
+        1800,
+        1200,
+        600,
+        240,
+        60,
+        20,
+    ];
 
-    if (dur >= 240)
+    foreach (immutable reminderPoint; reminderPoints[])
     {
-        delay(plugin, (() => dgReminderImpl(180)), (dur-180).seconds);
-    }
-
-    if (dur >= 60)
-    {
-        delay(plugin, (() => dgReminderImpl(30)), (dur-30).seconds);
-    }
-
-    if (dur >= 20)
-    {
-        delay(plugin, (() => dgReminderImpl(10)), (dur-10).seconds);
+        generateReminder(reminderPoint);
     }
 
     enum pattern = "Voting commenced! Please place your vote for one of: %-(<b>%s<b>, %) (<b>%d<b> seconds)";
