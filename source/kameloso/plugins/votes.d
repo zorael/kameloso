@@ -332,6 +332,7 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
     }
 
     import kameloso.plugins.common.delayawait : await, delay;
+    import kameloso.common : timeSince;
     import kameloso.constants : BufferSize;
     import core.time : seconds;
 
@@ -419,8 +420,9 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
         generateReminder(reminderPoint);
     }
 
-    enum pattern = "Voting commenced! Please place your vote for one of: %-(<b>%s<b>, %) (<b>%d<b> seconds)";
-    immutable message = pattern.format(sortedChoices, dur);
+    immutable timeInWords = dur.seconds.timeSince!(7, 1);
+    enum pattern = "Voting commenced! Please place your vote for one of: %-(<b>%s<b>, %) (<b>%s<b>)";
+    immutable message = pattern.format(sortedChoices, timeInWords);
     chan(plugin.state, event.channel, message);
 }
 
