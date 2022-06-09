@@ -321,7 +321,7 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
                 break;
 
             default:
-                throw new Exception("Unexpected IRCEvent type seen in vote delegate");
+                assert(0, "Unexpected IRCEvent type seen in vote delegate");
             }
 
             // Yield and await a new event
