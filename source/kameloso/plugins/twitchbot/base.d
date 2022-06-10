@@ -1690,7 +1690,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
         import lu.string : plurality;
         import std.conv : to;
         import std.datetime.systime : Clock, SysTime;
-        import core.time : days, hours, weeks;
+        import core.time : Duration, days, hours, minutes, weeks;
 
         enum retriesInCaseOfConnectionErrors = 5;
 
@@ -1742,7 +1742,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                 immutable delta = (expiresWhen - now);
                 immutable numDays = delta.total!"days";
 
-                if (delta > 1.weeks)
+                void warnOnWeekDg()
                 {
                     // More than a week away, just .info
                     enum pattern = "Your Twitch authorisation key will expire " ~
@@ -1750,7 +1750,8 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                     logger.infof(pattern.expandTags(LogLevel.info), numDays,
                         expiresWhen.year, expiresWhen.month, expiresWhen.day);
                 }
-                else if (delta > 1.days)
+
+                void warnOnDaysDg()
                 {
                     // A week or less, more than a day; warning
                     enum pattern = "Warning: Your Twitch authorisation key will expire " ~
@@ -1760,7 +1761,8 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                         expiresWhen.year, expiresWhen.month, expiresWhen.day,
                         expiresWhen.hour, expiresWhen.minute);
                 }
-                else
+
+                void warnOnHoursDg()
                 {
                     // Less than a day; warning
                     immutable numHours = delta.total!"hours";
@@ -1769,6 +1771,43 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                     logger.warningf(pattern.expandTags(LogLevel.warning),
                         numHours, numHours.plurality("hour", "hours"),
                         expiresWhen.hour, expiresWhen.minute);
+                }
+
+                void warnOnMinutesDg()
+                {
+                    // Less than an hour; warning
+                    immutable numHours = delta.total!"minutes";
+                    enum pattern = "WARNING: Your Twitch authorisation key will expire " ~
+                        "in <l>%d minutes</> at <l>%02d:%02d</>.";
+                    logger.warningf(pattern.expandTags(LogLevel.warning),
+                        numHours, expiresWhen.hour, expiresWhen.minute);
+                }
+
+                static immutable Duration[10] reminderPoints =
+                [
+                    14.days,
+                    7.days,
+                    3.days,
+                    1.days,
+                    12.hours,
+                    6.hours,
+                    1.hours,
+                    30.minutes,
+                    10.minutes,
+                    5.minutes,
+                ];
+
+                foreach (immutable reminderPoint; reminderPoints[])
+                {
+                    if (delta > reminderPoint)
+                    {
+                        import kameloso.plugins.common.delayawait : delay;
+
+                        if (reminderPoint > 1.weeks) delay(plugin, &warnOnWeekDg, delta);
+                        else if (reminderPoint > 1.days) delay(plugin, &warnOnDaysDg, delta);
+                        else if (reminderPoint > 1.hours) delay(plugin, &warnOnHoursDg, delta);
+                        else /*if (reminderPoint > 1.minutes)*/ delay(plugin, &warnOnMinutesDg, delta);
+                    }
                 }
             }
             catch (TwitchQueryException e)
