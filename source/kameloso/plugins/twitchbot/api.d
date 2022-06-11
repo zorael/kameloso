@@ -563,9 +563,66 @@ in ((!async || Fiber.getThis), "Tried to call `getValidation` from outside a Fib
         authToken[6..$] :
         authToken;
     immutable authorizationHeader = "OAuth " ~ authToken;
-    immutable response = async ?
-        sendHTTPRequest(plugin, url, authorizationHeader) :
-        sendHTTPRequestImpl(url, authorizationHeader, plugin.state.connSettings.caBundleFile);
+
+    QueryResponse response;
+
+    if (async)
+    {
+        response = sendHTTPRequest(plugin, url, authorizationHeader);
+    }
+    else
+    {
+        response = sendHTTPRequestImpl(url, authorizationHeader, plugin.state.connSettings.caBundleFile);
+
+        // Copy/paste error handling...
+        if (response.code == 2)
+        {
+            throw new TwitchQueryException(response.error, response.str,
+                response.error, response.code);
+        }
+        else if (response.code == 0) //(!response.str.length)
+        {
+            throw new TwitchQueryException("Empty response", response.str,
+                response.error, response.code);
+        }
+        else if (response.code >= 400)
+        {
+            import std.format : format;
+            import std.json : JSONException;
+
+            try
+            {
+                import lu.string : unquoted;
+                import std.json : parseJSON;
+                import std.string : chomp;
+
+                // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
+                /*
+                {
+                    "error": "Unauthorized",
+                    "message": "Client ID and OAuth token do not match",
+                    "status": 401
+                }
+                */
+                immutable errorJSON = parseJSON(response.str);
+                enum pattern = "%3d %s: %s";
+
+                immutable message = pattern.format(
+                    errorJSON["status"].integer,
+                    errorJSON["error"].str.unquoted,
+                    errorJSON["message"].str.chomp.unquoted);
+
+                throw new TwitchQueryException(message, response.str, response.error, response.code);
+            }
+            catch (JSONException)
+            {
+                enum pattern = `%3d: "%s"`;
+                immutable message = pattern.format(response.code, response.str);
+                throw new Exception(message);
+            }
+        }
+    }
+
     immutable validationJSON = parseJSON(response.str);
 
     if ((validationJSON.type != JSONType.object) || ("client_id" !in validationJSON))
