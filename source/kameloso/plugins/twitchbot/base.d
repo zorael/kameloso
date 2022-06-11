@@ -1993,10 +1993,10 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                 {
                     if (delta > reminderPoint)
                     {
-                        if (reminderPoint > 1.weeks) delay(plugin, &warnOnWeekDg, delta);
-                        else if (reminderPoint > 1.days) delay(plugin, &warnOnDaysDg, delta);
-                        else if (reminderPoint > 1.hours) delay(plugin, &warnOnHoursDg, delta);
-                        else /*if (reminderPoint > 1.minutes)*/ delay(plugin, &warnOnMinutesDg, delta);
+                        if (reminderPoint >= 1.weeks) delay(plugin, &warnOnWeekDg, delta);
+                        else if (reminderPoint >= 1.days) delay(plugin, &warnOnDaysDg, delta);
+                        else if (reminderPoint >= 1.hours) delay(plugin, &warnOnHoursDg, delta);
+                        else /*if (reminderPoint >= 1.minutes)*/ delay(plugin, &warnOnMinutesDg, delta);
                     }
                 }
 
@@ -2004,10 +2004,10 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                 delay(plugin, &quitOnExpiry, delta);
 
                 // Also announce once normally how much time is left
-                if (delta > 1.weeks) warnOnWeekDg();
-                else if (delta > 1.days) warnOnDaysDg();
-                else if (delta > 1.hours) warnOnHoursDg();
-                else /*if (delta > 1.minutes)*/ warnOnMinutesDg();
+                if (delta >= 1.weeks) warnOnWeekDg();
+                else if (delta >= 1.days) warnOnDaysDg();
+                else if (delta >= 1.hours) warnOnHoursDg();
+                else /*if (delta >= 1.minutes)*/ warnOnMinutesDg();
             }
             catch (TwitchQueryException e)
             {
