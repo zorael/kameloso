@@ -299,6 +299,7 @@ void handleTimerCommand(
     const /*ref*/ IRCEvent event,
     const string channelName)
 {
+    import kameloso.common : abbreviatedDuration;
     import lu.string : SplitResults, contains, nom, splitInto;
     import std.conv : ConvException, to;
     import std.format : format;
@@ -414,9 +415,9 @@ void handleTimerCommand(
         try
         {
             timerDef.messageCountThreshold = messageCountThreshold.to!long;
-            timerDef.timeThreshold = timeThreshold.to!long;
+            timerDef.timeThreshold = abbreviatedDuration(timeThreshold).total!"seconds";
             if (messageCountStagger.length) timerDef.messageCountStagger = messageCountStagger.to!long;
-            if (timeStagger.length) timerDef.timeStagger = timeStagger.to!long;
+            if (timeStagger.length) timerDef.timeStagger = abbreviatedDuration(timeStagger).total!"seconds";
         }
         catch (ConvException e)
         {
