@@ -1548,6 +1548,206 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
 }
 
 
+// onCommandStartPoll
+/++
+    Starts a Twitch poll.
+
+    Note: Experimental, since we cannot try it out ourselves.
+
+    See_Also:
+        [kameloso.plugins.twitchbot.api.createPoll]
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("startpoll")
+            .policy(PrefixPolicy.prefixed)
+            .description("Starts a Twitch poll.")
+            .addSyntax(`$command "[poll title]" [seconds] [choice1] [choice2] ...`)
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("startvote")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
+)
+void onCommandStartPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+{
+    import kameloso.common : splitWithQuotes;
+    import lu.string : stripped;
+
+    immutable args = splitWithQuotes(event.content.stripped);
+
+    if (args.length < 4)
+    {
+        import std.format : format;
+        enum pattern = `Usage: %s%s "[poll title]" [seconds] [choice1] [choice2] ...`;
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+        return;
+    }
+
+    immutable title = args[0];
+    immutable durationString = args[1];
+    immutable choices = args[2..$];
+
+    if (choices.length < 2)
+    {
+        enum message = "Insufficient number of choices, must be two or more.";
+        chan(plugin.state, event.channel, message);
+        return;
+    }
+
+    void startPollDg()
+    {
+        import std.json : JSONType;
+        import std.format : format;
+
+        try
+        {
+            immutable responseJSON = createPoll(plugin, event.channel, title, durationString, choices);
+
+            if (responseJSON.type != JSONType.array)
+            {
+                import std.stdio;
+                logger.error("Unexpected response from server when creating a poll");
+                writeln(responseJSON.toPrettyString);
+                return;
+            }
+
+            enum pattern = `Poll "%s" created.`;
+            immutable message = pattern.format(responseJSON.array[0].object["title"]);
+            chan(plugin.state, event.channel, message);
+        }
+        catch (TwitchQueryException e)
+        {
+            import std.algorithm.searching : endsWith;
+
+            if ((e.code == 403) &&
+                (e.error == "Forbidden") &&
+                e.msg.endsWith("is not a partner or affiliate"))
+            {
+                version(WithVotesPlugin)
+                {
+                    enum message = "You must be a partner or affiliate to create Twitch polls. " ~
+                        "(Consider using the Votes plugin.)";
+                }
+                else
+                {
+                    enum message = "You must be a partner or affiliate to create Twitch polls.";
+                }
+
+                chan(plugin.state, event.channel, message);
+            }
+        }
+    }
+
+    Fiber startPollFiber = new Fiber(&twitchTryCatchDg!startPollDg, BufferSize.fiberStack);
+    startPollFiber.call();
+}
+
+
+// onCommandEndPoll
+/++
+    Ends a Twitch poll.
+
+    Currently ends the first active poll if there are several.
+
+    Note: Experimental, since we cannot try it out ourselves.
+
+    See_Also:
+        [kameloso.plugins.twitchbot.api.endPoll]
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("endpoll")
+            .policy(PrefixPolicy.prefixed)
+            .description("Ends a Twitch poll.")
+            //.addSyntax("$command [terminating]")
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("endvote")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
+)
+void onCommandEndPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+{
+    /*static struct Choice
+    {
+        string title;
+        long votes;
+    }*/
+
+    void endPollDg()
+    {
+        import std.json : JSONType;
+        import std.stdio : writeln;
+
+        immutable pollInfoJSON = getPolls(plugin, event.channel);
+
+        if (pollInfoJSON.type != JSONType.array)
+        {
+            logger.error("Unexpected JSON type from server when fetching polls");
+            writeln(pollInfoJSON.toPrettyString);
+            return;
+        }
+
+        if (!pollInfoJSON.array.length)
+        {
+            enum message = "There are no active polls to end.";
+            chan(plugin.state, event.channel, message);
+            return;
+        }
+
+        immutable voteID = pollInfoJSON.array[0].object["id"].str;
+        immutable endResponseJSON = endPoll(plugin, event.channel, voteID, Yes.terminate);
+
+        if ((endResponseJSON.type != JSONType.object) ||
+            ("choices" !in endResponseJSON) ||
+            (endResponseJSON["choices"].array.length < 2))
+        {
+            // Invalid response in some way
+            logger.error("Unexpected response from server when ending a poll");
+            writeln(endResponseJSON.toPrettyString);
+            return;
+        }
+
+        /*Choice[] choices;
+        long totalVotes;
+
+        foreach (immutable i, const choiceJSON; endResponseJSON["choices"].array)
+        {
+            Choice choice;
+            choice.title = choiceJSON["title"].str;
+            choice.votes =
+                choiceJSON["votes"].integer +
+                choiceJSON["channel_points_votes"].integer +
+                choiceJSON["bits_votes"].integer;
+            choices ~= choice;
+            totalVotes += choice.votes;
+        }
+
+        auto sortedChoices = choices.sort!((a,b) => a.votes > b.votes);*/
+
+        enum message = "Poll ended.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    Fiber endPollFiber = new Fiber(&twitchTryCatchDg!endPollDg, BufferSize.fiberStack);
+    endPollFiber.call();
+}
+
+
 // onAnyMessage
 /++
     Bells on any message, if the [TwitchBotSettings.bellOnMessage] setting is set.

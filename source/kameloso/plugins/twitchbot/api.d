@@ -1168,3 +1168,310 @@ in (Fiber.getThis, "Tried to call `startCommercial` from outside a Fiber")
     cast(void)sendHTTPRequest(plugin, url, authorizationBearer,
         HttpVerb.POST, cast(ubyte[])body_, "application/json");
 }
+
+
+// getPolls
+/++
+    Fetches information about polls in the specified channel. If an ID string is
+    supplied, it will be included in the query, otherwise all `"ACTIVE"` polls
+    are included in the returned JSON.
+
+    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
+
+    Params:
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        channelName = Name of channel to fetch polls for.
+        idString = ID of a specific poll to get.
+
+    Returns:
+        A [std.json.JSONValue|JSONValue] [std.json.JSONType.array|array] with
+        all the matched polls.
+ +/
+auto getPolls(
+    TwitchBotPlugin plugin,
+    const string channelName,
+    const string idString = string.init)
+in (Fiber.getThis, "Tried to call `getPolls` from outside a Fiber")
+{
+    import std.json : JSONType, parseJSON;
+
+    enum baseURL = "https://api.twitch.tv/helix/polls?broadcaster_id=";
+    const room = channelName in plugin.rooms;
+    immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
+
+    string url = baseURL ~ room.id;  // mutable;
+    if (idString.length) url ~= "id=" ~ idString;
+
+    JSONValue allPollsJSON;
+    allPollsJSON = null;
+    allPollsJSON.array = null;
+    string after;
+
+    do
+    {
+        immutable paginatedURL = after.length ? (url ~ "&after=" ~ after) : url;
+        immutable response = sendHTTPRequest(plugin, paginatedURL, authorizationBearer,
+            HttpVerb.GET, cast(ubyte[])null, "application/json");
+        immutable responseJSON = parseJSON(response.str);
+
+        if ((responseJSON.type != JSONType.object) ||
+            ("data" !in responseJSON) ||
+            responseJSON["data"].type == JSONType.null_)
+        {
+            // Invalid response in some way
+            break;
+        }
+
+        /*
+        {
+            "data": [
+                {
+                "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
+                "broadcaster_id": "55696719",
+                "broadcaster_name": "TwitchDev",
+                "broadcaster_login": "twitchdev",
+                "title": "Heads or Tails?",
+                "choices": [
+                    {
+                    "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
+                    "title": "Heads",
+                    "votes": 0,
+                    "channel_points_votes": 0,
+                    "bits_votes": 0
+                    },
+                    {
+                    "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
+                    "title": "Tails",
+                    "votes": 0,
+                    "channel_points_votes": 0,
+                    "bits_votes": 0
+                    }
+                ],
+                "bits_voting_enabled": false,
+                "bits_per_vote": 0,
+                "channel_points_voting_enabled": false,
+                "channel_points_per_vote": 0,
+                "status": "ACTIVE",
+                "duration": 1800,
+                "started_at": "2021-03-19T06:08:33.871278372Z"
+                }
+            ],
+            "pagination": {}
+        }
+        */
+
+        foreach (const pollJSON; responseJSON["data"].array)
+        {
+            if (pollJSON["status"].str != "ACTIVE") continue;
+            allPollsJSON.array ~= pollJSON;
+        }
+
+        after = responseJSON["after"].str;
+    }
+    while (after.length);
+
+    return allPollsJSON;
+}
+
+
+// createPoll
+/++
+    Creates a Twitch poll in the specified channel.
+
+    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
+
+    Params:
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        channelName = Name of channel to create the poll in.
+        title = Poll title.
+        durationString = How long the poll should run for in seconds (as a string).
+        choices = A string array of poll choices.
+
+    Returns:
+        A [std.json.JSONValue|JSONValue] [std.json.JSONType.array|array] with
+        the response returned when creating the poll. On failure, an empty
+        [std.json.JSONValue|JSONValue] is instead returned.
+ +/
+auto createPoll(
+    TwitchBotPlugin plugin,
+    const string channelName,
+    const string title,
+    const string durationString,
+    const string[] choices)
+in (Fiber.getThis, "Tried to call `createPoll` from outside a Fiber")
+{
+    import std.array : Appender, replace;
+    import std.format : format;
+    import std.json : JSONType, parseJSON;
+
+    enum url = "https://api.twitch.tv/helix/polls";
+    enum pattern = `
+{
+    "broadcaster_id": "%s",
+    "title": "%s",
+    "choices":[
+%s
+    ],
+    "duration": %s
+}`;
+
+    Appender!(char[]) sink;
+    sink.reserve(256);
+
+    foreach (immutable i, immutable choice; choices)
+    {
+        if (i > 0) sink.put(',');
+        sink.put(`{"title":"`);
+        sink.put(choice.replace(`"`, `\"`));
+        sink.put(`"}`);
+    }
+
+    const room = channelName in plugin.rooms;
+    immutable escapedTitle = title.replace(`"`, `\"`);
+    immutable body_ = pattern.format(room.id, escapedTitle, sink.data, durationString);
+    immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
+
+    immutable response = sendHTTPRequest(plugin, url, authorizationBearer,
+        HttpVerb.POST, cast(ubyte[])body_, "application/json");
+
+    /*
+    {
+        "data": [
+            {
+            "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
+            "broadcaster_id": "141981764",
+            "broadcaster_name": "TwitchDev",
+            "broadcaster_login": "twitchdev",
+            "title": "Heads or Tails?",
+            "choices": [
+                {
+                "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
+                "title": "Heads",
+                "votes": 0,
+                "channel_points_votes": 0,
+                "bits_votes": 0
+                },
+                {
+                "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
+                "title": "Tails",
+                "votes": 0,
+                "channel_points_votes": 0,
+                "bits_votes": 0
+                }
+            ],
+            "bits_voting_enabled": false,
+            "bits_per_vote": 0,
+            "channel_points_voting_enabled": true,
+            "channel_points_per_vote": 100,
+            "status": "ACTIVE",
+            "duration": 1800,
+            "started_at": "2021-03-19T06:08:33.871278372Z"
+            }
+        ]
+    }
+    */
+
+    immutable responseJSON = parseJSON(response.str);
+
+    if ((responseJSON.type != JSONType.object) || ("data" !in responseJSON))
+    {
+        // Invalid response in some way
+        return JSONValue.init;
+    }
+
+    return responseJSON["data"];
+}
+
+
+// endPoll
+/++
+    Ends a Twitch poll, putting it in either a `"TERMINATED"` or `"ARCHIVED"` state.
+
+    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
+
+    Params:
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        channelName = Name of channel whose poll to end.
+        voteID = ID of the specific vote to end.
+        terminate = If set, ends the poll by putting it in a `"TERMINATED"` state.
+            If unset, ends it in an `"ARCHIVED"` way.
+
+    Returns:
+        A [std.json.JSONValue|JSONValue] [std.json.JSONType.array|array] with
+        the response returned when ending the poll. On failure, an empty
+        [std.json.JSONValue|JSONValue] is instead returned.
+ +/
+auto endPoll(
+    TwitchBotPlugin plugin,
+    const string channelName,
+    const string voteID,
+    const Flag!"terminate" terminate)
+in (Fiber.getThis, "Tried to call `endPoll` from outside a Fiber")
+{
+    import std.format : format;
+    import std.json : JSONType, parseJSON;
+
+    enum url = "https://api.twitch.tv/helix/polls";
+    enum pattern = `
+{
+    "broadcaster_id": "%s",
+    "id": "%s",
+    "status": "%s"
+}`;
+
+    const room = channelName in plugin.rooms;
+    immutable status = terminate ? "TERMINATED" : "ARCHIVED";
+    immutable body_ = pattern.format(room.id, voteID, status);
+    immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
+
+    immutable response = sendHTTPRequest(plugin, url, authorizationBearer,
+        HttpVerb.PATCH, cast(ubyte[])body_, "application/json");
+
+    /*
+    {
+        "data": [
+            {
+            "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
+            "broadcaster_id": "141981764",
+            "broadcaster_name": "TwitchDev",
+            "broadcaster_login": "twitchdev",
+            "title": "Heads or Tails?",
+            "choices": [
+                {
+                "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
+                "title": "Heads",
+                "votes": 0,
+                "channel_points_votes": 0,
+                "bits_votes": 0
+                },
+                {
+                "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
+                "title": "Tails",
+                "votes": 0,
+                "channel_points_votes": 0,
+                "bits_votes": 0
+                }
+            ],
+            "bits_voting_enabled": false,
+            "bits_per_vote": 0,
+            "channel_points_voting_enabled": true,
+            "channel_points_per_vote": 100,
+            "status": "TERMINATED",
+            "duration": 1800,
+            "started_at": "2021-03-19T06:08:33.871278372Z",
+            "ended_at": "2021-03-19T06:11:26.746889614Z"
+            }
+        ]
+    }
+    */
+
+    immutable responseJSON = parseJSON(response.str);
+
+    if ((responseJSON.type != JSONType.object) || ("data" !in responseJSON))
+    {
+        // Invalid response in some way
+        return JSONValue.init;
+    }
+
+    return responseJSON["data"].array[0];
+}
