@@ -1923,22 +1923,6 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                 immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
                 plugin.userID = validationJSON["user_id"].str;
                 immutable expiresIn = validationJSON["expires_in"].integer;
-
-                /+
-                    The below can probably never happen, as we never get to
-                    connect if the key has expired.
-                +/
-                /*if (expiresIn == 0L)
-                {
-                    import kameloso.messaging : quit;
-                    import std.typecons : Flag, No, Yes;
-
-                    // Expired.
-                    logger.error("Error: Your Twitch authorisation key has expired.");
-                    quit!(Yes.priority)(plugin.state, string.init, Yes.quiet);
-                    return;
-                }*/
-
                 immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
                 immutable now = Clock.currTime;
                 immutable delta = (expiresWhen - now);
