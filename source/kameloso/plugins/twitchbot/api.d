@@ -287,7 +287,8 @@ in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
 
     if (response.code == 2)
     {
-        throw new TwitchQueryException(response.error, response.str, response.error, response.code);
+        throw new TwitchQueryException(response.error, response.str,
+            response.error, response.code);
     }
     else if (response.code == 0) //(!response.str.length)
     {
@@ -308,6 +309,7 @@ in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
         {
             import lu.string : unquoted;
             import std.json : parseJSON;
+            import std.string : chomp;
 
             // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
             /*
@@ -323,7 +325,7 @@ in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
             immutable message = pattern.format(
                 errorJSON["status"].integer,
                 errorJSON["error"].str.unquoted,
-                errorJSON["message"].str.unquoted);
+                errorJSON["message"].str.chomp.unquoted);
 
             throw new TwitchQueryException(message, response.str, response.error, response.code);
         }
