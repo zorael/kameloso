@@ -540,6 +540,7 @@ in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
     Params:
         plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
         authToken = Authorisation token to validate.
+        async = Whether or not the validation should be done asynchronously, using Fibers.
 
     Returns:
         A [std.json.JSONValue|JSONValue] with the validation information JSON of the
@@ -552,7 +553,7 @@ JSONValue getValidation(
     TwitchBotPlugin plugin,
     /*const*/ string authToken,
     const Flag!"async" async)
-in ((!async || Fiber.getThis), "Tried to call `getValidation` from outside a Fiber")
+in ((!async || Fiber.getThis), "Tried to call asynchronous `getValidation` from outside a Fiber")
 {
     import lu.string : beginsWith;
     import std.json : JSONType, JSONValue, parseJSON;
