@@ -501,3 +501,27 @@ private string buildAuthNodeURL(const string authNode, const string[] scopes)
         "&force_verify=true",
         "&state=kameloso");
 }
+
+
+// getTokenExpiry
+/++
+    Validates an authorisation token and returns a [std.datetime.systime.SysTime|SysTime]
+    of when it expires.
+
+    Params:
+        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        authToken = Authorisation token to validate and check expiry of.
+
+    Returns:
+        A [std.datetime.systime.SysTime|SysTime] of when the passed token expires.
+ +/
+auto getTokenExpiry(TwitchBotPlugin plugin, const string authToken)
+{
+    import kameloso.plugins.twitchbot.api : getValidation;
+    import std.datetime.systime : Clock, SysTime;
+
+    immutable validationJSON = getValidation(plugin, authToken, No.async);
+    immutable expiresIn = validationJSON["expires_in"].integer;
+    immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
+    return expiresWhen;
+}
