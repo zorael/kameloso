@@ -199,6 +199,7 @@ void voteImpl(
     const string[string] origChoiceNames)
 {
     import kameloso.plugins.common.delayawait : await, delay;
+    import kameloso.plugins.common.misc : idOf;
     import kameloso.common : timeSince;
     import kameloso.constants : BufferSize;
     import kameloso.thread : CarryingFiber;
@@ -308,16 +309,18 @@ void voteImpl(
                 return;  // End Fiber
             }
 
+            immutable accountOrNickname = idOf(thisFiber.payload.sender);
+
             // Triggered by an event
             with (IRCEvent.Type)
             switch (event.type)
             {
             case NICK:
-                if (thisFiber.payload.sender.nickname in votedUsers)
+                if (accountOrNickname in votedUsers)
                 {
-                    immutable newNickname = thisFiber.payload.target.nickname;
-                    votedUsers[newNickname] = true;
-                    votedUsers.remove(thisFiber.payload.sender.nickname);
+                    immutable newID = idOf(thisFiber.payload.target);
+                    votedUsers[newID] = true;
+                    votedUsers.remove(accountOrNickname);
                 }
                 break;
 
@@ -328,13 +331,12 @@ void voteImpl(
                 if (thisFiber.payload.channel != event.channel) break;
 
                 immutable vote = thisFiber.payload.content.stripped;
-                immutable nickname = thisFiber.payload.sender.nickname;
 
                 if (!vote.length || vote.contains!(Yes.decode)(' '))
                 {
                     // Not a vote; yield and await a new event
                 }
-                else if (nickname in votedUsers)
+                else if (accountOrNickname in votedUsers)
                 {
                     // User already voted and we don't support revotes for now
                 }
@@ -342,7 +344,7 @@ void voteImpl(
                 {
                     // Valid entry, increment vote count
                     ++(*ballot);
-                    votedUsers[nickname] = true;
+                    votedUsers[accountOrNickname] = true;
                 }
                 break;
 
