@@ -379,7 +379,7 @@ void voteImpl(
 
     generateVoteReminders(plugin, event, id, dur, sortedChoices);
 
-    immutable timeInWords = dur.timeSince!(7, 1);
+    immutable timeInWords = dur.timeSince!(7, 0);
     enum pattern = "<b>Voting commenced!<b> Please place your vote for one of: " ~
         "%-(<b>%s<b>, %)<b> (%s)";  // extra <b> needed outside of %-(%s, %)
     immutable message = pattern.format(sortedChoices, timeInWords);
