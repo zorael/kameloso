@@ -16,6 +16,7 @@ import kameloso.plugins.twitchbot.base;
 import kameloso.plugins.twitchbot.helpers;
 import kameloso.common : expandTags, logger;
 import kameloso.logger : LogLevel;
+import std.typecons : Flag, No, Yes;
 
 package:
 
@@ -38,8 +39,10 @@ package:
 void requestTwitchKey(TwitchBotPlugin plugin)
 {
     import kameloso.thread : ThreadMessage;
+    import std.concurrency : prioritySend;
     import std.process : Pid, ProcessException, wait;
     import std.stdio : stdout, writefln, writeln;
+    import std.datetime.systime : Clock;
 
     scope(exit)
     {
@@ -171,12 +174,17 @@ instructions and log in to authorise the use of this program with your <i>BOT</>
         }
     }
 
-    import std.concurrency : prioritySend;
-
     plugin.state.bot.pass = readURLAndParseKey(plugin, authNode);
     if (*plugin.state.abort) return;
-    plugin.state.updates |= typeof(plugin.state.updates).bot;
-    plugin.state.mainThread.prioritySend(ThreadMessage.save());
+
+    writeln();
+    logger.info("Validating...");
+
+    immutable expiry = getTokenExpiry(plugin, plugin.state.bot.pass);
+    if (*plugin.state.abort) return;
+
+    immutable delta = (expiry - Clock.currTime);
+    immutable numDays = delta.total!"days";
 
     enum issuePattern = "
 --------------------------------------------------------------------------------
@@ -186,9 +194,11 @@ just work. If it doesn't, please file an issue at:
 
     <i>https://github.com/zorael/kameloso/issues/new</>
 
-<l>Note: keys are valid for 60 days, after which this process needs to be repeated.</>
+<l>Your key is valid for another <i>%d<l> days.</>
 ";
-    writeln(issuePattern.expandTags(LogLevel.off));
+    writefln(issuePattern.expandTags(LogLevel.off), numDays);
+    plugin.state.updates |= typeof(plugin.state.updates).bot;
+    plugin.state.mainThread.prioritySend(ThreadMessage.save());
 }
 
 
@@ -211,6 +221,7 @@ void requestTwitchSuperKey(TwitchBotPlugin plugin)
 {
     import std.process : Pid, ProcessException, wait;
     import std.stdio : stdout, writefln, writeln;
+    import std.datetime.systime : Clock;
 
     scope(exit)
     {
@@ -374,19 +385,27 @@ instructions and log in to authorise the use of this program with your <i>STREAM
         plugin.secretsByChannel[channel] = creds;
     }
 
-    saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
+    writeln();
+    logger.info("Validating...");
+
+    immutable expiry = getTokenExpiry(plugin, creds.broadcasterKey);
+    if (*plugin.state.abort) return;
+
+    immutable delta = (expiry - Clock.currTime);
+    immutable numDays = delta.total!"days";
 
     enum issuePattern = "
 --------------------------------------------------------------------------------
 
-All done! Restart the program (without <i>--set twitch.superKeygen</>) and it should
-just work. If it doesn't, please file an issue at:
+All done! Restart the program (without <i>--set twitch.superKeygen</>) and commands
+that require higher permissions should just work. If they don't, please file an issue at:
 
     <i>https://github.com/zorael/kameloso/issues/new</>
 
-<l>Note: keys are valid for 60 days, after which this process needs to be repeated.</>
+<l>Your key is valid for another <i>%d<l> days.</>
 ";
-    writeln(issuePattern.expandTags(LogLevel.off));
+    writefln(issuePattern.expandTags(LogLevel.off), numDays);
+    saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
 }
 
 
