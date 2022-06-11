@@ -136,6 +136,36 @@ void persistentQuerier(shared QueryResponse[int] bucket, const string caBundleFi
         setThreadName("twitchworker");
     }
 
+    void invokeSendHTTPRequestImpl(
+        const int id,
+        const string url,
+        const string authToken,
+        /*const*/ HttpVerb verb,
+        immutable(ubyte)[] body_,
+        const string contentType) scope
+    {
+        version(BenchmarkHTTPRequests)
+        {
+            import std.datetime.systime : Clock;
+            import std.stdio;
+            immutable pre = Clock.currTime;
+        }
+
+        immutable response = sendHTTPRequestImpl(url, authToken,
+            caBundleFile, verb, cast(ubyte[])body_, contentType);
+
+        synchronized //()
+        {
+            bucket[id] = response;  // empty str if code >= 400
+        }
+
+        version(BenchmarkHTTPRequests)
+        {
+            immutable post = Clock.currTime;
+            writefln("%s (%s)", post-pre, url);
+        }
+    }
+
     bool halt;
 
     while (!halt)
@@ -144,37 +174,13 @@ void persistentQuerier(shared QueryResponse[int] bucket, const string caBundleFi
             (int id, string url, string authToken, HttpVerb verb,
                 immutable(ubyte)[] body_, string contentType) scope
             {
-                version(BenchmarkHTTPRequests)
-                {
-                    import std.datetime.systime : Clock;
-                    import std.stdio;
-                    immutable pre = Clock.currTime;
-                }
-
-                immutable response = sendHTTPRequestImpl(url, authToken, bucket,
-                    caBundleFile, verb, cast(ubyte[])body_, contentType);
-
-                synchronized //()
-                {
-                    bucket[id] = response;  // empty str if code >= 400
-                }
-
-                version(BenchmarkHTTPRequests)
-                {
-                    immutable post = Clock.currTime;
-                    writefln("%s (%s)", post-pre, url);
-                }
+                invokeSendHTTPRequestImpl(id, url, authToken, verb, body_, contentType);
             },
             (int id, string url, string authToken) scope
             {
                 // Shorthand
-                immutable response = sendHTTPRequestImpl(url, authToken, bucket,
-                    caBundleFile, HttpVerb.GET, null, string.init);
-
-                synchronized //()
-                {
-                    bucket[id] = response;  // empty str if code >= 400
-                }
+                invokeSendHTTPRequestImpl(id, url, authToken, HttpVerb.GET,
+                    cast(immutable(ubyte)[])null, string.init);
             },
             (ThreadMessage message) scope
             {
@@ -335,29 +341,11 @@ in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
 
 // sendHTTPRequestImpl
 /++
-    Sends a HTTP request of the passed verb to the passed URL, and "returns" the
-    response by adding it to the shared `bucket` associative array.
-
-    Callers can as such spawn this function as a new or separate thread and
-    asynchronously monitor the `bucket` for when the results arrive.
-
-    Example:
-    ---
-    immutable url = "https://api.twitch.tv/helix/some/api/url";
-
-    spawn&(&sendHTTPRequestImpl, 12345, url, plugin.authorizationBearer, plugin.bucket, caBundleFile);
-    delay(plugin, plugin.approximateQueryTime.msecs, Yes.yield);
-    immutable response = waitForQueryResponse(plugin, 12345);
-    // response.str is the response body
-    ---
+    Sends a HTTP request of the passed verb to the passed URL, and returns the response.
 
     Params:
-        id = Unique ID to use as key when storing the returned
-            value in `bucket`.
         url = URL address to look up.
         authHeader = Authorisation token HTTP header to pass.
-        bucket = The shared associative array to put the results in, response
-            values keyed by URL.
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
         verb = What HTTP verb to pass.
         body_ = Request body to send in case of verbs like `POST` and `PATCH`.
@@ -369,7 +357,6 @@ in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
 auto sendHTTPRequestImpl(
     const string url,
     const string authHeader,
-    shared QueryResponse[int] bucket,
     const string caBundleFile,
     /*const*/ HttpVerb verb = HttpVerb.GET,
     /*const*/ ubyte[] body_ = null,
@@ -578,7 +565,7 @@ in ((!async || Fiber.getThis), "Tried to call `getValidation` from outside a Fib
     immutable authorizationHeader = "OAuth " ~ authToken;
     immutable response = async ?
         sendHTTPRequest(plugin, url, authorizationHeader) :
-        sendHTTPRequestImpl(url, authorizationHeader, plugin.bucket, plugin.state.connSettings.caBundleFile);
+        sendHTTPRequestImpl(url, authorizationHeader, plugin.state.connSettings.caBundleFile);
     immutable validationJSON = parseJSON(response.str);
 
     if ((validationJSON.type != JSONType.object) || ("client_id" !in validationJSON))
