@@ -218,3 +218,73 @@ unittest
         assert(rbd.endsWith("\\Roaming"), rbd);
     }
 }
+
+
+// openInBrowser
+/++
+    Opens up the passed URL in a web browser.
+
+    Params:
+        url = URL to open.
+
+    Returns:
+        A [std.process.Pid|Pid] of the spawned process. Remember to [std.process.wait|wait].
+ +/
+auto openInBrowser(const string url)
+{
+    import std.stdio : File;
+
+    version(Posix)
+    {
+        import std.process : ProcessException, environment, spawnProcess;
+
+        version(OSX)
+        {
+            enum open = "open";
+        }
+        else
+        {
+            // Assume XDG
+            enum open = "xdg-open";
+        }
+
+        immutable browserExecutable = environment.get("BROWSER", open);
+        string[2] browserCommand = [ browserExecutable, url ];  // mutable
+        auto devNull = File("/dev/null", "r+");
+
+        try
+        {
+            return spawnProcess(browserCommand[], devNull, devNull, devNull);
+        }
+        catch (ProcessException e)
+        {
+            if (browserExecutable == open) throw e;
+
+            browserCommand[0] = open;
+            return spawnProcess(browserCommand[], devNull, devNull, devNull);
+        }
+    }
+    else version(Windows)
+    {
+        import std.file : tempDir;
+        import std.format : format;
+        import std.path : buildPath;
+        import std.process : spawnProcess;
+
+        enum urlBasename = "kameloso-browser.url";
+        immutable urlFileName = buildPath(tempDir, urlBasename);
+
+        {
+            auto urlFile = File(urlFileName, "w");
+            urlFile.writeln("[InternetShortcut]\nURL=", url);
+        }
+
+        immutable string[2] browserCommand = [ "explorer", urlFileName ];
+        auto nulFile = File("NUL", "r+");
+        return spawnProcess(browserCommand[], nulFile, nulFile, nulFile);
+    }
+    else
+    {
+        static assert(0, "Unsupported platform, please file a bug.");
+    }
+}

@@ -598,7 +598,12 @@ void initResources(NotesPlugin plugin)
         import std.path : baseName;
 
         version(PrintStacktraces) logger.trace(e);
-        throw new IRCPluginInitialisationException(plugin.notesFile.baseName ~ " may be malformed.");
+        throw new IRCPluginInitialisationException(
+            "Notes file is malformed",
+            plugin.name,
+            plugin.notesFile,
+            __FILE__,
+            __LINE__);
     }
 
     // Let other Exceptions pass.

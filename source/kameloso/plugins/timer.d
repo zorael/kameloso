@@ -231,7 +231,7 @@ public:
         Returns:
             A new [TimerDefinition] with values loaded from the passed JSON.
      +/
-    static TimerDefinition fromJSON(const JSONValue json)
+    static auto fromJSON(const JSONValue json)
     {
         TimerDefinition def;
         def.name = json["name"].str;
@@ -258,7 +258,7 @@ public:
 
 // onCommandTimer
 /++
-    Adds, deletes, lists or clears timers for the specified target channel.
+    Adds, deletes or lists timers for the specified target channel.
 
     Changes are persistently saved to the [TimerPlugin.timersFile] file.
  +/
@@ -270,14 +270,13 @@ public:
         IRCEventHandler.Command()
             .word("timer")
             .policy(PrefixPolicy.prefixed)
-            .description("Adds, removes, lists or clears timers.")
+            .description("Adds, removes or lists timers.")
             .addSyntax("$command new [name] [type] [condition] [message count threshold] " ~
                 "[time threshold] [stagger message count] [stagger time]")
             .addSyntax("$command add [timer name] [timer text...]")
             .addSyntax("$command insert [timer name] [position] [timer text...]")
             .addSyntax("$command del [timer name] [optional line number]")
             .addSyntax("$command list")
-            .addSyntax("$command clear")
     )
 )
 void onCommandTimer(TimerPlugin plugin, const ref IRCEvent event)
@@ -288,7 +287,7 @@ void onCommandTimer(TimerPlugin plugin, const ref IRCEvent event)
 
 // handleTimerCommand
 /++
-    Adds, deletes, lists or clears timers for the specified target channel.
+    Adds, deletes or lists timers for the specified target channel.
 
     Params:
         plugin = The current [kameloso.plugins.timer.TimerPlugin|TimerPlugin].
@@ -300,6 +299,7 @@ void handleTimerCommand(
     const /*ref*/ IRCEvent event,
     const string channelName)
 {
+    import kameloso.common : abbreviatedDuration;
     import lu.string : SplitResults, contains, nom, splitInto;
     import std.conv : ConvException, to;
     import std.format : format;
@@ -415,9 +415,9 @@ void handleTimerCommand(
         try
         {
             timerDef.messageCountThreshold = messageCountThreshold.to!long;
-            timerDef.timeThreshold = timeThreshold.to!long;
+            timerDef.timeThreshold = abbreviatedDuration(timeThreshold).total!"seconds";
             if (messageCountStagger.length) timerDef.messageCountStagger = messageCountStagger.to!long;
-            if (timeStagger.length) timerDef.timeStagger = timeStagger.to!long;
+            if (timeStagger.length) timerDef.timeStagger = abbreviatedDuration(timeStagger).total!"seconds";
         }
         catch (ConvException e)
         {
@@ -442,7 +442,7 @@ void handleTimerCommand(
         saveResourceToDisk(plugin.timerDefsByChannel, plugin.timerFile);
         plugin.channels[channelName].timerFibers ~= plugin.createTimerFiber(timerDef, channelName);
 
-        enum appendPattern = "New timer added. Use <b>%s%s add<b> to add lines.";
+        enum appendPattern = "New timer added! Use <b>%s%s add<b> to add lines.";
         immutable message = appendPattern.format(plugin.state.settings.prefix, event.aux);
         chan(plugin.state, channelName, message);
         break;
@@ -1009,7 +1009,12 @@ void initResources(TimerPlugin plugin)
         import kameloso.plugins.common.misc : IRCPluginInitialisationException;
 
         version(PrintStacktraces) logger.trace(e);
-        throw new IRCPluginInitialisationException(plugin.timerFile.baseName ~ " may be malformed.");
+        throw new IRCPluginInitialisationException(
+            "Timer file is malformed",
+            plugin.name,
+            plugin.timerFile,
+            __FILE__,
+            __LINE__);
     }
 
     // Let other Exceptions pass.

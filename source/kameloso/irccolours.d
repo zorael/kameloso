@@ -1468,7 +1468,7 @@ private T expandIRCTagsImpl(T)(const T line, const Flag!"strip" strip = No.strip
                         {
                             static auto getColourChars(S)(S slice)
                             {
-                                struct Result
+                                static struct Result
                                 {
                                     immutable S fg;
                                     immutable S bg;

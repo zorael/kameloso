@@ -877,7 +877,12 @@ void initResources(QuotesPlugin plugin)
         import std.path : baseName;
 
         version(PrintStacktraces) logger.trace(e);
-        throw new IRCPluginInitialisationException(plugin.quotesFile.baseName ~ " may be malformed.");
+        throw new IRCPluginInitialisationException(
+            "Quotes file is malformed",
+            plugin.name,
+            plugin.quotesFile,
+            __FILE__,
+            __LINE__);
     }
 
     // Let other Exceptions pass.

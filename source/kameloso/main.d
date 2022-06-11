@@ -73,7 +73,7 @@ enum gcOptions = ()
     }
 
     // Tweak these numbers as we see fit
-    sink.put("initReserve:8 minPoolSize:8 incPoolSize:8");
+    sink.put("initReserve:8 minPoolSize:8 incPoolSize:16");
 
     return sink.data;
 }().idup;
@@ -332,10 +332,8 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             default:
-                import std.stdio;
                 enum pattern = "onMessage received unexpected message type: <l>%s";
                 logger.errorf(pattern.expandTags(LogLevel.error), message.type);
-                writeln(message);
                 if (instance.settings.flush) stdout.flush();
                 break;
             }
@@ -2073,6 +2071,8 @@ Next tryConnect(ref Kameloso instance)
     }
 
     uint incrementedRetryDelay = Timeout.connectionRetry;
+    enum transientSSLFailureTolerance = 10;
+    uint numTransientSSLFailures;
 
     foreach (const attempt; connector)
     {
@@ -2204,6 +2204,7 @@ Next tryConnect(ref Kameloso instance)
 
             if (*instance.abort) return Next.returnFailure;
             if (!lastRetry) verboselyDelay();
+            numTransientSSLFailures = 0;
             continue;
 
         case delayThenNextIP:
@@ -2211,6 +2212,7 @@ Next tryConnect(ref Kameloso instance)
             if (*instance.abort) return Next.returnFailure;
             verboselyDelayToNextIP();
             if (*instance.abort) return Next.returnFailure;
+            numTransientSSLFailures = 0;
             continue;
 
         /*case noMoreIPs:
@@ -2236,14 +2238,28 @@ Next tryConnect(ref Kameloso instance)
 
             if (*instance.abort) return Next.returnFailure;
             if (!lastRetry) goto case delayThenNextIP;
+            numTransientSSLFailures = 0;
             continue;
 
         case transientSSLFailure:
+            import lu.string : contains;
+
             // "Failed to establish SSL connection after successful connect (system lib)"
             // "Failed to establish SSL connection after successful connect" --> attempted SSL on non-SSL server
+
             logger.error("Failed to connect: ", Tint.log, attempt.error);
             if (*instance.abort) return Next.returnFailure;
-            if (!lastRetry) verboselyDelay();
+
+            if ((numTransientSSLFailures++ < transientSSLFailureTolerance) &&
+                attempt.error.contains("(system lib)"))
+            {
+                // Random failure, just reconnect immediately
+                // but only `transientSSLFailureTolerance` times
+            }
+            else
+            {
+                if (!lastRetry) verboselyDelay();
+            }
             continue;
 
         case fatalSSLFailure:
@@ -2791,6 +2807,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         }
 
         import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+        import kameloso.common : pluginNameOfFilename, pluginFileBaseName;
         import std.path : baseName;
 
         // Ensure initialised resources after resolve so we know we have a
@@ -2802,10 +2819,31 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         }
         catch (IRCPluginInitialisationException e)
         {
-            enum pattern = "The <l>%s</> plugin failed to load its resources; " ~
-                "<l>%s</> (at <l>%s</>:<l>%d</>)%s";
-            logger.warningf(pattern.expandTags(LogLevel.warning), e.file.baseName[0..$-2],
-                e.msg, e.file.baseName, e.line, bell);
+            if (e.malformedFilename.length)
+            {
+                enum pattern = "The <l>%s</> plugin failed to load its resources; " ~
+                    "<l>%s</> is malformed. (at <l>%s</>:<l>%d</>)%s";
+                logger.warningf(
+                    pattern.expandTags(LogLevel.warning),
+                    e.pluginName,
+                    e.malformedFilename,
+                    e.file.pluginFileBaseName,
+                    e.line,
+                    bell);
+            }
+            else
+            {
+                enum pattern = "The <l>%s</> plugin failed to load its resources; " ~
+                    "<l>%s</> (at <l>%s</>:<l>%d</>)%s";
+                logger.warningf(
+                    pattern.expandTags(LogLevel.warning),
+                    e.pluginName,
+                    e.msg,
+                    e.file.pluginFileBaseName,
+                    e.line,
+                    bell);
+            }
+
             version(PrintStacktraces) logger.trace(e.info);
             attempt.retval = ShellReturnValue.pluginResourceLoadFailure;
             break outerloop;
@@ -2814,8 +2852,14 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         {
             enum pattern = "An unexpected error occurred while initialising the <l>%s</> " ~
                 "plugin's resources: <l>%s</> (at <l>%s</>:<l>%d</>)%s";
-            logger.warningf(pattern.expandTags(LogLevel.warning), e.file.baseName[0..$-2],
-                e.msg, e.file, e.line, bell);
+            logger.warningf(
+                pattern.expandTags(LogLevel.warning),
+                e.file.pluginNameOfFilename,
+                e.msg,
+                e.file.pluginFileBaseName,
+                e.line,
+                bell);
+
             version(PrintStacktraces) logger.trace(e);
             attempt.retval = ShellReturnValue.pluginResourceLoadException;
             break outerloop;
@@ -2833,10 +2877,31 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         }
         catch (IRCPluginInitialisationException e)
         {
-            enum pattern = "The <l>%s</> plugin failed to start: <l>%s</> " ~
-                "(at <l>%s</>:<l>%d</>)%s";
-            logger.warningf(pattern.expandTags(LogLevel.warning), e.file.baseName[0..$-2],
-                e.msg, e.file.baseName, e.line, bell);
+            if (e.malformedFilename.length)
+            {
+                enum pattern = "The <l>%s</> plugin failed to start; " ~
+                    "<l>%s</> is malformed. (at <l>%s</>:<l>%d</>)%s";
+                logger.warningf(
+                    pattern.expandTags(LogLevel.warning),
+                    e.pluginName,
+                    e.malformedFilename,
+                    e.file.pluginFileBaseName,
+                    e.line,
+                    bell);
+            }
+            else
+            {
+                enum pattern = "The <l>%s</> plugin failed to start; " ~
+                    "<l>%s</> (at <l>%s</>:<l>%d</>)%s";
+                logger.warningf(
+                    pattern.expandTags(LogLevel.warning),
+                    e.pluginName,
+                    e.msg,
+                    e.file.pluginFileBaseName,
+                    e.line,
+                    bell);
+            }
+
             version(PrintStacktraces) logger.trace(e.info);
             attempt.retval = ShellReturnValue.pluginStartFailure;
             break outerloop;
@@ -2845,8 +2910,14 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         {
             enum pattern = "An unexpected error occurred while starting the <l>%s</> plugin: " ~
                 "<l>%s</> (at <l>%s</>:<l>%d</>)%s";
-            logger.warningf(pattern.expandTags(LogLevel.warning), e.file.baseName[0..$-2],
-                e.msg, e.file, e.line, bell);
+            logger.warningf(
+                pattern.expandTags(LogLevel.warning),
+                e.file.pluginNameOfFilename,
+                e.msg,
+                e.file,
+                e.line,
+                bell);
+
             version(PrintStacktraces) logger.trace(e);
             attempt.retval = ShellReturnValue.pluginStartException;
             break outerloop;

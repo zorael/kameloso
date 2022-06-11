@@ -13,6 +13,7 @@
  +/
 module kameloso.plugins.twitchbot.base;
 
+
 // TwitchBotSettings
 /++
     All Twitch bot plugin runtime settings.
@@ -24,6 +25,7 @@ module kameloso.plugins.twitchbot.base;
 package @Settings struct TwitchBotSettings
 {
 private:
+    import dialect.defs : IRCUser;
     import lu.uda : Unserialisable;
 
 public:
@@ -43,6 +45,16 @@ public:
     bool watchtime = true;
 
     /++
+        What kind of song requests to accept, if any.
+     +/
+    SongRequestMode songrequestMode = SongRequestMode.youtube;
+
+    /++
+        What level of user permissions are needed to issue song requests.
+     +/
+    IRCUser.Class songrequestPermsNeeded = IRCUser.Class.whitelist;
+
+    /++
         Whether or not broadcasters are always implicitly class
         [dialect.defs.IRCUser.Class.staff|IRCUser.Class.staff].
      +/
@@ -60,17 +72,6 @@ public:
      +/
     bool promoteVIPs = true;
 
-    /++
-        Whether to use one persistent worker for Twitch queries or to use separate subthreads.
-
-        It's a trade-off. A single worker thread obviously spawns fewer threads,
-        which makes it a better choice on Windows systems where creating such is
-        comparatively expensive. You also get to enjoy being able to reuse the
-        HTTP client. On the other hand, it's also slower (likely due to
-        concurrency message passing overhead).
-     +/
-    bool singleWorkerThread = true;
-
     @Unserialisable
     {
         /// Whether or not to bell on every message.
@@ -80,12 +81,60 @@ public:
         bool bellOnImportant = false;
 
         /++
-            Whether or not to start a captive session for generating a Twitch
-            authorisation key. Should not be permanently set in the configuration file!
+            Whether or not to start a captive session for requesting a Twitch
+            access token with normal chat privileges.
          +/
         bool keygen = false;
+
+        /++
+            Whether or not to start a captive session for requesting a Twitch
+            access token with broadcaster privileges.
+         +/
+        bool superKeygen = false;
+
+        /++
+            Whether or not to start a captive session for requesting Google
+            access tokens.
+         +/
+        bool googleKeygen = false;
+
+        /++
+            Whether or not to start a captive session for requesting Spotify
+            access tokens.
+         +/
+        bool spotifyKeygen = false;
+
+        /++
+            Whether or not to start a acptive session for requesting a Twitch
+            authorisation token with higher broadcaster privileges.
+         +/
+        bool broadcasterKeygen = false;
     }
 }
+
+
+// SongRequestMode
+/++
+    Song requests may be either disabled, or either in YouTube or Spotify mode.
+ +/
+private enum SongRequestMode
+{
+    /++
+        Song requests are disabled.
+     +/
+    disabled,
+
+    /++
+        Song requests relate to a YouTube playlist.
+     +/
+    youtube,
+
+    /++
+        Song requests relatet to a Spotify playlist.
+     +/
+    spotify,
+}
+
 
 private import kameloso.plugins.common.core;
 
@@ -105,6 +154,122 @@ import dialect.defs;
 import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
+
+
+// Credentials
+/++
+    Credentials needed to access APIs like that of Google and Spotify.
+
+    See_Also:
+        https://console.cloud.google.com/apis/credentials
+ +/
+package struct Credentials
+{
+    /++
+        Broadcaster-level Twitch key.
+     +/
+    string broadcasterKey;
+
+    /++
+        Google client ID.
+     +/
+    string googleClientID;
+
+    /++
+        Google client secret.
+     +/
+    string googleClientSecret;
+
+    /++
+        Google API OAuth access token.
+     +/
+    string googleAccessToken;
+
+    /++
+        Google API OAuth refresh token.
+     +/
+    string googleRefreshToken;
+
+    /++
+        YouTube playlist ID.
+     +/
+    string youtubePlaylistID;
+
+    /++
+        Google client ID.
+     +/
+    string spotifyClientID;
+
+    /++
+        Google client secret.
+     +/
+    string spotifyClientSecret;
+
+    /++
+        Spotify API OAuth access token.
+     +/
+    string spotifyAccessToken;
+
+    /++
+        Spotify API OAuth refresh token.
+     +/
+    string spotifyRefreshToken;
+
+    /++
+        Spotify playlist ID.
+     +/
+    string spotifyPlaylistID;
+
+    /++
+        Serialises these [Credentials] into JSON.
+
+        Returns:
+            `this` represented in JSON.
+     +/
+    JSONValue toJSON() const
+    {
+        JSONValue json;
+        json = null;
+        json.object = null;
+
+        json["broadcasterKey"] = this.broadcasterKey;
+        json["googleClientID"] = this.googleClientID;
+        json["googleClientSecret"] = this.googleClientSecret;
+        json["googleAccessToken"] = this.googleAccessToken;
+        json["googleRefreshToken"] = this.googleRefreshToken;
+        json["youtubePlaylistID"] = this.youtubePlaylistID;
+        json["spotifyClientID"] = this.spotifyClientID;
+        json["spotifyClientSecret"] = this.spotifyClientSecret;
+        json["spotifyAccessToken"] = this.spotifyAccessToken;
+        json["spotifyRefreshToken"] = this.spotifyRefreshToken;
+        json["spotifyPlaylistID"] = this.spotifyPlaylistID;
+
+        return json;
+    }
+
+    /++
+        Deserialises some [Credentials] from JSON.
+
+        Params:
+            json = JSON representation of some [Credentials].
+     +/
+    static auto fromJSON(const JSONValue json)
+    {
+        typeof(this) creds;
+        creds.broadcasterKey = json["broadcasterKey"].str;
+        creds.googleClientID = json["googleClientID"].str;
+        creds.googleClientSecret = json["googleClientSecret"].str;
+        creds.googleAccessToken = json["googleAccessToken"].str;
+        creds.googleRefreshToken = json["googleRefreshToken"].str;
+        creds.youtubePlaylistID = json["youtubePlaylistID"].str;
+        creds.spotifyClientID = json["spotifyClientID"].str;
+        creds.spotifyClientSecret = json["spotifyClientSecret"].str;
+        creds.spotifyAccessToken = json["spotifyAccessToken"].str;
+        creds.spotifyRefreshToken = json["spotifyRefreshToken"].str;
+        creds.spotifyPlaylistID = json["spotifyPlaylistID"].str;
+        return creds;
+    }
+}
 
 
 // onImportant
@@ -131,10 +296,19 @@ import core.thread : Fiber;
     .channelPolicy(ChannelPolicy.home)
     .chainable(true)
 )
-void onImportant(TwitchBotPlugin plugin)
+void onImportant(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.terminal : TerminalToken;
     import std.stdio : stdout, write;
+
+    // Record viewer as active
+    if (auto room = event.channel in plugin.rooms)
+    {
+        if (room.broadcast.active)
+        {
+            room.broadcast.activeViewers[event.sender.nickname] = true;
+        }
+    }
 
     if (plugin.twitchBotSettings.bellOnImportant)
     {
@@ -271,7 +445,7 @@ void onCommandUptime(TwitchBotPlugin plugin, const ref IRCEvent event)
             .word("start")
             .policy(PrefixPolicy.prefixed)
             .description("Marks the start of a broadcast.")
-            .addSyntax("$command [optional HH:MM or MM time already elapsed]")
+            .addSyntax("$command [optional duration time already elapsed]")
     )
 )
 void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
@@ -280,11 +454,11 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     import core.thread : Fiber;
 
     auto room = event.channel in plugin.rooms;
-    assert(room, "Tried to start a broadcast on a nonexistent room");
+    assert(room, "Tried to start a broadcast in a nonexistent room");
 
     void sendUsage()
     {
-        enum pattern = "Usage: %s%s [optional HH:MM or MM time already elapsed]";
+        enum pattern = "Usage: %s%s [optional duration time already elapsed]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
         chan(plugin.state, event.channel, message);
     }
@@ -305,41 +479,21 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
          +/
         try
         {
-            string slice = event.content.stripped;  // mutable
+            import kameloso.common : abbreviatedDuration, timeSince;
 
-            if (event.content.contains(':'))
-            {
-                immutable hours = slice.nom(':').to!int;
-                immutable minutes = slice.to!int;
-                if ((hours < 0) || (minutes < 0) || (minutes > 59)) return sendUsage();
-                immutable elapsed = (hours * 3600) + (minutes * 60);
+            initBroadcast();
+            immutable elapsed = abbreviatedDuration(event.content.stripped);
+            room.broadcast.startTime = (event.time - elapsed.total!"seconds");
 
-                initBroadcast();
-                room.broadcast.startTime = (event.time - elapsed);
-
-                enum pattern = "Broadcast start registered (as %d:%02d ago)!";
-                immutable message = pattern.format(hours, minutes);
-                chan(plugin.state, event.channel, message);
-            }
-            else
-            {
-                immutable minutes = slice.to!int;
-                if (minutes < 0) return sendUsage();
-                immutable elapsed = (minutes * 60);
-
-                initBroadcast();
-                room.broadcast.startTime = (event.time - elapsed);
-
-                /+
-                    Technically we should do `minutes.plurality("minute", "minutes")`
-                    but the chance of minutes being 1 is very slim.
-                 +/
-                enum pattern = "Broadcast start registered (as %d minutes ago)!";
-                immutable message = pattern.format(minutes);
-                chan(plugin.state, event.channel, message);
-            }
+            enum pattern = "Broadcast start registered (as %s ago)!";
+            immutable message = pattern.format(timeSince(elapsed));
+            chan(plugin.state, event.channel, message);
         }
         catch (ConvException e)
+        {
+            return sendUsage();
+        }
+        catch (Exception e)
         {
             return sendUsage();
         }
@@ -365,7 +519,7 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     {
         uint addedSinceLastRehash;
 
-        while (room.broadcast.active)
+        while (room.broadcast.active && plugin.useAPIFeatures)
         {
             import kameloso.plugins.common.delayawait : delay;
             import std.json : JSONType;
@@ -454,6 +608,9 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
                     // continue early if we shouldn't monitor watchtime
                     if (!plugin.twitchBotSettings.watchtime) continue;
 
+                    // Exclude lurkers from watchtime monitoring
+                    if (viewer !in room.broadcast.activeViewers) continue;
+
                     static immutable periodicitySeconds = plugin.chattersCheckPeriodicity.total!"seconds";
 
                     if (auto channelViewerTimes = event.channel in plugin.viewerTimesByChannel)
@@ -517,7 +674,7 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 void onCommandStop(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     auto room = event.channel in plugin.rooms;
-    assert(room, "Tried to stop a broadcast on a nonexistent room");
+    assert(room, "Tried to stop a broadcast in a nonexistent room");
 
     if (!room.broadcast.active)
     {
@@ -557,27 +714,6 @@ void onCommandStop(TwitchBotPlugin plugin, const ref IRCEvent event)
 void onAutomaticStop(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
     return onCommandStop(plugin, event);
-}
-
-
-// cullBriefViewers
-/++
-    Removes viewers that have only briefly viewed the stream, so as not to clog
-    up the records with drive-by viewers of one minute here, three minutes there.
-
-    Params:
-        viewerTimesByChannel = Ref associative array of viewer times to cull,
-            viewer time keyed by nickname keyed by channel name.
-        cullBelowSeconds = Limit number of seconds under which to cull user entries.
- +/
-void cullBriefViewers( ref long[string][string] viewerTimesByChannel, const uint cullBelowSeconds)
-{
-    import lu.objmanip : pruneAA;
-
-    foreach (/*immutable channelName,*/ ref viewerTimes; viewerTimesByChannel)
-    {
-        pruneAA!(time => time < cullBelowSeconds)(viewerTimes);
-    }
 }
 
 
@@ -682,6 +818,9 @@ void reportStreamTime(TwitchBotPlugin plugin,
     (or a specified user) have been a follower of the current channel.
 
     Lookups are done asynchronously in subthreads.
+
+    See_Also:
+        [kameloso.plugins.twitchbot.api.getFollows]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -784,7 +923,6 @@ void onCommandFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
                 immutable message = pattern.format(timeline, datestamp);
                 chan(plugin.state, event.channel, message);
             }
-
         }
 
         // Identity ascertained; look up in cached list
@@ -802,11 +940,25 @@ void onCommandFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             // !followage queries to sneak in.
             // Luckily we're inside a Fiber so we can cache it ourselves.
             room.follows = getFollows(plugin, room.id);
+            room.followsLastCached = event.time;
         }
+
+        enum minimumTimeBetweenRecaches = 10;
 
         if (const thisFollow = idString in room.follows)
         {
             return reportFollowAge(*thisFollow);
+        }
+        else if (event.time > (room.followsLastCached + minimumTimeBetweenRecaches))
+        {
+            // No match, but minimumTimeBetweenRecaches passed since last recache
+            room.follows = getFollows(plugin, room.id);
+            room.followsLastCached = event.time;
+
+            if (const thisFollow = idString in room.follows)
+            {
+                return reportFollowAge(*thisFollow);
+            }
         }
 
         // If we're here there were no matches.
@@ -876,6 +1028,7 @@ void onRoomState(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     void cacheFollowsDg()
     {
         room.follows = getFollows(plugin, room.id);
+        room.followsLastCached = event.time;
     }
 
     Fiber cacheFollowsFiber = new Fiber(&twitchTryCatchDg!cacheFollowsDg, BufferSize.fiberStack);
@@ -914,6 +1067,8 @@ void onCommandShoutout(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     import lu.string : SplitResults, beginsWith, splitInto, stripped;
     import std.format : format;
     import std.json : JSONType, parseJSON;
+
+    if (!plugin.useAPIFeatures) return;
 
     void sendUsage()
     {
@@ -1023,7 +1178,7 @@ void onCommandShoutout(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 )
 void onCommandVanish(TwitchBotPlugin plugin, const ref IRCEvent event)
 {
-    immutable message = "/timeout " ~ event.sender.nickname ~ " 1";
+    immutable message = ".timeout " ~ event.sender.nickname ~ " 1";
     chan(plugin.state, event.channel, message);
 }
 
@@ -1094,9 +1249,509 @@ void onCommandRepeat(TwitchBotPlugin plugin, const ref IRCEvent event)
 }
 
 
+// onCommandNuke
+/++
+    Deletes recent messages containing a supplied word or phrase.
+
+    See_Also:
+        [TwitchBotPlugin.Room.lastNMessages]
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("nuke")
+            .policy(PrefixPolicy.prefixed)
+            .description("Deletes recent messages containing a supplied word or phrase.")
+            .addSyntax("$command [word or phrase]")
+    )
+)
+void onCommandNuke(TwitchBotPlugin plugin, const ref IRCEvent event)
+{
+    import std.conv : text;
+    import std.uni : toLower;
+
+    if (!event.content.length)
+    {
+        import std.format : format;
+        enum pattern = "Usage: %s%s [word or phrase]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+        return;
+    }
+
+    auto room = event.channel in plugin.rooms;
+    assert(room, "Tried to nuke a word in a nonexistent room");
+    immutable phraseToLower = event.content.toLower;
+
+    foreach (immutable storedEvent; room.lastNMessages)
+    {
+        import std.algorithm.searching : canFind;
+        import std.uni : asLowerCase;
+
+        if (storedEvent.sender.class_ >= IRCUser.Class.operator) continue;
+        else if (!storedEvent.content.length) continue;
+
+        if (storedEvent.content.asLowerCase.canFind(phraseToLower))
+        {
+            chan!(Yes.priority)(plugin.state, event.channel, text(".delete ", storedEvent.id));
+        }
+    }
+
+    // Also nuke the nuking message in case there were spoilers in it
+    chan(plugin.state, event.channel, text(".delete ", event.id));
+}
+
+
+// onCommandSongRequest
+/++
+    Implements `!songrequest`, allowing viewers to request songs (actually
+    YouTube videos) to be added to the streamer's playlist.
+
+    See_Also:
+        [kameloso.plugins.twitchbot.google.addVideoToYouTubePlaylist]
+        [kameloso.plugins.twitchbot.spotify.addTrackToSpotifyPlaylist]
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.anyone)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("songrequest")
+            .policy(PrefixPolicy.prefixed)
+            .description("Requests a song.")
+            .addSyntax("$command [YouTube link, YouTube video ID, Spotify link or Spotify track ID]")
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("sr")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
+)
+void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
+{
+    import kameloso.plugins.twitchbot.helpers;
+    import kameloso.constants : KamelosoInfo, Timeout;
+    import arsd.http2 : HttpClient, HttpVerb, Uri;
+    import lu.string : contains, nom, stripped;
+    import std.format : format;
+    import core.time : seconds;
+
+    if (plugin.twitchBotSettings.songrequestMode == SongRequestMode.disabled) return;
+    else if (event.sender.class_ < plugin.twitchBotSettings.songrequestPermsNeeded)
+    {
+        // Issue an error?
+        logger.error("User does not have the needed permissions to issue song requests.");
+        return;
+    }
+
+    if (event.sender.class_ < IRCUser.class_.operator)
+    {
+        const room = event.channel in plugin.rooms;
+        assert(room, "Tried to make a song request in a nonexistent room");
+
+        if (const lastRequestTimestamp = event.sender.nickname in room.songrequestHistory)
+        {
+            if ((event.time - *lastRequestTimestamp) < TwitchBotPlugin.Room.minimumTimeBetweenSongRequests)
+            {
+                enum pattern = "At least %d seconds must pass between song requests.";
+                immutable message = pattern.format(TwitchBotPlugin.Room.minimumTimeBetweenSongRequests);
+                chan(plugin.state, event.channel, message);
+                return;
+            }
+        }
+    }
+
+    if (plugin.twitchBotSettings.songrequestMode == SongRequestMode.youtube)
+    {
+        immutable url = event.content.stripped;
+
+        enum videoIDLength = 11;
+
+        if (url.length == videoIDLength)
+        {
+            // Probably a video ID
+        }
+        else if (!url.length ||
+            url.contains(' ') ||
+            (!url.contains("youtube.com/") &&
+            !url.contains("youtu.be/")))
+        {
+            enum pattern = "Usage: %s%s [YouTube link or video ID]";
+            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+            chan(plugin.state, event.channel, message);
+            return;
+        }
+
+        auto creds = event.channel in plugin.secretsByChannel;
+
+        if (!creds || !creds.googleAccessToken.length || !creds.youtubePlaylistID.length)
+        {
+            enum message = "Missing Google API credentials and/or YouTube playlist ID. " ~
+                "Run the program with <l>--set twitch.googleKeygen</> to set up.";
+            logger.error(message.expandTags(LogLevel.error));
+            return;
+        }
+
+        // Patterns:
+        // https://www.youtube.com/watch?v=jW1KXvCg5bY&t=123
+        // www.youtube.com/watch?v=jW1KXvCg5bY&t=123
+        // https://youtu.be/jW1KXvCg5bY?t=123
+        // youtu.be/jW1KXvCg5bY?t=123
+        // jW1KXvCg5bY
+
+        string slice = url;  // mutable
+        string videoID;
+
+        if (slice.length == videoIDLength)
+        {
+            videoID = slice;
+        }
+        else if (slice.contains("youtube.com/watch?v="))
+        {
+            slice.nom("youtube.com/watch?v=");
+            videoID = slice.nom!(Yes.inherit)('&');
+        }
+        else if (slice.contains("youtu.be/"))
+        {
+            slice.nom("youtu.be/");
+            videoID = slice.nom!(Yes.inherit)('?');
+        }
+        else
+        {
+            logger.warning("Malformed video link?");
+            return;
+        }
+
+        void addVideoDg()
+        {
+            try
+            {
+                import kameloso.plugins.twitchbot.google : addVideoToYouTubePlaylist;
+
+                immutable json = addVideoToYouTubePlaylist(plugin, *creds, videoID);
+                immutable title = json["snippet"]["title"].str;
+                //immutable position = json["snippet"]["position"].integer;
+
+                enum pattern = "%s added to playlist.";
+                immutable message = pattern.format(title);
+                chan(plugin.state, event.channel, message);
+            }
+            catch (SongRequestException e)
+            {
+                enum message = "Invalid YouTube video URL.";
+                chan(plugin.state, event.channel, message);
+            }
+            catch (Exception e)
+            {
+                logger.error(e.msg);
+                version(PrintStacktraces) logger.trace(e);
+            }
+        }
+
+        Fiber addVideoFiber = new Fiber(&twitchTryCatchDg!addVideoDg, BufferSize.fiberStack);
+        addVideoFiber.call();
+    }
+    else if (plugin.twitchBotSettings.songrequestMode == SongRequestMode.spotify)
+    {
+        immutable url = event.content.stripped;
+
+        enum trackIDLength = 22;
+
+        if (url.length == trackIDLength)
+        {
+            // Probably a track ID
+        }
+        else if (!url.length ||
+            url.contains(' ') ||
+            !url.contains("spotify.com/track/"))
+        {
+            enum pattern = "Usage: %s%s [Spotify link or track ID]";
+            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+            chan(plugin.state, event.channel, message);
+            return;
+        }
+
+        auto creds = event.channel in plugin.secretsByChannel;
+
+        if (!creds || !creds.spotifyAccessToken.length || !creds.spotifyPlaylistID)
+        {
+            enum message = "Missing Spotify API credentials and/or playlist ID. " ~
+                "Run the program with <l>--set twitch.spotifyKeygen</> to set up.";
+            logger.error(message.expandTags(LogLevel.error));
+            return;
+        }
+
+        // Patterns
+        // https://open.spotify.com/track/65EGCfqn3di7gLMllw1Tg0?si=02eb9a0c9d6c4972
+
+        string slice = url;  // mutable
+        string trackID;
+
+        if (slice.length == trackIDLength)
+        {
+            trackID = slice;
+        }
+        else if (slice.contains("spotify.com/track/"))
+        {
+            slice.nom("spotify.com/track/");
+            trackID = slice.nom!(Yes.inherit)('?');
+        }
+        else
+        {
+            logger.warning("Malformed track link?");
+            return;
+        }
+
+        void addTrackDg()
+        {
+            try
+            {
+                import kameloso.plugins.twitchbot.spotify;
+                import std.json : JSONType;
+
+                immutable json = addTrackToSpotifyPlaylist(plugin, *creds, trackID);
+
+                if ((json.type != JSONType.object)  || "snapshot_id" !in json)
+                {
+                    logger.error("An error occurred.\n", json.toPrettyString);
+                    return;
+                }
+
+                const trackJSON = getSpotifyTrackByID(*creds, trackID);
+                immutable artist = trackJSON["artists"].array[0].object["name"].str;
+                immutable track = trackJSON["name"].str;
+
+                enum pattern = "%s - %s added to playlist.";
+                immutable message = pattern.format(artist, track);
+                chan(plugin.state, event.channel, message);
+            }
+            catch (SongRequestException e)
+            {
+                enum message = "Invalid Spotify track URL.";
+                chan(plugin.state, event.channel, message);
+            }
+            catch (Exception e)
+            {
+                logger.error(e.msg);
+                version(PrintStacktraces) logger.trace(e);
+            }
+        }
+
+        Fiber addTrackFiber = new Fiber(&twitchTryCatchDg!addTrackDg, BufferSize.fiberStack);
+        addTrackFiber.call();
+    }
+}
+
+
+// onCommandStartPoll
+/++
+    Starts a Twitch poll.
+
+    Note: Experimental, since we cannot try it out ourselves.
+
+    See_Also:
+        [kameloso.plugins.twitchbot.api.createPoll]
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("startpoll")
+            .policy(PrefixPolicy.prefixed)
+            .description("Starts a Twitch poll.")
+            .addSyntax(`$command "[poll title]" [seconds] [choice1] [choice2] ...`)
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("startvote")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
+)
+void onCommandStartPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+{
+    import kameloso.common : splitWithQuotes;
+    import lu.string : stripped;
+
+    immutable args = splitWithQuotes(event.content.stripped);
+
+    if (args.length < 4)
+    {
+        import std.format : format;
+        enum pattern = `Usage: %s%s "[poll title]" [seconds] [choice1] [choice2] ...`;
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+        return;
+    }
+
+    immutable title = args[0];
+    immutable durationString = args[1];
+    immutable choices = args[2..$];
+
+    if (choices.length < 2)
+    {
+        enum message = "Insufficient number of choices, must be two or more.";
+        chan(plugin.state, event.channel, message);
+        return;
+    }
+
+    void startPollDg()
+    {
+        import std.json : JSONType;
+        import std.format : format;
+
+        try
+        {
+            immutable responseJSON = createPoll(plugin, event.channel, title, durationString, choices);
+
+            if (responseJSON.type != JSONType.array)
+            {
+                import std.stdio;
+                logger.error("Unexpected response from server when creating a poll");
+                writeln(responseJSON.toPrettyString);
+                return;
+            }
+
+            enum pattern = `Poll "%s" created.`;
+            immutable message = pattern.format(responseJSON.array[0].object["title"]);
+            chan(plugin.state, event.channel, message);
+        }
+        catch (TwitchQueryException e)
+        {
+            import std.algorithm.searching : endsWith;
+
+            if ((e.code == 403) &&
+                (e.error == "Forbidden") &&
+                e.msg.endsWith("is not a partner or affiliate"))
+            {
+                version(WithVotesPlugin)
+                {
+                    enum message = "You must be a partner or affiliate to create Twitch polls. " ~
+                        "(Consider using the Votes plugin.)";
+                }
+                else
+                {
+                    enum message = "You must be a partner or affiliate to create Twitch polls.";
+                }
+
+                chan(plugin.state, event.channel, message);
+            }
+        }
+    }
+
+    Fiber startPollFiber = new Fiber(&twitchTryCatchDg!startPollDg, BufferSize.fiberStack);
+    startPollFiber.call();
+}
+
+
+// onCommandEndPoll
+/++
+    Ends a Twitch poll.
+
+    Currently ends the first active poll if there are several.
+
+    Note: Experimental, since we cannot try it out ourselves.
+
+    See_Also:
+        [kameloso.plugins.twitchbot.api.endPoll]
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("endpoll")
+            .policy(PrefixPolicy.prefixed)
+            .description("Ends a Twitch poll.")
+            //.addSyntax("$command [terminating]")
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("endvote")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
+)
+void onCommandEndPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+{
+    /*static struct Choice
+    {
+        string title;
+        long votes;
+    }*/
+
+    void endPollDg()
+    {
+        import std.json : JSONType;
+        import std.stdio : writeln;
+
+        immutable pollInfoJSON = getPolls(plugin, event.channel);
+
+        if (pollInfoJSON.type != JSONType.array)
+        {
+            logger.error("Unexpected JSON type from server when fetching polls");
+            writeln(pollInfoJSON.toPrettyString);
+            return;
+        }
+
+        if (!pollInfoJSON.array.length)
+        {
+            enum message = "There are no active polls to end.";
+            chan(plugin.state, event.channel, message);
+            return;
+        }
+
+        immutable voteID = pollInfoJSON.array[0].object["id"].str;
+        immutable endResponseJSON = endPoll(plugin, event.channel, voteID, Yes.terminate);
+
+        if ((endResponseJSON.type != JSONType.object) ||
+            ("choices" !in endResponseJSON) ||
+            (endResponseJSON["choices"].array.length < 2))
+        {
+            // Invalid response in some way
+            logger.error("Unexpected response from server when ending a poll");
+            writeln(endResponseJSON.toPrettyString);
+            return;
+        }
+
+        /*Choice[] choices;
+        long totalVotes;
+
+        foreach (immutable i, const choiceJSON; endResponseJSON["choices"].array)
+        {
+            Choice choice;
+            choice.title = choiceJSON["title"].str;
+            choice.votes =
+                choiceJSON["votes"].integer +
+                choiceJSON["channel_points_votes"].integer +
+                choiceJSON["bits_votes"].integer;
+            choices ~= choice;
+            totalVotes += choice.votes;
+        }
+
+        auto sortedChoices = choices.sort!((a,b) => a.votes > b.votes);*/
+
+        enum message = "Poll ended.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    Fiber endPollFiber = new Fiber(&twitchTryCatchDg!endPollDg, BufferSize.fiberStack);
+    endPollFiber.call();
+}
+
+
 // onAnyMessage
 /++
     Bells on any message, if the [TwitchBotSettings.bellOnMessage] setting is set.
+    Also counts emotes for `ecount` and records active viewers.
 
     Belling is useful with small audiences, so you don't miss messages.
  +/
@@ -1117,6 +1772,12 @@ void onAnyMessage(TwitchBotPlugin plugin, const ref IRCEvent event)
 
         write(plugin.bell);
         stdout.flush();
+    }
+
+    if (event.type == IRCEvent.Type.QUERY)
+    {
+        // Ignore queries for the rest of this function
+        return;
     }
 
     // ecount!
@@ -1152,6 +1813,17 @@ void onAnyMessage(TwitchBotPlugin plugin, const ref IRCEvent event)
             plugin.ecountDirty = true;
         }
     }
+
+    // Record viewer as active
+    if (auto room = event.channel in plugin.rooms)
+    {
+        if (room.broadcast.active)
+        {
+            room.broadcast.activeViewers[event.sender.nickname] = true;
+        }
+
+        room.lastNMessages.put(event);
+    }
 }
 
 
@@ -1170,40 +1842,61 @@ void onAnyMessage(TwitchBotPlugin plugin, const ref IRCEvent event)
 void onEndOfMOTD(TwitchBotPlugin plugin)
 {
     import lu.string : beginsWith;
-    import std.concurrency : Tid;
+    import std.concurrency : Tid, spawn;
     import std.typecons : Flag, No, Yes;
 
-    if (plugin.useAPIFeatures)
+    if (!plugin.useAPIFeatures) return;
+
+    // Concatenate the Bearer and OAuth headers once.
+    immutable pass = plugin.state.bot.pass.beginsWith("oauth:") ?
+        plugin.state.bot.pass[6..$] :
+        plugin.state.bot.pass;
+    plugin.authorizationBearer = "Bearer " ~ pass;
+
+    if (plugin.bucket is null)
     {
-        // Concatenate the Bearer and OAuth headers once.
-        immutable pass = plugin.state.bot.pass.beginsWith("oauth:") ?
-            plugin.state.bot.pass[6..$] :
-            plugin.state.bot.pass;
-        plugin.authorizationBearer = "Bearer " ~ pass;
+        plugin.bucket[0] = QueryResponse.init;
+        plugin.bucket.remove(0);
+    }
 
-        if (plugin.bucket is null)
+    if (plugin.persistentWorkerTid == Tid.init)
+    {
+        plugin.persistentWorkerTid = spawn(&persistentQuerier,
+            plugin.bucket, plugin.state.connSettings.caBundleFile);
+    }
+
+    void validationDg()
+    {
+        import kameloso.plugins.common.delayawait : delay;
+        import kameloso.constants : MagicErrorStrings;
+        import lu.string : plurality;
+        import std.conv : to;
+        import std.datetime.systime : Clock, SysTime;
+        import core.time : Duration, days, hours, minutes, weeks;
+
+        enum retriesInCaseOfConnectionErrors = 5;
+
+        while (true)
         {
-            plugin.bucket[string.init] = QueryResponse.init;
-            plugin.bucket.remove(string.init);
-        }
+            if (plugin.state.settings.headless)
+            {
+                try
+                {
+                    cast(void)getValidation(plugin, plugin.state.bot.pass, Yes.async);
+                }
+                catch (TwitchQueryException e)
+                {
+                    if ((e.code == 2) && (e.error != MagicErrorStrings.sslLibraryNotFound))
+                    {
+                        static int retries;
+                        if (retries++ < retriesInCaseOfConnectionErrors) continue;
+                    }
 
-        if (plugin.twitchBotSettings.singleWorkerThread)
-        {
-            import std.concurrency : spawn;
+                    plugin.useAPIFeatures = false;
+                }
 
-            assert((plugin.persistentWorkerTid == Tid.init),
-                "Double-spawn of Twitch single worker thread");
-
-            plugin.persistentWorkerTid = spawn(&persistentQuerier,
-                plugin.bucket, plugin.state.connSettings.caBundleFile);
-        }
-
-        void validationDg()
-        {
-            import lu.string : plurality;
-            import std.conv : to;
-            import std.datetime.systime : Clock, SysTime;
-            import core.time : days, hours, weeks;
+                return;
+            }
 
             try
             {
@@ -1227,58 +1920,99 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                 }
                 */
 
-                immutable validationJSON = getValidation(plugin);
+                immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
                 plugin.userID = validationJSON["user_id"].str;
                 immutable expiresIn = validationJSON["expires_in"].integer;
-
-                /+
-                    The below can probably never happen, as we never get to
-                    connect if the key has expired.
-                 +/
-                /*if (expiresIn == 0L)
-                {
-                    import kameloso.messaging : quit;
-                    import std.typecons : Flag, No, Yes;
-
-                    // Expired.
-                    logger.error("Error: Your Twitch authorisation key has expired.");
-                    quit!(Yes.priority)(plugin.state, string.init, Yes.quiet);
-                    return;
-                }*/
-
                 immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
                 immutable now = Clock.currTime;
                 immutable delta = (expiresWhen - now);
                 immutable numDays = delta.total!"days";
 
-                if (delta > 1.weeks)
+                void warnOnWeekDg()
                 {
                     // More than a week away, just .info
-                    enum pattern = "Your Twitch authorisation key will expire " ~
+                    enum pattern = "Your Twitch authorisation token will expire " ~
                         "in <l>%d days</> on <l>%4d-%02d-%02d</>.";
                     logger.infof(pattern.expandTags(LogLevel.info), numDays,
                         expiresWhen.year, expiresWhen.month, expiresWhen.day);
                 }
-                else if (delta > 1.days)
+
+                void warnOnDaysDg()
                 {
                     // A week or less, more than a day; warning
-                    enum pattern = "Warning: Your Twitch authorisation key will expire " ~
+                    enum pattern = "Warning: Your Twitch authorisation token will expire " ~
                         "in <l>%d %s</> on <l>%4d-%02d-%02d %02d:%02d</>.";
                     logger.warningf(pattern.expandTags(LogLevel.warning),
                         numDays, numDays.plurality("day", "days"),
                         expiresWhen.year, expiresWhen.month, expiresWhen.day,
                         expiresWhen.hour, expiresWhen.minute);
                 }
-                else
+
+                void warnOnHoursDg()
                 {
                     // Less than a day; warning
                     immutable numHours = delta.total!"hours";
-                    enum pattern = "WARNING: Your Twitch authorisation key will expire " ~
+                    enum pattern = "WARNING: Your Twitch authorisation token will expire " ~
                         "in <l>%d %s</> at <l>%02d:%02d</>.";
                     logger.warningf(pattern.expandTags(LogLevel.warning),
                         numHours, numHours.plurality("hour", "hours"),
                         expiresWhen.hour, expiresWhen.minute);
                 }
+
+                void warnOnMinutesDg()
+                {
+                    // Less than an hour; warning
+                    immutable numHours = delta.total!"minutes";
+                    enum pattern = "WARNING: Your Twitch authorisation token will expire " ~
+                        "in <l>%d minutes</> at <l>%02d:%02d</>.";
+                    logger.warningf(pattern.expandTags(LogLevel.warning),
+                        numHours, expiresWhen.hour, expiresWhen.minute);
+                }
+
+                void quitOnExpiry()
+                {
+                    import kameloso.messaging : quit;
+
+                    // Key expired
+                    enum pattern = "Your Twitch authorisation token has expired. " ~
+                        "Run the program with <l>--set twitch.keygen</> to generate a new one.";
+                    logger.error(pattern.expandTags(LogLevel.error));
+                    quit(plugin.state, "Twitch authorisation token expired");
+                }
+
+                static immutable Duration[10] reminderPoints =
+                [
+                    14.days,
+                    7.days,
+                    3.days,
+                    1.days,
+                    12.hours,
+                    6.hours,
+                    1.hours,
+                    30.minutes,
+                    10.minutes,
+                    5.minutes,
+                ];
+
+                foreach (immutable reminderPoint; reminderPoints[])
+                {
+                    if (delta >= reminderPoint)
+                    {
+                        if (reminderPoint >= 1.weeks) delay(plugin, &warnOnWeekDg, delta);
+                        else if (reminderPoint >= 1.days) delay(plugin, &warnOnDaysDg, delta);
+                        else if (reminderPoint >= 1.hours) delay(plugin, &warnOnHoursDg, delta);
+                        else /*if (reminderPoint >= 1.minutes)*/ delay(plugin, &warnOnMinutesDg, delta);
+                    }
+                }
+
+                // Schedule the final warning, on expiry
+                delay(plugin, &quitOnExpiry, delta);
+
+                // Also announce once normally how much time is left
+                if (delta >= 1.weeks) warnOnWeekDg();
+                else if (delta >= 1.days) warnOnDaysDg();
+                else if (delta >= 1.hours) warnOnHoursDg();
+                else /*if (delta >= 1.minutes)*/ warnOnMinutesDg();
             }
             catch (TwitchQueryException e)
             {
@@ -1286,8 +2020,6 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
 
                 if (e.code == 2)
                 {
-                    import kameloso.constants : MagicErrorStrings;
-
                     enum wikiPattern = cast(string)MagicErrorStrings.visitWikiOneliner;
 
                     if (e.error == MagicErrorStrings.sslLibraryNotFound)
@@ -1306,6 +2038,9 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                     }
                     else
                     {
+                        static int retries;
+                        if (retries++ < retriesInCaseOfConnectionErrors) continue;
+
                         enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
                         logger.errorf(pattern.expandTags(LogLevel.error), e.msg, e.error, e.code);
                         logger.error(wikiPattern.expandTags(LogLevel.error));
@@ -1321,17 +2056,22 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                 //version(PrintStacktraces) logger.trace(e);
                 plugin.useAPIFeatures = false;
             }
-        }
 
-        Fiber validationFiber = new Fiber(&validationDg, BufferSize.fiberStack);
-        validationFiber.call();
+            return;
+        }
     }
+
+    Fiber validationFiber = new Fiber(&validationDg, BufferSize.fiberStack);
+    validationFiber.call();
 }
 
 
 // onCommandEcount
 /++
     `!ecount`; reporting how many times a Twitch emote has been seen.
+
+    See_Also:
+        [TwitchBotPlugin.ecount]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -1438,7 +2178,8 @@ void onCommandWatchtime(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     import core.thread : Fiber;
     import core.time : Duration, seconds;
 
-    if (!plugin.twitchBotSettings.watchtime) return;
+    if (!plugin.useAPIFeatures) return;
+    else if (!plugin.twitchBotSettings.watchtime) return;
 
     void watchtimeDg()
     {
@@ -1540,6 +2281,203 @@ void onCommandWatchtime(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 }
 
 
+// onCommandSetTitle
+/++
+    Changes the title of the current channel.
+
+    See_Also:
+        [kameloso.plugins.twitchbot.api.modifyChannel]
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("settitle")
+            .policy(PrefixPolicy.prefixed)
+            .description("Sets the channel title.")
+            .addSyntax("$command [title]")
+    )
+)
+void onCommandSetTitle(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+{
+    import lu.string : stripped;
+    import std.array : replace;
+
+    if (!plugin.useAPIFeatures) return;
+
+    immutable unescapedTitle = event.content.stripped;
+
+    if (!unescapedTitle.length)
+    {
+        import std.format : format;
+
+        enum pattern = "Usage: %s%s [title]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+        return;
+    }
+
+    immutable title = unescapedTitle.replace(`"`, `\"`);
+
+    void setTitleDg()
+    {
+        modifyChannel(plugin, event.channel, title, string.init);
+    }
+
+    Fiber setTitleFiber = new Fiber(&twitchTryCatchDg!setTitleDg, BufferSize.fiberStack);
+    setTitleFiber.call();
+}
+
+
+// onCommandSetGame
+/++
+    Changes the game of the current channel.
+
+    See_Also:
+        [kameloso.plugins.twitchbot.api.modifyChannel]
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("setgame")
+            .policy(PrefixPolicy.prefixed)
+            .description("Sets the channel game.")
+            .addSyntax("$command [game name]")
+    )
+)
+void onCommandSetGame(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+{
+    import lu.string : stripped;
+    import std.array : replace;
+    import std.string : isNumeric;
+    import std.uri : encodeComponent;
+
+    if (!plugin.useAPIFeatures) return;
+
+    immutable unescapedGameName = event.content.stripped;
+
+    if (!unescapedGameName.length)
+    {
+        import std.format : format;
+
+        enum pattern = "Usage: %s%s [game name]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+        return;
+    }
+
+    immutable specified = unescapedGameName.replace(`"`, `\"`);
+    string id;
+
+    if (specified.isNumeric)
+    {
+        id = specified;
+    }
+    else
+    {
+        immutable gameInfo = getTwitchGame(plugin, specified.encodeComponent);
+
+        if (!gameInfo.id.length)
+        {
+            enum message = "Could not find a game by that name.";
+            chan(plugin.state, event.channel, message);
+            return;
+        }
+
+        id = gameInfo.id;
+    }
+
+    void setGameDg()
+    {
+        modifyChannel(plugin, event.channel, string.init, id);
+    }
+
+    Fiber setGameFiber = new Fiber(&twitchTryCatchDg!setGameDg, BufferSize.fiberStack);
+    setGameFiber.call();
+}
+
+
+// onCommandCommercial
+/++
+    Starts a commercial in the current channel.
+
+    See_Also:
+        [kameloso.plugins.twitchbot.api.startCommercial]
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("commercial")
+            .policy(PrefixPolicy.prefixed)
+            .description("Starts a commercial in the current channel.")
+            .addSyntax("$command [commercial length; valid values are 30, 60, 90, 120, 150 and 180]")
+    )
+)
+void onCommandCommercial(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+{
+    import lu.string : stripped;
+    import std.algorithm.comparison : among;
+    import std.format : format;
+
+    immutable lengthString = event.content.stripped;
+
+    if (!lengthString.length)
+    {
+        enum pattern = "Usage: %s%s [commercial length; valid values are 30, 60, 90, 120, 150 and 180]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+        return;
+    }
+
+    const room = event.channel in plugin.rooms;
+
+    if (!room.broadcast.active)
+    {
+        enum pattern = "Broadcast start was never marked with %sstart.";
+        immutable message = pattern.format(plugin.state.settings.prefix);
+        chan(plugin.state, event.channel, message);
+        return;
+    }
+
+    if (!lengthString.among!("30", "60", "90", "120", "150", "180"))
+    {
+        enum message = "Commercial length must be one of 30, 60, 90, 120, 150 or 180.";
+        chan(plugin.state, event.channel, message);
+        return;
+    }
+
+    void commercialDg()
+    {
+        try
+        {
+            startCommercial(plugin, event.channel, lengthString);
+        }
+        catch (TwitchQueryException e)
+        {
+            if ((e.code == 400) && (e.error == "Bad Request"))
+            {
+                chan(plugin.state, event.channel, e.msg);
+            }
+            else
+            {
+                throw e;
+            }
+        }
+    }
+
+    Fiber commercialFiber = new Fiber(&twitchTryCatchDg!commercialDg, BufferSize.fiberStack);
+    commercialFiber.call();
+}
+
+
 // onCAP
 /++
     Start the captive key generation routine at the earliest possible moment,
@@ -1554,14 +2492,49 @@ void onCommandWatchtime(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 )
 void onCAP(TwitchBotPlugin plugin)
 {
-    import kameloso.plugins.twitchbot.keygen;
     import std.algorithm.searching : endsWith;
 
-    if (plugin.twitchBotSettings.keygen &&
-        (plugin.state.server.daemon == IRCServer.Daemon.unset) &&
+    if ((plugin.state.server.daemon == IRCServer.Daemon.unset) &&
         plugin.state.server.address.endsWith(".twitch.tv"))
     {
-        return plugin.generateKey();
+        if (/*plugin.twitchBotSettings.keygen ||*/
+            plugin.twitchBotSettings.superKeygen ||
+            plugin.twitchBotSettings.googleKeygen ||
+            plugin.twitchBotSettings.spotifyKeygen)
+        {
+            // Some keygen, reload to load secrets so existing ones are read
+            plugin.reload();
+        }
+
+        if (plugin.twitchBotSettings.keygen)
+        {
+            import kameloso.plugins.twitchbot.keygen : requestTwitchKey;
+            plugin.requestTwitchKey();
+        }
+
+        if (*plugin.state.abort) return;
+
+        if (plugin.twitchBotSettings.superKeygen)
+        {
+            import kameloso.plugins.twitchbot.keygen : requestTwitchSuperKey;
+            plugin.requestTwitchSuperKey();
+        }
+
+        if (*plugin.state.abort) return;
+
+        if (plugin.twitchBotSettings.googleKeygen)
+        {
+            import kameloso.plugins.twitchbot.google : requestGoogleKeys;
+            plugin.requestGoogleKeys();
+        }
+
+        if (*plugin.state.abort) return;
+
+        if (plugin.twitchBotSettings.spotifyKeygen)
+        {
+            import kameloso.plugins.twitchbot.spotify : requestSpotifyKeys;
+            plugin.requestSpotifyKeys();
+        }
     }
 }
 
@@ -1588,15 +2561,17 @@ void onMyInfo(TwitchBotPlugin plugin)
     {
         while (true)
         {
-            if (plugin.isEnabled)
+            immutable now = Clock.currTime;
+
+            if (plugin.isEnabled && plugin.useAPIFeatures)
             {
                 foreach (immutable channelName, room; plugin.rooms)
                 {
                     room.follows = getFollows(plugin, room.id);
+                    room.followsLastCached = now.toUnixTime;
                 }
             }
 
-            immutable now = Clock.currTime;
             delay(plugin, now.nextMidnight-now, Yes.yield);
         }
     }
@@ -1674,8 +2649,7 @@ void teardown(TwitchBotPlugin plugin)
     import kameloso.thread : ThreadMessage;
     import std.concurrency : Tid, send;
 
-    if (plugin.twitchBotSettings.singleWorkerThread &&
-        (plugin.persistentWorkerTid != Tid.init))
+    if (plugin.persistentWorkerTid != Tid.init)
     {
         // It may not have been started if we're aborting very early.
         plugin.persistentWorkerTid.send(ThreadMessage.teardown());
@@ -1690,9 +2664,6 @@ void teardown(TwitchBotPlugin plugin)
 
     if (plugin.twitchBotSettings.watchtime && plugin.viewerTimesByChannel.length)
     {
-        // Cull brief viewers at program exit.
-        enum cullBelowSeconds = 300;
-        cullBriefViewers(plugin.viewerTimesByChannel, cullBelowSeconds);
         saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
     }
 }
@@ -1784,6 +2755,7 @@ void initResources(TwitchBotPlugin plugin)
 
     JSONStorage ecountJSON;
     JSONStorage viewersJSON;
+    JSONStorage secretsJSON;
 
     try
     {
@@ -1794,7 +2766,12 @@ void initResources(TwitchBotPlugin plugin)
         import kameloso.plugins.common.misc : IRCPluginInitialisationException;
 
         version(PrintStacktraces) logger.trace(e);
-        throw new IRCPluginInitialisationException(plugin.ecountFile.baseName ~ " may be malformed.");
+        throw new IRCPluginInitialisationException(
+            "Emote counter file is malformed",
+            plugin.name,
+            plugin.ecountFile,
+            __FILE__,
+            __LINE__);
     }
 
     try
@@ -1806,13 +2783,36 @@ void initResources(TwitchBotPlugin plugin)
         import kameloso.plugins.common.misc : IRCPluginInitialisationException;
 
         version(PrintStacktraces) logger.trace(e);
-        throw new IRCPluginInitialisationException(plugin.viewersFile.baseName ~ " may be malformed.");
+        throw new IRCPluginInitialisationException(
+            "Viewers file is malformed",
+            plugin.name,
+            plugin.viewersFile,
+            __FILE__,
+            __LINE__);
+    }
+
+    try
+    {
+        secretsJSON.load(plugin.secretsFile);
+    }
+    catch (JSONException e)
+    {
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+
+        version(PrintStacktraces) logger.trace(e);
+        throw new IRCPluginInitialisationException(
+            "Secrets file is malformed",
+            plugin.name,
+            plugin.secretsFile,
+            __FILE__,
+            __LINE__);
     }
 
     // Let other Exceptions pass.
 
     ecountJSON.save(plugin.ecountFile);
     viewersJSON.save(plugin.viewersFile);
+    secretsJSON.save(plugin.secretsFile);
 }
 
 
@@ -1836,6 +2836,30 @@ void saveResourceToDisk(const long[string][string] aa, const string filename)
 }
 
 
+// saveSecretsToDisk
+/++
+    FIXME
+ +/
+package void saveSecretsToDisk(const Credentials[string] aa, const string filename)
+{
+    import std.json : JSONValue;
+    import std.stdio : File, writeln;
+
+    JSONValue json;
+    json = null;
+    json.object = null;
+
+    foreach (immutable channelName, creds; aa)
+    {
+        json[channelName] = null;
+        json[channelName].object = null;
+        json[channelName] = creds.toJSON();
+    }
+
+    File(filename, "w").writeln(json.toPrettyString);
+}
+
+
 // reload
 /++
     Reloads the plugin, loading emote counters from disk.
@@ -1855,6 +2879,17 @@ void reload(TwitchBotPlugin plugin)
     plugin.viewerTimesByChannel.clear();
     plugin.viewerTimesByChannel.populateFromJSON(viewersJSON);
     plugin.viewerTimesByChannel = plugin.viewerTimesByChannel.rehash();
+
+    JSONStorage secretsJSON;
+    secretsJSON.load(plugin.secretsFile);
+    plugin.secretsByChannel.clear();
+
+    foreach (immutable channelName, credsJSON; secretsJSON.storage.object)
+    {
+        plugin.secretsByChannel[channelName] = Credentials.fromJSON(credsJSON);
+    }
+
+    plugin.secretsByChannel = plugin.secretsByChannel.rehash();
 }
 
 
@@ -1875,6 +2910,7 @@ final class TwitchBotPlugin : IRCPlugin
 {
 private:
     import kameloso.terminal : TerminalToken;
+    import lu.container : CircularBuffer;
     import std.concurrency : Tid;
     import core.time : hours, seconds;
 
@@ -1902,6 +2938,9 @@ package:
 
             /// How many users visited the channel during the last stream.
             size_t numViewersLastStream;
+
+            /// Hashmap of active viewers (who have shown activity).
+            bool[string] activeViewers;
         }
 
         /// Constructor taking a string (channel) name.
@@ -1929,6 +2968,27 @@ package:
 
         /// A JSON list of the followers of the channel.
         JSONValue[string] follows;
+
+        /// Unix timestamp of when [follows] was last cached.
+        long followsLastCached;
+
+        /// How many messages to keep in memory, to allow for nuking.
+        enum messageMemory = 64;
+
+        /// The last n messages sent in the channel, used by `nuke`.
+        CircularBuffer!(IRCEvent, No.dynamic, messageMemory) lastNMessages;
+
+        /++
+            The minimum amount of time in seconds that must have passed between
+            two song requests by one person.
+
+            Users of class [dialect.defs.IRCUser.Class.operator|operator] or
+            higher are exempt.
+         +/
+        enum minimumTimeBetweenSongRequests = 60;
+
+        /// Song request history; UNIX timestamps keyed by nickname.
+        long[string] songrequestHistory;
     }
 
     /// All Twitch Bot plugin settings.
@@ -2004,6 +3064,9 @@ package:
     /// Associative array of viewer times; seconds keyed by nickname keyed by channel.
     long[string][string] viewerTimesByChannel;
 
+    /// API keys and tokens, keyed by channel.
+    Credentials[string] secretsByChannel;
+
     /// The thread ID of the persistent worker thread.
     Tid persistentWorkerTid;
 
@@ -2011,13 +3074,16 @@ package:
     shared static Tid mainThread;
 
     /// Associative array of responses from async HTTP queries.
-    shared QueryResponse[string] bucket;
+    shared QueryResponse[int] bucket;
 
     /// File to save emote counters to.
     @Resource ecountFile = "twitch-ecount.json";
 
     /// File to save viewer times to.
     @Resource viewersFile = "twitch-viewers.json";
+
+    /// File to save API keys and tokens to.
+    @Resource secretsFile = "twitch-secrets.json";
 
     /// Emote counters associative array; counter longs keyed by emote ID string keyed by channel.
     long[string][string] ecount;

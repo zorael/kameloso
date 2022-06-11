@@ -675,7 +675,12 @@ void initAccountResources(PersistenceService service)
         import std.path : baseName;
 
         version(PrintStacktraces) logger.trace(e);
-        throw new IRCPluginInitialisationException(service.userFile.baseName ~ " may be malformed.");
+        throw new IRCPluginInitialisationException(
+            "Users file is malformed",
+            service.name,
+            service.userFile,
+            __FILE__,
+            __LINE__);
     }
 
     // Let other Exceptions pass.
@@ -752,7 +757,12 @@ void initAccountResources(PersistenceService service)
                 import std.path : baseName;
 
                 version(PrintStacktraces) logger.trace(e);
-                throw new IRCPluginInitialisationException(service.userFile.baseName ~ " may be malformed.");
+                throw new IRCPluginInitialisationException(
+                    "Users file is malformed",
+                    service.name,
+                    service.userFile,
+                    __FILE__,
+                    __LINE__);
             }
         }
     }
@@ -791,7 +801,12 @@ void initHostmaskResources(PersistenceService service)
         import std.path : baseName;
 
         version(PrintStacktraces) logger.trace(e);
-        throw new IRCPluginInitialisationException(service.hostmasksFile.baseName ~ " may be malformed.");
+        throw new IRCPluginInitialisationException(
+            "Hostmasks file is malformed",
+            service.name,
+            service.hostmasksFile,
+            __FILE__,
+            __LINE__);
     }
 
     enum examplePlaceholderKey1 = "<nickname1>!<ident>@<address>";

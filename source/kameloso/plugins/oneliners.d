@@ -18,7 +18,8 @@ private:
 
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
-import kameloso.common : logger;
+import kameloso.common : expandTags, logger;
+import kameloso.logger : LogLevel;
 import kameloso.messaging;
 import dialect.defs;
 
@@ -170,6 +171,7 @@ public:
         json["trigger"] = JSONValue(this.trigger);
         json["type"] = JSONValue(cast(int)this.type);
         json["responses"] = JSONValue(this.responses);
+
         return json;
     }
 
@@ -183,7 +185,7 @@ public:
         Returns:
             A new [Oneliner] with values loaded from the passed JSON.
      +/
-    static Oneliner fromJSON(const JSONValue json)
+    static auto fromJSON(const JSONValue json)
     {
         Oneliner oneliner;
         oneliner.trigger = json["trigger"].str;
@@ -467,8 +469,13 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
             }
 
             immutable message = (pos == appendToEndMagicNumber) ?
+<<<<<<< HEAD
                 "Oneliner line added!" :
                 "Oneliner line inserted!";
+=======
+                "Oneliner line added." :
+                "Oneliner line inserted.";
+>>>>>>> master
             chan(plugin.state, event.channel, message);
             saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
         }
@@ -694,7 +701,17 @@ void reload(OnelinersPlugin plugin)
     {
         foreach (immutable trigger, const onelinerJSON; channelOnelinersJSON.object)
         {
-            plugin.onelinersByChannel[channelName][trigger] = Oneliner.fromJSON(onelinerJSON);
+            import std.json : JSONException;
+
+            try
+            {
+                plugin.onelinersByChannel[channelName][trigger] = Oneliner.fromJSON(onelinerJSON);
+            }
+            catch (JSONException e)
+            {
+                enum pattern = "Failed to load oneliner \"<l>%s</>\"; <l>%s</> is outdated or corrupt.";
+                logger.errorf(pattern.expandTags(LogLevel.error), trigger, plugin.onelinerFile);
+            }
         }
     }
 
@@ -787,7 +804,12 @@ void initResources(OnelinersPlugin plugin)
         import kameloso.plugins.common.misc : IRCPluginInitialisationException;
 
         version(PrintStacktraces) logger.trace(e);
-        throw new IRCPluginInitialisationException(plugin.onelinerFile.baseName ~ " may be malformed.");
+        throw new IRCPluginInitialisationException(
+            "Oneliner file is malformed",
+            plugin.name,
+            plugin.onelinerFile,
+            __FILE__,
+            __LINE__);
     }
 
     // Let other Exceptions pass.

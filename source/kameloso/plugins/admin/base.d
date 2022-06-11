@@ -30,6 +30,7 @@ import kameloso.messaging;
 import dialect.defs;
 import std.concurrency : send;
 import std.typecons : Flag, No, Yes;
+import core.time : Duration;
 
 
 version(OmniscientAdmin)
@@ -958,7 +959,8 @@ void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 
     try
     {
-        immutable delay = delaystring.to!uint;
+        import kameloso.common : abbreviatedDuration;
+        immutable delay = abbreviatedDuration(delaystring);
         return cycle(plugin, channelName, delay, slice);
     }
     catch (ConvException e)
@@ -980,12 +982,12 @@ void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
     Params:
         plugin = The current [AdminPlugin].
         channelName = The name of the channel to cycle.
-        delaySecs = Number of second to delay rejoining.
+        delay_ = [core.time.Duration|Duration] to delay rejoining.
         key = The key to use when rejoining the channel.
  +/
 void cycle(AdminPlugin plugin,
     const string channelName,
-    const uint delaySecs = 0,
+    const Duration delay_ = Duration.zero,
     const string key = string.init)
 {
     import kameloso.plugins.common.delayawait : await, delay;
@@ -1009,14 +1011,14 @@ void cycle(AdminPlugin plugin,
                     join(plugin.state, channelName, key);
                 }
 
-                if (!delaySecs)
+                if (delay_ == Duration.zero)
                 {
                     return joinDg();
                 }
                 else
                 {
                     import core.time : seconds;
-                    return delay(plugin, &joinDg, delaySecs.seconds);
+                    return delay(plugin, &joinDg, delay_);
                 }
             }
 

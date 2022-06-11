@@ -2156,3 +2156,511 @@ static immutable string[134] errnoStrings =
     132 : "ERFKILL",
     133 : "EHWPOISON",
 ];
+
+
+// pluginFileBaseName
+/++
+    Returns a meaningful basename of a plugin filename.
+
+    This is preferred over use of [std.path.baseName] because some plugins are
+    nested in their own directories. The basename of `plugins/twitch/base.d` is
+    `base.d`, much like that of `plugins/printer/base.d` is.
+
+    With this we get `twitch/base.d` and `printer/base.d` instead, while still
+    getting `oneliners.d`.
+
+    Params:
+        filename = Full path to a plugin file.
+
+    Returns:
+        A meaningful basename of the passed filename.
+ +/
+auto pluginFileBaseName(const string filename)
+in (filename.length, "Empty plugin filename passed to `pluginFileBaseName`")
+{
+    return pluginFilenameSlicerImpl(filename, No.getPluginName);
+}
+
+///
+unittest
+{
+    {
+        version(Posix) enum filename = "plugins/oneliners.d";
+        else /*version(Windows)*/ enum filename = "plugins\\oneliners.d";
+        immutable expected = "oneliners.d";
+        immutable actual = pluginFileBaseName(filename);
+        assert((expected == actual), actual);
+    }
+    {
+        version(Posix)
+        {
+            enum filename = "plugins/twitch/base.d";
+            immutable expected = "twitch/base.d";
+        }
+        else /*version(Windows)*/
+        {
+            enum filename = "plugins\\twitch\\base.d";
+            immutable expected = "twitch\\base.d";
+        }
+
+        immutable actual = pluginFileBaseName(filename);
+        assert((expected == actual), actual);
+    }
+    {
+        version(Posix) enum filename = "plugins/counters.d";
+        else /*version(Windows)*/ enum filename = "plugins\\counters.d";
+        immutable expected = "counters.d";
+        immutable actual = pluginFileBaseName(filename);
+        assert((expected == actual), actual);
+    }
+}
+
+
+// pluginNameOfFilename
+/++
+    Returns the name of a plugin based on its filename.
+
+    This is preferred over slicing [std.path.baseName] because some plugins are
+    nested in their own directories. The basename of `plugins/twitch/base.d` is
+    `base.d`, much like that of `plugins/printer/base.d` is.
+
+    With this we get `twitch` and `printer` instead, while still getting `oneliners`.
+
+    Params:
+        filename = Full path to a plugin file.
+
+    Returns:
+        The name of the plugin, based on its filename.
+ +/
+auto pluginNameOfFilename(const string filename)
+in (filename.length, "Empty plugin filename passed to `pluginNameOfFilename`")
+{
+    return pluginFilenameSlicerImpl(filename, Yes.getPluginName);
+}
+
+///
+unittest
+{
+    {
+        version(Posix) enum filename = "plugins/oneliners.d";
+        else /*version(Windows)*/ enum filename = "plugins\\oneliners.d";
+        immutable expected = "oneliners";
+        immutable actual = pluginNameOfFilename(filename);
+        assert((expected == actual), actual);
+    }
+    {
+        version(Posix) enum filename = "plugins/twitch/base.d";
+        else /*version(Windows)*/ enum filename = "plugins\\twitch\\base.d";
+        immutable expected = "twitch";
+        immutable actual = pluginNameOfFilename(filename);
+        assert((expected == actual), actual);
+    }
+    {
+        version(Posix) enum filename = "plugins/counters.d";
+        else /*version(Windows)*/ enum filename = "plugins\\counters.d";
+        immutable expected = "counters";
+        immutable actual = pluginNameOfFilename(filename);
+        assert((expected == actual), actual);
+    }
+}
+
+
+// pluginFilenameSlicerImpl
+/++
+    Implementation function, code shared between [pluginFileBaseName] and
+    [pluginNameOfFilename].
+
+    Params:
+        filename = Full path to a plugin file.
+        getPluginName = Whether we want the plugin name or the plugin file "basename".
+
+    Returns:
+        The name of the plugin or its "basename", based on its filename and the
+        `getPluginName` parameter.
+ +/
+private auto pluginFilenameSlicerImpl(const string filename, const Flag!"getPluginName" getPluginName)
+in (filename.length, "Empty plugin filename passed to `pluginFilenameSlicerImpl`")
+{
+    import std.path : dirSeparator;
+    import std.string : indexOf;
+
+    string slice = filename;  // mutable
+    size_t pos = slice.indexOf(dirSeparator);
+
+    while (pos != -1)
+    {
+        if (slice[pos+1..$] == "base.d")
+        {
+            return getPluginName ? slice[0..pos] : slice;
+        }
+        slice = slice[pos+1..$];
+        pos = slice.indexOf(dirSeparator);
+    }
+
+    return getPluginName ? slice[0..$-2] : slice;
+}
+
+
+// splitWithQuotes
+/++
+    Splits a string into an array of strings by whitespace, but honours quotes.
+
+    Intended to be used with ASCII strings; may or may not work with more
+    elaborate UTF-8 strings.
+
+    TODO: Replace with [lu.string.splitWithQuotes] after its next release.
+
+    Example:
+    ---
+    string s = `title "this is my title" author "john doe"`;
+    immutable splitUp = splitWithQuotes(s);
+    assert(splitUp == [ "title", "this is my title", "author", "john doe" ]);
+    ---
+
+    Params:
+        line = Input string.
+
+    Returns:
+        A `string[]` composed of the input string split up into substrings,
+        deliminated by whitespace. Quoted sections are treated as one substring.
+ +/
+auto splitWithQuotes(const string line)
+{
+    import std.array : Appender;
+    import std.string : representation;
+
+    if (!line.length) return null;
+
+    Appender!(string[]) sink;
+    sink.reserve(8);
+
+    size_t start;
+    bool betweenQuotes;
+    bool escaping;
+    bool escapedAQuote;
+    bool escapedABackslash;
+
+    string replaceEscaped(const string line)
+    {
+        import std.array : replace;
+
+        string slice = line;  // mutable
+        if (escapedABackslash) slice = slice.replace(`\\`, "\1\1");
+        if (escapedAQuote) slice = slice.replace(`\"`, `"`);
+        if (escapedABackslash) slice = slice.replace("\1\1", `\`);
+        return slice;
+    }
+
+    foreach (immutable i, immutable c; line.representation)
+    {
+        if (escaping)
+        {
+            if (c == '\\')
+            {
+                escapedABackslash = true;
+            }
+            else if (c == '"')
+            {
+                escapedAQuote = true;
+            }
+
+            escaping = false;
+        }
+        else if (c == ' ')
+        {
+            if (betweenQuotes)
+            {
+                // do nothing
+            }
+            else if (i == start)
+            {
+                ++start;
+            }
+            else
+            {
+                // commit
+                sink.put(line[start..i]);
+                start = i+1;
+            }
+        }
+        else if (c == '\\')
+        {
+            escaping = true;
+        }
+        else if (c == '"')
+        {
+            if (betweenQuotes)
+            {
+                if (escapedAQuote || escapedABackslash)
+                {
+                    sink.put(replaceEscaped(line[start+1..i]));
+                    escapedAQuote = false;
+                    escapedABackslash = false;
+                }
+                else if (i > start+1)
+                {
+                    sink.put(line[start+1..i]);
+                }
+
+                betweenQuotes = false;
+                start = i+1;
+            }
+            else if (i > start+1)
+            {
+                sink.put(line[start+1..i]);
+                betweenQuotes = true;
+                start = i+1;
+            }
+            else
+            {
+                betweenQuotes = true;
+            }
+        }
+    }
+
+    if (line.length > start+1)
+    {
+        if (betweenQuotes)
+        {
+            if (escapedAQuote || escapedABackslash)
+            {
+                sink.put(replaceEscaped(line[start+1..$]));
+            }
+            else
+            {
+                sink.put(line[start+1..$]);
+            }
+        }
+        else
+        {
+            sink.put(line[start..$]);
+        }
+    }
+
+    return sink.data;
+}
+
+///
+unittest
+{
+    import std.conv : text;
+
+    {
+        enum input = `title "this is my title" author "john doe"`;
+        immutable splitUp = splitWithQuotes(input);
+        immutable expected =
+        [
+            "title",
+            "this is my title",
+            "author",
+            "john doe"
+        ];
+        assert(splitUp == expected, splitUp.text);
+    }
+    {
+        enum input = `string without quotes`;
+        immutable splitUp = splitWithQuotes(input);
+        immutable expected =
+        [
+            "string",
+            "without",
+            "quotes",
+        ];
+        assert(splitUp == expected, splitUp.text);
+    }
+    {
+        enum input = string.init;
+        immutable splitUp = splitWithQuotes(input);
+        immutable expected = (string[]).init;
+        assert(splitUp == expected, splitUp.text);
+    }
+    {
+        enum input = `title "this is \"my\" title" author "john\\" doe`;
+        immutable splitUp = splitWithQuotes(input);
+        immutable expected =
+        [
+            "title",
+            `this is "my" title`,
+            "author",
+            `john\`,
+            "doe"
+        ];
+        assert(splitUp == expected, splitUp.text);
+    }
+    {
+        enum input = `title "this is \"my\" title" author "john\\\" doe`;
+        immutable splitUp = splitWithQuotes(input);
+        immutable expected =
+        [
+            "title",
+            `this is "my" title`,
+            "author",
+            `john\" doe`
+        ];
+        assert(splitUp == expected, splitUp.text);
+    }
+    {
+        enum input = `this has "unbalanced quotes`;
+        immutable splitUp = splitWithQuotes(input);
+        immutable expected =
+        [
+            "this",
+            "has",
+            "unbalanced quotes"
+        ];
+        assert(splitUp == expected, splitUp.text);
+    }
+    {
+        enum input = `""`;
+        immutable splitUp = splitWithQuotes(input);
+        immutable expected = (string[]).init;
+        assert(splitUp == expected, splitUp.text);
+    }
+    {
+        enum input = `"`;
+        immutable splitUp = splitWithQuotes(input);
+        immutable expected = (string[]).init;
+        assert(splitUp == expected, splitUp.text);
+    }
+    {
+        enum input = `"""""""""""`;
+        immutable splitUp = splitWithQuotes(input);
+        immutable expected = (string[]).init;
+        assert(splitUp == expected, splitUp.text);
+    }
+}
+
+
+// abbreviatedDuration
+/++
+    Constructs a [core.time.Duration|Duration] from a string, assumed to be in a
+    `*d*h*m*s` pattern.
+
+    Params:
+        line = Abbreviated string line.
+
+    Returns:
+        A [core.time.Duration|Duration] as described in the input string.
+ +/
+auto abbreviatedDuration(const string line)
+{
+    import lu.string : contains, nom;
+    import std.conv : to;
+    import core.time : days, hours, minutes, seconds;
+
+    static int getAbbreviatedValue(ref string slice, const char c)
+    {
+        if (slice.contains(c))
+        {
+            immutable valueString = slice.nom(c);
+            immutable value = valueString.length ? valueString.to!int : 0;
+            if (value < 0) throw new Exception("Cannot have a negative value mid-string");
+            return value;
+        }
+        return 0;
+    }
+
+    string slice = line; // mutable
+    int sign = 1;
+
+    if (slice.length && (slice[0] == '-'))
+    {
+        sign = -1;
+        slice = slice[1..$];
+    }
+
+    immutable numDays = getAbbreviatedValue(slice, 'd');
+    immutable numHours = getAbbreviatedValue(slice, 'h');
+    immutable numMinutes = getAbbreviatedValue(slice, 'm');
+    int numSeconds;
+
+    if (slice.length)
+    {
+        immutable valueString = slice.nom!(Yes.inherit)('s');
+        if (!valueString.length) throw new Exception("Invalid duration pattern");
+        numSeconds = valueString.length ? valueString.to!int : 0;
+    }
+
+    if ((numDays < 0) || (numHours < 0) || (numMinutes < 0) || (numSeconds < 0))
+    {
+        throw new Exception("Time values must not be individually negative");
+    }
+
+    return sign * (numDays.days + numHours.hours + numMinutes.minutes + numSeconds.seconds);
+}
+
+///
+unittest
+{
+    import std.conv : text;
+    import std.exception : assertThrown;
+    import core.time : days, hours, minutes, seconds;
+
+    {
+        enum line = "30";
+        immutable actual = abbreviatedDuration(line);
+        immutable expected = 30.seconds;
+        assert((actual == expected), actual.text);
+    }
+    {
+        enum line = "30s";
+        immutable actual = abbreviatedDuration(line);
+        immutable expected = 30.seconds;
+        assert((actual == expected), actual.text);
+    }
+    {
+        enum line = "1h30s";
+        immutable actual = abbreviatedDuration(line);
+        immutable expected = 1.hours + 30.seconds;
+        assert((actual == expected), actual.text);
+    }
+    {
+        enum line = "5h";
+        immutable actual = abbreviatedDuration(line);
+        immutable expected = 5.hours;
+        assert((actual == expected), actual.text);
+    }
+    {
+        enum line = "1d12h39m40s";
+        immutable actual = abbreviatedDuration(line);
+        immutable expected = 1.days + 12.hours + 39.minutes + 40.seconds;
+        assert((actual == expected), actual.text);
+    }
+    {
+        enum line = "1d4s";
+        immutable actual = abbreviatedDuration(line);
+        immutable expected = 1.days + 4.seconds;
+        assert((actual == expected), actual.text);
+    }
+    {
+        enum line = "30s";
+        immutable actual = abbreviatedDuration(line);
+        immutable expected = 30.seconds;
+        assert((actual == expected), actual.text);
+    }
+    {
+        enum line = "-30s";
+        immutable actual = abbreviatedDuration(line);
+        immutable expected = (-30).seconds;
+        assert((actual == expected), actual.text);
+    }
+    {
+        import core.time : Duration;
+        enum line = string.init;
+        immutable actual = abbreviatedDuration(line);
+        immutable expected = Duration.zero;
+        assert((actual == expected), actual.text);
+    }
+    {
+        enum line = "s";
+        assertThrown(abbreviatedDuration(line));
+    }
+    {
+        enum line = "1d1h1m1z";
+        assertThrown(abbreviatedDuration(line));
+    }
+    {
+        enum line = "2h-30m";
+        assertThrown(abbreviatedDuration(line));
+    }
+}

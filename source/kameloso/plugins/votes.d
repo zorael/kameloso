@@ -17,9 +17,11 @@ private:
 
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
+import kameloso.common : expandTags, logger;
 import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
+import core.time : Duration;
 
 
 /++
@@ -36,7 +38,7 @@ import std.typecons : Flag, No, Yes;
 /++
     Instigates a vote or stops an ongoing one.
 
-    If starting one a duration and two or more voting options have to be passed.
+    If starting one a duration and two or more voting choices have to be passed.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -47,7 +49,7 @@ import std.typecons : Flag, No, Yes;
             .word("poll")
             .policy(PrefixPolicy.prefixed)
             .description(`Starts or stops a vote. Pass "abort" to abort, or "end" to end early.`)
-            .addSyntax("$command [seconds] [choice1] [choice2] ...")
+            .addSyntax("$command [duration] [choice1] [choice2] ...")
     )
     .addCommand(
         IRCEventHandler.Command()
@@ -56,62 +58,56 @@ import std.typecons : Flag, No, Yes;
             .hidden(true)
     )
 )
-void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandVote(VotesPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : contains, nom;
     import std.algorithm.iteration : splitter;
     import std.algorithm.searching : count;
-    import std.conv : ConvException, to;
-    import std.typecons : Flag, No, Yes;
-    import std.uni : toLower;
-    import core.thread : Fiber;
+    import std.conv : ConvException;
 
-    if (event.content.length)
-    {
-        switch (event.content)
-        {
-        case "abort":
-        case "stop":
-            const currentVoteInstance = event.channel in plugin.channelVoteInstances;
-
-            if (currentVoteInstance)
-            {
-                plugin.channelVoteInstances.remove(event.channel);
-                chan(plugin.state, event.channel, "Vote aborted.");
-            }
-            else
-            {
-                chan(plugin.state, event.channel, "There is no ongoing vote.");
-            }
-            return;
-
-        case "end":
-            auto currentVoteInstance = event.channel in plugin.channelVoteInstances;
-
-            if (currentVoteInstance)
-            {
-                // Signal that the vote should end early by giving the vote instance
-                // a value of -1. Catch it later in the vote Fiber delegate.
-                *currentVoteInstance = -1;
-            }
-            else
-            {
-                chan(plugin.state, event.channel, "There is no ongoing vote.");
-            }
-            return;
-
-        default:
-            break;
-        }
-    }
-    else
+    if (!event.content.length)
     {
         import std.format : format;
 
-        enum pattern = "Usage: %s%s [seconds] [choice1] [choice2] ...";
+        enum pattern = "Usage: %s%s [duration] [choice1] [choice2] ...";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
         chan(plugin.state, event.channel, message);
         return;
+    }
+
+    switch (event.content)
+    {
+    case "abort":
+    case "stop":
+        const currentVoteInstance = event.channel in plugin.channelVoteInstances;
+
+        if (currentVoteInstance)
+        {
+            plugin.channelVoteInstances.remove(event.channel);
+            chan(plugin.state, event.channel, "Vote aborted.");
+        }
+        else
+        {
+            chan(plugin.state, event.channel, "There is no ongoing vote.");
+        }
+        return;
+
+    case "end":
+        auto currentVoteInstance = event.channel in plugin.channelVoteInstances;
+
+        if (currentVoteInstance)
+        {
+            // Signal that the vote should end early by giving the vote instance
+            // a value of -1. Catch it later in the vote Fiber delegate.
+            *currentVoteInstance = VotesPlugin.endVoteEarlyMagicNumber;
+        }
+        else
+        {
+            chan(plugin.state, event.channel, "There is no ongoing vote.");
+        }
+        return;
+
+    default:
+        break;
     }
 
     if (event.channel in plugin.channelVoteInstances)
@@ -122,35 +118,39 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
 
     if (event.content.count(' ') < 2)
     {
-        chan(plugin.state, event.channel, "Need one duration and at least two options.");
+        chan(plugin.state, event.channel, "Need one duration and at least two choices.");
         return;
     }
 
-    long dur;
+    Duration dur;
     string slice = event.content;
 
     try
     {
-        dur = slice.nom!(Yes.decode)(' ').to!long;
+        import kameloso.common : abbreviatedDuration;
+        import lu.string : nom;
+        dur = abbreviatedDuration(slice.nom!(Yes.decode)(' '));
     }
     catch (ConvException e)
     {
         chan(plugin.state, event.channel, "Duration must be a positive number.");
-        //version(PrintStacktraces) logger.trace(e.info);
         return;
     }
-
-    if (dur <= 0)
+    catch (Exception e)
     {
-        chan(plugin.state, event.channel, "Duration must be a positive number.");
+        chan(plugin.state, event.channel, e.msg);
+        version(PrintStacktraces) logger.trace(e.info);
         return;
     }
 
-    /// Available vote options and their vote counts.
-    uint[string] voteChoices;
+    if (dur <= Duration.zero)
+    {
+        chan(plugin.state, event.channel, "Duration must not be negative.");
+        return;
+    }
 
-    /// Which users have already voted.
-    bool[string] votedUsers;
+    /// Available vote choices and their vote counts.
+    uint[string] voteChoices;
 
     /// What the choices were originally named before lowercasing.
     string[string] origChoiceNames;
@@ -158,6 +158,7 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
     foreach (immutable rawChoice; slice.splitter(' '))
     {
         import lu.string : strippedRight;
+        import std.uni : toLower;
 
         // Strip any trailing commas
         immutable choice = rawChoice.strippedRight(',');
@@ -174,11 +175,40 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
         return;
     }
 
+    return voteImpl(plugin, event, dur, voteChoices, origChoiceNames);
+}
+
+
+// voteImpl
+/++
+    Implementation function for generating a vote Fiber.
+
+    Params:
+        plugin = The current [VotesPlugin].
+        event = The triggering [dialect.defs.IRCEvent|IRCEvent].
+        dur = Vote/poll [core.time.Duration|Duration].
+        voteChoices = Associative array of vote tally by vote choice string key.
+        origChoiceNames = Original names of the keys in `voteChoices` before
+            [std.uni.toLower|toLower] was called on them.
+ +/
+void voteImpl(
+    VotesPlugin plugin,
+    const /*ref*/ IRCEvent event,
+    const Duration dur,
+    /*const*/ uint[string] voteChoices,
+    const string[string] origChoiceNames)
+{
+    import kameloso.plugins.common.delayawait : await, delay;
+    import kameloso.common : timeSince;
+    import kameloso.constants : BufferSize;
     import kameloso.thread : CarryingFiber;
     import std.algorithm.sorting : sort;
-    import std.array : array;
     import std.format : format;
     import std.random : uniform;
+    import core.thread : Fiber;
+
+    /// Which users have already voted.
+    bool[string] votedUsers;
 
     /// Unique vote instance identifier
     immutable id = uniform(1, 10_000);
@@ -186,6 +216,7 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
     void reportResults()
     {
         import std.algorithm.iteration : sum;
+        import std.array : array;
 
         immutable total = cast(double)voteChoices.byValue.sum;
 
@@ -239,17 +270,15 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
     {
         import kameloso.plugins.common.delayawait : unawait;
 
-        if (plugin.state.server.daemon != IRCServer.Daemon.twitch)
-        {
-            unawait(plugin, nonTwitchVoteEventTypes[]);
-        }
-
+        unawait(plugin, nonTwitchVoteEventTypes[]);
         unawait(plugin, IRCEvent.Type.CHAN);
         plugin.channelVoteInstances.remove(event.channel);
     }
 
     void dg()
     {
+        scope(exit) cleanup();
+
         while (true)
         {
             const currentVoteInstance = event.channel in plugin.channelVoteInstances;
@@ -258,11 +287,10 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
             {
                 return;  // Aborted
             }
-            else if (*currentVoteInstance == -1)
+            else if (*currentVoteInstance == VotesPlugin.endVoteEarlyMagicNumber)
             {
                 // Magic number, end early
                 reportResults();
-                cleanup();
                 return;
             }
             else if (*currentVoteInstance != id)
@@ -277,7 +305,6 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
             {
                 // Invoked by timer, not by event
                 reportResults();
-                cleanup();
                 return;  // End Fiber
             }
 
@@ -295,9 +322,12 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
                 break;
 
             case CHAN:
+                import lu.string : contains, stripped;
+                import std.uni : toLower;
+
                 if (thisFiber.payload.channel != event.channel) break;
 
-                immutable vote = thisFiber.payload.content;
+                immutable vote = thisFiber.payload.content.stripped;
                 immutable nickname = thisFiber.payload.sender.nickname;
 
                 if (!vote.length || vote.contains!(Yes.decode)(' '))
@@ -323,17 +353,13 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
                 break;
 
             default:
-                throw new Exception("Unexpected IRCEvent type seen in vote delegate");
+                assert(0, "Unexpected IRCEvent type seen in vote delegate");
             }
 
             // Yield and await a new event
             Fiber.yield();
         }
     }
-
-    import kameloso.plugins.common.delayawait : await, delay;
-    import kameloso.constants : BufferSize;
-    import core.time : seconds;
 
     Fiber fiber = new CarryingFiber!IRCEvent(&dg, BufferSize.fiberStack);
 
@@ -343,7 +369,7 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
     }
 
     await(plugin, fiber, IRCEvent.Type.CHAN);
-    delay(plugin, fiber, dur.seconds);
+    delay(plugin, fiber, dur);
     plugin.channelVoteInstances[event.channel] = id;
 
     const sortedChoices = voteChoices
@@ -351,63 +377,117 @@ void onCommandVote(VotesPlugin plugin, const /*ref*/ IRCEvent event)
         .sort
         .release;
 
-    void dgReminderImpl(const long time)
+    generateVoteReminders(plugin, event, id, dur, sortedChoices);
+
+    immutable timeInWords = dur.timeSince!(7, 1);
+    enum pattern = "<b>Voting commenced!<b> Please place your vote for one of: " ~
+        "%-(<b>%s<b>, %)<b> (%s)";  // extra <b> needed outside of %-(%s, %)
+    immutable message = pattern.format(sortedChoices, timeInWords);
+    chan(plugin.state, event.channel, message);
+}
+
+
+// generateVoteReminders
+/++
+    Generates some vote reminder Fibers.
+
+    Params:
+        plugin = The current [VotesPlugin].
+        event = The triggering [dialect.defs.IRCEvent|IRCEvent].
+        id = Unique vote identifier, used as key in [VotesPlugin.channelVoteInstances].
+        dur = Vote/poll [core.time.Duration|Duration].
+        sortedChoices = A sorted `string[]` list of all vote choices.
+ +/
+void generateVoteReminders(
+    VotesPlugin plugin,
+    const /*ref*/ IRCEvent event,
+    const uint id,
+    const Duration dur,
+    const string[] sortedChoices)
+{
+    import core.time : days, hours, minutes, seconds;
+
+    void reminderDg(const Duration time)
     {
+        import lu.string : plurality;
+        import std.format : format;
+
+        if (time == Duration.zero) return;
+
         const currentVoteInstance = event.channel in plugin.channelVoteInstances;
         if (!currentVoteInstance || (*currentVoteInstance != id)) return;  // Aborted
 
-        if ((time % 60) == 0)
+        enum pattern = "<b>%d<b> %s left to vote! (%-(<b>%s<b>, %)<b>)";
+        immutable numSeconds = time.total!"seconds";
+
+        if ((numSeconds % 24*3600) == 0)
         {
-            import lu.string : plurality;
-
+            // An even day
+            immutable numDays = cast(int)(numSeconds / 24*3600);
+            immutable message = pattern.format(
+                numDays,
+                numDays.plurality("day", "days"),
+                sortedChoices);
+            chan(plugin.state, event.channel, message);
+        }
+        else if ((numSeconds % 3600) == 0)
+        {
+            // An even hour
+            immutable numHours = cast(int)(numSeconds / 3600);
+            immutable message = pattern.format(
+                numHours,
+                numHours.plurality("hour", "hours"),
+                sortedChoices);
+            chan(plugin.state, event.channel, message);
+        }
+        else if ((numSeconds % 60) == 0)
+        {
             // An even minute
-            immutable minutes = cast(int)(time / 60);
-
-            enum pattern = "<b>%d<b> %s! (%-(%s, %))";
-            immutable message = pattern.format(minutes,
-                minutes.plurality("minute", "minutes"), sortedChoices);
+            immutable numMinutes = cast(int)(numSeconds / 60);
+            immutable message = pattern.format(
+                numMinutes,
+                numMinutes.plurality("minute", "minutes"),
+                sortedChoices);
             chan(plugin.state, event.channel, message);
         }
         else
         {
-            enum pattern = "<b>%d<b> seconds! (%-(%s, %))";
-            immutable message = pattern.format(time, sortedChoices);
+            enum secondsPattern = "<b>%d<b> seconds! (%-(<b>%s<b>, %)<b>)";
+            immutable message = secondsPattern.format(numSeconds, sortedChoices);
             chan(plugin.state, event.channel, message);
-
         }
     }
 
-    // Warn once at 600 seconds if the vote was for at least 1200 seconds
-    // also 600/300, 240/60, 60/30 and 20/10.
+    // Warn about the vote ending at certain points, depending on how long the duration is.
 
-    if (dur >= 1200)
+    static immutable Duration[15] reminderPoints =
+    [
+        7.days,
+        3.days,
+        2.days,
+        1.days,
+        12.hours,
+        6.hours,
+        3.hours,
+        1.hours,
+        30.minutes,
+        15.minutes,
+        10.minutes,
+        5.minutes,
+        2.minutes,
+        30.seconds,
+        10.seconds,
+    ];
+
+    foreach (immutable reminderPoint; reminderPoints[])
     {
-        delay(plugin, (() => dgReminderImpl(600)), (dur-600).seconds);
+        if (dur >= (reminderPoint * 2))
+        {
+            import kameloso.plugins.common.delayawait : await, delay;
+            immutable delta = (dur - reminderPoint);
+            delay(plugin, (() => reminderDg(reminderPoint)), delta);
+        }
     }
-
-    if (dur >= 600)
-    {
-        delay(plugin, (() => dgReminderImpl(300)), (dur-300).seconds);
-    }
-
-    if (dur >= 240)
-    {
-        delay(plugin, (() => dgReminderImpl(180)), (dur-180).seconds);
-    }
-
-    if (dur >= 60)
-    {
-        delay(plugin, (() => dgReminderImpl(30)), (dur-30).seconds);
-    }
-
-    if (dur >= 20)
-    {
-        delay(plugin, (() => dgReminderImpl(10)), (dur-10).seconds);
-    }
-
-    enum pattern = "Voting commenced! Please place your vote for one of: %-(<b>%s<b>, %) (<b>%d<b> seconds)";
-    immutable message = pattern.format(sortedChoices, dur);
-    chan(plugin.state, event.channel, message);
 }
 
 
@@ -425,6 +505,9 @@ final class VotesPlugin : IRCPlugin
 private:
     /// All Votes plugin settings.
     VotesSettings votesSettings;
+
+    /// Magic number to use to signal that a vote is to end.
+    enum endVoteEarlyMagicNumber = -1;
 
     /++
         An unique identifier for an ongoing channel vote, as set by
