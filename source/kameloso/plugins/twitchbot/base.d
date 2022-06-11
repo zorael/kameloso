@@ -1875,6 +1875,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
         import core.time : Duration, days, hours, minutes, weeks;
 
         enum retriesInCaseOfConnectionErrors = 5;
+        uint numRetries;
 
         while (true)
         {
@@ -1888,8 +1889,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                 {
                     if ((e.code == 2) && (e.error != MagicErrorStrings.sslLibraryNotFound))
                     {
-                        static int retries;
-                        if (retries++ < retriesInCaseOfConnectionErrors) continue;
+                        if (numRetries++ < retriesInCaseOfConnectionErrors) continue;
                     }
 
                     plugin.useAPIFeatures = false;
@@ -2038,8 +2038,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                     }
                     else
                     {
-                        static int retries;
-                        if (retries++ < retriesInCaseOfConnectionErrors) continue;
+                        if (numRetries++ < retriesInCaseOfConnectionErrors) continue;
 
                         enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
                         logger.errorf(pattern.expandTags(LogLevel.error), e.msg, e.error, e.code);
