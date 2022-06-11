@@ -151,8 +151,13 @@ void persistentQuerier(shared QueryResponse[int] bucket, const string caBundleFi
                     immutable pre = Clock.currTime;
                 }
 
-                sendHTTPRequestImpl(id, url, authToken, bucket, caBundleFile,
-                    verb, cast(ubyte[])body_, contentType);
+                immutable response = sendHTTPRequestImpl(url, authToken, bucket,
+                    caBundleFile, verb, cast(ubyte[])body_, contentType);
+
+                synchronized //()
+                {
+                    bucket[id] = response;  // empty str if code >= 400
+                }
 
                 version(BenchmarkHTTPRequests)
                 {
@@ -163,8 +168,13 @@ void persistentQuerier(shared QueryResponse[int] bucket, const string caBundleFi
             (int id, string url, string authToken) scope
             {
                 // Shorthand
-                sendHTTPRequestImpl(id, url, authToken, bucket, caBundleFile,
-                    HttpVerb.GET, null, string.init);
+                immutable response = sendHTTPRequestImpl(url, authToken, bucket,
+                    caBundleFile, HttpVerb.GET, null, string.init);
+
+                synchronized //()
+                {
+                    bucket[id] = response;  // empty str if code >= 400
+                }
             },
             (ThreadMessage message) scope
             {
@@ -345,18 +355,20 @@ in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
         id = Unique ID to use as key when storing the returned
             value in `bucket`.
         url = URL address to look up.
-        authToken = Authorisation token HTTP header to pass.
+        authHeader = Authorisation token HTTP header to pass.
         bucket = The shared associative array to put the results in, response
             values keyed by URL.
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
         verb = What HTTP verb to pass.
         body_ = Request body to send in case of verbs like `POST` and `PATCH`.
         contentType = "Content-Type" HTTP header to use.
+
+    Returns:
+        A [QueryResponse] of the response from the server.
  +/
-void sendHTTPRequestImpl(
-    const int id,
+auto sendHTTPRequestImpl(
     const string url,
-    const string authToken,
+    const string authHeader,
     shared QueryResponse[int] bucket,
     const string caBundleFile,
     /*const*/ HttpVerb verb = HttpVerb.GET,
@@ -386,7 +398,7 @@ void sendHTTPRequestImpl(
         if (caBundleFile.length) client.setClientCertificate(caBundleFile, caBundleFile);
     }
 
-    client.authorization = authToken;
+    client.authorization = authHeader;
 
     QueryResponse response;
     auto pre = Clock.currTime;
@@ -412,15 +424,10 @@ void sendHTTPRequestImpl(
     response.code = res.code;
     response.error = res.codeText;
     response.str = res.contentText;
-
     immutable post = Clock.currTime;
     immutable delta = (post - pre);
     response.msecs = delta.total!"msecs";
-
-    synchronized //()
-    {
-        bucket[id] = response;  // empty str if code >= 400
-    }
+    return response;
 }
 
 
