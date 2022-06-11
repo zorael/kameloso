@@ -31,6 +31,9 @@ import core.time : Duration;
 {
     /// Whether or not this plugin should react to any events.
     @Enabler bool enabled = true;
+
+    /// Whether or not only votes placed by online users count.
+    bool onlyOnlineUsersCount = false;
 }
 
 
@@ -350,8 +353,10 @@ void voteImpl(
 
             case PART:
             case QUIT:
-                immutable nickname = thisFiber.payload.sender.nickname;
-                votedUsers.remove(nickname);
+                if (plugin.votesSettings.onlyOnlineUsersCount)
+                {
+                    votedUsers.remove(accountOrNickname);
+                }
                 break;
 
             default:
