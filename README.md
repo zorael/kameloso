@@ -278,8 +278,8 @@ MrOffline joined #channel
 
       you | !poll
  kameloso | Usage: !poll [seconds] [choice1] [choice2] ...
-      you | !poll 60 snek snik
- kameloso | Voting commenced! Please place your vote for one of: snik, snek (60 seconds)
+      you | !poll 2m snek snik
+ kameloso | Voting commenced! Please place your vote for one of: snik, snek (2 minutes)
       BOB | snek
     Alice | snek
       ray | snik
