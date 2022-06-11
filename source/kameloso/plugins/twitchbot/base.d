@@ -445,7 +445,7 @@ void onCommandUptime(TwitchBotPlugin plugin, const ref IRCEvent event)
             .word("start")
             .policy(PrefixPolicy.prefixed)
             .description("Marks the start of a broadcast.")
-            .addSyntax("$command [optional HH:MM or MM time already elapsed]")
+            .addSyntax("$command [optional duration time already elapsed]")
     )
 )
 void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
@@ -458,7 +458,7 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 
     void sendUsage()
     {
-        enum pattern = "Usage: %s%s [optional HH:MM or MM time already elapsed]";
+        enum pattern = "Usage: %s%s [optional duration time already elapsed]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
         chan(plugin.state, event.channel, message);
     }
@@ -479,41 +479,21 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
          +/
         try
         {
-            string slice = event.content.stripped;  // mutable
+            import kameloso.common : abbreviatedDuration, timeSince;
 
-            if (event.content.contains(':'))
-            {
-                immutable hours = slice.nom(':').to!int;
-                immutable minutes = slice.to!int;
-                if ((hours < 0) || (minutes < 0) || (minutes > 59)) return sendUsage();
-                immutable elapsed = (hours * 3600) + (minutes * 60);
+            initBroadcast();
+            immutable elapsed = abbreviatedDuration(event.content.stripped);
+            room.broadcast.startTime = (event.time - elapsed.total!"seconds");
 
-                initBroadcast();
-                room.broadcast.startTime = (event.time - elapsed);
-
-                enum pattern = "Broadcast start registered (as %d:%02d ago)!";
-                immutable message = pattern.format(hours, minutes);
-                chan(plugin.state, event.channel, message);
-            }
-            else
-            {
-                immutable minutes = slice.to!int;
-                if (minutes < 0) return sendUsage();
-                immutable elapsed = (minutes * 60);
-
-                initBroadcast();
-                room.broadcast.startTime = (event.time - elapsed);
-
-                /+
-                    Technically we should do `minutes.plurality("minute", "minutes")`
-                    but the chance of minutes being 1 is very slim.
-                 +/
-                enum pattern = "Broadcast start registered (as %d minutes ago)!";
-                immutable message = pattern.format(minutes);
-                chan(plugin.state, event.channel, message);
-            }
+            enum pattern = "Broadcast start registered (as %s ago)!";
+            immutable message = pattern.format(timeSince(elapsed));
+            chan(plugin.state, event.channel, message);
         }
         catch (ConvException e)
+        {
+            return sendUsage();
+        }
+        catch (Exception e)
         {
             return sendUsage();
         }
