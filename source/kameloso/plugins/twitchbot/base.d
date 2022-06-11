@@ -1926,7 +1926,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                 void warnOnWeekDg()
                 {
                     // More than a week away, just .info
-                    enum pattern = "Your Twitch authorisation key will expire " ~
+                    enum pattern = "Your Twitch authorisation token will expire " ~
                         "in <l>%d days</> on <l>%4d-%02d-%02d</>.";
                     logger.infof(pattern.expandTags(LogLevel.info), numDays,
                         expiresWhen.year, expiresWhen.month, expiresWhen.day);
@@ -1935,7 +1935,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                 void warnOnDaysDg()
                 {
                     // A week or less, more than a day; warning
-                    enum pattern = "Warning: Your Twitch authorisation key will expire " ~
+                    enum pattern = "Warning: Your Twitch authorisation token will expire " ~
                         "in <l>%d %s</> on <l>%4d-%02d-%02d %02d:%02d</>.";
                     logger.warningf(pattern.expandTags(LogLevel.warning),
                         numDays, numDays.plurality("day", "days"),
@@ -1947,7 +1947,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                 {
                     // Less than a day; warning
                     immutable numHours = delta.total!"hours";
-                    enum pattern = "WARNING: Your Twitch authorisation key will expire " ~
+                    enum pattern = "WARNING: Your Twitch authorisation token will expire " ~
                         "in <l>%d %s</> at <l>%02d:%02d</>.";
                     logger.warningf(pattern.expandTags(LogLevel.warning),
                         numHours, numHours.plurality("hour", "hours"),
@@ -1958,7 +1958,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                 {
                     // Less than an hour; warning
                     immutable numHours = delta.total!"minutes";
-                    enum pattern = "WARNING: Your Twitch authorisation key will expire " ~
+                    enum pattern = "WARNING: Your Twitch authorisation token will expire " ~
                         "in <l>%d minutes</> at <l>%02d:%02d</>.";
                     logger.warningf(pattern.expandTags(LogLevel.warning),
                         numHours, expiresWhen.hour, expiresWhen.minute);
