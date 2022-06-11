@@ -405,25 +405,26 @@ void generateVoteReminders(
     const Duration dur,
     const string[] sortedChoices)
 {
+    import std.meta : AliasSeq;
     import core.time : days, hours, minutes, seconds;
 
-    void reminderDg(const Duration time)
+    void reminderDg(const Duration reminderPoint)
     {
         import lu.string : plurality;
         import std.format : format;
 
-        if (time == Duration.zero) return;
+        if (reminderPoint == Duration.zero) return;
 
         const currentVoteInstance = event.channel in plugin.channelVoteInstances;
         if (!currentVoteInstance || (*currentVoteInstance != id)) return;  // Aborted
 
         enum pattern = "<b>%d<b> %s left to vote! (%-(<b>%s<b>, %)<b>)";
-        immutable numSeconds = time.total!"seconds";
+        immutable numSeconds = reminderPoint.total!"seconds";
 
-        if ((numSeconds % 24*3600) == 0)
+        if ((numSeconds % (24*3600)) == 0)
         {
             // An even day
-            immutable numDays = cast(int)(numSeconds / 24*3600);
+            immutable numDays = cast(int)(numSeconds / (24*3600));
             immutable message = pattern.format(
                 numDays,
                 numDays.plurality("day", "days"),
@@ -460,8 +461,7 @@ void generateVoteReminders(
 
     // Warn about the vote ending at certain points, depending on how long the duration is.
 
-    static immutable Duration[15] reminderPoints =
-    [
+    alias reminderPoints = AliasSeq!(
         7.days,
         3.days,
         2.days,
@@ -471,15 +471,14 @@ void generateVoteReminders(
         3.hours,
         1.hours,
         30.minutes,
-        15.minutes,
         10.minutes,
         5.minutes,
         2.minutes,
         30.seconds,
         10.seconds,
-    ];
+    );
 
-    foreach (immutable reminderPoint; reminderPoints[])
+    foreach (immutable reminderPoint; reminderPoints)
     {
         if (dur >= (reminderPoint * 2))
         {

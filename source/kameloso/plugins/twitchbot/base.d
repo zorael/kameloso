@@ -1872,6 +1872,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
         import lu.string : plurality;
         import std.conv : to;
         import std.datetime.systime : Clock, SysTime;
+        import std.meta : AliasSeq;
         import core.time : Duration, days, hours, minutes, weeks;
 
         enum retriesInCaseOfConnectionErrors = 5;
@@ -1980,8 +1981,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                     quit(plugin.state, "Twitch authorisation token expired");
                 }
 
-                static immutable Duration[10] reminderPoints =
-                [
+                alias reminderPoints = AliasSeq!(
                     14.days,
                     7.days,
                     3.days,
@@ -1992,9 +1992,9 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                     30.minutes,
                     10.minutes,
                     5.minutes,
-                ];
+                );
 
-                foreach (immutable reminderPoint; reminderPoints[])
+                foreach (immutable reminderPoint; reminderPoints)
                 {
                     if (delta >= reminderPoint)
                     {
