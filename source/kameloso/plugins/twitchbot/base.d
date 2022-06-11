@@ -1867,6 +1867,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
 
     void validationDg()
     {
+        import kameloso.plugins.common.delayawait : delay;
         import lu.string : plurality;
         import std.conv : to;
         import std.datetime.systime : Clock, SysTime;
@@ -1963,6 +1964,17 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                         numHours, expiresWhen.hour, expiresWhen.minute);
                 }
 
+                void quitOnExpiry()
+                {
+                    import kameloso.messaging : quit;
+
+                    // Key expired
+                    enum pattern = "Your Twitch authorisation token has expired. " ~
+                        "Run the program with <l>--set twitch.keygen</> to generate a new one.";
+                    logger.warning(pattern.expandTags(LogLevel.warning));
+                    quit(plugin.state, "Twitch authorisation token expired");
+                }
+
                 static immutable Duration[10] reminderPoints =
                 [
                     14.days,
@@ -1981,14 +1993,15 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                 {
                     if (delta > reminderPoint)
                     {
-                        import kameloso.plugins.common.delayawait : delay;
-
                         if (reminderPoint > 1.weeks) delay(plugin, &warnOnWeekDg, delta);
                         else if (reminderPoint > 1.days) delay(plugin, &warnOnDaysDg, delta);
                         else if (reminderPoint > 1.hours) delay(plugin, &warnOnHoursDg, delta);
                         else /*if (reminderPoint > 1.minutes)*/ delay(plugin, &warnOnMinutesDg, delta);
                     }
                 }
+
+                // Schedule the final warning, on expiry
+                delay(plugin, &quitOnExpiry, delta);
 
                 // Also announce once normally how much time is left
                 if (delta > 1.weeks) warnOnWeekDg();
