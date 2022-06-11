@@ -1991,7 +1991,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
 
                 foreach (immutable reminderPoint; reminderPoints[])
                 {
-                    if (delta > reminderPoint)
+                    if (delta >= reminderPoint)
                     {
                         if (reminderPoint >= 1.weeks) delay(plugin, &warnOnWeekDg, delta);
                         else if (reminderPoint >= 1.days) delay(plugin, &warnOnDaysDg, delta);
