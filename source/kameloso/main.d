@@ -2237,11 +2237,22 @@ Next tryConnect(ref Kameloso instance)
             continue;
 
         case transientSSLFailure:
+            import lu.string : contains;
+
             // "Failed to establish SSL connection after successful connect (system lib)"
             // "Failed to establish SSL connection after successful connect" --> attempted SSL on non-SSL server
+
             logger.error("Failed to connect: ", Tint.log, attempt.error);
             if (*instance.abort) return Next.returnFailure;
-            if (!lastRetry) verboselyDelay();
+
+            if (attempt.error.contains("(system lib)"))
+            {
+                // Random failure, just reconnect immediately
+            }
+            else
+            {
+                if (!lastRetry) verboselyDelay();
+            }
             continue;
 
         case fatalSSLFailure:
