@@ -2071,6 +2071,8 @@ Next tryConnect(ref Kameloso instance)
     }
 
     uint incrementedRetryDelay = Timeout.connectionRetry;
+    enum transientSSLFailureTolerance = 10;
+    uint numTransientSSLFailures;
 
     foreach (const attempt; connector)
     {
@@ -2202,6 +2204,7 @@ Next tryConnect(ref Kameloso instance)
 
             if (*instance.abort) return Next.returnFailure;
             if (!lastRetry) verboselyDelay();
+            numTransientSSLFailures = 0;
             continue;
 
         case delayThenNextIP:
@@ -2209,6 +2212,7 @@ Next tryConnect(ref Kameloso instance)
             if (*instance.abort) return Next.returnFailure;
             verboselyDelayToNextIP();
             if (*instance.abort) return Next.returnFailure;
+            numTransientSSLFailures = 0;
             continue;
 
         /*case noMoreIPs:
@@ -2234,6 +2238,7 @@ Next tryConnect(ref Kameloso instance)
 
             if (*instance.abort) return Next.returnFailure;
             if (!lastRetry) goto case delayThenNextIP;
+            numTransientSSLFailures = 0;
             continue;
 
         case transientSSLFailure:
@@ -2245,9 +2250,11 @@ Next tryConnect(ref Kameloso instance)
             logger.error("Failed to connect: ", Tint.log, attempt.error);
             if (*instance.abort) return Next.returnFailure;
 
-            if (attempt.error.contains("(system lib)"))
+            if ((numTransientSSLFailures++ < transientSSLFailureTolerance) &&
+                attempt.error.contains("(system lib)"))
             {
                 // Random failure, just reconnect immediately
+                // but only `transientSSLFailureTolerance` times
             }
             else
             {
