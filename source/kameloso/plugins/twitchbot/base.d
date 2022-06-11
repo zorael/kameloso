@@ -1989,6 +1989,12 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                         else /*if (reminderPoint > 1.minutes)*/ delay(plugin, &warnOnMinutesDg, delta);
                     }
                 }
+
+                // Also announce once normally how much time is left
+                if (delta > 1.weeks) warnOnWeekDg();
+                else if (delta > 1.days) warnOnDaysDg();
+                else if (delta > 1.hours) warnOnHoursDg();
+                else /*if (delta > 1.minutes)*/ warnOnMinutesDg();
             }
             catch (TwitchQueryException e)
             {
