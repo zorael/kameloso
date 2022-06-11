@@ -1868,6 +1868,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
     void validationDg()
     {
         import kameloso.plugins.common.delayawait : delay;
+        import kameloso.constants : MagicErrorStrings;
         import lu.string : plurality;
         import std.conv : to;
         import std.datetime.systime : Clock, SysTime;
@@ -1877,6 +1878,26 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
 
         while (true)
         {
+            if (plugin.state.settings.headless)
+            {
+                try
+                {
+                    cast(void)getValidation(plugin, plugin.state.bot.pass, Yes.async);
+                }
+                catch (TwitchQueryException e)
+                {
+                    if ((e.code == 2) && (e.error != MagicErrorStrings.sslLibraryNotFound))
+                    {
+                        static int retries;
+                        if (retries++ < retriesInCaseOfConnectionErrors) continue;
+                    }
+
+                    plugin.useAPIFeatures = false;
+                }
+
+                return;
+            }
+
             try
             {
                 /*
@@ -2015,8 +2036,6 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
 
                 if (e.code == 2)
                 {
-                    import kameloso.constants : MagicErrorStrings;
-
                     enum wikiPattern = cast(string)MagicErrorStrings.visitWikiOneliner;
 
                     if (e.error == MagicErrorStrings.sslLibraryNotFound)
