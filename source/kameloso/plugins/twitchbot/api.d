@@ -544,12 +544,13 @@ in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
 
 // getValidation
 /++
-    Validates the current access key, retrieving information about it.
+    Validates an access key, retrieving information about it.
 
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
         plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        authToken = Authorisation token to validate.
 
     Returns:
         A [std.json.JSONValue|JSONValue] with the validation information JSON of the
@@ -558,8 +559,11 @@ in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
     Throws:
         [TwitchQueryException] on failure.
  +/
-JSONValue getValidation(TwitchBotPlugin plugin)
-in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
+JSONValue getValidation(
+    TwitchBotPlugin plugin,
+    /*const*/ string authToken,
+    const Flag!"async" async)
+in ((!async || Fiber.getThis), "Tried to call `getValidation` from outside a Fiber")
 {
     import lu.string : beginsWith;
     import std.json : JSONType, JSONValue, parseJSON;
@@ -568,12 +572,13 @@ in (Fiber.getThis, "Tried to call `getValidation` from outside a Fiber")
 
     // Validation needs an "Authorization: OAuth xxx" header, as opposed to the
     // "Authorization: Bearer xxx" used everywhere else.
-    immutable pass = plugin.state.bot.pass.beginsWith("oauth:") ?
-        plugin.state.bot.pass[6..$] :
-        plugin.state.bot.pass;
-    immutable authorizationHeader = "OAuth " ~ pass;
-
-    immutable response = sendHTTPRequest(plugin, url, authorizationHeader);
+    authToken = plugin.state.bot.pass.beginsWith("oauth:") ?
+        authToken[6..$] :
+        authToken;
+    immutable authorizationHeader = "OAuth " ~ authToken;
+    immutable response = async ?
+        sendHTTPRequest(plugin, url, authorizationHeader) :
+        sendHTTPRequestImpl(url, authorizationHeader, plugin.bucket, plugin.state.connSettings.caBundleFile);
     immutable validationJSON = parseJSON(response.str);
 
     if ((validationJSON.type != JSONType.object) || ("client_id" !in validationJSON))

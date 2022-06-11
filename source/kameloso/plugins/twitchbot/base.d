@@ -1698,7 +1698,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                 }
                 */
 
-                immutable validationJSON = getValidation(plugin);
+                immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
                 plugin.userID = validationJSON["user_id"].str;
                 immutable expiresIn = validationJSON["expires_in"].integer;
 
