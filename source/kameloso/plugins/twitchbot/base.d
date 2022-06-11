@@ -1976,7 +1976,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                     // Key expired
                     enum pattern = "Your Twitch authorisation token has expired. " ~
                         "Run the program with <l>--set twitch.keygen</> to generate a new one.";
-                    logger.warning(pattern.expandTags(LogLevel.warning));
+                    logger.error(pattern.expandTags(LogLevel.error));
                     quit(plugin.state, "Twitch authorisation token expired");
                 }
 
