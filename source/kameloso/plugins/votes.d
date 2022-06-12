@@ -33,7 +33,7 @@ import core.time : Duration;
     @Enabler bool enabled = true;
 
     /// Whether or not only votes placed by online users count.
-    bool onlyOnlineUsersCount = false;
+    bool onlyOnlineUsersCount = true;
 }
 
 
