@@ -1682,12 +1682,6 @@ void onCommandStartPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 )
 void onCommandEndPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    /*static struct Choice
-    {
-        string title;
-        long votes;
-    }*/
-
     void endPollDg()
     {
         import std.json : JSONType;
@@ -1722,7 +1716,13 @@ void onCommandEndPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             return;
         }
 
-        /*Choice[] choices;
+        /*static struct Choice
+        {
+            string title;
+            long votes;
+        }
+
+        Choice[] choices;
         long totalVotes;
 
         foreach (immutable i, const choiceJSON; endResponseJSON["choices"].array)
