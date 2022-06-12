@@ -204,10 +204,11 @@ See [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins) for more
       you | s/fish/snek/
  kameloso | you | I am a snek
 
-      you | !quote blarf I am a snek
+    blarf | I am a snek too
+      you | !quote blarf I am a snek too
  kameloso | Quote saved. (5 on record)
       you | !quote blarf
- kameloso | #4 [2022-04-04 23:15] blarf | I am a snek
+ kameloso | #4 [2022-04-04 23:15] blarf | I am a snek too
 
       you | !seen
  kameloso | Usage: !seen [nickname]
@@ -237,7 +238,7 @@ MrOffline joined #channel
  kameloso sets mode +o ray
 
       you | !oneliner new
- kameloso | Usage: !oneliner new [trigger] [type] [text...]
+ kameloso | Usage: !oneliner new [trigger] [type]
       you | !oneliner new info random
  kameloso | Oneliner !info created! Use !oneliner add to add lines.
       you | !oneliner add info @$nickname: for more information just use Google
@@ -422,7 +423,7 @@ Assuming a prefix of `!`, commands to test are:
 * `!settitle`
 * `!setgame`
 * `!commercial`
-* `!startpoll`/`!endpoll` (Twitch poll, *highly experimental*)
+* `!startpoll`/`!endpoll` (*highly* experimental, needs help from affiliate)
 
 ...alongside `!oneliner`, `!counter`, `!timer`, `!poll` (chat poll), `!stopwatch`, and other non-Twitch-specific commands. Try `!help` or [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins).
 
@@ -430,17 +431,17 @@ Assuming a prefix of `!`, commands to test are:
 
 #### Song requests
 
-To get song requests to work, you need to register an application to interface with [Google (YouTube)](https://console.cloud.google.com/projectcreate) and/or [Spotify](https://developer.spotify.com/dashboard) servers. To initiate the guides for this, pass `--set twitch.googleKeygen` for YouTube and `--set twitch.spotifyKeygen` for Spotify, then simply follow the on-screen instructions. (They behave much like `--set twitch.keygen`.)
+To get song requests to work, you need to register an "application" to interface with [Google (YouTube)](https://console.cloud.google.com/projectcreate) and/or [Spotify](https://developer.spotify.com/dashboard) servers. To initiate the guides for this, pass `--set twitch.googleKeygen` for YouTube and `--set twitch.spotifyKeygen` for Spotify, then simply follow the on-screen instructions. (They behave much like `--set twitch.keygen`.)
 
 #### Certain commands require higher permissions
 
-Some functionality, such as setting the channel title or currently played game, require credentials with the permissions of the channel owner. As such, if you want to use such commands you will need to generate OAuth access tokens for the main account separately, much as you generated some for the bot account. This will request keys from Twitch with more permissions, and the authorisation screen should reflect this.
+Some functionality, such as setting the channel title or currently played game, require credentials with the permissions of the channel owner. As such, if you want to use such commands, you will need to generate OAuth access tokens for the main account separately, much as you generated some for the bot account. This will request keys from Twitch with more permissions, and the authorisation screen should reflect this.
 
 ```shell
 $ kameloso --set twitch.superKeygen
 ```
 
-> Note: Mind that you need to be logged in as your main account while doing this, or the tokens generated will be ones for the wrong channel.
+> Mind that you need to be logged in as your main account while doing this, or the tokens generated will be for the wrong channel.
 
 ## Further help
 
