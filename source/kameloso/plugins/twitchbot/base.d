@@ -1620,7 +1620,7 @@ void onCommandStartPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             }
 
             enum pattern = `Poll "%s" created.`;
-            immutable message = pattern.format(responseJSON.array[0].object["title"]);
+            immutable message = pattern.format(responseJSON.array[0].object["title"].str);
             chan(plugin.state, event.channel, message);
         }
         catch (TwitchQueryException e)
