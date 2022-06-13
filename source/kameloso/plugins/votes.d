@@ -31,6 +31,9 @@ import core.time : Duration;
 {
     /// Whether or not this plugin should react to any events.
     @Enabler bool enabled = true;
+
+    /// Whether or not only votes placed by online users count.
+    bool onlyOnlineUsersCount = true;
 }
 
 
@@ -199,6 +202,7 @@ void voteImpl(
     const string[string] origChoiceNames)
 {
     import kameloso.plugins.common.delayawait : await, delay;
+    import kameloso.plugins.common.misc : idOf;
     import kameloso.common : timeSince;
     import kameloso.constants : BufferSize;
     import kameloso.thread : CarryingFiber;
@@ -308,16 +312,18 @@ void voteImpl(
                 return;  // End Fiber
             }
 
+            immutable accountOrNickname = idOf(thisFiber.payload.sender);
+
             // Triggered by an event
             with (IRCEvent.Type)
             switch (event.type)
             {
             case NICK:
-                if (thisFiber.payload.sender.nickname in votedUsers)
+                if (accountOrNickname in votedUsers)
                 {
-                    immutable newNickname = thisFiber.payload.target.nickname;
-                    votedUsers[newNickname] = true;
-                    votedUsers.remove(thisFiber.payload.sender.nickname);
+                    immutable newID = idOf(thisFiber.payload.target);
+                    votedUsers[newID] = true;
+                    votedUsers.remove(accountOrNickname);
                 }
                 break;
 
@@ -328,13 +334,12 @@ void voteImpl(
                 if (thisFiber.payload.channel != event.channel) break;
 
                 immutable vote = thisFiber.payload.content.stripped;
-                immutable nickname = thisFiber.payload.sender.nickname;
 
                 if (!vote.length || vote.contains!(Yes.decode)(' '))
                 {
                     // Not a vote; yield and await a new event
                 }
-                else if (nickname in votedUsers)
+                else if (accountOrNickname in votedUsers)
                 {
                     // User already voted and we don't support revotes for now
                 }
@@ -342,14 +347,16 @@ void voteImpl(
                 {
                     // Valid entry, increment vote count
                     ++(*ballot);
-                    votedUsers[nickname] = true;
+                    votedUsers[accountOrNickname] = true;
                 }
                 break;
 
             case PART:
             case QUIT:
-                immutable nickname = thisFiber.payload.sender.nickname;
-                votedUsers.remove(nickname);
+                if (plugin.votesSettings.onlyOnlineUsersCount)
+                {
+                    votedUsers.remove(accountOrNickname);
+                }
                 break;
 
             default:
@@ -379,7 +386,7 @@ void voteImpl(
 
     generateVoteReminders(plugin, event, id, dur, sortedChoices);
 
-    immutable timeInWords = dur.timeSince!(7, 1);
+    immutable timeInWords = dur.timeSince!(7, 0);
     enum pattern = "<b>Voting commenced!<b> Please place your vote for one of: " ~
         "%-(<b>%s<b>, %)<b> (%s)";  // extra <b> needed outside of %-(%s, %)
     immutable message = pattern.format(sortedChoices, timeInWords);
@@ -405,25 +412,26 @@ void generateVoteReminders(
     const Duration dur,
     const string[] sortedChoices)
 {
+    import std.meta : AliasSeq;
     import core.time : days, hours, minutes, seconds;
 
-    void reminderDg(const Duration time)
+    void reminderDg(const Duration reminderPoint)
     {
         import lu.string : plurality;
         import std.format : format;
 
-        if (time == Duration.zero) return;
+        if (reminderPoint == Duration.zero) return;
 
         const currentVoteInstance = event.channel in plugin.channelVoteInstances;
         if (!currentVoteInstance || (*currentVoteInstance != id)) return;  // Aborted
 
         enum pattern = "<b>%d<b> %s left to vote! (%-(<b>%s<b>, %)<b>)";
-        immutable numSeconds = time.total!"seconds";
+        immutable numSeconds = reminderPoint.total!"seconds";
 
-        if ((numSeconds % 24*3600) == 0)
+        if ((numSeconds % (24*3600)) == 0)
         {
             // An even day
-            immutable numDays = cast(int)(numSeconds / 24*3600);
+            immutable numDays = cast(int)(numSeconds / (24*3600));
             immutable message = pattern.format(
                 numDays,
                 numDays.plurality("day", "days"),
@@ -460,8 +468,7 @@ void generateVoteReminders(
 
     // Warn about the vote ending at certain points, depending on how long the duration is.
 
-    static immutable Duration[15] reminderPoints =
-    [
+    alias reminderPoints = AliasSeq!(
         7.days,
         3.days,
         2.days,
@@ -471,15 +478,14 @@ void generateVoteReminders(
         3.hours,
         1.hours,
         30.minutes,
-        15.minutes,
         10.minutes,
         5.minutes,
         2.minutes,
         30.seconds,
         10.seconds,
-    ];
+    );
 
-    foreach (immutable reminderPoint; reminderPoints[])
+    foreach (immutable reminderPoint; reminderPoints)
     {
         if (dur >= (reminderPoint * 2))
         {

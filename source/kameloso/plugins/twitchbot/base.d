@@ -1620,7 +1620,7 @@ void onCommandStartPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             }
 
             enum pattern = `Poll "%s" created.`;
-            immutable message = pattern.format(responseJSON.array[0].object["title"]);
+            immutable message = pattern.format(responseJSON.array[0].object["title"].str);
             chan(plugin.state, event.channel, message);
         }
         catch (TwitchQueryException e)
@@ -1633,12 +1633,12 @@ void onCommandStartPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             {
                 version(WithVotesPlugin)
                 {
-                    enum message = "You must be a partner or affiliate to create Twitch polls. " ~
+                    enum message = "You must be an affiliate to create Twitch polls. " ~
                         "(Consider using the Votes plugin.)";
                 }
                 else
                 {
-                    enum message = "You must be a partner or affiliate to create Twitch polls.";
+                    enum message = "You must be an affiliate to create Twitch polls.";
                 }
 
                 chan(plugin.state, event.channel, message);
@@ -1682,12 +1682,6 @@ void onCommandStartPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 )
 void onCommandEndPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    /*static struct Choice
-    {
-        string title;
-        long votes;
-    }*/
-
     void endPollDg()
     {
         import std.json : JSONType;
@@ -1722,7 +1716,13 @@ void onCommandEndPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             return;
         }
 
-        /*Choice[] choices;
+        /*static struct Choice
+        {
+            string title;
+            long votes;
+        }
+
+        Choice[] choices;
         long totalVotes;
 
         foreach (immutable i, const choiceJSON; endResponseJSON["choices"].array)
@@ -1872,9 +1872,11 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
         import lu.string : plurality;
         import std.conv : to;
         import std.datetime.systime : Clock, SysTime;
+        import std.meta : AliasSeq;
         import core.time : Duration, days, hours, minutes, weeks;
 
         enum retriesInCaseOfConnectionErrors = 5;
+        uint numRetries;
 
         while (true)
         {
@@ -1888,8 +1890,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                 {
                     if ((e.code == 2) && (e.error != MagicErrorStrings.sslLibraryNotFound))
                     {
-                        static int retries;
-                        if (retries++ < retriesInCaseOfConnectionErrors) continue;
+                        if (numRetries++ < retriesInCaseOfConnectionErrors) continue;
                     }
 
                     plugin.useAPIFeatures = false;
@@ -1980,8 +1981,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                     quit(plugin.state, "Twitch authorisation token expired");
                 }
 
-                static immutable Duration[10] reminderPoints =
-                [
+                alias reminderPoints = AliasSeq!(
                     14.days,
                     7.days,
                     3.days,
@@ -1992,9 +1992,9 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                     30.minutes,
                     10.minutes,
                     5.minutes,
-                ];
+                );
 
-                foreach (immutable reminderPoint; reminderPoints[])
+                foreach (immutable reminderPoint; reminderPoints)
                 {
                     if (delta >= reminderPoint)
                     {
@@ -2038,8 +2038,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                     }
                     else
                     {
-                        static int retries;
-                        if (retries++ < retriesInCaseOfConnectionErrors) continue;
+                        if (numRetries++ < retriesInCaseOfConnectionErrors) continue;
 
                         enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
                         logger.errorf(pattern.expandTags(LogLevel.error), e.msg, e.error, e.code);
