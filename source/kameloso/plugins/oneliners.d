@@ -466,6 +466,12 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
             {
                 import std.array : insertInPlace;
                 oneliner.responses.insertInPlace(pos, line);
+
+                if (oneliner.type == Oneliner.Type.ordered)
+                {
+                    // Reset ordered position to 0 on removals
+                    oneliner.position = 0;
+                }
             }
 
             immutable message = (pos == appendToEndMagicNumber) ?
