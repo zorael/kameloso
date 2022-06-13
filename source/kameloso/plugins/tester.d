@@ -586,32 +586,23 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
     send("oneliner");
     expect("Usage: %soneliner [new|insert|add|del|list] ...".format(prefix));
 
-    send("oneliner add");
-    expect("Usage: %soneliner add [trigger] [text...]".format(prefix));
-
     send("oneliner add herp derp dirp darp");
     expect("No such oneliner: %sherp".format(prefix));
 
-    send("oneliner del herp");
-    expect("No such oneliner: %sherp".format(prefix));
+    send("oneliner new");
+    expect("Usage: %soneliner new [trigger] [type]".format(prefix));
 
     send("oneliner new herp ordered");
     expect("Oneliner %sherp created! Use %1$soneliner add to add lines.".format(prefix));
-
-    send("oneliner list");
-    expect("Available commands: %sherp".format(prefix));
 
     sendPrefixed("herp");
     expect("(Empty oneliner; use %soneliner add to add lines.)".format(prefix));
 
     send("oneliner add herp 123");
-    expect("Oneliner line added!");
-
-    sendPrefixed("herp");
-    expect("123");
+    expect("Oneliner line added.");
 
     send("oneliner add herp 456");
-    expect("Oneliner line added!");
+    expect("Oneliner line added.");
 
     sendPrefixed("herp");
     expect("123");
@@ -623,13 +614,25 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
     expect("123");
 
     send("oneliner insert herp 0 000");
-    expect("Oneliner line inserted!");
+    expect("Oneliner line inserted.");
 
-    send("oneliner del hirrp");
-    expect("No such oneliner: %shirrp".format(prefix));
+    sendPrefixed("herp");
+    expect("000");
+
+    sendPrefixed("herp");
+    expect("123");
+
+    send("oneliner list");
+    expect("Available commands: %sherp".format(prefix));
+
+    send("oneliner del hurp");
+    expect("No such oneliner: %shurp".format(prefix));
 
     send("oneliner del herp");
     expect("Oneliner %sherp removed.".format(prefix));
+
+    send("oneliner list");
+    expect("There are no commands available right now.");
 
     return true;
 }
@@ -1074,7 +1077,7 @@ in (origEvent.channel.length, "Tried to test Timer with empty channel in origina
         "[time threshold] [stagger message count] [stagger time]");
 
     send("timer new hirrsteff ordered both 0 10 0 10");
-    expect("New timer added. Use !timer add to add lines.");
+    expect("New timer added! Use !timer add to add lines.");
 
     send("timer add splorf hello");
     expect("No such timer is defined. Add a new one with !timer new.");
