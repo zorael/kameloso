@@ -140,7 +140,16 @@ void onCommandTest(TesterPlugin plugin, const /*ref*/ IRCEvent event)
                 scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
 
                 awaitReply();  // advance past current message ("test [nickname] [plugin]")
-                runTestAndReport!test();
+
+                try
+                {
+                    runTestAndReport!test();
+                }
+                catch (Exception e)
+                {
+                    import std.stdio;
+                    writeln(e);
+                }
             }
 
             Fiber fiber = new CarryingFiber!IRCEvent(&caseDg, BufferSize.fiberStack);
@@ -163,9 +172,17 @@ void onCommandTest(TesterPlugin plugin, const /*ref*/ IRCEvent event)
 
             foreach (immutable i, test; tests)
             {
-                immutable success = runTestAndReport!test();
-                if (i+1 != tests.length) delay(plugin, timeInBetween, Yes.yield);
-                if (success) ++successes;
+                try
+                {
+                    immutable success = runTestAndReport!test();
+                    if (i+1 != tests.length) delay(plugin, timeInBetween, Yes.yield);
+                    if (success) ++successes;
+                }
+                catch (Exception e)
+                {
+                    import std.stdio;
+                    writeln(e);
+                }
             }
 
             logger.infof("%d/%d tests finished successfully.", successes, tests.length);
