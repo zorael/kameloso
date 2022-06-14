@@ -271,11 +271,13 @@ void voteImpl(
 
     // Take into account people leaving or changing nicknames on non-Twitch servers
     // On Twitch NICKs and QUITs don't exist, and PARTs are unreliable.
-    static immutable IRCEvent.Type[3] nonTwitchVoteEventTypes =
+    // ACCOUNTs also aren't a thing.
+    static immutable IRCEvent.Type[4] nonTwitchVoteEventTypes =
     [
         IRCEvent.Type.NICK,
         IRCEvent.Type.PART,
         IRCEvent.Type.QUIT,
+        IRCEvent.Type.ACCOUNT,
     ];
 
     void cleanup()
@@ -356,6 +358,15 @@ void voteImpl(
                     // Valid entry, increment vote count
                     ++(*ballot);
                     votedUsers[accountOrNickname] = true;
+                }
+                break;
+
+            case ACCOUNT:
+                if (const oldEntry = thisFiber.payload.sender.nickname in votedUsers)
+                {
+                    // Move the old entry to a new one with the account as key
+                    votedUsers[thisFiber.payload.sender.account] = *oldEntry;
+                    votedUsers.remove(thisFiber.payload.sender.nickname);
                 }
                 break;
 
