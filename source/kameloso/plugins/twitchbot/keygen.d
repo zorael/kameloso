@@ -186,17 +186,24 @@ instructions and log in to authorise the use of this program with your <i>BOT</>
     immutable delta = (expiry - Clock.currTime);
     immutable numDays = delta.total!"days";
 
-    enum issuePattern = "
---------------------------------------------------------------------------------
-
+    enum withKeygenSwitch = "
 All done! Restart the program (without <i>--set twitch.keygen</>) and it should
 just work. If it doesn't, please file an issue at:
-
+";
+    enum withoutKeygenSwitch = "
+All done! Restart the program and it should just work. If it doesn't, please file an issue at:
+";
+    enum issuePattern = "
+--------------------------------------------------------------------------------
+%s
     <i>https://github.com/zorael/kameloso/issues/new</>
 
 <l>Your key is valid for another <i>%d<l> days.</>
 ";
-    writefln(issuePattern.expandTags(LogLevel.off), numDays);
+    immutable message = plugin.twitchBotSettings.keygen ?
+        withKeygenSwitch :
+        withoutKeygenSwitch;
+    writefln(issuePattern.expandTags(LogLevel.off), message, numDays);
     plugin.state.updates |= typeof(plugin.state.updates).bot;
     plugin.state.mainThread.prioritySend(ThreadMessage.save());
 }
