@@ -2515,7 +2515,8 @@ void onCAP(TwitchBotPlugin plugin)
             plugin.reload();
         }
 
-        if (plugin.twitchBotSettings.keygen)
+        // Automatically keygen if no pass
+        if (plugin.twitchBotSettings.keygen || !plugin.state.bot.pass.length)
         {
             import kameloso.plugins.twitchbot.keygen : requestTwitchKey;
             plugin.requestTwitchKey();
