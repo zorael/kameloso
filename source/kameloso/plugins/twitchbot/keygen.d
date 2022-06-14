@@ -44,14 +44,7 @@ void requestTwitchKey(TwitchBotPlugin plugin)
     import std.stdio : stdout, writefln, writeln;
     import std.datetime.systime : Clock;
 
-    scope(exit)
-    {
-        import kameloso.messaging : quit;
-        import std.typecons : Flag, No, Yes;
-
-        if (plugin.state.settings.flush) stdout.flush();
-        quit!(Yes.priority)(plugin.state, string.init, Yes.quiet);
-    }
+    scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
     logger.trace();
     logger.info("-- Twitch authorisation key generation mode --");
@@ -186,24 +179,10 @@ instructions and log in to authorise the use of this program with your <i>BOT</>
     immutable delta = (expiry - Clock.currTime);
     immutable numDays = delta.total!"days";
 
-    enum withKeygenSwitch = "
-All done! Restart the program (without <i>--set twitch.keygen</>) and it should
-just work. If it doesn't, please file an issue at:
-";
-    enum withoutKeygenSwitch = "
-All done! Restart the program and it should just work. If it doesn't, please file an issue at:
-";
-    enum issuePattern = "
---------------------------------------------------------------------------------
-%s
-    <i>https://github.com/zorael/kameloso/issues/new</>
+    enum isValidPattern = "Your key is valid for another <l>%d</> days.";
+    logger.infof(isValidPattern.expandTags(LogLevel.info), numDays);
+    logger.trace();
 
-<l>Your key is valid for another <i>%d<l> days.</>
-";
-    immutable message = plugin.twitchBotSettings.keygen ?
-        withKeygenSwitch :
-        withoutKeygenSwitch;
-    writefln(issuePattern.expandTags(LogLevel.off), message, numDays);
     plugin.state.updates |= typeof(plugin.state.updates).bot;
     plugin.state.mainThread.prioritySend(ThreadMessage.save());
 }
@@ -230,14 +209,7 @@ void requestTwitchSuperKey(TwitchBotPlugin plugin)
     import std.stdio : stdout, writefln, writeln;
     import std.datetime.systime : Clock;
 
-    scope(exit)
-    {
-        import kameloso.messaging : quit;
-        import std.typecons : Flag, No, Yes;
-
-        if (plugin.state.settings.flush) stdout.flush();
-        quit!(Yes.priority)(plugin.state, string.init, Yes.quiet);
-    }
+    scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
     logger.trace();
     logger.info("-- Twitch authorisation super key generation mode --");
@@ -401,17 +373,10 @@ instructions and log in to authorise the use of this program with your <i>STREAM
     immutable delta = (expiry - Clock.currTime);
     immutable numDays = delta.total!"days";
 
-    enum issuePattern = "
---------------------------------------------------------------------------------
+    enum isValidPattern = "Your key is valid for another <l>%d</> days.";
+    logger.infof(isValidPattern.expandTags(LogLevel.info), numDays);
+    logger.trace();
 
-All done! Restart the program (without <i>--set twitch.superKeygen</>) and commands
-that require higher permissions should just work. If they don't, please file an issue at:
-
-    <i>https://github.com/zorael/kameloso/issues/new</>
-
-<l>Your key is valid for another <i>%d<l> days.</>
-";
-    writefln(issuePattern.expandTags(LogLevel.off), numDays);
     saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
 }
 
@@ -436,10 +401,7 @@ private string readURLAndParseKey(TwitchBotPlugin plugin, const string authNode)
 
     while (!key.length)
     {
-        scope(exit)
-        {
-            if (plugin.state.settings.flush) stdout.flush();
-        }
+        scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
         enum pattern = "<l>Paste the address of empty the page you were redirected to here (empty line exits):</>
 
