@@ -314,15 +314,16 @@ void voteImpl(
 
             auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
             assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+            immutable thisEvent = thisFiber.payload;
 
-            if (thisFiber.payload == IRCEvent.init)
+            if (thisEvent == IRCEvent.init)
             {
                 // Invoked by timer, not by event
                 reportResults();
                 return;  // End Fiber
             }
 
-            immutable accountOrNickname = idOf(thisFiber.payload.sender);
+            immutable accountOrNickname = idOf(thisEvent.sender);
 
             // Triggered by an event
             with (IRCEvent.Type)
@@ -331,7 +332,7 @@ void voteImpl(
             case NICK:
                 if (accountOrNickname in votedUsers)
                 {
-                    immutable newID = idOf(thisFiber.payload.target);
+                    immutable newID = idOf(thisEvent.target);
                     votedUsers[newID] = true;
                     votedUsers.remove(accountOrNickname);
                 }
@@ -341,9 +342,9 @@ void voteImpl(
                 import lu.string : contains, stripped;
                 import std.uni : toLower;
 
-                if (thisFiber.payload.channel != event.channel) break;
+                if (thisEvent.channel != event.channel) break;
 
-                immutable vote = thisFiber.payload.content.stripped;
+                immutable vote = thisEvent.content.stripped;
 
                 if (!vote.length || vote.contains!(Yes.decode)(' '))
                 {
@@ -362,11 +363,11 @@ void voteImpl(
                 break;
 
             case ACCOUNT:
-                if (const oldEntry = thisFiber.payload.sender.nickname in votedUsers)
+                if (const oldEntry = thisEvent.sender.nickname in votedUsers)
                 {
                     // Move the old entry to a new one with the account as key
-                    votedUsers[thisFiber.payload.sender.account] = *oldEntry;
-                    votedUsers.remove(thisFiber.payload.sender.nickname);
+                    votedUsers[thisEvent.sender.account] = *oldEntry;
+                    votedUsers.remove(thisEvent.sender.nickname);
                 }
                 break;
 
