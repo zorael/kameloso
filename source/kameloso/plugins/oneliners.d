@@ -284,7 +284,7 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 
 // onCommandModifyOneliner
 /++
-    Adds or removes a oneliner to/from the list of oneliners, and saves it to disk.
+    Adds, removes or modifies a oneliner, then saves the list to disk.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -297,6 +297,7 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
             .description("Manages oneliners.")
             .addSyntax("$command new [trigger] [type]")
             .addSyntax("$command add [trigger] [text...]")
+            .addSyntax("$command edit [trigger] [position] [new text...]")
             .addSyntax("$command insert [trigger] [position] [text...]")
             .addSyntax("$command del [trigger] [optional position]")
             .addSyntax("$command list")
@@ -352,7 +353,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
         import std.algorithm.comparison : among;
         import std.concurrency : send;
 
-        void sendAddUsage()
+        void sendNewUsage()
         {
             enum pattern = "Usage: <b>%s%s new<b> [trigger] [type]";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
@@ -362,7 +363,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
         string trigger;
         string typestring;
         immutable results = slice.splitInto(trigger, typestring);
-        if (results != SplitResults.match) return sendAddUsage();
+        if (results != SplitResults.match) return sendNewUsage();
 
         Oneliner.Type type;
 
@@ -446,9 +447,19 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
 
     case "insert":
     case "add":
-        enum appendToEndMagicNumber = -1;
+    case "edit":
+        enum Action
+        {
+            insertAtPosition,
+            appendToEnd,
+            editExisting,
+        }
 
-        void insert(/*const*/ string trigger, const ptrdiff_t pos, const string line)
+        void insert(
+            /*const*/ string trigger,
+            const string line,
+            const Action action,
+            const ptrdiff_t pos = 0)
         {
             trigger = stripPrefix(trigger).toLower;
 
@@ -458,30 +469,39 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
             auto oneliner = trigger in *channelOneliners;
             if (!oneliner) return sendNoSuchOneliner(trigger);
 
-            if ((pos == appendToEndMagicNumber) || (pos >= oneliner.responses.length))
+            if ((action != Action.appendToEnd) && (pos >= oneliner.responses.length))
             {
-                oneliner.responses ~= line;
+                throw new Exception("Oneliner response index out of bounds.");
             }
-            else
+
+            with (Action)
+            final switch (action)
             {
+            case insertAtPosition:
                 import std.array : insertInPlace;
+
                 oneliner.responses.insertInPlace(pos, line);
 
                 if (oneliner.type == Oneliner.Type.ordered)
                 {
-                    // Reset ordered position to 0 on removals
+                    // Reset ordered position to 0 on insertions
                     oneliner.position = 0;
                 }
+                break;
+
+            case appendToEnd:
+                oneliner.responses ~= line;
+                break;
+
+            case editExisting:
+                oneliner.responses[pos] = line;
+                break;
             }
 
-            immutable message = (pos == appendToEndMagicNumber) ?
-                "Oneliner line added." :
-                "Oneliner line inserted.";
-            chan(plugin.state, event.channel, message);
             saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
         }
 
-        if (verb == "insert")
+        if ((verb == "insert") || (verb == "edit"))
         {
             string trigger;
             string posString;
@@ -490,7 +510,9 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
             immutable results = slice.splitInto(trigger, posString);
             if (results != SplitResults.overrun)
             {
-                enum pattern = "Usage: <b>%s%s insert<b> [trigger] [position] [text...]";
+                immutable pattern = (verb == "insert") ?
+                    "Usage: <b>%s%s insert<b> [trigger] [position] [text...]" :
+                    "Usage: <b>%s%s edit<b> [trigger] [position] [new text...]";
                 immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
                 chan(plugin.state, event.channel, message);
                 return;
@@ -514,7 +536,26 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
                 return;
             }
 
-            return insert(trigger, pos, slice);
+            try
+            {
+                if (verb == "insert")
+                {
+                    insert(trigger, slice, Action.insertAtPosition, pos);
+                    enum message = "Oneliner line inserted.";
+                    chan(plugin.state, event.channel, message);
+                }
+                else /*if (verb == "edit")*/
+                {
+                    insert(trigger, slice, Action.editExisting, pos);
+                    enum message = "Oneliner line modified.";
+                    chan(plugin.state, event.channel, message);
+                }
+            }
+            catch (Exception e)
+            {
+                chan(plugin.state, event.channel, e.msg);
+                return;
+            }
         }
         else if (verb == "add")
         {
@@ -529,12 +570,23 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
                 return;
             }
 
-            return insert(trigger, appendToEndMagicNumber, slice);
+            try
+            {
+                insert(trigger, slice, Action.appendToEnd);
+                enum message = "Oneliner line added.";
+                chan(plugin.state, event.channel, message);
+            }
+            catch (Exception e)
+            {
+                chan(plugin.state, event.channel, e.msg);
+                return;
+            }
         }
         else
         {
             assert(0, "impossible case in onCommandOneliner switch");
         }
+        break;
 
     case "del":
         void sendDelUsage()
