@@ -1884,7 +1884,17 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
             {
                 try
                 {
-                    cast(void)getValidation(plugin, plugin.state.bot.pass, Yes.async);
+                    import kameloso.messaging : quit;
+
+                    immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
+                    plugin.userID = validationJSON["user_id"].str;
+                    immutable expiresIn = validationJSON["expires_in"].integer;
+                    immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
+                    immutable now = Clock.currTime;
+                    immutable delta = (expiresWhen - now);
+
+                    // Schedule quitting on expiry
+                    delay(plugin, (() => quit(plugin.state)), delta);
                 }
                 catch (TwitchQueryException e)
                 {
@@ -2005,7 +2015,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                     }
                 }
 
-                // Schedule the final warning, on expiry
+                // Schedule quitting on expiry
                 delay(plugin, &quitOnExpiry, delta);
 
                 // Also announce once normally how much time is left
