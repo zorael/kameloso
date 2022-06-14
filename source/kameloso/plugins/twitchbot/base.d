@@ -2506,44 +2506,75 @@ void onCAP(TwitchBotPlugin plugin)
     if ((plugin.state.server.daemon == IRCServer.Daemon.unset) &&
         plugin.state.server.address.endsWith(".twitch.tv"))
     {
-        if (/*plugin.twitchBotSettings.keygen ||*/
+        import kameloso.thread : ThreadMessage;
+        import std.concurrency : prioritySend;
+
+        if (plugin.twitchBotSettings.keygen ||
             plugin.twitchBotSettings.superKeygen ||
             plugin.twitchBotSettings.googleKeygen ||
             plugin.twitchBotSettings.spotifyKeygen)
         {
             // Some keygen, reload to load secrets so existing ones are read
+            // Not strictly needed for normal keygen
             plugin.reload();
-        }
 
-        // Automatically keygen if no pass
-        if (plugin.twitchBotSettings.keygen || !plugin.state.bot.pass.length)
-        {
-            import kameloso.plugins.twitchbot.keygen : requestTwitchKey;
-            plugin.requestTwitchKey();
-        }
+            // Automatically keygen if no pass
+            if (plugin.twitchBotSettings.keygen || !plugin.state.bot.pass.length)
+            {
+                import kameloso.plugins.twitchbot.keygen : requestTwitchKey;
+                plugin.requestTwitchKey();
+                plugin.twitchBotSettings.keygen = false;
+            }
 
-        if (*plugin.state.abort) return;
+            if (*plugin.state.abort) return;
 
-        if (plugin.twitchBotSettings.superKeygen)
-        {
-            import kameloso.plugins.twitchbot.keygen : requestTwitchSuperKey;
-            plugin.requestTwitchSuperKey();
-        }
+            if (plugin.twitchBotSettings.superKeygen)
+            {
+                import kameloso.plugins.twitchbot.keygen : requestTwitchSuperKey;
+                plugin.requestTwitchSuperKey();
+                plugin.twitchBotSettings.superKeygen = false;
+            }
 
-        if (*plugin.state.abort) return;
+            if (*plugin.state.abort) return;
 
-        if (plugin.twitchBotSettings.googleKeygen)
-        {
-            import kameloso.plugins.twitchbot.google : requestGoogleKeys;
-            plugin.requestGoogleKeys();
-        }
+            if (plugin.twitchBotSettings.googleKeygen)
+            {
+                import kameloso.plugins.twitchbot.google : requestGoogleKeys;
+                plugin.requestGoogleKeys();
+                plugin.twitchBotSettings.googleKeygen = false;
+            }
 
-        if (*plugin.state.abort) return;
+            if (*plugin.state.abort) return;
 
-        if (plugin.twitchBotSettings.spotifyKeygen)
-        {
-            import kameloso.plugins.twitchbot.spotify : requestSpotifyKeys;
-            plugin.requestSpotifyKeys();
+            if (plugin.twitchBotSettings.spotifyKeygen)
+            {
+                import kameloso.plugins.twitchbot.spotify : requestSpotifyKeys;
+                plugin.requestSpotifyKeys();
+                plugin.twitchBotSettings.spotifyKeygen = false;
+            }
+
+            if (*plugin.state.abort) return;
+
+            // Remove custom Twitch settings so we can reconnect without jumping
+            // back into keygens.
+            static immutable string[8] settingsToPop =
+            [
+                "twitch.keygen",
+                "twitchbot.keygen",
+                "twitch.superKeygen",
+                "twitchbot.superKeygen",
+                "twitch.googleKeygen",
+                "twitchbot.googleKeygen",
+                "twitch.spotifyKeygen",
+                "twitchbot.spotifyKeygen",
+            ];
+
+            foreach (immutable setting; settingsToPop[])
+            {
+                plugin.state.mainThread.prioritySend(ThreadMessage.popCustomSetting(setting));
+            }
+
+            plugin.state.mainThread.prioritySend(ThreadMessage.reconnect);
         }
     }
 }
