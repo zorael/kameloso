@@ -804,8 +804,8 @@ void onGlobalUserstate(OnelinersPlugin plugin, const ref IRCEvent event)
 
     Example:
     ---
-    plugin.oneliners["#channel"]["asdf"] ~= "asdf yourself";
-    plugin.oneliners["#channel"]["fdsa"] ~= "hirr";
+    plugin.oneliners["#channel"]["asdf"].responses ~= "asdf yourself";
+    plugin.oneliners["#channel"]["fdsa"].responses ~= "hirr";
 
     saveResource(plugin.onelinersByChannel, plugin.onelinerFile);
     ---
