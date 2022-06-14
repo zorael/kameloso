@@ -162,7 +162,7 @@ public:
         Returns:
             A [std.json.JSONValue|JSONValue] that describes this oneliner.
      +/
-    JSONValue toJSON() const
+    auto toJSON() const
     {
         JSONValue json;
         json = null;

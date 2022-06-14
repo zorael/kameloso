@@ -226,7 +226,7 @@ package struct Credentials
         Returns:
             `this` represented in JSON.
      +/
-    JSONValue toJSON() const
+    auto toJSON() const
     {
         JSONValue json;
         json = null;
