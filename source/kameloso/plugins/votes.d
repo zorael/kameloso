@@ -34,6 +34,14 @@ import core.time : Duration;
 
     /// Whether or not only votes placed by online users count.
     bool onlyOnlineUsersCount = true;
+
+    /++
+        Whether or not vote choices may start with the command prefix.
+
+        There's no check in place that a prefixed choice won't conflict with a
+        command, so make it opt-in at your own risk.
+     +/
+    bool forbidPrefixedChoices = true;
 }
 
 
@@ -164,7 +172,7 @@ void onCommandVote(VotesPlugin plugin, const ref IRCEvent event)
         import std.format : format;
         import std.uni : toLower;
 
-        if (rawChoice.beginsWith(plugin.state.settings.prefix))
+        if (plugin.votesSettings.forbidPrefixedChoices && rawChoice.beginsWith(plugin.state.settings.prefix))
         {
             enum pattern = `Vote choices may not start with the command prefix ("%s").`;
             immutable message = pattern.format(plugin.state.settings.prefix);
