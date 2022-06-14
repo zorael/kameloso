@@ -160,6 +160,11 @@ public:
      +/
     string[][string] invalidConfigurationEntries;
 
+    /++
+        Custom settings specfied at the command line with the `--set` parameter.
+     +/
+    string[] customSettings;
+
     /// Never copy this.
     @disable this(this);
 
