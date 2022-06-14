@@ -33,20 +33,15 @@ import core.thread : Fiber;
  +/
 package void requestGoogleKeys(TwitchBotPlugin plugin)
 {
+    import kameloso.common : timeSince;
     import kameloso.logger : LogLevel;
     import lu.string : contains, nom, stripped;
     import std.format : format;
     import std.process : Pid, ProcessException, wait;
     import std.stdio : File, readln, stdin, stdout, write, writefln, writeln;
+    import core.time : seconds;
 
-    scope(exit)
-    {
-        import kameloso.messaging : quit;
-        import std.typecons : Flag, No, Yes;
-
-        if (plugin.state.settings.flush) stdout.flush();
-        quit!(Yes.priority)(plugin.state, string.init, Yes.quiet);
-    }
+    scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
     logger.trace();
     logger.info("-- Google authorisation key generation mode --");
@@ -178,6 +173,7 @@ Follow the instructions and log in to authorise the use of this program with you
         scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
         enum pattern = "<l>Paste the address of the page you were redirected to here (empty line exits):</>
+
 > ";
         write(pattern.expandTags(LogLevel.off));
         stdout.flush();
@@ -232,6 +228,23 @@ Follow the instructions and log in to authorise the use of this program with you
     auto client = getHTTPClient();
     getGoogleTokens(client, creds, code);
 
+    writeln();
+    logger.info("Validating...");
+
+    immutable validationJSON = validateGoogleToken(client, creds);
+    if (*plugin.state.abort) return;
+
+    if (const errorJSON = "error" in validationJSON)
+    {
+        throw new Exception(validationJSON["error_description"].str);
+    }
+
+    immutable expiresIn = validationJSON["expires_in"].integer;
+
+    enum isValidPattern = "Your key is valid for another <l>%s</> but will be automatically refreshed.";
+    logger.infof(isValidPattern.expandTags(LogLevel.info), expiresIn.seconds.timeSince!(3,1));
+    logger.trace();
+
     if (auto storedCreds = channel in plugin.secretsByChannel)
     {
         import lu.meld : MeldingStrategy, meldInto;
@@ -243,17 +256,6 @@ Follow the instructions and log in to authorise the use of this program with you
     }
 
     saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
-
-    enum issuePattern = "
---------------------------------------------------------------------------------
-
-All done! Restart the program (without <i>--set twitch.googleKeygen</>)
-and it should just work. If it doesn't, please file an issue at:
-
-    <i>https://github.com/zorael/kameloso/issues/new</>
-";
-    writefln(issuePattern.expandTags(LogLevel.off), plugin.secretsFile);
-    if (plugin.state.settings.flush) stdout.flush();
 }
 
 
@@ -410,7 +412,6 @@ void getGoogleTokens(HttpClient client, ref Credentials creds, const string code
 
     immutable url = pattern.format(creds.googleClientID, creds.googleClientSecret, code);
     enum data = cast(ubyte[])"{}";
-
     auto req = client.request(Uri(url), HttpVerb.POST, data);
     auto res = req.waitForCompletion();
 
@@ -461,7 +462,6 @@ void refreshGoogleToken(HttpClient client, ref Credentials creds)
 
     immutable url = pattern.format(creds.googleClientID, creds.googleClientSecret, creds.googleRefreshToken);
     enum data = cast(ubyte[])"{}";
-
     auto req = client.request(Uri(url), HttpVerb.POST, data);
     auto res = req.waitForCompletion();
     const json = parseJSON(res.contentText);
@@ -476,4 +476,52 @@ void refreshGoogleToken(HttpClient client, ref Credentials creds)
 
     creds.googleAccessToken = json["access_token"].str;
     // refreshToken is not present and stays the same as before
+}
+
+
+// validateGoogleToken
+/++
+    Validates a Google OAuth token, returning the JSON received from the server.
+
+    Params:
+        client = [arsd.http2.HttpClient|HttpClient] to use.
+        creds = Credentials aggregate.
+
+    Returns:
+        The server [std.json.JSONValue|JSONValue] response.
+ +/
+auto validateGoogleToken(HttpClient client, ref Credentials creds)
+{
+    import arsd.http2 : Uri;
+    import std.json : JSONType, parseJSON;
+
+    enum urlHead = "https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=";
+    immutable url = urlHead ~ creds.googleAccessToken;
+    auto req = client.request(Uri(url));
+    auto res = req.waitForCompletion();
+    const json = parseJSON(res.contentText);
+
+    /*
+    {
+        "error": "invalid_token",
+        "error_description": "Invalid Value"
+    }
+    */
+    /*
+    {
+        "access_type": "offline",
+        "aud": "[redacted]",
+        "azp": "[redacted]",
+        "exp": "[redacted]",
+        "expires_in": "3599",
+        "scope": "https:\/\/www.googleapis.com\/auth\/youtube"
+    }
+    */
+
+    if (json.type != JSONType.object)
+    {
+        throw new Exception("Wrong JSON type in token validation response");
+    }
+
+    return json;
 }
