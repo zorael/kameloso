@@ -39,14 +39,7 @@ package void requestSpotifyKeys(TwitchBotPlugin plugin)
     import std.process : Pid, ProcessException, wait;
     import std.stdio : File, readln, stdin, stdout, write, writefln, writeln;
 
-    scope(exit)
-    {
-        import kameloso.messaging : quit;
-        import std.typecons : Flag, No, Yes;
-
-        if (plugin.state.settings.flush) stdout.flush();
-        quit!(Yes.priority)(plugin.state, string.init, Yes.quiet);
-    }
+    scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
     logger.trace();
     logger.info("-- Spotify authorisation key generation mode --");
@@ -171,6 +164,7 @@ Follow the instructions and log in to authorise the use of this program with you
         scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
         enum pattern = "<l>Paste the address of the page you were redirected to here (empty line exits):</>
+
 > ";
         write(pattern.expandTags(LogLevel.off));
         stdout.flush();
@@ -225,6 +219,24 @@ Follow the instructions and log in to authorise the use of this program with you
     auto client = getHTTPClient();
     getSpotifyTokens(client, creds, code);
 
+    writeln();
+    logger.info("Validating...");
+
+    immutable validationJSON = validateSpotifyToken(client, creds);
+    if (*plugin.state.abort) return;
+
+    if (const errorJSON = "error" in validationJSON)
+    {
+        throw new Exception((*errorJSON)["message"].str);
+    }
+    else if ("display_name" !in validationJSON)
+    {
+        throw new Exception("Unexpected JSON response from server");
+    }
+
+    logger.info("All done!");
+    logger.trace();
+
     if (auto storedCreds = channel in plugin.secretsByChannel)
     {
         import lu.meld : MeldingStrategy, meldInto;
@@ -236,17 +248,6 @@ Follow the instructions and log in to authorise the use of this program with you
     }
 
     saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
-
-    enum issuePattern = "
---------------------------------------------------------------------------------
-
-All done! Restart the program (without <i>--set twitch.spotifyKeygen</>)
-and it should just work. If it doesn't, please file an issue at:
-
-    <i>https://github.com/zorael/kameloso/issues/new</>
-";
-    writefln(issuePattern.expandTags(LogLevel.off), plugin.secretsFile);
-    if (plugin.state.settings.flush) stdout.flush();
 }
 
 
@@ -313,10 +314,9 @@ void getSpotifyTokens(HttpClient client, ref Credentials creds, const string cod
  +/
 void refreshSpotifyToken(HttpClient client, ref Credentials creds)
 {
-    import arsd.http2 : FormData, HttpVerb, Uri;
+    import arsd.http2 : HttpVerb, Uri;
     import std.format : format;
     import std.json : JSONType, parseJSON;
-    import std.string : indexOf;
 
     enum node = "https://accounts.spotify.com/api/token";
     enum urlPattern = node ~
@@ -506,13 +506,74 @@ package auto getSpotifyTrackByID(Credentials creds, const string trackID)
 
     auto req = client.request(Uri(url));
     auto res = req.waitForCompletion();
-
     auto json = parseJSON(res.contentText);
 
     if (json.type != JSONType.object)
     {
         throw new SongRequestJSONTypeMismatchException(
             "Wrong JSON type in track request response", json);
+    }
+
+    return json;
+}
+
+
+// validateSpotifyToken
+/++
+    Validates a Spotify OAuth token by issuing a simple request for user
+    information, returning the JSON received.
+
+    Params:
+        client = [arsd.http2.HttpClient|HttpClient] to use.
+        creds = Credentials aggregate.
+
+    Returns:
+        The server [std.json.JSONValue|JSONValue] response.
+ +/
+auto validateSpotifyToken(HttpClient client, ref Credentials creds)
+{
+    import arsd.http2 : Uri;
+    import std.json : JSONType, parseJSON;
+
+    enum url = "https://api.spotify.com/v1/me";
+    client.authorization = "Bearer " ~ creds.spotifyAccessToken;
+
+    auto req = client.request(Uri(url));
+    auto res = req.waitForCompletion();
+    const json = parseJSON(res.contentText);
+
+    import std.stdio;
+    writeln(json.toPrettyString);
+
+    /*
+    {
+        "error": {
+            "message": "The access token expired",
+            "status": 401
+        }
+    }
+    */
+    /*
+    {
+        "display_name": "zorael",
+        "external_urls": {
+            "spotify": "https:\/\/open.spotify.com\/user\/zorael"
+        },
+        "followers": {
+            "href": null,
+            "total": 0
+        },
+        "href": "https:\/\/api.spotify.com\/v1\/users\/zorael",
+        "id": "zorael",
+        "images": [],
+        "type": "user",
+        "uri": "spotify:user:zorael"
+    }
+    */
+
+    if (json.type != JSONType.object)
+    {
+        throw new Exception("Wrong JSON type in token validation response");
     }
 
     return json;
