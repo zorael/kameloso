@@ -160,8 +160,17 @@ void onCommandVote(VotesPlugin plugin, const ref IRCEvent event)
 
     foreach (immutable rawChoice; slice.splitter(' '))
     {
-        import lu.string : strippedRight;
+        import lu.string : beginsWith, strippedRight;
+        import std.format : format;
         import std.uni : toLower;
+
+        if (rawChoice.beginsWith(plugin.state.settings.prefix))
+        {
+            enum pattern = `Vote choices may not start with the command prefix ("%s").`;
+            immutable message = pattern.format(plugin.state.settings.prefix);
+            chan(plugin.state, event.channel, message);
+            return;
+        }
 
         // Strip any trailing commas
         immutable choice = rawChoice.strippedRight(',');
