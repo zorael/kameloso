@@ -331,6 +331,26 @@ void messageFiber(ref Kameloso instance)
                 instance.writeConfigurationFile(instance.settings.configFile);
                 break;
 
+            case popCustomSetting:
+                size_t[] toRemove;
+
+                foreach (immutable i, immutable line; instance.customSettings)
+                {
+                    import lu.string : nom;
+
+                    string slice = line;  // mutable
+                    immutable setting = slice.nom!(Yes.inherit)('=');
+                    if (setting == message.content) toRemove ~= i;
+                }
+
+                foreach_reverse (immutable i; toRemove)
+                {
+                    import std.algorithm.mutation : SwapStrategy, remove;
+                    instance.customSettings = instance.customSettings
+                        .remove!(SwapStrategy.unstable)(i);
+                }
+                break;
+
             default:
                 enum pattern = "onMessage received unexpected message type: <l>%s";
                 logger.errorf(pattern.expandTags(LogLevel.error), message.type);
@@ -1929,16 +1949,11 @@ void resetSignals() nothrow @nogc
     Params:
         instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
         args = The arguments passed to the program.
-        customSettings = Out reference to the dynamic array of custom settings as
-            specified with `--set plugin.setting=value` on the command line.
 
     Returns:
         [lu.common.Next|Next].* depending on what action the calling site should take.
  +/
-Next tryGetopt(
-    ref Kameloso instance,
-    string[] args,
-    out string[] customSettings)
+Next tryGetopt(ref Kameloso instance, string[] args)
 {
     import kameloso.plugins.common.misc : IRCPluginSettingsException;
     import kameloso.config : ConfigurationFileReadFailureException, handleGetopt;
@@ -1951,7 +1966,7 @@ Next tryGetopt(
     try
     {
         // Act on arguments getopt, pass return value to main
-        return instance.handleGetopt(args, customSettings);
+        return instance.handleGetopt(args);
     }
     catch (GetOptException e)
     {
@@ -2720,7 +2735,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             if (*instance.abort) break outerloop;
 
             // Re-init plugins here so it isn't done on the first connect attempt
-            instance.initPlugins(attempt.customSettings);
+            instance.initPlugins();
 
             // Reset throttling, in case there were queued messages.
             instance.throttle.reset();
@@ -3046,12 +3061,6 @@ struct AttemptState
     Next next;
 
     /++
-        An array for [kameloso.config.handleGetopt|handleGetopt] to fill by ref
-        with custom settings set on the command-line using `--set plugin.setting=value`.
-     +/
-    string[] customSettings;
-
-    /++
         Bool whether this is the first connection attempt or if we have
         connected at least once already.
      +/
@@ -3164,7 +3173,7 @@ int run(string[] args)
         resetSignals();
     }
 
-    immutable actionAfterGetopt = instance.tryGetopt(args, attempt.customSettings);
+    immutable actionAfterGetopt = instance.tryGetopt(args);
     globalHeadless = instance.settings.headless;
 
     with (Next)
@@ -3305,7 +3314,7 @@ int run(string[] args)
     {
         import std.file : exists;
 
-        instance.initPlugins(attempt.customSettings);
+        instance.initPlugins();
 
         if (!instance.settings.headless &&
             instance.missingConfigurationEntries.length &&

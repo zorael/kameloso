@@ -100,8 +100,6 @@ void printHelp(GetoptResult results)
         client = Reference to the current [dialect.defs.IRCClient|IRCClient].
         server = Reference to the current [dialect.defs.IRCServer|IRCServer].
         bot = Reference to the current [kameloso.kameloso.IRCBot|IRCBot].
-        customSettings = const string array to all the custom settings set
-            via [std.getopt.getopt|getopt], to apply to things before saving to disk.
         giveInstructions = Whether or not to give instructions to edit the
             generated file and supply admins and/or home channels.
  +/
@@ -109,7 +107,6 @@ void writeConfig(ref Kameloso instance,
     ref IRCClient client,
     ref IRCServer server,
     ref IRCBot bot,
-    const string[] customSettings,
     const Flag!"giveInstructions" giveInstructions = Yes.giveInstructions) @system
 {
     import kameloso.common : Tint, logger, printVersionInfo;
@@ -130,7 +127,7 @@ void writeConfig(ref Kameloso instance,
     }
 
     // If we don't initialise the plugins there'll be no plugins array
-    instance.initPlugins(customSettings);
+    instance.initPlugins();
 
     // Take the opportunity to set a default quit reason. We can't do this in
     // applyDefaults because it's a perfectly valid use-case not to have a quit
@@ -204,10 +201,8 @@ void writeConfig(ref Kameloso instance,
 
     Params:
         instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
-        customSettings = Array of all the custom settings set
-            via [std.getopt.getopt|getopt], to apply to things before saving to disk.
  +/
-void printSettings(ref Kameloso instance, const string[] customSettings) @system
+void printSettings(ref Kameloso instance) @system
 {
     import kameloso.common : printVersionInfo;
     import kameloso.printing : printObjects;
@@ -219,7 +214,7 @@ void printSettings(ref Kameloso instance, const string[] customSettings) @system
     printObjects!(No.all)(instance.parser.client, instance.bot,
         instance.parser.server, instance.connSettings, instance.settings);
 
-    instance.initPlugins(customSettings);
+    instance.initPlugins();
 
     foreach (plugin; instance.plugins) plugin.printSettings();
 
@@ -241,8 +236,6 @@ void printSettings(ref Kameloso instance, const string[] customSettings) @system
             terminal text editor was requested.
         shouldOpenGraphicalEditor = Opening the configuration file in a
             graphical text editor was requested.
-        customSettings = Custom settings supplied at the command line, to be
-            passed to [writeConfig] when writing to the configuration file.
         force = (Windows) If true, uses `explorer.exe` as the graphical editor,
             otherwise uses `notepad.exe`.
 
@@ -254,7 +247,6 @@ void manageConfigFile(ref Kameloso instance,
     const Flag!"shouldWriteConfig" shouldWriteConfig,
     const Flag!"shouldOpenTerminalEditor" shouldOpenTerminalEditor,
     const Flag!"shouldOpenGraphicalEditor" shouldOpenGraphicalEditor,
-    ref string[] customSettings,
     const bool force) @system
 {
     /++
@@ -335,8 +327,7 @@ void manageConfigFile(ref Kameloso instance,
     if (shouldWriteConfig)
     {
         // --save was passed; write configuration to file and quit
-        writeConfig(instance, instance.parser.client, instance.parser.server,
-            instance.bot, customSettings);
+        writeConfig(instance, instance.parser.client, instance.parser.server, instance.bot);
     }
 
     if (shouldOpenTerminalEditor || shouldOpenGraphicalEditor)
@@ -349,7 +340,7 @@ void manageConfigFile(ref Kameloso instance,
         {
             // No config file exists to open up, so create one first
             writeConfig(instance, instance.parser.client, instance.parser.server,
-                instance.bot, customSettings, No.giveInstructions);
+                instance.bot, No.giveInstructions);
         }
 
         if (shouldOpenTerminalEditor)
@@ -498,7 +489,7 @@ public:
     Example:
     ---
     Kameloso instance;
-    Next next = instance.handleGetopt(args, customSettings);
+    Next next = instance.handleGetopt(args);
 
     if (next == Next.returnSuccess) return 0;
     // ...
@@ -507,8 +498,6 @@ public:
     Params:
         instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
         args = The command-line arguments the program was called with.
-        customSettings = Out array of custom settings to apply on top of
-            the settings read from the configuration file.
 
     Returns:
         [lu.common.Next.continue_|Next.continue_] or
@@ -518,9 +507,7 @@ public:
     Throws:
         [std.getopt.GetOptException|GetOptException] if an unknown flag is passed.
  +/
-Next handleGetopt(ref Kameloso instance,
-    string[] args,
-    out string[] customSettings) @system
+Next handleGetopt(ref Kameloso instance, string[] args) @system
 {
     with (instance)
     {
@@ -975,7 +962,6 @@ Next handleGetopt(ref Kameloso instance,
                 cast(Flag!"shouldWriteConfig")shouldWriteConfig,
                 cast(Flag!"shouldOpenTerminalEditor")shouldOpenTerminalEditor,
                 cast(Flag!"shouldOpenGraphicalEditor")shouldOpenGraphicalEditor,
-                customSettings,
                 settings.force);
             return Next.returnSuccess;
         }
@@ -983,7 +969,7 @@ Next handleGetopt(ref Kameloso instance,
         if (shouldShowSettings)
         {
             // --settings was passed, show all options and quit
-            if (!settings.headless) printSettings(instance, customSettings);
+            if (!settings.headless) printSettings(instance);
             return Next.returnSuccess;
         }
 

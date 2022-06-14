@@ -295,15 +295,11 @@ public:
         It only initialises them to the point where they're aware of their
         settings, and not far enough to have loaded any resources.
 
-        Params:
-            customSettings = String array of custom settings to apply to plugins
-                in addition to those read from the configuration file.
-
         Throws:
             [kameloso.plugins.common.misc.IRCPluginSettingsException|IRCPluginSettingsException]
             on failure to apply custom settings.
      +/
-    void initPlugins(const string[] customSettings) @system
+    void initPlugins() @system
     {
         import kameloso.plugins : PluginModules;
         import kameloso.plugins.common.core : IRCPluginState;
@@ -405,7 +401,7 @@ public:
             }
         }
 
-        immutable allCustomSuccess = plugins.applyCustomSettings(customSettings, settings);
+        immutable allCustomSuccess = plugins.applyCustomSettings(this.customSettings, settings);
 
         if (!allCustomSuccess)
         {
