@@ -233,40 +233,39 @@ void voteImpl(
 
         immutable total = cast(double)voteChoices.byValue.sum;
 
-        if (total > 0)
-        {
-            chan(plugin.state, event.channel, "Voting complete, results:");
-
-            auto sorted = voteChoices
-                .byKeyValue
-                .array
-                .sort!((a, b) => a.value < b.value);
-
-            foreach (const result; sorted)
-            {
-                if (result.value == 0)
-                {
-                    enum pattern = "<b>%s<b> : 0 votes";
-                    immutable message = pattern.format(origChoiceNames[result.key]);
-                    chan(plugin.state, event.channel, message);
-                }
-                else
-                {
-                    import lu.string : plurality;
-
-                    immutable noun = result.value.plurality("vote", "votes");
-                    immutable double voteRatio = cast(double)result.value / total;
-                    immutable double votePercentage = 100 * voteRatio;
-
-                    enum pattern = "<b>%s<b> : %d %s (%.1f%%)";
-                    immutable message = pattern.format(origChoiceNames[result.key], result.value, noun, votePercentage);
-                    chan(plugin.state, event.channel, message);
-                }
-            }
-        }
-        else
+        if (total == 0)
         {
             chan(plugin.state, event.channel, "Voting complete, no one voted.");
+            return;
+        }
+
+        chan(plugin.state, event.channel, "Voting complete, results:");
+
+        auto sorted = voteChoices
+            .byKeyValue
+            .array
+            .sort!((a, b) => a.value < b.value);
+
+        foreach (const result; sorted)
+        {
+            if (result.value == 0)
+            {
+                enum pattern = "<b>%s<b> : 0 votes";
+                immutable message = pattern.format(origChoiceNames[result.key]);
+                chan(plugin.state, event.channel, message);
+            }
+            else
+            {
+                import lu.string : plurality;
+
+                immutable noun = result.value.plurality("vote", "votes");
+                immutable double voteRatio = cast(double)result.value / total;
+                immutable double votePercentage = 100 * voteRatio;
+
+                enum pattern = "<b>%s<b> : %d %s (%.1f%%)";
+                immutable message = pattern.format(origChoiceNames[result.key], result.value, noun, votePercentage);
+                chan(plugin.state, event.channel, message);
+            }
         }
     }
 
