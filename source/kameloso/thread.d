@@ -202,6 +202,12 @@ struct ThreadMessage
             responsiveness/precision during that time.
          +/
         shortenReceiveTimeout,
+
+        /++
+            Removes an entry from the custom settings array popualted at program
+            start with the `--set` parameter.
+         +/
+        popCustomSetting,
     }
 
     /++
