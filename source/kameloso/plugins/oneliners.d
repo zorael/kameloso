@@ -471,6 +471,10 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
 
             if ((action != Action.appendToEnd) && (pos >= oneliner.responses.length))
             {
+                // Send the error message here so we can include the range
+                enum pattern = "Oneliner response index out of bounds. (0-<b>%d<b>)";
+                immutable message = pattern.format(pos);
+                chan(plugin.state, event.channel, message);
                 throw new Exception("Oneliner response index out of bounds.");
             }
 
@@ -553,7 +557,8 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
             }
             catch (Exception e)
             {
-                chan(plugin.state, event.channel, e.msg);
+                // Already sent error message
+                //chan(plugin.state, event.channel, e.msg);
                 return;
             }
         }
@@ -578,7 +583,8 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const /*ref*/ IRCEvent even
             }
             catch (Exception e)
             {
-                chan(plugin.state, event.channel, e.msg);
+                // Already sent error message
+                //chan(plugin.state, event.channel, e.msg);
                 return;
             }
         }
