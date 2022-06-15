@@ -2328,10 +2328,9 @@ void onCommandSetTitle(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         return;
     }
 
-    immutable title = unescapedTitle.replace(`"`, `\"`);
-
     void setTitleDg()
     {
+        immutable title = unescapedTitle.replace(`"`, `\"`);
         modifyChannel(plugin, event.channel, title, string.init);
     }
 
@@ -2380,29 +2379,29 @@ void onCommandSetGame(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         return;
     }
 
-    immutable specified = unescapedGameName.replace(`"`, `\"`);
-    string id;
-
-    if (specified.isNumeric)
-    {
-        id = specified;
-    }
-    else
-    {
-        immutable gameInfo = getTwitchGame(plugin, specified.encodeComponent);
-
-        if (!gameInfo.id.length)
-        {
-            enum message = "Could not find a game by that name.";
-            chan(plugin.state, event.channel, message);
-            return;
-        }
-
-        id = gameInfo.id;
-    }
-
     void setGameDg()
     {
+        immutable specified = unescapedGameName.replace(`"`, `\"`);
+        string id;
+
+        if (specified.isNumeric)
+        {
+            id = specified;
+        }
+        else
+        {
+            immutable gameInfo = getTwitchGame(plugin, specified.encodeComponent);
+
+            if (!gameInfo.id.length)
+            {
+                enum message = "Could not find a game by that name.";
+                chan(plugin.state, event.channel, message);
+                return;
+            }
+
+            id = gameInfo.id;
+        }
+
         modifyChannel(plugin, event.channel, string.init, id);
     }
 
