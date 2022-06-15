@@ -43,8 +43,8 @@ package void requestSpotifyKeys(TwitchBotPlugin plugin)
 
     logger.trace();
     logger.info("-- Spotify authorisation key generation mode --");
-    enum message =
-"To access the Spotify API you need a <i>client ID</> and a <i>client secret</>.
+    enum message = "
+To access the Spotify API you need a <i>client ID</> and a <i>client secret</>.
 
 <l>Go here to create a project and generate said credentials:</>
 
@@ -109,11 +109,9 @@ A normal URL to any playlist you can modify will work fine.
     enum attemptToOpenPattern = `
 --------------------------------------------------------------------------------
 
-<l>Attempting to open a Spotify login page in your default web browser.</>
+<l>Attempting to open the Spotify redirect page in your default web browser.</>
 
-Follow the instructions and log in to authorise the use of this program with your account.
-
-<l>Then paste the address of the empty page you are redirected to afterwards here.</>
+<l>Paste the address of the empty page that was opened here.</>
 
 * The redirected address should start with <i>http://localhost</>.
 * It will probably say "<l>this site can't be reached</>" or "<l>unable to connect</>".

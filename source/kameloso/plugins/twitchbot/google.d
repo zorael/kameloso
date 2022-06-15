@@ -46,8 +46,8 @@ package void requestGoogleKeys(TwitchBotPlugin plugin)
 
     logger.trace();
     logger.info("-- Google authorisation key generation mode --");
-    enum message =
-`To access the Google API you need a <i>client ID</> and a <i>client secret</>.
+    enum message = `
+To access the Google API you need a <i>client ID</> and a <i>client secret</>.
 
 <l>Go here to create a project:</>
 
