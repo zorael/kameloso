@@ -36,6 +36,7 @@ package void requestGoogleKeys(TwitchBotPlugin plugin)
     import kameloso.common : timeSince;
     import kameloso.logger : LogLevel;
     import lu.string : contains, nom, stripped;
+    import std.conv : to;
     import std.format : format;
     import std.process : Pid, ProcessException, wait;
     import std.stdio : File, readln, stdin, stdout, write, writefln, writeln;
@@ -239,7 +240,8 @@ Follow the instructions and log in to authorise the use of this program with you
         throw new Exception(validationJSON["error_description"].str);
     }
 
-    immutable expiresIn = validationJSON["expires_in"].integer;
+    // "expires_in" is a string
+    immutable expiresIn = validationJSON["expires_in"].str.to!uint;
 
     enum isValidPattern = "Your key is valid for another <l>%s</> but will be automatically refreshed.";
     logger.infof(isValidPattern.expandTags(LogLevel.info), expiresIn.seconds.timeSince!(3,1));
