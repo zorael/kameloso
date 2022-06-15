@@ -2311,7 +2311,7 @@ void onCommandWatchtime(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 )
 void onCommandSetTitle(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import lu.string : stripped;
+    import lu.string : stripped, unquoted;
     import std.array : replace;
 
     if (!plugin.useAPIFeatures) return;
@@ -2330,7 +2330,7 @@ void onCommandSetTitle(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 
     void setTitleDg()
     {
-        immutable title = unescapedTitle.replace(`"`, `\"`);
+        immutable title = unescapedTitle.unquoted.replace(`"`, `\"`);
         modifyChannel(plugin, event.channel, title, string.init);
     }
 
