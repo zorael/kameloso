@@ -2512,7 +2512,8 @@ void onCAP(TwitchBotPlugin plugin)
         if (plugin.twitchBotSettings.keygen ||
             plugin.twitchBotSettings.superKeygen ||
             plugin.twitchBotSettings.googleKeygen ||
-            plugin.twitchBotSettings.spotifyKeygen)
+            plugin.twitchBotSettings.spotifyKeygen ||
+            (!plugin.state.bot.pass.length && !plugin.state.settings.force))
         {
             // Some keygen, reload to load secrets so existing ones are read
             // Not strictly needed for normal keygen
