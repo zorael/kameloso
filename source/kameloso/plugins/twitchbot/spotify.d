@@ -553,9 +553,6 @@ auto validateSpotifyToken(HttpClient client, ref Credentials creds)
     auto res = req.waitForCompletion();
     const json = parseJSON(res.contentText);
 
-    import std.stdio;
-    writeln(json.toPrettyString);
-
     /*
     {
         "error": {
