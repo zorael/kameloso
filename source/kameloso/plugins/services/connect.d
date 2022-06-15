@@ -1442,8 +1442,19 @@ void register(ConnectService service)
 
         if (!service.state.settings.hideOutgoing && !service.state.settings.trace)
         {
-            // fake it
-            logger.trace("--> PASS hunter2");
+            version(TwitchSupport)
+            {
+                if (!serverIsTwitch)
+                {
+                    // fake it
+                logger.trace("--> PASS hunter2");
+                }
+            }
+            else
+            {
+                // Ditto
+                logger.trace("--> PASS hunter2");
+            }
         }
     }
 
@@ -1495,7 +1506,9 @@ void negotiateNick(ConnectService service)
 {
     import std.algorithm.searching : endsWith;
 
-    if (!service.state.server.address.endsWith(".twitch.tv"))
+    immutable serverIsTwitch = service.state.server.address.endsWith(".twitch.tv");
+
+    if (!serverIsTwitch)
     {
         import kameloso.common : replaceTokens;
         import std.format : format;
@@ -1528,7 +1541,8 @@ void negotiateNick(ConnectService service)
         immediate(service.state, message, Yes.quiet);
     }
 
-    immediate(service.state, "NICK " ~ service.state.client.nickname);
+    immediate(service.state, "NICK " ~ service.state.client.nickname,
+        serverIsTwitch ? Yes.quiet : No.quiet);
     service.issuedNICK = true;
 }
 
