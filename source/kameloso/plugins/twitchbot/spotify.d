@@ -64,9 +64,22 @@ A normal URL to any playlist you can modify will work fine.
 
     Credentials creds;
 
-    immutable channel = readNamedString("<l>Enter your <i>#channel<l>:</> ",
-        0L, *plugin.state.abort);
-    if (*plugin.state.abort) return;
+    string channel;
+    while (!channel.length)
+    {
+        immutable rawChannel = readNamedString("<l>Enter your <i>#channel<l>:</> ",
+            0L, *plugin.state.abort);
+        if (*plugin.state.abort) return;
+
+        channel = rawChannel.stripped;
+
+        if (!channel.length || channel[0] != '#')
+        {
+            enum channelMessage = "Channel names are account names (in lowercase) starting with a '<l>#</>' sign.";
+            logger.warning(channelMessage.expandTags(LogLevel.warning));
+            channel = string.init;
+        }
+    }
 
     creds.spotifyClientID = readNamedString("<l>Copy and paste your <i>OAuth client ID<l>:</> ",
         32L, *plugin.state.abort);
