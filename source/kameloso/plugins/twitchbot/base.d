@@ -2360,7 +2360,7 @@ void onCommandSetTitle(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 )
 void onCommandSetGame(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import lu.string : stripped;
+    import lu.string : stripped, unquoted;
     import std.array : replace;
     import std.string : isNumeric;
     import std.uri : encodeComponent;
@@ -2381,7 +2381,7 @@ void onCommandSetGame(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 
     void setGameDg()
     {
-        immutable specified = unescapedGameName.replace(`"`, `\"`);
+        immutable specified = unescapedGameName.unquoted.replace(`"`, `\"`);
         string id;
 
         if (specified.isNumeric)
