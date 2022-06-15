@@ -248,6 +248,12 @@ Follow the instructions and log in to authorise the use of this program with you
     immutable validationJSON = validateGoogleToken(client, creds);
     if (*plugin.state.abort) return;
 
+    scope(failure)
+    {
+        import std.stdio;
+        writeln(validationJSON.toPrettyString);
+    }
+
     if (const errorJSON = "error" in validationJSON)
     {
         throw new Exception(validationJSON["error_description"].str);

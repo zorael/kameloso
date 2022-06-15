@@ -236,6 +236,12 @@ A normal URL to any playlist you can modify will work fine.
     immutable validationJSON = validateSpotifyToken(client, creds);
     if (*plugin.state.abort) return;
 
+    scope(failure)
+    {
+        import std.stdio;
+        writeln(validationJSON.toPrettyString);
+    }
+
     if (const errorJSON = "error" in validationJSON)
     {
         throw new Exception((*errorJSON)["message"].str);
