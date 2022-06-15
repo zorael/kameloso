@@ -86,7 +86,7 @@ A normal URL to any playlist you can modify will work fine.
 
         if (!channel.length || channel[0] != '#')
         {
-            enum channelMessage = "Channel names are account names (in lowercase) starting with a '<l>#</>' sign.";
+            enum channelMessage = "Channels are Twitch lowercase account names, prepended with a '<i>#</>' sign.";
             logger.warning(channelMessage.expandTags(LogLevel.warning));
             channel = string.init;
         }
