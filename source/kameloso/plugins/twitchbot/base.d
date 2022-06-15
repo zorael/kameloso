@@ -2519,12 +2519,16 @@ void onCAP(TwitchBotPlugin plugin)
             // Not strictly needed for normal keygen
             plugin.reload();
 
+            bool needSeparator;
+            enum separator = "---------------------------------------------------------------------";
+
             // Automatically keygen if no pass
             if (plugin.twitchBotSettings.keygen || !plugin.state.bot.pass.length)
             {
                 import kameloso.plugins.twitchbot.keygen : requestTwitchKey;
                 plugin.requestTwitchKey();
                 plugin.twitchBotSettings.keygen = false;
+                needSeparator = true;
             }
 
             if (*plugin.state.abort) return;
@@ -2532,8 +2536,10 @@ void onCAP(TwitchBotPlugin plugin)
             if (plugin.twitchBotSettings.superKeygen)
             {
                 import kameloso.plugins.twitchbot.keygen : requestTwitchSuperKey;
+                if (needSeparator) logger.trace(separator);
                 plugin.requestTwitchSuperKey();
                 plugin.twitchBotSettings.superKeygen = false;
+                needSeparator = true;
             }
 
             if (*plugin.state.abort) return;
@@ -2541,8 +2547,10 @@ void onCAP(TwitchBotPlugin plugin)
             if (plugin.twitchBotSettings.googleKeygen)
             {
                 import kameloso.plugins.twitchbot.google : requestGoogleKeys;
+                if (needSeparator) logger.trace(separator);
                 plugin.requestGoogleKeys();
                 plugin.twitchBotSettings.googleKeygen = false;
+                needSeparator = true;
             }
 
             if (*plugin.state.abort) return;
@@ -2550,6 +2558,7 @@ void onCAP(TwitchBotPlugin plugin)
             if (plugin.twitchBotSettings.spotifyKeygen)
             {
                 import kameloso.plugins.twitchbot.spotify : requestSpotifyKeys;
+                if (needSeparator) logger.trace(separator);
                 plugin.requestSpotifyKeys();
                 plugin.twitchBotSettings.spotifyKeygen = false;
             }
