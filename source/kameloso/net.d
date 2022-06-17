@@ -453,13 +453,12 @@ public:
             }
         }
 
-        if (rawline.indexOf('\n') != -1)
+        immutable newlinePos = rawline.indexOf('\n');
+
+        if (newlinePos != -1)
         {
-            // Line is made up of smaller sublines
-            foreach (immutable subline; rawline.splitter("\n"))
-            {
-                sendlineImpl(subline);
-            }
+            // Line incorrectly has a newline, so send up until that and discard rest
+            sendlineImpl(rawline[0..newlinePos]);
         }
         else
         {
