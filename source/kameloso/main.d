@@ -710,8 +710,9 @@ void messageFiber(ref Kameloso instance)
             }
         }
 
+        import kameloso.constants : Timeout;
         import std.datetime.systime : Clock;
-        import core.time : Duration, seconds;
+        import core.time : Duration, msecs;
 
         /// Did the concurrency receive catch something?
         bool receivedSomething;
@@ -720,7 +721,7 @@ void messageFiber(ref Kameloso instance)
         immutable loopStartTime = Clock.currTime;
 
         static immutable instant = Duration.zero;
-        static immutable oneSecond = 1.seconds;
+        static immutable maxReceiveTime = Timeout.messageReadMsecs.msecs;
 
         do
         {
@@ -745,7 +746,7 @@ void messageFiber(ref Kameloso instance)
         while (!*instance.abort &&
             receivedSomething &&
             (next == Next.continue_) &&
-            ((Clock.currTime - loopStartTime) <= oneSecond));
+            ((Clock.currTime - loopStartTime) <= maxReceiveTime));
 
         yield(next);
     }

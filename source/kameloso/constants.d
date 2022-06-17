@@ -382,6 +382,11 @@ enum Timeout
         Timeout for HTTP GET requests.
      +/
     httpGET = 10,
+
+    /++
+        Timeout for concurrency message reads (in between socket reads).
+     +/
+    messageReadMsecs = 1500,
 }
 
 
