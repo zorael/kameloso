@@ -190,18 +190,23 @@ void signalHandler(int sig) nothrow @nogc @system
 
     if (!globalHeadless && (sig < signalNames.length))
     {
-        printf("...caught signal SIG%s!\n", signalNames[sig].ptr);
+        if (!globalAbort)
+        {
+            printf("...caught signal SIG%s!\n", signalNames[sig].ptr);
+        }
+        else
+        {
+            printf("...caught signal SIG%s again! (press Enter if nothing happens)\n", signalNames[sig].ptr);
+        }
     }
 
+    if (globalAbort) resetSignals();
     globalAbort = true;
 
     version(Posix)
     {
         signalRaised = sig;
     }
-
-    // Restore signal handlers to the default
-    resetSignals();
 }
 
 
