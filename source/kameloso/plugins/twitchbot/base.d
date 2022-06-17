@@ -2522,7 +2522,8 @@ void onCAP(TwitchBotPlugin plugin)
             enum separator = "---------------------------------------------------------------------";
 
             // Automatically keygen if no pass
-            if (plugin.twitchBotSettings.keygen || !plugin.state.bot.pass.length)
+            if (plugin.twitchBotSettings.keygen ||
+                (!plugin.state.bot.pass.length && !plugin.state.settings.force))
             {
                 import kameloso.plugins.twitchbot.keygen : requestTwitchKey;
                 plugin.requestTwitchKey();
