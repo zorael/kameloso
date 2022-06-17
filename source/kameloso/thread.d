@@ -506,16 +506,16 @@ void exhaustMessages()
     // until a thread was spawned or thisTid was passed to a running thread.
     cast(void)thisTid;
 
-    bool notEmpty;
+    bool receivedSomething;
     static immutable almostInstant = 10.msecs;
 
     do
     {
-        notEmpty = receiveTimeout(almostInstant,
+        receivedSomething = receiveTimeout(almostInstant,
             (Variant _) scope {}
         );
     }
-    while (notEmpty);
+    while (receivedSomething);
 }
 
 ///

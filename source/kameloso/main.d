@@ -225,7 +225,7 @@ void messageFiber(ref Kameloso instance)
 {
     import kameloso.common : OutgoingLine, replaceTokens;
     import kameloso.messaging : Message;
-    import kameloso.thread : OutputRequest, Sendable, ThreadMessage;
+    import kameloso.thread : OutputRequest, ThreadMessage;
     import std.concurrency : yield;
 
     // The Generator we use this function with popFronts the first thing it does
@@ -3364,13 +3364,13 @@ int run(string[] args)
         // Catch any queued quit calls and use their reasons and quit settings
         // Also catch Variants so as not to throw an exception on missed priority messages
 
-        string reason = instance.bot.quitReason;
+        string reason = instance.bot.quitReason;  // mutable
         bool quiet;
-        bool notEmpty;
+        bool receivedSomething;
 
         do
         {
-            notEmpty = receiveTimeout(Duration.zero,
+            receivedSomething = receiveTimeout(Duration.zero,
                 (ThreadMessage message) scope
                 {
                     if (message.type == ThreadMessage.Type.quit)
@@ -3382,7 +3382,7 @@ int run(string[] args)
                 (Variant _) scope {},
             );
         }
-        while (notEmpty);
+        while (receivedSomething);
 
         if ((!instance.settings.hideOutgoing && !quiet) || instance.settings.trace)
         {
