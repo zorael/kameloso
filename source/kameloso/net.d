@@ -227,24 +227,8 @@ public:
      +/
     void reset()
     {
-        import std.range : only;
-        import std.socket : TcpSocket, AddressFamily, SocketShutdown, SocketType;
-
-        foreach (thisSocket; only(socket4, socket6))
-        {
-            if (!thisSocket) continue;
-
-            thisSocket.shutdown(SocketShutdown.BOTH);
-            thisSocket.close();
-        }
-
-        socket4 = new TcpSocket;
-        socket6 = new Socket(AddressFamily.INET6, SocketType.STREAM);
-        socket = socket4;
-
-        setDefaultOptions(socket4);
-        setDefaultOptions(socket6);
-
+        teardown();
+        setup();
         connected = false;
     }
 
@@ -256,7 +240,7 @@ public:
     void resetSSL() @system
     in (ssl, "Tried to reset SSL on a non-SSL `Connection`")
     {
-        if (sslInstance && sslContext) teardownSSL();
+        teardownSSL();
         setupSSL();
     }
 
@@ -325,6 +309,7 @@ public:
      +/
     void setupSSL() @system
     in (ssl, "Tried to set up SSL context on a non-SSL `Connection`")
+    in (socket, "Tried to set up an SSL context on a null `Socket`")
     {
         import std.file : exists;
         import std.path : extension;
@@ -371,13 +356,49 @@ public:
 
     // teardownSSL
     /++
-        Resets and frees SSL context and resources.
+        Frees SSL context and resources.
      +/
     void teardownSSL()
     in (ssl, "Tried to teardown SSL on a non-SSL `Connection`")
     {
-        openssl.SSL_free(sslInstance);
-        openssl.SSL_CTX_free(sslContext);
+        if (sslInstance) openssl.SSL_free(sslInstance);
+        if (sslContext) openssl.SSL_CTX_free(sslContext);
+    }
+
+
+    // teardown
+    /++
+        Shuts down and closes the internal [std.socket.Socket|Socket]s.
+     +/
+    void teardown()
+    {
+        import std.range : only;
+        import std.socket : SocketShutdown;
+
+        foreach (thisSocket; only(socket4, socket6))
+        {
+            if (!thisSocket) continue;
+
+            thisSocket.shutdown(SocketShutdown.BOTH);
+            thisSocket.close();
+        }
+    }
+
+
+    // setup
+    /++
+        Initialises new [std.socket.Socket|Socket]s and sets their options.
+     +/
+    void setup()
+    {
+        import std.socket : TcpSocket, AddressFamily, SocketShutdown, SocketType;
+
+        socket4 = new TcpSocket;
+        socket6 = new Socket(AddressFamily.INET6, SocketType.STREAM);
+        socket = socket4;
+
+        setDefaultOptions(socket4);
+        setDefaultOptions(socket6);
     }
 
 
@@ -866,6 +887,12 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
     alias State = ConnectionAttempt.State;
 
     yield(ConnectionAttempt.init);
+
+    scope(exit)
+    {
+        conn.teardown();
+        if (conn.ssl) conn.teardownSSL();
+    }
 
     do
     {
