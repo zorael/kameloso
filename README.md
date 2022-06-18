@@ -365,7 +365,7 @@ The first command creates a configuration file and opens it up in a text editor.
 * You can ignore `nickname`, `user`, `realName`, `account` and `password`, as they're not applicable on Twitch.
 * Peruse the file for other settings if you want; you can always get back to it with `--gedit`.
 
-The second command will launch the program and, upon detecting it's missing the authorisation token needed to connect to Twitch, start the guide to requesting a new one; see the ["long story"](#long-story) section below for details. Note that it will request a token for **the user you are currently logged in as in your browser**. If you want one for a different bot user instead, open up a private/incognito window, log in normally to Twitch **with the bot account** there, and copy/paste [this link](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true) to that browser window instead. (Then follow the terminal instructions again.)
+The second command will launch the program and, upon detecting it's missing the authorisation token needed to connect to Twitch (`pass` in the configuration file), it will start the guide to requesting a new one; see the ["long story"](#long-story) section below for details. **Note that it will request a token for the user you are currently logged in as in your browser**. If you want one for a different bot user instead, open up a private/incognito window, log in normally to Twitch **with the bot account** there, and copy/paste [this link](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true) to that browser window instead. (Then follow the terminal instructions again.)
 
 After obtaining a token it will save it to disk and reconnect to the server. Provided there were no errors, the bot should now enter your channel. Say something in chat in your browser and it should show in your terminal. If there were errors or snags, [*please* report them](https://github.com/zorael/kameloso/issues/new).
 
@@ -382,7 +382,7 @@ realName            likewise
 [IRCBot]
 #account
 #password
-pass                personaloauthauthorisationtoken
+pass                <personal oauth authorisation token for mainaccount>
 admins              mainaccount
 homeChannels        #mainaccount,#botaccount
 #guestChannels
@@ -404,7 +404,7 @@ It will open a browser window, in which you are asked to log onto Twitch *on Twi
 
 > Note: At no point is the bot privy to your Twitch login credentials! The logging-in is wholly done on Twitch's own servers, and no information is sent to any third parties. The code that deals with this is open for audit; [`requestTwitchKey` in `twitchbot/keygen.d`](source/kameloso/plugins/twitchbot/keygen.d).
 
-After entering your login and password and clicking **Authorize**, you will be redirected to an empty "`this site can't be reached`" or "`unable to connect`" page. **Copy the URL address of it** and paste it into the terminal, when asked. It will parse the address, extract your authorisation token, and offer to save it to your configuration file.
+After entering your login and password and clicking **Authorize**, you will be redirected to an empty "`this site can't be reached`" or "`unable to connect`" page. **Copy the URL address of it** and paste it into the terminal, when asked. It will parse the address, extract your authorisation token, and save it to your configuration file.
 
 If you prefer to generate the token manually, [**here is the URL you need to follow**](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true). The only thing the generation process does is open it for you, and automate saving the end token to disk.
 
@@ -444,7 +444,7 @@ Some functionality, such as setting the channel title or currently played game, 
 $ kameloso --set twitch.superKeygen
 ```
 
-> Mind that you need to be logged in as your main account while doing this, or the token obtained will be for the wrong channel.
+> Mind that you need to be logged into Twitch (in your browser) with your main account while doing this, or the token obtained will be for the wrong channel.
 
 ## Further help
 
