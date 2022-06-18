@@ -1566,7 +1566,7 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
             .word("startpoll")
             .policy(PrefixPolicy.prefixed)
             .description("Starts a Twitch poll.")
-            .addSyntax(`$command "[poll title]" [seconds] [choice1] [choice2] ...`)
+            .addSyntax(`$command "[poll title]" [duration] [choice1] [choice2] ...`)
     )
     .addCommand(
         IRCEventHandler.Command()
@@ -1577,28 +1577,41 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
 )
 void onCommandStartPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.common : splitWithQuotes;
+    import kameloso.common : abbreviatedDuration, splitWithQuotes;
     import lu.string : stripped;
+    import std.conv : ConvException, to;
 
     immutable args = splitWithQuotes(event.content.stripped);
 
     if (args.length < 4)
     {
         import std.format : format;
-        enum pattern = `Usage: %s%s "[poll title]" [seconds] [choice1] [choice2] ...`;
+        enum pattern = `Usage: %s%s "[poll title]" [duration] [choice1] [choice2] ...`;
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
         chan(plugin.state, event.channel, message);
         return;
     }
 
     immutable title = args[0];
-    immutable durationString = args[1];
+    string durationString = args[1];  // mutable
     immutable choices = args[2..$];
 
-    if (choices.length < 2)
+    try
     {
-        enum message = "Insufficient number of choices, must be two or more.";
+        durationString = durationString
+            .abbreviatedDuration
+            .total!"seconds"
+            .to!string;
+    }
+    catch (ConvException e)
+    {
+        enum message = "Invalid duration.";
         chan(plugin.state, event.channel, message);
+        return;
+    }
+    catch (Exception e)
+    {
+        chan(plugin.state, event.channel, e.msg);
         return;
     }
 
