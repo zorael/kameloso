@@ -42,6 +42,11 @@ import core.time : Duration;
         command, so make it opt-in at your own risk.
      +/
     bool forbidPrefixedChoices = true;
+
+    /++
+        Whether or not only users who have authenticated with services may vote.
+     +/
+    bool onlyRegisteredMayVote = false;
 }
 
 
@@ -337,6 +342,14 @@ void voteImpl(
                 // Invoked by timer, not by event
                 reportResults();
                 return;  // End Fiber
+            }
+
+            if (plugin.votesSettings.onlyRegisteredMayVote &&
+                (thisEvent.sender.class_ < IRCUser.Class.registered))
+            {
+                // User not authorised to vote. Yield and await a new event
+                Fiber.yield();
+                continue;
             }
 
             immutable accountOrNickname = idOf(thisEvent.sender);
