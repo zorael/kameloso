@@ -392,7 +392,13 @@ void voteImpl(
                 break;
 
             case ACCOUNT:
-                if (const oldEntry = thisEvent.sender.nickname in votedUsers)
+                if (thisEvent.sender.account == "*")
+                {
+                    // User logged out
+                    // We don't know what the account was, else we could have
+                    // moved the vote to a `thisEvent.sender.nickname` key...
+                }
+                else if (const oldEntry = thisEvent.sender.nickname in votedUsers)
                 {
                     // Move the old entry to a new one with the account as key
                     votedUsers[thisEvent.sender.account] = *oldEntry;
