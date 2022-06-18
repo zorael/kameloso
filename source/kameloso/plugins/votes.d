@@ -185,6 +185,14 @@ void onCommandVote(VotesPlugin plugin, const ref IRCEvent event)
         if (!choice.length) continue;
         immutable lower = choice.toLower;
 
+        if (lower in origChoiceNames)
+        {
+            enum pattern = `Duplicate choice: "%s"`;
+            immutable message = pattern.format(choice);
+            chan(plugin.state, event.channel, message);
+            return;
+        }
+
         origChoiceNames[lower] = choice;
         voteChoices[lower] = 0;
     }
