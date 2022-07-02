@@ -1988,7 +1988,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                 {
                     // A week or less, more than a day; warning
                     enum pattern = "Warning: Your Twitch authorisation token will expire " ~
-                        "in <l>%d %s</> on <l>%4d-%02d-%02d %02d:%02d</>.";
+                        "in <l>%d %s</> at <l>%4d-%02d-%02d %02d:%02d</>.";
                     logger.warningf(pattern.expandTags(LogLevel.warning),
                         numDays, numDays.plurality("day", "days"),
                         expiresWhen.year, expiresWhen.month, expiresWhen.day,
