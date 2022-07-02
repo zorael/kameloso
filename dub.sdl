@@ -1,5 +1,5 @@
 name "kameloso"
-description "IRC bot"
+description "IRC and Twitch bot"
 authors "JR"
 copyright "Copyright © 2016-2022, JR"
 homepage "https://www.github.com/zorael/kameloso"
