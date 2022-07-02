@@ -1614,7 +1614,6 @@ T expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" strip
 ///
 unittest
 {
-    import lu.semver;
     import std.conv : text, to;
     import std.format : format;
     import std.typecons : Flag, No, Yes;
@@ -1625,32 +1624,21 @@ unittest
         immutable expected = text("This is a ", Tint.log, "log", Tint.off, " line.");
         assert((replaced == expected), replaced);
     }
-
-    static if (
-        (LuSemVer.majorVersion == 1) &&
-        (LuSemVer.minorVersion == 1) &&
-        (LuSemVer.patchVersion <= 4))
     {
-        // lu.string.contains is broken for wstring and dstring on lu 1.1.4 and earlier
+        import std.conv : wtext;
+
+        immutable line = "This is a <l>log</> line."w;
+        immutable replaced = line.expandTags(LogLevel.off, No.strip);
+        immutable expected = wtext("This is a "w, Tint.log, "log"w, Tint.off, " line."w);
+        assert((replaced == expected), replaced.to!string);
     }
-    else
     {
-        {
-            import std.conv : wtext;
+        import std.conv : dtext;
 
-            immutable line = "This is a <l>log</> line."w;
-            immutable replaced = line.expandTags(LogLevel.off, No.strip);
-            immutable expected = wtext("This is a "w, Tint.log, "log"w, Tint.off, " line."w);
-            assert((replaced == expected), replaced.to!string);
-        }
-        {
-            import std.conv : dtext;
-
-            immutable line = "This is a <l>log</> line."d;
-            immutable replaced = line.expandTags(LogLevel.off, No.strip);
-            immutable expected = dtext("This is a "d, Tint.log, "log"d, Tint.off, " line."d);
-            assert((replaced == expected), replaced.to!string);
-        }
+        immutable line = "This is a <l>log</> line."d;
+        immutable replaced = line.expandTags(LogLevel.off, No.strip);
+        immutable expected = dtext("This is a "d, Tint.log, "log"d, Tint.off, " line."d);
+        assert((replaced == expected), replaced.to!string);
     }
     {
         immutable line = `<i>info</>nothing<c>critical</>nothing\<w>not warning`;

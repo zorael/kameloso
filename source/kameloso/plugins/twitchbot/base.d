@@ -1577,7 +1577,7 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
 )
 void onCommandStartPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import lu.semver : LuSemVer;
+    import lu.string : splitInto;
     import std.conv : ConvException, to;
 
     void sendUsage()
@@ -1588,34 +1588,13 @@ void onCommandStartPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         chan(plugin.state, event.channel, message);
     }
 
-    // Use new `lu.string.splitInto` if available
+    // mutable
+    string title;
+    string durationString;
+    string[] choices;
 
-    static if (
-        (LuSemVer.majorVersion >= 1) &&
-        (LuSemVer.minorVersion >= 2) &&
-        (LuSemVer.patchVersion >= 1))
-    {
-        import lu.string : splitInto;
-
-        // mutable
-        string title;
-        string durationString;
-        string[] choices;
-
-        event.content.splitInto(title, durationString, choices);
-        if (choices.length < 2) return sendUsage();
-    }
-    else
-    {
-        import lu.string : splitWithQuotes, stripped;
-
-        immutable args = splitWithQuotes(event.content.stripped);
-        if (args.length < 4) return sendUsage();
-
-        immutable title = args[0];
-        string durationString = args[1];  // mutable
-        immutable choices = args[2..$];
-    }
+    event.content.splitInto(title, durationString, choices);
+    if (choices.length < 2) return sendUsage();
 
     try
     {
