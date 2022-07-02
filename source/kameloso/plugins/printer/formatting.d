@@ -411,11 +411,29 @@ if (isOutputRange!(Sink, char[]))
 
     putSender();
 
-    if (event.target.nickname.length) putTarget();
+    bool putQuotedTwitchMessage;
 
-    if (content.length) putContent();
+    version(TwitchSupport)
+    {
+        if (((event.type == IRCEvent.Type.CHAN) ||
+             (event.type == IRCEvent.Type.SELFCHAN) ||
+             (event.type == IRCEvent.Type.EMOTE)) &&
+            event.target.nickname.length &&
+            event.aux.length)
+        {
+            /*if (content.length)*/ putContent();
+            if (event.target.nickname.length) putTarget();
+            if (event.aux.length) .put(sink, `: "`, event.aux, '"');
+            putQuotedTwitchMessage = true;
+        }
+    }
 
-    if (event.aux.length) .put(sink, " (", event.aux, ')');
+    if (!putQuotedTwitchMessage)
+    {
+        if (event.target.nickname.length) putTarget();
+        if (content.length) putContent();
+        if (event.aux.length) .put(sink, " (", event.aux, ')');
+    }
 
     if (event.count != long.min) .put(sink, " {", event.count, '}');
 
@@ -993,15 +1011,39 @@ if (isOutputRange!(Sink, char[]))
 
     putSender();
 
-    if (event.target.nickname.length) putTarget();
+    bool putQuotedTwitchMessage;
 
-    if (content.length) putContent();
-
-    if (event.aux.length)
+    version(TwitchSupport)
     {
-        .put!(Yes.colours)(sink,
-            TerminalForeground(bright ? Bright.aux : Dark.aux),
-            " (", event.aux, ')');
+        if (((event.type == IRCEvent.Type.CHAN) ||
+             (event.type == IRCEvent.Type.SELFCHAN) ||
+             (event.type == IRCEvent.Type.EMOTE)) &&
+            event.target.nickname.length &&
+            event.aux.length)
+        {
+            /*if (content.length)*/ putContent();
+            if (event.target.nickname.length) putTarget();
+            if (event.aux.length)
+            {
+                .put!(Yes.colours)(sink,
+                    TerminalForeground(bright ? Bright.content : Dark.content),
+                    `: "`, event.aux, '"');
+            }
+
+            putQuotedTwitchMessage = true;
+        }
+    }
+
+    if (!putQuotedTwitchMessage)
+    {
+        if (event.target.nickname.length) putTarget();
+        if (content.length) putContent();
+        if (event.aux.length)
+        {
+            .put!(Yes.colours)(sink,
+                TerminalForeground(bright ? Bright.aux : Dark.aux),
+                " (", event.aux, ')');
+        }
     }
 
     if (event.count != long.min)
