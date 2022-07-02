@@ -544,7 +544,7 @@ void generateVoteReminders(
     {
         if (dur >= (reminderPoint * 2))
         {
-            import kameloso.plugins.common.delayawait : await, delay;
+            import kameloso.plugins.common.delayawait : delay;
             immutable delta = (dur - reminderPoint);
             delay(plugin, (() => reminderDg(reminderPoint)), delta);
         }
