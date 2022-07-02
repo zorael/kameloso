@@ -744,7 +744,10 @@ void clearTargetNicknameIfUs(ref IRCEvent event, const IRCPluginState state)
             case TWITCH_SUBGIFT:
             case TWITCH_TIMEOUT:
             case TWITCH_HOSTSTART:
-                goto case MODE;
+            case CHAN:
+            case EMOTE:
+                // Likewise
+                break;
         }
 
         default:
@@ -774,24 +777,10 @@ unittest
 
     {
         IRCEvent event;
-        event.type = IRCEvent.Type.CHAN;
-        event.target.nickname = us;
-        event.clearTargetNicknameIfUs(state);
-        assert(!event.target.nickname.length, event.target.nickname);
-    }
-    {
-        IRCEvent event;
         event.type = IRCEvent.Type.MODE;
         event.target.nickname = us;
         event.clearTargetNicknameIfUs(state);
         assert((event.target.nickname == us), event.target.nickname);
-    }
-    {
-        IRCEvent event;
-        event.type = IRCEvent.Type.CHAN;
-        event.target.nickname = notUs;
-        event.clearTargetNicknameIfUs(state);
-        assert((event.target.nickname == notUs), event.target.nickname);
     }
     {
         IRCEvent event;
