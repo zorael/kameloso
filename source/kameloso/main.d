@@ -194,9 +194,10 @@ void signalHandler(int sig) nothrow @nogc @system
         {
             printf("...caught signal SIG%s!\n", signalNames[sig].ptr);
         }
-        else
+        else if (sig == 2)
         {
-            printf("...caught signal SIG%s again! (press Enter if nothing happens)\n", signalNames[sig].ptr);
+            printf("...caught another signal SIG%s! " ~
+                "(press Enter if nothing happens, or Ctrl+C again)\n", signalNames[sig].ptr);
         }
     }
 
