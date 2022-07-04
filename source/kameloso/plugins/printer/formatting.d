@@ -859,7 +859,6 @@ if (isOutputRange!(Sink, char[]))
                     TR.all,
                     TerminalForeground(bright ? Bright.badge : Dark.badge),
                     " [", event.target.badges, ']');
-
             }
         }
     }

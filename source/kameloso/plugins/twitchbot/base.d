@@ -1930,10 +1930,8 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                     {
                         if (retry++ < retriesInCaseOfConnectionErrors) continue;
                     }
-
                     plugin.useAPIFeatures = false;
                 }
-
                 return;
             }
 
@@ -2006,7 +2004,6 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                 //version(PrintStacktraces) logger.trace(e);
                 plugin.useAPIFeatures = false;
             }
-
             return;
         }
     }
