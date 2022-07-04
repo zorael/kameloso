@@ -305,6 +305,12 @@ mixin template UnderscoreOpDispatcher()
 
         return this;
     }
+
+    auto opDispatch(string var)() const
+    {
+        enum realVar = '_' ~ var;
+        return mixin(realVar);
+    }
 }
 
 ///
@@ -329,9 +335,9 @@ unittest
         .chainable(true)
         .verbose(false);
 
-    assert(f._acceptedEventTypes == [ IRCEvent.Type.CHAN, IRCEvent.Type.EMOTE, IRCEvent.Type.QUERY ]);
-    assert(f._chainable);
-    assert(!f._verbose);
+    assert(f.acceptedEventTypes == [ IRCEvent.Type.CHAN, IRCEvent.Type.EMOTE, IRCEvent.Type.QUERY ]);
+    assert(f.chainable);
+    assert(!f.verbose);
 }
 
 
