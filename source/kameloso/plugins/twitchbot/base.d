@@ -2732,13 +2732,14 @@ void generateExpiryReminders(TwitchBotPlugin plugin, const SysTime expiresWhen)
         5.minutes,
     );
 
-    immutable cachedExpiry = untilExpiry();
+    immutable now = Clock.currTime;
+    immutable trueExpiry = (expiresWhen - now);
 
     foreach (immutable reminderPoint; reminderPoints)
     {
-        if (cachedExpiry >= reminderPoint)
+        if (trueExpiry >= reminderPoint)
         {
-            immutable untilPoint = (cachedExpiry - reminderPoint);
+            immutable untilPoint = (trueExpiry - reminderPoint);
             if (reminderPoint >= 1.weeks) delay(plugin, &warnOnWeekDg, untilPoint);
             else if (reminderPoint >= 1.days) delay(plugin, &warnOnDaysDg, untilPoint);
             else if (reminderPoint >= 1.hours) delay(plugin, &warnOnHoursDg, untilPoint);
@@ -2747,13 +2748,13 @@ void generateExpiryReminders(TwitchBotPlugin plugin, const SysTime expiresWhen)
     }
 
     // Schedule quitting on expiry
-    delay(plugin, &quitOnExpiry, cachedExpiry);
+    delay(plugin, &quitOnExpiry, trueExpiry);
 
     // Also announce once normally how much time is left
-    if (cachedExpiry >= 1.weeks) warnOnWeekDg();
-    else if (cachedExpiry >= 1.days) warnOnDaysDg();
-    else if (cachedExpiry >= 1.hours) warnOnHoursDg();
-    else /*if (cachedExpiry >= 1.minutes)*/ warnOnMinutesDg();
+    if (trueExpiry >= 1.weeks) warnOnWeekDg();
+    else if (trueExpiry >= 1.days) warnOnDaysDg();
+    else if (trueExpiry >= 1.hours) warnOnHoursDg();
+    else /*if (trueExpiry >= 1.minutes)*/ warnOnMinutesDg();
 }
 
 
