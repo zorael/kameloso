@@ -2629,7 +2629,7 @@ void generateExpiryReminders(TwitchBotPlugin plugin, const SysTime expiresWhen)
     auto untilExpiry()
     {
         immutable now = Clock.currTime;
-        return (expiresWhen - now) + 5.seconds;
+        return (expiresWhen - now) + 59.seconds;
     }
 
     void warnOnWeekDg()
