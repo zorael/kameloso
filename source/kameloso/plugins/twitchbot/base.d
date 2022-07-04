@@ -151,6 +151,7 @@ import kameloso.constants : BufferSize;
 import kameloso.logger : LogLevel;
 import kameloso.messaging;
 import dialect.defs;
+import std.datetime.systime : SysTime;
 import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
@@ -1898,16 +1899,11 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
 
     void validationDg()
     {
-        import kameloso.plugins.common.delayawait : delay;
         import kameloso.constants : MagicErrorStrings;
-        import lu.string : plurality;
-        import std.conv : to;
         import std.datetime.systime : Clock, SysTime;
-        import std.meta : AliasSeq;
-        import core.time : Duration, days, hours, minutes, weeks;
 
         enum retriesInCaseOfConnectionErrors = 5;
-        uint numRetries;
+        uint retry;
 
         while (true)
         {
@@ -1915,6 +1911,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
             {
                 try
                 {
+                    import kameloso.plugins.common.delayawait : delay;
                     import kameloso.messaging : quit;
 
                     immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
@@ -1931,7 +1928,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                 {
                     if ((e.code == 2) && (e.error != MagicErrorStrings.sslLibraryNotFound))
                     {
-                        if (numRetries++ < retriesInCaseOfConnectionErrors) continue;
+                        if (retry++ < retriesInCaseOfConnectionErrors) continue;
                     }
 
                     plugin.useAPIFeatures = false;
@@ -1966,94 +1963,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                 plugin.userID = validationJSON["user_id"].str;
                 immutable expiresIn = validationJSON["expires_in"].integer;
                 immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
-                immutable now = Clock.currTime;
-                immutable delta = (expiresWhen - now);
-                immutable numDays = delta.total!"days";
-
-                void warnOnWeekDg()
-                {
-                    // More than a week away, just .info
-                    enum pattern = "Your Twitch authorisation token will expire " ~
-                        "in <l>%d days</> on <l>%4d-%02d-%02d</>.";
-                    logger.infof(pattern.expandTags(LogLevel.info), numDays,
-                        expiresWhen.year, expiresWhen.month, expiresWhen.day);
-                }
-
-                void warnOnDaysDg()
-                {
-                    // A week or less, more than a day; warning
-                    enum pattern = "Warning: Your Twitch authorisation token will expire " ~
-                        "in <l>%d %s</> at <l>%4d-%02d-%02d %02d:%02d</>.";
-                    logger.warningf(pattern.expandTags(LogLevel.warning),
-                        numDays, numDays.plurality("day", "days"),
-                        expiresWhen.year, expiresWhen.month, expiresWhen.day,
-                        expiresWhen.hour, expiresWhen.minute);
-                }
-
-                void warnOnHoursDg()
-                {
-                    // Less than a day; warning
-                    immutable numHours = delta.total!"hours";
-                    enum pattern = "WARNING: Your Twitch authorisation token will expire " ~
-                        "in <l>%d %s</> at <l>%02d:%02d</>.";
-                    logger.warningf(pattern.expandTags(LogLevel.warning),
-                        numHours, numHours.plurality("hour", "hours"),
-                        expiresWhen.hour, expiresWhen.minute);
-                }
-
-                void warnOnMinutesDg()
-                {
-                    // Less than an hour; warning
-                    immutable numHours = delta.total!"minutes";
-                    enum pattern = "WARNING: Your Twitch authorisation token will expire " ~
-                        "in <l>%d minutes</> at <l>%02d:%02d</>.";
-                    logger.warningf(pattern.expandTags(LogLevel.warning),
-                        numHours, expiresWhen.hour, expiresWhen.minute);
-                }
-
-                void quitOnExpiry()
-                {
-                    import kameloso.messaging : quit;
-
-                    // Key expired
-                    enum pattern = "Your Twitch authorisation token has expired. " ~
-                        "Run the program with <l>--set twitch.keygen</> to generate a new one.";
-                    logger.error(pattern.expandTags(LogLevel.error));
-                    quit(plugin.state, "Twitch authorisation token expired");
-                }
-
-                alias reminderPoints = AliasSeq!(
-                    14.days,
-                    7.days,
-                    3.days,
-                    1.days,
-                    12.hours,
-                    6.hours,
-                    1.hours,
-                    30.minutes,
-                    10.minutes,
-                    5.minutes,
-                );
-
-                foreach (immutable reminderPoint; reminderPoints)
-                {
-                    if (delta >= reminderPoint)
-                    {
-                        if (reminderPoint >= 1.weeks) delay(plugin, &warnOnWeekDg, delta);
-                        else if (reminderPoint >= 1.days) delay(plugin, &warnOnDaysDg, delta);
-                        else if (reminderPoint >= 1.hours) delay(plugin, &warnOnHoursDg, delta);
-                        else /*if (reminderPoint >= 1.minutes)*/ delay(plugin, &warnOnMinutesDg, delta);
-                    }
-                }
-
-                // Schedule quitting on expiry
-                delay(plugin, &quitOnExpiry, delta);
-
-                // Also announce once normally how much time is left
-                if (delta >= 1.weeks) warnOnWeekDg();
-                else if (delta >= 1.days) warnOnDaysDg();
-                else if (delta >= 1.hours) warnOnHoursDg();
-                else /*if (delta >= 1.minutes)*/ warnOnMinutesDg();
+                generateExpiryReminders(plugin, expiresWhen);
             }
             catch (TwitchQueryException e)
             {
@@ -2079,7 +1989,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                     }
                     else
                     {
-                        if (numRetries++ < retriesInCaseOfConnectionErrors) continue;
+                        if (retry++ < retriesInCaseOfConnectionErrors) continue;
 
                         enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
                         logger.errorf(pattern.expandTags(LogLevel.error), e.msg, e.error, e.code);
@@ -2700,6 +2610,153 @@ void onMyInfo(TwitchBotPlugin plugin)
 
     Fiber saveResourcesFiber = new Fiber(&saveResourcesDg, BufferSize.fiberStack);
     delay(plugin, saveResourcesFiber, plugin.savePeriodicity);
+}
+
+
+// generateExpiryReminders
+/++
+    Generates and delays Twitch authorisation token expiry reminders.
+
+    Params:
+        plugin = The current [TwitchBotPlugin].
+        expiresWhen = A [std.datetime.systime.SysTime|SysTime] of when the expiry occurs.
+ +/
+void generateExpiryReminders(TwitchBotPlugin plugin, const SysTime expiresWhen)
+{
+    import kameloso.plugins.common.delayawait : delay;
+    import lu.string : plurality;
+    import std.datetime.systime : Clock;
+    import std.meta : AliasSeq;
+    import core.time : days, hours, minutes, seconds, weeks;
+
+    auto untilExpiry()
+    {
+        immutable now = Clock.currTime;
+        return (expiresWhen - now) + 5.seconds;
+    }
+
+    void warnOnWeekDg()
+    {
+        immutable numDays = untilExpiry.total!"days";
+
+        // More than a week away, just .info
+        enum pattern = "Your Twitch authorisation token will expire " ~
+            "in <l>%d days</> on <l>%4d-%02d-%02d</>.";
+        logger.infof(pattern.expandTags(LogLevel.info), numDays,
+            expiresWhen.year, expiresWhen.month, expiresWhen.day);
+    }
+
+    void warnOnDaysDg()
+    {
+        int numDays;
+        int numHours;
+        untilExpiry.split!("days", "hours")(numDays, numHours);
+
+        // A week or less, more than a day; warning
+        if (numHours > 0)
+        {
+            enum pattern = "Warning: Your Twitch authorisation token will expire " ~
+                "in <l>%d %s and %d %s</> at <l>%4d-%02d-%02d %02d:%02d</>.";
+            logger.warningf(pattern.expandTags(LogLevel.warning),
+                numDays, numDays.plurality("day", "days"),
+                numHours, numHours.plurality("hour", "hours"),
+                expiresWhen.year, expiresWhen.month, expiresWhen.day,
+                expiresWhen.hour, expiresWhen.minute);
+        }
+        else
+        {
+            enum pattern = "Warning: Your Twitch authorisation token will expire " ~
+                "in <l>%d %s</> at <l>%4d-%02d-%02d %02d:%02d</>.";
+            logger.warningf(pattern.expandTags(LogLevel.warning),
+                numDays, numDays.plurality("day", "days"),
+                expiresWhen.year, expiresWhen.month, expiresWhen.day,
+                expiresWhen.hour, expiresWhen.minute);
+        }
+    }
+
+    void warnOnHoursDg()
+    {
+        int numHours;
+        int numMinutes;
+        untilExpiry.split!("hours", "minutes")(numHours, numMinutes);
+
+        // Less than a day; warning
+        if (numMinutes > 0)
+        {
+            enum pattern = "WARNING: Your Twitch authorisation token will expire " ~
+                "in <l>%d %s and %d %s</> at <l>%02d:%02d</>.";
+            logger.warningf(pattern.expandTags(LogLevel.warning),
+                numHours, numHours.plurality("hour", "hours"),
+                numMinutes, numMinutes.plurality("minute", "minutes"),
+                expiresWhen.hour, expiresWhen.minute);
+        }
+        else
+        {
+            enum pattern = "WARNING: Your Twitch authorisation token will expire " ~
+                "in <l>%d %s</> at <l>%02d:%02d</>.";
+            logger.warningf(pattern.expandTags(LogLevel.warning),
+                numHours, numHours.plurality("hour", "hours"),
+                expiresWhen.hour, expiresWhen.minute);
+        }
+    }
+
+    void warnOnMinutesDg()
+    {
+        immutable numMinutes = untilExpiry.total!"minutes";
+
+        // Less than an hour; warning
+        enum pattern = "WARNING: Your Twitch authorisation token will expire " ~
+            "in <l>%d minutes</> at <l>%02d:%02d</>.";
+        logger.warningf(pattern.expandTags(LogLevel.warning),
+            numMinutes, expiresWhen.hour, expiresWhen.minute);
+    }
+
+    void quitOnExpiry()
+    {
+        import kameloso.messaging : quit;
+
+        // Key expired
+        enum pattern = "Your Twitch authorisation token has expired. " ~
+            "Run the program with <l>--set twitch.keygen</> to generate a new one.";
+        logger.error(pattern.expandTags(LogLevel.error));
+        quit(plugin.state, "Twitch authorisation token expired");
+    }
+
+    alias reminderPoints = AliasSeq!(
+        14.days,
+        7.days,
+        3.days,
+        1.days,
+        12.hours,
+        6.hours,
+        1.hours,
+        30.minutes,
+        10.minutes,
+        5.minutes,
+    );
+
+    immutable cachedExpiry = untilExpiry();
+
+    foreach (immutable reminderPoint; reminderPoints)
+    {
+        if (cachedExpiry >= reminderPoint)
+        {
+            immutable untilPoint = (cachedExpiry - reminderPoint);
+            if (reminderPoint >= 1.weeks) delay(plugin, &warnOnWeekDg, untilPoint);
+            else if (reminderPoint >= 1.days) delay(plugin, &warnOnDaysDg, untilPoint);
+            else if (reminderPoint >= 1.hours) delay(plugin, &warnOnHoursDg, untilPoint);
+            else /*if (reminderPoint >= 1.minutes)*/ delay(plugin, &warnOnMinutesDg, untilPoint);
+        }
+    }
+
+    // Schedule quitting on expiry
+    delay(plugin, &quitOnExpiry, cachedExpiry);
+
+    // Also announce once normally how much time is left
+    if (cachedExpiry >= 1.weeks) warnOnWeekDg();
+    else if (cachedExpiry >= 1.days) warnOnDaysDg();
+    else if (cachedExpiry >= 1.hours) warnOnHoursDg();
+    else /*if (cachedExpiry >= 1.minutes)*/ warnOnMinutesDg();
 }
 
 
