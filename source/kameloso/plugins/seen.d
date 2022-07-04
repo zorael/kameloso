@@ -562,12 +562,16 @@ void onSomeAction(SeenPlugin plugin, const ref IRCEvent event)
         case TWITCH_SUBUPGRADE:
             // Consider these as chatty events too
             // targets might be caught in the crossfire in some cases
-            goto case CHAN;
+            break;
+
+        case JOIN:
+        case PART:
+            // Ignore Twitch JOINs and PARTs
+            if (plugin.state.server.daemon == IRCServer.Daemon.twitch) return;
+            goto default;
     }
 
-    /*case JOIN:
-    case PART:
-    case MODE:*/
+    //case MODE:
     default:
         if (plugin.seenSettings.ignoreNonChatEvents) return;
         // Drop down
