@@ -1010,8 +1010,8 @@ void onRoomState(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 
     void getDisplayNameDg()
     {
-        enum retriesInCaseOfErrors = 3;
-        uint numRetries;
+        enum retriesInCaseOfErrors = 5;
+        uint retry;
         immutable userURL = "https://api.twitch.tv/helix/users?id=" ~ event.aux;
 
         while (true)
@@ -1024,7 +1024,7 @@ void onRoomState(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             if ((userJSON.type != JSONType.object) || ("display_name" !in userJSON))
             {
                 // Something went wrong but might be transient, try again.
-                if (numRetries++ < retriesInCaseOfErrors) continue;
+                if (retry++ < retriesInCaseOfErrors) continue;
 
                 // All attempts failed
                 enum pattern = "Failed to fetch display name of channel <l>%s</>.";
