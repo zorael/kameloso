@@ -1158,14 +1158,15 @@ void initResources(SeenPlugin plugin)
     }
     catch (JSONException e)
     {
-        import kameloso.terminal : TerminalToken, isTerminal;
-        import std.path : baseName;
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
 
-        enum bellString = "" ~ cast(char)(TerminalToken.bell);
-        immutable bell = isTerminal ? bellString : string.init;
-
-        logger.warning(plugin.seenFile.baseName, " is corrupt. Starting afresh.", bell);
         version(PrintStacktraces) logger.trace(e);
+        throw new IRCPluginInitialisationException(
+            "Seen file is malformed",
+            plugin.name,
+            plugin.seenFile,
+            __FILE__,
+            __LINE__);
     }
 
     // Let other Exceptions pass up the stack.
