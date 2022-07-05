@@ -473,31 +473,32 @@ void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
         case "Improperly formatted auth":
             if (!service.state.bot.pass.length)
             {
-                logger.error("You *need* a pass to join this server.");
-                enum pattern = "Run the program with <i>--set twitch.keygen</> to generate a new one.";
-                logger.log(pattern.expandTags(LogLevel.all));
+                logger.error("Missing Twitch authentication token.");
             }
             else
             {
-                logger.error("Client pass is malformed, cannot authenticate. " ~
-                    "Please make sure it is entered correctly.");
+                logger.error("Twitch authentication token is malformed. " ~
+                    "Make sure it is entered correctly.");
             }
-            break;
+            break;  // drop down
 
         case "Login authentication failed":
-            logger.error("Incorrect client pass. Please make sure it is valid and has not expired.");
-            enum pattern = "Run the program with <i>--set twitch.keygen</> to generate a new one.";
-            logger.log(pattern.expandTags(LogLevel.all));
-            break;
+            logger.error("Twitch authentication token is invalid or has expired.");
+            break;  // drop down
 
         case "Login unsuccessful":
-            logger.error("Client pass probably has insufficient privileges.");
-            break;
+            logger.error("Twitch authentication token probably has insufficient privileges.");
+            break;  // drop down
 
         default:
             // Just some notice; return
             return;
         }
+
+        // Do this here since it should be output in all cases except for the
+        // default, which just returns anyway and skips this.
+        enum pattern = "Run the program with <i>--set twitch.keygen</> to generate a new one.";
+        logger.log(pattern.expandTags(LogLevel.all));
 
         // Exit and let the user tend to it.
         quit!(Yes.priority)(service.state, event.content, No.quiet);
