@@ -2886,25 +2886,45 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
  +/
 void initResources(TwitchPlugin plugin)
 {
+    import kameloso.plugins.common.misc : IRCPluginInitialisationException;
     import lu.json : JSONStorage;
+    import std.file : exists, mkdir, remove;
     import std.json : JSONException;
-    import std.path : baseName;
+    import std.path : baseName, buildNormalizedPath, dirName;
 
     JSONStorage ecountJSON;
     JSONStorage viewersJSON;
     JSONStorage secretsJSON;
 
+    // Ensure the subdirectory exists
+    immutable subdir = plugin.ecountFile.dirName;
+    if (!subdir.exists) mkdir(subdir);
+
+    immutable oldEcount = buildNormalizedPath(
+        plugin.state.settings.resourceDirectory,
+        "twitch-ecount.json");
+    immutable hasOldEcount = oldEcount.exists;
+
+    immutable oldViewers = buildNormalizedPath(
+        plugin.state.settings.resourceDirectory,
+        "twitch-viewers.json");
+    immutable hasOldViewers = oldViewers.exists;
+
+    immutable oldSecrets = buildNormalizedPath(
+        plugin.state.settings.resourceDirectory,
+        "twitch-secrets.json");
+    immutable hasOldSecrets = oldSecrets.exists;
+
     try
     {
-        ecountJSON.load(plugin.ecountFile);
+        immutable ecountFile = hasOldEcount ? oldEcount : plugin.ecountFile;
+        ecountJSON.load(ecountFile);
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
-
         version(PrintStacktraces) logger.trace(e);
         throw new IRCPluginInitialisationException(
-            "Emote counter file is malformed",
+            "Twitch emote counter file is malformed",
             plugin.name,
             plugin.ecountFile,
             __FILE__,
@@ -2913,15 +2933,14 @@ void initResources(TwitchPlugin plugin)
 
     try
     {
-        viewersJSON.load(plugin.viewersFile);
+        immutable viewersFile = hasOldViewers ? oldViewers : plugin.viewersFile;
+        viewersJSON.load(viewersFile);
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
-
         version(PrintStacktraces) logger.trace(e);
         throw new IRCPluginInitialisationException(
-            "Viewers file is malformed",
+            "Twitch viewers file is malformed",
             plugin.name,
             plugin.viewersFile,
             __FILE__,
@@ -2930,15 +2949,14 @@ void initResources(TwitchPlugin plugin)
 
     try
     {
-        secretsJSON.load(plugin.secretsFile);
+        immutable secretsFile = hasOldSecrets ? oldSecrets : plugin.secretsFile;
+        secretsJSON.load(secretsFile);
     }
     catch (JSONException e)
     {
-        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
-
         version(PrintStacktraces) logger.trace(e);
         throw new IRCPluginInitialisationException(
-            "Secrets file is malformed",
+            "Twitch secrets file is malformed",
             plugin.name,
             plugin.secretsFile,
             __FILE__,
@@ -2950,6 +2968,10 @@ void initResources(TwitchPlugin plugin)
     ecountJSON.save(plugin.ecountFile);
     viewersJSON.save(plugin.viewersFile);
     secretsJSON.save(plugin.secretsFile);
+
+    if (hasOldEcount) remove(oldEcount);
+    if (hasOldViewers) remove(oldViewers);
+    if (hasOldSecrets) remove(oldSecrets);
 }
 
 
@@ -3214,13 +3236,19 @@ package:
     shared QueryResponse[int] bucket;
 
     /// File to save emote counters to.
-    @Resource ecountFile = "twitch-ecount.json";
+    version(Posix) @Resource ecountFile = "twitch/ecount.json";
+    else version(Windows) @Resource ecountFile = "twitch\\ecount.json";
+    else static assert(0);
 
     /// File to save viewer times to.
-    @Resource viewersFile = "twitch-viewers.json";
+    version(Posix) @Resource viewersFile = "twitch/viewers.json";
+    else version(Windows) @Resource viewersFile = "twitch\\viewers.json";
+    else static assert(0);
 
     /// File to save API keys and tokens to.
-    @Resource secretsFile = "twitch-secrets.json";
+    version(Posix) @Resource secretsFile = "twitch/secrets.json";
+    else version(Windows) @Resource secretsFile = "twitch\\secrets.json";
+    else static assert(0);
 
     /// Emote counters associative array; counter longs keyed by emote ID string keyed by channel.
     long[string][string] ecount;
