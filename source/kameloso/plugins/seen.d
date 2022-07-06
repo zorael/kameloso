@@ -1171,7 +1171,11 @@ void initResources(SeenPlugin plugin)
 
     // Let other Exceptions pass up the stack.
 
-    json.save(plugin.seenFile);
+    version(Callgrind) {}
+    else
+    {
+        json.save(plugin.seenFile);
+    }
 }
 
 
