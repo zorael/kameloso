@@ -2872,11 +2872,10 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         }
         catch (Exception e)
         {
-            enum pattern = "An unexpected error occurred while initialising the <l>%s</> " ~
-                "plugin's resources: <l>%s</> (at <l>%s</>:<l>%d</>)%s";
+            enum pattern = "An unexpected error occurred while initialising " ~
+                "plugin resources: <l>%s</> (at <l>%s</>:<l>%d</>)%s";
             logger.warningf(
                 pattern.expandTags(LogLevel.warning),
-                e.file.pluginNameOfFilename,
                 e.msg,
                 e.file.pluginFileBaseName,
                 e.line,
