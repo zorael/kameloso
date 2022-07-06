@@ -2904,20 +2904,22 @@ void initResources(TwitchPlugin plugin)
         plugin.state.settings.resourceDirectory,
         "twitch-ecount.json");
     immutable hasOldEcount = oldEcount.exists;
+    immutable ecountFile = hasOldEcount ? oldEcount : plugin.ecountFile;
 
     immutable oldViewers = buildNormalizedPath(
         plugin.state.settings.resourceDirectory,
         "twitch-viewers.json");
     immutable hasOldViewers = oldViewers.exists;
+    immutable viewersFile = hasOldViewers ? oldViewers : plugin.viewersFile;
 
     immutable oldSecrets = buildNormalizedPath(
         plugin.state.settings.resourceDirectory,
         "twitch-secrets.json");
     immutable hasOldSecrets = oldSecrets.exists;
+    immutable secretsFile = hasOldSecrets ? oldSecrets : plugin.secretsFile;
 
     try
     {
-        immutable ecountFile = hasOldEcount ? oldEcount : plugin.ecountFile;
         ecountJSON.load(ecountFile);
     }
     catch (JSONException e)
@@ -2926,14 +2928,13 @@ void initResources(TwitchPlugin plugin)
         throw new IRCPluginInitialisationException(
             "Twitch emote counter file is malformed",
             plugin.name,
-            plugin.ecountFile,
+            ecountFile,
             __FILE__,
             __LINE__);
     }
 
     try
     {
-        immutable viewersFile = hasOldViewers ? oldViewers : plugin.viewersFile;
         viewersJSON.load(viewersFile);
     }
     catch (JSONException e)
@@ -2942,14 +2943,13 @@ void initResources(TwitchPlugin plugin)
         throw new IRCPluginInitialisationException(
             "Twitch viewers file is malformed",
             plugin.name,
-            plugin.viewersFile,
+            viewersFile,
             __FILE__,
             __LINE__);
     }
 
     try
     {
-        immutable secretsFile = hasOldSecrets ? oldSecrets : plugin.secretsFile;
         secretsJSON.load(secretsFile);
     }
     catch (JSONException e)
@@ -2958,7 +2958,7 @@ void initResources(TwitchPlugin plugin)
         throw new IRCPluginInitialisationException(
             "Twitch secrets file is malformed",
             plugin.name,
-            plugin.secretsFile,
+            secretsFile,
             __FILE__,
             __LINE__);
     }
