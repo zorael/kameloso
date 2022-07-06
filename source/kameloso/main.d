@@ -2948,6 +2948,46 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         // Do verbose exits if mainLoop causes a return
         attempt.silentExit = false;
 
+        /+
+            If version Callgrind, do a callgrind dump before the main loop starts,
+            and then once again on disconnect. That way the dump won't contain
+            uninteresting profiling about resolving and connecting and such.
+         +/
+        version(Callgrind)
+        {
+            /// Assume callgrind is running until proven otherwise.
+            bool callgrindRunning = true;
+
+            void dumpCallgrind()
+            {
+                import lu.string : beginsWith;
+                import std.conv : text;
+                import std.process : execute, thisProcessID;
+                import std.stdio : writeln;
+                import std.string : chomp;
+
+                immutable dumpCommand =
+                [
+                    "callgrind_control",
+                    "-d",
+                    thisProcessID.text,
+                ];
+
+                logger.info("$ callgrind_control -d ", thisProcessID);
+                immutable result = execute(dumpCommand);
+                writeln(result.output.chomp);
+
+                if (result.output.beginsWith("Error: Callgrind task with PID"))
+                {
+                    callgrindRunning = false;
+                }
+            }
+
+            // Dump now and on scope exit
+            dumpCallgrind();
+            scope(exit) if (callgrindRunning) dumpCallgrind();
+        }
+
         // Start the main loop
         attempt.next = instance.mainLoop();
         attempt.firstConnect = false;

@@ -82,7 +82,8 @@ versions \
     "OSXTMPDIR" \
     "TraceWhois" \
     "PrintAccountNamesToo" \
-    "PrintClassNamesToo"
+    "PrintClassNamesToo" \
+    "Callgrind"
 */
 
 configuration "application" {
