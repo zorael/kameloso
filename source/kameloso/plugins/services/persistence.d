@@ -343,7 +343,7 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
         {
             // Not in a channel. Additionally not an admin
             // Default to registered if the user has an account, except on Twitch
-            // postprocess in twitchbot/base.d will assign class as per badges
+            // postprocess in twitch/base.d will assign class as per badges
 
             if (service.state.server.daemon == IRCServer.Daemon.twitch)
             {

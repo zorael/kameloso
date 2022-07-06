@@ -2,18 +2,18 @@
     Bits and bobs to get Spotify API credentials for playlist management.
 
     See_Also:
-        [kameloso.plugins.twitchbot.base|twitchbot.base]
-        [kameloso.plugins.twitchbot.api|twitchbot.api]
+        [kameloso.plugins.twitch.base|twitch.base]
+        [kameloso.plugins.twitch.api|twitch.api]
  +/
-module kameloso.plugins.twitchbot.spotify;
+module kameloso.plugins.twitch.spotify;
 
 version(TwitchSupport):
-version(WithTwitchBotPlugin):
+version(WithTwitchPlugin):
 
 private:
 
-import kameloso.plugins.twitchbot.base;
-import kameloso.plugins.twitchbot.helpers;
+import kameloso.plugins.twitch.base;
+import kameloso.plugins.twitch.helpers;
 
 import kameloso.common : expandTags, logger;
 import kameloso.logger : LogLevel;
@@ -29,9 +29,9 @@ import core.thread : Fiber;
     to obtain an access key and a refresh OAuth key.
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
  +/
-package void requestSpotifyKeys(TwitchBotPlugin plugin)
+package void requestSpotifyKeys(TwitchPlugin plugin)
 {
     import kameloso.logger : LogLevel;
     import lu.string : contains, nom, stripped;
@@ -398,7 +398,7 @@ auto getSpotifyBase64Authorization(const Credentials creds)
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         creds = Credentials aggregate.
         trackID = Spotify track ID of the track to add.
         recursing = Whether or not the function is recursing into iself.
@@ -407,13 +407,13 @@ auto getSpotifyBase64Authorization(const Credentials creds)
         A [std.json.JSONValue|JSONValue] of the response.
  +/
 package JSONValue addTrackToSpotifyPlaylist(
-    TwitchBotPlugin plugin,
+    TwitchPlugin plugin,
     ref Credentials creds,
     const string trackID,
     const Flag!"recursing" recursing = No.recursing)
 in (Fiber.getThis, "Tried to call `addVideoToSpotifyPlaylist` from outside a Fiber")
 {
-    import kameloso.plugins.twitchbot.api : getUniqueNumericalID, waitForQueryResponse;
+    import kameloso.plugins.twitch.api : getUniqueNumericalID, waitForQueryResponse;
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.thread : ThreadMessage;
     import arsd.http2 : HttpVerb;

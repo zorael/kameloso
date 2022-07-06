@@ -2,18 +2,18 @@
     Functions for generating a Twitch API key.
 
     See_Also:
-        [kameloso.plugins.twitchbot.base|twitchbot.base]
-        [kameloso.plugins.twitchbot.api|twitchbot.api]
+        [kameloso.plugins.twitch.base|twitch.base]
+        [kameloso.plugins.twitch.api|twitch.api]
  +/
-module kameloso.plugins.twitchbot.keygen;
+module kameloso.plugins.twitch.keygen;
 
 version(TwitchSupport):
-version(WithTwitchBotPlugin):
+version(WithTwitchPlugin):
 
 private:
 
-import kameloso.plugins.twitchbot.base;
-import kameloso.plugins.twitchbot.helpers;
+import kameloso.plugins.twitch.base;
+import kameloso.plugins.twitch.helpers;
 import kameloso.common : expandTags, logger;
 import kameloso.logger : LogLevel;
 import std.typecons : Flag, No, Yes;
@@ -26,17 +26,17 @@ package:
     Start the captive key generation routine at the earliest possible moment,
     which are the [dialect.defs.IRCEvent.Type.CAP|CAP] events.
 
-    Invoked by [kameloso.plugins.twitchbot.base.onCAP|onCAP] during capability negotiation.
+    Invoked by [kameloso.plugins.twitch.base.onCAP|onCAP] during capability negotiation.
 
-    We can't do it in [kameloso.plugins.twitchbot.base.start|start] since the calls to
+    We can't do it in [kameloso.plugins.twitch.base.start|start] since the calls to
     save and exit would go unheard, as `start` happens before the main loop starts.
     It would then immediately fail to read if too much time has passed,
     and nothing would be saved.
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
  +/
-void requestTwitchKey(TwitchBotPlugin plugin)
+void requestTwitchKey(TwitchPlugin plugin)
 {
     import kameloso.thread : ThreadMessage;
     import std.concurrency : prioritySend;
@@ -193,17 +193,17 @@ instructions and log in to authorise the use of this program with your <i>BOT</>
     Start the captive key generation routine at the earliest possible moment,
     which are the [dialect.defs.IRCEvent.Type.CAP|CAP] events.
 
-    Invoked by [kameloso.plugins.twitchbot.base.onCAP|onCAP] during capability negotiation.
+    Invoked by [kameloso.plugins.twitch.base.onCAP|onCAP] during capability negotiation.
 
-    We can't do it in [kameloso.plugins.twitchbot.base.start|start] since the calls to
+    We can't do it in [kameloso.plugins.twitch.base.start|start] since the calls to
     save and exit would go unheard, as `start` happens before the main loop starts.
     It would then immediately fail to read if too much time has passed,
     and nothing would be saved.
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
  +/
-void requestTwitchSuperKey(TwitchBotPlugin plugin)
+void requestTwitchSuperKey(TwitchPlugin plugin)
 {
     import std.process : Pid, ProcessException, wait;
     import std.stdio : stdout, writefln, writeln;
@@ -386,13 +386,13 @@ instructions and log in to authorise the use of this program with your <i>STREAM
     Reads an URL from standard in and parses an OAuth key from it.
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         authNode = Authentication node URL, to detect whether the wrong link was pasted.
 
     Returns:
         An OAuth token key parsed from a pasted URL string.
  +/
-private string readURLAndParseKey(TwitchBotPlugin plugin, const string authNode)
+private string readURLAndParseKey(TwitchPlugin plugin, const string authNode)
 {
     import lu.string : contains, nom, stripped;
     import std.stdio : readln, stdin, stdout, write, writeln;
@@ -483,7 +483,7 @@ private string buildAuthNodeURL(const string authNode, const string[] scopes)
     return text(
         authNode,
         "?response_type=token",
-        "&client_id=", TwitchBotPlugin.clientID,
+        "&client_id=", TwitchPlugin.clientID,
         "&redirect_uri=http://localhost",
         "&scope=", scopes.join('+'),
         "&force_verify=true",
@@ -497,15 +497,15 @@ private string buildAuthNodeURL(const string authNode, const string[] scopes)
     of when it expires.
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         authToken = Authorisation token to validate and check expiry of.
 
     Returns:
         A [std.datetime.systime.SysTime|SysTime] of when the passed token expires.
  +/
-auto getTokenExpiry(TwitchBotPlugin plugin, const string authToken)
+auto getTokenExpiry(TwitchPlugin plugin, const string authToken)
 {
-    import kameloso.plugins.twitchbot.api : getValidation;
+    import kameloso.plugins.twitch.api : getValidation;
     import std.datetime.systime : Clock, SysTime;
 
     immutable validationJSON = getValidation(plugin, authToken, No.async);

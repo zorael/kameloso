@@ -2,19 +2,19 @@
     Functions for accessing the Twitch API. For internal use.
 
     See_Also:
-        [kameloso.plugins.twitchbot.base|twitchbot.base]
-        [kameloso.plugins.twitchbot.keygen|twitchbot.keygen]
-        [kameloso.plugins.twitchbot.keygen|twitchbot.google]
-        [kameloso.plugins.twitchbot.keygen|twitchbot.spotify]
+        [kameloso.plugins.twitch.base|twitch.base]
+        [kameloso.plugins.twitch.keygen|twitch.keygen]
+        [kameloso.plugins.twitch.keygen|twitch.google]
+        [kameloso.plugins.twitch.keygen|twitch.spotify]
  +/
-module kameloso.plugins.twitchbot.api;
+module kameloso.plugins.twitch.api;
 
 version(TwitchSupport):
-version(WithTwitchBotPlugin):
+version(WithTwitchPlugin):
 
 private:
 
-import kameloso.plugins.twitchbot.base;
+import kameloso.plugins.twitch.base;
 
 import arsd.http2 : HttpVerb;
 import dialect.defs;
@@ -69,7 +69,7 @@ if (isSomeFunction!dg)
         import kameloso.constants : MagicErrorStrings;
 
         // Hack; don't spam about failed queries if we already know SSL doesn't work
-        if (!TwitchBotPlugin.useAPIFeatures) return;
+        if (!TwitchPlugin.useAPIFeatures) return;
 
         immutable message = (e.error == MagicErrorStrings.sslLibraryNotFound) ?
             MagicErrorStrings.sslLibraryNotFoundRewritten :
@@ -97,7 +97,7 @@ if (isSomeFunction!dg)
             m.event.content = "Twitch API key expired";
             m.properties |= (Message.Property.forced | Message.Property.priority);
 
-            (cast()TwitchBotPlugin.mainThread).send(m);
+            (cast()TwitchPlugin.mainThread).send(m);
         }
     }
     catch (Exception e)
@@ -219,7 +219,7 @@ void persistentQuerier(shared QueryResponse[int] bucket, const string caBundleFi
     ---
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         url = The URL to query.
         authorisationHeader = Authorisation HTTP header to pass.
         verb = What HTTP verb to pass.
@@ -240,7 +240,7 @@ void persistentQuerier(shared QueryResponse[int] bucket, const string caBundleFi
         [core.object.Exception|Exception] if there were unrecoverable errors but
         where the sent body was not in JSON form.
  +/
-QueryResponse sendHTTPRequest(TwitchBotPlugin plugin,
+QueryResponse sendHTTPRequest(TwitchPlugin plugin,
     const string url,
     const string authorisationHeader,
     /*const*/ HttpVerb verb = HttpVerb.GET,
@@ -383,7 +383,7 @@ auto sendHTTPRequestImpl(
         client.acceptGzip = false;
         client.defaultTimeout = Timeout.httpGET.seconds;
         client.userAgent = "kameloso/" ~ cast(string)KamelosoInfo.version_;
-        headers = [ "Client-ID: " ~ TwitchBotPlugin.clientID ];
+        headers = [ "Client-ID: " ~ TwitchPlugin.clientID ];
         if (caBundleFile.length) client.setClientCertificate(caBundleFile, caBundleFile);
     }
 
@@ -425,7 +425,7 @@ auto sendHTTPRequestImpl(
     By following a passed URL, queries Twitch servers for an entity (user or channel).
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         url = The URL to follow.
 
     Returns:
@@ -433,7 +433,7 @@ auto sendHTTPRequestImpl(
         If nothing was found, an empty [std.json.JSONValue|JSONValue].init is
         returned instead.
  +/
-JSONValue getTwitchEntity(TwitchBotPlugin plugin, const string url)
+JSONValue getTwitchEntity(TwitchPlugin plugin, const string url)
 in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
 {
     import std.json : JSONType, parseJSON;
@@ -472,7 +472,7 @@ in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
     It is not updated in realtime, so it doesn't make sense to call this often.
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         broadcaster = The broadcaster to look up chatters for.
 
     Returns:
@@ -480,7 +480,7 @@ in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
         If nothing was found, an empty [std.json.JSONValue|JSONValue].init is
         returned instead.
  +/
-JSONValue getChatters(TwitchBotPlugin plugin, const string broadcaster)
+JSONValue getChatters(TwitchPlugin plugin, const string broadcaster)
 in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
 {
     import std.conv : text;
@@ -538,7 +538,7 @@ in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         authToken = Authorisation token to validate.
         async = Whether or not the validation should be done asynchronously, using Fibers.
 
@@ -550,7 +550,7 @@ in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
         [TwitchQueryException] on failure.
  +/
 JSONValue getValidation(
-    TwitchBotPlugin plugin,
+    TwitchPlugin plugin,
     /*const*/ string authToken,
     const Flag!"async" async)
 in ((!async || Fiber.getThis), "Tried to call asynchronous `getValidation` from outside a Fiber")
@@ -641,19 +641,19 @@ in ((!async || Fiber.getThis), "Tried to call asynchronous `getValidation` from 
 // getFollows
 /++
     Fetches a list of all follows of the passed channel and caches them in
-    the channel's entry in [kameloso.plugins.twitchbot.base.TwitchBotPlugin.rooms|TwitchBotPlugin.rooms].
+    the channel's entry in [kameloso.plugins.twitch.base.TwitchPlugin.rooms|TwitchPlugin.rooms].
 
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         id = The string identifier for the channel.
 
     Returns:
         An associative array of [std.json.JSONValue|JSONValue]s keyed by nickname string,
         containing follows.
  +/
-JSONValue[string] getFollows(TwitchBotPlugin plugin, const string id)
+JSONValue[string] getFollows(TwitchPlugin plugin, const string id)
 in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
 {
     import std.json : JSONType;
@@ -686,14 +686,14 @@ in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         url = The URL to follow.
 
     Returns:
         A [std.json.JSONValue|JSONValue] of type `array` containing all returned
         entities, over all paginated queries.
  +/
-JSONValue getMultipleTwitchEntities(TwitchBotPlugin plugin, const string url)
+JSONValue getMultipleTwitchEntities(TwitchPlugin plugin, const string url)
 in (Fiber.getThis, "Tried to call `getMultipleTwitchEntities` from outside a Fiber")
 {
     import std.json : JSONValue, parseJSON;
@@ -742,17 +742,17 @@ in (Fiber.getThis, "Tried to call `getMultipleTwitchEntities` from outside a Fib
     the weighted averages of the old value and said new measurement.
 
     The old value is given a weight of
-    [kameloso.plugins.twitchbot.base.TwitchBotPlugin.approximateQueryAveragingWeight|approximateQueryAveragingWeight]
+    [kameloso.plugins.twitch.base.TwitchPlugin.approximateQueryAveragingWeight|approximateQueryAveragingWeight]
     and the new measurement a weight of 1. Additionally the measurement is padded by
-    [kameloso.plugins.twitchbot.base.TwitchBotPlugin.approximateQueryMeasurementPadding|approximateQueryMeasurementPadding]
+    [kameloso.plugins.twitch.base.TwitchPlugin.approximateQueryMeasurementPadding|approximateQueryMeasurementPadding]
     to be on the safe side.
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         responseMsecs = The new measurement of how many milliseconds the last
             query took to complete.
  +/
-void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsecs)
+void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
 {
     import std.algorithm.comparison : min;
 
@@ -796,7 +796,7 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
     ---
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         id = Numerical ID to use as key when storing the response in the bucket AA.
         leaveTimingAlone = Whether or not to adjust the approximate query time.
             Enabled by default but can be disabled if the caller wants to do it.
@@ -804,7 +804,7 @@ void averageApproximateQueryTime(TwitchBotPlugin plugin, const long responseMsec
     Returns:
         A [QueryResponse] as constructed by other parts of the program.
  +/
-QueryResponse waitForQueryResponse(TwitchBotPlugin plugin, const int id)
+QueryResponse waitForQueryResponse(TwitchPlugin plugin, const int id)
 in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 {
     import kameloso.constants : Timeout;
@@ -856,7 +856,7 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         givenName = Name of user to look up.
         searchByDisplayName = Whether or not to also attempt to look up `givenName`
             as a display name.
@@ -865,7 +865,7 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
         Voldemort aggregate struct with `nickname`, `displayName` and `idString` members.
  +/
 auto getTwitchUser(
-    TwitchBotPlugin plugin,
+    TwitchPlugin plugin,
     const string givenName,
     const Flag!"searchByDisplayName" searchByDisplayName = No.searchByDisplayName)
 in (Fiber.getThis, "Tried to call `getTwitchUser` from outside a Fiber")
@@ -931,13 +931,13 @@ in (Fiber.getThis, "Tried to call `getTwitchUser` from outside a Fiber")
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         name = Name of game to look up.
 
     Returns:
         Voldemort aggregate struct with `id` and `name` members.
  +/
-auto getTwitchGame(TwitchBotPlugin plugin, const string name)
+auto getTwitchGame(TwitchPlugin plugin, const string name)
 in (Fiber.getThis, "Tried to call `getTwitchGame` from outside a Fiber")
 {
     static struct Game
@@ -1050,13 +1050,13 @@ auto getUniqueNumericalID(shared QueryResponse[int] bucket)
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to modify.
         title = Optional channel title to set.
         gameID = Optional game ID to set the channel as playing.
  +/
 void modifyChannel(
-    TwitchBotPlugin plugin,
+    TwitchPlugin plugin,
     const string channelName,
     const string title,
     const string gameID)
@@ -1101,7 +1101,7 @@ in (Fiber.getThis, "Tried to call `modifyChannel` from outside a Fiber")
     where such exist.
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to return token for.
 
     Returns:
@@ -1111,7 +1111,7 @@ in (Fiber.getThis, "Tried to call `modifyChannel` from outside a Fiber")
         [core.object.Exception|Exception] if there were no broadcaster key for
         the supplied channel in the secrets storage.
  +/
-auto getBroadcasterAuthorisation(TwitchBotPlugin plugin, const string channelName)
+auto getBroadcasterAuthorisation(TwitchPlugin plugin, const string channelName)
 {
     static string[string] authorizationByChannel;
 
@@ -1145,11 +1145,11 @@ auto getBroadcasterAuthorisation(TwitchBotPlugin plugin, const string channelNam
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to run commercials for.
         lengthString = Length to play the commercial for, as a string.
  +/
-void startCommercial(TwitchBotPlugin plugin, const string channelName, const string lengthString)
+void startCommercial(TwitchPlugin plugin, const string channelName, const string lengthString)
 in (Fiber.getThis, "Tried to call `startCommercial` from outside a Fiber")
 {
     import std.format : format;
@@ -1179,7 +1179,7 @@ in (Fiber.getThis, "Tried to call `startCommercial` from outside a Fiber")
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to fetch polls for.
         idString = ID of a specific poll to get.
 
@@ -1188,7 +1188,7 @@ in (Fiber.getThis, "Tried to call `startCommercial` from outside a Fiber")
         all the matched polls.
  +/
 auto getPolls(
-    TwitchBotPlugin plugin,
+    TwitchPlugin plugin,
     const string channelName,
     const string idString = string.init)
 in (Fiber.getThis, "Tried to call `getPolls` from outside a Fiber")
@@ -1281,7 +1281,7 @@ in (Fiber.getThis, "Tried to call `getPolls` from outside a Fiber")
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to create the poll in.
         title = Poll title.
         durationString = How long the poll should run for in seconds (as a string).
@@ -1293,7 +1293,7 @@ in (Fiber.getThis, "Tried to call `getPolls` from outside a Fiber")
         [std.json.JSONValue|JSONValue] is instead returned.
  +/
 auto createPoll(
-    TwitchBotPlugin plugin,
+    TwitchPlugin plugin,
     const string channelName,
     const string title,
     const string durationString,
@@ -1390,7 +1390,7 @@ in (Fiber.getThis, "Tried to call `createPoll` from outside a Fiber")
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel whose poll to end.
         voteID = ID of the specific vote to end.
         terminate = If set, ends the poll by putting it in a `"TERMINATED"` state.
@@ -1402,7 +1402,7 @@ in (Fiber.getThis, "Tried to call `createPoll` from outside a Fiber")
         [std.json.JSONValue|JSONValue] is instead returned.
  +/
 auto endPoll(
-    TwitchBotPlugin plugin,
+    TwitchPlugin plugin,
     const string channelName,
     const string voteID,
     const Flag!"terminate" terminate)

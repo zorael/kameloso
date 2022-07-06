@@ -2,18 +2,18 @@
     Bits and bobs to get Google API credentials for YouTube playlist management.
 
     See_Also:
-        [kameloso.plugins.twitchbot.base|twitchbot.base]
-        [kameloso.plugins.twitchbot.api|twitchbot.api]
+        [kameloso.plugins.twitch.base|twitch.base]
+        [kameloso.plugins.twitch.api|twitch.api]
  +/
-module kameloso.plugins.twitchbot.google;
+module kameloso.plugins.twitch.google;
 
 version(TwitchSupport):
-version(WithTwitchBotPlugin):
+version(WithTwitchPlugin):
 
 private:
 
-import kameloso.plugins.twitchbot.base;
-import kameloso.plugins.twitchbot.helpers;
+import kameloso.plugins.twitch.base;
+import kameloso.plugins.twitch.helpers;
 
 import kameloso.common : expandTags, logger;
 import kameloso.logger : LogLevel;
@@ -29,9 +29,9 @@ import core.thread : Fiber;
     to obtain an access key and a refresh OAuth key.
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
  +/
-package void requestGoogleKeys(TwitchBotPlugin plugin)
+package void requestGoogleKeys(TwitchPlugin plugin)
 {
     import kameloso.common : timeSince;
     import kameloso.logger : LogLevel;
@@ -287,7 +287,7 @@ Follow the instructions and log in to authorise the use of this program with you
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         creds = Credentials aggregate.
         videoID = YouTube video ID of the video to add.
         recursing = Whether or not the function is recursing into iself.
@@ -296,13 +296,13 @@ Follow the instructions and log in to authorise the use of this program with you
         A [std.json.JSONValue|JSONValue] of the response.
  +/
 package JSONValue addVideoToYouTubePlaylist(
-    TwitchBotPlugin plugin,
+    TwitchPlugin plugin,
     ref Credentials creds,
     const string videoID,
     const Flag!"recursing" recursing = No.recursing)
 in (Fiber.getThis, "Tried to call `addVideoToYouTubePlaylist` from outside a Fiber")
 {
-    import kameloso.plugins.twitchbot.api : getUniqueNumericalID, waitForQueryResponse;
+    import kameloso.plugins.twitch.api : getUniqueNumericalID, waitForQueryResponse;
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.thread : ThreadMessage;
     import arsd.http2 : HttpVerb;

@@ -126,7 +126,7 @@ bool applyCustomSettings(IRCPlugin[] plugins,
         }
         else
         {
-            if (pluginstring == "twitch") pluginstring = "twitchbot";
+            if (pluginstring == "twitchbot") pluginstring = "twitch";
 
             foreach (plugin; plugins)
             {
@@ -854,7 +854,7 @@ unittest
     struct instead of a tuple.
  +/
 version(WithWebtitlesPlugin)
-version(WithTwitchBotPlugin)
+version(WithTwitchPlugin)
 struct EventURLs
 {
     /// The [dialect.defs.IRCEvent|IRCEvent] that should trigger a Webtitles lookup.

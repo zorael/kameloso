@@ -58,7 +58,7 @@ versions \
  */
 versions \
     "Colours" \
-    "WithTwitchBotPluginStub" \
+    "WithTwitchPluginStub" \
     "PreciseGC"
     //"ConcurrentGC"
 
@@ -70,7 +70,7 @@ versions \
 /*
 versions \
     "TwitchSupport" \
-    "WithTwitchBotPlugin" \
+    "WithTwitchPlugin" \
     "TwitchWarnings" \
     "TwitchPromoteEverywhere" \
     "OmniscientAdmin" \
@@ -104,7 +104,7 @@ configuration "twitch" {
 
     versions \
         "TwitchSupport" \
-        "WithTwitchBotPlugin"
+        "WithTwitchPlugin"
 }
 
 configuration "twitch-lowmem" {
@@ -113,7 +113,7 @@ configuration "twitch-lowmem" {
 
     versions \
         "TwitchSupport" \
-        "WithTwitchBotPlugin"
+        "WithTwitchPlugin"
 }
 
 configuration "dev" {
@@ -121,7 +121,7 @@ configuration "dev" {
 
     versions \
         "TwitchSupport" \
-        "WithTwitchBotPlugin" \
+        "WithTwitchPlugin" \
         "TwitchWarnings" \
         "OmniscientAdmin" \
         "PrintStacktraces" \
@@ -143,7 +143,7 @@ configuration "dev-lowmem" {
 
     versions \
         "TwitchSupport" \
-        "WithTwitchBotPlugin" \
+        "WithTwitchPlugin" \
         "TwitchWarnings" \
         "OmniscientAdmin" \
         "PrintStacktraces" \
@@ -164,7 +164,7 @@ configuration "unittest" {
 
     versions \
         "TwitchSupport" \
-        "WithTwitchBotPlugin" \
+        "WithTwitchPlugin" \
         "TwitchWarnings" \
         "OmniscientAdmin" \
         "OmniscientQueries" \
@@ -186,7 +186,7 @@ configuration "unittest-lowmem" {
 
     versions \
         "TwitchSupport" \
-        "WithTwitchBotPlugin" \
+        "WithTwitchPlugin" \
         "TwitchWarnings" \
         "OmniscientAdmin" \
         "OmniscientQueries" \

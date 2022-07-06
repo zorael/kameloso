@@ -1,5 +1,5 @@
 /++
-    This is an example Twitch streamer bot. It supports querying uptime or how
+    This is an example Twitch channel bot. It supports querying uptime or how
     long a streamer has been live, follower age queries, etc. It can also emit
     some terminal bells on certain events, to draw attention.
 
@@ -7,22 +7,22 @@
     message has too many capital letters, etc. There is no protection from spam yet.
 
     See_Also:
-        https://github.com/zorael/kameloso/wiki/Current-plugins#twitchbot
+        https://github.com/zorael/kameloso/wiki/Current-plugins#twitch
         [kameloso.plugins.common.core|plugins.common.core]
         [kameloso.plugins.common.misc|plugins.common.misc]
  +/
-module kameloso.plugins.twitchbot.base;
+module kameloso.plugins.twitch.base;
 
 
-// TwitchBotSettings
+// TwitchSettings
 /++
-    All Twitch bot plugin runtime settings.
+    All Twitch plugin runtime settings.
 
     Placed outside of the `version` gates to make sure it is always available,
-    even on non-`WithTwitchBotPlugin` builds, so that the Twitch bot stub may
+    even on non-`WithTwitchPlugin` builds, so that the Twitch stub may
     import it and provide lines to the configuration file.
  +/
-package @Settings struct TwitchBotSettings
+package @Settings struct TwitchSettings
 {
 private:
     import dialect.defs : IRCUser;
@@ -139,11 +139,11 @@ private enum SongRequestMode
 private import kameloso.plugins.common.core;
 
 version(TwitchSupport):
-version(WithTwitchBotPlugin):
+version(WithTwitchPlugin):
 
 private:
 
-import kameloso.plugins.twitchbot.api;
+import kameloso.plugins.twitch.api;
 
 import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
 import kameloso.common : expandTags, logger;
@@ -276,7 +276,7 @@ package struct Credentials
 // onImportant
 /++
     Bells on any important event, like subscriptions, cheers and raids, if the
-    [TwitchBotSettings.bellOnImportant] setting is set.
+    [TwitchSettings.bellOnImportant] setting is set.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.TWITCH_SUB)
@@ -297,7 +297,7 @@ package struct Credentials
     .channelPolicy(ChannelPolicy.home)
     .chainable(true)
 )
-void onImportant(TwitchBotPlugin plugin, const ref IRCEvent event)
+void onImportant(TwitchPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.terminal : TerminalToken;
     import std.stdio : stdout, write;
@@ -311,7 +311,7 @@ void onImportant(TwitchBotPlugin plugin, const ref IRCEvent event)
         }
     }
 
-    if (plugin.twitchBotSettings.bellOnImportant)
+    if (plugin.twitchSettings.bellOnImportant)
     {
         write(plugin.bell);
         stdout.flush();
@@ -321,7 +321,7 @@ void onImportant(TwitchBotPlugin plugin, const ref IRCEvent event)
 
 // onSelfjoin
 /++
-    Registers a new [TwitchBotPlugin.Room] as we join a channel, so there's
+    Registers a new [TwitchPlugin.Room] as we join a channel, so there's
     always a state struct available.
 
     Simply passes on execution to [handleSelfjoin].
@@ -330,7 +330,7 @@ void onImportant(TwitchBotPlugin plugin, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.SELFJOIN)
     .channelPolicy(ChannelPolicy.home)
 )
-void onSelfjoin(TwitchBotPlugin plugin, const ref IRCEvent event)
+void onSelfjoin(TwitchPlugin plugin, const ref IRCEvent event)
 {
     return plugin.handleSelfjoin(event.channel);
 }
@@ -338,19 +338,19 @@ void onSelfjoin(TwitchBotPlugin plugin, const ref IRCEvent event)
 
 // handleSelfjoin
 /++
-    Registers a new [TwitchBotPlugin.Room] as we join a channel, so there's
+    Registers a new [TwitchPlugin.Room] as we join a channel, so there's
     always a state struct available.
 
     Params:
-        plugin = The current [TwitchBotPlugin].
+        plugin = The current [TwitchPlugin].
         channelName = The name of the channel we're supposedly joining.
  +/
-void handleSelfjoin(TwitchBotPlugin plugin, const string channelName)
+void handleSelfjoin(TwitchPlugin plugin, const string channelName)
 in (channelName.length, "Tried to handle SELFJOIN with an empty channel string")
 {
     if (channelName in plugin.rooms) return;
 
-    plugin.rooms[channelName] = TwitchBotPlugin.Room(channelName);
+    plugin.rooms[channelName] = TwitchPlugin.Room(channelName);
 }
 
 
@@ -381,7 +381,7 @@ void onUserstate(const ref IRCEvent event)
 
 // onSelfpart
 /++
-    Removes a channel's corresponding [TwitchBotPlugin.Room] when we leave it.
+    Removes a channel's corresponding [TwitchPlugin.Room] when we leave it.
 
     This resets all that channel's transient state.
  +/
@@ -389,7 +389,7 @@ void onUserstate(const ref IRCEvent event)
     .onEvent(IRCEvent.Type.SELFPART)
     .channelPolicy(ChannelPolicy.home)
 )
-void onSelfpart(TwitchBotPlugin plugin, const ref IRCEvent event)
+void onSelfpart(TwitchPlugin plugin, const ref IRCEvent event)
 {
     if (auto room = event.channel in plugin.rooms)
     {
@@ -419,7 +419,7 @@ void onSelfpart(TwitchBotPlugin plugin, const ref IRCEvent event)
             .description("Reports how long the streamer has been streaming.")
     )
 )
-void onCommandUptime(TwitchBotPlugin plugin, const ref IRCEvent event)
+void onCommandUptime(TwitchPlugin plugin, const ref IRCEvent event)
 {
     const room = event.channel in plugin.rooms;
     assert(room, "Tried to process `onCommandUptime` on a nonexistent room");
@@ -449,7 +449,7 @@ void onCommandUptime(TwitchBotPlugin plugin, const ref IRCEvent event)
             .addSyntax("$command [optional duration time already elapsed]")
     )
 )
-void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandStart(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import std.format : format;
     import core.thread : Fiber;
@@ -529,7 +529,7 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             if (chattersJSON.type != JSONType.object) return;
 
             // https://twitchinsights.net/bots
-            // https://twitchbots.info/bots
+            // https://twitchs.info/bots
             static immutable botBlacklist =
             [
                 //"nightbot",
@@ -607,7 +607,7 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
                     ++chatterCount;
 
                     // continue early if we shouldn't monitor watchtime
-                    if (!plugin.twitchBotSettings.watchtime) continue;
+                    if (!plugin.twitchSettings.watchtime) continue;
 
                     // Exclude lurkers from watchtime monitoring
                     if (viewer !in room.broadcast.activeViewers) continue;
@@ -672,7 +672,7 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             .description("Marks the end of a broadcast.")
     )
 )
-void onCommandStop(TwitchBotPlugin plugin, const ref IRCEvent event)
+void onCommandStop(TwitchPlugin plugin, const ref IRCEvent event)
 {
     auto room = event.channel in plugin.rooms;
     assert(room, "Tried to stop a broadcast in a nonexistent room");
@@ -694,7 +694,7 @@ void onCommandStop(TwitchBotPlugin plugin, const ref IRCEvent event)
     chan(plugin.state, event.channel, "Broadcast ended!");
     reportStreamTime(plugin, *room, Yes.justNowEnded);
 
-    if (plugin.twitchBotSettings.watchtime && plugin.viewerTimesByChannel.length)
+    if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
     {
         saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
     }
@@ -712,7 +712,7 @@ void onCommandStop(TwitchBotPlugin plugin, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.TWITCH_HOSTSTART)
     .channelPolicy(ChannelPolicy.home)
 )
-void onAutomaticStop(TwitchBotPlugin plugin, const ref IRCEvent event)
+void onAutomaticStop(TwitchPlugin plugin, const ref IRCEvent event)
 {
     return onCommandStop(plugin, event);
 }
@@ -724,12 +724,12 @@ void onAutomaticStop(TwitchBotPlugin plugin, const ref IRCEvent event)
     or previously lasted.
 
     Params:
-        plugin = The current [TwitchBotPlugin].
-        room = The [TwitchBotPlugin.Room] of the channel.
+        plugin = The current [TwitchPlugin].
+        room = The [TwitchPlugin.Room] of the channel.
         justNowEnded = Whether or not the stream ended just now.
  +/
-void reportStreamTime(TwitchBotPlugin plugin,
-    const TwitchBotPlugin.Room room,
+void reportStreamTime(TwitchPlugin plugin,
+    const TwitchPlugin.Room room,
     const Flag!"justNowEnded" justNowEnded = No.justNowEnded)
 {
     import kameloso.common : timeSince;
@@ -821,7 +821,7 @@ void reportStreamTime(TwitchBotPlugin plugin,
     Lookups are done asynchronously in subthreads.
 
     See_Also:
-        [kameloso.plugins.twitchbot.api.getFollows]
+        [kameloso.plugins.twitch.api.getFollows]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -837,7 +837,7 @@ void reportStreamTime(TwitchBotPlugin plugin,
             .addSyntax("$command [optional nickname]")
     )
 )
-void onCommandFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : beginsWith, nom, stripped;
     import std.conv : to;
@@ -993,7 +993,7 @@ void onCommandFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     .onEvent(IRCEvent.Type.ROOMSTATE)
     .channelPolicy(ChannelPolicy.home)
 )
-void onRoomState(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     auto room = event.channel in plugin.rooms;
 
@@ -1077,7 +1077,7 @@ void onRoomState(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             .hidden(true)
     )
 )
-void onCommandShoutout(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandShoutout(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.plugins.common.misc : idOf;
     import dialect.common : isValidNickname;
@@ -1193,7 +1193,7 @@ void onCommandShoutout(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             .hidden(true)
     )
 )
-void onCommandVanish(TwitchBotPlugin plugin, const ref IRCEvent event)
+void onCommandVanish(TwitchPlugin plugin, const ref IRCEvent event)
 {
     immutable message = ".timeout " ~ event.sender.nickname ~ " 1";
     chan(plugin.state, event.channel, message);
@@ -1222,7 +1222,7 @@ void onCommandVanish(TwitchBotPlugin plugin, const ref IRCEvent event)
             .hidden(true)
     )
 )
-void onCommandRepeat(TwitchBotPlugin plugin, const ref IRCEvent event)
+void onCommandRepeat(TwitchPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : nom;
     import std.algorithm.searching : count;
@@ -1271,7 +1271,7 @@ void onCommandRepeat(TwitchBotPlugin plugin, const ref IRCEvent event)
     Deletes recent messages containing a supplied word or phrase.
 
     See_Also:
-        [TwitchBotPlugin.Room.lastNMessages]
+        [TwitchPlugin.Room.lastNMessages]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -1285,7 +1285,7 @@ void onCommandRepeat(TwitchBotPlugin plugin, const ref IRCEvent event)
             .addSyntax("$command [word or phrase]")
     )
 )
-void onCommandNuke(TwitchBotPlugin plugin, const ref IRCEvent event)
+void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
 {
     import std.conv : text;
     import std.uni : toLower;
@@ -1328,8 +1328,8 @@ void onCommandNuke(TwitchBotPlugin plugin, const ref IRCEvent event)
     YouTube videos) to be added to the streamer's playlist.
 
     See_Also:
-        [kameloso.plugins.twitchbot.google.addVideoToYouTubePlaylist]
-        [kameloso.plugins.twitchbot.spotify.addTrackToSpotifyPlaylist]
+        [kameloso.plugins.twitch.google.addVideoToYouTubePlaylist]
+        [kameloso.plugins.twitch.spotify.addTrackToSpotifyPlaylist]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -1349,17 +1349,17 @@ void onCommandNuke(TwitchBotPlugin plugin, const ref IRCEvent event)
             .hidden(true)
     )
 )
-void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
+void onCommandSongRequest(TwitchPlugin plugin, const ref IRCEvent event)
 {
-    import kameloso.plugins.twitchbot.helpers;
+    import kameloso.plugins.twitch.helpers;
     import kameloso.constants : KamelosoInfo, Timeout;
     import arsd.http2 : HttpClient, HttpVerb, Uri;
     import lu.string : contains, nom, stripped;
     import std.format : format;
     import core.time : seconds;
 
-    if (plugin.twitchBotSettings.songrequestMode == SongRequestMode.disabled) return;
-    else if (event.sender.class_ < plugin.twitchBotSettings.songrequestPermsNeeded)
+    if (plugin.twitchSettings.songrequestMode == SongRequestMode.disabled) return;
+    else if (event.sender.class_ < plugin.twitchSettings.songrequestPermsNeeded)
     {
         // Issue an error?
         logger.error("User does not have the needed permissions to issue song requests.");
@@ -1373,17 +1373,17 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
 
         if (const lastRequestTimestamp = event.sender.nickname in room.songrequestHistory)
         {
-            if ((event.time - *lastRequestTimestamp) < TwitchBotPlugin.Room.minimumTimeBetweenSongRequests)
+            if ((event.time - *lastRequestTimestamp) < TwitchPlugin.Room.minimumTimeBetweenSongRequests)
             {
                 enum pattern = "At least %d seconds must pass between song requests.";
-                immutable message = pattern.format(TwitchBotPlugin.Room.minimumTimeBetweenSongRequests);
+                immutable message = pattern.format(TwitchPlugin.Room.minimumTimeBetweenSongRequests);
                 chan(plugin.state, event.channel, message);
                 return;
             }
         }
     }
 
-    if (plugin.twitchBotSettings.songrequestMode == SongRequestMode.youtube)
+    if (plugin.twitchSettings.songrequestMode == SongRequestMode.youtube)
     {
         immutable url = event.content.stripped;
 
@@ -1448,7 +1448,7 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
         {
             try
             {
-                import kameloso.plugins.twitchbot.google : addVideoToYouTubePlaylist;
+                import kameloso.plugins.twitch.google : addVideoToYouTubePlaylist;
 
                 immutable json = addVideoToYouTubePlaylist(plugin, *creds, videoID);
                 immutable title = json["snippet"]["title"].str;
@@ -1473,7 +1473,7 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
         Fiber addVideoFiber = new Fiber(&twitchTryCatchDg!addVideoDg, BufferSize.fiberStack);
         addVideoFiber.call();
     }
-    else if (plugin.twitchBotSettings.songrequestMode == SongRequestMode.spotify)
+    else if (plugin.twitchSettings.songrequestMode == SongRequestMode.spotify)
     {
         immutable url = event.content.stripped;
 
@@ -1528,7 +1528,7 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
         {
             try
             {
-                import kameloso.plugins.twitchbot.spotify;
+                import kameloso.plugins.twitch.spotify;
                 import std.json : JSONType;
 
                 immutable json = addTrackToSpotifyPlaylist(plugin, *creds, trackID);
@@ -1572,7 +1572,7 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
     Note: Experimental, since we cannot try it out ourselves.
 
     See_Also:
-        [kameloso.plugins.twitchbot.api.createPoll]
+        [kameloso.plugins.twitch.api.createPoll]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -1592,7 +1592,7 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
             .hidden(true)
     )
 )
-void onCommandStartPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : splitInto;
     import std.conv : ConvException, to;
@@ -1692,7 +1692,7 @@ void onCommandStartPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     Note: Experimental, since we cannot try it out ourselves.
 
     See_Also:
-        [kameloso.plugins.twitchbot.api.endPoll]
+        [kameloso.plugins.twitch.api.endPoll]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -1712,7 +1712,7 @@ void onCommandStartPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             .hidden(true)
     )
 )
-void onCommandEndPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandEndPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     void endPollDg()
     {
@@ -1782,7 +1782,7 @@ void onCommandEndPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 
 // onAnyMessage
 /++
-    Bells on any message, if the [TwitchBotSettings.bellOnMessage] setting is set.
+    Bells on any message, if the [TwitchSettings.bellOnMessage] setting is set.
     Also counts emotes for `ecount` and records active viewers.
 
     Belling is useful with small audiences, so you don't miss messages.
@@ -1795,9 +1795,9 @@ void onCommandEndPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     .channelPolicy(ChannelPolicy.home)
     .chainable(true)
 )
-void onAnyMessage(TwitchBotPlugin plugin, const ref IRCEvent event)
+void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
 {
-    if (plugin.twitchBotSettings.bellOnMessage)
+    if (plugin.twitchSettings.bellOnMessage)
     {
         import kameloso.terminal : TerminalToken;
         import std.stdio : stdout, write;
@@ -1813,7 +1813,7 @@ void onAnyMessage(TwitchBotPlugin plugin, const ref IRCEvent event)
     }
 
     // ecount!
-    if (plugin.twitchBotSettings.ecount && event.emotes.length)
+    if (plugin.twitchSettings.ecount && event.emotes.length)
     {
         import lu.string : nom;
         import std.algorithm.iteration : splitter;
@@ -1871,7 +1871,7 @@ void onAnyMessage(TwitchBotPlugin plugin, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.RPL_ENDOFMOTD)
     .onEvent(IRCEvent.Type.ERR_NOMOTD)
 )
-void onEndOfMOTD(TwitchBotPlugin plugin)
+void onEndOfMOTD(TwitchPlugin plugin)
 {
     import lu.string : beginsWith;
     import std.concurrency : Tid, spawn;
@@ -2018,7 +2018,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
     `!ecount`; reporting how many times a Twitch emote has been seen.
 
     See_Also:
-        [TwitchBotPlugin.ecount]
+        [TwitchPlugin.ecount]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -2032,13 +2032,13 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
             .addSyntax("$command [emote]")
     )
 )
-void onCommandEcount(TwitchBotPlugin plugin, const ref IRCEvent event)
+void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : nom, stripped;
     import std.format : format;
     import std.conv  : to;
 
-    if (!plugin.twitchBotSettings.ecount) return;
+    if (!plugin.twitchSettings.ecount) return;
 
     void sendResults(const long count)
     {
@@ -2116,7 +2116,7 @@ void onCommandEcount(TwitchBotPlugin plugin, const ref IRCEvent event)
             .hidden(true)
     )
 )
-void onCommandWatchtime(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandWatchtime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.common : timeSince;
     import lu.string : beginsWith, nom, stripped;
@@ -2126,7 +2126,7 @@ void onCommandWatchtime(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     import core.time : Duration, seconds;
 
     if (!plugin.useAPIFeatures) return;
-    else if (!plugin.twitchBotSettings.watchtime) return;
+    else if (!plugin.twitchSettings.watchtime) return;
 
     void watchtimeDg()
     {
@@ -2233,7 +2233,7 @@ void onCommandWatchtime(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     Changes the title of the current channel.
 
     See_Also:
-        [kameloso.plugins.twitchbot.api.modifyChannel]
+        [kameloso.plugins.twitch.api.modifyChannel]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -2247,7 +2247,7 @@ void onCommandWatchtime(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             .addSyntax("$command [title]")
     )
 )
-void onCommandSetTitle(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandSetTitle(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : stripped, unquoted;
     import std.array : replace;
@@ -2282,7 +2282,7 @@ void onCommandSetTitle(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     Changes the game of the current channel.
 
     See_Also:
-        [kameloso.plugins.twitchbot.api.modifyChannel]
+        [kameloso.plugins.twitch.api.modifyChannel]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -2296,7 +2296,7 @@ void onCommandSetTitle(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             .addSyntax("$command [game name]")
     )
 )
-void onCommandSetGame(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : stripped, unquoted;
     import std.array : replace;
@@ -2353,7 +2353,7 @@ void onCommandSetGame(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     Starts a commercial in the current channel.
 
     See_Also:
-        [kameloso.plugins.twitchbot.api.startCommercial]
+        [kameloso.plugins.twitch.api.startCommercial]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -2367,7 +2367,7 @@ void onCommandSetGame(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             .addSyntax("$command [commercial length; valid values are 30, 60, 90, 120, 150 and 180]")
     )
 )
-void onCommandCommercial(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : stripped;
     import std.algorithm.comparison : among;
@@ -2436,7 +2436,7 @@ void onCommandCommercial(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CAP)
 )
-void onCAP(TwitchBotPlugin plugin)
+void onCAP(TwitchPlugin plugin)
 {
     import std.algorithm.searching : endsWith;
 
@@ -2446,10 +2446,10 @@ void onCAP(TwitchBotPlugin plugin)
         import kameloso.thread : ThreadMessage;
         import std.concurrency : prioritySend;
 
-        if (plugin.twitchBotSettings.keygen ||
-            plugin.twitchBotSettings.superKeygen ||
-            plugin.twitchBotSettings.googleKeygen ||
-            plugin.twitchBotSettings.spotifyKeygen ||
+        if (plugin.twitchSettings.keygen ||
+            plugin.twitchSettings.superKeygen ||
+            plugin.twitchSettings.googleKeygen ||
+            plugin.twitchSettings.spotifyKeygen ||
             (!plugin.state.bot.pass.length && !plugin.state.settings.force))
         {
             // Some keygen, reload to load secrets so existing ones are read
@@ -2460,45 +2460,45 @@ void onCAP(TwitchBotPlugin plugin)
             enum separator = "---------------------------------------------------------------------";
 
             // Automatically keygen if no pass
-            if (plugin.twitchBotSettings.keygen ||
+            if (plugin.twitchSettings.keygen ||
                 (!plugin.state.bot.pass.length && !plugin.state.settings.force))
             {
-                import kameloso.plugins.twitchbot.keygen : requestTwitchKey;
+                import kameloso.plugins.twitch.keygen : requestTwitchKey;
                 plugin.requestTwitchKey();
-                plugin.twitchBotSettings.keygen = false;
+                plugin.twitchSettings.keygen = false;
                 needSeparator = true;
             }
 
             if (*plugin.state.abort) return;
 
-            if (plugin.twitchBotSettings.superKeygen)
+            if (plugin.twitchSettings.superKeygen)
             {
-                import kameloso.plugins.twitchbot.keygen : requestTwitchSuperKey;
+                import kameloso.plugins.twitch.keygen : requestTwitchSuperKey;
                 if (needSeparator) logger.trace(separator);
                 plugin.requestTwitchSuperKey();
-                plugin.twitchBotSettings.superKeygen = false;
+                plugin.twitchSettings.superKeygen = false;
                 needSeparator = true;
             }
 
             if (*plugin.state.abort) return;
 
-            if (plugin.twitchBotSettings.googleKeygen)
+            if (plugin.twitchSettings.googleKeygen)
             {
-                import kameloso.plugins.twitchbot.google : requestGoogleKeys;
+                import kameloso.plugins.twitch.google : requestGoogleKeys;
                 if (needSeparator) logger.trace(separator);
                 plugin.requestGoogleKeys();
-                plugin.twitchBotSettings.googleKeygen = false;
+                plugin.twitchSettings.googleKeygen = false;
                 needSeparator = true;
             }
 
             if (*plugin.state.abort) return;
 
-            if (plugin.twitchBotSettings.spotifyKeygen)
+            if (plugin.twitchSettings.spotifyKeygen)
             {
-                import kameloso.plugins.twitchbot.spotify : requestSpotifyKeys;
+                import kameloso.plugins.twitch.spotify : requestSpotifyKeys;
                 if (needSeparator) logger.trace(separator);
                 plugin.requestSpotifyKeys();
-                plugin.twitchBotSettings.spotifyKeygen = false;
+                plugin.twitchSettings.spotifyKeygen = false;
             }
 
             if (*plugin.state.abort) return;
@@ -2538,7 +2538,7 @@ void onCAP(TwitchBotPlugin plugin)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_MYINFO)
 )
-void onMyInfo(TwitchBotPlugin plugin)
+void onMyInfo(TwitchPlugin plugin)
 {
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.common : nextMidnight;
@@ -2578,7 +2578,7 @@ void onMyInfo(TwitchBotPlugin plugin)
     {
         while (true)
         {
-            if (plugin.twitchBotSettings.ecount && plugin.ecountDirty && plugin.ecount.length)
+            if (plugin.twitchSettings.ecount && plugin.ecountDirty && plugin.ecount.length)
             {
                 saveResourceToDisk(plugin.ecount, plugin.ecountFile);
                 plugin.ecountDirty = false;
@@ -2588,7 +2588,7 @@ void onMyInfo(TwitchBotPlugin plugin)
                 Only save watchtimes if there's at least one broadcast currently ongoing.
                 Since we save at broadcast stop there won't be anything new to save otherwise.
              +/
-            if (plugin.twitchBotSettings.watchtime && plugin.viewerTimesByChannel.length)
+            if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
             {
                 foreach (const room; plugin.rooms)
                 {
@@ -2615,10 +2615,10 @@ void onMyInfo(TwitchBotPlugin plugin)
     Generates and delays Twitch authorisation token expiry reminders.
 
     Params:
-        plugin = The current [TwitchBotPlugin].
+        plugin = The current [TwitchPlugin].
         expiresWhen = A [std.datetime.systime.SysTime|SysTime] of when the expiry occurs.
  +/
-void generateExpiryReminders(TwitchBotPlugin plugin, const SysTime expiresWhen)
+void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
 {
     import kameloso.plugins.common.delayawait : delay;
     import lu.string : plurality;
@@ -2762,7 +2762,7 @@ void generateExpiryReminders(TwitchBotPlugin plugin, const SysTime expiresWhen)
 /++
     Disables the bell if we're not running inside a terminal.
  +/
-void start(TwitchBotPlugin plugin)
+void start(TwitchPlugin plugin)
 {
     import kameloso.terminal : isTerminal;
     import std.concurrency : thisTid;
@@ -2781,7 +2781,7 @@ void start(TwitchBotPlugin plugin)
 /++
     De-initialises the plugin. Shuts down any persistent worker threads.
  +/
-void teardown(TwitchBotPlugin plugin)
+void teardown(TwitchPlugin plugin)
 {
     import kameloso.thread : ThreadMessage;
     import std.concurrency : Tid, send;
@@ -2792,14 +2792,14 @@ void teardown(TwitchBotPlugin plugin)
         plugin.persistentWorkerTid.send(ThreadMessage.teardown());
     }
 
-    if (plugin.twitchBotSettings.ecount && /*plugin.ecountDirty &&*/ plugin.ecount.length)
+    if (plugin.twitchSettings.ecount && /*plugin.ecountDirty &&*/ plugin.ecount.length)
     {
         // Might as well always save on exit.
         saveResourceToDisk(plugin.ecount, plugin.ecountFile);
         //plugin.ecountDirty = false;
     }
 
-    if (plugin.twitchBotSettings.watchtime && plugin.viewerTimesByChannel.length)
+    if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
     {
         saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
     }
@@ -2811,7 +2811,7 @@ void teardown(TwitchBotPlugin plugin)
     Hijacks a reference to a [dialect.defs.IRCEvent|IRCEvent] and modifies the
     sender and target class based on their badges (and the current settings).
  +/
-void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
+void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 {
     import std.algorithm.searching : canFind;
 
@@ -2823,14 +2823,14 @@ void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
         if (!plugin.state.bot.homeChannels.canFind(event.channel)) return;
     }
 
-    static void postprocessImpl(const TwitchBotPlugin plugin,
+    static void postprocessImpl(const TwitchPlugin plugin,
         const ref IRCEvent event, ref IRCUser user)
     {
         import lu.string : contains;
 
         if (user.class_ == IRCUser.Class.blacklist) return;
 
-        if (plugin.twitchBotSettings.promoteBroadcasters)
+        if (plugin.twitchSettings.promoteBroadcasters)
         {
             if ((user.class_ < IRCUser.Class.staff) &&
                 (user.nickname == event.channel[1..$]))
@@ -2844,7 +2844,7 @@ void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
         // Stop here if there are no badges to promote
         if (!user.badges.length) return;
 
-        if (plugin.twitchBotSettings.promoteModerators)
+        if (plugin.twitchSettings.promoteModerators)
         {
             if ((user.class_ < IRCUser.Class.operator) &&
                 user.badges.contains("moderator/"))
@@ -2855,7 +2855,7 @@ void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
             }
         }
 
-        if (plugin.twitchBotSettings.promoteVIPs)
+        if (plugin.twitchSettings.promoteVIPs)
         {
             if ((user.class_ < IRCUser.Class.whitelist) &&
                 user.badges.contains("vip/"))
@@ -2884,7 +2884,7 @@ void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
     Reads and writes the file of emote counters to disk, ensuring that it's
     there and properly formatted.
  +/
-void initResources(TwitchBotPlugin plugin)
+void initResources(TwitchPlugin plugin)
 {
     import lu.json : JSONStorage;
     import std.json : JSONException;
@@ -3001,7 +3001,7 @@ package void saveSecretsToDisk(const Credentials[string] aa, const string filena
 /++
     Reloads the plugin, loading emote counters from disk.
  +/
-void reload(TwitchBotPlugin plugin)
+void reload(TwitchPlugin plugin)
 {
     import lu.json : JSONStorage, populateFromJSON;
 
@@ -3038,12 +3038,12 @@ mixin TwitchAwareness;
 public:
 
 
-// TwitchBotPlugin
+// TwitchPlugin
 /++
-    The Twitch Bot plugin is an example Twitch streamer bot. It contains some
+    The Twitch plugin is an example Twitch streamer bot. It contains some
     basic tools for streamers, and the audience thereof.
  +/
-final class TwitchBotPlugin : IRCPlugin
+final class TwitchPlugin : IRCPlugin
 {
 private:
     import kameloso.terminal : TerminalToken;
@@ -3128,8 +3128,8 @@ package:
         long[string] songrequestHistory;
     }
 
-    /// All Twitch Bot plugin settings.
-    TwitchBotSettings twitchBotSettings;
+    /// All Twitch plugin settings.
+    TwitchSettings twitchSettings;
 
     /// Array of active bot channels' state.
     Room[string] rooms;
@@ -3237,7 +3237,7 @@ package:
         Override
         [kameloso.plugins.common.core.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled]
         and inject a server check, so this plugin only works on Twitch, in addition
-        to doing nothing when [TwitchBotSettings.enabled] is false.
+        to doing nothing when [TwitchSettings.enabled] is false.
 
         Returns:
             `true` if this plugin should react to events; `false` if not.
@@ -3246,7 +3246,7 @@ package:
     {
         return ((state.server.daemon == IRCServer.Daemon.twitch) ||
             (state.server.daemon == IRCServer.Daemon.unset)) &&
-            (twitchBotSettings.enabled || twitchBotSettings.keygen);
+            (twitchSettings.enabled || twitchSettings.keygen);
     }
 
     mixin IRCPluginImpl;
