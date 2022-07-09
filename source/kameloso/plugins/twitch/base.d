@@ -3258,7 +3258,11 @@ package:
     {
         return ((state.server.daemon == IRCServer.Daemon.twitch) ||
             (state.server.daemon == IRCServer.Daemon.unset)) &&
-            (twitchSettings.enabled || twitchSettings.keygen);
+            (twitchSettings.enabled ||
+                twitchSettings.keygen ||
+                twitchSettings.superKeygen ||
+                twitchSettings.googleKeygen ||
+                twitchSettings.spotifyKeygen);
     }
 
     mixin IRCPluginImpl;
