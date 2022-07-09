@@ -2881,8 +2881,7 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
 // initResources
 /++
-    Reads and writes the file of emote counters to disk, ensuring that it's
-    there and properly formatted.
+    Reads and writes resource files to disk, ensure that they're there and properly formatted.
  +/
 void initResources(TwitchPlugin plugin)
 {
@@ -2979,7 +2978,8 @@ void initResources(TwitchPlugin plugin)
 /++
     Saves the passed resource to disk, but in JSON format.
 
-    This is used with the associative arrays for `ecount`.
+    This is used with the associative arrays for `ecount`, as well as for keeping
+    track of viewers.
 
     Params:
         aa = The associative array to convert into JSON and save.
@@ -2997,7 +2997,11 @@ void saveResourceToDisk(const long[string][string] aa, const string filename)
 
 // saveSecretsToDisk
 /++
-    FIXME
+    Saves Twitch secrets to disk, in JSON format.
+
+    Params:
+        aa = Associative array of credentials.
+        filename = Filename of the file to write to.
  +/
 package void saveSecretsToDisk(const Credentials[string] aa, const string filename)
 {

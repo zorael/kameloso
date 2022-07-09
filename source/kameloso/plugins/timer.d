@@ -805,10 +805,10 @@ Fiber createTimerFiber(
     {
         import std.datetime.systime : Clock;
 
-        /// FIXME
+        /// Channel pointer.
         const channel = channelName in plugin.channels;
 
-        /// FIXME
+        /// Initial message count.
         immutable creationMessageCount = channel.messageCount;
 
         /// When this timer Fiber was created.
