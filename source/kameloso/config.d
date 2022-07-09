@@ -588,6 +588,7 @@ Next handleGetopt(ref Kameloso instance, string[] args) @system
         {
             import std.conv : text, to;
             import std.format : format;
+            import std.path : extension;
             import std.process : environment;
             import std.random : uniform;
             import std.range : repeat;
@@ -639,16 +640,20 @@ Next handleGetopt(ref Kameloso instance, string[] args) @system
                 enum getCacertString = "(Windows only)";
             }
 
+            immutable configFileExtension = settings.configFile.extension;
+            immutable defaultGeditProgramString =
+                "[<i>the default application used to open <l>*" ~
+                    configFileExtension ~ "<i> files on your system</>]";
+
             version(Windows)
             {
                 immutable geditProgramString = settings.force ?
-                    "[<i>the default application used to open <l>*.conf<i> files on your system</>]" :
+                    defaultGeditProgramString :
                     "[<i>notepad.exe</>]";
             }
             else
             {
-                enum geditProgramString = "[<i>the default application used to open " ~
-                    "<l>*.conf<i> files on your system</>]";
+                alias geditProgramString = defaultGeditProgramString;
             }
 
             return getopt(theseArgs,
