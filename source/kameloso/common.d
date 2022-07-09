@@ -116,10 +116,14 @@ void printVersionInfo(const Flag!"colours" colours = Yes.colours) @safe
     immutable logtint = colours ? Tint.log : string.init;
     immutable infotint = colours ? Tint.info : string.init;
 
-    enum versionPattern = "%skameloso IRC bot v%s, built with %s (%s) on %s%s";
+    version(TwitchSupport) enum twitchSupport = " (+twitch)";
+    else enum twitchSupport = string.init;
+
+    enum versionPattern = "%skameloso IRC bot v%s%s, built with %s (%s) on %s%s";
     writefln(versionPattern,
         logtint,
         cast(string)KamelosoInfo.version_,
+        twitchSupport,
         cast(string)KamelosoInfo.compiler,
         cast(string)KamelosoInfo.compilerVersion,
         cast(string)KamelosoInfo.built,
