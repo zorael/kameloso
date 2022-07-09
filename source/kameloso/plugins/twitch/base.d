@@ -2891,6 +2891,29 @@ void initResources(TwitchPlugin plugin)
     import std.json : JSONException;
     import std.path : baseName, buildNormalizedPath, dirName;
 
+    void loadFile(
+        ref JSONStorage json,
+        const string file,
+        const size_t line = __LINE__)
+    {
+        try
+        {
+            json.load(file);
+        }
+        catch (JSONException e)
+        {
+            version(PrintStacktraces) logger.error("JSONException: ", e.msg);
+            throw new IRCPluginInitialisationException(
+                file ~ " is malformed",
+                plugin.name,
+                file,
+                __FILE__,
+                line);
+        }
+
+        // Let other Exceptions pass.
+    }
+
     JSONStorage ecountJSON;
     JSONStorage viewersJSON;
     JSONStorage secretsJSON;
@@ -2917,52 +2940,9 @@ void initResources(TwitchPlugin plugin)
     immutable hasOldSecrets = oldSecrets.exists;
     immutable secretsFile = hasOldSecrets ? oldSecrets : plugin.secretsFile;
 
-    try
-    {
-        ecountJSON.load(ecountFile);
-    }
-    catch (JSONException e)
-    {
-        version(PrintStacktraces) logger.trace(e);
-        throw new IRCPluginInitialisationException(
-            "Twitch emote counter file is malformed",
-            plugin.name,
-            ecountFile,
-            __FILE__,
-            __LINE__);
-    }
-
-    try
-    {
-        viewersJSON.load(viewersFile);
-    }
-    catch (JSONException e)
-    {
-        version(PrintStacktraces) logger.trace(e);
-        throw new IRCPluginInitialisationException(
-            "Twitch viewers file is malformed",
-            plugin.name,
-            viewersFile,
-            __FILE__,
-            __LINE__);
-    }
-
-    try
-    {
-        secretsJSON.load(secretsFile);
-    }
-    catch (JSONException e)
-    {
-        version(PrintStacktraces) logger.trace(e);
-        throw new IRCPluginInitialisationException(
-            "Twitch secrets file is malformed",
-            plugin.name,
-            secretsFile,
-            __FILE__,
-            __LINE__);
-    }
-
-    // Let other Exceptions pass.
+    loadFile(ecountJSON, ecountFile);
+    loadFile(viewersJSON, viewersFile);
+    loadFile(secretsJSON, secretsFile);
 
     ecountJSON.save(plugin.ecountFile);
     viewersJSON.save(plugin.viewersFile);
