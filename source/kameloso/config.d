@@ -466,6 +466,7 @@ string configurationText(const string configFile)
         return configFile
             .readText
             .replace("[TwitchBot]\n", "[Twitch]\n")
+            .replace("[TwitchBot]\r\n", "[Twitch]\r\n")
             .chomp;
     }
     catch (Exception e)
