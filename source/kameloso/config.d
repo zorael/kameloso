@@ -447,6 +447,7 @@ void giveConfigurationMinimalInstructions()
 string configurationText(const string configFile)
 {
     import lu.common : FileTypeMismatchException;
+    import std.array : replace;
     import std.file : exists, getAttributes, isFile, readText;
     import std.string : chomp;
 
@@ -464,6 +465,7 @@ string configurationText(const string configFile)
     {
         return configFile
             .readText
+            .replace("[TwitchBot]\n", "[Twitch]\n")
             .chomp;
     }
     catch (Exception e)
