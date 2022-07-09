@@ -642,13 +642,13 @@ Next handleGetopt(ref Kameloso instance, string[] args) @system
             version(Windows)
             {
                 immutable geditProgramString = settings.force ?
-                    "[the default application used to open <i>*.conf</> files on your system]" :
+                    "[<i>the default application used to open <l>*.conf<i> files on your system</>]" :
                     "[<i>notepad.exe</>]";
             }
             else
             {
-                enum geditProgramString = "[the default application used to open " ~
-                    "<i>*.conf</> files on your system]";
+                enum geditProgramString = "[<i>the default application used to open " ~
+                    "<l>*.conf<i> files on your system</>]";
             }
 
             return getopt(theseArgs,
