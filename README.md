@@ -402,7 +402,7 @@ You will also require an [OAuth authorisation token](https://en.wikipedia.org/wi
 
 It will open a browser window, in which you are asked to log onto Twitch *on Twitch's own servers*. Verify this by checking the page address; it should end with `.twitch.tv`, with the little lock symbol showing the connection is secure.
 
-> Note: At no point is the bot privy to your Twitch login credentials! The logging-in is wholly done on Twitch's own servers, and no information is sent to any third parties. The code that deals with this is open for audit; [`requestTwitchKey` in `twitchbot/keygen.d`](source/kameloso/plugins/twitchbot/keygen.d).
+> Note: At no point is the bot privy to your Twitch login credentials! The logging-in is wholly done on Twitch's own servers, and no information is sent to any third parties. The code that deals with this is open for audit; [`requestTwitchKey` in `plugins/twitch/keygen.d`](source/kameloso/plugins/twitch/keygen.d).
 
 After entering your login and password and clicking **Authorize**, you will be redirected to an empty "`this site can't be reached`" or "`unable to connect`" page. **Copy the URL address of it** and paste it into the terminal, when asked. It will parse the address, extract your authorisation token, and save it to your configuration file.
 
@@ -459,7 +459,7 @@ If you still can't find what you're looking for, or if you have suggestions on h
 
 ## Windows
 
-**kameloso** uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard SSL library in the Posix sphere (Linux, macOS, ...), but not so on Windows. If you run into errors about missing SSL libraries when attempting to connect on Windows, supply the `--get-openssl` flag to download and launch the installer for [**OpenSSL for Windows**](https://slproweb.com/products/Win32OpenSSL.html), and opt to install to Windows system directories when asked.
+**kameloso** uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard library in the Posix sphere (Linux, macOS, ...) for making secure connections, but not so on Windows. If you run into errors about missing SSL libraries when attempting to connect on Windows, supply the `--get-openssl` flag to download and launch the installer for [**OpenSSL for Windows**](https://slproweb.com/products/Win32OpenSSL.html), and opt to install to Windows system directories when asked.
 
 # Roadmap
 
