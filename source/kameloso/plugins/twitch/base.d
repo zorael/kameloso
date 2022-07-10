@@ -2109,11 +2109,11 @@ void onCommandWatchtime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     if (!plugin.useAPIFeatures) return;
     else if (!plugin.twitchSettings.watchtime) return;
 
+    string slice = event.content.stripped;  // mutable
+    immutable nameSpecified = (slice.length > 0);
+
     void watchtimeDg()
     {
-        string slice = event.content.stripped;  // mutable
-        immutable nameSpecified = (slice.length > 0);
-
         string nickname;
         string displayName;
 
