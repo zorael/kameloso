@@ -257,11 +257,7 @@ void persistentQuerier(shared QueryResponse[int] bucket, const string caBundleFi
         as having been received from the server.
 
     Throws:
-        [TwitchQueryException] if there were unrecoverable errors with the body
-        describing it being in JSON Form.
-
-        [core.object.Exception|Exception] if there were unrecoverable errors but
-        where the sent body was not in JSON form.
+        [TwitchQueryException] if there were unrecoverable errors.
  +/
 QueryResponse sendHTTPRequest(TwitchPlugin plugin,
     const string url,
@@ -310,13 +306,19 @@ in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
 
     if (response.code == 2)
     {
-        throw new TwitchQueryException(response.error, response.str,
-            response.error, response.code);
+        throw new TwitchQueryException(
+            response.error,
+            response.str,
+            response.error,
+            response.code);
     }
     else if (response.code == 0) //(!response.str.length)
     {
-        throw new TwitchQueryException("Empty response", response.str,
-            response.error, response.code);
+        throw new TwitchQueryException(
+            "Empty response",
+            response.str,
+            response.error,
+            response.code);
     }
     else if ((response.code >= 500) && !recursing)
     {
@@ -350,13 +352,19 @@ in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
                 errorJSON["error"].str.unquoted,
                 errorJSON["message"].str.chomp.unquoted);
 
-            throw new TwitchQueryException(message, response.str, response.error, response.code);
+            throw new TwitchQueryException(
+                message,
+                response.str,
+                response.error,
+                response.code);
         }
-        catch (JSONException)
+        catch (JSONException e)
         {
-            enum pattern = `%3d: "%s"`;
-            immutable message = pattern.format(response.code, response.str);
-            throw new Exception(message);
+            throw new TwitchQueryException(
+                e.msg,
+                response.str,
+                response.error,
+                response.code);
         }
     }
 
@@ -459,16 +467,21 @@ auto sendHTTPRequestImpl(
 JSONValue getTwitchEntity(TwitchPlugin plugin, const string url)
 in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
 {
-    import std.json : JSONType, parseJSON;
+    import std.json : JSONException, JSONType, parseJSON;
+
+    immutable response = sendHTTPRequest(plugin, url, plugin.authorizationBearer);
 
     try
     {
-        immutable response = sendHTTPRequest(plugin, url, plugin.authorizationBearer);
         immutable responseJSON = parseJSON(response.str);
 
         if (responseJSON.type != JSONType.object)
         {
-            return JSONValue.init;
+            throw new TwitchQueryException(
+                "`getTwitchEntity` query response JSON is not JSONType.object",
+                response.str,
+                response.error,
+                response.code);
         }
         else if (const dataJSON = "data" in responseJSON)
         {
@@ -477,13 +490,31 @@ in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
             {
                 return dataJSON.array[0];
             }
+            else
+            {
+                throw new TwitchQueryException(
+                "`getTwitchEntity` query response JSON \"data\" value is not a 1-length array",
+                response.str,
+                response.error,
+                response.code);
+            }
         }
-
-        return JSONValue.init;
+        else
+        {
+            throw new TwitchQueryException(
+                "`getTwitchEntity` query response JSON does not contain a \"data\" element",
+                response.str,
+                response.error,
+                response.code);
+        }
     }
-    catch (TwitchQueryException e)
+    catch (JSONException e)
     {
-        return JSONValue.init;
+        throw new TwitchQueryException(
+            e.msg,
+            response.str,
+            response.error,
+            response.code);
     }
 }
 
@@ -539,13 +570,21 @@ in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
 
     if (responseJSON.type != JSONType.object)
     {
-        return JSONValue.init;
+        throw new TwitchQueryException(
+            "`getChatters` response JSON is not JSONType.object",
+            response.str,
+            response.error,
+            response.code);
     }
     else if (const chattersJSON = "chatters" in responseJSON)
     {
         if (chattersJSON.type != JSONType.object)
         {
-            return JSONValue.init;
+            throw new TwitchQueryException(
+                "`getChatters` \"chatters\" JSON is not JSONType.object",
+                response.str,
+                response.error,
+                response.code);
         }
     }
 
@@ -603,13 +642,19 @@ in ((!async || Fiber.getThis), "Tried to call asynchronous `getValidation` from 
         // Copy/paste error handling...
         if (response.code == 2)
         {
-            throw new TwitchQueryException(response.error, response.str,
-                response.error, response.code);
+            throw new TwitchQueryException(
+                response.error,
+                response.str,
+                response.error,
+                response.code);
         }
         else if (response.code == 0) //(!response.str.length)
         {
-            throw new TwitchQueryException("Empty response", response.str,
-                response.error, response.code);
+            throw new TwitchQueryException(
+                "Empty response",
+                response.str,
+                response.error,
+                response.code);
         }
         else if (response.code >= 400)
         {
@@ -640,11 +685,13 @@ in ((!async || Fiber.getThis), "Tried to call asynchronous `getValidation` from 
 
                 throw new TwitchQueryException(message, response.str, response.error, response.code);
             }
-            catch (JSONException)
+            catch (JSONException e)
             {
-                enum pattern = `%3d: "%s"`;
-                immutable message = pattern.format(response.code, response.str);
-                throw new Exception(message);
+                throw new TwitchQueryException(
+                    e.msg,
+                    response.str,
+                    response.error,
+                    response.code);
             }
         }
     }
@@ -685,11 +732,6 @@ in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
     JSONValue[string] allFollowsJSON;
     const entitiesArrayJSON = getMultipleTwitchEntities(plugin, url);
 
-    if (entitiesArrayJSON.type != JSONType.array)
-    {
-        return allFollowsJSON;  // init
-    }
-
     foreach (entityJSON; entitiesArrayJSON.array)
     {
         immutable key = entityJSON.object["from_id"].str;
@@ -729,29 +771,22 @@ in (Fiber.getThis, "Tried to call `getMultipleTwitchEntities` from outside a Fib
 
     do
     {
-        try
+        immutable paginatedURL = after.length ?
+            ("&after=" ~ after) :
+            url;
+
+        immutable response = sendHTTPRequest(plugin, paginatedURL, plugin.authorizationBearer);
+        immutable responseJSON = parseJSON(response.str);
+        const cursor = "cursor" in responseJSON["pagination"];
+
+        if (!total) total = responseJSON["total"].integer;
+
+        foreach (thisResponseJSON; responseJSON["data"].array)
         {
-            immutable paginatedURL = after.length ?
-                ("&after=" ~ after) :
-                url;
-
-            immutable response = sendHTTPRequest(plugin, paginatedURL, plugin.authorizationBearer);
-            immutable responseJSON = parseJSON(response.str);
-            const cursor = "cursor" in responseJSON["pagination"];
-
-            if (!total) total = responseJSON["total"].integer;
-
-            foreach (thisResponseJSON; responseJSON["data"].array)
-            {
-                allEntitiesJSON.array ~= thisResponseJSON;
-            }
-
-            after = ((allEntitiesJSON.array.length != total) && cursor) ? cursor.str : string.init;
+            allEntitiesJSON.array ~= thisResponseJSON;
         }
-        catch (TwitchQueryException e)
-        {
-            return JSONValue.init;
-        }
+
+        after = ((allEntitiesJSON.array.length != total) && cursor) ? cursor.str : string.init;
     }
     while (after.length);
 
@@ -1006,8 +1041,8 @@ final class TwitchQueryException : Exception
     uint code;
 
     /++
-        Create a new [TwitchQueryException], attaching a response body and a
-        HTTP return code.
+        Create a new [TwitchQueryException], attaching a response body, an error
+        and an HTTP status code.
      +/
     this(const string message,
         const string responseBody,
@@ -1396,10 +1431,16 @@ in (Fiber.getThis, "Tried to call `createPoll` from outside a Fiber")
 
     immutable responseJSON = parseJSON(response.str);
 
-    if ((responseJSON.type != JSONType.object) || ("data" !in responseJSON))
+    if ((responseJSON.type != JSONType.object) ||
+        ("data" !in responseJSON) ||
+        (responseJSON["data"].type != JSONType.array))
     {
         // Invalid response in some way
-        return JSONValue.init;
+        throw new TwitchQueryException(
+            "`createPoll` response has unexpected JSON",
+            response.str,
+            response.error,
+            response.code);
     }
 
     return responseJSON["data"];
@@ -1490,10 +1531,16 @@ in (Fiber.getThis, "Tried to call `endPoll` from outside a Fiber")
 
     immutable responseJSON = parseJSON(response.str);
 
-    if ((responseJSON.type != JSONType.object) || ("data" !in responseJSON))
+    if ((responseJSON.type != JSONType.object) ||
+        ("data" !in responseJSON) ||
+        (responseJSON["data"].type != JSONType.array))
     {
         // Invalid response in some way
-        return JSONValue.init;
+        throw new TwitchQueryException(
+            "`endPoll` response has unexpected JSON",
+            response.str,
+            response.error,
+            response.code);
     }
 
     return responseJSON["data"].array[0];
