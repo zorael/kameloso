@@ -103,12 +103,6 @@ public:
             access tokens.
          +/
         bool spotifyKeygen = false;
-
-        /++
-            Whether or not to start a acptive session for requesting a Twitch
-            authorisation token with higher broadcaster privileges.
-         +/
-        bool broadcasterKeygen = false;
     }
 }
 
