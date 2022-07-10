@@ -54,57 +54,80 @@ struct QueryResponse
 /++
     Calls a passed delegate in a try-catch. Allows us to have consistent error messages.
  +/
-void twitchTryCatchDg(alias dg)()
+void twitchTryCatchDg(alias dg, uint retries = 5)()
 if (isSomeFunction!dg)
 {
     import kameloso.common : expandTags, logger;
     import kameloso.logger : LogLevel;
 
-    try
+    version(PrintStacktraces)
+    void printBody(const string responseBody)
     {
-        dg();
-    }
-    catch (TwitchQueryException e)
-    {
-        import kameloso.constants : MagicErrorStrings;
+        import std.json : JSONException, parseJSON;
+        import std.stdio : stdout, writeln;
 
-        // Hack; don't spam about failed queries if we already know SSL doesn't work
-        if (!TwitchPlugin.useAPIFeatures) return;
-
-        immutable message = (e.error == MagicErrorStrings.sslLibraryNotFound) ?
-            MagicErrorStrings.sslLibraryNotFoundRewritten :
-            e.msg;
-
-        enum pattern = "Failed to query Twitch: <l>%s</> <t>(%s) </>(<t>%d</>)";
-        logger.errorf(pattern.expandTags(LogLevel.error), message, e.error, e.code);
-
-        if ((e.code == 401) && (e.error == "Unauthorized"))
+        try
         {
-            import kameloso.messaging : Message;
-            import kameloso.thread : ThreadMessage;
-            import std.concurrency : send = prioritySend;
-
-            // API key expired.
-            // Copy/paste kameloso.messaging.quit, since we don't have access to plugin.state
-
-            enum apiPattern = "Your Twitch API key has expired. " ~
-                "Run the program with <l>--set twitch.keygen</> to generate a new one.";
-            logger.error(apiPattern.expandTags(LogLevel.error));
-
-            Message m;
-
-            m.event.type = IRCEvent.Type.QUIT;
-            m.event.content = "Twitch API key expired";
-            m.properties |= (Message.Property.forced | Message.Property.priority);
-
-            (cast()TwitchPlugin.mainThread).send(m);
+            writeln(parseJSON(responseBody).toPrettyString);
         }
+        catch (JSONException _)
+        {
+            writeln(responseBody);
+        }
+
+        stdout.flush();
     }
-    catch (Exception e)
+
+    foreach (immutable i; 0..retries)
     {
-        enum pattern = "Unforeseen exception thrown when querying Twitch: <l>%s";
-        logger.errorf(pattern.expandTags(LogLevel.error), e.msg);
-        version(PrintStacktraces) logger.trace(e);
+        try
+        {
+            dg();
+            return;  // nothing thrown --> success
+        }
+        catch (TwitchQueryException e)
+        {
+            import kameloso.constants : MagicErrorStrings;
+
+            // Hack; don't spam about failed queries if we already know SSL doesn't work
+            if (!TwitchPlugin.useAPIFeatures) return;
+
+            immutable message = (e.error == MagicErrorStrings.sslLibraryNotFound) ?
+                MagicErrorStrings.sslLibraryNotFoundRewritten :
+                e.msg;
+
+            enum pattern = "Failed to query Twitch: <l>%s</> <t>(%s) </>(<t>%d</>)";
+            logger.errorf(pattern.expandTags(LogLevel.error), message, e.error, e.code);
+            version(PrintStacktraces) printBody(e.responseBody);
+
+            if ((e.code == 401) && (e.error == "Unauthorized"))
+            {
+                import kameloso.messaging : Message;
+                import kameloso.thread : ThreadMessage;
+                import std.concurrency : send = prioritySend;
+
+                // API key expired.
+                // Copy/paste kameloso.messaging.quit, since we don't have access to plugin.state
+
+                enum apiPattern = "Your Twitch API key has expired. " ~
+                    "Run the program with <l>--set twitch.keygen</> to generate a new one.";
+                logger.error(apiPattern.expandTags(LogLevel.error));
+
+                Message m;
+
+                m.event.type = IRCEvent.Type.QUIT;
+                m.event.content = "Twitch API key expired";
+                m.properties |= (Message.Property.forced | Message.Property.priority);
+
+                (cast()TwitchPlugin.mainThread).send(m);
+            }
+        }
+        catch (Exception e)
+        {
+            enum pattern = "Unforeseen exception caught: <l>%s";
+            logger.errorf(pattern.expandTags(LogLevel.error), e.msg);
+            version(PrintStacktraces) logger.trace(e);
+        }
     }
 }
 
