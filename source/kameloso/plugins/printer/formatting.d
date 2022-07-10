@@ -742,7 +742,7 @@ if (isOutputRange!(Sink, char[]))
 
         version(PrintClassNamesToo)
         {
-            .put(sink, ':', event.sender.class_);
+            .put!(Yes.colours)(sink, TR.all, ':', event.sender.class_);
         }
 
         version(PrintAccountNamesToo)
