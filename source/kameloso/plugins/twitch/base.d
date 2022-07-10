@@ -526,7 +526,6 @@ void onCommandStart(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             import std.json : JSONType;
 
             immutable chattersJSON = getChatters(plugin, room.broadcasterName);
-            if (chattersJSON.type != JSONType.object) return;
 
             // https://twitchinsights.net/bots
             // https://twitchs.info/bots
@@ -1642,15 +1641,6 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         try
         {
             immutable responseJSON = createPoll(plugin, event.channel, title, durationString, choices);
-
-            if (responseJSON.type != JSONType.array)
-            {
-                import std.stdio;
-                logger.error("Unexpected response from server when creating a poll");
-                writeln(responseJSON.toPrettyString);
-                return;
-            }
-
             enum pattern = `Poll "%s" created.`;
             immutable message = pattern.format(responseJSON.array[0].object["title"].str);
             chan(plugin.state, event.channel, message);
@@ -1720,13 +1710,6 @@ void onCommandEndPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         import std.stdio : writeln;
 
         immutable pollInfoJSON = getPolls(plugin, event.channel);
-
-        if (pollInfoJSON.type != JSONType.array)
-        {
-            logger.error("Unexpected JSON type from server when fetching polls");
-            writeln(pollInfoJSON.toPrettyString);
-            return;
-        }
 
         if (!pollInfoJSON.array.length)
         {
