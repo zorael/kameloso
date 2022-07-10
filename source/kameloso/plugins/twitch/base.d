@@ -1462,11 +1462,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const ref IRCEvent event)
                 enum message = "Invalid YouTube video URL.";
                 chan(plugin.state, event.channel, message);
             }
-            catch (Exception e)
-            {
-                logger.error(e.msg);
-                version(PrintStacktraces) logger.trace(e);
-            }
+            // Let other exceptions fall down to twitchTryCatchDg
         }
 
         Fiber addVideoFiber = new Fiber(&twitchTryCatchDg!addVideoDg, BufferSize.fiberStack);
@@ -1551,11 +1547,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const ref IRCEvent event)
                 enum message = "Invalid Spotify track URL.";
                 chan(plugin.state, event.channel, message);
             }
-            catch (Exception e)
-            {
-                logger.error(e.msg);
-                version(PrintStacktraces) logger.trace(e);
-            }
+            // Let other exceptions fall down to twitchTryCatchDg
         }
 
         Fiber addTrackFiber = new Fiber(&twitchTryCatchDg!addTrackDg, BufferSize.fiberStack);
@@ -1665,7 +1657,13 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
                 chan(plugin.state, event.channel, message);
             }
+            else
+            {
+                // Fall back to twitchTryCatchDg's exception handling
+                throw e;
+            }
         }
+        // As above
     }
 
     Fiber startPollFiber = new Fiber(&twitchTryCatchDg!startPollDg, BufferSize.fiberStack);
