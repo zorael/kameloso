@@ -2247,10 +2247,33 @@ void onCommandSetTitle(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         return;
     }
 
+    immutable title = unescapedTitle.unquoted.replace(`"`, `\"`);
+
     void setTitleDg()
     {
-        immutable title = unescapedTitle.unquoted.replace(`"`, `\"`);
-        modifyChannel(plugin, event.channel, title, string.init);
+        try
+        {
+            modifyChannel(plugin, event.channel, title, string.init);
+        }
+        catch (TwitchQueryException e)
+        {
+            if ((e.code == 401) && (e.error == "Unauthorized"))
+            {
+                static bool hasComplainedAboutExpiredKey;
+
+                if (!hasComplainedAboutExpiredKey)
+                {
+                    // broadcaster "superkey" expired.
+                    enum message = "The broadcaster-level API key has expired.";
+                    chan(plugin.state, event.channel, message);
+                    hasComplainedAboutExpiredKey = true;
+                }
+            }
+            else
+            {
+                throw e;
+            }
+        }
     }
 
     Fiber setTitleFiber = new Fiber(&twitchTryCatchDg!setTitleDg, BufferSize.fiberStack);
@@ -2298,30 +2321,53 @@ void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         return;
     }
 
+    immutable specified = unescapedGameName.unquoted.replace(`"`, `\"`);
+    string id;
+
+    if (specified.isNumeric)
+    {
+        id = specified;
+    }
+
     void setGameDg()
     {
-        immutable specified = unescapedGameName.unquoted.replace(`"`, `\"`);
-        string id;
-
-        if (specified.isNumeric)
+        try
         {
-            id = specified;
-        }
-        else
-        {
-            immutable gameInfo = getTwitchGame(plugin, specified.encodeComponent);
-
-            if (!gameInfo.id.length)
+            if (!id.length)
             {
-                enum message = "Could not find a game by that name.";
-                chan(plugin.state, event.channel, message);
-                return;
+                immutable gameInfo = getTwitchGame(plugin, specified.encodeComponent);
+
+                if (!gameInfo.id.length)
+                {
+                    enum message = "Could not find a game by that name.";
+                    chan(plugin.state, event.channel, message);
+                    return;
+                }
+
+                id = gameInfo.id;
             }
 
-            id = gameInfo.id;
+            modifyChannel(plugin, event.channel, string.init, id);
         }
+        catch (TwitchQueryException e)
+        {
+            if ((e.code == 401) && (e.error == "Unauthorized"))
+            {
+                static bool hasComplainedAboutExpiredKey;
 
-        modifyChannel(plugin, event.channel, string.init, id);
+                if (!hasComplainedAboutExpiredKey)
+                {
+                    // broadcaster "superkey" expired.
+                    enum message = "The broadcaster-level API key has expired.";
+                    chan(plugin.state, event.channel, message);
+                    hasComplainedAboutExpiredKey = true;
+                }
+            }
+            else
+            {
+                throw e;
+            }
+        }
     }
 
     Fiber setGameFiber = new Fiber(&twitchTryCatchDg!setGameDg, BufferSize.fiberStack);
