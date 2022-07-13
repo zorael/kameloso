@@ -1001,34 +1001,12 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     if (!plugin.useAPIFeatures) return;
 
+    immutable userURL = "https://api.twitch.tv/helix/users?id=" ~ event.aux;
+
     void getDisplayNameDg()
     {
-        enum retriesInCaseOfErrors = 5;
-        uint retry;
-        immutable userURL = "https://api.twitch.tv/helix/users?id=" ~ event.aux;
-
-        while (true)
-        {
-            import std.json : JSONType;
-            import std.stdio : writeln;
-
-            immutable userJSON = getTwitchEntity(plugin, userURL);
-
-            if ((userJSON.type != JSONType.object) || ("display_name" !in userJSON))
-            {
-                // Something went wrong but might be transient, try again.
-                if (retry++ < retriesInCaseOfErrors) continue;
-
-                // All attempts failed
-                enum pattern = "Failed to fetch display name of channel <l>%s</>.";
-                logger.errorf(pattern.expandTags(LogLevel.error), event.channel);
-                writeln(userJSON.toPrettyString);
-                return;
-            }
-
-            room.broadcasterDisplayName = userJSON["display_name"].str;
-            return;
-        }
+        immutable userJSON = getTwitchEntity(plugin, userURL);
+        room.broadcasterDisplayName = userJSON["display_name"].str;
     }
 
     Fiber getDisplayNameFiber = new Fiber(&twitchTryCatchDg!getDisplayNameDg, BufferSize.fiberStack);
