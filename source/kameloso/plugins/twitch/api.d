@@ -1203,8 +1203,8 @@ in (Fiber.getThis, "Tried to call `modifyChannel` from outside a Fiber")
         A "Bearer" OAuth token string for use in HTTP headers.
 
     Throws:
-        [core.object.Exception|Exception] if there were no broadcaster key for
-        the supplied channel in the secrets storage.
+        [MissingBroadcasterTokenException] if there were no broadcaster API token
+        for the supplied channel in the secrets storage.
  +/
 auto getBroadcasterAuthorisation(TwitchPlugin plugin, const string channelName)
 {
@@ -1226,7 +1226,7 @@ auto getBroadcasterAuthorisation(TwitchPlugin plugin, const string channelName)
 
     if (!authorizationBearer)
     {
-        throw new Exception("Missing broadcaster key");
+        throw new MissingBroadcasterTokenException("Missing broadcaster key", channelName, __FILE__);
     }
 
     return *authorizationBearer;
