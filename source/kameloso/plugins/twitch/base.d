@@ -2307,6 +2307,7 @@ void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : stripped, unquoted;
     import std.array : replace;
+    import std.format : format;
     import std.string : isNumeric;
     import std.uri : encodeComponent;
 
@@ -2316,8 +2317,6 @@ void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     if (!unescapedGameName.length)
     {
-        import std.format : format;
-
         enum pattern = "Usage: %s%s [game name]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
         chan(plugin.state, event.channel, message);
@@ -2325,32 +2324,42 @@ void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     }
 
     immutable specified = unescapedGameName.unquoted.replace(`"`, `\"`);
-    string id;
-
-    if (specified.isNumeric)
-    {
-        id = specified;
-    }
+    string id = specified.isNumeric ? specified : string.init;  // mutable
 
     void setGameDg()
     {
         try
         {
+            string name;  // mutable
+
             if (!id.length)
             {
-                immutable gameInfo = getTwitchGame(plugin, specified.encodeComponent);
-
-                if (!gameInfo.id.length)
-                {
-                    enum message = "Could not find a game by that name.";
-                    chan(plugin.state, event.channel, message);
-                    return;
-                }
-
+                immutable gameInfo = getTwitchGame(plugin, specified.encodeComponent, string.init);
                 id = gameInfo.id;
+                name = gameInfo.name;
+            }
+            else if (id == "0")
+            {
+                name = "(unset)";
+            }
+            else /*if (id.length)*/
+            {
+                immutable gameInfo = getTwitchGame(plugin, string.init, id);
+                name = gameInfo.name;
             }
 
             modifyChannel(plugin, event.channel, string.init, id);
+
+            enum pattern = "Game set to: %s";
+            immutable message = pattern.format(name);
+            chan(plugin.state, event.channel, message);
+        }
+        catch (EmptyDataException e)
+        {
+            enum message = "Could not find a game by that name.";
+            chan(plugin.state, event.channel, message);
+            import std.stdio;
+            writeln(e.responseBody);
         }
         catch (TwitchQueryException e)
         {

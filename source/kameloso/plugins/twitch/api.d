@@ -1010,19 +1010,23 @@ in (Fiber.getThis, "Tried to call `getTwitchUser` from outside a Fiber")
 
 // getTwitchGame
 /++
-    Fetches information about a game; notably its numerical ID.
+    Fetches information about a game; its numerical ID and full name.
+
+    If `id` is passed, then it takes priority over `name`.
 
     Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
 
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         name = Name of game to look up.
+        id = ID of game to look up.
 
     Returns:
         Voldemort aggregate struct with `id` and `name` members.
  +/
-auto getTwitchGame(TwitchPlugin plugin, const string name)
+auto getTwitchGame(TwitchPlugin plugin, const string name, const string id)
 in (Fiber.getThis, "Tried to call `getTwitchGame` from outside a Fiber")
+in ((name.length || id.length), "Tried to call `getTwitchGame` with no game name nor game ID")
 {
     static struct Game
     {
@@ -1038,12 +1042,11 @@ in (Fiber.getThis, "Tried to call `getTwitchGame` from outside a Fiber")
     }
     */
 
-    immutable gameURL = "https://api.twitch.tv/helix/games?name=" ~ name;
+    immutable gameURL = id.length ?
+        "https://api.twitch.tv/helix/games?id=" ~ id :
+        "https://api.twitch.tv/helix/games?name=" ~ name;
     immutable gameJSON = getTwitchEntity(plugin, gameURL);
-
-    return (gameJSON == JSONValue.init) ?
-        Game.init :
-        Game(gameJSON["id"].str, gameJSON["name"].str);
+    return Game(gameJSON["id"].str, gameJSON["name"].str);
 }
 
 
