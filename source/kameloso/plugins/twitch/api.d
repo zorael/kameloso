@@ -1071,6 +1071,43 @@ final class TwitchQueryException : Exception
 }
 
 
+// MissingBroadcasterTokenException
+/++
+    Exception, to be thrown when an API query to the Twitch servers failed,
+    due to missing broadcaster-level token.
+ +/
+final class MissingBroadcasterTokenException : Exception
+{
+@safe:
+    /// The channel name for which a broadcaster token was needed.
+    string channelName;
+
+    /++
+        Create a new [MissingBroadcasterTokenException], attaching a channel name.
+     +/
+    this(const string message,
+        const string channelName,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        this.channelName = channelName;
+        super(message, file, line, nextInChain);
+    }
+
+    /++
+        Create a new [MissingBroadcasterTokenException], without attaching anything.
+     +/
+    this(const string message,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        super(message, file, line, nextInChain);
+    }
+}
+
+
 // getUniqueNumericalID
 /++
     Generates a unique numerical ID for use as key in the passed associative array bucket.
