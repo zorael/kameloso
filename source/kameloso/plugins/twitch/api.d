@@ -61,7 +61,7 @@ if (isSomeFunction!dg)
     import kameloso.logger : LogLevel;
 
     version(PrintStacktraces)
-    void printBody(const string responseBody)
+    static void printBody(const string responseBody)
     {
         import std.json : JSONException, parseJSON;
         import std.stdio : stdout, writeln;
