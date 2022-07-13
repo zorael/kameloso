@@ -99,7 +99,12 @@ if (isSomeFunction!dg)
 
             enum pattern = "Failed to query Twitch: <l>%s</> <t>(%s) </>(<t>%d</>)";
             logger.errorf(pattern.expandTags(LogLevel.error), message, e.error, e.code);
-            version(PrintStacktraces) printBody(e.responseBody);
+
+            version(PrintStacktraces)
+            {
+                printBody(e.responseBody);
+                logger.trace(e.info);
+            }
 
             if ((e.code == 401) && (e.error == "Unauthorized"))
             {
