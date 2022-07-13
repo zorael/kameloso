@@ -906,7 +906,7 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
     {
         response = id in plugin.bucket;
 
-        if (!response)
+        if (!response || (*response == QueryResponse.init))
         {
             immutable now = Clock.currTime.toUnixTime;
 
@@ -928,7 +928,7 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
         plugin.averageApproximateQueryTime(response.msecs);
         plugin.bucket.remove(id);
     }
-    while (!response);
+    while (!response || (*response == QueryResponse.init));
 
     return *response;
 }
@@ -1201,7 +1201,7 @@ auto getUniqueNumericalID(shared QueryResponse[int] bucket)
             id = uniform(0, 1000);
         }
 
-        //bucket[id] = QueryResponse.init;  // reserve it
+        bucket[id] = QueryResponse.init;  // reserve it
     }
 
     return id;
