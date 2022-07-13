@@ -2358,8 +2358,6 @@ void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         {
             enum message = "Could not find a game by that name.";
             chan(plugin.state, event.channel, message);
-            import std.stdio;
-            writeln(e.responseBody);
         }
         catch (TwitchQueryException e)
         {
