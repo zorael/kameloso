@@ -465,6 +465,8 @@ string configurationText(const string configFile)
     {
         return configFile
             .readText
+            .replace("[Votes]\n", "[Poll]\n")
+            .replace("[Votes]\r\n", "[Poll]\r\n")
             .replace("[TwitchBot]\n", "[Twitch]\n")
             .replace("[TwitchBot]\r\n", "[Twitch]\r\n")
             .chomp;

@@ -38,7 +38,7 @@ versions \
     "WithSedReplacePlugin" \
     "WithSeenPlugin" \
     "WithStopwatchPlugin" \
-    "WithVotesPlugin" \
+    "WithPollPlugin" \
     "WithTimerPlugin" \
     "WithWebtitlesPlugin"
 

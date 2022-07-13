@@ -43,7 +43,7 @@ alias PluginModules = AliasSeq!(
     "kameloso.plugins.help",
     "kameloso.plugins.hello",
     "kameloso.plugins.oneliners",
-    "kameloso.plugins.votes",
+    "kameloso.plugins.poll",
     "kameloso.plugins.stopwatch",
     "kameloso.plugins.counter",
     "kameloso.plugins.webtitles",
