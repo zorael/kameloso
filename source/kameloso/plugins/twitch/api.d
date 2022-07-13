@@ -1091,6 +1091,45 @@ final class TwitchQueryException : Exception
 }
 
 
+// EmptyDataException
+/++
+    Exception, to be thrown when an API query to the Twitch servers failed,
+    due to having received empty JSON data.
+
+    It is a normal [object.Exception|Exception] but with attached metadata.
+ +/
+final class EmptyDataException : Exception
+{
+@safe:
+    /// The response body that was received.
+    string responseBody;
+
+    /++
+        Create a new [EmptyDataException], attaching a response body.
+     +/
+    this(const string message,
+        const string responseBody,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        this.responseBody = responseBody;
+        super(message, file, line, nextInChain);
+    }
+
+    /++
+        Create a new [EmptyDataException], without attaching anything.
+     +/
+    this(const string message,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        super(message, file, line, nextInChain);
+    }
+}
+
+
 // MissingBroadcasterTokenException
 /++
     Exception, to be thrown when an API query to the Twitch servers failed,
