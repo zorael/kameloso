@@ -122,6 +122,16 @@ if (isSomeFunction!dg)
                 (cast()TwitchPlugin.mainThread).send(m);
             }
         }
+        catch (MissingBroadcasterTokenException e)
+        {
+            if (!TwitchPlugin.useAPIFeatures) return;
+
+            enum pattern = "Missing broadcaster-level API token for channel <l>%s</>.";
+            logger.errorf(pattern.expandTags(LogLevel.error), e.channelName);
+
+            enum superPattern = "Run the program with <l>--set twitch.superKeygen</> to generate a new one.";
+            logger.error(superPattern.expandTags(LogLevel.error));
+        }
         catch (Exception e)
         {
             enum pattern = "Unforeseen exception caught: <l>%s";
