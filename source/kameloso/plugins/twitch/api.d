@@ -91,20 +91,6 @@ if (isSomeFunction!dg)
 
             // Hack; don't spam about failed queries if we already know SSL doesn't work
             if (!TwitchPlugin.useAPIFeatures) return;
-            else if (i < (retries-1)) continue;  // Only error if all retries failed
-
-            immutable message = (e.error == MagicErrorStrings.sslLibraryNotFound) ?
-                MagicErrorStrings.sslLibraryNotFoundRewritten :
-                e.msg;
-
-            enum pattern = "Failed to query Twitch: <l>%s</> <t>(%s) </>(<t>%d</>)";
-            logger.errorf(pattern.expandTags(LogLevel.error), message, e.error, e.code);
-
-            version(PrintStacktraces)
-            {
-                printBody(e.responseBody);
-                logger.trace(e.info);
-            }
 
             if ((e.code == 401) && (e.error == "Unauthorized"))
             {
@@ -128,6 +114,22 @@ if (isSomeFunction!dg)
                 (cast()TwitchPlugin.mainThread).send(m);
                 return;
             }
+
+            if (i < (retries-1)) continue;  // Only proceed to error if all retries failed
+
+            immutable message = (e.error == MagicErrorStrings.sslLibraryNotFound) ?
+                MagicErrorStrings.sslLibraryNotFoundRewritten :
+                e.msg;
+
+            enum pattern = "Failed to query Twitch: <l>%s</> <t>(%s) </>(<t>%d</>)";
+            logger.errorf(pattern.expandTags(LogLevel.error), message, e.error, e.code);
+
+            version(PrintStacktraces)
+            {
+                printBody(e.responseBody);
+                logger.trace(e.info);
+            }
+            return;
         }
         catch (MissingBroadcasterTokenException e)
         {
