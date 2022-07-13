@@ -505,18 +505,24 @@ in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
         }
         else if (const dataJSON = "data" in responseJSON)
         {
-            if ((dataJSON.type == JSONType.array) &&
-                (dataJSON.array.length == 1))
+            if (dataJSON.array.length == 1)
             {
                 return dataJSON.array[0];
+            }
+            else if (!dataJSON.array.length)
+            {
+                throw new EmptyDataException(
+                    "`getTwitchEntity` query response JSON has empty \"data\"",
+                    response.str,
+                    __FILE__);
             }
             else
             {
                 throw new TwitchQueryException(
-                "`getTwitchEntity` query response JSON \"data\" value is not a 1-length array",
-                response.str,
-                response.error,
-                response.code);
+                    "`getTwitchEntity` query response JSON \"data\" value is not a 1-length array",
+                    response.str,
+                    response.error,
+                    response.code);
             }
         }
         else
