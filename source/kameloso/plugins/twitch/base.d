@@ -1576,6 +1576,12 @@ void onCommandSongRequest(TwitchPlugin plugin, const ref IRCEvent event)
             .policy(PrefixPolicy.prefixed)
             .hidden(true)
     )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("createpoll")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
 )
 void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
