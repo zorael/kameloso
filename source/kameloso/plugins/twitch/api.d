@@ -120,6 +120,7 @@ if (isSomeFunction!dg)
                 m.properties |= (Message.Property.forced | Message.Property.priority);
 
                 (cast()TwitchPlugin.mainThread).send(m);
+                return;
             }
         }
         catch (MissingBroadcasterTokenException e)
