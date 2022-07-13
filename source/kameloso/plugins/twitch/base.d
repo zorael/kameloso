@@ -2232,6 +2232,7 @@ void onCommandSetTitle(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : stripped, unquoted;
     import std.array : replace;
+    import std.format : format;
 
     if (!plugin.useAPIFeatures) return;
 
@@ -2239,8 +2240,6 @@ void onCommandSetTitle(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     if (!unescapedTitle.length)
     {
-        import std.format : format;
-
         enum pattern = "Usage: %s%s [title]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
         chan(plugin.state, event.channel, message);
@@ -2254,6 +2253,10 @@ void onCommandSetTitle(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         try
         {
             modifyChannel(plugin, event.channel, title, string.init);
+
+            enum pattern = "Channel title set to: %s";
+            immutable message = pattern.format(title);
+            chan(plugin.state, event.channel, message);
         }
         catch (TwitchQueryException e)
         {
