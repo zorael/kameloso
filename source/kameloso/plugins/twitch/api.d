@@ -78,6 +78,8 @@ if (isSomeFunction!dg)
         stdout.flush();
     }
 
+    bool printedErrorMessage;
+
     foreach (immutable i; 0..retries)
     {
         try
@@ -91,6 +93,7 @@ if (isSomeFunction!dg)
 
             // Hack; don't spam about failed queries if we already know SSL doesn't work
             if (!TwitchPlugin.useAPIFeatures) return;
+            else if (printedErrorMessage) continue;
 
             immutable message = (e.error == MagicErrorStrings.sslLibraryNotFound) ?
                 MagicErrorStrings.sslLibraryNotFoundRewritten :
@@ -98,6 +101,7 @@ if (isSomeFunction!dg)
 
             enum pattern = "Failed to query Twitch: <l>%s</> <t>(%s) </>(<t>%d</>)";
             logger.errorf(pattern.expandTags(LogLevel.error), message, e.error, e.code);
+            printedErrorMessage = true;
             version(PrintStacktraces) printBody(e.responseBody);
 
             if ((e.code == 401) && (e.error == "Unauthorized"))
@@ -126,12 +130,14 @@ if (isSomeFunction!dg)
         catch (MissingBroadcasterTokenException e)
         {
             if (!TwitchPlugin.useAPIFeatures) return;
+            else if (printedErrorMessage) continue;
 
             enum pattern = "Missing broadcaster-level API token for channel <l>%s</>.";
             logger.errorf(pattern.expandTags(LogLevel.error), e.channelName);
 
             enum superPattern = "Run the program with <l>--set twitch.superKeygen</> to generate a new one.";
             logger.error(superPattern.expandTags(LogLevel.error));
+            printedErrorMessage = true;
         }
         catch (Exception e)
         {
