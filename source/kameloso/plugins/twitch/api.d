@@ -138,6 +138,10 @@ if (isSomeFunction!dg)
             enum pattern = "Unforeseen exception caught: <l>%s";
             logger.errorf(pattern.expandTags(LogLevel.error), e.msg);
             version(PrintStacktraces) logger.trace(e);
+
+            // Return immediately on unforeseen exceptions, since they're likely
+            // to just repeat.
+            return;
         }
     }
 }
