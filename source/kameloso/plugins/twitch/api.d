@@ -78,7 +78,7 @@ if (isSomeFunction!dg)
         stdout.flush();
     }
 
-    bool printedErrorMessage;
+    string lastTwitchQueryExceptionMessage;
 
     foreach (immutable i; 0..retries)
     {
@@ -93,7 +93,7 @@ if (isSomeFunction!dg)
 
             // Hack; don't spam about failed queries if we already know SSL doesn't work
             if (!TwitchPlugin.useAPIFeatures) return;
-            else if (printedErrorMessage) continue;
+            else if (lastTwitchQueryExceptionMessage == e.msg) continue;
 
             immutable message = (e.error == MagicErrorStrings.sslLibraryNotFound) ?
                 MagicErrorStrings.sslLibraryNotFoundRewritten :
@@ -101,7 +101,7 @@ if (isSomeFunction!dg)
 
             enum pattern = "Failed to query Twitch: <l>%s</> <t>(%s) </>(<t>%d</>)";
             logger.errorf(pattern.expandTags(LogLevel.error), message, e.error, e.code);
-            printedErrorMessage = true;
+            lastTwitchQueryExceptionMessage = e.msg;
             version(PrintStacktraces) printBody(e.responseBody);
 
             if ((e.code == 401) && (e.error == "Unauthorized"))
