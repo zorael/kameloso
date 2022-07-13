@@ -1235,7 +1235,7 @@ auto getBroadcasterAuthorisation(TwitchPlugin plugin, const string channelName)
 
     if (!authorizationBearer)
     {
-        if (auto creds = channelName in plugin.secretsByChannel)
+        if (const creds = channelName in plugin.secretsByChannel)
         {
             if (creds.broadcasterKey.length)
             {
