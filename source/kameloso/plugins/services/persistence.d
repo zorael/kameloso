@@ -54,6 +54,8 @@ void postprocess(PersistenceService service, ref IRCEvent event)
         if (const stored = event.sender.nickname in service.state.users)
         {
             service.state.users[event.target.nickname] = *stored;
+            ++service.usersAddedSinceLastRehash;
+            service.maybeRehash();
 
             auto newUser = event.target.nickname in service.state.users;
             newUser.nickname = event.target.nickname;
@@ -228,6 +230,8 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
         if (persistentCacheMiss)
         {
             service.state.users[user.nickname] = user;
+            ++service.usersAddedSinceLastRehash;
+            service.maybeRehash();
             stored = user.nickname in service.state.users;
         }
         else
@@ -455,18 +459,37 @@ void onWelcome(PersistenceService service)
 
     service.reloadAccountClassifiersFromDisk();
     if (service.state.settings.preferHostmasks) service.reloadHostmasksFromDisk();
+}
 
-    void periodicallyDg()
+
+// maybeRehash
+/++
+    Rehashes cache arrays if we deem enough new users have been added to them
+    since the last rehash to warrant it.
+
+    Params:
+        service = Current [PersistenceService].
+ +/
+void maybeRehash(PersistenceService service)
+{
+    enum minimumAddedNeededForRehash = 128;
+    enum rehashThresholdMultiplier = 1.0;
+
+    if ((service.usersAddedSinceLastRehash > minimumAddedNeededForRehash) &&
+        (service.usersAddedSinceLastRehash > (service.state.users.length * rehashThresholdMultiplier)))
     {
-        while (true)
-        {
-            service.state.users = service.state.users.rehash();
-            delay(service, service.timeBetweenRehashes, Yes.yield);
-        }
-    }
+        service.state.users = service.state.users.rehash();
+        service.userClassChannelCache = service.userClassChannelCache.rehash();
+        service.hostmaskNicknameAccountCache = service.hostmaskNicknameAccountCache.rehash();
+        service.channelUsers = service.channelUsers.rehash();
 
-    Fiber rehashFiber = new Fiber(&periodicallyDg, BufferSize.fiberStack);
-    delay(service, rehashFiber, service.timeBetweenRehashes);
+        foreach (ref channelUsers; service.channelUsers)
+        {
+            channelUsers = channelUsers.rehash();
+        }
+
+        service.usersAddedSinceLastRehash = 0;
+    }
 }
 
 
@@ -857,7 +880,6 @@ final class PersistenceService : IRCPlugin
 {
 private:
     import kameloso.constants : KamelosoFilenames;
-    import core.time : hours;
 
     /// Placeholder values.
     enum Placeholder
@@ -878,9 +900,6 @@ private:
         account2 = "<account2>",
     }
 
-    /// How often to rehash associative arrays, optimising access.
-    static immutable timeBetweenRehashes = 6.hours;
-
     /// File with user definitions.
     @Resource string userFile = KamelosoFilenames.users;
 
@@ -898,6 +917,13 @@ private:
 
     /// Associative array of which channel the latest class lookup for an account related to.
     string[string] userClassChannelCache;
+
+    /++
+        How many users have been added to the
+        [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users]
+        associative array since it was last rehashed.
+     +/
+    uint usersAddedSinceLastRehash;
 
     mixin IRCPluginImpl;
 }
