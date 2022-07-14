@@ -76,7 +76,7 @@ If there's anyone talking it should show up on your screen.
     * [**Copy/paste-friendly concrete setup from scratch**](#copy-paste-friendly-concrete-setup-from-scratch)
     * [Example configuration](#example-configuration)
     * [Long story](#long-story)
-    * [Twitch](#twitch)
+    * [Twitch bot](#twitch-bot)
       * [Song requests](#song-requests)
       * [Certain commands require higher permissions](#certain-commands-require-higher-permissions)
   * [Further help](#further-help)
@@ -420,7 +420,7 @@ After entering your login and password and clicking **Authorize**, you will be r
 
 If you prefer to generate the token manually, [**here is the URL you need to follow**](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true). The only thing the generation process does is open it for you, and automate saving the end token to your configuration file (as `pass` under `[IRCBot]`).
 
-### Twitch
+### Twitch bot
 
 **Please make the bot a moderator to prevent its messages from being as aggressively rate-limited.**
 
