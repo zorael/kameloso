@@ -488,7 +488,7 @@ auto sendHTTPRequestImpl(
         If nothing was found, an empty [std.json.JSONValue|JSONValue].init is
         returned instead.
  +/
-JSONValue getTwitchEntity(TwitchPlugin plugin, const string url)
+auto getTwitchEntity(TwitchPlugin plugin, const string url)
 in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
 {
     import std.json : JSONException, JSONType, parseJSON;
@@ -564,7 +564,7 @@ in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
         If nothing was found, an empty [std.json.JSONValue|JSONValue].init is
         returned instead.
  +/
-JSONValue getChatters(TwitchPlugin plugin, const string broadcaster)
+auto getChatters(TwitchPlugin plugin, const string broadcaster)
 in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
 {
     import std.conv : text;
@@ -641,7 +641,7 @@ in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
     Throws:
         [TwitchQueryException] on failure.
  +/
-JSONValue getValidation(
+auto getValidation(
     TwitchPlugin plugin,
     /*const*/ string authToken,
     const Flag!"async" async)
@@ -753,7 +753,7 @@ in ((!async || Fiber.getThis), "Tried to call asynchronous `getValidation` from 
         An associative array of [std.json.JSONValue|JSONValue]s keyed by nickname string,
         containing follows.
  +/
-JSONValue[string] getFollows(TwitchPlugin plugin, const string id)
+auto getFollows(TwitchPlugin plugin, const string id)
 in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
 {
     import std.json : JSONType;
@@ -788,7 +788,7 @@ in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
         A [std.json.JSONValue|JSONValue] of type `array` containing all returned
         entities, over all paginated queries.
  +/
-JSONValue getMultipleTwitchEntities(TwitchPlugin plugin, const string url)
+auto getMultipleTwitchEntities(TwitchPlugin plugin, const string url)
 in (Fiber.getThis, "Tried to call `getMultipleTwitchEntities` from outside a Fiber")
 {
     import std.json : JSONValue, parseJSON;
@@ -892,7 +892,7 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
     Returns:
         A [QueryResponse] as constructed by other parts of the program.
  +/
-QueryResponse waitForQueryResponse(TwitchPlugin plugin, const int id)
+auto waitForQueryResponse(TwitchPlugin plugin, const int id)
 in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 {
     import kameloso.constants : Timeout;
