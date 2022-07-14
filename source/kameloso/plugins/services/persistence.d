@@ -861,7 +861,7 @@ private:
     import core.time : hours;
 
     /// How often to rehash associative arrays, optimising access.
-    enum timeBetweenRehashes = 6.hours;
+    static immutable timeBetweenRehashes = 6.hours;
 
     /// File with user definitions.
     @Resource string userFile = KamelosoFilenames.users;
