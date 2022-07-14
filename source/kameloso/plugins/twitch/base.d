@@ -3244,20 +3244,35 @@ package:
     /// Associative array of responses from async HTTP queries.
     shared QueryResponse[int] bucket;
 
-    /// File to save emote counters to.
-    version(Posix) @Resource ecountFile = "twitch/ecount.json";
-    else version(Windows) @Resource ecountFile = "twitch\\ecount.json";
-    else static assert(0);
+    @Resource
+    {
+        version(Posix)
+        {
+            /// File to save emote counters to.
+            string ecountFile = "twitch/ecount.json";
 
-    /// File to save viewer times to.
-    version(Posix) @Resource viewersFile = "twitch/viewers.json";
-    else version(Windows) @Resource viewersFile = "twitch\\viewers.json";
-    else static assert(0);
+            /// File to save viewer times to.
+            string viewersFile = "twitch/viewers.json";
 
-    /// File to save API keys and tokens to.
-    version(Posix) @Resource secretsFile = "twitch/secrets.json";
-    else version(Windows) @Resource secretsFile = "twitch\\secrets.json";
-    else static assert(0);
+            /// File to save API keys and tokens to.
+            string secretsFile = "twitch/secrets.json";
+        }
+        else version(Windows)
+        {
+            // As above.
+            string ecountFile = "twitch\\ecount.json";
+
+            // ditto
+            string viewersFile = "twitch\\viewers.json";
+
+            // ditto
+            string secretsFile = "twitch\\secrets.json";
+        }
+        else
+        {
+            static assert(0, "Unsupported platform, please file a bug.");
+        }
+    }
 
     /// Emote counters associative array; counter longs keyed by emote ID string keyed by channel.
     long[string][string] ecount;
