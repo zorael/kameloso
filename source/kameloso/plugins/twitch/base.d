@@ -2451,22 +2451,22 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CAP)
 )
-void onCAP(TwitchPlugin plugin)
+void onCAP(TwitchPlugin plugin, const ref IRCEvent event)
 {
-    import std.algorithm.searching : endsWith;
-
-    if ((plugin.state.server.daemon == IRCServer.Daemon.unset) &&
-        plugin.state.server.address.endsWith(".twitch.tv"))
+    if (plugin.twitchSettings.keygen ||
+        plugin.twitchSettings.superKeygen ||
+        plugin.twitchSettings.googleKeygen ||
+        plugin.twitchSettings.spotifyKeygen ||
+        (!plugin.state.bot.pass.length && !plugin.state.settings.force))
     {
-        import kameloso.thread : ThreadMessage;
-        import std.concurrency : prioritySend;
+        import std.algorithm.searching : endsWith;
 
-        if (plugin.twitchSettings.keygen ||
-            plugin.twitchSettings.superKeygen ||
-            plugin.twitchSettings.googleKeygen ||
-            plugin.twitchSettings.spotifyKeygen ||
-            (!plugin.state.bot.pass.length && !plugin.state.settings.force))
+        if ((plugin.state.server.daemon == IRCServer.Daemon.unset) &&
+            plugin.state.server.address.endsWith(".twitch.tv"))
         {
+            import kameloso.thread : ThreadMessage;
+            import std.concurrency : prioritySend;
+
             // Some keygen, reload to load secrets so existing ones are read
             // Not strictly needed for normal keygen
             plugin.reload();
@@ -2538,6 +2538,14 @@ void onCAP(TwitchPlugin plugin)
             }
 
             plugin.state.mainThread.prioritySend(ThreadMessage.reconnect);
+        }
+        else if (event.aux == "LS")
+        {
+            enum message = "A Twitch keygen setting was supplied but the configuration " ~
+                "file is not set up to connect to Twitch. (<l>irc.chat.twitch.tv</>)";
+            logger.trace();
+            logger.warning(message.expandTags(LogLevel.warning));
+            logger.trace();
         }
     }
 }
