@@ -50,13 +50,13 @@ void requestTwitchKey(TwitchPlugin plugin)
     logger.info("-- Twitch authorisation key generation mode --");
     enum attemptToOpenPattern = `
 Attempting to open a Twitch login page in your default web browser. Follow the
-instructions and log in to authorise the use of this program with your <i>BOT</> account.
+instructions and log in to authorise the use of this program with your <w>BOT</> account.
 
 <l>Then paste the address of the page you are redirected to afterwards here.</>
 
 * The redirected address should start with <i>http://localhost</>.
 * It will probably say "<l>this site can't be reached</>" or "<l>unable to connect</>".
-* <l>The key generated is one for the account currently logged in.</>
+* <l>The key generated will be one for the account you are currently logged in as in your browser.</>
   If you are logged into your main Twitch account and you want the bot to use a
   separate account, you will have to log out and log in as that first, before
   attempting this. Use an incognito/private window.
@@ -219,7 +219,7 @@ To access certain Twitch functionality like changing channel settings
 key that corresponds to the owner of that channel.
 
 In the instructions that follow, it is essential that you are logged into the
-<i>STREAMER</> account in your browser.
+<w>STREAMER</> account in your browser.
 
 You also need to supply the channel for which it all relates.
 (Channels are Twitch lowercase account names, prepended with a '<i>#</>' sign.)
@@ -234,13 +234,13 @@ You also need to supply the channel for which it all relates.
 --------------------------------------------------------------------------------
 
 Attempting to open a Twitch login page in your default web browser. Follow the
-instructions and log in to authorise the use of this program with your <i>STREAMER</> account.
+instructions and log in to authorise the use of this program with your <w>STREAMER</> account.
 
 <l>Then paste the address of the page you are redirected to afterwards here.</>
 
 * The redirected address should start with <i>http://localhost</>.
 * It will probably say "<l>this site can't be reached</>" or "<l>unable to connect</>".
-* <l>The key generated is one for the account currently logged in.</>
+* <l>The key generated will be one for the account you are currently logged in as in your browser.</>
   You should be logged into your main Twitch account for this key.
 * If you are running local web server on port <i>80</>, you may have to temporarily
   disable it for this to work.
