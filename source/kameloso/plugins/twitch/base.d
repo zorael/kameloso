@@ -2453,6 +2453,8 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 )
 void onCAP(TwitchPlugin plugin, const ref IRCEvent event)
 {
+    if (event.aux != "LS") return;  // only do this once, on LS
+
     if (plugin.twitchSettings.keygen ||
         plugin.twitchSettings.superKeygen ||
         plugin.twitchSettings.googleKeygen ||
@@ -2539,7 +2541,7 @@ void onCAP(TwitchPlugin plugin, const ref IRCEvent event)
 
             plugin.state.mainThread.prioritySend(ThreadMessage.reconnect);
         }
-        else if (event.aux == "LS")
+        else
         {
             enum message = "A Twitch keygen setting was supplied but the configuration " ~
                 "file is not set up to connect to Twitch. (<l>irc.chat.twitch.tv</>)";
