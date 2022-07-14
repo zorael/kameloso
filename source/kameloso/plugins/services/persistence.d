@@ -582,9 +582,8 @@ void reloadHostmasksFromDisk(PersistenceService service)
         import dialect.common : isValidHostmask;
         import lu.string : contains;
 
-        // Copy/pasted from initHostmaskResources...
-        enum examplePlaceholderKey1 = "<nickname1>!<ident>@<address>";
-        enum examplePlaceholderKey2 = "<nickname2>!<ident>@<address>";
+        alias examplePlaceholderKey1 = PersistenceService.Placeholder.hostmask1;
+        alias examplePlaceholderKey2 = PersistenceService.Placeholder.hostmask2;
 
         if ((hostmask == examplePlaceholderKey1) ||
             (hostmask == examplePlaceholderKey2))
@@ -721,7 +720,7 @@ void initAccountResources(PersistenceService service)
 
     foreach (liststring; listTypes)
     {
-        enum examplePlaceholderKey = "<#channel>";
+        alias examplePlaceholderKey = PersistenceService.Placeholder.channel;
 
         if (liststring !in json)
         {
@@ -807,10 +806,10 @@ void initHostmaskResources(PersistenceService service)
             __LINE__);
     }
 
-    enum examplePlaceholderKey1 = "<nickname1>!<ident>@<address>";
-    enum examplePlaceholderKey2 = "<nickname2>!<ident>@<address>";
-    enum examplePlaceholderValue1 = "<account1>";
-    enum examplePlaceholderValue2 = "<account2>";
+    alias examplePlaceholderKey1 = PersistenceService.Placeholder.hostmask1;
+    alias examplePlaceholderKey2 = PersistenceService.Placeholder.hostmask2;
+    alias examplePlaceholderValue1 = PersistenceService.Placeholder.account1;
+    alias examplePlaceholderValue2 = PersistenceService.Placeholder.account2;
 
     if (json.object.length == 0)
     {
@@ -859,6 +858,25 @@ final class PersistenceService : IRCPlugin
 private:
     import kameloso.constants : KamelosoFilenames;
     import core.time : hours;
+
+    /// Placeholder values.
+    enum Placeholder
+    {
+        /// Hostmask placeholder 1.
+        hostmask1 = "<nickname1>!<ident>@<address>",
+
+        /// Hostmask placeholder 2.
+        hostmask2 = "<nickname2>!<ident>@<address>",
+
+        /// Channel placeholder.
+        channel = "<#channel>",
+
+        /// Account placeholder 1.
+        account1 = "<account1>",
+
+        /// Account placeholder 2.
+        account2 = "<account2>",
+    }
 
     /// How often to rehash associative arrays, optimising access.
     static immutable timeBetweenRehashes = 6.hours;
