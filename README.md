@@ -76,7 +76,7 @@ If there's anyone talking it should show up on your screen.
     * [**Copy/paste-friendly concrete setup from scratch**](#copy-paste-friendly-concrete-setup-from-scratch)
     * [Example configuration](#example-configuration)
     * [Long story](#long-story)
-    * [Twitch bot](#twitch-bot)
+    * [Twitch](#twitch)
       * [Song requests](#song-requests)
       * [Certain commands require higher permissions](#certain-commands-require-higher-permissions)
   * [Further help](#further-help)
@@ -128,7 +128,7 @@ This will compile the bot in the default **debug** mode, which adds some extra c
 There are several configurations in which the bot may be built.
 
 * `application`: base configuration
-* `twitch`: additionally includes Twitch chat support and the Twitch bot plugin
+* `twitch`: additionally includes Twitch chat support and the Twitch plugin
 * `dev`: all-inclusive development build equalling everything available, including things like more detailed error messages
 
 All configurations come in `-lowmem` variants (e.g. `application-lowmem`, `twitch-lowmem`, ...) that lower compilation memory required at the cost of increasing compilation time, but so far they do not work with the **dmd** compiler. (bug [#20699](https://issues.dlang.org/show_bug.cgi?id=20699))
@@ -355,7 +355,7 @@ kameloso --gedit
 kameloso
 ```
 
-The first command creates a configuration file and opens it up in a text editor.
+The first (`--gedit`) command creates a configuration file and opens it up in a text editor.
 
 **A line with a leading `#` is disabled, so remove any `#`s from the heads of entries you want to enable.**
 
@@ -365,9 +365,11 @@ The first command creates a configuration file and opens it up in a text editor.
 * You can ignore `nickname`, `user`, `realName`, `account` and `password`, as they're not applicable on Twitch.
 * Peruse the file for other settings if you want; you can always get back to it with `--gedit`.
 
-The second command will launch the program and, upon detecting it's missing the authorisation token needed to connect to Twitch (`pass` in the configuration file), it will start the guide to requesting a new one; see the ["long story"](#long-story) section below for details. **Note that it will request a token for the user you are currently logged in as in your browser**. If you want one for a different bot user instead, open up a private/incognito window, log in normally to Twitch **with the bot account** there, and copy/paste [this link](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true) to that browser window instead. (Then follow the terminal instructions again.)
+The second command will launch the program and connect to Twitch, assuming you entered `irc.chat.twitch.tv` as server address. Upon detecting it's missing the authorisation token needed to authenticate with the server, it will start the guide to requesting a new one in your terminal. See the ["long story"](#long-story) section below for details.
 
-After obtaining a token it will save it to disk and reconnect to the server. Provided there were no errors, the bot should now enter your channel. Say something in chat in your browser and it should show in your terminal. If there were errors or snags, [*please* report them](https://github.com/zorael/kameloso/issues/new).
+**Note that it will request a token for the user you are currently logged in as in your browser**. If you want one for a different bot user instead, open up a private/incognito window, log in normally to Twitch **with the bot account** there, and copy/paste [this link](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true) to that browser window instead. (Then follow the terminal instructions again.)
+
+After obtaining a token it will save it to your configuration file and reconnect to the server. Provided there were no errors, the bot should now enter your channel. Say something in chat in your browser and it should show in your terminal. If there were errors or snags, [***please*** report them](https://github.com/zorael/kameloso/issues/new).
 
 > If you don't like the terminal colouring, `--monochrome` disables it.
 
@@ -375,21 +377,31 @@ After obtaining a token it will save it to disk and reconnect to the server. Pro
 
 ```ini
 [IRCClient]
-nickname            doesntmatter
-user                ignored
-realName            likewise
+nickname                    doesntmatter
+user                        ignored
+realName                    likewise
 
 [IRCBot]
 #account
 #password
-pass                <personal oauth authorisation token for mainaccount>
-admins              mainaccount
-homeChannels        #mainaccount,#botaccount
+pass                        <twitch.keygen authorisation token for bot account>
+admins                      mainaccount
+homeChannels                #mainaccount,#botaccount
 #guestChannels
 
 [IRCServer]
-address             irc.chat.twitch.tv
-port                6697
+address                     irc.chat.twitch.tv
+port                        6697
+
+[Twitch]
+enabled                     true
+ecount                      true
+watchtime                   true
+songrequestMode             youtube
+songrequestPermsNeeded      whitelist
+promoteBroadcasters         true
+promoteModerators           true
+promoteVIPs                 true
 ```
 
 The Twitch SSL port is **6697** (or **443**). For non-encrypted traffic, use the default port **6667**.
@@ -398,7 +410,7 @@ The Twitch SSL port is **6697** (or **443**). For non-encrypted traffic, use the
 
 To connect to Twitch servers you must first build a configuration that includes support for it, which is currently either `twitch` or `dev`. **All pre-compiled binaries available from under [Releases](https://github.com/zorael/kameloso/releases) already have this built-in.**
 
-You will also require an [OAuth authorisation token](https://en.wikipedia.org/wiki/OAuth). Assuming you have a configuration file set up to connect to Twitch, it will automatically start the guide to requesting one upon connecting, if none is present. Run the bot with `--set twitch.keygen` to force it if it doesn't, or if your token expired. (They last for about 60 days.)
+You will also require an [authorisation token](https://en.wikipedia.org/wiki/OAuth). Assuming you have a configuration file set up to connect to Twitch, it will automatically start the guide to requesting one upon connecting, if none is present. Run the bot with `--set twitch.keygen` to force it if it doesn't, or if your token expired. (They last for about 60 days.)
 
 It will open a browser window, in which you are asked to log onto Twitch *on Twitch's own servers*. Verify this by checking the page address; it should end with `.twitch.tv`, with the little lock symbol showing the connection is secure.
 
@@ -406,9 +418,9 @@ It will open a browser window, in which you are asked to log onto Twitch *on Twi
 
 After entering your login and password and clicking **Authorize**, you will be redirected to an empty "`this site can't be reached`" or "`unable to connect`" page. **Copy the URL address of it** and paste it into the terminal, when asked. It will parse the address, extract your authorisation token, and save it to your configuration file.
 
-If you prefer to generate the token manually, [**here is the URL you need to follow**](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true). The only thing the generation process does is open it for you, and automate saving the end token to disk.
+If you prefer to generate the token manually, [**here is the URL you need to follow**](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true). The only thing the generation process does is open it for you, and automate saving the end token to your configuration file (as `pass` under `[IRCBot]`).
 
-### Twitch bot
+### Twitch
 
 **Please make the bot a moderator to prevent its messages from being as aggressively rate-limited.**
 
@@ -438,7 +450,7 @@ To get song requests to work, you need to register an "application" to interface
 
 #### Certain commands require higher permissions
 
-Some functionality, such as setting the channel title or currently played game, require credentials with the permissions of the channel owner (broadcaster). As such, if you want to use such commands, you will need to generate an OAuth authorisation token for **your main account** separately, much as you generated one for the bot account. This will request a token from Twitch with more permissions, and the authorisation browser page should reflect this.
+Some functionality, such as setting the channel title or currently played game, require elevated credentials with the permissions of the channel owner (broadcaster). As such, if you want to use such commands, you will need to generate an OAuth authorisation token for **your main account** separately, much as you generated one for the bot account. This will request a token from Twitch with more permissions, and the authorisation browser page should reflect this.
 
 ```shell
 $ kameloso --set twitch.superKeygen
