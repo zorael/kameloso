@@ -401,7 +401,7 @@ auto getSpotifyBase64Authorization(const Credentials creds)
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         creds = Credentials aggregate.
         trackID = Spotify track ID of the track to add.
-        recursing = Whether or not the function is recursing into iself.
+        recursing = Whether or not the function is recursing into itself.
 
     Returns:
         A [std.json.JSONValue|JSONValue] of the response.

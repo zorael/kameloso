@@ -290,7 +290,7 @@ Follow the instructions and log in to authorise the use of this program with you
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         creds = Credentials aggregate.
         videoID = YouTube video ID of the video to add.
-        recursing = Whether or not the function is recursing into iself.
+        recursing = Whether or not the function is recursing into itself.
 
     Returns:
         A [std.json.JSONValue|JSONValue] of the response.
