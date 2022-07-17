@@ -601,6 +601,12 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
     // double pop, and the first line is missed.
     yield(ListenAttempt.init);
 
+    /// How many consecutive warnings to allow before yielding an error.
+    enum maxConsecutiveWarningsUntilError = 20;
+
+    /// Current consecutive warnings count.
+    uint consecutiveWarnings;
+
     while (!abort)
     {
         ListenAttempt attempt;
@@ -655,6 +661,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
 
             enum Errno
             {
+                //success = 0,  // "The operation completed successfully."
                 timedOut = WSAETIMEDOUT,
                 wouldBlock = WSAEWOULDBLOCK,
                 netDown = WSAENETDOWN,
@@ -678,6 +685,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
             // Unlucky callgrind_control -d timing
             attempt.state = State.isEmpty;
             attempt.error = lastSocketError;
+            consecutiveWarnings = 0;
             yield(attempt);
             continue;
         }
@@ -705,6 +713,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
                  */
                 // Timed out, nothing received
                 attempt.state = State.isEmpty;
+                consecutiveWarnings = 0;
                 yield(attempt);
                 continue;
 
@@ -741,13 +750,25 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
 
             default:
                 attempt.error = lastSocketError;
-                attempt.state = State.warning;
-                yield(attempt);
-                continue;
+
+                if (++consecutiveWarnings >= maxConsecutiveWarningsUntilError)
+                {
+                    attempt.state = State.error;
+                    yield(attempt);
+                    // Should never get here
+                    assert(0, "Dead `listenFiber` resumed after yield (exceeded max consecutive errors)");
+                }
+                else
+                {
+                    attempt.state = State.warning;
+                    yield(attempt);
+                    continue;
+                }
             }
         }
 
         timeLastReceived = Clock.currTime.toUnixTime;
+        consecutiveWarnings = 0;
 
         immutable ptrdiff_t end = cast(ptrdiff_t)(start + attempt.bytesReceived);
         ptrdiff_t newline = (cast(char[])buffer[0..end]).indexOf('\n');
