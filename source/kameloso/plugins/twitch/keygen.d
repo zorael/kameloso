@@ -314,11 +314,11 @@ instructions and log in to authorise the use of this program with your <w>STREAM
 
         // Chat and PubSub
         // --------------------------
-        "channel:moderate",
-        "chat:edit",
-        "chat:read",
-        "whispers:edit",
-        "whispers:read",
+        //"channel:moderate",
+        //"chat:edit",
+        //"chat:read",
+        //"whispers:edit",
+        //"whispers:read",
     ];
 
     Pid browser;
