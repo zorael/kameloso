@@ -662,6 +662,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
                 endpointNotConnected = WSAENOTCONN,
                 connectionReset = WSAECONNRESET,
                 interrupted = WSAEINTR,
+                overlappedIO = 997,
             }
 
             attempt.errno = WSAGetLastError();
@@ -706,6 +707,14 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
                 attempt.state = State.isEmpty;
                 yield(attempt);
                 continue;
+
+            version(Windows)
+            {
+                case overlappedIO:
+                    // "Overlapped I/O operation is in progress."
+                    // seems benign
+                    goto case timedOut;
+            }
 
             static if (int(timedOut) != int(wouldBlock))
             {
