@@ -1213,28 +1213,29 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
 
     scope(failure)
     {
-        import lu.string : contains;
-        import std.algorithm.searching : canFind;
-
-        if (instance.settings.headless) return;
-
-        // Something asserted
-        logger.error("scopeguard tripped.");
-        printEventDebugDetails(event, raw, eventWasInitialised);
-
-        // Print the raw line char by char if it contains non-printables
-        if (raw.canFind!((c) => c < ' '))
+        if (!instance.settings.headless)
         {
-            import std.stdio : writefln;
-            import std.string : representation;
+            import lu.string : contains;
+            import std.algorithm.searching : canFind;
 
-            foreach (immutable c; raw.representation)
+            // Something asserted
+            logger.error("scopeguard tripped.");
+            printEventDebugDetails(event, raw, eventWasInitialised);
+
+            // Print the raw line char by char if it contains non-printables
+            if (raw.canFind!((c) => c < ' '))
             {
-                writefln("%3d: '%c'", c, cast(char)c);
-            }
-        }
+                import std.stdio : writefln;
+                import std.string : representation;
 
-        if (instance.settings.flush) stdout.flush();
+                foreach (immutable c; raw.representation)
+                {
+                    writefln("%3d: '%c'", c, cast(char)c);
+                }
+            }
+
+            if (instance.settings.flush) stdout.flush();
+        }
     }
 
     try
