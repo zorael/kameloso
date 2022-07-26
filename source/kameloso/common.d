@@ -77,6 +77,8 @@ void initLogger(
 out (; (logger !is null), "Failed to initialise logger")
 {
     import kameloso.logger : KamelosoLogger;
+    import kameloso.terminal.colours : Tint;
+
     logger = new KamelosoLogger(monochrome, bright, headless, flush);
     Tint.monochrome = monochrome;
 }
@@ -111,6 +113,7 @@ kameloso.kameloso.CoreSettings* settings;
 void printVersionInfo(const Flag!"colours" colours = Yes.colours) @safe
 {
     import kameloso.constants : KamelosoInfo;
+    import kameloso.terminal.colours : Tint;
     import std.stdio : writefln;
 
     immutable logtint = colours ? Tint.log : string.init;
@@ -1200,6 +1203,7 @@ unittest
 
     If the inner `monochrome` member is true, `Tint.*` will just return an empty string.
  +/
+deprecated("Use `kameloso.terminal.colours.Tint` instead")
 struct Tint
 {
     /++
@@ -1331,431 +1335,10 @@ unittest
         The passsed `line` but with any `<tags>` replaced with ANSI colour sequences.
         The original string is passed back if there was nothing to replace.
  +/
+//deprecated("Use `kameloso.terminal.colours.expandTags` instead")
 T expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" strip) @safe
 {
-    import lu.string : contains;
-    import std.array : Appender;
-    import std.range : ElementEncodingType;
-    import std.string : representation;
-    import std.traits : Unqual;
-
-    alias E = Unqual!(ElementEncodingType!T);
-
-    if (!line.length || !line.contains('<')) return line;
-
-    Appender!(E[]) sink;
-    bool dirty;
-    bool escaping;
-
-    immutable asBytes = line.representation;
-    immutable toReserve = (asBytes.length + 16);
-
-    byteloop:
-    for (size_t i = 0; i<asBytes.length; ++i)
-    {
-        immutable c = asBytes[i];
-
-        switch (c)
-        {
-        case '\\':
-            if (escaping)
-            {
-                // Always dirty
-                sink.put('\\');
-            }
-            else
-            {
-                if (!dirty)
-                {
-                    sink.reserve(toReserve);
-                    sink.put(asBytes[0..i]);
-                    dirty = true;
-                }
-            }
-
-            escaping = !escaping;
-            break;
-
-        case '<':
-            if (escaping)
-            {
-                // Always dirty
-                sink.put('<');
-                escaping = false;
-            }
-            else
-            {
-                import std.string : indexOf;
-
-                immutable ptrdiff_t closingBracketPos = (cast(T)asBytes[i..$]).indexOf('>');
-
-                if ((closingBracketPos == -1) || (closingBracketPos > 6))
-                {
-                    if (dirty)
-                    {
-                        sink.put(c);
-                    }
-                }
-                else
-                {
-                    // Valid; dirties now if not already dirty
-
-                    if (asBytes.length < i+2)
-                    {
-                        // Too close to the end to have a meaningful tag
-                        // Break and return
-
-                        if (dirty)
-                        {
-                            // Add rest first
-                            sink.put(asBytes[i..$]);
-                        }
-
-                        break byteloop;
-                    }
-
-                    if (!dirty)
-                    {
-                        sink.reserve(toReserve);
-                        sink.put(asBytes[0..i]);
-                        dirty = true;
-                    }
-
-                    immutable slice = asBytes[i+1..i+closingBracketPos];  // mutable
-                    if (slice.length != 1) break;
-
-                    sliceswitch:
-                    switch (slice[0])
-                    {
-
-                    version(Colours)
-                    {
-                        case 'l':
-                            if (!strip) sink.put(Tint.log);
-                            break;
-
-                        case 'i':
-                            if (!strip) sink.put(Tint.info);
-                            break;
-
-                        case 'w':
-                            if (!strip) sink.put(Tint.warning);
-                            break;
-
-                        case 'e':
-                            if (!strip) sink.put(Tint.error);
-                            break;
-
-                        case 't':
-                            if (!strip) sink.put(Tint.trace);
-                            break;
-
-                        case 'c':
-                            if (!strip) sink.put(Tint.critical);
-                            break;
-
-                        case 'f':
-                            if (!strip) sink.put(Tint.fatal);
-                            break;
-
-                        case 'o':
-                            if (!strip) sink.put(Tint.off);
-                            break;
-
-                        case '/':
-                            if (!strip)
-                            {
-                                with (LogLevel)
-                                final switch (baseLevel)
-                                {
-                                case all:  //log
-                                    //goto case 'l';
-                                    if (!strip) sink.put(Tint.log);
-                                    break sliceswitch;
-
-                                case trace:
-                                    //goto case 't';
-                                    if (!strip) sink.put(Tint.trace);
-                                    break sliceswitch;
-
-                                case info:
-                                    //goto case 'i';
-                                    if (!strip) sink.put(Tint.info);
-                                    break sliceswitch;
-
-                                case warning:
-                                    //goto case 'w';
-                                    if (!strip) sink.put(Tint.warning);
-                                    break sliceswitch;
-
-                                case error:
-                                    //goto case 'e';
-                                    if (!strip) sink.put(Tint.error);
-                                    break sliceswitch;
-
-                                case critical:
-                                    //goto case 'c';
-                                    if (!strip) sink.put(Tint.critical);
-                                    break sliceswitch;
-
-                                case fatal:
-                                    //goto case 'f';
-                                    if (!strip) sink.put(Tint.fatal);
-                                    break sliceswitch;
-
-                                case off:
-                                    //goto case 'o';
-                                    if (!strip) sink.put(Tint.off);
-                                    break sliceswitch;
-                                }
-                            }
-                            break;
-                    }
-
-                    case 'h':
-                        i += 3;  // advance past "<h>".length
-                        immutable closingHashMarkPos = (cast(T)asBytes[i..$]).indexOf("</>");
-
-                        if (closingHashMarkPos == -1)
-                        {
-                            // Revert advance
-                            i -= 3;
-                            goto default;
-                        }
-                        else
-                        {
-                            immutable word = cast(string)asBytes[i..i+closingHashMarkPos];
-
-                            version(Colours)
-                            {
-                                if (!strip)
-                                {
-                                    import kameloso.terminal.colours : colourByHash;
-
-                                    immutable bright =
-                                        cast(Flag!"brightTerminal")kameloso.common.settings.brightTerminal;
-                                    sink.put(colourByHash(word, bright));
-
-                                    with (LogLevel)
-                                    final switch (baseLevel)
-                                    {
-                                    case all:  //log
-                                        sink.put(Tint.log);
-                                        break;
-
-                                    case trace:
-                                        sink.put(Tint.trace);
-                                        break;
-
-                                    case info:
-                                        sink.put(Tint.info);
-                                        break;
-
-                                    case warning:
-                                        sink.put(Tint.warning);
-                                        break;
-
-                                    case error:
-                                        sink.put(Tint.error);
-                                        break;
-
-                                    case critical:
-                                        sink.put(Tint.critical);
-                                        break;
-
-                                    case fatal:
-                                        sink.put(Tint.fatal);
-                                        break;
-
-                                    case off:
-                                        sink.put(Tint.off);
-                                        break;
-                                    }
-                                }
-                                else
-                                {
-                                    sink.put(word);
-                                }
-                            }
-                            else
-                            {
-                                sink.put(word);
-                            }
-
-                            // Don't advance the full "<h>".length 3
-                            // because the for-loop ++i will advance one ahead
-                            i += (closingHashMarkPos+2);
-                            continue;  // Not break
-                        }
-
-                    default:
-                        // Invalid control character, just ignore
-                        break;
-                    }
-
-                    i += closingBracketPos;
-                }
-            }
-            break;
-
-        default:
-            if (escaping)
-            {
-                escaping = false;
-            }
-
-            if (dirty)
-            {
-                sink.put(c);
-            }
-            break;
-        }
-    }
-
-    return dirty ? sink.data.idup : line;
-}
-
-///
-unittest
-{
-    import std.conv : text, to;
-    import std.format : format;
-    import std.typecons : Flag, No, Yes;
-
-    {
-        immutable line = "This is a <l>log</> line.";
-        immutable replaced = line.expandTags(No.strip);
-        immutable expected = text("This is a ", Tint.log, "log", Tint.off, " line.");
-        assert((replaced == expected), replaced);
-    }
-    {
-        import std.conv : wtext;
-
-        immutable line = "This is a <l>log</> line."w;
-        immutable replaced = line.expandTags(LogLevel.off, No.strip);
-        immutable expected = wtext("This is a "w, Tint.log, "log"w, Tint.off, " line."w);
-        assert((replaced == expected), replaced.to!string);
-    }
-    {
-        import std.conv : dtext;
-
-        immutable line = "This is a <l>log</> line."d;
-        immutable replaced = line.expandTags(LogLevel.off, No.strip);
-        immutable expected = dtext("This is a "d, Tint.log, "log"d, Tint.off, " line."d);
-        assert((replaced == expected), replaced.to!string);
-    }
-    {
-        immutable line = `<i>info</>nothing<c>critical</>nothing\<w>not warning`;
-        immutable replaced = line.expandTags(LogLevel.off, No.strip);
-        immutable expected = text(Tint.info, "info", Tint.off, "nothing",
-            Tint.critical, "critical", Tint.off, "nothing<w>not warning");
-        assert((replaced == expected), replaced);
-    }
-    {
-        immutable line = "This is a line with no tags";
-        immutable replaced = line.expandTags(LogLevel.off, No.strip);
-        assert(line is replaced);
-    }
-    {
-        immutable emptyLine = string.init;
-        immutable replaced = emptyLine.expandTags(LogLevel.off, No.strip);
-        assert(replaced is emptyLine);
-    }
-    {
-        immutable line = "hello<h>kameloso</>hello";
-        immutable replaced = line.expandTags(LogLevel.off, Yes.strip);
-        immutable expected = "hellokamelosohello";
-        assert((replaced == expected), replaced);
-    }
-    {
-        immutable line = "hello<h></>hello";
-        immutable replaced = line.expandTags(LogLevel.off, Yes.strip);
-        immutable expected = "hellohello";
-        assert((replaced == expected), replaced);
-    }
-    {
-        immutable line = `hello\<harbl>kameloso<h>hello</>hi`;
-        immutable replaced = line.expandTags(LogLevel.off, Yes.strip);
-        immutable expected = "hello<harbl>kamelosohellohi";
-        assert((replaced == expected), replaced);
-    }
-    {
-        enum pattern = "Failed to fetch, replay and clear notes for " ~
-            "<l>%s<e> on <l>%s<e>: <l>%s";
-        immutable line = pattern.format("nickname", "<no channel>", "error");
-        immutable replaced = line.expandTags(LogLevel.off, No.strip);
-        immutable expected = "Failed to fetch, replay and clear notes for " ~
-            Tint.log ~ "nickname" ~ Tint.error ~ " on " ~ Tint.log ~
-            "<no channel>" ~ Tint.error ~ ": " ~ Tint.log ~ "error";
-        assert((replaced == expected), replaced);
-    }
-    {
-        enum pattern = "Failed to fetch, replay and clear notes for " ~
-            "<l>%s<e> on <l>%s<e>: <l>%s";
-        immutable line = pattern.format("nickname", "<no channel>", "error");
-        immutable replaced = line.expandTags(LogLevel.off, Yes.strip);
-        immutable expected = "Failed to fetch, replay and clear notes for " ~
-            "nickname on <no channel>: error";
-        assert((replaced == expected), replaced);
-    }
-    {
-        enum pattern = "Failed to fetch, replay and clear notes for " ~
-            "<l>%s</> on <l>%s</>: <l>%s";
-        immutable line = pattern.format("nickname", "<no channel>", "error");
-        immutable replaced = line.expandTags(LogLevel.error, No.strip);
-        immutable expected = "Failed to fetch, replay and clear notes for " ~
-            Tint.log ~ "nickname" ~ Tint.error ~ " on " ~ Tint.log ~
-            "<no channel>" ~ Tint.error ~ ": " ~ Tint.log ~ "error";
-        assert((replaced == expected), replaced);
-    }
-    {
-        enum pattern = "Failed to fetch, replay and clear notes for " ~
-            "<l>%s</> on <l>%s</>: <l>%s";
-        immutable line = pattern.format("nickname", "<no channel>", "error");
-        immutable replaced = line.expandTags(LogLevel.error, Yes.strip);
-        immutable expected = "Failed to fetch, replay and clear notes for " ~
-            "nickname on <no channel>: error";
-        assert((replaced == expected), replaced);
-    }
-    {
-        enum origPattern = "Could not apply <i>+%s<l> <i>%s<l> in <i>%s<l> " ~
-            "because we are not an operator in the channel.";
-        enum newPattern = "Could not apply <i>+%s</> <i>%s</> in <i>%s</> " ~
-            "because we are not an operator in the channel.";
-        immutable origLine = origPattern.format("o", "nickname", "#channel").expandTags(No.strip);
-        immutable newLine = newPattern.format("o", "nickname", "#channel").expandTags(LogLevel.all, No.strip);
-        assert((origLine == newLine), newLine);
-    }
-
-    version(Colours)
-    {
-        import kameloso.terminal.colours : colourByHash;
-
-        {
-            immutable line = "hello<h>kameloso</>hello";
-            immutable replaced = line.expandTags(LogLevel.off, No.strip);
-            immutable expected = text("hello", colourByHash("kameloso", No.brightTerminal), Tint.off, "hello");
-            assert((replaced == expected), replaced);
-        }
-        {
-            immutable line = `hello\<harbl>kameloso<h>hello</>hi`;
-            immutable replaced = line.expandTags(LogLevel.off, No.strip);
-            immutable expected = text("hello<harbl>kameloso", colourByHash("hello", No.brightTerminal), Tint.off, "hi");
-            assert((replaced == expected), replaced);
-        }
-        {
-            immutable line = "<l>%%APPDATA%%\\\\kameloso</>.";
-            immutable replaced = line.expandTags(LogLevel.off, No.strip);
-            immutable expected = Tint.log ~ "%%APPDATA%%\\kameloso" ~ Tint.off ~ ".";
-            assert((replaced == expected), replaced);
-        }
-        {
-            immutable line = "<l>herp\\</>herp\\\\herp\\\\<l>herp</>";
-            immutable replaced = line.expandTags(LogLevel.off, No.strip);
-            immutable expected = Tint.log ~ "herp</>herp\\herp\\" ~ Tint.log ~ "herp" ~ Tint.off;
-            assert((replaced == expected), replaced);
-        }
-    }
+    return line;
 }
 
 
@@ -1774,9 +1357,10 @@ unittest
         The passsed `line` but with any `<tags>` replaced with ANSI colour sequences.
         The original string is passed back if there was nothing to replace.
  +/
+//deprecated("Use `kameloso.terminal.colours.expandTags` instead")
 T expandTags(T)(const T line, const Flag!"strip" strip) @safe
 {
-    return expandTags(line, LogLevel.off, strip);
+    return line;
 }
 
 
@@ -1797,23 +1381,10 @@ T expandTags(T)(const T line, const Flag!"strip" strip) @safe
         The passsed `line` but with any `<tags>` replaced with ANSI colour sequences.
         The original string is passed back if there was nothing to replace.
  +/
-T expandTags(T)(const T line, const LogLevel baseLevel = LogLevel.off) @safe
+//deprecated("Use `kameloso.terminal.colours.expandTags` instead")
+T expandTags(T)(const T line, const LogLevel baseLevel) @safe
 {
-    immutable strip = cast(Flag!"strip")kameloso.common.settings.monochrome;
-    return expandTags(line, baseLevel, strip);
-}
-
-///
-unittest
-{
-    import std.conv : text, to;
-
-    {
-        immutable line = "This is a <l>log</> line.";
-        immutable replaced = line.expandTags(LogLevel.off);
-        immutable expected = text("This is a ", Tint.log, "log", Tint.off, " line.");
-        assert((replaced == expected), replaced);
-    }
+    return line;
 }
 
 
