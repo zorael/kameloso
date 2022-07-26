@@ -13,7 +13,7 @@ module kameloso.main;
 private:
 
 import kameloso.kameloso : Kameloso, CoreSettings;
-import kameloso.common : Tint, expandTags, logger;
+import kameloso.common : logger, expandTags;
 import kameloso.logger : LogLevel;
 import kameloso.plugins.common.core : IRCPlugin, Replay;
 import dialect.defs;
@@ -744,8 +744,8 @@ void messageFiber(ref Kameloso instance)
                 (Variant v) scope
                 {
                     // Caught an unhandled message
-                    logger.warning("Main thread message fiber received unknown Variant: ",
-                        Tint.log, v.type);
+                    enum pattern = "Main thread message fiber received unknown Variant: <l>%s";
+                    logger.warningf(pattern, v.type);
                 }
             );
         }
@@ -1453,12 +1453,14 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
     }
     catch (UTFException e)
     {
-        logger.warning("UTFException: ", Tint.log, e.msg);
+        enum pattern = "UTFException: <l>%s";
+        logger.warningf(pattern, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (UnicodeException e)
     {
-        logger.warning("UnicodeException: ", Tint.log, e.msg);
+        enum pattern = "UnicodeException: <l>%s";
+        logger.warningf(pattern, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (Exception e)
@@ -1978,12 +1980,14 @@ Next tryGetopt(ref Kameloso instance, string[] args)
     }
     catch (GetOptException e)
     {
-        logger.error("Error parsing command-line arguments: ", Tint.log, e.msg);
+        enum pattern = "Error parsing command-line arguments: <l>%s";
+        logger.errorf(pattern, e.msg);
         //version(PrintStacktraces) logger.trace(e.info);
     }
     catch (ConvException e)
     {
-        logger.error("Error converting command-line arguments: ", Tint.log, e.msg);
+        enum pattern = "Error converting command-line arguments: <l>%s";
+        logger.errorf(pattern, e.msg);
         //version(PrintStacktraces) logger.trace(e.info);
     }
     catch (FileTypeMismatchException e)
@@ -2000,7 +2004,8 @@ Next tryGetopt(ref Kameloso instance, string[] args)
     }
     catch (DeserialisationException e)
     {
-        logger.error("Error parsing configuration file: ", Tint.log, e.msg);
+        enum pattern = "Error parsing configuration file: <l>%s";
+        logger.errorf(pattern, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (ProcessException e)
@@ -2017,7 +2022,8 @@ Next tryGetopt(ref Kameloso instance, string[] args)
     }
     catch (Exception e)
     {
-        logger.error("Unexpected exception: ", Tint.log, e.msg);
+        enum pattern = "Unexpected exception: <l>%s";
+        logger.errorf(pattern, e.msg);
         version(PrintStacktraces) logger.trace(e);
     }
 
@@ -2270,7 +2276,8 @@ Next tryConnect(ref Kameloso instance)
             // "Failed to establish SSL connection after successful connect (system lib)"
             // "Failed to establish SSL connection after successful connect" --> attempted SSL on non-SSL server
 
-            logger.error("Failed to connect: ", Tint.log, attempt.error);
+            enum pattern = "Failed to connect: <l>%s";
+            logger.errorf(pattern, attempt.error);
             if (*instance.abort) return Next.returnFailure;
 
             if ((numTransientSSLFailures++ < transientSSLFailureTolerance) &&
@@ -2636,8 +2643,8 @@ void resolvePaths(ref Kameloso instance)
         import std.file : mkdirRecurse;
 
         mkdirRecurse(instance.settings.resourceDirectory);
-        logger.log("Created resource directory ", Tint.info,
-            instance.settings.resourceDirectory);
+        enum pattern = "Created resource directory <i>%s";
+        logger.log(pattern, instance.settings.resourceDirectory);
     }
 
     instance.settings.configDirectory = instance.settings.configFile.dirName;
@@ -3092,9 +3099,10 @@ void printSummary(const ref Kameloso instance)
             entry.numEvents, entry.bytesReceived, startString, stopString);
     }
 
-    logger.info("Total time connected: ", Tint.log, totalTime.timeSince!(7, 1));
-    enum pattern = "Total received: <l>%,d</> bytes";
-    logger.infof(pattern.expandTags(LogLevel.info), totalBytesReceived);
+    enum timeConnectedPattern = "Total time connected: <l>%s";
+    logger.infof(timeConnectedPattern, totalTime.timeSince!(7, 1));
+    enum receivedPattern = "Total received: <l>%,d</> bytes";
+    logger.infof(receivedPattern.expandTags(LogLevel.info), totalBytesReceived);
 }
 
 

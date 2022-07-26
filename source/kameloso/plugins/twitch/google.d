@@ -317,8 +317,9 @@ in (Fiber.getThis, "Tried to call `addVideoToYouTubePlaylist` from outside a Fib
 
     if (plugin.state.settings.trace)
     {
-        import kameloso.common : Tint, logger;
-        logger.trace("GET: ", Tint.info, url);
+        import kameloso.common : logger;
+        enum pattern = "GET: <i>%s";
+        logger.tracef(pattern, url);
     }
 
     static string authorizationBearer;

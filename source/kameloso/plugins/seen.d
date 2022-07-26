@@ -1025,8 +1025,8 @@ long[string] loadSeen(const string filename)
     }
     catch (JSONException e)
     {
-        import kameloso.common : Tint;
-        logger.error("Could not load seen JSON from file: ", Tint.log, e.msg);
+        enum pattern = "Could not load seen JSON from file: <l>%s";
+        logger.errorf(pattern, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
 

@@ -109,7 +109,7 @@ void writeConfig(ref Kameloso instance,
     ref IRCBot bot,
     const Flag!"giveInstructions" giveInstructions = Yes.giveInstructions) @system
 {
-    import kameloso.common : Tint, logger, printVersionInfo;
+    import kameloso.common : logger, printVersionInfo;
     import kameloso.constants : KamelosoDefaults;
     import kameloso.platform : rbd = resourceBaseDirectory;
     import kameloso.printing : printObjects;
@@ -180,7 +180,8 @@ void writeConfig(ref Kameloso instance,
     if (!instance.settings.headless)
     {
         printObjects(client, instance.bot, server, instance.connSettings, instance.settings);
-        logger.log("Configuration written to ", Tint.info, instance.settings.configFile);
+        enum pattern = "Configuration written to <l>%s";
+        logger.log(pattern, instance.settings.configFile);
 
         if (!instance.bot.admins.length && !instance.bot.homeChannels.length && giveInstructions)
         {
@@ -516,7 +517,8 @@ Next handleGetopt(ref Kameloso instance, string[] args) @system
 {
     with (instance)
     {
-        import kameloso.common : Tint, printVersionInfo;
+        import kameloso.common : printVersionInfo;
+        import kameloso.terminal.colours : Tint;
         import std.getopt : arraySep, config, getopt;
 
         bool shouldWriteConfig;

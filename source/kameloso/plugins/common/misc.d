@@ -44,7 +44,6 @@ bool applyCustomSettings(IRCPlugin[] plugins,
     const string[] customSettings,
     CoreSettings copyOfSettings)
 {
-    import kameloso.common : Tint;
     import lu.string : contains, nom;
     import std.conv : ConvException;
 
@@ -157,7 +156,8 @@ bool applyCustomSettings(IRCPlugin[] plugins,
             }
         }
 
-        logger.warning("Invalid plugin: ", Tint.log, pluginstring);
+        enum pattern = "Invalid plugin: <l>%s";
+        logger.warningf(pattern, pluginstring);
         noErrors = false;
     }
 

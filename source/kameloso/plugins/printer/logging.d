@@ -105,7 +105,6 @@ public:
 void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.printer.formatting : formatMessageMonochrome;
-    import kameloso.common : Tint;
     import std.typecons : Flag, No, Yes;
 
     if (!plugin.printerSettings.logs) return;
@@ -301,7 +300,8 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
         }
         catch (FileException e)
         {
-            logger.warning("File exception caught when writing to log: ", Tint.log, e.msg);
+            enum pattern = "File exception caught when writing to log: <l>%s";
+            logger.warningf(pattern, e.msg);
             version(PrintStacktraces) logger.trace(e.info);
         }
         catch (ErrnoException e)
@@ -330,7 +330,8 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
         }
         catch (Exception e)
         {
-            logger.warning("Unhandled exception caught when writing to log: ", Tint.log, e.msg);
+            enum pattern = "Unhandles exception caught when writing to log: <l>%s";
+            logger.warningf(pattern, e.msg);
             version(PrintStacktraces) logger.trace(e);
         }
     }
@@ -465,7 +466,6 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
  +/
 bool establishLogLocation(const string logLocation)
 {
-    import kameloso.common : Tint;
     import std.file : exists, isDir;
 
     if (logLocation.exists)
@@ -489,7 +489,8 @@ bool establishLogLocation(const string logLocation)
         import std.file : mkdirRecurse;
 
         mkdirRecurse(logLocation);
-        logger.log("Created log directory: ", Tint.info, logLocation);
+        enum pattern = "Created log directory: <i>%s";
+        logger.logf(pattern, logLocation);
     }
 
     return true;

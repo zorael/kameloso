@@ -138,7 +138,7 @@ void onMessage(WebtitlesPlugin plugin, const ref IRCEvent event)
  +/
 void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
 {
-    import kameloso.common : Tint, logger;
+    import kameloso.common : logger;
     import lu.string : beginsWith, contains, nom;
     import std.concurrency : spawn;
 
@@ -160,7 +160,8 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
 
         uniques[url] = true;
 
-        logger.info("Caught URL: ", Tint.log, url);
+        enum pattern = "Caught URL: <l>%s";
+        logger.infof(pattern, url);
 
         TitleLookupRequest request;
         request.state = plugin.state;

@@ -18,7 +18,7 @@ private:
 import kameloso.plugins.admin.base;
 
 import kameloso.plugins.common.misc : nameOf;
-import kameloso.common : Tint, expandTags, logger;
+import kameloso.common : expandTags, logger;
 import kameloso.logger : LogLevel;
 import kameloso.messaging;
 import dialect.defs;
@@ -270,7 +270,8 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
         else
         {
             // Terminal report
-            logger.warning("Invalid nickname/account: ", Tint.log, specified);
+            enum pattern = "Invalid nickname/account: <l>%s";
+            logger.warningf(pattern, specified);
         }
         return;
     }

@@ -158,7 +158,7 @@ void playbackNotes(NotesPlugin plugin,
     const string givenChannel,
     const Flag!"background" background = No.background)
 {
-    import kameloso.common : Tint, timeSince;
+    import kameloso.common : timeSince;
     import dialect.common : toLowerCase;
     import std.datetime.systime : Clock;
     import std.exception : ErrnoException;
@@ -246,12 +246,14 @@ void playbackNotes(NotesPlugin plugin,
             }
             catch (FileException e)
             {
-                logger.error("Failed to save notes: ", Tint.log, e.msg);
+                enum pattern = "Failed to save notes: <l>%s";
+                logger.errorf(pattern, e.msg);
                 version(PrintStacktraces) logger.trace(e.info);
             }
             catch (ErrnoException e)
             {
-                logger.error("Failed to open/close notes file: ", Tint.log, e.msg);
+                enum pattern = "Failed to open/close notes file: <l>%s";
+                logger.errorf(pattern, e.msg);
                 version(PrintStacktraces) logger.trace(e.info);
             }
         }
@@ -358,7 +360,8 @@ void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
             "Failed to add note; " ~ e.msg);
-        //logger.error("Failed to add note: ", Tint.log, e.msg);
+        /*enum pattern = "Failed to add note: <l>%s";
+        logger.errorf(pattern, e.msg);*/
         version(PrintStacktraces) logger.trace(e.info);
     }
 }

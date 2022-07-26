@@ -301,8 +301,9 @@ in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
 
     if (plugin.state.settings.trace)
     {
-        import kameloso.common : Tint, logger;
-        logger.trace("GET: ", Tint.info, url);
+        import kameloso.common : logger;
+        enum pattern = "GET: <i>%s";
+        logger.tracef(pattern, url);
     }
 
     plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout());
