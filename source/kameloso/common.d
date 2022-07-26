@@ -1190,106 +1190,10 @@ unittest
 
 // Tint
 /++
-    Provides an easy way to access the `*tint` members of our
-    [kameloso.logger.KamelosoLogger|KamelosoLogger] instance [logger].
-
-    It still accesses the global [kameloso.common.logger] instance, but is now
-    independent of [kameloso.common.settings].
-
-    Example:
-    ---
-    logger.logf("%s%s%s am a %1$s%4$s%3$s!", Tint.info, "I", Tint.log, "fish");
-    ---
-
-    If the inner `monochrome` member is true, `Tint.*` will just return an empty string.
+    Compatibility forwarding to `kameloso.terminal.colours.Tint`.
  +/
-deprecated("Use `kameloso.terminal.colours.Tint` instead")
-struct Tint
-{
-    /++
-        Whether or not output should be coloured at all.
-     +/
-    static bool monochrome;
-
-    version(Colours)
-    {
-        // opDispatch
-        /++
-            Provides the string that corresponds to the tint of the
-            [kameloso.logger.LogLevel|LogLevel] that was passed in string form
-            as the `tint` `opDispatch` template parameter.
-
-            This saves us the boilerplate of copy/pasting one function for each
-            [kameloso.logger.LogLevel|LogLevel].
-         +/
-        pragma(inline, true)
-        static string opDispatch(string tint)()
-        in ((logger !is null), "`Tint." ~ tint ~ "` was called with an uninitialised `logger`")
-        {
-            import std.traits : isSomeFunction;
-
-            enum tintfun = "logger." ~ tint ~ "tint";
-
-            static if (__traits(hasMember, logger, tint ~ "tint") &&
-                isSomeFunction!(mixin(tintfun)))
-            {
-                return monochrome ? string.init : mixin(tintfun);
-            }
-            else
-            {
-                static assert(0, "Unknown tint `" ~ tint ~ "` passed to `Tint.opDispatch`");
-            }
-        }
-    }
-    else
-    {
-        /++
-            Returns an empty string, since we're not versioned `Colours`.
-         +/
-        pragma(inline, true)
-        static string log()
-        {
-            return string.init;
-        }
-
-        alias all = log;
-        alias info = log;
-        alias warning = log;
-        alias error = log;
-        alias trace = log;
-        alias critical = log;
-        alias fatal = log;
-        alias off = log;
-    }
-}
-
-///
-unittest
-{
-    if (logger !is null)
-    {
-        version(Colours)
-        {
-            assert(Tint.log is logger.logtint);
-            assert(Tint.info is logger.infotint);
-            assert(Tint.warning is logger.warningtint);
-            assert(Tint.error is logger.errortint);
-            assert(Tint.fatal is logger.fataltint);
-            assert(Tint.trace is logger.tracetint);
-            assert(Tint.off is logger.offtint);
-        }
-        else
-        {
-            assert(Tint.log == string.init);
-            assert(Tint.info == string.init);
-            assert(Tint.warning == string.init);
-            assert(Tint.error == string.init);
-            assert(Tint.fatal == string.init);
-            assert(Tint.trace == string.init);
-            assert(Tint.off == string.init);
-        }
-    }
-}
+deprecated("Use `kameloso.terminal.colours.Tint` instead, or ideally expanding tags")
+import kameloso.terminal.colours : Tint;
 
 
 // expandTags
