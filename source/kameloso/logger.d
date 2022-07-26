@@ -85,6 +85,7 @@ enum LogLevel : ubyte
 final class KamelosoLogger
 {
 private:
+    import kameloso.terminal.colours : Tint, expandTags;
     import lu.conv : Enum;
     import std.array : Appender;
     import std.format : format;
@@ -103,8 +104,11 @@ private:
     /// Buffer to compose a line in before printing it to screen in one go.
     Appender!(char[]) linebuffer;
 
-    /// The initial size to allocate for [linebuffer]. It will grow if needed.
-    enum linebufferInitialSize = 4096;
+    /// Sub-buffer to compose the message in.
+    Appender!(char[]) messagebuffer;
+
+    /// The initial size to allocate for buffers. It will grow if needed.
+    enum bufferInitialSize = 4096;
 
     bool monochrome;  /// Whether to use colours or not in logger output.
     bool brightTerminal;  /// Whether or not to use colours for a bright background.
@@ -126,7 +130,8 @@ public:
         const Flag!"headless" headless,
         const Flag!"flush" flush) pure nothrow @safe
     {
-        linebuffer.reserve(linebufferInitialSize);
+        linebuffer.reserve(bufferInitialSize);
+        messagebuffer.reserve(bufferInitialSize);
         this.monochrome = monochrome;
         this.brightTerminal = brightTerminal;
         this.headless = headless;
@@ -253,8 +258,6 @@ public:
         import std.datetime : DateTime;
         import std.datetime.systime : Clock;
 
-        if (headless) return;
-
         version(Colours)
         {
             if (!monochrome)
@@ -287,8 +290,6 @@ public:
     {
         import std.stdio : stdout, writeln;
 
-        if (headless) return;
-
         version(Colours)
         {
             if (!monochrome)
@@ -300,7 +301,6 @@ public:
 
         writeln(linebuffer.data);
         if (flush) stdout.flush();
-        linebuffer.clear();
     }
 
 
@@ -322,6 +322,12 @@ public:
 
         if (headless) return;
 
+        scope(exit)
+        {
+            linebuffer.clear();
+            messagebuffer.clear();
+        }
+
         beginLogMsg(logLevel);
 
         foreach (ref arg; args)
@@ -330,12 +336,12 @@ public:
 
             static if (is(T : string) || is(T : char[]) || is(T : char))
             {
-                linebuffer.put(arg);
+                messagebuffer.put(arg);
             }
             else static if (is(T == enum))
             {
                 import lu.conv : Enum;
-                linebuffer.put(Enum!T.toString(arg));
+                messagebuffer.put(Enum!T.toString(arg));
             }
             else static if (isAggregateType!T && is(typeof(T.toString)))
             {
@@ -343,50 +349,51 @@ public:
 
                 static if (isSomeFunction!(T.toString) || __traits(isTemplate, T.toString))
                 {
-                    static if (__traits(compiles, arg.toString(linebuffer)))
+                    static if (__traits(compiles, arg.toString(messagebuffer)))
                     {
                         // Output range sink overload (accepts an Appender)
-                        arg.toString(linebuffer);
+                        arg.toString(messagebuffer);
                     }
                     else static if (__traits(compiles,
-                        arg.toString((const(char)[] text) => linebuffer.put(text))))
+                        arg.toString((const(char)[] text) => messagebuffer.put(text))))
                     {
                         // Output delegate sink overload
-                        arg.toString((const(char)[] text) => linebuffer.put(text));
+                        arg.toString((const(char)[] text) => messagebuffer.put(text));
                     }
-                    else static if (__traits(compiles, linebuffer.put(arg.toString)))
+                    else static if (__traits(compiles, messagebuffer.put(arg.toString)))
                     {
                         // Plain string-returning function or template
-                        linebuffer.put(arg.toString);
+                        messagebuffer.put(arg.toString);
                     }
                     else
                     {
                         import std.conv : to;
                         // std.conv.to fallback
-                        linebuffer.put(arg.to!string);
+                        messagebuffer.put(arg.to!string);
                     }
                 }
                 else static if (is(typeof(T.toString)) &&
                     (is(typeof(T.toString) : string) || is(typeof(T.toString) : char[])))
                 {
                     // toString string/char[] literal
-                    linebuffer.put(arg.toString);
+                    messagebuffer.put(arg.toString);
                 }
                 else
                 {
                     import std.conv : to;
                     // std.conv.to fallback
-                    linebuffer.put(arg.to!string);
+                    messagebuffer.put(arg.to!string);
                 }
             }
             else
             {
                 import std.conv : to;
                 // std.conv.to fallback
-                linebuffer.put(arg.to!string);
+                messagebuffer.put(arg.to!string);
             }
         }
 
+        linebuffer.put(messagebuffer.data.expandTags(logLevel));
         finishLogMsg();
     }
 
@@ -413,8 +420,15 @@ public:
 
         if (headless) return;
 
+        scope(exit)
+        {
+            linebuffer.clear();
+            messagebuffer.clear();
+        }
+
         beginLogMsg(logLevel);
-        linebuffer.formattedWrite(pattern, args);
+        messagebuffer.formattedWrite(pattern.expandTags(logLevel), args);
+        linebuffer.put(messagebuffer.data);
         finishLogMsg();
     }
 
@@ -439,8 +453,15 @@ public:
 
         if (headless) return;
 
+        scope(exit)
+        {
+            linebuffer.clear();
+            messagebuffer.clear();
+        }
+
         beginLogMsg(logLevel);
-        linebuffer.formattedWrite!pattern(args);
+        messagebuffer.formattedWrite!pattern(args);
+        linebuffer.put(messagebuffer.data.expandTags(logLevel));
         finishLogMsg();
     }
 
