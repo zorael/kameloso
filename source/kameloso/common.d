@@ -113,30 +113,28 @@ kameloso.kameloso.CoreSettings* settings;
 void printVersionInfo(const Flag!"colours" colours = Yes.colours) @safe
 {
     import kameloso.constants : KamelosoInfo;
-    import kameloso.terminal.colours : Tint;
+    import kameloso.terminal.colours : expandTags;
     import std.stdio : writefln;
-
-    immutable logtint = colours ? Tint.log : string.init;
-    immutable infotint = colours ? Tint.info : string.init;
 
     version(TwitchSupport) enum twitchSupport = " (+twitch)";
     else enum twitchSupport = string.init;
 
-    enum versionPattern = "%skameloso IRC bot v%s%s, built with %s (%s) on %s%s";
+    immutable versionPattern = colours ?
+        "<l>kameloso IRC bot v%s%s, built with %s (%s) on %s</>".expandTags(LogLevel.off) :
+        "kameloso IRC bot v%s%s, built with %s (%s) on %s";
+
     writefln(versionPattern,
-        logtint,
         cast(string)KamelosoInfo.version_,
         twitchSupport,
         cast(string)KamelosoInfo.compiler,
         cast(string)KamelosoInfo.compilerVersion,
-        cast(string)KamelosoInfo.built,
-        Tint.off);
+        cast(string)KamelosoInfo.built);
 
-    enum gitClonePattern = "$ git clone %s%s.git%s";
-    writefln(gitClonePattern,
-        infotint,
-        cast(string)KamelosoInfo.source,
-        Tint.off);
+    immutable gitClonePattern = colours ?
+        "$ git clone <i>%s.git</>".expandTags(LogLevel.off) :
+        "$ git clone %s.git";
+
+    writefln(gitClonePattern, cast(string)KamelosoInfo.source);
 }
 
 
