@@ -594,6 +594,8 @@ unittest
         log_.off("log: off");
     }
 
+    log_.log("log <i>info</> log <w>warning</> log <e>error</> log <t>trace</> log <o>off</> log");
+
     S1 s1;
     S2 s2;
     S3 s3;
