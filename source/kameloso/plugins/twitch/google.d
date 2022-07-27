@@ -15,7 +15,7 @@ private:
 import kameloso.plugins.twitch.base;
 import kameloso.plugins.twitch.helpers;
 
-import kameloso.common : logger;
+import kameloso.logger : logger;
 import arsd.http2 : HttpClient;
 import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
@@ -317,7 +317,6 @@ in (Fiber.getThis, "Tried to call `addVideoToYouTubePlaylist` from outside a Fib
 
     if (plugin.state.settings.trace)
     {
-        import kameloso.common : logger;
         enum pattern = "GET: <i>%s";
         logger.tracef(pattern, url);
     }

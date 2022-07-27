@@ -13,7 +13,7 @@ module kameloso.main;
 private:
 
 import kameloso.kameloso : Kameloso, CoreSettings;
-import kameloso.common : logger;
+import kameloso.logger : logger;
 import kameloso.plugins.common.core : IRCPlugin, Replay;
 import dialect.defs;
 import lu.common : Next;
@@ -3182,7 +3182,7 @@ public:
 int run(string[] args)
 {
     static import kameloso.common;
-    import kameloso.common : initLogger;
+    import kameloso.logger : KamelosoLogger;
     import kameloso.constants : ShellReturnValue;
     import std.exception : ErrnoException;
     import core.stdc.errno : errno;

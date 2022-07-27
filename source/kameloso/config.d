@@ -16,7 +16,7 @@ module kameloso.config;
 private:
 
 import kameloso.kameloso : Kameloso, IRCBot;
-import kameloso.common : logger;
+import kameloso.logger : logger;
 import dialect.defs : IRCClient, IRCServer;
 import lu.common : Next;
 import std.getopt : GetoptResult;
@@ -108,8 +108,9 @@ void writeConfig(ref Kameloso instance,
     ref IRCBot bot,
     const Flag!"giveInstructions" giveInstructions = Yes.giveInstructions) @system
 {
-    import kameloso.common : logger, printVersionInfo;
+    import kameloso.common : printVersionInfo;
     import kameloso.constants : KamelosoDefaults;
+    import kameloso.logger : logger;
     import kameloso.platform : rbd = resourceBaseDirectory;
     import kameloso.printing : printObjects;
     import std.file : exists;
@@ -856,8 +857,9 @@ Next handleGetopt(ref Kameloso instance, string[] args) @system
         }
 
         // Reinitialise the logger with new settings
-        import kameloso.logger : KamelosoLogger;
-        logger = new KamelosoLogger(settings);
+        // "Error: undefined identifier `logger` in package `kameloso`, perhaps add `static import kameloso.logger;`"
+        static import kameloso.logger;
+        kameloso.logger.logger = new kameloso.logger.KamelosoLogger(settings);
 
         // Manually override or append channels, depending on `shouldAppendChannels`
         if (shouldAppendToArrays)

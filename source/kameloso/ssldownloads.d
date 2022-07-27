@@ -37,8 +37,8 @@ Flag!"settingsTouched" downloadWindowsSSL(
     const Flag!"shouldDownloadCacert" shouldDownloadCacert,
     const Flag!"shouldDownloadOpenSSL" shouldDownloadOpenSSL)
 {
-    import kameloso.common : expandTags, logger;
-    import kameloso.logger : LogLevel;
+    import kameloso.logger : LogLevel, logger;
+    import kameloso.terminal.colours : expandTags;
     import std.path : buildNormalizedPath;
 
     static int downloadFile(const string url, const string what, const string saveAs)

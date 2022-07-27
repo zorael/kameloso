@@ -140,7 +140,7 @@ private:
 import kameloso.plugins.twitch.api;
 
 import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
-import kameloso.common : logger;
+import kameloso.logger : logger;
 import kameloso.constants : BufferSize;
 import kameloso.messaging;
 import dialect.defs;

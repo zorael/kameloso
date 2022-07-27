@@ -11,7 +11,7 @@ private:
 
 import kameloso.kameloso : CoreSettings;
 import kameloso.plugins.common.core;
-import kameloso.common : logger;
+import kameloso.logger : logger;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
@@ -344,7 +344,7 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
         {
             version(TwitchWarnings)
             {
-                import kameloso.common : logger;
+                import kameloso.logger : logger;
                 import kameloso.printing : printObject;
 
                 logger.warning(caller, " tried to WHOIS on Twitch");

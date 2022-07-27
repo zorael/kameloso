@@ -24,7 +24,7 @@ debug import kameloso.plugins.admin.debugging;
 
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness;
-import kameloso.common : logger;
+import kameloso.logger : logger;
 import kameloso.messaging;
 import dialect.defs;
 import std.concurrency : send;

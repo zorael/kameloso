@@ -53,8 +53,7 @@ module kameloso.terminal.colours;
 
 private:
 
-import kameloso.common : logger;
-import kameloso.logger : LogLevel;
+import kameloso.logger : LogLevel, logger;
 import std.typecons : Flag, No, Yes;
 
 public:

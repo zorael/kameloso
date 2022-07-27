@@ -8,7 +8,7 @@ version(WithTwitchPlugin):
 
 private:
 
-import kameloso.common : logger;
+import kameloso.logger : logger;
 import kameloso.terminal.colours : expandTags;
 
 package:

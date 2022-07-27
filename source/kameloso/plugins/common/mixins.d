@@ -317,7 +317,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
                 version(TwitchWarnings)
                 {
-                    import kameloso.common : logger;
+                    import kameloso.logger : logger;
                     logger.warning("Tried to enqueue and WHOIS on Twitch");
 
                     version(PrintStacktraces)

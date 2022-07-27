@@ -254,7 +254,7 @@ void startChannelQueries(ChanQueriesService service)
         whoisloop:
         foreach (immutable nickname; uniqueUsers.byKey)
         {
-            import kameloso.common : logger;
+            import kameloso.logger : logger;
             import kameloso.messaging : whois;
             import core.time : seconds;
 

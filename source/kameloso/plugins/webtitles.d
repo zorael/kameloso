@@ -138,7 +138,7 @@ void onMessage(WebtitlesPlugin plugin, const ref IRCEvent event)
  +/
 void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
 {
-    import kameloso.common : logger;
+    import kameloso.logger : logger;
     import lu.string : beginsWith, contains, nom;
     import std.concurrency : spawn;
 
