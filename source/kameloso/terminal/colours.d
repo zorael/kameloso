@@ -70,7 +70,7 @@ public:
 
     Example:
     ---
-    logger.logf("%s%s%s am a %1$s%4$s%3$s!", Tint.info, "I", Tint.log, "fish");
+    logger.logf("%s%s%s am a %1$s%4$s%3$s!", logger.infotint, "I", logger.logtint, "fish");
     ---
 
     If the inner `monochrome` member is true, `Tint.*` will just return an empty string.
@@ -141,23 +141,23 @@ unittest
     {
         version(Colours)
         {
-            assert(Tint.log is logger.logtint);
-            assert(Tint.info is logger.infotint);
-            assert(Tint.warning is logger.warningtint);
-            assert(Tint.error is logger.errortint);
-            assert(Tint.fatal is logger.fataltint);
-            assert(Tint.trace is logger.tracetint);
-            assert(Tint.off is logger.offtint);
+            assert(logger.logtint is logger.logtint);
+            assert(logger.infotint is logger.infotint);
+            assert(logger.warningtint is logger.warningtint);
+            assert(logger.errortint is logger.errortint);
+            assert(logger.fataltint is logger.fataltint);
+            assert(logger.tracetint is logger.tracetint);
+            assert(logger.offtint is logger.offtint);
         }
         else
         {
-            assert(Tint.log == string.init);
-            assert(Tint.info == string.init);
-            assert(Tint.warning == string.init);
-            assert(Tint.error == string.init);
-            assert(Tint.fatal == string.init);
-            assert(Tint.trace == string.init);
-            assert(Tint.off == string.init);
+            assert(logger.logtint == string.init);
+            assert(logger.infotint == string.init);
+            assert(logger.warningtint == string.init);
+            assert(logger.errortint == string.init);
+            assert(logger.fataltint == string.init);
+            assert(logger.tracetint == string.init);
+            assert(logger.offtint == string.init);
         }
     }
 }
@@ -308,35 +308,35 @@ auto expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" st
                     version(Colours)
                     {
                         case 'l':
-                            if (!strip) sink.put(Tint.log);
-                            break;
-
-                        case 'i':
-                            if (!strip) sink.put(Tint.info);
-                            break;
-
-                        case 'w':
-                            if (!strip) sink.put(Tint.warning);
-                            break;
-
-                        case 'e':
-                            if (!strip) sink.put(Tint.error);
+                            if (!strip) sink.put(logger.logtint);
                             break;
 
                         case 't':
-                            if (!strip) sink.put(Tint.trace);
+                            if (!strip) sink.put(logger.tracetint);
+                            break;
+
+                        case 'i':
+                            if (!strip) sink.put(logger.infotint);
+                            break;
+
+                        case 'w':
+                            if (!strip) sink.put(logger.warningtint);
+                            break;
+
+                        case 'e':
+                            if (!strip) sink.put(logger.errortint);
                             break;
 
                         case 'c':
-                            if (!strip) sink.put(Tint.critical);
+                            if (!strip) sink.put(logger.criticaltint);
                             break;
 
                         case 'f':
-                            if (!strip) sink.put(Tint.fatal);
+                            if (!strip) sink.put(logger.fataltint);
                             break;
 
                         case 'o':
-                            if (!strip) sink.put(Tint.off);
+                            if (!strip) sink.put(logger.offtint);
                             break;
 
                         case '/':
@@ -347,42 +347,42 @@ auto expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" st
                                 {
                                 case all:  //log
                                     //goto case 'l';
-                                    if (!strip) sink.put(Tint.log);
+                                    if (!strip) sink.put(logger.logtint);
                                     break sliceswitch;
 
                                 case trace:
                                     //goto case 't';
-                                    if (!strip) sink.put(Tint.trace);
+                                    if (!strip) sink.put(logger.tracetint);
                                     break sliceswitch;
 
                                 case info:
                                     //goto case 'i';
-                                    if (!strip) sink.put(Tint.info);
+                                    if (!strip) sink.put(logger.infotint);
                                     break sliceswitch;
 
                                 case warning:
                                     //goto case 'w';
-                                    if (!strip) sink.put(Tint.warning);
+                                    if (!strip) sink.put(logger.warningtint);
                                     break sliceswitch;
 
                                 case error:
                                     //goto case 'e';
-                                    if (!strip) sink.put(Tint.error);
+                                    if (!strip) sink.put(logger.errortint);
                                     break sliceswitch;
 
                                 case critical:
                                     //goto case 'c';
-                                    if (!strip) sink.put(Tint.critical);
+                                    if (!strip) sink.put(logger.criticaltint);
                                     break sliceswitch;
 
                                 case fatal:
                                     //goto case 'f';
-                                    if (!strip) sink.put(Tint.fatal);
+                                    if (!strip) sink.put(logger.fataltint);
                                     break sliceswitch;
 
                                 case off:
                                     //goto case 'o';
-                                    if (!strip) sink.put(Tint.off);
+                                    if (!strip) sink.put(logger.offtint);
                                     break sliceswitch;
                                 }
                             }
@@ -417,35 +417,35 @@ auto expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" st
                                     final switch (baseLevel)
                                     {
                                     case all:  //log
-                                        sink.put(Tint.log);
+                                        sink.put(logger.logtint);
                                         break;
 
                                     case trace:
-                                        sink.put(Tint.trace);
+                                        sink.put(logger.tracetint);
                                         break;
 
                                     case info:
-                                        sink.put(Tint.info);
+                                        sink.put(logger.infotint);
                                         break;
 
                                     case warning:
-                                        sink.put(Tint.warning);
+                                        sink.put(logger.warningtint);
                                         break;
 
                                     case error:
-                                        sink.put(Tint.error);
+                                        sink.put(logger.errortint);
                                         break;
 
                                     case critical:
-                                        sink.put(Tint.critical);
+                                        sink.put(logger.criticaltint);
                                         break;
 
                                     case fatal:
-                                        sink.put(Tint.fatal);
+                                        sink.put(logger.fataltint);
                                         break;
 
                                     case off:
-                                        sink.put(Tint.off);
+                                        sink.put(logger.offtint);
                                         break;
                                     }
                                 }
@@ -502,7 +502,7 @@ unittest
     {
         immutable line = "This is a <l>log</> line.";
         immutable replaced = line.expandTags(No.strip);
-        immutable expected = text("This is a ", Tint.log, "log", Tint.off, " line.");
+        immutable expected = text("This is a ", logger.logtint, "log", logger.offtint, " line.");
         assert((replaced == expected), replaced);
     }
     {
@@ -510,7 +510,7 @@ unittest
 
         immutable line = "This is a <l>log</> line."w;
         immutable replaced = line.expandTags(LogLevel.off, No.strip);
-        immutable expected = wtext("This is a "w, Tint.log, "log"w, Tint.off, " line."w);
+        immutable expected = wtext("This is a "w, logger.logtint, "log"w, logger.offtint, " line."w);
         assert((replaced == expected), replaced.to!string);
     }
     {
@@ -518,14 +518,14 @@ unittest
 
         immutable line = "This is a <l>log</> line."d;
         immutable replaced = line.expandTags(LogLevel.off, No.strip);
-        immutable expected = dtext("This is a "d, Tint.log, "log"d, Tint.off, " line."d);
+        immutable expected = dtext("This is a "d, logger.logtint, "log"d, logger.offtint, " line."d);
         assert((replaced == expected), replaced.to!string);
     }
     {
         immutable line = `<i>info</>nothing<c>critical</>nothing\<w>not warning`;
         immutable replaced = line.expandTags(LogLevel.off, No.strip);
-        immutable expected = text(Tint.info, "info", Tint.off, "nothing",
-            Tint.critical, "critical", Tint.off, "nothing<w>not warning");
+        immutable expected = text(logger.infotint, "info", logger.offtint, "nothing",
+            logger.criticaltint, "critical", logger.offtint, "nothing<w>not warning");
         assert((replaced == expected), replaced);
     }
     {
@@ -562,8 +562,8 @@ unittest
         immutable line = pattern.format("nickname", "<no channel>", "error");
         immutable replaced = line.expandTags(LogLevel.off, No.strip);
         immutable expected = "Failed to fetch, replay and clear notes for " ~
-            Tint.log ~ "nickname" ~ Tint.error ~ " on " ~ Tint.log ~
-            "<no channel>" ~ Tint.error ~ ": " ~ Tint.log ~ "error";
+            logger.logtint ~ "nickname" ~ logger.errortint ~ " on " ~ logger.logtint ~
+            "<no channel>" ~ logger.errortint ~ ": " ~ logger.logtint ~ "error";
         assert((replaced == expected), replaced);
     }
     {
@@ -581,8 +581,8 @@ unittest
         immutable line = pattern.format("nickname", "<no channel>", "error");
         immutable replaced = line.expandTags(LogLevel.error, No.strip);
         immutable expected = "Failed to fetch, replay and clear notes for " ~
-            Tint.log ~ "nickname" ~ Tint.error ~ " on " ~ Tint.log ~
-            "<no channel>" ~ Tint.error ~ ": " ~ Tint.log ~ "error";
+            logger.logtint ~ "nickname" ~ logger.errortint ~ " on " ~ logger.logtint ~
+            "<no channel>" ~ logger.errortint ~ ": " ~ logger.logtint ~ "error";
         assert((replaced == expected), replaced);
     }
     {
@@ -611,25 +611,25 @@ unittest
         {
             immutable line = "hello<h>kameloso</>hello";
             immutable replaced = line.expandTags(LogLevel.off, No.strip);
-            immutable expected = text("hello", colourByHash("kameloso", No.brightTerminal), Tint.off, "hello");
+            immutable expected = text("hello", colourByHash("kameloso", No.brightTerminal), logger.offtint, "hello");
             assert((replaced == expected), replaced);
         }
         {
             immutable line = `hello\<harbl>kameloso<h>hello</>hi`;
             immutable replaced = line.expandTags(LogLevel.off, No.strip);
-            immutable expected = text("hello<harbl>kameloso", colourByHash("hello", No.brightTerminal), Tint.off, "hi");
+            immutable expected = text("hello<harbl>kameloso", colourByHash("hello", No.brightTerminal), logger.offtint, "hi");
             assert((replaced == expected), replaced);
         }
         {
             immutable line = "<l>%%APPDATA%%\\\\kameloso</>.";
             immutable replaced = line.expandTags(LogLevel.off, No.strip);
-            immutable expected = Tint.log ~ "%%APPDATA%%\\kameloso" ~ Tint.off ~ ".";
+            immutable expected = logger.logtint ~ "%%APPDATA%%\\kameloso" ~ logger.offtint ~ ".";
             assert((replaced == expected), replaced);
         }
         {
             immutable line = "<l>herp\\</>herp\\\\herp\\\\<l>herp</>";
             immutable replaced = line.expandTags(LogLevel.off, No.strip);
-            immutable expected = Tint.log ~ "herp</>herp\\herp\\" ~ Tint.log ~ "herp" ~ Tint.off;
+            immutable expected = logger.logtint ~ "herp</>herp\\herp\\" ~ logger.logtint ~ "herp" ~ logger.offtint;
             assert((replaced == expected), replaced);
         }
     }
@@ -689,7 +689,7 @@ unittest
     {
         immutable line = "This is a <l>log</> line.";
         immutable replaced = line.expandTags(LogLevel.off);
-        immutable expected = text("This is a ", Tint.log, "log", Tint.off, " line.");
+        immutable expected = text("This is a ", logger.logtint, "log", logger.offtint, " line.");
         assert((replaced == expected), replaced);
     }
 }
