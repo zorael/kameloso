@@ -54,6 +54,8 @@ module kameloso.terminal.colours;
 private:
 
 import kameloso.common : logger;
+import kameloso.logger : LogLevel;
+import std.typecons : Flag, No, Yes;
 
 public:
 
@@ -697,12 +699,9 @@ version(Colours):
 
 private:
 
-import kameloso.logger : LogLevel;
 import kameloso.terminal : TerminalToken;
-
 import std.meta : allSatisfy;
 import std.range.primitives : isOutputRange;
-import std.typecons : Flag, No, Yes;
 
 public:
 
