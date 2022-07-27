@@ -11,8 +11,7 @@ private:
 
 import kameloso.kameloso : CoreSettings;
 import kameloso.plugins.common.core;
-import kameloso.common : expandTags, logger;
-import kameloso.logger : LogLevel;
+import kameloso.common : logger;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
@@ -55,7 +54,7 @@ bool applyCustomSettings(IRCPlugin[] plugins,
         if (!line.contains!(Yes.decode)('.'))
         {
             enum pattern = `Bad <l>plugin</>.<l>setting</>=<l>value</> format. (<l>%s</>)`;
-            logger.warningf(pattern.expandTags(LogLevel.warning), line);
+            logger.warningf(pattern, line);
             noErrors = false;
             continue;
         }
@@ -81,7 +80,7 @@ bool applyCustomSettings(IRCPlugin[] plugins,
                 if (!success)
                 {
                     enum pattern = "No such <l>core</> setting: <l>%s";
-                    logger.warningf(pattern.expandTags(LogLevel.warning), setting);
+                    logger.warningf(pattern, setting);
                     noErrors = false;
                 }
                 else
@@ -110,14 +109,14 @@ bool applyCustomSettings(IRCPlugin[] plugins,
             {
                 enum pattern = "Failed to set <l>core</>.<l>%s</>: " ~
                     "it requires a value and none was supplied.";
-                logger.warningf(pattern.expandTags(LogLevel.warning), setting);
+                logger.warningf(pattern, setting);
                 version(PrintStacktraces) logger.trace(e.info);
                 noErrors = false;
             }
             catch (ConvException e)
             {
                 enum pattern = `Invalid value for <l>core</>.<l>%s</>: "<l>%s</>"`;
-                logger.warningf(pattern.expandTags(LogLevel.warning), setting, value);
+                logger.warningf(pattern, setting, value);
                 noErrors = false;
             }
 
@@ -139,14 +138,14 @@ bool applyCustomSettings(IRCPlugin[] plugins,
                     if (!success)
                     {
                         enum pattern = "No such <l>%s</> plugin setting: <l>%s";
-                        logger.warningf(pattern.expandTags(LogLevel.warning), pluginstring, setting);
+                        logger.warningf(pattern, pluginstring, setting);
                         noErrors = false;
                     }
                 }
                 catch (ConvException e)
                 {
                     enum pattern = `Invalid value for <l>%s</>.<l>%s</>: "<l>%s</>"`;
-                    logger.warningf(pattern.expandTags(LogLevel.warning), pluginstring, setting, value);
+                    logger.warningf(pattern, pluginstring, setting, value);
                     noErrors = false;
 
                     //version(PrintStacktraces) logger.trace(e.info);
@@ -391,7 +390,7 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
             {
                 enum pattern = "<i>%s</> plugin <w>NOT</> queueing an event to be replayed " ~
                     "on behalf of <i>%s</>; delta time <i>%d</> is too recent";
-                logger.logf(pattern.expandTags(LogLevel.all), plugin.name, callerSlice, delta);
+                logger.logf(pattern, plugin.name, callerSlice, delta);
             }
             return;
         }
@@ -400,7 +399,7 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
     version(ExplainReplay)
     {
         enum pattern = "<i>%s</> plugin queueing an event to be replayed on behalf of <i>%s";
-        logger.logf(pattern.expandTags(LogLevel.all), plugin.name, callerSlice);
+        logger.logf(pattern, plugin.name, callerSlice);
     }
 
     plugin.state.pendingReplays[user.nickname] ~=
@@ -447,7 +446,7 @@ Replay replay(Plugin, Fun)(Plugin plugin, const ref IRCEvent event,
 
             enum pattern = "<i>%s</> replaying <i>%s</>-level event (invoking <i>%s</>) " ~
                 "based on WHOIS results; user <i>%s</> is <i>%s</> class";
-            logger.logf(pattern.expandTags(LogLevel.all),
+            logger.logf(pattern,
                 plugin.name,
                 Enum!Permissions.toString(replay.permissionsRequired),
                 caller,
@@ -465,7 +464,7 @@ Replay replay(Plugin, Fun)(Plugin plugin, const ref IRCEvent event,
             enum pattern = "<i>%s</> plugin <w>NOT</> replaying <i>%s</>-level event " ~
                 "(which would have invoked <i>%s</>) " ~
                 "based on WHOIS results: user <i>%s</> is <i>%s</> class";
-            logger.logf(pattern.expandTags(LogLevel.all),
+            logger.logf(pattern,
                 plugin.name,
                 Enum!Permissions.toString(replay.permissionsRequired),
                 caller,

@@ -20,8 +20,7 @@ version(WithPersistenceService):
 private:
 
 import kameloso.plugins.common.core;
-import kameloso.common : expandTags, logger;
-import kameloso.logger : LogLevel;
+import kameloso.common : logger;
 import dialect.defs;
 
 
@@ -567,13 +566,13 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
         catch (JSONException e)
         {
             enum pattern = "JSON exception caught when populating <l>%s</>: <l>%s";
-            logger.warningf(pattern.expandTags(LogLevel.warning), list, e.msg);
+            logger.warningf(pattern, list, e.msg);
             version(PrintStacktraces) logger.trace(e.info);
         }
         catch (Exception e)
         {
             enum pattern = "Unhandled exception caught when populating <l>%s</>: <l>%s";
-            logger.warningf(pattern.expandTags(LogLevel.warning), list, e.msg);
+            logger.warningf(pattern, list, e.msg);
             version(PrintStacktraces) logger.trace(e);
         }
     }
@@ -617,13 +616,13 @@ void reloadHostmasksFromDisk(PersistenceService service)
         if (!hostmask.isValidHostmask(service.state.server))
         {
             enum pattern =`Malformed hostmask in <l>%s</>: "<l>%s</>"`;
-            logger.warningf(pattern.expandTags(LogLevel.warning), service.hostmasksFile, hostmask);
+            logger.warningf(pattern, service.hostmasksFile, hostmask);
             continue;
         }
         else if (!account.length)
         {
             enum pattern =`Incomplete hostmask entry in <l>%s</>: "<l>%s</>" has empty account`;
-            logger.warningf(pattern.expandTags(LogLevel.warning), service.hostmasksFile, hostmask);
+            logger.warningf(pattern, service.hostmasksFile, hostmask);
             continue;
         }
 
@@ -643,7 +642,7 @@ void reloadHostmasksFromDisk(PersistenceService service)
         catch (Exception e)
         {
             enum pattern =`Exception parsing hostmask in <l>%s</> ("<l>%s</>"): <l>%s`;
-            logger.warningf(pattern.expandTags(LogLevel.warning), service.hostmasksFile, hostmask, e.msg);
+            logger.warningf(pattern, service.hostmasksFile, hostmask, e.msg);
             version(PrintStacktraces) logger.trace(e);
         }
     }

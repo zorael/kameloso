@@ -18,8 +18,7 @@ private:
 
 import kameloso.plugins.printer.base;
 
-import kameloso.common : expandTags, logger;
-import kameloso.logger : LogLevel;
+import kameloso.common : logger;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
@@ -312,14 +311,14 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                 import core.stdc.errno : errno;
 
                 enum pattern = "ErrnoException (<l>%s</>) caught when writing to log: <l>%s";
-                logger.warningf(pattern.expandTags(LogLevel.warning), errnoStrings[errno], e.msg);
+                logger.warningf(pattern, errnoStrings[errno], e.msg);
             }
             else version(Windows)
             {
                 import core.stdc.errno : errno;
 
                 enum pattern = "ErrnoException (<l>%d</>) caught when writing to log: <l>%s";
-                logger.warningf(pattern.expandTags(LogLevel.warning), errno, e.msg);
+                logger.warningf(pattern, errno, e.msg);
             }
             else
             {
@@ -477,7 +476,7 @@ bool establishLogLocation(const string logLocation)
         if (!naggedAboutDir)
         {
             enum pattern = "Specified log directory (<l>%s</>) is not a directory.";
-            logger.warningf(pattern.expandTags(LogLevel.warning), logLocation);
+            logger.warningf(pattern, logLocation);
             naggedAboutDir = true;
         }
 
@@ -580,7 +579,7 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
     catch (FileException e)
     {
         enum pattern = "File exception caught when committing log <l>%s</>: <l>%s%s";
-        logger.warningf(pattern.expandTags(LogLevel.warning), buffer.file, e.msg, plugin.bell);
+        logger.warningf(pattern, buffer.file, e.msg, plugin.bell);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (ErrnoException e)
@@ -589,13 +588,12 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
         {
             import kameloso.common : errnoStrings;
             enum pattern = "ErrnoException <l>%s</> caught when committing log to <l>%s</>: <l>%s%s";
-            logger.warningf(pattern.expandTags(LogLevel.warning), errnoStrings[e.errno],
-                buffer.file, e.msg, plugin.bell);
+            logger.warningf(pattern, errnoStrings[e.errno], buffer.file, e.msg, plugin.bell);
         }
         else version(Windows)
         {
             enum pattern = "ErrnoException <l>%d</> caught when committing log to <l>%s</>: <l>%s%s";
-            logger.warningf(pattern.expandTags(LogLevel.warning), e.errno, buffer.file, e.msg, plugin.bell);
+            logger.warningf(pattern, e.errno, buffer.file, e.msg, plugin.bell);
         }
         else
         {
@@ -607,7 +605,7 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
     catch (Exception e)
     {
         enum pattern = "Unexpected exception caught when committing log <l>%s</>: <l>%s%s";
-        logger.warningf(pattern.expandTags(LogLevel.warning), buffer.file, e.msg, plugin.bell);
+        logger.warningf(pattern, buffer.file, e.msg, plugin.bell);
         version(PrintStacktraces) logger.trace(e);
     }
 }

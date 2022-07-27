@@ -18,8 +18,7 @@ private:
 
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
-import kameloso.common : expandTags, logger;
-import kameloso.logger : LogLevel;
+import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
 
@@ -769,7 +768,7 @@ void reload(OnelinersPlugin plugin)
             catch (JSONException e)
             {
                 enum pattern = "Failed to load oneliner \"<l>%s</>\"; <l>%s</> is outdated or corrupt.";
-                logger.errorf(pattern.expandTags(LogLevel.error), trigger, plugin.onelinerFile);
+                logger.errorf(pattern, trigger, plugin.onelinerFile);
             }
         }
     }

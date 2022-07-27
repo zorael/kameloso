@@ -47,7 +47,7 @@ Flag!"settingsTouched" downloadWindowsSSL(
         import std.process : executeShell;
 
         enum pattern = "Downloading %s from <l>%s</>...";
-        logger.infof(pattern.expandTags(LogLevel.info), what, url);
+        logger.infof(pattern, what, url);
 
         enum executePattern = `powershell -c "Invoke-WebRequest '%s' -OutFile '%s'"`;
         immutable result = executeShell(executePattern.format(url, saveAs));
@@ -55,7 +55,7 @@ Flag!"settingsTouched" downloadWindowsSSL(
         if (result.status != 0)
         {
             enum errorPattern = "Download process failed with status <l>%d</>!";
-            logger.errorf(errorPattern.expandTags(LogLevel.error), result.status);
+            logger.errorf(errorPattern, result.status);
 
             version(PrintStacktraces)
             {
@@ -92,14 +92,14 @@ Flag!"settingsTouched" downloadWindowsSSL(
             if (!instance.settings.force)
             {
                 enum cacertPattern = "File saved as <l>%s</>; configuration updated.";
-                logger.infof(cacertPattern.expandTags(LogLevel.info), cacertFile);
+                logger.infof(cacertPattern, cacertFile);
                 instance.connSettings.caBundleFile = "cacert.pem";  // cacertFile
                 retval = Yes.settingsTouched;
             }
             else
             {
                 enum cacertPattern = "File saved as <l>%s</>.";
-                logger.infof(cacertPattern.expandTags(LogLevel.info), cacertFile);
+                logger.infof(cacertPattern, cacertFile);
                 instance.connSettings.caBundleFile = cacertFile;  // absolute path
                 //retval = Yes.settingsTouched;  // let user supply --save
             }
@@ -164,12 +164,12 @@ Flag!"settingsTouched" downloadWindowsSSL(
         catch (JSONException e)
         {
             enum pattern = "Error parsing file containing OpenSSL download links: <l>%s";
-            logger.errorf(pattern.expandTags(LogLevel.error), e.msg);
+            logger.errorf(pattern, e.msg);
         }
         catch (ProcessException e)
         {
             enum pattern = "Error starting installer: <l>%s";
-            logger.errorf(pattern.expandTags(LogLevel.error), e.msg);
+            logger.errorf(pattern, e.msg);
         }
     }
 

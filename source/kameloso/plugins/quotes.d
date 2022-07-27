@@ -21,8 +21,7 @@ private:
 
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : UserAwareness;
-import kameloso.common : expandTags, logger;
-import kameloso.logger : LogLevel;
+import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
@@ -245,7 +244,7 @@ in (rawLine.length, "Tried to add an empty quote")
     catch (JSONException e)
     {
         enum pattern = "Could not add quote for <l>%s</>: <l>%s";
-        logger.errorf(pattern.expandTags(LogLevel.error), id, e.msg);
+        logger.errorf(pattern, id, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
 }
@@ -324,7 +323,7 @@ void modQuoteAndReport(QuotesPlugin plugin,
     catch (JSONException e)
     {
         enum pattern = "Could not remove quote for <l>%s</>: <l>%s";
-        logger.errorf(pattern.expandTags(LogLevel.error), id, e.msg);
+        logger.errorf(pattern, id, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
 }
@@ -746,7 +745,7 @@ void manageQuoteImpl(QuotesPlugin plugin,
     catch (JSONException e)
     {
         enum pattern = "Could not quote <l>%s</>: <l>%s";
-        logger.errorf(pattern.expandTags(LogLevel.error), specified, e.msg);
+        logger.errorf(pattern, specified, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
 }

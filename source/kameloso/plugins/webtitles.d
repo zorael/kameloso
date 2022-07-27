@@ -319,8 +319,8 @@ void worker(shared TitleLookupRequest sRequest,
                             import kameloso.common : expandTags;
                             import kameloso.logger : LogLevel;
 
-                            enum getoptPattern = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
-                            request.state.askToError(getoptPattern.expandTags(LogLevel.error));
+                            enum getoptMessage = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
+                            request.state.askToError(getoptMessage);
                         }
                     }
                     else
@@ -401,8 +401,8 @@ void worker(shared TitleLookupRequest sRequest,
                             import kameloso.common : expandTags;
                             import kameloso.logger : LogLevel;
 
-                            enum getoptPattern = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
-                            request.state.askToError(getoptPattern.expandTags(LogLevel.error));
+                            enum getoptMessage = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
+                            request.state.askToError(getoptMessage);
                         }
                     }
                     else

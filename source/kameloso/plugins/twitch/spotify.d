@@ -15,8 +15,7 @@ private:
 import kameloso.plugins.twitch.base;
 import kameloso.plugins.twitch.helpers;
 
-import kameloso.common : expandTags, logger;
-import kameloso.logger : LogLevel;
+import kameloso.common : logger;
 import arsd.http2 : HttpClient;
 import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
@@ -34,6 +33,7 @@ import core.thread : Fiber;
 package void requestSpotifyKeys(TwitchPlugin plugin)
 {
     import kameloso.logger : LogLevel;
+    import kameloso.terminal.colours : expandTags;
     import lu.string : contains, nom, stripped;
     import std.format : format;
     import std.process : Pid, ProcessException, wait;
@@ -76,7 +76,7 @@ A normal URL to any playlist you can modify will work fine.
         if (!channel.length || channel[0] != '#')
         {
             enum channelMessage = "Channels are Twitch lowercase account names, prepended with a '<i>#</>' sign.";
-            logger.warning(channelMessage.expandTags(LogLevel.warning));
+            logger.warning(channelMessage);
             channel = string.init;
         }
     }
@@ -113,13 +113,13 @@ A normal URL to any playlist you can modify will work fine.
             writeln();
             enum invalidMessage = "Cannot recognise link as a Spotify playlist URL. " ~
                 "Try copying again or file a bug.";
-            logger.error(invalidMessage.expandTags(LogLevel.error));
+            logger.error(invalidMessage);
             writeln();
             continue;
         }
     }
 
-    enum attemptToOpenPattern = `
+    enum attemptToOpenMessage = `
 --------------------------------------------------------------------------------
 
 <l>Attempting to open the Spotify redirect page in your default web browser.</>
@@ -131,7 +131,7 @@ A normal URL to any playlist you can modify will work fine.
 * If you are running local web server on port <i>80</>, you may have to temporarily
   disable it for this to work.
 `;
-    writeln(attemptToOpenPattern.expandTags(LogLevel.off));
+    writeln(attemptToOpenMessage.expandTags(LogLevel.off));
     if (plugin.state.settings.flush) stdout.flush();
 
     enum authNode = "https://accounts.spotify.com/authorize";
@@ -174,10 +174,10 @@ A normal URL to any playlist you can modify will work fine.
     {
         scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
-        enum pattern = "<l>Paste the address of the page you were redirected to here (empty line exits):</>
+        enum pasteMessage = "<l>Paste the address of the page you were redirected to here (empty line exits):</>
 
 > ";
-        write(pattern.expandTags(LogLevel.off));
+        write(pasteMessage.expandTags(LogLevel.off));
         stdout.flush();
 
         stdin.flush();
@@ -200,9 +200,9 @@ A normal URL to any playlist you can modify will work fine.
 
             if (readCode.beginsWith(authNode))
             {
-                enum wrongPagePattern = "Not that page; the empty page you're " ~
+                enum wrongPageMessage = "Not that page; the empty page you're " ~
                     "lead to after clicking <l>Allow</>.";
-                logger.error(wrongPagePattern.expandTags(LogLevel.error));
+                logger.error(wrongPageMessage);
             }
             else
             {

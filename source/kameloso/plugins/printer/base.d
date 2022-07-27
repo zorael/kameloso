@@ -493,9 +493,7 @@ void commitAllLogs(PrinterPlugin plugin)
 )
 void onISUPPORT(PrinterPlugin plugin)
 {
-    import kameloso.common : expandTags, logger;
-    import kameloso.logger : LogLevel;
-    import lu.conv : Enum;
+    import kameloso.common : logger;
 
     static bool printedISUPPORT;
 
@@ -508,9 +506,10 @@ void onISUPPORT(PrinterPlugin plugin)
     printedISUPPORT = true;
 
     enum pattern = "Detected <i>%s</> running daemon <i>%s</> (<i>%s</>)";
-    logger.logf(pattern.expandTags(LogLevel.all),
+    logger.logf(
+        pattern,
         plugin.state.server.network,
-        Enum!(IRCServer.Daemon).toString(plugin.state.server.daemon),
+        plugin.state.server.daemon,
         plugin.state.server.daemonstring);
 }
 

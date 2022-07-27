@@ -15,8 +15,7 @@ private:
 import kameloso.plugins.twitch.base;
 import kameloso.plugins.twitch.helpers;
 
-import kameloso.common : expandTags, logger;
-import kameloso.logger : LogLevel;
+import kameloso.common : logger;
 import arsd.http2 : HttpClient;
 import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
@@ -35,6 +34,7 @@ package void requestGoogleKeys(TwitchPlugin plugin)
 {
     import kameloso.common : timeSince;
     import kameloso.logger : LogLevel;
+    import kameloso.terminal.colours : expandTags;
     import lu.string : contains, nom, stripped;
     import std.conv : to;
     import std.format : format;
@@ -87,7 +87,7 @@ A normal URL to any playlist you can modify will work fine.
         if (!channel.length || channel[0] != '#')
         {
             enum channelMessage = "Channels are Twitch lowercase account names, prepended with a '<i>#</>' sign.";
-            logger.warning(channelMessage.expandTags(LogLevel.warning));
+            logger.warning(channelMessage);
             channel = string.init;
         }
     }
@@ -124,7 +124,7 @@ A normal URL to any playlist you can modify will work fine.
             writeln();
             enum invalidMessage = "Cannot recognise link as a YouTube playlist URL. " ~
                 "Try copying again or file a bug.";
-            logger.error(invalidMessage.expandTags(LogLevel.error));
+            logger.error(invalidMessage);
             writeln();
             continue;
         }
@@ -186,10 +186,10 @@ Follow the instructions and log in to authorise the use of this program with you
     {
         scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
-        enum pattern = "<l>Paste the address of the page you were redirected to here (empty line exits):</>
+        enum pasteMessage = "<l>Paste the address of the page you were redirected to here (empty line exits):</>
 
 > ";
-        write(pattern.expandTags(LogLevel.off));
+        write(pasteMessage.expandTags(LogLevel.off));
         stdout.flush();
 
         stdin.flush();
@@ -212,9 +212,9 @@ Follow the instructions and log in to authorise the use of this program with you
 
             if (readCode.beginsWith(authNode))
             {
-                enum wrongPagePattern = "Not that page; the empty page you're " ~
+                enum wrongPageMessage = "Not that page; the empty page you're " ~
                     "lead to after clicking <l>Allow</>.";
-                logger.error(wrongPagePattern.expandTags(LogLevel.error));
+                logger.error(wrongPageMessage);
             }
             else
             {
@@ -263,7 +263,7 @@ Follow the instructions and log in to authorise the use of this program with you
     immutable expiresIn = validationJSON["expires_in"].str.to!uint;
 
     enum isValidPattern = "Your key is valid for another <l>%s</> but will be automatically refreshed.";
-    logger.infof(isValidPattern.expandTags(LogLevel.info), expiresIn.seconds.timeSince!(3,1));
+    logger.infof(isValidPattern, expiresIn.seconds.timeSince!(3,1));
     logger.trace();
 
     if (auto storedCreds = channel in plugin.secretsByChannel)

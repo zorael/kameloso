@@ -17,8 +17,7 @@ version(WithConnectService):
 private:
 
 import kameloso.plugins.common.core;
-import kameloso.common : expandTags, logger;
-import kameloso.logger : LogLevel;
+import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
@@ -145,7 +144,7 @@ void joinChannels(ConnectService service)
     immutable numChans = homelist.walkLength() + guestlist.walkLength();
 
     enum pattern = "Joining <i>%d</> %s...";
-    logger.logf(pattern.expandTags(LogLevel.all), numChans, numChans.plurality("channel", "channels"));
+    logger.logf(pattern, numChans, numChans.plurality("channel", "channels"));
 
     // Join in two steps so home channels don't get shoved away by guest channels
     if (service.state.bot.homeChannels.length) joinChannel(service.state,
@@ -189,7 +188,7 @@ void joinChannels(ConnectService service)
             if (missingChannels.length)
             {
                 enum pattern = "Timed out waiting to join channels: %-(<l>%s</>, %)";
-                logger.warningf(pattern.expandTags(LogLevel.warning), missingChannels);
+                logger.warningf(pattern, missingChannels);
             }
         }
 
@@ -321,7 +320,7 @@ void tryAuth(ConnectService service)
         {
             enum pattern = "Cannot auth when you have changed your nickname. " ~
                 "(<l>%s</> != <l>%s</>)";
-            logger.warningf(pattern.expandTags(LogLevel.warning), service.state.client.nickname,
+            logger.warningf(pattern, service.state.client.nickname,
                 service.state.client.origNickname);
 
             service.authentication = Progress.finished;
@@ -350,7 +349,7 @@ void tryAuth(ConnectService service)
         if (!service.state.bot.account.length)
         {
             enum pattern = "No account specified! Trying <i>%s</>...";
-            logger.logf(pattern.expandTags(LogLevel.all), service.state.client.origNickname);
+            logger.logf(pattern, service.state.client.origNickname);
             account = service.state.client.origNickname;
         }
 
@@ -497,8 +496,8 @@ void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
 
         // Do this here since it should be output in all cases except for the
         // default, which just returns anyway and skips this.
-        enum pattern = "Run the program with <i>--set twitch.keygen</> to generate a new one.";
-        logger.log(pattern.expandTags(LogLevel.all));
+        enum message = "Run the program with <i>--set twitch.keygen</> to generate a new one.";
+        logger.log(message);
 
         // Exit and let the user tend to it.
         quit!(Yes.priority)(service.state, event.content, No.quiet);
@@ -630,8 +629,8 @@ void onInvite(ConnectService service, const ref IRCEvent event)
 {
     if (!service.connectSettings.joinOnInvite)
     {
-        enum pattern = "Invited, but <i>joinOnInvite</> is set to false.";
-        logger.log(pattern.expandTags(LogLevel.all));
+        enum message = "Invited, but <i>joinOnInvite</> is set to false.";
+        logger.log(message);
         return;
     }
 
@@ -919,7 +918,7 @@ bool trySASLPlain(ConnectService service)
     catch (Base64Exception e)
     {
         enum pattern = "Could not authenticate: malformed password (<l>%s</>)";
-        logger.errorf(pattern.expandTags(LogLevel.error), e.msg);
+        logger.errorf(pattern, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
         return false;
     }
@@ -1096,7 +1095,7 @@ void onWelcome(ConnectService service)
                 {
                     enum pattern = `WARNING: A prefix of "<l>%s</>" will *not* work on Twitch servers, ` ~
                         "as <l>.</> and <l>/</> are reserved for Twitch's own commands.";
-                    logger.warningf(pattern.expandTags(LogLevel.warning), service.state.settings.prefix);
+                    logger.warningf(pattern, service.state.settings.prefix);
                 }
             }
             else
@@ -1188,7 +1187,7 @@ void onQuit(ConnectService service, const ref IRCEvent event)
     {
         // The regain Fiber will end itself when it is next triggered
         enum pattern = "Attempting to regain nickname <l>%s</>...";
-        logger.infof(pattern.expandTags(LogLevel.info), service.state.client.origNickname);
+        logger.infof(pattern, service.state.client.origNickname);
         raw(service.state, "NICK " ~ service.state.client.origNickname, No.quiet, No.background);
     }
 }
@@ -1316,8 +1315,8 @@ void onUnknownCommand(ConnectService service, const ref IRCEvent event)
     if (service.serverSupportsWHOIS && !service.state.settings.preferHostmasks && (event.aux == "WHOIS"))
     {
         logger.error("Error: This server does not seem to support user accounts.");
-        enum pattern = "Consider enabling <l>Core</>.<l>preferHostmasks</>.";
-        logger.error(pattern.expandTags(LogLevel.error));
+        enum message = "Consider enabling <l>Core</>.<l>preferHostmasks</>.";
+        logger.error(message);
         logger.error("As it is, functionality will be greatly limited.");
         service.serverSupportsWHOIS = false;
     }

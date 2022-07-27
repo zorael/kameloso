@@ -18,8 +18,7 @@ private:
 import kameloso.plugins.admin.base;
 
 import kameloso.plugins.common.misc : nameOf;
-import kameloso.common : expandTags, logger;
-import kameloso.logger : LogLevel;
+import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
 import std.algorithm.comparison : among;
@@ -211,7 +210,7 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
             {
             case success:
                 enum pattern = "Added <h>%s</> as %s in %s.";
-                logger.logf(pattern.expandTags(LogLevel.all), id, asWhat, channel);
+                logger.logf(pattern, id, asWhat, channel);
                 break;
 
             case noSuchAccount:
@@ -220,7 +219,7 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
 
             case alreadyInList:
                 enum pattern = "<h>%s</> is already %s in %s.";
-                logger.logf(pattern.expandTags(LogLevel.all), id, asWhat, channel);
+                logger.logf(pattern, id, asWhat, channel);
                 break;
             }
         }
@@ -435,17 +434,17 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
 
         case noSuchAccount:
             enum pattern = "No such account <h>%s</> was found as %s in %s.";
-            logger.logf(pattern.expandTags(LogLevel.all), account, asWhat, channel);
+            logger.logf(pattern, account, asWhat, channel);
             break;
 
         case noSuchChannel:
             enum pattern = "Account <h>%s</> isn't %s in %s.";
-            logger.logf(pattern.expandTags(LogLevel.all), account, asWhat, channel);
+            logger.logf(pattern, account, asWhat, channel);
             break;
 
         case success:
             enum pattern = "Removed <h>%s</> as %s in %s.";
-            logger.logf(pattern.expandTags(LogLevel.all), account, asWhat, channel);
+            logger.logf(pattern, account, asWhat, channel);
             break;
         }
     }
@@ -628,7 +627,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
             {
                 enum pattern = `Invalid hostmask "<l>%s</>"; must be in the form ` ~
                     `"<l>nickname!ident@address</>".`;
-                logger.warningf(pattern.expandTags(LogLevel.warning), mask);
+                logger.warningf(pattern, mask);
             }
             else
             {
@@ -649,7 +648,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
         {
             immutable colouredAccount = colourByHash(account, brightFlag);
             enum pattern = `Added hostmask "<l>%s</>", mapped to account <h>%s</>.`;
-            logger.infof(pattern.expandTags(LogLevel.info), mask, colouredAccount);
+            logger.infof(pattern, mask, colouredAccount);
         }
         else
         {
@@ -670,7 +669,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
             if (event == IRCEvent.init)
             {
                 enum pattern = `Removed hostmask "<l>%s</>".`;
-                logger.infof(pattern.expandTags(LogLevel.info), mask);
+                logger.infof(pattern, mask);
             }
             else
             {
@@ -684,7 +683,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
             if (event == IRCEvent.init)
             {
                 enum pattern = `No such hostmask "<l>%s</>" on file.`;
-                logger.warningf(pattern.expandTags(LogLevel.warning), mask);
+                logger.warningf(pattern, mask);
             }
             else
             {

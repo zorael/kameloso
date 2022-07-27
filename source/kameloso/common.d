@@ -9,7 +9,7 @@ module kameloso.common;
 
 private:
 
-import kameloso.logger : KamelosoLogger, LogLevel;
+import kameloso.logger : KamelosoLogger;
 import dialect.defs : IRCClient, IRCServer;
 import std.datetime.systime : SysTime;
 import std.range.primitives : isOutputRange;
@@ -113,6 +113,7 @@ kameloso.kameloso.CoreSettings* settings;
 void printVersionInfo(const Flag!"colours" colours = Yes.colours) @safe
 {
     import kameloso.constants : KamelosoInfo;
+    import kameloso.logger : LogLevel;
     import kameloso.terminal.colours : expandTags;
     import std.stdio : writefln;
 

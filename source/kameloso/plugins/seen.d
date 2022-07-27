@@ -45,11 +45,8 @@ private import kameloso.plugins.common.awareness : ChannelAwareness, UserAwarene
 // Likewise [dialect.defs], for the definitions of an IRC event.
 private import dialect.defs;
 
-// [kameloso.common] for some globals and helpers.
-private import kameloso.common : expandTags, logger;
-
-// [kameloso.logger] for an enum we need for colouring terminal output.
-private import kameloso.logger : LogLevel;
+// [kameloso.common] for the global logger instance.
+private import kameloso.common : logger;
 
 // [std.datetime.systime] for the [std.datetime.systime.Clock|Clock], to update times with.
 private import std.datetime.systime : Clock;
@@ -1009,7 +1006,7 @@ long[string] loadSeen(const string filename)
     if (!filename.exists || !filename.isFile)
     {
         enum pattern = "<l>%s</> does not exist or is not a file";
-        logger.warningf(pattern.expandTags(LogLevel.warning), filename);
+        logger.warningf(pattern, filename);
         return aa;
     }
 
@@ -1112,7 +1109,7 @@ void onWelcome(SeenPlugin plugin)
         // Reports statistics on how many users are registered as having been seen
 
         enum pattern = "Currently <i>%d</> users seen.";
-        logger.logf(pattern.expandTags(LogLevel.all), plugin.seenUsers.length);
+        logger.logf(pattern, plugin.seenUsers.length);
     }
 
     await(plugin, &endOfMotdDg, endOfMotdEventTypes[]);

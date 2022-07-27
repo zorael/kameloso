@@ -8,8 +8,8 @@ version(WithTwitchPlugin):
 
 private:
 
-import kameloso.common : expandTags, logger;
-import kameloso.logger : LogLevel;
+import kameloso.common : logger;
+import kameloso.terminal.colours : expandTags;
 
 package:
 
@@ -61,6 +61,7 @@ auto readNamedString(
     const size_t expectedLength,
     ref bool abort)
 {
+    import kameloso.logger : LogLevel;
     import lu.string : stripped;
     import std.stdio : readln, stdin, stdout, write, writeln;
 
@@ -117,7 +118,7 @@ void printManualURL(const string url)
 
 <i>8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<</>
 `;
-    writefln(copyPastePattern.expandTags(LogLevel.off), url);
+    writefln(copyPastePattern, url);
 }
 
 
