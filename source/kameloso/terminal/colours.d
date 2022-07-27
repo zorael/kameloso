@@ -512,7 +512,8 @@ unittest
         {
             immutable line = `hello\<harbl>kameloso<h>hello</>hi`;
             immutable replaced = line.expandTags(LogLevel.off, No.strip);
-            immutable expected = text("hello<harbl>kameloso", colourByHash("hello", No.brightTerminal), logger.offtint, "hi");
+            immutable expected = text("hello<harbl>kameloso", colourByHash("hello",
+                No.brightTerminal), logger.offtint, "hi");
             assert((replaced == expected), replaced);
         }
         {
