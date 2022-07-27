@@ -77,10 +77,7 @@ void initLogger(
 out (; (logger !is null), "Failed to initialise logger")
 {
     import kameloso.logger : KamelosoLogger;
-    import kameloso.terminal.colours : Tint;
-
     logger = new KamelosoLogger(monochrome, bright, headless, flush);
-    Tint.monochrome = monochrome;
 }
 
 

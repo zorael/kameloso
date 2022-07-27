@@ -517,7 +517,6 @@ Next handleGetopt(ref Kameloso instance, string[] args) @system
     with (instance)
     {
         import kameloso.common : printVersionInfo;
-        import kameloso.terminal.colours : Tint;
         import std.getopt : arraySep, config, getopt;
 
         bool shouldWriteConfig;
@@ -580,9 +579,6 @@ Next handleGetopt(ref Kameloso instance, string[] args) @system
             config.passThrough,
             "monochrome", &settings.monochrome
         );
-
-        // Set Tint.monochrome manually so callGetopt results below is properly (un-)tinted
-        Tint.monochrome = settings.monochrome;
 
         /++
             Call getopt in a nested function so we can call it both to merely

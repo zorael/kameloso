@@ -85,7 +85,7 @@ enum LogLevel : ubyte
 final class KamelosoLogger
 {
 private:
-    import kameloso.terminal.colours : Tint, expandTags;
+    import kameloso.terminal.colours : expandTags;
     import lu.conv : Enum;
     import std.array : Appender;
     import std.format : format;
