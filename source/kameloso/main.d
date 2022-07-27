@@ -3203,11 +3203,7 @@ int run(string[] args)
 
     // Initialise the logger immediately so it's always available.
     // handleGetopt re-inits later when we know the settings for monochrome and headless
-    initLogger(
-        cast(Flag!"monochrome")instance.settings.monochrome,
-        cast(Flag!"brightTerminal")instance.settings.brightTerminal,
-        cast(Flag!"headless")instance.settings.headless,
-        cast(Flag!"flush")instance.settings.flush);
+    logger = new KamelosoLogger(instance.settings);
 
     // Set up signal handling so that we can gracefully catch Ctrl+C.
     setupSignals();

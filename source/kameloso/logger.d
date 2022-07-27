@@ -85,6 +85,7 @@ enum LogLevel : ubyte
 final class KamelosoLogger
 {
 private:
+    import kameloso.kameloso : CoreSettings;
     import kameloso.terminal.colours : expandTags;
     import lu.conv : Enum;
     import std.array : Appender;
@@ -117,7 +118,7 @@ private:
 
 public:
     /++
-        Create a new [KamelosoLogger] with the passed settings.
+        Creates a new [KamelosoLogger] with the passed settings.
 
         Params:
             monochrome = Whether or not to print colours.
@@ -138,6 +139,23 @@ public:
         this.flush = flush;
     }
 
+    /++
+        Creates a new [KamelosoLogger] with settings divined from the passed
+        [kameloso.kameloso.CoreSettings|CoreSettings] struct.
+
+        Params:
+            settings = [kameloso.kameloso.CoreSettings|CoreSettings] whose
+                values to inherit.
+     +/
+    this(const CoreSettings settings)
+    {
+        linebuffer.reserve(bufferInitialSize);
+        messagebuffer.reserve(bufferInitialSize);
+        this.monochrome = settings.monochrome;
+        this.brightTerminal = settings.brightTerminal;
+        this.headless = settings.headless;
+        this.flush = settings.flush;
+    }
 
     version(Colours)
     {

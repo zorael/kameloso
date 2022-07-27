@@ -66,7 +66,7 @@ bool applyCustomSettings(IRCPlugin[] plugins,
 
         if (pluginstring == "core")
         {
-            import kameloso.common : initLogger;
+            import kameloso.logger : KamelosoLogger, logger;
             import lu.objmanip : SetMemberException, setMemberByName;
             import std.algorithm.comparison : among;
             static import kameloso.common;
@@ -87,11 +87,7 @@ bool applyCustomSettings(IRCPlugin[] plugins,
                 {
                     if (setting.among!("monochrome", "brightTerminal", "headless", "flush"))
                     {
-                        initLogger(
-                            cast(Flag!"monochrome")copyOfSettings.monochrome,
-                            cast(Flag!"brightTerminal")copyOfSettings.brightTerminal,
-                            cast(Flag!"headless")copyOfSettings.headless,
-                            cast(Flag!"flush")copyOfSettings.flush);
+                        logger = new KamelosoLogger(copyOfSettings);
                     }
 
                     *kameloso.common.settings = copyOfSettings;

@@ -856,12 +856,8 @@ Next handleGetopt(ref Kameloso instance, string[] args) @system
         }
 
         // Reinitialise the logger with new settings
-        import kameloso.common : initLogger;
-        initLogger(
-            cast(Flag!"monochrome")settings.monochrome,
-            cast(Flag!"brightTerminal")settings.brightTerminal,
-            cast(Flag!"headless")settings.headless,
-            cast(Flag!"flush")settings.flush);
+        import kameloso.logger : KamelosoLogger;
+        logger = new KamelosoLogger(settings);
 
         // Manually override or append channels, depending on `shouldAppendChannels`
         if (shouldAppendToArrays)
