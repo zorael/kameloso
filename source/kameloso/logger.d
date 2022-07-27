@@ -210,7 +210,7 @@ public:
          +/
         private string tintImpl(LogLevel level)() const @property pure nothrow @nogc @safe
         {
-            if (headless)
+            if (headless || monochrome)
             {
                 return string.init;
             }
