@@ -588,7 +588,7 @@ Next handleGetopt(ref Kameloso instance, string[] args) @system
         auto callGetopt(/*const*/ string[] theseArgs, const Flag!"quiet" quiet)
         {
             import kameloso.logger : LogLevel;
-            import kameloso.terminal.colours : expandTags;
+            import kameloso.terminal.colours.tags : expandTags;
             import std.conv : text, to;
             import std.format : format;
             import std.path : extension;

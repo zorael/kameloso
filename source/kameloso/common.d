@@ -69,7 +69,7 @@ void printVersionInfo(const Flag!"colours" colours = Yes.colours) @safe
 {
     import kameloso.constants : KamelosoInfo;
     import kameloso.logger : LogLevel;
-    import kameloso.terminal.colours : expandTags;
+    import kameloso.terminal.colours.tags : expandTags;
     import std.stdio : writefln;
 
     version(TwitchSupport) enum twitchSupport = " (+twitch)";

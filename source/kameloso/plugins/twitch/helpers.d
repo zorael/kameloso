@@ -9,7 +9,7 @@ version(WithTwitchPlugin):
 private:
 
 import kameloso.logger : logger;
-import kameloso.terminal.colours : expandTags;
+import kameloso.terminal.colours.tags : expandTags;
 
 package:
 

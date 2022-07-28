@@ -687,7 +687,7 @@ void messageFiber(ref Kameloso instance)
             {
             case writeln:
                 import kameloso.logger : LogLevel;
-                import kameloso.terminal.colours : expandTags;
+                import kameloso.terminal.colours.tags : expandTags;
                 import std.stdio : writeln;
 
                 writeln(request.line.expandTags(LogLevel.off));

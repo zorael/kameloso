@@ -98,7 +98,7 @@ final class KamelosoLogger
 {
 private:
     import kameloso.kameloso : CoreSettings;
-    import kameloso.terminal.colours : expandTags;
+    import kameloso.terminal.colours.tags : expandTags;
     import lu.conv : Enum;
     import std.array : Appender;
     import std.format : format;

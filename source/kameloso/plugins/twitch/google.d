@@ -34,7 +34,7 @@ package void requestGoogleKeys(TwitchPlugin plugin)
 {
     import kameloso.common : timeSince;
     import kameloso.logger : LogLevel;
-    import kameloso.terminal.colours : expandTags;
+    import kameloso.terminal.colours.tags : expandTags;
     import lu.string : contains, nom, stripped;
     import std.conv : to;
     import std.format : format;
