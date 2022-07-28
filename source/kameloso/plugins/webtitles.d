@@ -316,9 +316,6 @@ void worker(shared TitleLookupRequest sRequest,
 
                         version(Windows)
                         {
-                            import kameloso.common : expandTags;
-                            import kameloso.logger : LogLevel;
-
                             enum getoptMessage = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
                             request.state.askToError(getoptMessage);
                         }
@@ -398,9 +395,6 @@ void worker(shared TitleLookupRequest sRequest,
 
                         version(Windows)
                         {
-                            import kameloso.common : expandTags;
-                            import kameloso.logger : LogLevel;
-
                             enum getoptMessage = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
                             request.state.askToError(getoptMessage);
                         }
