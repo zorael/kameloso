@@ -275,6 +275,39 @@ public:
          +/
         alias logtint = alltint;
     }
+    else
+    {
+        // offtint
+        /++
+            Dummy function returning an empty string, since there can be no tints
+            on non-version `Colours` builds.
+
+            Returns:
+                An empty string.
+         +/
+        public static string offtint() pure nothrow @nogc @safe
+        {
+            return string.init;
+        }
+
+        /+
+            Generate dummy *tint functions for each [LogLevel] by aliasing them
+            to [offtint].
+         +/
+        static foreach (const lv; EnumMembers!LogLevel)
+        {
+            static if (lv != LogLevel.off)
+            {
+                mixin("alias " ~ Enum!LogLevel.toString(lv) ~ "tint = offtint;");
+            }
+        }
+
+        /++
+            Synonymous alias to `alltint`, as a workaround for [LogLevel.all]
+            not being named `LogLevel.log`.
+         +/
+        alias logtint = alltint;
+    }
 
 
     /++
