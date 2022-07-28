@@ -677,7 +677,7 @@ void messageFiber(ref Kameloso instance)
             }
         }
 
-        /// Proxies the passed message to the [kameloso.common.logger].
+        /// Proxies the passed message to the [kameloso.logger.logger].
         void proxyLoggerMessages(OutputRequest request) scope
         {
             if (instance.settings.headless) return;
