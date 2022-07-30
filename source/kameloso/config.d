@@ -16,8 +16,7 @@ module kameloso.config;
 private:
 
 import kameloso.kameloso : Kameloso, IRCBot;
-import kameloso.common : expandTags, logger;
-import kameloso.logger : LogLevel;
+import kameloso.logger : logger;
 import dialect.defs : IRCClient, IRCServer;
 import lu.common : Next;
 import std.getopt : GetoptResult;
@@ -109,8 +108,9 @@ void writeConfig(ref Kameloso instance,
     ref IRCBot bot,
     const Flag!"giveInstructions" giveInstructions = Yes.giveInstructions) @system
 {
-    import kameloso.common : Tint, logger, printVersionInfo;
+    import kameloso.common : printVersionInfo;
     import kameloso.constants : KamelosoDefaults;
+    import kameloso.logger : logger;
     import kameloso.platform : rbd = resourceBaseDirectory;
     import kameloso.printing : printObjects;
     import std.file : exists;
@@ -180,7 +180,8 @@ void writeConfig(ref Kameloso instance,
     if (!instance.settings.headless)
     {
         printObjects(client, instance.bot, server, instance.connSettings, instance.settings);
-        logger.log("Configuration written to ", Tint.info, instance.settings.configFile);
+        enum pattern = "Configuration written to <l>%s";
+        logger.log(pattern, instance.settings.configFile);
 
         if (!instance.bot.admins.length && !instance.bot.homeChannels.length && giveInstructions)
         {
@@ -264,12 +265,12 @@ void manageConfigFile(ref Kameloso instance,
         if (!editor.length)
         {
             enum pattern = "Missing <l>$EDITOR</> environment variable; cannot guess editor.";
-            logger.error(pattern.expandTags(LogLevel.error));
+            logger.error(pattern);
             return;
         }
 
         enum pattern = "Attempting to open <i>%s</> with <i>%s</>...";
-        logger.logf(pattern.expandTags(LogLevel.all), instance.settings.configFile, editor);
+        logger.logf(pattern, instance.settings.configFile, editor);
 
         immutable command = [ editor, instance.settings.configFile ];
         spawnProcess(command).wait;
@@ -318,7 +319,7 @@ void manageConfigFile(ref Kameloso instance,
         // by [kameloso.main.tryGetopt].
 
         enum pattern = "Attempting to open <i>%s</> in a graphical text editor...";
-        logger.logf(pattern.expandTags(LogLevel.all), instance.settings.configFile);
+        logger.logf(pattern, instance.settings.configFile);
 
         immutable command = [ editor, instance.settings.configFile ];
         execute(command);
@@ -415,9 +416,9 @@ void writeToDisk(const string filename,
 void giveConfigurationMinimalInstructions()
 {
     enum adminPattern = "...one or more <i>admins</> who get administrative control over the bot.";
-    logger.trace(adminPattern.expandTags(LogLevel.trace));
+    logger.trace(adminPattern);
     enum homePattern = "...one or more <i>homeChannels</> in which to operate.";
-    logger.trace(homePattern.expandTags(LogLevel.trace));
+    logger.trace(homePattern);
 }
 
 
@@ -516,7 +517,7 @@ Next handleGetopt(ref Kameloso instance, string[] args) @system
 {
     with (instance)
     {
-        import kameloso.common : Tint, printVersionInfo;
+        import kameloso.common : printVersionInfo;
         import std.getopt : arraySep, config, getopt;
 
         bool shouldWriteConfig;
@@ -580,15 +581,14 @@ Next handleGetopt(ref Kameloso instance, string[] args) @system
             "monochrome", &settings.monochrome
         );
 
-        // Set Tint.monochrome manually so callGetopt results below is properly (un-)tinted
-        Tint.monochrome = settings.monochrome;
-
         /++
             Call getopt in a nested function so we can call it both to merely
             parse for settings and to format the help listing.
          +/
         auto callGetopt(/*const*/ string[] theseArgs, const Flag!"quiet" quiet)
         {
+            import kameloso.logger : LogLevel;
+            import kameloso.terminal.colours.tags : expandTags;
             import std.conv : text, to;
             import std.format : format;
             import std.path : extension;
@@ -857,12 +857,9 @@ Next handleGetopt(ref Kameloso instance, string[] args) @system
         }
 
         // Reinitialise the logger with new settings
-        import kameloso.common : initLogger;
-        initLogger(
-            cast(Flag!"monochrome")settings.monochrome,
-            cast(Flag!"brightTerminal")settings.brightTerminal,
-            cast(Flag!"headless")settings.headless,
-            cast(Flag!"flush")settings.flush);
+        // "Error: undefined identifier `logger` in package `kameloso`, perhaps add `static import kameloso.logger;`"
+        static import kameloso.logger;
+        kameloso.logger.logger = new kameloso.logger.KamelosoLogger(settings);
 
         // Manually override or append channels, depending on `shouldAppendChannels`
         if (shouldAppendToArrays)
@@ -1069,13 +1066,13 @@ void notifyAboutMissingSettings(const string[][string] missingEntries,
     foreach (immutable section, const sectionEntries; missingEntries)
     {
         enum missingPattern = "...under <l>[<i>%s<l>]</>: %-(<i>%s%|</>, %)";
-        logger.tracef(missingPattern.expandTags(LogLevel.trace), section, sectionEntries);
+        logger.tracef(missingPattern, section, sectionEntries);
     }
 
     enum pattern = "Use <i>%s --save</> to regenerate the file, " ~
         "updating it with all available configuration. [<i>%s</>]";
     logger.trace();
-    logger.tracef(pattern.expandTags(LogLevel.trace), binaryPath.baseName, configFile);
+    logger.tracef(pattern, binaryPath.baseName, configFile);
     logger.trace();
 }
 
@@ -1102,13 +1099,13 @@ void notifyAboutIncompleteConfiguration(const string configFile, const string bi
     if (configFile.exists)
     {
         enum pattern = "Edit <i>%s</> and make sure it has at least one of the following:";
-        logger.logf(pattern.expandTags(LogLevel.all), configFile);
+        logger.logf(pattern, configFile);
         giveConfigurationMinimalInstructions();
     }
     else
     {
         enum pattern = "Use <i>%s --save</> to generate a configuration file.";
-        logger.logf(pattern.expandTags(LogLevel.all), binaryPath.baseName);
+        logger.logf(pattern, binaryPath.baseName);
     }
 
     logger.trace();
@@ -1129,13 +1126,13 @@ void giveBrightTerminalHint(
 {
     enum brightPattern = "If text is difficult to read (eg. white on white), " ~
         "try running the program with <i>--bright</> or <i>--monochrome</>.";
-    logger.trace(brightPattern.expandTags(LogLevel.trace));
+    logger.trace(brightPattern);
 
     if (alsoConfigSetting)
     {
         enum configPattern = "The setting will be made persistent if you pass it " ~
             "at the same time as <i>--save</>.";
-        logger.trace(configPattern.expandTags(LogLevel.trace));
+        logger.trace(configPattern);
     }
 }
 

@@ -14,8 +14,8 @@ private:
 
 import kameloso.plugins.twitch.base;
 import kameloso.plugins.twitch.helpers;
-import kameloso.common : expandTags, logger;
-import kameloso.logger : LogLevel;
+import kameloso.logger : LogLevel, logger;
+import kameloso.terminal.colours.tags : expandTags;
 import std.typecons : Flag, No, Yes;
 
 package:
@@ -48,7 +48,7 @@ void requestTwitchKey(TwitchPlugin plugin)
 
     logger.trace();
     logger.info("-- Twitch authorisation key generation mode --");
-    enum attemptToOpenPattern = `
+    enum attemptToOpenMessage = `
 Attempting to open a Twitch login page in your default web browser. Follow the
 instructions and log in to authorise the use of this program with your <w>BOT</> account.
 
@@ -63,7 +63,7 @@ instructions and log in to authorise the use of this program with your <w>BOT</>
 * If you are running local web server on port <i>80</>, you may have to temporarily
   disable it for this to work.
 `;
-    writeln(attemptToOpenPattern.expandTags(LogLevel.off));
+    writeln(attemptToOpenMessage.expandTags(LogLevel.off));
     if (plugin.state.settings.flush) stdout.flush();
 
     static immutable scopes =
@@ -180,7 +180,7 @@ instructions and log in to authorise the use of this program with your <w>BOT</>
     immutable numDays = delta.total!"days";
 
     enum isValidPattern = "Your key is valid for another <l>%d</> days.";
-    logger.infof(isValidPattern.expandTags(LogLevel.info), numDays);
+    logger.infof(isValidPattern, numDays);
     logger.trace();
 
     plugin.state.updates |= typeof(plugin.state.updates).bot;
@@ -230,7 +230,7 @@ You also need to supply the channel for which it all relates.
         0L, *plugin.state.abort);
     if (*plugin.state.abort) return;
 
-    enum attemptToOpenPattern = `
+    enum attemptToOpenMessage = `
 --------------------------------------------------------------------------------
 
 Attempting to open a Twitch login page in your default web browser. Follow the
@@ -245,7 +245,7 @@ instructions and log in to authorise the use of this program with your <w>STREAM
 * If you are running local web server on port <i>80</>, you may have to temporarily
   disable it for this to work.
 `;
-    writeln(attemptToOpenPattern.expandTags(LogLevel.off));
+    writeln(attemptToOpenMessage.expandTags(LogLevel.off));
     if (plugin.state.settings.flush) stdout.flush();
 
     static immutable scopes =
@@ -374,7 +374,7 @@ instructions and log in to authorise the use of this program with your <w>STREAM
     immutable numDays = delta.total!"days";
 
     enum isValidPattern = "Your key is valid for another <l>%d</> days.";
-    logger.infof(isValidPattern.expandTags(LogLevel.info), numDays);
+    logger.infof(isValidPattern, numDays);
     logger.trace();
 
     saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
@@ -403,10 +403,10 @@ private string readURLAndParseKey(TwitchPlugin plugin, const string authNode)
     {
         scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
-        enum pattern = "<l>Paste the address of empty the page you were redirected to here (empty line exits):</>
+        enum pasteMessage = "<l>Paste the address of empty the page you were redirected to here (empty line exits):</>
 
 > ";
-        write(pattern.expandTags(LogLevel.off));
+        write(pasteMessage.expandTags(LogLevel.off));
         stdout.flush();
 
         stdin.flush();
@@ -434,9 +434,9 @@ private string readURLAndParseKey(TwitchPlugin plugin, const string authNode)
 
             if (readURL.beginsWith(authNode))
             {
-                enum wrongPagePattern = "Not that page; the empty page you're " ~
+                enum wrongPageMessage = "Not that page; the empty page you're " ~
                     "lead to after clicking <l>Authorize</>.";
-                logger.error(wrongPagePattern.expandTags(LogLevel.error));
+                logger.error(wrongPageMessage);
             }
             else
             {

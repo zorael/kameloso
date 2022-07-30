@@ -140,9 +140,8 @@ private:
 import kameloso.plugins.twitch.api;
 
 import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
-import kameloso.common : expandTags, logger;
+import kameloso.logger : logger;
 import kameloso.constants : BufferSize;
-import kameloso.logger : LogLevel;
 import kameloso.messaging;
 import dialect.defs;
 import std.datetime.systime : SysTime;
@@ -368,7 +367,7 @@ void onUserstate(const ref IRCEvent event)
     {
         enum pattern = "The bot is not a moderator of home channel <l>%s</>. " ~
             "Consider elevating it to such to avoid being as rate-limited.";
-        logger.warningf(pattern.expandTags(LogLevel.warning), event.channel);
+        logger.warningf(pattern, event.channel);
     }
 }
 
@@ -1381,7 +1380,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const ref IRCEvent event)
         {
             enum message = "Missing Google API credentials and/or YouTube playlist ID. " ~
                 "Run the program with <l>--set twitch.googleKeygen</> to set up.";
-            logger.error(message.expandTags(LogLevel.error));
+            logger.error(message);
             return;
         }
 
@@ -1466,7 +1465,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const ref IRCEvent event)
         {
             enum message = "Missing Spotify API credentials and/or playlist ID. " ~
                 "Run the program with <l>--set twitch.spotifyKeygen</> to set up.";
-            logger.error(message.expandTags(LogLevel.error));
+            logger.error(message);
             return;
         }
 
@@ -1928,20 +1927,19 @@ void onEndOfMOTD(TwitchPlugin plugin)
 
                 if (e.code == 2)
                 {
-                    enum wikiPattern = cast(string)MagicErrorStrings.visitWikiOneliner;
+                    enum wikiMessage = cast(string)MagicErrorStrings.visitWikiOneliner;
 
                     if (e.error == MagicErrorStrings.sslLibraryNotFound)
                     {
                         enum pattern = "Failed to validate Twitch API keys: <l>%s</> " ~
                             "<t>(is OpenSSL installed?)";
-                        logger.errorf(pattern.expandTags(LogLevel.error),
-                            cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten);
-                        logger.error(wikiPattern.expandTags(LogLevel.error));
+                        logger.errorf(pattern, cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten);
+                        logger.error(wikiMessage);
 
                         version(Windows)
                         {
-                            enum getoptPattern = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
-                            logger.error(getoptPattern.expandTags(LogLevel.error));
+                            enum getoptMessage = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
+                            logger.error(getoptMessage);
                         }
                     }
                     else
@@ -1949,14 +1947,14 @@ void onEndOfMOTD(TwitchPlugin plugin)
                         if (retry++ < retriesInCaseOfConnectionErrors) continue;
 
                         enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
-                        logger.errorf(pattern.expandTags(LogLevel.error), e.msg, e.error, e.code);
-                        logger.error(wikiPattern.expandTags(LogLevel.error));
+                        logger.errorf(pattern, e.msg, e.error, e.code);
+                        logger.error(wikiMessage);
                     }
                 }
                 else
                 {
                     enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
-                    logger.errorf(pattern.expandTags(LogLevel.error), e.msg, e.error, e.code);
+                    logger.errorf(pattern, e.msg, e.error, e.code);
                 }
 
                 logger.warning("Disabling API features. Expect breakage.");
@@ -2546,7 +2544,7 @@ void onCAP(TwitchPlugin plugin, const ref IRCEvent event)
             enum message = "A Twitch keygen setting was supplied but the configuration " ~
                 "file is not set up to connect to Twitch. (<l>irc.chat.twitch.tv</>)";
             logger.trace();
-            logger.warning(message.expandTags(LogLevel.warning));
+            logger.warning(message);
             logger.trace();
         }
     }
@@ -2664,8 +2662,7 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
         // More than a week away, just .info
         enum pattern = "Your Twitch authorisation token will expire " ~
             "in <l>%d days</> on <l>%4d-%02d-%02d</>.";
-        logger.infof(pattern.expandTags(LogLevel.info), numDays,
-            expiresWhen.year, expiresWhen.month, expiresWhen.day);
+        logger.infof(pattern, numDays, expiresWhen.year, expiresWhen.month, expiresWhen.day);
     }
 
     void warnOnDaysDg()
@@ -2679,7 +2676,7 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
         {
             enum pattern = "Warning: Your Twitch authorisation token will expire " ~
                 "in <l>%d %s and %d %s</> at <l>%4d-%02d-%02d %02d:%02d</>.";
-            logger.warningf(pattern.expandTags(LogLevel.warning),
+            logger.warningf(pattern,
                 numDays, numDays.plurality("day", "days"),
                 numHours, numHours.plurality("hour", "hours"),
                 expiresWhen.year, expiresWhen.month, expiresWhen.day,
@@ -2689,7 +2686,7 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
         {
             enum pattern = "Warning: Your Twitch authorisation token will expire " ~
                 "in <l>%d %s</> at <l>%4d-%02d-%02d %02d:%02d</>.";
-            logger.warningf(pattern.expandTags(LogLevel.warning),
+            logger.warningf(pattern,
                 numDays, numDays.plurality("day", "days"),
                 expiresWhen.year, expiresWhen.month, expiresWhen.day,
                 expiresWhen.hour, expiresWhen.minute);
@@ -2707,7 +2704,7 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
         {
             enum pattern = "WARNING: Your Twitch authorisation token will expire " ~
                 "in <l>%d %s and %d %s</> at <l>%02d:%02d</>.";
-            logger.warningf(pattern.expandTags(LogLevel.warning),
+            logger.warningf(pattern,
                 numHours, numHours.plurality("hour", "hours"),
                 numMinutes, numMinutes.plurality("minute", "minutes"),
                 expiresWhen.hour, expiresWhen.minute);
@@ -2716,7 +2713,7 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
         {
             enum pattern = "WARNING: Your Twitch authorisation token will expire " ~
                 "in <l>%d %s</> at <l>%02d:%02d</>.";
-            logger.warningf(pattern.expandTags(LogLevel.warning),
+            logger.warningf(pattern,
                 numHours, numHours.plurality("hour", "hours"),
                 expiresWhen.hour, expiresWhen.minute);
         }
@@ -2729,7 +2726,7 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
         // Less than an hour; warning
         enum pattern = "WARNING: Your Twitch authorisation token will expire " ~
             "in <l>%d minutes</> at <l>%02d:%02d</>.";
-        logger.warningf(pattern.expandTags(LogLevel.warning),
+        logger.warningf(pattern,
             numMinutes, expiresWhen.hour, expiresWhen.minute);
     }
 
@@ -2738,9 +2735,9 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
         import kameloso.messaging : quit;
 
         // Key expired
-        enum pattern = "Your Twitch authorisation token has expired. " ~
+        enum message = "Your Twitch authorisation token has expired. " ~
             "Run the program with <l>--set twitch.keygen</> to generate a new one.";
-        logger.error(pattern.expandTags(LogLevel.error));
+        logger.error(message);
         quit(plugin.state, "Twitch authorisation token expired");
     }
 

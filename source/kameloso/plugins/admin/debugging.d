@@ -169,7 +169,7 @@ void onCommandPrintBytesImpl(AdminPlugin plugin, const ref IRCEvent event)
  +/
 void onCommandStatusImpl(AdminPlugin plugin)
 {
-    import kameloso.common : logger;
+    import kameloso.logger : logger;
     import kameloso.printing : printObjects;
     import std.stdio : writeln;
 
@@ -203,7 +203,7 @@ void onCommandStatusImpl(AdminPlugin plugin)
  +/
 void onCommandBusImpl(AdminPlugin plugin, const string input)
 {
-    import kameloso.common : logger;
+    import kameloso.logger : logger;
     import kameloso.thread : ThreadMessage, sendable;
     import lu.string : contains, nom;
     import std.concurrency : send;

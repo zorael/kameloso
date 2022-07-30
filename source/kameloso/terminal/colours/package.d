@@ -56,7 +56,6 @@ version(Colours):
 private:
 
 import kameloso.terminal : TerminalToken;
-
 import std.meta : allSatisfy;
 import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;

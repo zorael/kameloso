@@ -15,7 +15,7 @@ version(WithTwitchPlugin):
 private:
 
 import kameloso.plugins.twitch.base;
-
+import kameloso.logger : logger;
 import arsd.http2 : HttpVerb;
 import dialect.defs;
 import std.json : JSONValue;
@@ -57,9 +57,6 @@ struct QueryResponse
 void twitchTryCatchDg(alias dg, uint retries = 5)()
 if (isSomeFunction!dg)
 {
-    import kameloso.common : expandTags, logger;
-    import kameloso.logger : LogLevel;
-
     version(PrintStacktraces)
     static void printBody(const string responseBody)
     {
@@ -101,9 +98,9 @@ if (isSomeFunction!dg)
                 // API key expired.
                 // Copy/paste kameloso.messaging.quit, since we don't have access to plugin.state
 
-                enum apiPattern = "Your Twitch API key has expired. " ~
+                enum apiMessage = "Your Twitch API key has expired. " ~
                     "Run the program with <l>--set twitch.keygen</> to generate a new one.";
-                logger.error(apiPattern.expandTags(LogLevel.error));
+                logger.error(apiMessage);
 
                 Message m;
 
@@ -122,7 +119,7 @@ if (isSomeFunction!dg)
                 e.msg;
 
             enum pattern = "Failed to query Twitch: <l>%s</> <t>(%s) </>(<t>%d</>)";
-            logger.errorf(pattern.expandTags(LogLevel.error), message, e.error, e.code);
+            logger.errorf(pattern, message, e.error, e.code);
 
             version(PrintStacktraces)
             {
@@ -136,16 +133,16 @@ if (isSomeFunction!dg)
             if (!TwitchPlugin.useAPIFeatures) return;
 
             enum pattern = "Missing broadcaster-level API token for channel <l>%s</>.";
-            logger.errorf(pattern.expandTags(LogLevel.error), e.channelName);
+            logger.errorf(pattern, e.channelName);
 
-            enum superPattern = "Run the program with <l>--set twitch.superKeygen</> to generate a new one.";
-            logger.error(superPattern.expandTags(LogLevel.error));
+            enum superMessage = "Run the program with <l>--set twitch.superKeygen</> to generate a new one.";
+            logger.error(superMessage);
             return;
         }
         catch (Exception e)
         {
             enum pattern = "Unforeseen exception caught: <l>%s";
-            logger.errorf(pattern.expandTags(LogLevel.error), e.msg);
+            logger.errorf(pattern, e.msg);
             version(PrintStacktraces) logger.trace(e);
 
             // Return immediately on unforeseen exceptions, since they're likely
@@ -301,8 +298,8 @@ in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
 
     if (plugin.state.settings.trace)
     {
-        import kameloso.common : Tint, logger;
-        logger.trace("GET: ", Tint.info, url);
+        enum pattern = "GET: <i>%s";
+        logger.tracef(pattern, url);
     }
 
     plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout());
