@@ -349,7 +349,7 @@ unittest
 
     {
         immutable line = "This is a <l>log</> line.";
-        immutable replaced = line.expandTags(No.strip);
+        immutable replaced = line.expandTags(LogLevel.off, No.strip);
         immutable expected = text("This is a ", logger.logtint, "log", logger.offtint, " line.");
         assert((replaced == expected), replaced);
     }
@@ -447,7 +447,7 @@ unittest
             "because we are not an operator in the channel.";
         enum newPattern = "Could not apply <i>+%s</> <i>%s</> in <i>%s</> " ~
             "because we are not an operator in the channel.";
-        immutable origLine = origPattern.format("o", "nickname", "#channel").expandTags(No.strip);
+        immutable origLine = origPattern.format("o", "nickname", "#channel").expandTags(LogLevel.off, No.strip);
         immutable newLine = newPattern.format("o", "nickname", "#channel").expandTags(LogLevel.all, No.strip);
         assert((origLine == newLine), newLine);
     }
@@ -487,28 +487,8 @@ unittest
 
 // expandTags
 /++
-    String-replaces `<tags>` in a string with the results from calls to `Tint`.
-    Also works with `dstring`s and `wstring`s. Overload that does not take Overload that does not take a
-    `baseLevel` [kameloso.logger.LogLevel|LogLevel] but instead passes a default
-    [kameloso.logger.LogLevel.off|LogLevel.off]`.
-
-    Params:
-        line = A line of text, presumably with `<tags>`.
-        strip = Whether to expand tags or strip them.
-
-    Returns:
-        The passsed `line` but with any `<tags>` replaced with ANSI colour sequences.
-        The original string is passed back if there was nothing to replace.
- +/
-auto expandTags(T)(const T line, const Flag!"strip" strip) @safe
-{
-    return expandTags(line, LogLevel.off, strip);
-}
-
-
-// expandTags
-/++
-    String-replaces `<tags>` in a string with the results from calls to `Tint`.
+    String-replaces `<tags>` in a string with the results from calls to
+    [kameloso.logger.KamelosoLogger|KamelosoLogger] `*tint` methods.
     Also works with `dstring`s and `wstring`s. Overload that does not take a
     `strip` [std.typecons.Flag|Flag], optionally nor a `baseLevel`
     [kameloso.logger.LogLevel|LogLevel], instead passing a default
