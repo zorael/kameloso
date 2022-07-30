@@ -775,7 +775,7 @@ void onNamesReply(SeenPlugin plugin, const ref IRCEvent event)
 )
 void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
 {
-    import kameloso.common : timeSince;
+    import kameloso.time : timeSince;
     import dialect.common : isValidNickname;
     import lu.string : beginsWith, contains;
     import std.algorithm.searching : canFind;

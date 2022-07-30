@@ -1510,7 +1510,7 @@ void negotiateNick(ConnectService service)
 
     if (!serverIsTwitch)
     {
-        import kameloso.common : replaceTokens;
+        import kameloso.string : replaceTokens;
         import std.format : format;
 
         // Twitch doesn't require USER, only PASS and NICK

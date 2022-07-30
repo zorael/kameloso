@@ -32,9 +32,9 @@ import core.thread : Fiber;
  +/
 package void requestGoogleKeys(TwitchPlugin plugin)
 {
-    import kameloso.common : timeSince;
     import kameloso.logger : LogLevel;
     import kameloso.terminal.colours.tags : expandTags;
+    import kameloso.time : timeSince;
     import lu.string : contains, nom, stripped;
     import std.conv : to;
     import std.format : format;

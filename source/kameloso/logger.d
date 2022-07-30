@@ -19,6 +19,10 @@
  +/
 module kameloso.logger;
 
+private:
+
+import std.typecons : Flag, No, Yes;
+
 public:
 
 
@@ -103,7 +107,6 @@ private:
     import std.array : Appender;
     import std.format : format;
     import std.traits : EnumMembers;
-    import std.typecons : Flag, No, Yes;
 
     version(Colours)
     {
@@ -576,8 +579,6 @@ void " ~ Enum!LogLevel.toString(lv) ~ "f(string pattern, Args...)(auto ref Args 
 ///
 unittest
 {
-    import std.typecons : Flag, No, Yes;
-
     struct S1
     {
         void toString(Sink)(auto ref Sink sink) const

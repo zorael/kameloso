@@ -157,7 +157,7 @@ void playbackNotes(NotesPlugin plugin,
     const string givenChannel,
     const Flag!"background" background = No.background)
 {
-    import kameloso.common : timeSince;
+    import kameloso.time : timeSince;
     import dialect.common : toLowerCase;
     import std.datetime.systime : Clock;
     import std.exception : ErrnoException;

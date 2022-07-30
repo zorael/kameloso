@@ -298,7 +298,7 @@ void handleTimerCommand(
     const /*ref*/ IRCEvent event,
     const string channelName)
 {
-    import kameloso.common : abbreviatedDuration;
+    import kameloso.time : abbreviatedDuration;
     import lu.string : SplitResults, contains, nom, splitInto;
     import std.conv : ConvException, to;
     import std.format : format;

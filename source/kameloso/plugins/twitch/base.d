@@ -473,7 +473,7 @@ void onCommandStart(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
          +/
         try
         {
-            import kameloso.common : abbreviatedDuration, timeSince;
+            import kameloso.time : abbreviatedDuration, timeSince;
 
             initBroadcast();
             immutable elapsed = abbreviatedDuration(event.content.stripped);
@@ -724,7 +724,7 @@ void reportStreamTime(TwitchPlugin plugin,
     const TwitchPlugin.Room room,
     const Flag!"justNowEnded" justNowEnded = No.justNowEnded)
 {
-    import kameloso.common : timeSince;
+    import kameloso.time : timeSince;
     import std.datetime.systime : Clock, SysTime;
     import std.format : format;
     import core.time : msecs;
@@ -870,7 +870,7 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
         void reportFollowAge(const JSONValue followingUserJSON)
         {
-            import kameloso.common : timeSince;
+            import kameloso.time : timeSince;
             import std.datetime.systime : Clock, SysTime;
             import std.format : format;
 
@@ -1583,7 +1583,7 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     try
     {
-        import kameloso.common : abbreviatedDuration;
+        import kameloso.time : abbreviatedDuration;
 
         durationString = durationString
             .abbreviatedDuration
@@ -2075,7 +2075,7 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
 )
 void onCommandWatchtime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.common : timeSince;
+    import kameloso.time : timeSince;
     import lu.string : beginsWith, nom, stripped;
     import std.conv : to;
     import std.format : format;
@@ -2564,7 +2564,7 @@ void onCAP(TwitchPlugin plugin, const ref IRCEvent event)
 void onMyInfo(TwitchPlugin plugin)
 {
     import kameloso.plugins.common.delayawait : delay;
-    import kameloso.common : nextMidnight;
+    import kameloso.time : nextMidnight;
     import std.datetime.systime : Clock;
     import core.thread : Fiber;
 

@@ -564,7 +564,7 @@ void start(PrinterPlugin plugin)
 
     static Duration untilNextMidnight()
     {
-        import kameloso.common : nextMidnight;
+        import kameloso.time : nextMidnight;
         import std.datetime.systime : Clock;
 
         immutable now = Clock.currTime;

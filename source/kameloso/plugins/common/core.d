@@ -1805,7 +1805,7 @@ bool prefixPolicyMatches(bool verbose = false)
     const IRCClient client,
     const string prefix)
 {
-    import kameloso.common : stripSeparatedPrefix;
+    import kameloso.string : stripSeparatedPrefix;
     import lu.string : beginsWith;
     import std.typecons : No, Yes;
 
