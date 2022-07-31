@@ -9,8 +9,8 @@ module kameloso.common;
 
 private:
 
+import kameloso.kameloso : CoreSettings;
 import std.typecons : Flag, No, Yes;
-static import kameloso.kameloso;
 
 public:
 
@@ -29,7 +29,7 @@ shared static this()
         Yes.flush);
 
     // settings needs instantiating now.
-    settings = new kameloso.kameloso.CoreSettings;
+    settings = new CoreSettings;
 }
 
 
@@ -42,7 +42,7 @@ shared static this()
     [kameloso.common.settings], so they know to use monochrome output or not.
     It is a problem that needs solving.
  +/
-kameloso.kameloso.CoreSettings* settings;
+CoreSettings* settings;
 
 
 // printVersionInfo
