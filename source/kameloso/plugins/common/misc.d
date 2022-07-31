@@ -39,7 +39,7 @@ public:
     See_Also:
         [lu.objmanip.setSettingByName]
  +/
-bool applyCustomSettings(IRCPlugin[] plugins,
+auto applyCustomSettings(IRCPlugin[] plugins,
     const string[] customSettings,
     CoreSettings copyOfSettings)
 {
@@ -603,7 +603,7 @@ void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
         The nickname of the user if there is no alias known, else the alias.
  +/
 pragma(inline, true)
-string nameOf(const IRCUser user) pure @safe nothrow @nogc
+auto nameOf(const IRCUser user) pure @safe nothrow @nogc
 {
     version(TwitchSupport)
     {
@@ -655,7 +655,7 @@ unittest
     Returns:
         The nickname of the user if there is no alias known, else the alias.
  +/
-string nameOf(const IRCPlugin plugin, const string specified) pure @safe nothrow @nogc
+auto nameOf(const IRCPlugin plugin, const string specified) pure @safe nothrow @nogc
 {
     version(TwitchSupport)
     {
@@ -690,7 +690,7 @@ string nameOf(const IRCPlugin plugin, const string specified) pure @safe nothrow
         The nickname or account of the passed user.
  +/
 pragma(inline, true)
-string idOf(const IRCUser user) pure @safe nothrow @nogc
+auto idOf(const IRCUser user) pure @safe nothrow @nogc
 in (user.nickname.length, "Tried to get `idOf` a user with an empty nickname")
 {
     return user.account.length ? user.account : user.nickname;
