@@ -21,14 +21,15 @@ shared static this()
 {
     static import kameloso.logger;
 
-    // This is technically before settings have been read...
+    // This is technically before settings have been read.
+    // We need this for unittests.
     kameloso.logger.logger = new kameloso.logger.KamelosoLogger(
         No.monochrome,
         No.brightTerminal,
         No.headless,
         Yes.flush);
 
-    // settings needs instantiating now.
+    // settings need instantiating too, for tag expansion and kameloso.printing.
     settings = new CoreSettings;
 }
 

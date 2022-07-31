@@ -41,7 +41,7 @@ public:
         ";
 
     enum patternWithColouredNickname = "No quotes for nickname <h>%s<h>.";
-    immutable message = patternWithColouredNickname.format(event.sendern.nickname);
+    immutable message = patternWithColouredNickname.format(event.sender.nickname);
     ---
 
     Params:
