@@ -143,7 +143,7 @@ void onCommandVote(PollPlugin plugin, const ref IRCEvent event)
 
     try
     {
-        import kameloso.common : abbreviatedDuration;
+        import kameloso.time : abbreviatedDuration;
         import lu.string : nom;
         dur = abbreviatedDuration(slice.nom!(Yes.decode)(' '));
     }
@@ -233,9 +233,9 @@ void pollImpl(
 {
     import kameloso.plugins.common.delayawait : await, delay;
     import kameloso.plugins.common.misc : idOf;
-    import kameloso.common : timeSince;
     import kameloso.constants : BufferSize;
     import kameloso.thread : CarryingFiber;
+    import kameloso.time : timeSince;
     import std.algorithm.sorting : sort;
     import std.format : format;
     import std.random : uniform;

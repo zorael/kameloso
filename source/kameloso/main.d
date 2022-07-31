@@ -223,8 +223,9 @@ void signalHandler(int sig) nothrow @nogc @system
  +/
 void messageFiber(ref Kameloso instance)
 {
-    import kameloso.common : OutgoingLine, replaceTokens;
+    import kameloso.common : OutgoingLine;
     import kameloso.messaging : Message;
+    import kameloso.string : replaceTokens;
     import kameloso.thread : OutputRequest, ThreadMessage;
     import std.concurrency : yield;
 
@@ -3057,7 +3058,7 @@ void printEventDebugDetails(const ref IRCEvent event,
  +/
 void printSummary(const ref Kameloso instance)
 {
-    import kameloso.common : timeSince;
+    import kameloso.time : timeSince;
     import core.time : Duration;
 
     Duration totalTime;
@@ -3299,8 +3300,9 @@ int run(string[] args)
     // Copy ssl setting to the Connection after the above
     instance.conn.ssl = instance.connSettings.ssl;
 
-    import kameloso.common : replaceTokens, printVersionInfo;
+    import kameloso.common : printVersionInfo;
     import kameloso.printing : printObjects;
+    import kameloso.string : replaceTokens;
     import std.stdio : writeln;
 
     if (!instance.settings.headless)

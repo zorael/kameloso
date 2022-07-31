@@ -958,7 +958,7 @@ void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 
     try
     {
-        import kameloso.common : abbreviatedDuration;
+        import kameloso.time : abbreviatedDuration;
         immutable delay = abbreviatedDuration(delaystring);
         return cycle(plugin, channelName, delay, slice);
     }

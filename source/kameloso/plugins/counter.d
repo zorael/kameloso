@@ -210,7 +210,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
     }
     else if (slice.beginsWith(plugin.state.client.nickname))
     {
-        import kameloso.common : stripSeparatedPrefix;
+        import kameloso.string : stripSeparatedPrefix;
         slice = slice.stripSeparatedPrefix(plugin.state.client.nickname, Yes.demandSeparatingChars);
     }
     else
