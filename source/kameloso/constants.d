@@ -38,20 +38,22 @@ else
     use of compile-time [std.format.format|format].
 
     ---
-    enum compilerVersion = format("%d.%03d", (__VERSION__ / 1000), (__VERSION__ % 1000));
+    import std.compiler;
+    enum compilerVersion = format("%d.%03d", version_major, version_minor);
     ---
  +/
 auto buildCompilerVersionString()
 {
     import lu.conv : toAlphaInto;
     import std.array : Appender;
+    import std.compiler : version_major, version_minor;
 
     Appender!(char[]) sink;
     sink.reserve(5);  // 2.098
 
-    (__VERSION__ / 1000).toAlphaInto(sink);
+    version_major.toAlphaInto(sink);
     sink.put('.');
-    (__VERSION__ % 1000).toAlphaInto!(3,3)(sink);
+    version_minor.toAlphaInto!(3,3)(sink);
 
     return sink.data.idup;
 }
