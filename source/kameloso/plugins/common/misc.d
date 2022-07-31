@@ -858,3 +858,146 @@ struct EventURLs
     /// The URLs discovered inside [dialect.defs.IRCEvent.content|IRCEvent.content].
     string[] urls;
 }
+
+
+// pluginFileBaseName
+/++
+    Returns a meaningful basename of a plugin filename.
+
+    This is preferred over use of [std.path.baseName] because some plugins are
+    nested in their own directories. The basename of `plugins/twitch/base.d` is
+    `base.d`, much like that of `plugins/printer/base.d` is.
+
+    With this we get `twitch/base.d` and `printer/base.d` instead, while still
+    getting `oneliners.d`.
+
+    Params:
+        filename = Full path to a plugin file.
+
+    Returns:
+        A meaningful basename of the passed filename.
+ +/
+auto pluginFileBaseName(const string filename)
+in (filename.length, "Empty plugin filename passed to `pluginFileBaseName`")
+{
+    return pluginFilenameSlicerImpl(filename, No.getPluginName);
+}
+
+///
+unittest
+{
+    {
+        version(Posix) enum filename = "plugins/oneliners.d";
+        else /*version(Windows)*/ enum filename = "plugins\\oneliners.d";
+        immutable expected = "oneliners.d";
+        immutable actual = pluginFileBaseName(filename);
+        assert((expected == actual), actual);
+    }
+    {
+        version(Posix)
+        {
+            enum filename = "plugins/twitch/base.d";
+            immutable expected = "twitch/base.d";
+        }
+        else /*version(Windows)*/
+        {
+            enum filename = "plugins\\twitch\\base.d";
+            immutable expected = "twitch\\base.d";
+        }
+
+        immutable actual = pluginFileBaseName(filename);
+        assert((expected == actual), actual);
+    }
+    {
+        version(Posix) enum filename = "plugins/counters.d";
+        else /*version(Windows)*/ enum filename = "plugins\\counters.d";
+        immutable expected = "counters.d";
+        immutable actual = pluginFileBaseName(filename);
+        assert((expected == actual), actual);
+    }
+}
+
+
+// pluginNameOfFilename
+/++
+    Returns the name of a plugin based on its filename.
+
+    This is preferred over slicing [std.path.baseName] because some plugins are
+    nested in their own directories. The basename of `plugins/twitch/base.d` is
+    `base.d`, much like that of `plugins/printer/base.d` is.
+
+    With this we get `twitch` and `printer` instead, while still getting `oneliners`.
+
+    Params:
+        filename = Full path to a plugin file.
+
+    Returns:
+        The name of the plugin, based on its filename.
+ +/
+auto pluginNameOfFilename(const string filename)
+in (filename.length, "Empty plugin filename passed to `pluginNameOfFilename`")
+{
+    return pluginFilenameSlicerImpl(filename, Yes.getPluginName);
+}
+
+///
+unittest
+{
+    {
+        version(Posix) enum filename = "plugins/oneliners.d";
+        else /*version(Windows)*/ enum filename = "plugins\\oneliners.d";
+        immutable expected = "oneliners";
+        immutable actual = pluginNameOfFilename(filename);
+        assert((expected == actual), actual);
+    }
+    {
+        version(Posix) enum filename = "plugins/twitch/base.d";
+        else /*version(Windows)*/ enum filename = "plugins\\twitch\\base.d";
+        immutable expected = "twitch";
+        immutable actual = pluginNameOfFilename(filename);
+        assert((expected == actual), actual);
+    }
+    {
+        version(Posix) enum filename = "plugins/counters.d";
+        else /*version(Windows)*/ enum filename = "plugins\\counters.d";
+        immutable expected = "counters";
+        immutable actual = pluginNameOfFilename(filename);
+        assert((expected == actual), actual);
+    }
+}
+
+
+// pluginFilenameSlicerImpl
+/++
+    Implementation function, code shared between [pluginFileBaseName] and
+    [pluginNameOfFilename].
+
+    Params:
+        filename = Full path to a plugin file.
+        getPluginName = Whether we want the plugin name or the plugin file "basename".
+
+    Returns:
+        The name of the plugin or its "basename", based on its filename and the
+        `getPluginName` parameter.
+ +/
+private auto pluginFilenameSlicerImpl(const string filename, const Flag!"getPluginName" getPluginName)
+in (filename.length, "Empty plugin filename passed to `pluginFilenameSlicerImpl`")
+{
+    import std.path : dirSeparator;
+    import std.string : indexOf;
+
+    string slice = filename;  // mutable
+    size_t pos = slice.indexOf(dirSeparator);
+
+    while (pos != -1)
+    {
+        if (slice[pos+1..$] == "base.d")
+        {
+            return getPluginName ? slice[0..pos] : slice;
+        }
+        slice = slice[pos+1..$];
+        pos = slice.indexOf(dirSeparator);
+    }
+
+    return getPluginName ? slice[0..$-2] : slice;
+}
