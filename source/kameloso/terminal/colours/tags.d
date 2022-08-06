@@ -24,7 +24,7 @@ public:
     returning to a default.
 
     Lastly, text between two `<h>`s are replaced with the results from a call to
-    [kameloso.terminal.colours|colourByHash|colourByHash].
+    [kameloso.terminal.colours.colourByHash|colourByHash].
 
     This should hopefully make highlighted strings more readable.
 
@@ -41,13 +41,14 @@ public:
         ";
 
     enum patternWithColouredNickname = "No quotes for nickname <h>%s<h>.";
-    immutable message = patternWithColouredNickname.format(event.sender.nickname);
+    immutable message = patternWithColouredNickname
+        .format(event.sender.nickname)
+        .expandTags(LogLevel.off, No.strip);
     ---
 
     Params:
         line = A line of text, presumably with `<tags>`.
-        baseLevel = The base [kameloso.logger.LogLevel|LogLevel] to fall back to
-            on `</>` tags.
+        baseLevel = The base [kameloso.logger.LogLevel|LogLevel] to fall back to on `</>` tags.
         strip = Whether to expand tags or strip them.
 
     Returns:
