@@ -250,7 +250,7 @@ Follow the instructions and log in to authorise the use of this program with you
 
     scope(failure)
     {
-        import std.stdio;
+        import std.stdio : writeln;
         writeln(validationJSON.toPrettyString);
     }
 

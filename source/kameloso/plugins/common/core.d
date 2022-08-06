@@ -488,8 +488,7 @@ mixin template IRCPluginImpl(
 
             static if (handlerAnnotations.length > 1)
             {
-                import std.format;
-
+                import std.format : format;
                 enum pattern = "`%s` is annotated with more than one `IRCEventHandler`";
                 static assert(0, pattern.format(fullyQualifiedName!fun));
             }

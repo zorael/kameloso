@@ -193,7 +193,6 @@ void persistentQuerier(shared QueryResponse[int] bucket, const string caBundleFi
         version(BenchmarkHTTPRequests)
         {
             import std.datetime.systime : Clock;
-            import std.stdio;
             immutable pre = Clock.currTime;
         }
 
@@ -207,6 +206,7 @@ void persistentQuerier(shared QueryResponse[int] bucket, const string caBundleFi
 
         version(BenchmarkHTTPRequests)
         {
+            import std.stdio : writefln;
             immutable post = Clock.currTime;
             writefln("%s (%s)", post-pre, url);
         }

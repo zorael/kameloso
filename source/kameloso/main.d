@@ -1916,7 +1916,7 @@ void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
  +/
 void setupSignals() nothrow @nogc
 {
-    import core.stdc.signal : signal, SIGINT, SIGTERM;
+    import core.stdc.signal : SIGINT, SIGTERM, signal;
 
     signal(SIGINT, &signalHandler);
     signal(SIGTERM, &signalHandler);
@@ -1938,7 +1938,7 @@ void setupSignals() nothrow @nogc
  +/
 void resetSignals() nothrow @nogc
 {
-    import core.stdc.signal : signal, SIG_DFL, SIGINT, SIGTERM;
+    import core.stdc.signal : SIG_DFL, SIGINT, SIGTERM, signal;
 
     signal(SIGINT, SIG_DFL);
     signal(SIGTERM, SIG_DFL);
@@ -2050,8 +2050,8 @@ Next tryGetopt(ref Kameloso instance, string[] args)
  +/
 Next tryConnect(ref Kameloso instance)
 {
-    import kameloso.constants : ConnectionDefaultIntegers,
-        ConnectionDefaultFloats, MagicErrorStrings, Timeout;
+    import kameloso.constants : ConnectionDefaultFloats,
+        ConnectionDefaultIntegers, MagicErrorStrings, Timeout;
     import kameloso.net : ConnectionAttempt, connectFiber;
     import kameloso.thread : interruptibleSleep;
     import std.concurrency : Generator;

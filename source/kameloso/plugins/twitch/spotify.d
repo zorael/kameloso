@@ -238,7 +238,7 @@ A normal URL to any playlist you can modify will work fine.
 
     scope(failure)
     {
-        import std.stdio;
+        import std.stdio : writeln;
         writeln(validationJSON.toPrettyString);
     }
 

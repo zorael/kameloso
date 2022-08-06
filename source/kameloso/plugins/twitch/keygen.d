@@ -41,9 +41,9 @@ void requestTwitchKey(TwitchPlugin plugin)
 {
     import kameloso.thread : ThreadMessage;
     import std.concurrency : prioritySend;
+    import std.datetime.systime : Clock;
     import std.process : Pid, ProcessException, wait;
     import std.stdio : stdout, writefln, writeln;
-    import std.datetime.systime : Clock;
 
     scope(exit) if (plugin.state.settings.flush) stdout.flush();
 

@@ -1321,7 +1321,7 @@ void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
 )
 void onCommandSongRequest(TwitchPlugin plugin, const ref IRCEvent event)
 {
-    import kameloso.plugins.twitch.helpers;
+    import kameloso.plugins.twitch.helpers : SongRequestException;
     import kameloso.constants : KamelosoInfo, Timeout;
     import arsd.http2 : HttpClient, HttpVerb, Uri;
     import lu.string : contains, nom, stripped;
@@ -1494,7 +1494,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const ref IRCEvent event)
         {
             try
             {
-                import kameloso.plugins.twitch.spotify;
+                import kameloso.plugins.twitch.spotify : addTrackToSpotifyPlaylist, getSpotifyTrackByID;
                 import std.json : JSONType;
 
                 immutable json = addTrackToSpotifyPlaylist(plugin, *creds, trackID);
