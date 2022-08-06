@@ -291,7 +291,8 @@ in ((channel.length || nickname.length), "Tried to send a PRIVMSG but no channel
     }
     else
     {
-        assert(0);  // in-contract will have already output an error
+        // In case contracts are disabled?
+        assert(0, "Tried to send a PRIVMSG but no channel nor nickname was given");
     }
 }
 

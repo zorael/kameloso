@@ -555,7 +555,7 @@ void handleTimerCommand(
         if (!timerDefs) return sendNoSuchTimer();
 
         auto channel = channelName in plugin.channels;
-        assert(channel);
+        assert(channel, "Tried to delete a timer from a non-existent channel");
 
         string name;
         string linesPosString;

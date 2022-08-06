@@ -549,7 +549,7 @@ Replay replay(Plugin, Fun)(Plugin plugin, const ref IRCEvent event,
             {
                 // onEventImpl.call should already have statically asserted all
                 // event handlers are of the types above
-                static assert(0);
+                static assert(0, "Failed to cover all event handler function signature cases");
             }
             return;
         }

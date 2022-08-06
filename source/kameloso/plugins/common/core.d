@@ -1059,7 +1059,8 @@ mixin template IRCPluginImpl(
                 import std.algorithm.searching : canFind;
                 import std.traits : getUDAs;
 
-                static assert(udaSanityCheck!fun);
+                static assert(udaSanityCheck!fun,
+                    __traits(identifier, fun) ~ " UDA sanity check failed.");
 
                 static if (__VERSION__ >= 2096L)
                 {
