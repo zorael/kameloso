@@ -77,7 +77,7 @@ auto expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" st
     immutable toReserve = (asBytes.length + 16);
 
     byteloop:
-    for (size_t i = 0; i<asBytes.length; ++i)
+    for (size_t i; i<asBytes.length; ++i)
     {
         immutable c = asBytes[i];
 

@@ -1390,7 +1390,7 @@ private T expandIRCTagsImpl(T)(const T line, const Flag!"strip" strip = No.strip
     immutable toReserve = (asBytes.length + 16);
 
     byteloop:
-    for (size_t i = 0; i<asBytes.length; ++i)
+    for (size_t i; i<asBytes.length; ++i)
     {
         immutable c = asBytes[i];
 
