@@ -150,7 +150,7 @@ public:
             settings = [kameloso.kameloso.CoreSettings|CoreSettings] whose
                 values to inherit.
      +/
-    this(const CoreSettings settings)
+    this(const CoreSettings settings) pure nothrow @safe
     {
         linebuffer.reserve(bufferInitialSize);
         messagebuffer.reserve(bufferInitialSize);
