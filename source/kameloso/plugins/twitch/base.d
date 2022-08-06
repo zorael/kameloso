@@ -720,7 +720,8 @@ void onAutomaticStop(TwitchPlugin plugin, const ref IRCEvent event)
         room = The [TwitchPlugin.Room] of the channel.
         justNowEnded = Whether or not the stream ended just now.
  +/
-void reportStreamTime(TwitchPlugin plugin,
+void reportStreamTime(
+    TwitchPlugin plugin,
     const TwitchPlugin.Room room,
     const Flag!"justNowEnded" justNowEnded = No.justNowEnded)
 {

@@ -102,7 +102,8 @@ void printHelp(GetoptResult results)
         giveInstructions = Whether or not to give instructions to edit the
             generated file and supply admins and/or home channels.
  +/
-void writeConfig(ref Kameloso instance,
+void writeConfig(
+    ref Kameloso instance,
     ref IRCClient client,
     ref IRCServer server,
     ref IRCBot bot,
@@ -243,7 +244,8 @@ void printSettings(ref Kameloso instance) @system
         [object.Exception|Exception] on unexpected platforms where we did not
         know how to open the configuration file in a text editor.
  +/
-void manageConfigFile(ref Kameloso instance,
+void manageConfigFile(
+    ref Kameloso instance,
     const Flag!"shouldWriteConfig" shouldWriteConfig,
     const Flag!"shouldOpenTerminalEditor" shouldOpenTerminalEditor,
     const Flag!"shouldOpenGraphicalEditor" shouldOpenGraphicalEditor,
@@ -374,7 +376,8 @@ void manageConfigFile(ref Kameloso instance,
         configurationText = Content to write to file.
         banner = Whether or not to add the "kameloso bot" banner at the head of the file.
  +/
-void writeToDisk(const string filename,
+void writeToDisk(
+    const string filename,
     const string configurationText,
     const Flag!"addBanner" banner = Yes.addBanner)
 {

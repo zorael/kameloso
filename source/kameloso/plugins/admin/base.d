@@ -984,7 +984,8 @@ void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         delay_ = [core.time.Duration|Duration] to delay rejoining.
         key = The key to use when rejoining the channel.
  +/
-void cycle(AdminPlugin plugin,
+void cycle(
+    AdminPlugin plugin,
     const string channelName,
     const Duration delay_ = Duration.zero,
     const string key = string.init)

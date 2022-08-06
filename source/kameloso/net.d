@@ -902,7 +902,8 @@ struct ConnectionAttempt
         abort = Reference "abort" flag, which -- if set -- should make the
             function return and the [core.thread.fiber.Fiber|Fiber] terminate.
  +/
-void connectFiber(ref Connection conn,
+void connectFiber(
+    ref Connection conn,
     const uint connectionRetries,
     ref bool abort) @system
 in (!conn.connected, "Tried to set up a connecting fiber on an already live connection")
@@ -1200,7 +1201,8 @@ struct ResolveAttempt
         abort = Reference "abort" flag, which -- if set -- should make the
             function return and the [core.thread.fiber.Fiber|Fiber] terminate.
  +/
-void resolveFiber(ref Connection conn,
+void resolveFiber(
+    ref Connection conn,
     const string address,
     const ushort port,
     const bool useIPv6,

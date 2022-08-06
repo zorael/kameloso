@@ -152,7 +152,8 @@ void onWhoReply(NotesPlugin plugin, const /*ref*/ IRCEvent event)
         givenChannel = Name of the channel we want the notes related to.
         background = Whether or not to issue WHOIS queries as low-priority background messages.
  +/
-void playbackNotes(NotesPlugin plugin,
+void playbackNotes(
+    NotesPlugin plugin,
     const IRCUser givenUser,
     const string givenChannel,
     const Flag!"background" background = No.background)
@@ -517,7 +518,8 @@ void pruneNotes(NotesPlugin plugin)
         channel = Channel for which we should save the note.
         line = Note text.
  +/
-void addNote(NotesPlugin plugin,
+void addNote(
+    NotesPlugin plugin,
     const string id,
     const string sender,
     const string channel,

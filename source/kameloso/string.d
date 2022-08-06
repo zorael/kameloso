@@ -37,7 +37,8 @@ public:
     Returns:
         The passed line with the `prefix` sliced away.
  +/
-auto stripSeparatedPrefix(const string line,
+auto stripSeparatedPrefix(
+    const string line,
     const string prefix,
     const Flag!"demandSeparatingChars" demandSep = Yes.demandSeparatingChars) pure @nogc
 in (prefix.length, "Tried to strip separated prefix but no prefix was given")

@@ -246,7 +246,8 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
         description = The description text that the event handler function is annotated with.
         syntaxes = The declared different syntaxes of the command.
  +/
-void sendCommandHelp(HelpPlugin plugin,
+void sendCommandHelp(
+    HelpPlugin plugin,
     const string otherPluginName,
     const ref IRCEvent event,
     const string command,

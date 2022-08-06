@@ -226,7 +226,8 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
         descriptions = Whether or not to look up meta descriptions.
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
  +/
-void worker(shared TitleLookupRequest sRequest,
+void worker(
+    shared TitleLookupRequest sRequest,
     shared TitleLookupResults[string] cache,
     const ulong delayMsecs,
     const Flag!"descriptions" descriptions,

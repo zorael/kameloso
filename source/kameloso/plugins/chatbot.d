@@ -185,7 +185,8 @@ void onCommandBash(ChatbotPlugin plugin, const ref IRCEvent event)
             the screen.
         event = The [dialect.defs.IRCEvent|IRCEvent] in flight.
  +/
-void worker(shared IRCPluginState sState,
+void worker(
+    shared IRCPluginState sState,
     const ref IRCEvent event)
 {
     import kameloso.constants : KamelosoInfo, Timeout;

@@ -129,7 +129,8 @@ unittest
     Returns:
         The passed line, encased within IRC colour tags.
  +/
-string ircColour(const string line,
+string ircColour(
+    const string line,
     const IRCColour fg,
     const IRCColour bg = IRCColour.unset) pure
 in (line.length, "Tried to apply IRC colours to a string but no string was given")
@@ -445,7 +446,8 @@ auto ircReset() @nogc pure nothrow
         A new string based on `origLine` with mIRC tokens mapped to terminal ones.
  +/
 version(Colours)
-auto mapEffects(const string origLine,
+auto mapEffects(
+    const string origLine,
     const uint fgBase = TerminalForeground.default_,
     const uint bgBase = TerminalBackground.default_) pure nothrow
 {
@@ -573,7 +575,8 @@ unittest
         The passed `line`, now with terminal colouring.
  +/
 version(Colours)
-string mapColours(const string line,
+string mapColours(
+    const string line,
     const uint fgReset = TerminalForeground.default_,
     const uint bgReset = TerminalBackground.default_) pure nothrow
 {

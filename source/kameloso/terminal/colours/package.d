@@ -565,7 +565,8 @@ if (isOutputRange!(Sink, char[]))
     Returns:
         The passed string word encompassed by terminal colour tags.
  +/
-string truecolour(const string word,
+string truecolour(
+    const string word,
     const uint r,
     const uint g,
     const uint b,
@@ -620,7 +621,8 @@ unittest
         Line with the substring in it inverted, if inversion was successful,
         else (a duplicate of) the line unchanged.
  +/
-string invert(const string line,
+string invert(
+    const string line,
     const string toInvert,
     const Flag!"caseSensitive" caseSensitive = Yes.caseSensitive) pure
 {
@@ -929,8 +931,7 @@ unittest
     Returns:
         A [TerminalForeground] based on the passed string.
  +/
-auto getColourByHash(const string word,
-    const Flag!"brightTerminal" bright) pure @nogc nothrow
+auto getColourByHash(const string word, const Flag!"brightTerminal" bright) pure @nogc nothrow
 in (word.length, "Tried to get colour by hash but no word was given")
 {
     import std.traits : EnumMembers;

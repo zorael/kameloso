@@ -1025,7 +1025,8 @@ unittest
         quiet = Whether or not to echo what was sent to the local terminal.
         caller = String name of the calling function, or something else that gives context.
  +/
-void immediate(IRCPluginState state,
+void immediate(
+    IRCPluginState state,
     const string line,
     const Flag!"quiet" quiet = No.quiet,
     const string caller = __FUNCTION__)

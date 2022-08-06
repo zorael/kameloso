@@ -191,7 +191,8 @@ void onJoin(AutomodePlugin plugin, const ref IRCEvent event)
         nickname = String nickname of the user to apply modes to.
         account = String account of the user, to look up definitions for.
  +/
-void applyAutomodes(AutomodePlugin plugin,
+void applyAutomodes(
+    AutomodePlugin plugin,
     const string channelName,
     const string nickname,
     const string account)
@@ -401,7 +402,8 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
         channelName = The channel the automode should play out in.
         mode = The mode string, when adding a new automode.
  +/
-void modifyAutomode(AutomodePlugin plugin,
+void modifyAutomode(
+    AutomodePlugin plugin,
     const Flag!"add" add,
     const string nickname,
     const string channelName,

@@ -3015,7 +3015,8 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         eventWasInitialised = Whether the [dialect.defs.IRCEvent|IRCEvent] was
             initialised or if it was only ever set to `void`.
  +/
-void printEventDebugDetails(const ref IRCEvent event,
+void printEventDebugDetails(
+    const ref IRCEvent event,
     const string raw,
     const bool eventWasInitialised = true)
 {

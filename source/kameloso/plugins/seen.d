@@ -905,7 +905,8 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
         time = UNIX timestamp of when the user was seen.
         skipModesignStrp = Whether or not to explicitly not strip modesigns from the nickname.
  +/
-void updateUser(SeenPlugin plugin,
+void updateUser(
+    SeenPlugin plugin,
     const string signed,
     const long time,
     const Flag!"skipModesignStrip" skipModesignStrip = No.skipModesignStrip)

@@ -1927,7 +1927,8 @@ auto prefixPolicyMatches(bool verbose = false)
         A [FilterResult] saying the event should `pass`, `fail`, or that more
         information about the sender is needed via a WHOIS call.
  +/
-auto filterSender(const ref IRCEvent event,
+auto filterSender(
+    const ref IRCEvent event,
     const Permissions permissionsRequired,
     const bool preferHostmasks) @safe
 {

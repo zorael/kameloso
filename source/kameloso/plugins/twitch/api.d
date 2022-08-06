@@ -282,7 +282,8 @@ void persistentQuerier(shared QueryResponse[int] bucket, const string caBundleFi
     Throws:
         [TwitchQueryException] if there were unrecoverable errors.
  +/
-QueryResponse sendHTTPRequest(TwitchPlugin plugin,
+QueryResponse sendHTTPRequest(
+    TwitchPlugin plugin,
     const string url,
     const string authorisationHeader,
     /*const*/ HttpVerb verb = HttpVerb.GET,

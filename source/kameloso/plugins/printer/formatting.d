@@ -1181,7 +1181,8 @@ unittest
  +/
 version(Colours)
 version(TwitchSupport)
-auto highlightEmotes(const ref IRCEvent event,
+auto highlightEmotes(
+    const ref IRCEvent event,
     const Flag!"colourful" colourful,
     const Flag!"brightTerminal" brightTerminal)
 {
