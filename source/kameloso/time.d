@@ -886,6 +886,9 @@ unittest
 
     Returns:
         A [core.time.Duration|Duration] as described in the input string.
+
+    Throws:
+        [core.object.Exception|Exception] if individually negative values were passed.
  +/
 auto abbreviatedDuration(const string line)
 {

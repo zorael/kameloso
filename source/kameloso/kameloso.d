@@ -611,6 +611,10 @@ public:
     /++
         Propagates a single update to the the [previousWhoisTimestamps]
         associative array to all plugins.
+
+        Params:
+            nickname = Nickname whose WHOIS timestamp to propagate.
+            now = UNIX WHOIS timestamp.
      +/
     void propagateWhoisTimestamp(const string nickname, const long now) pure
     {

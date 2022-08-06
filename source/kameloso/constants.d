@@ -41,6 +41,9 @@ else
     import std.compiler;
     enum compilerVersion = format("%d.%03d", version_major, version_minor);
     ---
+
+    Returns:
+        The compiler version as a string in the format of `{MAJOR}.{MINOR}` (eg. `2.100`).
  +/
 auto buildCompilerVersionString()
 {
@@ -73,6 +76,11 @@ auto buildCompilerVersionString()
             KamelosoSemVerPrerelease.length ? "-" : string.init,
             KamelosoSemVerPrerelease);
     ---
+
+    Returns:
+        The program version as a string in the format of
+        `{MAJOR}.{MINOR}.{PATCH}{-PRERELEASE}` (eg. `3.2.0-alpha.1`).
+        `{-PRERELEASE}` is optional.
  +/
 auto buildVersionString()
 {
