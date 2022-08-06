@@ -599,9 +599,10 @@ if (isOutputRange!(Sink, char[]))
      +/
     FG colourByHash(const string nickname)
     {
-        enum foregroundMembersLength = __traits(allMembers, TerminalForeground).length;
+        // Subtract 3 from array size to exempt default_, yellow and black/white
+        enum arraySize = __traits(allMembers, TerminalForeground).length +(-3);
 
-        static immutable TerminalForeground[foregroundMembersLength+(-3)] fgBright =
+        static immutable TerminalForeground[arraySize] fgBright =
         [
             //FG.default_,
             FG.black,
@@ -622,7 +623,7 @@ if (isOutputRange!(Sink, char[]))
             //FG.white,
         ];
 
-        static immutable TerminalForeground[foregroundMembersLength+(-3)] fgDark =
+        static immutable TerminalForeground[arraySize] fgDark =
         [
             //FG.default_,
             //FG.black,
