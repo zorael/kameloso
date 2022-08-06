@@ -291,7 +291,7 @@ in ((channel.length || nickname.length), "Tried to send a PRIVMSG but no channel
     }
     else
     {
-        assert(0);//, "Tried to send empty `privmsg` with no channel nor target nickname");
+        assert(0);  // in-contract will have already output an error
     }
 }
 

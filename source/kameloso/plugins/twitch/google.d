@@ -341,7 +341,7 @@ in (Fiber.getThis, "Tried to call `addVideoToYouTubePlaylist` from outside a Fib
 }`;
 
     immutable data = pattern.format(creds.youtubePlaylistID, videoID).representation;
-    /*immutable*/ int id = getUniqueNumericalID(plugin.bucket);
+    /*immutable*/ int id = getUniqueNumericalID(plugin.bucket);  // Making immutable bumps compilation memory +44mb
     plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout());
     plugin.persistentWorkerTid.send(id, url, authorizationBearer, HttpVerb.POST, data, "application/json");
     static immutable guesstimatePeriodToWaitForCompletion = 600.msecs;

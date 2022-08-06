@@ -634,7 +634,7 @@ public:
      +/
     void propagateWhoisTimestamps() pure
     {
-        auto copy = previousWhoisTimestamps.dup;
+        auto copy = previousWhoisTimestamps.dup;  // mutable
 
         foreach (plugin; plugins)
         {
