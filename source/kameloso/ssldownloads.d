@@ -74,7 +74,7 @@ auto downloadWindowsSSL(
         return result.status;
     }
 
-    typeof(return) retval;
+    Flag!"settingsTouched" retval;
 
     if (shouldDownloadCacert)
     {
