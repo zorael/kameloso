@@ -5,7 +5,7 @@ module kameloso.terminal.colours.tags;
 
 private:
 
-import kameloso.logger : LogLevel, logger;
+import kameloso.logger : LogLevel;
 import std.typecons : Flag, No, Yes;
 
 public:
@@ -56,6 +56,7 @@ public:
  +/
 auto expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" strip) @safe
 {
+    import kameloso.common : logger;
     import lu.string : contains;
     import std.array : Appender;
     import std.range : ElementEncodingType;
@@ -343,6 +344,7 @@ auto expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" st
 ///
 unittest
 {
+    import kameloso.common : logger;
     import std.conv : text, to;
     import std.format : format;
     import std.typecons : Flag, No, Yes;
@@ -513,6 +515,7 @@ auto expandTags(T)(const T line, const LogLevel baseLevel) @safe
 ///
 unittest
 {
+    import kameloso.common : logger;
     import std.conv : text, to;
 
     {

@@ -18,9 +18,8 @@ public:
 struct Kameloso
 {
 private:
-    import kameloso.common : OutgoingLine;
+    import kameloso.common : OutgoingLine, logger;
     import kameloso.constants : BufferSize;
-    import kameloso.logger : logger;
     import kameloso.net : Connection;
     import kameloso.plugins.common.core : IRCPlugin;
     import dialect.defs : IRCClient, IRCServer;

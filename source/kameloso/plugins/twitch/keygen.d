@@ -14,7 +14,8 @@ private:
 
 import kameloso.plugins.twitch.base;
 import kameloso.plugins.twitch.helpers;
-import kameloso.logger : LogLevel, logger;
+import kameloso.common : logger;
+import kameloso.logger : LogLevel;
 import kameloso.terminal.colours.tags : expandTags;
 import std.typecons : Flag, No, Yes;
 

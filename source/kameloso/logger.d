@@ -26,18 +26,6 @@ import std.typecons : Flag, No, Yes;
 public:
 
 
-// logger
-/++
-    Instance of a [KamelosoLogger|KamelosoLogger], providing timestamped and
-    coloured logging.
-
-    The member functions to use are `log`, `trace`, `info`, `warning`, `error`,
-    and `fatal`. It is not `__gshared`, so instantiate a thread-local
-    [KamelosoLogger|KamelosoLogger] if threading.
- +/
-KamelosoLogger logger;
-
-
 // LogLevel
 /++
     Logging levels; copied straight from [std.experimental.logger], to save us

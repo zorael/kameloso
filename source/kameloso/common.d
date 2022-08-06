@@ -10,6 +10,11 @@ module kameloso.common;
 private:
 
 import kameloso.kameloso : CoreSettings;
+import kameloso.logger : KamelosoLogger;
+import dialect.defs : IRCClient, IRCServer;
+import std.datetime.systime : SysTime;
+import std.range.primitives : isOutputRange;
+import std.stdio : stdout;
 import std.typecons : Flag, No, Yes;
 
 public:
@@ -19,11 +24,9 @@ public:
 version(unittest)
 shared static this()
 {
-    static import kameloso.logger;
-
     // This is technically before settings have been read.
     // We need this for unittests.
-    kameloso.logger.logger = new kameloso.logger.KamelosoLogger(
+    logger = new KamelosoLogger(
         No.monochrome,
         No.brightTerminal,
         No.headless,
@@ -31,6 +34,54 @@ shared static this()
 
     // settings need instantiating too, for tag expansion and kameloso.printing.
     settings = new CoreSettings;
+}
+
+
+// logger
+/++
+    Instance of a [kameloso.logger.KamelosoLogger|KamelosoLogger], providing
+    timestamped and coloured logging.
+
+    The member functions to use are `log`, `trace`, `info`, `warning`, `error`,
+    and `fatal`. It is not `__gshared`, so instantiate a thread-local
+    [kameloso.logger.KamelosoLogger|KamelosoLogger] if threading.
+
+    Having this here is unfortunate; ideally plugins should not use variables
+    from other modules, but unsure of any way to fix this other than to have
+    each plugin keep their own [kameloso.common.logger] pointer.
+ +/
+KamelosoLogger logger;
+
+
+// initLogger
+/++
+    Initialises the [kameloso.logger.KamelosoLogger|KamelosoLogger] logger for
+    use in this thread.
+
+    It needs to be separately instantiated per thread, and even so there may be
+    race conditions. Plugins are encouraged to use
+    [kameloso.thread.ThreadMessage|ThreadMessage]s to log to screen from other threads.
+
+    Example:
+    ---
+    initLogger(No.monochrome, Yes.brightTerminal);
+    ---
+
+    Params:
+        monochrome = Whether the terminal is set to monochrome or not.
+        bright = Whether the terminal has a bright background or not.
+        headless = Whether the terminal is headless or not.
+        flush = Whether the terminal needs to manually flush standard out after writing to it.
+ +/
+void initLogger(
+    const Flag!"monochrome" monochrome,
+    const Flag!"brightTerminal" bright,
+    const Flag!"headless" headless,
+    const Flag!"flush" flush)
+out (; (logger !is null), "Failed to initialise logger")
+{
+    import kameloso.logger : KamelosoLogger;
+    logger = new KamelosoLogger(monochrome, bright, headless, flush);
 }
 
 
@@ -62,8 +113,9 @@ CoreSettings* settings;
  +/
 void printVersionInfo(const Flag!"colours" colours = Yes.colours) @safe
 {
+    import kameloso.common : logger;
     import kameloso.constants : KamelosoInfo;
-    import kameloso.logger : LogLevel, logger;
+    import kameloso.logger : LogLevel;
     import kameloso.terminal.colours.tags : expandTags;
     import std.stdio : writefln;
 

@@ -11,7 +11,7 @@ private:
 
 import kameloso.kameloso : CoreSettings;
 import kameloso.plugins.common.core;
-import kameloso.logger : logger;
+import kameloso.common : logger;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
@@ -66,7 +66,8 @@ auto applyCustomSettings(IRCPlugin[] plugins,
 
         if (pluginstring == "core")
         {
-            import kameloso.logger : KamelosoLogger, logger;
+            import kameloso.common : logger;
+            import kameloso.logger : KamelosoLogger;
             import lu.objmanip : SetMemberException, setMemberByName;
             import std.algorithm.comparison : among;
             static import kameloso.common;
@@ -344,7 +345,7 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
         {
             version(TwitchWarnings)
             {
-                import kameloso.logger : logger;
+                import kameloso.common : logger;
                 import kameloso.printing : printObject;
 
                 logger.warning(caller, " tried to WHOIS on Twitch");

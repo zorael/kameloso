@@ -493,7 +493,7 @@ void commitAllLogs(PrinterPlugin plugin)
 )
 void onISUPPORT(PrinterPlugin plugin)
 {
-    import kameloso.logger : logger;
+    import kameloso.common : logger;
 
     static bool printedISUPPORT;
 
@@ -579,7 +579,7 @@ void start(PrinterPlugin plugin)
             {
                 if (plugin.printerSettings.monitor && plugin.printerSettings.daybreaks)
                 {
-                    import kameloso.logger : logger;
+                    import kameloso.common : logger;
                     logger.info(datestamp);
                 }
 
@@ -680,7 +680,7 @@ void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable con
         break;
 
     default:
-        import kameloso.logger : logger;
+        import kameloso.common : logger;
         logger.error("[printer] Unimplemented bus message verb: ", verb);
         break;
     }

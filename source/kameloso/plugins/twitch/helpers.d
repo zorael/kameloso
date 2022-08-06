@@ -56,7 +56,8 @@ auto readNamedString(
     const size_t expectedLength,
     ref bool abort)
 {
-    import kameloso.logger : LogLevel, logger;
+    import kameloso.common : logger;
+    import kameloso.logger : LogLevel;
     import kameloso.terminal.colours.tags : expandTags;
     import lu.string : stripped;
     import std.stdio : readln, stdin, stdout, write, writeln;

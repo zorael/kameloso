@@ -12,8 +12,8 @@ module kameloso.main;
 
 private:
 
+import kameloso.common : logger;
 import kameloso.kameloso : Kameloso, CoreSettings;
-import kameloso.logger : logger;
 import kameloso.plugins.common.core : IRCPlugin, Replay;
 import dialect.defs;
 import lu.common : Next;
@@ -3183,8 +3183,8 @@ public:
 int run(string[] args)
 {
     static import kameloso.common;
-    import kameloso.logger : KamelosoLogger;
     import kameloso.constants : ShellReturnValue;
+    import kameloso.logger : KamelosoLogger;
     import std.exception : ErrnoException;
     import core.stdc.errno : errno;
 
@@ -3204,7 +3204,7 @@ int run(string[] args)
 
     // Initialise the logger immediately so it's always available.
     // handleGetopt re-inits later when we know the settings for monochrome and headless
-    logger = new KamelosoLogger(instance.settings);
+    kameloso.common.logger = new KamelosoLogger(instance.settings);
 
     // Set up signal handling so that we can gracefully catch Ctrl+C.
     setupSignals();

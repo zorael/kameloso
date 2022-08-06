@@ -20,7 +20,7 @@ version(WithPersistenceService):
 private:
 
 import kameloso.plugins.common.core;
-import kameloso.logger : logger;
+import kameloso.common : logger;
 import dialect.defs;
 
 
@@ -772,6 +772,7 @@ void initAccountResources(PersistenceService service)
             catch (JSONException e)
             {
                 import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+                import kameloso.common : logger;
                 import std.path : baseName;
 
                 version(PrintStacktraces) logger.trace(e);
@@ -815,6 +816,7 @@ void initHostmaskResources(PersistenceService service)
     catch (JSONException e)
     {
         import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+        import kameloso.common : logger;
         import std.path : baseName;
 
         version(PrintStacktraces) logger.trace(e);

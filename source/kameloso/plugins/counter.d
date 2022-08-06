@@ -403,7 +403,7 @@ void initResources(CounterPlugin plugin)
     catch (JSONException e)
     {
         import kameloso.plugins.common.misc : IRCPluginInitialisationException;
-        import kameloso.logger : logger;
+        import kameloso.common : logger;
 
         version(PrintStacktraces) logger.trace(e);
         throw new IRCPluginInitialisationException(

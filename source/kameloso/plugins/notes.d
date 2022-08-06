@@ -15,7 +15,7 @@ private:
 
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
-import kameloso.logger : logger;
+import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;

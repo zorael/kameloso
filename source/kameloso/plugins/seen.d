@@ -45,8 +45,8 @@ private import kameloso.plugins.common.awareness : ChannelAwareness, UserAwarene
 // Likewise [dialect.defs], for the definitions of an IRC event.
 private import dialect.defs;
 
-// [kameloso.logger] for the global logger instance.
-private import kameloso.logger : logger;
+// [kameloso.common] for the global logger instance.
+private import kameloso.common : logger;
 
 // [std.datetime.systime] for the [std.datetime.systime.Clock|Clock], to update times with.
 private import std.datetime.systime : Clock;

@@ -18,7 +18,7 @@ private:
 
 import kameloso.plugins.printer.base;
 
-import kameloso.logger : logger;
+import kameloso.common : logger;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 

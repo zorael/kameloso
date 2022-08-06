@@ -15,7 +15,7 @@ version(WithTwitchPlugin):
 private:
 
 import kameloso.plugins.twitch.base;
-import kameloso.logger : logger;
+
 import arsd.http2 : HttpVerb;
 import dialect.defs;
 import std.json : JSONValue;
@@ -57,6 +57,8 @@ struct QueryResponse
 void twitchTryCatchDg(alias dg, uint retries = 5)()
 if (isSomeFunction!dg)
 {
+    import kameloso.common : logger;
+
     version(PrintStacktraces)
     static void printBody(const string responseBody)
     {
@@ -298,6 +300,7 @@ in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
 
     if (plugin.state.settings.trace)
     {
+        import kameloso.common : logger;
         enum pattern = "GET: <i>%s";
         logger.tracef(pattern, url);
     }

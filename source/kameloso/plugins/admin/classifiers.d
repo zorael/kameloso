@@ -18,7 +18,7 @@ private:
 import kameloso.plugins.admin.base;
 
 import kameloso.plugins.common.misc : nameOf;
-import kameloso.logger : logger;
+import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
 import std.algorithm.comparison : among;
