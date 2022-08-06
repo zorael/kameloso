@@ -32,7 +32,7 @@ public:
         `Yes.settingsTouched` if [kameloso.kameloso.Kameloso.settings|Kameloso.settings]
         were touched and the configuration file should be updated; `No.settingsTouched` if not.
  +/
-Flag!"settingsTouched" downloadWindowsSSL(
+auto downloadWindowsSSL(
     ref Kameloso instance,
     const Flag!"shouldDownloadCacert" shouldDownloadCacert,
     const Flag!"shouldDownloadOpenSSL" shouldDownloadOpenSSL)

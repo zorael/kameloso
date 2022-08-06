@@ -29,7 +29,7 @@ else
         Returns:
             `0` on success, non-`0` on failure.
      +/
-    int main(string[] args)
+    auto main(string[] args)
     {
         import kameloso.main : run;
 

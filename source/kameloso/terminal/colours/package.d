@@ -872,7 +872,7 @@ unittest
         A [TerminalForeground] based on the passed string, picked from the
             passed `fgArray` array.
  +/
-TerminalForeground getColourByHash(const string word, const TerminalForeground[] fgArray) pure @nogc nothrow
+auto getColourByHash(const string word, const TerminalForeground[] fgArray) pure @nogc nothrow
 in (word.length, "Tried to get colour by hash but no word was given")
 in (fgArray.length, "Tried to get colour by hash but with an empty colour array")
 {
@@ -929,7 +929,7 @@ unittest
     Returns:
         A [TerminalForeground] based on the passed string.
  +/
-TerminalForeground getColourByHash(const string word,
+auto getColourByHash(const string word,
     const Flag!"brightTerminal" bright) pure @nogc nothrow
 in (word.length, "Tried to get colour by hash but no word was given")
 {
@@ -983,7 +983,7 @@ unittest
     Returns:
         `word`, now in colour based on the hash of its contents.
  +/
-string colourByHash(const string word, const Flag!"brightTerminal" bright) pure nothrow
+auto colourByHash(const string word, const Flag!"brightTerminal" bright) pure nothrow
 {
     return word.colour(getColourByHash(word, bright));
 }

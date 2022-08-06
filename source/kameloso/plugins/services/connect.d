@@ -888,7 +888,7 @@ void onSASLAuthenticate(ConnectService service)
     Params:
         service = The current [ConnectService].
  +/
-bool trySASLPlain(ConnectService service)
+auto trySASLPlain(ConnectService service)
 {
     import lu.string : beginsWith, decode64, encode64;
     import std.base64 : Base64Exception;

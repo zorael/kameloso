@@ -444,7 +444,7 @@ void giveConfigurationMinimalInstructions()
         [lu.serialisation.ConfigurationFileReadFailureException|ConfigurationFileReadFailureException]
         if the reading and decoding of the configuration file failed.
  +/
-string configurationText(const string configFile)
+auto configurationText(const string configFile)
 {
     import lu.common : FileTypeMismatchException;
     import std.array : replace;
@@ -512,7 +512,7 @@ public:
     Throws:
         [std.getopt.GetOptException|GetOptException] if an unknown flag is passed.
  +/
-Next handleGetopt(ref Kameloso instance, string[] args) @system
+auto handleGetopt(ref Kameloso instance, string[] args) @system
 {
     with (instance)
     {

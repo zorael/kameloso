@@ -34,7 +34,7 @@ public:
         `true` if the member string matches `this`, `__ctor` or `__dtor`;
         `false` if not.
  +/
-bool memberstringIsThisCtorOrDtor(const string memberstring) pure @safe nothrow @nogc
+auto memberstringIsThisCtorOrDtor(const string memberstring) pure @safe nothrow @nogc
 {
     return
         (memberstring == "this") ||

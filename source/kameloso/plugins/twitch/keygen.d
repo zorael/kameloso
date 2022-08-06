@@ -393,7 +393,7 @@ instructions and log in to authorise the use of this program with your <w>STREAM
     Returns:
         An OAuth token key parsed from a pasted URL string.
  +/
-private string readURLAndParseKey(TwitchPlugin plugin, const string authNode)
+private auto readURLAndParseKey(TwitchPlugin plugin, const string authNode)
 {
     import lu.string : contains, nom, stripped;
     import std.stdio : readln, stdin, stdout, write, writeln;
@@ -476,7 +476,7 @@ private string readURLAndParseKey(TwitchPlugin plugin, const string authNode)
     Returns:
         An URL string.
  +/
-private string buildAuthNodeURL(const string authNode, const string[] scopes)
+private auto buildAuthNodeURL(const string authNode, const string[] scopes)
 {
     import std.array : join;
     import std.conv : text;

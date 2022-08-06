@@ -1113,7 +1113,7 @@ if (isOutputRange!(Sink, char[]))
     Returns:
         A slice of the passed `typestring`, excluding any prefixes if present.
  +/
-string withoutTypePrefix(const string typestring) @safe pure nothrow @nogc @property
+auto withoutTypePrefix(const string typestring) @safe pure nothrow @nogc @property
 {
     import lu.string : beginsWith;
 
@@ -1181,7 +1181,7 @@ unittest
  +/
 version(Colours)
 version(TwitchSupport)
-string highlightEmotes(const ref IRCEvent event,
+auto highlightEmotes(const ref IRCEvent event,
     const Flag!"colourful" colourful,
     const Flag!"brightTerminal" brightTerminal)
 {
@@ -1479,7 +1479,7 @@ unittest
         True if `haystack` contains `needle` in such a way that it is guaranteed
         to not be a different nickname.
  +/
-bool containsNickname(const string haystack, const string needle) pure nothrow @nogc
+auto containsNickname(const string haystack, const string needle) pure nothrow @nogc
 in (needle.length, "Tried to determine whether an empty nickname was in a string")
 {
     import kameloso.terminal : TerminalToken;

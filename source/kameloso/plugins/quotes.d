@@ -98,7 +98,7 @@ enum ManageQuoteAction
         A [Quote] containing a random quote string. If no quote is available it
         returns an empty `Quote.init` instead.
  +/
-Quote getRandomQuote(QuotesPlugin plugin, const string nickname)
+auto getRandomQuote(QuotesPlugin plugin, const string nickname)
 {
     if (const quotesForNickname = nickname in plugin.quotes)
     {
@@ -139,7 +139,7 @@ Quote getRandomQuote(QuotesPlugin plugin, const string nickname)
         A [Quote] containing a the quote string of a specific quote.
         If no such quote is available it returns an empty `Quote.init` instead.
  +/
-Quote getSpecificQuote(QuotesPlugin plugin, const string nickname, const size_t index)
+auto getSpecificQuote(QuotesPlugin plugin, const string nickname, const size_t index)
 {
     if (const quotesForNickname = nickname in plugin.quotes)
     {
@@ -342,7 +342,7 @@ void modQuoteAndReport(QuotesPlugin plugin,
         The original line with the WeeChat timestamp and nickname sliced away,
         or as it was passed. No new string is ever allocated.
  +/
-string removeWeeChatHead(const string line,
+auto removeWeeChatHead(const string line,
     const string nickname,
     const string prefixes) pure @safe @nogc
 in (nickname.length, "Tried to remove WeeChat head for a nickname but the nickname was empty")

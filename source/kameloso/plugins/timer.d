@@ -793,7 +793,7 @@ void handleSelfjoin(TimerPlugin plugin, const string channelName)
         timerDef = Definition of the timer to apply.
         channelName = String channel to which the timer belongs.
  +/
-Fiber createTimerFiber(
+auto createTimerFiber(
     TimerPlugin plugin,
     /*const*/ TimerDefinition timerDef,
     const string channelName)

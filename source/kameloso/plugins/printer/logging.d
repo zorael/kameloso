@@ -463,7 +463,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
     Returns:
         A bool whether or not the log location is valid.
  +/
-bool establishLogLocation(const string logLocation)
+auto establishLogLocation(const string logLocation)
 {
     import std.file : exists, isDir;
 

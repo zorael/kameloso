@@ -783,7 +783,7 @@ void messageFiber(ref Kameloso instance)
         [lu.common.Next.retry|Next.retry] if the bot should reconnect to the server.
         [lu.common.Next.continue_|Next.continue_] is never returned.
  +/
-Next mainLoop(ref Kameloso instance)
+auto mainLoop(ref Kameloso instance)
 {
     import kameloso.constants : Timeout;
     import kameloso.net : ListenAttempt, listenFiber;
@@ -1056,7 +1056,7 @@ Next mainLoop(ref Kameloso instance)
     Returns:
         How many milliseconds until the next message in the buffers should be sent.
  +/
-double sendLines(ref Kameloso instance)
+auto sendLines(ref Kameloso instance)
 {
     if (!instance.immediateBuffer.empty)
     {
@@ -1110,7 +1110,7 @@ import kameloso.net : ListenAttempt;
     Returns:
         A [lu.common.Next|Next] describing what action [mainLoop] should take next.
  +/
-Next listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
+auto listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
 {
     // Handle the attempt; switch on its state
     with (ListenAttempt.State)
@@ -1964,7 +1964,7 @@ void resetSignals() nothrow @nogc
     Returns:
         [lu.common.Next|Next].* depending on what action the calling site should take.
  +/
-Next tryGetopt(ref Kameloso instance, string[] args)
+auto tryGetopt(ref Kameloso instance, string[] args)
 {
     import kameloso.plugins.common.misc : IRCPluginSettingsException;
     import kameloso.config : ConfigurationFileReadFailureException, handleGetopt;
@@ -2048,7 +2048,7 @@ Next tryGetopt(ref Kameloso instance, string[] args)
         [lu.common.Next.returnFailure|Next.returnFailure] if connection failed
         and the program should exit.
  +/
-Next tryConnect(ref Kameloso instance)
+auto tryConnect(ref Kameloso instance)
 {
     import kameloso.constants : ConnectionDefaultFloats,
         ConnectionDefaultIntegers, MagicErrorStrings, Timeout;
@@ -2347,7 +2347,7 @@ Next tryConnect(ref Kameloso instance)
         [lu.common.Next.returnFailure|Next.returnFailure] if it failed and the
         program should exit.
  +/
-Next tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
+auto tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
 {
     import kameloso.constants : Timeout;
     import kameloso.net : ResolveAttempt, resolveFiber;
@@ -2522,7 +2522,7 @@ void setDefaultDirectories(ref CoreSettings settings)
         [lu.common.Next.returnFailure|Next.returnFailure] if the program should exit,
         [lu.common.Next.continue_|Next.continue_] otherwise.
  +/
-Next verifySettings(ref Kameloso instance)
+auto verifySettings(ref Kameloso instance)
 {
     if (!instance.settings.force)
     {
@@ -3180,7 +3180,7 @@ public:
     Returns:
         `0` on success, non-`0` on failure.
  +/
-int run(string[] args)
+auto run(string[] args)
 {
     static import kameloso.common;
     import kameloso.constants : ShellReturnValue;

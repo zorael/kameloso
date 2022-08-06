@@ -472,7 +472,7 @@ void worker(shared TitleLookupRequest sRequest,
         [object.Exception|Exception] if URL could not be fetched, or if no title
         could be divined from it.
  +/
-TitleLookupResults lookupTitle(
+auto lookupTitle(
     const string url,
     const Flag!"descriptions" descriptions,
     const string caBundleFile)
@@ -624,7 +624,7 @@ void reportYouTubeTitle(TitleLookupRequest request)
     Returns:
         A rewritten string if it's a compatible imgur one, else the passed `url`.
  +/
-string rewriteDirectImgurURL(const string url) @safe pure
+auto rewriteDirectImgurURL(const string url) @safe pure
 {
     import lu.string : beginsWith, nom;
     import std.typecons : No, Yes;
@@ -683,7 +683,7 @@ unittest
 
         [std.json.JSONException|JSONException] if the JSON response could not be parsed.
  +/
-JSONValue getYouTubeInfo(const string url, const string caBundleFile)
+auto getYouTubeInfo(const string url, const string caBundleFile)
 {
     import kameloso.constants : KamelosoInfo, Timeout;
     import arsd.http2 : HttpClient, Uri;
@@ -779,7 +779,7 @@ final class TitleFetchException : Exception
     Returns:
         A modified string, with unwanted bits stripped out and/or decoded.
  +/
-string decodeEntities(const string line)
+auto decodeEntities(const string line)
 {
     import lu.string : stripped;
     import arsd.dom : htmlEntitiesDecode;

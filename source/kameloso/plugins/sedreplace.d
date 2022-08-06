@@ -114,7 +114,7 @@ struct Line
     Returns:
         Original line with the changes the replace pattern incurred.
  +/
-string sedReplace(const string line,
+auto sedReplace(const string line,
     const string expr,
     const Flag!"relaxSyntax" relaxSyntax) @safe pure nothrow
 in (line.length, "Tried to `sedReplace` an empty line")

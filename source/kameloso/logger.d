@@ -229,7 +229,7 @@ public:
             Returns:
                 A tint string.
          +/
-        private string tintImpl(LogLevel level)() const @property pure nothrow @nogc @safe
+        private auto tintImpl(LogLevel level)() const @property pure nothrow @nogc @safe
         {
             if (headless || monochrome)
             {
@@ -276,7 +276,7 @@ public:
             Returns:
                 An empty string.
          +/
-        public static string offtint() pure nothrow @nogc @safe
+        public static auto offtint() pure nothrow @nogc @safe
         {
             return string.init;
         }

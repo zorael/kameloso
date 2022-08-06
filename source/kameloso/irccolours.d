@@ -172,7 +172,7 @@ unittest
     Returns:
         An opening IRC colour token with the passed colours.
  +/
-string ircColour(const IRCColour fg, const IRCColour bg = IRCColour.unset) pure
+auto ircColour(const IRCColour fg, const IRCColour bg = IRCColour.unset) pure
 {
     import std.format : format;
 
@@ -248,7 +248,7 @@ unittest
     Returns:
         The passed string encased within IRC colour coding.
  +/
-string ircColourByHash(const string word) pure
+auto ircColourByHash(const string word) pure
 in (word.length, "Tried to apply IRC colours by hash to a string but no string was given")
 {
     if (!word.length) return string.init;
@@ -297,7 +297,7 @@ unittest
     Returns:
         The passed something, as a string, in IRC bold.
  +/
-string ircBold(T)(T something) //pure nothrow
+auto ircBold(T)(T something) //pure nothrow
 {
     import std.conv : text;
     return text(cast(char)IRCControlCharacter.bold, something, cast(char)IRCControlCharacter.bold);
@@ -339,7 +339,7 @@ unittest
     Returns:
         The passed something, as a string, in IRC italics.
  +/
-string ircItalics(T)(T something) //pure nothrow
+auto ircItalics(T)(T something) //pure nothrow
 {
     import std.conv : text;
     return text(cast(char)IRCControlCharacter.italics, something, cast(char)IRCControlCharacter.italics);
@@ -381,7 +381,7 @@ unittest
     Returns:
         The passed something, as a string, in IRC underlined.
  +/
-string ircUnderlined(T)(T something) //pure nothrow
+auto ircUnderlined(T)(T something) //pure nothrow
 {
     import std.conv : text;
     return text(cast(char)IRCControlCharacter.underlined, something, cast(char)IRCControlCharacter.underlined);
@@ -420,7 +420,7 @@ unittest
     Returns:
         An IRC colour/formatting reset token.
  +/
-char ircReset() @nogc pure nothrow
+auto ircReset() @nogc pure nothrow
 {
     return cast(char)IRCControlCharacter.reset;
 }
@@ -445,7 +445,7 @@ char ircReset() @nogc pure nothrow
         A new string based on `origLine` with mIRC tokens mapped to terminal ones.
  +/
 version(Colours)
-string mapEffects(const string origLine,
+auto mapEffects(const string origLine,
     const uint fgBase = TerminalForeground.default_,
     const uint bgBase = TerminalBackground.default_) pure nothrow
 {

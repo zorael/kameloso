@@ -526,7 +526,7 @@ void onISUPPORT(PrinterPlugin plugin)
     Returns:
         A string with the current date.
  +/
-package string datestamp()
+package auto datestamp()
 {
     import std.datetime.systime : Clock;
     import std.format : format;
