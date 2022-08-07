@@ -298,7 +298,7 @@ void handleTimerCommand(
     const /*ref*/ IRCEvent event,
     const string channelName)
 {
-    import kameloso.time : abbreviatedDuration;
+    import kameloso.time : DurationStringException, abbreviatedDuration;
     import lu.string : SplitResults, contains, nom, splitInto;
     import std.conv : ConvException, to;
     import std.format : format;
@@ -421,6 +421,11 @@ void handleTimerCommand(
         catch (ConvException e)
         {
             return sendBadNumerics();
+        }
+        catch (DurationStringException e)
+        {
+            chan(plugin.state, channelName, e.msg);
+            return;
         }
 
         if ((timerDef.messageCountThreshold < 0) ||

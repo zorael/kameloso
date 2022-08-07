@@ -76,6 +76,7 @@ import core.time : Duration;
 )
 void onCommandVote(PollPlugin plugin, const ref IRCEvent event)
 {
+    import kameloso.time : DurationStringException, abbreviatedDuration;
     import std.algorithm.iteration : splitter;
     import std.algorithm.searching : count;
     import std.conv : ConvException;
@@ -143,13 +144,17 @@ void onCommandVote(PollPlugin plugin, const ref IRCEvent event)
 
     try
     {
-        import kameloso.time : abbreviatedDuration;
         import lu.string : nom;
         dur = abbreviatedDuration(slice.nom!(Yes.decode)(' '));
     }
     catch (ConvException e)
     {
         chan(plugin.state, event.channel, "Duration must be a positive number.");
+        return;
+    }
+    catch (DurationStringException e)
+    {
+        chan(plugin.state, event.channel, e.msg);
         return;
     }
     catch (Exception e)

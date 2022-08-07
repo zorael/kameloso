@@ -930,6 +930,7 @@ void onCommandSummary(AdminPlugin plugin)
 )
 void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
+    import kameloso.time : DurationStringException, abbreviatedDuration;
     import lu.string : nom;
     import std.conv : ConvException, text, to;
 
@@ -958,9 +959,8 @@ void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 
     try
     {
-        import kameloso.time : abbreviatedDuration;
         immutable delay = abbreviatedDuration(delaystring);
-        return cycle(plugin, channelName, delay, slice);
+        cycle(plugin, channelName, delay, slice);
     }
     catch (ConvException e)
     {
@@ -969,7 +969,10 @@ void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         enum pattern = `"<b>%s<b>" is not a valid number for seconds to delay.`;
         immutable message = pattern.format(slice);
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
-        return;
+    }
+    catch (DurationStringException e)
+    {
+        privmsg(plugin.state, event.channel, event.sender.nickname, e.msg);
     }
 }
 

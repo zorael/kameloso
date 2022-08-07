@@ -444,6 +444,7 @@ void onCommandUptime(TwitchPlugin plugin, const ref IRCEvent event)
 )
 void onCommandStart(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
+    import kameloso.time : DurationStringException, abbreviatedDuration, timeSince;
     import std.format : format;
     import core.thread : Fiber;
 
@@ -473,8 +474,6 @@ void onCommandStart(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
          +/
         try
         {
-            import kameloso.time : abbreviatedDuration, timeSince;
-
             initBroadcast();
             immutable elapsed = abbreviatedDuration(event.content.stripped);
             room.broadcast.startTime = (event.time - elapsed.total!"seconds");
@@ -486,6 +485,11 @@ void onCommandStart(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         catch (ConvException e)
         {
             return sendUsage();
+        }
+        catch (DurationStringException e)
+        {
+            chan(plugin.state, event.channel, e.msg);
+            return;
         }
         catch (Exception e)
         {
@@ -1563,6 +1567,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const ref IRCEvent event)
 )
 void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
+    import kameloso.time : DurationStringException, abbreviatedDuration;
     import lu.string : splitInto;
     import std.conv : ConvException, to;
 
@@ -1584,8 +1589,6 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     try
     {
-        import kameloso.time : abbreviatedDuration;
-
         durationString = durationString
             .abbreviatedDuration
             .total!"seconds"
@@ -1595,6 +1598,11 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     {
         enum message = "Invalid duration.";
         chan(plugin.state, event.channel, message);
+        return;
+    }
+    catch (DurationStringException e)
+    {
+        chan(plugin.state, event.channel, e.msg);
         return;
     }
     catch (Exception e)
