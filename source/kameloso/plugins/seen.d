@@ -176,7 +176,7 @@ public:
         then replay the event by invoking its delegate.
 
     * [kameloso.plugins.common.core.IRCPluginState.awaitingFibers|IRCPluginState.awaitingFibers]
-        is an array of [core.thread.fiber.Fiber|Fiber]s indexed by [dialect.ircdefs.IRCEvent.Type]s'
+        is an array of [core.thread.fiber.Fiber|Fiber]s indexed by [dialect.defs.IRCEvent.Type]s'
         numeric values. Fibers in the array of a particular event type will be
         executed the next time such an event is incoming. Think of it as Fiber callbacks.
 

@@ -54,7 +54,7 @@ public:
     Appender!(string[]) lines;
 
     /++
-        Constructor taking a [std.datetime.sytime.SysTime|SysTime], to save as the date
+        Constructor taking a [std.datetime.systime.SysTime|SysTime], to save as the date
         the buffer was created.
      +/
     this(const string dir, const SysTime now)
@@ -73,7 +73,7 @@ public:
     }
 
     /++
-        Constructor not taking a [std.datetime.sytime.SysTime|SysTime], for use with
+        Constructor not taking a [std.datetime.systime.SysTime|SysTime], for use with
         buffers that should not be dated, such as the error log and the raw log.
      +/
     this(const string dir, const string filename)
