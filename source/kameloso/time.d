@@ -902,7 +902,11 @@ auto abbreviatedDuration(const string line)
         {
             immutable valueString = slice.nom(c);
             immutable value = valueString.length ? valueString.to!int : 0;
-            if (value < 0) throw new Exception("Cannot have a negative value mid-string");
+
+            if (value < 0)
+            {
+                throw new DurationStringException("Durations cannot have negative values mid-string");
+            }
             return value;
         }
         return 0;
@@ -925,13 +929,13 @@ auto abbreviatedDuration(const string line)
     if (slice.length)
     {
         immutable valueString = slice.nom!(Yes.inherit)('s');
-        if (!valueString.length) throw new Exception("Invalid duration pattern");
+        if (!valueString.length) throw new DurationStringException("Invalid duration pattern");
         numSeconds = valueString.length ? valueString.to!int : 0;
     }
 
     if ((numDays < 0) || (numHours < 0) || (numMinutes < 0) || (numSeconds < 0))
     {
-        throw new Exception("Time values must not be individually negative");
+        throw new DurationStringException("Duration values must not be individually negative");
     }
 
     return sign * (numDays.days + numHours.hours + numMinutes.minutes + numSeconds.seconds);
@@ -1010,5 +1014,25 @@ unittest
     {
         enum line = "2h-30m";
         assertThrown(abbreviatedDuration(line));
+    }
+}
+
+
+// DurationStringException
+/++
+    A normal [object.Exception|Exception] but where its type conveys the specific
+    context of a call to [abbreviatedDuration] having malformed arguments.
+ +/
+final class DurationStringException : Exception
+{
+    /++
+        Constructor.
+     +/
+    this(const string message,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        super(message, file, line, nextInChain);
     }
 }
