@@ -470,7 +470,7 @@ void worker(
         A finished [TitleLookupResults].
 
     Throws:
-        [object.Exception|Exception] if URL could not be fetched, or if no title
+        [TitleFetchException] if URL could not be fetched, or if no title
         could be divined from it.
  +/
 auto lookupTitle(
@@ -680,7 +680,7 @@ unittest
         A [std.json.JSONValue|JSONValue] with fields describing the looked-up video.
 
     Throws:
-        [object.Exception|Exception] if the YouTube ID was invalid and could not be queried.
+        [TitleFetchException] if the YouTube ID was invalid and could not be queried.
 
         [std.json.JSONException|JSONException] if the JSON response could not be parsed.
  +/

@@ -239,10 +239,6 @@ void printSettings(ref Kameloso instance) @system
             graphical text editor was requested.
         force = (Windows) If true, uses `explorer.exe` as the graphical editor,
             otherwise uses `notepad.exe`.
-
-    Throws:
-        [object.Exception|Exception] on unexpected platforms where we did not
-        know how to open the configuration file in a text editor.
  +/
 void manageConfigFile(
     ref Kameloso instance,
