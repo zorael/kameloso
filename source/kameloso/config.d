@@ -228,8 +228,6 @@ void printSettings(ref Kameloso instance) @system
     Writes and/or edits the configuration file. Broken out into a separate
     function to lower the size of [handleGetopt].
 
-    Takes bool parameters instead of [std.typecons.Flag|Flag]s to work with getopt bools.
-
     Params:
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
         shouldWriteConfig = Writing to the configuration file was requested.
