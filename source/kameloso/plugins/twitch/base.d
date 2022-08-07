@@ -1322,7 +1322,7 @@ void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
 )
 void onCommandSongRequest(TwitchPlugin plugin, const ref IRCEvent event)
 {
-    import kameloso.plugins.twitch.helpers : SongRequestException;
+    import kameloso.plugins.twitch.helpers : ErrorJSONException, UnexpectedJSONException;
     import kameloso.constants : KamelosoInfo, Timeout;
     import arsd.http2 : HttpClient, HttpVerb, Uri;
     import lu.string : contains, nom, stripped;
@@ -1429,7 +1429,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const ref IRCEvent event)
                 immutable message = pattern.format(title);
                 chan(plugin.state, event.channel, message);
             }
-            catch (SongRequestException e)
+            catch (ErrorJSONException e)
             {
                 enum message = "Invalid YouTube video URL.";
                 chan(plugin.state, event.channel, message);
@@ -1514,7 +1514,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const ref IRCEvent event)
                 immutable message = pattern.format(artist, track);
                 chan(plugin.state, event.channel, message);
             }
-            catch (SongRequestException e)
+            catch (ErrorJSONException e)
             {
                 enum message = "Invalid Spotify track URL.";
                 chan(plugin.state, event.channel, message);

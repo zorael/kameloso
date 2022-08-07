@@ -256,7 +256,7 @@ Follow the instructions and log in to authorise the use of this program with you
 
     if (const errorJSON = "error" in validationJSON)
     {
-        throw new Exception(validationJSON["error_description"].str);
+        throw new ErrorJSONException(validationJSON["error_description"].str, validationJSON);
     }
 
     // "expires_in" is a string
@@ -382,15 +382,14 @@ in (Fiber.getThis, "Tried to call `addVideoToYouTubePlaylist` from outside a Fib
 
     if (json.type != JSONType.object)
     {
-        throw new SongRequestJSONTypeMismatchException(
-            "Wrong JSON type in playlist append response", json);
+        throw new UnexpectedJSONException("Wrong JSON type in playlist append response", json);
     }
 
     if (auto errorJSON = "error" in json)
     {
         if (recursing)
         {
-            throw new SongRequestException(errorJSON.object["message"].str);
+            throw new ErrorJSONException(errorJSON.object["message"].str, *errorJSON);
         }
         else if (auto statusJSON = "status" in errorJSON.object)
         {
@@ -402,7 +401,7 @@ in (Fiber.getThis, "Tried to call `addVideoToYouTubePlaylist` from outside a Fib
             }
         }
 
-        throw new SongRequestException(errorJSON.object["message"].str);
+        throw new ErrorJSONException(errorJSON.object["message"].str, *errorJSON);
     }
 
     return json;
@@ -451,11 +450,13 @@ void getGoogleTokens(HttpClient client, ref Credentials creds, const string code
 
     if (json.type != JSONType.object)
     {
-        throw new SongRequestJSONTypeMismatchException(
-            "Wrong JSON type in token request response", json);
+        throw new UnexpectedJSONException("Wrong JSON type in token request response", json);
     }
 
-    if (auto errorJSON = "error" in json) throw new SongRequestTokenException(errorJSON.str);
+    if (auto errorJSON = "error" in json)
+    {
+        throw new ErrorJSONException(errorJSON.str, *errorJSON);
+    }
 
     creds.googleAccessToken = json["access_token"].str;
     creds.googleRefreshToken = json["refresh_token"].str;
@@ -490,11 +491,13 @@ void refreshGoogleToken(HttpClient client, ref Credentials creds)
 
     if (json.type != JSONType.object)
     {
-        throw new SongRequestJSONTypeMismatchException(
-            "Wrong JSON type in token refresh response", json);
+        throw new UnexpectedJSONException("Wrong JSON type in token refresh response", json);
     }
 
-    if (auto errorJSON = "error" in json) throw new SongRequestTokenException(errorJSON.str);
+    if (auto errorJSON = "error" in json)
+    {
+        throw new ErrorJSONException(errorJSON.str, *errorJSON);
+    }
 
     creds.googleAccessToken = json["access_token"].str;
     // refreshToken is not present and stays the same as before
@@ -542,7 +545,12 @@ auto validateGoogleToken(HttpClient client, ref Credentials creds)
 
     if (json.type != JSONType.object)
     {
-        throw new Exception("Wrong JSON type in token validation response");
+        throw new UnexpectedJSONException("Wrong JSON type in token validation response", json);
+    }
+
+    if (auto errorJSON = "error" in json)
+    {
+        throw new ErrorJSONException(errorJSON.str, *errorJSON);
     }
 
     return json;

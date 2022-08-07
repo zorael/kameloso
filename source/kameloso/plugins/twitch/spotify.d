@@ -244,11 +244,13 @@ A normal URL to any playlist you can modify will work fine.
 
     if (const errorJSON = "error" in validationJSON)
     {
-        throw new Exception((*errorJSON)["message"].str);
+        throw new ErrorJSONException((*errorJSON)["message"].str, *errorJSON);
     }
     else if ("display_name" !in validationJSON)
     {
-        throw new Exception("Unexpected JSON response from server");
+        throw new UnexpectedJSONException(
+            "Unexpected JSON response from server",
+            validationJSON);
     }
 
     logger.info("All done!");
@@ -310,11 +312,13 @@ void getSpotifyTokens(HttpClient client, ref Credentials creds, const string cod
 
     if (json.type != JSONType.object)
     {
-        throw new SongRequestJSONTypeMismatchException(
-            "Wrong JSON type in token request response", json);
+        throw new UnexpectedJSONException("Wrong JSON type in token request response", json);
     }
 
-    if (auto errorJSON = "error" in json) throw new SongRequestTokenException(errorJSON.str);
+    if (auto errorJSON = "error" in json)
+    {
+        throw new ErrorJSONException(errorJSON.str, *errorJSON);
+    }
 
     creds.spotifyAccessToken = json["access_token"].str;
     creds.spotifyRefreshToken = json["refresh_token"].str;
@@ -359,11 +363,13 @@ void refreshSpotifyToken(HttpClient client, ref Credentials creds)
 
     if (json.type != JSONType.object)
     {
-        throw new SongRequestJSONTypeMismatchException(
-            "Wrong JSON type in token refresh response", json);
+        throw new UnexpectedJSONException("Wrong JSON type in token refresh response", json);
     }
 
-    if (auto errorJSON = "error" in json) throw new SongRequestTokenException(errorJSON.str);
+    if (auto errorJSON = "error" in json)
+    {
+        throw new ErrorJSONException(errorJSON.str, *errorJSON);
+    }
 
     creds.spotifyAccessToken = json["access_token"].str;
     // refreshToken is not present and stays the same as before
@@ -468,15 +474,14 @@ in (Fiber.getThis, "Tried to call `addVideoToSpotifyPlaylist` from outside a Fib
 
     if (json.type != JSONType.object)
     {
-        throw new SongRequestJSONTypeMismatchException(
-            "Wrong JSON type in playlist append response", json);
+        throw new UnexpectedJSONException("Wrong JSON type in playlist append response", json);
     }
 
     if (auto errorJSON = "error" in json)
     {
         if (recursing)
         {
-            throw new SongRequestException(errorJSON.object["message"].str);
+            throw new ErrorJSONException(errorJSON.object["message"].str, *errorJSON);
         }
         else if (auto messageJSON = "message" in errorJSON.object)
         {
@@ -488,7 +493,7 @@ in (Fiber.getThis, "Tried to call `addVideoToSpotifyPlaylist` from outside a Fib
             }
         }
 
-        throw new SongRequestException(errorJSON.object["message"].str);
+        throw new ErrorJSONException(errorJSON.object["message"].str, *errorJSON);
     }
 
     return json;
@@ -528,8 +533,12 @@ package auto getSpotifyTrackByID(Credentials creds, const string trackID)
 
     if (json.type != JSONType.object)
     {
-        throw new SongRequestJSONTypeMismatchException(
-            "Wrong JSON type in track request response", json);
+        throw new UnexpectedJSONException("Wrong JSON type in track request response", json);
+    }
+
+    if (auto errorJSON = "error" in json)
+    {
+        throw new ErrorJSONException(errorJSON.str, *errorJSON);
     }
 
     return json;
@@ -588,7 +597,12 @@ auto validateSpotifyToken(HttpClient client, ref Credentials creds)
 
     if (json.type != JSONType.object)
     {
-        throw new Exception("Wrong JSON type in token validation response");
+        throw new UnexpectedJSONException("Wrong JSON type in token validation response", json);
+    }
+
+    if (auto errorJSON = "error" in json)
+    {
+        throw new ErrorJSONException(errorJSON.str, *errorJSON);
     }
 
     return json;
