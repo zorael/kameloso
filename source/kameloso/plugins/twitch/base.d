@@ -2800,6 +2800,11 @@ void start(TwitchPlugin plugin)
 
     plugin.mainThread = cast(shared)thisTid;
 
+    // Reset the shared static useAPIFeatures between instantiations.
+    // We'd ideally do it in the plugin's constructor but the mixed in constructor
+    // doesn't seem to work alongside an explicit, concrete one.
+    plugin.useAPIFeatures = true;
+
     if (!isTerminal)
     {
         // Not a TTY so replace our bell string with an empty one
