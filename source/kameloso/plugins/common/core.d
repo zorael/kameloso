@@ -2257,6 +2257,7 @@ public:
         Returns:
             The numeric ID of the current connection.
      +/
+    pragma(inline, true)
     auto connectionID()
     {
         return privateConnectionID;
