@@ -2704,6 +2704,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
     {
         // *instance.abort is guaranteed to be false here.
 
+        instance.generateNewConnectionID();
         attempt.silentExit = true;
 
         if (!attempt.firstConnect)

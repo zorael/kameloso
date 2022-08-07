@@ -2044,6 +2044,12 @@ private:
     import std.concurrency : Tid;
     import core.thread : Fiber;
 
+    /++
+        Numeric ID of the current connection, to disambiguate between multiple
+        connections in one program run. Private value.
+     +/
+    uint privateConnectionID;
+
 public:
     // Update
     /++
@@ -2242,6 +2248,28 @@ public:
         Pointer to the global abort flag.
      +/
     bool* abort;
+
+    // connectionID
+    /++
+        Numeric ID of the current connection, to disambiguate between multiple
+        connections in one program run. Accessor.
+
+        Returns:
+            The numeric ID of the current connection.
+     +/
+    auto connectionID()
+    {
+        return privateConnectionID;
+    }
+
+    // this
+    /++
+        Constructor taking a connection ID `uint`.
+     +/
+    this(const uint connectionID)
+    {
+        this.privateConnectionID = connectionID;
+    }
 }
 
 

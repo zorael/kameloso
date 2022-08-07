@@ -2247,14 +2247,14 @@ void onCommandSetTitle(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         {
             if ((e.code == 401) && (e.error == "Unauthorized"))
             {
-                static bool hasComplainedAboutExpiredKey;
+                static uint idWhenComplainedAboutExpiredKey;
 
-                if (!hasComplainedAboutExpiredKey)
+                if (idWhenComplainedAboutExpiredKey != plugin.state.connectionID)
                 {
                     // broadcaster "superkey" expired.
                     enum message = "The broadcaster-level API key has expired.";
                     chan(plugin.state, event.channel, message);
-                    hasComplainedAboutExpiredKey = true;
+                    idWhenComplainedAboutExpiredKey = plugin.state.connectionID;
                 }
             }
             else
@@ -2348,14 +2348,14 @@ void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         {
             if ((e.code == 401) && (e.error == "Unauthorized"))
             {
-                static bool hasComplainedAboutExpiredKey;
+                static uint idWhenComplainedAboutExpiredKey;
 
-                if (!hasComplainedAboutExpiredKey)
+                if (idWhenComplainedAboutExpiredKey != plugin.state.connectionID)
                 {
                     // broadcaster "superkey" expired.
                     enum message = "The broadcaster-level API key has expired.";
                     chan(plugin.state, event.channel, message);
-                    hasComplainedAboutExpiredKey = true;
+                    idWhenComplainedAboutExpiredKey = plugin.state.connectionID;
                 }
             }
             else

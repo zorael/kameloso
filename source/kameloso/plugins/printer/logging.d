@@ -459,11 +459,12 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 
     Params:
         logLocation = String of the location directory we want to store logs in.
+        connectionID = ID of the current connection, so as not to spam error messages.
 
     Returns:
         A bool whether or not the log location is valid.
  +/
-auto establishLogLocation(const string logLocation)
+auto establishLogLocation(const string logLocation, const uint connectionID)
 {
     import std.file : exists, isDir;
 
@@ -471,13 +472,13 @@ auto establishLogLocation(const string logLocation)
     {
         if (logLocation.isDir) return true;
 
-        static bool naggedAboutDir;
+        static uint idWhenNaggedAboutDir;
 
-        if (!naggedAboutDir)
+        if (idWhenNaggedAboutDir != connectionID)
         {
             enum pattern = "Specified log directory (<l>%s</>) is not a directory.";
             logger.warningf(pattern, logLocation);
-            naggedAboutDir = true;
+            idWhenNaggedAboutDir = connectionID;
         }
 
         return false;

@@ -27,7 +27,6 @@ private:
     import lu.container : Buffer;
     import std.datetime.systime : SysTime;
 
-
     // Throttle
     /++
         Aggregate of values and state needed to throttle outgoing messages.
@@ -53,6 +52,12 @@ private:
             m = 0.0;
         }
     }
+
+    /++
+        Numeric ID of the current connection, to disambiguate between multiple
+        connections in one program run. Private value.
+     +/
+    uint privateConnectionID;
 
 public:
     /++
@@ -168,6 +173,28 @@ public:
     /// Never copy this.
     @disable this(this);
 
+    /++
+        Numeric ID of the current connection, to disambiguate between multiple
+        connections in one program run. Accessor.
+
+        Returns:
+            The numeric ID of the current connection.
+     +/
+    auto connectionID()
+    {
+        return privateConnectionID;
+    }
+
+    /++
+        Generates a new connection ID.
+
+        Don't include the number 0, or it may collide with the default value of `static uint`.
+     +/
+    void generateNewConnectionID() @safe
+    {
+        import std.random : uniform;
+        privateConnectionID = uniform(1, 1001);
+    }
 
     // throttleline
     /++
@@ -308,7 +335,7 @@ public:
 
         teardownPlugins();
 
-        IRCPluginState state;
+        auto state = IRCPluginState(this.connectionID);
         state.client = parser.client;
         state.server = parser.server;
         state.bot = this.bot;
