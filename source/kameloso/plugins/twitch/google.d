@@ -29,6 +29,10 @@ import core.thread : Fiber;
 
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+
+    Throws:
+        [kameloso.plugins.twitch.helpers.ErrorJSONException|ErrorJSONException]
+        if the returned JSON has an `"error"` field.
  +/
 package void requestGoogleKeys(TwitchPlugin plugin)
 {
@@ -294,6 +298,13 @@ Follow the instructions and log in to authorise the use of this program with you
 
     Returns:
         A [std.json.JSONValue|JSONValue] of the response.
+
+    Throws:
+        [kameloso.plugins.twitch.helpers.UnexpectedJSONException|UnexpectedJSONException]
+        on unexpected JSON.
+
+        [kameloso.plugins.twitch.helpers.ErrorJSONException|ErrorJSONException]
+        if the returned JSON has an `"error"` field.
  +/
 package JSONValue addVideoToYouTubePlaylist(
     TwitchPlugin plugin,
@@ -416,6 +427,13 @@ in (Fiber.getThis, "Tried to call `addVideoToYouTubePlaylist` from outside a Fib
         client = [arsd.http2.HttpClient|HttpClient] to use.
         creds = Credentials aggregate.
         code = Google authorization code.
+
+    Throws:
+        [kameloso.plugins.twitch.helpers.UnexpectedJSONException|UnexpectedJSONException]
+        on unexpected JSON.
+
+        [kameloso.plugins.twitch.helpers.ErrorJSONException|ErrorJSONException]
+        if the returned JSON has an `"error"` field.
  +/
 void getGoogleTokens(HttpClient client, ref Credentials creds, const string code)
 {
@@ -470,6 +488,13 @@ void getGoogleTokens(HttpClient client, ref Credentials creds, const string code
     Params:
         client = [arsd.http2.HttpClient|HttpClient] to use.
         creds = Credentials aggregate.
+
+    Throws:
+        [kameloso.plugins.twitch.helpers.UnexpectedJSONException|UnexpectedJSONException]
+        on unexpected JSON.
+
+        [kameloso.plugins.twitch.helpers.ErrorJSONException|ErrorJSONException]
+        if the returned JSON has an `"error"` field.
  +/
 void refreshGoogleToken(HttpClient client, ref Credentials creds)
 {
@@ -514,6 +539,13 @@ void refreshGoogleToken(HttpClient client, ref Credentials creds)
 
     Returns:
         The server [std.json.JSONValue|JSONValue] response.
+
+    Throws:
+        [kameloso.plugins.twitch.helpers.UnexpectedJSONException|UnexpectedJSONException]
+        on unexpected JSON.
+
+        [kameloso.plugins.twitch.helpers.ErrorJSONException|ErrorJSONException]
+        if the returned JSON has an `"error"` field.
  +/
 auto validateGoogleToken(HttpClient client, ref Credentials creds)
 {

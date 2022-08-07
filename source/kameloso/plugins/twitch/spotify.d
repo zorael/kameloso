@@ -29,6 +29,13 @@ import core.thread : Fiber;
 
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+
+    Throws:
+        [kameloso.plugins.twitch.helpers.UnexpectedJSONException|UnexpectedJSONException]
+        on unexpected JSON.
+
+        [kameloso.plugins.twitch.helpers.ErrorJSONException|ErrorJSONException]
+        if the returned JSON has an `"error"` field.
  +/
 package void requestSpotifyKeys(TwitchPlugin plugin)
 {
@@ -278,6 +285,13 @@ A normal URL to any playlist you can modify will work fine.
         client = [arsd.http2.HttpClient|HttpClient] to use.
         creds = Credentials aggregate.
         code = Spotify authorization code.
+
+    Throws:
+        [kameloso.plugins.twitch.helpers.UnexpectedJSONException|UnexpectedJSONException]
+        on unexpected JSON.
+
+        [kameloso.plugins.twitch.helpers.ErrorJSONException|ErrorJSONException]
+        if the returned JSON has an `"error"` field.
  +/
 void getSpotifyTokens(HttpClient client, ref Credentials creds, const string code)
 {
@@ -332,6 +346,13 @@ void getSpotifyTokens(HttpClient client, ref Credentials creds, const string cod
     Params:
         client = [arsd.http2.HttpClient|HttpClient] to use.
         creds = Credentials aggregate.
+
+    Throws:
+        [kameloso.plugins.twitch.helpers.UnexpectedJSONException|UnexpectedJSONException]
+        on unexpected JSON.
+
+        [kameloso.plugins.twitch.helpers.ErrorJSONException|ErrorJSONException]
+        if the returned JSON has an `"error"` field.
  +/
 void refreshSpotifyToken(HttpClient client, ref Credentials creds)
 {
@@ -411,6 +432,13 @@ auto getSpotifyBase64Authorization(const Credentials creds)
 
     Returns:
         A [std.json.JSONValue|JSONValue] of the response.
+
+    Throws:
+        [kameloso.plugins.twitch.helpers.UnexpectedJSONException|UnexpectedJSONException]
+        on unexpected JSON.
+
+        [kameloso.plugins.twitch.helpers.ErrorJSONException|ErrorJSONException]
+        if the returned JSON has an `"error"` field.
  +/
 package JSONValue addTrackToSpotifyPlaylist(
     TwitchPlugin plugin,
@@ -510,6 +538,13 @@ in (Fiber.getThis, "Tried to call `addVideoToSpotifyPlaylist` from outside a Fib
 
     Returns:
         A [std.json.JSONValue|JSONValue] of the response.
+
+    Throws:
+        [kameloso.plugins.twitch.helpers.UnexpectedJSONException|UnexpectedJSONException]
+        on unexpected JSON.
+
+        [kameloso.plugins.twitch.helpers.ErrorJSONException|ErrorJSONException]
+        if the returned JSON has an `"error"` field.
  +/
 package auto getSpotifyTrackByID(Credentials creds, const string trackID)
 {
@@ -556,6 +591,13 @@ package auto getSpotifyTrackByID(Credentials creds, const string trackID)
 
     Returns:
         The server [std.json.JSONValue|JSONValue] response.
+
+    Throws:
+        [kameloso.plugins.twitch.helpers.UnexpectedJSONException|UnexpectedJSONException]
+        on unexpected JSON.
+
+        [kameloso.plugins.twitch.helpers.ErrorJSONException|ErrorJSONException]
+        if the returned JSON has an `"error"` field.
  +/
 auto validateSpotifyToken(HttpClient client, ref Credentials creds)
 {
