@@ -448,6 +448,7 @@ public:
         on each plugin.
      +/
     void initPluginResources() @system
+    in (plugins.length, "Tried to initialise plugin resources but there were no plugins to initialise")
     {
         foreach (plugin; plugins)
         {
@@ -466,6 +467,7 @@ public:
         Don't teardown disabled plugins as they may not have been initialised fully.
      +/
     void teardownPlugins() @system
+    //in (plugins.length, "Tried to teardown plugins but there were no plugins to teardown")
     {
         if (!plugins.length) return;
 
@@ -524,6 +526,7 @@ public:
         Don't setup disabled plugins.
      +/
     void setupPlugins() @system
+    in (plugins.length, "Tried to set up plugins but there were no plugins to set up")
     {
         foreach (plugin; plugins)
         {
@@ -567,6 +570,7 @@ public:
                 member structs to inspect for updates.
      +/
     void checkPluginForUpdates(IRCPlugin plugin)
+    in (plugins.length, "Tried to check plugins for updates but there were no plugins to check")
     {
         alias Update = typeof(plugin.state.updates);
 
@@ -621,6 +625,8 @@ public:
     //pragma(inline, true)
     void propagate(Thing)(Thing thing) pure nothrow @nogc
     if (is(Thing == struct))
+    in (plugins.length, "Tried to set propagate a `" ~ Thing.stringof ~
+        "` but there were no plugins to propagate to")
     {
         import std.meta : AliasSeq;
 
@@ -666,6 +672,7 @@ public:
             now = UNIX WHOIS timestamp.
      +/
     void propagateWhoisTimestamp(const string nickname, const long now) pure
+    in (plugins.length, "Tried to propagate a WHOIS timestamp but there were no plugins to propagate to")
     {
         foreach (plugin; plugins)
         {
@@ -682,6 +689,7 @@ public:
         modify the original.
      +/
     void propagateWhoisTimestamps() pure
+    in (plugins.length, "Tried to propagate WHOIS timestamps but there were no plugins to propagate to")
     {
         auto copy = previousWhoisTimestamps.dup;  // mutable
 
