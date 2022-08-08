@@ -336,7 +336,7 @@ Before allowing *anyone* to trigger any restricted functionality, the bot will t
 
 ## Twitch
 
-Reer to [the wiki page on Twitch](https://github.com/zorael/kameloso/wiki/Twitch) for more information.
+Refer to [the wiki page on Twitch](https://github.com/zorael/kameloso/wiki/Twitch) for more information.
 
 ### **Copy paste-friendly concrete setup from scratch**
 
