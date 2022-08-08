@@ -535,6 +535,27 @@ public:
     }
 
 
+    // startPlugins
+    /++
+        Starts all plugins by calling any module-level `start` functions.
+
+        This happens after connection has been established.
+
+        Don't start disabled plugins.
+     +/
+    void startPlugins() @system
+    in (plugins.length, "Tried to start plugins but there were no plugins to start")
+    {
+        foreach (plugin; plugins)
+        {
+            if (!plugin.isEnabled) continue;
+
+            plugin.start();
+            checkPluginForUpdates(plugin);
+        }
+    }
+
+
     // checkPluginForUpdates
     /++
         Propagates updated bots, clients, servers and/or settings, to `this`,

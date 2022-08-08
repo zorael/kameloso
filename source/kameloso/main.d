@@ -789,6 +789,7 @@ auto mainLoop(ref Kameloso instance)
     import kameloso.net : ListenAttempt, listenFiber;
     import std.concurrency : Generator;
     import std.datetime.systime : Clock;
+    import core.thread : Fiber;
 
     /// Variable denoting what we should do next loop.
     Next next;
@@ -807,6 +808,49 @@ auto mainLoop(ref Kameloso instance)
         GC.free(&listener);
         destroy(messenger);
         GC.free(&messenger);
+    }
+
+    /++
+        Invokes the messenger generator.
+     +/
+    Next callMessenger()
+    {
+        try
+        {
+            messenger.call();
+        }
+        catch (Exception e)
+        {
+            enum pattern = "Unhandled messenger exception: <l>%s</> (at <l>%s</>:<l>%d</>)";
+            logger.warningf(pattern, e.msg, e.file, e.line);
+            version(PrintStacktraces) logger.trace(e);
+            return Next.returnFailure;
+        }
+
+        if (messenger.state == Fiber.State.HOLD)
+        {
+            return messenger.front;
+        }
+        else
+        {
+            logger.error("Internal error, thread messenger Fiber ended abruptly.");
+            return Next.returnFailure;
+        }
+    }
+
+    // Start plugins before the loop starts and immediately read messages sent.
+    try
+    {
+        instance.startPlugins();
+        immutable messengerNext = callMessenger();
+        if (messengerNext != Next.continue_) return messengerNext;
+    }
+    catch (Exception e)
+    {
+        enum pattern = "Exception thrown when starting plugins: <l>%s";
+        logger.errorf(pattern, e.msg);
+        logger.trace(e.info);
+        return Next.returnFailure;
     }
 
     /// The history entry for the current connection.
@@ -831,8 +875,6 @@ auto mainLoop(ref Kameloso instance)
 
     do
     {
-        import core.thread : Fiber;
-
         if (*instance.abort) return Next.returnFailure;
 
         if (!instance.settings.headless && instance.wantLiveSummary)
@@ -942,28 +984,10 @@ auto mainLoop(ref Kameloso instance)
             }
         }
 
-        // Check concurrency messages to see if we should exit, else repeat
-        try
-        {
-            messenger.call();
-            if (*instance.abort) return Next.returnFailure;
-        }
-        catch (Exception e)
-        {
-            enum pattern = "Unhandled messenger exception: <l>%s</> (at <l>%s</>:<l>%d</>)";
-            logger.warningf(pattern, e.msg, e.file, e.line);
-            version(PrintStacktraces) logger.trace(e);
-        }
-
-        if (messenger.state == Fiber.State.HOLD)
-        {
-            next = messenger.front;
-        }
-        else
-        {
-            logger.error("Internal error, thread messenger Fiber ended abruptly.");
-            return Next.returnFailure;
-        }
+        // Check concurrency messages to see if we should exit
+        next = callMessenger();
+        if (*instance.abort) return Next.returnFailure;
+        else if (next != Next.continue_) return next;
 
         bool bufferHasMessages = (
             !instance.outbuffer.empty |

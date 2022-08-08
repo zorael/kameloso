@@ -170,6 +170,12 @@ public:
      +/
     void setup() @system;
 
+    // start
+    /++
+        Called when connection has been established.
+     +/
+    void start() @system;
+
     // printSettings
     /++
         Called when we want a plugin to print its
@@ -1506,6 +1512,32 @@ mixin template IRCPluginImpl(
                 import std.format : format;
                 enum pattern = "`%s.setup` has an unsupported function signature: `%s`";
                 static assert(0, pattern.format(module_, typeof(.setup).stringof));
+            }
+        }
+    }
+
+    // start
+    /++
+        Runs early post-connect routines, immediately after connection has been
+        established.
+     +/
+    override public void start() @system
+    {
+        static if (__traits(compiles, .start))
+        {
+            import lu.traits : TakesParams;
+
+            if (!this.isEnabled) return;
+
+            static if (TakesParams!(.start, typeof(this)))
+            {
+                .start(this);
+            }
+            else
+            {
+                import std.format : format;
+                enum pattern = "`%s.start` has an unsupported function signature: `%s`";
+                static assert(0, pattern.format(module_, typeof(.start).stringof));
             }
         }
     }
