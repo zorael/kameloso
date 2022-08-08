@@ -844,13 +844,13 @@ void prune(shared TitleLookupResults[string] cache, const uint expireSeconds)
 }
 
 
-// setup
+// initialise
 /++
     Initialises the shared cache, else it won't retain changes.
 
     Just assign an entry and remove it.
  +/
-void setup(WebtitlesPlugin plugin)
+void initialise(WebtitlesPlugin plugin)
 {
     // No need to synchronise this; no worker threads are running
     plugin.cache[string.init] = TitleLookupResults.init;

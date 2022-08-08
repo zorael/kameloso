@@ -2446,22 +2446,13 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 }
 
 
-// onCAP
+// start
 /++
-    Start the captive key generation routine at the earliest possible moment,
-    which are the [dialect.defs.IRCEvent.Type.CAP|CAP] events.
-
-    We can't do it in [start] since the calls to save and exit would go unheard,
-    as [start] happens before the main loop starts. It would then immediately
-    fail to read if too much time has passed, and nothing would be saved.
+    Start the captive key generation routine immediately after connection has
+    been established.
  +/
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.CAP)
-)
-void onCAP(TwitchPlugin plugin, const ref IRCEvent event)
+void start(TwitchPlugin plugin)
 {
-    if (event.aux != "LS") return;  // only do this once, on LS
-
     if (plugin.twitchSettings.keygen ||
         plugin.twitchSettings.superKeygen ||
         plugin.twitchSettings.googleKeygen ||
@@ -2789,13 +2780,13 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
 }
 
 
-// setup
+// initialise
 /++
-    Sets up the Twitch plugin.
+    Initialises the Twitch plugin.
 
     Disables the bell if we're not running inside a terminal.
  +/
-void setup(TwitchPlugin plugin)
+void initialise(TwitchPlugin plugin)
 {
     import kameloso.terminal : isTerminal;
     import std.concurrency : thisTid;
