@@ -517,8 +517,7 @@ public:
 
     // setupPlugins
     /++
-        Sets up all plugins, loading any resources they may want and calling any
-        module-level `setup` functions.
+        Sets up all plugins, calling any module-level `setup` functions.
 
         This has to happen after [initPlugins] or there will not be any plugins
         in the [plugins] array.

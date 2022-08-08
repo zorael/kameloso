@@ -165,8 +165,7 @@ public:
 
     // setup
     /++
-        Called when connection has been established, to set up the plugin;
-        its would-be constructor.
+        Called at program start but before connection has been established.
      +/
     void setup() @system;
 
@@ -1492,8 +1491,7 @@ mixin template IRCPluginImpl(
 
     // setup
     /++
-        Runs early after-connect routines, immediately after connection has been
-        established.
+        Runs early pre-connect routines.
      +/
     override public void setup() @system
     {
