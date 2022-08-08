@@ -2902,14 +2902,14 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
 
         try
         {
-            instance.startPlugins();
+            instance.setupPlugins();
             if (*instance.abort) break outerloop;
         }
         catch (IRCPluginInitialisationException e)
         {
             if (e.malformedFilename.length)
             {
-                enum pattern = "The <l>%s</> plugin failed to start; " ~
+                enum pattern = "The <l>%s</> plugin failed to setup; " ~
                     "<l>%s</> is malformed. (at <l>%s</>:<l>%d</>)%s";
                 logger.warningf(
                     pattern,
@@ -2921,7 +2921,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             }
             else
             {
-                enum pattern = "The <l>%s</> plugin failed to start; " ~
+                enum pattern = "The <l>%s</> plugin failed to setup; " ~
                     "<l>%s</> (at <l>%s</>:<l>%d</>)%s";
                 logger.warningf(
                     pattern,
@@ -2933,12 +2933,12 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             }
 
             version(PrintStacktraces) logger.trace(e.info);
-            attempt.retval = ShellReturnValue.pluginStartFailure;
+            attempt.retval = ShellReturnValue.pluginSetupFailure;
             break outerloop;
         }
         catch (Exception e)
         {
-            enum pattern = "An unexpected error occurred while starting the <l>%s</> plugin: " ~
+            enum pattern = "An unexpected error occurred while setting up the <l>%s</> plugin: " ~
                 "<l>%s</> (at <l>%s</>:<l>%d</>)%s";
             logger.warningf(
                 pattern,
@@ -2949,7 +2949,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                 bell);
 
             version(PrintStacktraces) logger.trace(e);
-            attempt.retval = ShellReturnValue.pluginStartException;
+            attempt.retval = ShellReturnValue.pluginSetupException;
             break outerloop;
         }
 

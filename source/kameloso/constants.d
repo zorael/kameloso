@@ -475,14 +475,14 @@ enum ShellReturnValue
     pluginResourceLoadException = 32,
 
     /++
-        Failure encountered during plugin startup.
+        Failure encountered during plugin setup.
      +/
-    pluginStartFailure = 33,
+    pluginSetupFailure = 33,
 
     /++
-        Generic exception was thrown when a plugin tried to start up.
+        Generic exception was thrown when a plugin tried to setup.
      +/
-    pluginStartException = 34,
+    pluginSetupException = 34,
 }
 
 

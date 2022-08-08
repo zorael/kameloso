@@ -163,12 +163,12 @@ public:
      +/
     bool setSettingByName(const string setting, const string value);
 
-    // start
+    // setup
     /++
-        Called when connection has been established, to start the plugin;
+        Called when connection has been established, to set up the plugin;
         its would-be constructor.
      +/
-    void start() @system;
+    void setup() @system;
 
     // printSettings
     /++
@@ -1484,28 +1484,28 @@ mixin template IRCPluginImpl(
         return didSomething;
     }
 
-    // start
+    // setup
     /++
         Runs early after-connect routines, immediately after connection has been
         established.
      +/
-    override public void start() @system
+    override public void setup() @system
     {
-        static if (__traits(compiles, .start))
+        static if (__traits(compiles, .setup))
         {
             import lu.traits : TakesParams;
 
             if (!this.isEnabled) return;
 
-            static if (TakesParams!(.start, typeof(this)))
+            static if (TakesParams!(.setup, typeof(this)))
             {
-                .start(this);
+                .setup(this);
             }
             else
             {
                 import std.format : format;
-                enum pattern = "`%s.start` has an unsupported function signature: `%s`";
-                static assert(0, pattern.format(module_, typeof(.start).stringof));
+                enum pattern = "`%s.setup` has an unsupported function signature: `%s`";
+                static assert(0, pattern.format(module_, typeof(.setup).stringof));
             }
         }
     }

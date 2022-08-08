@@ -513,23 +513,23 @@ public:
     }
 
 
-    // startPlugins
+    // setupPlugins
     /++
-        Start all plugins, loading any resources they may want and calling any
-        module-level `start` functions.
+        Sets up all plugins, loading any resources they may want and calling any
+        module-level `setup` functions.
 
         This has to happen after [initPlugins] or there will not be any plugins
         in the [plugins] array.
 
-        Don't start disabled plugins.
+        Don't setup disabled plugins.
      +/
-    void startPlugins() @system
+    void setupPlugins() @system
     {
         foreach (plugin; plugins)
         {
             if (!plugin.isEnabled) continue;
 
-            plugin.start();
+            plugin.setup();
             checkPluginForUpdates(plugin);
         }
     }

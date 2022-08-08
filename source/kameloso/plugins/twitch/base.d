@@ -2789,11 +2789,13 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
 }
 
 
-// start
+// setup
 /++
+    Sets up the Twitch plugin.
+
     Disables the bell if we're not running inside a terminal.
  +/
-void start(TwitchPlugin plugin)
+void setup(TwitchPlugin plugin)
 {
     import kameloso.terminal : isTerminal;
     import std.concurrency : thisTid;
