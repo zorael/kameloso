@@ -237,7 +237,7 @@ void messageFiber(ref Kameloso instance)
     // Loop forever; we'll just terminate the Generator when we want to quit.
     while (true)
     {
-        Next next;
+        auto next = Next.continue_;
 
         alias Quiet = Flag!"quiet";
 
@@ -721,21 +721,20 @@ void messageFiber(ref Kameloso instance)
         import std.datetime.systime : Clock;
         import core.time : Duration, msecs;
 
-        /// Did the concurrency receive catch something?
-        bool receivedSomething;
-
         /// Timestamp of when the loop started.
         immutable loopStartTime = Clock.currTime;
 
         static immutable instant = Duration.zero;
         static immutable maxReceiveTime = Timeout.messageReadMsecs.msecs;
 
-        do
+        while (!*instance.abort &&
+            (next == Next.continue_) &&
+            ((Clock.currTime - loopStartTime) <= maxReceiveTime))
         {
             import std.concurrency : receiveTimeout;
             import std.variant : Variant;
 
-            receivedSomething = receiveTimeout(instant,
+            immutable receivedSomething = receiveTimeout(instant,
                 &onMessage,
                 &eventToServer,
                 &proxyLoggerMessages,
@@ -749,11 +748,9 @@ void messageFiber(ref Kameloso instance)
                     logger.warningf(pattern, v.type);
                 }
             );
+
+            if (!receivedSomething) break;
         }
-        while (!*instance.abort &&
-            receivedSomething &&
-            (next == Next.continue_) &&
-            ((Clock.currTime - loopStartTime) <= maxReceiveTime));
 
         yield(next);
     }
