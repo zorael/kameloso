@@ -486,7 +486,6 @@ void onWelcome(SedReplacePlugin plugin)
 {
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.constants : BufferSize;
-    import core.thread : Fiber;
 
     delay(plugin, plugin.timeBetweenPurges, Yes.yield);
 

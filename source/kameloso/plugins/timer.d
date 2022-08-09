@@ -15,7 +15,6 @@ import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
-import core.thread : Fiber;
 
 
 // TimerSettings
@@ -713,6 +712,7 @@ void onWelcome(TimerPlugin plugin)
     import kameloso.constants : BufferSize;
     import lu.json : JSONStorage;
     import std.datetime.systime : Clock;
+    import core.thread : Fiber;
 
     plugin.reload();
     delay(plugin, plugin.timerPeriodicity, Yes.yield);
@@ -800,6 +800,7 @@ auto createTimerFiber(
     const string channelName)
 {
     import kameloso.constants : BufferSize;
+    import core.thread : Fiber;
 
     void dg()
     {
@@ -1083,6 +1084,7 @@ public:
 final class TimerPlugin : IRCPlugin
 {
 private:
+    import core.thread : Fiber;
     import core.time : seconds;
 
 public:
