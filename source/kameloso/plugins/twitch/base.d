@@ -1852,12 +1852,6 @@ void onEndOfMOTD(TwitchPlugin plugin)
         plugin.state.bot.pass;
     plugin.authorizationBearer = "Bearer " ~ pass;
 
-    if (plugin.bucket is null)
-    {
-        plugin.bucket[0] = QueryResponse.init;
-        plugin.bucket.remove(0);
-    }
-
     if (plugin.persistentWorkerTid == Tid.init)
     {
         plugin.persistentWorkerTid = spawn(&persistentQuerier,
@@ -2797,6 +2791,10 @@ void initialise(TwitchPlugin plugin)
     // We'd ideally do it in the plugin's constructor but the mixed in constructor
     // doesn't seem to work alongside an explicit, concrete one.
     plugin.useAPIFeatures = true;
+
+    // Initialise the bucket, just so that it isn't null
+    plugin.bucket[0] = QueryResponse.init;
+    plugin.bucket.remove(0);
 
     if (!isTerminal)
     {
