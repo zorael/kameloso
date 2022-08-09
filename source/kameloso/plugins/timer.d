@@ -705,6 +705,7 @@ void onAnyMessage(TimerPlugin plugin, const ref IRCEvent event)
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
+    .fiber(true)
 )
 void onWelcome(TimerPlugin plugin)
 {
@@ -714,32 +715,27 @@ void onWelcome(TimerPlugin plugin)
     import std.datetime.systime : Clock;
 
     plugin.reload();
+    delay(plugin, plugin.timerPeriodicity, Yes.yield);
 
-    void periodicDg()
+    while (true)
     {
-        while (true)
+        // Walk through channels, trigger fibers
+        foreach (immutable channelName, room; plugin.channels)
         {
-            // Walk through channels, trigger fibers
-            foreach (immutable channelName, room; plugin.channels)
+            foreach (timerFiber; room.timerFibers)
             {
-                foreach (timerFiber; room.timerFibers)
+                if (!timerFiber || (timerFiber.state != Fiber.State.HOLD))
                 {
-                    if (!timerFiber || (timerFiber.state != Fiber.State.HOLD))
-                    {
-                        logger.error("Dead or busy timer Fiber in channel ", channelName);
-                        continue;
-                    }
-
-                    timerFiber.call();
+                    logger.error("Dead or busy timer Fiber in channel ", channelName);
+                    continue;
                 }
+
+                timerFiber.call();
             }
-
-            delay(plugin, plugin.timerPeriodicity, Yes.yield);
         }
-    }
 
-    Fiber periodicFiber = new Fiber(&periodicDg, BufferSize.fiberStack);
-    delay(plugin, periodicFiber, plugin.timerPeriodicity);
+        delay(plugin, plugin.timerPeriodicity, Yes.yield);
+    }
 }
 
 
