@@ -606,7 +606,7 @@ mixin template IRCPluginImpl(
         /++
             Calls the passed function pointer, appropriately.
          +/
-        void call(Fun)(Fun fun, ref IRCEvent event)
+        void call(Fun)(scope Fun fun, ref IRCEvent event) scope
         {
             import lu.traits : TakesParams;
             import std.traits : ParameterStorageClass, Parameters, arity;
@@ -689,8 +689,12 @@ mixin template IRCPluginImpl(
         /++
             Process a function.
          +/
-        NextStep process(bool verbose, Fun)(Fun fun, const string funName,
-            const IRCEventHandler uda, ref IRCEvent event, const bool acceptsAnyType)
+        NextStep process(bool verbose, Fun)
+            (scope Fun fun,
+            const string funName,
+            const IRCEventHandler uda,
+            ref IRCEvent event,
+            const bool acceptsAnyType) scope
         {
             import std.algorithm.searching : canFind;
 
@@ -982,7 +986,17 @@ mixin template IRCPluginImpl(
                 if (state.settings.flush) stdout.flush();
             }
 
-            call(fun, event);
+            if (uda._fiber)
+            {
+                import kameloso.constants : BufferSize;
+                import core.thread : Fiber;
+                auto fiber = new Fiber(() => call(fun, event), BufferSize.fiberStack);
+                fiber.call();
+            }
+            else
+            {
+                call(fun, event);
+            }
 
             if (uda._chainable)
             {
@@ -2621,6 +2635,13 @@ struct IRCEventHandler
         within a plugin module are triggered.
      +/
     Timing _when;
+
+    // fiber
+    /++
+        Whether or not the annotated event handler should be run from within a
+        [core.thread.fiber.Fiber|Fiber].
+     +/
+    bool _fiber;
 
     mixin UnderscoreOpDispatcher;
 
