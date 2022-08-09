@@ -1833,6 +1833,10 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
 
     Has to be done at MOTD, as we only know whether we're on Twitch after
     [dialect.defs.IRCEvent.Type.RPL_MYINFO|RPL_MYINFO] or so.
+
+    Some of this could be done in [initialise], like spawning the persistent
+    worker thread, but then it'd always be spawned even if the plugin is disabled
+    or if we end up on a non-Twitch server.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_ENDOFMOTD)
@@ -1841,22 +1845,24 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
 void onEndOfMOTD(TwitchPlugin plugin)
 {
     import lu.string : beginsWith;
-    import std.concurrency : Tid, spawn;
-    import std.typecons : Flag, No, Yes;
-
-    if (!plugin.useAPIFeatures) return;
+    import std.concurrency : spawn;
 
     // Concatenate the Bearer and OAuth headers once.
+    // This has to be done *after* connect's register
     immutable pass = plugin.state.bot.pass.beginsWith("oauth:") ?
         plugin.state.bot.pass[6..$] :
         plugin.state.bot.pass;
     plugin.authorizationBearer = "Bearer " ~ pass;
 
-    if (plugin.persistentWorkerTid == Tid.init)
-    {
-        plugin.persistentWorkerTid = spawn(&persistentQuerier,
-            plugin.bucket, plugin.state.connSettings.caBundleFile);
-    }
+    // Initialise the bucket, just so that it isn't null
+    plugin.bucket[0] = QueryResponse.init;
+    plugin.bucket.remove(0);
+
+    // Spawn the persistent worker.
+    plugin.persistentWorkerTid = spawn(
+        &persistentQuerier,
+        plugin.bucket,
+        plugin.state.connSettings.caBundleFile);
 
     void validationDg()
     {
@@ -2777,24 +2783,17 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
 // initialise
 /++
     Initialises the Twitch plugin.
-
-    Disables the bell if we're not running inside a terminal.
  +/
 void initialise(TwitchPlugin plugin)
 {
     import kameloso.terminal : isTerminal;
     import std.concurrency : thisTid;
 
-    plugin.mainThread = cast(shared)thisTid;
-
     // Reset the shared static useAPIFeatures between instantiations.
-    // We'd ideally do it in the plugin's constructor but the mixed in constructor
-    // doesn't seem to work alongside an explicit, concrete one.
     plugin.useAPIFeatures = true;
 
-    // Initialise the bucket, just so that it isn't null
-    plugin.bucket[0] = QueryResponse.init;
-    plugin.bucket.remove(0);
+    // Register this thread as the main thread.
+    plugin.mainThread = cast(shared)thisTid;
 
     if (!isTerminal)
     {
