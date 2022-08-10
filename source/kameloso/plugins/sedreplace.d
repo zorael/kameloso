@@ -223,7 +223,7 @@ unittest
         The passed line with the relevant bits replaced, or as is if the expression
         didn't apply.
  +/
-string sedReplaceImpl(char char_)
+auto sedReplaceImpl(char char_)
     (const string line,
     const string expr,
     const Flag!"relaxSyntax" relaxSyntax)

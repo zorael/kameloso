@@ -172,7 +172,7 @@ public:
             A copy of [privateSendTimeout].
      +/
     pragma(inline, true)
-    uint sendTimeout() const @property pure @nogc nothrow
+    auto sendTimeout() const @property pure @nogc nothrow
     {
         return privateSendTimeout;
     }
@@ -200,7 +200,7 @@ public:
             A copy of [privateReceiveTimeout].
      +/
     pragma(inline, true)
-    uint receiveTimeout() const @property pure @nogc nothrow
+    auto receiveTimeout() const @property pure @nogc nothrow
     {
         return privateReceiveTimeout;
     }
@@ -255,7 +255,7 @@ public:
         Returns:
             A string with the last SSL error code translated into humanly-readable text.
      +/
-    string getSSLErrorMessage(const int code) @system
+    auto getSSLErrorMessage(const int code) @system
     in (ssl, "Tried to get SSL error message on a non-SSL `Connection`")
     {
         import std.string : fromStringz;

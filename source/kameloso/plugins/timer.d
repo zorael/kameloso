@@ -135,7 +135,7 @@ public:
             A line string. If the [lines] array is empty, then an empty string
             is returned instead.
      +/
-    string getLine()
+    auto getLine()
     {
         return (type == Type.random) ?
             randomLine() :
@@ -151,7 +151,7 @@ public:
             A line string. If the [lines] array is empty, then an empty string
             is returned instead.
      +/
-    string nextOrderedLine()
+    auto nextOrderedLine()
     {
         if (!lines.length) return string.init;
 
@@ -179,7 +179,7 @@ public:
             A line string. If the [lines] array is empty, then an empty string
             is returned instead.
      +/
-    string randomLine() const
+    auto randomLine() const
     {
         import std.random : uniform;
 

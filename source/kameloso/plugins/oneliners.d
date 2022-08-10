@@ -106,7 +106,7 @@ public:
             A response string. If the [responses] array is empty, then an empty
             string is returned instead.
      +/
-    string getResponse()
+    auto getResponse()
     {
         return (type == Type.random) ?
             randomResponse() :
@@ -122,7 +122,7 @@ public:
             A response string. If the [responses] array is empty, then an empty
             string is returned instead.
      +/
-    string nextOrderedResponse()
+    auto nextOrderedResponse()
     {
         if (!responses.length) return string.init;
 
@@ -145,7 +145,7 @@ public:
             A response string. If the [responses] array is empty, then an empty
             string is returned instead.
      +/
-    string randomResponse() const
+    auto randomResponse() const
     {
         import std.random : uniform;
 

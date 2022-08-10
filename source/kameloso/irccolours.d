@@ -520,7 +520,7 @@ unittest
     Returns:
         A string devoid of effects.
  +/
-string stripEffects(const string line) pure nothrow
+auto stripEffects(const string line) pure nothrow
 {
     alias I = IRCControlCharacter;
 
@@ -575,7 +575,7 @@ unittest
         The passed `line`, now with terminal colouring.
  +/
 version(Colours)
-string mapColours(
+auto mapColours(
     const string line,
     const uint fgReset = TerminalForeground.default_,
     const uint bgReset = TerminalBackground.default_) pure nothrow
@@ -914,7 +914,7 @@ unittest
     Returns:
         The passed `line`, now stripped of IRC colours.
  +/
-string stripColours(const string line) pure nothrow
+auto stripColours(const string line) pure nothrow
 {
     enum fgReset = 39;
     enum bgReset = 49;

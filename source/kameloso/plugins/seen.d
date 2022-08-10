@@ -997,7 +997,7 @@ void updateAllObservedUsers(SeenPlugin plugin)
     Returns:
         `long[string]` associative array; UNIX timestamp longs keyed by nickname strings.
  +/
-long[string] loadSeen(const string filename)
+auto loadSeen(const string filename)
 {
     import std.file : exists, isFile, readText;
     import std.json : JSONException, parseJSON;
