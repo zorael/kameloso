@@ -35,7 +35,7 @@ public:
     $(I info), $(I warning), $(I error), $(I critical), $(I fatal), and $(I off).
     If a log function with `LogLevel.fatal` is called the shutdown handler of
     that logger is called.
-+/
+ +/
 enum LogLevel : ubyte
 {
     /++
