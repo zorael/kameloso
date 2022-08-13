@@ -30,20 +30,28 @@ public:
 
     Example:
     ---
-    enum keyPattern = "
+    enum oldPattern = "
         %1$sYour private authorisation key is: %2$s%3$s%4$s
         It should be entered as %2$spass%4$s under %2$s[IRCBot]%4$s.
         ";
+    immutable oldMessage = oldPattern.format(Tint.log, Tint.info, pass, Tint.off);
 
-    enum keyPatternWithColoured = "
+    enum newPattern = "
         <l>Your private authorisation key is: <i>%s</>
         It should be entered as <i>pass</> under <i>[IRCBot]</>
         ";
+    immutable newMessage = newPattern
+        .format(pass)
+        .expandTags(LogLevel.off);
 
     enum patternWithColouredNickname = "No quotes for nickname <h>%s<h>.";
-    immutable message = patternWithColouredNickname
+    immutable colouredMessage = patternWithColouredNickname
         .format(event.sender.nickname)
-        .expandTags(LogLevel.off, No.strip);
+        .expandTags(LogLevel.off);
+
+    immutable uncolouredMessage = patternWithColouredNickname
+        .format(event.sender.nickname)
+        .stripTags();
     ---
 
     Params:
@@ -52,7 +60,7 @@ public:
         strip = Whether to expand tags or strip them.
 
     Returns:
-        The passsed `line` but with any `<tags>` replaced with ANSI colour sequences.
+        The passed `line` but with any `<tags>` replaced with ANSI colour sequences.
         The original string is passed back if there was nothing to replace.
  +/
 auto expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" strip) @safe
@@ -493,17 +501,14 @@ unittest
     String-replaces `<tags>` in a string with the results from calls to
     [kameloso.logger.KamelosoLogger|KamelosoLogger] `*tint` methods.
     Also works with `dstring`s and `wstring`s. Overload that does not take a
-    `strip` [std.typecons.Flag|Flag], optionally nor a `baseLevel`
-    [kameloso.logger.LogLevel|LogLevel], instead passing a default
-    [kameloso.logger.LogLevel.off|LogLevel.off]`.
+    `strip` [std.typecons.Flag|Flag].
 
     Params:
         line = A line of text, presumably with `<tags>`.
-        baseLevel = The base [kameloso.logger.LogLevel|LogLevel] to fall back to
-            on `</>` tags; default [kameloso.logger.LogLevel.off|LogLevel.off].
+        baseLevel = The base [kameloso.logger.LogLevel|LogLevel] to fall back to on `</>` tags.
 
     Returns:
-        The passsed `line` but with any `<tags>` replaced with ANSI colour sequences.
+        The passed `line` but with any `<tags>` replaced with ANSI colour sequences.
         The original string is passed back if there was nothing to replace.
  +/
 auto expandTags(T)(const T line, const LogLevel baseLevel) @safe
@@ -536,7 +541,7 @@ unittest
         line = A line of text, presumably with `<tags>` to remove.
 
     Returns:
-        The passsed `line` but with any `<tags>` removed.
+        The passed `line` with any `<tags>` removed.
         The original string is passed back if there was nothing to remove.
  +/
 auto stripTags(T)(const T line) @safe
