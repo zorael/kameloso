@@ -526,3 +526,31 @@ unittest
         assert((replaced == expected), replaced);
     }
 }
+
+
+// stripTags
+/++
+    Removes `<tags>` from a string.
+
+    Params:
+        line = A line of text, presumably with `<tags>` to remove.
+
+    Returns:
+        The passsed `line` but with any `<tags>` removed.
+        The original string is passed back if there was nothing to remove.
+ +/
+auto stripTags(T)(const T line) @safe
+{
+    return expandTags(line, LogLevel.off, Yes.strip);
+}
+
+///
+unittest
+{
+    {
+        immutable line = "This is a <l>log</> line.";
+        immutable replaced = line.stripTags();
+        immutable expected = "This is a log line.";
+        assert((replaced == expected), replaced);
+    }
+}
