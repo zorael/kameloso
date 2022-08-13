@@ -197,42 +197,42 @@ auto expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" st
                                 {
                                 case all:  //log
                                     //goto case 'l';
-                                    if (!strip) sink.put(logger.logtint);
+                                    sink.put(logger.logtint);
                                     break sliceswitch;
 
                                 case trace:
                                     //goto case 't';
-                                    if (!strip) sink.put(logger.tracetint);
+                                    sink.put(logger.tracetint);
                                     break sliceswitch;
 
                                 case info:
                                     //goto case 'i';
-                                    if (!strip) sink.put(logger.infotint);
+                                    sink.put(logger.infotint);
                                     break sliceswitch;
 
                                 case warning:
                                     //goto case 'w';
-                                    if (!strip) sink.put(logger.warningtint);
+                                    sink.put(logger.warningtint);
                                     break sliceswitch;
 
                                 case error:
                                     //goto case 'e';
-                                    if (!strip) sink.put(logger.errortint);
+                                    sink.put(logger.errortint);
                                     break sliceswitch;
 
                                 case critical:
                                     //goto case 'c';
-                                    if (!strip) sink.put(logger.criticaltint);
+                                    sink.put(logger.criticaltint);
                                     break sliceswitch;
 
                                 case fatal:
                                     //goto case 'f';
-                                    if (!strip) sink.put(logger.fataltint);
+                                    sink.put(logger.fataltint);
                                     break sliceswitch;
 
                                 case off:
                                     //goto case 'o';
-                                    if (!strip) sink.put(logger.offtint);
+                                    sink.put(logger.offtint);
                                     break sliceswitch;
                                 }
                             }
