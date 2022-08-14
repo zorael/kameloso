@@ -12,7 +12,7 @@
 * bugs
 * channel polls, `!seen`, counters, oneliners, timed announcements, stopwatches, ...
 * automatic mode sets (e.g. auto `+o` on join)
-* some common Twitch bot features
+* some common [Twitch bot features](#twitch-bot)
 * [more random stuff and gimmicks](https://github.com/zorael/kameloso/wiki/Current-plugins)
 
 All of the above are plugins and can be disabled at runtime or omitted from compilation entirely. It is modular and easy to extend. A skeletal Hello World plugin is [25 lines of code](source/kameloso/plugins/hello.d).
@@ -60,7 +60,7 @@ If there's anyone talking it should show up on your screen.
 * [Getting started](#getting-started)
   * [Prerequisites](#prerequisites)
      * [SSL libraries on Windows](#ssl-libraries-on-windows)
-  * [Downloading](#downloading)
+  * [Downloading source](#downloading-source)
   * [Compiling](#compiling)
     * [Build configurations](#build-configurations)
 * [How to use](#how-to-use)
@@ -107,7 +107,7 @@ The package manager [**dub**](https://code.dlang.org) is used to facilitate comp
 
 See the [known issues](#known-issues) section on Windows for information on libraries needed to connect to SSL servers and to allow plugins to access the web via `https://` addresses.
 
-## Downloading
+## Downloading source
 
 ```console
 $ git clone https://github.com/zorael/kameloso.git
@@ -194,7 +194,7 @@ More server-specific resource files will be created the first time you connect t
 
 ## Example use
 
-See [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins) for more information.
+See [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins) for more information on available plugins and their commands.
 
 ```
       you joined #channel
@@ -326,7 +326,7 @@ The command **prefix** (here `!`) is configurable; refer to your configuration f
 prefix                      "!"
 ```
 
-It can technically be any string and not just one character. It may include spaces if enclosed within quotes, like `"please "` (making it `please note`, `please quote`, ...). Additionally, prefixing commands with the bot's nickname also works, as in `kameloso: seen MrOffline`. This is to be able to disambiguate between several bots in the same channel. Some administrative commands only work when called this way.
+It can technically be any string and not just one character. It may include spaces if enclosed within quotes, like `"please "` (making it `please note`, `please quote`, ...). Additionally, prefixing commands with the bot's nickname also always works, as in `kameloso: seen MrOffline`. This is to be able to disambiguate between several bots in the same channel. Some administrative commands only work when called this way.
 
 ### **Except nothing happens**
 
@@ -446,7 +446,7 @@ Assuming a prefix of `!`, commands to test are:
 
 #### Song requests
 
-To get song requests to work, you need to register an "application" to interface with [Google (YouTube)](https://console.cloud.google.com/projectcreate) and/or [Spotify](https://developer.spotify.com/dashboard) servers. To initiate the guides for this, pass `--set twitch.googleKeygen` for YouTube and `--set twitch.spotifyKeygen` for Spotify, then simply follow the on-screen instructions. (They behave much like `--set twitch.keygen`.)
+To get song requests to work, you need to register an *application* to interface with [Google (YouTube)](https://console.cloud.google.com/projectcreate) and/or [Spotify](https://developer.spotify.com/dashboard) servers individually. To initiate the guides for this, pass `--set twitch.googleKeygen` for YouTube and `--set twitch.spotifyKeygen` for Spotify, then simply follow the on-screen instructions. (They behave much like `--set twitch.keygen`.)
 
 #### Certain commands require higher permissions
 
@@ -471,7 +471,7 @@ If you still can't find what you're looking for, or if you have suggestions on h
 
 ## Windows
 
-**kameloso** uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard library in the Posix sphere (Linux, macOS, ...) for making secure connections, but not so on Windows. If you run into errors about missing SSL libraries when attempting to connect on Windows, supply the `--get-openssl` flag to download and launch the installer for [**OpenSSL for Windows**](https://slproweb.com/products/Win32OpenSSL.html), and opt to install to Windows system directories when asked.
+**kameloso** uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard library for making secure connections in the Posix sphere (Linux, macOS, ...), but not so on Windows. If you run into errors about missing SSL libraries when attempting to connect on Windows, pass the `--get-openssl` flag to download and launch the installer for [**OpenSSL for Windows**](https://slproweb.com/products/Win32OpenSSL.html). Make sure to opt to install to Windows system directories when asked.
 
 # Roadmap
 
