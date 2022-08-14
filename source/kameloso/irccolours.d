@@ -1356,6 +1356,54 @@ T expandIRCTags(T)(const T line) @system
 }
 
 
+// stripIRCTags
+/++
+    Removes `<tags>` in an outgoing IRC string where the tags correlate to formatting
+    using [dialect.common.IRCControlCharacter|IRCControlCharacter]s.
+
+    Params:
+        line = String line to remove IRC tags from.
+
+    Returns:
+        The passed `line` but with tags removed.
+ +/
+T stripIRCTags(T)(const T line) @system
+{
+    return expandIRCTags(line, Yes.strip);
+}
+
+///
+@system unittest
+{
+    import std.typecons : Flag, No, Yes;
+
+    {
+        immutable line = "hello<b>hello<b>hello";
+        immutable expanded = line.stripIRCTags();
+        immutable expected = "hellohellohello";
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = "hello<99,99<b>hiho</>";
+        immutable expanded = line.stripIRCTags();
+        immutable expected = "hello<99,99hiho";
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = "hello<1>hellohello";
+        immutable expanded = line.stripIRCTags();
+        immutable expected = "hellohellohello";
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = `hello\<h>hello<h>hello<h>hello`;
+        immutable expanded = line.stripIRCTags();
+        immutable expected = "hello<h>hellohellohello";
+        assert((expanded == expected), expanded);
+    }
+}
+
+
 // expandIRCTagsImpl
 /++
     Implementation function for [expandIRCTags]. Kept separate so that
