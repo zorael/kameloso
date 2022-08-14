@@ -6,6 +6,7 @@ module kameloso.terminal.colours.tags;
 private:
 
 import kameloso.logger : LogLevel;
+import std.traits : isSomeString;
 import std.typecons : Flag, No, Yes;
 
 public:
@@ -64,6 +65,7 @@ public:
         The original string is passed back if there was nothing to replace.
  +/
 auto expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" strip) @safe
+if (isSomeString!T)
 {
     import kameloso.common : logger;
     import lu.string : contains;
@@ -512,6 +514,7 @@ unittest
         The original string is passed back if there was nothing to replace.
  +/
 auto expandTags(T)(const T line, const LogLevel baseLevel) @safe
+if (isSomeString!T)
 {
     static import kameloso.common;
     immutable strip = cast(Flag!"strip")kameloso.common.settings.monochrome;
@@ -545,6 +548,7 @@ unittest
         The original string is passed back if there was nothing to remove.
  +/
 auto stripTags(T)(const T line) @safe
+if (isSomeString!T)
 {
     return expandTags(line, LogLevel.off, Yes.strip);
 }
