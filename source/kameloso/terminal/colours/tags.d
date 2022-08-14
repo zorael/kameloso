@@ -46,13 +46,10 @@ public:
         .expandTags(LogLevel.off);
 
     enum patternWithColouredNickname = "No quotes for nickname <h>%s<h>.";
+
     immutable colouredMessage = patternWithColouredNickname
         .format(event.sender.nickname)
         .expandTags(LogLevel.off);
-
-    immutable uncolouredMessage = patternWithColouredNickname
-        .format(event.sender.nickname)
-        .stripTags();
     ---
 
     Params:
@@ -539,6 +536,22 @@ unittest
 // stripTags
 /++
     Removes `<tags>` from a string.
+
+    Example:
+    ---
+    enum pattern = "
+        <l>Your private authorisation key is: <i>%s</>
+        It should be entered as <i>pass</> under <i>[IRCBot]</>
+        ";
+    immutable newMessage = newPattern
+        .format(pass)
+        .stripTags();
+
+    enum patternWithColouredNickname = "No quotes for nickname <h>%s<h>.";
+    immutable uncolouredMessage = patternWithColouredNickname
+        .format(event.sender.nickname)
+        .stripTags();
+    ---
 
     Params:
         line = A line of text, presumably with `<tags>` to remove.
