@@ -2665,7 +2665,7 @@ void resolvePaths(ref Kameloso instance)
 
         mkdirRecurse(instance.settings.resourceDirectory);
         enum pattern = "Created resource directory <i>%s";
-        logger.log(pattern, instance.settings.resourceDirectory);
+        logger.logf(pattern, instance.settings.resourceDirectory);
     }
 
     instance.settings.configDirectory = instance.settings.configFile.dirName;
