@@ -351,21 +351,20 @@ kameloso --get-openssl
 The rest is common for all platforms:
 
 ```shell
-kameloso --gedit
+kameloso --server irc.chat.twitch.tv --port 6697 --gedit
 kameloso
 ```
 
-The first (`--gedit`) command creates a configuration file and opens it up in a text editor.
+The first (`--server`, `--port`, `--gedit`) command creates a configuration file with the server address and port already set to connect to Twitch, then opens it up in a text editor.
 
 **A line with a leading `#` is disabled, so remove any `#`s from the heads of entries you want to enable.**
 
-* Under `[IRCServer]`, be sure to set the server `address` to `irc.chat.twitch.tv` and `port` to `6697`.
 * Add your channel to `homeChannels`. Channel names are account names (which are always lowercase) with a `#` in front, so the Twitch user `Streamer123` would have the channel `#streamer123`.
 * Optionally add an account name to `admins` to give them global low-level control of the bot. Owners of channels (broadcasters) automatically have high privileges in the scope of their own channels, so it's not strictly needed.
 * You can ignore `nickname`, `user`, `realName`, `account` and `password`, as they're not applicable on Twitch.
-* Peruse the file for other settings if you want; you can always get back to it with `--gedit`.
+* Peruse the file for other settings if you want; you can always get back to it with `--gedit`. You don't need to include the `--server` and `--port` arguments now that the file has these values.
 
-The second command will launch the program and connect to Twitch, assuming you entered `irc.chat.twitch.tv` as server address. Upon detecting it's missing the authorisation token needed to authenticate with the server, it will start the guide to requesting a new one in your terminal. See the ["long story"](#long-story) section below for details.
+The second command will launch the program and connect to Twitch. Upon detecting it's missing the authorisation token needed to authenticate with the server, it will start the guide to requesting a new one in your terminal. See the ["long story"](#long-story) section below for details.
 
 **Note that it will request a token for the user you are currently logged in as in your browser**. If you want one for a different bot user instead, open up a private/incognito window, log in normally to Twitch **with the bot account** there, and copy/paste [this link](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true) to that browser window instead. (Then follow the terminal instructions again.)
 
