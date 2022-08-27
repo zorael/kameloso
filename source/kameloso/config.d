@@ -503,7 +503,7 @@ auto configurationText(const string configFile)
 
     Params:
         separator = Separator, defaults to a space string (" ").
-        array = A dynamic array.
+        arr = A dynamic array.
 
     Returns:
         A new array, with any elements previously containing more than one
