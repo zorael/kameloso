@@ -356,6 +356,9 @@ void manageConfigFile(
 
     if (shouldOpenTerminalEditor || shouldOpenGraphicalEditor)
     {
+        // If instructions were given, add an extra linebreak to make it prettier
+        if (!configFileExists) logger.trace();
+
         // --edit or --gedit was passed, so open up an appropriate editor
         if (shouldOpenTerminalEditor)
         {
