@@ -230,12 +230,13 @@ void printSettings(ref Kameloso instance) @system
 
     Params:
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
-        shouldWriteConfig = Writing to the configuration file was requested.
+        shouldWriteConfig = Writing to the configuration file was explicitly
+            requested or implicitly by changing some setting via getopt.
         shouldOpenTerminalEditor = Opening the configuration file in a
             terminal text editor was requested.
         shouldOpenGraphicalEditor = Opening the configuration file in a
             graphical text editor was requested.
-        force = (Windows) If true, uses `explorer.exe` as the graphical editor,
+        force = (Windows) If set, uses `explorer.exe` as the graphical editor,
             otherwise uses `notepad.exe`.
  +/
 void manageConfigFile(
@@ -243,7 +244,7 @@ void manageConfigFile(
     const Flag!"shouldWriteConfig" shouldWriteConfig,
     const Flag!"shouldOpenTerminalEditor" shouldOpenTerminalEditor,
     const Flag!"shouldOpenGraphicalEditor" shouldOpenGraphicalEditor,
-    const bool force) @system
+    const Flag!"force" force) @system
 {
     /++
         Opens up the configuration file in a terminal text editor.
@@ -259,7 +260,19 @@ void manageConfigFile(
 
         if (!editor.length)
         {
-            enum pattern = "Missing <l>$EDITOR</> environment variable; cannot guess editor.";
+            version(Windows)
+            {
+                enum pattern = "Missing <l>%EDITOR%</> environment variable; cannot guess editor.";
+            }
+            else version(Posix)
+            {
+                enum pattern = "Missing <l>$EDITOR</> environment variable; cannot guess editor.";
+            }
+            else
+            {
+                static assert(0, "Unsupported platform, please file a bug.");
+            }
+
             logger.error(pattern);
             return;
         }
@@ -320,25 +333,30 @@ void manageConfigFile(
         execute(command);
     }
 
-    if (shouldWriteConfig)
+    import std.file : exists;
+
+    /+
+        Write config if...
+        * --save was passed
+        * a setting was changed via getopt (also passes Yes.shouldWriteConfig)
+        * the config file doesn't exist
+     +/
+
+    immutable configFileExists = instance.settings.configFile.exists;
+
+    if (shouldWriteConfig || !configFileExists)
     {
-        // --save was passed; write configuration to file and quit
-        writeConfig(instance, instance.parser.client, instance.parser.server, instance.bot);
+        writeConfig(
+            instance,
+            instance.parser.client,
+            instance.parser.server,
+            instance.bot,
+            cast(Flag!"giveInstructions")(!configFileExists));
     }
 
     if (shouldOpenTerminalEditor || shouldOpenGraphicalEditor)
     {
-        import std.file : exists;
-
-        // --edit or --gedit was passed, so open up a text editor before exiting
-
-        if (!instance.settings.configFile.exists)
-        {
-            // No config file exists to open up, so create one first
-            writeConfig(instance, instance.parser.client, instance.parser.server,
-                instance.bot, No.giveInstructions);
-        }
-
+        // --edit or --gedit was passed, so open up an appropriate editor
         if (shouldOpenTerminalEditor)
         {
             openTerminalEditor();
@@ -912,6 +930,10 @@ auto handleGetopt(ref Kameloso instance, string[] args) @system
             );
         }
 
+        const backupClient = instance.parser.client;
+        auto backupServer = instance.parser.server;  // cannot opEqual const IRCServer with mutable
+        const backupBot = instance.bot;
+
         // No need to catch the return value, only used for --help
         cast(void)callGetopt(args, Yes.quiet);
 
@@ -1035,12 +1057,21 @@ auto handleGetopt(ref Kameloso instance, string[] args) @system
         if (shouldWriteConfig || shouldOpenTerminalEditor || shouldOpenGraphicalEditor)
         {
             // --save and/or --edit was passed; defer to manageConfigFile
+
+            // Also pass Yes.shouldWriteConfig if something was changed via getopt
+            shouldWriteConfig =
+                shouldWriteConfig ||
+                customSettings.length ||
+                (instance.parser.client != backupClient) ||
+                (instance.parser.server != backupServer) ||
+                (instance.bot != backupBot);
+
             manageConfigFile(
                 instance,
                 cast(Flag!"shouldWriteConfig")shouldWriteConfig,
                 cast(Flag!"shouldOpenTerminalEditor")shouldOpenTerminalEditor,
                 cast(Flag!"shouldOpenGraphicalEditor")shouldOpenGraphicalEditor,
-                settings.force);
+                cast(Flag!"force")settings.force);
             return Next.returnSuccess;
         }
 
