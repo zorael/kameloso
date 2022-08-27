@@ -478,6 +478,76 @@ auto configurationText(const string configFile)
 }
 
 
+// flatten
+/++
+    Flattens a dynamic array by splitting elements containing more than one
+    value (as separated by a separator string) into separate elements.
+
+    Params:
+        separator = Separator, defaults to a space string (" ").
+        array = A dynamic array.
+
+    Returns:
+        A new array, with any elements previously containing more than one
+        `separator`-separated entries now in separate elements.
+ +/
+auto flatten(string separator = " ", T)(const T[] arr)
+{
+    import lu.semver : LuSemVer;
+    import lu.string : stripped;
+    import std.algorithm.iteration : filter, joiner, map, splitter;
+    import std.array : array;
+
+    auto toReturn = arr
+        .map!(elem => elem.splitter(separator))
+        .joiner
+        .map!(elem => elem.stripped)
+        .filter!(elem => elem.length)
+        .array;
+
+    static if (
+        (LuSemVer.majorVersion >= 1) &&
+        (LuSemVer.minorVersion >= 2) &&
+        (LuSemVer.patchVersion >= 2))
+    {
+        return toReturn;
+    }
+    else
+    {
+        // FIXME: lu.string.stripped makes the type const
+        // Remove this when we update lu
+        return toReturn.dup;
+    }
+}
+
+///
+unittest
+{
+    import std.conv : text;
+
+    {
+        auto arr = [ "a", "b", "c d e   ", "f" ];
+        arr = flatten(arr);
+        assert((arr == [ "a", "b", "c", "d", "e", "f" ]), arr.text);
+    }
+    {
+        auto arr = [ "a", "b", "c,d,e,,,", "f" ];
+        arr = flatten!","(arr);
+        assert((arr == [ "a", "b", "c", "d", "e", "f" ]), arr.text);
+    }
+    {
+        auto arr = [ "a", "b", "c dhonk  e ", "f" ];
+        arr = flatten!"honk"(arr);
+        assert((arr == [ "a", "b", "c d", "e", "f" ]), arr.text);
+    }
+    {
+        auto arr = [ "a", "b", "c" ];
+        arr = flatten(arr);
+        assert((arr == [ "a", "b", "c" ]), arr.text);
+    }
+}
+
+
 public:
 
 
@@ -856,6 +926,11 @@ auto handleGetopt(ref Kameloso instance, string[] args) @system
         import kameloso.logger : KamelosoLogger;
         static import kameloso.common;
         kameloso.common.logger = new KamelosoLogger(settings);
+
+        // Support channels and admins being separated by spaces (mirror config file behaviour)
+        if (inputHomeChannels.length) inputHomeChannels = flatten(inputHomeChannels);
+        if (inputGuestChannels.length) inputGuestChannels = flatten(inputGuestChannels);
+        if (inputAdmins.length) inputAdmins = flatten(inputAdmins);
 
         // Manually override or append channels, depending on `shouldAppendChannels`
         if (shouldAppendToArrays)
