@@ -265,6 +265,11 @@ public:
     }
     ---
 
+    Params:
+        debug_ = Enables some debug output.
+        module_ = Name of the current module. Should never be specified and always
+            be left to its `__MODULE__` default value. Here be dragons.
+
     See_Also:
         [kameloso.plugins.common.core.IRCPlugin|IRCPlugin]
  +/
