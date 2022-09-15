@@ -1137,8 +1137,10 @@ auto listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
     with (ListenAttempt.State)
     final switch (attempt.state)
     {
-    case prelisten:  // Should never happen
-        assert(0, "listener attempt yielded state `prelisten`");
+    case unset:
+    case prelisten:
+        // Should never happen
+        assert(0, "listener yielded invalid state");
 
     case isEmpty:
         // Empty line yielded means nothing received; break foreach and try again
@@ -2164,6 +2166,10 @@ auto tryConnect(ref Kameloso instance)
         with (ConnectionAttempt.State)
         final switch (attempt.state)
         {
+        case unset:
+            // Should never happen
+            assert(0, "connector yielded `unset` state");
+
         case preconnect:
             import lu.common : sharedDomains;
             import std.socket : AddressException, AddressFamily;
@@ -2420,6 +2426,10 @@ auto tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
         with (ResolveAttempt.State)
         final switch (attempt.state)
         {
+        case unset:
+            // Should never happen
+            assert(0, "resolver yielded `unset` state");
+
         case preresolve:
             // No message for this
             continue;

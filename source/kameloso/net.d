@@ -480,6 +480,7 @@ struct ListenAttempt
      +/
     enum State
     {
+        unset,      /// Init value.
         prelisten,  /// About to listen.
         isEmpty,    /// Empty result; nothing read or similar.
         hasString,  /// String read, ready for processing.
@@ -815,6 +816,7 @@ struct ConnectionAttempt
      +/
     enum State
     {
+        unset,                   /// Init value.
         preconnect,              /// About to connect.
         connected,               /// Successfully connected.
         delayThenReconnect,      /// Failed to connect; should delay and retry.
@@ -1120,6 +1122,7 @@ struct ResolveAttempt
      +/
     enum State
     {
+        unset,          /// Init value.
         preresolve,     /// About to resolve.
         success,        /// Successfully resolved.
         exception,      /// Failure, recoverable exception thrown.
