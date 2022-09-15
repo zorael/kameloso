@@ -610,28 +610,6 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
 
     while (!abort)
     {
-        ListenAttempt attempt;
-
-        if (conn.ssl)
-        {
-            import requests.ssl_adapter : openssl;
-            attempt.bytesReceived = openssl.SSL_read(conn.sslInstance,
-                cast(void*)buffer.ptr+start, cast(int)(buffer.length-start));
-        }
-        else
-        {
-            attempt.bytesReceived = conn.receive(buffer[start..$]);
-        }
-
-        if (!attempt.bytesReceived)
-        {
-            attempt.state = State.error;
-            attempt.error = lastSocketError;
-            yield(attempt);
-            // Should never get here
-            assert(0, "Dead `listenFiber` resumed after yield (no bytes received)");
-        }
-
         version(Posix)
         {
             import core.stdc.errno : EAGAIN, ECONNRESET, EINTR, ENETDOWN,
@@ -649,13 +627,11 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
                 connectionReset = ECONNRESET,
                 interrupted = EINTR,
             }
-
-            attempt.errno = errno;
         }
         else version(Windows)
         {
             import core.sys.windows.winsock2 : WSAECONNRESET, WSAEINTR, WSAENETDOWN,
-                WSAENETUNREACH, WSAENOTCONN, WSAETIMEDOUT, WSAEWOULDBLOCK, WSAGetLastError;
+                WSAENETUNREACH, WSAENOTCONN, WSAETIMEDOUT, WSAEWOULDBLOCK, errno = WSAGetLastError;
 
             // https://www.hardhats.org/cs/broker/docs/winsock.html
             // https://infosys.beckhoff.com/english.php?content=../content/1033/tcpipserver/html/tcplclibtcpip_e_winsockerror.htm
@@ -672,12 +648,34 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
                 interrupted = WSAEINTR,
                 overlappedIO = 997,
             }
-
-            attempt.errno = WSAGetLastError();
         }
         else
         {
             static assert(0, "Unsupported platform, please file a bug.");
+        }
+
+        ListenAttempt attempt;
+
+        if (conn.ssl)
+        {
+            import requests.ssl_adapter : openssl;
+            attempt.bytesReceived = openssl.SSL_read(conn.sslInstance,
+                cast(void*)buffer.ptr+start, cast(int)(buffer.length-start));
+        }
+        else
+        {
+            attempt.bytesReceived = conn.receive(buffer[start..$]);
+        }
+
+        attempt.errno = errno;
+
+        if (!attempt.bytesReceived)
+        {
+            attempt.state = State.error;
+            attempt.error = lastSocketError;
+            yield(attempt);
+            // Should never get here
+            assert(0, "Dead `listenFiber` resumed after yield (no bytes received)");
         }
 
         if (attempt.errno == Errno.interrupted)
