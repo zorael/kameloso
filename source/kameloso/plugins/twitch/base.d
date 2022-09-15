@@ -2658,6 +2658,7 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
     void warnOnWeekDg()
     {
         immutable numDays = untilExpiry.total!"days";
+        if (numDays <= 0) return;
 
         // More than a week away, just .info
         enum pattern = "Your Twitch authorisation token will expire " ~
@@ -2670,6 +2671,7 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
         int numDays;
         int numHours;
         untilExpiry.split!("days", "hours")(numDays, numHours);
+        if ((numDays < 0) || (numHours < 0)) return;
 
         // A week or less, more than a day; warning
         if (numHours > 0)
@@ -2698,6 +2700,7 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
         int numHours;
         int numMinutes;
         untilExpiry.split!("hours", "minutes")(numHours, numMinutes);
+        if ((numHours < 0) || (numMinutes < 0)) return;
 
         // Less than a day; warning
         if (numMinutes > 0)
@@ -2722,6 +2725,7 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
     void warnOnMinutesDg()
     {
         immutable numMinutes = untilExpiry.total!"minutes";
+        if (numMinutes <= 0) return;
 
         // Less than an hour; warning
         enum pattern = "WARNING: Your Twitch authorisation token will expire " ~
