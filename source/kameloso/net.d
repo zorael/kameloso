@@ -453,11 +453,19 @@ public:
             }
         }
 
-        immutable newlinePos = rawline.indexOf('\n');
+        auto newlinePos = rawline.indexOf('\n');  // mutable
 
         if (newlinePos != -1)
         {
-            // Line incorrectly has a newline, so send up until that and discard rest
+            // Line incorrectly has at least one newline, so send up until
+            // the first and discard the remainder
+
+            if ((newlinePos > 0) && (rawline[newlinePos-1] == '\r'))
+            {
+                // It was actually "\r\n", so omit the '\r' too
+                --newlinePos;
+            }
+
             sendlineImpl(rawline[0..newlinePos]);
         }
         else
