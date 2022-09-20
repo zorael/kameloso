@@ -807,7 +807,7 @@ void onCommandPart(AdminPlugin plugin, const ref IRCEvent event)
             .addSyntax("$command [plugin.setting=value]")
     )
 )
-void onSetCommand(AdminPlugin plugin, const ref IRCEvent event)
+void onCommandSet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.thread : ThreadMessage;
     import std.concurrency : send;
