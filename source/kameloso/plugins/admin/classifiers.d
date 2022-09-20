@@ -29,19 +29,20 @@ package:
 
 // manageClassLists
 /++
-    Common code for whitelisting and blacklisting nicknames/accounts.
+    Common code for enlisting and delisting nicknames/accounts.
 
     Params:
         plugin = The current [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin].
         event = The triggering [dialect.defs.IRCEvent|IRCEvent].
-        list = Which list to add/remove from; "staff", "whitelist", "operator" or "blacklist".
+        list = Which list to add/remove from; "staff", "whitelist", "elevated",
+            "operator" or "blacklist".
  +/
 void manageClassLists(
     AdminPlugin plugin,
     const ref IRCEvent event,
     const string list)
-in (list.among!("whitelist", "blacklist", "operator", "staff"),
-    list ~ " is not whitelist, operator, staff nor blacklist")
+in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
+    list ~ " is not whitelist, elevated, operator, staff nor blacklist")
 {
     import lu.string : beginsWith, nom, strippedRight;
     import std.typecons : Flag, No, Yes;
@@ -86,13 +87,13 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
 
 // listList
 /++
-    Sends a list of the current users in the whitelist, operator list or the
-    blacklist to the querying user or channel.
+    Sends a list of the current users in the whitelist, operator list, list of
+    elevated users, staff, or the blacklist to the querying user or channel.
 
     Params:
         plugin = The current [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin].
         channel = The channel the list relates to.
-        list = Which list to list; "whitelist", "operator", "staff" or "blacklist".
+        list = Which list to list; "whitelist", "elevated", "operator", "staff" or "blacklist".
         event = Optional [dialect.defs.IRCEvent|IRCEvent] that instigated the listing.
  +/
 void listList(
@@ -100,8 +101,8 @@ void listList(
     const string channel,
     const string list,
     const IRCEvent event = IRCEvent.init)
-in (list.among!("whitelist", "blacklist", "operator", "staff"),
-    list ~ " is not whitelist, operator, staff nor blacklist")
+in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
+    list ~ " is not whitelist, elevated, operator, staff nor blacklist")
 {
     import lu.json : JSONStorage;
     import std.format : format;
@@ -109,6 +110,7 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
     immutable asWhat =
         (list == "operator") ? "operators" :
         (list == "staff") ? "staff" :
+        (list == "elevated") ? "elevated users" :
         (list == "whitelist") ? "whitelisted users" :
         /*(list == "blacklist") ?*/ "blacklisted users";
 
@@ -138,14 +140,15 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
 
 // lookupEnlist
 /++
-    Adds an account to either the whitelist, operator list or the blacklist.
+    Adds an account to either the whitelist, operator list, list of elevated users,
+    staff, or the blacklist.
 
     Passes the `list` parameter to [alterAccountClassifier], for list selection.
 
     Params:
         plugin = The current [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin].
         specified = The nickname or account to white-/blacklist.
-        list = Which of "whitelist", "operator", "staff" or "blacklist" to add to.
+        list = Which of "whitelist", "elevated", "operator", "staff" or "blacklist" to add to.
         channel = Which channel the enlisting relates to.
         event = Optional instigating [dialect.defs.IRCEvent|IRCEvent].
  +/
@@ -155,7 +158,7 @@ void lookupEnlist(
     const string list,
     const string channel,
     const IRCEvent event = IRCEvent.init)
-in (list.among!("whitelist", "blacklist", "operator", "staff"),
+in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
     list ~ " is not whitelist, operator, staff nor blacklist")
 {
     import dialect.common : isValidNickname;
@@ -165,6 +168,7 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
     [
         "staff",
         "operator",
+        "elevated",
         "whitelist",
         "blacklist",
     ];
@@ -172,6 +176,7 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
     immutable asWhat =
         (list == "operator") ? "an operator" :
         (list == "staff") ? "staff" :
+        (list == "elevated") ? "elevated" :
         (list == "whitelist") ? "a whitelisted user" :
         /*(list == "blacklist") ?*/ "a blacklisted user";
 
@@ -357,14 +362,15 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
 
 // delist
 /++
-    Removes a nickname from either the whitelist, operator list or the blacklist.
+    Removes a nickname from either the whitelist, operator list, list of elevated
+    users, staff, or the blacklist.
 
     Passes the `list` parameter to [alterAccountClassifier], for list selection.
 
     Params:
         plugin = The current [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin].
-        account = The account to delist as whitelisted/blacklisted or as operator.
-        list = Which of "whitelist", "operator", "staff" or "blacklist" to remove from.
+        account = The account to delist.
+        list = Which of "whitelist", "elevated", "operator", "staff" or "blacklist" to remove from.
         channel = Which channel the enlisting relates to.
         event = Optional instigating [dialect.defs.IRCEvent|IRCEvent].
  +/
@@ -374,7 +380,7 @@ void delist(
     const string list,
     const string channel,
     const IRCEvent event = IRCEvent.init)
-in (list.among!("whitelist", "blacklist", "operator", "staff"),
+in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
     list ~ " is not whitelist, operator, staff nor blacklist")
 {
     import std.format : format;
@@ -397,6 +403,7 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
     immutable asWhat =
         (list == "operator") ? "an operator" :
         (list == "staff") ? "staff" :
+        (list == "elevated") ? "elevated" :
         (list == "whitelist") ? "a whitelisted user" :
         /*(list == "blacklist") ?*/ "a blacklisted user";
 
@@ -479,7 +486,8 @@ enum AlterationResult
     Params:
         plugin = The current [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin].
         add = Whether to add to or remove from lists.
-        list = Which list to add to or remove from; `whitelist`, `operator` or `blacklist`.
+        list = Which list to add to or remove from; `whitelist`, `elevated`,
+            `operator`, `staff` or `blacklist`.
         account = Services account name to add or remove.
         channelName = Channel the account-class applies to.
 
@@ -498,8 +506,8 @@ auto alterAccountClassifier(
     const string list,
     const string account,
     const string channelName)
-in (list.among!("whitelist", "blacklist", "operator", "staff"),
-    list ~ " is not whitelist, operator, staff nor blacklist")
+in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
+    list ~ " is not whitelist, elevated, operator, staff nor blacklist")
 {
     import kameloso.thread : ThreadMessage;
     import lu.json : JSONStorage;
