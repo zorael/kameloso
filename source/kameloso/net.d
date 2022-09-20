@@ -1226,7 +1226,7 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
 
     alias State = ResolveAttempt.State;
 
-    yield(ResolveAttempt.init);
+    yield(ResolveAttempt(State.preresolve));
 
     for (uint i; (i >= 0); ++i)
     {
