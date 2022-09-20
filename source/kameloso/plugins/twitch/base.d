@@ -2453,100 +2453,101 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
  +/
 void start(TwitchPlugin plugin)
 {
-    if (plugin.twitchSettings.keygen ||
+    import std.algorithm.searching : endsWith;
+
+    immutable someKeygenWanted =
+        plugin.twitchSettings.keygen ||
         plugin.twitchSettings.superKeygen ||
         plugin.twitchSettings.googleKeygen ||
-        plugin.twitchSettings.spotifyKeygen ||
-        (!plugin.state.bot.pass.length && !plugin.state.settings.force))
+        plugin.twitchSettings.spotifyKeygen;
+
+    if (!plugin.state.server.address.endsWith(".twitch.tv"))
     {
-        import std.algorithm.searching : endsWith;
-
-        if ((plugin.state.server.daemon == IRCServer.Daemon.unset) &&
-            plugin.state.server.address.endsWith(".twitch.tv"))
+        if (someKeygenWanted)
         {
-            import kameloso.thread : ThreadMessage;
-            import std.concurrency : prioritySend;
-
-            // Some keygen, reload to load secrets so existing ones are read
-            // Not strictly needed for normal keygen
-            plugin.reload();
-
-            bool needSeparator;
-            enum separator = "---------------------------------------------------------------------";
-
-            // Automatically keygen if no pass
-            if (plugin.twitchSettings.keygen ||
-                (!plugin.state.bot.pass.length && !plugin.state.settings.force))
-            {
-                import kameloso.plugins.twitch.keygen : requestTwitchKey;
-                plugin.requestTwitchKey();
-                plugin.twitchSettings.keygen = false;
-                needSeparator = true;
-            }
-
-            if (*plugin.state.abort) return;
-
-            if (plugin.twitchSettings.superKeygen)
-            {
-                import kameloso.plugins.twitch.keygen : requestTwitchSuperKey;
-                if (needSeparator) logger.trace(separator);
-                plugin.requestTwitchSuperKey();
-                plugin.twitchSettings.superKeygen = false;
-                needSeparator = true;
-            }
-
-            if (*plugin.state.abort) return;
-
-            if (plugin.twitchSettings.googleKeygen)
-            {
-                import kameloso.plugins.twitch.google : requestGoogleKeys;
-                if (needSeparator) logger.trace(separator);
-                plugin.requestGoogleKeys();
-                plugin.twitchSettings.googleKeygen = false;
-                needSeparator = true;
-            }
-
-            if (*plugin.state.abort) return;
-
-            if (plugin.twitchSettings.spotifyKeygen)
-            {
-                import kameloso.plugins.twitch.spotify : requestSpotifyKeys;
-                if (needSeparator) logger.trace(separator);
-                plugin.requestSpotifyKeys();
-                plugin.twitchSettings.spotifyKeygen = false;
-            }
-
-            if (*plugin.state.abort) return;
-
-            // Remove custom Twitch settings so we can reconnect without jumping
-            // back into keygens.
-            static immutable string[8] settingsToPop =
-            [
-                "twitch.keygen",
-                "twitchbot.keygen",
-                "twitch.superKeygen",
-                "twitchbot.superKeygen",
-                "twitch.googleKeygen",
-                "twitchbot.googleKeygen",
-                "twitch.spotifyKeygen",
-                "twitchbot.spotifyKeygen",
-            ];
-
-            foreach (immutable setting; settingsToPop[])
-            {
-                plugin.state.mainThread.prioritySend(ThreadMessage.popCustomSetting(setting));
-            }
-
-            plugin.state.mainThread.prioritySend(ThreadMessage.reconnect);
-        }
-        else
-        {
-            enum message = "A Twitch keygen setting was supplied but the configuration " ~
+            enum message = "A Twitch keygen was requested but the configuration " ~
                 "file is not set up to connect to Twitch. (<l>irc.chat.twitch.tv</>)";
             logger.trace();
             logger.warning(message);
             logger.trace();
         }
+
+        // Not conncting to Twitch, return early
+        return;
+    }
+
+    if (someKeygenWanted || (!plugin.state.bot.pass.length && !plugin.state.settings.force))
+    {
+        import kameloso.thread : ThreadMessage;
+        import std.concurrency : prioritySend;
+
+        // Some keygen, reload to load secrets so existing ones are read
+        // Not strictly needed for normal keygen
+        plugin.reload();
+
+        bool needSeparator;
+        enum separator = "---------------------------------------------------------------------";
+
+        // Automatically keygen if no pass
+        if (plugin.twitchSettings.keygen ||
+            (!plugin.state.bot.pass.length && !plugin.state.settings.force))
+        {
+            import kameloso.plugins.twitch.keygen : requestTwitchKey;
+            plugin.requestTwitchKey();
+            if (*plugin.state.abort) return;
+            plugin.twitchSettings.keygen = false;
+            needSeparator = true;
+        }
+
+        if (plugin.twitchSettings.superKeygen)
+        {
+            import kameloso.plugins.twitch.keygen : requestTwitchSuperKey;
+            if (needSeparator) logger.trace(separator);
+            plugin.requestTwitchSuperKey();
+            if (*plugin.state.abort) return;
+            plugin.twitchSettings.superKeygen = false;
+            needSeparator = true;
+        }
+
+        if (plugin.twitchSettings.googleKeygen)
+        {
+            import kameloso.plugins.twitch.google : requestGoogleKeys;
+            if (needSeparator) logger.trace(separator);
+            plugin.requestGoogleKeys();
+            if (*plugin.state.abort) return;
+            plugin.twitchSettings.googleKeygen = false;
+            needSeparator = true;
+        }
+
+        if (plugin.twitchSettings.spotifyKeygen)
+        {
+            import kameloso.plugins.twitch.spotify : requestSpotifyKeys;
+            if (needSeparator) logger.trace(separator);
+            plugin.requestSpotifyKeys();
+            if (*plugin.state.abort) return;
+            plugin.twitchSettings.spotifyKeygen = false;
+        }
+
+        // Remove custom Twitch settings so we can reconnect without jumping
+        // back into keygens.
+        static immutable string[8] settingsToPop =
+        [
+            "twitch.keygen",
+            "twitchbot.keygen",
+            "twitch.superKeygen",
+            "twitchbot.superKeygen",
+            "twitch.googleKeygen",
+            "twitchbot.googleKeygen",
+            "twitch.spotifyKeygen",
+            "twitchbot.spotifyKeygen",
+        ];
+
+        foreach (immutable setting; settingsToPop[])
+        {
+            plugin.state.mainThread.prioritySend(ThreadMessage.popCustomSetting(setting));
+        }
+
+        plugin.state.mainThread.prioritySend(ThreadMessage.reconnect);
     }
 }
 
