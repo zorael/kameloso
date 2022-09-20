@@ -493,6 +493,13 @@ auto replay(Plugin, Fun)(Plugin plugin, const ref IRCEvent event,
             }
             break;
 
+        case elevated:
+            if (replay.event.sender.class_ >= IRCUser.Class.elevated)
+            {
+                goto case ignore;
+            }
+            break;
+
         case whitelist:
             if (replay.event.sender.class_ >= IRCUser.Class.whitelist)
             {

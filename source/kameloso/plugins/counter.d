@@ -33,7 +33,7 @@ import std.typecons : Flag, No, Yes;
     @Enabler bool enabled = true;
 
     /// User level required to bump a counter.
-    IRCUser.Class minimumPermissionsNeeded = IRCUser.Class.whitelist;
+    IRCUser.Class minimumPermissionsNeeded = IRCUser.Class.elevated;
 }
 
 
@@ -43,7 +43,7 @@ import std.typecons : Flag, No, Yes;
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .permissionsRequired(Permissions.whitelist)
+    .permissionsRequired(Permissions.elevated)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()

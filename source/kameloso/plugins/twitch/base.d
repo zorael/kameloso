@@ -68,7 +68,7 @@ public:
 
     /++
         Whether or not VIPs are always implicitly (at least) class
-        [dialect.defs.IRCUser.Class.whitelist|IRCUser.Class.whitelist].
+        [dialect.defs.IRCUser.Class.elevated|IRCUser.Class.elevated].
      +/
     bool promoteVIPs = true;
 
@@ -2887,11 +2887,11 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
         if (plugin.twitchSettings.promoteVIPs)
         {
-            if ((user.class_ < IRCUser.Class.whitelist) &&
+            if ((user.class_ < IRCUser.Class.elevated) &&
                 user.badges.contains("vip/"))
             {
-                // User is VIP but is not registered as at least whitelist
-                user.class_ = IRCUser.Class.whitelist;
+                // User is VIP but is not registered as at least elevated
+                user.class_ = IRCUser.Class.elevated;
                 return;
             }
         }
