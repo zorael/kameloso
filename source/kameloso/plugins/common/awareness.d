@@ -628,7 +628,7 @@ void onUserAwarenessPing(IRCPlugin plugin, const ref IRCEvent event) @system
 
     enum minutesBeforeInitialRehash = 5;
 
-    static long pingRehash = 0L;
+    static long pingRehash;
 
     if (pingRehash == 0L)
     {

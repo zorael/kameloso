@@ -24,8 +24,7 @@ debug import kameloso.plugins.admin.debugging;
 
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness;
-import kameloso.common : expandTags, logger;
-import kameloso.logger : LogLevel;
+import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
 import std.concurrency : send;
@@ -931,6 +930,7 @@ void onCommandSummary(AdminPlugin plugin)
 )
 void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
+    import kameloso.time : DurationStringException, abbreviatedDuration;
     import lu.string : nom;
     import std.conv : ConvException, text, to;
 
@@ -959,9 +959,8 @@ void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 
     try
     {
-        import kameloso.common : abbreviatedDuration;
         immutable delay = abbreviatedDuration(delaystring);
-        return cycle(plugin, channelName, delay, slice);
+        cycle(plugin, channelName, delay, slice);
     }
     catch (ConvException e)
     {
@@ -970,7 +969,10 @@ void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         enum pattern = `"<b>%s<b>" is not a valid number for seconds to delay.`;
         immutable message = pattern.format(slice);
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
-        return;
+    }
+    catch (DurationStringException e)
+    {
+        privmsg(plugin.state, event.channel, event.sender.nickname, e.msg);
     }
 }
 
@@ -985,7 +987,8 @@ void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         delay_ = [core.time.Duration|Duration] to delay rejoining.
         key = The key to use when rejoining the channel.
  +/
-void cycle(AdminPlugin plugin,
+void cycle(
+    AdminPlugin plugin,
     const string channelName,
     const Duration delay_ = Duration.zero,
     const string key = string.init)
@@ -1294,7 +1297,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         if (slice.length)
         {
             enum pattern = `Reloading plugin "<i>%s</>".`;
-            logger.logf(pattern.expandTags(LogLevel.all), slice);
+            logger.logf(pattern, slice);
         }
         else
         {
@@ -1318,8 +1321,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             // verb_channel_nickname
             enum pattern = "Invalid bus message syntax; expected <l>%s%s</> " ~
                 "[verb] [channel] [nickname if add/del], got \"<l>%s</>\"";
-            logger.warningf(pattern.expandTags(LogLevel.warning),
-                plugin.state.settings.prefix, verb, message.payload.strippedRight);
+            logger.warningf(pattern, plugin.state.settings.prefix, verb, message.payload.strippedRight);
             return;
         }
 
@@ -1350,7 +1352,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 
         default:
             enum pattern = "Invalid bus message <l>%s</> subverb <l>%s";
-            logger.warningf(pattern.expandTags(LogLevel.warning), verb, subverb);
+            logger.warningf(pattern, verb, subverb);
             break;
         }
         break;
@@ -1397,7 +1399,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 
         default:
             enum pattern = "Invalid bus message <l>%s</> subverb <l>%s";
-            logger.warningf(pattern.expandTags(LogLevel.warning), verb, subverb);
+            logger.warningf(pattern, verb, subverb);
             break;
         }
         break;
@@ -1406,7 +1408,8 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         return plugin.onCommandSummary();
 
     default:
-        logger.error("[admin] Unimplemented bus message verb: <l>".expandTags(LogLevel.error), verb);
+        enum pattern = "[admin] Unimplemented bus message verb: <l>%s";
+        logger.errorf(pattern, verb);
         break;
     }
 }

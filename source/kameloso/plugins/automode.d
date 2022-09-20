@@ -16,8 +16,7 @@ private:
 
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
-import kameloso.common : expandTags, logger;
-import kameloso.logger : LogLevel;
+import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
@@ -74,7 +73,6 @@ void initResources(AutomodePlugin plugin)
     catch (JSONException e)
     {
         import kameloso.plugins.common.misc : IRCPluginInitialisationException;
-        import std.path : baseName;
 
         version(PrintStacktraces) logger.trace(e);
         throw new IRCPluginInitialisationException(
@@ -193,7 +191,8 @@ void onJoin(AutomodePlugin plugin, const ref IRCEvent event)
         nickname = String nickname of the user to apply modes to.
         account = String account of the user, to look up definitions for.
  +/
-void applyAutomodes(AutomodePlugin plugin,
+void applyAutomodes(
+    AutomodePlugin plugin,
     const string channelName,
     const string nickname,
     const string account)
@@ -238,7 +237,7 @@ in (account.length, "Tried to apply automodes to an empty account")
     {
         enum pattern = "Could not apply <i>+%s</> <i>%s</> in <i>%s</> " ~
             "because we are not an operator in the channel.";
-        logger.logf(pattern.expandTags(LogLevel.all), missingModes, nickname, channelName);
+        logger.logf(pattern, missingModes, nickname, channelName);
         return;
     }
 
@@ -403,7 +402,8 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
         channelName = The channel the automode should play out in.
         mode = The mode string, when adding a new automode.
  +/
-void modifyAutomode(AutomodePlugin plugin,
+void modifyAutomode(
+    AutomodePlugin plugin,
     const Flag!"add" add,
     const string nickname,
     const string channelName,

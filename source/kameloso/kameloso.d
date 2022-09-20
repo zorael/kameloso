@@ -27,7 +27,6 @@ private:
     import lu.container : Buffer;
     import std.datetime.systime : SysTime;
 
-
     // Throttle
     /++
         Aggregate of values and state needed to throttle outgoing messages.
@@ -53,6 +52,12 @@ private:
             m = 0.0;
         }
     }
+
+    /++
+        Numeric ID of the current connection, to disambiguate between multiple
+        connections in one program run. Private value.
+     +/
+    uint privateConnectionID;
 
 public:
     /++
@@ -160,9 +165,37 @@ public:
      +/
     string[][string] invalidConfigurationEntries;
 
+    /++
+        Custom settings specfied at the command line with the `--set` parameter.
+     +/
+    string[] customSettings;
+
     /// Never copy this.
     @disable this(this);
 
+    /++
+        Numeric ID of the current connection, to disambiguate between multiple
+        connections in one program run. Accessor.
+
+        Returns:
+            The numeric ID of the current connection.
+     +/
+    pragma(inline, true)
+    auto connectionID()
+    {
+        return privateConnectionID;
+    }
+
+    /++
+        Generates a new connection ID.
+
+        Don't include the number 0, or it may collide with the default value of `static uint`.
+     +/
+    void generateNewConnectionID() @safe
+    {
+        import std.random : uniform;
+        privateConnectionID = uniform(1, 1001);
+    }
 
     // throttleline
     /++
@@ -290,15 +323,11 @@ public:
         It only initialises them to the point where they're aware of their
         settings, and not far enough to have loaded any resources.
 
-        Params:
-            customSettings = String array of custom settings to apply to plugins
-                in addition to those read from the configuration file.
-
         Throws:
             [kameloso.plugins.common.misc.IRCPluginSettingsException|IRCPluginSettingsException]
             on failure to apply custom settings.
      +/
-    void initPlugins(const string[] customSettings) @system
+    void initPlugins() @system
     {
         import kameloso.plugins : PluginModules;
         import kameloso.plugins.common.core : IRCPluginState;
@@ -307,7 +336,7 @@ public:
 
         teardownPlugins();
 
-        IRCPluginState state;
+        auto state = IRCPluginState(this.connectionID);
         state.client = parser.client;
         state.server = parser.server;
         state.bot = this.bot;
@@ -400,7 +429,7 @@ public:
             }
         }
 
-        immutable allCustomSuccess = plugins.applyCustomSettings(customSettings, settings);
+        immutable allCustomSuccess = plugins.applyCustomSettings(this.customSettings, settings);
 
         if (!allCustomSuccess)
         {
@@ -419,6 +448,7 @@ public:
         on each plugin.
      +/
     void initPluginResources() @system
+    in (plugins.length, "Tried to initialise plugin resources but there were no plugins to initialise")
     {
         foreach (plugin; plugins)
         {
@@ -437,10 +467,8 @@ public:
         Don't teardown disabled plugins as they may not have been initialised fully.
      +/
     void teardownPlugins() @system
+    //in (plugins.length, "Tried to teardown plugins but there were no plugins to teardown")
     {
-        import kameloso.common : expandTags;
-        import kameloso.logger : LogLevel;
-
         if (!plugins.length) return;
 
         foreach (plugin; plugins)
@@ -467,14 +495,14 @@ public:
                 else
                 {
                     enum pattern = "ErrnoException when tearing down <l>%s</>: <l>%s";
-                    logger.warningf(pattern.expandTags(LogLevel.warning), plugin.name, e.msg);
+                    logger.warningf(pattern, plugin.name, e.msg);
                     version(PrintStacktraces) logger.trace(e.info);
                 }
             }
             catch (Exception e)
             {
                 enum pattern = "Exception when tearing down <l>%s</>: <l>%s";
-                logger.warningf(pattern.expandTags(LogLevel.warning), plugin.name, e.msg);
+                logger.warningf(pattern, plugin.name, e.msg);
                 version(PrintStacktraces) logger.trace(e);
             }
 
@@ -487,17 +515,38 @@ public:
     }
 
 
-    // startPlugins
+    // setupPlugins
     /++
-        Start all plugins, loading any resources they may want and calling any
-        module-level `start` functions.
+        Sets up all plugins, calling any module-level `setup` functions.
 
         This has to happen after [initPlugins] or there will not be any plugins
         in the [plugins] array.
 
+        Don't setup disabled plugins.
+     +/
+    void setupPlugins() @system
+    in (plugins.length, "Tried to set up plugins but there were no plugins to set up")
+    {
+        foreach (plugin; plugins)
+        {
+            if (!plugin.isEnabled) continue;
+
+            plugin.setup();
+            checkPluginForUpdates(plugin);
+        }
+    }
+
+
+    // startPlugins
+    /++
+        Starts all plugins by calling any module-level `start` functions.
+
+        This happens after connection has been established.
+
         Don't start disabled plugins.
      +/
     void startPlugins() @system
+    in (plugins.length, "Tried to start plugins but there were no plugins to start")
     {
         foreach (plugin; plugins)
         {
@@ -520,6 +569,7 @@ public:
                 member structs to inspect for updates.
      +/
     void checkPluginForUpdates(IRCPlugin plugin)
+    in (plugins.length, "Tried to check plugins for updates but there were no plugins to check")
     {
         alias Update = typeof(plugin.state.updates);
 
@@ -574,6 +624,8 @@ public:
     //pragma(inline, true)
     void propagate(Thing)(Thing thing) pure nothrow @nogc
     if (is(Thing == struct))
+    in (plugins.length, "Tried to set propagate a `" ~ Thing.stringof ~
+        "` but there were no plugins to propagate to")
     {
         import std.meta : AliasSeq;
 
@@ -613,8 +665,13 @@ public:
     /++
         Propagates a single update to the the [previousWhoisTimestamps]
         associative array to all plugins.
+
+        Params:
+            nickname = Nickname whose WHOIS timestamp to propagate.
+            now = UNIX WHOIS timestamp.
      +/
     void propagateWhoisTimestamp(const string nickname, const long now) pure
+    in (plugins.length, "Tried to propagate a WHOIS timestamp but there were no plugins to propagate to")
     {
         foreach (plugin; plugins)
         {
@@ -631,8 +688,9 @@ public:
         modify the original.
      +/
     void propagateWhoisTimestamps() pure
+    in (plugins.length, "Tried to propagate WHOIS timestamps but there were no plugins to propagate to")
     {
-        auto copy = previousWhoisTimestamps.dup;
+        auto copy = previousWhoisTimestamps.dup;  // mutable
 
         foreach (plugin; plugins)
         {

@@ -1,5 +1,5 @@
 name "kameloso"
-description "IRC bot"
+description "IRC and Twitch bot"
 authors "JR"
 copyright "Copyright © 2016-2022, JR"
 homepage "https://www.github.com/zorael/kameloso"
@@ -11,10 +11,10 @@ dflags "-dip25" "-dip1008"
 dflags "-linkonce-templates" platform="ldc"
 x:ddoxTool "scod"
 
-dependency "lu" version="~>1.2.0"
+dependency "lu" version="~>1.2.1"
 dependency "dialect" version="~>1.3.0"
-dependency "arsd-official:dom" version="~>10.8.2"
-dependency "arsd-official:http" version="~>10.8.2"
+dependency "arsd-official:dom" version="~>10.9.0"
+dependency "arsd-official:http" version="~>10.9.0"
 dependency "requests" version="~>2.0.0"
 
 sourcePaths "source"
@@ -38,7 +38,7 @@ versions \
     "WithSedReplacePlugin" \
     "WithSeenPlugin" \
     "WithStopwatchPlugin" \
-    "WithVotesPlugin" \
+    "WithPollPlugin" \
     "WithTimerPlugin" \
     "WithWebtitlesPlugin"
 
@@ -58,7 +58,7 @@ versions \
  */
 versions \
     "Colours" \
-    "WithTwitchBotPluginStub" \
+    "WithTwitchPluginStub" \
     "PreciseGC"
     //"ConcurrentGC"
 
@@ -70,7 +70,7 @@ versions \
 /*
 versions \
     "TwitchSupport" \
-    "WithTwitchBotPlugin" \
+    "WithTwitchPlugin" \
     "TwitchWarnings" \
     "TwitchPromoteEverywhere" \
     "OmniscientAdmin" \
@@ -82,7 +82,8 @@ versions \
     "OSXTMPDIR" \
     "TraceWhois" \
     "PrintAccountNamesToo" \
-    "PrintClassNamesToo"
+    "PrintClassNamesToo" \
+    "Callgrind"
 */
 
 configuration "application" {
@@ -103,7 +104,7 @@ configuration "twitch" {
 
     versions \
         "TwitchSupport" \
-        "WithTwitchBotPlugin"
+        "WithTwitchPlugin"
 }
 
 configuration "twitch-lowmem" {
@@ -112,7 +113,7 @@ configuration "twitch-lowmem" {
 
     versions \
         "TwitchSupport" \
-        "WithTwitchBotPlugin"
+        "WithTwitchPlugin"
 }
 
 configuration "dev" {
@@ -120,7 +121,7 @@ configuration "dev" {
 
     versions \
         "TwitchSupport" \
-        "WithTwitchBotPlugin" \
+        "WithTwitchPlugin" \
         "TwitchWarnings" \
         "OmniscientAdmin" \
         "PrintStacktraces" \
@@ -142,7 +143,7 @@ configuration "dev-lowmem" {
 
     versions \
         "TwitchSupport" \
-        "WithTwitchBotPlugin" \
+        "WithTwitchPlugin" \
         "TwitchWarnings" \
         "OmniscientAdmin" \
         "PrintStacktraces" \
@@ -163,7 +164,7 @@ configuration "unittest" {
 
     versions \
         "TwitchSupport" \
-        "WithTwitchBotPlugin" \
+        "WithTwitchPlugin" \
         "TwitchWarnings" \
         "OmniscientAdmin" \
         "OmniscientQueries" \
@@ -185,7 +186,7 @@ configuration "unittest-lowmem" {
 
     versions \
         "TwitchSupport" \
-        "WithTwitchBotPlugin" \
+        "WithTwitchPlugin" \
         "TwitchWarnings" \
         "OmniscientAdmin" \
         "OmniscientQueries" \

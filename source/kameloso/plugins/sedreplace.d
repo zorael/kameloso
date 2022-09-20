@@ -114,7 +114,8 @@ struct Line
     Returns:
         Original line with the changes the replace pattern incurred.
  +/
-string sedReplace(const string line,
+auto sedReplace(
+    const string line,
     const string expr,
     const Flag!"relaxSyntax" relaxSyntax) @safe pure nothrow
 in (line.length, "Tried to `sedReplace` an empty line")
@@ -222,7 +223,7 @@ unittest
         The passed line with the relevant bits replaced, or as is if the expression
         didn't apply.
  +/
-string sedReplaceImpl(char char_)
+auto sedReplaceImpl(char char_)
     (const string line,
     const string expr,
     const Flag!"relaxSyntax" relaxSyntax)
@@ -479,38 +480,34 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
+    .fiber(true)
 )
 void onWelcome(SedReplacePlugin plugin)
 {
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.constants : BufferSize;
-    import core.thread : Fiber;
 
-    void prevlineClearDg()
+    delay(plugin, plugin.timeBetweenPurges, Yes.yield);
+
+    while (true)
     {
-        while (true)
+        import std.datetime.systime : Clock;
+
+        immutable now = Clock.currTime.toUnixTime;
+
+        foreach (immutable sender, const lines; plugin.prevlines)
         {
-            import std.datetime.systime : Clock;
-
-            immutable now = Clock.currTime.toUnixTime;
-
-            foreach (immutable sender, const lines; plugin.prevlines)
+            if (!lines.length ||
+                ((now - lines[0].timestamp) >= plugin.replaceTimeoutSeconds))
             {
-                if (!lines.length ||
-                    ((now - lines[0].timestamp) >= plugin.replaceTimeoutSeconds))
-                {
-                    // Something is either wrong with the sender's entries or
-                    // the most recent entry is too old
-                    plugin.prevlines.remove(sender);
-                }
+                // Something is either wrong with the sender's entries or
+                // the most recent entry is too old
+                plugin.prevlines.remove(sender);
             }
-
-            delay(plugin, plugin.timeBetweenPurges, Yes.yield);
         }
-    }
 
-    Fiber prevlineClearFiber = new Fiber(&prevlineClearDg, BufferSize.fiberStack);
-    delay(plugin, prevlineClearFiber, plugin.timeBetweenPurges);
+        delay(plugin, plugin.timeBetweenPurges, Yes.yield);
+    }
 }
 
 

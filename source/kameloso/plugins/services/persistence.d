@@ -20,8 +20,7 @@ version(WithPersistenceService):
 private:
 
 import kameloso.plugins.common.core;
-import kameloso.common : expandTags, logger;
-import kameloso.logger : LogLevel;
+import kameloso.common : logger;
 import dialect.defs;
 
 
@@ -54,6 +53,8 @@ void postprocess(PersistenceService service, ref IRCEvent event)
         if (const stored = event.sender.nickname in service.state.users)
         {
             service.state.users[event.target.nickname] = *stored;
+            ++service.usersAddedSinceLastRehash;
+            service.maybeRehash();
 
             auto newUser = event.target.nickname in service.state.users;
             newUser.nickname = event.target.nickname;
@@ -228,6 +229,8 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
         if (persistentCacheMiss)
         {
             service.state.users[user.nickname] = user;
+            ++service.usersAddedSinceLastRehash;
+            service.maybeRehash();
             stored = user.nickname in service.state.users;
         }
         else
@@ -343,7 +346,7 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
         {
             // Not in a channel. Additionally not an admin
             // Default to registered if the user has an account, except on Twitch
-            // postprocess in twitchbot/base.d will assign class as per badges
+            // postprocess in twitch/base.d will assign class as per badges
 
             if (service.state.server.daemon == IRCServer.Daemon.twitch)
             {
@@ -455,18 +458,37 @@ void onWelcome(PersistenceService service)
 
     service.reloadAccountClassifiersFromDisk();
     if (service.state.settings.preferHostmasks) service.reloadHostmasksFromDisk();
+}
 
-    void periodicallyDg()
+
+// maybeRehash
+/++
+    Rehashes cache arrays if we deem enough new users have been added to them
+    since the last rehash to warrant it.
+
+    Params:
+        service = Current [PersistenceService].
+ +/
+void maybeRehash(PersistenceService service)
+{
+    enum minimumAddedNeededForRehash = 128;
+    enum rehashThresholdMultiplier = 1.0;
+
+    if ((service.usersAddedSinceLastRehash > minimumAddedNeededForRehash) &&
+        (service.usersAddedSinceLastRehash > (service.state.users.length * rehashThresholdMultiplier)))
     {
-        while (true)
-        {
-            service.state.users = service.state.users.rehash();
-            delay(service, service.timeBetweenRehashes, Yes.yield);
-        }
-    }
+        service.state.users = service.state.users.rehash();
+        service.userClassChannelCache = service.userClassChannelCache.rehash();
+        service.hostmaskNicknameAccountCache = service.hostmaskNicknameAccountCache.rehash();
+        service.channelUsers = service.channelUsers.rehash();
 
-    Fiber rehashFiber = new Fiber(&periodicallyDg, BufferSize.fiberStack);
-    delay(service, rehashFiber, service.timeBetweenRehashes);
+        foreach (ref channelUsers; service.channelUsers)
+        {
+            channelUsers = channelUsers.rehash();
+        }
+
+        service.usersAddedSinceLastRehash = 0;
+    }
 }
 
 
@@ -544,13 +566,13 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
         catch (JSONException e)
         {
             enum pattern = "JSON exception caught when populating <l>%s</>: <l>%s";
-            logger.warningf(pattern.expandTags(LogLevel.warning), list, e.msg);
+            logger.warningf(pattern, list, e.msg);
             version(PrintStacktraces) logger.trace(e.info);
         }
         catch (Exception e)
         {
             enum pattern = "Unhandled exception caught when populating <l>%s</>: <l>%s";
-            logger.warningf(pattern.expandTags(LogLevel.warning), list, e.msg);
+            logger.warningf(pattern, list, e.msg);
             version(PrintStacktraces) logger.trace(e);
         }
     }
@@ -582,9 +604,8 @@ void reloadHostmasksFromDisk(PersistenceService service)
         import dialect.common : isValidHostmask;
         import lu.string : contains;
 
-        // Copy/pasted from initHostmaskResources...
-        enum examplePlaceholderKey1 = "<nickname1>!<ident>@<address>";
-        enum examplePlaceholderKey2 = "<nickname2>!<ident>@<address>";
+        alias examplePlaceholderKey1 = PersistenceService.Placeholder.hostmask1;
+        alias examplePlaceholderKey2 = PersistenceService.Placeholder.hostmask2;
 
         if ((hostmask == examplePlaceholderKey1) ||
             (hostmask == examplePlaceholderKey2))
@@ -595,13 +616,13 @@ void reloadHostmasksFromDisk(PersistenceService service)
         if (!hostmask.isValidHostmask(service.state.server))
         {
             enum pattern =`Malformed hostmask in <l>%s</>: "<l>%s</>"`;
-            logger.warningf(pattern.expandTags(LogLevel.warning), service.hostmasksFile, hostmask);
+            logger.warningf(pattern, service.hostmasksFile, hostmask);
             continue;
         }
         else if (!account.length)
         {
             enum pattern =`Incomplete hostmask entry in <l>%s</>: "<l>%s</>" has empty account`;
-            logger.warningf(pattern.expandTags(LogLevel.warning), service.hostmasksFile, hostmask);
+            logger.warningf(pattern, service.hostmasksFile, hostmask);
             continue;
         }
 
@@ -621,7 +642,7 @@ void reloadHostmasksFromDisk(PersistenceService service)
         catch (Exception e)
         {
             enum pattern =`Exception parsing hostmask in <l>%s</> ("<l>%s</>"): <l>%s`;
-            logger.warningf(pattern.expandTags(LogLevel.warning), service.hostmasksFile, hostmask, e.msg);
+            logger.warningf(pattern, service.hostmasksFile, hostmask, e.msg);
             version(PrintStacktraces) logger.trace(e);
         }
     }
@@ -671,8 +692,6 @@ void initAccountResources(PersistenceService service)
     catch (JSONException e)
     {
         import kameloso.plugins.common.misc : IRCPluginInitialisationException;
-        import kameloso.common : logger;
-        import std.path : baseName;
 
         version(PrintStacktraces) logger.trace(e);
         throw new IRCPluginInitialisationException(
@@ -723,7 +742,7 @@ void initAccountResources(PersistenceService service)
 
     foreach (liststring; listTypes)
     {
-        enum examplePlaceholderKey = "<#channel>";
+        alias examplePlaceholderKey = PersistenceService.Placeholder.channel;
 
         if (liststring !in json)
         {
@@ -809,10 +828,10 @@ void initHostmaskResources(PersistenceService service)
             __LINE__);
     }
 
-    enum examplePlaceholderKey1 = "<nickname1>!<ident>@<address>";
-    enum examplePlaceholderKey2 = "<nickname2>!<ident>@<address>";
-    enum examplePlaceholderValue1 = "<account1>";
-    enum examplePlaceholderValue2 = "<account2>";
+    alias examplePlaceholderKey1 = PersistenceService.Placeholder.hostmask1;
+    alias examplePlaceholderKey2 = PersistenceService.Placeholder.hostmask2;
+    alias examplePlaceholderValue1 = PersistenceService.Placeholder.account1;
+    alias examplePlaceholderValue2 = PersistenceService.Placeholder.account2;
 
     if (json.object.length == 0)
     {
@@ -860,10 +879,25 @@ final class PersistenceService : IRCPlugin
 {
 private:
     import kameloso.constants : KamelosoFilenames;
-    import core.time : hours;
 
-    /// How often to rehash associative arrays, optimising access.
-    enum timeBetweenRehashes = 6.hours;
+    /// Placeholder values.
+    enum Placeholder
+    {
+        /// Hostmask placeholder 1.
+        hostmask1 = "<nickname1>!<ident>@<address>",
+
+        /// Hostmask placeholder 2.
+        hostmask2 = "<nickname2>!<ident>@<address>",
+
+        /// Channel placeholder.
+        channel = "<#channel>",
+
+        /// Account placeholder 1.
+        account1 = "<account1>",
+
+        /// Account placeholder 2.
+        account2 = "<account2>",
+    }
 
     /// File with user definitions.
     @Resource string userFile = KamelosoFilenames.users;
@@ -882,6 +916,13 @@ private:
 
     /// Associative array of which channel the latest class lookup for an account related to.
     string[string] userClassChannelCache;
+
+    /++
+        How many users have been added to the
+        [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users]
+        associative array since it was last rehashed.
+     +/
+    uint usersAddedSinceLastRehash;
 
     mixin IRCPluginImpl;
 }

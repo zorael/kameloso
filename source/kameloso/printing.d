@@ -62,7 +62,7 @@ private:
     import std.algorithm.comparison : max;
 
     enum minimumTypeWidth = 8;  // Current sweet spot, accommodates well for `string[]`
-    enum minimumNameWidth = 24;  // Current minimum 22, TwitchBotSettings' "caseSensitiveTriggers"
+    enum minimumNameWidth = 24;  // Current minimum 22, TwitchSettings' "caseSensitiveTriggers"
 
     static if (all)
     {
@@ -92,7 +92,7 @@ unittest
     import std.algorithm.comparison : max;
 
     enum minimumTypeWidth = 8;  // Current sweet spot, accommodates well for `string[]`
-    enum minimumNameWidth = 24;  // Current minimum 22, TwitchBotSettings' "caseSensitiveTriggers"
+    enum minimumNameWidth = 24;  // Current minimum 22, TwitchSettings' "caseSensitiveTriggers"
 
     struct S1
     {

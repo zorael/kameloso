@@ -18,8 +18,7 @@ private:
 
 import kameloso.plugins.printer.base;
 
-import kameloso.common : expandTags, logger;
-import kameloso.logger : LogLevel;
+import kameloso.common : logger;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
@@ -55,7 +54,7 @@ public:
     Appender!(string[]) lines;
 
     /++
-        Constructor taking a [std.datetime.sytime.SysTime|SysTime], to save as the date
+        Constructor taking a [std.datetime.systime.SysTime|SysTime], to save as the date
         the buffer was created.
      +/
     this(const string dir, const SysTime now)
@@ -74,7 +73,7 @@ public:
     }
 
     /++
-        Constructor not taking a [std.datetime.sytime.SysTime|SysTime], for use with
+        Constructor not taking a [std.datetime.systime.SysTime|SysTime], for use with
         buffers that should not be dated, such as the error log and the raw log.
      +/
     this(const string dir, const string filename)
@@ -105,7 +104,6 @@ public:
 void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.printer.formatting : formatMessageMonochrome;
-    import kameloso.common : Tint;
     import std.typecons : Flag, No, Yes;
 
     if (!plugin.printerSettings.logs) return;
@@ -301,7 +299,8 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
         }
         catch (FileException e)
         {
-            logger.warning("File exception caught when writing to log: ", Tint.log, e.msg);
+            enum pattern = "File exception caught when writing to log: <l>%s";
+            logger.warningf(pattern, e.msg);
             version(PrintStacktraces) logger.trace(e.info);
         }
         catch (ErrnoException e)
@@ -312,14 +311,14 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                 import core.stdc.errno : errno;
 
                 enum pattern = "ErrnoException (<l>%s</>) caught when writing to log: <l>%s";
-                logger.warningf(pattern.expandTags(LogLevel.warning), errnoStrings[errno], e.msg);
+                logger.warningf(pattern, errnoStrings[errno], e.msg);
             }
             else version(Windows)
             {
                 import core.stdc.errno : errno;
 
                 enum pattern = "ErrnoException (<l>%d</>) caught when writing to log: <l>%s";
-                logger.warningf(pattern.expandTags(LogLevel.warning), errno, e.msg);
+                logger.warningf(pattern, errno, e.msg);
             }
             else
             {
@@ -330,7 +329,8 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
         }
         catch (Exception e)
         {
-            logger.warning("Unhandled exception caught when writing to log: ", Tint.log, e.msg);
+            enum pattern = "Unhandles exception caught when writing to log: <l>%s";
+            logger.warningf(pattern, e.msg);
             version(PrintStacktraces) logger.trace(e);
         }
     }
@@ -459,26 +459,26 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 
     Params:
         logLocation = String of the location directory we want to store logs in.
+        connectionID = ID of the current connection, so as not to spam error messages.
 
     Returns:
         A bool whether or not the log location is valid.
  +/
-bool establishLogLocation(const string logLocation)
+auto establishLogLocation(const string logLocation, const uint connectionID)
 {
-    import kameloso.common : Tint;
     import std.file : exists, isDir;
 
     if (logLocation.exists)
     {
         if (logLocation.isDir) return true;
 
-        static bool naggedAboutDir;
+        static uint idWhenNaggedAboutDir;
 
-        if (!naggedAboutDir)
+        if (idWhenNaggedAboutDir != connectionID)
         {
             enum pattern = "Specified log directory (<l>%s</>) is not a directory.";
-            logger.warningf(pattern.expandTags(LogLevel.warning), logLocation);
-            naggedAboutDir = true;
+            logger.warningf(pattern, logLocation);
+            idWhenNaggedAboutDir = connectionID;
         }
 
         return false;
@@ -489,7 +489,8 @@ bool establishLogLocation(const string logLocation)
         import std.file : mkdirRecurse;
 
         mkdirRecurse(logLocation);
-        logger.log("Created log directory: ", Tint.info, logLocation);
+        enum pattern = "Created log directory: <i>%s";
+        logger.logf(pattern, logLocation);
     }
 
     return true;
@@ -579,7 +580,7 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
     catch (FileException e)
     {
         enum pattern = "File exception caught when committing log <l>%s</>: <l>%s%s";
-        logger.warningf(pattern.expandTags(LogLevel.warning), buffer.file, e.msg, plugin.bell);
+        logger.warningf(pattern, buffer.file, e.msg, plugin.bell);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (ErrnoException e)
@@ -588,13 +589,12 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
         {
             import kameloso.common : errnoStrings;
             enum pattern = "ErrnoException <l>%s</> caught when committing log to <l>%s</>: <l>%s%s";
-            logger.warningf(pattern.expandTags(LogLevel.warning), errnoStrings[e.errno],
-                buffer.file, e.msg, plugin.bell);
+            logger.warningf(pattern, errnoStrings[e.errno], buffer.file, e.msg, plugin.bell);
         }
         else version(Windows)
         {
             enum pattern = "ErrnoException <l>%d</> caught when committing log to <l>%s</>: <l>%s%s";
-            logger.warningf(pattern.expandTags(LogLevel.warning), e.errno, buffer.file, e.msg, plugin.bell);
+            logger.warningf(pattern, e.errno, buffer.file, e.msg, plugin.bell);
         }
         else
         {
@@ -606,7 +606,7 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
     catch (Exception e)
     {
         enum pattern = "Unexpected exception caught when committing log <l>%s</>: <l>%s%s";
-        logger.warningf(pattern.expandTags(LogLevel.warning), buffer.file, e.msg, plugin.bell);
+        logger.warningf(pattern, buffer.file, e.msg, plugin.bell);
         version(PrintStacktraces) logger.trace(e);
     }
 }

@@ -45,11 +45,8 @@ private import kameloso.plugins.common.awareness : ChannelAwareness, UserAwarene
 // Likewise [dialect.defs], for the definitions of an IRC event.
 private import dialect.defs;
 
-// [kameloso.common] for some globals and helpers.
-private import kameloso.common : expandTags, logger;
-
-// [kameloso.logger] for an enum we need for colouring terminal output.
-private import kameloso.logger : LogLevel;
+// [kameloso.common] for the global logger instance.
+private import kameloso.common : logger;
 
 // [std.datetime.systime] for the [std.datetime.systime.Clock|Clock], to update times with.
 private import std.datetime.systime : Clock;
@@ -179,7 +176,7 @@ public:
         then replay the event by invoking its delegate.
 
     * [kameloso.plugins.common.core.IRCPluginState.awaitingFibers|IRCPluginState.awaitingFibers]
-        is an array of [core.thread.fiber.Fiber|Fiber]s indexed by [dialect.ircdefs.IRCEvent.Type]s'
+        is an array of [core.thread.fiber.Fiber|Fiber]s indexed by [dialect.defs.IRCEvent.Type]s'
         numeric values. Fibers in the array of a particular event type will be
         executed the next time such an event is incoming. Think of it as Fiber callbacks.
 
@@ -562,12 +559,16 @@ void onSomeAction(SeenPlugin plugin, const ref IRCEvent event)
         case TWITCH_SUBUPGRADE:
             // Consider these as chatty events too
             // targets might be caught in the crossfire in some cases
-            goto case CHAN;
+            break;
+
+        case JOIN:
+        case PART:
+            // Ignore Twitch JOINs and PARTs
+            if (plugin.state.server.daemon == IRCServer.Daemon.twitch) return;
+            goto default;
     }
 
-    /*case JOIN:
-    case PART:
-    case MODE:*/
+    //case MODE:
     default:
         if (plugin.seenSettings.ignoreNonChatEvents) return;
         // Drop down
@@ -774,7 +775,7 @@ void onNamesReply(SeenPlugin plugin, const ref IRCEvent event)
 )
 void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
 {
-    import kameloso.common : timeSince;
+    import kameloso.time : timeSince;
     import dialect.common : isValidNickname;
     import lu.string : beginsWith, contains;
     import std.algorithm.searching : canFind;
@@ -904,7 +905,8 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
         time = UNIX timestamp of when the user was seen.
         skipModesignStrp = Whether or not to explicitly not strip modesigns from the nickname.
  +/
-void updateUser(SeenPlugin plugin,
+void updateUser(
+    SeenPlugin plugin,
     const string signed,
     const long time,
     const Flag!"skipModesignStrip" skipModesignStrip = No.skipModesignStrip)
@@ -995,7 +997,7 @@ void updateAllObservedUsers(SeenPlugin plugin)
     Returns:
         `long[string]` associative array; UNIX timestamp longs keyed by nickname strings.
  +/
-long[string] loadSeen(const string filename)
+auto loadSeen(const string filename)
 {
     import std.file : exists, isFile, readText;
     import std.json : JSONException, parseJSON;
@@ -1005,7 +1007,7 @@ long[string] loadSeen(const string filename)
     if (!filename.exists || !filename.isFile)
     {
         enum pattern = "<l>%s</> does not exist or is not a file";
-        logger.warningf(pattern.expandTags(LogLevel.warning), filename);
+        logger.warningf(pattern, filename);
         return aa;
     }
 
@@ -1021,8 +1023,8 @@ long[string] loadSeen(const string filename)
     }
     catch (JSONException e)
     {
-        import kameloso.common : Tint;
-        logger.error("Could not load seen JSON from file: ", Tint.log, e.msg);
+        enum pattern = "Could not load seen JSON from file: <l>%s";
+        logger.errorf(pattern, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
 
@@ -1108,7 +1110,7 @@ void onWelcome(SeenPlugin plugin)
         // Reports statistics on how many users are registered as having been seen
 
         enum pattern = "Currently <i>%d</> users seen.";
-        logger.logf(pattern.expandTags(LogLevel.all), plugin.seenUsers.length);
+        logger.logf(pattern, plugin.seenUsers.length);
     }
 
     await(plugin, &endOfMotdDg, endOfMotdEventTypes[]);
@@ -1154,19 +1156,24 @@ void initResources(SeenPlugin plugin)
     }
     catch (JSONException e)
     {
-        import kameloso.terminal : TerminalToken, isTerminal;
-        import std.path : baseName;
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
 
-        enum bellString = "" ~ cast(char)(TerminalToken.bell);
-        immutable bell = isTerminal ? bellString : string.init;
-
-        logger.warning(plugin.seenFile.baseName, " is corrupt. Starting afresh.", bell);
         version(PrintStacktraces) logger.trace(e);
+        throw new IRCPluginInitialisationException(
+            "Seen file is malformed",
+            plugin.name,
+            plugin.seenFile,
+            __FILE__,
+            __LINE__);
     }
 
     // Let other Exceptions pass up the stack.
 
-    json.save(plugin.seenFile);
+    version(Callgrind) {}
+    else
+    {
+        json.save(plugin.seenFile);
+    }
 }
 
 

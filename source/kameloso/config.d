@@ -16,8 +16,7 @@ module kameloso.config;
 private:
 
 import kameloso.kameloso : Kameloso, IRCBot;
-import kameloso.common : expandTags, logger;
-import kameloso.logger : LogLevel;
+import kameloso.common : logger;
 import dialect.defs : IRCClient, IRCServer;
 import lu.common : Next;
 import std.getopt : GetoptResult;
@@ -100,19 +99,17 @@ void printHelp(GetoptResult results)
         client = Reference to the current [dialect.defs.IRCClient|IRCClient].
         server = Reference to the current [dialect.defs.IRCServer|IRCServer].
         bot = Reference to the current [kameloso.kameloso.IRCBot|IRCBot].
-        customSettings = const string array to all the custom settings set
-            via [std.getopt.getopt|getopt], to apply to things before saving to disk.
         giveInstructions = Whether or not to give instructions to edit the
             generated file and supply admins and/or home channels.
  +/
-void writeConfig(ref Kameloso instance,
+void writeConfig(
+    ref Kameloso instance,
     ref IRCClient client,
     ref IRCServer server,
     ref IRCBot bot,
-    const string[] customSettings,
     const Flag!"giveInstructions" giveInstructions = Yes.giveInstructions) @system
 {
-    import kameloso.common : Tint, logger, printVersionInfo;
+    import kameloso.common : logger, printVersionInfo;
     import kameloso.constants : KamelosoDefaults;
     import kameloso.platform : rbd = resourceBaseDirectory;
     import kameloso.printing : printObjects;
@@ -130,7 +127,7 @@ void writeConfig(ref Kameloso instance,
     }
 
     // If we don't initialise the plugins there'll be no plugins array
-    instance.initPlugins(customSettings);
+    instance.initPlugins();
 
     // Take the opportunity to set a default quit reason. We can't do this in
     // applyDefaults because it's a perfectly valid use-case not to have a quit
@@ -183,7 +180,8 @@ void writeConfig(ref Kameloso instance,
     if (!instance.settings.headless)
     {
         printObjects(client, instance.bot, server, instance.connSettings, instance.settings);
-        logger.log("Configuration written to ", Tint.info, instance.settings.configFile);
+        enum pattern = "Configuration written to <l>%s";
+        logger.logf(pattern, instance.settings.configFile);
 
         if (!instance.bot.admins.length && !instance.bot.homeChannels.length && giveInstructions)
         {
@@ -204,10 +202,8 @@ void writeConfig(ref Kameloso instance,
 
     Params:
         instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
-        customSettings = Array of all the custom settings set
-            via [std.getopt.getopt|getopt], to apply to things before saving to disk.
  +/
-void printSettings(ref Kameloso instance, const string[] customSettings) @system
+void printSettings(ref Kameloso instance) @system
 {
     import kameloso.common : printVersionInfo;
     import kameloso.printing : printObjects;
@@ -219,7 +215,7 @@ void printSettings(ref Kameloso instance, const string[] customSettings) @system
     printObjects!(No.all)(instance.parser.client, instance.bot,
         instance.parser.server, instance.connSettings, instance.settings);
 
-    instance.initPlugins(customSettings);
+    instance.initPlugins();
 
     foreach (plugin; instance.plugins) plugin.printSettings();
 
@@ -232,30 +228,23 @@ void printSettings(ref Kameloso instance, const string[] customSettings) @system
     Writes and/or edits the configuration file. Broken out into a separate
     function to lower the size of [handleGetopt].
 
-    Takes bool parameters instead of [std.typecons.Flag|Flag]s to work with getopt bools.
-
     Params:
         instance = The current [kameloso.kameloso.Kameloso|Kameloso] instance.
-        shouldWriteConfig = Writing to the configuration file was requested.
+        shouldWriteConfig = Writing to the configuration file was explicitly
+            requested or implicitly by changing some setting via getopt.
         shouldOpenTerminalEditor = Opening the configuration file in a
             terminal text editor was requested.
         shouldOpenGraphicalEditor = Opening the configuration file in a
             graphical text editor was requested.
-        customSettings = Custom settings supplied at the command line, to be
-            passed to [writeConfig] when writing to the configuration file.
-        force = (Windows) If true, uses `explorer.exe` as the graphical editor,
+        force = (Windows) If set, uses `explorer.exe` as the graphical editor,
             otherwise uses `notepad.exe`.
-
-    Throws:
-        [object.Exception|Exception] on unexpected platforms where we did not
-        know how to open the configuration file in a text editor.
  +/
-void manageConfigFile(ref Kameloso instance,
+void manageConfigFile(
+    ref Kameloso instance,
     const Flag!"shouldWriteConfig" shouldWriteConfig,
     const Flag!"shouldOpenTerminalEditor" shouldOpenTerminalEditor,
     const Flag!"shouldOpenGraphicalEditor" shouldOpenGraphicalEditor,
-    ref string[] customSettings,
-    const bool force) @system
+    const Flag!"force" force) @system
 {
     /++
         Opens up the configuration file in a terminal text editor.
@@ -271,13 +260,25 @@ void manageConfigFile(ref Kameloso instance,
 
         if (!editor.length)
         {
-            enum pattern = "Missing <l>$EDITOR</> environment variable; cannot guess editor.";
-            logger.error(pattern.expandTags(LogLevel.error));
+            version(Windows)
+            {
+                enum pattern = "Missing <l>%EDITOR%</> environment variable; cannot guess editor.";
+            }
+            else version(Posix)
+            {
+                enum pattern = "Missing <l>$EDITOR</> environment variable; cannot guess editor.";
+            }
+            else
+            {
+                static assert(0, "Unsupported platform, please file a bug.");
+            }
+
+            logger.error(pattern);
             return;
         }
 
         enum pattern = "Attempting to open <i>%s</> with <i>%s</>...";
-        logger.logf(pattern.expandTags(LogLevel.all), instance.settings.configFile, editor);
+        logger.logf(pattern, instance.settings.configFile, editor);
 
         immutable command = [ editor, instance.settings.configFile ];
         spawnProcess(command).wait;
@@ -326,32 +327,39 @@ void manageConfigFile(ref Kameloso instance,
         // by [kameloso.main.tryGetopt].
 
         enum pattern = "Attempting to open <i>%s</> in a graphical text editor...";
-        logger.logf(pattern.expandTags(LogLevel.all), instance.settings.configFile);
+        logger.logf(pattern, instance.settings.configFile);
 
         immutable command = [ editor, instance.settings.configFile ];
         execute(command);
     }
 
-    if (shouldWriteConfig)
+    import std.file : exists;
+
+    /+
+        Write config if...
+        * --save was passed
+        * a setting was changed via getopt (also passes Yes.shouldWriteConfig)
+        * the config file doesn't exist
+     +/
+
+    immutable configFileExists = instance.settings.configFile.exists;
+
+    if (shouldWriteConfig || !configFileExists)
     {
-        // --save was passed; write configuration to file and quit
-        writeConfig(instance, instance.parser.client, instance.parser.server,
-            instance.bot, customSettings);
+        writeConfig(
+            instance,
+            instance.parser.client,
+            instance.parser.server,
+            instance.bot,
+            cast(Flag!"giveInstructions")(!configFileExists));
     }
 
     if (shouldOpenTerminalEditor || shouldOpenGraphicalEditor)
     {
-        import std.file : exists;
+        // If instructions were given, add an extra linebreak to make it prettier
+        if (!configFileExists) logger.trace();
 
-        // --edit or --gedit was passed, so open up a text editor before exiting
-
-        if (!instance.settings.configFile.exists)
-        {
-            // No config file exists to open up, so create one first
-            writeConfig(instance, instance.parser.client, instance.parser.server,
-                instance.bot, customSettings, No.giveInstructions);
-        }
-
+        // --edit or --gedit was passed, so open up an appropriate editor
         if (shouldOpenTerminalEditor)
         {
             openTerminalEditor();
@@ -383,7 +391,8 @@ void manageConfigFile(ref Kameloso instance,
         configurationText = Content to write to file.
         banner = Whether or not to add the "kameloso bot" banner at the head of the file.
  +/
-void writeToDisk(const string filename,
+void writeToDisk(
+    const string filename,
     const string configurationText,
     const Flag!"addBanner" banner = Yes.addBanner)
 {
@@ -424,9 +433,9 @@ void writeToDisk(const string filename,
 void giveConfigurationMinimalInstructions()
 {
     enum adminPattern = "...one or more <i>admins</> who get administrative control over the bot.";
-    logger.trace(adminPattern.expandTags(LogLevel.trace));
+    logger.trace(adminPattern);
     enum homePattern = "...one or more <i>homeChannels</> in which to operate.";
-    logger.trace(homePattern.expandTags(LogLevel.trace));
+    logger.trace(homePattern);
 }
 
 
@@ -453,9 +462,10 @@ void giveConfigurationMinimalInstructions()
         [lu.serialisation.ConfigurationFileReadFailureException|ConfigurationFileReadFailureException]
         if the reading and decoding of the configuration file failed.
  +/
-string configurationText(const string configFile)
+auto configurationText(const string configFile)
 {
     import lu.common : FileTypeMismatchException;
+    import std.array : replace;
     import std.file : exists, getAttributes, isFile, readText;
     import std.string : chomp;
 
@@ -473,6 +483,10 @@ string configurationText(const string configFile)
     {
         return configFile
             .readText
+            .replace("[Votes]\n", "[Poll]\n")
+            .replace("[Votes]\r\n", "[Poll]\r\n")
+            .replace("[TwitchBot]\n", "[Twitch]\n")
+            .replace("[TwitchBot]\r\n", "[Twitch]\r\n")
             .chomp;
     }
     catch (Exception e)
@@ -481,6 +495,76 @@ string configurationText(const string configFile)
         // kinds of error than the normal "Invalid UTF-8 sequence".
         throw new ConfigurationFileReadFailureException(e.msg, configFile,
             __FILE__, __LINE__);
+    }
+}
+
+
+// flatten
+/++
+    Flattens a dynamic array by splitting elements containing more than one
+    value (as separated by a separator string) into separate elements.
+
+    Params:
+        separator = Separator, defaults to a space string (" ").
+        arr = A dynamic array.
+
+    Returns:
+        A new array, with any elements previously containing more than one
+        `separator`-separated entries now in separate elements.
+ +/
+auto flatten(string separator = " ", T)(const T[] arr)
+{
+    import lu.semver : LuSemVer;
+    import lu.string : stripped;
+    import std.algorithm.iteration : filter, joiner, map, splitter;
+    import std.array : array;
+
+    auto toReturn = arr
+        .map!(elem => elem.splitter(separator))
+        .joiner
+        .map!(elem => elem.stripped)
+        .filter!(elem => elem.length)
+        .array;
+
+    static if (
+        (LuSemVer.majorVersion >= 1) &&
+        (LuSemVer.minorVersion >= 2) &&
+        (LuSemVer.patchVersion >= 2))
+    {
+        return toReturn;
+    }
+    else
+    {
+        // FIXME: lu.string.stripped makes the type const
+        // Remove this when we update lu
+        return toReturn.dup;
+    }
+}
+
+///
+unittest
+{
+    import std.conv : text;
+
+    {
+        auto arr = [ "a", "b", "c d e   ", "f" ];
+        arr = flatten(arr);
+        assert((arr == [ "a", "b", "c", "d", "e", "f" ]), arr.text);
+    }
+    {
+        auto arr = [ "a", "b", "c,d,e,,,", "f" ];
+        arr = flatten!","(arr);
+        assert((arr == [ "a", "b", "c", "d", "e", "f" ]), arr.text);
+    }
+    {
+        auto arr = [ "a", "b", "c dhonk  e ", "f" ];
+        arr = flatten!"honk"(arr);
+        assert((arr == [ "a", "b", "c d", "e", "f" ]), arr.text);
+    }
+    {
+        auto arr = [ "a", "b", "c" ];
+        arr = flatten(arr);
+        assert((arr == [ "a", "b", "c" ]), arr.text);
     }
 }
 
@@ -498,7 +582,7 @@ public:
     Example:
     ---
     Kameloso instance;
-    Next next = instance.handleGetopt(args, customSettings);
+    Next next = instance.handleGetopt(args);
 
     if (next == Next.returnSuccess) return 0;
     // ...
@@ -507,8 +591,6 @@ public:
     Params:
         instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
         args = The command-line arguments the program was called with.
-        customSettings = Out array of custom settings to apply on top of
-            the settings read from the configuration file.
 
     Returns:
         [lu.common.Next.continue_|Next.continue_] or
@@ -518,13 +600,11 @@ public:
     Throws:
         [std.getopt.GetOptException|GetOptException] if an unknown flag is passed.
  +/
-Next handleGetopt(ref Kameloso instance,
-    string[] args,
-    out string[] customSettings) @system
+auto handleGetopt(ref Kameloso instance, string[] args) @system
 {
     with (instance)
     {
-        import kameloso.common : Tint, printVersionInfo;
+        import kameloso.common : printVersionInfo;
         import std.getopt : arraySep, config, getopt;
 
         bool shouldWriteConfig;
@@ -588,17 +668,17 @@ Next handleGetopt(ref Kameloso instance,
             "monochrome", &settings.monochrome
         );
 
-        // Set Tint.monochrome manually so callGetopt results below is properly (un-)tinted
-        Tint.monochrome = settings.monochrome;
-
         /++
             Call getopt in a nested function so we can call it both to merely
             parse for settings and to format the help listing.
          +/
         auto callGetopt(/*const*/ string[] theseArgs, const Flag!"quiet" quiet)
         {
+            import kameloso.logger : LogLevel;
+            import kameloso.terminal.colours.tags : expandTags;
             import std.conv : text, to;
             import std.format : format;
+            import std.path : extension;
             import std.process : environment;
             import std.random : uniform;
             import std.range : repeat;
@@ -650,16 +730,20 @@ Next handleGetopt(ref Kameloso instance,
                 enum getCacertString = "(Windows only)";
             }
 
+            immutable configFileExtension = settings.configFile.extension;
+            immutable defaultGeditProgramString =
+                "[<i>the default application used to open <l>*" ~
+                    configFileExtension ~ "<i> files on your system</>]";
+
             version(Windows)
             {
                 immutable geditProgramString = settings.force ?
-                    "[the default application used to open <i>*.conf</> files on your system]" :
+                    defaultGeditProgramString :
                     "[<i>notepad.exe</>]";
             }
             else
             {
-                enum geditProgramString = "[the default application used to open " ~
-                    "<i>*.conf</> files on your system]";
+                alias geditProgramString = defaultGeditProgramString;
             }
 
             return getopt(theseArgs,
@@ -849,6 +933,10 @@ Next handleGetopt(ref Kameloso instance,
             );
         }
 
+        const backupClient = instance.parser.client;
+        auto backupServer = instance.parser.server;  // cannot opEqual const IRCServer with mutable
+        const backupBot = instance.bot;
+
         // No need to catch the return value, only used for --help
         cast(void)callGetopt(args, Yes.quiet);
 
@@ -860,12 +948,14 @@ Next handleGetopt(ref Kameloso instance,
         }
 
         // Reinitialise the logger with new settings
-        import kameloso.common : initLogger;
-        initLogger(
-            cast(Flag!"monochrome")settings.monochrome,
-            cast(Flag!"brightTerminal")settings.brightTerminal,
-            cast(Flag!"headless")settings.headless,
-            cast(Flag!"flush")settings.flush);
+        import kameloso.logger : KamelosoLogger;
+        static import kameloso.common;
+        kameloso.common.logger = new KamelosoLogger(settings);
+
+        // Support channels and admins being separated by spaces (mirror config file behaviour)
+        if (inputHomeChannels.length) inputHomeChannels = flatten(inputHomeChannels);
+        if (inputGuestChannels.length) inputGuestChannels = flatten(inputGuestChannels);
+        if (inputAdmins.length) inputAdmins = flatten(inputAdmins);
 
         // Manually override or append channels, depending on `shouldAppendChannels`
         if (shouldAppendToArrays)
@@ -970,20 +1060,28 @@ Next handleGetopt(ref Kameloso instance,
         if (shouldWriteConfig || shouldOpenTerminalEditor || shouldOpenGraphicalEditor)
         {
             // --save and/or --edit was passed; defer to manageConfigFile
+
+            // Also pass Yes.shouldWriteConfig if something was changed via getopt
+            shouldWriteConfig =
+                shouldWriteConfig ||
+                customSettings.length ||
+                (instance.parser.client != backupClient) ||
+                (instance.parser.server != backupServer) ||
+                (instance.bot != backupBot);
+
             manageConfigFile(
                 instance,
                 cast(Flag!"shouldWriteConfig")shouldWriteConfig,
                 cast(Flag!"shouldOpenTerminalEditor")shouldOpenTerminalEditor,
                 cast(Flag!"shouldOpenGraphicalEditor")shouldOpenGraphicalEditor,
-                customSettings,
-                settings.force);
+                cast(Flag!"force")settings.force);
             return Next.returnSuccess;
         }
 
         if (shouldShowSettings)
         {
             // --settings was passed, show all options and quit
-            if (!settings.headless) printSettings(instance, customSettings);
+            if (!settings.headless) printSettings(instance);
             return Next.returnSuccess;
         }
 
@@ -1073,13 +1171,13 @@ void notifyAboutMissingSettings(const string[][string] missingEntries,
     foreach (immutable section, const sectionEntries; missingEntries)
     {
         enum missingPattern = "...under <l>[<i>%s<l>]</>: %-(<i>%s%|</>, %)";
-        logger.tracef(missingPattern.expandTags(LogLevel.trace), section, sectionEntries);
+        logger.tracef(missingPattern, section, sectionEntries);
     }
 
     enum pattern = "Use <i>%s --save</> to regenerate the file, " ~
         "updating it with all available configuration. [<i>%s</>]";
     logger.trace();
-    logger.tracef(pattern.expandTags(LogLevel.trace), binaryPath.baseName, configFile);
+    logger.tracef(pattern, binaryPath.baseName, configFile);
     logger.trace();
 }
 
@@ -1106,13 +1204,13 @@ void notifyAboutIncompleteConfiguration(const string configFile, const string bi
     if (configFile.exists)
     {
         enum pattern = "Edit <i>%s</> and make sure it has at least one of the following:";
-        logger.logf(pattern.expandTags(LogLevel.all), configFile);
+        logger.logf(pattern, configFile);
         giveConfigurationMinimalInstructions();
     }
     else
     {
         enum pattern = "Use <i>%s --save</> to generate a configuration file.";
-        logger.logf(pattern.expandTags(LogLevel.all), binaryPath.baseName);
+        logger.logf(pattern, binaryPath.baseName);
     }
 
     logger.trace();
@@ -1133,13 +1231,13 @@ void giveBrightTerminalHint(
 {
     enum brightPattern = "If text is difficult to read (eg. white on white), " ~
         "try running the program with <i>--bright</> or <i>--monochrome</>.";
-    logger.trace(brightPattern.expandTags(LogLevel.trace));
+    logger.trace(brightPattern);
 
     if (alsoConfigSetting)
     {
         enum configPattern = "The setting will be made persistent if you pass it " ~
             "at the same time as <i>--save</>.";
-        logger.trace(configPattern.expandTags(LogLevel.trace));
+        logger.trace(configPattern);
     }
 }
 

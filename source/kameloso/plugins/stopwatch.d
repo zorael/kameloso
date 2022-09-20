@@ -68,7 +68,7 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
 
     string getDiff(const string id)
     {
-        import kameloso.common : timeSince;
+        import kameloso.time : timeSince;
         import core.time : msecs;
 
         assert((event.channel in plugin.stopwatches),

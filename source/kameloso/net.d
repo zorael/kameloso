@@ -172,7 +172,7 @@ public:
             A copy of [privateSendTimeout].
      +/
     pragma(inline, true)
-    uint sendTimeout() const @property pure @nogc nothrow
+    auto sendTimeout() const @property pure @nogc nothrow
     {
         return privateSendTimeout;
     }
@@ -200,7 +200,7 @@ public:
             A copy of [privateReceiveTimeout].
      +/
     pragma(inline, true)
-    uint receiveTimeout() const @property pure @nogc nothrow
+    auto receiveTimeout() const @property pure @nogc nothrow
     {
         return privateReceiveTimeout;
     }
@@ -227,24 +227,8 @@ public:
      +/
     void reset()
     {
-        import std.range : only;
-        import std.socket : TcpSocket, AddressFamily, SocketShutdown, SocketType;
-
-        foreach (thisSocket; only(socket4, socket6))
-        {
-            if (!thisSocket) continue;
-
-            thisSocket.shutdown(SocketShutdown.BOTH);
-            thisSocket.close();
-        }
-
-        socket4 = new TcpSocket;
-        socket6 = new Socket(AddressFamily.INET6, SocketType.STREAM);
-        socket = socket4;
-
-        setDefaultOptions(socket4);
-        setDefaultOptions(socket6);
-
+        teardown();
+        setup();
         connected = false;
     }
 
@@ -256,7 +240,7 @@ public:
     void resetSSL() @system
     in (ssl, "Tried to reset SSL on a non-SSL `Connection`")
     {
-        if (sslInstance && sslContext) teardownSSL();
+        teardownSSL();
         setupSSL();
     }
 
@@ -271,7 +255,7 @@ public:
         Returns:
             A string with the last SSL error code translated into humanly-readable text.
      +/
-    string getSSLErrorMessage(const int code) @system
+    auto getSSLErrorMessage(const int code) @system
     in (ssl, "Tried to get SSL error message on a non-SSL `Connection`")
     {
         import std.string : fromStringz;
@@ -325,6 +309,7 @@ public:
      +/
     void setupSSL() @system
     in (ssl, "Tried to set up SSL context on a non-SSL `Connection`")
+    in (socket, "Tried to set up an SSL context on a null `Socket`")
     {
         import std.file : exists;
         import std.path : extension;
@@ -371,13 +356,49 @@ public:
 
     // teardownSSL
     /++
-        Resets and frees SSL context and resources.
+        Frees SSL context and resources.
      +/
     void teardownSSL()
     in (ssl, "Tried to teardown SSL on a non-SSL `Connection`")
     {
-        openssl.SSL_free(sslInstance);
-        openssl.SSL_CTX_free(sslContext);
+        if (sslInstance) openssl.SSL_free(sslInstance);
+        if (sslContext) openssl.SSL_CTX_free(sslContext);
+    }
+
+
+    // teardown
+    /++
+        Shuts down and closes the internal [std.socket.Socket|Socket]s.
+     +/
+    void teardown()
+    {
+        import std.range : only;
+        import std.socket : SocketShutdown;
+
+        foreach (thisSocket; only(socket4, socket6))
+        {
+            if (!thisSocket) continue;
+
+            thisSocket.shutdown(SocketShutdown.BOTH);
+            thisSocket.close();
+        }
+    }
+
+
+    // setup
+    /++
+        Initialises new [std.socket.Socket|Socket]s and sets their options.
+     +/
+    void setup()
+    {
+        import std.socket : TcpSocket, AddressFamily, SocketShutdown, SocketType;
+
+        socket4 = new TcpSocket;
+        socket6 = new Socket(AddressFamily.INET6, SocketType.STREAM);
+        socket = socket4;
+
+        setDefaultOptions(socket4);
+        setDefaultOptions(socket6);
     }
 
 
@@ -432,13 +453,20 @@ public:
             }
         }
 
-        if (rawline.indexOf('\n') != -1)
+        auto newlinePos = rawline.indexOf('\n');  // mutable
+
+        if (newlinePos != -1)
         {
-            // Line is made up of smaller sublines
-            foreach (immutable subline; rawline.splitter("\n"))
+            // Line incorrectly has at least one newline, so send up until
+            // the first and discard the remainder
+
+            if ((newlinePos > 0) && (rawline[newlinePos-1] == '\r'))
             {
-                sendlineImpl(subline);
+                // It was actually "\r\n", so omit the '\r' too
+                --newlinePos;
             }
+
+            sendlineImpl(rawline[0..newlinePos]);
         }
         else
         {
@@ -460,6 +488,7 @@ struct ListenAttempt
      +/
     enum State
     {
+        unset,      /// Init value.
         prelisten,  /// About to listen.
         isEmpty,    /// Empty result; nothing read or similar.
         hasString,  /// String read, ready for processing.
@@ -581,30 +610,14 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
     // double pop, and the first line is missed.
     yield(ListenAttempt.init);
 
+    /// How many consecutive warnings to allow before yielding an error.
+    enum maxConsecutiveWarningsUntilError = 20;
+
+    /// Current consecutive warnings count.
+    uint consecutiveWarnings;
+
     while (!abort)
     {
-        ListenAttempt attempt;
-
-        if (conn.ssl)
-        {
-            import requests.ssl_adapter : openssl;
-            attempt.bytesReceived = openssl.SSL_read(conn.sslInstance,
-                cast(void*)buffer.ptr+start, cast(int)(buffer.length-start));
-        }
-        else
-        {
-            attempt.bytesReceived = conn.receive(buffer[start..$]);
-        }
-
-        if (!attempt.bytesReceived)
-        {
-            attempt.state = State.error;
-            attempt.error = lastSocketError;
-            yield(attempt);
-            // Should never get here
-            assert(0, "Dead `listenFiber` resumed after yield (no bytes received)");
-        }
-
         version(Posix)
         {
             import core.stdc.errno : EAGAIN, ECONNRESET, EINTR, ENETDOWN,
@@ -622,19 +635,18 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
                 connectionReset = ECONNRESET,
                 interrupted = EINTR,
             }
-
-            attempt.errno = errno;
         }
         else version(Windows)
         {
             import core.sys.windows.winsock2 : WSAECONNRESET, WSAEINTR, WSAENETDOWN,
-                WSAENETUNREACH, WSAENOTCONN, WSAETIMEDOUT, WSAEWOULDBLOCK, WSAGetLastError;
+                WSAENETUNREACH, WSAENOTCONN, WSAETIMEDOUT, WSAEWOULDBLOCK, errno = WSAGetLastError;
 
             // https://www.hardhats.org/cs/broker/docs/winsock.html
             // https://infosys.beckhoff.com/english.php?content=../content/1033/tcpipserver/html/tcplclibtcpip_e_winsockerror.htm
 
             enum Errno
             {
+                //success = 0,  // "The operation completed successfully."
                 timedOut = WSAETIMEDOUT,
                 wouldBlock = WSAEWOULDBLOCK,
                 netDown = WSAENETDOWN,
@@ -642,13 +654,36 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
                 endpointNotConnected = WSAENOTCONN,
                 connectionReset = WSAECONNRESET,
                 interrupted = WSAEINTR,
+                overlappedIO = 997,
             }
-
-            attempt.errno = WSAGetLastError();
         }
         else
         {
             static assert(0, "Unsupported platform, please file a bug.");
+        }
+
+        ListenAttempt attempt;
+
+        if (conn.ssl)
+        {
+            import requests.ssl_adapter : openssl;
+            attempt.bytesReceived = openssl.SSL_read(conn.sslInstance,
+                cast(void*)buffer.ptr+start, cast(int)(buffer.length-start));
+        }
+        else
+        {
+            attempt.bytesReceived = conn.receive(buffer[start..$]);
+        }
+
+        attempt.errno = errno;
+
+        if (!attempt.bytesReceived)
+        {
+            attempt.state = State.error;
+            attempt.error = lastSocketError;
+            yield(attempt);
+            // Should never get here
+            assert(0, "Dead `listenFiber` resumed after yield (no bytes received)");
         }
 
         if (attempt.errno == Errno.interrupted)
@@ -657,6 +692,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
             // Unlucky callgrind_control -d timing
             attempt.state = State.isEmpty;
             attempt.error = lastSocketError;
+            consecutiveWarnings = 0;
             yield(attempt);
             continue;
         }
@@ -684,8 +720,17 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
                  */
                 // Timed out, nothing received
                 attempt.state = State.isEmpty;
+                consecutiveWarnings = 0;
                 yield(attempt);
                 continue;
+
+            version(Windows)
+            {
+                case overlappedIO:
+                    // "Overlapped I/O operation is in progress."
+                    // seems benign
+                    goto case timedOut;
+            }
 
             static if (int(timedOut) != int(wouldBlock))
             {
@@ -712,13 +757,25 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
 
             default:
                 attempt.error = lastSocketError;
-                attempt.state = State.warning;
-                yield(attempt);
-                continue;
+
+                if (++consecutiveWarnings >= maxConsecutiveWarningsUntilError)
+                {
+                    attempt.state = State.error;
+                    yield(attempt);
+                    // Should never get here
+                    assert(0, "Dead `listenFiber` resumed after yield (exceeded max consecutive errors)");
+                }
+                else
+                {
+                    attempt.state = State.warning;
+                    yield(attempt);
+                    continue;
+                }
             }
         }
 
         timeLastReceived = Clock.currTime.toUnixTime;
+        consecutiveWarnings = 0;
 
         immutable ptrdiff_t end = cast(ptrdiff_t)(start + attempt.bytesReceived);
         ptrdiff_t newline = (cast(char[])buffer[0..end]).indexOf('\n');
@@ -765,6 +822,7 @@ struct ConnectionAttempt
      +/
     enum State
     {
+        unset,                   /// Init value.
         preconnect,              /// About to connect.
         connected,               /// Successfully connected.
         delayThenReconnect,      /// Failed to connect; should delay and retry.
@@ -852,7 +910,8 @@ struct ConnectionAttempt
         abort = Reference "abort" flag, which -- if set -- should make the
             function return and the [core.thread.fiber.Fiber|Fiber] terminate.
  +/
-void connectFiber(ref Connection conn,
+void connectFiber(
+    ref Connection conn,
     const uint connectionRetries,
     ref bool abort) @system
 in (!conn.connected, "Tried to set up a connecting fiber on an already live connection")
@@ -866,6 +925,12 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
     alias State = ConnectionAttempt.State;
 
     yield(ConnectionAttempt.init);
+
+    scope(exit)
+    {
+        conn.teardown();
+        if (conn.ssl) conn.teardownSSL();
+    }
 
     do
     {
@@ -1063,6 +1128,7 @@ struct ResolveAttempt
      +/
     enum State
     {
+        unset,          /// Init value.
         preresolve,     /// About to resolve.
         success,        /// Successfully resolved.
         exception,      /// Failure, recoverable exception thrown.
@@ -1144,7 +1210,8 @@ struct ResolveAttempt
         abort = Reference "abort" flag, which -- if set -- should make the
             function return and the [core.thread.fiber.Fiber|Fiber] terminate.
  +/
-void resolveFiber(ref Connection conn,
+void resolveFiber(
+    ref Connection conn,
     const string address,
     const ushort port,
     const bool useIPv6,
@@ -1159,7 +1226,7 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
 
     alias State = ResolveAttempt.State;
 
-    yield(ResolveAttempt.init);
+    yield(ResolveAttempt(State.preresolve));
 
     for (uint i; (i >= 0); ++i)
     {

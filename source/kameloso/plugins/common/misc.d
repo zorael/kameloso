@@ -11,8 +11,7 @@ private:
 
 import kameloso.kameloso : CoreSettings;
 import kameloso.plugins.common.core;
-import kameloso.common : expandTags, logger;
-import kameloso.logger : LogLevel;
+import kameloso.common : logger;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
@@ -40,11 +39,10 @@ public:
     See_Also:
         [lu.objmanip.setSettingByName]
  +/
-bool applyCustomSettings(IRCPlugin[] plugins,
+auto applyCustomSettings(IRCPlugin[] plugins,
     const string[] customSettings,
     CoreSettings copyOfSettings)
 {
-    import kameloso.common : Tint;
     import lu.string : contains, nom;
     import std.conv : ConvException;
 
@@ -56,7 +54,7 @@ bool applyCustomSettings(IRCPlugin[] plugins,
         if (!line.contains!(Yes.decode)('.'))
         {
             enum pattern = `Bad <l>plugin</>.<l>setting</>=<l>value</> format. (<l>%s</>)`;
-            logger.warningf(pattern.expandTags(LogLevel.warning), line);
+            logger.warningf(pattern, line);
             noErrors = false;
             continue;
         }
@@ -68,7 +66,8 @@ bool applyCustomSettings(IRCPlugin[] plugins,
 
         if (pluginstring == "core")
         {
-            import kameloso.common : initLogger;
+            import kameloso.common : logger;
+            import kameloso.logger : KamelosoLogger;
             import lu.objmanip : SetMemberException, setMemberByName;
             import std.algorithm.comparison : among;
             static import kameloso.common;
@@ -82,18 +81,14 @@ bool applyCustomSettings(IRCPlugin[] plugins,
                 if (!success)
                 {
                     enum pattern = "No such <l>core</> setting: <l>%s";
-                    logger.warningf(pattern.expandTags(LogLevel.warning), setting);
+                    logger.warningf(pattern, setting);
                     noErrors = false;
                 }
                 else
                 {
                     if (setting.among!("monochrome", "brightTerminal", "headless", "flush"))
                     {
-                        initLogger(
-                            cast(Flag!"monochrome")copyOfSettings.monochrome,
-                            cast(Flag!"brightTerminal")copyOfSettings.brightTerminal,
-                            cast(Flag!"headless")copyOfSettings.headless,
-                            cast(Flag!"flush")copyOfSettings.flush);
+                        logger = new KamelosoLogger(copyOfSettings);
                     }
 
                     *kameloso.common.settings = copyOfSettings;
@@ -111,14 +106,14 @@ bool applyCustomSettings(IRCPlugin[] plugins,
             {
                 enum pattern = "Failed to set <l>core</>.<l>%s</>: " ~
                     "it requires a value and none was supplied.";
-                logger.warningf(pattern.expandTags(LogLevel.warning), setting);
+                logger.warningf(pattern, setting);
                 version(PrintStacktraces) logger.trace(e.info);
                 noErrors = false;
             }
             catch (ConvException e)
             {
                 enum pattern = `Invalid value for <l>core</>.<l>%s</>: "<l>%s</>"`;
-                logger.warningf(pattern.expandTags(LogLevel.warning), setting, value);
+                logger.warningf(pattern, setting, value);
                 noErrors = false;
             }
 
@@ -126,7 +121,7 @@ bool applyCustomSettings(IRCPlugin[] plugins,
         }
         else
         {
-            if (pluginstring == "twitch") pluginstring = "twitchbot";
+            if (pluginstring == "twitchbot") pluginstring = "twitch";
 
             foreach (plugin; plugins)
             {
@@ -140,14 +135,14 @@ bool applyCustomSettings(IRCPlugin[] plugins,
                     if (!success)
                     {
                         enum pattern = "No such <l>%s</> plugin setting: <l>%s";
-                        logger.warningf(pattern.expandTags(LogLevel.warning), pluginstring, setting);
+                        logger.warningf(pattern, pluginstring, setting);
                         noErrors = false;
                     }
                 }
                 catch (ConvException e)
                 {
                     enum pattern = `Invalid value for <l>%s</>.<l>%s</>: "<l>%s</>"`;
-                    logger.warningf(pattern.expandTags(LogLevel.warning), pluginstring, setting, value);
+                    logger.warningf(pattern, pluginstring, setting, value);
                     noErrors = false;
 
                     //version(PrintStacktraces) logger.trace(e.info);
@@ -157,7 +152,8 @@ bool applyCustomSettings(IRCPlugin[] plugins,
             }
         }
 
-        logger.warning("Invalid plugin: ", Tint.log, pluginstring);
+        enum pattern = "Invalid plugin: <l>%s";
+        logger.warningf(pattern, pluginstring);
         noErrors = false;
     }
 
@@ -391,7 +387,7 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
             {
                 enum pattern = "<i>%s</> plugin <w>NOT</> queueing an event to be replayed " ~
                     "on behalf of <i>%s</>; delta time <i>%d</> is too recent";
-                logger.logf(pattern.expandTags(LogLevel.all), plugin.name, callerSlice, delta);
+                logger.logf(pattern, plugin.name, callerSlice, delta);
             }
             return;
         }
@@ -400,7 +396,7 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
     version(ExplainReplay)
     {
         enum pattern = "<i>%s</> plugin queueing an event to be replayed on behalf of <i>%s";
-        logger.logf(pattern.expandTags(LogLevel.all), plugin.name, callerSlice);
+        logger.logf(pattern, plugin.name, callerSlice);
     }
 
     plugin.state.pendingReplays[user.nickname] ~=
@@ -430,7 +426,7 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
     See_Also:
         [kameloso.plugins.common.core.Replay|Replay]
  +/
-Replay replay(Plugin, Fun)(Plugin plugin, const ref IRCEvent event,
+auto replay(Plugin, Fun)(Plugin plugin, const ref IRCEvent event,
     Fun fun, const Permissions permissionsRequired, const string caller = __FUNCTION__)
 {
     void dg(Replay replay)
@@ -447,7 +443,7 @@ Replay replay(Plugin, Fun)(Plugin plugin, const ref IRCEvent event,
 
             enum pattern = "<i>%s</> replaying <i>%s</>-level event (invoking <i>%s</>) " ~
                 "based on WHOIS results; user <i>%s</> is <i>%s</> class";
-            logger.logf(pattern.expandTags(LogLevel.all),
+            logger.logf(pattern,
                 plugin.name,
                 Enum!Permissions.toString(replay.permissionsRequired),
                 caller,
@@ -465,7 +461,7 @@ Replay replay(Plugin, Fun)(Plugin plugin, const ref IRCEvent event,
             enum pattern = "<i>%s</> plugin <w>NOT</> replaying <i>%s</>-level event " ~
                 "(which would have invoked <i>%s</>) " ~
                 "based on WHOIS results: user <i>%s</> is <i>%s</> class";
-            logger.logf(pattern.expandTags(LogLevel.all),
+            logger.logf(pattern,
                 plugin.name,
                 Enum!Permissions.toString(replay.permissionsRequired),
                 caller,
@@ -553,7 +549,7 @@ Replay replay(Plugin, Fun)(Plugin plugin, const ref IRCEvent event,
             {
                 // onEventImpl.call should already have statically asserted all
                 // event handlers are of the types above
-                static assert(0);
+                static assert(0, "Failed to cover all event handler function signature cases");
             }
             return;
         }
@@ -608,7 +604,7 @@ void rehashUsers(IRCPlugin plugin, const string channelName = string.init)
         The nickname of the user if there is no alias known, else the alias.
  +/
 pragma(inline, true)
-string nameOf(const IRCUser user) pure @safe nothrow @nogc
+auto nameOf(const IRCUser user) pure @safe nothrow @nogc
 {
     version(TwitchSupport)
     {
@@ -660,7 +656,7 @@ unittest
     Returns:
         The nickname of the user if there is no alias known, else the alias.
  +/
-string nameOf(const IRCPlugin plugin, const string specified) pure @safe nothrow @nogc
+auto nameOf(const IRCPlugin plugin, const string specified) pure @safe nothrow @nogc
 {
     version(TwitchSupport)
     {
@@ -695,7 +691,7 @@ string nameOf(const IRCPlugin plugin, const string specified) pure @safe nothrow
         The nickname or account of the passed user.
  +/
 pragma(inline, true)
-string idOf(const IRCUser user) pure @safe nothrow @nogc
+auto idOf(const IRCUser user) pure @safe nothrow @nogc
 in (user.nickname.length, "Tried to get `idOf` a user with an empty nickname")
 {
     return user.account.length ? user.account : user.nickname;
@@ -854,7 +850,7 @@ unittest
     struct instead of a tuple.
  +/
 version(WithWebtitlesPlugin)
-version(WithTwitchBotPlugin)
+version(WithTwitchPlugin)
 struct EventURLs
 {
     /// The [dialect.defs.IRCEvent|IRCEvent] that should trigger a Webtitles lookup.
@@ -862,4 +858,147 @@ struct EventURLs
 
     /// The URLs discovered inside [dialect.defs.IRCEvent.content|IRCEvent.content].
     string[] urls;
+}
+
+
+// pluginFileBaseName
+/++
+    Returns a meaningful basename of a plugin filename.
+
+    This is preferred over use of [std.path.baseName] because some plugins are
+    nested in their own directories. The basename of `plugins/twitch/base.d` is
+    `base.d`, much like that of `plugins/printer/base.d` is.
+
+    With this we get `twitch/base.d` and `printer/base.d` instead, while still
+    getting `oneliners.d`.
+
+    Params:
+        filename = Full path to a plugin file.
+
+    Returns:
+        A meaningful basename of the passed filename.
+ +/
+auto pluginFileBaseName(const string filename)
+in (filename.length, "Empty plugin filename passed to `pluginFileBaseName`")
+{
+    return pluginFilenameSlicerImpl(filename, No.getPluginName);
+}
+
+///
+unittest
+{
+    {
+        version(Posix) enum filename = "plugins/oneliners.d";
+        else /*version(Windows)*/ enum filename = "plugins\\oneliners.d";
+        immutable expected = "oneliners.d";
+        immutable actual = pluginFileBaseName(filename);
+        assert((expected == actual), actual);
+    }
+    {
+        version(Posix)
+        {
+            enum filename = "plugins/twitch/base.d";
+            immutable expected = "twitch/base.d";
+        }
+        else /*version(Windows)*/
+        {
+            enum filename = "plugins\\twitch\\base.d";
+            immutable expected = "twitch\\base.d";
+        }
+
+        immutable actual = pluginFileBaseName(filename);
+        assert((expected == actual), actual);
+    }
+    {
+        version(Posix) enum filename = "plugins/counters.d";
+        else /*version(Windows)*/ enum filename = "plugins\\counters.d";
+        immutable expected = "counters.d";
+        immutable actual = pluginFileBaseName(filename);
+        assert((expected == actual), actual);
+    }
+}
+
+
+// pluginNameOfFilename
+/++
+    Returns the name of a plugin based on its filename.
+
+    This is preferred over slicing [std.path.baseName] because some plugins are
+    nested in their own directories. The basename of `plugins/twitch/base.d` is
+    `base.d`, much like that of `plugins/printer/base.d` is.
+
+    With this we get `twitch` and `printer` instead, while still getting `oneliners`.
+
+    Params:
+        filename = Full path to a plugin file.
+
+    Returns:
+        The name of the plugin, based on its filename.
+ +/
+auto pluginNameOfFilename(const string filename)
+in (filename.length, "Empty plugin filename passed to `pluginNameOfFilename`")
+{
+    return pluginFilenameSlicerImpl(filename, Yes.getPluginName);
+}
+
+///
+unittest
+{
+    {
+        version(Posix) enum filename = "plugins/oneliners.d";
+        else /*version(Windows)*/ enum filename = "plugins\\oneliners.d";
+        immutable expected = "oneliners";
+        immutable actual = pluginNameOfFilename(filename);
+        assert((expected == actual), actual);
+    }
+    {
+        version(Posix) enum filename = "plugins/twitch/base.d";
+        else /*version(Windows)*/ enum filename = "plugins\\twitch\\base.d";
+        immutable expected = "twitch";
+        immutable actual = pluginNameOfFilename(filename);
+        assert((expected == actual), actual);
+    }
+    {
+        version(Posix) enum filename = "plugins/counters.d";
+        else /*version(Windows)*/ enum filename = "plugins\\counters.d";
+        immutable expected = "counters";
+        immutable actual = pluginNameOfFilename(filename);
+        assert((expected == actual), actual);
+    }
+}
+
+
+// pluginFilenameSlicerImpl
+/++
+    Implementation function, code shared between [pluginFileBaseName] and
+    [pluginNameOfFilename].
+
+    Params:
+        filename = Full path to a plugin file.
+        getPluginName = Whether we want the plugin name or the plugin file "basename".
+
+    Returns:
+        The name of the plugin or its "basename", based on its filename and the
+        `getPluginName` parameter.
+ +/
+private auto pluginFilenameSlicerImpl(const string filename, const Flag!"getPluginName" getPluginName)
+in (filename.length, "Empty plugin filename passed to `pluginFilenameSlicerImpl`")
+{
+    import std.path : dirSeparator;
+    import std.string : indexOf;
+
+    string slice = filename;  // mutable
+    size_t pos = slice.indexOf(dirSeparator);
+
+    while (pos != -1)
+    {
+        if (slice[pos+1..$] == "base.d")
+        {
+            return getPluginName ? slice[0..pos] : slice;
+        }
+        slice = slice[pos+1..$];
+        pos = slice.indexOf(dirSeparator);
+    }
+
+    return getPluginName ? slice[0..$-2] : slice;
 }

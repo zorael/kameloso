@@ -56,7 +56,6 @@ version(Colours):
 private:
 
 import kameloso.terminal : TerminalToken;
-
 import std.meta : allSatisfy;
 import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;
@@ -566,7 +565,8 @@ if (isOutputRange!(Sink, char[]))
     Returns:
         The passed string word encompassed by terminal colour tags.
  +/
-string truecolour(const string word,
+string truecolour(
+    const string word,
     const uint r,
     const uint g,
     const uint b,
@@ -621,7 +621,8 @@ unittest
         Line with the substring in it inverted, if inversion was successful,
         else (a duplicate of) the line unchanged.
  +/
-string invert(const string line,
+string invert(
+    const string line,
     const string toInvert,
     const Flag!"caseSensitive" caseSensitive = Yes.caseSensitive) pure
 {
@@ -873,7 +874,7 @@ unittest
         A [TerminalForeground] based on the passed string, picked from the
             passed `fgArray` array.
  +/
-TerminalForeground getColourByHash(const string word, const TerminalForeground[] fgArray) pure @nogc nothrow
+auto getColourByHash(const string word, const TerminalForeground[] fgArray) pure @nogc nothrow
 in (word.length, "Tried to get colour by hash but no word was given")
 in (fgArray.length, "Tried to get colour by hash but with an empty colour array")
 {
@@ -930,8 +931,7 @@ unittest
     Returns:
         A [TerminalForeground] based on the passed string.
  +/
-TerminalForeground getColourByHash(const string word,
-    const Flag!"brightTerminal" bright) pure @nogc nothrow
+auto getColourByHash(const string word, const Flag!"brightTerminal" bright) pure @nogc nothrow
 in (word.length, "Tried to get colour by hash but no word was given")
 {
     import std.traits : EnumMembers;
@@ -984,7 +984,7 @@ unittest
     Returns:
         `word`, now in colour based on the hash of its contents.
  +/
-string colourByHash(const string word, const Flag!"brightTerminal" bright) pure nothrow
+auto colourByHash(const string word, const Flag!"brightTerminal" bright) pure nothrow
 {
     return word.colour(getColourByHash(word, bright));
 }

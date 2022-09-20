@@ -11,12 +11,10 @@ private:
 
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication, UserAwareness;
-import kameloso.common : expandTags, logger;
-import kameloso.logger : LogLevel;
+import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
-import core.thread : Fiber;
 
 
 // TimerSettings
@@ -137,7 +135,7 @@ public:
             A line string. If the [lines] array is empty, then an empty string
             is returned instead.
      +/
-    string getLine()
+    auto getLine()
     {
         return (type == Type.random) ?
             randomLine() :
@@ -153,7 +151,7 @@ public:
             A line string. If the [lines] array is empty, then an empty string
             is returned instead.
      +/
-    string nextOrderedLine()
+    auto nextOrderedLine()
     {
         if (!lines.length) return string.init;
 
@@ -181,7 +179,7 @@ public:
             A line string. If the [lines] array is empty, then an empty string
             is returned instead.
      +/
-    string randomLine() const
+    auto randomLine() const
     {
         import std.random : uniform;
 
@@ -197,7 +195,7 @@ public:
         Returns:
             A [std.json.JSONValue|JSONValue] that describes this timer.
      +/
-    JSONValue toJSON() const
+    auto toJSON() const
     {
         JSONValue json;
         json = null;
@@ -299,7 +297,7 @@ void handleTimerCommand(
     const /*ref*/ IRCEvent event,
     const string channelName)
 {
-    import kameloso.common : abbreviatedDuration;
+    import kameloso.time : DurationStringException, abbreviatedDuration;
     import lu.string : SplitResults, contains, nom, splitInto;
     import std.conv : ConvException, to;
     import std.format : format;
@@ -422,6 +420,11 @@ void handleTimerCommand(
         catch (ConvException e)
         {
             return sendBadNumerics();
+        }
+        catch (DurationStringException e)
+        {
+            chan(plugin.state, channelName, e.msg);
+            return;
         }
 
         if ((timerDef.messageCountThreshold < 0) ||
@@ -556,7 +559,7 @@ void handleTimerCommand(
         if (!timerDefs) return sendNoSuchTimer();
 
         auto channel = channelName in plugin.channels;
-        assert(channel);
+        assert(channel, "Tried to delete a timer from a non-existent channel");
 
         string name;
         string linesPosString;
@@ -701,6 +704,7 @@ void onAnyMessage(TimerPlugin plugin, const ref IRCEvent event)
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
+    .fiber(true)
 )
 void onWelcome(TimerPlugin plugin)
 {
@@ -708,34 +712,30 @@ void onWelcome(TimerPlugin plugin)
     import kameloso.constants : BufferSize;
     import lu.json : JSONStorage;
     import std.datetime.systime : Clock;
+    import core.thread : Fiber;
 
     plugin.reload();
+    delay(plugin, plugin.timerPeriodicity, Yes.yield);
 
-    void periodicDg()
+    while (true)
     {
-        while (true)
+        // Walk through channels, trigger fibers
+        foreach (immutable channelName, room; plugin.channels)
         {
-            // Walk through channels, trigger fibers
-            foreach (immutable channelName, room; plugin.channels)
+            foreach (timerFiber; room.timerFibers)
             {
-                foreach (timerFiber; room.timerFibers)
+                if (!timerFiber || (timerFiber.state != Fiber.State.HOLD))
                 {
-                    if (!timerFiber || (timerFiber.state != Fiber.State.HOLD))
-                    {
-                        logger.error("Dead or busy timer Fiber in channel ", channelName);
-                        continue;
-                    }
-
-                    timerFiber.call();
+                    logger.error("Dead or busy timer Fiber in channel ", channelName);
+                    continue;
                 }
+
+                timerFiber.call();
             }
-
-            delay(plugin, plugin.timerPeriodicity, Yes.yield);
         }
-    }
 
-    Fiber periodicFiber = new Fiber(&periodicDg, BufferSize.fiberStack);
-    delay(plugin, periodicFiber, plugin.timerPeriodicity);
+        delay(plugin, plugin.timerPeriodicity, Yes.yield);
+    }
 }
 
 
@@ -794,21 +794,22 @@ void handleSelfjoin(TimerPlugin plugin, const string channelName)
         timerDef = Definition of the timer to apply.
         channelName = String channel to which the timer belongs.
  +/
-Fiber createTimerFiber(
+auto createTimerFiber(
     TimerPlugin plugin,
     /*const*/ TimerDefinition timerDef,
     const string channelName)
 {
     import kameloso.constants : BufferSize;
+    import core.thread : Fiber;
 
     void dg()
     {
         import std.datetime.systime : Clock;
 
-        /// FIXME
+        /// Channel pointer.
         const channel = channelName in plugin.channels;
 
-        /// FIXME
+        /// Initial message count.
         immutable creationMessageCount = channel.messageCount;
 
         /// When this timer Fiber was created.
@@ -1083,6 +1084,7 @@ public:
 final class TimerPlugin : IRCPlugin
 {
 private:
+    import core.thread : Fiber;
     import core.time : seconds;
 
 public:

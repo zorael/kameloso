@@ -411,11 +411,29 @@ if (isOutputRange!(Sink, char[]))
 
     putSender();
 
-    if (event.target.nickname.length) putTarget();
+    bool putQuotedTwitchMessage;
 
-    if (content.length) putContent();
+    version(TwitchSupport)
+    {
+        if (((event.type == IRCEvent.Type.CHAN) ||
+             (event.type == IRCEvent.Type.SELFCHAN) ||
+             (event.type == IRCEvent.Type.EMOTE)) &&
+            event.target.nickname.length &&
+            event.aux.length)
+        {
+            /*if (content.length)*/ putContent();
+            if (event.target.nickname.length) putTarget();
+            if (event.aux.length) .put(sink, `: "`, event.aux, '"');
+            putQuotedTwitchMessage = true;
+        }
+    }
 
-    if (event.aux.length) .put(sink, " (", event.aux, ')');
+    if (!putQuotedTwitchMessage)
+    {
+        if (event.target.nickname.length) putTarget();
+        if (content.length) putContent();
+        if (event.aux.length) .put(sink, " (", event.aux, ')');
+    }
 
     if (event.count != long.min) .put(sink, " {", event.count, '}');
 
@@ -581,9 +599,10 @@ if (isOutputRange!(Sink, char[]))
      +/
     FG colourByHash(const string nickname)
     {
-        enum foregroundMembersLength = __traits(allMembers, TerminalForeground).length;
+        // Subtract 3 from array size to exempt default_, yellow and black/white
+        enum arraySize = __traits(allMembers, TerminalForeground).length +(-3);
 
-        static immutable TerminalForeground[foregroundMembersLength+(-3)] fgBright =
+        static immutable TerminalForeground[arraySize] fgBright =
         [
             //FG.default_,
             FG.black,
@@ -604,7 +623,7 @@ if (isOutputRange!(Sink, char[]))
             //FG.white,
         ];
 
-        static immutable TerminalForeground[foregroundMembersLength+(-3)] fgDark =
+        static immutable TerminalForeground[arraySize] fgDark =
         [
             //FG.default_,
             //FG.black,
@@ -724,7 +743,7 @@ if (isOutputRange!(Sink, char[]))
 
         version(PrintClassNamesToo)
         {
-            .put(sink, ':', event.sender.class_);
+            .put!(Yes.colours)(sink, TR.all, ':', event.sender.class_);
         }
 
         version(PrintAccountNamesToo)
@@ -841,7 +860,6 @@ if (isOutputRange!(Sink, char[]))
                     TR.all,
                     TerminalForeground(bright ? Bright.badge : Dark.badge),
                     " [", event.target.badges, ']');
-
             }
         }
     }
@@ -993,15 +1011,39 @@ if (isOutputRange!(Sink, char[]))
 
     putSender();
 
-    if (event.target.nickname.length) putTarget();
+    bool putQuotedTwitchMessage;
 
-    if (content.length) putContent();
-
-    if (event.aux.length)
+    version(TwitchSupport)
     {
-        .put!(Yes.colours)(sink,
-            TerminalForeground(bright ? Bright.aux : Dark.aux),
-            " (", event.aux, ')');
+        if (((event.type == IRCEvent.Type.CHAN) ||
+             (event.type == IRCEvent.Type.SELFCHAN) ||
+             (event.type == IRCEvent.Type.EMOTE)) &&
+            event.target.nickname.length &&
+            event.aux.length)
+        {
+            /*if (content.length)*/ putContent();
+            if (event.target.nickname.length) putTarget();
+            if (event.aux.length)
+            {
+                .put!(Yes.colours)(sink,
+                    TerminalForeground(bright ? Bright.content : Dark.content),
+                    `: "`, event.aux, '"');
+            }
+
+            putQuotedTwitchMessage = true;
+        }
+    }
+
+    if (!putQuotedTwitchMessage)
+    {
+        if (event.target.nickname.length) putTarget();
+        if (content.length) putContent();
+        if (event.aux.length)
+        {
+            .put!(Yes.colours)(sink,
+                TerminalForeground(bright ? Bright.aux : Dark.aux),
+                " (", event.aux, ')');
+        }
     }
 
     if (event.count != long.min)
@@ -1071,7 +1113,7 @@ if (isOutputRange!(Sink, char[]))
     Returns:
         A slice of the passed `typestring`, excluding any prefixes if present.
  +/
-string withoutTypePrefix(const string typestring) @safe pure nothrow @nogc @property
+auto withoutTypePrefix(const string typestring) @safe pure nothrow @nogc @property
 {
     import lu.string : beginsWith;
 
@@ -1139,7 +1181,8 @@ unittest
  +/
 version(Colours)
 version(TwitchSupport)
-string highlightEmotes(const ref IRCEvent event,
+auto highlightEmotes(
+    const ref IRCEvent event,
     const Flag!"colourful" colourful,
     const Flag!"brightTerminal" brightTerminal)
 {
@@ -1437,7 +1480,7 @@ unittest
         True if `haystack` contains `needle` in such a way that it is guaranteed
         to not be a different nickname.
  +/
-bool containsNickname(const string haystack, const string needle) pure nothrow @nogc
+auto containsNickname(const string haystack, const string needle) pure nothrow @nogc
 in (needle.length, "Tried to determine whether an empty nickname was in a string")
 {
     import kameloso.terminal : TerminalToken;

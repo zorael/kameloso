@@ -1,5 +1,5 @@
 /++
-    This is an example Twitch streamer bot. It supports querying uptime or how
+    This is an example Twitch channel bot. It supports querying uptime or how
     long a streamer has been live, follower age queries, etc. It can also emit
     some terminal bells on certain events, to draw attention.
 
@@ -7,22 +7,22 @@
     message has too many capital letters, etc. There is no protection from spam yet.
 
     See_Also:
-        https://github.com/zorael/kameloso/wiki/Current-plugins#twitchbot
+        https://github.com/zorael/kameloso/wiki/Current-plugins#twitch
         [kameloso.plugins.common.core|plugins.common.core]
         [kameloso.plugins.common.misc|plugins.common.misc]
  +/
-module kameloso.plugins.twitchbot.base;
+module kameloso.plugins.twitch.base;
 
 
-// TwitchBotSettings
+// TwitchSettings
 /++
-    All Twitch bot plugin runtime settings.
+    All Twitch plugin runtime settings.
 
     Placed outside of the `version` gates to make sure it is always available,
-    even on non-`WithTwitchBotPlugin` builds, so that the Twitch bot stub may
+    even on non-`WithTwitchPlugin` builds, so that the Twitch stub may
     import it and provide lines to the configuration file.
  +/
-package @Settings struct TwitchBotSettings
+package @Settings struct TwitchSettings
 {
 private:
     import dialect.defs : IRCUser;
@@ -103,12 +103,6 @@ public:
             access tokens.
          +/
         bool spotifyKeygen = false;
-
-        /++
-            Whether or not to start a acptive session for requesting a Twitch
-            authorisation token with higher broadcaster privileges.
-         +/
-        bool broadcasterKeygen = false;
     }
 }
 
@@ -139,18 +133,18 @@ private enum SongRequestMode
 private import kameloso.plugins.common.core;
 
 version(TwitchSupport):
-version(WithTwitchBotPlugin):
+version(WithTwitchPlugin):
 
 private:
 
-import kameloso.plugins.twitchbot.api;
+import kameloso.plugins.twitch.api;
 
 import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
-import kameloso.common : expandTags, logger;
+import kameloso.common : logger;
 import kameloso.constants : BufferSize;
-import kameloso.logger : LogLevel;
 import kameloso.messaging;
 import dialect.defs;
+import std.datetime.systime : SysTime;
 import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
@@ -226,7 +220,7 @@ package struct Credentials
         Returns:
             `this` represented in JSON.
      +/
-    JSONValue toJSON() const
+    auto toJSON() const
     {
         JSONValue json;
         json = null;
@@ -275,7 +269,7 @@ package struct Credentials
 // onImportant
 /++
     Bells on any important event, like subscriptions, cheers and raids, if the
-    [TwitchBotSettings.bellOnImportant] setting is set.
+    [TwitchSettings.bellOnImportant] setting is set.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.TWITCH_SUB)
@@ -296,7 +290,7 @@ package struct Credentials
     .channelPolicy(ChannelPolicy.home)
     .chainable(true)
 )
-void onImportant(TwitchBotPlugin plugin, const ref IRCEvent event)
+void onImportant(TwitchPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.terminal : TerminalToken;
     import std.stdio : stdout, write;
@@ -310,7 +304,7 @@ void onImportant(TwitchBotPlugin plugin, const ref IRCEvent event)
         }
     }
 
-    if (plugin.twitchBotSettings.bellOnImportant)
+    if (plugin.twitchSettings.bellOnImportant)
     {
         write(plugin.bell);
         stdout.flush();
@@ -320,7 +314,7 @@ void onImportant(TwitchBotPlugin plugin, const ref IRCEvent event)
 
 // onSelfjoin
 /++
-    Registers a new [TwitchBotPlugin.Room] as we join a channel, so there's
+    Registers a new [TwitchPlugin.Room] as we join a channel, so there's
     always a state struct available.
 
     Simply passes on execution to [handleSelfjoin].
@@ -329,7 +323,7 @@ void onImportant(TwitchBotPlugin plugin, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.SELFJOIN)
     .channelPolicy(ChannelPolicy.home)
 )
-void onSelfjoin(TwitchBotPlugin plugin, const ref IRCEvent event)
+void onSelfjoin(TwitchPlugin plugin, const ref IRCEvent event)
 {
     return plugin.handleSelfjoin(event.channel);
 }
@@ -337,19 +331,19 @@ void onSelfjoin(TwitchBotPlugin plugin, const ref IRCEvent event)
 
 // handleSelfjoin
 /++
-    Registers a new [TwitchBotPlugin.Room] as we join a channel, so there's
+    Registers a new [TwitchPlugin.Room] as we join a channel, so there's
     always a state struct available.
 
     Params:
-        plugin = The current [TwitchBotPlugin].
+        plugin = The current [TwitchPlugin].
         channelName = The name of the channel we're supposedly joining.
  +/
-void handleSelfjoin(TwitchBotPlugin plugin, const string channelName)
+void handleSelfjoin(TwitchPlugin plugin, const string channelName)
 in (channelName.length, "Tried to handle SELFJOIN with an empty channel string")
 {
     if (channelName in plugin.rooms) return;
 
-    plugin.rooms[channelName] = TwitchBotPlugin.Room(channelName);
+    plugin.rooms[channelName] = TwitchPlugin.Room(channelName);
 }
 
 
@@ -373,14 +367,14 @@ void onUserstate(const ref IRCEvent event)
     {
         enum pattern = "The bot is not a moderator of home channel <l>%s</>. " ~
             "Consider elevating it to such to avoid being as rate-limited.";
-        logger.warningf(pattern.expandTags(LogLevel.warning), event.channel);
+        logger.warningf(pattern, event.channel);
     }
 }
 
 
 // onSelfpart
 /++
-    Removes a channel's corresponding [TwitchBotPlugin.Room] when we leave it.
+    Removes a channel's corresponding [TwitchPlugin.Room] when we leave it.
 
     This resets all that channel's transient state.
  +/
@@ -388,7 +382,7 @@ void onUserstate(const ref IRCEvent event)
     .onEvent(IRCEvent.Type.SELFPART)
     .channelPolicy(ChannelPolicy.home)
 )
-void onSelfpart(TwitchBotPlugin plugin, const ref IRCEvent event)
+void onSelfpart(TwitchPlugin plugin, const ref IRCEvent event)
 {
     if (auto room = event.channel in plugin.rooms)
     {
@@ -418,7 +412,7 @@ void onSelfpart(TwitchBotPlugin plugin, const ref IRCEvent event)
             .description("Reports how long the streamer has been streaming.")
     )
 )
-void onCommandUptime(TwitchBotPlugin plugin, const ref IRCEvent event)
+void onCommandUptime(TwitchPlugin plugin, const ref IRCEvent event)
 {
     const room = event.channel in plugin.rooms;
     assert(room, "Tried to process `onCommandUptime` on a nonexistent room");
@@ -448,8 +442,9 @@ void onCommandUptime(TwitchBotPlugin plugin, const ref IRCEvent event)
             .addSyntax("$command [optional duration time already elapsed]")
     )
 )
-void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandStart(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
+    import kameloso.time : DurationStringException, abbreviatedDuration, timeSince;
     import std.format : format;
     import core.thread : Fiber;
 
@@ -479,8 +474,6 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
          +/
         try
         {
-            import kameloso.common : abbreviatedDuration, timeSince;
-
             initBroadcast();
             immutable elapsed = abbreviatedDuration(event.content.stripped);
             room.broadcast.startTime = (event.time - elapsed.total!"seconds");
@@ -492,6 +485,11 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         catch (ConvException e)
         {
             return sendUsage();
+        }
+        catch (DurationStringException e)
+        {
+            chan(plugin.state, event.channel, e.msg);
+            return;
         }
         catch (Exception e)
         {
@@ -525,10 +523,9 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             import std.json : JSONType;
 
             immutable chattersJSON = getChatters(plugin, room.broadcasterName);
-            if (chattersJSON.type != JSONType.object) return;
 
             // https://twitchinsights.net/bots
-            // https://twitchbots.info/bots
+            // https://twitchs.info/bots
             static immutable botBlacklist =
             [
                 //"nightbot",
@@ -606,7 +603,7 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
                     ++chatterCount;
 
                     // continue early if we shouldn't monitor watchtime
-                    if (!plugin.twitchBotSettings.watchtime) continue;
+                    if (!plugin.twitchSettings.watchtime) continue;
 
                     // Exclude lurkers from watchtime monitoring
                     if (viewer !in room.broadcast.activeViewers) continue;
@@ -671,7 +668,7 @@ void onCommandStart(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             .description("Marks the end of a broadcast.")
     )
 )
-void onCommandStop(TwitchBotPlugin plugin, const ref IRCEvent event)
+void onCommandStop(TwitchPlugin plugin, const ref IRCEvent event)
 {
     auto room = event.channel in plugin.rooms;
     assert(room, "Tried to stop a broadcast in a nonexistent room");
@@ -693,7 +690,7 @@ void onCommandStop(TwitchBotPlugin plugin, const ref IRCEvent event)
     chan(plugin.state, event.channel, "Broadcast ended!");
     reportStreamTime(plugin, *room, Yes.justNowEnded);
 
-    if (plugin.twitchBotSettings.watchtime && plugin.viewerTimesByChannel.length)
+    if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
     {
         saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
     }
@@ -711,7 +708,7 @@ void onCommandStop(TwitchBotPlugin plugin, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.TWITCH_HOSTSTART)
     .channelPolicy(ChannelPolicy.home)
 )
-void onAutomaticStop(TwitchBotPlugin plugin, const ref IRCEvent event)
+void onAutomaticStop(TwitchPlugin plugin, const ref IRCEvent event)
 {
     return onCommandStop(plugin, event);
 }
@@ -723,15 +720,16 @@ void onAutomaticStop(TwitchBotPlugin plugin, const ref IRCEvent event)
     or previously lasted.
 
     Params:
-        plugin = The current [TwitchBotPlugin].
-        room = The [TwitchBotPlugin.Room] of the channel.
+        plugin = The current [TwitchPlugin].
+        room = The [TwitchPlugin.Room] of the channel.
         justNowEnded = Whether or not the stream ended just now.
  +/
-void reportStreamTime(TwitchBotPlugin plugin,
-    const TwitchBotPlugin.Room room,
+void reportStreamTime(
+    TwitchPlugin plugin,
+    const TwitchPlugin.Room room,
     const Flag!"justNowEnded" justNowEnded = No.justNowEnded)
 {
-    import kameloso.common : timeSince;
+    import kameloso.time : timeSince;
     import std.datetime.systime : Clock, SysTime;
     import std.format : format;
     import core.time : msecs;
@@ -820,11 +818,11 @@ void reportStreamTime(TwitchBotPlugin plugin,
     Lookups are done asynchronously in subthreads.
 
     See_Also:
-        [kameloso.plugins.twitchbot.api.getFollows]
+        [kameloso.plugins.twitch.api.getFollows]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .permissionsRequired(Permissions.ignore)
+    .permissionsRequired(Permissions.anyone)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
@@ -836,7 +834,7 @@ void reportStreamTime(TwitchBotPlugin plugin,
             .addSyntax("$command [optional nickname]")
     )
 )
-void onCommandFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : beginsWith, nom, stripped;
     import std.conv : to;
@@ -877,7 +875,7 @@ void onCommandFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 
         void reportFollowAge(const JSONValue followingUserJSON)
         {
-            import kameloso.common : timeSince;
+            import kameloso.time : timeSince;
             import std.datetime.systime : Clock, SysTime;
             import std.format : format;
 
@@ -992,7 +990,7 @@ void onCommandFollowAge(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     .onEvent(IRCEvent.Type.ROOMSTATE)
     .channelPolicy(ChannelPolicy.home)
 )
-void onRoomState(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     auto room = event.channel in plugin.rooms;
 
@@ -1007,17 +1005,11 @@ void onRoomState(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 
     if (!plugin.useAPIFeatures) return;
 
+    immutable userURL = "https://api.twitch.tv/helix/users?id=" ~ event.aux;
+
     void getDisplayNameDg()
     {
-        immutable userURL = "https://api.twitch.tv/helix/users?id=" ~ event.aux;
         immutable userJSON = getTwitchEntity(plugin, userURL);
-
-        /*if ((userJSON.type != JSONType.object) || ("id" !in userJSON))
-        {
-            chan(plugin.state, event.channel, "No such user: " ~ event.aux);
-            return;
-        }*/
-
         room.broadcasterDisplayName = userJSON["display_name"].str;
     }
 
@@ -1060,7 +1052,7 @@ void onRoomState(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             .hidden(true)
     )
 )
-void onCommandShoutout(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandShoutout(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.plugins.common.misc : idOf;
     import dialect.common : isValidNickname;
@@ -1176,7 +1168,7 @@ void onCommandShoutout(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             .hidden(true)
     )
 )
-void onCommandVanish(TwitchBotPlugin plugin, const ref IRCEvent event)
+void onCommandVanish(TwitchPlugin plugin, const ref IRCEvent event)
 {
     immutable message = ".timeout " ~ event.sender.nickname ~ " 1";
     chan(plugin.state, event.channel, message);
@@ -1205,7 +1197,7 @@ void onCommandVanish(TwitchBotPlugin plugin, const ref IRCEvent event)
             .hidden(true)
     )
 )
-void onCommandRepeat(TwitchBotPlugin plugin, const ref IRCEvent event)
+void onCommandRepeat(TwitchPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : nom;
     import std.algorithm.searching : count;
@@ -1254,7 +1246,7 @@ void onCommandRepeat(TwitchBotPlugin plugin, const ref IRCEvent event)
     Deletes recent messages containing a supplied word or phrase.
 
     See_Also:
-        [TwitchBotPlugin.Room.lastNMessages]
+        [TwitchPlugin.Room.lastNMessages]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -1268,7 +1260,7 @@ void onCommandRepeat(TwitchBotPlugin plugin, const ref IRCEvent event)
             .addSyntax("$command [word or phrase]")
     )
 )
-void onCommandNuke(TwitchBotPlugin plugin, const ref IRCEvent event)
+void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
 {
     import std.conv : text;
     import std.uni : toLower;
@@ -1311,8 +1303,8 @@ void onCommandNuke(TwitchBotPlugin plugin, const ref IRCEvent event)
     YouTube videos) to be added to the streamer's playlist.
 
     See_Also:
-        [kameloso.plugins.twitchbot.google.addVideoToYouTubePlaylist]
-        [kameloso.plugins.twitchbot.spotify.addTrackToSpotifyPlaylist]
+        [kameloso.plugins.twitch.google.addVideoToYouTubePlaylist]
+        [kameloso.plugins.twitch.spotify.addTrackToSpotifyPlaylist]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -1332,17 +1324,17 @@ void onCommandNuke(TwitchBotPlugin plugin, const ref IRCEvent event)
             .hidden(true)
     )
 )
-void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
+void onCommandSongRequest(TwitchPlugin plugin, const ref IRCEvent event)
 {
-    import kameloso.plugins.twitchbot.helpers;
+    import kameloso.plugins.twitch.helpers : ErrorJSONException, UnexpectedJSONException;
     import kameloso.constants : KamelosoInfo, Timeout;
     import arsd.http2 : HttpClient, HttpVerb, Uri;
     import lu.string : contains, nom, stripped;
     import std.format : format;
     import core.time : seconds;
 
-    if (plugin.twitchBotSettings.songrequestMode == SongRequestMode.disabled) return;
-    else if (event.sender.class_ < plugin.twitchBotSettings.songrequestPermsNeeded)
+    if (plugin.twitchSettings.songrequestMode == SongRequestMode.disabled) return;
+    else if (event.sender.class_ < plugin.twitchSettings.songrequestPermsNeeded)
     {
         // Issue an error?
         logger.error("User does not have the needed permissions to issue song requests.");
@@ -1356,17 +1348,17 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
 
         if (const lastRequestTimestamp = event.sender.nickname in room.songrequestHistory)
         {
-            if ((event.time - *lastRequestTimestamp) < TwitchBotPlugin.Room.minimumTimeBetweenSongRequests)
+            if ((event.time - *lastRequestTimestamp) < TwitchPlugin.Room.minimumTimeBetweenSongRequests)
             {
                 enum pattern = "At least %d seconds must pass between song requests.";
-                immutable message = pattern.format(TwitchBotPlugin.Room.minimumTimeBetweenSongRequests);
+                immutable message = pattern.format(TwitchPlugin.Room.minimumTimeBetweenSongRequests);
                 chan(plugin.state, event.channel, message);
                 return;
             }
         }
     }
 
-    if (plugin.twitchBotSettings.songrequestMode == SongRequestMode.youtube)
+    if (plugin.twitchSettings.songrequestMode == SongRequestMode.youtube)
     {
         immutable url = event.content.stripped;
 
@@ -1393,7 +1385,7 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
         {
             enum message = "Missing Google API credentials and/or YouTube playlist ID. " ~
                 "Run the program with <l>--set twitch.googleKeygen</> to set up.";
-            logger.error(message.expandTags(LogLevel.error));
+            logger.error(message);
             return;
         }
 
@@ -1431,7 +1423,7 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
         {
             try
             {
-                import kameloso.plugins.twitchbot.google : addVideoToYouTubePlaylist;
+                import kameloso.plugins.twitch.google : addVideoToYouTubePlaylist;
 
                 immutable json = addVideoToYouTubePlaylist(plugin, *creds, videoID);
                 immutable title = json["snippet"]["title"].str;
@@ -1441,22 +1433,18 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
                 immutable message = pattern.format(title);
                 chan(plugin.state, event.channel, message);
             }
-            catch (SongRequestException e)
+            catch (ErrorJSONException e)
             {
                 enum message = "Invalid YouTube video URL.";
                 chan(plugin.state, event.channel, message);
             }
-            catch (Exception e)
-            {
-                logger.error(e.msg);
-                version(PrintStacktraces) logger.trace(e);
-            }
+            // Let other exceptions fall down to twitchTryCatchDg
         }
 
         Fiber addVideoFiber = new Fiber(&twitchTryCatchDg!addVideoDg, BufferSize.fiberStack);
         addVideoFiber.call();
     }
-    else if (plugin.twitchBotSettings.songrequestMode == SongRequestMode.spotify)
+    else if (plugin.twitchSettings.songrequestMode == SongRequestMode.spotify)
     {
         immutable url = event.content.stripped;
 
@@ -1482,7 +1470,7 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
         {
             enum message = "Missing Spotify API credentials and/or playlist ID. " ~
                 "Run the program with <l>--set twitch.spotifyKeygen</> to set up.";
-            logger.error(message.expandTags(LogLevel.error));
+            logger.error(message);
             return;
         }
 
@@ -1511,7 +1499,7 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
         {
             try
             {
-                import kameloso.plugins.twitchbot.spotify;
+                import kameloso.plugins.twitch.spotify : addTrackToSpotifyPlaylist, getSpotifyTrackByID;
                 import std.json : JSONType;
 
                 immutable json = addTrackToSpotifyPlaylist(plugin, *creds, trackID);
@@ -1530,16 +1518,12 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
                 immutable message = pattern.format(artist, track);
                 chan(plugin.state, event.channel, message);
             }
-            catch (SongRequestException e)
+            catch (ErrorJSONException e)
             {
                 enum message = "Invalid Spotify track URL.";
                 chan(plugin.state, event.channel, message);
             }
-            catch (Exception e)
-            {
-                logger.error(e.msg);
-                version(PrintStacktraces) logger.trace(e);
-            }
+            // Let other exceptions fall down to twitchTryCatchDg
         }
 
         Fiber addTrackFiber = new Fiber(&twitchTryCatchDg!addTrackDg, BufferSize.fiberStack);
@@ -1555,7 +1539,7 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
     Note: Experimental, since we cannot try it out ourselves.
 
     See_Also:
-        [kameloso.plugins.twitchbot.api.createPoll]
+        [kameloso.plugins.twitch.api.createPoll]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -1566,7 +1550,7 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
             .word("startpoll")
             .policy(PrefixPolicy.prefixed)
             .description("Starts a Twitch poll.")
-            .addSyntax(`$command "[poll title]" [seconds] [choice1] [choice2] ...`)
+            .addSyntax(`$command "[poll title]" [duration] [choice1] [choice2] ...`)
     )
     .addCommand(
         IRCEventHandler.Command()
@@ -1574,31 +1558,56 @@ void onCommandSongRequest(TwitchBotPlugin plugin, const ref IRCEvent event)
             .policy(PrefixPolicy.prefixed)
             .hidden(true)
     )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("createpoll")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
 )
-void onCommandStartPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.common : splitWithQuotes;
-    import lu.string : stripped;
+    import kameloso.time : DurationStringException, abbreviatedDuration;
+    import lu.string : splitInto;
+    import std.conv : ConvException, to;
 
-    immutable args = splitWithQuotes(event.content.stripped);
-
-    if (args.length < 4)
+    void sendUsage()
     {
         import std.format : format;
-        enum pattern = `Usage: %s%s "[poll title]" [seconds] [choice1] [choice2] ...`;
+        enum pattern = `Usage: %s%s "[poll title]" [duration] [choice1] [choice2] ...`;
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+    }
+
+    // mutable
+    string title;
+    string durationString;
+    string[] choices;
+
+    event.content.splitInto(title, durationString, choices);
+    if (choices.length < 2) return sendUsage();
+
+    try
+    {
+        durationString = durationString
+            .abbreviatedDuration
+            .total!"seconds"
+            .to!string;
+    }
+    catch (ConvException e)
+    {
+        enum message = "Invalid duration.";
         chan(plugin.state, event.channel, message);
         return;
     }
-
-    immutable title = args[0];
-    immutable durationString = args[1];
-    immutable choices = args[2..$];
-
-    if (choices.length < 2)
+    catch (DurationStringException e)
     {
-        enum message = "Insufficient number of choices, must be two or more.";
-        chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel, e.msg);
+        return;
+    }
+    catch (Exception e)
+    {
+        chan(plugin.state, event.channel, e.msg);
         return;
     }
 
@@ -1610,15 +1619,6 @@ void onCommandStartPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         try
         {
             immutable responseJSON = createPoll(plugin, event.channel, title, durationString, choices);
-
-            if (responseJSON.type != JSONType.array)
-            {
-                import std.stdio;
-                logger.error("Unexpected response from server when creating a poll");
-                writeln(responseJSON.toPrettyString);
-                return;
-            }
-
             enum pattern = `Poll "%s" created.`;
             immutable message = pattern.format(responseJSON.array[0].object["title"].str);
             chan(plugin.state, event.channel, message);
@@ -1643,7 +1643,13 @@ void onCommandStartPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 
                 chan(plugin.state, event.channel, message);
             }
+            else
+            {
+                // Fall back to twitchTryCatchDg's exception handling
+                throw e;
+            }
         }
+        // As above
     }
 
     Fiber startPollFiber = new Fiber(&twitchTryCatchDg!startPollDg, BufferSize.fiberStack);
@@ -1660,7 +1666,7 @@ void onCommandStartPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     Note: Experimental, since we cannot try it out ourselves.
 
     See_Also:
-        [kameloso.plugins.twitchbot.api.endPoll]
+        [kameloso.plugins.twitch.api.endPoll]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -1680,7 +1686,7 @@ void onCommandStartPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             .hidden(true)
     )
 )
-void onCommandEndPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandEndPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     void endPollDg()
     {
@@ -1688,13 +1694,6 @@ void onCommandEndPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
         import std.stdio : writeln;
 
         immutable pollInfoJSON = getPolls(plugin, event.channel);
-
-        if (pollInfoJSON.type != JSONType.array)
-        {
-            logger.error("Unexpected JSON type from server when fetching polls");
-            writeln(pollInfoJSON.toPrettyString);
-            return;
-        }
 
         if (!pollInfoJSON.array.length)
         {
@@ -1750,7 +1749,7 @@ void onCommandEndPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 
 // onAnyMessage
 /++
-    Bells on any message, if the [TwitchBotSettings.bellOnMessage] setting is set.
+    Bells on any message, if the [TwitchSettings.bellOnMessage] setting is set.
     Also counts emotes for `ecount` and records active viewers.
 
     Belling is useful with small audiences, so you don't miss messages.
@@ -1763,9 +1762,9 @@ void onCommandEndPoll(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     .channelPolicy(ChannelPolicy.home)
     .chainable(true)
 )
-void onAnyMessage(TwitchBotPlugin plugin, const ref IRCEvent event)
+void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
 {
-    if (plugin.twitchBotSettings.bellOnMessage)
+    if (plugin.twitchSettings.bellOnMessage)
     {
         import kameloso.terminal : TerminalToken;
         import std.stdio : stdout, write;
@@ -1781,7 +1780,7 @@ void onAnyMessage(TwitchBotPlugin plugin, const ref IRCEvent event)
     }
 
     // ecount!
-    if (plugin.twitchBotSettings.ecount && event.emotes.length)
+    if (plugin.twitchSettings.ecount && event.emotes.length)
     {
         import lu.string : nom;
         import std.algorithm.iteration : splitter;
@@ -1834,49 +1833,44 @@ void onAnyMessage(TwitchBotPlugin plugin, const ref IRCEvent event)
 
     Has to be done at MOTD, as we only know whether we're on Twitch after
     [dialect.defs.IRCEvent.Type.RPL_MYINFO|RPL_MYINFO] or so.
+
+    Some of this could be done in [initialise], like spawning the persistent
+    worker thread, but then it'd always be spawned even if the plugin is disabled
+    or if we end up on a non-Twitch server.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_ENDOFMOTD)
     .onEvent(IRCEvent.Type.ERR_NOMOTD)
 )
-void onEndOfMOTD(TwitchBotPlugin plugin)
+void onEndOfMOTD(TwitchPlugin plugin)
 {
     import lu.string : beginsWith;
-    import std.concurrency : Tid, spawn;
-    import std.typecons : Flag, No, Yes;
-
-    if (!plugin.useAPIFeatures) return;
+    import std.concurrency : spawn;
 
     // Concatenate the Bearer and OAuth headers once.
+    // This has to be done *after* connect's register
     immutable pass = plugin.state.bot.pass.beginsWith("oauth:") ?
         plugin.state.bot.pass[6..$] :
         plugin.state.bot.pass;
     plugin.authorizationBearer = "Bearer " ~ pass;
 
-    if (plugin.bucket is null)
-    {
-        plugin.bucket[0] = QueryResponse.init;
-        plugin.bucket.remove(0);
-    }
+    // Initialise the bucket, just so that it isn't null
+    plugin.bucket[0] = QueryResponse.init;
+    plugin.bucket.remove(0);
 
-    if (plugin.persistentWorkerTid == Tid.init)
-    {
-        plugin.persistentWorkerTid = spawn(&persistentQuerier,
-            plugin.bucket, plugin.state.connSettings.caBundleFile);
-    }
+    // Spawn the persistent worker.
+    plugin.persistentWorkerTid = spawn(
+        &persistentQuerier,
+        plugin.bucket,
+        plugin.state.connSettings.caBundleFile);
 
     void validationDg()
     {
-        import kameloso.plugins.common.delayawait : delay;
         import kameloso.constants : MagicErrorStrings;
-        import lu.string : plurality;
-        import std.conv : to;
         import std.datetime.systime : Clock, SysTime;
-        import std.meta : AliasSeq;
-        import core.time : Duration, days, hours, minutes, weeks;
 
         enum retriesInCaseOfConnectionErrors = 5;
-        uint numRetries;
+        uint retry;
 
         while (true)
         {
@@ -1884,18 +1878,27 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
             {
                 try
                 {
-                    cast(void)getValidation(plugin, plugin.state.bot.pass, Yes.async);
+                    import kameloso.plugins.common.delayawait : delay;
+                    import kameloso.messaging : quit;
+
+                    immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
+                    plugin.userID = validationJSON["user_id"].str;
+                    immutable expiresIn = validationJSON["expires_in"].integer;
+                    immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
+                    immutable now = Clock.currTime;
+                    immutable delta = (expiresWhen - now);
+
+                    // Schedule quitting on expiry
+                    delay(plugin, (() => quit(plugin.state)), delta);
                 }
                 catch (TwitchQueryException e)
                 {
                     if ((e.code == 2) && (e.error != MagicErrorStrings.sslLibraryNotFound))
                     {
-                        if (numRetries++ < retriesInCaseOfConnectionErrors) continue;
+                        if (retry++ < retriesInCaseOfConnectionErrors) continue;
                     }
-
                     plugin.useAPIFeatures = false;
                 }
-
                 return;
             }
 
@@ -1925,94 +1928,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
                 plugin.userID = validationJSON["user_id"].str;
                 immutable expiresIn = validationJSON["expires_in"].integer;
                 immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
-                immutable now = Clock.currTime;
-                immutable delta = (expiresWhen - now);
-                immutable numDays = delta.total!"days";
-
-                void warnOnWeekDg()
-                {
-                    // More than a week away, just .info
-                    enum pattern = "Your Twitch authorisation token will expire " ~
-                        "in <l>%d days</> on <l>%4d-%02d-%02d</>.";
-                    logger.infof(pattern.expandTags(LogLevel.info), numDays,
-                        expiresWhen.year, expiresWhen.month, expiresWhen.day);
-                }
-
-                void warnOnDaysDg()
-                {
-                    // A week or less, more than a day; warning
-                    enum pattern = "Warning: Your Twitch authorisation token will expire " ~
-                        "in <l>%d %s</> on <l>%4d-%02d-%02d %02d:%02d</>.";
-                    logger.warningf(pattern.expandTags(LogLevel.warning),
-                        numDays, numDays.plurality("day", "days"),
-                        expiresWhen.year, expiresWhen.month, expiresWhen.day,
-                        expiresWhen.hour, expiresWhen.minute);
-                }
-
-                void warnOnHoursDg()
-                {
-                    // Less than a day; warning
-                    immutable numHours = delta.total!"hours";
-                    enum pattern = "WARNING: Your Twitch authorisation token will expire " ~
-                        "in <l>%d %s</> at <l>%02d:%02d</>.";
-                    logger.warningf(pattern.expandTags(LogLevel.warning),
-                        numHours, numHours.plurality("hour", "hours"),
-                        expiresWhen.hour, expiresWhen.minute);
-                }
-
-                void warnOnMinutesDg()
-                {
-                    // Less than an hour; warning
-                    immutable numHours = delta.total!"minutes";
-                    enum pattern = "WARNING: Your Twitch authorisation token will expire " ~
-                        "in <l>%d minutes</> at <l>%02d:%02d</>.";
-                    logger.warningf(pattern.expandTags(LogLevel.warning),
-                        numHours, expiresWhen.hour, expiresWhen.minute);
-                }
-
-                void quitOnExpiry()
-                {
-                    import kameloso.messaging : quit;
-
-                    // Key expired
-                    enum pattern = "Your Twitch authorisation token has expired. " ~
-                        "Run the program with <l>--set twitch.keygen</> to generate a new one.";
-                    logger.error(pattern.expandTags(LogLevel.error));
-                    quit(plugin.state, "Twitch authorisation token expired");
-                }
-
-                alias reminderPoints = AliasSeq!(
-                    14.days,
-                    7.days,
-                    3.days,
-                    1.days,
-                    12.hours,
-                    6.hours,
-                    1.hours,
-                    30.minutes,
-                    10.minutes,
-                    5.minutes,
-                );
-
-                foreach (immutable reminderPoint; reminderPoints)
-                {
-                    if (delta >= reminderPoint)
-                    {
-                        if (reminderPoint >= 1.weeks) delay(plugin, &warnOnWeekDg, delta);
-                        else if (reminderPoint >= 1.days) delay(plugin, &warnOnDaysDg, delta);
-                        else if (reminderPoint >= 1.hours) delay(plugin, &warnOnHoursDg, delta);
-                        else /*if (reminderPoint >= 1.minutes)*/ delay(plugin, &warnOnMinutesDg, delta);
-                    }
-                }
-
-                // Schedule the final warning, on expiry
-                delay(plugin, &quitOnExpiry, delta);
-
-                // Also announce once normally how much time is left
-                if (delta >= 1.weeks) warnOnWeekDg();
-                else if (delta >= 1.days) warnOnDaysDg();
-                else if (delta >= 1.hours) warnOnHoursDg();
-                else /*if (delta >= 1.minutes)*/ warnOnMinutesDg();
+                generateExpiryReminders(plugin, expiresWhen);
             }
             catch (TwitchQueryException e)
             {
@@ -2020,42 +1936,40 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
 
                 if (e.code == 2)
                 {
-                    enum wikiPattern = cast(string)MagicErrorStrings.visitWikiOneliner;
+                    enum wikiMessage = cast(string)MagicErrorStrings.visitWikiOneliner;
 
                     if (e.error == MagicErrorStrings.sslLibraryNotFound)
                     {
                         enum pattern = "Failed to validate Twitch API keys: <l>%s</> " ~
                             "<t>(is OpenSSL installed?)";
-                        logger.errorf(pattern.expandTags(LogLevel.error),
-                            cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten);
-                        logger.error(wikiPattern.expandTags(LogLevel.error));
+                        logger.errorf(pattern, cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten);
+                        logger.error(wikiMessage);
 
                         version(Windows)
                         {
-                            enum getoptPattern = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
-                            logger.error(getoptPattern.expandTags(LogLevel.error));
+                            enum getoptMessage = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
+                            logger.error(getoptMessage);
                         }
                     }
                     else
                     {
-                        if (numRetries++ < retriesInCaseOfConnectionErrors) continue;
+                        if (retry++ < retriesInCaseOfConnectionErrors) continue;
 
                         enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
-                        logger.errorf(pattern.expandTags(LogLevel.error), e.msg, e.error, e.code);
-                        logger.error(wikiPattern.expandTags(LogLevel.error));
+                        logger.errorf(pattern, e.msg, e.error, e.code);
+                        logger.error(wikiMessage);
                     }
                 }
                 else
                 {
                     enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
-                    logger.errorf(pattern.expandTags(LogLevel.error), e.msg, e.error, e.code);
+                    logger.errorf(pattern, e.msg, e.error, e.code);
                 }
 
                 logger.warning("Disabling API features. Expect breakage.");
                 //version(PrintStacktraces) logger.trace(e);
                 plugin.useAPIFeatures = false;
             }
-
             return;
         }
     }
@@ -2070,7 +1984,7 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
     `!ecount`; reporting how many times a Twitch emote has been seen.
 
     See_Also:
-        [TwitchBotPlugin.ecount]
+        [TwitchPlugin.ecount]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -2084,13 +1998,13 @@ void onEndOfMOTD(TwitchBotPlugin plugin)
             .addSyntax("$command [emote]")
     )
 )
-void onCommandEcount(TwitchBotPlugin plugin, const ref IRCEvent event)
+void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : nom, stripped;
     import std.format : format;
     import std.conv  : to;
 
-    if (!plugin.twitchBotSettings.ecount) return;
+    if (!plugin.twitchSettings.ecount) return;
 
     void sendResults(const long count)
     {
@@ -2168,9 +2082,9 @@ void onCommandEcount(TwitchBotPlugin plugin, const ref IRCEvent event)
             .hidden(true)
     )
 )
-void onCommandWatchtime(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandWatchtime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.common : timeSince;
+    import kameloso.time : timeSince;
     import lu.string : beginsWith, nom, stripped;
     import std.conv : to;
     import std.format : format;
@@ -2178,13 +2092,13 @@ void onCommandWatchtime(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     import core.time : Duration, seconds;
 
     if (!plugin.useAPIFeatures) return;
-    else if (!plugin.twitchBotSettings.watchtime) return;
+    else if (!plugin.twitchSettings.watchtime) return;
+
+    string slice = event.content.stripped;  // mutable
+    immutable nameSpecified = (slice.length > 0);
 
     void watchtimeDg()
     {
-        string slice = event.content.stripped;  // mutable
-        immutable nameSpecified = (slice.length > 0);
-
         string nickname;
         string displayName;
 
@@ -2285,7 +2199,7 @@ void onCommandWatchtime(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     Changes the title of the current channel.
 
     See_Also:
-        [kameloso.plugins.twitchbot.api.modifyChannel]
+        [kameloso.plugins.twitch.api.modifyChannel]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -2299,10 +2213,11 @@ void onCommandWatchtime(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             .addSyntax("$command [title]")
     )
 )
-void onCommandSetTitle(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandSetTitle(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import lu.string : stripped;
+    import lu.string : stripped, unquoted;
     import std.array : replace;
+    import std.format : format;
 
     if (!plugin.useAPIFeatures) return;
 
@@ -2310,19 +2225,43 @@ void onCommandSetTitle(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 
     if (!unescapedTitle.length)
     {
-        import std.format : format;
-
         enum pattern = "Usage: %s%s [title]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
         chan(plugin.state, event.channel, message);
         return;
     }
 
-    immutable title = unescapedTitle.replace(`"`, `\"`);
+    immutable title = unescapedTitle.unquoted.replace(`"`, `\"`);
 
     void setTitleDg()
     {
-        modifyChannel(plugin, event.channel, title, string.init);
+        try
+        {
+            modifyChannel(plugin, event.channel, title, string.init);
+
+            enum pattern = "Channel title set to: %s";
+            immutable message = pattern.format(title);
+            chan(plugin.state, event.channel, message);
+        }
+        catch (TwitchQueryException e)
+        {
+            if ((e.code == 401) && (e.error == "Unauthorized"))
+            {
+                static uint idWhenComplainedAboutExpiredKey;
+
+                if (idWhenComplainedAboutExpiredKey != plugin.state.connectionID)
+                {
+                    // broadcaster "superkey" expired.
+                    enum message = "The broadcaster-level API key has expired.";
+                    chan(plugin.state, event.channel, message);
+                    idWhenComplainedAboutExpiredKey = plugin.state.connectionID;
+                }
+            }
+            else
+            {
+                throw e;
+            }
+        }
     }
 
     Fiber setTitleFiber = new Fiber(&twitchTryCatchDg!setTitleDg, BufferSize.fiberStack);
@@ -2335,7 +2274,7 @@ void onCommandSetTitle(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     Changes the game of the current channel.
 
     See_Also:
-        [kameloso.plugins.twitchbot.api.modifyChannel]
+        [kameloso.plugins.twitch.api.modifyChannel]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -2349,10 +2288,11 @@ void onCommandSetTitle(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             .addSyntax("$command [game name]")
     )
 )
-void onCommandSetGame(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import lu.string : stripped;
+    import lu.string : stripped, unquoted;
     import std.array : replace;
+    import std.format : format;
     import std.string : isNumeric;
     import std.uri : encodeComponent;
 
@@ -2362,38 +2302,67 @@ void onCommandSetGame(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 
     if (!unescapedGameName.length)
     {
-        import std.format : format;
-
         enum pattern = "Usage: %s%s [game name]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
         chan(plugin.state, event.channel, message);
         return;
     }
 
-    immutable specified = unescapedGameName.replace(`"`, `\"`);
-    string id;
-
-    if (specified.isNumeric)
-    {
-        id = specified;
-    }
-    else
-    {
-        immutable gameInfo = getTwitchGame(plugin, specified.encodeComponent);
-
-        if (!gameInfo.id.length)
-        {
-            enum message = "Could not find a game by that name.";
-            chan(plugin.state, event.channel, message);
-            return;
-        }
-
-        id = gameInfo.id;
-    }
+    immutable specified = unescapedGameName.unquoted.replace(`"`, `\"`);
+    string id = specified.isNumeric ? specified : string.init;  // mutable
 
     void setGameDg()
     {
-        modifyChannel(plugin, event.channel, string.init, id);
+        try
+        {
+            string name;  // mutable
+
+            if (!id.length)
+            {
+                immutable gameInfo = getTwitchGame(plugin, specified.encodeComponent, string.init);
+                id = gameInfo.id;
+                name = gameInfo.name;
+            }
+            else if (id == "0")
+            {
+                name = "(unset)";
+            }
+            else /*if (id.length)*/
+            {
+                immutable gameInfo = getTwitchGame(plugin, string.init, id);
+                name = gameInfo.name;
+            }
+
+            modifyChannel(plugin, event.channel, string.init, id);
+
+            enum pattern = "Game set to: %s";
+            immutable message = pattern.format(name);
+            chan(plugin.state, event.channel, message);
+        }
+        catch (EmptyDataException e)
+        {
+            enum message = "Could not find a game by that name.";
+            chan(plugin.state, event.channel, message);
+        }
+        catch (TwitchQueryException e)
+        {
+            if ((e.code == 401) && (e.error == "Unauthorized"))
+            {
+                static uint idWhenComplainedAboutExpiredKey;
+
+                if (idWhenComplainedAboutExpiredKey != plugin.state.connectionID)
+                {
+                    // broadcaster "superkey" expired.
+                    enum message = "The broadcaster-level API key has expired.";
+                    chan(plugin.state, event.channel, message);
+                    idWhenComplainedAboutExpiredKey = plugin.state.connectionID;
+                }
+            }
+            else
+            {
+                throw e;
+            }
+        }
     }
 
     Fiber setGameFiber = new Fiber(&twitchTryCatchDg!setGameDg, BufferSize.fiberStack);
@@ -2406,7 +2375,7 @@ void onCommandSetGame(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
     Starts a commercial in the current channel.
 
     See_Also:
-        [kameloso.plugins.twitchbot.api.startCommercial]
+        [kameloso.plugins.twitch.api.startCommercial]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -2420,7 +2389,7 @@ void onCommandSetGame(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
             .addSyntax("$command [commercial length; valid values are 30, 60, 90, 120, 150 and 180]")
     )
 )
-void onCommandCommercial(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
+void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : stripped;
     import std.algorithm.comparison : among;
@@ -2477,62 +2446,106 @@ void onCommandCommercial(TwitchBotPlugin plugin, const /*ref*/ IRCEvent event)
 }
 
 
-// onCAP
+// start
 /++
-    Start the captive key generation routine at the earliest possible moment,
-    which are the [dialect.defs.IRCEvent.Type.CAP|CAP] events.
-
-    We can't do it in [start] since the calls to save and exit would go unheard,
-    as [start] happens before the main loop starts. It would then immediately
-    fail to read if too much time has passed, and nothing would be saved.
+    Start the captive key generation routine immediately after connection has
+    been established.
  +/
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.CAP)
-)
-void onCAP(TwitchBotPlugin plugin)
+void start(TwitchPlugin plugin)
 {
-    import std.algorithm.searching : endsWith;
-
-    if ((plugin.state.server.daemon == IRCServer.Daemon.unset) &&
-        plugin.state.server.address.endsWith(".twitch.tv"))
+    if (plugin.twitchSettings.keygen ||
+        plugin.twitchSettings.superKeygen ||
+        plugin.twitchSettings.googleKeygen ||
+        plugin.twitchSettings.spotifyKeygen ||
+        (!plugin.state.bot.pass.length && !plugin.state.settings.force))
     {
-        if (/*plugin.twitchBotSettings.keygen ||*/
-            plugin.twitchBotSettings.superKeygen ||
-            plugin.twitchBotSettings.googleKeygen ||
-            plugin.twitchBotSettings.spotifyKeygen)
+        import std.algorithm.searching : endsWith;
+
+        if ((plugin.state.server.daemon == IRCServer.Daemon.unset) &&
+            plugin.state.server.address.endsWith(".twitch.tv"))
         {
+            import kameloso.thread : ThreadMessage;
+            import std.concurrency : prioritySend;
+
             // Some keygen, reload to load secrets so existing ones are read
+            // Not strictly needed for normal keygen
             plugin.reload();
+
+            bool needSeparator;
+            enum separator = "---------------------------------------------------------------------";
+
+            // Automatically keygen if no pass
+            if (plugin.twitchSettings.keygen ||
+                (!plugin.state.bot.pass.length && !plugin.state.settings.force))
+            {
+                import kameloso.plugins.twitch.keygen : requestTwitchKey;
+                plugin.requestTwitchKey();
+                plugin.twitchSettings.keygen = false;
+                needSeparator = true;
+            }
+
+            if (*plugin.state.abort) return;
+
+            if (plugin.twitchSettings.superKeygen)
+            {
+                import kameloso.plugins.twitch.keygen : requestTwitchSuperKey;
+                if (needSeparator) logger.trace(separator);
+                plugin.requestTwitchSuperKey();
+                plugin.twitchSettings.superKeygen = false;
+                needSeparator = true;
+            }
+
+            if (*plugin.state.abort) return;
+
+            if (plugin.twitchSettings.googleKeygen)
+            {
+                import kameloso.plugins.twitch.google : requestGoogleKeys;
+                if (needSeparator) logger.trace(separator);
+                plugin.requestGoogleKeys();
+                plugin.twitchSettings.googleKeygen = false;
+                needSeparator = true;
+            }
+
+            if (*plugin.state.abort) return;
+
+            if (plugin.twitchSettings.spotifyKeygen)
+            {
+                import kameloso.plugins.twitch.spotify : requestSpotifyKeys;
+                if (needSeparator) logger.trace(separator);
+                plugin.requestSpotifyKeys();
+                plugin.twitchSettings.spotifyKeygen = false;
+            }
+
+            if (*plugin.state.abort) return;
+
+            // Remove custom Twitch settings so we can reconnect without jumping
+            // back into keygens.
+            static immutable string[8] settingsToPop =
+            [
+                "twitch.keygen",
+                "twitchbot.keygen",
+                "twitch.superKeygen",
+                "twitchbot.superKeygen",
+                "twitch.googleKeygen",
+                "twitchbot.googleKeygen",
+                "twitch.spotifyKeygen",
+                "twitchbot.spotifyKeygen",
+            ];
+
+            foreach (immutable setting; settingsToPop[])
+            {
+                plugin.state.mainThread.prioritySend(ThreadMessage.popCustomSetting(setting));
+            }
+
+            plugin.state.mainThread.prioritySend(ThreadMessage.reconnect);
         }
-
-        if (plugin.twitchBotSettings.keygen)
+        else
         {
-            import kameloso.plugins.twitchbot.keygen : requestTwitchKey;
-            plugin.requestTwitchKey();
-        }
-
-        if (*plugin.state.abort) return;
-
-        if (plugin.twitchBotSettings.superKeygen)
-        {
-            import kameloso.plugins.twitchbot.keygen : requestTwitchSuperKey;
-            plugin.requestTwitchSuperKey();
-        }
-
-        if (*plugin.state.abort) return;
-
-        if (plugin.twitchBotSettings.googleKeygen)
-        {
-            import kameloso.plugins.twitchbot.google : requestGoogleKeys;
-            plugin.requestGoogleKeys();
-        }
-
-        if (*plugin.state.abort) return;
-
-        if (plugin.twitchBotSettings.spotifyKeygen)
-        {
-            import kameloso.plugins.twitchbot.spotify : requestSpotifyKeys;
-            plugin.requestSpotifyKeys();
+            enum message = "A Twitch keygen setting was supplied but the configuration " ~
+                "file is not set up to connect to Twitch. (<l>irc.chat.twitch.tv</>)";
+            logger.trace();
+            logger.warning(message);
+            logger.trace();
         }
     }
 }
@@ -2548,10 +2561,10 @@ void onCAP(TwitchBotPlugin plugin)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_MYINFO)
 )
-void onMyInfo(TwitchBotPlugin plugin)
+void onMyInfo(TwitchPlugin plugin)
 {
     import kameloso.plugins.common.delayawait : delay;
-    import kameloso.common : nextMidnight;
+    import kameloso.time : nextMidnight;
     import std.datetime.systime : Clock;
     import core.thread : Fiber;
 
@@ -2588,7 +2601,7 @@ void onMyInfo(TwitchBotPlugin plugin)
     {
         while (true)
         {
-            if (plugin.twitchBotSettings.ecount && plugin.ecountDirty && plugin.ecount.length)
+            if (plugin.twitchSettings.ecount && plugin.ecountDirty && plugin.ecount.length)
             {
                 saveResourceToDisk(plugin.ecount, plugin.ecountFile);
                 plugin.ecountDirty = false;
@@ -2598,7 +2611,7 @@ void onMyInfo(TwitchBotPlugin plugin)
                 Only save watchtimes if there's at least one broadcast currently ongoing.
                 Since we save at broadcast stop there won't be anything new to save otherwise.
              +/
-            if (plugin.twitchBotSettings.watchtime && plugin.viewerTimesByChannel.length)
+            if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
             {
                 foreach (const room; plugin.rooms)
                 {
@@ -2620,15 +2633,170 @@ void onMyInfo(TwitchBotPlugin plugin)
 }
 
 
-// start
+// generateExpiryReminders
 /++
-    Disables the bell if we're not running inside a terminal.
+    Generates and delays Twitch authorisation token expiry reminders.
+
+    Params:
+        plugin = The current [TwitchPlugin].
+        expiresWhen = A [std.datetime.systime.SysTime|SysTime] of when the expiry occurs.
  +/
-void start(TwitchBotPlugin plugin)
+void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
+{
+    import kameloso.plugins.common.delayawait : delay;
+    import lu.string : plurality;
+    import std.datetime.systime : Clock;
+    import std.meta : AliasSeq;
+    import core.time : days, hours, minutes, seconds, weeks;
+
+    auto untilExpiry()
+    {
+        immutable now = Clock.currTime;
+        return (expiresWhen - now) + 59.seconds;
+    }
+
+    void warnOnWeekDg()
+    {
+        immutable numDays = untilExpiry.total!"days";
+        if (numDays <= 0) return;
+
+        // More than a week away, just .info
+        enum pattern = "Your Twitch authorisation token will expire " ~
+            "in <l>%d days</> on <l>%4d-%02d-%02d</>.";
+        logger.infof(pattern, numDays, expiresWhen.year, expiresWhen.month, expiresWhen.day);
+    }
+
+    void warnOnDaysDg()
+    {
+        int numDays;
+        int numHours;
+        untilExpiry.split!("days", "hours")(numDays, numHours);
+        if ((numDays < 0) || (numHours < 0)) return;
+
+        // A week or less, more than a day; warning
+        if (numHours > 0)
+        {
+            enum pattern = "Warning: Your Twitch authorisation token will expire " ~
+                "in <l>%d %s and %d %s</> at <l>%4d-%02d-%02d %02d:%02d</>.";
+            logger.warningf(pattern,
+                numDays, numDays.plurality("day", "days"),
+                numHours, numHours.plurality("hour", "hours"),
+                expiresWhen.year, expiresWhen.month, expiresWhen.day,
+                expiresWhen.hour, expiresWhen.minute);
+        }
+        else
+        {
+            enum pattern = "Warning: Your Twitch authorisation token will expire " ~
+                "in <l>%d %s</> at <l>%4d-%02d-%02d %02d:%02d</>.";
+            logger.warningf(pattern,
+                numDays, numDays.plurality("day", "days"),
+                expiresWhen.year, expiresWhen.month, expiresWhen.day,
+                expiresWhen.hour, expiresWhen.minute);
+        }
+    }
+
+    void warnOnHoursDg()
+    {
+        int numHours;
+        int numMinutes;
+        untilExpiry.split!("hours", "minutes")(numHours, numMinutes);
+        if ((numHours < 0) || (numMinutes < 0)) return;
+
+        // Less than a day; warning
+        if (numMinutes > 0)
+        {
+            enum pattern = "WARNING: Your Twitch authorisation token will expire " ~
+                "in <l>%d %s and %d %s</> at <l>%02d:%02d</>.";
+            logger.warningf(pattern,
+                numHours, numHours.plurality("hour", "hours"),
+                numMinutes, numMinutes.plurality("minute", "minutes"),
+                expiresWhen.hour, expiresWhen.minute);
+        }
+        else
+        {
+            enum pattern = "WARNING: Your Twitch authorisation token will expire " ~
+                "in <l>%d %s</> at <l>%02d:%02d</>.";
+            logger.warningf(pattern,
+                numHours, numHours.plurality("hour", "hours"),
+                expiresWhen.hour, expiresWhen.minute);
+        }
+    }
+
+    void warnOnMinutesDg()
+    {
+        immutable numMinutes = untilExpiry.total!"minutes";
+        if (numMinutes <= 0) return;
+
+        // Less than an hour; warning
+        enum pattern = "WARNING: Your Twitch authorisation token will expire " ~
+            "in <l>%d minutes</> at <l>%02d:%02d</>.";
+        logger.warningf(pattern,
+            numMinutes, expiresWhen.hour, expiresWhen.minute);
+    }
+
+    void quitOnExpiry()
+    {
+        import kameloso.messaging : quit;
+
+        // Key expired
+        enum message = "Your Twitch authorisation token has expired. " ~
+            "Run the program with <l>--set twitch.keygen</> to generate a new one.";
+        logger.error(message);
+        quit(plugin.state, "Twitch authorisation token expired");
+    }
+
+    alias reminderPoints = AliasSeq!(
+        14.days,
+        7.days,
+        3.days,
+        1.days,
+        12.hours,
+        6.hours,
+        1.hours,
+        30.minutes,
+        10.minutes,
+        5.minutes,
+    );
+
+    immutable now = Clock.currTime;
+    immutable trueExpiry = (expiresWhen - now);
+
+    foreach (immutable reminderPoint; reminderPoints)
+    {
+        if (trueExpiry >= reminderPoint)
+        {
+            immutable untilPoint = (trueExpiry - reminderPoint);
+            if (reminderPoint >= 1.weeks) delay(plugin, &warnOnWeekDg, untilPoint);
+            else if (reminderPoint >= 1.days) delay(plugin, &warnOnDaysDg, untilPoint);
+            else if (reminderPoint >= 1.hours) delay(plugin, &warnOnHoursDg, untilPoint);
+            else /*if (reminderPoint >= 1.minutes)*/ delay(plugin, &warnOnMinutesDg, untilPoint);
+        }
+    }
+
+    // Schedule quitting on expiry
+    delay(plugin, &quitOnExpiry, trueExpiry);
+
+    // Also announce once normally how much time is left
+    if (trueExpiry >= 1.weeks) warnOnWeekDg();
+    else if (trueExpiry >= 1.days) warnOnDaysDg();
+    else if (trueExpiry >= 1.hours) warnOnHoursDg();
+    else /*if (trueExpiry >= 1.minutes)*/ warnOnMinutesDg();
+}
+
+
+// initialise
+/++
+    Initialises the Twitch plugin.
+ +/
+void initialise(TwitchPlugin plugin)
 {
     import kameloso.terminal : isTerminal;
     import std.concurrency : thisTid;
 
+    // Reset the shared static useAPIFeatures between instantiations.
+    plugin.useAPIFeatures = true;
+
+    // Register this thread as the main thread.
     plugin.mainThread = cast(shared)thisTid;
 
     if (!isTerminal)
@@ -2643,7 +2811,7 @@ void start(TwitchBotPlugin plugin)
 /++
     De-initialises the plugin. Shuts down any persistent worker threads.
  +/
-void teardown(TwitchBotPlugin plugin)
+void teardown(TwitchPlugin plugin)
 {
     import kameloso.thread : ThreadMessage;
     import std.concurrency : Tid, send;
@@ -2654,14 +2822,14 @@ void teardown(TwitchBotPlugin plugin)
         plugin.persistentWorkerTid.send(ThreadMessage.teardown());
     }
 
-    if (plugin.twitchBotSettings.ecount && /*plugin.ecountDirty &&*/ plugin.ecount.length)
+    if (plugin.twitchSettings.ecount && /*plugin.ecountDirty &&*/ plugin.ecount.length)
     {
         // Might as well always save on exit.
         saveResourceToDisk(plugin.ecount, plugin.ecountFile);
         //plugin.ecountDirty = false;
     }
 
-    if (plugin.twitchBotSettings.watchtime && plugin.viewerTimesByChannel.length)
+    if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
     {
         saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
     }
@@ -2673,7 +2841,7 @@ void teardown(TwitchBotPlugin plugin)
     Hijacks a reference to a [dialect.defs.IRCEvent|IRCEvent] and modifies the
     sender and target class based on their badges (and the current settings).
  +/
-void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
+void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 {
     import std.algorithm.searching : canFind;
 
@@ -2685,14 +2853,14 @@ void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
         if (!plugin.state.bot.homeChannels.canFind(event.channel)) return;
     }
 
-    static void postprocessImpl(const TwitchBotPlugin plugin,
+    static void postprocessImpl(const TwitchPlugin plugin,
         const ref IRCEvent event, ref IRCUser user)
     {
         import lu.string : contains;
 
         if (user.class_ == IRCUser.Class.blacklist) return;
 
-        if (plugin.twitchBotSettings.promoteBroadcasters)
+        if (plugin.twitchSettings.promoteBroadcasters)
         {
             if ((user.class_ < IRCUser.Class.staff) &&
                 (user.nickname == event.channel[1..$]))
@@ -2706,7 +2874,7 @@ void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
         // Stop here if there are no badges to promote
         if (!user.badges.length) return;
 
-        if (plugin.twitchBotSettings.promoteModerators)
+        if (plugin.twitchSettings.promoteModerators)
         {
             if ((user.class_ < IRCUser.Class.operator) &&
                 user.badges.contains("moderator/"))
@@ -2717,7 +2885,7 @@ void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
             }
         }
 
-        if (plugin.twitchBotSettings.promoteVIPs)
+        if (plugin.twitchSettings.promoteVIPs)
         {
             if ((user.class_ < IRCUser.Class.whitelist) &&
                 user.badges.contains("vip/"))
@@ -2743,75 +2911,76 @@ void postprocess(TwitchBotPlugin plugin, ref IRCEvent event)
 
 // initResources
 /++
-    Reads and writes the file of emote counters to disk, ensuring that it's
-    there and properly formatted.
+    Reads and writes resource files to disk, ensure that they're there and properly formatted.
  +/
-void initResources(TwitchBotPlugin plugin)
+void initResources(TwitchPlugin plugin)
 {
+    import kameloso.plugins.common.misc : IRCPluginInitialisationException;
     import lu.json : JSONStorage;
+    import std.file : exists, mkdir, remove;
     import std.json : JSONException;
-    import std.path : baseName;
+    import std.path : baseName, buildNormalizedPath, dirName;
+
+    void loadFile(
+        ref JSONStorage json,
+        const string file,
+        const size_t line = __LINE__)
+    {
+        try
+        {
+            json.load(file);
+        }
+        catch (JSONException e)
+        {
+            version(PrintStacktraces) logger.error("JSONException: ", e.msg);
+            throw new IRCPluginInitialisationException(
+                file ~ " is malformed",
+                plugin.name,
+                file,
+                __FILE__,
+                line);
+        }
+
+        // Let other Exceptions pass.
+    }
 
     JSONStorage ecountJSON;
     JSONStorage viewersJSON;
     JSONStorage secretsJSON;
 
-    try
-    {
-        ecountJSON.load(plugin.ecountFile);
-    }
-    catch (JSONException e)
-    {
-        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+    // Ensure the subdirectory exists
+    immutable subdir = plugin.ecountFile.dirName;
+    if (!subdir.exists) mkdir(subdir);
 
-        version(PrintStacktraces) logger.trace(e);
-        throw new IRCPluginInitialisationException(
-            "Emote counter file is malformed",
-            plugin.name,
-            plugin.ecountFile,
-            __FILE__,
-            __LINE__);
-    }
+    immutable oldEcount = buildNormalizedPath(
+        plugin.state.settings.resourceDirectory,
+        "twitch-ecount.json");
+    immutable hasOldEcount = oldEcount.exists;
+    immutable ecountFile = hasOldEcount ? oldEcount : plugin.ecountFile;
 
-    try
-    {
-        viewersJSON.load(plugin.viewersFile);
-    }
-    catch (JSONException e)
-    {
-        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+    immutable oldViewers = buildNormalizedPath(
+        plugin.state.settings.resourceDirectory,
+        "twitch-viewers.json");
+    immutable hasOldViewers = oldViewers.exists;
+    immutable viewersFile = hasOldViewers ? oldViewers : plugin.viewersFile;
 
-        version(PrintStacktraces) logger.trace(e);
-        throw new IRCPluginInitialisationException(
-            "Viewers file is malformed",
-            plugin.name,
-            plugin.viewersFile,
-            __FILE__,
-            __LINE__);
-    }
+    immutable oldSecrets = buildNormalizedPath(
+        plugin.state.settings.resourceDirectory,
+        "twitch-secrets.json");
+    immutable hasOldSecrets = oldSecrets.exists;
+    immutable secretsFile = hasOldSecrets ? oldSecrets : plugin.secretsFile;
 
-    try
-    {
-        secretsJSON.load(plugin.secretsFile);
-    }
-    catch (JSONException e)
-    {
-        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
-
-        version(PrintStacktraces) logger.trace(e);
-        throw new IRCPluginInitialisationException(
-            "Secrets file is malformed",
-            plugin.name,
-            plugin.secretsFile,
-            __FILE__,
-            __LINE__);
-    }
-
-    // Let other Exceptions pass.
+    loadFile(ecountJSON, ecountFile);
+    loadFile(viewersJSON, viewersFile);
+    loadFile(secretsJSON, secretsFile);
 
     ecountJSON.save(plugin.ecountFile);
     viewersJSON.save(plugin.viewersFile);
     secretsJSON.save(plugin.secretsFile);
+
+    if (hasOldEcount) remove(oldEcount);
+    if (hasOldViewers) remove(oldViewers);
+    if (hasOldSecrets) remove(oldSecrets);
 }
 
 
@@ -2819,7 +2988,8 @@ void initResources(TwitchBotPlugin plugin)
 /++
     Saves the passed resource to disk, but in JSON format.
 
-    This is used with the associative arrays for `ecount`.
+    This is used with the associative arrays for `ecount`, as well as for keeping
+    track of viewers.
 
     Params:
         aa = The associative array to convert into JSON and save.
@@ -2837,7 +3007,11 @@ void saveResourceToDisk(const long[string][string] aa, const string filename)
 
 // saveSecretsToDisk
 /++
-    FIXME
+    Saves Twitch secrets to disk, in JSON format.
+
+    Params:
+        aa = Associative array of credentials.
+        filename = Filename of the file to write to.
  +/
 package void saveSecretsToDisk(const Credentials[string] aa, const string filename)
 {
@@ -2863,7 +3037,7 @@ package void saveSecretsToDisk(const Credentials[string] aa, const string filena
 /++
     Reloads the plugin, loading emote counters from disk.
  +/
-void reload(TwitchBotPlugin plugin)
+void reload(TwitchPlugin plugin)
 {
     import lu.json : JSONStorage, populateFromJSON;
 
@@ -2900,12 +3074,12 @@ mixin TwitchAwareness;
 public:
 
 
-// TwitchBotPlugin
+// TwitchPlugin
 /++
-    The Twitch Bot plugin is an example Twitch streamer bot. It contains some
+    The Twitch plugin is an example Twitch streamer bot. It contains some
     basic tools for streamers, and the audience thereof.
  +/
-final class TwitchBotPlugin : IRCPlugin
+final class TwitchPlugin : IRCPlugin
 {
 private:
     import kameloso.terminal : TerminalToken;
@@ -2990,8 +3164,8 @@ package:
         long[string] songrequestHistory;
     }
 
-    /// All Twitch Bot plugin settings.
-    TwitchBotSettings twitchBotSettings;
+    /// All Twitch plugin settings.
+    TwitchSettings twitchSettings;
 
     /// Array of active bot channels' state.
     Room[string] rooms;
@@ -3075,14 +3249,35 @@ package:
     /// Associative array of responses from async HTTP queries.
     shared QueryResponse[int] bucket;
 
-    /// File to save emote counters to.
-    @Resource ecountFile = "twitch-ecount.json";
+    @Resource
+    {
+        version(Posix)
+        {
+            /// File to save emote counters to.
+            string ecountFile = "twitch/ecount.json";
 
-    /// File to save viewer times to.
-    @Resource viewersFile = "twitch-viewers.json";
+            /// File to save viewer times to.
+            string viewersFile = "twitch/viewers.json";
 
-    /// File to save API keys and tokens to.
-    @Resource secretsFile = "twitch-secrets.json";
+            /// File to save API keys and tokens to.
+            string secretsFile = "twitch/secrets.json";
+        }
+        else version(Windows)
+        {
+            // As above.
+            string ecountFile = "twitch\\ecount.json";
+
+            // ditto
+            string viewersFile = "twitch\\viewers.json";
+
+            // ditto
+            string secretsFile = "twitch\\secrets.json";
+        }
+        else
+        {
+            static assert(0, "Unsupported platform, please file a bug.");
+        }
+    }
 
     /// Emote counters associative array; counter longs keyed by emote ID string keyed by channel.
     long[string][string] ecount;
@@ -3099,7 +3294,7 @@ package:
         Override
         [kameloso.plugins.common.core.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled]
         and inject a server check, so this plugin only works on Twitch, in addition
-        to doing nothing when [TwitchBotSettings.enabled] is false.
+        to doing nothing when [TwitchSettings.enabled] is false.
 
         Returns:
             `true` if this plugin should react to events; `false` if not.
@@ -3108,7 +3303,11 @@ package:
     {
         return ((state.server.daemon == IRCServer.Daemon.twitch) ||
             (state.server.daemon == IRCServer.Daemon.unset)) &&
-            (twitchBotSettings.enabled || twitchBotSettings.keygen);
+            (twitchSettings.enabled ||
+                twitchSettings.keygen ||
+                twitchSettings.superKeygen ||
+                twitchSettings.googleKeygen ||
+                twitchSettings.spotifyKeygen);
     }
 
     mixin IRCPluginImpl;

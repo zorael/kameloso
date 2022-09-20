@@ -163,10 +163,15 @@ public:
      +/
     bool setSettingByName(const string setting, const string value);
 
+    // setup
+    /++
+        Called at program start but before connection has been established.
+     +/
+    void setup() @system;
+
     // start
     /++
-        Called when connection has been established, to start the plugin;
-        its would-be constructor.
+        Called when connection has been established.
      +/
     void start() @system;
 
@@ -259,6 +264,11 @@ public:
         mixin IRCPluginImpl;
     }
     ---
+
+    Params:
+        debug_ = Enables some debug output.
+        module_ = Name of the current module. Should never be specified and always
+            be left to its `__MODULE__` default value. Here be dragons.
 
     See_Also:
         [kameloso.plugins.common.core.IRCPlugin|IRCPlugin]
@@ -488,8 +498,7 @@ mixin template IRCPluginImpl(
 
             static if (handlerAnnotations.length > 1)
             {
-                import std.format;
-
+                import std.format : format;
                 enum pattern = "`%s` is annotated with more than one `IRCEventHandler`";
                 static assert(0, pattern.format(fullyQualifiedName!fun));
             }
@@ -602,7 +611,7 @@ mixin template IRCPluginImpl(
         /++
             Calls the passed function pointer, appropriately.
          +/
-        void call(Fun)(Fun fun, ref IRCEvent event)
+        void call(Fun)(scope Fun fun, ref IRCEvent event) scope
         {
             import lu.traits : TakesParams;
             import std.traits : ParameterStorageClass, Parameters, arity;
@@ -685,8 +694,12 @@ mixin template IRCPluginImpl(
         /++
             Process a function.
          +/
-        NextStep process(bool verbose, Fun)(Fun fun, const string funName,
-            const IRCEventHandler uda, ref IRCEvent event, const bool acceptsAnyType)
+        NextStep process(bool verbose, Fun)
+            (scope Fun fun,
+            const string funName,
+            const IRCEventHandler uda,
+            ref IRCEvent event,
+            const bool acceptsAnyType) scope
         {
             import std.algorithm.searching : canFind;
 
@@ -978,7 +991,17 @@ mixin template IRCPluginImpl(
                 if (state.settings.flush) stdout.flush();
             }
 
-            call(fun, event);
+            if (uda._fiber)
+            {
+                import kameloso.constants : BufferSize;
+                import core.thread : Fiber;
+                auto fiber = new Fiber(() => call(fun, event), BufferSize.fiberStack);
+                fiber.call();
+            }
+            else
+            {
+                call(fun, event);
+            }
 
             if (uda._chainable)
             {
@@ -1060,7 +1083,8 @@ mixin template IRCPluginImpl(
                 import std.algorithm.searching : canFind;
                 import std.traits : getUDAs;
 
-                static assert(udaSanityCheck!fun);
+                static assert(udaSanityCheck!fun,
+                    __traits(identifier, fun) ~ " UDA sanity check failed.");
 
                 static if (__VERSION__ >= 2096L)
                 {
@@ -1109,7 +1133,7 @@ mixin template IRCPluginImpl(
                 catch (Exception e)
                 {
                     /*enum pattern = "tryProcess some exception on <l>%s</>: <l>%s";
-                    logger.warningf(pattern.expandTags(LogLevel.warning), funName, e);*/
+                    logger.warningf(pattern, funName, e);*/
 
                     import std.utf : UTFException;
                     import core.exception : UnicodeException;
@@ -1484,9 +1508,34 @@ mixin template IRCPluginImpl(
         return didSomething;
     }
 
+    // setup
+    /++
+        Runs early pre-connect routines.
+     +/
+    override public void setup() @system
+    {
+        static if (__traits(compiles, .setup))
+        {
+            import lu.traits : TakesParams;
+
+            if (!this.isEnabled) return;
+
+            static if (TakesParams!(.setup, typeof(this)))
+            {
+                .setup(this);
+            }
+            else
+            {
+                import std.format : format;
+                enum pattern = "`%s.setup` has an unsupported function signature: `%s`";
+                static assert(0, pattern.format(module_, typeof(.setup).stringof));
+            }
+        }
+    }
+
     // start
     /++
-        Runs early after-connect routines, immediately after connection has been
+        Runs early post-connect routines, immediately after connection has been
         established.
      +/
     override public void start() @system
@@ -1799,13 +1848,13 @@ unittest
         `true` if the message is in a context where the event matches the
         `policy`, `false` if not.
  +/
-bool prefixPolicyMatches(bool verbose = false)
+auto prefixPolicyMatches(bool verbose = false)
     (ref IRCEvent event,
     const PrefixPolicy policy,
     const IRCClient client,
     const string prefix)
 {
-    import kameloso.common : stripSeparatedPrefix;
+    import kameloso.string : stripSeparatedPrefix;
     import lu.string : beginsWith;
     import std.typecons : No, Yes;
 
@@ -1927,7 +1976,8 @@ bool prefixPolicyMatches(bool verbose = false)
         A [FilterResult] saying the event should `pass`, `fail`, or that more
         information about the sender is needed via a WHOIS call.
  +/
-FilterResult filterSender(const ref IRCEvent event,
+auto filterSender(
+    const ref IRCEvent event,
     const Permissions permissionsRequired,
     const bool preferHostmasks) @safe
 {
@@ -2042,6 +2092,12 @@ private:
     import kameloso.thread : ScheduledDelegate, ScheduledFiber;
     import std.concurrency : Tid;
     import core.thread : Fiber;
+
+    /++
+        Numeric ID of the current connection, to disambiguate between multiple
+        connections in one program run. Private value.
+     +/
+    uint privateConnectionID;
 
 public:
     // Update
@@ -2241,6 +2297,29 @@ public:
         Pointer to the global abort flag.
      +/
     bool* abort;
+
+    // connectionID
+    /++
+        Numeric ID of the current connection, to disambiguate between multiple
+        connections in one program run. Accessor.
+
+        Returns:
+            The numeric ID of the current connection.
+     +/
+    pragma(inline, true)
+    auto connectionID()
+    {
+        return privateConnectionID;
+    }
+
+    // this
+    /++
+        Constructor taking a connection ID `uint`.
+     +/
+    this(const uint connectionID)
+    {
+        this.privateConnectionID = connectionID;
+    }
 }
 
 
@@ -2561,6 +2640,13 @@ struct IRCEventHandler
         within a plugin module are triggered.
      +/
     Timing _when;
+
+    // fiber
+    /++
+        Whether or not the annotated event handler should be run from within a
+        [core.thread.fiber.Fiber|Fiber].
+     +/
+    bool _fiber;
 
     mixin UnderscoreOpDispatcher;
 

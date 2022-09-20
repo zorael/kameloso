@@ -129,7 +129,8 @@ unittest
     Returns:
         The passed line, encased within IRC colour tags.
  +/
-string ircColour(const string line,
+string ircColour(
+    const string line,
     const IRCColour fg,
     const IRCColour bg = IRCColour.unset) pure
 in (line.length, "Tried to apply IRC colours to a string but no string was given")
@@ -172,7 +173,7 @@ unittest
     Returns:
         An opening IRC colour token with the passed colours.
  +/
-string ircColour(const IRCColour fg, const IRCColour bg = IRCColour.unset) pure
+auto ircColour(const IRCColour fg, const IRCColour bg = IRCColour.unset) pure
 {
     import std.format : format;
 
@@ -248,7 +249,7 @@ unittest
     Returns:
         The passed string encased within IRC colour coding.
  +/
-string ircColourByHash(const string word) pure
+auto ircColourByHash(const string word) pure
 in (word.length, "Tried to apply IRC colours by hash to a string but no string was given")
 {
     if (!word.length) return string.init;
@@ -297,7 +298,7 @@ unittest
     Returns:
         The passed something, as a string, in IRC bold.
  +/
-string ircBold(T)(T something) //pure nothrow
+auto ircBold(T)(T something) //pure nothrow
 {
     import std.conv : text;
     return text(cast(char)IRCControlCharacter.bold, something, cast(char)IRCControlCharacter.bold);
@@ -339,7 +340,7 @@ unittest
     Returns:
         The passed something, as a string, in IRC italics.
  +/
-string ircItalics(T)(T something) //pure nothrow
+auto ircItalics(T)(T something) //pure nothrow
 {
     import std.conv : text;
     return text(cast(char)IRCControlCharacter.italics, something, cast(char)IRCControlCharacter.italics);
@@ -381,7 +382,7 @@ unittest
     Returns:
         The passed something, as a string, in IRC underlined.
  +/
-string ircUnderlined(T)(T something) //pure nothrow
+auto ircUnderlined(T)(T something) //pure nothrow
 {
     import std.conv : text;
     return text(cast(char)IRCControlCharacter.underlined, something, cast(char)IRCControlCharacter.underlined);
@@ -420,7 +421,7 @@ unittest
     Returns:
         An IRC colour/formatting reset token.
  +/
-char ircReset() @nogc pure nothrow
+auto ircReset() @nogc pure nothrow
 {
     return cast(char)IRCControlCharacter.reset;
 }
@@ -445,7 +446,8 @@ char ircReset() @nogc pure nothrow
         A new string based on `origLine` with mIRC tokens mapped to terminal ones.
  +/
 version(Colours)
-string mapEffects(const string origLine,
+auto mapEffects(
+    const string origLine,
     const uint fgBase = TerminalForeground.default_,
     const uint bgBase = TerminalBackground.default_) pure nothrow
 {
@@ -518,7 +520,7 @@ unittest
     Returns:
         A string devoid of effects.
  +/
-string stripEffects(const string line) pure nothrow
+auto stripEffects(const string line) pure nothrow
 {
     alias I = IRCControlCharacter;
 
@@ -573,7 +575,8 @@ unittest
         The passed `line`, now with terminal colouring.
  +/
 version(Colours)
-string mapColours(const string line,
+auto mapColours(
+    const string line,
     const uint fgReset = TerminalForeground.default_,
     const uint bgReset = TerminalBackground.default_) pure nothrow
 {
@@ -911,7 +914,7 @@ unittest
     Returns:
         The passed `line`, now stripped of IRC colours.
  +/
-string stripColours(const string line) pure nothrow
+auto stripColours(const string line) pure nothrow
 {
     enum fgReset = 39;
     enum bgReset = 49;
@@ -1353,6 +1356,54 @@ T expandIRCTags(T)(const T line) @system
 }
 
 
+// stripIRCTags
+/++
+    Removes `<tags>` in an outgoing IRC string where the tags correlate to formatting
+    using [dialect.common.IRCControlCharacter|IRCControlCharacter]s.
+
+    Params:
+        line = String line to remove IRC tags from.
+
+    Returns:
+        The passed `line` but with tags removed.
+ +/
+T stripIRCTags(T)(const T line) @system
+{
+    return expandIRCTags(line, Yes.strip);
+}
+
+///
+@system unittest
+{
+    import std.typecons : Flag, No, Yes;
+
+    {
+        immutable line = "hello<b>hello<b>hello";
+        immutable expanded = line.stripIRCTags();
+        immutable expected = "hellohellohello";
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = "hello<99,99<b>hiho</>";
+        immutable expanded = line.stripIRCTags();
+        immutable expected = "hello<99,99hiho";
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = "hello<1>hellohello";
+        immutable expanded = line.stripIRCTags();
+        immutable expected = "hellohellohello";
+        assert((expanded == expected), expanded);
+    }
+    {
+        immutable line = `hello\<h>hello<h>hello<h>hello`;
+        immutable expanded = line.stripIRCTags();
+        immutable expected = "hello<h>hellohellohello";
+        assert((expanded == expected), expanded);
+    }
+}
+
+
 // expandIRCTagsImpl
 /++
     Implementation function for [expandIRCTags]. Kept separate so that
@@ -1390,7 +1441,7 @@ private T expandIRCTagsImpl(T)(const T line, const Flag!"strip" strip = No.strip
     immutable toReserve = (asBytes.length + 16);
 
     byteloop:
-    for (size_t i = 0; i<asBytes.length; ++i)
+    for (size_t i; i<asBytes.length; ++i)
     {
         immutable c = asBytes[i];
 

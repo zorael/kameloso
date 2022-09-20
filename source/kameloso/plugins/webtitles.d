@@ -138,7 +138,7 @@ void onMessage(WebtitlesPlugin plugin, const ref IRCEvent event)
  +/
 void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
 {
-    import kameloso.common : Tint, logger;
+    import kameloso.common : logger;
     import lu.string : beginsWith, contains, nom;
     import std.concurrency : spawn;
 
@@ -160,7 +160,8 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
 
         uniques[url] = true;
 
-        logger.info("Caught URL: ", Tint.log, url);
+        enum pattern = "Caught URL: <l>%s";
+        logger.infof(pattern, url);
 
         TitleLookupRequest request;
         request.state = plugin.state;
@@ -225,7 +226,8 @@ void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
         descriptions = Whether or not to look up meta descriptions.
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
  +/
-void worker(shared TitleLookupRequest sRequest,
+void worker(
+    shared TitleLookupRequest sRequest,
     shared TitleLookupResults[string] cache,
     const ulong delayMsecs,
     const Flag!"descriptions" descriptions,
@@ -315,11 +317,8 @@ void worker(shared TitleLookupRequest sRequest,
 
                         version(Windows)
                         {
-                            import kameloso.common : expandTags;
-                            import kameloso.logger : LogLevel;
-
-                            enum getoptPattern = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
-                            request.state.askToError(getoptPattern.expandTags(LogLevel.error));
+                            enum getoptMessage = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
+                            request.state.askToError(getoptMessage);
                         }
                     }
                     else
@@ -397,11 +396,8 @@ void worker(shared TitleLookupRequest sRequest,
 
                         version(Windows)
                         {
-                            import kameloso.common : expandTags;
-                            import kameloso.logger : LogLevel;
-
-                            enum getoptPattern = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
-                            request.state.askToError(getoptPattern.expandTags(LogLevel.error));
+                            enum getoptMessage = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
+                            request.state.askToError(getoptMessage);
                         }
                     }
                     else
@@ -474,10 +470,10 @@ void worker(shared TitleLookupRequest sRequest,
         A finished [TitleLookupResults].
 
     Throws:
-        [object.Exception|Exception] if URL could not be fetched, or if no title
+        [TitleFetchException] if URL could not be fetched, or if no title
         could be divined from it.
  +/
-TitleLookupResults lookupTitle(
+auto lookupTitle(
     const string url,
     const Flag!"descriptions" descriptions,
     const string caBundleFile)
@@ -629,7 +625,7 @@ void reportYouTubeTitle(TitleLookupRequest request)
     Returns:
         A rewritten string if it's a compatible imgur one, else the passed `url`.
  +/
-string rewriteDirectImgurURL(const string url) @safe pure
+auto rewriteDirectImgurURL(const string url) @safe pure
 {
     import lu.string : beginsWith, nom;
     import std.typecons : No, Yes;
@@ -684,11 +680,11 @@ unittest
         A [std.json.JSONValue|JSONValue] with fields describing the looked-up video.
 
     Throws:
-        [object.Exception|Exception] if the YouTube ID was invalid and could not be queried.
+        [TitleFetchException] if the YouTube ID was invalid and could not be queried.
 
         [std.json.JSONException|JSONException] if the JSON response could not be parsed.
  +/
-JSONValue getYouTubeInfo(const string url, const string caBundleFile)
+auto getYouTubeInfo(const string url, const string caBundleFile)
 {
     import kameloso.constants : KamelosoInfo, Timeout;
     import arsd.http2 : HttpClient, Uri;
@@ -784,7 +780,7 @@ final class TitleFetchException : Exception
     Returns:
         A modified string, with unwanted bits stripped out and/or decoded.
  +/
-string decodeEntities(const string line)
+auto decodeEntities(const string line)
 {
     import lu.string : stripped;
     import arsd.dom : htmlEntitiesDecode;
@@ -848,13 +844,13 @@ void prune(shared TitleLookupResults[string] cache, const uint expireSeconds)
 }
 
 
-// start
+// initialise
 /++
     Initialises the shared cache, else it won't retain changes.
 
     Just assign an entry and remove it.
  +/
-void start(WebtitlesPlugin plugin)
+void initialise(WebtitlesPlugin plugin)
 {
     // No need to synchronise this; no worker threads are running
     plugin.cache[string.init] = TitleLookupResults.init;

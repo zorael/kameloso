@@ -493,24 +493,24 @@ void commitAllLogs(PrinterPlugin plugin)
 )
 void onISUPPORT(PrinterPlugin plugin)
 {
-    import kameloso.common : expandTags, logger;
-    import kameloso.logger : LogLevel;
-    import lu.conv : Enum;
+    import kameloso.common : logger;
 
-    static bool printedISUPPORT;
+    static uint idWhenPrintedISUPPORT;
 
-    if (printedISUPPORT || !plugin.state.server.network.length)
+    if ((idWhenPrintedISUPPORT == plugin.state.connectionID) ||
+        !plugin.state.server.network.length)
     {
         // We already printed this information, or we haven't yet seen NETWORK
         return;
     }
 
-    printedISUPPORT = true;
+    idWhenPrintedISUPPORT = plugin.state.connectionID;
 
     enum pattern = "Detected <i>%s</> running daemon <i>%s</> (<i>%s</>)";
-    logger.logf(pattern.expandTags(LogLevel.all),
+    logger.logf(
+        pattern,
         plugin.state.server.network,
-        Enum!(IRCServer.Daemon).toString(plugin.state.server.daemon),
+        plugin.state.server.daemon,
         plugin.state.server.daemonstring);
 }
 
@@ -527,7 +527,7 @@ void onISUPPORT(PrinterPlugin plugin)
     Returns:
         A string with the current date.
  +/
-package string datestamp()
+package auto datestamp()
 {
     import std.datetime.systime : Clock;
     import std.format : format;
@@ -538,34 +538,39 @@ package string datestamp()
 }
 
 
-// start
+// initialise
 /++
     Initialises the Printer plugin by allocating a slice of memory for the linebuffer.
-    Sets up a Fiber to print the date in `YYYY-MM-DD` format to the screen and
-    to any active log files upon day change.
-
-    Do this in `.start` to have the Printer plugin always be minimially initialised,
-    since hot-disabling/-enabling it is kind of a valid use-case.
  +/
-void start(PrinterPlugin plugin)
+void initialise(PrinterPlugin plugin)
 {
-    import kameloso.plugins.common.delayawait : delay;
-    import kameloso.constants : BufferSize;
     import kameloso.terminal : isTerminal;
-    import core.thread : Fiber;
-    import core.time : Duration;
 
-    plugin.linebuffer.reserve(plugin.linebufferInitialSize);
+    plugin.linebuffer.reserve(PrinterPlugin.linebufferInitialSize);
 
     if (!isTerminal)
     {
         // Not a TTY so replace our bell string with an empty one
         plugin.bell = string.init;
     }
+}
+
+
+// start
+/++
+    Sets up a Fiber to print the date in `YYYY-MM-DD` format to the screen and
+    to any active log files upon day change.
+ +/
+void start(PrinterPlugin plugin)
+{
+    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.constants : BufferSize;
+    import core.thread : Fiber;
+    import core.time : Duration;
 
     static Duration untilNextMidnight()
     {
-        import kameloso.common : nextMidnight;
+        import kameloso.time : nextMidnight;
         import std.datetime.systime : Clock;
 
         immutable now = Clock.currTime;
@@ -608,9 +613,10 @@ void initResources(PrinterPlugin plugin)
 {
     if (!plugin.printerSettings.logs) return;
 
-    if (!establishLogLocation(plugin.logDirectory))
+    if (!establishLogLocation(plugin.logDirectory, plugin.state.connectionID))
     {
         import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+
         throw new IRCPluginInitialisationException(
             "Could not create log directory",
             plugin.name,
@@ -744,7 +750,10 @@ void clearTargetNicknameIfUs(ref IRCEvent event, const IRCPluginState state)
             case TWITCH_SUBGIFT:
             case TWITCH_TIMEOUT:
             case TWITCH_HOSTSTART:
-                goto case MODE;
+            case CHAN:
+            case EMOTE:
+                // Likewise
+                break;
         }
 
         default:
@@ -774,24 +783,10 @@ unittest
 
     {
         IRCEvent event;
-        event.type = IRCEvent.Type.CHAN;
-        event.target.nickname = us;
-        event.clearTargetNicknameIfUs(state);
-        assert(!event.target.nickname.length, event.target.nickname);
-    }
-    {
-        IRCEvent event;
         event.type = IRCEvent.Type.MODE;
         event.target.nickname = us;
         event.clearTargetNicknameIfUs(state);
         assert((event.target.nickname == us), event.target.nickname);
-    }
-    {
-        IRCEvent event;
-        event.type = IRCEvent.Type.CHAN;
-        event.target.nickname = notUs;
-        event.clearTargetNicknameIfUs(state);
-        assert((event.target.nickname == notUs), event.target.nickname);
     }
     {
         IRCEvent event;

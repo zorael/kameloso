@@ -23,8 +23,7 @@ version(WithPipelinePlugin):
 private:
 
 import kameloso.plugins.common.core;
-import kameloso.common : expandTags, logger;
-import kameloso.logger : LogLevel;
+import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
@@ -399,19 +398,19 @@ in (!plugin.workerRunning, "Tried to double-initialise the pipereader")
     catch (ReturnValueException e)
     {
         enum pattern = "Failed to initialise the Pipeline plugin: <l>%s</> (<l>%s</> returned <l>%d</>)";
-        logger.warningf(pattern.expandTags(LogLevel.warning), e.msg, e.command, e.retval);
+        logger.warningf(pattern, e.msg, e.command, e.retval);
         //version(PrintStacktraces) logger.trace(e.info);
     }
     catch (FileExistsException e)
     {
         enum pattern = "Failed to initialise the Pipeline plugin: <l>%s</> [<l>%s</>]";
-        logger.warningf(pattern.expandTags(LogLevel.warning), e.msg, e.filename);
+        logger.warningf(pattern, e.msg, e.filename);
         //version(PrintStacktraces) logger.trace(e.info);
     }
     catch (FileTypeMismatchException e)
     {
         enum pattern = "Failed to initialise the Pipeline plugin: <l>%s</> [<l>%s</>]";
-        logger.warningf(pattern.expandTags(LogLevel.warning), e.msg, e.filename);
+        logger.warningf(pattern, e.msg, e.filename);
         //version(PrintStacktraces) logger.trace(e.info);
     }
 

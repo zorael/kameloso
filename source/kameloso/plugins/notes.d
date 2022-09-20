@@ -15,8 +15,7 @@ private:
 
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
-import kameloso.common : expandTags, logger;
-import kameloso.logger : LogLevel;
+import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
@@ -153,12 +152,13 @@ void onWhoReply(NotesPlugin plugin, const /*ref*/ IRCEvent event)
         givenChannel = Name of the channel we want the notes related to.
         background = Whether or not to issue WHOIS queries as low-priority background messages.
  +/
-void playbackNotes(NotesPlugin plugin,
+void playbackNotes(
+    NotesPlugin plugin,
     const IRCUser givenUser,
     const string givenChannel,
     const Flag!"background" background = No.background)
 {
-    import kameloso.common : Tint, timeSince;
+    import kameloso.time : timeSince;
     import dialect.common : toLowerCase;
     import std.datetime.systime : Clock;
     import std.exception : ErrnoException;
@@ -232,7 +232,7 @@ void playbackNotes(NotesPlugin plugin,
             {
                 enum pattern = "Failed to fetch, replay and clear notes for " ~
                     "<l>%s</> on <l>%s</>: <l>%s";
-                logger.errorf(pattern.expandTags(LogLevel.error), id,
+                logger.errorf(pattern, id,
                     (channelName.length ? channelName : "<no channel>"), e.msg);
 
                 if (e.msg == "JSONValue is not an object")
@@ -246,12 +246,14 @@ void playbackNotes(NotesPlugin plugin,
             }
             catch (FileException e)
             {
-                logger.error("Failed to save notes: ", Tint.log, e.msg);
+                enum pattern = "Failed to save notes: <l>%s";
+                logger.errorf(pattern, e.msg);
                 version(PrintStacktraces) logger.trace(e.info);
             }
             catch (ErrnoException e)
             {
-                logger.error("Failed to open/close notes file: ", Tint.log, e.msg);
+                enum pattern = "Failed to open/close notes file: <l>%s";
+                logger.errorf(pattern, e.msg);
                 version(PrintStacktraces) logger.trace(e.info);
             }
         }
@@ -358,7 +360,8 @@ void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
             "Failed to add note; " ~ e.msg);
-        //logger.error("Failed to add note: ", Tint.log, e.msg);
+        /*enum pattern = "Failed to add note: <l>%s";
+        logger.errorf(pattern, e.msg);*/
         version(PrintStacktraces) logger.trace(e.info);
     }
 }
@@ -407,14 +410,14 @@ auto getNotes(NotesPlugin plugin, const string channel, const string id)
         if (channelNotesJSON.type != JSONType.object)
         {
             enum pattern = "Invalid channel notes list type for <l>%s</>: `<l>%s</>`";
-            logger.errorf(pattern.expandTags(LogLevel.error), channel, channelNotesJSON.type);
+            logger.errorf(pattern, channel, channelNotesJSON.type);
         }
         else if (const nickNotes = id in channelNotesJSON.object)
         {
             if (nickNotes.type != JSONType.array)
             {
                 enum pattern = "Invalid notes list type for <l>%s</> on <l>%s</>: `<l>%s</>`";
-                logger.errorf(pattern.expandTags(LogLevel.error), id, channel, nickNotes.type);
+                logger.errorf(pattern, id, channel, nickNotes.type);
                 return noteArray;
             }
 
@@ -464,7 +467,7 @@ in (id.length, "Tried to clear notes for an empty id")
         if (plugin.notes[channel].type != JSONType.object)
         {
             enum pattern = "Invalid channel notes list type for <l>%s</>: `<l>%s</>`";
-            logger.errorf(pattern.expandTags(LogLevel.error), channel, plugin.notes[channel].type);
+            logger.errorf(pattern, channel, plugin.notes[channel].type);
             return;
         }
 
@@ -515,7 +518,8 @@ void pruneNotes(NotesPlugin plugin)
         channel = Channel for which we should save the note.
         line = Note text.
  +/
-void addNote(NotesPlugin plugin,
+void addNote(
+    NotesPlugin plugin,
     const string id,
     const string sender,
     const string channel,
@@ -595,7 +599,6 @@ void initResources(NotesPlugin plugin)
     catch (JSONException e)
     {
         import kameloso.plugins.common.misc : IRCPluginInitialisationException;
-        import std.path : baseName;
 
         version(PrintStacktraces) logger.trace(e);
         throw new IRCPluginInitialisationException(

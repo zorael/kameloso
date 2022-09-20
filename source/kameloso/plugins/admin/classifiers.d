@@ -18,8 +18,7 @@ private:
 import kameloso.plugins.admin.base;
 
 import kameloso.plugins.common.misc : nameOf;
-import kameloso.common : Tint, expandTags, logger;
-import kameloso.logger : LogLevel;
+import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
 import std.algorithm.comparison : among;
@@ -37,7 +36,8 @@ package:
         event = The triggering [dialect.defs.IRCEvent|IRCEvent].
         list = Which list to add/remove from; "staff", "whitelist", "operator" or "blacklist".
  +/
-void manageClassLists(AdminPlugin plugin,
+void manageClassLists(
+    AdminPlugin plugin,
     const ref IRCEvent event,
     const string list)
 in (list.among!("whitelist", "blacklist", "operator", "staff"),
@@ -95,7 +95,8 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
         list = Which list to list; "whitelist", "operator", "staff" or "blacklist".
         event = Optional [dialect.defs.IRCEvent|IRCEvent] that instigated the listing.
  +/
-void listList(AdminPlugin plugin,
+void listList(
+    AdminPlugin plugin,
     const string channel,
     const string list,
     const IRCEvent event = IRCEvent.init)
@@ -148,7 +149,8 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
         channel = Which channel the enlisting relates to.
         event = Optional instigating [dialect.defs.IRCEvent|IRCEvent].
  +/
-void lookupEnlist(AdminPlugin plugin,
+void lookupEnlist(
+    AdminPlugin plugin,
     const string specified,
     const string list,
     const string channel,
@@ -211,7 +213,7 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
             {
             case success:
                 enum pattern = "Added <h>%s</> as %s in %s.";
-                logger.logf(pattern.expandTags(LogLevel.all), id, asWhat, channel);
+                logger.logf(pattern, id, asWhat, channel);
                 break;
 
             case noSuchAccount:
@@ -220,7 +222,7 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
 
             case alreadyInList:
                 enum pattern = "<h>%s</> is already %s in %s.";
-                logger.logf(pattern.expandTags(LogLevel.all), id, asWhat, channel);
+                logger.logf(pattern, id, asWhat, channel);
                 break;
             }
         }
@@ -270,7 +272,8 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
         else
         {
             // Terminal report
-            logger.warning("Invalid nickname/account: ", Tint.log, specified);
+            enum pattern = "Invalid nickname/account: <l>%s";
+            logger.warningf(pattern, specified);
         }
         return;
     }
@@ -365,7 +368,8 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
         channel = Which channel the enlisting relates to.
         event = Optional instigating [dialect.defs.IRCEvent|IRCEvent].
  +/
-void delist(AdminPlugin plugin,
+void delist(
+    AdminPlugin plugin,
     const string account,
     const string list,
     const string channel,
@@ -434,17 +438,17 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
 
         case noSuchAccount:
             enum pattern = "No such account <h>%s</> was found as %s in %s.";
-            logger.logf(pattern.expandTags(LogLevel.all), account, asWhat, channel);
+            logger.logf(pattern, account, asWhat, channel);
             break;
 
         case noSuchChannel:
             enum pattern = "Account <h>%s</> isn't %s in %s.";
-            logger.logf(pattern.expandTags(LogLevel.all), account, asWhat, channel);
+            logger.logf(pattern, account, asWhat, channel);
             break;
 
         case success:
             enum pattern = "Removed <h>%s</> as %s in %s.";
-            logger.logf(pattern.expandTags(LogLevel.all), account, asWhat, channel);
+            logger.logf(pattern, account, asWhat, channel);
             break;
         }
     }
@@ -488,7 +492,8 @@ enum AlterationResult
         channel could be found in the specified list.
         [AlterationResult.success] if enlisting or delisting succeeded.
  +/
-AlterationResult alterAccountClassifier(AdminPlugin plugin,
+auto alterAccountClassifier(
+    AdminPlugin plugin,
     const Flag!"add" add,
     const string list,
     const string account,
@@ -575,7 +580,8 @@ in (list.among!("whitelist", "blacklist", "operator", "staff"),
         mask = String "nickname!ident@address.tld" hostmask.
         event = Instigating [dialect.defs.IRCEvent|IRCEvent].
  +/
-void modifyHostmaskDefinition(AdminPlugin plugin,
+void modifyHostmaskDefinition(
+    AdminPlugin plugin,
     const Flag!"add" add,
     const string account,
     const string mask,
@@ -627,7 +633,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
             {
                 enum pattern = `Invalid hostmask "<l>%s</>"; must be in the form ` ~
                     `"<l>nickname!ident@address</>".`;
-                logger.warningf(pattern.expandTags(LogLevel.warning), mask);
+                logger.warningf(pattern, mask);
             }
             else
             {
@@ -648,7 +654,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
         {
             immutable colouredAccount = colourByHash(account, brightFlag);
             enum pattern = `Added hostmask "<l>%s</>", mapped to account <h>%s</>.`;
-            logger.infof(pattern.expandTags(LogLevel.info), mask, colouredAccount);
+            logger.infof(pattern, mask, colouredAccount);
         }
         else
         {
@@ -669,7 +675,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
             if (event == IRCEvent.init)
             {
                 enum pattern = `Removed hostmask "<l>%s</>".`;
-                logger.infof(pattern.expandTags(LogLevel.info), mask);
+                logger.infof(pattern, mask);
             }
             else
             {
@@ -683,7 +689,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
             if (event == IRCEvent.init)
             {
                 enum pattern = `No such hostmask "<l>%s</>" on file.`;
-                logger.warningf(pattern.expandTags(LogLevel.warning), mask);
+                logger.warningf(pattern, mask);
             }
             else
             {

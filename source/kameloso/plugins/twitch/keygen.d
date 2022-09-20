@@ -2,20 +2,21 @@
     Functions for generating a Twitch API key.
 
     See_Also:
-        [kameloso.plugins.twitchbot.base|twitchbot.base]
-        [kameloso.plugins.twitchbot.api|twitchbot.api]
+        [kameloso.plugins.twitch.base|twitch.base]
+        [kameloso.plugins.twitch.api|twitch.api]
  +/
-module kameloso.plugins.twitchbot.keygen;
+module kameloso.plugins.twitch.keygen;
 
 version(TwitchSupport):
-version(WithTwitchBotPlugin):
+version(WithTwitchPlugin):
 
 private:
 
-import kameloso.plugins.twitchbot.base;
-import kameloso.plugins.twitchbot.helpers;
-import kameloso.common : expandTags, logger;
+import kameloso.plugins.twitch.base;
+import kameloso.plugins.twitch.helpers;
+import kameloso.common : logger;
 import kameloso.logger : LogLevel;
+import kameloso.terminal.colours.tags : expandTags;
 import std.typecons : Flag, No, Yes;
 
 package:
@@ -26,51 +27,44 @@ package:
     Start the captive key generation routine at the earliest possible moment,
     which are the [dialect.defs.IRCEvent.Type.CAP|CAP] events.
 
-    Invoked by [kameloso.plugins.twitchbot.base.onCAP|onCAP] during capability negotiation.
+    Invoked by [kameloso.plugins.twitch.base.onCAP|onCAP] during capability negotiation.
 
-    We can't do it in [kameloso.plugins.twitchbot.base.start|start] since the calls to
+    We can't do it in [kameloso.plugins.twitch.base.start|start] since the calls to
     save and exit would go unheard, as `start` happens before the main loop starts.
     It would then immediately fail to read if too much time has passed,
     and nothing would be saved.
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
  +/
-void requestTwitchKey(TwitchBotPlugin plugin)
+void requestTwitchKey(TwitchPlugin plugin)
 {
     import kameloso.thread : ThreadMessage;
     import std.concurrency : prioritySend;
+    import std.datetime.systime : Clock;
     import std.process : Pid, ProcessException, wait;
     import std.stdio : stdout, writefln, writeln;
-    import std.datetime.systime : Clock;
 
-    scope(exit)
-    {
-        import kameloso.messaging : quit;
-        import std.typecons : Flag, No, Yes;
-
-        if (plugin.state.settings.flush) stdout.flush();
-        quit!(Yes.priority)(plugin.state, string.init, Yes.quiet);
-    }
+    scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
     logger.trace();
     logger.info("-- Twitch authorisation key generation mode --");
-    enum attemptToOpenPattern = `
+    enum attemptToOpenMessage = `
 Attempting to open a Twitch login page in your default web browser. Follow the
-instructions and log in to authorise the use of this program with your <i>BOT</> account.
+instructions and log in to authorise the use of this program with your <w>BOT</> account.
 
 <l>Then paste the address of the page you are redirected to afterwards here.</>
 
 * The redirected address should start with <i>http://localhost</>.
 * It will probably say "<l>this site can't be reached</>" or "<l>unable to connect</>".
-* <l>The key generated is one for the account currently logged in.</>
+* <l>The key generated will be one for the account you are currently logged in as in your browser.</>
   If you are logged into your main Twitch account and you want the bot to use a
   separate account, you will have to log out and log in as that first, before
   attempting this. Use an incognito/private window.
 * If you are running local web server on port <i>80</>, you may have to temporarily
   disable it for this to work.
 `;
-    writeln(attemptToOpenPattern.expandTags(LogLevel.off));
+    writeln(attemptToOpenMessage.expandTags(LogLevel.off));
     if (plugin.state.settings.flush) stdout.flush();
 
     static immutable scopes =
@@ -186,17 +180,10 @@ instructions and log in to authorise the use of this program with your <i>BOT</>
     immutable delta = (expiry - Clock.currTime);
     immutable numDays = delta.total!"days";
 
-    enum issuePattern = "
---------------------------------------------------------------------------------
+    enum isValidPattern = "Your key is valid for another <l>%d</> days.";
+    logger.infof(isValidPattern, numDays);
+    logger.trace();
 
-All done! Restart the program (without <i>--set twitch.keygen</>) and it should
-just work. If it doesn't, please file an issue at:
-
-    <i>https://github.com/zorael/kameloso/issues/new</>
-
-<l>Your key is valid for another <i>%d<l> days.</>
-";
-    writefln(issuePattern.expandTags(LogLevel.off), numDays);
     plugin.state.updates |= typeof(plugin.state.updates).bot;
     plugin.state.mainThread.prioritySend(ThreadMessage.save());
 }
@@ -207,40 +194,33 @@ just work. If it doesn't, please file an issue at:
     Start the captive key generation routine at the earliest possible moment,
     which are the [dialect.defs.IRCEvent.Type.CAP|CAP] events.
 
-    Invoked by [kameloso.plugins.twitchbot.base.onCAP|onCAP] during capability negotiation.
+    Invoked by [kameloso.plugins.twitch.base.onCAP|onCAP] during capability negotiation.
 
-    We can't do it in [kameloso.plugins.twitchbot.base.start|start] since the calls to
+    We can't do it in [kameloso.plugins.twitch.base.start|start] since the calls to
     save and exit would go unheard, as `start` happens before the main loop starts.
     It would then immediately fail to read if too much time has passed,
     and nothing would be saved.
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
  +/
-void requestTwitchSuperKey(TwitchBotPlugin plugin)
+void requestTwitchSuperKey(TwitchPlugin plugin)
 {
     import std.process : Pid, ProcessException, wait;
     import std.stdio : stdout, writefln, writeln;
     import std.datetime.systime : Clock;
 
-    scope(exit)
-    {
-        import kameloso.messaging : quit;
-        import std.typecons : Flag, No, Yes;
-
-        if (plugin.state.settings.flush) stdout.flush();
-        quit!(Yes.priority)(plugin.state, string.init, Yes.quiet);
-    }
+    scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
     logger.trace();
     logger.info("-- Twitch authorisation super key generation mode --");
-    enum message =
-`To access certain Twitch functionality like changing channel settings
+    enum message = `
+To access certain Twitch functionality like changing channel settings
 (what game is currently being played, etc), the program needs an authorisation
 key that corresponds to the owner of that channel.
 
 In the instructions that follow, it is essential that you are logged into the
-<i>STREAMER</> account in your browser.
+<w>STREAMER</> account in your browser.
 
 You also need to supply the channel for which it all relates.
 (Channels are Twitch lowercase account names, prepended with a '<i>#</>' sign.)
@@ -251,22 +231,22 @@ You also need to supply the channel for which it all relates.
         0L, *plugin.state.abort);
     if (*plugin.state.abort) return;
 
-    enum attemptToOpenPattern = `
+    enum attemptToOpenMessage = `
 --------------------------------------------------------------------------------
 
 Attempting to open a Twitch login page in your default web browser. Follow the
-instructions and log in to authorise the use of this program with your <i>STREAMER</> account.
+instructions and log in to authorise the use of this program with your <w>STREAMER</> account.
 
 <l>Then paste the address of the page you are redirected to afterwards here.</>
 
 * The redirected address should start with <i>http://localhost</>.
 * It will probably say "<l>this site can't be reached</>" or "<l>unable to connect</>".
-* <l>The key generated is one for the account currently logged in.</>
+* <l>The key generated will be one for the account you are currently logged in as in your browser.</>
   You should be logged into your main Twitch account for this key.
 * If you are running local web server on port <i>80</>, you may have to temporarily
   disable it for this to work.
 `;
-    writeln(attemptToOpenPattern.expandTags(LogLevel.off));
+    writeln(attemptToOpenMessage.expandTags(LogLevel.off));
     if (plugin.state.settings.flush) stdout.flush();
 
     static immutable scopes =
@@ -335,11 +315,11 @@ instructions and log in to authorise the use of this program with your <i>STREAM
 
         // Chat and PubSub
         // --------------------------
-        "channel:moderate",
-        "chat:edit",
-        "chat:read",
-        "whispers:edit",
-        "whispers:read",
+        //"channel:moderate",
+        //"chat:edit",
+        //"chat:read",
+        //"whispers:edit",
+        //"whispers:read",
     ];
 
     Pid browser;
@@ -394,17 +374,10 @@ instructions and log in to authorise the use of this program with your <i>STREAM
     immutable delta = (expiry - Clock.currTime);
     immutable numDays = delta.total!"days";
 
-    enum issuePattern = "
---------------------------------------------------------------------------------
+    enum isValidPattern = "Your key is valid for another <l>%d</> days.";
+    logger.infof(isValidPattern, numDays);
+    logger.trace();
 
-All done! Restart the program (without <i>--set twitch.superKeygen</>) and commands
-that require higher permissions should just work. If they don't, please file an issue at:
-
-    <i>https://github.com/zorael/kameloso/issues/new</>
-
-<l>Your key is valid for another <i>%d<l> days.</>
-";
-    writefln(issuePattern.expandTags(LogLevel.off), numDays);
     saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
 }
 
@@ -414,13 +387,13 @@ that require higher permissions should just work. If they don't, please file an 
     Reads an URL from standard in and parses an OAuth key from it.
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         authNode = Authentication node URL, to detect whether the wrong link was pasted.
 
     Returns:
         An OAuth token key parsed from a pasted URL string.
  +/
-private string readURLAndParseKey(TwitchBotPlugin plugin, const string authNode)
+private auto readURLAndParseKey(TwitchPlugin plugin, const string authNode)
 {
     import lu.string : contains, nom, stripped;
     import std.stdio : readln, stdin, stdout, write, writeln;
@@ -429,15 +402,12 @@ private string readURLAndParseKey(TwitchBotPlugin plugin, const string authNode)
 
     while (!key.length)
     {
-        scope(exit)
-        {
-            if (plugin.state.settings.flush) stdout.flush();
-        }
+        scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
-        enum pattern = "<l>Paste the address of empty the page you were redirected to here (empty line exits):</>
+        enum pasteMessage = "<l>Paste the address of empty the page you were redirected to here (empty line exits):</>
 
 > ";
-        write(pattern.expandTags(LogLevel.off));
+        write(pasteMessage.expandTags(LogLevel.off));
         stdout.flush();
 
         stdin.flush();
@@ -465,9 +435,9 @@ private string readURLAndParseKey(TwitchBotPlugin plugin, const string authNode)
 
             if (readURL.beginsWith(authNode))
             {
-                enum wrongPagePattern = "Not that page; the empty page you're " ~
+                enum wrongPageMessage = "Not that page; the empty page you're " ~
                     "lead to after clicking <l>Authorize</>.";
-                logger.error(wrongPagePattern.expandTags(LogLevel.error));
+                logger.error(wrongPageMessage);
             }
             else
             {
@@ -506,7 +476,7 @@ private string readURLAndParseKey(TwitchBotPlugin plugin, const string authNode)
     Returns:
         An URL string.
  +/
-private string buildAuthNodeURL(const string authNode, const string[] scopes)
+private auto buildAuthNodeURL(const string authNode, const string[] scopes)
 {
     import std.array : join;
     import std.conv : text;
@@ -514,7 +484,7 @@ private string buildAuthNodeURL(const string authNode, const string[] scopes)
     return text(
         authNode,
         "?response_type=token",
-        "&client_id=", TwitchBotPlugin.clientID,
+        "&client_id=", TwitchPlugin.clientID,
         "&redirect_uri=http://localhost",
         "&scope=", scopes.join('+'),
         "&force_verify=true",
@@ -528,15 +498,15 @@ private string buildAuthNodeURL(const string authNode, const string[] scopes)
     of when it expires.
 
     Params:
-        plugin = The current [kameloso.plugins.twitchbot.base.TwitchBotPlugin|TwitchBotPlugin].
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         authToken = Authorisation token to validate and check expiry of.
 
     Returns:
         A [std.datetime.systime.SysTime|SysTime] of when the passed token expires.
  +/
-auto getTokenExpiry(TwitchBotPlugin plugin, const string authToken)
+auto getTokenExpiry(TwitchPlugin plugin, const string authToken)
 {
-    import kameloso.plugins.twitchbot.api : getValidation;
+    import kameloso.plugins.twitch.api : getValidation;
     import std.datetime.systime : Clock, SysTime;
 
     immutable validationJSON = getValidation(plugin, authToken, No.async);

@@ -210,7 +210,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
     }
     else if (slice.beginsWith(plugin.state.client.nickname))
     {
-        import kameloso.common : stripSeparatedPrefix;
+        import kameloso.string : stripSeparatedPrefix;
         slice = slice.stripSeparatedPrefix(plugin.state.client.nickname, Yes.demandSeparatingChars);
     }
     else
@@ -252,7 +252,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
     // Limit modifications to the configured class
     if (event.sender.class_ < plugin.counterSettings.minimumPermissionsNeeded) return;
 
-    assert(slice.length);
+    assert(slice.length, "Empty slice after slicing");
     immutable sign = slice[0];
 
     switch (sign)

@@ -38,20 +38,25 @@ else
     use of compile-time [std.format.format|format].
 
     ---
-    enum compilerVersion = format("%d.%03d", (__VERSION__ / 1000), (__VERSION__ % 1000));
+    import std.compiler;
+    enum compilerVersion = format("%d.%03d", version_major, version_minor);
     ---
+
+    Returns:
+        The compiler version as a string in the format of `{MAJOR}.{MINOR}` (eg. `2.100`).
  +/
 auto buildCompilerVersionString()
 {
     import lu.conv : toAlphaInto;
     import std.array : Appender;
+    import std.compiler : version_major, version_minor;
 
     Appender!(char[]) sink;
     sink.reserve(5);  // 2.098
 
-    (__VERSION__ / 1000).toAlphaInto(sink);
+    version_major.toAlphaInto(sink);
     sink.put('.');
-    (__VERSION__ % 1000).toAlphaInto!(3,3)(sink);
+    version_minor.toAlphaInto!(3,3)(sink);
 
     return sink.data.idup;
 }
@@ -71,6 +76,11 @@ auto buildCompilerVersionString()
             KamelosoSemVerPrerelease.length ? "-" : string.init,
             KamelosoSemVerPrerelease);
     ---
+
+    Returns:
+        The program version as a string in the format of
+        `{MAJOR}.{MINOR}.{PATCH}{-PRERELEASE}` (eg. `3.2.0-alpha.1`).
+        `{-PRERELEASE}` is optional.
  +/
 auto buildVersionString()
 {
@@ -382,6 +392,11 @@ enum Timeout
         Timeout for HTTP GET requests.
      +/
     httpGET = 10,
+
+    /++
+        Timeout for concurrency message reads (in between socket reads).
+     +/
+    messageReadMsecs = 1500,
 }
 
 
@@ -460,14 +475,14 @@ enum ShellReturnValue
     pluginResourceLoadException = 32,
 
     /++
-        Failure encountered during plugin startup.
+        Failure encountered during plugin setup.
      +/
-    pluginStartFailure = 33,
+    pluginSetupFailure = 33,
 
     /++
-        Generic exception was thrown when a plugin tried to start up.
+        Generic exception was thrown when a plugin tried to setup.
      +/
-    pluginStartException = 34,
+    pluginSetupException = 34,
 }
 
 

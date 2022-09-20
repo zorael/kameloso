@@ -19,6 +19,10 @@
  +/
 module kameloso.logger;
 
+private:
+
+import std.typecons : Flag, No, Yes;
+
 public:
 
 
@@ -31,7 +35,7 @@ public:
     $(I info), $(I warning), $(I error), $(I critical), $(I fatal), and $(I off).
     If a log function with `LogLevel.fatal` is called the shutdown handler of
     that logger is called.
-+/
+ +/
 enum LogLevel : ubyte
 {
     /++
@@ -85,11 +89,12 @@ enum LogLevel : ubyte
 final class KamelosoLogger
 {
 private:
+    import kameloso.kameloso : CoreSettings;
+    import kameloso.terminal.colours.tags : expandTags;
     import lu.conv : Enum;
     import std.array : Appender;
     import std.format : format;
     import std.traits : EnumMembers;
-    import std.typecons : Flag, No, Yes;
 
     version(Colours)
     {
@@ -103,8 +108,11 @@ private:
     /// Buffer to compose a line in before printing it to screen in one go.
     Appender!(char[]) linebuffer;
 
-    /// The initial size to allocate for [linebuffer]. It will grow if needed.
-    enum linebufferInitialSize = 4096;
+    /// Sub-buffer to compose the message in.
+    Appender!(char[]) messagebuffer;
+
+    /// The initial size to allocate for buffers. It will grow if needed.
+    enum bufferInitialSize = 4096;
 
     bool monochrome;  /// Whether to use colours or not in logger output.
     bool brightTerminal;  /// Whether or not to use colours for a bright background.
@@ -113,7 +121,7 @@ private:
 
 public:
     /++
-        Create a new [KamelosoLogger] with the passed settings.
+        Creates a new [KamelosoLogger] with the passed settings.
 
         Params:
             monochrome = Whether or not to print colours.
@@ -126,13 +134,31 @@ public:
         const Flag!"headless" headless,
         const Flag!"flush" flush) pure nothrow @safe
     {
-        linebuffer.reserve(linebufferInitialSize);
+        linebuffer.reserve(bufferInitialSize);
+        messagebuffer.reserve(bufferInitialSize);
         this.monochrome = monochrome;
         this.brightTerminal = brightTerminal;
         this.headless = headless;
         this.flush = flush;
     }
 
+    /++
+        Creates a new [KamelosoLogger] with settings divined from the passed
+        [kameloso.kameloso.CoreSettings|CoreSettings] struct.
+
+        Params:
+            settings = [kameloso.kameloso.CoreSettings|CoreSettings] whose
+                values to inherit.
+     +/
+    this(const CoreSettings settings) pure nothrow @safe
+    {
+        linebuffer.reserve(bufferInitialSize);
+        messagebuffer.reserve(bufferInitialSize);
+        this.monochrome = settings.monochrome;
+        this.brightTerminal = settings.brightTerminal;
+        this.headless = settings.headless;
+        this.flush = settings.flush;
+    }
 
     version(Colours)
     {
@@ -203,9 +229,9 @@ public:
             Returns:
                 A tint string.
          +/
-        private string tintImpl(LogLevel level)() const @property pure nothrow @nogc @safe
+        private auto tintImpl(LogLevel level)() const @property pure nothrow @nogc @safe
         {
-            if (headless)
+            if (headless || monochrome)
             {
                 return string.init;
             }
@@ -240,6 +266,39 @@ public:
          +/
         alias logtint = alltint;
     }
+    else
+    {
+        // offtint
+        /++
+            Dummy function returning an empty string, since there can be no tints
+            on non-version `Colours` builds.
+
+            Returns:
+                An empty string.
+         +/
+        public static auto offtint() pure nothrow @nogc @safe
+        {
+            return string.init;
+        }
+
+        /+
+            Generate dummy *tint functions for each [LogLevel] by aliasing them
+            to [offtint].
+         +/
+        static foreach (const lv; EnumMembers!LogLevel)
+        {
+            static if (lv != LogLevel.off)
+            {
+                mixin("alias " ~ Enum!LogLevel.toString(lv) ~ "tint = offtint;");
+            }
+        }
+
+        /++
+            Synonymous alias to `alltint`, as a workaround for [LogLevel.all]
+            not being named `LogLevel.log`.
+         +/
+        alias logtint = alltint;
+    }
 
 
     /++
@@ -252,8 +311,6 @@ public:
     {
         import std.datetime : DateTime;
         import std.datetime.systime : Clock;
-
-        if (headless) return;
 
         version(Colours)
         {
@@ -287,8 +344,6 @@ public:
     {
         import std.stdio : stdout, writeln;
 
-        if (headless) return;
-
         version(Colours)
         {
             if (!monochrome)
@@ -300,7 +355,6 @@ public:
 
         writeln(linebuffer.data);
         if (flush) stdout.flush();
-        linebuffer.clear();
     }
 
 
@@ -322,6 +376,12 @@ public:
 
         if (headless) return;
 
+        scope(exit)
+        {
+            linebuffer.clear();
+            messagebuffer.clear();
+        }
+
         beginLogMsg(logLevel);
 
         foreach (ref arg; args)
@@ -330,12 +390,12 @@ public:
 
             static if (is(T : string) || is(T : char[]) || is(T : char))
             {
-                linebuffer.put(arg);
+                messagebuffer.put(arg);
             }
             else static if (is(T == enum))
             {
                 import lu.conv : Enum;
-                linebuffer.put(Enum!T.toString(arg));
+                messagebuffer.put(Enum!T.toString(arg));
             }
             else static if (isAggregateType!T && is(typeof(T.toString)))
             {
@@ -343,50 +403,51 @@ public:
 
                 static if (isSomeFunction!(T.toString) || __traits(isTemplate, T.toString))
                 {
-                    static if (__traits(compiles, arg.toString(linebuffer)))
+                    static if (__traits(compiles, arg.toString(messagebuffer)))
                     {
                         // Output range sink overload (accepts an Appender)
-                        arg.toString(linebuffer);
+                        arg.toString(messagebuffer);
                     }
                     else static if (__traits(compiles,
-                        arg.toString((const(char)[] text) => linebuffer.put(text))))
+                        arg.toString((const(char)[] text) => messagebuffer.put(text))))
                     {
                         // Output delegate sink overload
-                        arg.toString((const(char)[] text) => linebuffer.put(text));
+                        arg.toString((const(char)[] text) => messagebuffer.put(text));
                     }
-                    else static if (__traits(compiles, linebuffer.put(arg.toString)))
+                    else static if (__traits(compiles, messagebuffer.put(arg.toString)))
                     {
                         // Plain string-returning function or template
-                        linebuffer.put(arg.toString);
+                        messagebuffer.put(arg.toString);
                     }
                     else
                     {
                         import std.conv : to;
                         // std.conv.to fallback
-                        linebuffer.put(arg.to!string);
+                        messagebuffer.put(arg.to!string);
                     }
                 }
                 else static if (is(typeof(T.toString)) &&
                     (is(typeof(T.toString) : string) || is(typeof(T.toString) : char[])))
                 {
                     // toString string/char[] literal
-                    linebuffer.put(arg.toString);
+                    messagebuffer.put(arg.toString);
                 }
                 else
                 {
                     import std.conv : to;
                     // std.conv.to fallback
-                    linebuffer.put(arg.to!string);
+                    messagebuffer.put(arg.to!string);
                 }
             }
             else
             {
                 import std.conv : to;
                 // std.conv.to fallback
-                linebuffer.put(arg.to!string);
+                messagebuffer.put(arg.to!string);
             }
         }
 
+        linebuffer.put(messagebuffer.data.expandTags(logLevel));
         finishLogMsg();
     }
 
@@ -413,8 +474,15 @@ public:
 
         if (headless) return;
 
+        scope(exit)
+        {
+            linebuffer.clear();
+            messagebuffer.clear();
+        }
+
         beginLogMsg(logLevel);
-        linebuffer.formattedWrite(pattern, args);
+        messagebuffer.formattedWrite(pattern.expandTags(logLevel), args);
+        linebuffer.put(messagebuffer.data);
         finishLogMsg();
     }
 
@@ -439,8 +507,15 @@ public:
 
         if (headless) return;
 
+        scope(exit)
+        {
+            linebuffer.clear();
+            messagebuffer.clear();
+        }
+
         beginLogMsg(logLevel);
-        linebuffer.formattedWrite!pattern(args);
+        messagebuffer.formattedWrite!pattern(args);
+        linebuffer.put(messagebuffer.data.expandTags(logLevel));
         finishLogMsg();
     }
 
@@ -492,8 +567,6 @@ void " ~ Enum!LogLevel.toString(lv) ~ "f(string pattern, Args...)(auto ref Args 
 ///
 unittest
 {
-    import std.typecons : Flag, No, Yes;
-
     struct S1
     {
         void toString(Sink)(auto ref Sink sink) const
@@ -572,6 +645,8 @@ unittest
         log_.trace("log: trace");
         log_.off("log: off");
     }
+
+    log_.log("log <i>info</> log <w>warning</> log <e>error</> log <t>trace</> log <o>off</> log");
 
     S1 s1;
     S2 s2;

@@ -291,7 +291,8 @@ in ((channel.length || nickname.length), "Tried to send a PRIVMSG but no channel
     }
     else
     {
-        assert(0);//, "Tried to send empty `privmsg` with no channel nor target nickname");
+        // In case contracts are disabled?
+        assert(0, "Tried to send a PRIVMSG but no channel nor nickname was given");
     }
 }
 
@@ -1024,7 +1025,8 @@ unittest
         quiet = Whether or not to echo what was sent to the local terminal.
         caller = String name of the calling function, or something else that gives context.
  +/
-void immediate(IRCPluginState state,
+void immediate(
+    IRCPluginState state,
     const string line,
     const Flag!"quiet" quiet = No.quiet,
     const string caller = __FUNCTION__)

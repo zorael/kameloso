@@ -21,8 +21,7 @@ private:
 
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : UserAwareness;
-import kameloso.common : expandTags, logger;
-import kameloso.logger : LogLevel;
+import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
@@ -99,7 +98,7 @@ enum ManageQuoteAction
         A [Quote] containing a random quote string. If no quote is available it
         returns an empty `Quote.init` instead.
  +/
-Quote getRandomQuote(QuotesPlugin plugin, const string nickname)
+auto getRandomQuote(QuotesPlugin plugin, const string nickname)
 {
     if (const quotesForNickname = nickname in plugin.quotes)
     {
@@ -140,7 +139,7 @@ Quote getRandomQuote(QuotesPlugin plugin, const string nickname)
         A [Quote] containing a the quote string of a specific quote.
         If no such quote is available it returns an empty `Quote.init` instead.
  +/
-Quote getSpecificQuote(QuotesPlugin plugin, const string nickname, const size_t index)
+auto getSpecificQuote(QuotesPlugin plugin, const string nickname, const size_t index)
 {
     if (const quotesForNickname = nickname in plugin.quotes)
     {
@@ -204,7 +203,8 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
         id = The specified nickname or (preferably) account.
         rawLine = The quote string to add.
  +/
-void addQuoteAndReport(QuotesPlugin plugin,
+void addQuoteAndReport(
+    QuotesPlugin plugin,
     const ref IRCEvent event,
     const string id,
     const string rawLine)
@@ -245,7 +245,7 @@ in (rawLine.length, "Tried to add an empty quote")
     catch (JSONException e)
     {
         enum pattern = "Could not add quote for <l>%s</>: <l>%s";
-        logger.errorf(pattern.expandTags(LogLevel.error), id, e.msg);
+        logger.errorf(pattern, id, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
 }
@@ -263,7 +263,8 @@ in (rawLine.length, "Tried to add an empty quote")
         newText = Optional new text to assign to the quote index; implies
             a modification is requested, not a removal.
  +/
-void modQuoteAndReport(QuotesPlugin plugin,
+void modQuoteAndReport(
+    QuotesPlugin plugin,
     const ref IRCEvent event,
     const string id,
     const size_t index,
@@ -324,7 +325,7 @@ void modQuoteAndReport(QuotesPlugin plugin,
     catch (JSONException e)
     {
         enum pattern = "Could not remove quote for <l>%s</>: <l>%s";
-        logger.errorf(pattern.expandTags(LogLevel.error), id, e.msg);
+        logger.errorf(pattern, id, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
 }
@@ -343,7 +344,8 @@ void modQuoteAndReport(QuotesPlugin plugin,
         The original line with the WeeChat timestamp and nickname sliced away,
         or as it was passed. No new string is ever allocated.
  +/
-string removeWeeChatHead(const string line,
+auto removeWeeChatHead(
+    const string line,
     const string nickname,
     const string prefixes) pure @safe @nogc
 in (nickname.length, "Tried to remove WeeChat head for a nickname but the nickname was empty")
@@ -523,7 +525,8 @@ void onCommandModQuote(QuotesPlugin plugin, const ref IRCEvent event)
         event = The triggering [dialect.defs.IRCEvent|IRCEvent].
         action = What action to take; add (or replay), modify or remove.
  +/
-void manageQuoteImpl(QuotesPlugin plugin,
+void manageQuoteImpl(
+    QuotesPlugin plugin,
     const /*ref*/ IRCEvent event,
     const ManageQuoteAction action)
 {
@@ -746,7 +749,7 @@ void manageQuoteImpl(QuotesPlugin plugin,
     catch (JSONException e)
     {
         enum pattern = "Could not quote <l>%s</>: <l>%s";
-        logger.errorf(pattern.expandTags(LogLevel.error), specified, e.msg);
+        logger.errorf(pattern, specified, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
 }
@@ -874,7 +877,6 @@ void initResources(QuotesPlugin plugin)
     catch (JSONException e)
     {
         import kameloso.plugins.common.misc : IRCPluginInitialisationException;
-        import std.path : baseName;
 
         version(PrintStacktraces) logger.trace(e);
         throw new IRCPluginInitialisationException(
