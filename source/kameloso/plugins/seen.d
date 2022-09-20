@@ -444,6 +444,7 @@ else
     [kameloso.plugins.common.core.Permissions.anyone|Permissions.anyone],
     [kameloso.plugins.common.core.Permissions.registered|Permissions.registered],
     [kameloso.plugins.common.core.Permissions.whitelist|Permissions.whitelist],
+    [kameloso.plugins.common.core.Permissions.elevated|Permissions.elevated],
     [kameloso.plugins.common.core.Permissions.operator|Permissions.operator],
     [kameloso.plugins.common.core.Permissions.staff|Permissions.staff] and
     [kameloso.plugins.common.core.Permissions.admin|Permissions.admin].
@@ -464,6 +465,11 @@ else
         resource file, provided they are also not blacklisted. Consider this to
         correspond to "regulars" in the channel.
 
+    * [kameloso.plugins.common.core.Permissions.elevated|Permissions.elevated]
+        will also only allow users in the whitelist section of the `users.json`
+        resource file, provided they are also not blacklisted. Consider this to
+        correspond to VIPs in the channel.
+
     * [kameloso.plugins.common.core.Permissions.operator|Permissions.operator]
         will only allow users in the operator section of the `users.json`
         resource file. Consider this to correspond to "moderators" in the channel.
@@ -479,6 +485,7 @@ else
 
     In the case of
     [kameloso.plugins.common.core.Permissions.whitelist|Permissions.whitelist],
+    [kameloso.plugins.common.core.Permissions.elevated|Permissions.elevated],
     [kameloso.plugins.common.core.Permissions.operator|Permissions.operator],
     [kameloso.plugins.common.core.Permissions.staff|Permissions.staff] and
     [kameloso.plugins.common.core.Permissions.admin|Permissions.admin] it will
