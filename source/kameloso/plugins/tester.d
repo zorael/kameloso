@@ -50,6 +50,7 @@ version(DigitalMars)
             .word("test")
             .policy(PrefixPolicy.nickname)
             .description("Runs tests.")
+            .addSyntax("$command [target bot nickname] [plugin, or \"all\"]")
     )
 )
 void onCommandTest(TesterPlugin plugin, const /*ref*/ IRCEvent event)
@@ -58,6 +59,8 @@ void onCommandTest(TesterPlugin plugin, const /*ref*/ IRCEvent event)
     import lu.string : SplitResults, splitInto;
     import std.meta : AliasSeq;
     import core.thread : Fiber;
+
+    logger.info("tester invoked.");
 
     string slice = event.content;  // mutable
     string pluginName;
@@ -142,7 +145,7 @@ void onCommandTest(TesterPlugin plugin, const /*ref*/ IRCEvent event)
                 await(plugin, IRCEvent.Type.CHAN, No.yield);
                 scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
 
-                awaitReply();  // advance past current message ("test [nickname] [plugin]")
+                //awaitReply();  // advance past current message ("test [nickname] [plugin]")
 
                 try
                 {
@@ -168,7 +171,7 @@ void onCommandTest(TesterPlugin plugin, const /*ref*/ IRCEvent event)
             await(plugin, IRCEvent.Type.CHAN, No.yield);
             scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
 
-            awaitReply();  // advance past current message ("test [nickname] [plugin]")
+            //awaitReply();  // advance past current message ("test [nickname] [plugin]")
 
             static immutable timeInBetween = 10.seconds;
             uint successes;
