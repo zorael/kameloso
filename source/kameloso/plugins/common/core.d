@@ -2006,6 +2006,7 @@ auto filterSender(
         immutable isAdmin = (class_ == IRCUser.Class.admin);  // Trust in Persistence
         immutable isStaff = (class_ == IRCUser.Class.staff);
         immutable isOperator = (class_ == IRCUser.Class.operator);
+        immutable isElevated = (class_ == IRCUser.Class.elevated);
         immutable isWhitelisted = (class_ == IRCUser.Class.whitelist);
         immutable isAnyone = (class_ == IRCUser.Class.anyone);
 
@@ -2018,6 +2019,10 @@ auto filterSender(
             return FilterResult.pass;
         }
         else if (isOperator && (permissionsRequired <= Permissions.operator))
+        {
+            return FilterResult.pass;
+        }
+        else if (isElevated && (permissionsRequired <= Permissions.elevated))
         {
             return FilterResult.pass;
         }
@@ -2054,6 +2059,7 @@ auto filterSender(
         case admin:
         case staff:
         case operator:
+        case elevated:
         case whitelist:
         case registered:
             // Unknown sender; WHOIS if old result expired, otherwise fail
@@ -2379,7 +2385,8 @@ struct Replay
 
 // filterResult
 /++
-    The tristate results from comparing a username with the admin or whitelist lists.
+    The tristate results from comparing a username with the admin or
+    whitelist/elevated/operator/staff lists.
  +/
 enum FilterResult
 {
@@ -2499,12 +2506,18 @@ enum Permissions
     whitelist = 30,
 
     /++
+        Only users with a [dialect.defs.IRCClient.Class.elevated|IRCClient.Class.elevated]
+        classifier (or higher) may trigger the annotated function.
+     +/
+    elevated = 40,
+
+    /++
         Only users with a [dialect.defs.IRCClient.Class.operator|IRCClient.Class.operator]
         classifier (or higiher) may trigger the annotated function.
 
         Note: this does not mean IRC "+o" operators.
      +/
-    operator = 40,
+    operator = 50,
 
     /++
         Only users with a [dialect.defs.IRCClient.Class.staff|IRCClient.Class.staff]
@@ -2512,7 +2525,7 @@ enum Permissions
 
         These are channel owners.
      +/
-    staff = 50,
+    staff = 60,
 
     /++
         Only users defined in the configuration file as an administrator may
