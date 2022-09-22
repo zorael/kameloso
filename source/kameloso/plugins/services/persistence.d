@@ -507,7 +507,7 @@ void reload(PersistenceService service)
 
 // reloadAccountClassifiersFromDisk
 /++
-    Reloads admin/whitelist/blacklist classifier definitions from disk.
+    Reloads admin/staff/operator/elevated/whitelist/blacklist classifier definitions from disk.
 
     Params:
         service = The current [PersistenceService].
@@ -529,6 +529,7 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
     [
         IRCUser.Class.staff,
         IRCUser.Class.operator,
+        IRCUser.Class.elevated,
         IRCUser.Class.whitelist,
         IRCUser.Class.blacklist,
     ];
@@ -736,6 +737,7 @@ void initAccountResources(PersistenceService service)
     [
         "staff",
         "operator",
+        "elevated",
         "whitelist",
         "blacklist",
     ];
@@ -787,7 +789,7 @@ void initAccountResources(PersistenceService service)
     }
 
     // Force staff, operator and whitelist to appear before blacklist in the .json
-    static immutable order = [ "staff", "operator", "whitelist", "blacklist" ];
+    static immutable order = [ "staff", "operator", "elevated", "whitelist", "blacklist" ];
     json.save!(JSONStorage.KeyOrderStrategy.inGivenOrder)(service.userFile, order);
 }
 

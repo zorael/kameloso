@@ -168,7 +168,7 @@ auto getSpecificQuote(QuotesPlugin plugin, const string nickname, const size_t i
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
-    .permissionsRequired(Permissions.whitelist)
+    .permissionsRequired(Permissions.elevated)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()

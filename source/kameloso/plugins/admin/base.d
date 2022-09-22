@@ -547,7 +547,7 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
             .word("whitelist")
             .policy(PrefixPolicy.prefixed)
             .description("Adds or removes an account to/from the whitelist of users " ~
-                "who may trigger the bot (in the current channel).")
+                "(in the current channel).")
             .addSyntax("$command add [account or nickname]")
             .addSyntax("$command del [account or nickname]")
     )
@@ -555,6 +555,34 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
 void onCommandWhitelist(AdminPlugin plugin, const ref IRCEvent event)
 {
     return plugin.manageClassLists(event, "whitelist");
+}
+
+
+// onCommandElevated
+/++
+    Adds a nickname to the list of users who may trigger the bot, to the current
+    list of [dialect.defs.IRCClient.Class.elevated|IRCClient.Class.elevated] users of the
+    current [AdminPlugin]'s [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
+
+    This is on a [kameloso.plugins.common.core.Permissions.operator|Permissions.operator] level.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("elevated")
+            .policy(PrefixPolicy.prefixed)
+            .description("Adds or removes an account to/from the list of elevated users " ~
+                "(in the current channel).")
+            .addSyntax("$command add [account or nickname]")
+            .addSyntax("$command del [account or nickname]")
+    )
+)
+void onCommandElevated(AdminPlugin plugin, const ref IRCEvent event)
+{
+    return plugin.manageClassLists(event, "elevated");
 }
 
 
@@ -1307,6 +1335,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         return plugin.state.mainThread.send(ThreadMessage.reload(slice));
 
     case "whitelist":
+    case "elevated":
     case "operator":
     case "staff":
     case "blacklist":
