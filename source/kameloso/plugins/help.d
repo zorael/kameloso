@@ -80,17 +80,22 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
 
     void dg(IRCPlugin.CommandMetadata[string][string] allPluginCommands)
     {
-        import lu.string : beginsWith, contains;
+        import lu.string : beginsWith, contains, stripped;
 
         IRCEvent mutEvent = event;  // mutable
+        mutEvent.content = mutEvent.content.stripped;
         if (plugin.helpSettings.repliesInQuery) mutEvent.channel = string.init;
 
         if (mutEvent.content.length)
         {
-            if (mutEvent.content.beginsWith(plugin.state.settings.prefix))
+            immutable shorthandNicknamePrefix = plugin.state.client.nickname[0..1] ~ ':';
+
+            if (mutEvent.content.beginsWith(plugin.state.settings.prefix) ||
+                mutEvent.content.beginsWith(plugin.state.client.nickname) ||
+                mutEvent.content.beginsWith(shorthandNicknamePrefix))
             {
                 // Not a plugin, just a prefixed command (probably)
-                sendCommandHelp(plugin, mutEvent, allPluginCommands);
+                sendOnlyCommandHelp(plugin, mutEvent, allPluginCommands);
             }
             else if (mutEvent.content.contains!(Yes.decode)(' '))
             {
@@ -293,46 +298,9 @@ void sendPluginCommandHelp(
         "`sendPluginCommandHelp` was called incorrectly; the content does not " ~
         "have a space-separated plugin and command");
 
-    string stripPrefix(const string prefixed)
-    {
-        import lu.string : beginsWith;
-
-        if (prefixed.beginsWith(plugin.state.settings.prefix))
-        {
-            return prefixed[plugin.state.settings.prefix.length..$];
-        }
-        else if (prefixed.beginsWith(plugin.state.client.nickname))
-        {
-            string slice = prefixed[plugin.state.client.nickname.length..$];  // mutable
-
-            outer:
-            while (slice.length > 0)
-            {
-                switch (slice[0])
-                {
-                case ':':
-                case '!':
-                case '?':
-                case ' ':
-                    slice = slice[1..$];
-                    break;
-
-                default:
-                    break outer;
-                }
-            }
-
-            return slice;
-        }
-        else
-        {
-            return prefixed;
-        }
-    }
-
     string slice = event.content;
     immutable specifiedPlugin = slice.nom!(Yes.decode)(' ');
-    immutable specifiedCommand = stripPrefix(slice);
+    immutable specifiedCommand = stripPrefix(plugin, slice);
 
     if (const pluginCommands = specifiedPlugin in allPluginCommands)
     {
@@ -356,7 +324,7 @@ void sendPluginCommandHelp(
 }
 
 
-// sendCommandHelp
+// sendOnlyCommandHelp
 /++
     Sends the help list of a single command of a specific plugin. Only the command
     was supplied, prefixed with the command prefix.
@@ -366,17 +334,14 @@ void sendPluginCommandHelp(
         event = The triggering [dialect.defs.IRCEvent|IRCEvent].
         allPluginCommands = The metadata of all commands for this particular plugin.
  +/
-void sendCommandHelp(
+void sendOnlyCommandHelp(
     HelpPlugin plugin,
     const ref IRCEvent event,
     /*const*/ IRCPlugin.CommandMetadata[string][string] allPluginCommands)
 {
     import lu.string : beginsWith;
 
-    assert(event.content.beginsWith(plugin.state.settings.prefix),
-        "`sendCommandHelp` was called incorrectly; the content does not start with the prefix");
-
-    immutable specifiedCommand = event.content[plugin.state.settings.prefix.length..$];
+    immutable specifiedCommand = stripPrefix(plugin, event.content);
 
     if (!specifiedCommand.length)
     {
@@ -450,7 +415,66 @@ auto addPrefix(HelpPlugin plugin, const string word, const PrefixPolicy policy)
         return plugin.state.settings.prefix ~ word;
 
     case nickname:
-        return plugin.state.client.nickname ~ ':' ~ word;
+        return plugin.state.client.nickname[0..1] ~ ':' ~ word;
+    }
+}
+
+
+// stripPrefix
+/++
+    Strips any prefixes from the passed string; prefixes being the command prefix,
+    the bot's nickname, or the shorthand with only the first letter of the bot's nickname.
+
+    Params:
+        plugin = The current [HelpPlugin].
+        prefixed = The prefixed string, to strip the prefix of.
+
+    Returns:
+        The passed `prefixed` string with any prefixes sliced away.
+ +/
+auto stripPrefix(HelpPlugin plugin, const string prefixed)
+{
+    import lu.string : beginsWith;
+
+    static string sliceAwaySeparators(const string orig)
+    {
+        string slice = orig;  // mutable
+
+        outer:
+        while (slice.length > 0)
+        {
+            switch (slice[0])
+            {
+            case ':':
+            case '!':
+            case '?':
+            case ' ':
+                slice = slice[1..$];
+                break;
+
+            default:
+                break outer;
+            }
+        }
+
+        return slice;
+    }
+
+    if (prefixed.beginsWith(plugin.state.settings.prefix))
+    {
+        return prefixed[plugin.state.settings.prefix.length..$];
+    }
+    else if (prefixed.beginsWith(plugin.state.client.nickname))
+    {
+        return sliceAwaySeparators(prefixed[plugin.state.client.nickname.length..$]);
+    }
+    else if (prefixed.beginsWith(plugin.state.client.nickname[0..1] ~ ':'))
+    {
+        return sliceAwaySeparators(prefixed[2..$]);
+    }
+    else
+    {
+        return prefixed;
     }
 }
 
