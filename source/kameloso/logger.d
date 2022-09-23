@@ -481,8 +481,8 @@ public:
         }
 
         beginLogMsg(logLevel);
-        messagebuffer.formattedWrite(pattern.expandTags(logLevel), args);
-        linebuffer.put(messagebuffer.data);
+        messagebuffer.formattedWrite(pattern, args);
+        linebuffer.put(messagebuffer.data.expandTags(logLevel));
         finishLogMsg();
     }
 
