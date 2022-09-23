@@ -24,8 +24,8 @@ public:
     `</>` equals the passed `baseLevel` and is used to terminate colour sequences,
     returning to a default.
 
-    Lastly, text between two `<h>`s are replaced with the results from a call to
-    [kameloso.terminal.colours.colourByHash|colourByHash].
+    Lastly, text between a `<h>` and a `</>` are replaced with the results from
+    a call to [kameloso.terminal.colours.colourByHash|colourByHash].
 
     This should hopefully make highlighted strings more readable.
 
@@ -489,6 +489,14 @@ unittest
             immutable line = "<l>herp\\</>herp\\\\herp\\\\<l>herp</>";
             immutable replaced = line.expandTags(LogLevel.off, No.strip);
             immutable expected = logger.logtint ~ "herp</>herp\\herp\\" ~ logger.logtint ~ "herp" ~ logger.offtint;
+            assert((replaced == expected), replaced);
+        }
+        {
+            immutable line = "Added <h>hirrsteff</> as a blacklisted user in #garderoben";
+            immutable replaced = line.expandTags(LogLevel.off, No.strip);
+            immutable expected = "Added " ~
+                colourByHash("hirrsteff", No.brightTerminal) ~
+                logger.offtint ~ " as a blacklisted user in #garderoben";
             assert((replaced == expected), replaced);
         }
     }
