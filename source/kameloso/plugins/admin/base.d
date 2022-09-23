@@ -1342,15 +1342,15 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         import lu.string : SplitResults, splitInto;
 
         string subverb;
-        string channel;
+        string channelName;
 
-        immutable results = slice.splitInto(subverb, channel);
+        immutable results = slice.splitInto(subverb, channelName);
         if (results == SplitResults.underrun)
         {
             // verb_channel_nickname
-            enum pattern = "Invalid bus message syntax; expected <l>%s%s</> " ~
+            enum pattern = "Invalid bus message syntax; expected <l>%s</> " ~
                 "[verb] [channel] [nickname if add/del], got \"<l>%s</>\"";
-            logger.warningf(pattern, plugin.state.settings.prefix, verb, message.payload.strippedRight);
+            logger.warningf(pattern, verb, message.payload.strippedRight);
             return;
         }
 
@@ -1363,21 +1363,21 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             if (!user.length)
             {
                 logger.warning("Invalid bus message syntax; no user supplied, " ~
-                    "only channel <l>", channel);
+                    "only channel <l>", channelName);
                 return;
             }
 
             if (subverb == "add")
             {
-                return plugin.lookupEnlist(user, subverb, channel);
+                return plugin.lookupEnlist(user, verb, channelName);
             }
             else /*if (subverb == "del")*/
             {
-                return plugin.delist(user, subverb, channel);
+                return plugin.delist(user, verb, channelName);
             }
 
         case "list":
-            return plugin.listList(channel, verb);
+            return plugin.listList(channelName, verb);
 
         default:
             enum pattern = "Invalid bus message <l>%s</> subverb <l>%s";
