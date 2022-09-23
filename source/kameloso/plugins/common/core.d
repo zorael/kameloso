@@ -78,6 +78,12 @@ public:
      +/
     static struct CommandMetadata
     {
+        // policy
+        /++
+            Prefix policy of this command.
+         +/
+        PrefixPolicy policy;
+
         // description
         /++
             Description about what the command does, in natural language.
@@ -97,11 +103,14 @@ public:
          +/
         bool hidden;
 
-        /// Constructor.
-        this(const string description, /*const*/ string[] syntaxes, const bool hidden) pure @safe nothrow @nogc
+        /// Constructor. Don't take a `syntax` here, populate it manually.
+        this(
+            const PrefixPolicy policy,
+            const string description,
+            const bool hidden) pure @safe nothrow @nogc
         {
+            this.policy = policy;
             this.description = description;
-            this.syntaxes = syntaxes;
             this.hidden = hidden;
         }
     }
@@ -1669,7 +1678,7 @@ mixin template IRCPluginImpl(
                 {{
                     enum key = command._word;
                     commandAA[key] = IRCPlugin.CommandMetadata
-                        (command._description, command._syntaxes, command._hidden);
+                        (command._policy, command._description, command._hidden);
 
                     static if (command._description.length)
                     {
@@ -1691,6 +1700,10 @@ mixin template IRCPluginImpl(
                                 commandAA[key].syntaxes ~= "$nickname: $command";
                             }
                         }
+                        else
+                        {
+                            commandAA[key].syntaxes ~= command._syntaxes;
+                        }
                     }
                     else static if (!command._hidden)
                     {
@@ -1704,9 +1717,10 @@ mixin template IRCPluginImpl(
                 static foreach (immutable regex; uda._regexes)
                 {{
                     enum key = `r"` ~ regex.expression ~ `"`;
-                        commandAA[key] = IRCPlugin.CommandMetadata(regex.description, regex.hidden);
+                        commandAA[key] = IRCPlugin.CommandMetadata
+                            (regex._policy, regex._description, regex._hidden);
 
-                    static if (regex.description.length)
+                    static if (regex._description.length)
                     {
                         static if (regex._policy == PrefixPolicy.direct)
                         {
