@@ -149,19 +149,18 @@ void sendCommandHelpImpl(
     immutable message = pattern.format(otherPluginName, command, description);
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
 
-    if (!syntaxes.length) return;
-
     foreach (immutable syntax; syntaxes)
     {
-        immutable udaSyntax = syntax
+        immutable humanlyReadable = syntax
             .replace("$command", command)
-            .replace("$nickname", plugin.state.client.nickname)
-            .replace("$prefix", plugin.state.settings.prefix);
+            .replace("$bot", plugin.state.client.nickname)
+            .replace("$prefix", plugin.state.settings.prefix)
+            .replace("$nickname", event.sender.nickname);
 
         // Prepend the prefix to non-PrefixPolicy.nickname commands
-        immutable prefixedSyntax = (syntax.beginsWith("$nickname") || syntax.beginsWith("$prefix")) ?
-            udaSyntax :
-            plugin.state.settings.prefix ~ udaSyntax;
+        immutable prefixedSyntax = (syntax.beginsWith("$bot") || syntax.beginsWith("$prefix")) ?
+            humanlyReadable :
+            plugin.state.settings.prefix ~ humanlyReadable;
         immutable usage = (syntaxes.length == 1) ?
             "<b>Usage<b>: " ~ prefixedSyntax :
             "* " ~ prefixedSyntax;

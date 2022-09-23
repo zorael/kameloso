@@ -1680,7 +1680,11 @@ mixin template IRCPluginImpl(
                     commandAA[key] = IRCPlugin.CommandMetadata
                         (command._policy, command._description, command._hidden);
 
-                    static if (command._description.length)
+                    static if (command._hidden)
+                    {
+                        // Just ignore
+                    }
+                    else static if (command._description.length)
                     {
                         static if (command._policy == PrefixPolicy.nickname)
                         {
@@ -1690,22 +1694,29 @@ mixin template IRCPluginImpl(
                                 // as that's how it's actually used.
                                 foreach (immutable syntax; command._syntaxes)
                                 {
-                                    commandAA[key].syntaxes ~= "$nickname: " ~ syntax;
+                                    commandAA[key].syntaxes ~= "$bot: " ~ syntax;
                                 }
                             }
                             else
                             {
                                 // Define an empty nickname: command syntax
                                 // to give hint about the nickname prefix
-                                commandAA[key].syntaxes ~= "$nickname: $command";
+                                commandAA[key].syntaxes ~= "$bot: $command";
                             }
                         }
                         else
                         {
-                            commandAA[key].syntaxes ~= command._syntaxes;
+                            static if (command._syntaxes.length)
+                            {
+                                commandAA[key].syntaxes ~= command._syntaxes;
+                            }
+                            else
+                            {
+                                commandAA[key].syntaxes ~= "$command";
+                            }
                         }
                     }
-                    else static if (!command._hidden)
+                    else /*static if (!command._hidden && !command._description.length)*/
                     {
                         import std.format : format;
                         import std.traits : fullyQualifiedName;
