@@ -329,7 +329,7 @@ void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
         return plugin.delHome(event, slice);
 
     case "list":
-        enum pattern = "Current home channels: %-(<b>%s<b>, %)";
+        enum pattern = "Current home channels: %-(<b>%s<b>, %)<b>";
         immutable message = pattern.format(plugin.state.bot.homeChannels);
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
         return;

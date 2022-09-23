@@ -162,7 +162,7 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
         }
 
         enum pattern = "Current counters: %s";
-        immutable arrayPattern = "%-(<b>" ~ plugin.state.settings.prefix ~ "%s<b>, %)";
+        immutable arrayPattern = "%-(<b>" ~ plugin.state.settings.prefix ~ "%s<b>, %)<b>";
         immutable list = arrayPattern.format(plugin.counters[event.channel].keys);
         immutable message = pattern.format(list);
         chan(plugin.state, event.channel, message);

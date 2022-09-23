@@ -720,7 +720,7 @@ void listCommands(OnelinersPlugin plugin, const string channelName)
 
     if (channelOneliners && channelOneliners.length)
     {
-        immutable rtPattern = "Available commands: %-(<b>" ~ plugin.state.settings.prefix ~ "%s<b>, %)";
+        immutable rtPattern = "Available commands: %-(<b>" ~ plugin.state.settings.prefix ~ "%s<b>, %)<b>";
         immutable message = rtPattern.format(channelOneliners.byKey);
         chan(plugin.state, channelName, message);
     }
