@@ -1324,7 +1324,7 @@ void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
             .hidden(true)
     )
 )
-void onCommandSongRequest(TwitchPlugin plugin, const ref IRCEvent event)
+void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.plugins.twitch.helpers : ErrorJSONException, UnexpectedJSONException;
     import kameloso.constants : KamelosoInfo, Timeout;

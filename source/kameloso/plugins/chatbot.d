@@ -158,7 +158,7 @@ void onCommand8ball(ChatbotPlugin plugin, const ref IRCEvent event)
             .addSyntax("$command [optional bash quote number]")
     )
 )
-void onCommandBash(ChatbotPlugin plugin, const ref IRCEvent event)
+void onCommandBash(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.thread : ThreadMessage;
     import std.concurrency : prioritySend, spawn;
