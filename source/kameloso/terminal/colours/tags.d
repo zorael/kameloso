@@ -77,6 +77,23 @@ if (isSomeString!T)
 
     if (!line.length || !line.contains('<')) return line;
 
+    // Without marking this as @trusted, we can't have @safe expandTags...
+    static auto indexOf(H, N)(const H haystack, const N rawNeedle) @trusted
+    {
+        import std.string : indexOf;
+
+        static if (is(N : ubyte))
+        {
+            immutable needle = cast(char)rawNeedle;
+        }
+        else
+        {
+            alias needle = rawNeedle;
+        }
+
+        return (cast(T)haystack).indexOf(needle);
+    }
+
     Appender!(E[]) sink;
     bool dirty;
     bool escaping;
@@ -119,9 +136,7 @@ if (isSomeString!T)
             }
             else
             {
-                import std.string : indexOf;
-
-                immutable ptrdiff_t closingBracketPos = (cast(T)asBytes[i..$]).indexOf('>');
+                immutable ptrdiff_t closingBracketPos = indexOf(asBytes[i..$], '>');
 
                 if ((closingBracketPos == -1) || (closingBracketPos > 6))
                 {
@@ -248,7 +263,7 @@ if (isSomeString!T)
 
                     case 'h':
                         i += 3;  // advance past "<h>".length
-                        immutable closingHashMarkPos = (cast(T)asBytes[i..$]).indexOf("</>");
+                        immutable closingHashMarkPos = indexOf(asBytes[i..$], "</>");
 
                         if (closingHashMarkPos == -1)
                         {
