@@ -745,7 +745,7 @@ public:
 struct CoreSettings
 {
 private:
-    import lu.uda : CannotContainComments, Quoted, Unserialisable;
+    import lu.uda : CannotContainComments, Hidden, Quoted, Unserialisable;
 
 public:
     version(Colours)
@@ -789,6 +789,8 @@ public:
     /++
         Path to resource directory.
      +/
+    @Hidden
+    @CannotContainComments
     string resourceDirectory;
 
     /++
