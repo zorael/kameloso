@@ -351,11 +351,11 @@ kameloso --get-openssl
 The rest is common for all platforms:
 
 ```shell
-kameloso --server irc.chat.twitch.tv --port 6697 --gedit
+kameloso --setup-twitch
 kameloso
 ```
 
-The first (`--server`, `--port`, `--gedit`) command creates a configuration file with the server address and port already set to connect to Twitch, then opens it up in a text editor.
+The first (`--setup-twitch`) command creates a configuration file with the server address and port already set to connect to Twitch, then opens it up in a text editor.
 
 **A line with a leading `#` is disabled, so remove any `#`s from the heads of entries you want to enable.**
 
