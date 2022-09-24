@@ -188,10 +188,13 @@ void writeConfig(
             logger.trace();
             logger.log("Edit it and make sure it contains at least one of the following:");
             giveConfigurationMinimalInstructions();
-            logger.trace();
         }
 
-        if (shouldGiveBrightTerminalHint) giveBrightTerminalHint(Yes.alsoAboutConfigSetting);
+        if (shouldGiveBrightTerminalHint)
+        {
+            logger.trace();
+            giveBrightTerminalHint(Yes.alsoAboutConfigSetting);
+        }
     }
 }
 
