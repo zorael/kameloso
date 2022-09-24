@@ -766,16 +766,19 @@ public:
     /// Whether or not to display a connection summary on program exit.
     bool exitSummary = false;
 
-    /++
-        Whether to eagerly and exhaustively WHOIS all participants in home channels,
-        or to do a just-in-time lookup when needed.
-     +/
-    bool eagerLookups = false;
+    @Hidden
+    {
+        /++
+            Whether to eagerly and exhaustively WHOIS all participants in home channels,
+            or to do a just-in-time lookup when needed.
+         +/
+        bool eagerLookups = false;
 
-    /++
-        Whether or not to be "headless", disabling all terminal output.
-     +/
-    bool headless;
+        /++
+            Whether or not to be "headless", disabling all terminal output.
+         +/
+        bool headless;
+    }
 
     /++
         Path to resource directory.
