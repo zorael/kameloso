@@ -447,7 +447,7 @@ public:
             }
         }
 
-        linebuffer.put(messagebuffer.data.expandTags(logLevel));
+        linebuffer.put(messagebuffer.data.expandTags(logLevel, cast(Flag!"strip")monochrome));
         finishLogMsg();
     }
 
@@ -482,7 +482,7 @@ public:
 
         beginLogMsg(logLevel);
         messagebuffer.formattedWrite(pattern, args);
-        linebuffer.put(messagebuffer.data.expandTags(logLevel));
+        linebuffer.put(messagebuffer.data.expandTags(logLevel, cast(Flag!"strip")monochrome));
         finishLogMsg();
     }
 
@@ -515,7 +515,7 @@ public:
 
         beginLogMsg(logLevel);
         messagebuffer.formattedWrite!pattern(args);
-        linebuffer.put(messagebuffer.data.expandTags(logLevel));
+        linebuffer.put(messagebuffer.data.expandTags(logLevel, cast(Flag!"strip")monochrome));
         finishLogMsg();
     }
 
