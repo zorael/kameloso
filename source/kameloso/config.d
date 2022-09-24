@@ -616,10 +616,14 @@ auto handleGetopt(ref Kameloso instance, string[] args) @system
         bool shouldShowVersion;
         bool shouldShowSettings;
         bool shouldAppendToArrays;
+        bool noop;
 
         // Windows-only but must be declared regardless of platform
         bool shouldDownloadOpenSSL;
         bool shouldDownloadCacert;
+
+        // Likewise but version `TwitchSupport`
+        bool shouldSetupTwitch;
 
         string[] inputGuestChannels;
         string[] inputHomeChannels;
@@ -668,7 +672,8 @@ auto handleGetopt(ref Kameloso instance, string[] args) @system
             config.caseSensitive,
             config.bundling,
             config.passThrough,
-            "monochrome", &settings.monochrome
+            "monochrome", &settings.monochrome,
+            "setup-twitch", &shouldSetupTwitch,
         );
 
         /++
@@ -747,6 +752,15 @@ auto handleGetopt(ref Kameloso instance, string[] args) @system
             else
             {
                 alias geditProgramString = defaultGeditProgramString;
+            }
+
+            version(TwitchSupport)
+            {
+                enum setupTwitchString = "Set up a basic Twitch connection";
+            }
+            else
+            {
+                enum setupTwitchString = "(Requires Twitch support)";
             }
 
             return getopt(theseArgs,
@@ -845,7 +859,8 @@ auto handleGetopt(ref Kameloso instance, string[] args) @system
                         "Use monochrome output [<i>%s</>]"
                             .expandTags(LogLevel.trace)
                             .format(settings.monochrome),
-                    &settings.monochrome,
+                    //&settings.monochrome,
+                    &noop,
                 "set",
                     quiet ? string.init :
                         text("Manually change a setting (syntax: ", setSyntax, ')'),
@@ -855,7 +870,8 @@ auto handleGetopt(ref Kameloso instance, string[] args) @system
                         "Specify a different configuration file [<i>%s</>]"
                             .expandTags(LogLevel.trace)
                             .format(settings.configFile),
-                    &settings.configFile,
+                    //&settings.configFile,
+                    &noop,
                 "r|resourceDir",
                     quiet ? string.init :
                         "Specify a different resource directory [<i>%s</>]"
@@ -891,6 +907,11 @@ auto handleGetopt(ref Kameloso instance, string[] args) @system
                         getCacertString
                             .expandTags(LogLevel.trace),
                     &shouldDownloadCacert,
+                "setup-twitch",
+                    quiet ? string.init :
+                        setupTwitchString,
+                    //&shouldSetupTwitch,
+                    &noop,
                 "numeric",
                     quiet ? string.init :
                         "Use numeric output of addresses",
@@ -939,6 +960,20 @@ auto handleGetopt(ref Kameloso instance, string[] args) @system
         const backupClient = instance.parser.client;
         auto backupServer = instance.parser.server;  // cannot opEqual const IRCServer with mutable
         const backupBot = instance.bot;
+
+        version(TwitchSupport)
+        {
+            if (shouldSetupTwitch)
+            {
+                // Do this early to allow for manual overrides with --server etc
+                instance.parser.server.address = "irc.chat.twitch.tv";
+                instance.parser.server.port = 6697;
+                instance.parser.client.nickname = "doesntmatter";
+                instance.parser.client.user = "ignored";
+                instance.parser.client.realName = "likewise";
+                shouldOpenGraphicalEditor = true;
+            }
+        }
 
         // No need to catch the return value, only used for --help
         cast(void)callGetopt(args, Yes.quiet);
