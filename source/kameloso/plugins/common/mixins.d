@@ -493,11 +493,8 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
     Params:
         debug_ = Whether or not to include debugging output.
-        module_ = String name of the mixing-in module; generally leave as-is.
  +/
-mixin template MessagingProxy(
-    Flag!"debug_" debug_ = No.debug_,
-    string module_ = __MODULE__)
+mixin template MessagingProxy(Flag!"debug_" debug_ = No.debug_)
 {
 private:
     static import kameloso.messaging;
