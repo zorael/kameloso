@@ -1072,6 +1072,8 @@ void onWelcome(ConnectService service)
 
         void twitchWarningDg(IRCEvent)
         {
+            scope(exit) unawait(service, &twitchWarningDg, endOfMotdEventTypes[]);
+
             version(TwitchSupport)
             {
                 import lu.string : beginsWith;
@@ -1107,8 +1109,6 @@ void onWelcome(ConnectService service)
                         "Expect errors and general uselessness.");
                 }
             }
-
-            unawait(service, &twitchWarningDg, endOfMotdEventTypes[]);
         }
 
         await(service, &twitchWarningDg, endOfMotdEventTypes[]);
