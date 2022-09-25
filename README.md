@@ -361,14 +361,14 @@ The first (`--setup-twitch`) command creates a configuration file with the serve
 
 * Add your channel to `homeChannels`. Channel names are account names (which are always lowercase) with a `#` in front, so the Twitch user `Streamer123` would have the channel `#streamer123`.
 * Optionally add an account name to `admins` to give them global low-level control of the bot. Owners of channels (broadcasters) automatically have high privileges in the scope of their own channels, so it's not strictly needed.
-* You can ignore `nickname`, `user`, `realName`, `account` and `password`, as they're not applicable on Twitch.
-* Peruse the file for other settings if you want; you can always get back to it with `--gedit`. You don't need to include the `--server` and `--port` arguments now that the file has these values.
+* You can ignore `nickname`, `user`, `realName`, `account` and `password`, as they're not applicable on Twitch. Do not enter your Twitch password anywhere.
+* Peruse the file for other settings if you want; you can always get back to it by passing `--gedit` (short for `g`raphical `edit`or).
 
 The second command will launch the program and connect to Twitch. Upon detecting it's missing the authorisation token needed to authenticate with the server, it will start the guide to requesting a new one in your terminal. See the ["long story"](#long-story) section below for details.
 
-**Note that it will request a token for the user you are currently logged in as in your browser**. If you want one for a different bot user instead, open up a private/incognito window, log in normally to Twitch **with the bot account** there, and copy/paste [this link](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true) to that browser window instead. (Then follow the terminal instructions again.)
+**Note that it will request a token for the user you are currently logged in as in your browser**. If you want one for a different "bot user" instead, open up a private/incognito window, log in normally to Twitch **with the bot account** there, and copy/paste [this link](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true) and follow it in that browser window instead. (Then follow the terminal instructions again.)
 
-After obtaining a token it will save it to your configuration file and reconnect to the server. Provided there were no errors, the bot should now enter your channel. Say something in chat in your browser and it should show in your terminal. If there were errors or snags, [***please*** report them](https://github.com/zorael/kameloso/issues/new).
+After obtaining a token it will save it to your configuration file and reconnect to the server. Provided there were no errors, the bot should now enter your channel. Say something in chat in your browser and it should show in your terminal. If there were errors or snags, please [report them](https://github.com/zorael/kameloso/issues/new).
 
 > If you don't like the terminal colouring, `--monochrome` disables it.
 
