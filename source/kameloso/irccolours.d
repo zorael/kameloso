@@ -257,18 +257,25 @@ unittest
     Returns:
         The passed string encased within IRC colour coding.
  +/
-auto ircColourByHash(const string word) pure
+string ircColourByHash(const string word) pure
 in (word.length, "Tried to apply IRC colours by hash to a string but no string was given")
 {
+    import lu.conv : toAlphaInto;
+    import std.array : Appender;
+
     if (!word.length) return string.init;
 
-    import std.format : format;
-
-    alias I = IRCControlCharacter;
+    Appender!(char[]) sink;
+    sink.reserve(word.length + 4);  // colour, index, word, colour
 
     immutable colourIndex = hashOf(word) % 16;
-    enum pattern = "%c%02d%s%c";
-    return format(pattern, cast(char)I.colour, colourIndex, word, cast(char)I.colour);
+
+    sink.put(cast(char)IRCControlCharacter.colour);
+    colourIndex.toAlphaInto!(2, 2)(sink);
+    sink.put(word);
+    sink.put(cast(char)IRCControlCharacter.colour);
+
+    return sink.data;
 }
 
 ///
