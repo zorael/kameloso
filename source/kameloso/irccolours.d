@@ -173,20 +173,28 @@ unittest
     Returns:
         An opening IRC colour token with the passed colours.
  +/
-auto ircColour(const IRCColour fg, const IRCColour bg = IRCColour.unset) pure
+string ircColour(const IRCColour fg, const IRCColour bg = IRCColour.unset) pure
 {
-    import std.format : format;
+    import lu.conv : toAlphaInto;
+    import std.array : Appender;
+
+    Appender!(char[]) sink;
+    sink.reserve(6);
+
+    sink.put(cast(char)IRCControlCharacter.colour);
 
     if (bg != IRCColour.unset)
     {
-        enum pattern = "%c%02d,%02d";
-        return format(pattern, cast(char)IRCControlCharacter.colour, fg, bg);
+        (cast(int)fg).toAlphaInto!(2, 2)(sink);
+        sink.put(',');
+        (cast(int)bg).toAlphaInto!(2, 2)(sink);
     }
     else
     {
-        enum pattern = "%c%02d";
-        return format(pattern, cast(char)IRCControlCharacter.colour, fg);
+        (cast(int)fg).toAlphaInto!(2, 2)(sink);
     }
+
+    return sink.data;
 }
 
 ///
