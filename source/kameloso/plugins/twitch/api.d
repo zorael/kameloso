@@ -201,12 +201,6 @@ private auto twitchTryCatchDgExceptionHandler(
 
         enum pattern = "Failed to query Twitch: <l>%s</> <t>(%s) </>(<t>%d</>)";
         logger.errorf(pattern, message, e.error, e.code);
-
-        version(PrintStacktraces)
-        {
-            printBody(e.responseBody);
-            logger.trace(e.info);
-        }
         return Next.returnFailure;
     }
     catch (MissingBroadcasterTokenException e)
