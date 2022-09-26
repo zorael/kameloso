@@ -51,8 +51,6 @@
 
 module kameloso.terminal.colours;
 
-version(Colours):
-
 private:
 
 import kameloso.terminal : TerminalToken;
@@ -70,6 +68,7 @@ public:
  +/
 enum TerminalFormat
 {
+    unset       = 0,  /// Seemingly resets to nothing.
     bold        = 1,  /// Bold.
     dim         = 2,  /// Dim, darkens it a bit.
     italics     = 3,  /// Italics; usually has some other effect.
@@ -135,6 +134,8 @@ enum TerminalReset
     hidden      = 28,   /// Resets hidden text.
 }
 
+
+version(Colours):
 
 // isAColourCode
 /++
