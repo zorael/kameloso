@@ -426,7 +426,7 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
     See_Also:
         [kameloso.plugins.common.core.Replay|Replay]
  +/
-auto replay(Plugin, Fun)(Plugin plugin, const ref IRCEvent event,
+auto replay(Plugin, Fun)(Plugin plugin, const /*ref*/ IRCEvent event,
     Fun fun, const Permissions permissionsRequired, const string caller = __FUNCTION__)
 {
     void dg(Replay replay)
