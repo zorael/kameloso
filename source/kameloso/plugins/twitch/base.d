@@ -523,53 +523,7 @@ void onCommandStart(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             import std.json : JSONType;
 
             immutable chattersJSON = getChatters(plugin, room.broadcasterName);
-
-            // https://twitchinsights.net/bots
-            // https://twitchs.info/bots
-            static immutable botBlacklist =
-            [
-                //"nightbot",
-                "streamlabs",
-                "streamelements",
-                "soundalerts",
-                //"moobot",
-                "anotherttvviewer",
-                "kaxips06",
-                "la_kaylee",
-                "commanderroot",
-                "rogueg1rl",
-                "midsooooooooon",
-                "lanarayyyy",
-                "itzemmaaaaaaa",
-                "aliengathering",
-                "elysian",
-                "lurxx",
-                "feet",
-                "aten",
-                "spiketrapclair",
-                "soundalerts",
-                "ffxivstyx",
-                "curvaceous_natalia",
-                "viewer_of_irl",
-                "frw33ds_kitten",
-                "fashionable_camille",
-                "lurking_miku",
-                "stixffxiv",
-                "eatsaoe",
-                "wafflebudder",
-                "elbretweets",
-                "underworldnaiad",
-                "beardedstrumerwaitingroom",
-                "icantcontrolit",
-                "nerdydreams",
-                "uncle_spawn",
-                "hades_osiris",
-                "0ax2",
-                "violets_tv",
-                "dankingaround",
-                "erika_fnbr",
-                "comettunes",
-            ];
+            const botBlacklist = getBotList(plugin);
 
             static immutable chatterTypes =
             [

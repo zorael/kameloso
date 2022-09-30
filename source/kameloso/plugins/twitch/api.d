@@ -1761,3 +1761,99 @@ in (Fiber.getThis, "Tried to call `endPoll` from outside a Fiber")
 
     return responseJSON["data"].array[0];
 }
+
+
+// getBotList
+/++
+    Fetches a list of known (online) bots from TwitchInsights.net.
+
+    With this we don't have to keep a static list of known bots to exclude when
+    counting chatters.
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+
+    Returns:
+        A `string[]` array of online bot account names.
+
+    Throws:
+        [TwitchQueryException] on unexpected JSON.
+
+    See_Also:
+        https:/twitchinsights.net/bots
+ +/
+auto getBotList(TwitchPlugin plugin)
+{
+    import std.algorithm.searching : endsWith;
+    import std.array : Appender;
+    import std.json : JSONType, parseJSON;
+
+    enum url = "https://api.twitchinsights.net/v1/bots/online";
+    immutable response = sendHTTPRequest(plugin, url, string.init);
+    immutable responseJSON = parseJSON(response.str);
+
+    /*
+    {
+        "_total": 78,
+        "bots": [
+            [
+                "commanderroot",
+                55158,
+                1664543800
+            ],
+            [
+                "alexisthenexis",
+                54928,
+                1664543800
+            ],
+            [
+                "anna_banana_10",
+                54636,
+                1664543800
+            ],
+            [
+                "sophiafox21",
+                54587,
+                1664543800
+            ]
+        ]
+    }
+    */
+
+    if ((responseJSON.type != JSONType.object) ||
+        ("_total" !in responseJSON) ||
+        ("bots" !in responseJSON) ||
+        (responseJSON["bots"].type != JSONType.array))
+    {
+        // Invalid response in some way
+        throw new TwitchQueryException(
+            "`getBotList` response has unexpected JSON",
+            response.str,
+            response.error,
+            response.code);
+    }
+
+    Appender!(string[]) sink;
+    sink.reserve(responseJSON["_total"].integer);
+
+    foreach (const botEntryJSON; responseJSON["bots"].array)
+    {
+        /*
+        [
+            "commanderroot",
+            55158,
+            1664543800
+        ]
+        */
+
+        immutable botAccountName = botEntryJSON.array[0].str;
+
+        if (!botAccountName.endsWith("bot"))
+        {
+            // Only add bots whose names don't end with "bot", since we automatically filter those
+            sink.put(botAccountName);
+        }
+    }
+
+    return sink.data;
+}
