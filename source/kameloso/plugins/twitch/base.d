@@ -727,7 +727,7 @@ void reportStreamTime(
 
             if (justNowEnded)
             {
-                if (room.broadcast.numViewersLastStream)
+                if (room.broadcast.numViewersLastStream > 0)
                 {
                     enum pattern = "%s streamed for %s, with %d unique viewers. " ~
                         "(max at any one time was %d viewers)";
