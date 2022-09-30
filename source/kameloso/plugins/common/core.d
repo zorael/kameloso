@@ -620,31 +620,54 @@ mixin template IRCPluginImpl(
         /++
             Calls the passed function pointer, appropriately.
          +/
-        void call(Fun)(scope Fun fun, ref IRCEvent event) scope
+        void call(bool inFiber, Fun)(scope Fun fun, ref IRCEvent event) scope
         {
             import lu.traits : TakesParams;
             import std.traits : ParameterStorageClass, Parameters, arity;
 
-            /++
-                Statically asserts that a parameter storage class is neither `out` nor `ref`.
-
-                Take the storage class as a template parameter and statically
-                assert inside this function, unlike how `udaSanityCheck` returns
-                false on failure, so we can format and print the error message
-                once here (instead of at all call sites upon receiving false).
-             +/
-            static void assertNotRefNorOut(ParameterStorageClass storageClass)()
+            static if (inFiber)
             {
-                static if (
-                    (storageClass & ParameterStorageClass.ref_) ||
-                    (storageClass & ParameterStorageClass.out_))
-                {
-                    import std.format : format;
+                /++
+                    Statically asserts that a parameter storage class is not `ref`.
 
-                    enum pattern = "`%s` has a `%s` event handler that takes an " ~
-                        "`IRCEvent` of an unsupported storage class; " ~
-                        "may not be mutable `ref` or `out`";
-                    static assert(0, pattern.format(module_, Fun.stringof));
+                    Take the storage class as a template parameter and statically
+                    assert inside this function, unlike how `udaSanityCheck` returns
+                    false on failure, so we can format and print the error message
+                    once here (instead of at all call sites upon receiving false).
+                 +/
+                static void assertNotRef(ParameterStorageClass storageClass)()
+                {
+                    static if (storageClass & ParameterStorageClass.ref_)
+                    {
+                        import std.format : format;
+
+                        enum pattern = "`%s` has a `%s` event handler annotated `.fiber(true)`" ~
+                            "that takes an `IRCEvent` by `ref`, which doesn't work in release builds";
+                        static assert(0, pattern.format(module_, Fun.stringof));
+                    }
+                }
+            }
+
+            static if (!inFiber)
+            {
+                /++
+                    Statically asserts that a parameter storage class is neither `out` nor `ref`.
+
+                    See `assertNotRef` above.
+                 +/
+                static void assertNotRefNorOut(ParameterStorageClass storageClass)()
+                {
+                    static if (
+                        (storageClass & ParameterStorageClass.ref_) ||
+                        (storageClass & ParameterStorageClass.out_))
+                    {
+                        import std.format : format;
+
+                        enum pattern = "`%s` has a `%s` event handler that takes an " ~
+                            "`IRCEvent` of an unsupported storage class; " ~
+                            "may not be mutable `ref` or `out`";
+                        static assert(0, pattern.format(module_, Fun.stringof));
+                    }
                 }
             }
 
@@ -652,10 +675,18 @@ mixin template IRCPluginImpl(
                 TakesParams!(fun, typeof(this), IRCEvent) ||
                 TakesParams!(fun, IRCPlugin, IRCEvent))
             {
-                static if (!is(Parameters!fun[1] == const))
+                static if (inFiber)
                 {
                     import std.traits : ParameterStorageClassTuple;
-                    assertNotRefNorOut!(ParameterStorageClassTuple!fun[1]);
+                    assertNotRef!(ParameterStorageClassTuple!fun[1]);
+                }
+                else
+                {
+                    static if (!is(Parameters!fun[1] == const))
+                    {
+                        import std.traits : ParameterStorageClassTuple;
+                        assertNotRefNorOut!(ParameterStorageClassTuple!fun[1]);
+                    }
                 }
 
                 fun(this, event);
@@ -668,10 +699,18 @@ mixin template IRCPluginImpl(
             }
             else static if (TakesParams!(fun, IRCEvent))
             {
-                static if (!is(Parameters!fun[0] == const))
+                static if (inFiber)
                 {
                     import std.traits : ParameterStorageClassTuple;
-                    assertNotRefNorOut!(ParameterStorageClassTuple!fun[0]);
+                    assertNotRef!(ParameterStorageClassTuple!fun[0]);
+                }
+                else
+                {
+                    static if (!is(Parameters!fun[0] == const))
+                    {
+                        import std.traits : ParameterStorageClassTuple;
+                        assertNotRefNorOut!(ParameterStorageClassTuple!fun[0]);
+                    }
                 }
 
                 fun(event);
@@ -703,7 +742,7 @@ mixin template IRCPluginImpl(
         /++
             Process a function.
          +/
-        NextStep process(bool verbose, Fun)
+        NextStep process(bool verbose, bool inFiber, Fun)
             (scope Fun fun,
             const string funName,
             const IRCEventHandler uda,
@@ -1000,16 +1039,25 @@ mixin template IRCPluginImpl(
                 if (state.settings.flush) stdout.flush();
             }
 
+            static if (Fun.stringof[$-5..$] == "@safe")
+            {
+                mixin("alias SystemFun = " ~ Fun.stringof[0..$-6] ~ " @system;");
+            }
+            else /*static if (Fun.stringof[$-7..$] == "@system")*/
+            {
+                alias SystemFun = Fun;
+            }
+
             if (uda._fiber)
             {
                 import kameloso.constants : BufferSize;
                 import core.thread : Fiber;
-                auto fiber = new Fiber(() => call(fun, event), BufferSize.fiberStack);
+                auto fiber = new Fiber(() => call!(inFiber, SystemFun)(fun, event), BufferSize.fiberStack);
                 fiber.call();
             }
             else
             {
-                call(fun, event);
+                call!(inFiber, SystemFun)(fun, event);
             }
 
             if (uda._chainable)
@@ -1116,7 +1164,8 @@ mixin template IRCPluginImpl(
 
                 try
                 {
-                    immutable next = process!verbose(&fun, funName, uda, event, acceptsAnyType);
+                    immutable next = process!(verbose, cast(bool)uda._fiber)
+                        (&fun, funName, uda, event, acceptsAnyType);
 
                     if (next == NextStep.continue_)
                     {
@@ -1125,7 +1174,8 @@ mixin template IRCPluginImpl(
                     else if (next == NextStep.repeat)
                     {
                         // only repeat once so we don't endlessly loop
-                        if (process!verbose(&fun, funName, uda, event, acceptsAnyType) == NextStep.continue_)
+                        if (process!(verbose, cast(bool)uda._fiber)
+                            (&fun, funName, uda, event, acceptsAnyType) == NextStep.continue_)
                         {
                             continue;
                         }
@@ -1156,7 +1206,8 @@ mixin template IRCPluginImpl(
                     sanitiseEvent(event);
 
                     // Copy-paste, not much we can do otherwise
-                    immutable next = process!verbose(&fun, funName, uda, event, acceptsAnyType);
+                    immutable next = process!(verbose, cast(bool)uda._fiber)
+                        (&fun, funName, uda, event, acceptsAnyType);
 
                     if (next == NextStep.continue_)
                     {
@@ -1165,7 +1216,8 @@ mixin template IRCPluginImpl(
                     else if (next == NextStep.repeat)
                     {
                         // only repeat once so we don't endlessly loop
-                        if (process!verbose(&fun, funName, uda, event, acceptsAnyType) == NextStep.continue_)
+                        if (process!(verbose, cast(bool)uda._fiber)
+                            (&fun, funName, uda, event, acceptsAnyType) == NextStep.continue_)
                         {
                             continue;
                         }
