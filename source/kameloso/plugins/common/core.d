@@ -38,6 +38,10 @@
 
     See_Also:
         [kameloso.plugins.common.misc|plugins.common.misc]
+
+        [kameloso.plugins.common.mixins|plugins.common.mixins]
+
+        [kameloso.plugins.common.delayawait|plugins.common.delayawait]
  +/
 module kameloso.plugins.common.core;
 
