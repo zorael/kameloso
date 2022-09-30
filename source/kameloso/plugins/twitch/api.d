@@ -582,6 +582,9 @@ auto sendHTTPRequestImpl(
         A singular user or channel regardless of how many were asked for in the URL.
         If nothing was found, an empty [std.json.JSONValue|JSONValue].init is
         returned instead.
+
+    Throws:
+        [TwitchQueryException] on unexpected JSON.
  +/
 auto getTwitchEntity(TwitchPlugin plugin, const string url)
 in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
@@ -658,6 +661,9 @@ in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
         A [std.json.JSONValue|JSONValue] with "`chatters`" and "`chatter_count`" keys.
         If nothing was found, an empty [std.json.JSONValue|JSONValue].init is
         returned instead.
+
+    Throws:
+        [TwitchQueryException] on unexpected JSON.
  +/
 auto getChatters(TwitchPlugin plugin, const string broadcaster)
 in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
@@ -1553,6 +1559,9 @@ in (Fiber.getThis, "Tried to call `getPolls` from outside a Fiber")
         A [std.json.JSONValue|JSONValue] [std.json.JSONType.array|array] with
         the response returned when creating the poll. On failure, an empty
         [std.json.JSONValue|JSONValue] is instead returned.
+
+    Throws:
+        [TwitchQueryException] on unexpected JSON.
  +/
 auto createPoll(
     TwitchPlugin plugin,
@@ -1668,6 +1677,9 @@ in (Fiber.getThis, "Tried to call `createPoll` from outside a Fiber")
         A [std.json.JSONValue|JSONValue] [std.json.JSONType.array|array] with
         the response returned when ending the poll. On failure, an empty
         [std.json.JSONValue|JSONValue] is instead returned.
+
+    Throws:
+        [TwitchQueryException] on unexpected JSON.
  +/
 auto endPoll(
     TwitchPlugin plugin,
