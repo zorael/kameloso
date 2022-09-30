@@ -515,6 +515,8 @@ void onCommandStart(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     void periodicalChattersCheckDg()
     {
+        const botBlacklist = getBotList(plugin);
+
         uint addedSinceLastRehash;
 
         while (room.broadcast.active && plugin.useAPIFeatures)
@@ -523,7 +525,6 @@ void onCommandStart(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             import std.json : JSONType;
 
             immutable chattersJSON = getChatters(plugin, room.broadcasterName);
-            const botBlacklist = getBotList(plugin);
 
             static immutable chatterTypes =
             [
