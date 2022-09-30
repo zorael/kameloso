@@ -537,7 +537,7 @@ auto sendHTTPRequestImpl(
         if (caBundleFile.length) client.setClientCertificate(caBundleFile, caBundleFile);
     }
 
-    client.authorization = authHeader;
+    if (authHeader.length) client.authorization = authHeader;
 
     QueryResponse response;
     auto pre = Clock.currTime;
