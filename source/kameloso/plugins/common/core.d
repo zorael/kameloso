@@ -1494,7 +1494,7 @@ mixin template IRCPluginImpl(
                     hasUDA!(typeof(this.tupleof[i]), Settings)))
             {
                 success = symbol.setMemberByName(setting, value);
-                if (success) break;
+                break;
             }
         }
 
