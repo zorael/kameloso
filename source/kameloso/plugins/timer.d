@@ -802,7 +802,7 @@ auto createTimerFiber(
     import kameloso.constants : BufferSize;
     import core.thread : Fiber;
 
-    void dg()
+    void createTimerDg()
     {
         import std.datetime.systime : Clock;
 
@@ -950,7 +950,7 @@ auto createTimerFiber(
         }
     }
 
-    return new Fiber(&dg, BufferSize.fiberStack);
+    return new Fiber(&createTimerDg, BufferSize.fiberStack);
 }
 
 

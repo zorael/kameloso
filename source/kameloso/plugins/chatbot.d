@@ -299,10 +299,13 @@ void worker(
     .onEvent(IRCEvent.Type.CHAN)
     .permissionsRequired(Permissions.anyone)
     .channelPolicy(ChannelPolicy.home)
+    .fiber(true)
 )
 void onDance(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
 {
+    import kameloso.plugins.common.delayawait : delay;
     import kameloso.constants : BufferSize;
+    import kameloso.messaging : emote;
     import kameloso.thread : ScheduledFiber;
     import std.string : indexOf;
     import core.thread : Fiber;
@@ -317,30 +320,26 @@ void onDance(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
     }
     else if (event.content.length > (dancePos+5))
     {
-        import std.algorithm.comparison : among;
-        immutable trailing = event.content[dancePos+5];
-        if (!trailing.among!(' ', '!', '.', '?')) return;
+        string trailing = event.content[dancePos+5..$];  // mutable
+
+        while (trailing.length)
+        {
+            import std.algorithm.comparison : among;
+            if (!trailing[0].among!(' ', '!', '.', '?')) return;
+            trailing = trailing[1..$];
+        }
     }
 
     // Should dance. Stagger it a bit with a second in between.
     static immutable timeBetweenDances = 1.seconds;
 
-    void danceDg()
-    {
-        import kameloso.plugins.common.delayawait : delay;
-        import kameloso.messaging : emote;
+    emote(plugin.state, event.channel, "dances :D-<");
+    delay(plugin, timeBetweenDances, Yes.yield);
 
-        emote(plugin.state, event.channel, "dances :D-<");
-        delay(plugin, timeBetweenDances, Yes.yield);
+    emote(plugin.state, event.channel, "dances :D|-<");
+    delay(plugin, timeBetweenDances, Yes.yield);
 
-        emote(plugin.state, event.channel, "dances :D|-<");
-        delay(plugin, timeBetweenDances, Yes.yield);
-
-        emote(plugin.state, event.channel, "dances :D/-<");
-    }
-
-    Fiber danceFiber = new Fiber(&danceDg, BufferSize.fiberStack);
-    danceFiber.call();
+    emote(plugin.state, event.channel, "dances :D/-<");
 }
 
 
