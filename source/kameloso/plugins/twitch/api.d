@@ -379,7 +379,7 @@ void persistentQuerier(shared QueryResponse[int] bucket, const string caBundleFi
 QueryResponse sendHTTPRequest(
     TwitchPlugin plugin,
     const string url,
-    const string authorisationHeader,
+    const string authorisationHeader = string.init,
     /*const*/ HttpVerb verb = HttpVerb.GET,
     /*const*/ ubyte[] body_ = null,
     const string contentType = string.init,
@@ -1789,7 +1789,7 @@ auto getBotList(TwitchPlugin plugin)
     import std.json : JSONType, parseJSON;
 
     enum url = "https://api.twitchinsights.net/v1/bots/online";
-    immutable response = sendHTTPRequest(plugin, url, string.init);
+    immutable response = sendHTTPRequest(plugin, url);
     immutable responseJSON = parseJSON(response.str);
 
     /*
