@@ -1015,18 +1015,18 @@ auto mainLoop(ref Kameloso instance)
             }
         }
 
-        if (instance.wantReceiveTimeoutShortened)
-        {
-            // Set the timestamp and unset the bool
-            instance.wantReceiveTimeoutShortened = false;
-            timeWhenReceiveWasShortened = nowInHnsecs;
-        }
-
         if (timeWhenReceiveWasShortened &&
             (nowInHnsecs > (timeWhenReceiveWasShortened + maxShortenDurationHnsecs)))
         {
             // Shortened duration passed, reset timestamp to disable it
             timeWhenReceiveWasShortened = 0L;
+        }
+
+        if (instance.wantReceiveTimeoutShortened)
+        {
+            // Set the timestamp and unset the bool
+            instance.wantReceiveTimeoutShortened = false;
+            timeWhenReceiveWasShortened = nowInHnsecs;
         }
 
         if ((timeoutFromMessages < uint.max) || nextGlobalScheduledTimestamp ||
