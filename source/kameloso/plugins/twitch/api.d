@@ -314,13 +314,24 @@ void persistentQuerier(shared QueryResponse[int] bucket, const string caBundleFi
             (int id, string url, string authToken, HttpVerb verb,
                 immutable(ubyte)[] body_, string contentType) scope
             {
-                invokeSendHTTPRequestImpl(id, url, authToken, verb, body_, contentType);
+                invokeSendHTTPRequestImpl(
+                    id,
+                    url,
+                    authToken,
+                    verb,
+                    body_,
+                    contentType);
             },
             (int id, string url, string authToken) scope
             {
                 // Shorthand
-                invokeSendHTTPRequestImpl(id, url, authToken, HttpVerb.GET,
-                    cast(immutable(ubyte)[])null, string.init);
+                invokeSendHTTPRequestImpl(
+                    id,
+                    url,
+                    authToken,
+                    HttpVerb.GET,
+                    cast(immutable(ubyte)[])null,
+                    string.init);
             },
             (ThreadMessage message) scope
             {
@@ -404,7 +415,14 @@ in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
 
     immutable pre = Clock.currTime;
     if (id == -1) id = getUniqueNumericalID(plugin.bucket);
-    plugin.persistentWorkerTid.send(id, url, authorisationHeader, verb, body_.idup, contentType);
+
+    plugin.persistentWorkerTid.send(
+        id,
+        url,
+        authorisationHeader,
+        verb,
+        body_.idup,
+        contentType);
 
     delay(plugin, plugin.approximateQueryTime.msecs, Yes.yield);
     immutable response = waitForQueryResponse(plugin, id);
@@ -441,8 +459,15 @@ in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
     }
     else if ((response.code >= 500) && !recursing)
     {
-        return sendHTTPRequest(plugin, url, authorisationHeader, verb,
-            body_, contentType, id, Yes.recursing);
+        return sendHTTPRequest(
+            plugin,
+            url,
+            authorisationHeader,
+            verb,
+            body_,
+            contentType,
+            id,
+            Yes.recursing);
     }
     else if (response.code >= 400)
     {

@@ -479,7 +479,15 @@ in (Fiber.getThis, "Tried to call `addVideoToSpotifyPlaylist` from outside a Fib
     immutable ubyte[] data;
     /*immutable*/ int id = getUniqueNumericalID(plugin.bucket);  // Making immutable bumps compilation memory +44mb
     plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout());
-    plugin.persistentWorkerTid.send(id, url, authorizationBearer, HttpVerb.POST, data, string.init);
+
+    plugin.persistentWorkerTid.send(
+        id,
+        url,
+        authorizationBearer,
+        HttpVerb.POST,
+        data,
+        string.init);
+
     static immutable guesstimatePeriodToWaitForCompletion = 300.msecs;
     delay(plugin, guesstimatePeriodToWaitForCompletion, Yes.yield);
     immutable response = waitForQueryResponse(plugin, id);
