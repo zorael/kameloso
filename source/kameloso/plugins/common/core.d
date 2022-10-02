@@ -646,7 +646,7 @@ mixin template IRCPluginImpl(
                         import std.format : format;
 
                         enum pattern = "`%s` has a `%s` event handler annotated `.fiber(true)`" ~
-                            "that takes an `IRCEvent` by `ref`, which doesn't work in release builds";
+                            "that takes an `IRCEvent` by `ref`, which is prone to memory corruption";
                         static assert(0, pattern.format(module_, Fun.stringof));
                     }
                 }
