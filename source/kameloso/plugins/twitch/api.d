@@ -978,9 +978,12 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
     immutable responseAdjusted = min(responseMsecs, (current + maxDeltaToResponse));
     immutable average = ((weight * current) + (responseAdjusted + padding)) / (weight + 1);
 
-    /*import std.stdio;
-    writefln("time:%s | response: %d~%d (+%d) | new average:%s",
-        current, responseMsecs, responseAdjusted, padding, average);*/
+    version(BenchmarkHTTPRequests)
+    {
+        import std.stdio : writefln;
+        writefln("time:%s | response: %d~%d (+%d) | new average:%s",
+            current, responseMsecs, responseAdjusted, padding, average);
+    }
 
     plugin.approximateQueryTime = cast(long)average;
 }
