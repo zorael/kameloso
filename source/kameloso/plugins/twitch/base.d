@@ -514,8 +514,6 @@ void onCommandStart(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         chan(plugin.state, event.channel, "Broadcast start registered!");
     }
 
-    const botBlacklist = getBotList(plugin);
-
     uint addedSinceLastRehash;
 
     while (room.broadcast.active && plugin.useAPIFeatures)
@@ -523,6 +521,7 @@ void onCommandStart(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         import kameloso.plugins.common.delayawait : delay;
         import std.json : JSONType;
 
+        const botBlacklist = getBotList(plugin);
         immutable chattersJSON = getChatters(plugin, room.broadcasterName);
 
         static immutable chatterTypes =
