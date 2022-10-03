@@ -434,6 +434,7 @@ void onCommandUptime(TwitchPlugin plugin, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.CHAN)
     .permissionsRequired(Permissions.operator)
     .channelPolicy(ChannelPolicy.home)
+    .fiber(true)
     .addCommand(
         IRCEventHandler.Command()
             .word("start")
@@ -513,98 +514,91 @@ void onCommandStart(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         chan(plugin.state, event.channel, "Broadcast start registered!");
     }
 
-    void periodicalChattersCheckDg()
+    const botBlacklist = getBotList(plugin);
+
+    uint addedSinceLastRehash;
+
+    while (room.broadcast.active && plugin.useAPIFeatures)
     {
-        const botBlacklist = getBotList(plugin);
+        import kameloso.plugins.common.delayawait : delay;
+        import std.json : JSONType;
 
-        uint addedSinceLastRehash;
+        immutable chattersJSON = getChatters(plugin, room.broadcasterName);
 
-        while (room.broadcast.active && plugin.useAPIFeatures)
+        static immutable chatterTypes =
+        [
+            "admins",
+            //"broadcaster",
+            "global_mods",
+            "moderators",
+            "staff",
+            "viewers",
+            "vips",
+        ];
+
+        uint chatterCount;
+
+        foreach (immutable chatterType; chatterTypes)
         {
-            import kameloso.plugins.common.delayawait : delay;
-            import std.json : JSONType;
-
-            immutable chattersJSON = getChatters(plugin, room.broadcasterName);
-
-            static immutable chatterTypes =
-            [
-                "admins",
-                //"broadcaster",
-                "global_mods",
-                "moderators",
-                "staff",
-                "viewers",
-                "vips",
-            ];
-
-            uint chatterCount;
-
-            foreach (immutable chatterType; chatterTypes)
+            foreach (immutable viewerJSON; chattersJSON["chatters"][chatterType].array)
             {
-                foreach (immutable viewerJSON; chattersJSON["chatters"][chatterType].array)
+                import std.algorithm.searching : canFind, endsWith;
+
+                immutable viewer = viewerJSON.str;
+
+                if (viewer.endsWith("bot") ||
+                    botBlacklist.canFind(viewer) ||
+                    (viewer == plugin.state.client.nickname))
                 {
-                    import std.algorithm.searching : canFind, endsWith;
+                    continue;
+                }
 
-                    immutable viewer = viewerJSON.str;
+                room.broadcast.chattersSeen[viewer] = true;
+                ++chatterCount;
 
-                    if (viewer.endsWith("bot") ||
-                        botBlacklist.canFind(viewer) ||
-                        (viewer == plugin.state.client.nickname))
+                // continue early if we shouldn't monitor watchtime
+                if (!plugin.twitchSettings.watchtime) continue;
+
+                // Exclude lurkers from watchtime monitoring
+                if (viewer !in room.broadcast.activeViewers) continue;
+
+                static immutable periodicitySeconds = plugin.chattersCheckPeriodicity.total!"seconds";
+
+                if (auto channelViewerTimes = event.channel in plugin.viewerTimesByChannel)
+                {
+                    if (auto viewerTime = viewer in *channelViewerTimes)
                     {
-                        continue;
-                    }
-
-                    room.broadcast.chattersSeen[viewer] = true;
-                    ++chatterCount;
-
-                    // continue early if we shouldn't monitor watchtime
-                    if (!plugin.twitchSettings.watchtime) continue;
-
-                    // Exclude lurkers from watchtime monitoring
-                    if (viewer !in room.broadcast.activeViewers) continue;
-
-                    static immutable periodicitySeconds = plugin.chattersCheckPeriodicity.total!"seconds";
-
-                    if (auto channelViewerTimes = event.channel in plugin.viewerTimesByChannel)
-                    {
-                        if (auto viewerTime = viewer in *channelViewerTimes)
-                        {
-                            *viewerTime += periodicitySeconds;
-                        }
-                        else
-                        {
-                            (*channelViewerTimes)[viewer] = periodicitySeconds;
-                            ++addedSinceLastRehash;
-
-                            if ((addedSinceLastRehash > 128) &&
-                                (addedSinceLastRehash > channelViewerTimes.length))
-                            {
-                                // channel-viewer times AA doubled in size; rehash
-                                *channelViewerTimes = (*channelViewerTimes).rehash();
-                                addedSinceLastRehash = 0;
-                            }
-                        }
+                        *viewerTime += periodicitySeconds;
                     }
                     else
                     {
-                        plugin.viewerTimesByChannel[event.channel][viewer] = periodicitySeconds;
+                        (*channelViewerTimes)[viewer] = periodicitySeconds;
                         ++addedSinceLastRehash;
+
+                        if ((addedSinceLastRehash > 128) &&
+                            (addedSinceLastRehash > channelViewerTimes.length))
+                        {
+                            // channel-viewer times AA doubled in size; rehash
+                            *channelViewerTimes = (*channelViewerTimes).rehash();
+                            addedSinceLastRehash = 0;
+                        }
                     }
                 }
+                else
+                {
+                    plugin.viewerTimesByChannel[event.channel][viewer] = periodicitySeconds;
+                    ++addedSinceLastRehash;
+                }
             }
-
-            if (chatterCount > room.broadcast.maxConcurrentChatters)
-            {
-                room.broadcast.maxConcurrentChatters = chatterCount;
-            }
-
-            delay(plugin, plugin.chattersCheckPeriodicity, Yes.yield);
         }
-    }
 
-    Fiber chattersCheckFiber =
-        new Fiber(&twitchTryCatchDg!periodicalChattersCheckDg, BufferSize.fiberStack);
-    chattersCheckFiber.call();
+        if (chatterCount > room.broadcast.maxConcurrentChatters)
+        {
+            room.broadcast.maxConcurrentChatters = chatterCount;
+        }
+
+        delay(plugin, plugin.chattersCheckPeriodicity, Yes.yield);
+    }
 }
 
 
@@ -1239,6 +1233,7 @@ void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.CHAN)
     .permissionsRequired(Permissions.anyone)
     .channelPolicy(ChannelPolicy.home)
+    .fiber(true)
     .addCommand(
         IRCEventHandler.Command()
             .word("songrequest")
@@ -1348,30 +1343,24 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             return;
         }
 
-        void addVideoDg()
+        try
         {
-            try
-            {
-                import kameloso.plugins.twitch.google : addVideoToYouTubePlaylist;
+            import kameloso.plugins.twitch.google : addVideoToYouTubePlaylist;
 
-                immutable json = addVideoToYouTubePlaylist(plugin, *creds, videoID);
-                immutable title = json["snippet"]["title"].str;
-                //immutable position = json["snippet"]["position"].integer;
+            immutable json = addVideoToYouTubePlaylist(plugin, *creds, videoID);
+            immutable title = json["snippet"]["title"].str;
+            //immutable position = json["snippet"]["position"].integer;
 
-                enum pattern = "%s added to playlist.";
-                immutable message = pattern.format(title);
-                chan(plugin.state, event.channel, message);
-            }
-            catch (ErrorJSONException e)
-            {
-                enum message = "Invalid YouTube video URL.";
-                chan(plugin.state, event.channel, message);
-            }
-            // Let other exceptions fall down to twitchTryCatchDg
+            enum pattern = "%s added to playlist.";
+            immutable message = pattern.format(title);
+            chan(plugin.state, event.channel, message);
         }
-
-        Fiber addVideoFiber = new Fiber(&twitchTryCatchDg!addVideoDg, BufferSize.fiberStack);
-        addVideoFiber.call();
+        catch (ErrorJSONException e)
+        {
+            enum message = "Invalid YouTube video URL.";
+            chan(plugin.state, event.channel, message);
+        }
+        // Let other exceptions fall down to twitchTryCatchDg
     }
     else if (plugin.twitchSettings.songrequestMode == SongRequestMode.spotify)
     {
@@ -1424,39 +1413,33 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             return;
         }
 
-        void addTrackDg()
+        try
         {
-            try
+            import kameloso.plugins.twitch.spotify : addTrackToSpotifyPlaylist, getSpotifyTrackByID;
+            import std.json : JSONType;
+
+            immutable json = addTrackToSpotifyPlaylist(plugin, *creds, trackID);
+
+            if ((json.type != JSONType.object)  || "snapshot_id" !in json)
             {
-                import kameloso.plugins.twitch.spotify : addTrackToSpotifyPlaylist, getSpotifyTrackByID;
-                import std.json : JSONType;
-
-                immutable json = addTrackToSpotifyPlaylist(plugin, *creds, trackID);
-
-                if ((json.type != JSONType.object)  || "snapshot_id" !in json)
-                {
-                    logger.error("An error occurred.\n", json.toPrettyString);
-                    return;
-                }
-
-                const trackJSON = getSpotifyTrackByID(*creds, trackID);
-                immutable artist = trackJSON["artists"].array[0].object["name"].str;
-                immutable track = trackJSON["name"].str;
-
-                enum pattern = "%s - %s added to playlist.";
-                immutable message = pattern.format(artist, track);
-                chan(plugin.state, event.channel, message);
+                logger.error("An error occurred.\n", json.toPrettyString);
+                return;
             }
-            catch (ErrorJSONException e)
-            {
-                enum message = "Invalid Spotify track URL.";
-                chan(plugin.state, event.channel, message);
-            }
-            // Let other exceptions fall down to twitchTryCatchDg
+
+            const trackJSON = getSpotifyTrackByID(*creds, trackID);
+            immutable artist = trackJSON["artists"].array[0].object["name"].str;
+            immutable track = trackJSON["name"].str;
+
+            enum pattern = "%s - %s added to playlist.";
+            immutable message = pattern.format(artist, track);
+            chan(plugin.state, event.channel, message);
         }
-
-        Fiber addTrackFiber = new Fiber(&twitchTryCatchDg!addTrackDg, BufferSize.fiberStack);
-        addTrackFiber.call();
+        catch (ErrorJSONException e)
+        {
+            enum message = "Invalid Spotify track URL.";
+            chan(plugin.state, event.channel, message);
+        }
+        // Let other exceptions fall down to twitchTryCatchDg
     }
 }
 
@@ -2452,6 +2435,7 @@ void start(TwitchPlugin plugin)
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_MYINFO)
+    .fiber(true)
 )
 void onMyInfo(TwitchPlugin plugin)
 {
@@ -2488,40 +2472,37 @@ void onMyInfo(TwitchPlugin plugin)
     // Load ecounts.
     plugin.reload();
 
-    // Periodically save ecounts and viewer times
-    void saveResourcesDg()
-    {
-        while (true)
-        {
-            if (plugin.twitchSettings.ecount && plugin.ecountDirty && plugin.ecount.length)
-            {
-                saveResourceToDisk(plugin.ecount, plugin.ecountFile);
-                plugin.ecountDirty = false;
-            }
+    // delay once before looping
+    delay(plugin, plugin.savePeriodicity, Yes.yield);
 
-            /+
-                Only save watchtimes if there's at least one broadcast currently ongoing.
-                Since we save at broadcast stop there won't be anything new to save otherwise.
-             +/
-            if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
+    // Periodically save ecounts and viewer times
+    while (true)
+    {
+        if (plugin.twitchSettings.ecount && plugin.ecountDirty && plugin.ecount.length)
+        {
+            saveResourceToDisk(plugin.ecount, plugin.ecountFile);
+            plugin.ecountDirty = false;
+        }
+
+        /+
+            Only save watchtimes if there's at least one broadcast currently ongoing.
+            Since we save at broadcast stop there won't be anything new to save otherwise.
+            +/
+        if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
+        {
+            foreach (const room; plugin.rooms)
             {
-                foreach (const room; plugin.rooms)
+                if (room.broadcast.active)
                 {
-                    if (room.broadcast.active)
-                    {
-                        // At least one broadcast active
-                        saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
-                        break;
-                    }
+                    // At least one broadcast active
+                    saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
+                    break;
                 }
             }
-
-            delay(plugin, plugin.savePeriodicity, Yes.yield);
         }
-    }
 
-    Fiber saveResourcesFiber = new Fiber(&saveResourcesDg, BufferSize.fiberStack);
-    delay(plugin, saveResourcesFiber, plugin.savePeriodicity);
+        delay(plugin, plugin.savePeriodicity, Yes.yield);
+    }
 }
 
 
