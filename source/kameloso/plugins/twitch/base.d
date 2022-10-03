@@ -113,11 +113,13 @@ public:
 }
 
 
-// SongRequestMode
+// SRM
 /++
     Song requests may be either disabled, or either in YouTube or Spotify mode.
+
+    `SongRequestMode` abbreviated to fit into `printObjects` output formatting.
  +/
-private enum SongRequestMode
+private enum SRM
 {
     /++
         Song requests are disabled.
@@ -135,6 +137,8 @@ private enum SongRequestMode
     spotify,
 }
 
+/// Alias to [SRM].
+alias SongRequestMode = SRM;
 
 private import kameloso.plugins.common.core;
 
