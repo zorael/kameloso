@@ -45,6 +45,12 @@ public:
     bool watchtime = true;
 
     /++
+        Whether or not to only count watchtime for users that has shown activity
+        in the channel. This makes it ignore silent lurkers.
+     +/
+    bool watchtimeExcludesLurkers = true;
+
+    /++
         What kind of song requests to accept, if any.
      +/
     SongRequestMode songrequestMode = SongRequestMode.youtube;
@@ -560,8 +566,11 @@ void onCommandStart(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
                 // continue early if we shouldn't monitor watchtime
                 if (!plugin.twitchSettings.watchtime) continue;
 
-                // Exclude lurkers from watchtime monitoring
-                if (viewer !in room.broadcast.activeViewers) continue;
+                if (plugin.twitchSettings.watchtimeExcludesLurkers)
+                {
+                    // Exclude lurkers from watchtime monitoring
+                    if (viewer !in room.broadcast.activeViewers) continue;
+                }
 
                 static immutable periodicitySeconds = plugin.chattersCheckPeriodicity.total!"seconds";
 
