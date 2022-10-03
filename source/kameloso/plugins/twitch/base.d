@@ -576,7 +576,7 @@ void onCommandStart(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
                     if (viewer !in room.broadcast.activeViewers) continue;
                 }
 
-                static immutable periodicitySeconds = plugin.chattersCheckPeriodicity.total!"seconds";
+                enum periodicitySeconds = plugin.chattersCheckPeriodicity.total!"seconds";
 
                 if (auto channelViewerTimes = event.channel in plugin.viewerTimesByChannel)
                 {
