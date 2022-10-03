@@ -461,8 +461,8 @@ void onCommandStart(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     void initBroadcast()
     {
-        room.broadcast = typeof(room.broadcast).init;
-        room.broadcast.active = true;
+        // Initialise a Broadcast with a new unique ID by using its constructor
+        room.broadcast = TwitchPlugin.Room.Broadcast(true);
     }
 
     if (event.content.length)
@@ -514,9 +514,11 @@ void onCommandStart(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         chan(plugin.state, event.channel, "Broadcast start registered!");
     }
 
+    immutable uniqueIDSnapshot = room.broadcast.uniqueID;
     uint addedSinceLastRehash;
 
-    while (room.broadcast.active && plugin.useAPIFeatures)
+    while (room.broadcast.active && plugin.useAPIFeatures &&
+        (room.broadcast.uniqueID == uniqueIDSnapshot))
     {
         import kameloso.plugins.common.delayawait : delay;
         import std.json : JSONType;
@@ -2966,6 +2968,10 @@ package:
         /// Aggregate of a broadcast.
         static struct Broadcast
         {
+        private:
+            uint privateUniqueID;
+
+        public:
             /// Whether or not the streamer is currently broadcasting.
             bool active;
 
@@ -2986,6 +2992,18 @@ package:
 
             /// Hashmap of active viewers (who have shown activity).
             bool[string] activeViewers;
+
+            /// Accessor for `privateUniqueID`.
+            auto uniqueID() const
+            {
+                return privateUniqueID;
+            }
+
+            /// Constructor.
+            this(const bool active)
+            {
+                this.active = active;
+            }
         }
 
         /// Constructor taking a string (channel) name.
