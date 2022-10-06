@@ -1055,9 +1055,20 @@ mixin template IRCPluginImpl(
             if (uda._fiber)
             {
                 import kameloso.constants : BufferSize;
+                import kameloso.thread : CarryingFiber;
                 import core.thread : Fiber;
-                auto fiber = new Fiber(() => call!(inFiber, SystemFun)(fun, event), BufferSize.fiberStack);
+
+                auto fiber = new CarryingFiber!IRCEvent(
+                    () => call!(inFiber, SystemFun)(fun, event),
+                    BufferSize.fiberStack);
+                fiber.payload = event;
                 fiber.call();
+
+                if (fiber.state == Fiber.State.TERM)
+                {
+                    // Ended immediately, so just destroy
+                    destroy(fiber);
+                }
             }
             else
             {
