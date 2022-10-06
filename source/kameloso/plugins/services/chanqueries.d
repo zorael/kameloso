@@ -97,7 +97,6 @@ void startChannelQueries(ChanQueriesService service)
     if (!querylist.length && !service.state.settings.eagerLookups) return;
 
     auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-    assert(thisFiber);
 
     service.querying = true;  // "Lock"
 

@@ -304,11 +304,8 @@ void worker(
 void onDance(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.plugins.common.delayawait : delay;
-    import kameloso.constants : BufferSize;
     import kameloso.messaging : emote;
-    import kameloso.thread : ScheduledFiber;
     import std.string : indexOf;
-    import core.thread : Fiber;
     import core.time : seconds;
 
     immutable dancePos = event.content.indexOf("DANCE");
