@@ -1021,7 +1021,7 @@ mixin template IRCPluginImpl(
                     {
                         // Unsure why we need to specifically specify IRCPlugin
                         // now despite typeof(this) being a subclass...
-                        enqueue(this, event, uda._permissionsRequired, fun, funName);
+                        enqueue(this, event, uda._permissionsRequired, uda._fiber, fun, funName);
                         return uda._chainable ? NextStep.continue_ : NextStep.return_;
                     }
                     else
