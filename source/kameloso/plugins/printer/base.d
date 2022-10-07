@@ -101,6 +101,9 @@ public:
     /// Whether or not to log non-home channels.
     bool logGuestChannels = false;
 
+    /// Whether or not to log private messages.
+    bool logPrivateMessages = true;
+
     @Unserialisable
     {
         /// Whether or not to send a terminal bell signal when the bot is mentioned in chat.

@@ -423,8 +423,11 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
         }
         else if (event.sender.nickname.length)
         {
-            // Implicitly not a channel; query
-            writeEventToFile(plugin, event, event.sender.nickname);
+            // Not a channel; query or other server-wide message
+            if (plugin.printerSettings.logPrivateMessages)
+            {
+                writeEventToFile(plugin, event, event.sender.nickname);
+            }
         }
         else if (plugin.printerSettings.logServer && !event.sender.nickname.length &&
             event.sender.address.length)
