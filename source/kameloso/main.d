@@ -714,6 +714,14 @@ void messageFiber(ref Kameloso instance)
             case error:
                 logger.error(request.line);
                 break;
+
+            case critical:
+                logger.critical(request.line);
+                break;
+
+            case fatal:
+                logger.fatal(request.line);
+                break;
             }
         }
 

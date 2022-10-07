@@ -1106,6 +1106,10 @@ alias askToWarn = askToOutputImpl!"warning";
 alias askToWarning = askToWarn;
 /// Sends a concurrency message to the main thread to `logger.error` text to the local terminal.
 alias askToError = askToOutputImpl!"error";
+/// Sends a concurrency message to the main thread to `logger.critical` text to the local terminal.
+alias askToCritical = askToOutputImpl!"critical";
+/// Sends a concurrency message to the main thread to `logger.fatal` text to the local terminal.
+alias askToFatal = askToOutputImpl!"fatal";
 
 unittest
 {
@@ -1120,10 +1124,11 @@ unittest
     state.askToInfo("info");
     state.askToWarn("warning");
     state.askToError("error");
+    state.askToCritical("critical");
 
     alias T = OutputRequest.Level;
 
-    static immutable T[6] expectedLevels =
+    static immutable T[7] expectedLevels =
     [
         T.writeln,
         T.trace,
@@ -1131,9 +1136,10 @@ unittest
         T.info,
         T.warning,
         T.error,
+        T.critical,
     ];
 
-    static immutable string[6] expectedMessages =
+    static immutable string[7] expectedMessages =
     [
         "writeln",
         "trace",
@@ -1141,6 +1147,7 @@ unittest
         "info",
         "warning",
         "error",
+        "critical",
     ];
 
     static assert(expectedLevels.length == expectedMessages.length);
