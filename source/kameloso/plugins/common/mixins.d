@@ -833,4 +833,35 @@ unittest
         askToWarning(string.init);
         askToError(string.init);
     }
+
+    class MyPlugin2 : IRCPlugin
+    {
+        mixin MessagingProxy fromMixin;
+        mixin IRCPluginImpl;
+    }
+
+    static import kameloso.messaging;
+
+    MyPlugin2 plugin2 = new MyPlugin2(state);
+
+    foreach (immutable funstring; __traits(derivedMembers, kameloso.messaging))
+    {
+        import lu.string : beginsWith;
+        import std.algorithm.comparison : among;
+
+        static if (funstring.among!(
+                "object",
+                "dialect",
+                "kameloso",
+                "Message") ||
+            funstring.beginsWith("askTo"))
+        {
+            //pragma(msg, "ignoring " ~ funstring);
+        }
+        else
+        {
+            enum message = "`MessageProxy` is missing a wrapper for `kameloso.messaging." ~ funstring ~ "`";
+            static assert(__traits(compiles, typeof(mixin("plugin2.fromMixin." ~ funstring))), message);
+        }
+    }
 }
