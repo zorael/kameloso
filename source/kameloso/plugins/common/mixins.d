@@ -761,6 +761,9 @@ private:
         return kameloso.messaging.immediate(state, line, quiet, caller);
     }
 
+    /// Merely an alias to [immediate], because we use both terms at different places.
+    alias immediateline = immediate;
+
 
     import std.meta : AliasSeq;
 
@@ -821,6 +824,7 @@ unittest
         whois(string.init, Yes.force, Yes.quiet, No.background);
         raw(string.init);
         immediate(string.init);
+        immediateline(string.init);
         askToWriteln(string.init);
         askToTrace(string.init);
         askToLog(string.init);
