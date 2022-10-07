@@ -10,8 +10,7 @@
 * saving notes to offline users that get played back when they come online
 * logs
 * bugs
-* channel polls, `!seen`, counters, oneliners, timed announcements, stopwatches, ...
-* automatic mode sets (e.g. auto `+o` on join)
+* channel polls, `!seen`, counters, oneliners, timed announcements, stopwatches, modesets, ...
 * some common [Twitch bot features](#twitch-bot)
 * [more random stuff and gimmicks](https://github.com/zorael/kameloso/wiki/Current-plugins)
 
@@ -326,7 +325,7 @@ The command **prefix** (here `!`) is configurable; refer to your configuration f
 prefix                      "!"
 ```
 
-It can technically be any string and not just one character. It may include spaces if enclosed within quotes, like `"please "` (making it `please note`, `please quote`, ...). Additionally, prefixing commands with the bot's nickname also always works, as in `kameloso: seen MrOffline`. This is to be able to disambiguate between several bots in the same channel. Some administrative commands only work when called this way.
+It can technically be any string and not just one character. It may include spaces if enclosed within quotes, like `"please "` (making it `please note`, `please quote`, ...). Additionally, prefixing commands with the bot's nickname also always works, as in `kameloso: seen MrOffline`. This is to be able to disambiguate between several bots in the same channel. Moreover, some administrative commands only work when called this way.
 
 ### **Except nothing happens**
 
@@ -437,7 +436,7 @@ Assuming a prefix of `!`, commands to test are:
 * `!settitle`
 * `!setgame`
 * `!commercial`
-* `!startpoll`/`!endpoll` (*highly* experimental, needs help from affiliate)
+* `!startpoll`/`!endpoll` (*highly* experimental, need help from affiliate)
 
 ...alongside `!oneliner`, `!counter`, `!timer`, `!poll` (chat poll), `!stopwatch`, and other non-Twitch-specific commands. Try `!help` or [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins).
 
@@ -455,7 +454,7 @@ Some functionality, such as setting the channel title or currently played game, 
 $ kameloso --set twitch.superKeygen
 ```
 
-> Mind that you need to be logged into Twitch (in your browser) with your main account while doing this, or the token obtained will be for the wrong channel.
+> Mind that you need to be logged into Twitch (in your browser) with your main account while doing this, or the token obtained will be with permissions for the wrong channel.
 
 ## Further help
 
@@ -470,7 +469,7 @@ If you still can't find what you're looking for, or if you have suggestions on h
 
 ## Windows
 
-**kameloso** uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard library for making secure connections in the Posix sphere (Linux, macOS, ...), but not so on Windows. If you run into errors about missing SSL libraries when attempting to connect on Windows, pass the `--get-openssl` flag to download and launch the installer for [**OpenSSL for Windows**](https://slproweb.com/products/Win32OpenSSL.html). Make sure to opt to install to Windows system directories when asked.
+**kameloso** uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard library for making secure connections in the Posix sphere (Linux, macOS, ...), but not so on Windows. If you run into errors about missing SSL libraries when attempting to connect on Windows, pass the `--get-openssl` flag to download and launch the installer for [**OpenSSL for Windows**](https://slproweb.com/products/Win32OpenSSL.html) **v1.1.\***. Make sure to opt to install to Windows system directories when asked.
 
 # Roadmap
 
