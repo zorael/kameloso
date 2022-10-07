@@ -891,7 +891,8 @@ unittest
         caller = String name of the calling function, or something else that gives context.
  +/
 void whois(Flag!"priority" priority = No.priority)
-    (IRCPluginState state, const string nickname,
+    (IRCPluginState state,
+    const string nickname,
     const Flag!"force" force = No.force,
     const Flag!"quiet" quiet = No.quiet,
     const Flag!"background" background = No.background,

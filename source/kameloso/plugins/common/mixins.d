@@ -297,7 +297,8 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             [object.Exception|Exception] if a success of failure function was to trigger
             in an impossible scenario, such as on WHOIS results on Twitch.
      +/
-    void enqueueAndWHOIS(const string nickname,
+    void enqueueAndWHOIS(
+        const string nickname,
         const Flag!"issueWhois" issueWhois = Yes.issueWhois,
         const Flag!"background" background = No.background)
     {
@@ -754,7 +755,8 @@ private:
         Sends raw text to the server, verbatim, bypassing all queues and
         throttling delays.
      +/
-    void immediate(const string line,
+    void immediate(
+        const string line,
         const Flag!"quiet" quiet = No.quiet,
         const string caller = __FUNCTION__)
     {
