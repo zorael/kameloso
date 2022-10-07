@@ -1122,21 +1122,21 @@ else
 {
     /// Sends a concurrency message to the main thread asking to print text to the local terminal.
     alias askToWriteln = askToOutputImpl!"writeln";
-    /// Sends a concurrency message to the main thread to `logger.trace` text to the local terminal.
+    /// Sends a concurrency message to the main thread to [KamelosoLogger.trace] text to the local terminal.
     alias askToTrace = askToOutputImpl!"trace";
-    /// Sends a concurrency message to the main thread to `logger.log` text to the local terminal.
+    /// Sends a concurrency message to the main thread to [KamelosoLogger.log] text to the local terminal.
     alias askToLog = askToOutputImpl!"log";
-    /// Sends a concurrency message to the main thread to `logger.info` text to the local terminal.
+    /// Sends a concurrency message to the main thread to [KamelosoLogger.info] text to the local terminal.
     alias askToInfo = askToOutputImpl!"info";
-    /// Sends a concurrency message to the main thread to `logger.warning` text to the local terminal.
+    /// Sends a concurrency message to the main thread to [KamelosoLogger.warning] text to the local terminal.
     alias askToWarn = askToOutputImpl!"warning";
     /// Simple alias to [askToWarn], because both spellings are right.
     alias askToWarning = askToWarn;
-    /// Sends a concurrency message to the main thread to `logger.error` text to the local terminal.
+    /// Sends a concurrency message to the main thread to [KamelosoLogger.error] text to the local terminal.
     alias askToError = askToOutputImpl!"error";
-    /// Sends a concurrency message to the main thread to `logger.critical` text to the local terminal.
+    /// Sends a concurrency message to the main thread to [KamelosoLogger.critical] text to the local terminal.
     alias askToCritical = askToOutputImpl!"critical";
-    /// Sends a concurrency message to the main thread to `logger.fatal` text to the local terminal.
+    /// Sends a concurrency message to the main thread to [KamelosoLogger.fatal] text to the local terminal.
     alias askToFatal = askToOutputImpl!"fatal";
 }
 
