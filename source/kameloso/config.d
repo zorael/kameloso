@@ -261,18 +261,18 @@ void manageConfigFile(
         {
             version(Windows)
             {
-                enum pattern = "Missing <l>%EDITOR%</> environment variable; cannot guess editor.";
+                enum message = "Missing <l>%EDITOR%</> environment variable; cannot guess editor.";
             }
             else version(Posix)
             {
-                enum pattern = "Missing <l>$EDITOR</> environment variable; cannot guess editor.";
+                enum message = "Missing <l>$EDITOR</> environment variable; cannot guess editor.";
             }
             else
             {
                 static assert(0, "Unsupported platform, please file a bug.");
             }
 
-            logger.error(pattern);
+            logger.error(message);
             return;
         }
 
@@ -474,8 +474,11 @@ auto configurationText(const string configFile)
     }
     else if (!configFile.isFile)
     {
-        throw new FileTypeMismatchException("Configuration file is not a file",
-            configFile, cast(ushort)getAttributes(configFile), __FILE__);
+        throw new FileTypeMismatchException(
+            "Configuration file is not a file",
+            configFile,
+            cast(ushort)getAttributes(configFile),
+            __FILE__);
     }
 
     try
@@ -492,8 +495,11 @@ auto configurationText(const string configFile)
     {
         // catch Exception instead of UTFException, just in case there are more
         // kinds of error than the normal "Invalid UTF-8 sequence".
-        throw new ConfigurationFileReadFailureException(e.msg, configFile,
-            __FILE__, __LINE__);
+        throw new ConfigurationFileReadFailureException(
+            e.msg,
+            configFile,
+            __FILE__,
+            __LINE__);
     }
 }
 
