@@ -299,13 +299,14 @@ void worker(
     .onEvent(IRCEvent.Type.CHAN)
     .permissionsRequired(Permissions.anyone)
     .channelPolicy(ChannelPolicy.home)
-    .fiber(true)
 )
 void onDance(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.plugins.common.delayawait : delay;
+    import kameloso.constants : BufferSize;
     import kameloso.messaging : emote;
     import std.string : indexOf;
+    import core.thread : Fiber;
     import core.time : seconds;
 
     immutable dancePos = event.content.indexOf("DANCE");
@@ -330,13 +331,22 @@ void onDance(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
     // Should dance. Stagger it a bit with a second in between.
     static immutable timeBetweenDances = 1.seconds;
 
-    emote(plugin.state, event.channel, "dances :D-<");
-    delay(plugin, timeBetweenDances, Yes.yield);
+    void danceDg()
+    {
+        import kameloso.plugins.common.delayawait : delay;
+        import kameloso.messaging : emote;
 
-    emote(plugin.state, event.channel, "dances :D|-<");
-    delay(plugin, timeBetweenDances, Yes.yield);
+        emote(plugin.state, event.channel, "dances :D-<");
+        delay(plugin, timeBetweenDances, Yes.yield);
 
-    emote(plugin.state, event.channel, "dances :D/-<");
+        emote(plugin.state, event.channel, "dances :D|-<");
+        delay(plugin, timeBetweenDances, Yes.yield);
+
+        emote(plugin.state, event.channel, "dances :D/-<");
+    }
+
+    Fiber danceFiber = new Fiber(&danceDg, BufferSize.fiberStack);
+    danceFiber.call();
 }
 
 
