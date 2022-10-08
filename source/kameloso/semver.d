@@ -12,7 +12,7 @@ enum KamelosoSemVer
 {
     majorVersion = 3,  /// SemVer major version of the program.
     minorVersion = 4,  /// SemVer minor version of the program.
-    patchVersion = 0,  /// SemVer patch version of the program.
+    patchVersion = 1,  /// SemVer patch version of the program.
 }
 
 
