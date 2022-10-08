@@ -180,7 +180,7 @@ void writeConfig(
     if (!instance.settings.headless)
     {
         printObjects(client, instance.bot, server, instance.connSettings, instance.settings);
-        enum pattern = "Configuration written to <l>%s";
+        enum pattern = "Configuration written to <i>%s";
         logger.logf(pattern, instance.settings.configFile);
 
         if (!instance.bot.admins.length && !instance.bot.homeChannels.length && giveInstructions)
