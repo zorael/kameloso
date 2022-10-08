@@ -115,12 +115,12 @@ void writeConfig(
     import kameloso.printing : printObjects;
     import std.file : exists;
     import std.path : buildNormalizedPath, expandTilde;
-    import std.stdio : writeln;
 
     // --save was passed; write configuration to file and quit
 
     if (!instance.settings.headless)
     {
+        import std.stdio : writeln;
         printVersionInfo();
         writeln();
         if (instance.settings.flush) stdout.flush();
@@ -134,39 +134,35 @@ void writeConfig(
     // string, and having it there would enforce the default string if none present.
     if (!instance.bot.quitReason.length) instance.bot.quitReason = KamelosoDefaults.quitReason;
 
-    immutable defaultResourceDir = buildNormalizedPath(rbd, "kameloso");
-
     // Copied from kameloso.main.resolvePaths
     version(Windows)
     {
         import std.string : replace;
-        immutable resolvedResourceDir = instance.parser.server.address.length ?
-            buildNormalizedPath(
-                defaultResourceDir,
-                "server",
-                instance.parser.server.address.replace(':', '_')) :
-            string.init;
+        immutable escapedServerDirName = instance.parser.server.address.replace(':', '_');
     }
     else version(Posix)
     {
-        immutable resolvedResourceDir = instance.parser.server.address.length ?
-            buildNormalizedPath(
-                defaultResourceDir,
-                "server",
-                instance.parser.server.address) :
-            string.init;
+        immutable escapedServerDirName = instance.parser.server.address;
     }
     else
     {
         static assert(0, "Unsupported platform, please file a bug.");
     }
 
-    if ((instance.settings.resourceDirectory == defaultResourceDir) ||
-        (resolvedResourceDir.length &&
-            (instance.settings.resourceDirectory.expandTilde() == resolvedResourceDir)))
+    immutable defaultResourceHomeDir = buildNormalizedPath(rbd, "kameloso");
+    immutable settingsResourceDir = instance.settings.resourceDirectory.expandTilde();
+    immutable defaultFullServerResourceDir = escapedServerDirName.length ?
+        buildNormalizedPath(
+            defaultResourceHomeDir,
+            "server",
+            escapedServerDirName) :
+        string.init;
+
+    if ((settingsResourceDir == defaultResourceHomeDir) ||
+        (settingsResourceDir == defaultFullServerResourceDir))
     {
-        // If the resource directory is the default, write it out as empty
-        // Likewise if it is what would be automatically inferred
+        // If the resource directory is the default (unset),
+        // or if it is what would be automatically inferred, write it out as empty
         instance.settings.resourceDirectory = string.init;
     }
 
