@@ -1051,7 +1051,7 @@ mixin template IRCPluginImpl(
             {
                 mixin("alias SystemFun = " ~ Fun.stringof[0..$-6] ~ " @system;");
             }
-            else /*static if (Fun.stringof[$-7..$] == "@system")*/
+            else
             {
                 alias SystemFun = Fun;
             }
@@ -1268,6 +1268,7 @@ mixin template IRCPluginImpl(
         enum isEarlyFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.early);
         enum isLateFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.late);
         enum isCleanupFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.cleanup);
+
         alias hasSpecialTiming = templateOr!(isSetupFun, isEarlyFun,
             isLateFun, isCleanupFun);
         alias isNormalEventHandler = templateNot!hasSpecialTiming;
