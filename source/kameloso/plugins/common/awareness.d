@@ -53,8 +53,6 @@ import std.typecons : Flag, No, Yes;
 
 public:
 
-@safe:
-
 
 // MinimalAuthentication
 /++
@@ -271,8 +269,6 @@ mixin template UserAwareness(
         mixin MinimalAuthentication!(debug_, module_);
     }
 
-
-@safe:
 
     // onUserAwarenessQuitMixin
     /++
@@ -705,8 +701,6 @@ mixin template ChannelAwareness(
         static assert(0, pattern.format(module_));
     }
 
-
-@safe:
 
     // onChannelAwarenessSelfjoinMixin
     /++
@@ -1425,8 +1419,6 @@ mixin template TwitchAwareness(
         static assert(0, pattern.format(module_));
     }
 
-
-@safe:
 
     // onTwitchAwarenessSenderCarryingEventMixin
     /++
