@@ -499,6 +499,7 @@ mixin template IRCPluginImpl(
     {
         mixin("static import thisModule = ", module_, ";");
 
+        // udaSanityCheck
         /++
             Verifies that annotations are as expected.
          +/
@@ -621,6 +622,7 @@ mixin template IRCPluginImpl(
             return true;
         }
 
+        // call
         /++
             Calls the passed function pointer, appropriately.
          +/
@@ -732,6 +734,7 @@ mixin template IRCPluginImpl(
             }
         }
 
+        // NextStep
         /++
             Signal up the callstack of what to do next.
          +/
@@ -743,6 +746,7 @@ mixin template IRCPluginImpl(
             return_,
         }
 
+        // process
         /++
             Process a function.
          +/
@@ -1089,7 +1093,10 @@ mixin template IRCPluginImpl(
             }
         }
 
-        /// Sanitise and try again once on UTF/Unicode exceptions
+        // sanitiseEvent
+        /++
+            Sanitise event, used upon UTF/Unicode exceptions.
+         +/
         static void sanitiseEvent(ref IRCEvent event)
         {
             import std.encoding : sanitize;
@@ -1119,7 +1126,10 @@ mixin template IRCPluginImpl(
             }
         }
 
-        /// Wrap all the functions in the passed `funlist` in try-catch blocks.
+        // tryProcess
+        /++
+            Wrap all the functions in the passed `funlist` in try-catch blocks.
+         +/
         void tryProcess(funlist...)(ref IRCEvent event)
         {
             static if (__VERSION__ < 2096L)
