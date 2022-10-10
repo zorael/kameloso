@@ -85,21 +85,12 @@ mixin template MinimalAuthentication(
     private import kameloso.plugins.common.misc : ModulePluginName;
     private static import kameloso.plugins.common.awareness;
 
-    static if (__traits(compiles, .hasMinimalAuthentication))
-    {
-        private import std.format : format;
-        private enum pattern = "Double mixin of `%s` in `%s`";
-        static assert(0, pattern.format("MinimalAuthentication", module_));
-    }
-    else
-    {
-        /++
-            Flag denoting that
-            [kameloso.plugins.common.awareness.MinimalAuthentication|MinimalAuthentication]
-            has been mixed in.
-         +/
-        package enum hasMinimalAuthentication = true;
-    }
+    /++
+        Flag denoting that
+        [kameloso.plugins.common.awareness.MinimalAuthentication|MinimalAuthentication]
+        has been mixed in.
+     +/
+    package enum hasMinimalAuthentication = true;
 
     mixin("private alias Plugin = " ~ ModulePluginName!module_ ~ ";");
     mixin kameloso.plugins.common.awareness.MinimalAuthenticationImpl!(Plugin, debug_, module_);
@@ -277,21 +268,12 @@ mixin template UserAwareness(
     private import kameloso.plugins.common.misc : ModulePluginName;
     private static import kameloso.plugins.common.awareness;
 
-    static if (__traits(compiles, .hasUserAwareness))
-    {
-        private import std.format : format;
-        private enum pattern = "Double mixin of `%s` in `%s`";
-        static assert(0, pattern.format("UserAwareness", module_));
-    }
-    else
-    {
-        /++
-            Flag denoting that
-            [kameloso.plugins.common.awareness.UserAwareness|UserAwareness]
-            has been mixed in.
-         +/
-        package enum hasUserAwareness = true;
-    }
+    /++
+        Flag denoting that
+        [kameloso.plugins.common.awareness.UserAwareness|UserAwareness]
+        has been mixed in.
+     +/
+    package enum hasUserAwareness = true;
 
     static if (!__traits(compiles, .hasMinimalAuthentication))
     {
@@ -735,20 +717,11 @@ mixin template ChannelAwareness(
     private import kameloso.plugins.common.misc : ModulePluginName;
     private static import kameloso.plugins.common.awareness;
 
-    static if (__traits(compiles, .hasChannelAwareness))
-    {
-        private import std.format : format;
-        private enum pattern = "Double mixin of `%s` in `%s`";
-        static assert(0, pattern.format("ChannelAwareness", module_));
-    }
-    else
-    {
-        /++
-            Flag denoting that [kameloso.plugins.common.awareness.ChannelAwareness|ChannelAwareness]
-            has been mixed in.
-         +/
-        package enum hasChannelAwareness = true;
-    }
+    /++
+        Flag denoting that [kameloso.plugins.common.awareness.ChannelAwareness|ChannelAwareness]
+        has been mixed in.
+     +/
+    package enum hasChannelAwareness = true;
 
     mixin("private alias Plugin = " ~ ModulePluginName!module_ ~ ";");
     mixin kameloso.plugins.common.awareness.ChannelAwarenessImpl!(Plugin, channelPolicy, debug_, module_);
@@ -1483,20 +1456,11 @@ mixin template TwitchAwareness(
     private import kameloso.plugins.common.misc : ModulePluginName;
     private static import kameloso.plugins.common.awareness;
 
-    static if (__traits(compiles, .hasTwitchAwareness))
-    {
-        private import std.format : format;
-        private enum pattern = "Double mixin of `%s` in `%s`";
-        static assert(0, pattern.format("TwitchAwareness", module_));
-    }
-    else
-    {
-        /++
-            Flag denoting that [kameloso.plugins.common.awareness.TwitchAwareness|TwitchAwareness]
-            has been mixed in.
-         +/
-        package enum hasTwitchAwareness = true;
-    }
+    /++
+        Flag denoting that [kameloso.plugins.common.awareness.TwitchAwareness|TwitchAwareness]
+        has been mixed in.
+     +/
+    package enum hasTwitchAwareness = true;
 
     static if (!__traits(compiles, .hasChannelAwareness))
     {
@@ -1694,20 +1658,11 @@ mixin template TwitchAwareness(
     Flag!"debug_" debug_ = No.debug_,
     string module_ = __MODULE__)
 {
-    static if (__traits(compiles, .hasTwitchAwareness))
-    {
-        private import std.format : format;
-        private enum pattern = "Double mixin of `%s` in `%s`";
-        static assert(0, pattern.format("TwitchAwareness", module_));
-    }
-    else
-    {
-        /++
-            Flag denoting that [kameloso.plugins.common.awareness.TwitchAwareness|TwitchAwareness]
-            has been mixed in.
-         +/
-        package enum hasTwitchAwareness = true;
-    }
+    /++
+        Flag denoting that [kameloso.plugins.common.awareness.TwitchAwareness|TwitchAwareness]
+        has been mixed in.
+     +/
+    package enum hasTwitchAwareness = true;
 
     static if (!__traits(compiles, .hasChannelAwareness))
     {
