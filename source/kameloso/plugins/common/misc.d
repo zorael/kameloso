@@ -1045,3 +1045,35 @@ in (filename.length, "Empty plugin filename passed to `pluginFilenameSlicerImpl`
 
     return getPluginName ? slice[0..$-2] : slice;
 }
+
+
+// ModulePluginName
+/++
+    Introspects a module given a string of its fully qualified name, and aliases
+    itself to the name of the plugin class therein, as detected by looking for
+    [kameloso.plugins.common.core.IRCPlugin|IRCPlugin] subclasses annotated
+    [kameloso.plugins.common.core.IRCPluginHook|IRCPluginHook].
+
+    Params:
+        module_ = String name of a module.
+ +/
+enum ModulePluginName(string module_) = ()
+{
+    import lu.traits : getSymbolsByUDA;
+
+    mixin("import thisModule = " ~ module_ ~ ";");
+
+    alias hookedSymbols = getSymbolsByUDA!(thisModule, IRCPluginHook);
+
+    static if ((hookedSymbols.length == 1) && is(hookedSymbols[0] : IRCPlugin))
+    {
+        return __traits(identifier, hookedSymbols[0]);
+    }
+    else
+    {
+        import std.format : format;
+        enum pattern = "Bad `IRCPluginHook` annotations in module `%s`";
+        immutable message = pattern.format(module_);
+        static assert(0, message);
+    }
+}();
