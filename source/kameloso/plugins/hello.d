@@ -1,5 +1,4 @@
 module kameloso.plugins.hello;
-
 version(none):  // Remove to enable
 
 import kameloso.plugins.common;
