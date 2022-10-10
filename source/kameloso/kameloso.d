@@ -330,8 +330,9 @@ public:
     void initPlugins() @system
     {
         import kameloso.plugins : PluginModules;
-        import kameloso.plugins.common.core : IRCPluginState;
+        import kameloso.plugins.common.core : IRCPluginHook, IRCPluginState;
         import kameloso.plugins.common.misc : applyCustomSettings;
+        import lu.traits : getSymbolsByUDA;
         import std.concurrency : thisTid;
 
         teardownPlugins();
@@ -378,25 +379,17 @@ public:
                     mixin("import pluginModule = " ~ moduleName ~ ";");
                 }
 
-                foreach (member; __traits(allMembers, pluginModule))
+                foreach (Plugin; getSymbolsByUDA!(pluginModule, IRCPluginHook))
                 {
-                    static if (is(__traits(getMember, pluginModule, member) == class))
+                    static if (__traits(compiles, new Plugin(state)))
                     {
-                        alias Class = __traits(getMember, pluginModule, member);
-
-                        static if (is(Class : IRCPlugin))
-                        {
-                            static if (__traits(compiles, new Class(state)))
-                            {
-                                plugins ~= new Class(state);
-                            }
-                            else
-                            {
-                                import std.format : format;
-                                enum pattern = "`%s.%s` constructor does not compile";
-                                static assert(0, pattern.format(moduleName, Class.stringof));
-                            }
-                        }
+                        plugins ~= new Plugin(state);
+                    }
+                    else
+                    {
+                        import std.format : format;
+                        enum pattern = "`%s.%s` constructor does not compile";
+                        static assert(0, pattern.format(moduleName, Class.stringof));
                     }
                 }
             }
