@@ -246,9 +246,9 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
             {
                 if (service.state.server.daemon == IRCServer.Daemon.twitch)
                 {
-                    if (stored.class_ == IRCUser.Class.admin)
+                    if (!event.channel.length)
                     {
-                        // Admin is a sticky class and nothing special needs to be done.
+                        stored.badges = string.init;
                     }
                     else if (stored.badges.length && !user.badges.length)
                     {
@@ -355,7 +355,7 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
                     // This needs to be versioned becaused IRCUser.badges isn't
                     // available if not version TwitchSupport
                     stored.class_ = IRCUser.Class.anyone;
-                    if (!event.channel.length) stored.badges = string.init;
+                    //stored.badges = string.init;  // already done above on cache hit
                 }
             }
             else if (stored.account.length && (stored.account != "*"))
