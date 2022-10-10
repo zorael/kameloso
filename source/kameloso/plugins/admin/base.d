@@ -1462,6 +1462,7 @@ public:
 
     It was historically part of the [kameloso.plugins.chatbot.ChatbotPlugin|ChatbotPlugin].
  +/
+@IRCPluginHook
 final class AdminPlugin : IRCPlugin
 {
 package:

@@ -906,6 +906,7 @@ public:
 
     It was historically part of [kameloso.plugins.chatbot.ChatbotPlugin|ChatbotPlugin].
  +/
+@IRCPluginHook
 final class QuotesPlugin : IRCPlugin
 {
 private:

@@ -625,6 +625,7 @@ public:
     The Notes plugin, which allows people to leave messages to each other,
     for offline communication and such.
  +/
+@IRCPluginHook
 final class NotesPlugin : IRCPlugin
 {
 private:
