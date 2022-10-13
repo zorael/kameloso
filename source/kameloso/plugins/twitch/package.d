@@ -18,5 +18,5 @@ import kameloso.plugins.twitch.api;
 //import kameloso.plugins.twitch.keygen;  // Only necessary from within onCAP
 //import kameloso.plugins.twitch.google;
 //import kameloso.plugins.twitch.spotify;
-//import kameloso.plugins.twitch.helpers;
+//import kameloso.plugins.twitch.common;
 import kameloso.plugins.twitch.stub;

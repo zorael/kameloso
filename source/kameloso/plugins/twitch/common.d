@@ -1,7 +1,7 @@
 /++
     Helper functions for song request modules.
  +/
-module kameloso.plugins.twitch.helpers;
+module kameloso.plugins.twitch.common;
 
 version(TwitchSupport):
 version(WithTwitchPlugin):
