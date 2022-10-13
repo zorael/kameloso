@@ -286,6 +286,7 @@ package struct Credentials
     .onEvent(IRCEvent.Type.TWITCH_SUB)
     .onEvent(IRCEvent.Type.TWITCH_SUBGIFT)
     .onEvent(IRCEvent.Type.TWITCH_CHEER)
+    .onEvent(IRCEvent.Type.TWITCH_DIRECTCHEER)
     .onEvent(IRCEvent.Type.TWITCH_REWARDGIFT)
     .onEvent(IRCEvent.Type.TWITCH_GIFTCHAIN)
     .onEvent(IRCEvent.Type.TWITCH_BULKGIFT)
