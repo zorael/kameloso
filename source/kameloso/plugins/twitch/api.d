@@ -15,6 +15,7 @@ version(WithTwitchPlugin):
 private:
 
 import kameloso.plugins.twitch.base;
+import kameloso.plugins.twitch.common;
 
 import arsd.http2 : HttpVerb;
 import dialect.defs;
@@ -129,7 +130,6 @@ private auto twitchTryCatchDgExceptionHandler(
     const uint retries,
     const size_t retryNum)
 {
-    import kameloso.plugins.twitch.helpers : ErrorJSONException, UnexpectedJSONException;
     import kameloso.common : logger;
 
     version(PrintStacktraces)
@@ -496,11 +496,7 @@ in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
                 errorJSON["error"].str.unquoted,
                 errorJSON["message"].str.chomp.unquoted);
 
-            throw new TwitchQueryException(
-                message,
-                response.str,
-                response.error,
-                response.code);
+            throw new ErrorJSONException(message, errorJSON);
         }
         catch (JSONException e)
         {
@@ -624,11 +620,8 @@ in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
 
         if (responseJSON.type != JSONType.object)
         {
-            throw new TwitchQueryException(
-                "`getTwitchEntity` query response JSON is not JSONType.object",
-                response.str,
-                response.error,
-                response.code);
+            enum message = "`getTwitchEntity` query response JSON is not JSONType.object";
+            throw new UnexpectedJSONException(message, responseJSON);
         }
         else if (const dataJSON = "data" in responseJSON)
         {
@@ -638,27 +631,19 @@ in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
             }
             else if (!dataJSON.array.length)
             {
-                throw new EmptyDataException(
-                    "`getTwitchEntity` query response JSON has empty \"data\"",
-                    response.str,
-                    __FILE__);
+                enum message = "`getTwitchEntity` query response JSON has empty \"data\"";
+                throw new EmptyDataJSONException(message, responseJSON);
             }
             else
             {
-                throw new TwitchQueryException(
-                    "`getTwitchEntity` query response JSON \"data\" value is not a 1-length array",
-                    response.str,
-                    response.error,
-                    response.code);
+                enum message = "`getTwitchEntity` query response JSON \"data\" value is not a 1-length array";
+                throw new UnexpectedJSONException(message, *dataJSON);
             }
         }
         else
         {
-            throw new TwitchQueryException(
-                "`getTwitchEntity` query response JSON does not contain a \"data\" element",
-                response.str,
-                response.error,
-                response.code);
+            enum message = "`getTwitchEntity` query response JSON does not contain a \"data\" element";
+            throw new UnexpectedJSONException(message, responseJSON);
         }
     }
     catch (JSONException e)
@@ -726,21 +711,15 @@ in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
 
     if (responseJSON.type != JSONType.object)
     {
-        throw new TwitchQueryException(
-            "`getChatters` response JSON is not JSONType.object",
-            response.str,
-            response.error,
-            response.code);
+        enum message = "`getChatters` response JSON is not JSONType.object";
+        throw new UnexpectedJSONException(message, responseJSON);
     }
     else if (const chattersJSON = "chatters" in responseJSON)
     {
         if (chattersJSON.type != JSONType.object)
         {
-            throw new TwitchQueryException(
-                "`getChatters` \"chatters\" JSON is not JSONType.object",
-                response.str,
-                response.error,
-                response.code);
+            enum message = "`getChatters` \"chatters\" JSON is not JSONType.object";
+            throw new UnexpectedJSONException(message, *chattersJSON);
         }
     }
 
@@ -856,8 +835,8 @@ in ((!async || Fiber.getThis), "Tried to call asynchronous `getValidation` from 
 
     if ((validationJSON.type != JSONType.object) || ("client_id" !in validationJSON))
     {
-        throw new TwitchQueryException("Failed to validate Twitch authorisation " ~
-            "token; unknown JSON", response.str, response.error, response.code);
+        enum message = "Failed to validate Twitch authorisation token; unknown JSON";
+        throw new UnexpectedJSONException(message, validationJSON);
     }
 
     return validationJSON;
@@ -1180,132 +1159,6 @@ in ((name.length || id.length), "Tried to call `getTwitchGame` with no game name
         "https://api.twitch.tv/helix/games?name=" ~ name;
     immutable gameJSON = getTwitchEntity(plugin, gameURL);
     return Game(gameJSON["id"].str, gameJSON["name"].str);
-}
-
-
-// TwitchQueryException
-/++
-    Exception, to be thrown when an API query to the Twitch servers failed,
-    for whatever reason.
-
-    It is a normal [object.Exception|Exception] but with attached metadata.
- +/
-final class TwitchQueryException : Exception
-{
-@safe:
-    /// The response body that was received.
-    string responseBody;
-
-    /// The message of any thrown exception, if the query failed.
-    string error;
-
-    /// The HTTP code that was received.
-    uint code;
-
-    /++
-        Create a new [TwitchQueryException], attaching a response body, an error
-        and an HTTP status code.
-     +/
-    this(const string message,
-        const string responseBody,
-        const string error,
-        const uint code,
-        const string file = __FILE__,
-        const size_t line = __LINE__,
-        Throwable nextInChain = null) pure nothrow @nogc @safe
-    {
-        this.responseBody = responseBody;
-        this.error = error;
-        this.code = code;
-        super(message, file, line, nextInChain);
-    }
-
-    /++
-        Create a new [TwitchQueryException], without attaching anything.
-     +/
-    this(const string message,
-        const string file = __FILE__,
-        const size_t line = __LINE__,
-        Throwable nextInChain = null) pure nothrow @nogc @safe
-    {
-        super(message, file, line, nextInChain);
-    }
-}
-
-
-// EmptyDataException
-/++
-    Exception, to be thrown when an API query to the Twitch servers failed,
-    due to having received empty JSON data.
-
-    It is a normal [object.Exception|Exception] but with attached metadata.
- +/
-final class EmptyDataException : Exception
-{
-@safe:
-    /// The response body that was received.
-    string responseBody;
-
-    /++
-        Create a new [EmptyDataException], attaching a response body.
-     +/
-    this(const string message,
-        const string responseBody,
-        const string file = __FILE__,
-        const size_t line = __LINE__,
-        Throwable nextInChain = null) pure nothrow @nogc @safe
-    {
-        this.responseBody = responseBody;
-        super(message, file, line, nextInChain);
-    }
-
-    /++
-        Create a new [EmptyDataException], without attaching anything.
-     +/
-    this(const string message,
-        const string file = __FILE__,
-        const size_t line = __LINE__,
-        Throwable nextInChain = null) pure nothrow @nogc @safe
-    {
-        super(message, file, line, nextInChain);
-    }
-}
-
-
-// MissingBroadcasterTokenException
-/++
-    Exception, to be thrown when an API query to the Twitch servers failed,
-    due to missing broadcaster-level token.
- +/
-final class MissingBroadcasterTokenException : Exception
-{
-@safe:
-    /// The channel name for which a broadcaster token was needed.
-    string channelName;
-
-    /++
-        Create a new [MissingBroadcasterTokenException], attaching a channel name.
-     +/
-    this(const string message,
-        const string channelName,
-        const string file = __FILE__,
-        const size_t line = __LINE__,
-        Throwable nextInChain = null) pure nothrow @nogc @safe
-    {
-        this.channelName = channelName;
-        super(message, file, line, nextInChain);
-    }
-
-    /++
-        Create a new [MissingBroadcasterTokenException], without attaching anything.
-     +/
-    this(const string message,
-        const string file = __FILE__,
-        const size_t line = __LINE__,
-        Throwable nextInChain = null) pure nothrow @nogc @safe
-    {
-        super(message, file, line, nextInChain);
-    }
 }
 
 
@@ -1677,11 +1530,8 @@ in (Fiber.getThis, "Tried to call `createPoll` from outside a Fiber")
         (responseJSON["data"].type != JSONType.array))
     {
         // Invalid response in some way
-        throw new TwitchQueryException(
-            "`createPoll` response has unexpected JSON",
-            response.str,
-            response.error,
-            response.code);
+        enum message = "`createPoll` response has unexpected JSON";
+        throw new UnexpectedJSONException(message, responseJSON);
     }
 
     return responseJSON["data"];
@@ -1780,11 +1630,8 @@ in (Fiber.getThis, "Tried to call `endPoll` from outside a Fiber")
         (responseJSON["data"].type != JSONType.array))
     {
         // Invalid response in some way
-        throw new TwitchQueryException(
-            "`endPoll` response has unexpected JSON",
-            response.str,
-            response.error,
-            response.code);
+        enum message = "`endPoll` response has unexpected JSON";
+        throw new UnexpectedJSONException(message, responseJSON);
     }
 
     return responseJSON["data"].array[0];
@@ -1854,11 +1701,8 @@ auto getBotList(TwitchPlugin plugin)
         (responseJSON["bots"].type != JSONType.array))
     {
         // Invalid response in some way
-        throw new TwitchQueryException(
-            "`getBotList` response has unexpected JSON",
-            response.str,
-            response.error,
-            response.code);
+        enum message = "`getBotList` response has unexpected JSON";
+        throw new UnexpectedJSONException(message, responseJSON);
     }
 
     Appender!(string[]) sink;

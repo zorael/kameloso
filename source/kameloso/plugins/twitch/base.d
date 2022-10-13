@@ -148,6 +148,7 @@ version(WithTwitchPlugin):
 private:
 
 import kameloso.plugins.twitch.api;
+import kameloso.plugins.twitch.common;
 
 import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
 import kameloso.common : logger;
@@ -1149,7 +1150,6 @@ void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
 )
 void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.plugins.twitch.helpers : ErrorJSONException, UnexpectedJSONException;
     import kameloso.constants : KamelosoInfo, Timeout;
     import arsd.http2 : HttpClient, HttpVerb, Uri;
     import lu.string : contains, nom, stripped;
@@ -2121,7 +2121,7 @@ void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         immutable message = pattern.format(name);
         chan(plugin.state, event.channel, message);
     }
-    catch (EmptyDataException e)
+    catch (EmptyDataJSONException e)
     {
         enum message = "Could not find a game by that name.";
         chan(plugin.state, event.channel, message);

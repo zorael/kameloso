@@ -53,6 +53,7 @@ import std.typecons : Flag, No, Yes;
 
 public:
 
+@safe:
 
 // MinimalAuthentication
 /++
@@ -98,6 +99,7 @@ mixin template MinimalAuthentication(
         package enum hasMinimalAuthentication = true;
     }
 
+    @system:
 
     // onMinimalAuthenticationAccountInfoTargetMixin
     /++
@@ -269,6 +271,7 @@ mixin template UserAwareness(
         mixin MinimalAuthentication!(debug_, module_);
     }
 
+    @system:
 
     // onUserAwarenessQuitMixin
     /++
@@ -701,6 +704,7 @@ mixin template ChannelAwareness(
         static assert(0, pattern.format(module_));
     }
 
+    @system:
 
     // onChannelAwarenessSelfjoinMixin
     /++
@@ -1419,6 +1423,7 @@ mixin template TwitchAwareness(
         static assert(0, pattern.format(module_));
     }
 
+    @system:
 
     // onTwitchAwarenessSenderCarryingEventMixin
     /++
