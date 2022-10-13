@@ -6,6 +6,10 @@ module kameloso.plugins.twitch.common;
 version(TwitchSupport):
 version(WithTwitchPlugin):
 
+private:
+
+import std.json : JSONValue;
+
 package:
 
 
@@ -172,10 +176,6 @@ public:
  +/
 final class ErrorJSONException : Exception
 {
-private:
-    import std.json : JSONValue;
-
-public:
     /++
         [std.json.JSONValue|JSONValue] in question.
      +/
@@ -196,6 +196,132 @@ public:
 
     /++
         Constructor.
+     +/
+    this(const string message,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        super(message, file, line, nextInChain);
+    }
+}
+
+
+// TwitchQueryException
+/++
+    Exception, to be thrown when an API query to the Twitch servers failed,
+    for whatever reason.
+
+    It is a normal [object.Exception|Exception] but with attached metadata.
+ +/
+final class TwitchQueryException : Exception
+{
+@safe:
+    /// The response body that was received.
+    string responseBody;
+
+    /// The message of any thrown exception, if the query failed.
+    string error;
+
+    /// The HTTP code that was received.
+    uint code;
+
+    /++
+        Create a new [TwitchQueryException], attaching a response body, an error
+        and an HTTP status code.
+     +/
+    this(const string message,
+        const string responseBody,
+        const string error,
+        const uint code,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        this.responseBody = responseBody;
+        this.error = error;
+        this.code = code;
+        super(message, file, line, nextInChain);
+    }
+
+    /++
+        Create a new [TwitchQueryException], without attaching anything.
+     +/
+    this(const string message,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        super(message, file, line, nextInChain);
+    }
+}
+
+
+// EmptyDataJSONException
+/++
+    Exception, to be thrown when an API query to the Twitch servers failed,
+    due to having received empty JSON data.
+
+    It is a normal [object.Exception|Exception] but with attached metadata.
+ +/
+final class EmptyDataJSONException : Exception
+{
+@safe:
+    /// The response body that was received.
+    JSONValue json;
+
+    /++
+        Create a new [EmptyDataException], attaching a response body.
+     +/
+    this(const string message,
+        const JSONValue json,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        this.json = json;
+        super(message, file, line, nextInChain);
+    }
+
+    /++
+        Create a new [EmptyDataException], without attaching anything.
+     +/
+    this(const string message,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        super(message, file, line, nextInChain);
+    }
+}
+
+
+// MissingBroadcasterTokenException
+/++
+    Exception, to be thrown when an API query to the Twitch servers failed,
+    due to missing broadcaster-level token.
+ +/
+final class MissingBroadcasterTokenException : Exception
+{
+@safe:
+    /// The channel name for which a broadcaster token was needed.
+    string channelName;
+
+    /++
+        Create a new [MissingBroadcasterTokenException], attaching a channel name.
+     +/
+    this(const string message,
+        const string channelName,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        this.channelName = channelName;
+        super(message, file, line, nextInChain);
+    }
+
+    /++
+        Create a new [MissingBroadcasterTokenException], without attaching anything.
      +/
     this(const string message,
         const string file = __FILE__,
