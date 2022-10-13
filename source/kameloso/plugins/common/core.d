@@ -1047,8 +1047,21 @@ mixin template IRCPluginImpl(
                 if (state.settings.flush) stdout.flush();
             }
 
+            /+
+                This casts any @safe event handler functions to @system.
+                It should no longer be necessary since we removed the `@safe:`
+                from the top of all modules with handler functions (including
+                `awareness.d`), but it's free, so keep it here in case we add
+                something later and accidentally make it @safe.
+             +/
             static if (Fun.stringof[$-5..$] == "@safe")
             {
+                enum message = "Warning: `" ~ module_ ~ "` has a `" ~ Fun.stringof[0..$-6] ~
+                    "` event handler annotated `@safe`, either directly or via mixins, " ~
+                    "which incurs unnecessary template instantiations. " ~
+                    "It was cast to `@system`, but consider revising source";
+                pragma(msg, message);
+
                 mixin("alias SystemFun = " ~ Fun.stringof[0..$-6] ~ " @system;");
             }
             else

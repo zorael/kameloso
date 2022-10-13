@@ -53,6 +53,7 @@ import std.typecons : Flag, No, Yes;
 
 public:
 
+@safe:
 
 // MinimalAuthentication
 /++
@@ -117,6 +118,8 @@ mixin template MinimalAuthenticationImpl(
 {
     private import kameloso.plugins.common.awareness;
     private import dialect.defs : IRCEvent;
+
+    @system:
 
     // onMinimalAuthenticationAccountInfoTargetMixin
     /++
@@ -308,6 +311,8 @@ mixin template UserAwarenessImpl(
 {
     private import kameloso.plugins.common.awareness;
     private import dialect.defs : IRCEvent;
+
+    @system:
 
     // onUserAwarenessQuitMixin
     /++
@@ -761,6 +766,7 @@ mixin template ChannelAwarenessImpl(
         static assert(0, pattern.format(module_));
     }
 
+    @system:
 
     // onChannelAwarenessSelfjoinMixin
     /++
@@ -1501,6 +1507,8 @@ mixin template TwitchAwarenessImpl(
 {
     private import kameloso.plugins.common.awareness;
     private import dialect.defs : IRCEvent;
+
+    @system:
 
     // onTwitchAwarenessSenderCarryingEventMixin
     /++
