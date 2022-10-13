@@ -129,7 +129,7 @@ private auto twitchTryCatchDgExceptionHandler(
     const uint retries,
     const size_t retryNum)
 {
-    import kameloso.plugins.twitch.helpers : ErrorJSONException, UnexpectedJSONException;
+    import kameloso.plugins.twitch.common : ErrorJSONException, UnexpectedJSONException;
     import kameloso.common : logger;
 
     version(PrintStacktraces)
