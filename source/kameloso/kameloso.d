@@ -57,7 +57,7 @@ private:
         Numeric ID of the current connection, to disambiguate between multiple
         connections in one program run. Private value.
      +/
-    uint privateConnectionID;
+    shared static uint privateConnectionID;
 
 public:
     /++
@@ -181,7 +181,7 @@ public:
             The numeric ID of the current connection.
      +/
     pragma(inline, true)
-    auto connectionID()
+    static auto connectionID()
     {
         return privateConnectionID;
     }
@@ -193,8 +193,11 @@ public:
      +/
     void generateNewConnectionID() @safe
     {
-        import std.random : uniform;
-        privateConnectionID = uniform(1, 1001);
+        synchronized //()
+        {
+            import std.random : uniform;
+            privateConnectionID = uniform(1, 1001);
+        }
     }
 
     // throttleline
