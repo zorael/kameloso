@@ -893,6 +893,7 @@ public:
     The Oneliners plugin serves to listen to custom commands that can be added,
     modified and removed at runtime. Think `!info`.
  +/
+@IRCPluginHook
 final class OnelinersPlugin : IRCPlugin
 {
 private:

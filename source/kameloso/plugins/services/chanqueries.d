@@ -464,6 +464,7 @@ public:
     The Channel Queries service queries channels for information about them (in
     terms of topic and modes) as well as its list of participants.
  +/
+@IRCPluginHook
 final class ChanQueriesService : IRCPlugin
 {
 private:

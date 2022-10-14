@@ -320,6 +320,7 @@ public:
         - https://modern.ircdocs.horse/ctcp.html
         - http://www.irchelp.org/protocol/ctcpspec.html
  +/
+@IRCPluginHook
 final class CTCPService : IRCPlugin
 {
 private:

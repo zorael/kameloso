@@ -430,6 +430,7 @@ public:
 /++
     The Counter plugin allows for users to define counter commands at runtime.
  +/
+@IRCPluginHook
 final class CounterPlugin : IRCPlugin
 {
 private:

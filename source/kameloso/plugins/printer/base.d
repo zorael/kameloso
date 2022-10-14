@@ -816,6 +816,7 @@ public:
     This used to be part of the core program, but with UDAs it's easy to split
     off into its own plugin.
  +/
+@IRCPluginHook
 final class PrinterPlugin : IRCPlugin
 {
 private:

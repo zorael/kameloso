@@ -362,6 +362,7 @@ public:
     Currently this includes magic 8ball, `bash.org` quotes and some other
     trivial miscellanea.
  +/
+@IRCPluginHook
 final class ChatbotPlugin : IRCPlugin
 {
 private:

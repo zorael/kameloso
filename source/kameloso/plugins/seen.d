@@ -218,6 +218,7 @@ public:
         is a pointer to the global abort bool. When this is set, it signals the
         rest of the program that we want to terminate cleanly.
  +/
+@IRCPluginHook
 final class SeenPlugin : IRCPlugin
 {
 private:  // Module-level private.
