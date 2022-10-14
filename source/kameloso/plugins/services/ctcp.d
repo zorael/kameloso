@@ -270,7 +270,7 @@ void onCTCPClientinfo(CTCPService service, const ref IRCEvent event)
         import std.array : Appender;
         import std.traits : getUDAs, isSomeFunction;
 
-        mixin("import thisModule = ", __MODULE__, ";");
+        mixin("static import thisModule = ", __MODULE__, ";");
 
         Appender!(char[]) sink;
         sink.reserve(128);  // ~95
