@@ -305,20 +305,23 @@ void onDance(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.constants : BufferSize;
     import kameloso.messaging : emote;
+    import lu.string : strippedRight;
     import std.string : indexOf;
     import core.thread : Fiber;
     import core.time : seconds;
 
-    immutable dancePos = event.content.indexOf("DANCE");
+    immutable content = event.content.strippedRight;
+    immutable dancePos = content.indexOf("DANCE");
+
     if (dancePos == -1) return;
 
-    if ((dancePos > 0) && (event.content[dancePos-1] != ' '))
+    if ((dancePos > 0) && (content[dancePos-1] != ' '))
     {
         return;
     }
-    else if (event.content.length > (dancePos+5))
+    else if (content.length > (dancePos+5))
     {
-        string trailing = event.content[dancePos+5..$];  // mutable
+        string trailing = content[dancePos+5..$];  // mutable
 
         while (trailing.length)
         {
