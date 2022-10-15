@@ -1058,7 +1058,7 @@ mixin template IRCPluginImpl(
                 alias SystemFun = Fun;
             }
 
-            if (uda._fiber)
+            static if (inFiber)
             {
                 import kameloso.constants : BufferSize;
                 import kameloso.thread : CarryingFiber;
