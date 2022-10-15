@@ -360,7 +360,7 @@ public:
             {
                 static if (__traits(compiles, { mixin("alias thisModule = " ~ moduleName ~ ".base;"); }))
                 {
-                    static if (!__traits(compiles, { mixin("import " ~ moduleName ~ ".base;"); }))
+                    static if (!__traits(compiles, { mixin("static import " ~ moduleName ~ ".base;"); }))
                     {
                         import std.format : format;
                         enum pattern = "Plugin module `%s.base` (inferred from listing `%1$s`" ~
@@ -368,18 +368,18 @@ public:
                         static assert(0, pattern.format(moduleName));
                     }
 
-                    mixin("import pluginModule = " ~ moduleName ~ ".base;");
+                    mixin("static import pluginModule = " ~ moduleName ~ ".base;");
                 }
                 else
                 {
-                    static if (!__traits(compiles, { mixin("import " ~ moduleName ~ ";"); }))
+                    static if (!__traits(compiles, { mixin("static import " ~ moduleName ~ ";"); }))
                     {
                         import std.format : format;
                         enum pattern = "Plugin module `%s` (listed in `plugins/package.d`) fails to compile";
                         static assert(0, pattern.format(moduleName));
                     }
 
-                    mixin("import pluginModule = " ~ moduleName ~ ";");
+                    mixin("static import pluginModule = " ~ moduleName ~ ";");
                 }
 
                 foreach (Plugin; getSymbolsByUDA!(pluginModule, IRCPluginHook))

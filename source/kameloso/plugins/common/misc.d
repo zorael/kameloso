@@ -1061,7 +1061,7 @@ enum ModulePluginName(string module_) = ()
 {
     import lu.traits : getSymbolsByUDA;
 
-    mixin("import thisModule = " ~ module_ ~ ";");
+    mixin("static import thisModule = " ~ module_ ~ ";");
 
     alias hookedSymbols = getSymbolsByUDA!(thisModule, IRCPluginHook);
 
