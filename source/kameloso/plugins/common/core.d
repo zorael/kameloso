@@ -1597,80 +1597,50 @@ mixin template IRCPluginImpl(
         return didSomething;
     }
 
-    // setup
-    /++
-        Runs early pre-connect routines.
+    private import std.meta : AliasSeq;
+
+    // setup, start, teardown, reload
+    /+
+        Generates functions `setup`, `start`, `reload` and `teardown`. These
+        merely pass on calls to module-level `.setup`, `.start`, `.reload` and
+        `.teardown`, where such is available.
+
+        `setup` runs early pre-connect routines.
+
+        `start` runs early post-connect routines, immediately after connection
+        has been established.
+
+        `reload` Reloads the plugin, where such makes sense. What this means is
+        implementation-defined.
+
+        `teardown` de-initialises the plugin.
      +/
-    override public void setup() @system
+    static foreach (immutable funName; AliasSeq!("setup", "start", "reload", "teardown"))
     {
-        static if (__traits(compiles, .setup))
+        mixin(`
+        /++
+            Automatically generated function.
+         +/
+        override public void ` ~ funName ~ `() @system
         {
-            import lu.traits : TakesParams;
-
-            if (!this.isEnabled) return;
-
-            static if (TakesParams!(.setup, typeof(this)))
+            static if (__traits(compiles, .` ~ funName ~ `))
             {
-                .setup(this);
-            }
-            else
-            {
-                import std.format : format;
-                enum pattern = "`%s.setup` has an unsupported function signature: `%s`";
-                static assert(0, pattern.format(module_, typeof(.setup).stringof));
-            }
-        }
-    }
+                import lu.traits : TakesParams;
 
-    // start
-    /++
-        Runs early post-connect routines, immediately after connection has been
-        established.
-     +/
-    override public void start() @system
-    {
-        static if (__traits(compiles, .start))
-        {
-            import lu.traits : TakesParams;
+                if (!this.isEnabled) return;
 
-            if (!this.isEnabled) return;
-
-            static if (TakesParams!(.start, typeof(this)))
-            {
-                .start(this);
+                static if (TakesParams!(.` ~ funName ~ `, typeof(this)))
+                {
+                    .` ~ funName ~ `(this);
+                }
+                else
+                {
+                    import std.format : format;
+                    ` ~ "enum pattern = \"`%s.%s` has an unsupported function signature: `%s`\";
+                    " ~ `static assert(0, pattern.format(module_, "` ~ funName ~ `", typeof(.` ~ funName ~ `).stringof));
+                }
             }
-            else
-            {
-                import std.format : format;
-                enum pattern = "`%s.start` has an unsupported function signature: `%s`";
-                static assert(0, pattern.format(module_, typeof(.start).stringof));
-            }
-        }
-    }
-
-    // teardown
-    /++
-        De-initialises the plugin.
-     +/
-    override public void teardown() @system
-    {
-        static if (__traits(compiles, .teardown))
-        {
-            import lu.traits : TakesParams;
-
-            if (!this.isEnabled) return;
-
-            static if (TakesParams!(.teardown, typeof(this)))
-            {
-                .teardown(this);
-            }
-            else
-            {
-                import std.format : format;
-                enum pattern = "`%s.teardown` has an unsupported function signature: `%s`";
-                static assert(0, pattern.format(module_, typeof(.teardown).stringof));
-            }
-        }
+        }`);
     }
 
     // name
@@ -1845,33 +1815,6 @@ mixin template IRCPluginImpl(
         // and then just the address, but this is really not a hotspot.
         // So just let it allocate when it wants.
         return this.isEnabled ? ctCommandsEnumLiteral : null;
-    }
-
-    // reload
-    /++
-        Reloads the plugin, where such makes sense.
-
-        What this means is implementation-defined.
-     +/
-    override public void reload() @system
-    {
-        static if (__traits(compiles, .reload))
-        {
-            import lu.traits : TakesParams;
-
-            if (!this.isEnabled) return;
-
-            static if (TakesParams!(.reload, typeof(this)))
-            {
-                .reload(this);
-            }
-            else
-            {
-                import std.format : format;
-                enum pattern = "`%s.reload` has an unsupported function signature: `%s`";
-                static assert(0, pattern.format(module_, typeof(.reload).stringof));
-            }
-        }
     }
 
     private import kameloso.thread : Sendable;
