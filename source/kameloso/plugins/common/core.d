@@ -838,14 +838,14 @@ mixin template IRCPluginImpl(
             // Evaluate each Command UDAs with the current event
             if (uda._commands.length)
             {
+                commandForeach:
                 foreach (const command; uda._commands)
                 {
                     static if (verbose)
                     {
                         writefln(`   ...Command "%s"`, command._word);
+                        if (state.settings.flush) stdout.flush();
                     }
-
-                    bool policyMismatch;
 
                     if (!event.prefixPolicyMatches!verbose
                         (command._policy, state.client, state.settings.prefix))
@@ -856,25 +856,19 @@ mixin template IRCPluginImpl(
                             if (state.settings.flush) stdout.flush();
                         }
 
-                        policyMismatch = true;
-                    }
-
-                    if (policyMismatch)
-                    {
                         // Do nothing, proceed to next command
+                        continue commandForeach;
                     }
                     else
                     {
                         import lu.string : nom;
-                        import std.algorithm.comparison : equal;
                         import std.typecons : No, Yes;
-                        import std.uni : asLowerCase, toLower;
+                        import std.uni : toLower;
 
                         immutable thisCommand = event.content
                             .nom!(Yes.inherit, Yes.decode)(' ');
-                        immutable lowerWord = command._word.toLower;
 
-                        if (thisCommand.asLowerCase.equal(lowerWord))
+                        if (thisCommand.toLower == command._word.toLower)
                         {
                             static if (verbose)
                             {
@@ -884,7 +878,7 @@ mixin template IRCPluginImpl(
 
                             event.aux = thisCommand;
                             commandMatch = true;
-                            break;
+                            break commandForeach;
                         }
                         else
                         {
@@ -898,6 +892,7 @@ mixin template IRCPluginImpl(
             // Iff no match from Commands, evaluate Regexes
             if (uda._regexes.length && !commandMatch)
             {
+                regexForeach:
                 foreach (const regex; uda._regexes)
                 {
                     static if (verbose)
@@ -905,8 +900,6 @@ mixin template IRCPluginImpl(
                         writeln("   ...Regex: `", regex._expression, "`");
                         if (state.settings.flush) stdout.flush();
                     }
-
-                    bool policyMismatch;
 
                     if (!event.prefixPolicyMatches!verbose
                         (regex._policy, state.client, state.settings.prefix))
@@ -917,12 +910,8 @@ mixin template IRCPluginImpl(
                             if (state.settings.flush) stdout.flush();
                         }
 
-                        policyMismatch = true;
-                    }
-
-                    if (policyMismatch)
-                    {
                         // Do nothing, proceed to next regex
+                        continue regexForeach;
                     }
                     else
                     {
@@ -942,7 +931,7 @@ mixin template IRCPluginImpl(
 
                                 event.aux = hits[0];
                                 commandMatch = true;
-                                break;
+                                break regexForeach;
                             }
                             else
                             {
