@@ -1072,8 +1072,8 @@ enum ModulePluginName(string module_) = ()
     else
     {
         import std.format : format;
-        enum pattern = "Bad `IRCPluginHook` annotations in module `%s` (expected 1, saw %d)";
-        immutable message = pattern.format(module_, hookedSymbols.length);
+        enum pattern = "Bad `IRCPluginHook` annotations in module `%s`";
+        immutable message = pattern.format(module_);
         static assert(0, message);
     }
 }();
