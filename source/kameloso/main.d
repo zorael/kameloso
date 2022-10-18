@@ -3207,6 +3207,85 @@ void syncGuestChannels(ref Kameloso instance)
 }
 
 
+// getQuitMessageInFlight
+/++
+    Get any QUIT concurrency messages currently in the mailbox. Also catch Variants
+    so as not to throw an exception on missed priority messages.
+
+    Params:
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+
+    Returns:
+        A [kameloso.thread.ThreadMessage|ThreadMessage] with its `content` message
+        containing any quit reasons encountered.
+ +/
+auto getQuitMessageInFlight(ref Kameloso instance)
+{
+    import kameloso.string : replaceTokens;
+    import kameloso.thread : ThreadMessage;
+    import std.concurrency : receiveTimeout;
+    import std.variant : Variant;
+    import core.time : Duration;
+
+    ThreadMessage returnMessage;
+    bool receivedSomething;
+    bool halt;
+
+    do
+    {
+        receivedSomething = receiveTimeout(Duration.zero,
+            (ThreadMessage message) scope
+            {
+                if (message.type == ThreadMessage.Type.quit)
+                {
+                    returnMessage = message;
+                    halt = true;
+                }
+            },
+            (Variant _) scope {},
+        );
+    }
+    while (!halt && receivedSomething);
+
+    return returnMessage;
+}
+
+
+// echoQuitMessage
+/++
+    Echos the quit message to the local terminal, to fake it being sent verbosely
+    to the server. It is sent, but later, bypassing the message Fiber which would
+    otherwise do the echoing.
+
+    Params:
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        reason = Quit reason.
+ +/
+void echoQuitMessage(ref Kameloso instance, const string reason)
+{
+    import kameloso.string : replaceTokens;
+
+    bool printed;
+
+    version(Colours)
+    {
+        if (!instance.settings.monochrome)
+        {
+            import kameloso.irccolours : mapEffects;
+
+            logger.trace("--> QUIT :", reason.mapEffects);
+            printed = true;
+        }
+    }
+
+    if (!printed)
+    {
+        import kameloso.irccolours : stripEffects;
+        logger.trace("--> QUIT :", reason.stripEffects);
+    }
+}
+
+
 public:
 
 
@@ -3228,12 +3307,14 @@ auto run(string[] args)
     static import kameloso.common;
     import kameloso.constants : ShellReturnValue;
     import kameloso.logger : KamelosoLogger;
+    import kameloso.string : replaceTokens;
+    import std.algorithm.comparison : among;
     import std.exception : ErrnoException;
     import core.stdc.errno : errno;
 
     // Set up the Kameloso instance.
     Kameloso instance;
-    postInstanceSetup(instance);
+    instance.postInstanceSetup();
 
     // Set pointers.
     kameloso.common.settings = &instance.settings;
@@ -3285,7 +3366,7 @@ auto run(string[] args)
     case returnFailure:
         return ShellReturnValue.getoptFailure;
 
-    case crash:
+    case crash:  // as above
         assert(0, "`tryGetopt` returned `Next.crash`");
     }
 
@@ -3330,8 +3411,6 @@ auto run(string[] args)
         applyDefaults(instance.parser.client, instance.parser.server, instance.bot);
     }
 
-    import std.algorithm.comparison : among;
-
     // Additionally if the port is an SSL-like port, assume SSL,
     // but only if the user isn't forcing settings
     if (!instance.conn.ssl && !instance.settings.force &&
@@ -3343,13 +3422,12 @@ auto run(string[] args)
     // Copy ssl setting to the Connection after the above
     instance.conn.ssl = instance.connSettings.ssl;
 
-    import kameloso.common : printVersionInfo;
-    import kameloso.printing : printObjects;
-    import kameloso.string : replaceTokens;
-    import std.stdio : writeln;
-
     if (!instance.settings.headless)
     {
+        import kameloso.common : printVersionInfo;
+        import kameloso.printing : printObjects;
+        import std.stdio : writeln;
+
         printVersionInfo();
         writeln();
         if (instance.settings.flush) stdout.flush();
@@ -3361,7 +3439,7 @@ auto run(string[] args)
 
         if (!instance.bot.homeChannels.length && !instance.bot.admins.length)
         {
-            import kameloso.config :giveBrightTerminalHint, notifyAboutIncompleteConfiguration;
+            import kameloso.config : giveBrightTerminalHint, notifyAboutIncompleteConfiguration;
 
             giveBrightTerminalHint();
             logger.trace();
@@ -3381,13 +3459,13 @@ auto run(string[] args)
     case retry:  // should never happen
         assert(0, "`verifySettings` returned `Next.retry`");
 
-    case returnSuccess:
-        return ShellReturnValue.success;
+    case returnSuccess:  // as above
+        assert(0, "`verifySettings` returned `Next.returnSuccess`");
 
     case returnFailure:
         return ShellReturnValue.settingsVerificationFailure;
 
-    case crash:
+    case crash:  // as above
         assert(0, "`verifySettings` returned `Next.crash`");
     }
 
@@ -3424,12 +3502,14 @@ auto run(string[] args)
     {
         // Configuration file/--set argument syntax error
         logger.error(e.msg);
+        version(PrintStacktraces) logger.trace(e.info);
         if (!instance.settings.force) return ShellReturnValue.customConfigSyntaxFailure;
     }
     catch (IRCPluginSettingsException e)
     {
         // --set plugin/setting name error
         logger.error(e.msg);
+        version(PrintStacktraces) logger.trace(e.info);
         if (!instance.settings.force) return ShellReturnValue.customConfigFailure;
     }
 
@@ -3442,65 +3522,28 @@ auto run(string[] args)
 
     // If we're here, we should exit. The only question is in what way.
 
-    if (*instance.abort && instance.conn.connected)
+    if (instance.conn.connected)
     {
-        import kameloso.thread : ThreadMessage;
-        import std.concurrency : receiveTimeout;
-        import std.variant : Variant;
-        import core.time : Duration;
+        // Send a proper QUIT, optionally verbosely
+        string reason;  // mutable
 
-        // Connected and aborting
-        // Catch any queued quit calls and use their reasons and quit settings
-        // Also catch Variants so as not to throw an exception on missed priority messages
-
-        string reason = instance.bot.quitReason;  // mutable
-        bool quiet;
-        bool receivedSomething;
-
-        do
+        if (!*instance.abort && !instance.settings.headless && !instance.settings.hideOutgoing)
         {
-            receivedSomething = receiveTimeout(Duration.zero,
-                (ThreadMessage message) scope
-                {
-                    if (message.type == ThreadMessage.Type.quit)
-                    {
-                        reason = message.content;
-                        quiet = message.quiet;
-                    }
-                },
-                (Variant _) scope {},
-            );
-        }
-        while (receivedSomething);
+            const message = instance.getQuitMessageInFlight();
+            reason = message.content.length ?
+                message.content :
+                instance.bot.quitReason;
+            reason = reason.replaceTokens(instance.parser.client);
 
-        if ((!instance.settings.hideOutgoing && !quiet) || instance.settings.trace)
-        {
-            bool printed;
-
-            version(Colours)
-            {
-                if (!instance.settings.monochrome)
-                {
-                    import kameloso.irccolours : mapEffects;
-
-                    logger.trace("--> QUIT :", reason
-                        .mapEffects
-                        .replaceTokens(instance.parser.client));
-                    printed = true;
-                }
-            }
-
-            if (!printed)
-            {
-                import kameloso.irccolours : stripEffects;
-
-                logger.trace("--> QUIT :", reason
-                    .stripEffects
-                    .replaceTokens(instance.parser.client));
-            }
+            instance.echoQuitMessage(reason);
         }
 
-        instance.conn.sendline("QUIT :" ~ reason.replaceTokens(instance.parser.client));
+        if (!reason.length)
+        {
+            reason = instance.bot.quitReason.replaceTokens(instance.parser.client);
+        }
+
+        instance.conn.sendline("QUIT :" ~ reason);
     }
 
     // Save if we're exiting and configuration says we should.
@@ -3521,6 +3564,7 @@ auto run(string[] args)
         }
     }
 
+    // Print connection summary
     if (!instance.settings.headless)
     {
         if (instance.settings.exitSummary && instance.connectionHistory.length)
