@@ -3185,22 +3185,24 @@ void syncGuestChannels(ref Kameloso instance)
     foreach (plugin; instance.plugins)
     {
         // Find a plugin that seems to mixin channel awareness
-        if (plugin.state.channels.length)
-        {
-            foreach (immutable channelName; plugin.state.channels.byKey)
-            {
-                import std.algorithm.searching : canFind;
+        if (plugin.state.channels.length) continue;
 
-                if (!instance.bot.homeChannels.canFind(channelName) &&
-                    !instance.bot.guestChannels.canFind(channelName))
-                {
-                    // We're in a channel that isn't tracked as home or guest
-                    // We're also saving, so save it as guest
-                    instance.bot.guestChannels ~= channelName;
-                }
+        foreach (immutable channelName; plugin.state.channels.byKey)
+        {
+            import std.algorithm.searching : canFind;
+
+            if (!instance.bot.homeChannels.canFind(channelName) &&
+                !instance.bot.guestChannels.canFind(channelName))
+            {
+                // We're in a channel that isn't tracked as home or guest
+                // We're also saving, so save it as guest
+                instance.bot.guestChannels ~= channelName;
             }
-            break;
         }
+
+        // We only need the channels from one plugin, as we can be reasonably sure
+        // every plugin that have channels have the same channels
+        break;
     }
 }
 
