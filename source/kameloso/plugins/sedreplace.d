@@ -42,6 +42,7 @@ import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.messaging;
 import dialect.defs;
+import lu.container : CircularBuffer;
 import lu.string : beginsWith;
 import std.meta : aliasSeqOf;
 import std.typecons : Flag, No, Yes;
@@ -399,8 +400,11 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
     immutable stripped_ = event.content.stripped;
     if (!stripped_.length) return;
 
-    static void recordLineAsLast(SedReplacePlugin plugin, const string sender,
-        const string string_, const long time)
+    static void recordLineAsLast(
+        SedReplacePlugin plugin,
+        const string sender,
+        const string string_,
+        const long time)
     {
         Line line;
         line.content = string_;
@@ -410,17 +414,12 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
 
         if (!senderLines)
         {
-            plugin.prevlines[sender] = Line[].init;
+            plugin.prevlines[sender] = CircularBuffer!(Line, Yes.dynamic).init;
             senderLines = sender in plugin.prevlines;
-            senderLines.length = plugin.sedReplaceSettings.history;
+            senderLines.resize(plugin.sedReplaceSettings.history);
         }
 
-        foreach_reverse (immutable i; 1..plugin.sedReplaceSettings.history)
-        {
-            (*senderLines)[i] = (*senderLines)[i-1];
-        }
-
-        (*senderLines)[0] = line;
+        senderLines.put(line);
     }
 
     if (stripped_.beginsWith('s') && (stripped_.length >= 5))
@@ -437,9 +436,10 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
         }
 
         case DelimiterCharacters[0]:
-            if (const senderLines = event.sender.nickname in plugin.prevlines)
+            if (auto senderLines = event.sender.nickname in plugin.prevlines)
             {
-                foreach (immutable line; (*senderLines)[])
+                // Work around CircularBuffer pre-1.2.3 having save annotated const
+                foreach (immutable line; cast()senderLines.save)
                 {
                     if ((event.time - line.timestamp) > plugin.replaceTimeoutSeconds)
                     {
@@ -506,8 +506,8 @@ void onWelcome(SedReplacePlugin plugin)
 
         foreach (immutable sender, const lines; plugin.prevlines)
         {
-            if (!lines.length ||
-                ((now - lines[0].timestamp) >= plugin.replaceTimeoutSeconds))
+            if (lines.empty ||
+                ((now - lines.front.timestamp) >= plugin.replaceTimeoutSeconds))
             {
                 // Something is either wrong with the sender's entries or
                 // the most recent entry is too old
@@ -560,10 +560,10 @@ private:
     static immutable timeBetweenPurges = (replaceTimeoutSeconds * 3).seconds;
 
     /++
-        A `Line[string]` buffer of the previous line every user said, with
-        with nickname as key.
+        A [lu.container.CircularBuffer|CircularBuffer]`[string]` associative array
+        of the previous line(s) every user said, with nickname as key.
      +/
-    Line[][string] prevlines;
+    CircularBuffer!(Line, Yes.dynamic)[string] prevlines;
 
     mixin IRCPluginImpl;
 }
