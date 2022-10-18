@@ -282,6 +282,8 @@ in (expr.length, "Tried to `sedReplaceImpl` with an empty expression")
     immutable replaceThis = slice[0..delimPos].replace(escapedChar, charAsString);
     slice = slice[delimPos+1..$];
 
+    if (!slice.length) return line;
+
     immutable endDelimPos = getNextUnescaped(slice);
 
     if (relaxSyntax)
@@ -368,6 +370,14 @@ unittest
     {
         immutable replaced = "This is INVALID".sedReplaceImpl!'#'("s#INVALID#valid##", Yes.relaxSyntax);
         assert((replaced == "This is INVALID"), replaced);
+    }
+    {
+        immutable replaced = "snek".sedReplaceImpl!'/'("s/snek/", Yes.relaxSyntax);
+        assert((replaced == "snek"), replaced);
+    }
+    {
+        immutable replaced = "snek".sedReplaceImpl!'/'("s/snek", Yes.relaxSyntax);
+        assert((replaced == "snek"), replaced);
     }
 }
 
