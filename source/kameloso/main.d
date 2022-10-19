@@ -3413,7 +3413,7 @@ auto run(string[] args)
 
     // Additionally if the port is an SSL-like port, assume SSL,
     // but only if the user isn't forcing settings
-    if (!instance.conn.ssl && !instance.settings.force &&
+    if (!instance.connSettings.ssl && !instance.settings.force &&
         instance.parser.server.port.among!(6697, 7000, 7001, 7029, 7070, 9999, 443))
     {
         instance.connSettings.ssl = true;
