@@ -70,7 +70,7 @@ If there's anyone talking it should show up on your screen.
     * [Other files](#other-files)
   * [Example use](#example-use)
     * [Online help and commands](#online-help-and-commands)
-    * [**Except nothing happens**](#except-nothing-happens)
+    * [***Except nothing happens***](#except-nothing-happens)
   * [**Twitch**](#twitch)
     * [**Copy/paste-friendly concrete setup from scratch**](#copy-paste-friendly-concrete-setup-from-scratch)
     * [Example configuration](#example-configuration)
@@ -329,7 +329,7 @@ prefix                      "!"
 
 It can technically be any string and not just one character. It may include spaces if enclosed within quotes, like `"please "` (making it `please note`, `please quote`, ...). Additionally, prefixing commands with the bot's nickname also always works, as in `kameloso: seen MrOffline`. This is to be able to disambiguate between several bots in the same channel. Moreover, some administrative commands only work when called this way.
 
-### **Except nothing happens**
+### ***Except nothing happens***
 
 Before allowing *anyone* to trigger any restricted functionality, the bot will try to identify that user by querying the server for what services account the accessing user is logged onto, if not already known. For full administrative privileges you will need to be logged in with an account listed in the `admins` field in the configuration file, while other users may be defined with other permissions in your [`users.json` file](#other-files). If a user is not logged onto services it is considered as not being uniquely identifiable and cannot be resolved to an account.
 
@@ -433,7 +433,6 @@ Assuming a prefix of `!`, commands to test are:
 
 * `!start`, `!uptime`, `!stop`
 * `!followage`
-* `!shoutout`
 * `!vanish`
 * `!repeat`
 * `!ecount`
