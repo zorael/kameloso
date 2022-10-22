@@ -1777,7 +1777,7 @@ mixin template IRCPluginImpl(
 
                 static foreach (immutable regex; uda._regexes)
                 {{
-                    enum key = `r"` ~ regex.expression ~ `"`;
+                    enum key = `r"` ~ regex._expression ~ `"`;
                         commandAA[key] = IRCPlugin.CommandMetadata
                             (regex._policy, regex._description, regex._hidden);
 
@@ -1787,7 +1787,7 @@ mixin template IRCPluginImpl(
                         {
                             commandAA[key].syntaxes ~= regex._expression;
                         }
-                        else static if (regex._policy == PrefixPolicy.prefix)
+                        else static if (regex._policy == PrefixPolicy.prefixed)
                         {
                             commandAA[key].syntaxes ~= "$prefix" ~ regex._expression;
                         }
