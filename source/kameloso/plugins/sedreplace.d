@@ -66,11 +66,11 @@ alias DelimiterCharacters = AliasSeq!('/', '|', '#', '@', ' ', '_', ';');
     @Enabler bool enabled = true;
 
     /++
-        How many lines back a sed-replacement call may reach. If this is 3, then
-        the last 3 messages will be taken into account and examined for
+        How many lines back a sed-replacement call may reach. If this is 5, then
+        the last 5 messages will be taken into account and examined for
         applicability when replacing.
      +/
-    int history = 3;
+    int history = 5;
 
     /++
         Toggles whether or not replacement expressions have to properly end with
