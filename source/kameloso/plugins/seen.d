@@ -1187,6 +1187,19 @@ void initResources(SeenPlugin plugin)
 
 import kameloso.thread : Sendable;
 
+/+
+    Only some plugins benefit from this one implementning `onBusMessage`, so omit
+    it if they aren't available.
+ +/
+version(WithPipelinePlugin)
+{
+    version = ShouldImplementOnBusMessage;
+}
+else version(WithAdminPlugin)
+{
+    version = ShouldImplementOnBusMessage;
+}
+
 // onBusMessage
 /++
     Receive a passed [kameloso.thread.BusMessage|BusMessage] with the "`seen`" header,
@@ -1203,7 +1216,7 @@ import kameloso.thread : Sendable;
  +/
 debug
 version(Posix)
-//version(WithPipelinePlugin)  // Be available to other plugins too, like admin
+version(ShouldImplementOnBusMessage)
 void onBusMessage(SeenPlugin plugin, const string header, shared Sendable content)
 {
     if (!plugin.isEnabled) return;
