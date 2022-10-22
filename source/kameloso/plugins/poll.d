@@ -50,7 +50,7 @@ import core.time : Duration;
 }
 
 
-// onCommandVote
+// onCommandPoll
 /++
     Instigates a poll or stops an ongoing one.
 
@@ -74,10 +74,9 @@ import core.time : Duration;
             .hidden(true)
     )
 )
-void onCommandVote(PollPlugin plugin, const ref IRCEvent event)
+void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.time : DurationStringException, abbreviatedDuration;
-    import std.algorithm.iteration : splitter;
     import std.algorithm.searching : count;
     import std.conv : ConvException;
 
@@ -140,7 +139,7 @@ void onCommandVote(PollPlugin plugin, const ref IRCEvent event)
     }
 
     Duration dur;
-    string slice = event.content;
+    string slice = event.content;  // mutable
 
     try
     {
@@ -170,11 +169,48 @@ void onCommandVote(PollPlugin plugin, const ref IRCEvent event)
         return;
     }
 
-    /// Available poll choices and their vote counts.
-    uint[string] pollChoices;
+    auto choicesVoldemort = getPollChoices(plugin, event, slice);  // mutable
 
-    /// What the choices were originally named before lowercasing.
-    string[string] origChoiceNames;
+    if (!choicesVoldemort.success) return;
+
+    if (choicesVoldemort.choices.length < 2)
+    {
+        chan(plugin.state, event.channel, "Need at least two unique poll choices.");
+        return;
+    }
+
+    return pollImpl(
+        plugin,
+        event,
+        dur,
+        choicesVoldemort.choices,
+        choicesVoldemort.origChoiceNames);
+}
+
+
+// getPollChoices
+/++
+    Sifts out unique choice words from a string.
+
+    Params:
+        slice = Input string.
+
+    Returns:
+        A Voldemort struct with members `choices` and `origChoiceNames` representing
+        the choices found in the input string.
+ +/
+auto getPollChoices(PollPlugin plugin, const ref IRCEvent event, const string slice)
+{
+    import std.algorithm.iteration : splitter;
+
+    static struct PollChoices
+    {
+        bool success;
+        uint[string] choices;
+        string[string] origChoiceNames;
+    }
+
+    PollChoices result;
 
     foreach (immutable rawChoice; slice.splitter(' '))
     {
@@ -187,33 +223,32 @@ void onCommandVote(PollPlugin plugin, const ref IRCEvent event)
             enum pattern = `Poll choices may not start with the command prefix ("%s").`;
             immutable message = pattern.format(plugin.state.settings.prefix);
             chan(plugin.state, event.channel, message);
-            return;
+            return result;
         }
 
-        // Strip any trailing commas
-        immutable choice = rawChoice.strippedRight(',');
+        // Strip any trailing commas, unless the choice is literally just commas
+        // We can tell if the comma-stripped string is empty
+        immutable strippedChoice = rawChoice.strippedRight(',');
+        immutable choice = strippedChoice.length ?
+            strippedChoice :
+            rawChoice;
         if (!choice.length) continue;
         immutable lower = choice.toLower;
 
-        if (lower in origChoiceNames)
+        if (lower in result.origChoiceNames)
         {
             enum pattern = `Duplicate choice: "%s"`;
             immutable message = pattern.format(choice);
             chan(plugin.state, event.channel, message);
-            return;
+            return result;
         }
 
-        origChoiceNames[lower] = choice;
-        pollChoices[lower] = 0;
+        result.origChoiceNames[lower] = choice;
+        result.choices[lower] = 0;
     }
 
-    if (pollChoices.length < 2)
-    {
-        chan(plugin.state, event.channel, "Need at least two unique poll choices.");
-        return;
-    }
-
-    return pollImpl(plugin, event, dur, pollChoices, origChoiceNames);
+    result.success = true;
+    return result;
 }
 
 
@@ -225,15 +260,15 @@ void onCommandVote(PollPlugin plugin, const ref IRCEvent event)
         plugin = The current [PollPlugin].
         event = The triggering [dialect.defs.IRCEvent|IRCEvent].
         dur = Vote/poll [core.time.Duration|Duration].
-        pollChoices = Associative array of vote tally by poll choice string key.
-        origChoiceNames = Original names of the keys in `pollChoices` before
+        choices = Associative array of vote tally by poll choice string key.
+        origChoiceNames = Original names of the keys in `choices` before
             [std.uni.toLower|toLower] was called on them.
  +/
 void pollImpl(
     PollPlugin plugin,
     const /*ref*/ IRCEvent event,
     const Duration dur,
-    /*const*/ uint[string] pollChoices,
+    /*const*/ uint[string] choices,
     const string[string] origChoiceNames)
 {
     import kameloso.plugins.common.delayawait : await, delay;
@@ -246,18 +281,15 @@ void pollImpl(
     import std.random : uniform;
     import core.thread : Fiber;
 
-    /// Which users have already voted.
-    bool[string] votedUsers;
-
     /// Unique poll instance identifier
-    immutable id = uniform(1, 10_000);
+    immutable uniqueID = uniform(1, 10_000);
 
     void reportResults()
     {
         import std.algorithm.iteration : sum;
         import std.array : array;
 
-        immutable total = cast(double)pollChoices.byValue.sum;
+        immutable total = cast(double)choices.byValue.sum;
 
         if (total == 0)
         {
@@ -267,7 +299,7 @@ void pollImpl(
 
         chan(plugin.state, event.channel, "Voting complete, results:");
 
-        auto sorted = pollChoices
+        auto sorted = choices
             .byKeyValue
             .array
             .sort!((a, b) => a.value < b.value);
@@ -289,7 +321,11 @@ void pollImpl(
                 immutable double votePercentage = 100 * voteRatio;
 
                 enum pattern = "<b>%s<b> : %d %s (%.1f%%)";
-                immutable message = pattern.format(origChoiceNames[result.key], result.value, noun, votePercentage);
+                immutable message = pattern.format(
+                    origChoiceNames[result.key],
+                    result.value,
+                    noun,
+                    votePercentage);
                 chan(plugin.state, event.channel, message);
             }
         }
@@ -315,9 +351,12 @@ void pollImpl(
         plugin.channelVoteInstances.remove(event.channel);
     }
 
-    void dg()
+    void pollDg()
     {
         scope(exit) cleanup();
+
+        /// Which users have already voted.
+        string[string] votedUsers;
 
         while (true)
         {
@@ -333,7 +372,7 @@ void pollImpl(
                 reportResults();
                 return;
             }
-            else if (*currentPollInstance != id)
+            else if (*currentPollInstance != uniqueID)
             {
                 return;  // Different poll started
             }
@@ -357,18 +396,18 @@ void pollImpl(
                 continue;
             }
 
-            immutable accountOrNickname = idOf(thisEvent.sender);
+            immutable id = idOf(thisEvent.sender);
 
             // Triggered by an event
             with (IRCEvent.Type)
             switch (event.type)
             {
             case NICK:
-                if (accountOrNickname in votedUsers)
+                if (auto previousVote = id in votedUsers)
                 {
                     immutable newID = idOf(thisEvent.target);
-                    votedUsers[newID] = true;
-                    votedUsers.remove(accountOrNickname);
+                    votedUsers[newID] = *previousVote;
+                    votedUsers.remove(id);
                 }
                 break;
 
@@ -382,32 +421,61 @@ void pollImpl(
 
                 if (!vote.length || vote.contains!(Yes.decode)(' '))
                 {
-                    // Not a vote; yield and await a new event
+                    // Not a vote; drop down to yield and await a new event
+                    break;
                 }
-                else if (accountOrNickname in votedUsers)
+
+                immutable lowerVote = vote.toLower;
+
+                if (auto ballot = lowerVote in choices)
                 {
-                    // User already voted and we don't support revotes for now
-                }
-                else if (auto ballot = vote.toLower in pollChoices)
-                {
-                    // Valid entry, increment vote count
-                    ++(*ballot);
-                    votedUsers[accountOrNickname] = true;
+                    if (auto previousVote = id in votedUsers)
+                    {
+                        if (*previousVote != lowerVote)
+                        {
+                            // User changed their mind
+                            --choices[*previousVote];
+                            ++(*ballot);
+                            votedUsers[id] = lowerVote;
+                        }
+                        else
+                        {
+                            // User is double-voting the same choice, ignore
+                        }
+                    }
+                    else
+                    {
+                        // New user
+                        // Valid entry, increment vote count
+                        // Record user as having voted
+                        ++(*ballot);
+                        votedUsers[id] = lowerVote;
+                    }
                 }
                 break;
 
             case ACCOUNT:
-                if (thisEvent.sender.account == "*")
+                if (!thisEvent.sender.account.length)
                 {
                     // User logged out
-                    // We don't know what the account was, else we could have
-                    // moved the vote to a `thisEvent.sender.nickname` key...
+                    // Old account is in aux; move vote to nickname if necessary
+                    if (thisEvent.aux != thisEvent.sender.nickname)
+                    {
+                        if (const previousVote = thisEvent.aux in votedUsers)
+                        {
+                            votedUsers[thisEvent.sender.nickname] = *previousVote;
+                            votedUsers.remove(thisEvent.aux);
+                        }
+                    }
                 }
-                else if (const oldEntry = thisEvent.sender.nickname in votedUsers)
+                else if (thisEvent.sender.account != thisEvent.sender.nickname)
                 {
-                    // Move the old entry to a new one with the account as key
-                    votedUsers[thisEvent.sender.account] = *oldEntry;
-                    votedUsers.remove(thisEvent.sender.nickname);
+                    if (const previousVote = thisEvent.sender.nickname in votedUsers)
+                    {
+                        // Move the old entry to a new one with the account as key
+                        votedUsers[thisEvent.sender.account] = *previousVote;
+                        votedUsers.remove(thisEvent.sender.nickname);
+                    }
                 }
                 break;
 
@@ -415,7 +483,11 @@ void pollImpl(
             case QUIT:
                 if (plugin.pollSettings.onlyOnlineUsersCount)
                 {
-                    votedUsers.remove(accountOrNickname);
+                    if (auto previousVote = id in votedUsers)
+                    {
+                        --choices[*previousVote];
+                        votedUsers.remove(id);
+                    }
                 }
                 break;
 
@@ -428,7 +500,7 @@ void pollImpl(
         }
     }
 
-    Fiber fiber = new CarryingFiber!IRCEvent(&dg, BufferSize.fiberStack);
+    Fiber fiber = new CarryingFiber!IRCEvent(&pollDg, BufferSize.fiberStack);
 
     if (plugin.state.server.daemon != IRCServer.Daemon.twitch)
     {
@@ -437,14 +509,14 @@ void pollImpl(
 
     await(plugin, fiber, IRCEvent.Type.CHAN);
     delay(plugin, fiber, dur);
-    plugin.channelVoteInstances[event.channel] = id;
+    plugin.channelVoteInstances[event.channel] = uniqueID;
 
-    const sortedChoices = pollChoices
+    const sortedChoices = choices
         .keys
         .sort
         .release;
 
-    generateVoteReminders(plugin, event, id, dur, sortedChoices);
+    generateVoteReminders(plugin, event, uniqueID, dur, sortedChoices);
 
     immutable timeInWords = dur.timeSince!(7, 0);
     enum pattern = "<b>Voting commenced!<b> Please place your vote for one of: " ~
@@ -461,14 +533,14 @@ void pollImpl(
     Params:
         plugin = The current [PollPlugin].
         event = The triggering [dialect.defs.IRCEvent|IRCEvent].
-        id = Unique vote identifier, used as key in [PollPlugin.channelVoteInstances].
+        uniqueID = Unique vote identifier, used as key in [PollPlugin.channelVoteInstances].
         dur = Vote/poll [core.time.Duration|Duration].
         sortedChoices = A sorted `string[]` list of all poll choices.
  +/
 void generateVoteReminders(
     PollPlugin plugin,
     const /*ref*/ IRCEvent event,
-    const uint id,
+    const uint uniqueID,
     const Duration dur,
     const string[] sortedChoices)
 {
@@ -483,7 +555,7 @@ void generateVoteReminders(
         if (reminderPoint == Duration.zero) return;
 
         const currentPollInstance = event.channel in plugin.channelVoteInstances;
-        if (!currentPollInstance || (*currentPollInstance != id)) return;  // Aborted
+        if (!currentPollInstance || (*currentPollInstance != uniqueID)) return;  // Aborted
 
         enum pattern = "<b>%d<b> %s left to vote! (%-(<b>%s<b>, %)<b>)";
         immutable numSeconds = reminderPoint.total!"seconds";
