@@ -598,12 +598,25 @@ mixin template IRCPluginImpl(
             {
                 static foreach (immutable regex; uda._regexes)
                 {
+                    import lu.string : contains;
+
                     static if (!regex._expression.length)
                     {
                         import std.format : format;
 
                         enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                             "listening for a `Regex` with an empty expression";
+                        static assert(0, pattern.format(fullyQualifiedName!fun));
+                    }
+                    else static if (
+                        (regex._policy != PrefixPolicy.direct) &&
+                        regex._expression.contains(' '))
+                    {
+                        import std.format : format;
+
+                        enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
+                            "listening for a non-`PrefixPolicy.direct`-annotated " ~
+                            "`Regex` with an expression containing spaces";
                         static assert(0, pattern.format(fullyQualifiedName!fun));
                     }
                 }
