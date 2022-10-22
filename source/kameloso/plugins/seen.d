@@ -837,7 +837,7 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
         else if (!requestedUser.isValidNickname(plugin.state.server))
         {
             // Nickname contained a space or other invalid character
-            immutable message = "Invalid user: <b>" ~ requestedUser ~ "<b>";
+            immutable message = "Invalid user: <h>" ~ requestedUser ~ "<h>";
             privmsg(event.channel, event.sender.nickname, message);
             return;
         }
