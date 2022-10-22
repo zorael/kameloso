@@ -44,7 +44,7 @@ import kameloso.messaging;
 import dialect.defs;
 import lu.container : CircularBuffer;
 import lu.string : beginsWith;
-import std.meta : aliasSeqOf;
+import std.meta : AliasSeq;
 import std.typecons : Flag, No, Yes;
 
 
@@ -53,7 +53,7 @@ import std.typecons : Flag, No, Yes;
 
     More can be added but if any are removed unittests will need to be updated.
  +/
-alias DelimiterCharacters = aliasSeqOf!("/|#@ _;");
+alias DelimiterCharacters = AliasSeq!('/', '|', '#', '@', ' ', '_', ';');
 
 
 // SedReplaceSettings
@@ -118,7 +118,7 @@ struct Line
 auto sedReplace(
     const string line,
     const string expr,
-    const Flag!"relaxSyntax" relaxSyntax) @safe pure nothrow
+    const Flag!"relaxSyntax" relaxSyntax)
 in (line.length, "Tried to `sedReplace` an empty line")
 in ((expr.length >= 5), "Tried to `sedReplace` with an invalid-length expression")
 in (expr.beginsWith('s'), "Tried to `sedReplace` with a non-expression expression")
@@ -236,7 +236,7 @@ in (expr.length, "Tried to `sedReplaceImpl` with an empty expression")
     import std.string : indexOf;
 
     enum charAsString = "" ~ char_;
-    enum escapedChar = "\\" ~ char_;
+    enum escapedCharAsString = "\\" ~ char_;
 
     static ptrdiff_t getNextUnescaped(const string lineWithChar)
     {
@@ -274,16 +274,23 @@ in (expr.length, "Tried to `sedReplaceImpl` with an empty expression")
         global = true;
     }
 
-    immutable openEnd = slice[$-1] != char_;
+    immutable openEnd = (slice[$-1] != char_);
     if (openEnd && !relaxSyntax) return line;
 
     immutable delimPos = getNextUnescaped(slice);
     if (delimPos == -1) return line;
 
-    immutable replaceThis = slice[0..delimPos].replace(escapedChar, charAsString);
-    slice = slice[delimPos+1..$];
+    // Defer string-replace until after slice advance and subsequent length check
+    string replaceThis = slice[0..delimPos];  // mutable
 
+    slice = slice[delimPos+1..$];
     if (!slice.length) return line;
+
+    // ...to here.
+    replaceThis = replaceThis.replace(escapedCharAsString, charAsString);
+
+    immutable replaceThisPos = line.indexOf(replaceThis);
+    if (replaceThisPos == -1) return line;
 
     immutable endDelimPos = getNextUnescaped(slice);
 
@@ -318,8 +325,6 @@ in (expr.length, "Tried to `sedReplaceImpl` with an empty expression")
     }
     else
     {
-        immutable replaceThisPos = line.indexOf(replaceThis);
-        if (replaceThisPos == -1) return line;  // This can happen, I *think*.
         return line.replace(replaceThisPos, replaceThisPos+replaceThis.length, withThis);
     }
 }
@@ -380,6 +385,10 @@ unittest
         immutable replaced = "snek".sedReplaceImpl!'/'("s/snek", Yes.relaxSyntax);
         assert((replaced == "snek"), replaced);
     }
+    {
+        immutable replaced = "hink".sedReplaceImpl!'/'("s/honk/henk/", Yes.relaxSyntax);
+        assert((replaced == "hink"), replaced);
+    }
 }
 
 
@@ -429,10 +438,13 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
         delimiterswitch:
         switch (delimiter)
         {
-        foreach (immutable c; DelimiterCharacters[1..$])
+        static if (DelimiterCharacters.length > 1)
         {
-            case c:
-                goto case DelimiterCharacters[0];
+            foreach (immutable c; DelimiterCharacters[1..$])
+            {
+                case c:
+                    goto case DelimiterCharacters[0];
+            }
         }
 
         case DelimiterCharacters[0]:
@@ -441,7 +453,16 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
                 // Work around CircularBuffer pre-1.2.3 having save annotated const
                 foreach (immutable line; cast()senderLines.save)
                 {
-                    if ((event.time - line.timestamp) > plugin.replaceTimeoutSeconds)
+                    import kameloso.messaging : chan;
+                    import std.format : format;
+
+                    if (!line.content.length)
+                    {
+                        // line is Line.init
+                        continue;
+                    }
+
+                    if ((event.time - line.timestamp) > plugin.prevlineLifetime)
                     {
                         // Entry is too old, any further entries will be even older
                         break delimiterswitch;
@@ -451,9 +472,6 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
                         cast(Flag!"relaxSyntax")plugin.sedReplaceSettings.relaxSyntax);
 
                     if ((result == line.content) || !result.length) continue;
-
-                    import kameloso.messaging : chan;
-                    import std.format : format;
 
                     enum pattern = "<h>%s<h> | %s";
                     immutable message = pattern.format(event.sender.nickname, result);
@@ -494,20 +512,18 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
 void onWelcome(SedReplacePlugin plugin)
 {
     import kameloso.plugins.common.delayawait : delay;
-    import kameloso.constants : BufferSize;
+    import std.datetime.systime : Clock;
 
     delay(plugin, plugin.timeBetweenPurges, Yes.yield);
 
     while (true)
     {
-        import std.datetime.systime : Clock;
-
         immutable now = Clock.currTime.toUnixTime;
 
         foreach (immutable sender, const lines; plugin.prevlines)
         {
             if (lines.empty ||
-                ((now - lines.front.timestamp) >= plugin.replaceTimeoutSeconds))
+                ((now - lines.front.timestamp) >= plugin.prevlineLifetime))
             {
                 // Something is either wrong with the sender's entries or
                 // the most recent entry is too old
@@ -554,10 +570,10 @@ private:
     SedReplaceSettings sedReplaceSettings;
 
     /// Lifetime of a [Line] in [prevlines], in seconds.
-    enum replaceTimeoutSeconds = 3600;
+    enum prevlineLifetime = 3600;
 
     /// How often to purge the [prevlines] list of messages.
-    static immutable timeBetweenPurges = (replaceTimeoutSeconds * 3).seconds;
+    static immutable timeBetweenPurges = (prevlineLifetime * 3).seconds;
 
     /++
         A [lu.container.CircularBuffer|CircularBuffer]`[string]` associative array
