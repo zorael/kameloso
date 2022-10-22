@@ -41,6 +41,7 @@ versions \
     "WithPollPlugin" \
     "WithTimerPlugin" \
     "WithWebtitlesPlugin"
+    //"WithSamePlugin"
 
 /**
     Services; needed for everything to work right.

@@ -49,4 +49,5 @@ alias PluginModules = AliasSeq!(
     "kameloso.plugins.webtitles",
     "kameloso.plugins.pipeline",
     "kameloso.plugins.timer",
+    "kameloso.plugins.same",
 );
