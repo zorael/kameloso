@@ -90,7 +90,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
  +/
 void postprocessCommon(PersistenceService service, ref IRCEvent event)
 {
-    static void postprocessImpl(PersistenceService service, const ref IRCEvent event, ref IRCUser user)
+    static void postprocessImpl(PersistenceService service, ref IRCEvent event, ref IRCUser user)
     {
         import std.algorithm.searching : canFind;
 
@@ -206,11 +206,18 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
                 switch (event.type)
                 {
                 case JOIN:
-                case ACCOUNT:
                 case RPL_WHOISACCOUNT:
                 case RPL_WHOISUSER:
                 case RPL_WHOISREGNICK:
                     applyClassifiers(service, event, user);
+                    break;
+
+                case ACCOUNT:
+                    if ((user.account == "*") && stored.account.length)
+                    {
+                        event.aux = stored.account;
+                        goto case RPL_WHOISACCOUNT;
+                    }
                     break;
 
                 default:
