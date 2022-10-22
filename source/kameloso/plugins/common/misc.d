@@ -1072,7 +1072,10 @@ enum ModulePluginName(string module_) = ()
     else
     {
         import std.format : format;
-        enum pattern = "Bad `IRCPluginHook` annotations in module `%s`";
+
+        // It can apparently branch here for a variety of reasons,
+        // so only give a generic error message.
+        enum pattern = "Unspecific error in module `%s`; see backtrace";
         immutable message = pattern.format(module_);
         static assert(0, message);
     }
