@@ -589,7 +589,7 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
     expect("There are no commands available right now.");
 
     send("oneliner");
-    expect("Usage: %soneliner [new|insert|add|del|list] ...".format(prefix));
+    expect("Usage: %soneliner [new|insert|add|edit|del|list] ...".format(prefix));
 
     send("oneliner add herp derp dirp darp");
     expect("No such oneliner: %sherp".format(prefix));
@@ -1096,6 +1096,7 @@ public:
 /++
  +
  +/
+@IRCPluginHook
 final class TesterPlugin : IRCPlugin
 {
 private:
