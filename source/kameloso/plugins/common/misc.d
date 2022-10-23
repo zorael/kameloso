@@ -1075,7 +1075,7 @@ enum ModulePluginName(string module_) = ()
 
         // It can apparently branch here for a variety of reasons,
         // so only give a generic error message.
-        enum pattern = "Unspecific error in module `%s`; see backtrace";
+        enum pattern = "Unspecific error in module `%s`; if no backtrace, verify `IRCPluginHook` annotations";
         immutable message = pattern.format(module_);
         static assert(0, message);
     }
