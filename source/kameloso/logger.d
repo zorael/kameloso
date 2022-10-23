@@ -372,6 +372,7 @@ public:
      +/
     private void printImpl(Args...)(const LogLevel logLevel, auto ref Args args)
     {
+        import lu.traits : UnqualArray;
         import std.traits : isAggregateType;
 
         if (headless) return;
@@ -388,7 +389,7 @@ public:
         {
             alias T = typeof(arg);
 
-            static if (is(T : string) || is(T : char[]) || is(T : char))
+            static if (is(UnqualArray!T : char[]) || is(T : char))
             {
                 messagebuffer.put(arg);
             }
@@ -427,7 +428,7 @@ public:
                     }
                 }
                 else static if (is(typeof(T.toString)) &&
-                    (is(typeof(T.toString) : string) || is(typeof(T.toString) : char[])))
+                    is(UnqualArray!(typeof(T.toString)) : char[]))
                 {
                     // toString string/char[] literal
                     messagebuffer.put(arg.toString);
@@ -447,7 +448,7 @@ public:
             }
         }
 
-        linebuffer.put(messagebuffer.data.expandTags(logLevel));
+        linebuffer.put(messagebuffer.data.expandTags(logLevel, cast(Flag!"strip")monochrome));
         finishLogMsg();
     }
 
@@ -481,8 +482,8 @@ public:
         }
 
         beginLogMsg(logLevel);
-        messagebuffer.formattedWrite(pattern.expandTags(logLevel), args);
-        linebuffer.put(messagebuffer.data);
+        messagebuffer.formattedWrite(pattern, args);
+        linebuffer.put(messagebuffer.data.expandTags(logLevel, cast(Flag!"strip")monochrome));
         finishLogMsg();
     }
 
@@ -515,7 +516,7 @@ public:
 
         beginLogMsg(logLevel);
         messagebuffer.formattedWrite!pattern(args);
-        linebuffer.put(messagebuffer.data.expandTags(logLevel));
+        linebuffer.put(messagebuffer.data.expandTags(logLevel, cast(Flag!"strip")monochrome));
         finishLogMsg();
     }
 

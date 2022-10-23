@@ -1072,6 +1072,8 @@ void onWelcome(ConnectService service)
 
         void twitchWarningDg(IRCEvent)
         {
+            scope(exit) unawait(service, &twitchWarningDg, endOfMotdEventTypes[]);
+
             version(TwitchSupport)
             {
                 import lu.string : beginsWith;
@@ -1107,8 +1109,6 @@ void onWelcome(ConnectService service)
                         "Expect errors and general uselessness.");
                 }
             }
-
-            unawait(service, &twitchWarningDg, endOfMotdEventTypes[]);
         }
 
         await(service, &twitchWarningDg, endOfMotdEventTypes[]);
@@ -1608,6 +1608,7 @@ public:
     but also incorporates logic to authenticate with services, and capability
     negotiations.
  +/
+@IRCPluginHook
 final class ConnectService : IRCPlugin
 {
 private:

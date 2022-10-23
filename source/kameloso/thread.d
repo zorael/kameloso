@@ -283,6 +283,8 @@ struct OutputRequest
         info,       /// Log at [kameloso.logger.LogLevel.info].
         warning,    /// Log at [kameloso.logger.LogLevel.warning].
         error,      /// Log at [kameloso.logger.LogLevel.error].
+        critical,   /// Log at [kameloso.logger.LogLevel.critical].
+        fatal,      /// Log at [kameloso.logger.LogLevel.fatal].
     }
 
     /++

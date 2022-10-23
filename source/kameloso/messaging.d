@@ -891,7 +891,8 @@ unittest
         caller = String name of the calling function, or something else that gives context.
  +/
 void whois(Flag!"priority" priority = No.priority)
-    (IRCPluginState state, const string nickname,
+    (IRCPluginState state,
+    const string nickname,
     const Flag!"force" force = No.force,
     const Flag!"quiet" quiet = No.quiet,
     const Flag!"background" background = No.background,
@@ -1091,20 +1092,53 @@ void askToOutputImpl(string logLevel)(IRCPluginState state, const string line)
 }
 
 
-/// Sends a concurrency message to the main thread asking to print text to the local terminal.
-alias askToWriteln = askToOutputImpl!"writeln";
-/// Sends a concurrency message to the main thread to `logger.trace` text to the local terminal.
-alias askToTrace = askToOutputImpl!"trace";
-/// Sends a concurrency message to the main thread to `logger.log` text to the local terminal.
-alias askToLog = askToOutputImpl!"log";
-/// Sends a concurrency message to the main thread to `logger.info` text to the local terminal.
-alias askToInfo = askToOutputImpl!"info";
-/// Sends a concurrency message to the main thread to `logger.warning` text to the local terminal.
-alias askToWarn = askToOutputImpl!"warning";
-/// Simple alias to [askToWarn], because both spellings are right.
-alias askToWarning = askToWarn;
-/// Sends a concurrency message to the main thread to `logger.error` text to the local terminal.
-alias askToError = askToOutputImpl!"error";
+/+
+    Generate `askToLevel` family of functions at compile-time, provided the compiler
+    is recent enough to support it. Too old compilers fail at resolving the "static"
+    [askToWarn] alias.
+
+    For older compilers, just provide the handwritten aliases.
+ +/
+static if (__VERSION__ >= 2099L)
+{
+    private import kameloso.thread : OutputRequest;
+    private import std.string : capitalize;
+    private import std.traits : EnumMembers;
+
+    static foreach (immutable member; EnumMembers!(OutputRequest.Level))
+    {
+        mixin(
+`
+        /// Sends a concurrency message to the main thread to [KamelosoLogger.trace] text to the local terminal.
+        alias askTo` ~ __traits(identifier, member).capitalize ~ ` =
+            askToOutputImpl!"` ~ __traits(identifier, member) ~ `";
+`);
+    }
+
+    /// Simple alias to [askToWarn], because both spellings are right.
+    alias askToWarn = askToWarning;
+}
+else
+{
+    /// Sends a concurrency message to the main thread asking to print text to the local terminal.
+    alias askToWriteln = askToOutputImpl!"writeln";
+    /// Sends a concurrency message to the main thread to [KamelosoLogger.trace] text to the local terminal.
+    alias askToTrace = askToOutputImpl!"trace";
+    /// Sends a concurrency message to the main thread to [KamelosoLogger.log] text to the local terminal.
+    alias askToLog = askToOutputImpl!"log";
+    /// Sends a concurrency message to the main thread to [KamelosoLogger.info] text to the local terminal.
+    alias askToInfo = askToOutputImpl!"info";
+    /// Sends a concurrency message to the main thread to [KamelosoLogger.warning] text to the local terminal.
+    alias askToWarn = askToOutputImpl!"warning";
+    /// Simple alias to [askToWarn], because both spellings are right.
+    alias askToWarning = askToWarn;
+    /// Sends a concurrency message to the main thread to [KamelosoLogger.error] text to the local terminal.
+    alias askToError = askToOutputImpl!"error";
+    /// Sends a concurrency message to the main thread to [KamelosoLogger.critical] text to the local terminal.
+    alias askToCritical = askToOutputImpl!"critical";
+    /// Sends a concurrency message to the main thread to [KamelosoLogger.fatal] text to the local terminal.
+    alias askToFatal = askToOutputImpl!"fatal";
+}
 
 unittest
 {
@@ -1119,10 +1153,11 @@ unittest
     state.askToInfo("info");
     state.askToWarn("warning");
     state.askToError("error");
+    state.askToCritical("critical");
 
     alias T = OutputRequest.Level;
 
-    static immutable T[6] expectedLevels =
+    static immutable T[7] expectedLevels =
     [
         T.writeln,
         T.trace,
@@ -1130,9 +1165,10 @@ unittest
         T.info,
         T.warning,
         T.error,
+        T.critical,
     ];
 
-    static immutable string[6] expectedMessages =
+    static immutable string[7] expectedMessages =
     [
         "writeln",
         "trace",
@@ -1140,6 +1176,7 @@ unittest
         "info",
         "warning",
         "error",
+        "critical",
     ];
 
     static assert(expectedLevels.length == expectedMessages.length);

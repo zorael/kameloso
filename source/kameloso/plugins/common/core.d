@@ -38,6 +38,10 @@
 
     See_Also:
         [kameloso.plugins.common.misc|plugins.common.misc]
+
+        [kameloso.plugins.common.mixins|plugins.common.mixins]
+
+        [kameloso.plugins.common.delayawait|plugins.common.delayawait]
  +/
 module kameloso.plugins.common.core;
 
@@ -78,6 +82,12 @@ public:
      +/
     static struct CommandMetadata
     {
+        // policy
+        /++
+            Prefix policy of this command.
+         +/
+        PrefixPolicy policy;
+
         // description
         /++
             Description about what the command does, in natural language.
@@ -97,11 +107,14 @@ public:
          +/
         bool hidden;
 
-        /// Constructor.
-        this(const string description, /*const*/ string[] syntaxes, const bool hidden) pure @safe nothrow @nogc
+        /// Constructor. Don't take a `syntax` here, populate it manually.
+        this(
+            const PrefixPolicy policy,
+            const string description,
+            const bool hidden) pure @safe nothrow @nogc
         {
+            this.policy = policy;
             this.description = description;
-            this.syntaxes = syntaxes;
             this.hidden = hidden;
         }
     }
@@ -486,6 +499,7 @@ mixin template IRCPluginImpl(
     {
         mixin("static import thisModule = ", module_, ";");
 
+        // udaSanityCheck
         /++
             Verifies that annotations are as expected.
          +/
@@ -584,12 +598,25 @@ mixin template IRCPluginImpl(
             {
                 static foreach (immutable regex; uda._regexes)
                 {
+                    import lu.string : contains;
+
                     static if (!regex._expression.length)
                     {
                         import std.format : format;
 
                         enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                             "listening for a `Regex` with an empty expression";
+                        static assert(0, pattern.format(fullyQualifiedName!fun));
+                    }
+                    else static if (
+                        (regex._policy != PrefixPolicy.direct) &&
+                        regex._expression.contains(' '))
+                    {
+                        import std.format : format;
+
+                        enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
+                            "listening for a non-`PrefixPolicy.direct`-annotated " ~
+                            "`Regex` with an expression containing spaces";
                         static assert(0, pattern.format(fullyQualifiedName!fun));
                     }
                 }
@@ -608,34 +635,58 @@ mixin template IRCPluginImpl(
             return true;
         }
 
+        // call
         /++
             Calls the passed function pointer, appropriately.
          +/
-        void call(Fun)(scope Fun fun, ref IRCEvent event) scope
+        void call(bool inFiber, Fun)(scope Fun fun, ref IRCEvent event) scope
         {
             import lu.traits : TakesParams;
             import std.traits : ParameterStorageClass, Parameters, arity;
 
-            /++
-                Statically asserts that a parameter storage class is neither `out` nor `ref`.
-
-                Take the storage class as a template parameter and statically
-                assert inside this function, unlike how `udaSanityCheck` returns
-                false on failure, so we can format and print the error message
-                once here (instead of at all call sites upon receiving false).
-             +/
-            static void assertNotRefNorOut(ParameterStorageClass storageClass)()
+            static if (inFiber)
             {
-                static if (
-                    (storageClass & ParameterStorageClass.ref_) ||
-                    (storageClass & ParameterStorageClass.out_))
-                {
-                    import std.format : format;
+                /++
+                    Statically asserts that a parameter storage class is not `ref`.
 
-                    enum pattern = "`%s` has a `%s` event handler that takes an " ~
-                        "`IRCEvent` of an unsupported storage class; " ~
-                        "may not be mutable `ref` or `out`";
-                    static assert(0, pattern.format(module_, Fun.stringof));
+                    Take the storage class as a template parameter and statically
+                    assert inside this function, unlike how `udaSanityCheck` returns
+                    false on failure, so we can format and print the error message
+                    once here (instead of at all call sites upon receiving false).
+                 +/
+                static void assertNotRef(ParameterStorageClass storageClass)()
+                {
+                    static if (storageClass & ParameterStorageClass.ref_)
+                    {
+                        import std.format : format;
+
+                        enum pattern = "`%s` has a `%s` event handler annotated `.fiber(true)` " ~
+                            "that takes an `IRCEvent` by `ref`, which is prone to memory corruption";
+                        static assert(0, pattern.format(module_, Fun.stringof));
+                    }
+                }
+            }
+
+            static if (!inFiber)
+            {
+                /++
+                    Statically asserts that a parameter storage class is neither `out` nor `ref`.
+
+                    See `assertNotRef` above.
+                 +/
+                static void assertNotRefNorOut(ParameterStorageClass storageClass)()
+                {
+                    static if (
+                        (storageClass & ParameterStorageClass.ref_) ||
+                        (storageClass & ParameterStorageClass.out_))
+                    {
+                        import std.format : format;
+
+                        enum pattern = "`%s` has a `%s` event handler that takes an " ~
+                            "`IRCEvent` of an unsupported storage class; " ~
+                            "may not be mutable `ref` or `out`";
+                        static assert(0, pattern.format(module_, Fun.stringof));
+                    }
                 }
             }
 
@@ -643,10 +694,18 @@ mixin template IRCPluginImpl(
                 TakesParams!(fun, typeof(this), IRCEvent) ||
                 TakesParams!(fun, IRCPlugin, IRCEvent))
             {
-                static if (!is(Parameters!fun[1] == const))
+                static if (inFiber)
                 {
                     import std.traits : ParameterStorageClassTuple;
-                    assertNotRefNorOut!(ParameterStorageClassTuple!fun[1]);
+                    assertNotRef!(ParameterStorageClassTuple!fun[1]);
+                }
+                else
+                {
+                    static if (!is(Parameters!fun[1] == const))
+                    {
+                        import std.traits : ParameterStorageClassTuple;
+                        assertNotRefNorOut!(ParameterStorageClassTuple!fun[1]);
+                    }
                 }
 
                 fun(this, event);
@@ -659,10 +718,18 @@ mixin template IRCPluginImpl(
             }
             else static if (TakesParams!(fun, IRCEvent))
             {
-                static if (!is(Parameters!fun[0] == const))
+                static if (inFiber)
                 {
                     import std.traits : ParameterStorageClassTuple;
-                    assertNotRefNorOut!(ParameterStorageClassTuple!fun[0]);
+                    assertNotRef!(ParameterStorageClassTuple!fun[0]);
+                }
+                else
+                {
+                    static if (!is(Parameters!fun[0] == const))
+                    {
+                        import std.traits : ParameterStorageClassTuple;
+                        assertNotRefNorOut!(ParameterStorageClassTuple!fun[0]);
+                    }
                 }
 
                 fun(event);
@@ -680,6 +747,7 @@ mixin template IRCPluginImpl(
             }
         }
 
+        // NextStep
         /++
             Signal up the callstack of what to do next.
          +/
@@ -691,10 +759,11 @@ mixin template IRCPluginImpl(
             return_,
         }
 
+        // process
         /++
             Process a function.
          +/
-        NextStep process(bool verbose, Fun)
+        NextStep process(bool verbose, bool inFiber, Fun)
             (scope Fun fun,
             const string funName,
             const IRCEventHandler uda,
@@ -782,14 +851,14 @@ mixin template IRCPluginImpl(
             // Evaluate each Command UDAs with the current event
             if (uda._commands.length)
             {
+                commandForeach:
                 foreach (const command; uda._commands)
                 {
                     static if (verbose)
                     {
                         writefln(`   ...Command "%s"`, command._word);
+                        if (state.settings.flush) stdout.flush();
                     }
-
-                    bool policyMismatch;
 
                     if (!event.prefixPolicyMatches!verbose
                         (command._policy, state.client, state.settings.prefix))
@@ -800,25 +869,19 @@ mixin template IRCPluginImpl(
                             if (state.settings.flush) stdout.flush();
                         }
 
-                        policyMismatch = true;
-                    }
-
-                    if (policyMismatch)
-                    {
                         // Do nothing, proceed to next command
+                        continue commandForeach;
                     }
                     else
                     {
                         import lu.string : nom;
-                        import std.algorithm.comparison : equal;
                         import std.typecons : No, Yes;
-                        import std.uni : asLowerCase, toLower;
+                        import std.uni : toLower;
 
                         immutable thisCommand = event.content
                             .nom!(Yes.inherit, Yes.decode)(' ');
-                        immutable lowerWord = command._word.toLower;
 
-                        if (thisCommand.asLowerCase.equal(lowerWord))
+                        if (thisCommand.toLower == command._word.toLower)
                         {
                             static if (verbose)
                             {
@@ -828,7 +891,7 @@ mixin template IRCPluginImpl(
 
                             event.aux = thisCommand;
                             commandMatch = true;
-                            break;
+                            break commandForeach;
                         }
                         else
                         {
@@ -842,6 +905,7 @@ mixin template IRCPluginImpl(
             // Iff no match from Commands, evaluate Regexes
             if (uda._regexes.length && !commandMatch)
             {
+                regexForeach:
                 foreach (const regex; uda._regexes)
                 {
                     static if (verbose)
@@ -849,8 +913,6 @@ mixin template IRCPluginImpl(
                         writeln("   ...Regex: `", regex._expression, "`");
                         if (state.settings.flush) stdout.flush();
                     }
-
-                    bool policyMismatch;
 
                     if (!event.prefixPolicyMatches!verbose
                         (regex._policy, state.client, state.settings.prefix))
@@ -861,12 +923,8 @@ mixin template IRCPluginImpl(
                             if (state.settings.flush) stdout.flush();
                         }
 
-                        policyMismatch = true;
-                    }
-
-                    if (policyMismatch)
-                    {
                         // Do nothing, proceed to next regex
+                        continue regexForeach;
                     }
                     else
                     {
@@ -886,7 +944,7 @@ mixin template IRCPluginImpl(
 
                                 event.aux = hits[0];
                                 commandMatch = true;
-                                break;
+                                break regexForeach;
                             }
                             else
                             {
@@ -969,7 +1027,7 @@ mixin template IRCPluginImpl(
                     {
                         // Unsure why we need to specifically specify IRCPlugin
                         // now despite typeof(this) being a subclass...
-                        enqueue(this, event, uda._permissionsRequired, fun, funName);
+                        enqueue(this, event, uda._permissionsRequired, uda._fiber, fun, funName);
                         return uda._chainable ? NextStep.continue_ : NextStep.return_;
                     }
                     else
@@ -991,16 +1049,49 @@ mixin template IRCPluginImpl(
                 if (state.settings.flush) stdout.flush();
             }
 
-            if (uda._fiber)
+            /+
+                This casts any @safe event handler functions to @system.
+                It should no longer be necessary since we removed the `@safe:`
+                from the top of all modules with handler functions (including
+                `awareness.d`), but it's free, so keep it here in case we add
+                something later and accidentally make it @safe.
+             +/
+            static if (Fun.stringof[$-5..$] == "@safe")
             {
-                import kameloso.constants : BufferSize;
-                import core.thread : Fiber;
-                auto fiber = new Fiber(() => call(fun, event), BufferSize.fiberStack);
-                fiber.call();
+                enum message = "Warning: `" ~ module_ ~ "` has a `" ~ Fun.stringof[0..$-6] ~
+                    "` event handler annotated `@safe`, either directly or via mixins, " ~
+                    "which incurs unnecessary template instantiations. " ~
+                    "It was cast to `@system`, but consider revising source";
+                pragma(msg, message);
+
+                mixin("alias SystemFun = " ~ Fun.stringof[0..$-6] ~ " @system;");
             }
             else
             {
-                call(fun, event);
+                alias SystemFun = Fun;
+            }
+
+            static if (inFiber)
+            {
+                import kameloso.constants : BufferSize;
+                import kameloso.thread : CarryingFiber;
+                import core.thread : Fiber;
+
+                auto fiber = new CarryingFiber!IRCEvent(
+                    () => call!(inFiber, SystemFun)(fun, event),
+                    BufferSize.fiberStack);
+                fiber.payload = event;
+                fiber.call();
+
+                if (fiber.state == Fiber.State.TERM)
+                {
+                    // Ended immediately, so just destroy
+                    destroy(fiber);
+                }
+            }
+            else
+            {
+                call!(inFiber, SystemFun)(fun, event);
             }
 
             if (uda._chainable)
@@ -1017,7 +1108,10 @@ mixin template IRCPluginImpl(
             }
         }
 
-        /// Sanitise and try again once on UTF/Unicode exceptions
+        // sanitiseEvent
+        /++
+            Sanitise event, used upon UTF/Unicode exceptions.
+         +/
         static void sanitiseEvent(ref IRCEvent event)
         {
             import std.encoding : sanitize;
@@ -1047,7 +1141,10 @@ mixin template IRCPluginImpl(
             }
         }
 
-        /// Wrap all the functions in the passed `funlist` in try-catch blocks.
+        // tryProcess
+        /++
+            Wrap all the functions in the passed `funlist` in try-catch blocks.
+         +/
         void tryProcess(funlist...)(ref IRCEvent event)
         {
             static if (__VERSION__ < 2096L)
@@ -1107,7 +1204,8 @@ mixin template IRCPluginImpl(
 
                 try
                 {
-                    immutable next = process!verbose(&fun, funName, uda, event, acceptsAnyType);
+                    immutable next = process!(verbose, cast(bool)uda._fiber)
+                        (&fun, funName, uda, event, acceptsAnyType);
 
                     if (next == NextStep.continue_)
                     {
@@ -1116,7 +1214,8 @@ mixin template IRCPluginImpl(
                     else if (next == NextStep.repeat)
                     {
                         // only repeat once so we don't endlessly loop
-                        if (process!verbose(&fun, funName, uda, event, acceptsAnyType) == NextStep.continue_)
+                        if (process!(verbose, cast(bool)uda._fiber)
+                            (&fun, funName, uda, event, acceptsAnyType) == NextStep.continue_)
                         {
                             continue;
                         }
@@ -1147,7 +1246,8 @@ mixin template IRCPluginImpl(
                     sanitiseEvent(event);
 
                     // Copy-paste, not much we can do otherwise
-                    immutable next = process!verbose(&fun, funName, uda, event, acceptsAnyType);
+                    immutable next = process!(verbose, cast(bool)uda._fiber)
+                        (&fun, funName, uda, event, acceptsAnyType);
 
                     if (next == NextStep.continue_)
                     {
@@ -1156,7 +1256,8 @@ mixin template IRCPluginImpl(
                     else if (next == NextStep.repeat)
                     {
                         // only repeat once so we don't endlessly loop
-                        if (process!verbose(&fun, funName, uda, event, acceptsAnyType) == NextStep.continue_)
+                        if (process!(verbose, cast(bool)uda._fiber)
+                            (&fun, funName, uda, event, acceptsAnyType) == NextStep.continue_)
                         {
                             continue;
                         }
@@ -1182,6 +1283,7 @@ mixin template IRCPluginImpl(
         enum isEarlyFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.early);
         enum isLateFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.late);
         enum isCleanupFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.cleanup);
+
         alias hasSpecialTiming = templateOr!(isSetupFun, isEarlyFun,
             isLateFun, isCleanupFun);
         alias isNormalEventHandler = templateNot!hasSpecialTiming;
@@ -1433,7 +1535,7 @@ mixin template IRCPluginImpl(
                     hasUDA!(typeof(this.tupleof[i]), Settings)))
             {
                 success = symbol.setMemberByName(setting, value);
-                if (success) break;
+                break;
             }
         }
 
@@ -1508,80 +1610,50 @@ mixin template IRCPluginImpl(
         return didSomething;
     }
 
-    // setup
-    /++
-        Runs early pre-connect routines.
+    private import std.meta : AliasSeq;
+
+    // setup, start, teardown, reload
+    /+
+        Generates functions `setup`, `start`, `reload` and `teardown`. These
+        merely pass on calls to module-level `.setup`, `.start`, `.reload` and
+        `.teardown`, where such is available.
+
+        `setup` runs early pre-connect routines.
+
+        `start` runs early post-connect routines, immediately after connection
+        has been established.
+
+        `reload` Reloads the plugin, where such makes sense. What this means is
+        implementation-defined.
+
+        `teardown` de-initialises the plugin.
      +/
-    override public void setup() @system
+    static foreach (immutable funName; AliasSeq!("setup", "start", "reload", "teardown"))
     {
-        static if (__traits(compiles, .setup))
+        mixin(`
+        /++
+            Automatically generated function.
+         +/
+        override public void ` ~ funName ~ `() @system
         {
-            import lu.traits : TakesParams;
-
-            if (!this.isEnabled) return;
-
-            static if (TakesParams!(.setup, typeof(this)))
+            static if (__traits(compiles, .` ~ funName ~ `))
             {
-                .setup(this);
-            }
-            else
-            {
-                import std.format : format;
-                enum pattern = "`%s.setup` has an unsupported function signature: `%s`";
-                static assert(0, pattern.format(module_, typeof(.setup).stringof));
-            }
-        }
-    }
+                import lu.traits : TakesParams;
 
-    // start
-    /++
-        Runs early post-connect routines, immediately after connection has been
-        established.
-     +/
-    override public void start() @system
-    {
-        static if (__traits(compiles, .start))
-        {
-            import lu.traits : TakesParams;
+                if (!this.isEnabled) return;
 
-            if (!this.isEnabled) return;
-
-            static if (TakesParams!(.start, typeof(this)))
-            {
-                .start(this);
+                static if (TakesParams!(.` ~ funName ~ `, typeof(this)))
+                {
+                    .` ~ funName ~ `(this);
+                }
+                else
+                {
+                    import std.format : format;
+                    ` ~ "enum pattern = \"`%s.%s` has an unsupported function signature: `%s`\";
+                    " ~ `static assert(0, pattern.format(module_, "` ~ funName ~ `", typeof(.` ~ funName ~ `).stringof));
+                }
             }
-            else
-            {
-                import std.format : format;
-                enum pattern = "`%s.start` has an unsupported function signature: `%s`";
-                static assert(0, pattern.format(module_, typeof(.start).stringof));
-            }
-        }
-    }
-
-    // teardown
-    /++
-        De-initialises the plugin.
-     +/
-    override public void teardown() @system
-    {
-        static if (__traits(compiles, .teardown))
-        {
-            import lu.traits : TakesParams;
-
-            if (!this.isEnabled) return;
-
-            static if (TakesParams!(.teardown, typeof(this)))
-            {
-                .teardown(this);
-            }
-            else
-            {
-                import std.format : format;
-                enum pattern = "`%s.teardown` has an unsupported function signature: `%s`";
-                static assert(0, pattern.format(module_, typeof(.teardown).stringof));
-            }
-        }
+        }`);
     }
 
     // name
@@ -1669,9 +1741,13 @@ mixin template IRCPluginImpl(
                 {{
                     enum key = command._word;
                     commandAA[key] = IRCPlugin.CommandMetadata
-                        (command._description, command._syntaxes, command._hidden);
+                        (command._policy, command._description, command._hidden);
 
-                    static if (command._description.length)
+                    static if (command._hidden)
+                    {
+                        // Just ignore
+                    }
+                    else static if (command._description.length)
                     {
                         static if (command._policy == PrefixPolicy.nickname)
                         {
@@ -1681,18 +1757,29 @@ mixin template IRCPluginImpl(
                                 // as that's how it's actually used.
                                 foreach (immutable syntax; command._syntaxes)
                                 {
-                                    commandAA[key].syntaxes ~= "$nickname: " ~ syntax;
+                                    commandAA[key].syntaxes ~= "$bot: " ~ syntax;
                                 }
                             }
                             else
                             {
                                 // Define an empty nickname: command syntax
                                 // to give hint about the nickname prefix
-                                commandAA[key].syntaxes ~= "$nickname: $command";
+                                commandAA[key].syntaxes ~= "$bot: $command";
+                            }
+                        }
+                        else
+                        {
+                            static if (command._syntaxes.length)
+                            {
+                                commandAA[key].syntaxes ~= command._syntaxes;
+                            }
+                            else
+                            {
+                                commandAA[key].syntaxes ~= "$command";
                             }
                         }
                     }
-                    else static if (!command._hidden)
+                    else /*static if (!command._hidden && !command._description.length)*/
                     {
                         import std.format : format;
                         import std.traits : fullyQualifiedName;
@@ -1703,16 +1790,17 @@ mixin template IRCPluginImpl(
 
                 static foreach (immutable regex; uda._regexes)
                 {{
-                    enum key = `r"` ~ regex.expression ~ `"`;
-                        commandAA[key] = IRCPlugin.CommandMetadata(regex.description, regex.hidden);
+                    enum key = `r"` ~ regex._expression ~ `"`;
+                        commandAA[key] = IRCPlugin.CommandMetadata
+                            (regex._policy, regex._description, regex._hidden);
 
-                    static if (regex.description.length)
+                    static if (regex._description.length)
                     {
                         static if (regex._policy == PrefixPolicy.direct)
                         {
                             commandAA[key].syntaxes ~= regex._expression;
                         }
-                        else static if (regex._policy == PrefixPolicy.prefix)
+                        else static if (regex._policy == PrefixPolicy.prefixed)
                         {
                             commandAA[key].syntaxes ~= "$prefix" ~ regex._expression;
                         }
@@ -1740,33 +1828,6 @@ mixin template IRCPluginImpl(
         // and then just the address, but this is really not a hotspot.
         // So just let it allocate when it wants.
         return this.isEnabled ? ctCommandsEnumLiteral : null;
-    }
-
-    // reload
-    /++
-        Reloads the plugin, where such makes sense.
-
-        What this means is implementation-defined.
-     +/
-    override public void reload() @system
-    {
-        static if (__traits(compiles, .reload))
-        {
-            import lu.traits : TakesParams;
-
-            if (!this.isEnabled) return;
-
-            static if (TakesParams!(.reload, typeof(this)))
-            {
-                .reload(this);
-            }
-            else
-            {
-                import std.format : format;
-                enum pattern = "`%s.reload` has an unsupported function signature: `%s`";
-                static assert(0, pattern.format(module_, typeof(.reload).stringof));
-            }
-        }
     }
 
     private import kameloso.thread : Sendable;
@@ -2819,3 +2880,10 @@ enum Configuration;
     Annotation denoting that a variable enables and disables a plugin.
  +/
 enum Enabler;
+
+
+// IRCPluginHook
+/++
+    Annotation denoting that a class is a plugin.
+ +/
+enum IRCPluginHook;

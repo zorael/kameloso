@@ -45,6 +45,12 @@ public:
     bool watchtime = true;
 
     /++
+        Whether or not to only count watchtime for users that has shown activity
+        in the channel. This makes it ignore silent lurkers.
+     +/
+    bool watchtimeExcludesLurkers = true;
+
+    /++
         What kind of song requests to accept, if any.
      +/
     SongRequestMode songrequestMode = SongRequestMode.youtube;
@@ -107,11 +113,13 @@ public:
 }
 
 
-// SongRequestMode
+// SRM
 /++
     Song requests may be either disabled, or either in YouTube or Spotify mode.
+
+    `SongRequestMode` abbreviated to fit into `printObjects` output formatting.
  +/
-private enum SongRequestMode
+private enum SRM
 {
     /++
         Song requests are disabled.
@@ -129,6 +137,8 @@ private enum SongRequestMode
     spotify,
 }
 
+/// Alias to [SRM].
+alias SongRequestMode = SRM;
 
 private import kameloso.plugins.common.core;
 
@@ -138,6 +148,7 @@ version(WithTwitchPlugin):
 private:
 
 import kameloso.plugins.twitch.api;
+import kameloso.plugins.twitch.common;
 
 import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
 import kameloso.common : logger;
@@ -275,6 +286,7 @@ package struct Credentials
     .onEvent(IRCEvent.Type.TWITCH_SUB)
     .onEvent(IRCEvent.Type.TWITCH_SUBGIFT)
     .onEvent(IRCEvent.Type.TWITCH_CHEER)
+    .onEvent(IRCEvent.Type.TWITCH_DIRECTCHEER)
     .onEvent(IRCEvent.Type.TWITCH_REWARDGIFT)
     .onEvent(IRCEvent.Type.TWITCH_GIFTCHAIN)
     .onEvent(IRCEvent.Type.TWITCH_BULKGIFT)
@@ -434,6 +446,7 @@ void onCommandUptime(TwitchPlugin plugin, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.CHAN)
     .permissionsRequired(Permissions.operator)
     .channelPolicy(ChannelPolicy.home)
+    .fiber(true)
     .addCommand(
         IRCEventHandler.Command()
             .word("start")
@@ -460,8 +473,8 @@ void onCommandStart(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     void initBroadcast()
     {
-        room.broadcast = typeof(room.broadcast).init;
-        room.broadcast.active = true;
+        // Initialise a Broadcast with a new unique ID by using its constructor
+        room.broadcast = TwitchPlugin.Room.Broadcast(true);
     }
 
     if (event.content.length)
@@ -488,8 +501,7 @@ void onCommandStart(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         }
         catch (DurationStringException e)
         {
-            chan(plugin.state, event.channel, e.msg);
-            return;
+            return chan(plugin.state, event.channel, e.msg);
         }
         catch (Exception e)
         {
@@ -503,9 +515,8 @@ void onCommandStart(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
          +/
         if (room.broadcast.active)
         {
-            chan(plugin.state, event.channel,
+            return chan(plugin.state, event.channel,
                 room.broadcasterDisplayName ~ " is already live.");
-            return;
         }
 
         initBroadcast();
@@ -513,143 +524,95 @@ void onCommandStart(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         chan(plugin.state, event.channel, "Broadcast start registered!");
     }
 
-    void periodicalChattersCheckDg()
+    immutable uniqueIDSnapshot = room.broadcast.uniqueID;
+    uint addedSinceLastRehash;
+
+    while (room.broadcast.active && plugin.useAPIFeatures &&
+        (room.broadcast.uniqueID == uniqueIDSnapshot))
     {
-        uint addedSinceLastRehash;
+        import kameloso.plugins.common.delayawait : delay;
+        import std.json : JSONType;
 
-        while (room.broadcast.active && plugin.useAPIFeatures)
+        const botBlacklist = getBotList(plugin);
+        immutable chattersJSON = getChatters(plugin, room.broadcasterName);
+
+        static immutable chatterTypes =
+        [
+            "admins",
+            //"broadcaster",
+            "global_mods",
+            "moderators",
+            "staff",
+            "viewers",
+            "vips",
+        ];
+
+        uint chatterCount;
+
+        foreach (immutable chatterType; chatterTypes)
         {
-            import kameloso.plugins.common.delayawait : delay;
-            import std.json : JSONType;
-
-            immutable chattersJSON = getChatters(plugin, room.broadcasterName);
-
-            // https://twitchinsights.net/bots
-            // https://twitchs.info/bots
-            static immutable botBlacklist =
-            [
-                //"nightbot",
-                "streamlabs",
-                "streamelements",
-                "soundalerts",
-                //"moobot",
-                "anotherttvviewer",
-                "kaxips06",
-                "la_kaylee",
-                "commanderroot",
-                "rogueg1rl",
-                "midsooooooooon",
-                "lanarayyyy",
-                "itzemmaaaaaaa",
-                "aliengathering",
-                "elysian",
-                "lurxx",
-                "feet",
-                "aten",
-                "spiketrapclair",
-                "soundalerts",
-                "ffxivstyx",
-                "curvaceous_natalia",
-                "viewer_of_irl",
-                "frw33ds_kitten",
-                "fashionable_camille",
-                "lurking_miku",
-                "stixffxiv",
-                "eatsaoe",
-                "wafflebudder",
-                "elbretweets",
-                "underworldnaiad",
-                "beardedstrumerwaitingroom",
-                "icantcontrolit",
-                "nerdydreams",
-                "uncle_spawn",
-                "hades_osiris",
-                "0ax2",
-                "violets_tv",
-                "dankingaround",
-                "erika_fnbr",
-                "comettunes",
-            ];
-
-            static immutable chatterTypes =
-            [
-                "admins",
-                //"broadcaster",
-                "global_mods",
-                "moderators",
-                "staff",
-                "viewers",
-                "vips",
-            ];
-
-            uint chatterCount;
-
-            foreach (immutable chatterType; chatterTypes)
+            foreach (immutable viewerJSON; chattersJSON["chatters"][chatterType].array)
             {
-                foreach (immutable viewerJSON; chattersJSON["chatters"][chatterType].array)
+                import std.algorithm.searching : canFind, endsWith;
+
+                immutable viewer = viewerJSON.str;
+
+                if (viewer.endsWith("bot") ||
+                    botBlacklist.canFind(viewer) ||
+                    (viewer == plugin.state.client.nickname))
                 {
-                    import std.algorithm.searching : canFind, endsWith;
+                    continue;
+                }
 
-                    immutable viewer = viewerJSON.str;
+                room.broadcast.chattersSeen[viewer] = true;
+                ++chatterCount;
 
-                    if (viewer.endsWith("bot") ||
-                        botBlacklist.canFind(viewer) ||
-                        (viewer == plugin.state.client.nickname))
-                    {
-                        continue;
-                    }
+                // continue early if we shouldn't monitor watchtime
+                if (!plugin.twitchSettings.watchtime) continue;
 
-                    room.broadcast.chattersSeen[viewer] = true;
-                    ++chatterCount;
-
-                    // continue early if we shouldn't monitor watchtime
-                    if (!plugin.twitchSettings.watchtime) continue;
-
+                if (plugin.twitchSettings.watchtimeExcludesLurkers)
+                {
                     // Exclude lurkers from watchtime monitoring
                     if (viewer !in room.broadcast.activeViewers) continue;
+                }
 
-                    static immutable periodicitySeconds = plugin.chattersCheckPeriodicity.total!"seconds";
+                enum periodicitySeconds = plugin.chattersCheckPeriodicity.total!"seconds";
 
-                    if (auto channelViewerTimes = event.channel in plugin.viewerTimesByChannel)
+                if (auto channelViewerTimes = event.channel in plugin.viewerTimesByChannel)
+                {
+                    if (auto viewerTime = viewer in *channelViewerTimes)
                     {
-                        if (auto viewerTime = viewer in *channelViewerTimes)
-                        {
-                            *viewerTime += periodicitySeconds;
-                        }
-                        else
-                        {
-                            (*channelViewerTimes)[viewer] = periodicitySeconds;
-                            ++addedSinceLastRehash;
-
-                            if ((addedSinceLastRehash > 128) &&
-                                (addedSinceLastRehash > channelViewerTimes.length))
-                            {
-                                // channel-viewer times AA doubled in size; rehash
-                                *channelViewerTimes = (*channelViewerTimes).rehash();
-                                addedSinceLastRehash = 0;
-                            }
-                        }
+                        *viewerTime += periodicitySeconds;
                     }
                     else
                     {
-                        plugin.viewerTimesByChannel[event.channel][viewer] = periodicitySeconds;
+                        (*channelViewerTimes)[viewer] = periodicitySeconds;
                         ++addedSinceLastRehash;
+
+                        if ((addedSinceLastRehash > 128) &&
+                            (addedSinceLastRehash > channelViewerTimes.length))
+                        {
+                            // channel-viewer times AA doubled in size; rehash
+                            *channelViewerTimes = (*channelViewerTimes).rehash();
+                            addedSinceLastRehash = 0;
+                        }
                     }
                 }
+                else
+                {
+                    plugin.viewerTimesByChannel[event.channel][viewer] = periodicitySeconds;
+                    ++addedSinceLastRehash;
+                }
             }
-
-            if (chatterCount > room.broadcast.maxConcurrentChatters)
-            {
-                room.broadcast.maxConcurrentChatters = chatterCount;
-            }
-
-            delay(plugin, plugin.chattersCheckPeriodicity, Yes.yield);
         }
-    }
 
-    Fiber chattersCheckFiber =
-        new Fiber(&twitchTryCatchDg!periodicalChattersCheckDg, BufferSize.fiberStack);
-    chattersCheckFiber.call();
+        if (chatterCount > room.broadcast.maxConcurrentChatters)
+        {
+            room.broadcast.maxConcurrentChatters = chatterCount;
+        }
+
+        delay(plugin, plugin.chattersCheckPeriodicity, Yes.yield);
+    }
 }
 
 
@@ -772,7 +735,7 @@ void reportStreamTime(
 
             if (justNowEnded)
             {
-                if (room.broadcast.numViewersLastStream)
+                if (room.broadcast.numViewersLastStream > 0)
                 {
                     enum pattern = "%s streamed for %s, with %d unique viewers. " ~
                         "(max at any one time was %d viewers)";
@@ -824,6 +787,7 @@ void reportStreamTime(
     .onEvent(IRCEvent.Type.CHAN)
     .permissionsRequired(Permissions.anyone)
     .channelPolicy(ChannelPolicy.home)
+    .fiber(true)
     .addCommand(
         IRCEventHandler.Command()
             .word("followage")
@@ -838,146 +802,136 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : beginsWith, nom, stripped;
     import std.conv : to;
-    import std.json : JSONValue;
+    import std.json : JSONType, JSONValue;
     import core.thread : Fiber;
 
     if (!plugin.useAPIFeatures) return;
 
-    void followageDg()
+    string slice = event.content.stripped;  // mutable
+    string idString;
+    string displayName;
+    immutable nameSpecified = (slice.length > 0);
+
+    if (!nameSpecified)
     {
-        string slice = event.content.stripped;  // mutable
-        immutable nameSpecified = (slice.length > 0);
+        // Assume the user is asking about itself
+        idString = event.sender.id.to!string;
+        displayName = event.sender.displayName;
+    }
+    else
+    {
+        string givenName = slice.nom!(Yes.inherit)(' ');  // mutable
+        if (givenName.beginsWith('@')) givenName = givenName[1..$];
+        immutable user = getTwitchUser(plugin, givenName, Yes.searchByDisplayName);
 
-        string idString;
-        string displayName;
-
-        if (!nameSpecified)
+        if (!user.nickname.length)
         {
-            // Assume the user is asking about itself
-            idString = event.sender.id.to!string;
-            displayName = event.sender.displayName;
+            return chan(plugin.state, event.channel, "No such user: " ~ givenName);
+        }
+
+        idString = user.idString;
+        displayName = user.displayName;
+    }
+
+    void reportFollowAge(const JSONValue followingUserJSON)
+    {
+        import kameloso.time : timeSince;
+        import std.datetime.systime : Clock, SysTime;
+        import std.format : format;
+
+        static immutable string[12] months =
+        [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+        ];
+
+        /*{
+            "followed_at": "2019-09-13T13:07:43Z",
+            "from_id": "20739840",
+            "from_name": "mike_bison",
+            "to_id": "22216721",
+            "to_name": "Zorael"
+        }*/
+
+        enum datestampPattern = "%s %d";
+        immutable when = SysTime.fromISOExtString(followingUserJSON["followed_at"].str);
+        immutable diff = Clock.currTime - when;
+        immutable timeline = diff.timeSince!(7, 3);
+        immutable datestamp = datestampPattern.format(months[cast(int)when.month-1], when.year);
+
+        if (nameSpecified)
+        {
+            enum pattern = "%s has been a follower for %s, since %s.";
+            immutable message = pattern.format(displayName, timeline, datestamp);
+            chan(plugin.state, event.channel, message);
         }
         else
         {
-            string givenName = slice.nom!(Yes.inherit)(' ');  // mutable
-            if (givenName.beginsWith('@')) givenName = givenName[1..$];
-            immutable user = getTwitchUser(plugin, givenName, Yes.searchByDisplayName);
-
-            if (!user.nickname.length)
-            {
-                chan(plugin.state, event.channel, "No such user: " ~ givenName);
-                return;
-            }
-
-            idString = user.idString;
-            displayName = user.displayName;
+            enum pattern = "You have been a follower for %s, since %s.";
+            immutable message = pattern.format(timeline, datestamp);
+            chan(plugin.state, event.channel, message);
         }
+    }
 
-        void reportFollowAge(const JSONValue followingUserJSON)
-        {
-            import kameloso.time : timeSince;
-            import std.datetime.systime : Clock, SysTime;
-            import std.format : format;
+    // Identity ascertained; look up in cached list
 
-            static immutable string[12] months =
-            [
-                "January",
-                "February",
-                "March",
-                "April",
-                "May",
-                "June",
-                "July",
-                "August",
-                "September",
-                "October",
-                "November",
-                "December",
-            ];
+    auto room = event.channel in plugin.rooms;
+    assert(room, "Tried to look up follow age in a nonexistent room");
 
-            /*{
-                "followed_at": "2019-09-13T13:07:43Z",
-                "from_id": "20739840",
-                "from_name": "mike_bison",
-                "to_id": "22216721",
-                "to_name": "Zorael"
-            }*/
+    if (!room.follows.length)
+    {
+        // Follows have not yet been cached!
+        // This can technically happen, though practically the caching is
+        // done immediately after joining so there should be no time for
+        // !followage queries to sneak in.
+        // Luckily we're inside a Fiber so we can cache it ourselves.
+        room.follows = getFollows(plugin, room.id);
+        room.followsLastCached = event.time;
+    }
 
-            enum datestampPattern = "%s %d";
-            immutable when = SysTime.fromISOExtString(followingUserJSON["followed_at"].str);
-            immutable diff = Clock.currTime - when;
-            immutable timeline = diff.timeSince!(7, 3);
-            immutable datestamp = datestampPattern.format(months[cast(int)when.month-1], when.year);
+    enum minimumTimeBetweenRecaches = 10;
 
-            if (nameSpecified)
-            {
-                enum pattern = "%s has been a follower for %s, since %s.";
-                immutable message = pattern.format(displayName, timeline, datestamp);
-                chan(plugin.state, event.channel, message);
-            }
-            else
-            {
-                enum pattern = "You have been a follower for %s, since %s.";
-                immutable message = pattern.format(timeline, datestamp);
-                chan(plugin.state, event.channel, message);
-            }
-        }
-
-        // Identity ascertained; look up in cached list
-
-        import std.json : JSONType;
-
-        auto room = event.channel in plugin.rooms;
-        assert(room, "Tried to look up follow age in a nonexistent room");
-
-        if (!room.follows.length)
-        {
-            // Follows have not yet been cached!
-            // This can technically happen, though practically the caching is
-            // done immediately after joining so there should be no time for
-            // !followage queries to sneak in.
-            // Luckily we're inside a Fiber so we can cache it ourselves.
-            room.follows = getFollows(plugin, room.id);
-            room.followsLastCached = event.time;
-        }
-
-        enum minimumTimeBetweenRecaches = 10;
+    if (const thisFollow = idString in room.follows)
+    {
+        return reportFollowAge(*thisFollow);
+    }
+    else if (event.time > (room.followsLastCached + minimumTimeBetweenRecaches))
+    {
+        // No match, but minimumTimeBetweenRecaches passed since last recache
+        room.follows = getFollows(plugin, room.id);
+        room.followsLastCached = event.time;
 
         if (const thisFollow = idString in room.follows)
         {
             return reportFollowAge(*thisFollow);
         }
-        else if (event.time > (room.followsLastCached + minimumTimeBetweenRecaches))
-        {
-            // No match, but minimumTimeBetweenRecaches passed since last recache
-            room.follows = getFollows(plugin, room.id);
-            room.followsLastCached = event.time;
-
-            if (const thisFollow = idString in room.follows)
-            {
-                return reportFollowAge(*thisFollow);
-            }
-        }
-
-        // If we're here there were no matches.
-
-        if (nameSpecified)
-        {
-            import std.format : format;
-
-            enum pattern = "%s is currently not a follower.";
-            immutable message = pattern.format(displayName);
-            chan(plugin.state, event.channel, message);
-        }
-        else
-        {
-            enum message = "You are currently not a follower.";
-            chan(plugin.state, event.channel, message);
-        }
     }
 
-    Fiber followageFiber = new Fiber(&twitchTryCatchDg!followageDg, BufferSize.fiberStack);
-    followageFiber.call();
+    // If we're here there were no matches.
+
+    if (nameSpecified)
+    {
+        import std.format : format;
+
+        enum pattern = "%s is currently not a follower.";
+        immutable message = pattern.format(displayName);
+        chan(plugin.state, event.channel, message);
+    }
+    else
+    {
+        enum message = "You are currently not a follower.";
+        chan(plugin.state, event.channel, message);
+    }
 }
 
 
@@ -989,6 +943,7 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ROOMSTATE)
     .channelPolicy(ChannelPolicy.home)
+    .fiber(true)
 )
 void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
@@ -1006,145 +961,11 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     if (!plugin.useAPIFeatures) return;
 
     immutable userURL = "https://api.twitch.tv/helix/users?id=" ~ event.aux;
+    immutable userJSON = getTwitchEntity(plugin, userURL);
+    room.broadcasterDisplayName = userJSON["display_name"].str;
 
-    void getDisplayNameDg()
-    {
-        immutable userJSON = getTwitchEntity(plugin, userURL);
-        room.broadcasterDisplayName = userJSON["display_name"].str;
-    }
-
-    Fiber getDisplayNameFiber = new Fiber(&twitchTryCatchDg!getDisplayNameDg, BufferSize.fiberStack);
-    getDisplayNameFiber.call();
-
-    // Always cache as soon as possible, before we get any !followage requests
-    void cacheFollowsDg()
-    {
-        room.follows = getFollows(plugin, room.id);
-        room.followsLastCached = event.time;
-    }
-
-    Fiber cacheFollowsFiber = new Fiber(&twitchTryCatchDg!cacheFollowsDg, BufferSize.fiberStack);
-    cacheFollowsFiber.call();
-}
-
-
-// onCommandShoutout
-/++
-    Emits a shoutout to another streamer.
-
-    Merely gives a link to their channel and echoes what game they last streamed.
- +/
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.CHAN)
-    .permissionsRequired(Permissions.operator)
-    .channelPolicy(ChannelPolicy.home)
-    .addCommand(
-        IRCEventHandler.Command()
-            .word("shoutout")
-            .policy(PrefixPolicy.prefixed)
-            .description("Emits a shoutout to another streamer.")
-            .addSyntax("$command [name of streamer] [optional number of times to spam]")
-    )
-    .addCommand(
-        IRCEventHandler.Command()
-            .word("so")
-            .policy(PrefixPolicy.prefixed)
-            .hidden(true)
-    )
-)
-void onCommandShoutout(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
-{
-    import kameloso.plugins.common.misc : idOf;
-    import dialect.common : isValidNickname;
-    import lu.string : SplitResults, beginsWith, splitInto, stripped;
-    import std.format : format;
-    import std.json : JSONType, parseJSON;
-
-    if (!plugin.useAPIFeatures) return;
-
-    void sendUsage()
-    {
-        enum pattern = "Usage: %s%s [name of streamer] [optional number of times to spam]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-        chan(plugin.state, event.channel, message);
-    }
-
-    string slice = event.content.stripped;  // mutable
-    string target;
-    string numTimesString;
-
-    immutable results = slice.splitInto(target, numTimesString);
-    if (target.beginsWith('@')) target = target[1..$];
-
-    if (!target.length || (results == SplitResults.overrun))
-    {
-        return sendUsage();
-    }
-
-    // Limit number of times to spam to an outrageous 10
-    enum numTimesCap = 10;
-    uint numTimes = 1;
-
-    if (numTimesString.length)
-    {
-        import std.conv : ConvException, to;
-
-        try
-        {
-            import std.algorithm.comparison : min;
-            numTimes = min(numTimesString.to!uint, numTimesCap);
-        }
-        catch (ConvException e)
-        {
-            return sendUsage();
-        }
-    }
-
-    immutable nickname = idOf(plugin, target);
-
-    if (!nickname.isValidNickname(plugin.state.server))
-    {
-        chan(plugin.state, event.channel, "Invalid streamer name.");
-        return;
-    }
-
-    void shoutoutQueryDg()
-    {
-        immutable userURL = "https://api.twitch.tv/helix/users?login=" ~ nickname;
-        immutable userJSON = getTwitchEntity(plugin, userURL);
-
-        if ((userJSON.type != JSONType.object) || ("id" !in userJSON))
-        {
-            chan(plugin.state, event.channel, "No such user: " ~ target);
-            return;
-        }
-
-        immutable id = userJSON["id"].str;
-        immutable login = userJSON["login"].str;
-        immutable channelURL = "https://api.twitch.tv/helix/channels?broadcaster_id=" ~ id;
-        immutable channelJSON = getTwitchEntity(plugin, channelURL);
-
-        if ((channelJSON.type != JSONType.object) || ("broadcaster_name" !in channelJSON))
-        {
-            chan(plugin.state, event.channel, "Impossible error; user has no channel?");
-            return;
-        }
-
-        immutable broadcasterDisplayName = channelJSON["broadcaster_name"].str;
-        immutable gameName = channelJSON["game_name"].str;
-        immutable lastSeenPlayingPattern = gameName.length ?
-            " (last seen playing %s)" : "%s";
-        immutable pattern = "Shoutout to %s! Visit them at https://twitch.tv/%s!" ~ lastSeenPlayingPattern;
-        immutable message = pattern.format(broadcasterDisplayName, login, gameName);
-
-        foreach (immutable i; 0..numTimes)
-        {
-            chan(plugin.state, event.channel, message);
-        }
-    }
-
-    Fiber shoutoutFiber = new Fiber(&twitchTryCatchDg!shoutoutQueryDg, BufferSize.fiberStack);
-    shoutoutFiber.call();
+    room.follows = getFollows(plugin, room.id);
+    room.followsLastCached = event.time;
 }
 
 
@@ -1225,8 +1046,7 @@ void onCommandRepeat(TwitchPlugin plugin, const ref IRCEvent event)
         if (numTimes < 1)
         {
             enum message = "Number of times must be greater than 0.";
-            chan(plugin.state, event.channel, message);
-            return;
+            return chan(plugin.state, event.channel, message);
         }
 
         foreach (immutable i; 0..numTimes)
@@ -1270,8 +1090,7 @@ void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
         import std.format : format;
         enum pattern = "Usage: %s%s [word or phrase]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-        chan(plugin.state, event.channel, message);
-        return;
+        return chan(plugin.state, event.channel, message);
     }
 
     auto room = event.channel in plugin.rooms;
@@ -1310,6 +1129,7 @@ void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.CHAN)
     .permissionsRequired(Permissions.anyone)
     .channelPolicy(ChannelPolicy.home)
+    .fiber(true)
     .addCommand(
         IRCEventHandler.Command()
             .word("songrequest")
@@ -1324,9 +1144,8 @@ void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
             .hidden(true)
     )
 )
-void onCommandSongRequest(TwitchPlugin plugin, const ref IRCEvent event)
+void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.plugins.twitch.helpers : ErrorJSONException, UnexpectedJSONException;
     import kameloso.constants : KamelosoInfo, Timeout;
     import arsd.http2 : HttpClient, HttpVerb, Uri;
     import lu.string : contains, nom, stripped;
@@ -1337,8 +1156,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const ref IRCEvent event)
     else if (event.sender.class_ < plugin.twitchSettings.songrequestPermsNeeded)
     {
         // Issue an error?
-        logger.error("User does not have the needed permissions to issue song requests.");
-        return;
+        return logger.error("User does not have the needed permissions to issue song requests.");
     }
 
     if (event.sender.class_ < IRCUser.class_.operator)
@@ -1352,8 +1170,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const ref IRCEvent event)
             {
                 enum pattern = "At least %d seconds must pass between song requests.";
                 immutable message = pattern.format(TwitchPlugin.Room.minimumTimeBetweenSongRequests);
-                chan(plugin.state, event.channel, message);
-                return;
+                return chan(plugin.state, event.channel, message);
             }
         }
     }
@@ -1375,8 +1192,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const ref IRCEvent event)
         {
             enum pattern = "Usage: %s%s [YouTube link or video ID]";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-            chan(plugin.state, event.channel, message);
-            return;
+            return chan(plugin.state, event.channel, message);
         }
 
         auto creds = event.channel in plugin.secretsByChannel;
@@ -1385,8 +1201,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const ref IRCEvent event)
         {
             enum message = "Missing Google API credentials and/or YouTube playlist ID. " ~
                 "Run the program with <l>--set twitch.googleKeygen</> to set up.";
-            logger.error(message);
-            return;
+            return logger.error(message);
         }
 
         // Patterns:
@@ -1415,34 +1230,27 @@ void onCommandSongRequest(TwitchPlugin plugin, const ref IRCEvent event)
         }
         else
         {
-            logger.warning("Malformed video link?");
-            return;
+            return logger.warning("Malformed video link?");
         }
 
-        void addVideoDg()
+        try
         {
-            try
-            {
-                import kameloso.plugins.twitch.google : addVideoToYouTubePlaylist;
+            import kameloso.plugins.twitch.google : addVideoToYouTubePlaylist;
 
-                immutable json = addVideoToYouTubePlaylist(plugin, *creds, videoID);
-                immutable title = json["snippet"]["title"].str;
-                //immutable position = json["snippet"]["position"].integer;
+            immutable json = addVideoToYouTubePlaylist(plugin, *creds, videoID);
+            immutable title = json["snippet"]["title"].str;
+            //immutable position = json["snippet"]["position"].integer;
 
-                enum pattern = "%s added to playlist.";
-                immutable message = pattern.format(title);
-                chan(plugin.state, event.channel, message);
-            }
-            catch (ErrorJSONException e)
-            {
-                enum message = "Invalid YouTube video URL.";
-                chan(plugin.state, event.channel, message);
-            }
-            // Let other exceptions fall down to twitchTryCatchDg
+            enum pattern = "%s added to playlist.";
+            immutable message = pattern.format(title);
+            chan(plugin.state, event.channel, message);
         }
-
-        Fiber addVideoFiber = new Fiber(&twitchTryCatchDg!addVideoDg, BufferSize.fiberStack);
-        addVideoFiber.call();
+        catch (ErrorJSONException e)
+        {
+            enum message = "Invalid YouTube video URL.";
+            chan(plugin.state, event.channel, message);
+        }
+        // Let other exceptions fall down to twitchTryCatchDg
     }
     else if (plugin.twitchSettings.songrequestMode == SongRequestMode.spotify)
     {
@@ -1460,8 +1268,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const ref IRCEvent event)
         {
             enum pattern = "Usage: %s%s [Spotify link or track ID]";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-            chan(plugin.state, event.channel, message);
-            return;
+            return chan(plugin.state, event.channel, message);
         }
 
         auto creds = event.channel in plugin.secretsByChannel;
@@ -1470,8 +1277,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const ref IRCEvent event)
         {
             enum message = "Missing Spotify API credentials and/or playlist ID. " ~
                 "Run the program with <l>--set twitch.spotifyKeygen</> to set up.";
-            logger.error(message);
-            return;
+            return logger.error(message);
         }
 
         // Patterns
@@ -1491,43 +1297,35 @@ void onCommandSongRequest(TwitchPlugin plugin, const ref IRCEvent event)
         }
         else
         {
-            logger.warning("Malformed track link?");
-            return;
+            return logger.warning("Malformed track link?");
         }
 
-        void addTrackDg()
+        try
         {
-            try
+            import kameloso.plugins.twitch.spotify : addTrackToSpotifyPlaylist, getSpotifyTrackByID;
+            import std.json : JSONType;
+
+            immutable json = addTrackToSpotifyPlaylist(plugin, *creds, trackID);
+
+            if ((json.type != JSONType.object)  || "snapshot_id" !in json)
             {
-                import kameloso.plugins.twitch.spotify : addTrackToSpotifyPlaylist, getSpotifyTrackByID;
-                import std.json : JSONType;
-
-                immutable json = addTrackToSpotifyPlaylist(plugin, *creds, trackID);
-
-                if ((json.type != JSONType.object)  || "snapshot_id" !in json)
-                {
-                    logger.error("An error occurred.\n", json.toPrettyString);
-                    return;
-                }
-
-                const trackJSON = getSpotifyTrackByID(*creds, trackID);
-                immutable artist = trackJSON["artists"].array[0].object["name"].str;
-                immutable track = trackJSON["name"].str;
-
-                enum pattern = "%s - %s added to playlist.";
-                immutable message = pattern.format(artist, track);
-                chan(plugin.state, event.channel, message);
+                return logger.error("An error occurred.\n", json.toPrettyString);
             }
-            catch (ErrorJSONException e)
-            {
-                enum message = "Invalid Spotify track URL.";
-                chan(plugin.state, event.channel, message);
-            }
-            // Let other exceptions fall down to twitchTryCatchDg
+
+            const trackJSON = getSpotifyTrackByID(*creds, trackID);
+            immutable artist = trackJSON["artists"].array[0].object["name"].str;
+            immutable track = trackJSON["name"].str;
+
+            enum pattern = "%s - %s added to playlist.";
+            immutable message = pattern.format(artist, track);
+            chan(plugin.state, event.channel, message);
         }
-
-        Fiber addTrackFiber = new Fiber(&twitchTryCatchDg!addTrackDg, BufferSize.fiberStack);
-        addTrackFiber.call();
+        catch (ErrorJSONException e)
+        {
+            enum message = "Invalid Spotify track URL.";
+            chan(plugin.state, event.channel, message);
+        }
+        // Let other exceptions fall down to twitchTryCatchDg
     }
 }
 
@@ -1545,6 +1343,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.CHAN)
     .permissionsRequired(Permissions.operator)
     .channelPolicy(ChannelPolicy.home)
+    .fiber(true)
     .addCommand(
         IRCEventHandler.Command()
             .word("startpoll")
@@ -1570,6 +1369,8 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     import kameloso.time : DurationStringException, abbreviatedDuration;
     import lu.string : splitInto;
     import std.conv : ConvException, to;
+    import std.format : format;
+    import std.json : JSONType;
 
     void sendUsage()
     {
@@ -1597,63 +1398,51 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     catch (ConvException e)
     {
         enum message = "Invalid duration.";
-        chan(plugin.state, event.channel, message);
-        return;
+        return chan(plugin.state, event.channel, message);
     }
     catch (DurationStringException e)
     {
-        chan(plugin.state, event.channel, e.msg);
-        return;
+        return chan(plugin.state, event.channel, e.msg);
     }
     catch (Exception e)
     {
-        chan(plugin.state, event.channel, e.msg);
-        return;
+        return chan(plugin.state, event.channel, e.msg);
     }
 
-    void startPollDg()
+    try
     {
-        import std.json : JSONType;
-        import std.format : format;
+        immutable responseJSON = createPoll(plugin, event.channel, title, durationString, choices);
+        enum pattern = `Poll "%s" created.`;
+        immutable message = pattern.format(responseJSON.array[0].object["title"].str);
+        chan(plugin.state, event.channel, message);
+    }
+    catch (TwitchQueryException e)
+    {
+        import std.algorithm.searching : endsWith;
 
-        try
+        if ((e.code == 403) &&
+            (e.error == "Forbidden") &&
+            e.msg.endsWith("is not a partner or affiliate"))
         {
-            immutable responseJSON = createPoll(plugin, event.channel, title, durationString, choices);
-            enum pattern = `Poll "%s" created.`;
-            immutable message = pattern.format(responseJSON.array[0].object["title"].str);
-            chan(plugin.state, event.channel, message);
-        }
-        catch (TwitchQueryException e)
-        {
-            import std.algorithm.searching : endsWith;
-
-            if ((e.code == 403) &&
-                (e.error == "Forbidden") &&
-                e.msg.endsWith("is not a partner or affiliate"))
+            version(WithVotesPlugin)
             {
-                version(WithVotesPlugin)
-                {
-                    enum message = "You must be an affiliate to create Twitch polls. " ~
-                        "(Consider using the Votes plugin.)";
-                }
-                else
-                {
-                    enum message = "You must be an affiliate to create Twitch polls.";
-                }
-
-                chan(plugin.state, event.channel, message);
+                enum message = "You must be an affiliate to create Twitch polls. " ~
+                    "(Consider using the Votes plugin.)";
             }
             else
             {
-                // Fall back to twitchTryCatchDg's exception handling
-                throw e;
+                enum message = "You must be an affiliate to create Twitch polls.";
             }
-        }
-        // As above
-    }
 
-    Fiber startPollFiber = new Fiber(&twitchTryCatchDg!startPollDg, BufferSize.fiberStack);
-    startPollFiber.call();
+            chan(plugin.state, event.channel, message);
+        }
+        else
+        {
+            // Fall back to twitchTryCatchDg's exception handling
+            throw e;
+        }
+    }
+    // As above
 }
 
 
@@ -1672,6 +1461,7 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     .onEvent(IRCEvent.Type.CHAN)
     .permissionsRequired(Permissions.operator)
     .channelPolicy(ChannelPolicy.home)
+    .fiber(true)
     .addCommand(
         IRCEventHandler.Command()
             .word("endpoll")
@@ -1688,62 +1478,55 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 )
 void onCommandEndPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    void endPollDg()
+    import std.json : JSONType;
+    import std.stdio : writeln;
+
+    immutable pollInfoJSON = getPolls(plugin, event.channel);
+
+    if (!pollInfoJSON.array.length)
     {
-        import std.json : JSONType;
-        import std.stdio : writeln;
-
-        immutable pollInfoJSON = getPolls(plugin, event.channel);
-
-        if (!pollInfoJSON.array.length)
-        {
-            enum message = "There are no active polls to end.";
-            chan(plugin.state, event.channel, message);
-            return;
-        }
-
-        immutable voteID = pollInfoJSON.array[0].object["id"].str;
-        immutable endResponseJSON = endPoll(plugin, event.channel, voteID, Yes.terminate);
-
-        if ((endResponseJSON.type != JSONType.object) ||
-            ("choices" !in endResponseJSON) ||
-            (endResponseJSON["choices"].array.length < 2))
-        {
-            // Invalid response in some way
-            logger.error("Unexpected response from server when ending a poll");
-            writeln(endResponseJSON.toPrettyString);
-            return;
-        }
-
-        /*static struct Choice
-        {
-            string title;
-            long votes;
-        }
-
-        Choice[] choices;
-        long totalVotes;
-
-        foreach (immutable i, const choiceJSON; endResponseJSON["choices"].array)
-        {
-            Choice choice;
-            choice.title = choiceJSON["title"].str;
-            choice.votes =
-                choiceJSON["votes"].integer +
-                choiceJSON["channel_points_votes"].integer +
-                choiceJSON["bits_votes"].integer;
-            choices ~= choice;
-            totalVotes += choice.votes;
-        }
-
-        auto sortedChoices = choices.sort!((a,b) => a.votes > b.votes);*/
-
-        enum message = "Poll ended.";
-        chan(plugin.state, event.channel, message);
+        enum message = "There are no active polls to end.";
+        return chan(plugin.state, event.channel, message);
     }
 
-    Fiber endPollFiber = new Fiber(&twitchTryCatchDg!endPollDg, BufferSize.fiberStack);
-    endPollFiber.call();
+    immutable voteID = pollInfoJSON.array[0].object["id"].str;
+    immutable endResponseJSON = endPoll(plugin, event.channel, voteID, Yes.terminate);
+
+    if ((endResponseJSON.type != JSONType.object) ||
+        ("choices" !in endResponseJSON) ||
+        (endResponseJSON["choices"].array.length < 2))
+    {
+        // Invalid response in some way
+        logger.error("Unexpected response from server when ending a poll");
+        writeln(endResponseJSON.toPrettyString);
+        return;
+    }
+
+    /*static struct Choice
+    {
+        string title;
+        long votes;
+    }
+
+    Choice[] choices;
+    long totalVotes;
+
+    foreach (immutable i, const choiceJSON; endResponseJSON["choices"].array)
+    {
+        Choice choice;
+        choice.title = choiceJSON["title"].str;
+        choice.votes =
+            choiceJSON["votes"].integer +
+            choiceJSON["channel_points_votes"].integer +
+            choiceJSON["bits_votes"].integer;
+        choices ~= choice;
+        totalVotes += choice.votes;
+    }
+
+    auto sortedChoices = choices.sort!((a,b) => a.votes > b.votes);*/
+
+    enum message = "Poll ended.";
+    chan(plugin.state, event.channel, message);
 }
 
 
@@ -1841,11 +1624,14 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_ENDOFMOTD)
     .onEvent(IRCEvent.Type.ERR_NOMOTD)
+    .fiber(true)
 )
 void onEndOfMOTD(TwitchPlugin plugin)
 {
+    import kameloso.constants : MagicErrorStrings;
     import lu.string : beginsWith;
     import std.concurrency : spawn;
+    import std.datetime.systime : Clock, SysTime;
 
     // Concatenate the Bearer and OAuth headers once.
     // This has to be done *after* connect's register
@@ -1864,118 +1650,109 @@ void onEndOfMOTD(TwitchPlugin plugin)
         plugin.bucket,
         plugin.state.connSettings.caBundleFile);
 
-    void validationDg()
+    enum retriesInCaseOfConnectionErrors = 5;
+    uint retry;
+
+    while (true)
     {
-        import kameloso.constants : MagicErrorStrings;
-        import std.datetime.systime : Clock, SysTime;
-
-        enum retriesInCaseOfConnectionErrors = 5;
-        uint retry;
-
-        while (true)
+        if (plugin.state.settings.headless)
         {
-            if (plugin.state.settings.headless)
-            {
-                try
-                {
-                    import kameloso.plugins.common.delayawait : delay;
-                    import kameloso.messaging : quit;
-
-                    immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
-                    plugin.userID = validationJSON["user_id"].str;
-                    immutable expiresIn = validationJSON["expires_in"].integer;
-                    immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
-                    immutable now = Clock.currTime;
-                    immutable delta = (expiresWhen - now);
-
-                    // Schedule quitting on expiry
-                    delay(plugin, (() => quit(plugin.state)), delta);
-                }
-                catch (TwitchQueryException e)
-                {
-                    if ((e.code == 2) && (e.error != MagicErrorStrings.sslLibraryNotFound))
-                    {
-                        if (retry++ < retriesInCaseOfConnectionErrors) continue;
-                    }
-                    plugin.useAPIFeatures = false;
-                }
-                return;
-            }
-
             try
             {
-                /*
-                {
-                    "client_id": "tjyryd2ojnqr8a51ml19kn1yi2n0v1",
-                    "expires_in": 5036421,
-                    "login": "zorael",
-                    "scopes": [
-                        "bits:read",
-                        "channel:moderate",
-                        "channel:read:subscriptions",
-                        "channel_editor",
-                        "chat:edit",
-                        "chat:read",
-                        "user:edit:broadcast",
-                        "whispers:edit",
-                        "whispers:read"
-                    ],
-                    "user_id": "22216721"
-                }
-                */
+                import kameloso.plugins.common.delayawait : delay;
+                import kameloso.messaging : quit;
 
                 immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
                 plugin.userID = validationJSON["user_id"].str;
                 immutable expiresIn = validationJSON["expires_in"].integer;
                 immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
-                generateExpiryReminders(plugin, expiresWhen);
+                immutable now = Clock.currTime;
+                immutable delta = (expiresWhen - now);
+
+                // Schedule quitting on expiry
+                delay(plugin, (() => quit(plugin.state)), delta);
             }
             catch (TwitchQueryException e)
             {
-                // Something is deeply wrong.
-
-                if (e.code == 2)
+                if ((e.code == 2) && (e.error != MagicErrorStrings.sslLibraryNotFound))
                 {
-                    enum wikiMessage = cast(string)MagicErrorStrings.visitWikiOneliner;
-
-                    if (e.error == MagicErrorStrings.sslLibraryNotFound)
-                    {
-                        enum pattern = "Failed to validate Twitch API keys: <l>%s</> " ~
-                            "<t>(is OpenSSL installed?)";
-                        logger.errorf(pattern, cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten);
-                        logger.error(wikiMessage);
-
-                        version(Windows)
-                        {
-                            enum getoptMessage = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
-                            logger.error(getoptMessage);
-                        }
-                    }
-                    else
-                    {
-                        if (retry++ < retriesInCaseOfConnectionErrors) continue;
-
-                        enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
-                        logger.errorf(pattern, e.msg, e.error, e.code);
-                        logger.error(wikiMessage);
-                    }
+                    if (retry++ < retriesInCaseOfConnectionErrors) continue;
                 }
-                else
-                {
-                    enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
-                    logger.errorf(pattern, e.msg, e.error, e.code);
-                }
-
-                logger.warning("Disabling API features. Expect breakage.");
-                //version(PrintStacktraces) logger.trace(e);
                 plugin.useAPIFeatures = false;
             }
             return;
         }
-    }
 
-    Fiber validationFiber = new Fiber(&validationDg, BufferSize.fiberStack);
-    validationFiber.call();
+        try
+        {
+            /*
+            {
+                "client_id": "tjyryd2ojnqr8a51ml19kn1yi2n0v1",
+                "expires_in": 5036421,
+                "login": "zorael",
+                "scopes": [
+                    "bits:read",
+                    "channel:moderate",
+                    "channel:read:subscriptions",
+                    "channel_editor",
+                    "chat:edit",
+                    "chat:read",
+                    "user:edit:broadcast",
+                    "whispers:edit",
+                    "whispers:read"
+                ],
+                "user_id": "22216721"
+            }
+            */
+
+            immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
+            plugin.userID = validationJSON["user_id"].str;
+            immutable expiresIn = validationJSON["expires_in"].integer;
+            immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
+            generateExpiryReminders(plugin, expiresWhen);
+        }
+        catch (TwitchQueryException e)
+        {
+            // Something is deeply wrong.
+
+            if (e.code == 2)
+            {
+                enum wikiMessage = cast(string)MagicErrorStrings.visitWikiOneliner;
+
+                if (e.error == MagicErrorStrings.sslLibraryNotFound)
+                {
+                    enum pattern = "Failed to validate Twitch API keys: <l>%s</> " ~
+                        "<t>(is OpenSSL installed?)";
+                    logger.errorf(pattern, cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten);
+                    logger.error(wikiMessage);
+
+                    version(Windows)
+                    {
+                        enum getoptMessage = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
+                        logger.error(getoptMessage);
+                    }
+                }
+                else
+                {
+                    if (retry++ < retriesInCaseOfConnectionErrors) continue;
+
+                    enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
+                    logger.errorf(pattern, e.msg, e.error, e.code);
+                    logger.error(wikiMessage);
+                }
+            }
+            else
+            {
+                enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
+                logger.errorf(pattern, e.msg, e.error, e.code);
+            }
+
+            logger.warning("Disabling API features. Expect breakage.");
+            //version(PrintStacktraces) logger.trace(e);
+            plugin.useAPIFeatures = false;
+        }
+        return;
+    }
 }
 
 
@@ -2036,14 +1813,12 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
     {
         enum pattern = "Usage: %s%s [emote]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-        chan(plugin.state, event.channel, message);
-        return;
+        return chan(plugin.state, event.channel, message);
     }
     else if (!event.emotes.length)
     {
         enum message = "That is not a Twitch emote.";
-        chan(plugin.state, event.channel, message);
-        return;
+        return chan(plugin.state, event.channel, message);
     }
 
     const channelcounts = event.channel in plugin.ecount;
@@ -2068,6 +1843,7 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.CHAN)
     .permissionsRequired(Permissions.anyone)
     .channelPolicy(ChannelPolicy.home)
+    .fiber(true)
     .addCommand(
         IRCEventHandler.Command()
             .word("watchtime")
@@ -2095,102 +1871,93 @@ void onCommandWatchtime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     else if (!plugin.twitchSettings.watchtime) return;
 
     string slice = event.content.stripped;  // mutable
+    string nickname;
+    string displayName;
     immutable nameSpecified = (slice.length > 0);
 
-    void watchtimeDg()
+    if (!nameSpecified)
     {
-        string nickname;
-        string displayName;
+        // Assume the user is asking about itself
+        nickname = event.sender.nickname;
+        displayName = event.sender.displayName;
+    }
+    else
+    {
+        string givenName = slice.nom!(Yes.inherit)(' ');  // mutable
+        if (givenName.beginsWith('@')) givenName = givenName[1..$];
+        immutable user = getTwitchUser(plugin, givenName, Yes.searchByDisplayName);
 
-        if (!nameSpecified)
+        if (!user.nickname.length)
         {
-            // Assume the user is asking about itself
-            nickname = event.sender.nickname;
-            displayName = event.sender.displayName;
+            return chan(plugin.state, event.channel, "No such user: " ~ givenName);
+        }
+
+        nickname = user.nickname;
+        displayName = user.displayName;
+    }
+
+    void reportNoViewerTime()
+    {
+        enum pattern = "%s has not been watching this channel's streams.";
+        immutable message = pattern.format(displayName);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void reportViewerTime(const Duration time)
+    {
+        enum pattern = "%s has been a viewer for a total of %s.";
+        immutable message = pattern.format(displayName, timeSince(time));
+        chan(plugin.state, event.channel, message);
+    }
+
+    void reportNoViewerTimeInvoker()
+    {
+        enum message = "You have not been watching this channel's streams.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void reportViewerTimeInvoker(const Duration time)
+    {
+        enum pattern = "You have been a viewer for a total of %s.";
+        immutable message = pattern.format(timeSince(time));
+        chan(plugin.state, event.channel, message);
+    }
+
+    if (nickname == event.channel[1..$])
+    {
+        if (nameSpecified)
+        {
+            enum pattern = "%s is the streamer though...";
+            immutable message = pattern.format(nickname);
+            chan(plugin.state, event.channel, message);
         }
         else
         {
-            string givenName = slice.nom!(Yes.inherit)(' ');  // mutable
-            if (givenName.beginsWith('@')) givenName = givenName[1..$];
-            immutable user = getTwitchUser(plugin, givenName, Yes.searchByDisplayName);
-
-            if (!user.nickname.length)
-            {
-                chan(plugin.state, event.channel, "No such user: " ~ givenName);
-                return;
-            }
-
-            nickname = user.nickname;
-            displayName = user.displayName;
-        }
-
-        void reportNoViewerTime()
-        {
-            enum pattern = "%s has not been watching this channel's streams.";
-            immutable message = pattern.format(displayName);
+            enum message = "You are the streamer though...";
             chan(plugin.state, event.channel, message);
         }
-
-        void reportViewerTime(const Duration time)
-        {
-            enum pattern = "%s has been a viewer for a total of %s.";
-            immutable message = pattern.format(displayName, timeSince(time));
-            chan(plugin.state, event.channel, message);
-        }
-
-        void reportNoViewerTimeInvoker()
-        {
-            enum message = "You have not been watching this channel's streams.";
-            chan(plugin.state, event.channel, message);
-        }
-
-        void reportViewerTimeInvoker(const Duration time)
-        {
-            enum pattern = "You have been a viewer for a total of %s.";
-            immutable message = pattern.format(timeSince(time));
-            chan(plugin.state, event.channel, message);
-        }
-
-        if (nickname == event.channel[1..$])
-        {
-            if (nameSpecified)
-            {
-                enum pattern = "%s is the streamer though...";
-                immutable message = pattern.format(nickname);
-                chan(plugin.state, event.channel, message);
-            }
-            else
-            {
-                enum message = "You are the streamer though...";
-                chan(plugin.state, event.channel, message);
-            }
-            return;
-        }
-        else if (nickname == plugin.state.client.nickname)
-        {
-            enum message = "I've seen it all.";
-            chan(plugin.state, event.channel, message);
-            return;
-        }
-
-        if (auto channelViewerTimes = event.channel in plugin.viewerTimesByChannel)
-        {
-            if (auto viewerTime = nickname in *channelViewerTimes)
-            {
-                return nameSpecified ?
-                    reportViewerTime((*viewerTime).seconds) :
-                    reportViewerTimeInvoker((*viewerTime).seconds);
-            }
-        }
-
-        // If we're here, there were no matches
-        return nameSpecified ?
-            reportNoViewerTime() :
-            reportNoViewerTimeInvoker();
+        return;
+    }
+    else if (nickname == plugin.state.client.nickname)
+    {
+        enum message = "I've seen it all.";
+        return chan(plugin.state, event.channel, message);
     }
 
-    Fiber watchtimeFiber = new Fiber(&twitchTryCatchDg!watchtimeDg, BufferSize.fiberStack);
-    watchtimeFiber.call();
+    if (auto channelViewerTimes = event.channel in plugin.viewerTimesByChannel)
+    {
+        if (auto viewerTime = nickname in *channelViewerTimes)
+        {
+            return nameSpecified ?
+                reportViewerTime((*viewerTime).seconds) :
+                reportViewerTimeInvoker((*viewerTime).seconds);
+        }
+    }
+
+    // If we're here, there were no matches
+    return nameSpecified ?
+        reportNoViewerTime() :
+        reportNoViewerTimeInvoker();
 }
 
 
@@ -2205,6 +1972,7 @@ void onCommandWatchtime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     .onEvent(IRCEvent.Type.CHAN)
     .permissionsRequired(Permissions.operator)
     .channelPolicy(ChannelPolicy.home)
+    .fiber(true)
     .addCommand(
         IRCEventHandler.Command()
             .word("settitle")
@@ -2227,45 +1995,38 @@ void onCommandSetTitle(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     {
         enum pattern = "Usage: %s%s [title]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-        chan(plugin.state, event.channel, message);
-        return;
+        return chan(plugin.state, event.channel, message);
     }
 
     immutable title = unescapedTitle.unquoted.replace(`"`, `\"`);
 
-    void setTitleDg()
+    try
     {
-        try
-        {
-            modifyChannel(plugin, event.channel, title, string.init);
+        modifyChannel(plugin, event.channel, title, string.init);
 
-            enum pattern = "Channel title set to: %s";
-            immutable message = pattern.format(title);
-            chan(plugin.state, event.channel, message);
+        enum pattern = "Channel title set to: %s";
+        immutable message = pattern.format(title);
+        chan(plugin.state, event.channel, message);
+    }
+    catch (TwitchQueryException e)
+    {
+        if ((e.code == 401) && (e.error == "Unauthorized"))
+        {
+            static uint idWhenComplainedAboutExpiredKey;
+
+            if (idWhenComplainedAboutExpiredKey != plugin.state.connectionID)
+            {
+                // broadcaster "superkey" expired.
+                enum message = "The broadcaster-level API key has expired.";
+                chan(plugin.state, event.channel, message);
+                idWhenComplainedAboutExpiredKey = plugin.state.connectionID;
+            }
         }
-        catch (TwitchQueryException e)
+        else
         {
-            if ((e.code == 401) && (e.error == "Unauthorized"))
-            {
-                static uint idWhenComplainedAboutExpiredKey;
-
-                if (idWhenComplainedAboutExpiredKey != plugin.state.connectionID)
-                {
-                    // broadcaster "superkey" expired.
-                    enum message = "The broadcaster-level API key has expired.";
-                    chan(plugin.state, event.channel, message);
-                    idWhenComplainedAboutExpiredKey = plugin.state.connectionID;
-                }
-            }
-            else
-            {
-                throw e;
-            }
+            throw e;
         }
     }
-
-    Fiber setTitleFiber = new Fiber(&twitchTryCatchDg!setTitleDg, BufferSize.fiberStack);
-    setTitleFiber.call();
 }
 
 
@@ -2280,6 +2041,7 @@ void onCommandSetTitle(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     .onEvent(IRCEvent.Type.CHAN)
     .permissionsRequired(Permissions.operator)
     .channelPolicy(ChannelPolicy.home)
+    .fiber(true)
     .addCommand(
         IRCEventHandler.Command()
             .word("setgame")
@@ -2304,69 +2066,62 @@ void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     {
         enum pattern = "Usage: %s%s [game name]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-        chan(plugin.state, event.channel, message);
-        return;
+        return chan(plugin.state, event.channel, message);
     }
 
     immutable specified = unescapedGameName.unquoted.replace(`"`, `\"`);
     string id = specified.isNumeric ? specified : string.init;  // mutable
 
-    void setGameDg()
+    try
     {
-        try
+        string name;  // mutable
+
+        if (!id.length)
         {
-            string name;  // mutable
-
-            if (!id.length)
-            {
-                immutable gameInfo = getTwitchGame(plugin, specified.encodeComponent, string.init);
-                id = gameInfo.id;
-                name = gameInfo.name;
-            }
-            else if (id == "0")
-            {
-                name = "(unset)";
-            }
-            else /*if (id.length)*/
-            {
-                immutable gameInfo = getTwitchGame(plugin, string.init, id);
-                name = gameInfo.name;
-            }
-
-            modifyChannel(plugin, event.channel, string.init, id);
-
-            enum pattern = "Game set to: %s";
-            immutable message = pattern.format(name);
-            chan(plugin.state, event.channel, message);
+            immutable gameInfo = getTwitchGame(plugin, specified.encodeComponent, string.init);
+            id = gameInfo.id;
+            name = gameInfo.name;
         }
-        catch (EmptyDataException e)
+        else if (id == "0")
         {
-            enum message = "Could not find a game by that name.";
-            chan(plugin.state, event.channel, message);
+            name = "(unset)";
         }
-        catch (TwitchQueryException e)
+        else /*if (id.length)*/
         {
-            if ((e.code == 401) && (e.error == "Unauthorized"))
-            {
-                static uint idWhenComplainedAboutExpiredKey;
+            immutable gameInfo = getTwitchGame(plugin, string.init, id);
+            name = gameInfo.name;
+        }
 
-                if (idWhenComplainedAboutExpiredKey != plugin.state.connectionID)
-                {
-                    // broadcaster "superkey" expired.
-                    enum message = "The broadcaster-level API key has expired.";
-                    chan(plugin.state, event.channel, message);
-                    idWhenComplainedAboutExpiredKey = plugin.state.connectionID;
-                }
-            }
-            else
+        modifyChannel(plugin, event.channel, string.init, id);
+
+        enum pattern = "Game set to: %s";
+        immutable message = pattern.format(name);
+        chan(plugin.state, event.channel, message);
+    }
+    catch (EmptyDataJSONException e)
+    {
+        enum message = "Could not find a game by that name.";
+        chan(plugin.state, event.channel, message);
+    }
+    catch (TwitchQueryException e)
+    {
+        if ((e.code == 401) && (e.error == "Unauthorized"))
+        {
+            static uint idWhenComplainedAboutExpiredKey;
+
+            if (idWhenComplainedAboutExpiredKey != plugin.state.connectionID)
             {
-                throw e;
+                // broadcaster "superkey" expired.
+                enum message = "The broadcaster-level API key has expired.";
+                chan(plugin.state, event.channel, message);
+                idWhenComplainedAboutExpiredKey = plugin.state.connectionID;
             }
+        }
+        else
+        {
+            throw e;
         }
     }
-
-    Fiber setGameFiber = new Fiber(&twitchTryCatchDg!setGameDg, BufferSize.fiberStack);
-    setGameFiber.call();
 }
 
 
@@ -2381,6 +2136,7 @@ void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     .onEvent(IRCEvent.Type.CHAN)
     .permissionsRequired(Permissions.operator)
     .channelPolicy(ChannelPolicy.home)
+    .fiber(true)
     .addCommand(
         IRCEventHandler.Command()
             .word("commercial")
@@ -2401,8 +2157,7 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     {
         enum pattern = "Usage: %s%s [commercial length; valid values are 30, 60, 90, 120, 150 and 180]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-        chan(plugin.state, event.channel, message);
-        return;
+        return chan(plugin.state, event.channel, message);
     }
 
     const room = event.channel in plugin.rooms;
@@ -2411,38 +2166,30 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     {
         enum pattern = "Broadcast start was never marked with %sstart.";
         immutable message = pattern.format(plugin.state.settings.prefix);
-        chan(plugin.state, event.channel, message);
-        return;
+        return chan(plugin.state, event.channel, message);
     }
 
     if (!lengthString.among!("30", "60", "90", "120", "150", "180"))
     {
         enum message = "Commercial length must be one of 30, 60, 90, 120, 150 or 180.";
-        chan(plugin.state, event.channel, message);
-        return;
+        return chan(plugin.state, event.channel, message);
     }
 
-    void commercialDg()
+    try
     {
-        try
+        startCommercial(plugin, event.channel, lengthString);
+    }
+    catch (TwitchQueryException e)
+    {
+        if ((e.code == 400) && (e.error == "Bad Request"))
         {
-            startCommercial(plugin, event.channel, lengthString);
+            chan(plugin.state, event.channel, e.msg);
         }
-        catch (TwitchQueryException e)
+        else
         {
-            if ((e.code == 400) && (e.error == "Bad Request"))
-            {
-                chan(plugin.state, event.channel, e.msg);
-            }
-            else
-            {
-                throw e;
-            }
+            throw e;
         }
     }
-
-    Fiber commercialFiber = new Fiber(&twitchTryCatchDg!commercialDg, BufferSize.fiberStack);
-    commercialFiber.call();
 }
 
 
@@ -2561,6 +2308,7 @@ void start(TwitchPlugin plugin)
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_MYINFO)
+    .fiber(true)
 )
 void onMyInfo(TwitchPlugin plugin)
 {
@@ -2591,46 +2339,43 @@ void onMyInfo(TwitchPlugin plugin)
 
     immutable now = Clock.currTime;
 
-    Fiber followersFiber = new Fiber(&cacheFollowersDg, BufferSize.fiberStack);
-    delay(plugin, followersFiber, now.nextMidnight-now);
+    Fiber cacheFollowersFiber = new Fiber(&cacheFollowersDg, BufferSize.fiberStack);
+    delay(plugin, cacheFollowersFiber, now.nextMidnight-now);
 
     // Load ecounts.
     plugin.reload();
 
-    // Periodically save ecounts and viewer times
-    void saveResourcesDg()
-    {
-        while (true)
-        {
-            if (plugin.twitchSettings.ecount && plugin.ecountDirty && plugin.ecount.length)
-            {
-                saveResourceToDisk(plugin.ecount, plugin.ecountFile);
-                plugin.ecountDirty = false;
-            }
+    // delay once before looping
+    delay(plugin, plugin.savePeriodicity, Yes.yield);
 
-            /+
-                Only save watchtimes if there's at least one broadcast currently ongoing.
-                Since we save at broadcast stop there won't be anything new to save otherwise.
-             +/
-            if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
+    // Periodically save ecounts and viewer times
+    while (true)
+    {
+        if (plugin.twitchSettings.ecount && plugin.ecountDirty && plugin.ecount.length)
+        {
+            saveResourceToDisk(plugin.ecount, plugin.ecountFile);
+            plugin.ecountDirty = false;
+        }
+
+        /+
+            Only save watchtimes if there's at least one broadcast currently ongoing.
+            Since we save at broadcast stop there won't be anything new to save otherwise.
+            +/
+        if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
+        {
+            foreach (const room; plugin.rooms)
             {
-                foreach (const room; plugin.rooms)
+                if (room.broadcast.active)
                 {
-                    if (room.broadcast.active)
-                    {
-                        // At least one broadcast active
-                        saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
-                        break;
-                    }
+                    // At least one broadcast active
+                    saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
+                    break;
                 }
             }
-
-            delay(plugin, plugin.savePeriodicity, Yes.yield);
         }
-    }
 
-    Fiber saveResourcesFiber = new Fiber(&saveResourcesDg, BufferSize.fiberStack);
-    delay(plugin, saveResourcesFiber, plugin.savePeriodicity);
+        delay(plugin, plugin.savePeriodicity, Yes.yield);
+    }
 }
 
 
@@ -3080,6 +2825,7 @@ public:
     The Twitch plugin is an example Twitch streamer bot. It contains some
     basic tools for streamers, and the audience thereof.
  +/
+@IRCPluginHook
 final class TwitchPlugin : IRCPlugin
 {
 private:
@@ -3095,6 +2841,10 @@ package:
         /// Aggregate of a broadcast.
         static struct Broadcast
         {
+        private:
+            uint privateUniqueID;
+
+        public:
             /// Whether or not the streamer is currently broadcasting.
             bool active;
 
@@ -3115,6 +2865,18 @@ package:
 
             /// Hashmap of active viewers (who have shown activity).
             bool[string] activeViewers;
+
+            /// Accessor for `privateUniqueID`.
+            auto uniqueID() const
+            {
+                return privateUniqueID;
+            }
+
+            /// Constructor.
+            this(const bool active)
+            {
+                this.active = active;
+            }
         }
 
         /// Constructor taking a string (channel) name.

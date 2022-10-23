@@ -164,6 +164,7 @@ public:
     The Stopwatch plugin offers the ability to start stopwatches, and print
     how much time elapsed upon stopping them.
  +/
+@IRCPluginHook
 final class StopwatchPlugin : IRCPlugin
 {
 private:

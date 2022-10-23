@@ -13,7 +13,7 @@ version(WithTwitchPlugin):
 private:
 
 import kameloso.plugins.twitch.base;
-import kameloso.plugins.twitch.helpers;
+import kameloso.plugins.twitch.common;
 import kameloso.common : logger;
 import kameloso.logger : LogLevel;
 import kameloso.terminal.colours.tags : expandTags;

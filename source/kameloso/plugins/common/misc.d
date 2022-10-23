@@ -39,7 +39,8 @@ public:
     See_Also:
         [lu.objmanip.setSettingByName]
  +/
-auto applyCustomSettings(IRCPlugin[] plugins,
+auto applyCustomSettings(
+    IRCPlugin[] plugins,
     const string[] customSettings,
     CoreSettings copyOfSettings)
 {
@@ -323,6 +324,7 @@ void catchUser(IRCPlugin plugin, const IRCUser newUser) @safe
             replay the function pointer `fun` with as first argument.
         event = [dialect.defs.IRCEvent|IRCEvent] to queue up to replay.
         permissionsRequired = Permissions level to match the results from the WHOIS query with.
+        inFiber = Whether or not the function should be called from within a Fiber.
         fun = Function/delegate pointer to call when the results return.
         caller = String name of the calling function, or something else that gives context.
  +/
@@ -330,6 +332,7 @@ void enqueue(Plugin, Fun)
     (Plugin plugin,
     const ref IRCEvent event,
     const Permissions permissionsRequired,
+    const bool inFiber,
     Fun fun,
     const string caller = __FUNCTION__)
 in ((event != IRCEvent.init), "Tried to `enqueue` with an init IRCEvent")
@@ -400,7 +403,7 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
     }
 
     plugin.state.pendingReplays[user.nickname] ~=
-        replay(plugin, event, fun, permissionsRequired, caller);
+        replay(plugin, event, fun, permissionsRequired, inFiber, caller);
     plugin.state.hasPendingReplays = true;
 }
 
@@ -417,6 +420,7 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
         event = [dialect.defs.IRCEvent|IRCEvent] that instigated the WHOIS lookup.
         fun = Function/delegate pointer to call upon receiving the results.
         permissionsRequired = The permissions level policy to apply to the WHOIS results.
+        inFiber = Whether or not the function should be called from within a Fiber.
         caller = String name of the calling function, or something else that gives context.
 
     Returns:
@@ -426,8 +430,13 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
     See_Also:
         [kameloso.plugins.common.core.Replay|Replay]
  +/
-auto replay(Plugin, Fun)(Plugin plugin, const ref IRCEvent event,
-    Fun fun, const Permissions permissionsRequired, const string caller = __FUNCTION__)
+auto replay(Plugin, Fun)
+    (Plugin plugin,
+    const /*ref*/ IRCEvent event,
+    Fun fun,
+    const Permissions permissionsRequired,
+    const bool inFiber,
+    const string caller = __FUNCTION__)
 {
     void dg(Replay replay)
     {
@@ -531,33 +540,60 @@ auto replay(Plugin, Fun)(Plugin plugin, const ref IRCEvent event,
 
             version(ExplainReplay) explainReplay();
 
-            static if (
-                TakesParams!(fun, Plugin, IRCEvent) ||
-                TakesParams!(fun, IRCPlugin, IRCEvent))
+            void call()
             {
-                fun(plugin, replay.event);
+                static if (
+                    TakesParams!(fun, Plugin, IRCEvent) ||
+                    TakesParams!(fun, IRCPlugin, IRCEvent))
+                {
+                    fun(plugin, replay.event);
+                }
+                else static if (
+                    TakesParams!(fun, Plugin) ||
+                    TakesParams!(fun, IRCPlugin))
+                {
+                    fun(plugin);
+                }
+                else static if (
+                    TakesParams!(fun, IRCEvent))
+                {
+                    fun(replay.event);
+                }
+                else static if (arity!fun == 0)
+                {
+                    fun();
+                }
+                else
+                {
+                    // onEventImpl.call should already have statically asserted all
+                    // event handlers are of the types above
+                    static assert(0, "Failed to cover all event handler function signature cases");
+                }
             }
-            else static if (
-                TakesParams!(fun, Plugin) ||
-                TakesParams!(fun, IRCPlugin))
+
+            if (inFiber)
             {
-                fun(plugin);
-            }
-            else static if (
-                TakesParams!(fun, IRCEvent))
-            {
-                fun(replay.event);
-            }
-            else static if (arity!fun == 0)
-            {
-                fun();
+                import kameloso.constants : BufferSize;
+                import kameloso.thread : CarryingFiber;
+                import core.thread : Fiber;
+
+                auto fiber = new CarryingFiber!IRCEvent(
+                    &call,
+                    BufferSize.fiberStack);
+                fiber.payload = replay.event;
+                fiber.call();
+
+                if (fiber.state == Fiber.State.TERM)
+                {
+                    // Ended immediately, so just destroy
+                    destroy(fiber);
+                }
             }
             else
             {
-                // onEventImpl.call should already have statically asserted all
-                // event handlers are of the types above
-                static assert(0, "Failed to cover all event handler function signature cases");
+                call();
             }
+
             return;
         }
 
@@ -1009,3 +1045,38 @@ in (filename.length, "Empty plugin filename passed to `pluginFilenameSlicerImpl`
 
     return getPluginName ? slice[0..$-2] : slice;
 }
+
+
+// ModulePluginName
+/++
+    Introspects a module given a string of its fully qualified name, and aliases
+    itself to the name of the plugin class therein, as detected by looking for
+    [kameloso.plugins.common.core.IRCPlugin|IRCPlugin] subclasses annotated
+    [kameloso.plugins.common.core.IRCPluginHook|IRCPluginHook].
+
+    Params:
+        module_ = String name of a module.
+ +/
+enum ModulePluginName(string module_) = ()
+{
+    import lu.traits : getSymbolsByUDA;
+
+    mixin("static import thisModule = " ~ module_ ~ ";");
+
+    alias hookedSymbols = getSymbolsByUDA!(thisModule, IRCPluginHook);
+
+    static if ((hookedSymbols.length == 1) && is(hookedSymbols[0] : IRCPlugin))
+    {
+        return __traits(identifier, hookedSymbols[0]);
+    }
+    else
+    {
+        import std.format : format;
+
+        // It can apparently branch here for a variety of reasons,
+        // so only give a generic error message.
+        enum pattern = "Unspecific error in module `%s`; see backtrace";
+        immutable message = pattern.format(module_);
+        static assert(0, message);
+    }
+}();

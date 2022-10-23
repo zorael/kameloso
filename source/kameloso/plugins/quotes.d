@@ -280,8 +280,7 @@ void modQuoteAndReport(
         {
             enum pattern = "No quotes on record for user <h>%s<h>.";
             immutable message = pattern.format(id);
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
-            return;
+            return privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
 
         immutable len = plugin.quotes[id].array.length;
@@ -290,8 +289,7 @@ void modQuoteAndReport(
         {
             enum pattern = "Index <b>%1$d<b> is out of range. (%1$d >= %2$d)";
             immutable message = pattern.format(index, len);
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
-            return;
+            return privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
 
         string pattern;
@@ -679,8 +677,7 @@ void manageQuoteImpl(
                         {
                             enum pattern = "No such quote: <h>%s<h> #<b>%d<b>";
                             immutable message = pattern.format(id, index);
-                            privmsg(plugin.state, event.channel, event.sender.nickname, message);
-                            return;
+                            return privmsg(plugin.state, event.channel, event.sender.nickname, message);
                         }
                     }
                     else
@@ -797,23 +794,20 @@ void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
     {
         enum pattern = "Usage: <b>%s%s<b> [source] [target]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
-        return;
+        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
     if (source == target)
     {
         enum message = "Cannot merge quotes from one user into the same one.";
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
-        return;
+        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
     if ((source !in plugin.quotes) || !plugin.quotes[source].array.length)
     {
         enum pattern = "<h>%s<h> has no quotes to merge.";
         immutable message = pattern.format(source);
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
-        return;
+        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
     if (target !in plugin.quotes)
@@ -906,6 +900,7 @@ public:
 
     It was historically part of [kameloso.plugins.chatbot.ChatbotPlugin|ChatbotPlugin].
  +/
+@IRCPluginHook
 final class QuotesPlugin : IRCPlugin
 {
 private:

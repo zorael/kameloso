@@ -12,7 +12,7 @@ dflags "-linkonce-templates" platform="ldc"
 x:ddoxTool "scod"
 
 dependency "lu" version="~>1.2.1"
-dependency "dialect" version="~>1.4.0"
+dependency "dialect" version="~>1.4.1"
 dependency "arsd-official:dom" version="~>10.9.0"
 dependency "arsd-official:http" version="~>10.9.0"
 dependency "requests" version="~>2.0.0"
@@ -41,6 +41,7 @@ versions \
     "WithPollPlugin" \
     "WithTimerPlugin" \
     "WithWebtitlesPlugin"
+    //"WithSamePlugin"
 
 /**
     Services; needed for everything to work right.

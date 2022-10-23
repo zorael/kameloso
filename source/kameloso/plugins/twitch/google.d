@@ -13,7 +13,7 @@ version(WithTwitchPlugin):
 private:
 
 import kameloso.plugins.twitch.base;
-import kameloso.plugins.twitch.helpers;
+import kameloso.plugins.twitch.common;
 
 import kameloso.common : logger;
 import arsd.http2 : HttpClient;
@@ -31,7 +31,7 @@ import core.thread : Fiber;
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
 
     Throws:
-        [kameloso.plugins.twitch.helpers.ErrorJSONException|ErrorJSONException]
+        [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
 package void requestGoogleKeys(TwitchPlugin plugin)
@@ -300,10 +300,10 @@ Follow the instructions and log in to authorise the use of this program with you
         A [std.json.JSONValue|JSONValue] of the response.
 
     Throws:
-        [kameloso.plugins.twitch.helpers.UnexpectedJSONException|UnexpectedJSONException]
+        [kameloso.plugins.twitch.common.UnexpectedJSONException|UnexpectedJSONException]
         on unexpected JSON.
 
-        [kameloso.plugins.twitch.helpers.ErrorJSONException|ErrorJSONException]
+        [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
 package JSONValue addVideoToYouTubePlaylist(
@@ -354,7 +354,15 @@ in (Fiber.getThis, "Tried to call `addVideoToYouTubePlaylist` from outside a Fib
     immutable data = pattern.format(creds.youtubePlaylistID, videoID).representation;
     /*immutable*/ int id = getUniqueNumericalID(plugin.bucket);  // Making immutable bumps compilation memory +44mb
     plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout());
-    plugin.persistentWorkerTid.send(id, url, authorizationBearer, HttpVerb.POST, data, "application/json");
+
+    plugin.persistentWorkerTid.send(
+        id,
+        url,
+        authorizationBearer,
+        HttpVerb.POST,
+        data,
+        "application/json");
+
     static immutable guesstimatePeriodToWaitForCompletion = 600.msecs;
     delay(plugin, guesstimatePeriodToWaitForCompletion, Yes.yield);
     immutable response = waitForQueryResponse(plugin, id);
@@ -429,10 +437,10 @@ in (Fiber.getThis, "Tried to call `addVideoToYouTubePlaylist` from outside a Fib
         code = Google authorization code.
 
     Throws:
-        [kameloso.plugins.twitch.helpers.UnexpectedJSONException|UnexpectedJSONException]
+        [kameloso.plugins.twitch.common.UnexpectedJSONException|UnexpectedJSONException]
         on unexpected JSON.
 
-        [kameloso.plugins.twitch.helpers.ErrorJSONException|ErrorJSONException]
+        [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
 void getGoogleTokens(HttpClient client, ref Credentials creds, const string code)
@@ -490,10 +498,10 @@ void getGoogleTokens(HttpClient client, ref Credentials creds, const string code
         creds = Credentials aggregate.
 
     Throws:
-        [kameloso.plugins.twitch.helpers.UnexpectedJSONException|UnexpectedJSONException]
+        [kameloso.plugins.twitch.common.UnexpectedJSONException|UnexpectedJSONException]
         on unexpected JSON.
 
-        [kameloso.plugins.twitch.helpers.ErrorJSONException|ErrorJSONException]
+        [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
 void refreshGoogleToken(HttpClient client, ref Credentials creds)
@@ -541,10 +549,10 @@ void refreshGoogleToken(HttpClient client, ref Credentials creds)
         The server [std.json.JSONValue|JSONValue] response.
 
     Throws:
-        [kameloso.plugins.twitch.helpers.UnexpectedJSONException|UnexpectedJSONException]
+        [kameloso.plugins.twitch.common.UnexpectedJSONException|UnexpectedJSONException]
         on unexpected JSON.
 
-        [kameloso.plugins.twitch.helpers.ErrorJSONException|ErrorJSONException]
+        [kameloso.plugins.twitch.common.ErrorJSONException|ErrorJSONException]
         if the returned JSON has an `"error"` field.
  +/
 auto validateGoogleToken(HttpClient client, ref Credentials creds)

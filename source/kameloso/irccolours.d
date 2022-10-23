@@ -10,7 +10,7 @@
     Example:
     ---
     immutable nameInColour = "kameloso".ircColour(IRCColour.red);
-    immutable nameInHashedColour = "kameloso".ircColouByHash;
+    immutable nameInHashedColour = "kameloso".ircColourByHash;
     immutable nameInBold = "kameloso".ircBold;
     ---
  +/
@@ -18,14 +18,12 @@ module kameloso.irccolours;
 
 private:
 
+import kameloso.terminal.colours : TerminalBackground, TerminalForeground,
+    TerminalFormat, TerminalReset;
 import dialect.common : IRCControlCharacter;
 import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;
 
-version(Colours)
-{
-    import kameloso.terminal.colours : TerminalBackground, TerminalForeground;
-}
 
 public:
 
@@ -77,19 +75,12 @@ if (isOutputRange!(Sink, char[]))
 in (line.length, "Tried to apply IRC colours to a string but no string was given")
 {
     import lu.conv : toAlphaInto;
-    import std.conv : to;
-    import std.format : formattedWrite;
-
-    assert((fg != IRCColour.unset), "Tried to IRC colour with an unset colour");
 
     sink.put(cast(char)IRCControlCharacter.colour);
-
-    //sink.formattedWrite("%02d", fg);
     (cast(int)fg).toAlphaInto!(2, 2)(sink);  // So far the highest colour seems to be 99; two digits
 
     if (bg != IRCColour.unset)
     {
-        //sink.formattedWrite(",%02d", bg);
         sink.put(',');
         (cast(int)bg).toAlphaInto!(2, 2)(sink);
     }
@@ -135,15 +126,14 @@ string ircColour(
     const IRCColour bg = IRCColour.unset) pure
 in (line.length, "Tried to apply IRC colours to a string but no string was given")
 {
-    if (!line.length) return string.init;
-
     import std.array : Appender;
+
+    if (!line.length) return string.init;
 
     Appender!(char[]) sink;
 
     sink.reserve(line.length + 7);  // Two colour tokens, four colour numbers and a comma
     line.ircColourInto(sink, fg, bg);
-
     return sink.data;
 }
 
@@ -173,20 +163,24 @@ unittest
     Returns:
         An opening IRC colour token with the passed colours.
  +/
-auto ircColour(const IRCColour fg, const IRCColour bg = IRCColour.unset) pure
+string ircColour(const IRCColour fg, const IRCColour bg = IRCColour.unset) pure
 {
-    import std.format : format;
+    import lu.conv : toAlphaInto;
+    import std.array : Appender;
+
+    Appender!(char[]) sink;
+    sink.reserve(6);
+
+    sink.put(cast(char)IRCControlCharacter.colour);
+    (cast(int)fg).toAlphaInto!(2, 2)(sink);
 
     if (bg != IRCColour.unset)
     {
-        enum pattern = "%c%02d,%02d";
-        return format(pattern, cast(char)IRCControlCharacter.colour, fg, bg);
+        sink.put(',');
+        (cast(int)bg).toAlphaInto!(2, 2)(sink);
     }
-    else
-    {
-        enum pattern = "%c%02d";
-        return format(pattern, cast(char)IRCControlCharacter.colour, fg);
-    }
+
+    return sink.data;
 }
 
 ///
@@ -249,18 +243,25 @@ unittest
     Returns:
         The passed string encased within IRC colour coding.
  +/
-auto ircColourByHash(const string word) pure
+string ircColourByHash(const string word) pure
 in (word.length, "Tried to apply IRC colours by hash to a string but no string was given")
 {
+    import lu.conv : toAlphaInto;
+    import std.array : Appender;
+
     if (!word.length) return string.init;
 
-    import std.format : format;
-
-    alias I = IRCControlCharacter;
+    Appender!(char[]) sink;
+    sink.reserve(word.length + 4);  // colour, index, word, colour
 
     immutable colourIndex = hashOf(word) % 16;
-    enum pattern = "%c%02d%s%c";
-    return format(pattern, cast(char)I.colour, colourIndex, word, cast(char)I.colour);
+
+    sink.put(cast(char)IRCControlCharacter.colour);
+    colourIndex.toAlphaInto!(2, 2)(sink);
+    sink.put(word);
+    sink.put(cast(char)IRCControlCharacter.colour);
+
+    return sink.data;
 }
 
 ///
@@ -301,7 +302,9 @@ unittest
 auto ircBold(T)(T something) //pure nothrow
 {
     import std.conv : text;
-    return text(cast(char)IRCControlCharacter.bold, something, cast(char)IRCControlCharacter.bold);
+
+    alias I = IRCControlCharacter;
+    return text(cast(char)I.bold, something, cast(char)I.bold);
 }
 
 ///
@@ -343,7 +346,9 @@ unittest
 auto ircItalics(T)(T something) //pure nothrow
 {
     import std.conv : text;
-    return text(cast(char)IRCControlCharacter.italics, something, cast(char)IRCControlCharacter.italics);
+
+    alias I = IRCControlCharacter;
+    return text(cast(char)I.italics, something, cast(char)I.italics);
 }
 
 ///
@@ -385,7 +390,9 @@ unittest
 auto ircUnderlined(T)(T something) //pure nothrow
 {
     import std.conv : text;
-    return text(cast(char)IRCControlCharacter.underlined, something, cast(char)IRCControlCharacter.underlined);
+
+    alias I = IRCControlCharacter;
+    return text(cast(char)I.underlined, something, cast(char)I.underlined);
 }
 
 ///
@@ -439,8 +446,8 @@ auto ircReset() @nogc pure nothrow
 
     Params:
         origLine = String line to map effects of.
-        fgBase = Foreground base code to reset to after end colour tags.
-        bgBase = Background base code to reset to after end colour tags.
+        fgBase = Optional foreground base code to reset to after end colour tags.
+        bgBase = Optional background base code to reset to after end colour tags.
 
     Returns:
         A new string based on `origLine` with mIRC tokens mapped to terminal ones.
@@ -448,17 +455,17 @@ auto ircReset() @nogc pure nothrow
 version(Colours)
 auto mapEffects(
     const string origLine,
-    const uint fgBase = TerminalForeground.default_,
-    const uint bgBase = TerminalBackground.default_) pure nothrow
+    const TerminalForeground fgBase = TerminalForeground.default_,
+    const TerminalBackground bgBase = TerminalBackground.default_) pure nothrow
 {
-    import kameloso.terminal.colours : TF = TerminalFormat;
     import lu.string : contains;
 
     alias I = IRCControlCharacter;
+    alias TF = TerminalFormat;
 
     if (!origLine.length) return string.init;
 
-    string line = origLine;
+    string line = origLine;  // mutable
 
     if (line.contains(I.colour))
     {
@@ -492,12 +499,11 @@ version(Colours)
 unittest
 {
     import kameloso.terminal : TerminalToken;
-    import kameloso.terminal.colours : TF = TerminalFormat;
     import lu.conv : toAlpha;
 
     alias I = IRCControlCharacter;
 
-    enum bBold = TerminalToken.format ~ "[" ~ TF.bold.toAlpha ~ "m";
+    enum bBold = TerminalToken.format ~ "[" ~ TerminalFormat.bold.toAlpha ~ "m";
     enum bReset = TerminalToken.format ~ "[22m";
     //enum bResetAll = TerminalToken.format ~ "[0m";
 
@@ -522,15 +528,15 @@ unittest
  +/
 auto stripEffects(const string line) pure nothrow
 {
-    alias I = IRCControlCharacter;
-
     if (!line.length) return line;
+
+    alias I = IRCControlCharacter;
 
     return line
         .stripColours
-        .mapEffectsImpl!(Yes.strip, I.bold, 0)
-        .mapEffectsImpl!(Yes.strip, I.italics, 0)
-        .mapEffectsImpl!(Yes.strip, I.underlined, 0);
+        .mapEffectsImpl!(Yes.strip, I.bold, TerminalFormat.unset)
+        .mapEffectsImpl!(Yes.strip, I.italics, TerminalFormat.unset)
+        .mapEffectsImpl!(Yes.strip, I.underlined, TerminalFormat.unset);
 }
 
 ///
@@ -568,8 +574,8 @@ unittest
 
     Params:
         line = String line with IRC colours to translate.
-        fgReset = Foreground code to reset to after colour-default tokens.
-        bgReset = Background code to reset to after colour-default tokens.
+        fgFallback = Foreground code to reset to after colour-default tokens.
+        bgFallback = Background code to reset to after colour-default tokens.
 
     Returns:
         The passed `line`, now with terminal colouring.
@@ -577,12 +583,11 @@ unittest
 version(Colours)
 auto mapColours(
     const string line,
-    const uint fgReset = TerminalForeground.default_,
-    const uint bgReset = TerminalBackground.default_) pure nothrow
+    const TerminalForeground fgFallback,
+    const TerminalBackground bgFallback) pure nothrow
 {
     if (!line.length) return line;
-
-    return mapColoursImpl!(No.strip)(line, fgReset, bgReset);
+    return mapColoursImpl!(No.strip)(line, fgFallback, bgFallback);
 }
 
 
@@ -599,32 +604,27 @@ auto mapColours(
     Params:
         strip = Whether or not to strip colours or to map them.
         line = String line with IRC colours to translate.
-        fgReset = Foreground code to reset to after colour-default tokens.
-        bgReset = Background code to reset to after colour-default tokens.
+        fgFallback = Foreground code to reset to after colour-default tokens.
+        bgFallback = Background code to reset to after colour-default tokens.
 
     Returns:
         The passed `line`, now with terminal colouring, or completely without.
  +/
 private string mapColoursImpl(Flag!"strip" strip = No.strip)
     (const string line,
-    const uint fgReset,
-    const uint bgReset) pure nothrow
-in ((fgReset > 0), "Tried to " ~ (strip ? "strip" : "map") ~
-    " colours with a foreground reset value of 0")
-in ((bgReset > 0), "Tried to " ~ (strip ? "strip" : "map") ~
-    " colours with a background reset value of 0")
+    const TerminalForeground fgFallback,
+    const TerminalBackground bgFallback) pure nothrow
 {
     import lu.conv : toAlphaInto;
     import std.array : Appender;
     import std.string : indexOf;
 
-    static if (!strip)
+    version(Colours) {}
+    else
     {
-        version(Colours) {}
-        else
+        static if (!strip)
         {
-            static assert(0, "`mapColoursImpl!(No.strip)` is being called " ~
-                "outside of version `Colours`");
+            static assert(0, "Tried to `mapColoursImpl!(No.strip)` outside of version `Colours`");
         }
     }
 
@@ -810,9 +810,9 @@ in ((bgReset > 0), "Tried to " ~ (strip ? "strip" : "map") ~
 
                 if (segment.isReset)
                 {
-                    fgReset.toAlphaInto(sink);
+                    fgFallback.toAlphaInto(sink);
                     sink.put(';');
-                    bgReset.toAlphaInto(sink);
+                    bgFallback.toAlphaInto(sink);
                     sink.put('m');
                     open = false;
                     continue;
@@ -837,13 +837,13 @@ in ((bgReset > 0), "Tried to " ~ (strip ? "strip" : "map") ~
 
     sink.put(tail);
 
-    static if (!strip)
+    version(Colours)
     {
-        version(Colours)
+        static if (!strip)
         {
             if (open)
             {
-                if ((fgReset == 39) && (bgReset == 49))
+                if ((fgFallback == 39) && (bgFallback == 49))
                 {
                     // Shortcut
                     sink.put("\033[39;49m");
@@ -851,9 +851,9 @@ in ((bgReset > 0), "Tried to " ~ (strip ? "strip" : "map") ~
                 else
                 {
                     sink.put("\033[");
-                    fgReset.toAlphaInto(sink);
+                    fgFallback.toAlphaInto(sink);
                     sink.put(';');
-                    bgReset.toAlphaInto(sink);
+                    bgFallback.toAlphaInto(sink);
                     sink.put('m');
                 }
             }
@@ -868,35 +868,37 @@ version(Colours)
 unittest
 {
     alias I = IRCControlCharacter;
+    alias TF = TerminalForeground;
+    alias TB = TerminalBackground;
 
     {
         immutable line = "This is " ~ I.colour ~ "4all red!" ~ I.colour ~ " while this is not.";
-        immutable mapped = mapColours(line, 39, 49);
+        immutable mapped = mapColours(line, TF.default_, TB.default_);
         assert((mapped == "This is \033[91mall red!\033[39;49m while this is not."), mapped);
     }
     {
         immutable line = "This time there's" ~ I.colour ~ "6 no ending token, only magenta.";
-        immutable mapped = mapColours(line, 39, 49);
+        immutable mapped = mapColours(line, TF.default_, TB.default_);
         assert((mapped == "This time there's\033[35m no ending token, only magenta.\033[39;49m"), mapped);
     }
     {
         immutable line = I.colour ~ "1,0You" ~ I.colour ~ "0,4Tube" ~ I.colour ~ " asdf";
-        immutable mapped = mapColours(line, 39, 49);
+        immutable mapped = mapColours(line, TF.default_, TB.default_);
         assert((mapped == "\033[90;107mYou\033[97;41mTube\033[39;49m asdf"), mapped);
     }
     {
         immutable line = I.colour ~ "17,0You" ~ I.colour ~ "0,21Tube" ~ I.colour ~ " asdf";
-        immutable mapped = mapColours(line, 39, 49);
+        immutable mapped = mapColours(line, TF.default_, TB.default_);
         assert((mapped == "\033[90;107mYou\033[97;41mTube\033[39;49m asdf"), mapped);
     }
     {
         immutable line = I.colour ~ "17,0You" ~ I.colour ~ "0,2" ~ I.colour;
-        immutable mapped = mapColours(line, 39, 49);
+        immutable mapped = mapColours(line, TF.default_, TB.default_);
         assert((mapped == "\033[90;107mYou\033[97;44m\033[39;49m"), mapped);
     }
     {
         immutable line = I.colour ~ "";
-        immutable mapped = mapColours(line, 39, 49);
+        immutable mapped = mapColours(line, TF.default_, TB.default_);
         assert((mapped == "\033[39;49m"), mapped);
     }
 }
@@ -916,12 +918,8 @@ unittest
  +/
 auto stripColours(const string line) pure nothrow
 {
-    enum fgReset = 39;
-    enum bgReset = 49;
-
     if (!line.length) return line;
-
-    return mapColoursImpl!(Yes.strip)(line, fgReset, bgReset);
+    return mapColoursImpl!(Yes.strip)(line, TerminalForeground.default_, TerminalBackground.default_);
 }
 
 ///
@@ -969,31 +967,25 @@ unittest
     Returns:
         The passed `line`, now with terminal formatting.
  +/
-private string mapEffectsImpl(Flag!"strip" strip, int mircToken, int terminalFormatCode)
-    (const string line)
-in ((mircToken > 0), "Tried to " ~ (strip ? "strip" : "map") ~ " effects with an IRC token of 0")
-in ((strip || (terminalFormatCode > 0)), "Tried to map effects with terminal format code of 0")
+private string mapEffectsImpl(Flag!"strip" strip, IRCControlCharacter mircToken,
+    TerminalFormat terminalFormatCode)
+    (const string line) pure
 {
     import lu.conv : toAlpha;
     import std.array : Appender;
     import std.string : indexOf;
 
-    static if (!strip)
+    version(Colours) {}
+    else
     {
-        version(Colours) {}
-        else
+        static if (!strip)
         {
-            static assert(0, "`mapEffectsImpl!(No.strip)` is being called " ~
-                "outside of version `Colours`");
+            static assert(0, "Tried to call `mapEffectsImpl!(No.strip)` outside of version `Colours`");
         }
     }
 
-    alias I = IRCControlCharacter;
-
     string slice = line;  // mutable
-
     ptrdiff_t pos = slice.indexOf(mircToken);
-
     if (pos == -1) return line;  // As is
 
     Appender!(char[]) sink;
@@ -1001,11 +993,9 @@ in ((strip || (terminalFormatCode > 0)), "Tried to map effects with terminal for
     static if (!strip)
     {
         import kameloso.terminal : TerminalToken;
-        import kameloso.terminal.colours : TF = TerminalFormat, TerminalReset, colourWith;
+        import kameloso.terminal.colours : colourWith;
 
         enum terminalToken = TerminalToken.format ~ "[" ~ toAlpha(terminalFormatCode) ~ "m";
-        // enum pattern = "(?:"~mircToken~")([^"~mircToken~"]*)(?:"~mircToken~")";
-
         sink.reserve(cast(size_t)(line.length * 1.5));
         bool open;
     }
@@ -1060,8 +1050,7 @@ in ((strip || (terminalFormatCode > 0)), "Tried to map effects with terminal for
         pos = slice.indexOf(mircToken);
     }
 
-    immutable tail = slice;
-
+    alias tail = slice;
     sink.put(tail);
 
     static if (!strip)
@@ -1077,7 +1066,6 @@ version(Colours)
 unittest
 {
     import kameloso.terminal : TerminalToken;
-    import kameloso.terminal.colours : TerminalFormat;
     import lu.conv : toAlpha;
 
     alias I = IRCControlCharacter;
@@ -1420,7 +1408,7 @@ T stripIRCTags(T)(const T line) @system
         [std.string.indexOf] (used internally) throws [std.utf.UTFException|UTFException]
         if the starting index of a lookup doesn't represent a well-formed codepoint.
  +/
-private T expandIRCTagsImpl(T)(const T line, const Flag!"strip" strip = No.strip)
+private T expandIRCTagsImpl(T)(const T line, const Flag!"strip" strip = No.strip) pure
 {
     import dialect.common : IRCControlCharacter;
     import lu.string : contains;

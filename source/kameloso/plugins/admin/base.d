@@ -329,10 +329,9 @@ void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
         return plugin.delHome(event, slice);
 
     case "list":
-        enum pattern = "Current home channels: %-(<b>%s<b>, %)";
+        enum pattern = "Current home channels: %-(<b>%s<b>, %)<b>";
         immutable message = pattern.format(plugin.state.bot.homeChannels);
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
-        return;
+        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
 
     default:
         return sendUsage();
@@ -367,15 +366,13 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
 
     if (!channelName.isValidChannel(plugin.state.server))
     {
-        privmsg(plugin.state, event.channel, event.sender.nickname, "Invalid channel name.");
-        return;
+        return privmsg(plugin.state, event.channel, event.sender.nickname, "Invalid channel name.");
     }
 
     if (plugin.state.bot.homeChannels.canFind(channelName))
     {
-        privmsg(plugin.state, event.channel, event.sender.nickname,
+        return privmsg(plugin.state, event.channel, event.sender.nickname,
             "We are already in that home channel.");
-        return;
     }
 
     // We need to add it to the homeChannels array so as to get ChannelPolicy.home
@@ -512,8 +509,7 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
 
         enum pattern = "Channel <b>%s<b> was not listed as a home.";
         immutable message = pattern.format(channelName);
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
-        return;
+        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
     plugin.state.bot.homeChannels = plugin.state.bot.homeChannels
@@ -767,9 +763,8 @@ void onCommandJoin(AdminPlugin plugin, const ref IRCEvent event)
 
     if (!event.content.length)
     {
-        privmsg(plugin.state, event.channel, event.sender.nickname,
+        return privmsg(plugin.state, event.channel, event.sender.nickname,
             "No channels to join supplied...");
-        return;
     }
 
     string slice = event.content;  // mutable
@@ -804,9 +799,8 @@ void onCommandPart(AdminPlugin plugin, const ref IRCEvent event)
 
     if (!event.content.length)
     {
-        privmsg(plugin.state, event.channel, event.sender.nickname,
+        return privmsg(plugin.state, event.channel, event.sender.nickname,
             "No channels to part supplied...");
-        return;
     }
 
     string slice = event.content;  // mutable
@@ -973,9 +967,8 @@ void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 
     if (channelName !in plugin.state.channels)
     {
-        privmsg(plugin.state, event.channel, event.sender.nickname,
+        return privmsg(plugin.state, event.channel, event.sender.nickname,
             "I am not in that channel.");
-        return;
     }
 
     if (!slice.length)
@@ -1099,9 +1092,8 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
 
     if (!plugin.state.settings.preferHostmasks)
     {
-        privmsg(plugin.state, event.channel, event.sender.nickname,
+        return privmsg(plugin.state, event.channel, event.sender.nickname,
             "This bot is not currently configured to use hostmasks for authentication.");
-        return;
     }
 
     void sendUsage()
@@ -1126,8 +1118,7 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
         {
             enum pattern = "Usage: <b>%s%s add<b> [account] [hostmask]";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
-            return;
+            return privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
 
         return plugin.modifyHostmaskDefinition(Yes.add, account, mask, event);
@@ -1138,8 +1129,7 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
         {
             enum pattern = "Usage: <b>%s%s del<b> [hostmask]";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
-            return;
+            return privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
 
         return plugin.modifyHostmaskDefinition(No.add, string.init, slice, event);
@@ -1342,16 +1332,15 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         import lu.string : SplitResults, splitInto;
 
         string subverb;
-        string channel;
+        string channelName;
 
-        immutable results = slice.splitInto(subverb, channel);
+        immutable results = slice.splitInto(subverb, channelName);
         if (results == SplitResults.underrun)
         {
             // verb_channel_nickname
-            enum pattern = "Invalid bus message syntax; expected <l>%s%s</> " ~
+            enum pattern = "Invalid bus message syntax; expected <l>%s</> " ~
                 "[verb] [channel] [nickname if add/del], got \"<l>%s</>\"";
-            logger.warningf(pattern, plugin.state.settings.prefix, verb, message.payload.strippedRight);
-            return;
+            return logger.warningf(pattern, verb, message.payload.strippedRight);
         }
 
         switch (subverb)
@@ -1362,22 +1351,21 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 
             if (!user.length)
             {
-                logger.warning("Invalid bus message syntax; no user supplied, " ~
-                    "only channel <l>", channel);
-                return;
+                return logger.warning("Invalid bus message syntax; no user supplied, " ~
+                    "only channel <l>", channelName);
             }
 
             if (subverb == "add")
             {
-                return plugin.lookupEnlist(user, subverb, channel);
+                return plugin.lookupEnlist(user, verb, channelName);
             }
             else /*if (subverb == "del")*/
             {
-                return plugin.delist(user, subverb, channel);
+                return plugin.delist(user, verb, channelName);
             }
 
         case "list":
-            return plugin.listList(channel, verb);
+            return plugin.listList(channelName, verb);
 
         default:
             enum pattern = "Invalid bus message <l>%s</> subverb <l>%s";
@@ -1402,9 +1390,8 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             immutable results = slice.splitInto(account, mask);
             if (results != SplitResults.match)
             {
-                logger.warning("Invalid bus message syntax; " ~
+                return logger.warning("Invalid bus message syntax; " ~
                     "expected hostmask add [account] [hostmask]");
-                return;
             }
 
             IRCEvent lvalueEvent;
@@ -1414,9 +1401,8 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         case "remove":
             if (!slice.length)
             {
-                logger.warning("Invalid bus message syntax; " ~
+                return logger.warning("Invalid bus message syntax; " ~
                     "expected hostmask del [hostmask]");
-                return;
             }
 
             IRCEvent lvalueEvent;
@@ -1462,6 +1448,7 @@ public:
 
     It was historically part of the [kameloso.plugins.chatbot.ChatbotPlugin|ChatbotPlugin].
  +/
+@IRCPluginHook
 final class AdminPlugin : IRCPlugin
 {
 package:

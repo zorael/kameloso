@@ -1,4 +1,4 @@
-# kameloso [![Linux/macOS/Windows](https://img.shields.io/github/workflow/status/zorael/kameloso/D?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/actions?query=workflow%3AD) [![Linux](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?logo=circleci&style=flat&maxAge=3600)](https://circleci.com/gh/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?logo=appveyor&style=flat&maxAge=3600)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v3.3.0.svg?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/compare/v3.3.0...master)
+# kameloso [![Linux/macOS/Windows](https://img.shields.io/github/workflow/status/zorael/kameloso/D?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/actions?query=workflow%3AD) [![Linux](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?logo=circleci&style=flat&maxAge=3600)](https://circleci.com/gh/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?logo=appveyor&style=flat&maxAge=3600)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v3.4.2.svg?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/compare/v3.4.2...master)
 
 **kameloso** is an IRC bot. It works as a Twitch bot too, see [here](#twitch).
 
@@ -10,8 +10,7 @@
 * saving notes to offline users that get played back when they come online
 * logs
 * bugs
-* channel polls, `!seen`, counters, oneliners, timed announcements, stopwatches, ...
-* automatic mode sets (e.g. auto `+o` on join)
+* channel polls, `!seen`, counters, oneliners, timed announcements, stopwatches, modesets, ...
 * some common [Twitch bot features](#twitch-bot)
 * [more random stuff and gimmicks](https://github.com/zorael/kameloso/wiki/Current-plugins)
 
@@ -71,7 +70,7 @@ If there's anyone talking it should show up on your screen.
     * [Other files](#other-files)
   * [Example use](#example-use)
     * [Online help and commands](#online-help-and-commands)
-    * [*Except nothing happens*](#except-nothing-happens)
+    * [***Except nothing happens***](#except-nothing-happens)
   * [**Twitch**](#twitch)
     * [**Copy/paste-friendly concrete setup from scratch**](#copy-paste-friendly-concrete-setup-from-scratch)
     * [Example configuration](#example-configuration)
@@ -155,13 +154,13 @@ A new `kameloso.conf` will be created in a directory dependent on your platform.
 
 ### Configuration file
 
-* **Linux** and other Posix: `$HOME/.config/kameloso` (alternatively where `$XDG_CONFIG_HOME` points to; [XDG standards](https://en.wikipedia.org/wiki/Freedesktop.org#User_directories) are assumed)
+* **Linux** and other Posix: `$HOME/.config/kameloso` (alternatively in a `kameloso` subdirectory of where `$XDG_CONFIG_HOME` points to; [XDG standards](https://en.wikipedia.org/wiki/Freedesktop.org#User_directories) are assumed)
 * **Windows**: `%APPDATA%\kameloso`
 * **macOS**: `$HOME/Library/Application Support/kameloso`
 
 Open the file in a normal text editor.
 
-> As a shortcut you can pass `--gedit` to attempt to open it in a graphical editor, or `--edit` to open it in your default terminal one, as defined in the `$EDITOR` environment variable.
+> As a shortcut you can pass `--gedit` to attempt to open it in a `g`raphical `edit`or, or `--edit` to open it in your default terminal one, as defined in the `$EDITOR` environment variable.
 
 ### Command-line arguments
 
@@ -190,11 +189,13 @@ An alternative is to disable colours entirely with `--monochrome`.
 
 ### Other files
 
-More server-specific resource files will be created the first time you connect to a server. These include `users.json`, in which you whitelist which accounts are allowed to access the bot's features on a per-channel basis. Where these are stored also depends on platform; in the case of **macOS** and **Windows** they will be put in server-split subdirectories of the same directory as the configuration file, [listed above](#configuration-file). On **Linux** and other Posix, under `$HOME/.local/share/kameloso` (or wherever `$XDG_DATA_HOME` points to; [XDG standards](https://en.wikipedia.org/wiki/Freedesktop.org#User_directories) remain assumed).
+More server-specific resource files will be created the first time you connect to a server. These include `users.json`, in which you whitelist which accounts are allowed to access the bot's features on a per-channel basis. Where these are stored also depends on platform; in the case of **macOS** and **Windows** they will be put in server-split subdirectories of the same directory as the configuration file, [listed above](#configuration-file). On **Linux** and other Posix, under `$HOME/.local/share/kameloso` (or a `kameloso` subdirectory of wherever `$XDG_DATA_HOME` points to; [XDG standards](https://en.wikipedia.org/wiki/Freedesktop.org#User_directories) remain assumed).
 
 ## Example use
 
 See [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins) for more information on available plugins and their commands.
+
+Additionally, see [this section about permissions](#except-nothing-happens) if nothing happens when you try to invoke commands.
 
 ```
       you joined #channel
@@ -319,56 +320,61 @@ MrOffline joined #channel
 
 Use the `!help` command for a summary of available bot commands, and `!help [plugin] [command]` for a brief description of a specific one. The shorthand `!help !command` also works.
 
-The command **prefix** (here `!`) is configurable; refer to your configuration file. Common alternatives are `.` (dot), `~` (tilde) and `?`, making it `.note`, `~quote` and `?counter` respectively.
+The command **prefix** (here "`!`") is configurable; refer to your configuration file. Common alternatives are `.` (dot), `~` (tilde) and `?`, making it `.note`, `~quote` and `?counter` respectively.
 
 ```ini
 [Core]
 prefix                      "!"
 ```
 
-It can technically be any string and not just one character. It may include spaces if enclosed within quotes, like `"please "` (making it `please note`, `please quote`, ...). Additionally, prefixing commands with the bot's nickname also always works, as in `kameloso: seen MrOffline`. This is to be able to disambiguate between several bots in the same channel. Some administrative commands only work when called this way.
+It can technically be any string and not just one character. It may include spaces if enclosed within quotes, like `"please "` (making it `please note`, `please quote`, ...). Additionally, prefixing commands with the bot's nickname also always works, as in `kameloso: seen MrOffline`. This is to be able to disambiguate between several bots in the same channel. Moreover, some administrative commands only work when called this way.
 
-### **Except nothing happens**
+### ***Except nothing happens***
 
-Before allowing *anyone* to trigger any restricted functionality, the bot will try to identify that user by querying the server for what services account the accessing user is logged onto, if not already known. For full administrative privileges you will need to be logged in with an account listed in the `admins` field in the configuration file, while other users may be defined in your [`users.json` file](#other-files). If a user is not logged onto services it is considered as not being uniquely identifiable and cannot be resolved to an account.
+Before allowing *anyone* to trigger any restricted functionality, the bot will try to identify that user by querying the server for what services account the accessing user is logged onto, if not already known. For full administrative privileges you will need to be logged in with an account listed in the `admins` field in the configuration file, while other users may be defined with other permissions in your [`users.json` file](#other-files). If a user is not logged onto services it is considered as not being uniquely identifiable and cannot be resolved to an account.
 
 > In the case of **hostmasks mode**, the above still applies but "accounts" are derived from hostmasks. See the **Admin** plugin `!hostmask` command (and the `hostmasks.json` file) for how to map hostmasks to would-be accounts. Hostmasks are a weaker solution to user identification but not all servers may offer services. See [the wiki entry on hostmasks](https://github.com/zorael/kameloso/wiki/On-servers-without-services-(e.g.-no-NickServ)).
 
 ## Twitch
 
-Refer to [the wiki page on Twitch](https://github.com/zorael/kameloso/wiki/Twitch) for more information.
+Refer to [the wiki page on Twitch](https://github.com/zorael/kameloso/wiki/Twitch) for more in-depth information.
 
 ### **Copy paste-friendly concrete setup from scratch**
 
 Pre-compiled binaries for Windows and Linux can be found under [Releases](https://github.com/zorael/kameloso/releases).
 
-If you're on Windows, you must first [install the **OpenSSL** library](#windows). Run this command to download and launch the installer for it, then opt to install to system directories when asked.
+If you're on Windows, you must first [install the **OpenSSL** library](#windows). Run this command to download and launch the installer for it, then opt to install to Windows system directories when asked.
 
 ```shell
 kameloso --get-openssl
 ```
 
-The rest is common for all platforms:
+The rest is common for all platforms.
 
 ```shell
-kameloso --server irc.chat.twitch.tv --port 6697 --gedit
-kameloso
+kameloso --setup-twitch
 ```
 
-The first (`--server`, `--port`, `--gedit`) command creates a configuration file with the server address and port already set to connect to Twitch, then opens it up in a text editor.
+The `--setup-twitch` command creates a configuration file with the server address and port already set to connect to Twitch, then opens it up in a text editor.
 
 **A line with a leading `#` is disabled, so remove any `#`s from the heads of entries you want to enable.**
 
 * Add your channel to `homeChannels`. Channel names are account names (which are always lowercase) with a `#` in front, so the Twitch user `Streamer123` would have the channel `#streamer123`.
 * Optionally add an account name to `admins` to give them global low-level control of the bot. Owners of channels (broadcasters) automatically have high privileges in the scope of their own channels, so it's not strictly needed.
-* You can ignore `nickname`, `user`, `realName`, `account` and `password`, as they're not applicable on Twitch.
-* Peruse the file for other settings if you want; you can always get back to it with `--gedit`. You don't need to include the `--server` and `--port` arguments now that the file has these values.
+* You can ignore `nickname`, `user`, `realName`, `account` and `password`, as they're not applicable on Twitch. Do not enter your Twitch password anywhere.
+* Peruse the file for other settings if you want; you can always get back to it by passing `--gedit` (short for `g`raphical `edit`or).
 
-The second command will launch the program and connect to Twitch. Upon detecting it's missing the authorisation token needed to authenticate with the server, it will start the guide to requesting a new one in your terminal. See the ["long story"](#long-story) section below for details.
+The program can then be run normally.
 
-**Note that it will request a token for the user you are currently logged in as in your browser**. If you want one for a different bot user instead, open up a private/incognito window, log in normally to Twitch **with the bot account** there, and copy/paste [this link](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true) to that browser window instead. (Then follow the terminal instructions again.)
+```shell
+kameloso
+```
 
-After obtaining a token it will save it to your configuration file and reconnect to the server. Provided there were no errors, the bot should now enter your channel. Say something in chat in your browser and it should show in your terminal. If there were errors or snags, [***please*** report them](https://github.com/zorael/kameloso/issues/new).
+It will connect to Twitch, and upon detecting it's missing the authorisation token needed to authenticate with the server it will start the guide to requesting a new one in your terminal. See the ["long story"](#long-story) section below for details.
+
+**Note that it will request a token for the user you are currently logged in as in your browser**. If you want one for a different "bot user" instead, open up a private/incognito window, log in normally to Twitch **with the bot account** there, and copy/paste [this link](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true) and follow it in that browser window instead. (Then follow the terminal instructions again.)
+
+After obtaining a token it will save it to your configuration file and reconnect to the server. Provided there were no errors, the bot should now enter your channel. Say something in chat in your browser's chat and it should show in your terminal. If there were errors or snags, please [report them](https://github.com/zorael/kameloso/issues/new).
 
 > If you don't like the terminal colouring, `--monochrome` disables it.
 
@@ -427,7 +433,6 @@ Assuming a prefix of `!`, commands to test are:
 
 * `!start`, `!uptime`, `!stop`
 * `!followage`
-* `!shoutout`
 * `!vanish`
 * `!repeat`
 * `!ecount`
@@ -437,7 +442,7 @@ Assuming a prefix of `!`, commands to test are:
 * `!settitle`
 * `!setgame`
 * `!commercial`
-* `!startpoll`/`!endpoll` (*highly* experimental, needs help from affiliate)
+* `!startpoll`/`!endpoll` (*highly* experimental, need help from affiliate)
 
 ...alongside `!oneliner`, `!counter`, `!timer`, `!poll` (chat poll), `!stopwatch`, and other non-Twitch-specific commands. Try `!help` or [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins).
 
@@ -455,7 +460,7 @@ Some functionality, such as setting the channel title or currently played game, 
 $ kameloso --set twitch.superKeygen
 ```
 
-> Mind that you need to be logged into Twitch (in your browser) with your main account while doing this, or the token obtained will be for the wrong channel.
+> Mind that you need to be logged into Twitch (in your browser) with your main account while doing this, or the token obtained will be with permissions for the wrong channel.
 
 ## Further help
 
@@ -470,7 +475,7 @@ If you still can't find what you're looking for, or if you have suggestions on h
 
 ## Windows
 
-**kameloso** uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard library for making secure connections in the Posix sphere (Linux, macOS, ...), but not so on Windows. If you run into errors about missing SSL libraries when attempting to connect on Windows, pass the `--get-openssl` flag to download and launch the installer for [**OpenSSL for Windows**](https://slproweb.com/products/Win32OpenSSL.html). Make sure to opt to install to Windows system directories when asked.
+**kameloso** uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard library for making secure connections in the Posix sphere (Linux, macOS, ...), but not so on Windows. If you run into errors about missing SSL libraries when attempting to connect on Windows, pass the `--get-openssl` flag to download and launch the installer for [**OpenSSL for Windows**](https://slproweb.com/products/Win32OpenSSL.html) **v1.1.\***. Make sure to opt to install to Windows system directories when asked.
 
 # Roadmap
 

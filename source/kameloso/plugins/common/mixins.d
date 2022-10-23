@@ -297,7 +297,8 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             [object.Exception|Exception] if a success of failure function was to trigger
             in an impossible scenario, such as on WHOIS results on Twitch.
      +/
-    void enqueueAndWHOIS(const string nickname,
+    void enqueueAndWHOIS(
+        const string nickname,
         const Flag!"issueWhois" issueWhois = Yes.issueWhois,
         const Flag!"background" background = No.background)
     {
@@ -493,11 +494,8 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
     Params:
         debug_ = Whether or not to include debugging output.
-        module_ = String name of the mixing-in module; generally leave as-is.
  +/
-mixin template MessagingProxy(
-    Flag!"debug_" debug_ = No.debug_,
-    string module_ = __MODULE__)
+mixin template MessagingProxy(Flag!"debug_" debug_ = No.debug_)
 {
 private:
     static import kameloso.messaging;
@@ -757,12 +755,16 @@ private:
         Sends raw text to the server, verbatim, bypassing all queues and
         throttling delays.
      +/
-    void immediate(const string line,
+    void immediate(
+        const string line,
         const Flag!"quiet" quiet = No.quiet,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.immediate(state, line, quiet, caller);
     }
+
+    /// Merely an alias to [immediate], because we use both terms at different places.
+    alias immediateline = immediate;
 
 
     import std.meta : AliasSeq;
@@ -824,6 +826,7 @@ unittest
         whois(string.init, Yes.force, Yes.quiet, No.background);
         raw(string.init);
         immediate(string.init);
+        immediateline(string.init);
         askToWriteln(string.init);
         askToTrace(string.init);
         askToLog(string.init);
@@ -831,5 +834,39 @@ unittest
         askToWarn(string.init);
         askToWarning(string.init);
         askToError(string.init);
+    }
+
+    class MyPlugin2 : IRCPlugin
+    {
+        mixin MessagingProxy fromMixin;
+        mixin IRCPluginImpl;
+    }
+
+    static if (__VERSION__ >= 2097L)
+    {
+        static import kameloso.messaging;
+
+        MyPlugin2 plugin2 = new MyPlugin2(state);
+
+        foreach (immutable funstring; __traits(derivedMembers, kameloso.messaging))
+        {
+            import lu.string : beginsWith;
+            import std.algorithm.comparison : among;
+
+            static if (funstring.among!(
+                    "object",
+                    "dialect",
+                    "kameloso",
+                    "Message") ||
+                funstring.beginsWith("askTo"))
+            {
+                //pragma(msg, "ignoring " ~ funstring);
+            }
+            else
+            {
+                enum message = "`MessageProxy` is missing a wrapper for `kameloso.messaging." ~ funstring ~ "`";
+                static assert(__traits(compiles, typeof(mixin("plugin2.fromMixin." ~ funstring))), message);
+            }
+        }
     }
 }

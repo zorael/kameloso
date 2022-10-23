@@ -57,7 +57,7 @@ private:
         Numeric ID of the current connection, to disambiguate between multiple
         connections in one program run. Private value.
      +/
-    uint privateConnectionID;
+    shared static uint privateConnectionID;
 
 public:
     /++
@@ -181,7 +181,7 @@ public:
             The numeric ID of the current connection.
      +/
     pragma(inline, true)
-    auto connectionID()
+    static auto connectionID()
     {
         return privateConnectionID;
     }
@@ -193,8 +193,11 @@ public:
      +/
     void generateNewConnectionID() @safe
     {
-        import std.random : uniform;
-        privateConnectionID = uniform(1, 1001);
+        synchronized //()
+        {
+            import std.random : uniform;
+            privateConnectionID = uniform(1, 1001);
+        }
     }
 
     // throttleline
@@ -330,8 +333,9 @@ public:
     void initPlugins() @system
     {
         import kameloso.plugins : PluginModules;
-        import kameloso.plugins.common.core : IRCPluginState;
+        import kameloso.plugins.common.core : IRCPluginHook, IRCPluginState;
         import kameloso.plugins.common.misc : applyCustomSettings;
+        import lu.traits : getSymbolsByUDA;
         import std.concurrency : thisTid;
 
         teardownPlugins();
@@ -356,7 +360,7 @@ public:
             {
                 static if (__traits(compiles, { mixin("alias thisModule = " ~ moduleName ~ ".base;"); }))
                 {
-                    static if (!__traits(compiles, { mixin("import " ~ moduleName ~ ".base;"); }))
+                    static if (!__traits(compiles, { mixin("static import " ~ moduleName ~ ".base;"); }))
                     {
                         import std.format : format;
                         enum pattern = "Plugin module `%s.base` (inferred from listing `%1$s`" ~
@@ -364,39 +368,31 @@ public:
                         static assert(0, pattern.format(moduleName));
                     }
 
-                    mixin("import pluginModule = " ~ moduleName ~ ".base;");
+                    mixin("static import pluginModule = " ~ moduleName ~ ".base;");
                 }
                 else
                 {
-                    static if (!__traits(compiles, { mixin("import " ~ moduleName ~ ";"); }))
+                    static if (!__traits(compiles, { mixin("static import " ~ moduleName ~ ";"); }))
                     {
                         import std.format : format;
                         enum pattern = "Plugin module `%s` (listed in `plugins/package.d`) fails to compile";
                         static assert(0, pattern.format(moduleName));
                     }
 
-                    mixin("import pluginModule = " ~ moduleName ~ ";");
+                    mixin("static import pluginModule = " ~ moduleName ~ ";");
                 }
 
-                foreach (member; __traits(allMembers, pluginModule))
+                foreach (Plugin; getSymbolsByUDA!(pluginModule, IRCPluginHook))
                 {
-                    static if (is(__traits(getMember, pluginModule, member) == class))
+                    static if (__traits(compiles, new Plugin(state)))
                     {
-                        alias Class = __traits(getMember, pluginModule, member);
-
-                        static if (is(Class : IRCPlugin))
-                        {
-                            static if (__traits(compiles, new Class(state)))
-                            {
-                                plugins ~= new Class(state);
-                            }
-                            else
-                            {
-                                import std.format : format;
-                                enum pattern = "`%s.%s` constructor does not compile";
-                                static assert(0, pattern.format(moduleName, Class.stringof));
-                            }
-                        }
+                        plugins ~= new Plugin(state);
+                    }
+                    else
+                    {
+                        import std.format : format;
+                        enum pattern = "`%s.%s` constructor does not compile";
+                        static assert(0, pattern.format(moduleName, Class.stringof));
                     }
                 }
             }
@@ -448,7 +444,6 @@ public:
         on each plugin.
      +/
     void initPluginResources() @system
-    in (plugins.length, "Tried to initialise plugin resources but there were no plugins to initialise")
     {
         foreach (plugin; plugins)
         {
@@ -467,7 +462,6 @@ public:
         Don't teardown disabled plugins as they may not have been initialised fully.
      +/
     void teardownPlugins() @system
-    //in (plugins.length, "Tried to teardown plugins but there were no plugins to teardown")
     {
         if (!plugins.length) return;
 
@@ -525,7 +519,6 @@ public:
         Don't setup disabled plugins.
      +/
     void setupPlugins() @system
-    in (plugins.length, "Tried to set up plugins but there were no plugins to set up")
     {
         foreach (plugin; plugins)
         {
@@ -546,7 +539,6 @@ public:
         Don't start disabled plugins.
      +/
     void startPlugins() @system
-    in (plugins.length, "Tried to start plugins but there were no plugins to start")
     {
         foreach (plugin; plugins)
         {
@@ -569,7 +561,6 @@ public:
                 member structs to inspect for updates.
      +/
     void checkPluginForUpdates(IRCPlugin plugin)
-    in (plugins.length, "Tried to check plugins for updates but there were no plugins to check")
     {
         alias Update = typeof(plugin.state.updates);
 
@@ -624,8 +615,6 @@ public:
     //pragma(inline, true)
     void propagate(Thing)(Thing thing) pure nothrow @nogc
     if (is(Thing == struct))
-    in (plugins.length, "Tried to set propagate a `" ~ Thing.stringof ~
-        "` but there were no plugins to propagate to")
     {
         import std.meta : AliasSeq;
 
@@ -671,7 +660,6 @@ public:
             now = UNIX WHOIS timestamp.
      +/
     void propagateWhoisTimestamp(const string nickname, const long now) pure
-    in (plugins.length, "Tried to propagate a WHOIS timestamp but there were no plugins to propagate to")
     {
         foreach (plugin; plugins)
         {
@@ -688,7 +676,6 @@ public:
         modify the original.
      +/
     void propagateWhoisTimestamps() pure
-    in (plugins.length, "Tried to propagate WHOIS timestamps but there were no plugins to propagate to")
     {
         auto copy = previousWhoisTimestamps.dup;  // mutable
 
@@ -745,7 +732,7 @@ public:
 struct CoreSettings
 {
 private:
-    import lu.uda : CannotContainComments, Quoted, Unserialisable;
+    import lu.uda : CannotContainComments, Hidden, Quoted, Unserialisable;
 
 public:
     version(Colours)
@@ -775,20 +762,25 @@ public:
     /// Whether or not to display a connection summary on program exit.
     bool exitSummary = false;
 
-    /++
-        Whether to eagerly and exhaustively WHOIS all participants in home channels,
-        or to do a just-in-time lookup when needed.
-     +/
-    bool eagerLookups = false;
+    @Hidden
+    {
+        /++
+            Whether to eagerly and exhaustively WHOIS all participants in home channels,
+            or to do a just-in-time lookup when needed.
+         +/
+        bool eagerLookups = false;
 
-    /++
-        Whether or not to be "headless", disabling all terminal output.
-     +/
-    bool headless;
+        /++
+            Whether or not to be "headless", disabling all terminal output.
+         +/
+        bool headless;
+    }
 
     /++
         Path to resource directory.
      +/
+    @Hidden
+    @CannotContainComments
     string resourceDirectory;
 
     /++

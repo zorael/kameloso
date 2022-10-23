@@ -158,7 +158,7 @@ void onCommand8ball(ChatbotPlugin plugin, const ref IRCEvent event)
             .addSyntax("$command [optional bash quote number]")
     )
 )
-void onCommandBash(ChatbotPlugin plugin, const ref IRCEvent event)
+void onCommandBash(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.thread : ThreadMessage;
     import std.concurrency : prioritySend, spawn;
@@ -231,8 +231,7 @@ void worker(
         if (res.code == 2)
         {
             enum pattern = "Chatbot could not fetch <l>bash.org</> quote at <l>%s</>: <t>%s";
-            askToWarn(state, pattern.format(url, res.codeText));
-            return;
+            return askToWarn(state, pattern.format(url, res.codeText));
         }
 
         auto doc = new Document;
@@ -244,8 +243,7 @@ void worker(
         if (!numBlock.length)
         {
             enum message = "No such <b>bash.org<b> quote found.";
-            privmsg(state, event.channel, event.sender.nickname, message);
-            return;
+            return privmsg(state, event.channel, event.sender.nickname, message);
         }
 
         void reportLayoutError()
@@ -270,9 +268,7 @@ void worker(
             .htmlEntitiesDecode
             .splitter('\n');
 
-        enum pattern = "[<b>bash.org<b>] #%s";
-        immutable num = b[0].toString[4..$-4];
-        immutable message = pattern.format(num);
+        immutable message = "[<b>bash.org<b>] #" ~ b[0].toString[4..$-4];
         privmsg(state, event.channel, event.sender.nickname, message);
 
         foreach (const line; range)
@@ -302,24 +298,33 @@ void worker(
 )
 void onDance(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
 {
+    import kameloso.plugins.common.delayawait : delay;
     import kameloso.constants : BufferSize;
-    import kameloso.thread : ScheduledFiber;
+    import kameloso.messaging : emote;
+    import lu.string : strippedRight;
     import std.string : indexOf;
     import core.thread : Fiber;
     import core.time : seconds;
 
-    immutable dancePos = event.content.indexOf("DANCE");
+    immutable content = event.content.strippedRight;
+    immutable dancePos = content.indexOf("DANCE");
+
     if (dancePos == -1) return;
 
-    if ((dancePos > 0) && (event.content[dancePos-1] != ' '))
+    if ((dancePos > 0) && (content[dancePos-1] != ' '))
     {
         return;
     }
-    else if (event.content.length > (dancePos+5))
+    else if (content.length > (dancePos+5))
     {
-        import std.algorithm.comparison : among;
-        immutable trailing = event.content[dancePos+5];
-        if (!trailing.among!(' ', '!', '.', '?')) return;
+        string trailing = content[dancePos+5..$];  // mutable
+
+        while (trailing.length)
+        {
+            import std.algorithm.comparison : among;
+            if (!trailing[0].among!(' ', '!', '.', '?')) return;
+            trailing = trailing[1..$];
+        }
     }
 
     // Should dance. Stagger it a bit with a second in between.
@@ -356,6 +361,7 @@ public:
     Currently this includes magic 8ball, `bash.org` quotes and some other
     trivial miscellanea.
  +/
+@IRCPluginHook
 final class ChatbotPlugin : IRCPlugin
 {
 private:

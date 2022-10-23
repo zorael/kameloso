@@ -115,12 +115,12 @@ void writeConfig(
     import kameloso.printing : printObjects;
     import std.file : exists;
     import std.path : buildNormalizedPath, expandTilde;
-    import std.stdio : writeln;
 
     // --save was passed; write configuration to file and quit
 
     if (!instance.settings.headless)
     {
+        import std.stdio : writeln;
         printVersionInfo();
         writeln();
         if (instance.settings.flush) stdout.flush();
@@ -134,39 +134,35 @@ void writeConfig(
     // string, and having it there would enforce the default string if none present.
     if (!instance.bot.quitReason.length) instance.bot.quitReason = KamelosoDefaults.quitReason;
 
-    immutable defaultResourceDir = buildNormalizedPath(rbd, "kameloso");
-
     // Copied from kameloso.main.resolvePaths
     version(Windows)
     {
         import std.string : replace;
-        immutable resolvedResourceDir = instance.parser.server.address.length ?
-            buildNormalizedPath(
-                defaultResourceDir,
-                "server",
-                instance.parser.server.address.replace(':', '_')) :
-            string.init;
+        immutable escapedServerDirName = instance.parser.server.address.replace(':', '_');
     }
     else version(Posix)
     {
-        immutable resolvedResourceDir = instance.parser.server.address.length ?
-            buildNormalizedPath(
-                defaultResourceDir,
-                "server",
-                instance.parser.server.address) :
-            string.init;
+        immutable escapedServerDirName = instance.parser.server.address;
     }
     else
     {
         static assert(0, "Unsupported platform, please file a bug.");
     }
 
-    if ((instance.settings.resourceDirectory == defaultResourceDir) ||
-        (resolvedResourceDir.length &&
-            (instance.settings.resourceDirectory.expandTilde() == resolvedResourceDir)))
+    immutable defaultResourceHomeDir = buildNormalizedPath(rbd, "kameloso");
+    immutable settingsResourceDir = instance.settings.resourceDirectory.expandTilde();
+    immutable defaultFullServerResourceDir = escapedServerDirName.length ?
+        buildNormalizedPath(
+            defaultResourceHomeDir,
+            "server",
+            escapedServerDirName) :
+        string.init;
+
+    if ((settingsResourceDir == defaultResourceHomeDir) ||
+        (settingsResourceDir == defaultFullServerResourceDir))
     {
-        // If the resource directory is the default, write it out as empty
-        // Likewise if it is what would be automatically inferred
+        // If the resource directory is the default (unset),
+        // or if it is what would be automatically inferred, write it out as empty
         instance.settings.resourceDirectory = string.init;
     }
 
@@ -180,7 +176,7 @@ void writeConfig(
     if (!instance.settings.headless)
     {
         printObjects(client, instance.bot, server, instance.connSettings, instance.settings);
-        enum pattern = "Configuration written to <l>%s";
+        enum pattern = "Configuration written to <i>%s";
         logger.logf(pattern, instance.settings.configFile);
 
         if (!instance.bot.admins.length && !instance.bot.homeChannels.length && giveInstructions)
@@ -188,10 +184,13 @@ void writeConfig(
             logger.trace();
             logger.log("Edit it and make sure it contains at least one of the following:");
             giveConfigurationMinimalInstructions();
-            logger.trace();
         }
 
-        if (shouldGiveBrightTerminalHint) giveBrightTerminalHint(Yes.alsoAboutConfigSetting);
+        if (shouldGiveBrightTerminalHint)
+        {
+            logger.trace();
+            giveBrightTerminalHint(Yes.alsoAboutConfigSetting);
+        }
     }
 }
 
@@ -262,18 +261,18 @@ void manageConfigFile(
         {
             version(Windows)
             {
-                enum pattern = "Missing <l>%EDITOR%</> environment variable; cannot guess editor.";
+                enum message = "Missing <l>%EDITOR%</> environment variable; cannot guess editor.";
             }
             else version(Posix)
             {
-                enum pattern = "Missing <l>$EDITOR</> environment variable; cannot guess editor.";
+                enum message = "Missing <l>$EDITOR</> environment variable; cannot guess editor.";
             }
             else
             {
                 static assert(0, "Unsupported platform, please file a bug.");
             }
 
-            logger.error(pattern);
+            logger.error(message);
             return;
         }
 
@@ -475,8 +474,11 @@ auto configurationText(const string configFile)
     }
     else if (!configFile.isFile)
     {
-        throw new FileTypeMismatchException("Configuration file is not a file",
-            configFile, cast(ushort)getAttributes(configFile), __FILE__);
+        throw new FileTypeMismatchException(
+            "Configuration file is not a file",
+            configFile,
+            cast(ushort)getAttributes(configFile),
+            __FILE__);
     }
 
     try
@@ -493,8 +495,11 @@ auto configurationText(const string configFile)
     {
         // catch Exception instead of UTFException, just in case there are more
         // kinds of error than the normal "Invalid UTF-8 sequence".
-        throw new ConfigurationFileReadFailureException(e.msg, configFile,
-            __FILE__, __LINE__);
+        throw new ConfigurationFileReadFailureException(
+            e.msg,
+            configFile,
+            __FILE__,
+            __LINE__);
     }
 }
 
@@ -613,10 +618,14 @@ auto handleGetopt(ref Kameloso instance, string[] args) @system
         bool shouldShowVersion;
         bool shouldShowSettings;
         bool shouldAppendToArrays;
+        bool noop;
 
         // Windows-only but must be declared regardless of platform
         bool shouldDownloadOpenSSL;
         bool shouldDownloadCacert;
+
+        // Likewise but version `TwitchSupport`
+        bool shouldSetupTwitch;
 
         string[] inputGuestChannels;
         string[] inputHomeChannels;
@@ -665,7 +674,8 @@ auto handleGetopt(ref Kameloso instance, string[] args) @system
             config.caseSensitive,
             config.bundling,
             config.passThrough,
-            "monochrome", &settings.monochrome
+            "monochrome", &settings.monochrome,
+            "setup-twitch", &shouldSetupTwitch,
         );
 
         /++
@@ -744,6 +754,15 @@ auto handleGetopt(ref Kameloso instance, string[] args) @system
             else
             {
                 alias geditProgramString = defaultGeditProgramString;
+            }
+
+            version(TwitchSupport)
+            {
+                enum setupTwitchString = "Set up a basic Twitch connection";
+            }
+            else
+            {
+                enum setupTwitchString = "(Requires Twitch support)";
             }
 
             return getopt(theseArgs,
@@ -842,7 +861,8 @@ auto handleGetopt(ref Kameloso instance, string[] args) @system
                         "Use monochrome output [<i>%s</>]"
                             .expandTags(LogLevel.trace)
                             .format(settings.monochrome),
-                    &settings.monochrome,
+                    //&settings.monochrome,
+                    &noop,
                 "set",
                     quiet ? string.init :
                         text("Manually change a setting (syntax: ", setSyntax, ')'),
@@ -852,7 +872,8 @@ auto handleGetopt(ref Kameloso instance, string[] args) @system
                         "Specify a different configuration file [<i>%s</>]"
                             .expandTags(LogLevel.trace)
                             .format(settings.configFile),
-                    &settings.configFile,
+                    //&settings.configFile,
+                    &noop,
                 "r|resourceDir",
                     quiet ? string.init :
                         "Specify a different resource directory [<i>%s</>]"
@@ -888,6 +909,11 @@ auto handleGetopt(ref Kameloso instance, string[] args) @system
                         getCacertString
                             .expandTags(LogLevel.trace),
                     &shouldDownloadCacert,
+                "setup-twitch",
+                    quiet ? string.init :
+                        setupTwitchString,
+                    //&shouldSetupTwitch,
+                    &noop,
                 "numeric",
                     quiet ? string.init :
                         "Use numeric output of addresses",
@@ -936,6 +962,20 @@ auto handleGetopt(ref Kameloso instance, string[] args) @system
         const backupClient = instance.parser.client;
         auto backupServer = instance.parser.server;  // cannot opEqual const IRCServer with mutable
         const backupBot = instance.bot;
+
+        version(TwitchSupport)
+        {
+            if (shouldSetupTwitch)
+            {
+                // Do this early to allow for manual overrides with --server etc
+                instance.parser.server.address = "irc.chat.twitch.tv";
+                instance.parser.server.port = 6697;
+                instance.parser.client.nickname = "doesntmatter";
+                instance.parser.client.user = "ignored";
+                instance.parser.client.realName = "likewise";
+                shouldOpenGraphicalEditor = true;
+            }
+        }
 
         // No need to catch the return value, only used for --help
         cast(void)callGetopt(args, Yes.quiet);

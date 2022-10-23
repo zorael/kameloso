@@ -15,6 +15,7 @@ version(WithTwitchPlugin):
 private:
 
 import kameloso.plugins.twitch.base;
+import kameloso.plugins.twitch.common;
 
 import arsd.http2 : HttpVerb;
 import dialect.defs;
@@ -129,7 +130,6 @@ private auto twitchTryCatchDgExceptionHandler(
     const uint retries,
     const size_t retryNum)
 {
-    import kameloso.plugins.twitch.helpers : ErrorJSONException, UnexpectedJSONException;
     import kameloso.common : logger;
 
     version(PrintStacktraces)
@@ -201,12 +201,6 @@ private auto twitchTryCatchDgExceptionHandler(
 
         enum pattern = "Failed to query Twitch: <l>%s</> <t>(%s) </>(<t>%d</>)";
         logger.errorf(pattern, message, e.error, e.code);
-
-        version(PrintStacktraces)
-        {
-            printBody(e.responseBody);
-            logger.trace(e.info);
-        }
         return Next.returnFailure;
     }
     catch (MissingBroadcasterTokenException e)
@@ -320,13 +314,24 @@ void persistentQuerier(shared QueryResponse[int] bucket, const string caBundleFi
             (int id, string url, string authToken, HttpVerb verb,
                 immutable(ubyte)[] body_, string contentType) scope
             {
-                invokeSendHTTPRequestImpl(id, url, authToken, verb, body_, contentType);
+                invokeSendHTTPRequestImpl(
+                    id,
+                    url,
+                    authToken,
+                    verb,
+                    body_,
+                    contentType);
             },
             (int id, string url, string authToken) scope
             {
                 // Shorthand
-                invokeSendHTTPRequestImpl(id, url, authToken, HttpVerb.GET,
-                    cast(immutable(ubyte)[])null, string.init);
+                invokeSendHTTPRequestImpl(
+                    id,
+                    url,
+                    authToken,
+                    HttpVerb.GET,
+                    cast(immutable(ubyte)[])null,
+                    string.init);
             },
             (ThreadMessage message) scope
             {
@@ -385,7 +390,7 @@ void persistentQuerier(shared QueryResponse[int] bucket, const string caBundleFi
 QueryResponse sendHTTPRequest(
     TwitchPlugin plugin,
     const string url,
-    const string authorisationHeader,
+    const string authorisationHeader = string.init,
     /*const*/ HttpVerb verb = HttpVerb.GET,
     /*const*/ ubyte[] body_ = null,
     const string contentType = string.init,
@@ -410,7 +415,14 @@ in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
 
     immutable pre = Clock.currTime;
     if (id == -1) id = getUniqueNumericalID(plugin.bucket);
-    plugin.persistentWorkerTid.send(id, url, authorisationHeader, verb, body_.idup, contentType);
+
+    plugin.persistentWorkerTid.send(
+        id,
+        url,
+        authorisationHeader,
+        verb,
+        body_.idup,
+        contentType);
 
     delay(plugin, plugin.approximateQueryTime.msecs, Yes.yield);
     immutable response = waitForQueryResponse(plugin, id);
@@ -447,8 +459,15 @@ in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
     }
     else if ((response.code >= 500) && !recursing)
     {
-        return sendHTTPRequest(plugin, url, authorisationHeader, verb,
-            body_, contentType, id, Yes.recursing);
+        return sendHTTPRequest(
+            plugin,
+            url,
+            authorisationHeader,
+            verb,
+            body_,
+            contentType,
+            id,
+            Yes.recursing);
     }
     else if (response.code >= 400)
     {
@@ -477,11 +496,7 @@ in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
                 errorJSON["error"].str.unquoted,
                 errorJSON["message"].str.chomp.unquoted);
 
-            throw new TwitchQueryException(
-                message,
-                response.str,
-                response.error,
-                response.code);
+            throw new ErrorJSONException(message, errorJSON);
         }
         catch (JSONException e)
         {
@@ -588,6 +603,9 @@ auto sendHTTPRequestImpl(
         A singular user or channel regardless of how many were asked for in the URL.
         If nothing was found, an empty [std.json.JSONValue|JSONValue].init is
         returned instead.
+
+    Throws:
+        [TwitchQueryException] on unexpected JSON.
  +/
 auto getTwitchEntity(TwitchPlugin plugin, const string url)
 in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
@@ -602,11 +620,8 @@ in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
 
         if (responseJSON.type != JSONType.object)
         {
-            throw new TwitchQueryException(
-                "`getTwitchEntity` query response JSON is not JSONType.object",
-                response.str,
-                response.error,
-                response.code);
+            enum message = "`getTwitchEntity` query response JSON is not JSONType.object";
+            throw new UnexpectedJSONException(message, responseJSON);
         }
         else if (const dataJSON = "data" in responseJSON)
         {
@@ -616,27 +631,19 @@ in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
             }
             else if (!dataJSON.array.length)
             {
-                throw new EmptyDataException(
-                    "`getTwitchEntity` query response JSON has empty \"data\"",
-                    response.str,
-                    __FILE__);
+                enum message = "`getTwitchEntity` query response JSON has empty \"data\"";
+                throw new EmptyDataJSONException(message, responseJSON);
             }
             else
             {
-                throw new TwitchQueryException(
-                    "`getTwitchEntity` query response JSON \"data\" value is not a 1-length array",
-                    response.str,
-                    response.error,
-                    response.code);
+                enum message = "`getTwitchEntity` query response JSON \"data\" value is not a 1-length array";
+                throw new UnexpectedJSONException(message, *dataJSON);
             }
         }
         else
         {
-            throw new TwitchQueryException(
-                "`getTwitchEntity` query response JSON does not contain a \"data\" element",
-                response.str,
-                response.error,
-                response.code);
+            enum message = "`getTwitchEntity` query response JSON does not contain a \"data\" element";
+            throw new UnexpectedJSONException(message, responseJSON);
         }
     }
     catch (JSONException e)
@@ -664,6 +671,9 @@ in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
         A [std.json.JSONValue|JSONValue] with "`chatters`" and "`chatter_count`" keys.
         If nothing was found, an empty [std.json.JSONValue|JSONValue].init is
         returned instead.
+
+    Throws:
+        [TwitchQueryException] on unexpected JSON.
  +/
 auto getChatters(TwitchPlugin plugin, const string broadcaster)
 in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
@@ -701,21 +711,15 @@ in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
 
     if (responseJSON.type != JSONType.object)
     {
-        throw new TwitchQueryException(
-            "`getChatters` response JSON is not JSONType.object",
-            response.str,
-            response.error,
-            response.code);
+        enum message = "`getChatters` response JSON is not JSONType.object";
+        throw new UnexpectedJSONException(message, responseJSON);
     }
     else if (const chattersJSON = "chatters" in responseJSON)
     {
         if (chattersJSON.type != JSONType.object)
         {
-            throw new TwitchQueryException(
-                "`getChatters` \"chatters\" JSON is not JSONType.object",
-                response.str,
-                response.error,
-                response.code);
+            enum message = "`getChatters` \"chatters\" JSON is not JSONType.object";
+            throw new UnexpectedJSONException(message, *chattersJSON);
         }
     }
 
@@ -831,8 +835,8 @@ in ((!async || Fiber.getThis), "Tried to call asynchronous `getValidation` from 
 
     if ((validationJSON.type != JSONType.object) || ("client_id" !in validationJSON))
     {
-        throw new TwitchQueryException("Failed to validate Twitch authorisation " ~
-            "token; unknown JSON", response.str, response.error, response.code);
+        enum message = "Failed to validate Twitch authorisation token; unknown JSON";
+        throw new UnexpectedJSONException(message, validationJSON);
     }
 
     return validationJSON;
@@ -953,9 +957,12 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
     immutable responseAdjusted = min(responseMsecs, (current + maxDeltaToResponse));
     immutable average = ((weight * current) + (responseAdjusted + padding)) / (weight + 1);
 
-    /*import std.stdio;
-    writefln("time:%s | response: %d~%d (+%d) | new average:%s",
-        current, responseMsecs, responseAdjusted, padding, average);*/
+    version(BenchmarkHTTPRequests)
+    {
+        import std.stdio : writefln;
+        writefln("time:%s | response: %d~%d (+%d) | new average:%s",
+            current, responseMsecs, responseAdjusted, padding, average);
+    }
 
     plugin.approximateQueryTime = cast(long)average;
 }
@@ -1152,132 +1159,6 @@ in ((name.length || id.length), "Tried to call `getTwitchGame` with no game name
         "https://api.twitch.tv/helix/games?name=" ~ name;
     immutable gameJSON = getTwitchEntity(plugin, gameURL);
     return Game(gameJSON["id"].str, gameJSON["name"].str);
-}
-
-
-// TwitchQueryException
-/++
-    Exception, to be thrown when an API query to the Twitch servers failed,
-    for whatever reason.
-
-    It is a normal [object.Exception|Exception] but with attached metadata.
- +/
-final class TwitchQueryException : Exception
-{
-@safe:
-    /// The response body that was received.
-    string responseBody;
-
-    /// The message of any thrown exception, if the query failed.
-    string error;
-
-    /// The HTTP code that was received.
-    uint code;
-
-    /++
-        Create a new [TwitchQueryException], attaching a response body, an error
-        and an HTTP status code.
-     +/
-    this(const string message,
-        const string responseBody,
-        const string error,
-        const uint code,
-        const string file = __FILE__,
-        const size_t line = __LINE__,
-        Throwable nextInChain = null) pure nothrow @nogc @safe
-    {
-        this.responseBody = responseBody;
-        this.error = error;
-        this.code = code;
-        super(message, file, line, nextInChain);
-    }
-
-    /++
-        Create a new [TwitchQueryException], without attaching anything.
-     +/
-    this(const string message,
-        const string file = __FILE__,
-        const size_t line = __LINE__,
-        Throwable nextInChain = null) pure nothrow @nogc @safe
-    {
-        super(message, file, line, nextInChain);
-    }
-}
-
-
-// EmptyDataException
-/++
-    Exception, to be thrown when an API query to the Twitch servers failed,
-    due to having received empty JSON data.
-
-    It is a normal [object.Exception|Exception] but with attached metadata.
- +/
-final class EmptyDataException : Exception
-{
-@safe:
-    /// The response body that was received.
-    string responseBody;
-
-    /++
-        Create a new [EmptyDataException], attaching a response body.
-     +/
-    this(const string message,
-        const string responseBody,
-        const string file = __FILE__,
-        const size_t line = __LINE__,
-        Throwable nextInChain = null) pure nothrow @nogc @safe
-    {
-        this.responseBody = responseBody;
-        super(message, file, line, nextInChain);
-    }
-
-    /++
-        Create a new [EmptyDataException], without attaching anything.
-     +/
-    this(const string message,
-        const string file = __FILE__,
-        const size_t line = __LINE__,
-        Throwable nextInChain = null) pure nothrow @nogc @safe
-    {
-        super(message, file, line, nextInChain);
-    }
-}
-
-
-// MissingBroadcasterTokenException
-/++
-    Exception, to be thrown when an API query to the Twitch servers failed,
-    due to missing broadcaster-level token.
- +/
-final class MissingBroadcasterTokenException : Exception
-{
-@safe:
-    /// The channel name for which a broadcaster token was needed.
-    string channelName;
-
-    /++
-        Create a new [MissingBroadcasterTokenException], attaching a channel name.
-     +/
-    this(const string message,
-        const string channelName,
-        const string file = __FILE__,
-        const size_t line = __LINE__,
-        Throwable nextInChain = null) pure nothrow @nogc @safe
-    {
-        this.channelName = channelName;
-        super(message, file, line, nextInChain);
-    }
-
-    /++
-        Create a new [MissingBroadcasterTokenException], without attaching anything.
-     +/
-    this(const string message,
-        const string file = __FILE__,
-        const size_t line = __LINE__,
-        Throwable nextInChain = null) pure nothrow @nogc @safe
-    {
-        super(message, file, line, nextInChain);
-    }
 }
 
 
@@ -1559,6 +1440,9 @@ in (Fiber.getThis, "Tried to call `getPolls` from outside a Fiber")
         A [std.json.JSONValue|JSONValue] [std.json.JSONType.array|array] with
         the response returned when creating the poll. On failure, an empty
         [std.json.JSONValue|JSONValue] is instead returned.
+
+    Throws:
+        [TwitchQueryException] on unexpected JSON.
  +/
 auto createPoll(
     TwitchPlugin plugin,
@@ -1646,11 +1530,8 @@ in (Fiber.getThis, "Tried to call `createPoll` from outside a Fiber")
         (responseJSON["data"].type != JSONType.array))
     {
         // Invalid response in some way
-        throw new TwitchQueryException(
-            "`createPoll` response has unexpected JSON",
-            response.str,
-            response.error,
-            response.code);
+        enum message = "`createPoll` response has unexpected JSON";
+        throw new UnexpectedJSONException(message, responseJSON);
     }
 
     return responseJSON["data"];
@@ -1674,6 +1555,9 @@ in (Fiber.getThis, "Tried to call `createPoll` from outside a Fiber")
         A [std.json.JSONValue|JSONValue] [std.json.JSONType.array|array] with
         the response returned when ending the poll. On failure, an empty
         [std.json.JSONValue|JSONValue] is instead returned.
+
+    Throws:
+        [TwitchQueryException] on unexpected JSON.
  +/
 auto endPoll(
     TwitchPlugin plugin,
@@ -1746,12 +1630,102 @@ in (Fiber.getThis, "Tried to call `endPoll` from outside a Fiber")
         (responseJSON["data"].type != JSONType.array))
     {
         // Invalid response in some way
-        throw new TwitchQueryException(
-            "`endPoll` response has unexpected JSON",
-            response.str,
-            response.error,
-            response.code);
+        enum message = "`endPoll` response has unexpected JSON";
+        throw new UnexpectedJSONException(message, responseJSON);
     }
 
     return responseJSON["data"].array[0];
+}
+
+
+// getBotList
+/++
+    Fetches a list of known (online) bots from TwitchInsights.net.
+
+    With this we don't have to keep a static list of known bots to exclude when
+    counting chatters.
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+
+    Returns:
+        A `string[]` array of online bot account names.
+
+    Throws:
+        [TwitchQueryException] on unexpected JSON.
+
+    See_Also:
+        https:/twitchinsights.net/bots
+ +/
+auto getBotList(TwitchPlugin plugin)
+{
+    import std.algorithm.searching : endsWith;
+    import std.array : Appender;
+    import std.json : JSONType, parseJSON;
+
+    enum url = "https://api.twitchinsights.net/v1/bots/online";
+    immutable response = sendHTTPRequest(plugin, url);
+    immutable responseJSON = parseJSON(response.str);
+
+    /*
+    {
+        "_total": 78,
+        "bots": [
+            [
+                "commanderroot",
+                55158,
+                1664543800
+            ],
+            [
+                "alexisthenexis",
+                54928,
+                1664543800
+            ],
+            [
+                "anna_banana_10",
+                54636,
+                1664543800
+            ],
+            [
+                "sophiafox21",
+                54587,
+                1664543800
+            ]
+        ]
+    }
+    */
+
+    if ((responseJSON.type != JSONType.object) ||
+        ("_total" !in responseJSON) ||
+        ("bots" !in responseJSON) ||
+        (responseJSON["bots"].type != JSONType.array))
+    {
+        // Invalid response in some way
+        enum message = "`getBotList` response has unexpected JSON";
+        throw new UnexpectedJSONException(message, responseJSON);
+    }
+
+    Appender!(string[]) sink;
+    sink.reserve(responseJSON["_total"].integer);
+
+    foreach (const botEntryJSON; responseJSON["bots"].array)
+    {
+        /*
+        [
+            "commanderroot",
+            55158,
+            1664543800
+        ]
+        */
+
+        immutable botAccountName = botEntryJSON.array[0].str;
+
+        if (!botAccountName.endsWith("bot"))
+        {
+            // Only add bots whose names don't end with "bot", since we automatically filter those
+            sink.put(botAccountName);
+        }
+    }
+
+    return sink.data;
 }

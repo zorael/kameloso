@@ -90,7 +90,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
  +/
 void postprocessCommon(PersistenceService service, ref IRCEvent event)
 {
-    static void postprocessImpl(PersistenceService service, const ref IRCEvent event, ref IRCUser user)
+    static void postprocessImpl(PersistenceService service, ref IRCEvent event, ref IRCUser user)
     {
         import std.algorithm.searching : canFind;
 
@@ -206,11 +206,18 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
                 switch (event.type)
                 {
                 case JOIN:
-                case ACCOUNT:
                 case RPL_WHOISACCOUNT:
                 case RPL_WHOISUSER:
                 case RPL_WHOISREGNICK:
                     applyClassifiers(service, event, user);
+                    break;
+
+                case ACCOUNT:
+                    if ((user.account == "*") && stored.account.length)
+                    {
+                        event.aux = stored.account;
+                        goto case RPL_WHOISACCOUNT;
+                    }
                     break;
 
                 default:
@@ -246,9 +253,9 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
             {
                 if (service.state.server.daemon == IRCServer.Daemon.twitch)
                 {
-                    if (stored.class_ == IRCUser.Class.admin)
+                    if (!event.channel.length)
                     {
-                        // Admin is a sticky class and nothing special needs to be done.
+                        stored.badges = string.init;
                     }
                     else if (stored.badges.length && !user.badges.length)
                     {
@@ -355,7 +362,7 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
                     // This needs to be versioned becaused IRCUser.badges isn't
                     // available if not version TwitchSupport
                     stored.class_ = IRCUser.Class.anyone;
-                    if (!event.channel.length) stored.badges = string.init;
+                    //stored.badges = string.init;  // already done above on cache hit
                 }
             }
             else if (stored.account.length && (stored.account != "*"))
@@ -877,6 +884,7 @@ public:
     for minimal bookkeeping, not the full package, so we only copy/paste the
     relevant bits to stay slim.
  +/
+@IRCPluginHook
 final class PersistenceService : IRCPlugin
 {
 private:

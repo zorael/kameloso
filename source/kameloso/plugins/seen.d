@@ -218,6 +218,7 @@ public:
         is a pointer to the global abort bool. When this is set, it signals the
         rest of the program that we want to terminate cleanly.
  +/
+@IRCPluginHook
 final class SeenPlugin : IRCPlugin
 {
 private:  // Module-level private.
@@ -830,27 +831,23 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
         {
             immutable message = "Usage: <b>" ~ plugin.state.settings.prefix ~
                 event.aux ~ "<b> [nickname]";
-            privmsg(event.channel, event.sender.nickname, message);
-            return;
+            return privmsg(event.channel, event.sender.nickname, message);
         }
         else if (!requestedUser.isValidNickname(plugin.state.server))
         {
             // Nickname contained a space or other invalid character
-            immutable message = "Invalid user: <b>" ~ requestedUser ~ "<b>";
-            privmsg(event.channel, event.sender.nickname, message);
-            return;
+            immutable message = "Invalid user: <h>" ~ requestedUser ~ "<h>";
+            return privmsg(event.channel, event.sender.nickname, message);
         }
         else if (requestedUser == state.client.nickname)
         {
             // The requested nick is the bot's.
-            privmsg(event.channel, event.sender.nickname, "T-that's me though...");
-            return;
+            return privmsg(event.channel, event.sender.nickname, "T-that's me though...");
         }
         else if (requestedUser == event.sender.nickname)
         {
             // The person is asking for seen information about him-/herself.
-            privmsg(event.channel, event.sender.nickname, "That's you!");
-            return;
+            return privmsg(event.channel, event.sender.nickname, "That's you!");
         }
 
         foreach (const channel; state.channels)
@@ -861,8 +858,7 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
                     "<h>%s<h> is here right now!" :
                     "<h>%s<h> is online right now.";
                 immutable message = pattern.format(requestedUser);
-                privmsg(event.channel, event.sender.nickname, message);
-                return;
+                return privmsg(event.channel, event.sender.nickname, message);
             }
         }
 
@@ -1186,6 +1182,19 @@ void initResources(SeenPlugin plugin)
 
 import kameloso.thread : Sendable;
 
+/+
+    Only some plugins benefit from this one implementning `onBusMessage`, so omit
+    it if they aren't available.
+ +/
+version(WithPipelinePlugin)
+{
+    version = ShouldImplementOnBusMessage;
+}
+else version(WithAdminPlugin)
+{
+    version = ShouldImplementOnBusMessage;
+}
+
 // onBusMessage
 /++
     Receive a passed [kameloso.thread.BusMessage|BusMessage] with the "`seen`" header,
@@ -1202,7 +1211,7 @@ import kameloso.thread : Sendable;
  +/
 debug
 version(Posix)
-//version(WithPipelinePlugin)  // Be available to other plugins too, like admin
+version(ShouldImplementOnBusMessage)
 void onBusMessage(SeenPlugin plugin, const string header, shared Sendable content)
 {
     if (!plugin.isEnabled) return;

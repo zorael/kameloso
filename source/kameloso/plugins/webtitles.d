@@ -136,7 +136,7 @@ void onMessage(WebtitlesPlugin plugin, const ref IRCEvent event)
 
     It accesses the cache of already looked up addresses to speed things up.
  +/
-void lookupURLs(WebtitlesPlugin plugin, const ref IRCEvent event, string[] urls)
+void lookupURLs(WebtitlesPlugin plugin, const /*ref*/ IRCEvent event, string[] urls)
 {
     import kameloso.common : logger;
     import lu.string : beginsWith, contains, nom;
@@ -869,6 +869,7 @@ public:
     their servers and and streams the web page itself, looking for the web page's
     title. This is then reported to the originating channel or personal query.
  +/
+@IRCPluginHook
 final class WebtitlesPlugin : IRCPlugin
 {
 private:
