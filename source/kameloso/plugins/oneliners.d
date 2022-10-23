@@ -553,14 +553,21 @@ void handleAddToOneliner(
                 // Reset ordered position to 0 on insertions
                 oneliner.position = 0;
             }
+
+            enum message = "Oneliner line inserted.";
+            chan(plugin.state, event.channel, message);
             break;
 
         case appendToEnd:
             oneliner.responses ~= line;
+            enum message = "Oneliner line added.";
+            chan(plugin.state, event.channel, message);
             break;
 
         case editExisting:
             oneliner.responses[pos] = line;
+            enum message = "Oneliner line modified.";
+            chan(plugin.state, event.channel, message);
             break;
         }
 
@@ -604,14 +611,10 @@ void handleAddToOneliner(
             if (verb == "insert")
             {
                 insert(trigger, slice, Action.insertAtPosition, pos);
-                enum message = "Oneliner line inserted.";
-                chan(plugin.state, event.channel, message);
             }
             else /*if (verb == "edit")*/
             {
                 insert(trigger, slice, Action.editExisting, pos);
-                enum message = "Oneliner line modified.";
-                chan(plugin.state, event.channel, message);
             }
         }
         catch (Exception e)
@@ -635,9 +638,7 @@ void handleAddToOneliner(
 
         try
         {
-            insert(trigger, slice, Action.appendToEnd);
-            enum message = "Oneliner line added.";
-            chan(plugin.state, event.channel, message);
+            return insert(trigger, slice, Action.appendToEnd);
         }
         catch (Exception e)
         {
