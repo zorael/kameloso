@@ -237,8 +237,7 @@ in (account.length, "Tried to apply automodes to an empty account")
     {
         enum pattern = "Could not apply <i>+%s</> <i>%s</> in <i>%s</> " ~
             "because we are not an operator in the channel.";
-        logger.logf(pattern, missingModes, nickname, channelName);
-        return;
+        return logger.logf(pattern, missingModes, nickname, channelName);
     }
 
     mode(plugin.state, channel.name, "+" ~ missingModes, nickname);
@@ -317,14 +316,12 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 
         if (!nickname.isValidNickname(plugin.state.server))
         {
-            chan(plugin.state, event.channel, "Invalid nickname.");
-            return;
+            return chan(plugin.state, event.channel, "Invalid nickname.");
         }
 
         if (mode.beginsWith('-'))
         {
-            chan(plugin.state, event.channel, "Can't add a negative automode.");
-            return;
+            return chan(plugin.state, event.channel, "Can't add a negative automode.");
         }
 
         while (mode.beginsWith('+'))
@@ -334,8 +331,7 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 
         if (!mode.length)
         {
-            chan(plugin.state, event.channel, "You must supply a valid mode.");
-            return;
+            return chan(plugin.state, event.channel, "You must supply a valid mode.");
         }
 
         plugin.modifyAutomode(Yes.add, nickname, event.channel, mode);
@@ -354,8 +350,7 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 
         if (!nickname.isValidNickname(plugin.state.server))
         {
-            chan(plugin.state, event.channel, "Invalid nickname.");
-            return;
+            return chan(plugin.state, event.channel, "Invalid nickname.");
         }
 
         plugin.modifyAutomode(No.add, nickname, event.channel);

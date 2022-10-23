@@ -831,27 +831,23 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
         {
             immutable message = "Usage: <b>" ~ plugin.state.settings.prefix ~
                 event.aux ~ "<b> [nickname]";
-            privmsg(event.channel, event.sender.nickname, message);
-            return;
+            return privmsg(event.channel, event.sender.nickname, message);
         }
         else if (!requestedUser.isValidNickname(plugin.state.server))
         {
             // Nickname contained a space or other invalid character
             immutable message = "Invalid user: <h>" ~ requestedUser ~ "<h>";
-            privmsg(event.channel, event.sender.nickname, message);
-            return;
+            return privmsg(event.channel, event.sender.nickname, message);
         }
         else if (requestedUser == state.client.nickname)
         {
             // The requested nick is the bot's.
-            privmsg(event.channel, event.sender.nickname, "T-that's me though...");
-            return;
+            return privmsg(event.channel, event.sender.nickname, "T-that's me though...");
         }
         else if (requestedUser == event.sender.nickname)
         {
             // The person is asking for seen information about him-/herself.
-            privmsg(event.channel, event.sender.nickname, "That's you!");
-            return;
+            return privmsg(event.channel, event.sender.nickname, "That's you!");
         }
 
         foreach (const channel; state.channels)
@@ -862,8 +858,7 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
                     "<h>%s<h> is here right now!" :
                     "<h>%s<h> is online right now.";
                 immutable message = pattern.format(requestedUser);
-                privmsg(event.channel, event.sender.nickname, message);
-                return;
+                return privmsg(event.channel, event.sender.nickname, message);
             }
         }
 

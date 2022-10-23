@@ -86,8 +86,7 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
 
         enum pattern = "Usage: %s%s [duration] [choice1] [choice2] ...";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-        chan(plugin.state, event.channel, message);
-        return;
+        return chan(plugin.state, event.channel, message);
     }
 
     switch (event.content)
@@ -128,14 +127,12 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
 
     if (event.channel in plugin.channelVoteInstances)
     {
-        chan(plugin.state, event.channel, "A poll is already in progress!");
-        return;
+        return chan(plugin.state, event.channel, "A poll is already in progress!");
     }
 
     if (event.content.count(' ') < 2)
     {
-        chan(plugin.state, event.channel, "Need one duration and at least two choices.");
-        return;
+        return chan(plugin.state, event.channel, "Need one duration and at least two choices.");
     }
 
     Duration dur;
@@ -148,13 +145,11 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
     }
     catch (ConvException e)
     {
-        chan(plugin.state, event.channel, "Duration must be a positive number.");
-        return;
+        return chan(plugin.state, event.channel, "Duration must be a positive number.");
     }
     catch (DurationStringException e)
     {
-        chan(plugin.state, event.channel, e.msg);
-        return;
+        return chan(plugin.state, event.channel, e.msg);
     }
     catch (Exception e)
     {
@@ -165,8 +160,7 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
 
     if (dur <= Duration.zero)
     {
-        chan(plugin.state, event.channel, "Duration must not be negative.");
-        return;
+        return chan(plugin.state, event.channel, "Duration must not be negative.");
     }
 
     auto choicesVoldemort = getPollChoices(plugin, event, slice);  // mutable
@@ -175,8 +169,7 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
 
     if (choicesVoldemort.choices.length < 2)
     {
-        chan(plugin.state, event.channel, "Need at least two unique poll choices.");
-        return;
+        return chan(plugin.state, event.channel, "Need at least two unique poll choices.");
     }
 
     return pollImpl(
@@ -293,8 +286,7 @@ void pollImpl(
 
         if (total == 0)
         {
-            chan(plugin.state, event.channel, "Voting complete, no one voted.");
-            return;
+            return chan(plugin.state, event.channel, "Voting complete, no one voted.");
         }
 
         chan(plugin.state, event.channel, "Voting complete, results:");
@@ -369,8 +361,7 @@ void pollImpl(
             else if (*currentPollInstance == PollPlugin.endPollEarlyMagicNumber)
             {
                 // Magic number, end early
-                reportResults();
-                return;
+                return reportResults();
             }
             else if (*currentPollInstance != uniqueID)
             {
@@ -384,8 +375,7 @@ void pollImpl(
             if (thisEvent == IRCEvent.init)
             {
                 // Invoked by timer, not by event
-                reportResults();
-                return;  // End Fiber
+                return reportResults();  // End Fiber
             }
 
             if (plugin.pollSettings.onlyRegisteredMayVote &&

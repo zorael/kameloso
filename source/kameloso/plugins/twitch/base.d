@@ -501,8 +501,7 @@ void onCommandStart(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         }
         catch (DurationStringException e)
         {
-            chan(plugin.state, event.channel, e.msg);
-            return;
+            return chan(plugin.state, event.channel, e.msg);
         }
         catch (Exception e)
         {
@@ -516,9 +515,8 @@ void onCommandStart(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
          +/
         if (room.broadcast.active)
         {
-            chan(plugin.state, event.channel,
+            return chan(plugin.state, event.channel,
                 room.broadcasterDisplayName ~ " is already live.");
-            return;
         }
 
         initBroadcast();
@@ -828,8 +826,7 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
         if (!user.nickname.length)
         {
-            chan(plugin.state, event.channel, "No such user: " ~ givenName);
-            return;
+            return chan(plugin.state, event.channel, "No such user: " ~ givenName);
         }
 
         idString = user.idString;
@@ -1049,8 +1046,7 @@ void onCommandRepeat(TwitchPlugin plugin, const ref IRCEvent event)
         if (numTimes < 1)
         {
             enum message = "Number of times must be greater than 0.";
-            chan(plugin.state, event.channel, message);
-            return;
+            return chan(plugin.state, event.channel, message);
         }
 
         foreach (immutable i; 0..numTimes)
@@ -1094,8 +1090,7 @@ void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
         import std.format : format;
         enum pattern = "Usage: %s%s [word or phrase]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-        chan(plugin.state, event.channel, message);
-        return;
+        return chan(plugin.state, event.channel, message);
     }
 
     auto room = event.channel in plugin.rooms;
@@ -1161,8 +1156,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     else if (event.sender.class_ < plugin.twitchSettings.songrequestPermsNeeded)
     {
         // Issue an error?
-        logger.error("User does not have the needed permissions to issue song requests.");
-        return;
+        return logger.error("User does not have the needed permissions to issue song requests.");
     }
 
     if (event.sender.class_ < IRCUser.class_.operator)
@@ -1176,8 +1170,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             {
                 enum pattern = "At least %d seconds must pass between song requests.";
                 immutable message = pattern.format(TwitchPlugin.Room.minimumTimeBetweenSongRequests);
-                chan(plugin.state, event.channel, message);
-                return;
+                return chan(plugin.state, event.channel, message);
             }
         }
     }
@@ -1199,8 +1192,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         {
             enum pattern = "Usage: %s%s [YouTube link or video ID]";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-            chan(plugin.state, event.channel, message);
-            return;
+            return chan(plugin.state, event.channel, message);
         }
 
         auto creds = event.channel in plugin.secretsByChannel;
@@ -1209,8 +1201,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         {
             enum message = "Missing Google API credentials and/or YouTube playlist ID. " ~
                 "Run the program with <l>--set twitch.googleKeygen</> to set up.";
-            logger.error(message);
-            return;
+            return logger.error(message);
         }
 
         // Patterns:
@@ -1239,8 +1230,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         }
         else
         {
-            logger.warning("Malformed video link?");
-            return;
+            return logger.warning("Malformed video link?");
         }
 
         try
@@ -1278,8 +1268,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         {
             enum pattern = "Usage: %s%s [Spotify link or track ID]";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-            chan(plugin.state, event.channel, message);
-            return;
+            return chan(plugin.state, event.channel, message);
         }
 
         auto creds = event.channel in plugin.secretsByChannel;
@@ -1288,8 +1277,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         {
             enum message = "Missing Spotify API credentials and/or playlist ID. " ~
                 "Run the program with <l>--set twitch.spotifyKeygen</> to set up.";
-            logger.error(message);
-            return;
+            return logger.error(message);
         }
 
         // Patterns
@@ -1309,8 +1297,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         }
         else
         {
-            logger.warning("Malformed track link?");
-            return;
+            return logger.warning("Malformed track link?");
         }
 
         try
@@ -1322,8 +1309,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
             if ((json.type != JSONType.object)  || "snapshot_id" !in json)
             {
-                logger.error("An error occurred.\n", json.toPrettyString);
-                return;
+                return logger.error("An error occurred.\n", json.toPrettyString);
             }
 
             const trackJSON = getSpotifyTrackByID(*creds, trackID);
@@ -1412,18 +1398,15 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     catch (ConvException e)
     {
         enum message = "Invalid duration.";
-        chan(plugin.state, event.channel, message);
-        return;
+        return chan(plugin.state, event.channel, message);
     }
     catch (DurationStringException e)
     {
-        chan(plugin.state, event.channel, e.msg);
-        return;
+        return chan(plugin.state, event.channel, e.msg);
     }
     catch (Exception e)
     {
-        chan(plugin.state, event.channel, e.msg);
-        return;
+        return chan(plugin.state, event.channel, e.msg);
     }
 
     try
@@ -1503,8 +1486,7 @@ void onCommandEndPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     if (!pollInfoJSON.array.length)
     {
         enum message = "There are no active polls to end.";
-        chan(plugin.state, event.channel, message);
-        return;
+        return chan(plugin.state, event.channel, message);
     }
 
     immutable voteID = pollInfoJSON.array[0].object["id"].str;
@@ -1831,14 +1813,12 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
     {
         enum pattern = "Usage: %s%s [emote]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-        chan(plugin.state, event.channel, message);
-        return;
+        return chan(plugin.state, event.channel, message);
     }
     else if (!event.emotes.length)
     {
         enum message = "That is not a Twitch emote.";
-        chan(plugin.state, event.channel, message);
-        return;
+        return chan(plugin.state, event.channel, message);
     }
 
     const channelcounts = event.channel in plugin.ecount;
@@ -1909,8 +1889,7 @@ void onCommandWatchtime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
         if (!user.nickname.length)
         {
-            chan(plugin.state, event.channel, "No such user: " ~ givenName);
-            return;
+            return chan(plugin.state, event.channel, "No such user: " ~ givenName);
         }
 
         nickname = user.nickname;
@@ -1962,8 +1941,7 @@ void onCommandWatchtime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     else if (nickname == plugin.state.client.nickname)
     {
         enum message = "I've seen it all.";
-        chan(plugin.state, event.channel, message);
-        return;
+        return chan(plugin.state, event.channel, message);
     }
 
     if (auto channelViewerTimes = event.channel in plugin.viewerTimesByChannel)
@@ -2017,8 +1995,7 @@ void onCommandSetTitle(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     {
         enum pattern = "Usage: %s%s [title]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-        chan(plugin.state, event.channel, message);
-        return;
+        return chan(plugin.state, event.channel, message);
     }
 
     immutable title = unescapedTitle.unquoted.replace(`"`, `\"`);
@@ -2089,8 +2066,7 @@ void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     {
         enum pattern = "Usage: %s%s [game name]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-        chan(plugin.state, event.channel, message);
-        return;
+        return chan(plugin.state, event.channel, message);
     }
 
     immutable specified = unescapedGameName.unquoted.replace(`"`, `\"`);
@@ -2181,8 +2157,7 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     {
         enum pattern = "Usage: %s%s [commercial length; valid values are 30, 60, 90, 120, 150 and 180]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-        chan(plugin.state, event.channel, message);
-        return;
+        return chan(plugin.state, event.channel, message);
     }
 
     const room = event.channel in plugin.rooms;
@@ -2191,15 +2166,13 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     {
         enum pattern = "Broadcast start was never marked with %sstart.";
         immutable message = pattern.format(plugin.state.settings.prefix);
-        chan(plugin.state, event.channel, message);
-        return;
+        return chan(plugin.state, event.channel, message);
     }
 
     if (!lengthString.among!("30", "60", "90", "120", "150", "180"))
     {
         enum message = "Commercial length must be one of 30, 60, 90, 120, 150 or 180.";
-        chan(plugin.state, event.channel, message);
-        return;
+        return chan(plugin.state, event.channel, message);
     }
 
     try

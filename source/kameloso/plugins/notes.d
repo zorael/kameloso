@@ -337,15 +337,13 @@ void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
     {
         enum pattern = "Usage: <b>%s%s<b> [nickname] [note text...]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
-        return;
+        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
     if (target.opEqualsCaseInsensitive(plugin.state.client.nickname, plugin.state.server.caseMapping))
     {
-        privmsg(plugin.state, event.channel, event.sender.nickname,
+        return privmsg(plugin.state, event.channel, event.sender.nickname,
             "You cannot leave the bot a message; it would never be replayed.");
-        return;
     }
 
     target = target.toLowerCase(plugin.state.server.caseMapping);
@@ -467,8 +465,7 @@ in (id.length, "Tried to clear notes for an empty id")
         if (plugin.notes[channel].type != JSONType.object)
         {
             enum pattern = "Invalid channel notes list type for <l>%s</>: `<l>%s</>`";
-            logger.errorf(pattern, channel, plugin.notes[channel].type);
-            return;
+            return logger.errorf(pattern, channel, plugin.notes[channel].type);
         }
 
         plugin.notes[channel].object.remove(id);
@@ -535,8 +532,7 @@ in (line.length, "Tried to add an empty note")
 
     if (!line.length)
     {
-        logger.warning("No message to create note from.");
-        return;
+        return logger.warning("No message to create note from.");
     }
 
     // "when" is long so can't construct a single AA and assign it in one go

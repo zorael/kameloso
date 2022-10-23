@@ -231,8 +231,7 @@ void worker(
         if (res.code == 2)
         {
             enum pattern = "Chatbot could not fetch <l>bash.org</> quote at <l>%s</>: <t>%s";
-            askToWarn(state, pattern.format(url, res.codeText));
-            return;
+            return askToWarn(state, pattern.format(url, res.codeText));
         }
 
         auto doc = new Document;
@@ -244,8 +243,7 @@ void worker(
         if (!numBlock.length)
         {
             enum message = "No such <b>bash.org<b> quote found.";
-            privmsg(state, event.channel, event.sender.nickname, message);
-            return;
+            return privmsg(state, event.channel, event.sender.nickname, message);
         }
 
         void reportLayoutError()

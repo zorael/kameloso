@@ -727,8 +727,7 @@ void handleDelFromOneliner(
         {
             enum pattern = "Oneliner <b>%s<b> is empty and has no responses to remove.";
             immutable message = pattern.format(trigger);
-            chan(plugin.state, event.channel, message);
-            return;
+            return chan(plugin.state, event.channel, message);
         }
 
         try

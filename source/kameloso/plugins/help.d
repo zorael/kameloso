@@ -251,8 +251,7 @@ void sendSpecificPluginListing(
         if (!nonhiddenCommands.length)
         {
             immutable message = "No commands available for plugin <b>" ~ event.content ~ "<b>";
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
-            return;
+            return privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
 
         enum width = 12;
@@ -265,8 +264,7 @@ void sendSpecificPluginListing(
         }
 
         immutable message = pattern.format(width, specifiedPlugin, keys);
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
-        return;
+        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
     else
     {
@@ -346,17 +344,15 @@ void sendOnlyCommandHelp(
     {
         // Only a prefix was supplied
         enum message = "No command specified.";
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
-        return;
+        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
     foreach (immutable pluginName, pluginCommands; allPluginCommands)
     {
         if (const command = specifiedCommand in pluginCommands)
         {
-            sendCommandHelpImpl(plugin, pluginName, event, specifiedCommand,
+            return sendCommandHelpImpl(plugin, pluginName, event, specifiedCommand,
                 command.description, command.syntaxes);
-            return;
         }
     }
 
