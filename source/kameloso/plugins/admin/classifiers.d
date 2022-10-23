@@ -64,19 +64,17 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
     string slice = event.content;  // mutable
     immutable verb = slice.nom!(Yes.inherit)(' ');
     if (slice.beginsWith('@')) slice = slice[1..$];
-    slice = slice.strippedRight;
-    immutable channelName = slice.length ? slice : event.channel;
 
     switch (verb)
     {
     case "add":
-        return plugin.lookupEnlist(slice, list, channelName, event);
+        return plugin.lookupEnlist(slice, list, event.channel, event);
 
     case "del":
-        return plugin.delist(slice, list, channelName, event);
+        return plugin.delist(slice, list, event.channel, event);
 
     case "list":
-        return plugin.listList(channelName, list, event);
+        return plugin.listList(event.channel, list, event);
 
     default:
         return sendUsage();
