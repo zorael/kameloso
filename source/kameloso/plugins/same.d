@@ -99,6 +99,9 @@ void onAnyMessageRegex(SamePlugin plugin, const ref IRCEvent event)
 }
 
 
+public:
+
+
 // SamePlugin
 /++
     The Same toy plugin, that replies to the text "same" with "same".
