@@ -420,7 +420,7 @@ void handleNewOneliner(
     /+
         We need to check both hardcoded and soft channel-specific commands
         for conflicts.
-        +/
+     +/
     bool triggerConflicts(const IRCPlugin.CommandMetadata[string][string] aa)
     {
         foreach (immutable pluginName, pluginCommands; aa)
@@ -474,7 +474,7 @@ void handleNewOneliner(
 
 // handleAddToOneliner
 /++
-    Adds or inserts a line to a oneliner, or modifies an existing line.
+    Adds or inserts a line into a oneliner, or modifies an existing line.
 
     Params:
         plugin = The current [OnelinersPlugin].

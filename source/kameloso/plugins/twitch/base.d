@@ -2360,7 +2360,7 @@ void onMyInfo(TwitchPlugin plugin)
         /+
             Only save watchtimes if there's at least one broadcast currently ongoing.
             Since we save at broadcast stop there won't be anything new to save otherwise.
-            +/
+         +/
         if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
         {
             foreach (const room; plugin.rooms)
