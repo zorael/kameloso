@@ -664,4 +664,7 @@ unittest
     log_.critical(s4);
     log_.error(s5);
     log_.trace(c);
+
+    log_.headless = true;
+    log_.error("THIS SHOULD NEVER BE SEEN");
 }
