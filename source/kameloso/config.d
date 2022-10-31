@@ -973,6 +973,7 @@ auto handleGetopt(ref Kameloso instance, string[] args) @system
                 instance.parser.client.nickname = "doesntmatter";
                 instance.parser.client.user = "ignored";
                 instance.parser.client.realName = "likewise";
+                shouldWriteConfig = true;
                 shouldOpenGraphicalEditor = true;
             }
         }
