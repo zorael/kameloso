@@ -614,8 +614,8 @@ unittest
     log_.errorf!"log: %s"("error");
     log_.criticalf!"log: %s"("critical");
     // log_.fatalf!"log: %s"("FATAL");
-    log_.tracef("log: %s", "trace");
-    log_.offf("log: %s", "off");
+    log_.tracef!"log: %s"("trace");
+    log_.offf!"log: %s"("off");
 
     version(Colours)
     {
