@@ -737,7 +737,7 @@ auto handleGetopt(ref Kameloso instance, string[] args) @system
             else
             {
                 enum getOpenSSLString = "(Windows only)";
-                enum getCacertString = "(Windows only)";
+                enum getCacertString = getOpenSSLString;
             }
 
             immutable configFileExtension = settings.configFile.extension;

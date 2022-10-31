@@ -25,7 +25,7 @@ import std.typecons : Flag, No, Yes;
 /++
     A value line for [rt_options] to fine-tune the garbage collector.
 
-    Older compilers don't support all the garbeage collector options newer
+    Older compilers don't support all the garbage collector options newer
     compilers do (breakpoints being at `2.085` for the precise garbage collector
     and cleanup behaviour, and `2.098` for the forking one). So in one way or
     another we need to specialise for compiler versions. This is one way.
@@ -86,7 +86,8 @@ enum gcOptions = ()
         [gcOptions]
         https://dlang.org/spec/garbage.html
  +/
-extern(C) public __gshared const string[] rt_options =
+extern(C)
+public __gshared const string[] rt_options =
 [
     /++
         Garbage collector options.
