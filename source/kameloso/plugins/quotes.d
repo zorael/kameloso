@@ -345,7 +345,7 @@ void modQuoteAndReport(
 auto removeWeeChatHead(
     const string line,
     const string nickname,
-    const string prefixes) pure @safe @nogc
+    const string prefixes) pure @safe
 in (nickname.length, "Tried to remove WeeChat head for a nickname but the nickname was empty")
 {
     import lu.string : beginsWith, contains, nom, strippedLeft;
