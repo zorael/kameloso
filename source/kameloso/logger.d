@@ -375,8 +375,6 @@ public:
         import lu.traits : UnqualArray;
         import std.traits : isAggregateType;
 
-        if (headless) return;
-
         scope(exit)
         {
             linebuffer.clear();
@@ -473,8 +471,6 @@ public:
     {
         import std.format : formattedWrite;
 
-        if (headless) return;
-
         scope(exit)
         {
             linebuffer.clear();
@@ -506,8 +502,6 @@ public:
     {
         import std.format : formattedWrite;
 
-        if (headless) return;
-
         scope(exit)
         {
             linebuffer.clear();
@@ -530,24 +524,24 @@ public:
 
         Mixes in [fatalExitMixin] on `fatal` to have it exit the program on those.
      +/
-    static foreach (const lv; [ EnumMembers!LogLevel ])
+    static foreach (const lv; EnumMembers!LogLevel)
     {
         mixin(
 "void " ~ Enum!LogLevel.toString(lv) ~ "(Args...)(auto ref Args args)
 {
-    printImpl(LogLevel." ~ Enum!LogLevel.toString(lv) ~ ", args);
+    if (!headless) printImpl(LogLevel." ~ Enum!LogLevel.toString(lv) ~ ", args);
     " ~ ((lv == LogLevel.fatal) ? fatalErrorMixin : string.init) ~ "
 }
 
 void " ~ Enum!LogLevel.toString(lv) ~ "f(Args...)(const string pattern, auto ref Args args)
 {
-    printfImpl(LogLevel." ~ Enum!LogLevel.toString(lv) ~ ", pattern, args);
+    if (!headless) printfImpl(LogLevel." ~ Enum!LogLevel.toString(lv) ~ ", pattern, args);
     " ~ ((lv == LogLevel.fatal) ? fatalErrorMixin : string.init) ~ "
 }
 
 void " ~ Enum!LogLevel.toString(lv) ~ "f(string pattern, Args...)(auto ref Args args)
 {
-    printfImpl!pattern(LogLevel." ~ Enum!LogLevel.toString(lv) ~ ", args);
+    if (!headless) printfImpl!pattern(LogLevel." ~ Enum!LogLevel.toString(lv) ~ ", args);
     " ~ ((lv == LogLevel.fatal) ? fatalErrorMixin : string.init) ~ "
 }");
     }
