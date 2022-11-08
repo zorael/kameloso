@@ -1608,7 +1608,6 @@ public:
     but also incorporates logic to authenticate with services, and capability
     negotiations.
  +/
-@IRCPluginHook
 final class ConnectService : IRCPlugin
 {
 private:

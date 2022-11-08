@@ -1161,7 +1161,6 @@ public:
 /++
     The Timer plugin serves reoccuring (timered) announcements.
  +/
-@IRCPluginHook
 final class TimerPlugin : IRCPlugin
 {
 private:

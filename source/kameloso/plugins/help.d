@@ -487,7 +487,6 @@ public:
     to warrant its own plugin, so that the Chatbot could be disabled while
     keeping this around.
  +/
-@IRCPluginHook
 final class HelpPlugin : IRCPlugin
 {
 private:

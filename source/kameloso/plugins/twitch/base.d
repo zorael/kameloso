@@ -2825,7 +2825,6 @@ public:
     The Twitch plugin is an example Twitch streamer bot. It contains some
     basic tools for streamers, and the audience thereof.
  +/
-@IRCPluginHook
 final class TwitchPlugin : IRCPlugin
 {
 private:

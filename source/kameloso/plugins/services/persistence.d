@@ -884,7 +884,6 @@ public:
     for minimal bookkeeping, not the full package, so we only copy/paste the
     relevant bits to stay slim.
  +/
-@IRCPluginHook
 final class PersistenceService : IRCPlugin
 {
 private:

@@ -581,7 +581,6 @@ public:
 
     Definitions are saved in a JSON file.
  +/
-@IRCPluginHook
 final class AutomodePlugin : IRCPlugin
 {
 private:

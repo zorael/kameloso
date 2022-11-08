@@ -628,7 +628,6 @@ public:
 /++
     The Vote plugin offers the ability to hold votes/polls in a channel.
  +/
-@IRCPluginHook
 final class PollPlugin : IRCPlugin
 {
 private:

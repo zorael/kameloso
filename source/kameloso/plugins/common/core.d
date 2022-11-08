@@ -2912,10 +2912,3 @@ enum Configuration;
     Annotation denoting that a variable enables and disables a plugin.
  +/
 enum Enabler;
-
-
-// IRCPluginHook
-/++
-    Annotation denoting that a class is a plugin.
- +/
-enum IRCPluginHook;
