@@ -106,7 +106,6 @@ public:
 /++
     The Same toy plugin, that replies to the text "same" with "same".
  +/
-@IRCPluginHook
 final class SamePlugin : IRCPlugin
 {
     /// All Same plugin settings gathered.

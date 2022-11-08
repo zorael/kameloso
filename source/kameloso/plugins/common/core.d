@@ -2851,6 +2851,38 @@ struct IRCEventHandler
 }
 
 
+// ModulePlugins
+/++
+    Introspects a module given a string of its fully qualified name, and aliases
+    itself to the plugin class(es) therein, as detected by looking for
+    [kameloso.plugins.common.core.IRCPlugin|IRCPlugin] subclasses.
+
+    Params:
+        module_ = String name of a module.
+ +/
+template ModulePlugins(string module_)
+{
+    static if (__traits(compiles, { mixin("alias thisModule = " ~ module_ ~ ";"); }))
+    {
+        import std.meta : ApplyLeft, Filter, NoDuplicates, staticMap;
+
+        mixin("static import thisModule = " ~ module_ ~ ";");
+
+        enum isPlugin(alias T) = is(T : IRCPlugin);
+        alias getMember(alias parent, string memberstring) = __traits(getMember, parent, memberstring);
+        alias allMembers = staticMap!(ApplyLeft!(getMember, thisModule), __traits(allMembers, thisModule));
+        alias allUniqueMembers = NoDuplicates!allMembers;
+        alias ModulePlugins = Filter!(isPlugin, allUniqueMembers);
+    }
+    else
+    {
+        import std.format : format;
+        enum pattern = "Tried to divine the `IRCPlugin` subclass of non-existent module `%s`";
+        static assert(0, pattern.format(module_));
+    }
+}
+
+
 // Settings
 /++
     Annotation denoting that a struct variable or struct type is to be considered

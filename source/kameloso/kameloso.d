@@ -333,9 +333,8 @@ public:
     void initPlugins() @system
     {
         import kameloso.plugins : PluginModules;
-        import kameloso.plugins.common.core : IRCPluginHook, IRCPluginState;
+        import kameloso.plugins.common.core : IRCPluginState, ModulePlugins;
         import kameloso.plugins.common.misc : applyCustomSettings;
-        import lu.traits : getSymbolsByUDA;
         import std.concurrency : thisTid;
 
         teardownPlugins();
@@ -382,7 +381,9 @@ public:
                     mixin("static import pluginModule = " ~ moduleName ~ ";");
                 }
 
-                foreach (Plugin; getSymbolsByUDA!(pluginModule, IRCPluginHook))
+                alias allPlugins = ModulePlugins!moduleName;
+
+                foreach (Plugin; allPlugins)
                 {
                     static if (__traits(compiles, new Plugin(state)))
                     {
@@ -392,7 +393,7 @@ public:
                     {
                         import std.format : format;
                         enum pattern = "`%s.%s` constructor does not compile";
-                        static assert(0, pattern.format(moduleName, Class.stringof));
+                        static assert(0, pattern.format(moduleName, Plugin.stringof));
                     }
                 }
             }

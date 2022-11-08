@@ -1051,23 +1051,18 @@ in (filename.length, "Empty plugin filename passed to `pluginFilenameSlicerImpl`
 /++
     Introspects a module given a string of its fully qualified name, and aliases
     itself to the name of the plugin class therein, as detected by looking for
-    [kameloso.plugins.common.core.IRCPlugin|IRCPlugin] subclasses annotated
-    [kameloso.plugins.common.core.IRCPluginHook|IRCPluginHook].
+    [kameloso.plugins.common.core.IRCPlugin|IRCPlugin] subclasses.
 
     Params:
         module_ = String name of a module.
  +/
 enum ModulePluginName(string module_) = ()
 {
-    import lu.traits : getSymbolsByUDA;
+    alias allPlugins = ModulePlugins!module_;
 
-    mixin("static import thisModule = " ~ module_ ~ ";");
-
-    alias hookedSymbols = getSymbolsByUDA!(thisModule, IRCPluginHook);
-
-    static if ((hookedSymbols.length == 1) && is(hookedSymbols[0] : IRCPlugin))
+    static if ((allPlugins.length == 1) && is(allPlugins[0] : IRCPlugin))
     {
-        return __traits(identifier, hookedSymbols[0]);
+        return __traits(identifier, allPlugins[0]);
     }
     else
     {
@@ -1075,7 +1070,7 @@ enum ModulePluginName(string module_) = ()
 
         // It can apparently branch here for a variety of reasons,
         // so only give a generic error message.
-        enum pattern = "Unspecific error in module `%s`; if no backtrace, verify `IRCPluginHook` annotations";
+        enum pattern = "Unspecific error in module `%s`";
         immutable message = pattern.format(module_);
         static assert(0, message);
     }
