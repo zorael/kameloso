@@ -618,7 +618,6 @@ public:
     {
         import std.meta : AliasSeq;
 
-        aliasloop:
         foreach (ref sym; AliasSeq!(this, parser))
         {
             foreach (immutable i, ref member; sym.tupleof)
@@ -628,12 +627,11 @@ public:
                 static if (is(T == Thing))
                 {
                     sym.tupleof[i] = thing;
-                    continue aliasloop;
+                    break;
                 }
             }
         }
 
-        pluginloop:
         foreach (plugin; plugins)
         {
             foreach (immutable i, ref member; plugin.state.tupleof)
@@ -643,7 +641,7 @@ public:
                 static if (is(T == Thing))
                 {
                     plugin.state.tupleof[i] = thing;
-                    continue pluginloop;
+                    break;
                 }
             }
         }
