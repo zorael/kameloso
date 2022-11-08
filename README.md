@@ -1,6 +1,6 @@
 # kameloso [![Linux/macOS/Windows](https://img.shields.io/github/workflow/status/zorael/kameloso/D?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/actions?query=workflow%3AD) [![Linux](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?logo=circleci&style=flat&maxAge=3600)](https://circleci.com/gh/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?logo=appveyor&style=flat&maxAge=3600)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v3.5.0.svg?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/compare/v3.5.0...master)
 
-**kameloso** is an IRC bot. It works as a Twitch bot too, see [here](#twitch).
+**kameloso** is an IRC bot. It works as a [Twitch bot](#twitch) too.
 
 ## Current functionality includes:
 
@@ -164,7 +164,7 @@ Open the file in a normal text editor.
 
 ### Command-line arguments
 
-You can make changes to your configuration file in-place by specyfing some at the command line and adding `--save`.
+You can make changes to your configuration file in-place by specifying some at the command line and adding `--save`.
 
 ```shell
 $ kameloso \
@@ -333,7 +333,7 @@ It can technically be any string and not just one character. It may include spac
 
 Before allowing *anyone* to trigger any restricted functionality, the bot will try to identify that user by querying the server for what services account the accessing user is logged onto, if not already known. For full administrative privileges you will need to be logged in with an account listed in the `admins` field in the configuration file, while other users may be defined with other permissions in your [`users.json` file](#other-files). If a user is not logged onto services it is considered as not being uniquely identifiable and cannot be resolved to an account.
 
-> In the case of **hostmasks mode**, the above still applies but "accounts" are derived from hostmasks. See the **Admin** plugin `!hostmask` command (and the `hostmasks.json` file) for how to map hostmasks to would-be accounts. Hostmasks are a weaker solution to user identification but not all servers may offer services. See [the wiki entry on hostmasks](https://github.com/zorael/kameloso/wiki/On-servers-without-services-(e.g.-no-NickServ)).
+> In the case of **hostmasks mode**, the above still applies but "accounts" are derived from hostmasks. See the **Admin** plugin `!hostmask` command (and the `hostmasks.json` file) for how to map hostmasks to would-be accounts. Hostmasks are a weaker solution to user identification but not all servers may offer services. Also see [the wiki entry on hostmasks](https://github.com/zorael/kameloso/wiki/On-servers-without-services-(e.g.-no-NickServ)).
 
 ## Twitch
 
@@ -374,7 +374,7 @@ It will connect to Twitch, and upon detecting it's missing the authorisation tok
 
 **Note that it will request a token for the user you are currently logged in as in your browser**. If you want one for a different "bot user" instead, open up a private/incognito window, log in normally to Twitch **with the bot account** there, and copy/paste [this link](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true) and follow it in that browser window instead. (Then follow the terminal instructions again.)
 
-After obtaining a token it will save it to your configuration file and reconnect to the server. Provided there were no errors, the bot should now enter your channel. Say something in chat in your browser's chat and it should show in your terminal. If there were errors or snags, please [report them](https://github.com/zorael/kameloso/issues/new).
+After obtaining a token it will save it to your configuration file and reconnect to the server. Provided there were no errors, the bot should now enter your channel. Say something in your channel's chat (in your browser) and it should show in your terminal. If there were errors or snags, please [report them](https://github.com/zorael/kameloso/issues/new).
 
 > If you don't like the terminal colouring, `--monochrome` disables it.
 
