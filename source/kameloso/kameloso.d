@@ -353,35 +353,35 @@ public:
 
         plugins.reserve(PluginModules.length);
 
-        foreach (immutable moduleName; PluginModules)
+        foreach (immutable module_; PluginModules)
         {
-            static if (is(typeof(moduleName) : string) && moduleName.length)
+            static if (is(typeof(module_) : string) && module_.length)
             {
-                static if (__traits(compiles, { mixin("alias thisModule = " ~ moduleName ~ ".base;"); }))
+                static if (__traits(compiles, { mixin("alias thisModule = " ~ module_ ~ ".base;"); }))
                 {
-                    static if (!__traits(compiles, { mixin("static import " ~ moduleName ~ ".base;"); }))
+                    static if (!__traits(compiles, { mixin("static import " ~ module_ ~ ".base;"); }))
                     {
                         import std.format : format;
                         enum pattern = "Plugin module `%s.base` (inferred from listing `%1$s`" ~
                             "in `plugins/package.d`) fails to compile";
-                        static assert(0, pattern.format(moduleName));
+                        static assert(0, pattern.format(module_));
                     }
 
-                    mixin("static import pluginModule = " ~ moduleName ~ ".base;");
+                    mixin("static import pluginModule = " ~ module_ ~ ".base;");
                 }
                 else
                 {
-                    static if (!__traits(compiles, { mixin("static import " ~ moduleName ~ ";"); }))
+                    static if (!__traits(compiles, { mixin("static import " ~ module_ ~ ";"); }))
                     {
                         import std.format : format;
                         enum pattern = "Plugin module `%s` (listed in `plugins/package.d`) fails to compile";
-                        static assert(0, pattern.format(moduleName));
+                        static assert(0, pattern.format(module_));
                     }
 
-                    mixin("static import pluginModule = " ~ moduleName ~ ";");
+                    mixin("static import pluginModule = " ~ module_ ~ ";");
                 }
 
-                alias PluginModule = PluginModuleInfo!moduleName;
+                alias PluginModule = PluginModuleInfo!module_;
 
                 static if (!PluginModule.hasPluginClass)
                 {
@@ -395,14 +395,14 @@ public:
                 {
                     import std.format : format;
                     enum pattern = "`%s.%s` constructor does not compile";
-                    static assert(0, pattern.format(moduleName, PluginModule.className));
+                    static assert(0, pattern.format(module_, PluginModule.className));
                 }
             }
             else
             {
                 import std.format : format;
                 enum pattern = "Invalid `PluginModules` entry in `plugins/package.d`: `%s`";
-                static assert(0, pattern.format(moduleName));
+                static assert(0, pattern.format(module_));
             }
         }
 
