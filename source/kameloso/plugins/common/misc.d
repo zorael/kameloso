@@ -1045,22 +1045,3 @@ in (filename.length, "Empty plugin filename passed to `pluginFilenameSlicerImpl`
 
     return getPluginName ? slice[0..$-2] : slice;
 }
-
-
-// ModulePluginName
-/++
-    Introspects a module given a string of its fully qualified name, and aliases
-    itself to the name of the plugin class therein, as detected by looking for
-    [kameloso.plugins.common.core.IRCPlugin|IRCPlugin] subclasses.
-
-    There's no need to be careful here, since [kameloso.plugins.common.core.ModulePlugins]
-    does sanity checks for us.
-
-    Params:
-        module_ = String name of a module.
- +/
-enum ModulePluginName(string module_) = ()
-{
-    alias allPlugins = ModulePlugins!module_;
-    return __traits(identifier, allPlugins[0]);
-}();
