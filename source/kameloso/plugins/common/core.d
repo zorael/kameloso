@@ -1289,6 +1289,16 @@ mixin template IRCPluginImpl(
         alias isNormalEventHandler = templateNot!hasSpecialTiming;
 
         alias allFuns = Filter!(isSomeFunction, getSymbolsByUDA!(thisModule, IRCEventHandler));
+
+        static if (!allFuns.length)
+        {
+            enum message = "Warning: `IRCPlugin` subclass `" ~ ModulePluginName!module_ ~
+                "` in module `" ~ module_ ~ "` mixes in `IRCPluginImpl`, but there " ~
+                "seem to be no module-level event handlers. " ~
+                "Verify `IRCEventHandler` annotations";
+            pragma(msg, message);
+        }
+
         alias setupFuns = Filter!(isSetupFun, allFuns);
         alias earlyFuns = Filter!(isEarlyFun, allFuns);
         alias lateFuns = Filter!(isLateFun, allFuns);
