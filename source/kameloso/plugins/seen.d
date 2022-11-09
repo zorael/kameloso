@@ -1184,14 +1184,23 @@ import kameloso.thread : Sendable;
 /+
     Only some plugins benefit from this one implementning `onBusMessage`, so omit
     it if they aren't available.
+
+    Use an enum instead of a version, since for some reason this suddenly broke
+    on pre-2.093 compilers.
  +/
 version(WithPipelinePlugin)
 {
-    version = ShouldImplementOnBusMessage;
+    //version = ShouldImplementOnBusMessage;
+    enum shouldImplementOnBusMessage = true;
 }
 else version(WithAdminPlugin)
 {
-    version = ShouldImplementOnBusMessage;
+    //version = ShouldImplementOnBusMessage;
+    enum shouldImplementOnBusMessage = true;
+}
+else
+{
+    enum shouldImplementOnBusMessage = false;
 }
 
 // onBusMessage
@@ -1210,7 +1219,8 @@ else version(WithAdminPlugin)
  +/
 debug
 version(Posix)
-version(ShouldImplementOnBusMessage)
+//version(ShouldImplementOnBusMessage)
+static if (shouldImplementOnBusMessage)
 void onBusMessage(SeenPlugin plugin, const string header, shared Sendable content)
 {
     if (!plugin.isEnabled) return;
