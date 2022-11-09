@@ -1053,25 +1053,14 @@ in (filename.length, "Empty plugin filename passed to `pluginFilenameSlicerImpl`
     itself to the name of the plugin class therein, as detected by looking for
     [kameloso.plugins.common.core.IRCPlugin|IRCPlugin] subclasses.
 
+    There's no need to be careful here, since [kameloso.plugins.common.core.ModulePlugins]
+    does sanity checks for us.
+
     Params:
         module_ = String name of a module.
  +/
 enum ModulePluginName(string module_) = ()
 {
     alias allPlugins = ModulePlugins!module_;
-
-    static if ((allPlugins.length == 1) && is(allPlugins[0] : IRCPlugin))
-    {
-        return __traits(identifier, allPlugins[0]);
-    }
-    else
-    {
-        import std.format : format;
-
-        // It can apparently branch here for a variety of reasons,
-        // so only give a generic error message.
-        enum pattern = "Unspecific error in module `%s`";
-        immutable message = pattern.format(module_);
-        static assert(0, message);
-    }
+    return __traits(identifier, allPlugins[0]);
 }();

@@ -2883,10 +2883,41 @@ template ModulePlugins(string module_)
         alias allMembers = staticMap!(ApplyLeft!(getMember, thisModule), __traits(allMembers, thisModule));
         alias allUniqueMembers = NoDuplicates!allMembers;
         alias ModulePlugins = Filter!(isPlugin, allUniqueMembers);
+
+        /+
+            Perform some sanity checks.
+         +/
+        static if (!ModulePlugins.length)
+        {
+            // It's likely a package; do nothing
+        }
+        else static if (ModulePlugins.length > 1)
+        {
+            import std.format : format;
+
+            enum pattern = "Plugin module `%s` is has more than one `IRCPlugin` subclass: ";
+            immutable message = pattern.format(module_) ~ ModulePlugins.stringof;
+            static assert(0, message);
+        }
+        else static if (is(ModulePlugins[0] : IRCPlugin))
+        {
+            // Benign case, should always be true. Do nothing
+        }
+        else
+        {
+            import std.format : format;
+
+            // Unsure if this ever happens anymore, but may as well keep the error.
+            enum pattern = "Unspecific error encountered when performing sanity " ~
+                "checks on introspected `IRCPlugin` subclasses in module `%s`";
+            immutable message = pattern.format(module_);
+            static assert(0, message);
+        }
     }
     else
     {
         import std.format : format;
+
         enum pattern = "Tried to divine the `IRCPlugin` subclass of non-existent module `%s`";
         static assert(0, pattern.format(module_));
     }
