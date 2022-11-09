@@ -333,7 +333,7 @@ public:
     void initPlugins() @system
     {
         import kameloso.plugins : PluginModules;
-        import kameloso.plugins.common.core : IRCPluginState, ModulePlugins;
+        import kameloso.plugins.common.core : IRCPluginState, PluginModuleInfo;
         import kameloso.plugins.common.misc : applyCustomSettings;
         import std.concurrency : thisTid;
 
@@ -381,20 +381,21 @@ public:
                     mixin("static import pluginModule = " ~ moduleName ~ ";");
                 }
 
-                alias allPlugins = ModulePlugins!moduleName;
+                alias PluginModule = PluginModuleInfo!moduleName;
 
-                foreach (Plugin; allPlugins)
+                static if (!PluginModule.hasPluginClass)
                 {
-                    static if (__traits(compiles, new Plugin(state)))
-                    {
-                        plugins ~= new Plugin(state);
-                    }
-                    else
-                    {
-                        import std.format : format;
-                        enum pattern = "`%s.%s` constructor does not compile";
-                        static assert(0, pattern.format(moduleName, Plugin.stringof));
-                    }
+                    // No class in module, so just ignore it
+                }
+                else static if (__traits(compiles, new PluginModule.Class(state)))
+                {
+                    plugins ~= new PluginModule.Class(state);
+                }
+                else
+                {
+                    import std.format : format;
+                    enum pattern = "`%s.%s` constructor does not compile";
+                    static assert(0, pattern.format(moduleName, PluginModule.className));
                 }
             }
             else

@@ -83,7 +83,7 @@ mixin template MinimalAuthentication(
     Flag!"debug_" debug_ = No.debug_,
     string module_ = __MODULE__)
 {
-    private import kameloso.plugins.common.misc : ModulePluginName;
+    private import kameloso.plugins.common.core : PluginModuleInfo;
     private static import kameloso.plugins.common.awareness;
 
     /++
@@ -93,7 +93,7 @@ mixin template MinimalAuthentication(
      +/
     package enum hasMinimalAuthentication = true;
 
-    mixin("private alias Plugin = " ~ ModulePluginName!module_ ~ ";");
+    mixin("private alias Plugin = " ~ PluginModuleInfo!module_.className ~ ";");
     mixin kameloso.plugins.common.awareness.MinimalAuthenticationImpl!(Plugin, debug_, module_);
 }
 
@@ -268,7 +268,7 @@ mixin template UserAwareness(
     Flag!"debug_" debug_ = No.debug_,
     string module_ = __MODULE__)
 {
-    private import kameloso.plugins.common.misc : ModulePluginName;
+    private import kameloso.plugins.common.core : PluginModuleInfo;
     private static import kameloso.plugins.common.awareness;
 
     /++
@@ -283,7 +283,7 @@ mixin template UserAwareness(
         mixin kameloso.plugins.common.awareness.MinimalAuthentication!(debug_, module_);
     }
 
-    mixin("private alias Plugin = " ~ ModulePluginName!module_ ~ ";");
+    mixin("private alias Plugin = " ~ PluginModuleInfo!module_.className ~ ";");
     mixin kameloso.plugins.common.awareness.UserAwarenessImpl!(Plugin, channelPolicy, debug_, module_);
 }
 
@@ -719,7 +719,7 @@ mixin template ChannelAwareness(
     Flag!"debug_" debug_ = No.debug_,
     string module_ = __MODULE__)
 {
-    private import kameloso.plugins.common.misc : ModulePluginName;
+    private import kameloso.plugins.common.core : PluginModuleInfo;
     private static import kameloso.plugins.common.awareness;
 
     /++
@@ -728,7 +728,7 @@ mixin template ChannelAwareness(
      +/
     package enum hasChannelAwareness = true;
 
-    mixin("private alias Plugin = " ~ ModulePluginName!module_ ~ ";");
+    mixin("private alias Plugin = " ~ PluginModuleInfo!module_.className ~ ";");
     mixin kameloso.plugins.common.awareness.ChannelAwarenessImpl!(Plugin, channelPolicy, debug_, module_);
 }
 
@@ -1459,7 +1459,7 @@ mixin template TwitchAwareness(
     Flag!"debug_" debug_ = No.debug_,
     string module_ = __MODULE__)
 {
-    private import kameloso.plugins.common.misc : ModulePluginName;
+    private import kameloso.plugins.common.core : PluginModuleInfo;
     private static import kameloso.plugins.common.awareness;
 
     /++
@@ -1477,7 +1477,7 @@ mixin template TwitchAwareness(
         static assert(0, pattern.format(module_));
     }
 
-    mixin("private alias Plugin = " ~ ModulePluginName!module_ ~ ";");
+    mixin("private alias Plugin = " ~ PluginModuleInfo!module_.className ~ ";");
     mixin kameloso.plugins.common.awareness.TwitchAwarenessImpl!(Plugin, channelPolicy, debug_, module_);
 }
 

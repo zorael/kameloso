@@ -2861,19 +2861,24 @@ struct IRCEventHandler
 }
 
 
-// ModulePlugins
+// PluginModuleInfo
 /++
-    Introspects a module given a string of its fully qualified name, and aliases
-    itself to the plugin class(es) therein, as detected by looking for
-    [kameloso.plugins.common.core.IRCPlugin|IRCPlugin] subclasses.
+    Introspects a module given a string of its fully qualified name and divines
+    the [kameloso.plugins.common.core.IRCPlugin|IRCPlugin] subclass within.
+
+    `.hasPluginClass` will be set to false if there were no plugins in the module,
+    and true if there was. In that case, `.Class` will alias to said plugin class,
+    and `.className` will become the string of its name.
 
     Params:
         module_ = String name of a module.
  +/
-template ModulePlugins(string module_)
+template PluginModuleInfo(string module_)
 {
     static if (__traits(compiles, { mixin("alias thisModule = " ~ module_ ~ ";"); }))
     {
+        private:
+
         import std.meta : ApplyLeft, Filter, NoDuplicates, staticMap;
 
         mixin("static import thisModule = " ~ module_ ~ ";");
@@ -2882,26 +2887,30 @@ template ModulePlugins(string module_)
         alias getMember(alias parent, string memberstring) = __traits(getMember, parent, memberstring);
         alias allMembers = staticMap!(ApplyLeft!(getMember, thisModule), __traits(allMembers, thisModule));
         alias allUniqueMembers = NoDuplicates!allMembers;
-        alias ModulePlugins = Filter!(isPlugin, allUniqueMembers);
+        alias Plugins = Filter!(isPlugin, allUniqueMembers);
 
         /+
             Perform some sanity checks.
          +/
-        static if (!ModulePlugins.length)
+        static if (!Plugins.length)
         {
-            // It's likely a package; do nothing
+            // It's likely a package or helper module; do nothing but mark as empty
+            public enum hasPluginClass = false;
         }
-        else static if (ModulePlugins.length > 1)
+        else static if (Plugins.length > 1)
         {
             import std.format : format;
 
-            enum pattern = "Plugin module `%s` is has more than one `IRCPlugin` subclass: ";
-            immutable message = pattern.format(module_) ~ ModulePlugins.stringof;
+            enum pattern = "Plugin module `%s` is has more than one `IRCPlugin` subclass: `%s`";
+            immutable message = pattern.format(module_, Plugins.stringof);
             static assert(0, message);
         }
-        else static if (is(ModulePlugins[0] : IRCPlugin))
+        else static if (is(Plugins[0] : IRCPlugin))
         {
-            // Benign case, should always be true. Do nothing
+            // Benign case, should always be true.
+            public alias Class = Plugins[0];
+            public enum className = __traits(identifier, Class);
+            public enum hasPluginClass = true;
         }
         else
         {
