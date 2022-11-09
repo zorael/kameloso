@@ -1292,11 +1292,41 @@ mixin template IRCPluginImpl(
 
         static if (!allFuns.length)
         {
-            enum message = "Warning: `IRCPlugin` subclass `" ~ ModulePluginName!module_ ~
-                "` in module `" ~ module_ ~ "` mixes in `IRCPluginImpl`, but there " ~
-                "seem to be no module-level event handlers. " ~
-                "Verify `IRCEventHandler` annotations";
-            pragma(msg, message);
+            version(unittest)
+            {
+                // Skip event handler checks when unittesting, as it triggers
+                // unittests in common/core.d
+            }
+            else
+            {
+                import std.algorithm.comparison : among;
+                import std.meta : AliasSeq;
+
+                // Also skip event handler checks for these specific whitelisted modules
+                alias emptyModuleWhitelist = AliasSeq!(
+                    "kameloso.plugins.twitch.stub",
+                );
+
+                static if (module_.among!emptyModuleWhitelist)
+                {
+                    // Known to be empty
+                }
+                else
+                {
+                    import kameloso.plugins.common.core : PluginModuleInfo;
+
+                    alias PluginModule = PluginModuleInfo!module_;
+
+                    static if (PluginModule.hasPluginClass)
+                    {
+                        enum message = "Warning: `IRCPlugin` subclass `" ~ PluginModule.className ~
+                            "` in module `" ~ module_ ~ "` mixes in `IRCPluginImpl`, but there " ~
+                            "seem to be no module-level event handlers. " ~
+                            "Verify `IRCEventHandler` annotations";
+                        pragma(msg, message);
+                    }
+                }
+            }
         }
 
         alias setupFuns = Filter!(isSetupFun, allFuns);
