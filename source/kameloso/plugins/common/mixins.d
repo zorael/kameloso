@@ -65,8 +65,10 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
     static if ((paramNames.length == 0) || !is(typeof(mixin(paramNames[0])) : IRCPlugin))
     {
-        static assert(0, "`WHOISFiberDelegate` should be mixed into the context of an event handler. " ~
-            "(First parameter of `" ~ __FUNCTION__ ~ "` is not an `IRCPlugin` or subclass)");
+        import std.format : format;
+        enum pattern = "`WHOISFiberDelegate` should be mixed into the context of an event handler. " ~
+            "(First parameter of `%s` is not an `IRCPlugin` subclass)";
+        static assert(0, pattern.format(__FUNCTION__));
     }
     else
     {
@@ -862,10 +864,11 @@ unittest
             {
                 //pragma(msg, "ignoring " ~ funstring);
             }
-            else
+            else static if (!__traits(compiles, typeof(mixin("plugin2.fromMixin." ~ funstring))))
             {
-                enum message = "`MessageProxy` is missing a wrapper for `kameloso.messaging." ~ funstring ~ "`";
-                static assert(__traits(compiles, typeof(mixin("plugin2.fromMixin." ~ funstring))), message);
+                import std.format : format;
+                enum pattern = "`MessageProxy` is missing a wrapper for `kameloso.messaging.%s`";
+                static assert(0, pattern.format(funstring));
             }
         }
     }

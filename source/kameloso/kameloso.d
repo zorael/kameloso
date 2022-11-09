@@ -399,9 +399,9 @@ public:
             }
             else
             {
-                import std.conv : text;
-                static assert(0, text("Invalid `PluginModules` entry in `plugins/package.d`: `",
-                    moduleName, '`'));
+                import std.format : format;
+                enum pattern = "Invalid `PluginModules` entry in `plugins/package.d`: `%s`";
+                static assert(0, pattern.format(moduleName));
             }
         }
 
