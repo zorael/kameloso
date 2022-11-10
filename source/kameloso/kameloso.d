@@ -33,19 +33,38 @@ private:
      +/
     static struct Throttle
     {
-        /// Origo of x-axis (last sent message).
+        // t0
+        /++
+            Origo of x-axis (last sent message).
+         +/
         SysTime t0;
 
-        /// y at t0 (ergo y at x = 0, weight at last sent message).
+
+        // m
+        /++
+            y at t0 (ergo y at x = 0, weight at last sent message).
+         +/
         double m = 0.0;
 
-        /// Increment to y on sent message.
+
+        // increment
+        /++
+            Increment to y on sent message.
+         +/
         enum increment = 1.0;
 
-        /// Don't copy this, just keep one instance.
+
+        // this(this)
+        /++
+            Don't copy this, just keep one instance.
+         +/
         @disable this(this);
 
-        /// Resets the throttle values in-place.
+
+        // reset
+        /++
+            Resets the throttle values in-place.
+         +/
         void reset()
         {
             t0 = SysTime.init;
@@ -53,19 +72,25 @@ private:
         }
     }
 
+
+    // privateConnectionID
     /++
         Numeric ID of the current connection, to disambiguate between multiple
         connections in one program run. Private value.
      +/
     shared static uint privateConnectionID;
 
+
 public:
+    // conn
     /++
         The [kameloso.net.Connection|Connection] that houses and wraps the socket
         we use to connect to, write to and read from the server.
      +/
     Connection conn;
 
+
+    // plugins
     /++
         A runtime array of all plugins. We iterate these when we have finished
         parsing an [dialect.defs.IRCEvent|IRCEvent], and call the relevant event
@@ -73,43 +98,67 @@ public:
      +/
     IRCPlugin[] plugins;
 
+
+    // settings
     /++
         The root copy of the program-wide settings.
      +/
     CoreSettings settings;
 
+
+    // connSettings
     /++
         Settings relating to the connection between the bot and the IRC server.
      +/
     ConnectionSettings connSettings;
 
+
+    // previousWhoisTimestamps
     /++
         An associative array o fwhen a nickname was last issued a WHOIS query for,
         UNIX timestamps by nickname key, for hysteresis and rate-limiting.
      +/
     long[string] previousWhoisTimestamps;
 
-    /// Parser instance.
+
+    // parser
+    /++
+        Parser instance.
+     +/
     IRCParser parser;
 
-    /// IRC bot values and state.
+
+    // bot
+    /++
+        IRC bot values and state.
+     +/
     IRCBot bot;
 
-    /// Values and state needed to throttle sending messages.
+
+    // throttle
+    /++
+        Values and state needed to throttle sending messages.
+     +/
     Throttle throttle;
 
+
+    // abort
     /++
         When this is set by signal handlers, the program should exit. Other
         parts of the program will be monitoring it.
      +/
     bool* abort;
 
+
+    // wantLiveSummary
     /++
         When this is set, the main loop should print a connection summary upon
         the next iteration. It is transient.
      +/
     bool wantLiveSummary;
 
+
+    // outbuffer
     /++
         Buffer of outgoing message strings.
 
@@ -118,6 +167,8 @@ public:
      +/
     Buffer!(OutgoingLine, No.dynamic, BufferSize.outbuffer) outbuffer;
 
+
+    // backgroundBuffer
     /++
         Buffer of outgoing background message strings.
 
@@ -134,6 +185,8 @@ public:
      +/
     Buffer!(OutgoingLine, No.dynamic, BufferSize.priorityBuffer) priorityBuffer;
 
+
+    // immediateBuffer
     /++
         Buffer of outgoing message strings to be sent immediately.
 
@@ -142,8 +195,10 @@ public:
      +/
     Buffer!(OutgoingLine, No.dynamic, BufferSize.priorityBuffer) immediateBuffer;
 
+
     version(TwitchSupport)
     {
+        // fastbuffer
         /++
             Buffer of outgoing fast message strings, used on Twitch servers.
 
@@ -153,26 +208,36 @@ public:
         Buffer!(OutgoingLine, No.dynamic, BufferSize.outbuffer*2) fastbuffer;
     }
 
+
+    // missingConfigurationEntries
     /++
         Associative array of string arrays of expected configuration entries
         that were missing.
      +/
     string[][string] missingConfigurationEntries;
 
+
+    // invalidConfigurationEntries
     /++
         Associative array of string arrays of unexpected configuration entries
         that did not belong.
      +/
     string[][string] invalidConfigurationEntries;
 
+
+    // customSettings
     /++
         Custom settings specfied at the command line with the `--set` parameter.
      +/
     string[] customSettings;
 
+
+    // this(this)
     /// Never copy this.
     @disable this(this);
 
+
+    // connectionID
     /++
         Numeric ID of the current connection, to disambiguate between multiple
         connections in one program run. Accessor.
@@ -186,6 +251,8 @@ public:
         return privateConnectionID;
     }
 
+
+    // generateNewConnectionID
     /++
         Generates a new connection ID.
 
@@ -206,6 +273,7 @@ public:
             while (privateConnectionID == previous);
         }
     }
+
 
     // throttleline
     /++
@@ -713,14 +781,24 @@ public:
         ulong bytesReceived;
     }
 
-    /// History records of established connections this execution run.
+
+    // connectionHistory
+    /++
+        History records of established connections this execution run.
+     +/
     ConnectionHistoryEntry[] connectionHistory;
 
-    /// Set when the Socket read timeout was requested to be shortened.
+
+    // wantReceiveTimeoutShortened
+    /++
+        Set when the Socket read timeout was requested to be shortened.
+     +/
     bool wantReceiveTimeoutShortened;
+
 
     version(TwitchSupport)
     {
+        // sawWelcome
         /++
             Set when an [dialect.defs.IRCEvent.Type.RPL_WELCOME|RPL_WELCOME]
             event was encountered.
@@ -745,45 +823,83 @@ private:
 public:
     version(Colours)
     {
-        bool monochrome = false;  /// Logger monochrome setting.
+        // monochrome colours
+        /++
+            Logger monochrome setting.
+         +/
+        bool monochrome = false;
     }
     else
     {
-        bool monochrome = true;  /// Non-colours version defaults to true.
+        // monochrome non-colours
+        /++
+            Non-colours version defaults to true.
+         +/
+        bool monochrome = true;
     }
 
-    /// Flag denoting that the terminal has a bright background.
+
+    // brightTerminal
+    /++
+        Flag denoting that the terminal has a bright background.
+     +/
     bool brightTerminal = false;
 
-    /// Flag denoting that usermasks should be used instead of accounts to authenticate users.
+
+    // preferHostmasks
+    /++
+        Flag denoting that usermasks should be used instead of accounts to authenticate users.
+     +/
     bool preferHostmasks = false;
 
-    /// Whether or not to hide outgoing messages, not printing them to screen.
+
+    // hideOutgoing
+    /++
+        Whether or not to hide outgoing messages, not printing them to screen.
+     +/
     bool hideOutgoing = false;
 
-    /// Whether or not to add colours to outgoing messages.
+
+    // colouredOutgoing
+    /++
+        Whether or not to add colours to outgoing messages.
+     +/
     bool colouredOutgoing = true;
 
-    /// Flag denoting that we should save configuration changes to file on exit.
+
+    // saveOnExit
+    /++
+        Flag denoting that we should save configuration changes to file on exit.
+     +/
     bool saveOnExit = false;
 
-    /// Whether or not to display a connection summary on program exit.
+
+    // exitSummary
+    /++
+        Whether or not to display a connection summary on program exit.
+     +/
     bool exitSummary = false;
+
 
     @Hidden
     {
+        // eagerLookups
         /++
             Whether to eagerly and exhaustively WHOIS all participants in home channels,
             or to do a just-in-time lookup when needed.
          +/
         bool eagerLookups = false;
 
+
+        // headless
         /++
             Whether or not to be "headless", disabling all terminal output.
          +/
         bool headless;
     }
 
+
+    // resourceDirectory
     /++
         Path to resource directory.
      +/
@@ -791,6 +907,8 @@ public:
     @CannotContainComments
     string resourceDirectory;
 
+
+    // prefix
     /++
         Character(s) that prefix a bot chat command.
 
@@ -800,33 +918,44 @@ public:
      +/
     @Quoted string prefix = "!";
 
+
     @Unserialisable
     {
+        // configFile
         /++
             Main configuration file.
          +/
         string configFile;
 
+
+        // configDirectory
         /++
             Path to configuration directory.
          +/
         string configDirectory;
 
+
+        // force
         /++
             Whether or not to force connecting, skipping some sanity checks.
          +/
         bool force;
 
+
+        // flush
         /++
             Whether or not to explicitly set stdout to flush after writing a linebreak to it.
          +/
         bool flush;
 
+        // trace
         /++
             Whether or not *all* outgoing messages should be echoed to the terminal.
          +/
         bool trace;
 
+
+        // numericAddresses
         /++
             Whether to print addresses as IPs or as hostnames (where applicable).
          +/
@@ -846,34 +975,65 @@ private:
     import lu.uda : CannotContainComments, Hidden;
 
 public:
-    /// Whether to connect to IPv6 addresses or only use IPv4 ones.
+    // ipv6
+    /++
+        Whether to connect to IPv6 addresses or only use IPv4 ones.
+     +/
     bool ipv6 = true;
+
 
     @CannotContainComments
     @Hidden
     {
-        /// Path to private (`.pem`) key file, used in SSL connections.
+        // privateKeyFile
+        /++
+            Path to private (`.pem`) key file, used in SSL connections.
+         +/
         string privateKeyFile;
 
-        /// Path to certificate (`.pem`) file.
+
+        // certFile
+        /++
+            Path to certificate (`.pem`) file.
+         +/
         string certFile;
 
-        /// Path to certificate bundle `cacert.pem` file or equivalent.
+
+        // caBundleFile
+        /++
+            Path to certificate bundle `cacert.pem` file or equivalent.
+         +/
         string caBundleFile;
     }
 
-    /// Whether or not to attempt an SSL connection.
+    // ssl
+    /++
+        Whether or not to attempt an SSL connection.
+     +/
     bool ssl = false;
+
 
     @Hidden
     {
-        /// Socket receive timeout in milliseconds (how often to check for concurrency messages).
+        // receiveTimeout
+        /++
+            Socket receive timeout in milliseconds (how often to check for concurrency messages).
+         +/
         uint receiveTimeout = Timeout.receiveMsecs;
 
-        /// How many messages to send per second, maximum.
+
+        // messageRate
+        /++
+            How many messages to send per second, maximum.
+         +/
         double messageRate = ConnectionDefaultFloats.messageRate;
 
-        /// How many messages to immediately send in one go, before throttling kicks in.
+
+        // messageBurst
+        /++
+            How many messages to immediately send in one go, before throttling kicks in.
+
+         +/
         double messageBurst = ConnectionDefaultFloats.messageBurst;
     }
 }
@@ -890,40 +1050,73 @@ private:
     import lu.uda : CannotContainComments, Hidden, Separator, Unserialisable;
 
 public:
-    /// Username to use as services account login name.
+    // account
+    /++
+        Username to use as services account login name.
+     +/
     string account;
+
 
     @Hidden
     @CannotContainComments
     {
-        /// Password for services account.
+        // password
+        /++
+            Password for services account.
+         +/
         string password;
 
-        /// Login `PASS`, different from `SASL` and services.
+
+        // pass
+        /++
+            Login `PASS`, different from `SASL` and services.
+         +/
         string pass;
 
-        /// Default reason given when quitting and not specifying a reason text.
+
+        // quitReason
+        /++
+            Default reason given when quitting and not specifying a reason text.
+         +/
         string quitReason;
 
-        /// Default reason given when parting a channel and not specifying a reason text.
+
+        // partReason
+        /++
+            Default reason given when parting a channel and not specifying a reason text.
+         +/
         string partReason;
     }
+
 
     @Separator(",")
     @Separator(" ")
     {
-        /// The nickname services accounts of administrators, in a bot-like context.
+        // admins
+        /++
+            The nickname services accounts of administrators, in a bot-like context.
+         +/
         string[] admins;
 
-        /// List of home channels for the bot to operate in.
+
+        // homeChannels
+        /++
+            List of home channels for the bot to operate in.
+         +/
         @CannotContainComments
         string[] homeChannels;
 
-        /// Currently inhabited non-home guest channels.
+
+        // guestChannels
+        /++
+            Currently inhabited non-home guest channels.
+         +/
         @CannotContainComments
         string[] guestChannels;
     }
 
+
+    // hasGuestNickname
     /++
         Whether or not we connected without an explicit nickname, and a random
         guest such was generated.
