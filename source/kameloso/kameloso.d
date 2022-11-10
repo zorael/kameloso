@@ -297,7 +297,7 @@ public:
 
             if (dryRun) break;
 
-            if (settings.trace || !buffer.front.quiet)
+            if (!settings.headless && (settings.trace || !buffer.front.quiet))
             {
                 bool printed;
 
