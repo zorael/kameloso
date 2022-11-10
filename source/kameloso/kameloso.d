@@ -193,10 +193,17 @@ public:
      +/
     void generateNewConnectionID() @safe
     {
+        import std.random : uniform;
+
         synchronized //()
         {
-            import std.random : uniform;
-            privateConnectionID = uniform(1, 1001);
+            immutable previous = privateConnectionID;
+
+            do
+            {
+                privateConnectionID = uniform(1, 1001);
+            }
+            while (privateConnectionID == previous);
         }
     }
 
