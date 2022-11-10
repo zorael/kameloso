@@ -363,7 +363,7 @@ public:
                     {
                         import std.format : format;
                         enum pattern = "Plugin module `%s.base` (inferred from listing `%1$s`" ~
-                            "in `plugins/package.d`) fails to compile";
+                            "in `plugins/package.d`) is missing or fails to compile";
                         static assert(0, pattern.format(module_));
                     }
 
@@ -374,7 +374,8 @@ public:
                     static if (!__traits(compiles, { mixin("static import " ~ module_ ~ ";"); }))
                     {
                         import std.format : format;
-                        enum pattern = "Plugin module `%s` (listed in `plugins/package.d`) fails to compile";
+                        enum pattern = "Plugin module `%s` (listed in `plugins/package.d`) " ~
+                            "is missing or fails to compile";
                         static assert(0, pattern.format(module_));
                     }
 
