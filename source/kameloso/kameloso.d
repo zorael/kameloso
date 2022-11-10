@@ -524,7 +524,7 @@ public:
         plugins are enabled, but in all other cases they are skipped if so.
 
         Params:
-            signal = String name of call to issue to all plugins.
+            call = String name of call to issue to all plugins.
      +/
     private void issuePluginCallImpl(string call)()
     if (call.among!("setup", "start", "reload", "initResources"))
@@ -535,7 +535,6 @@ public:
             {
                 // Always init resources, even if the plugin is disabled
                 mixin("plugin." ~ call ~ "();");
-
             }
             else
             {
