@@ -25,6 +25,7 @@ private:
     import dialect.defs : IRCClient, IRCServer;
     import dialect.parsing : IRCParser;
     import lu.container : Buffer;
+    import std.algorithm.comparison : among;
     import std.datetime.systime : SysTime;
 
     // Throttle
@@ -513,6 +514,47 @@ public:
     }
 
 
+    // issuePluginCallImpl
+    /++
+        Issues a call to all plugins, where such a call is one of "setup",
+        "start", "initResources" or "reload". This invokes their module-level
+        functions of the same name, where available.
+
+        In the case of "initResources", the call does not care whether the
+        plugins are enabled, but in all other cases they are skipped if so.
+
+        Params:
+            signal = String name of call to issue to all plugins.
+     +/
+    private void issuePluginCallImpl(string call)()
+    if (call.among!("setup", "start", "reload", "initResources"))
+    {
+        foreach (plugin; plugins)
+        {
+            static if (call == "initResources")
+            {
+                // Always init resources, even if the plugin is disabled
+                mixin("plugin." ~ call ~ "();");
+
+            }
+            else
+            {
+                if (!plugin.isEnabled) continue;
+
+                mixin("plugin." ~ call ~ "();");
+                checkPluginForUpdates(plugin);
+            }
+        }
+    }
+
+
+    // setupPlugins
+    /++
+        Sets up all plugins, calling any module-level `setup` functions.
+     +/
+    alias setupPlugins = issuePluginCallImpl!"setup";
+
+
     // initPluginResources
     /++
         Initialises all plugins' resource files.
@@ -521,13 +563,27 @@ public:
         [kameloso.plugins.common.core.IRCPlugin.initResources|IRCPlugin.initResources]
         on each plugin.
      +/
-    void initPluginResources() @system
-    {
-        foreach (plugin; plugins)
-        {
-            plugin.initResources();
-        }
-    }
+    alias initPluginResources = issuePluginCallImpl!"initResources";
+
+
+    // startPlugins
+    /++
+        Starts all plugins by calling any module-level `start` functions.
+
+        This happens after connection has been established.
+
+        Don't start disabled plugins.
+     +/
+    alias startPlugins = issuePluginCallImpl!"start";
+
+
+    // reloadPlugins
+    /++
+        Reloads all plugins by calling any module-level `reload` functions.
+
+        What this actually does is up to the plugins.
+     +/
+    alias reloadPlugins = issuePluginCallImpl!"reload";
 
 
     // teardownPlugins
@@ -584,47 +640,6 @@ public:
 
         // Zero out old plugins array
         plugins = null;
-    }
-
-
-    // setupPlugins
-    /++
-        Sets up all plugins, calling any module-level `setup` functions.
-
-        This has to happen after [initPlugins] or there will not be any plugins
-        in the [plugins] array.
-
-        Don't setup disabled plugins.
-     +/
-    void setupPlugins() @system
-    {
-        foreach (plugin; plugins)
-        {
-            if (!plugin.isEnabled) continue;
-
-            plugin.setup();
-            checkPluginForUpdates(plugin);
-        }
-    }
-
-
-    // startPlugins
-    /++
-        Starts all plugins by calling any module-level `start` functions.
-
-        This happens after connection has been established.
-
-        Don't start disabled plugins.
-     +/
-    void startPlugins() @system
-    {
-        foreach (plugin; plugins)
-        {
-            if (!plugin.isEnabled) continue;
-
-            plugin.start();
-            checkPluginForUpdates(plugin);
-        }
     }
 
 
