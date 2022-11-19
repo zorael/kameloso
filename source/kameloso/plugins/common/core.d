@@ -1777,7 +1777,7 @@ mixin template IRCPluginImpl(
             {
                 immutable uda = getUDAs!(fun, IRCEventHandler)[0];
 
-                static foreach (const command; uda._commands)
+                static foreach (immutable command; uda._commands)
                 {{
                     enum key = command._word;
                     commandAA[key] = IRCPlugin.CommandMetadata
