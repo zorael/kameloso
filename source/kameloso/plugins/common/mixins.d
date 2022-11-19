@@ -78,7 +78,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         mixin("alias context = ", paramNames[0], ";");
     }
 
-    static if (__traits(compiles, hasWHOISFiber))
+    static if (__traits(compiles, { alias _ = hasWHOISFiber; }))
     {
         import std.format : format;
         enum pattern = "Double mixin of `%s` in `%s`";
@@ -90,7 +90,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         enum hasWHOISFiber = true;
     }
 
-    static if (!alwaysLookup && !__traits(compiles, .hasUserAwareness))
+    static if (!alwaysLookup && !__traits(compiles, { alias _ = .hasUserAwareness; }))
     {
         pragma(msg, "Warning: `" ~ __FUNCTION__ ~ "` mixes in `WHOISFiberDelegate` " ~
             "but its parent module does not mix in `UserAwareness`");
@@ -330,7 +330,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                     }
                 }
 
-                static if (__traits(compiles, .hasUserAwareness))
+                static if (__traits(compiles, { alias _ = .hasUserAwareness; }))
                 {
                     if (const user = nickname in context.state.users)
                     {
@@ -383,7 +383,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             }
         }
 
-        static if (!alwaysLookup && __traits(compiles, .hasUserAwareness))
+        static if (!alwaysLookup && __traits(compiles, { alias _ = .hasUserAwareness; }))
         {
             if (const user = nickname in context.state.users)
             {
@@ -522,7 +522,7 @@ private:
             messagingParentInfo.fqn, "MessagingProxy"));
     }
 
-    static if (__traits(compiles, this.hasMessagingProxy))
+    static if (__traits(compiles, { alias _ = this.hasMessagingProxy; }))
     {
         import std.format : format;
         enum pattern = "Double mixin of `%s` in `%s`";
@@ -864,7 +864,7 @@ unittest
             {
                 //pragma(msg, "ignoring " ~ funstring);
             }
-            else static if (!__traits(compiles, typeof(mixin("plugin2.fromMixin." ~ funstring))))
+            else static if (!__traits(compiles, { alias _ = mixin("plugin2.fromMixin." ~ funstring); }))
             {
                 import std.format : format;
                 enum pattern = "`MessageProxy` is missing a wrapper for `kameloso.messaging.%s`";

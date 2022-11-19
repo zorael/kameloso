@@ -278,7 +278,7 @@ mixin template UserAwareness(
      +/
     package enum hasUserAwareness = true;
 
-    static if (!__traits(compiles, .hasMinimalAuthentication))
+    static if (!__traits(compiles, { alias _ = .hasMinimalAuthentication; }))
     {
         mixin kameloso.plugins.common.awareness.MinimalAuthentication!(debug_, module_);
     }
@@ -546,7 +546,7 @@ void onUserAwarenessCatchSender(ChannelPolicy channelPolicy)
                 break;
             }
 
-            static if (__traits(compiles, .hasChannelAwareness))
+            static if (__traits(compiles, { alias _ = .hasChannelAwareness; }))
             {
                 // Catch the user if it's visible in some channel we're in.
 
@@ -757,7 +757,7 @@ mixin template ChannelAwarenessImpl(
     private import kameloso.plugins.common.awareness;
     private import dialect.defs : IRCEvent;
 
-    static if (!__traits(compiles, .hasUserAwareness))
+    static if (!__traits(compiles, { alias _ = .hasUserAwareness; }))
     {
         private import std.format : format;
 
@@ -1468,7 +1468,7 @@ mixin template TwitchAwareness(
      +/
     package enum hasTwitchAwareness = true;
 
-    static if (!__traits(compiles, .hasChannelAwareness))
+    static if (!__traits(compiles, { alias _ = .hasChannelAwareness; }))
     {
         private import std.format : format;
 
@@ -1672,7 +1672,7 @@ mixin template TwitchAwareness(
      +/
     package enum hasTwitchAwareness = true;
 
-    static if (!__traits(compiles, .hasChannelAwareness))
+    static if (!__traits(compiles, { alias _ = .hasChannelAwareness; }))
     {
         private import std.format : format;
 

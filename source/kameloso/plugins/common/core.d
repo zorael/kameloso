@@ -312,7 +312,7 @@ mixin template IRCPluginImpl(
             pluginImplParentInfo.fqn, "IRCPluginImpl"));
     }
 
-    static if (__traits(compiles, this.hasIRCPluginImpl))
+    static if (__traits(compiles, { alias _ = this.hasIRCPluginImpl; }))
     {
         import std.format : format;
         enum pattern = "Double mixin of `%s` in `%s`";
@@ -623,7 +623,7 @@ mixin template IRCPluginImpl(
             }
 
             static if ((uda._permissionsRequired != Permissions.ignore) &&
-                !__traits(compiles, .hasMinimalAuthentication))
+                !__traits(compiles, { alias _ = .hasMinimalAuthentication; }))
             {
                 import std.format : format;
 
@@ -1395,7 +1395,7 @@ mixin template IRCPluginImpl(
             }
         }
 
-        static if (__traits(compiles, .initialise))
+        static if (__traits(compiles, { alias _ = .initialise; }))
         {
             import lu.traits : TakesParams;
 
@@ -1422,7 +1422,7 @@ mixin template IRCPluginImpl(
      +/
     override public void postprocess(ref IRCEvent event) @system
     {
-        static if (__traits(compiles, .postprocess))
+        static if (__traits(compiles, { alias _ = .postprocess; }))
         {
             import lu.traits : TakesParams;
 
@@ -1462,7 +1462,7 @@ mixin template IRCPluginImpl(
      +/
     override public void initResources() @system
     {
-        static if (__traits(compiles, .initResources))
+        static if (__traits(compiles, { alias _ = .initResources; }))
         {
             import lu.traits : TakesParams;
 
@@ -1676,7 +1676,7 @@ mixin template IRCPluginImpl(
          +/
         override public void ` ~ funName ~ `() @system
         {
-            static if (__traits(compiles, .` ~ funName ~ `))
+            static if (__traits(compiles, { alias _ = .` ~ funName ~ `; }))
             {
                 import lu.traits : TakesParams;
 
@@ -1883,7 +1883,7 @@ mixin template IRCPluginImpl(
      +/
     override public void onBusMessage(const string header, shared Sendable content) @system
     {
-        static if (__traits(compiles, .onBusMessage))
+        static if (__traits(compiles, { alias _ = .onBusMessage; }))
         {
             import lu.traits : TakesParams;
 
