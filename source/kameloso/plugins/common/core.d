@@ -1811,7 +1811,7 @@ mixin template IRCPluginImpl(
                         {
                             static if (command._syntaxes.length)
                             {
-                                commandAA[key].syntaxes ~= command._syntaxes;
+                                commandAA[key].syntaxes ~= command._syntaxes.dup;
                             }
                             else
                             {
