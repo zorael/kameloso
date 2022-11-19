@@ -128,7 +128,7 @@ unittest
 
     version(OSX)
     {
-        assert(cfgd.endsWith("Library/Application Support"), cfgd);
+        assert(cfgd.endsWith("Library/Preferences"), cfgd);
     }
     else version(Posix)
     {
