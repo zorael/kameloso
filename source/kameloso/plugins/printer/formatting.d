@@ -1272,6 +1272,8 @@ void highlightEmotesImpl(Sink)
 if (isOutputRange!(Sink, char[]))
 {
     import std.algorithm.iteration : splitter;
+    import std.algorithm.sorting : sort;
+    import std.array : Appender;
     import std.conv : to;
 
     static struct Highlight
@@ -1284,12 +1286,11 @@ if (isOutputRange!(Sink, char[]))
     // max encountered emotes so far: 46
     // Severely pathological let's-crash-the-bot case: max possible ~161 emotes
     // That is a standard PRIVMSG line with ":) " repeated until 512 chars.
-    // Highlight[162].sizeof == 2592, manageable stack size.
-    enum maxHighlights = 162;
+    //enum maxHighlights = 162;
 
-    Highlight[maxHighlights] highlights;
+    Appender!(Highlight[]) highlights;
+    highlights.reserve(64);
 
-    size_t numHighlights;
     size_t pos;
 
     foreach (emote; emotes.splitter('/'))
@@ -1302,37 +1303,33 @@ if (isOutputRange!(Sink, char[]))
         {
             import std.string : indexOf;
 
-            if (numHighlights == maxHighlights) break;  // too many, don't go out of bounds.
-
             immutable dashPos = location.indexOf('-');
             immutable start = location[0..dashPos].to!size_t;
             immutable end = location[dashPos+1..$].to!size_t + 1;  // inclusive
 
-            highlights[numHighlights++] = Highlight(emoteID, start, end);
+            highlights.put(Highlight(emoteID, start, end));
         }
     }
 
-    import std.algorithm.sorting : sort;
-    highlights[0..numHighlights].sort!((a, b) => a.start < b.start)();
+    const sortedHighlights = highlights.data
+        .dup
+        .sort!((a, b) => a.start < b.start)()
+        .release();
 
     // We need a dstring since we're slicing something that isn't necessarily ASCII
     // Without this highlights become offset a few characters depending on the text
     immutable dline = line.to!dstring;
 
-    foreach (immutable i; 0..numHighlights)
+    foreach (const highlight; sortedHighlights)
     {
         import kameloso.terminal.colours : getColourByHash, colourWith;
 
-        immutable id = highlights[i].id;
-        immutable start = highlights[i].start;
-        immutable end = highlights[i].end;
-
-        sink.put(dline[pos..start]);
-        sink.colourWith(colourful ? getColourByHash(id, brightTerminal) : pre);
-        sink.put(dline[start..end]);
+        sink.put(dline[pos..highlight.start]);
+        sink.colourWith(colourful ? getColourByHash(highlight.id, brightTerminal) : pre);
+        sink.put(dline[highlight.start..highlight.end]);
         sink.colourWith(post);
 
-        pos = end;
+        pos = highlight.end;
     }
 
     // Add the remaining tail from after the last emote
