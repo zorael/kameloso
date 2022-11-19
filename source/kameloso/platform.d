@@ -95,8 +95,10 @@ auto configurationBaseDirectory()
     version(OSX)
     {
         import std.path : buildNormalizedPath;
-        return buildNormalizedPath(environment["HOME"], "Library",
-            "Application Support");
+        return buildNormalizedPath(
+            environment["HOME"],
+            "Library",
+            "Preferences");
     }
     else version(Posix)
     {
@@ -157,7 +159,7 @@ unittest
 
     On macOS it defaults to `$HOME/Library/Application Support`.
 
-    On Windows it defaults to `%APPDATA%`.
+    On Windows it defaults to `%LOCALAPPDATA%`.
 
     Returns:
         A string path to the default resource base directory.
@@ -169,7 +171,9 @@ auto resourceBaseDirectory()
     version(OSX)
     {
         import std.path : buildNormalizedPath;
-        return buildNormalizedPath(environment["HOME"], "Library",
+        return buildNormalizedPath(
+            environment["HOME"],
+            "Library",
             "Application Support");
     }
     else version(Posix)
@@ -180,8 +184,8 @@ auto resourceBaseDirectory()
     }
     else version(Windows)
     {
-        // Blindly assume %APPDATA% is defined
-        return environment["APPDATA"];
+        // Blindly assume %LOCALAPPDATA% is defined
+        return environment["LOCALAPPDATA"];
     }
     else
     {
@@ -215,7 +219,7 @@ unittest
     else version(Windows)
     {
         immutable rbd = resourceBaseDirectory;
-        assert(rbd.endsWith("\\Roaming"), rbd);
+        assert(rbd.endsWith("\\Local"), rbd);
     }
 }
 
