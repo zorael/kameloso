@@ -864,7 +864,7 @@ unittest
             {
                 //pragma(msg, "ignoring " ~ funstring);
             }
-            else static if (!__traits(compiles, { alias _ = mixin("plugin2.fromMixin." ~ funstring); }))
+            else static if (!__traits(compiles, { mixin("alias _ = plugin2.fromMixin." ~ funstring ~ ";"); }))
             {
                 import std.format : format;
                 enum pattern = "`MessageProxy` is missing a wrapper for `kameloso.messaging.%s`";
