@@ -2698,35 +2698,13 @@ void initResources(TwitchPlugin plugin)
     immutable subdir = plugin.ecountFile.dirName;
     if (!subdir.exists) mkdir(subdir);
 
-    immutable oldEcount = buildNormalizedPath(
-        plugin.state.settings.resourceDirectory,
-        "twitch-ecount.json");
-    immutable hasOldEcount = oldEcount.exists;
-    immutable ecountFile = hasOldEcount ? oldEcount : plugin.ecountFile;
-
-    immutable oldViewers = buildNormalizedPath(
-        plugin.state.settings.resourceDirectory,
-        "twitch-viewers.json");
-    immutable hasOldViewers = oldViewers.exists;
-    immutable viewersFile = hasOldViewers ? oldViewers : plugin.viewersFile;
-
-    immutable oldSecrets = buildNormalizedPath(
-        plugin.state.settings.resourceDirectory,
-        "twitch-secrets.json");
-    immutable hasOldSecrets = oldSecrets.exists;
-    immutable secretsFile = hasOldSecrets ? oldSecrets : plugin.secretsFile;
-
-    loadFile(ecountJSON, ecountFile);
-    loadFile(viewersJSON, viewersFile);
-    loadFile(secretsJSON, secretsFile);
+    loadFile(ecountJSON, plugin.ecountFile);
+    loadFile(viewersJSON, plugin.viewersFile);
+    loadFile(secretsJSON, plugin.secretsFile);
 
     ecountJSON.save(plugin.ecountFile);
     viewersJSON.save(plugin.viewersFile);
     secretsJSON.save(plugin.secretsFile);
-
-    if (hasOldEcount) remove(oldEcount);
-    if (hasOldViewers) remove(oldViewers);
-    if (hasOldSecrets) remove(oldSecrets);
 }
 
 
