@@ -431,38 +431,41 @@ public:
 
         foreach (immutable module_; PluginModules)
         {
-            static if (is(typeof(module_) : string) && module_.length)
+            static if (module_.length)
             {
                 static if (__traits(compiles, { mixin("alias thisModule = " ~ module_ ~ ".base;"); }))
                 {
                     static if (!__traits(compiles, { mixin("static import " ~ module_ ~ ".base;"); }))
                     {
                         import std.format : format;
-                        enum pattern = "Plugin module `%s.base` (inferred from listing `%1$s`" ~
-                            "in `plugins/package.d`) is missing or fails to compile";
+                        enum pattern = "Plugin module `%s.base` (inferred from listing `%1$s` " ~
+                            "in `plugins/package.d`) fails to compile";
                         static assert(0, pattern.format(module_));
                     }
-
-                    mixin("static import pluginModule = " ~ module_ ~ ".base;");
+                    else
+                    {
+                        alias PluginModule = PluginModuleInfo!(module_ ~ ".base");
+                    }
                 }
-                else
+                else static if (__traits(compiles, { mixin("alias thisModule = " ~ module_ ~ ";"); }))
                 {
                     static if (!__traits(compiles, { mixin("static import " ~ module_ ~ ";"); }))
                     {
                         import std.format : format;
                         enum pattern = "Plugin module `%s` (listed in `plugins/package.d`) " ~
-                            "is missing or fails to compile";
+                            "fails to compile";
                         static assert(0, pattern.format(module_));
                     }
-
-                    mixin("static import pluginModule = " ~ module_ ~ ";");
+                    else
+                    {
+                        alias PluginModule = PluginModuleInfo!module_;
+                    }
                 }
-
-                alias PluginModule = PluginModuleInfo!module_;
 
                 static if (!PluginModule.hasPluginClass)
                 {
                     // No class in module, so just ignore it
+                    //pragma(msg, "Versioned-out or dummy plugin: " ~ module_);
                 }
                 else static if (__traits(compiles, new PluginModule.Class(state)))
                 {
@@ -474,12 +477,6 @@ public:
                     enum pattern = "`%s.%s` constructor does not compile";
                     static assert(0, pattern.format(module_, PluginModule.className));
                 }
-            }
-            else
-            {
-                import std.format : format;
-                enum pattern = "Invalid `PluginModules` entry in `plugins/package.d`: `%s`";
-                static assert(0, pattern.format(module_));
             }
         }
 
