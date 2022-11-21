@@ -22,8 +22,6 @@ public:
 
     A plugin can be completely disabled by removing/commenting out its entry here,
     or by adding a `version(none):` or `__EOF__` to the top of the file.
-    The module declaration *must* be kept however, or the compiler will stop due
-    to the below not being possible to be resolved to valid modules.
  +/
 alias PluginModules = AliasSeq!(
     "kameloso.plugins.services.persistence",
