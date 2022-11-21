@@ -27,9 +27,9 @@ import dialect.defs;
 // postprocess
 /++
     Hijacks a reference to a [dialect.defs.IRCEvent|IRCEvent] after parsing and
-    fleshes out the [dialect.defs.IRCEvent.sender] and/or
-    [dialect.defs.IRCEvent.target] fields, so that things like account names
-    that are only sent sometimes carry over.
+    fleshes out the [dialect.defs.IRCEvent.sender|IRCEvent.sender] and/or
+    [dialect.defs.IRCEvent.target|IRCEvent.target] fields, so that things like
+    account names that are only sent sometimes carry over.
 
     Merely leverages [postprocessCommon].
  +/
@@ -502,7 +502,7 @@ void maybeRehash(PersistenceService service)
 // reload
 /++
     Reloads the service, rehashing the user array and loading
-    admin/whitelist/blacklist classifier definitions from disk.
+    admin/staff/operator/elevated/whitelist/blacklist classifier definitions from disk.
  +/
 void reload(PersistenceService service)
 {
@@ -675,8 +675,8 @@ void initResources(PersistenceService service)
     Reads, completes and saves the user classification JSON file, creating one
     if one doesn't exist. Removes any duplicate entries.
 
-    This ensures there will be "whitelist", "operator", "staff" and "blacklist"
-    arrays in it.
+    This ensures there will be "staff", "operator", "elevated", "whitelist"
+    and "blacklist" arrays in it.
 
     Params:
         service = The current [PersistenceService].
@@ -803,8 +803,7 @@ void initAccountResources(PersistenceService service)
 
 // initHostmaskResources
 /++
-    Reads, completes and saves the hostmasks JSON file, creating one if it
-    doesn't exist.
+    Reads, completes and saves the hostmasks JSON file, creating one if it doesn't exist.
 
     Throws:
         [kameloso.plugins.common.misc.IRCPluginInitialisationException|IRCPluginInitialisationException]

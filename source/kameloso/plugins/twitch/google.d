@@ -292,7 +292,7 @@ Follow the instructions and log in to authorise the use of this program with you
 
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
-        creds = Credentials aggregate.
+        creds = [Credentials] aggregate.
         videoID = YouTube video ID of the video to add.
         recursing = Whether or not the function is recursing into itself.
 
@@ -433,7 +433,7 @@ in (Fiber.getThis, "Tried to call `addVideoToYouTubePlaylist` from outside a Fib
 
     Params:
         client = [arsd.http2.HttpClient|HttpClient] to use.
-        creds = Credentials aggregate.
+        creds = [Credentials] aggregate.
         code = Google authorization code.
 
     Throws:
@@ -495,7 +495,7 @@ void getGoogleTokens(HttpClient client, ref Credentials creds, const string code
 
     Params:
         client = [arsd.http2.HttpClient|HttpClient] to use.
-        creds = Credentials aggregate.
+        creds = [Credentials] aggregate.
 
     Throws:
         [kameloso.plugins.twitch.common.UnexpectedJSONException|UnexpectedJSONException]
@@ -543,7 +543,7 @@ void refreshGoogleToken(HttpClient client, ref Credentials creds)
 
     Params:
         client = [arsd.http2.HttpClient|HttpClient] to use.
-        creds = Credentials aggregate.
+        creds = [Credentials] aggregate.
 
     Returns:
         The server [std.json.JSONValue|JSONValue] response.

@@ -2142,7 +2142,7 @@ void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             .word("commercial")
             .policy(PrefixPolicy.prefixed)
             .description("Starts a commercial in the current channel.")
-            .addSyntax("$command [commercial length; valid values are 30, 60, 90, 120, 150 and 180]")
+            .addSyntax("$command [commercial duration; valid values are 30, 60, 90, 120, 150 and 180]")
     )
 )
 void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
@@ -2155,7 +2155,7 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     if (!lengthString.length)
     {
-        enum pattern = "Usage: %s%s [commercial length; valid values are 30, 60, 90, 120, 150 and 180]";
+        enum pattern = "Usage: %s%s [commercial duration; valid values are 30, 60, 90, 120, 150 and 180]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
         return chan(plugin.state, event.channel, message);
     }
@@ -2171,7 +2171,7 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     if (!lengthString.among!("30", "60", "90", "120", "150", "180"))
     {
-        enum message = "Commercial length must be one of 30, 60, 90, 120, 150 or 180.";
+        enum message = "Commercial duration must be one of 30, 60, 90, 120, 150 or 180.";
         return chan(plugin.state, event.channel, message);
     }
 
@@ -2938,7 +2938,7 @@ package:
      +/
     private enum bellString = "" ~ cast(char)(TerminalToken.bell);
 
-    /// Effective bell after [kameloso.terminal.isTerminal|isTerminal] checks.
+    /// Effective bell after [kameloso.terminal.isTerminal] checks.
     string bell = bellString;
 
     /// The Twitch application ID for kameloso.
@@ -3054,7 +3054,8 @@ package:
     // isEnabled
     /++
         Override
-        [kameloso.plugins.common.core.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled]
+        [kameloso.plugins.common.core.IRCPlugin.isEnabled|IRCPlugin.isEnabled]
+        (effectively overriding [kameloso.plugins.common.core.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled])
         and inject a server check, so this plugin only works on Twitch, in addition
         to doing nothing when [TwitchSettings.enabled] is false.
 

@@ -3,8 +3,8 @@
     For internal use.
 
     The [dialect.defs.IRCEvent|IRCEvent]-annotated handlers must be in the same module
-    as the [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin], but these implementation
-    functions can be offloaded here to limit module size a bit.
+    as the [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin],
+    but these implementation functions can be offloaded here to limit module size a bit.
 
     See_Also:
         [kameloso.plugins.printer.base|printer.base]
@@ -1092,8 +1092,7 @@ if (isOutputRange!(Sink, char[]))
     Slices away any type prefixes from the string of a
     [dialect.defs.IRCEvent.Type|IRCEvent.Type].
 
-    Only for shared use in [formatMessageMonochrome] and
-    [formatMessageColoured].
+    Only for shared use in [formatMessageMonochrome] and [formatMessageColoured].
 
     Example:
     ---
@@ -1464,7 +1463,7 @@ unittest
 
     Tries to detect nicknames enclosed in terminal formatting. As such, call this
     *after* having translated IRC- to terminal such with
-    [kameloso.irccolours.mapEffects|irccolours.mapEffects].
+    [kameloso.irccolours.mapEffects].
 
     Uses [std.string.indexOf|indexOf] internally with hopes of being more resilient to
     weird UTF-8.

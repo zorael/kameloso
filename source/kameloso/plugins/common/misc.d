@@ -424,8 +424,8 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
         caller = String name of the calling function, or something else that gives context.
 
     Returns:
-        A [Replay] with template parameters inferred from the arguments
-        passed to this function.
+        A [kameloso.plugins.common.core.Replay|Replay] with template parameters
+        inferred from the arguments passed to this function.
 
     See_Also:
         [kameloso.plugins.common.core.Replay|Replay]

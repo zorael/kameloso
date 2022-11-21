@@ -38,9 +38,7 @@
 
     See_Also:
         [kameloso.plugins.common.misc|plugins.common.misc]
-
         [kameloso.plugins.common.mixins|plugins.common.mixins]
-
         [kameloso.plugins.common.delayawait|plugins.common.delayawait]
  +/
 module kameloso.plugins.common.core;
@@ -74,11 +72,11 @@ private:
 public:
     // CommandMetadata
     /++
-        Metadata about a [kameloso.plugins.common.core.IRCEventHandler.Command|IRCEventHandler.Command]- and/or
-        [kameloso.plugins.common.core.IRCEventHandler.Regex|IRCEventHandler.Regex]-annotated event handler.
+        Metadata about a [IRCEventHandler.Command]- and/or
+        [IRCEventHandler.Regex]-annotated event handler.
 
         See_Also:
-            [commands]
+            [IRCPlugin.commands]
      +/
     static struct CommandMetadata
     {
@@ -121,9 +119,8 @@ public:
 
     // state
     /++
-        An [kameloso.plugins.common.core.IRCPluginState|IRCPluginState] instance containing
-        variables and arrays that represent the current state of the plugin.
-        Should generally be passed by reference.
+        An [IRCPluginState] instance containing variables and arrays that represent
+        the current state of the plugin. Should generally be passed by reference.
      +/
     IRCPluginState state;
 
@@ -190,8 +187,7 @@ public:
 
     // printSettings
     /++
-        Called when we want a plugin to print its
-        [kameloso.plugins.common.core.Settings|Settings]-annotated struct of settings.
+        Called when we want a plugin to print its [Settings]-annotated struct of settings.
      +/
     void printSettings() @system const;
 
@@ -215,7 +211,7 @@ public:
         Returns an array of the descriptions of the commands a plugin offers.
 
         Returns:
-            An associative [CommandMetadata] array keyed by string.
+            An associative [IRCPlugin.CommandMetadata] array keyed by string.
      +/
     CommandMetadata[string] commands() pure nothrow @property const;
 
@@ -225,7 +221,7 @@ public:
         plugin offers.
 
         Returns:
-            An associative [CommandMetadata] array keyed by string.
+            An associative [IRCPlugin.CommandMetadata] array keyed by string.
      +/
     CommandMetadata[string] channelSpecificCommands(const string) @system;
 
@@ -270,7 +266,7 @@ public:
     ---
     final class MyPlugin : IRCPlugin
     {
-        @Settings MyPluginSettings myPluginSettings;
+        MyPluginSettings myPluginSettings;  // type should be annotated @Settings at declaration
 
         // ...implementation...
 
@@ -1962,7 +1958,6 @@ auto prefixPolicyMatches(bool verbose = false)
     static if (verbose)
     {
         import std.stdio : writefln, writeln;
-
         writeln("...prefixPolicyMatches! policy:", policy);
     }
 
@@ -2219,22 +2214,22 @@ public:
         nothing  = 0,
 
         /++
-            `IRCPluginState.bot` was marked as updated.
+            [IRCPluginState.bot] was marked as updated.
          +/
         bot      = 1 << 0,
 
         /++
-            `IRCPluginState.client` was marked as updated.
+            [IRCPluginState.client] was marked as updated.
          +/
         client   = 1 << 1,
 
         /++
-            `IRCPluginState.server` was marked as updated.
+            [IRCPluginState.server] was marked as updated.
          +/
         server   = 1 << 2,
 
         /++
-            `IRCPluginState.settings` was marked as updated.
+            [IRCPluginState.settings] was marked as updated.
          +/
         settings = 1 << 3,
     }
@@ -2601,19 +2596,19 @@ enum Permissions
     registered = 20,
 
     /++
-        Only users with a [dialect.defs.IRCClient.Class.whitelist|IRCClient.Class.whitelist]
+        Only users with a [dialect.defs.IRCUser.Class.whitelist|IRCUser.Class.whitelist]
         classifier (or higher) may trigger the annotated function.
      +/
     whitelist = 30,
 
     /++
-        Only users with a [dialect.defs.IRCClient.Class.elevated|IRCClient.Class.elevated]
+        Only users with a [dialect.defs.IRCUser.Class.elevated|IRCUser.Class.elevated]
         classifier (or higher) may trigger the annotated function.
      +/
     elevated = 40,
 
     /++
-        Only users with a [dialect.defs.IRCClient.Class.operator|IRCClient.Class.operator]
+        Only users with a [dialect.defs.IRCUser.Class.operator|IRCUser.Class.operator]
         classifier (or higiher) may trigger the annotated function.
 
         Note: this does not mean IRC "+o" operators.
@@ -2621,7 +2616,7 @@ enum Permissions
     operator = 50,
 
     /++
-        Only users with a [dialect.defs.IRCClient.Class.staff|IRCClient.Class.staff]
+        Only users with a [dialect.defs.IRCUser.Class.staff|IRCUser.Class.staff]
         classifier (or higher) may trigger the annotated function.
 
         These are channel owners.
@@ -2679,7 +2674,7 @@ struct IRCEventHandler
 {
     private import kameloso.traits : UnderscoreOpDispatcher;
 
-    // acceptedEventTypes
+    // _acceptedEventTypes
     /++
         Array of types of [dialect.defs.IRCEvent] that the annotated event
         handler function should accept.
@@ -2693,21 +2688,21 @@ struct IRCEventHandler
      +/
     alias _onEvent = _acceptedEventTypes;
 
-    // permissionsRequired
+    // _permissionsRequired
     /++
         Permissions required of instigating user, below which the annotated
         event handler function should not be triggered.
      +/
     Permissions _permissionsRequired = Permissions.ignore;
 
-    // channelPolicy
+    // _channelPolicy
     /++
         What kind of channel the annotated event handler function may be
         triggered in; homes or mere guest channels.
      +/
     ChannelPolicy _channelPolicy = ChannelPolicy.home;
 
-    // commands
+    // _commands
     /++
         Array of [IRCEventHandler.Command]s the bot should pick up and listen for.
      +/
@@ -2720,7 +2715,7 @@ struct IRCEventHandler
      +/
     alias _addCommand = _commands;
 
-    // regexes
+    // _regexes
     /++
         Array of [IRCEventHandler.Regex]es the bot should pick up and listen for.
      +/
@@ -2733,7 +2728,7 @@ struct IRCEventHandler
      +/
     alias _addRegex = _regexes;
 
-    // chainable
+    // _chainable
     /++
         Whether or not the annotated event handler function should allow other
         functions to fire after it. If not set (default false), it will
@@ -2741,21 +2736,21 @@ struct IRCEventHandler
      +/
     bool _chainable;
 
-    // verbose
+    // _verbose
     /++
         Whether or not additional information should be output to the local
         terminal as the function is (or is not) triggered.
      +/
     bool _verbose;
 
-    // when
+    // _when
     /++
         Special instruction related to the order of which event handler functions
         within a plugin module are triggered.
      +/
     Timing _when;
 
-    // fiber
+    // _fiber
     /++
         Whether or not the annotated event handler should be run from within a
         [core.thread.fiber.Fiber|Fiber].
@@ -2770,19 +2765,19 @@ struct IRCEventHandler
      +/
     static struct Command
     {
-        // policy
+        // _policy
         /++
             In what way the message is required to start for the annotated function to trigger.
          +/
         PrefixPolicy _policy = PrefixPolicy.prefixed;
 
-        // word
+        // _word
         /++
             The command word, without spaces.
          +/
         string _word;
 
-        // description
+        // _description
         /++
             Describes the functionality of the event handler function the parent
             [IRCEventHandler] annotates, and by extension, this [IRCEventHandler.Command].
@@ -2792,13 +2787,13 @@ struct IRCEventHandler
          +/
         string _description;
 
-        // hidden
+        // _hidden
         /++
             Whether this is a hidden command or if it should show up in help listings.
          +/
         bool _hidden;
 
-        // syntax
+        // _syntax
         /++
             Command usage syntax help strings.
          +/
@@ -2822,25 +2817,25 @@ struct IRCEventHandler
     {
         import std.regex : StdRegex = Regex;
 
-        // policy
+        // _policy
         /++
             In what way the message is required to start for the annotated function to trigger.
          +/
         PrefixPolicy _policy = PrefixPolicy.direct;
 
-        // engine
+        // _engine
         /++
             Regex engine to match incoming messages with.
          +/
         StdRegex!char _engine;
 
-        // expression
+        // _expression
         /++
             The regular expression in string form.
          +/
         string _expression;
 
-        // description
+        // _description
         /++
             Describes the functionality of the event handler function the parent
             [IRCEventHandler] annotates, and by extension, this [IRCEventHandler.Regex].
@@ -2850,13 +2845,13 @@ struct IRCEventHandler
          +/
         string _description;
 
-        // hidden
+        // _hidden
         /++
             Whether this is a hidden command or if it should show up in help listings.
          +/
         bool _hidden;
 
-        // expression
+        // _expression
         /++
             The regular expression this [IRCEventHandler.Regex] embodies, in string form.
 

@@ -867,7 +867,7 @@ void reload(OnelinersPlugin plugin)
 // onGlobalUserstate
 /++
     On Twitch, catch the bot's display name on
-    `dialect.defs.IRCEvent.Type.GLOBALUSERSTATE|GLOBALUSERSTATE`, early after connecting.
+    [dialect.defs.IRCEvent.Type.GLOBALUSERSTATE|GLOBALUSERSTATE], early after connecting.
 
     This lets us replace `$bot` in oneliners with our display name.
  +/

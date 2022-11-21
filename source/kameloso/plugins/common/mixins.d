@@ -4,8 +4,8 @@
     This was all in one `plugins/common.d` file that just grew too big.
 
     See_Also:
-        [kameloso.plugins.common.core|plugins.common.core]
-        [kameloso.plugins.common.misc|plugins.common.misc]
+        [kameloso.plugins.common.core]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.common.mixins;
 
@@ -292,7 +292,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
         Params:
             nickname = Nickname of the user the enqueueing event relates to.
-            issueWhois = Whether to actually issue WHOIS queries at all or just enqueue.
+            issueWhois = Whether to actually issue `WHOIS` queries at all or just enqueue.
             background = Whether or not to issue queries as low-priority background messages.
 
         Throws:

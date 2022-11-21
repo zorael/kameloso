@@ -50,15 +50,11 @@ import std.typecons : Flag, No, Yes;
     [kameloso.plugins.common.core.IRCEventHandler.Command|IRCEventHandler.Command]-annotated
     functions.
 
-    To work around this we construct an array of
-    `kameloso.thread.CarryingFiber!(kameloso.plugins.common.core.IRCPlugin)`s and send it
-    to the main thread. It will attach the client-global `plugins` array of
-    [kameloso.plugins.common.core.IRCPlugin|IRCPlugin]s to it, and invoke the Fiber.
-    The delegate inside will then process the list as if it had taken the array
-    as an argument.
+    To work around this we construct a delegate that accepts an array of
+    [kameloso.plugins.common.core.IRCPlugin|IRCPlugins], and pass it to the main thread.
+    It will then invoke the delegate with the client-global `plugins` array as argument.
 
-    Once we have the list we format it nicely and send it back to the requester,
-    which we remember since we saved the original [dialect.defs.IRCEvent|IRCEvent].
+    Once we have the list we format it nicely and send it back to the requester.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -386,9 +382,10 @@ auto filterHiddenCommands(IRCPlugin.CommandMetadata[string] aa)
 
 // addPrefix
 /++
-    Adds a prefix to a command word; the command prefix if the passed `policy`
-    is [PrefixPolicy.prefixed], the bot nickname if is [PrefixPolicy.nickname],
-    and as is if it is [PrefixPolicy.direct].
+    Adds a prefix to a command word; the command prefix if the passed `policy` is
+    [kameloso.plugins.common.core.PrefixPolicy.prefixed], the bot nickname if it is
+    [kameloso.plugins.common.core.PrefixPolicy.nickname], and as is if it is
+    [kameloso.plugins.common.core.PrefixPolicy.direct].
 
     Params:
         plugin = The current [HelpPlugin].
