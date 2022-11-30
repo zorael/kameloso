@@ -353,8 +353,8 @@ mixin template IRCPluginImpl(
 
             static if (
                 is(typeof(this.tupleof[i]) == struct) &&
-                (hasUDA!(this.tupleof[i], Settings) ||
-                    hasUDA!(typeof(this.tupleof[i]), Settings)))
+                (hasUDA!(typeof(this.tupleof[i]), Settings) ||
+                    hasUDA!(this.tupleof[i], Settings)))
             {
                 foreach (immutable n, _2; this.tupleof[i].tupleof)
                 {
@@ -1509,8 +1509,8 @@ mixin template IRCPluginImpl(
         {
             static if (
                 is(typeof(this.tupleof[i]) == struct) &&
-                (hasUDA!(this.tupleof[i], Settings) ||
-                    hasUDA!(typeof(this.tupleof[i]), Settings)))
+                (hasUDA!(typeof(this.tupleof[i]), Settings) ||
+                    hasUDA!(this.tupleof[i], Settings)))
             {
                 if (symbol != typeof(symbol).init)
                 {
@@ -1569,8 +1569,8 @@ mixin template IRCPluginImpl(
         {
             static if (
                 is(typeof(this.tupleof[i]) == struct) &&
-                (hasUDA!(this.tupleof[i], Settings) ||
-                    hasUDA!(typeof(this.tupleof[i]), Settings)))
+                (hasUDA!(typeof(this.tupleof[i]), Settings) ||
+                    hasUDA!(this.tupleof[i], Settings)))
             {
                 success = symbol.setMemberByName(setting, value);
                 break;
@@ -1593,8 +1593,8 @@ mixin template IRCPluginImpl(
         {
             static if (
                 is(typeof(this.tupleof[i]) == struct) &&
-                (hasUDA!(this.tupleof[i], Settings) ||
-                    hasUDA!(typeof(this.tupleof[i]), Settings)))
+                (hasUDA!(typeof(this.tupleof[i]), Settings) ||
+                    hasUDA!(this.tupleof[i], Settings)))
             {
                 import std.typecons : No, Yes;
                 printObject!(No.all)(symbol);
@@ -1634,8 +1634,8 @@ mixin template IRCPluginImpl(
         {
             static if (
                 is(typeof(this.tupleof[i]) == struct) &&
-                (hasUDA!(this.tupleof[i], Settings) ||
-                    hasUDA!(typeof(this.tupleof[i]), Settings)))
+                (hasUDA!(typeof(this.tupleof[i]), Settings) ||
+                    hasUDA!(this.tupleof[i], Settings)))
             {
                 import lu.serialisation : serialise;
 
