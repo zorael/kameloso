@@ -295,7 +295,7 @@ mixin template IRCPluginImpl(
 
     /// Symbol needed for the mixin constraints to work.
     // https://forum.dlang.org/post/sk4hqm$12cf$1@digitalmars.com
-    alias mixinParent = __traits(parent, {});
+    private alias mixinParent = __traits(parent, {});
 
     // Use a custom constraint to force the scope to be an IRCPlugin
     static if (!is(mixinParent : IRCPlugin))
