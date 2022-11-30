@@ -637,7 +637,7 @@ mixin template IRCPluginImpl(
         /++
             Calls the passed function pointer, appropriately.
          +/
-        void call(bool inFiber, Fun)(scope Fun fun, ref IRCEvent event) scope
+        void call(bool inFiber, Fun)(scope Fun fun, const ref IRCEvent event) scope
         {
             import lu.traits : TakesParams;
             import std.traits : ParameterStorageClass, Parameters, arity;
