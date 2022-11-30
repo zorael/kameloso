@@ -8,7 +8,7 @@ license "BSL-1.0"
 targetType "executable"
 mainSourceFile "source/kameloso/entrypoint.d"
 dflags "-dip25" "-dip1008"
-dflags "-linkonce-templates" platform="ldc"
+dflags "-linkonce-templates" "-disable-verify" platform="ldc"  #"-link-defaultlib-shared=false"
 x:ddoxTool "scod"
 
 dependency "lu" version="~>1.2.1"
