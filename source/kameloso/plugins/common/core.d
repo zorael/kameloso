@@ -286,8 +286,11 @@ mixin template IRCPluginImpl(
     Flag!"debug_" debug_ = No.debug_,
     string module_ = __MODULE__)
 {
-    private import kameloso.plugins.common.core : FilterResult, IRCPluginState, Permissions;
+    private import kameloso.plugins.common.core : FilterResult, IRCEventHandler, IRCPluginState, Permissions;
     private import dialect.defs : IRCEvent, IRCServer, IRCUser;
+    private import lu.traits : getSymbolsByUDA;
+    private import std.meta : Filter, templateNot, templateOr;
+    private import std.traits : getUDAs, isSomeFunction;
     private import core.thread : Fiber;
 
     /// Symbol needed for the mixin constraints to work.
@@ -318,6 +321,11 @@ mixin template IRCPluginImpl(
     {
         private enum hasIRCPluginImpl = true;
     }
+
+    mixin("private static import thisModule = ", module_, ";");
+
+    private alias allEventHandlerFunctionsInModule =
+        Filter!(isSomeFunction, getSymbolsByUDA!(thisModule, IRCEventHandler));
 
     @safe:
 
@@ -493,33 +501,20 @@ mixin template IRCPluginImpl(
      +/
     private void onEventImpl(/*const ref*/ IRCEvent origEvent) @system
     {
-        mixin("static import thisModule = ", module_, ";");
-
         // udaSanityCheck
         /++
             Verifies that annotations are as expected.
          +/
-        static bool udaSanityCheck(alias fun)()
+        static bool udaSanityCheck(alias fun, IRCEventHandler uda)()
         {
             import kameloso.plugins.common.core : IRCEventHandler;
-            import std.traits : fullyQualifiedName, getUDAs;
-
-            alias handlerAnnotations = getUDAs!(fun, IRCEventHandler);
-
-            static if (handlerAnnotations.length > 1)
-            {
-                import std.format : format;
-                enum pattern = "`%s` is annotated with more than one `IRCEventHandler`";
-                static assert(0, pattern.format(fullyQualifiedName!fun));
-            }
-
-            static immutable uda = handlerAnnotations[0];
 
             static foreach (immutable type; uda._acceptedEventTypes)
             {{
                 static if (type == IRCEvent.Type.UNSET)
                 {
                     import std.format : format;
+                    import std.traits : fullyQualifiedName;
 
                     enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
                         "`@(IRCEvent.Type.UNSET)`, which is not a valid event type.";
@@ -528,6 +523,7 @@ mixin template IRCPluginImpl(
                 else static if (type == IRCEvent.Type.PRIVMSG)
                 {
                     import std.format : format;
+                    import std.traits : fullyQualifiedName;
 
                     enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
                         "`@(IRCEvent.Type.PRIVMSG)`, which is not a valid event type. " ~
@@ -537,6 +533,7 @@ mixin template IRCPluginImpl(
                 else static if (type == IRCEvent.Type.WHISPER)
                 {
                     import std.format : format;
+                    import std.traits : fullyQualifiedName;
 
                     enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
                         "`@(IRCEvent.Type.WHISPER)`, which is not a valid event type. " ~
@@ -554,6 +551,7 @@ mixin template IRCPluginImpl(
                     {
                         import lu.conv : Enum;
                         import std.format : format;
+                        import std.traits : fullyQualifiedName;
 
                         enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                             "listening for a `Command` and/or `Regex`, but is at the " ~
@@ -573,6 +571,7 @@ mixin template IRCPluginImpl(
                     static if (!command._word.length)
                     {
                         import std.format : format;
+                        import std.traits : fullyQualifiedName;
 
                         enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                             "listening for a `Command` with an empty trigger word";
@@ -581,6 +580,7 @@ mixin template IRCPluginImpl(
                     else static if (command._word.contains(' '))
                     {
                         import std.format : format;
+                        import std.traits : fullyQualifiedName;
 
                         enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                             "listening for a `Command` whose trigger " ~
@@ -599,6 +599,7 @@ mixin template IRCPluginImpl(
                     static if (!regex._expression.length)
                     {
                         import std.format : format;
+                        import std.traits : fullyQualifiedName;
 
                         enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                             "listening for a `Regex` with an empty expression";
@@ -609,6 +610,7 @@ mixin template IRCPluginImpl(
                         regex._expression.contains(' '))
                     {
                         import std.format : format;
+                        import std.traits : fullyQualifiedName;
 
                         enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                             "listening for a non-`PrefixPolicy.direct`-annotated " ~
@@ -1174,14 +1176,20 @@ mixin template IRCPluginImpl(
             foreach (immutable i, fun; funlist)
             {
                 import std.algorithm.searching : canFind;
-                import std.traits : getUDAs;
-
-                static assert(udaSanityCheck!fun,
-                    __traits(identifier, fun) ~ " UDA sanity check failed.");
+                import std.traits : fullyQualifiedName, getUDAs;
 
                 static if (__VERSION__ >= 2096L)
                 {
-                    static immutable uda = getUDAs!(fun, IRCEventHandler)[0];
+                    alias handlerAnnotations = getUDAs!(fun, IRCEventHandler);
+
+                    static if (handlerAnnotations.length != 1)
+                    {
+                        import std.format : format;
+                        enum pattern = "`%s` may only be annotated with one and only one `IRCEventHandler`";
+                        static assert(0, pattern.format(fullyQualifiedName!fun));
+                    }
+
+                    static immutable uda = handlerAnnotations[0];
                 }
                 else
                 {
@@ -1190,6 +1198,9 @@ mixin template IRCPluginImpl(
                     // See `ctUDAArray` above.
                     immutable uda = ctUDAArray[i];
                 }
+
+                static assert(udaSanityCheck!(fun, uda),
+                    fullyQualifiedName!fun ~ " UDA sanity check failed.");
 
                 enum verbose = (uda._verbose || debug_);
                 enum funName = module_ ~ '.' ~ __traits(identifier, fun);
@@ -1270,23 +1281,7 @@ mixin template IRCPluginImpl(
             }
         }
 
-        import kameloso.plugins.common.core : IRCEventHandler;
-        import lu.traits : getSymbolsByUDA;
-        import std.meta : Filter, templateNot, templateOr;
-        import std.traits : getUDAs, isSomeFunction;
-
-        enum isSetupFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.setup);
-        enum isEarlyFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.early);
-        enum isLateFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.late);
-        enum isCleanupFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.cleanup);
-
-        alias hasSpecialTiming = templateOr!(isSetupFun, isEarlyFun,
-            isLateFun, isCleanupFun);
-        alias isNormalEventHandler = templateNot!hasSpecialTiming;
-
-        alias allFuns = Filter!(isSomeFunction, getSymbolsByUDA!(thisModule, IRCEventHandler));
-
-        static if (!allFuns.length)
+        static if (!this.allEventHandlerFunctionsInModule.length)
         {
             version(unittest)
             {
@@ -1325,11 +1320,18 @@ mixin template IRCPluginImpl(
             }
         }
 
-        alias setupFuns = Filter!(isSetupFun, allFuns);
-        alias earlyFuns = Filter!(isEarlyFun, allFuns);
-        alias lateFuns = Filter!(isLateFun, allFuns);
-        alias cleanupFuns = Filter!(isCleanupFun, allFuns);
-        alias pluginFuns = Filter!(isNormalEventHandler, allFuns);
+        enum isSetupFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.setup);
+        enum isEarlyFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.early);
+        enum isLateFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.late);
+        enum isCleanupFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.cleanup);
+        alias hasSpecialTiming = templateOr!(isSetupFun, isEarlyFun, isLateFun, isCleanupFun);
+        alias isNormalEventHandler = templateNot!hasSpecialTiming;
+
+        alias setupFuns = Filter!(isSetupFun, this.allEventHandlerFunctionsInModule);
+        alias earlyFuns = Filter!(isEarlyFun, this.allEventHandlerFunctionsInModule);
+        alias lateFuns = Filter!(isLateFun, this.allEventHandlerFunctionsInModule);
+        alias cleanupFuns = Filter!(isCleanupFun, this.allEventHandlerFunctionsInModule);
+        alias pluginFuns = Filter!(isNormalEventHandler, this.allEventHandlerFunctionsInModule);
 
         tryProcess!setupFuns(origEvent);
         tryProcess!earlyFuns(origEvent);
@@ -1759,17 +1761,11 @@ mixin template IRCPluginImpl(
         enum ctCommandsEnumLiteral =
         {
             import kameloso.plugins.common.core : IRCEventHandler;
-            import lu.traits : getSymbolsByUDA;
-            import std.meta : Filter;
-            import std.traits : getUDAs, isSomeFunction;
-
-            mixin("static import thisModule = ", module_, ";");
-
-            alias funs = Filter!(isSomeFunction, getSymbolsByUDA!(thisModule, IRCEventHandler));
+            import std.traits : getUDAs;
 
             IRCPlugin.CommandMetadata[string] commandAA;
 
-            foreach (fun; funs)
+            foreach (fun; this.allEventHandlerFunctionsInModule)
             {
                 immutable uda = getUDAs!(fun, IRCEventHandler)[0];
 
