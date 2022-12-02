@@ -66,9 +66,11 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     static if ((paramNames.length == 0) || !is(typeof(mixin(paramNames[0])) : IRCPlugin))
     {
         import std.format : format;
+
         enum pattern = "`WHOISFiberDelegate` should be mixed into the context of an event handler. " ~
             "(First parameter of `%s` is not an `IRCPlugin` subclass)";
-        static assert(0, pattern.format(__FUNCTION__));
+        enum message = pattern.format(__FUNCTION__);
+        static assert(0, message);
     }
     else
     {
@@ -81,8 +83,10 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     static if (__traits(compiles, { alias _ = hasWHOISFiber; }))
     {
         import std.format : format;
+
         enum pattern = "Double mixin of `%s` in `%s`";
-        static assert(0, pattern.format("WHOISFiberDelegate", __FUNCTION__));
+        enum message = pattern.format("WHOISFiberDelegate", __FUNCTION__);
+        static assert(0, message);
     }
     else
     {
@@ -174,8 +178,11 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
                     enum pattern = "Unsupported signature of success function/delegate " ~
                         "alias passed to mixin `WHOISFiberDelegate` in `%s`: `%s %s`";
-                    static assert(0, pattern.format(__FUNCTION__,
-                        typeof(onSuccess).stringof, __traits(identifier, onSuccess)));
+                    enum message = pattern.format(
+                        __FUNCTION__,
+                        typeof(onSuccess).stringof,
+                        __traits(identifier, onSuccess));
+                    static assert(0, message);
                 }
             }
 
@@ -209,8 +216,11 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
                         enum pattern = "Unsupported signature of failure function/delegate " ~
                             "alias passed to mixin `WHOISFiberDelegate` in `%s`: `%s %s`";
-                        static assert(0, pattern.format(__FUNCTION__,
-                            typeof(onFailure).stringof, __traits(identifier, onFailure)));
+                        enum message = pattern.format(
+                            __FUNCTION__,
+                            typeof(onFailure).stringof,
+                            __traits(identifier, onFailure));
+                        static assert(0, message);
                     }
                 }
             }
@@ -516,17 +526,22 @@ private:
 
         alias messagingParentInfo = CategoryName!mixinParent;
 
-        private enum pattern = "%s `%s` mixes in `%s` but it is only supposed to be " ~
+        enum pattern = "%s `%s` mixes in `%s` but it is only supposed to be " ~
             "mixed into an `IRCPlugin` subclass";
-        static assert(0, pattern.format(messagingParentInfo.type,
-            messagingParentInfo.fqn, "MessagingProxy"));
+        enum message = pattern.format(
+            messagingParentInfo.type,
+            messagingParentInfo.fqn,
+            "MessagingProxy");
+        static assert(0, message);
     }
 
     static if (__traits(compiles, { alias _ = this.hasMessagingProxy; }))
     {
         import std.format : format;
+
         enum pattern = "Double mixin of `%s` in `%s`";
-        static assert(0, pattern.format("MessagingProxy", typeof(this).stringof));
+        enum message = pattern.format("MessagingProxy", typeof(this).stringof);
+        static assert(0, message);
     }
     else
     {
@@ -867,8 +882,10 @@ unittest
             else static if (!__traits(compiles, { mixin("alias _ = plugin2.fromMixin." ~ funstring ~ ";"); }))
             {
                 import std.format : format;
+
                 enum pattern = "`MessageProxy` is missing a wrapper for `kameloso.messaging.%s`";
-                static assert(0, pattern.format(funstring));
+                enum message = pattern.format(funstring);
+                static assert(0, message);
             }
         }
     }

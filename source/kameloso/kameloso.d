@@ -438,9 +438,11 @@ public:
                     static if (!__traits(compiles, { mixin("static import " ~ module_ ~ ".base;"); }))
                     {
                         import std.format : format;
+
                         enum pattern = "Plugin module `%s.base` (inferred from listing `%1$s` " ~
                             "in `plugins/package.d`) fails to compile";
-                        static assert(0, pattern.format(module_));
+                        enum message = pattern.format(module_);
+                        static assert(0, message);
                     }
                     else
                     {
@@ -452,9 +454,11 @@ public:
                     static if (!__traits(compiles, { mixin("static import " ~ module_ ~ ";"); }))
                     {
                         import std.format : format;
+
                         enum pattern = "Plugin module `%s` (listed in `plugins/package.d`) " ~
                             "fails to compile";
-                        static assert(0, pattern.format(module_));
+                        enum message = pattern.format(module_);
+                        static assert(0, message);
                     }
                     else
                     {
@@ -474,8 +478,10 @@ public:
                 else
                 {
                     import std.format : format;
+
                     enum pattern = "`%s.%s` constructor does not compile";
-                    static assert(0, pattern.format(module_, PluginModule.className));
+                    enum message = pattern.format(module_, PluginModule.className);
+                    static assert(0, message);
                 }
             }
         }

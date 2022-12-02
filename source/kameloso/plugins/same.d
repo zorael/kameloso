@@ -65,8 +65,10 @@ else
 version(MatchVersionError)
 {
     import std.format : format;
+
     enum pattern = "`%s` needs one of versions `MatchByStringComparison` and `MatchWithRegex` (but not both)";
-    static assert(0, pattern.format(__MODULE__));
+    enum message = pattern.format(__MODULE__);
+    static assert(0, message);
 }
 
 

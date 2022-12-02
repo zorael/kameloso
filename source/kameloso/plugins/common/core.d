@@ -307,15 +307,20 @@ mixin template IRCPluginImpl(
 
         enum pattern = "%s `%s` mixes in `%s` but it is only supposed to be " ~
             "mixed into an `IRCPlugin` subclass";
-        static assert(0, pattern.format(pluginImplParentInfo.type,
-            pluginImplParentInfo.fqn, "IRCPluginImpl"));
+        enum message = pattern.format(
+            pluginImplParentInfo.type,
+            pluginImplParentInfo.fqn,
+            "IRCPluginImpl");
+        static assert(0, message);
     }
 
     static if (__traits(compiles, { alias _ = this.hasIRCPluginImpl; }))
     {
         import std.format : format;
+
         enum pattern = "Double mixin of `%s` in `%s`";
-        static assert(0, pattern.format("IRCPluginImpl", typeof(this).stringof));
+        enum message = pattern.format("IRCPluginImpl", typeof(this).stringof);
+        static assert(0, message);
     }
     else
     {
@@ -369,10 +374,11 @@ mixin template IRCPluginImpl(
 
                             alias UnqualThis = Unqual!(typeof(this));
                             enum pattern = "`%s` has a non-bool `Enabler`: `%s %s`";
-
-                            static assert(0, pattern.format(UnqualThis.stringof,
+                            enum message = pattern.format(
+                                UnqualThis.stringof,
                                 ThisEnabler.stringof,
-                                __traits(identifier, this.tupleof[i].tupleof[n])));
+                                __traits(identifier, this.tupleof[i].tupleof[n]));
+                            static assert(0, message);
                         }
 
                         retval = this.tupleof[i].tupleof[n];
@@ -446,7 +452,8 @@ mixin template IRCPluginImpl(
         }
 
         // Permissions.ignore always passes, even for Class.blacklist.
-        return (permissionsRequired == Permissions.ignore) ? FilterResult.pass :
+        return (permissionsRequired == Permissions.ignore) ?
+            FilterResult.pass :
             filterSender(event, permissionsRequired, state.settings.preferHostmasks);
     }
 
@@ -517,8 +524,9 @@ mixin template IRCPluginImpl(
                     import std.traits : fullyQualifiedName;
 
                     enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
-                        "`@(IRCEvent.Type.UNSET)`, which is not a valid event type.";
-                    static assert(0, pattern.format(fullyQualifiedName!fun));
+                        "`@(IRCEvent.Type.UNSET)`, which is not a valid event type";
+                    enum message = pattern.format(fullyQualifiedName!fun);
+                    static assert(0, message);
                 }
                 else static if (type == IRCEvent.Type.PRIVMSG)
                 {
@@ -528,7 +536,8 @@ mixin template IRCPluginImpl(
                     enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
                         "`@(IRCEvent.Type.PRIVMSG)`, which is not a valid event type. " ~
                         "Use `IRCEvent.Type.CHAN` and/or `IRCEvent.Type.QUERY` instead";
-                    static assert(0, pattern.format(fullyQualifiedName!fun));
+                    enum message = pattern.format(fullyQualifiedName!fun);
+                    static assert(0, message);
                 }
                 else static if (type == IRCEvent.Type.WHISPER)
                 {
@@ -538,7 +547,8 @@ mixin template IRCPluginImpl(
                     enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
                         "`@(IRCEvent.Type.WHISPER)`, which is not a valid event type. " ~
                         "Use `IRCEvent.Type.QUERY` instead";
-                    static assert(0, pattern.format(fullyQualifiedName!fun));
+                    enum message = pattern.format(fullyQualifiedName!fun);
+                    static assert(0, message);
                 }
 
                 static if (uda._commands.length || uda._regexes.length)
@@ -556,8 +566,10 @@ mixin template IRCPluginImpl(
                         enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                             "listening for a `Command` and/or `Regex`, but is at the " ~
                             "same time accepting non-message `IRCEvent.Type.%s events`";
-                        static assert(0, pattern.format(fullyQualifiedName!fun,
-                            Enum!(IRCEvent.Type).toString(type)));
+                        enum message = pattern.format(
+                            fullyQualifiedName!fun,
+                            Enum!(IRCEvent.Type).toString(type));
+                        static assert(0, message);
                     }
                 }
             }
@@ -575,7 +587,8 @@ mixin template IRCPluginImpl(
 
                         enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                             "listening for a `Command` with an empty trigger word";
-                        static assert(0, pattern.format(fullyQualifiedName!fun));
+                        enum message = pattern.format(fullyQualifiedName!fun);
+                        static assert(0, message);
                     }
                     else static if (command._word.contains(' '))
                     {
@@ -585,7 +598,8 @@ mixin template IRCPluginImpl(
                         enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                             "listening for a `Command` whose trigger " ~
                             `word "%s" contains a space character`;
-                        static assert(0, pattern.format(fullyQualifiedName!fun, command._word));
+                        enum message = pattern.format(fullyQualifiedName!fun, command._word);
+                        static assert(0, message);
                     }
                 }
             }
@@ -603,7 +617,8 @@ mixin template IRCPluginImpl(
 
                         enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                             "listening for a `Regex` with an empty expression";
-                        static assert(0, pattern.format(fullyQualifiedName!fun));
+                        enum message = pattern.format(fullyQualifiedName!fun);
+                        static assert(0, message);
                     }
                     else static if (
                         (regex._policy != PrefixPolicy.direct) &&
@@ -615,7 +630,8 @@ mixin template IRCPluginImpl(
                         enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                             "listening for a non-`PrefixPolicy.direct`-annotated " ~
                             "`Regex` with an expression containing spaces";
-                        static assert(0, pattern.format(fullyQualifiedName!fun));
+                        enum message = pattern.format(fullyQualifiedName!fun);
+                        static assert(0, message);
                     }
                 }
             }
@@ -627,7 +643,8 @@ mixin template IRCPluginImpl(
 
                 enum pattern = "`%s` is missing a `MinimalAuthentication` " ~
                     "mixin (needed for `Permissions` checks)";
-                static assert(0, pattern.format(module_));
+                enum message = pattern.format(module_);
+                static assert(0, message);
             }
 
             return true;
@@ -660,7 +677,8 @@ mixin template IRCPluginImpl(
 
                         enum pattern = "`%s` has a `%s` event handler annotated `.fiber(true)` " ~
                             "that takes an `IRCEvent` by `ref`, which is prone to memory corruption";
-                        static assert(0, pattern.format(module_, Fun.stringof));
+                        enum message = pattern.format(module_, Fun.stringof);
+                        static assert(0, message);
                     }
                 }
             }
@@ -683,7 +701,8 @@ mixin template IRCPluginImpl(
                         enum pattern = "`%s` has a `%s` event handler that takes an " ~
                             "`IRCEvent` of an unsupported storage class; " ~
                             "may not be mutable `ref` or `out`";
-                        static assert(0, pattern.format(module_, Fun.stringof));
+                        enum message = pattern.format(module_, Fun.stringof);
+                        static assert(0, message);
                     }
                 }
             }
@@ -741,7 +760,8 @@ mixin template IRCPluginImpl(
                 import std.format : format;
 
                 enum pattern = "`%s` has an event handler with an unsupported function signature: `%s`";
-                static assert(0, pattern.format(module_, Fun.stringof));
+                enum message = pattern.format(module_, Fun.stringof);
+                static assert(0, message);
             }
         }
 
@@ -1031,8 +1051,10 @@ mixin template IRCPluginImpl(
                     else
                     {
                         import std.format : format;
+
                         enum pattern = "`%s` has an event handler with an unsupported function signature: `%s`";
-                        static assert(0, pattern.format(module_, Fun.stringof));
+                        enum message = pattern.format(module_, Fun.stringof);
+                        static assert(0, message);
                     }
                 }
                 else /*if (result == FilterResult.fail)*/
@@ -1176,17 +1198,20 @@ mixin template IRCPluginImpl(
             foreach (immutable i, fun; funlist)
             {
                 import std.algorithm.searching : canFind;
-                import std.traits : fullyQualifiedName, getUDAs;
 
                 static if (__VERSION__ >= 2096L)
                 {
+                    import std.traits : getUDAs;
+
                     alias handlerAnnotations = getUDAs!(fun, IRCEventHandler);
 
                     static if (handlerAnnotations.length != 1)
                     {
                         import std.format : format;
+
                         enum pattern = "`%s` may only be annotated with one and only one `IRCEventHandler`";
-                        static assert(0, pattern.format(fullyQualifiedName!fun));
+                        enum message = pattern.format(fullyQualifiedName!fun);
+                        static assert(0, message);
                     }
 
                     static immutable uda = handlerAnnotations[0];
@@ -1412,8 +1437,10 @@ mixin template IRCPluginImpl(
             else
             {
                 import std.format : format;
+
                 enum pattern = "`%s.initialise` has an unsupported function signature: `%s`";
-                static assert(0, pattern.format(module_, typeof(.initialise).stringof));
+                enum message = pattern.format(module_, typeof(.initialise).stringof);
+                static assert(0, message);
             }
         }
     }
@@ -1448,16 +1475,20 @@ mixin template IRCPluginImpl(
                 else
                 {
                     import std.format : format;
+
                     enum pattern = "`%s.postprocess` does not take its " ~
                         "`IRCEvent` parameter by `ref`";
-                    static assert(0, pattern.format(module_,));
+                    enum message = pattern.format(module_,);
+                    static assert(0, message);
                 }
             }
             else
             {
                 import std.format : format;
+
                 enum pattern = "`%s.postprocess` has an unsupported function signature: `%s`";
-                static assert(0, pattern.format(module_, typeof(.postprocess).stringof));
+                enum message = pattern.format(module_, typeof(.postprocess).stringof);
+                static assert(0, message);
             }
         }
     }
@@ -1481,8 +1512,10 @@ mixin template IRCPluginImpl(
             else
             {
                 import std.format : format;
+
                 enum pattern = "`%s.initResources` has an unsupported function signature: `%s`";
-                static assert(0, pattern.format(module_, typeof(.initResources).stringof));
+                enum message = pattern.format(module_, typeof(.initResources).stringof);
+                static assert(0, message);
             }
         }
     }
@@ -1658,7 +1691,7 @@ mixin template IRCPluginImpl(
 
     private import std.meta : AliasSeq;
 
-    // setup, start, teardown, reload
+    // setup, start, reload, teardown
     /+
         Generates functions `setup`, `start`, `reload` and `teardown`. These
         merely pass on calls to module-level `.setup`, `.start`, `.reload` and
@@ -1696,7 +1729,8 @@ mixin template IRCPluginImpl(
                 {
                     import std.format : format;
                     ` ~ "enum pattern = \"`%s.%s` has an unsupported function signature: `%s`\";
-                    " ~ `static assert(0, pattern.format(module_, "` ~ funName ~ `", typeof(.` ~ funName ~ `).stringof));
+                    enum message = pattern.format(module_, \"" ~ funName ~ `", typeof(.` ~ funName ~ `).stringof);
+                    static assert(0, message);
                 }
             }
         }`);
@@ -1730,7 +1764,8 @@ mixin template IRCPluginImpl(
             import std.format : format;
 
             enum pattern = "Plugin module `%s` is not under `kameloso.plugins`";
-            static assert(0, pattern.format(module_));
+            enum message = pattern.format(module_);
+            static assert(0, message);
         }
     }
 
@@ -1825,8 +1860,10 @@ mixin template IRCPluginImpl(
                     {
                         import std.format : format;
                         import std.traits : fullyQualifiedName;
+
                         enum pattern = "Warning: `%s` non-hidden command word \"%s\" is missing a description";
-                        pragma(msg, pattern.format(fullyQualifiedName!fun, command._word));
+                        enum message = pattern.format(fullyQualifiedName!fun, command._word);
+                        pragma(msg, message);
                     }
                 }}
 
@@ -1857,7 +1894,8 @@ mixin template IRCPluginImpl(
                         import std.traits : fullyQualifiedName;
 
                         enum pattern = "Warning: `%s` non-hidden expression \"%s\" is missing a description";
-                        pragma(msg, pattern.format(fullyQualifiedName!fun, regex._expression));
+                        enum message = pattern.format(fullyQualifiedName!fun, regex._expression);
+                        pragma(msg, message);
                     }
                 }}
             }
@@ -1900,8 +1938,10 @@ mixin template IRCPluginImpl(
             else
             {
                 import std.format : format;
+
                 enum pattern = "`%s.onBusMessage` has an unsupported function signature: `%s`";
-                static assert(0, pattern.format(module_, typeof(.onBusMessage).stringof));
+                enum message = pattern.format(module_, typeof(.onBusMessage).stringof);
+                static assert(0, message);
             }
         }
     }
@@ -2962,7 +3002,8 @@ template PluginModuleInfo(string module_)
         import std.format : format;
 
         enum pattern = "Tried to divine the `IRCPlugin` subclass of non-existent module `%s`";
-        static assert(0, pattern.format(module_));
+        enum message = pattern.format(module_);
+        static assert(0, message);
     }
 }
 

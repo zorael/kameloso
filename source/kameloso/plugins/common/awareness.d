@@ -759,11 +759,12 @@ mixin template ChannelAwarenessImpl(
 
     static if (!__traits(compiles, { alias _ = .hasUserAwareness; }))
     {
-        private import std.format : format;
+        import std.format : format;
 
-        private enum pattern = "`%s` is missing a `UserAwareness` mixin " ~
+        enum pattern = "`%s` is missing a `UserAwareness` mixin " ~
             "(needed for `ChannelAwareness`)";
-        static assert(0, pattern.format(module_));
+        enum message = pattern.format(module_);
+        static assert(0, message);
     }
 
     @system:
@@ -1470,11 +1471,12 @@ mixin template TwitchAwareness(
 
     static if (!__traits(compiles, { alias _ = .hasChannelAwareness; }))
     {
-        private import std.format : format;
+        import std.format : format;
 
-        private enum pattern = "`%s` is missing a `ChannelAwareness` mixin " ~
+        enum pattern = "`%s` is missing a `ChannelAwareness` mixin " ~
             "(needed for `TwitchAwareness`)";
-        static assert(0, pattern.format(module_));
+        enum message = pattern.format(module_);
+        static assert(0, message);
     }
 
     mixin("private alias Plugin = " ~ PluginModuleInfo!module_.className ~ ";");
@@ -1674,10 +1676,11 @@ mixin template TwitchAwareness(
 
     static if (!__traits(compiles, { alias _ = .hasChannelAwareness; }))
     {
-        private import std.format : format;
+        import std.format : format;
 
-        private enum pattern = "`%s` is missing a `ChannelAwareness` mixin " ~
+        enum pattern = "`%s` is missing a `ChannelAwareness` mixin " ~
             "(needed for `TwitchAwareness`)";
-        static assert(0, pattern.format(module_));
+        enum message = pattern.format(module_);
+        static assert(0, message);
     }
 }

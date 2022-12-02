@@ -533,8 +533,10 @@ if (Things.length > 0)
             else
             {
                 import std.format : format;
+
                 enum pattern = "Non-aggregate type `%s` passed to `longestNamesImpl`";
-                static assert(0, pattern.format(Thing.stringof));
+                enum message = pattern.format(Thing.stringof);
+                static assert(0, message);
             }
         }
 
