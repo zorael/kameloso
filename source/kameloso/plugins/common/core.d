@@ -510,7 +510,7 @@ mixin template IRCPluginImpl(
             import kameloso.plugins.common.core : IRCEventHandler;
 
             static foreach (immutable type; uda._acceptedEventTypes)
-            {{
+            {
                 static if (type == IRCEvent.Type.UNSET)
                 {
                     import std.format : format;
@@ -560,7 +560,7 @@ mixin template IRCPluginImpl(
                             Enum!(IRCEvent.Type).toString(type)));
                     }
                 }
-            }}
+            }
 
             static if (uda._commands.length)
             {
