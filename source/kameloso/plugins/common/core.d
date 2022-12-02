@@ -1714,11 +1714,13 @@ mixin template IRCPluginImpl(
     {
         import lu.string : beginsWith;
 
-        static if (module_.beginsWith("kameloso.plugins."))
+        enum modulePrefix = "kameloso.plugins.";
+
+        static if (module_.beginsWith(modulePrefix))
         {
             import std.string : indexOf;
 
-            string slice = module_[17..$];  // mutable
+            string slice = module_[modulePrefix.length..$];  // mutable
             immutable dotPos = slice.indexOf('.');
             if (dotPos == -1) return slice;
             return (slice[dotPos+1..$] == "base") ? slice[0..dotPos] : slice[dotPos+1..$];
