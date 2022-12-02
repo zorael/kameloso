@@ -1199,11 +1199,11 @@ mixin template IRCPluginImpl(
                     immutable uda = ctUDAArray[i];
                 }
 
-                static assert(udaSanityCheck!(fun, uda),
-                    fullyQualifiedName!fun ~ " UDA sanity check failed.");
-
                 enum verbose = (uda._verbose || debug_);
                 enum funName = module_ ~ '.' ~ __traits(identifier, fun);
+
+                static assert(udaSanityCheck!(fun, uda),
+                    funName ~ " UDA sanity check failed.");
 
                 // Make a special check for IRCEvent.Type.ANY at compile-time,
                 // so the processing function won't have to walk the array twice
