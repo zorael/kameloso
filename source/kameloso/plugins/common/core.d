@@ -1235,6 +1235,10 @@ mixin template IRCPluginImpl(
                     {
                         return;
                     }
+                    else /*if (next == NextStep.unset)*/
+                    {
+                        assert(0, "`IRCPluginImpl.onEventImpl.process` returned `Next.unset`");
+                    }
                 }
                 catch (Exception e)
                 {
@@ -1273,9 +1277,13 @@ mixin template IRCPluginImpl(
                             return;
                         }
                     }
-                    else /*if (next == NextStep.return_)*/
+                    else if (next == NextStep.return_)
                     {
                         return;
+                    }
+                    else /*if (next == NextStep.unset)*/
+                    {
+                        assert(0, "`IRCPluginImpl.onEventImpl.process` returned `Next.unset`");
                     }
                 }
             }
