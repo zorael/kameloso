@@ -2415,7 +2415,7 @@ public:
             The numeric ID of the current connection.
      +/
     pragma(inline, true)
-    auto connectionID()
+    auto connectionID() const
     {
         return privateConnectionID;
     }
