@@ -1951,7 +1951,7 @@ unittest
         `true` if the message is in a context where the event matches the
         `policy`, `false` if not.
  +/
-auto prefixPolicyMatches(bool verbose = false)
+auto prefixPolicyMatches(bool verbose)
     (ref IRCEvent event,
     const PrefixPolicy policy,
     const IRCClient client,
