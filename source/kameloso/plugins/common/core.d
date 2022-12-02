@@ -2471,8 +2471,11 @@ struct Replay
     /++
         Creates a new [Replay] with a timestamp of the current time.
      +/
-    this(void delegate(Replay) dg, const ref IRCEvent event,
-        const Permissions permissionsRequired, const string caller)
+    this(
+        void delegate(Replay) dg,
+        const ref IRCEvent event,
+        const Permissions permissionsRequired,
+        const string caller)
     {
         import std.datetime.systime : Clock;
 
