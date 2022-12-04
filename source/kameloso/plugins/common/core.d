@@ -105,6 +105,12 @@ public:
          +/
         bool hidden;
 
+        // isRegex
+        /++
+            Whether or not the command is based on an `IRCEventHandler.Regex`.
+         +/
+        bool isRegex;
+
         // this
         /++
             Constructor taking an [IRCEventHandler.Command].
@@ -116,6 +122,7 @@ public:
             this.policy = command.policy;
             this.description = command.description;
             this.hidden = command.hidden;
+            //this.isRegex = false;
         }
 
         // this
@@ -129,6 +136,7 @@ public:
             this.policy = regex.policy;
             this.description = regex.description;
             this.hidden = regex.hidden;
+            this.isRegex = true;
         }
     }
 
