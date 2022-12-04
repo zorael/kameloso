@@ -1790,12 +1790,12 @@ mixin template IRCPluginImpl(
 
     // commands
     /++
-        Collects all [kameloso.plugins.common.core.IRCEventHandler.Command|IRCEventHandler.Command]
-        command words and [kameloso.plugins.common.core.IRCEventHandler.Regex|IRCEventHandler.Regex]
-        regex expressions that this plugin offers at compile time, then at runtime
-        returns them alongside their descriptions and their visibility, as an associative
-        array of [kameloso.plugins.common.core.IRCPlugin.CommandMetadata|IRCPlugin.CommandMetadata]s
-        keyed by command name strings.
+        Forwards to [kameloso.plugins.common.core.IRCPluginImpl.commandsImpl|IRCPluginImpl.commandsImpl].
+
+        This is made a separate function to allow plugins to override it and
+        insert their own code, while still leveraging
+        [kameloso.plugins.common.core.IRCPluginImpl.commandsImpl|IRCPluginImpl.commandsImpl]
+        for the actual dirty work.
 
         Returns:
             Associative array of tuples of all command metadata (descriptions,
@@ -1803,7 +1803,33 @@ mixin template IRCPluginImpl(
             [kameloso.plugins.common.core.IRCEventHandler.Command.word|IRCEventHandler.Command.word]s
             and [kameloso.plugins.common.core.IRCEventHandler.Regex.expression|IRCEventHandler.Regex.expression]s.
      +/
+    pragma(inline, true)
     override public IRCPlugin.CommandMetadata[string] commands() pure nothrow @property const
+    {
+        return commandsImpl();
+    }
+
+    // commandsImpl
+    /++
+        Collects all [kameloso.plugins.common.core.IRCEventHandler.Command|IRCEventHandler.Command]
+        command words and [kameloso.plugins.common.core.IRCEventHandler.Regex|IRCEventHandler.Regex]
+        regex expressions that this plugin offers at compile time, then at runtime
+        returns them alongside their descriptions and their visibility, as an associative
+        array of [kameloso.plugins.common.core.IRCPlugin.CommandMetadata|IRCPlugin.CommandMetadata]s
+        keyed by command name strings.
+
+        This function is private, but since it's part of a mixin template it will
+        be visible at the mixin site. Plugins can as such override
+        [kameloso.plugins.common.core.IRCPlugin.commands|IRCPlugin.commands] with
+        their own code and invoke [onCommandsImpl] as a fallback.
+
+        Returns:
+            Associative array of tuples of all command metadata (descriptions,
+            syntaxes, and whether they are hidden), keyed by
+            [kameloso.plugins.common.core.IRCEventHandler.Command.word|IRCEventHandler.Command.word]s
+            and [kameloso.plugins.common.core.IRCEventHandler.Regex.expression|IRCEventHandler.Regex.expression]s.
+     +/
+    private IRCPlugin.CommandMetadata[string] commandsImpl() pure nothrow @property const
     {
         enum ctCommandsEnumLiteral =
         {
