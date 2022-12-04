@@ -94,9 +94,9 @@ Grab a prebuilt binary from under [Releases](https://github.com/zorael/kameloso/
 
 ## Prerequisites
 
-**kameloso** is written in [**D**](https://dlang.org). It can be built using the reference compiler [**dmd**](https://dlang.org/download.html) and with the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases). **dmd** compiles very fast, while **ldc** is slower at compiling but produces faster code. Additionally it supports more target architectures than **dmd** does (e.g. ARM). See [here](https://wiki.dlang.org/Compilers) for an overview of the available compiler vendors.
+**kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html) and with the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases). **dmd** compiles very fast, while **ldc** is slower at compiling but produces faster code. Additionally it supports more target architectures than **dmd** does (e.g. ARM). See [here](https://wiki.dlang.org/Compilers) for an overview of the available compiler vendors.
 
-The latest release of the the GCC-based [**gdc**](https://gdcproject.org/downloads) (series **12**)  can currently technically compile the project source, but will fail to link it into a usable executable.
+The latest release of the the GCC-based [**gdc**](https://gdcproject.org/downloads) (series **12**) can currently technically compile the project source, but will fail to link it into a usable executable.
 
 You need a compiler based on D version **2.084** or later (January 2019). For **ldc** this is version **1.14**.
 
@@ -418,7 +418,7 @@ The Twitch secure port is **6697** (or **443**). For non-encrypted traffic, use 
 
 ### Long story
 
-To connect to Twitch servers, you must first compile the `twitch` build configuration to include Twitch support. **All pre-compiled binaries available from under [Releases](https://github.com/zorael/kameloso/releases) already have this built-in.**
+To connect to Twitch servers, you must first compile the `twitch` build configuration to include Twitch support. **All pre-compiled binaries available from under [Releases](https://github.com/zorael/kameloso/releases) are built this way.**
 
 You will also require an [authorisation token](https://en.wikipedia.org/wiki/OAuth). Assuming you have a configuration file set up to connect to Twitch, it will automatically start the guide to requesting one upon connecting, if none is present. Run the bot with `--set twitch.keygen` to force it if it doesn't, or if your token expired. (They last about 60 days.)
 
