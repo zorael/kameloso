@@ -1184,6 +1184,8 @@ mixin template IRCPluginImpl(
                 static immutable ctUDAArray = ()
                 {
                     IRCEventHandler[] udas;
+                    if (!__ctfe) return udas;
+
                     udas.length = funlist.length;
 
                     foreach (immutable i, fun; funlist)
@@ -1809,6 +1811,7 @@ mixin template IRCPluginImpl(
             import std.traits : getUDAs;
 
             IRCPlugin.CommandMetadata[string] commandAA;
+            if (!__ctfe) return commandAA;
 
             foreach (fun; this.allEventHandlerFunctionsInModule)
             {

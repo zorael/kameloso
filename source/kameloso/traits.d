@@ -487,6 +487,7 @@ if (Things.length > 0)
         }
 
         Results results;
+        if (!__ctfe) return results;
 
         foreach (Thing; Things)
         {
