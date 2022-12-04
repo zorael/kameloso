@@ -713,30 +713,28 @@ public:
     {
         import std.meta : AliasSeq;
 
+        parserTop:
         foreach (ref sym; AliasSeq!(this, parser))
         {
-            foreach (immutable i, ref member; sym.tupleof)
+            static foreach (immutable i; 0..sym.tupleof.length)
             {
-                alias T = typeof(sym.tupleof[i]);
-
-                static if (is(T == Thing))
+                static if (is(typeof(sym.tupleof[i]) == Thing))
                 {
                     sym.tupleof[i] = thing;
-                    break;
+                    break parserTop;
                 }
             }
         }
 
+        pluginTop:
         foreach (plugin; plugins)
         {
-            foreach (immutable i, ref member; plugin.state.tupleof)
+            static foreach (immutable i; 0..plugin.state.tupleof.length)
             {
-                alias T = typeof(plugin.state.tupleof[i]);
-
-                static if (is(T == Thing))
+                static if (is(typeof(plugin.state.tupleof[i]) == Thing))
                 {
                     plugin.state.tupleof[i] = thing;
-                    break;
+                    break pluginTop;
                 }
             }
         }

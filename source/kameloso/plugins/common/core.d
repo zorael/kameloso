@@ -375,7 +375,7 @@ mixin template IRCPluginImpl(
         bool retval = true;
 
         top:
-        foreach (immutable i, _; this.tupleof)
+        foreach (immutable i; 0..this.tupleof.length)
         {
             import std.traits : hasUDA;
 
@@ -384,7 +384,7 @@ mixin template IRCPluginImpl(
                 (hasUDA!(typeof(this.tupleof[i]), Settings) ||
                     hasUDA!(this.tupleof[i], Settings)))
             {
-                foreach (immutable n, _2; this.tupleof[i].tupleof)
+                foreach (immutable n; 0..this.tupleof[i].tupleof.length)
                 {
                     static if (hasUDA!(this.tupleof[i].tupleof[n], Enabler))
                     {
@@ -1434,19 +1434,20 @@ mixin template IRCPluginImpl(
         //this.state.previousWhoisTimestamps = null;  // keep
         this.state.updates = IRCPluginState.Update.nothing;
 
-        foreach (immutable i, ref member; this.tupleof)
+        // Not sure why this needs to be static but it does
+        static foreach (immutable i; 0..this.tupleof.length)
         {
-            static if (isSerialisable!member)
+            static if (isSerialisable!(this.tupleof[i]))
             {
                 import std.path : buildNormalizedPath;
 
                 static if (hasUDA!(this.tupleof[i], Resource))
                 {
-                    member = buildNormalizedPath(state.settings.resourceDirectory, member);
+                    this.tupleof[i] = buildNormalizedPath(state.settings.resourceDirectory, this.tupleof[i]);
                 }
                 else static if (hasUDA!(this.tupleof[i], Configuration))
                 {
-                    member = buildNormalizedPath(state.settings.configDirectory, member);
+                    this.tupleof[i] = buildNormalizedPath(state.settings.configDirectory, this.tupleof[i]);
                 }
             }
         }
@@ -1571,7 +1572,7 @@ mixin template IRCPluginImpl(
         import lu.meld : meldInto;
         import std.traits : hasUDA;
 
-        foreach (immutable i, ref symbol; this.tupleof)
+        foreach (immutable i; 0..this.tupleof.length)
         {
             static if (
                 is(typeof(this.tupleof[i]) == struct) &&
@@ -1631,14 +1632,14 @@ mixin template IRCPluginImpl(
 
         bool success;
 
-        foreach (immutable i, ref symbol; this.tupleof)
+        foreach (immutable i; 0..this.tupleof.length)
         {
             static if (
                 is(typeof(this.tupleof[i]) == struct) &&
                 (hasUDA!(typeof(this.tupleof[i]), Settings) ||
                     hasUDA!(this.tupleof[i], Settings)))
             {
-                success = symbol.setMemberByName(setting, value);
+                success = this.tupleof[i].setMemberByName(setting, value);
                 break;
             }
         }
@@ -1655,7 +1656,7 @@ mixin template IRCPluginImpl(
         import kameloso.printing : printObject;
         import std.traits : hasUDA;
 
-        foreach (immutable i, const ref symbol; this.tupleof)
+        foreach (immutable i; 0..this.tupleof.length)
         {
             static if (
                 is(typeof(this.tupleof[i]) == struct) &&
@@ -1663,7 +1664,7 @@ mixin template IRCPluginImpl(
                     hasUDA!(this.tupleof[i], Settings)))
             {
                 import std.typecons : No, Yes;
-                printObject!(No.all)(symbol);
+                printObject!(No.all)(this.tupleof[i]);
                 break;
             }
         }
@@ -1696,7 +1697,7 @@ mixin template IRCPluginImpl(
 
         bool didSomething;
 
-        foreach (immutable i, ref symbol; this.tupleof)
+        foreach (immutable i; 0..this.tupleof.length)
         {
             static if (
                 is(typeof(this.tupleof[i]) == struct) &&
@@ -1705,7 +1706,7 @@ mixin template IRCPluginImpl(
             {
                 import lu.serialisation : serialise;
 
-                sink.serialise(symbol);
+                sink.serialise(this.tupleof[i]);
                 didSomething = true;
                 break;
             }
