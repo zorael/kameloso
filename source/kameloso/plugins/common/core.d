@@ -105,15 +105,30 @@ public:
          +/
         bool hidden;
 
-        /// Constructor. Don't take a `syntax` here, populate it manually.
-        this(
-            const PrefixPolicy policy,
-            const string description,
-            const bool hidden) pure @safe nothrow @nogc
+        // this
+        /++
+            Constructor taking an [IRCEventHandler.Command].
+
+            Do not touch [syntaxes]; populate them at the call site.
+         +/
+        this(const IRCEventHandler.Command command) pure @safe nothrow @nogc
         {
-            this.policy = policy;
-            this.description = description;
-            this.hidden = hidden;
+            this.policy = command.policy;
+            this.description = command.description;
+            this.hidden = command.hidden;
+        }
+
+        // this
+        /++
+            Constructor taking an [IRCEventHandler.Regex].
+
+            Do not touch [syntaxes]; populate them at the call site.
+         +/
+        this(const IRCEventHandler.Regex regex) pure @safe nothrow @nogc
+        {
+            this.policy = regex.policy;
+            this.description = regex.description;
+            this.hidden = regex.hidden;
         }
     }
 
@@ -1846,8 +1861,7 @@ mixin template IRCPluginImpl(
                 static foreach (immutable command; uda._commands)
                 {{
                     enum key = command._word;
-                    commandAA[key] = IRCPlugin.CommandMetadata
-                        (command._policy, command._description, command._hidden);
+                    commandAA[key] = IRCPlugin.CommandMetadata(command);
 
                     static if (command._hidden)
                     {
@@ -1857,13 +1871,23 @@ mixin template IRCPluginImpl(
                     {
                         static if (command._policy == PrefixPolicy.nickname)
                         {
+                            import lu.string : beginsWith;
+
                             static if (command._syntaxes.length)
                             {
-                                // Prefix the command with the bot's nickname,
-                                // as that's how it's actually used.
                                 foreach (immutable syntax; command._syntaxes)
                                 {
-                                    commandAA[key].syntaxes ~= "$bot: " ~ syntax;
+                                    if (syntax.beginsWith("$bot"))
+                                    {
+                                        // Syntax is already prefixed
+                                        commandAA[key].syntaxes ~= syntax;
+                                    }
+                                    else
+                                    {
+                                        // Prefix the command with the bot's nickname,
+                                        // as that's how it's actually used.
+                                        commandAA[key].syntaxes ~= "$bot: " ~ syntax;
+                                    }
                                 }
                             }
                             else
@@ -1899,8 +1923,7 @@ mixin template IRCPluginImpl(
                 static foreach (immutable regex; uda._regexes)
                 {{
                     enum key = `r"` ~ regex._expression ~ `"`;
-                        commandAA[key] = IRCPlugin.CommandMetadata
-                            (regex._policy, regex._description, regex._hidden);
+                    commandAA[key] = IRCPlugin.CommandMetadata(regex);
 
                     static if (regex._description.length)
                     {
