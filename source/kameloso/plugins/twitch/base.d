@@ -2408,7 +2408,7 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
 
         // More than a week away, just .info
         enum pattern = "Your Twitch authorisation token will expire " ~
-            "in <l>%d days</> on <l>%4d-%02d-%02d</>.";
+            "in <l>%d days</> on <l>%4d-%02d-%02d";
         logger.infof(pattern, numDays, expiresWhen.year, expiresWhen.month, expiresWhen.day);
     }
 
@@ -2423,7 +2423,7 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
         if (numHours > 0)
         {
             enum pattern = "Warning: Your Twitch authorisation token will expire " ~
-                "in <l>%d %s and %d %s</> at <l>%4d-%02d-%02d %02d:%02d</>.";
+                "in <l>%d %s and %d %s</> at <l>%4d-%02d-%02d %02d:%02d";
             logger.warningf(pattern,
                 numDays, numDays.plurality("day", "days"),
                 numHours, numHours.plurality("hour", "hours"),
@@ -2433,7 +2433,7 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
         else
         {
             enum pattern = "Warning: Your Twitch authorisation token will expire " ~
-                "in <l>%d %s</> at <l>%4d-%02d-%02d %02d:%02d</>.";
+                "in <l>%d %s</> at <l>%4d-%02d-%02d %02d:%02d";
             logger.warningf(pattern,
                 numDays, numDays.plurality("day", "days"),
                 expiresWhen.year, expiresWhen.month, expiresWhen.day,
@@ -2452,7 +2452,7 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
         if (numMinutes > 0)
         {
             enum pattern = "WARNING: Your Twitch authorisation token will expire " ~
-                "in <l>%d %s and %d %s</> at <l>%02d:%02d</>.";
+                "in <l>%d %s and %d %s</> at <l>%02d:%02d";
             logger.warningf(pattern,
                 numHours, numHours.plurality("hour", "hours"),
                 numMinutes, numMinutes.plurality("minute", "minutes"),
@@ -2461,7 +2461,7 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
         else
         {
             enum pattern = "WARNING: Your Twitch authorisation token will expire " ~
-                "in <l>%d %s</> at <l>%02d:%02d</>.";
+                "in <l>%d %s</> at <l>%02d:%02d";
             logger.warningf(pattern,
                 numHours, numHours.plurality("hour", "hours"),
                 expiresWhen.hour, expiresWhen.minute);
@@ -2475,7 +2475,7 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
 
         // Less than an hour; warning
         enum pattern = "WARNING: Your Twitch authorisation token will expire " ~
-            "in <l>%d minutes</> at <l>%02d:%02d</>.";
+            "in <l>%d minutes</> at <l>%02d:%02d";
         logger.warningf(pattern,
             numMinutes, expiresWhen.hour, expiresWhen.minute);
     }
