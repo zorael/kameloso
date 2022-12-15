@@ -160,8 +160,8 @@ bool isTerminal() @system
 
 // applyMonochromeAndFlushOverrides
 /++
-    Override [kameloso.kameloso.CoreSettings.monochrome|CoreSettings.monochrome] and
-    potentially [kameloso.kameloso.CoreSettings.flush|CoreSettings.flush] if the
+    Override [kameloso.pods.CoreSettings.monochrome|CoreSettings.monochrome] and
+    potentially [kameloso.pods.CoreSettings.flush|CoreSettings.flush] if the
     terminal seems to not truly be a terminal (such as a pager, or a non-whitelisted
     IDE terminal emulator).
 

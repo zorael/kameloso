@@ -865,6 +865,8 @@ void initHostmaskResources(PersistenceService service)
 }
 
 
+mixin ModuleRegistration!(-50);
+
 public:
 
 

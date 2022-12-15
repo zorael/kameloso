@@ -124,7 +124,7 @@ public:
         to join, which home channels to operate in, the list of administrator accounts, etc.
 
     * [kameloso.plugins.common.core.IRCPluginState.settings|IRCPluginState.settings]
-        is a copy of the "global" [kameloso.kameloso.CoreSettings|CoreSettings],
+        is a copy of the "global" [kameloso.pods.CoreSettings|CoreSettings],
         which contains information about how the bot should output text, whether
         or not to always save to disk upon program exit, and some other program-wide settings.
 
@@ -395,7 +395,7 @@ version(OmniscientSeen)
         The three policies are
         [kameloso.plugins.common.core.ChannelPolicy.home|ChannelPolicy.home],
         with which only events in channels in the
-        [kameloso.kameloso.IRCBot.homeChannels|IRCBot.homeChannels]
+        [kameloso.pods.IRCBot.homeChannels|IRCBot.homeChannels]
         array will be allowed to trigger it;
         [kameloso.plugins.common.core.ChannelPolicy.guest|ChannelPolicy.guest]
         with which only events outside of such home channels will be allowed to trigger;
@@ -1277,6 +1277,13 @@ mixin UserAwareness;
     the amount of tracked users to people in our home channels.
  +/
 mixin ChannelAwareness!omniscientChannelPolicy;
+
+
+/++
+    Mixes in a module constructor that registers this module's plugin to be
+    instantiated on program startup/connect.
+ +/
+mixin ModuleRegistration;
 
 
 /++

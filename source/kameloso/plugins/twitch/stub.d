@@ -11,6 +11,8 @@ private:
 
 import kameloso.plugins.common.core;
 
+mixin ModuleRegistration;
+
 public:
 
 

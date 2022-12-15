@@ -9,7 +9,7 @@ module kameloso.common;
 
 private:
 
-import kameloso.kameloso : CoreSettings;
+import kameloso.pods : CoreSettings;
 import kameloso.logger : KamelosoLogger;
 import dialect.defs : IRCClient, IRCServer;
 import std.datetime.systime : SysTime;
@@ -87,7 +87,7 @@ out (; (logger !is null), "Failed to initialise logger")
 
 // settings
 /++
-    A [kameloso.kameloso.CoreSettings|CoreSettings] struct global, housing
+    A [kameloso.pods.CoreSettings|CoreSettings] struct global, housing
     certain runtime settings.
 
     This will be accessed from other parts of the program, via

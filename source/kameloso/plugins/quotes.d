@@ -888,8 +888,10 @@ void initResources(QuotesPlugin plugin)
 
 
 mixin UserAwareness;
+mixin ModuleRegistration;
 
 public:
+
 
 // QuotesPlugin
 /++

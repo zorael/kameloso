@@ -1567,7 +1567,7 @@ mixin template IRCPluginImpl(
         out string[][string] missingEntries,
         out string[][string] invalidEntries)
     {
-        import kameloso.config : readConfigInto;
+        import kameloso.configreader : readConfigInto;
         import lu.meld : meldInto;
         import std.traits : hasUDA;
 
@@ -2296,7 +2296,7 @@ auto filterSender(
 struct IRCPluginState
 {
 private:
-    import kameloso.kameloso : ConnectionSettings, CoreSettings, IRCBot;
+    import kameloso.pods : ConnectionSettings, CoreSettings, IRCBot;
     import kameloso.thread : ScheduledDelegate, ScheduledFiber;
     import std.concurrency : Tid;
     import core.thread : Fiber;
@@ -2356,20 +2356,20 @@ public:
 
     // bot
     /++
-        The current [kameloso.kameloso.IRCBot|IRCBot], containing information
+        The current [kameloso.pods.IRCBot|IRCBot], containing information
         pertaining to the bot in the context of an IRC bot.
      +/
     IRCBot bot;
 
     // settings
     /++
-        The current program-wide [kameloso.kameloso.CoreSettings|CoreSettings].
+        The current program-wide [kameloso.pods.CoreSettings|CoreSettings].
      +/
     CoreSettings settings;
 
     // connSettings
     /++
-        The current program-wide [kameloso.kameloso.ConnectionSettings|ConnectionSettings].
+        The current program-wide [kameloso.pods.ConnectionSettings|ConnectionSettings].
      +/
     ConnectionSettings connSettings;
 
@@ -2629,7 +2629,7 @@ enum PrefixPolicy
     /++
         The annotated event handler will only trigger if the
         [dialect.defs.IRCEvent.content|IRCEvent.content] member starts with the
-        [kameloso.kameloso.CoreSettings.prefix|CoreSettings.prefix] (e.g. "!").
+        [kameloso.pods.CoreSettings.prefix|CoreSettings.prefix] (e.g. "!").
         All other annotations must also match.
      +/
     prefixed,
@@ -3064,6 +3064,59 @@ template PluginModuleInfo(string module_)
         enum pattern = "Tried to divine the `IRCPlugin` subclass of non-existent module `%s`";
         enum message = pattern.format(module_);
         static assert(0, message);
+    }
+}
+
+
+// ModuleRegistration
+/++
+    Mixes in a module constructor that registers any [IRCPlugin] subclasses in
+    the module to be instantiated on program startup/connect.
+
+    Params:
+        priority = Priority at which to instantiate the plugin. A lower priority
+            makes it get instantiated before other plugins. Defaults to `0`.
+        module_ = String name of the module. Should be kept to its default `__MODULE__`.
+ +/
+mixin template ModuleRegistration(
+    int priority = 0,
+    string module_ = __MODULE__)
+{
+    // module constructor
+    /++
+        Mixed-in module constructor that registers any [IRCPlugin] subclasses in
+        the module to be instantiated on program startup.
+     +/
+    shared static this()
+    {
+        import kameloso.plugins.common.core : IRCPluginState, PluginModuleInfo;
+
+        alias PluginModule = PluginModuleInfo!module_;
+
+        static if (!PluginModule.hasPluginClass)
+        {
+            // No class in module, so just ignore it
+            pragma(msg, "Note: Versioned-out or dummy plugin: " ~ module_);
+        }
+        else static if (__traits(compiles, new PluginModule.Class(IRCPluginState.init)))
+        {
+            import kameloso.plugins : registerPlugin;
+
+            static auto ctor(IRCPluginState state)
+            {
+                return new PluginModule.Class(state);
+            }
+
+            registerPlugin(priority, module_, &ctor);
+        }
+        else
+        {
+            import std.format : format;
+
+            enum pattern = "`%s.%s` constructor does not compile";
+            enum message = pattern.format(module_, PluginModule.className);
+            static assert(0, message);
+        }
     }
 }
 

@@ -106,7 +106,7 @@ void onSelfpart(ConnectService service, const ref IRCEvent event)
 // joinChannels
 /++
     Joins all channels listed as home channels *and* guest channels in the arrays in
-    [kameloso.kameloso.IRCBot|IRCBot] of the current [ConnectService]'s
+    [kameloso.pods.IRCBot|IRCBot] of the current [ConnectService]'s
     [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
 
     Params:
@@ -597,7 +597,7 @@ void onBanned(ConnectService service)
 
 // onPassMismatch
 /++
-    Quits the program if we supplied a bad [kameloso.kameloso.IRCBot.pass|IRCBot.pass].
+    Quits the program if we supplied a bad [kameloso.pods.IRCBot.pass|IRCBot.pass].
 
     There's no point in reconnecting.
  +/
@@ -873,16 +873,16 @@ void onSASLAuthenticate(ConnectService service)
 // trySASLPlain
 /++
     Constructs a SASL plain authentication token from the bot's
-    [kameloso.kameloso.IRCBot.account|IRCBot.account] and
-    [kameloso.kameloso.IRCBot.password|IRCBot.password],
+    [kameloso.pods.IRCBot.account|IRCBot.account] and
+    [kameloso.pods.IRCBot.password|IRCBot.password],
     then sends it to the server, during registration.
 
     A SASL plain authentication token is composed like so:
 
         `base64(account \0 account \0 password)`
 
-    ...where [kameloso.kameloso.IRCBot.account|IRCBot.account] is the services
-    account name and [kameloso.kameloso.IRCBot.password|IRCBot.password] is the
+    ...where [kameloso.pods.IRCBot.account|IRCBot.account] is the services
+    account name and [kameloso.pods.IRCBot.password|IRCBot.password] is the
     account password.
 
     Params:
@@ -1595,6 +1595,8 @@ void onBusMessage(ConnectService service, const string header, shared Sendable c
     }
 }
 
+
+mixin ModuleRegistration!(-30);
 
 public:
 

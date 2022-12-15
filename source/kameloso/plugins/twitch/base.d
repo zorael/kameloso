@@ -2793,7 +2793,7 @@ void reload(TwitchPlugin plugin)
 mixin UserAwareness;
 mixin ChannelAwareness;
 mixin TwitchAwareness;
-
+mixin ModuleRegistration;
 
 public:
 

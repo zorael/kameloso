@@ -806,6 +806,7 @@ unittest
 
 mixin UserAwareness!(ChannelPolicy.any);
 mixin ChannelAwareness!(ChannelPolicy.any);
+mixin ModuleRegistration!(-40);
 
 public:
 
