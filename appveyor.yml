@@ -6,13 +6,13 @@ environment:
       #DVersion: latest
       arch: x64
     - DC: dmd
-      DVersion: 2.085.0
+      DVersion: 2.086.0
       arch: x64
     - DC: ldc
       #DVersion: latest
       arch: x64
     - DC: ldc
-      DVersion: 1.15.0
+      DVersion: 1.16.0
       arch: x64
 
 branches:
