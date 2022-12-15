@@ -23,10 +23,10 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-latest, macOS-latest, windows-latest ]
-        dc: [ dmd-latest, dmd-2.085.0, ldc-latest, ldc-1.15.0 ]
+        dc: [ dmd-latest, dmd-2.086.0, ldc-latest, ldc-1.16.0 ]
         exclude:
-          - { os: macOS-latest, dc: dmd-2.085.0 }
-          - { os: macOS-latest, dc: ldc-1.15.0 }
+          - { os: macOS-latest, dc: dmd-2.086.0 }
+          - { os: macOS-latest, dc: ldc-1.16.0 }
 
     runs-on: ${{ matrix.os }}
     continue-on-error: true
