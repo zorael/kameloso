@@ -569,7 +569,7 @@ void pruneChannels(ref string[string][string] automodes)
 
 mixin UserAwareness;
 mixin ChannelAwareness;
-
+mixin ModuleRegistration;
 
 public:
 

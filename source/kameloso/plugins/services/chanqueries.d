@@ -446,15 +446,17 @@ void onNoSuchChannel(ChanQueriesService service, const ref IRCEvent event)
 
 version(OmniscientQueries)
 {
-    mixin UserAwareness!(ChannelPolicy.any);
-    mixin ChannelAwareness!(ChannelPolicy.any);
+    enum channelPolicy = ChannelPolicy.any;
 }
 else
 {
-    mixin UserAwareness;
-    mixin ChannelAwareness;
+    enum channelPolicy = ChannelPolicy.home;
 }
 
+
+mixin UserAwareness!channelPolicy;
+mixin ChannelAwareness!channelPolicy;
+mixin ModuleRegistration!(-10);
 
 public:
 

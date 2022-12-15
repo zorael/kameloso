@@ -279,7 +279,7 @@ void onCommandQuit(AdminPlugin plugin, const ref IRCEvent event)
 // onCommandHome
 /++
     Adds or removes channels to/from the list of currently active home channels,
-    in the [kameloso.kameloso.IRCBot.homeChannels|IRCBot.homeChannels] array of
+    in the [kameloso.pods.IRCBot.homeChannels|IRCBot.homeChannels] array of
     the current [AdminPlugin]'s [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
 
     Merely passes on execution to [addHome] and [delHome].
@@ -342,7 +342,7 @@ void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
 // addHome
 /++
     Adds a channel to the list of currently active home channels, in the
-    [kameloso.kameloso.IRCBot.homeChannels|IRCBot.homeChannels] array of the
+    [kameloso.pods.IRCBot.homeChannels|IRCBot.homeChannels] array of the
     current [AdminPlugin]'s [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
 
     Follows up with a [core.thread.fiber.Fiber|Fiber] to verify that the channel
@@ -489,7 +489,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
 // delHome
 /++
     Removes a channel from the list of currently active home channels, from the
-    [kameloso.kameloso.IRCBot.homeChannels|IRCBot.homeChannels] array of the
+    [kameloso.pods.IRCBot.homeChannels|IRCBot.homeChannels] array of the
     current [AdminPlugin]'s [kameloso.plugins.common.core.IRCPluginState|IRCPluginState].
  +/
 void delHome(AdminPlugin plugin, const ref IRCEvent event, const string rawChannel)
@@ -1432,12 +1432,12 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 
 mixin UserAwareness!omniscientChannelPolicy;
 mixin ChannelAwareness!omniscientChannelPolicy;
+mixin ModuleRegistration;
 
 version(TwitchSupport)
 {
     mixin TwitchAwareness!omniscientChannelPolicy;
 }
-
 
 public:
 

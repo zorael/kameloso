@@ -119,7 +119,7 @@ void onTwitchChannelEvent(NotesPlugin plugin, const /*ref*/ IRCEvent event)
     These carry a sender, so it's possible we know the account without lookups.
 
     Do nothing if
-    [kameloso.kameloso.CoreSettings.eagerLookups|CoreSettings.eagerLookups] is true,
+    [kameloso.pods.CoreSettings.eagerLookups|CoreSettings.eagerLookups] is true,
     as we'd collide with ChanQueries' queries.
 
     Pass `Yes.background` to [playbackNotes] to ensure it does low-priority background
@@ -612,6 +612,7 @@ void initResources(NotesPlugin plugin)
 
 
 mixin MinimalAuthentication;
+mixin ModuleRegistration;
 
 public:
 

@@ -13,8 +13,9 @@ module kameloso.main;
 private:
 
 import kameloso.common : logger;
-import kameloso.kameloso : Kameloso, CoreSettings;
+import kameloso.kameloso : Kameloso;
 import kameloso.plugins.common.core : IRCPlugin, Replay;
+import kameloso.pods : CoreSettings;
 import dialect.defs;
 import lu.common : Next;
 import std.stdio : stdout;
@@ -1995,7 +1996,8 @@ void resetSignals() nothrow @nogc
 auto tryGetopt(ref Kameloso instance, string[] args)
 {
     import kameloso.plugins.common.misc : IRCPluginSettingsException;
-    import kameloso.config : ConfigurationFileReadFailureException, handleGetopt;
+    import kameloso.config : handleGetopt;
+    import kameloso.configreader : ConfigurationFileReadFailureException;
     import lu.common : FileTypeMismatchException;
     import lu.serialisation : DeserialisationException;
     import std.conv : ConvException;
@@ -2526,12 +2528,12 @@ void postInstanceSetup(ref Kameloso instance)
 
 // setDefaultDirectories
 /++
-    Sets default directories in the passed [kameloso.kameloso.CoreSettings|CoreSettings].
+    Sets default directories in the passed [kameloso.pods.CoreSettings|CoreSettings].
 
     This is called during early execution.
 
     Params:
-        settings = A reference to some [kameloso.kameloso.CoreSettings|CoreSettings].
+        settings = A reference to some [kameloso.pods.CoreSettings|CoreSettings].
  +/
 void setDefaultDirectories(ref CoreSettings settings)
 {

@@ -859,6 +859,7 @@ void initialise(WebtitlesPlugin plugin)
 
 
 mixin MinimalAuthentication;
+mixin ModuleRegistration;
 
 public:
 

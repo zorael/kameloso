@@ -965,12 +965,12 @@ void initResources(OnelinersPlugin plugin)
 
 mixin UserAwareness;
 mixin ChannelAwareness;
+mixin ModuleRegistration;
 
 version(TwitchSupport)
 {
     mixin TwitchAwareness;
 }
-
 
 public:
 

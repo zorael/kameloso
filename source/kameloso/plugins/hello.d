@@ -1,4 +1,5 @@
 module kameloso.plugins.hello;
+
 version(none):  // Remove to enable
 
 import kameloso.plugins.common;
@@ -22,3 +23,5 @@ final class HelloPlugin : IRCPlugin
 {
     mixin IRCPluginImpl;
 }
+
+mixin ModuleRegistration;

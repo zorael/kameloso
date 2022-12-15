@@ -620,6 +620,7 @@ void generateVoteReminders(
 
 
 mixin MinimalAuthentication;
+mixin ModuleRegistration;
 
 public:
 

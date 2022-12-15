@@ -350,6 +350,7 @@ void onDance(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
 
 
 mixin MinimalAuthentication;
+mixin ModuleRegistration;
 
 public:
 

@@ -477,6 +477,8 @@ void onBusMessage(PipelinePlugin plugin, const string header, shared Sendable co
 }
 
 
+mixin ModuleRegistration;
+
 public:
 
 

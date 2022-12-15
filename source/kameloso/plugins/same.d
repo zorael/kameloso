@@ -125,6 +125,8 @@ void onAnyMessageRegex(SamePlugin plugin, const ref IRCEvent event)
 }
 
 
+mixin ModuleRegistration;
+
 public:
 
 

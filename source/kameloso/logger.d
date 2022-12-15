@@ -89,7 +89,7 @@ enum LogLevel : ubyte
 final class KamelosoLogger
 {
 private:
-    import kameloso.kameloso : CoreSettings;
+    import kameloso.pods : CoreSettings;
     import kameloso.terminal.colours.tags : expandTags;
     import lu.conv : Enum;
     import std.array : Appender;
@@ -144,10 +144,10 @@ public:
 
     /++
         Creates a new [KamelosoLogger] with settings divined from the passed
-        [kameloso.kameloso.CoreSettings|CoreSettings] struct.
+        [kameloso.pods.CoreSettings|CoreSettings] struct.
 
         Params:
-            settings = [kameloso.kameloso.CoreSettings|CoreSettings] whose
+            settings = [kameloso.pods.CoreSettings|CoreSettings] whose
                 values to inherit.
      +/
     this(const CoreSettings settings) pure nothrow @safe
