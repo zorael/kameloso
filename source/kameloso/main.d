@@ -46,15 +46,17 @@ enum gcOptions = ()
     {
         sink.put("profile:1 ");
     }
-
-    static if (__VERSION__ >= 2085L)
+    else version(unittest)
     {
-        sink.put("cleanup:finalize ");
+        // Always print profile information on unittest builds
+        sink.put("profile:1 ");
+    }
 
-        version(PreciseGC)
-        {
-            sink.put("gc:precise ");
-        }
+    sink.put("cleanup:finalize ");
+
+    version(PreciseGC)
+    {
+        sink.put("gc:precise ");
     }
 
     static if (__VERSION__ >= 2098L)
@@ -63,12 +65,6 @@ enum gcOptions = ()
         {
             sink.put("fork:1 ");
         }
-    }
-
-    version(unittest)
-    {
-        // Always print profile information on unittest builds
-        sink.put("profile:1 ");
     }
 
     // Tweak these numbers as we see fit

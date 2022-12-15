@@ -98,7 +98,7 @@ Grab a prebuilt binary from under [Releases](https://github.com/zorael/kameloso/
 
 The latest release of the the GCC-based [**gdc**](https://gdcproject.org/downloads) (series **12**) can currently technically compile the project source, but will fail to link it into a usable executable.
 
-You need a compiler based on D version **2.084** or later (January 2019). For **ldc** this is version **1.14**.
+You need a compiler based on D version **2.085** or later (March 2019). For **ldc** this is version **1.15**.
 
 If your repositories (or other software sources) don't have compilers new enough, you can use the official [`install.sh`](https://dlang.org/install.html) installation script to download current ones, or any version of choice. (**gdc** is not available via this script.)
 
