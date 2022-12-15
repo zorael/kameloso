@@ -259,9 +259,10 @@ final class IRCPluginInitialisationException : Exception
 
     /++
         Constructs an [IRCPluginInitialisationException], embedding a plugin name
-        and the optional name of a malformed resource file.
+        and the name of a malformed resource file.
      +/
-    this(const string message,
+    this(
+        const string message,
         const string pluginName,
         const string malformedFilename,
         const string file = __FILE__,
@@ -273,12 +274,17 @@ final class IRCPluginInitialisationException : Exception
         super(message, file, line, nextInChain);
     }
 
-    /// Wraps normal Exception constructors.
-    this(const string message,
+    /++
+        Constructs an [IRCPluginInitialisationException], embedding a plugin name.
+     +/
+    this(
+        const string message,
+        const string pluginName,
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
     {
+        this.pluginName = pluginName;
         super(message, file, line, nextInChain);
     }
 }
