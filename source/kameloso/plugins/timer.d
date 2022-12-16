@@ -1154,7 +1154,6 @@ version(TwitchSupport)
     mixin UserAwareness;
 }
 
-
 public:
 
 
