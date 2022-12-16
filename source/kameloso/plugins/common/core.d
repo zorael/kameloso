@@ -1348,17 +1348,11 @@ mixin template IRCPluginImpl(
             }
             else
             {
-                import std.algorithm.comparison : among;
-                import std.meta : AliasSeq;
+                import std.algorithm.searching : endsWith;
 
-                // Also skip event handler checks for these specific whitelisted modules
-                alias emptyModuleWhitelist = AliasSeq!(
-                    "kameloso.plugins.twitch.stub",
-                );
-
-                static if (module_.among!emptyModuleWhitelist)
+                static if (module_.endsWith(".stub"))
                 {
-                    // Known to be empty
+                    // Defined to be empty
                 }
                 else
                 {
