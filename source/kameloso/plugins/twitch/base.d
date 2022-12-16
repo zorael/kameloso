@@ -277,6 +277,13 @@ package struct Credentials
 }
 
 
+// Mixins
+mixin UserAwareness;
+mixin ChannelAwareness;
+mixin TwitchAwareness;
+mixin ModuleRegistration;
+
+
 // onImportant
 /++
     Bells on any important event, like subscriptions, cheers and raids, if the
@@ -2789,11 +2796,6 @@ void reload(TwitchPlugin plugin)
     plugin.secretsByChannel = plugin.secretsByChannel.rehash();
 }
 
-
-mixin UserAwareness;
-mixin ChannelAwareness;
-mixin TwitchAwareness;
-mixin ModuleRegistration;
 
 public:
 
