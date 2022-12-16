@@ -1391,6 +1391,53 @@ mixin template IRCPluginImpl(
         alias cleanupFuns = Filter!(isCleanupFun, this.allEventHandlerFunctionsInModule);
         alias pluginFuns = Filter!(isNormalEventHandler, this.allEventHandlerFunctionsInModule);
 
+        /+
+            It seems we can't trust mixed-in awareness functions to actually get
+            detected, depending on how late in the module the site of mixin is.
+            So statically assert we found some.
+         +/
+        static if (__traits(compiles, { alias _ = .hasMinimalAuthentication; }))
+        {
+            static if (!earlyFuns.length)
+            {
+                import std.format : format;
+
+                enum pattern = "Module `%s` mixes in `MinimalAwareness`, " ~
+                    "yet no `Timing.early` functions were found during introspection. " ~
+                    "Try moving the mixin site to earlier in the module.";
+                immutable message = pattern.format(module_);
+                static assert(0, message);
+            }
+        }
+
+        static if (__traits(compiles, { alias _ = .hasUserAwareness; }))
+        {
+            static if (!cleanupFuns.length)
+            {
+                import std.format : format;
+
+                enum pattern = "Module `%s` mixes in `UserAwareness`, " ~
+                    "yet no `Timing.cleanup` functions were found during introspection. " ~
+                    "Try moving the mixin site to earlier in the module.";
+                immutable message = pattern.format(module_);
+                static assert(0, message);
+            }
+        }
+
+        static if (__traits(compiles, { alias _ = .hasChannelAwareness; }))
+        {
+            static if (!lateFuns.length)
+            {
+                import std.format : format;
+
+                enum pattern = "Module `%s` mixes in `ChannelAwareness`, " ~
+                    "yet no `Timing.late` functions were found during introspection. " ~
+                    "Try moving the mixin site to earlier in the module.";
+                immutable message = pattern.format(module_);
+                static assert(0, message);
+            }
+        }
+
         tryProcess!setupFuns(origEvent);
         tryProcess!earlyFuns(origEvent);
         tryProcess!pluginFuns(origEvent);
