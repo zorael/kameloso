@@ -33,7 +33,6 @@ import std.datetime.timezone : TimeZone;
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .onEvent(IRCEvent.Type.QUERY)
     .permissionsRequired(Permissions.anyone)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
@@ -66,18 +65,18 @@ void onCommandTime(TimePlugin plugin, const ref IRCEvent event)
         {
             enum pattern = "Invalid time zone: <b>%s<b>";
             immutable message = pattern.format(specified);
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            chan(plugin.state, event.channel, message);
         }
         else if (overrideZone)
         {
             enum pattern = `Internal error; possible malformed entry "<b>%s<b>" in time zones file.`;
             immutable message = pattern.format(*overrideZone);
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            chan(plugin.state, event.channel, message);
         }
         else
         {
             enum message = "Internal error.";
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            chan(plugin.state, event.channel, message);
         }
         return;
     }
@@ -88,12 +87,12 @@ void onCommandTime(TimePlugin plugin, const ref IRCEvent event)
     {
         enum pattern = "The time is currently <b>%02d:%02d<b> in <b>%s<b>.";
         immutable message = pattern.format(now.hour, now.minute, specified);
-        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        return chan(plugin.state, event.channel, message);
     }
 
     version(TwitchSupport)
     {
-        if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) && event.channel.length)
+        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
             import kameloso.plugins.common.misc : nameOf;
 
@@ -108,21 +107,20 @@ void onCommandTime(TimePlugin plugin, const ref IRCEvent event)
         }
     }
 
-    if (now.timezone.name.length && event.channel.length)
+    if (overrideZone)
     {
-        // --> is not LocalTime()
         enum pattern = "The time is currently <b>%02d:%02d<b> in <b>%s<b>.";
         immutable message = pattern.format(
             now.hour,
             now.minute,
             *overrideZone);
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        chan(plugin.state, event.channel, message);
     }
     else
     {
         enum pattern = "The time is currently <b>%02d:%02d<b> locally.";
         immutable message = pattern.format(now.hour, now.minute);
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        chan(plugin.state, event.channel, message);
     }
 }
 
