@@ -1,7 +1,5 @@
 /++
     A simple plugin for querying the time in different timezones.
-
-    Limitations: Currently only supports a single local time zone override.
  +/
 module kameloso.plugins.time;
 
@@ -25,16 +23,13 @@ import std.datetime.timezone : TimeZone;
 {
     /// Toggle whether or not this plugin should do anything at all.
     @Enabler bool enabled = true;
-
-    /// Name of timezone to use for local time; e.g. "Europe/Stockholm".
-    string localTimeZoneOverride;
 }
 
 
 // onCommandTime
 /++
-    Reports the time in the specified timezone, in the override specified in the
-    configuration file, or in the one local to the bot.
+    Reports the time in the specified timezone, in an override specified in the
+    time zones definitions file, or in the one local to the bot.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -45,33 +40,54 @@ import std.datetime.timezone : TimeZone;
         IRCEventHandler.Command()
             .word("time")
             .policy(PrefixPolicy.prefixed)
-            .description("Reports the time in a given time zone, or the one local to the bot.")
+            .description("Reports the time in a given time zone.")
             .addSyntax("$command [optional timezone]")
     )
 )
 void onCommandTime(TimePlugin plugin, const ref IRCEvent event)
 {
+    import lu.string : stripped;
     import std.datetime.systime : Clock;
+    import std.datetime.timezone : LocalTime;
     import std.format : format;
 
-    immutable timeZone = event.content.length ?
-        getTimeZoneByName(event.content, plugin.installedTimeZones) :
-        cast(immutable)plugin.localTimeZone;
+    immutable specified = event.content.stripped;
+    const overrideZone = event.channel in plugin.channelTimeZones;
 
-    if (!timeZone)
+    immutable timezone = specified.length ?
+        getTimeZoneByName(specified, plugin.installedTimeZones) :
+        overrideZone ?
+            getTimeZoneByName(*overrideZone, plugin.installedTimeZones) :
+            LocalTime();
+
+    if (!timezone)
     {
-        enum pattern = "Invalid time zone: <b>%s<b>";
-        immutable message = pattern.format(event.content);
-        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        if (specified.length)
+        {
+            enum pattern = "Invalid time zone: <b>%s<b>";
+            immutable message = pattern.format(specified);
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        }
+        else if (overrideZone)
+        {
+            enum pattern = `Internal error; possible malformed entry "<b>%s<b>" in time zones file.`;
+            immutable message = pattern.format(*overrideZone);
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        }
+        else
+        {
+            enum message = "Internal error.";
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        }
+        return;
     }
 
-    immutable now = Clock.currTime(timeZone);
+    immutable now = Clock.currTime(timezone);
 
-    if (timeZone.name.length)
+    if (specified.length)
     {
-        // Not LocalTime, whose .name property is always null
-        enum pattern = "Current time in <b>%s<b>: <b>%02d:%02d<b>";
-        immutable message = pattern.format(event.content, now.hour, now.minute);
+        enum pattern = "The time is currently <b>%02d:%02d<b> in <b>%s<b>.";
+        immutable message = pattern.format(now.hour, now.minute, specified);
         return privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
@@ -83,27 +99,28 @@ void onCommandTime(TimePlugin plugin, const ref IRCEvent event)
 
             // No specific time zone specified; report the streamer's
             // (technically the bot's, unless an override was entered in the config file)
-            enum pattern = "Current time for %s: %02d:%02d";
+            enum pattern = "The time is currently %02d:%02d for %s.";
             immutable message = pattern.format(
-                nameOf(plugin, event.channel[1..$]),
                 now.hour,
-                now.minute);
-            return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+                now.minute,
+                nameOf(plugin, event.channel[1..$]));
+            return chan(plugin.state, event.channel, message);
         }
     }
 
-    if (plugin.timeSettings.localTimeZoneOverride.length)
+    if (now.timezone.name.length && event.channel.length)
     {
-        enum pattern = "Current time in <b>%s<b>: <b>%02d:%02d<b>";
+        // --> is not LocalTime()
+        enum pattern = "The time is currently <b>%02d:%02d<b> in <b>%s<b>.";
         immutable message = pattern.format(
-            plugin.timeSettings.localTimeZoneOverride,
             now.hour,
-            now.minute);
+            now.minute,
+            *overrideZone);
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
     else
     {
-        enum pattern = "Current time locally: <b>%02d:%02d<b>";
+        enum pattern = "The time is currently <b>%02d:%02d<b> locally.";
         immutable message = pattern.format(now.hour, now.minute);
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
@@ -191,6 +208,75 @@ in (specified.length, "Tried to get time zone of an empty string")
 }
 
 
+// onCommandSetZone
+/++
+    Sets the time zone for a channel, to be used to properly pad the output of `!time`.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("setzone")
+            .policy(PrefixPolicy.prefixed)
+            .description("Sets the time zone to be used when querying the time in a channel.")
+            .addSyntax("$command [time zone string]")
+    )
+)
+void onCommandSetZone(TimePlugin plugin, const ref IRCEvent event)
+{
+    import lu.string : stripped;
+    import std.format : format;
+    import std.json : JSONValue;
+
+    immutable specified = event.content.stripped;
+
+    if (specified == "-")
+    {
+        plugin.channelTimeZones.remove(event.channel);
+        saveResourceToDisk(plugin.channelTimeZones, plugin.timezonesFile);
+
+        enum message = "Time zone cleared.";
+        return chan(plugin.state, event.channel, message);
+    }
+
+    immutable timezone = getTimeZoneByName(specified, plugin.installedTimeZones);
+
+    if (!timezone || !timezone.name.length)
+    {
+        enum pattern = "Invalid time zone: <b>%s<b>";
+        immutable message = pattern.format(specified);
+        return chan(plugin.state, event.channel, message);
+    }
+
+    plugin.channelTimeZones[event.channel] = timezone.name;
+    saveResourceToDisk(plugin.channelTimeZones, plugin.timezonesFile);
+
+    enum pattern = "Time zone changed to <b>%s<b>.";
+    immutable message = pattern.format(timezone.name);
+    chan(plugin.state, event.channel, message);
+}
+
+
+// saveTimeZoneMapToDisk
+/++
+    Saves the time zone map to disk, but in JSON format.
+
+    Params:
+        aa = The JSON-convertible resource to save.
+        filename = Filename of the file to write to.
+ +/
+void saveResourceToDisk(const string[string] aa, const string filename)
+in (filename.length, "Tried to save resources to an empty filename string")
+{
+    import std.json : JSONValue;
+    import std.stdio : File, writeln;
+
+    File(filename, "w").writeln(JSONValue(aa).toPrettyString);
+}
+
+
 // setup
 /++
     Sets up the [TimePlugin].
@@ -211,40 +297,58 @@ void setup(TimePlugin plugin)
     {
         static assert(0, "Unsupported platform, please file a bug");
     }
+}
 
-    if (plugin.timeSettings.localTimeZoneOverride.length)
+
+// reload
+/++
+    Reloads the time zones map from disk.
+ +/
+void reload(TimePlugin plugin)
+{
+    import lu.json : JSONStorage, populateFromJSON;
+    import std.typecons : Flag, No, Yes;
+
+    JSONStorage channelTimeZonesJSON;
+    channelTimeZonesJSON.load(plugin.timezonesFile);
+    plugin.channelTimeZones.clear();
+    plugin.channelTimeZones.populateFromJSON(channelTimeZonesJSON, Yes.lowercaseKeys);
+}
+
+
+// initResources
+/++
+    Reads and writes the file of timezones to disk, ensuring that they're there and
+    properly formatted.
+ +/
+void initResources(TimePlugin plugin)
+{
+    import lu.json : JSONStorage;
+    import std.json : JSONException;
+    import std.path : baseName;
+
+    JSONStorage timezonesJSON;
+
+    try
     {
-        plugin.privateLocalTimeZone = cast()getTimeZoneByName(
-            plugin.timeSettings.localTimeZoneOverride,
-            plugin.installedTimeZones);
-
-        if (!plugin.localTimeZone)
-        {
-            import kameloso.plugins.common.misc : IRCPluginInitialisationException;
-            import std.format : format;
-
-            enum pattern = "Invalid time zone override in configuration file; " ~
-                `"%s" is not a valid identifier on this platform.`;
-            immutable message = pattern.format(plugin.timeSettings.localTimeZoneOverride);
-
-            throw new IRCPluginInitialisationException(
-                message,
-                plugin.name,
-                string.init,
-                __FILE__,
-                __LINE__);
-        }
-
-        if (plugin.localTimeZone.name != plugin.timeSettings.localTimeZoneOverride)
-        {
-            plugin.timeSettings.localTimeZoneOverride = plugin.localTimeZone.name;
-        }
+        timezonesJSON.load(plugin.timezonesFile);
     }
-    else
+    catch (JSONException e)
     {
-        import std.datetime.timezone : LocalTime;
-        plugin.privateLocalTimeZone = cast()LocalTime();
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+
+        version(PrintStacktraces) logger.trace(e);
+        throw new IRCPluginInitialisationException(
+            "Timezones file is malformed",
+            plugin.name,
+            plugin.timezonesFile,
+            __FILE__,
+            __LINE__);
     }
+
+    // Let other Exceptions pass.
+
+    timezonesJSON.save(plugin.timezonesFile);
 }
 
 
@@ -268,35 +372,14 @@ public:
  +/
 final class TimePlugin : IRCPlugin
 {
+private:
+    import lu.json : JSONStorage;
+
     // timeSettings
     /++
         All Time plugin settings gathered.
      +/
     TimeSettings timeSettings;
-
-    // privateLocalTimeZone
-    /++
-        Private reference to a technically immutable
-        [std.datetime.timezone.TimeZone|TimeZone], potentially one to the
-        [std.datetime.timezone.LocalTime|LocalTime] singleton.
-
-        We have to cast away the immutability to be able to set this member
-        outside of a class constructor. Care has to be taken to only use
-        [localTimeZone] to access it, so we don't violate the immutability.
-     +/
-    private TimeZone privateLocalTimeZone;
-
-    // localTimeZone
-    /++
-        Accessor providing an immutable reference to [privateLocalTimeZone].
-
-        It should only be accessed via this, so as not to violate immutability
-        more than is absolutely necessary.
-     +/
-    auto localTimeZone() const @property
-    {
-        return cast(immutable)privateLocalTimeZone;
-    }
 
     // installedTimeZones
     /++
@@ -304,6 +387,17 @@ final class TimePlugin : IRCPlugin
      +/
     string[] installedTimeZones;
 
+    // channelTimeZones
+    /++
+        Channel time zone map.
+     +/
+    string[string] channelTimeZones;
+
+    // timezonesFile
+    /++
+        Filename of file to which we should save time zone channel definitions.
+     +/
+    @Resource string timezonesFile = "timezones.json";
 
     mixin IRCPluginImpl;
 }
