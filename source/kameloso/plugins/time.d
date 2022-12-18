@@ -12,7 +12,6 @@ import kameloso.plugins.common.awareness : UserAwareness;
 import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
-import std.datetime.timezone : TimeZone;
 
 
 // TimeSettings

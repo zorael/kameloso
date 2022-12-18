@@ -517,7 +517,6 @@ void onNamesReply(PersistenceService service, const ref IRCEvent event)
             immutable signed = slice.nom('!');
             immutable nickname = signed.stripModesign(service.state.server);
             if (nickname == service.state.client.nickname) continue;
-
             immutable ident = slice.nom('@');
 
             // Do addresses ever contain bold, italics, underlined?
