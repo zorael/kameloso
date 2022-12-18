@@ -610,16 +610,15 @@ void manageQuoteImpl(
 
         if (isTwitch)
         {
-            enum pattern = "#%d [%d-%02d-%02d %02d:%02d] %s";
+            enum pattern = "#%d [%d-%02d-%02d] %s";
             message = pattern.format(quote.index,
-                when.year, when.month, when.day, when.hour, when.minute, quote.line);
+                when.year, when.month, when.day, quote.line);
         }
         else
         {
-            enum pattern = "#%d [%d-%02d-%02d %02d:%02d] <h>%s<h> | %s";
+            enum pattern = "#%d [%d-%02d-%02d] <h>%s<h> | %s";
             message = pattern.format(quote.index,
-                when.year, when.month, when.day, when.hour, when.minute,
-                nickname, quote.line);
+                when.year, when.month, when.day, nickname, quote.line);
         }
 
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
