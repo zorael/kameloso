@@ -58,7 +58,8 @@ public:
 
 // MinimalAuthentication
 /++
-    Implements triggering of queued events in a plugin module.
+    Implements triggering of queued events in a plugin module, based on user details
+    such as account or hostmask.
 
     Most of the time a plugin doesn't require a full
     [kameloso.plugins.common.awareness.UserAwareness|UserAwareness]; only
@@ -220,12 +221,14 @@ void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const ref IRCE
 /++
     Implements *user awareness* in a plugin module.
 
-    Plugins that deal with users in any form will need event handlers to handle
-    people joining and leaving channels, disconnecting from the server, and
-    other events related to user details (including services account names).
+    This maintains a cache of all currently visible users, adding people to it
+    upon discovering them and best-effort culling them when they leave or quit.
+    The cache kept is an associative array, in
+    [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users].
 
-    If more elaborate ones are needed, additional functions can be written and,
-    where applicable, annotated appropriately.
+    User awareness implicitly requires
+    [kameloso.plugins.common.awareness.MinimalAuthentication|minimal authentication]
+    and will silently include it if it was not already mixed in.
 
     Params:
         channelPolicy = What [kameloso.plugins.common.core.ChannelPolicy|ChannelPolicy]
@@ -521,11 +524,10 @@ void onUserAwarenessCatchSender(ChannelPolicy channelPolicy)
 // onUserAwarenessNamesReply
 /++
     Catch users in a reply for the request for a NAMES list of all the
-    participants in a channel, if they are expressed in the full
-    `user!ident@address` form.
+    participants in a channel.
 
     Freenode only sends a list of the nicknames but SpotChat sends the full
-    information.
+    `user!ident@address` information.
  +/
 void onUserAwarenessNamesReply(IRCPlugin plugin, const ref IRCEvent event)
 {
@@ -636,17 +638,13 @@ void onUserAwarenessPing(IRCPlugin plugin, const ref IRCEvent event) @system
 /++
     Implements *channel awareness* in a plugin module.
 
-    Plugins that need to track channels and the users in them need some event
-    handlers to handle the book-keeping. Notably when the bot joins and leaves
-    channels, when someone else joins, leaves or disconnects, someone changes
-    their nickname, changes channel modes or topic, as well as some events that
-    list information about users and what channels they're in.
+    This maintains a cache of all current channels, their topics and modes, and
+    their participants. The cache kept is an associative array, in
+    [kameloso.plugins.common.core.IRCPluginState.channels|IRCPluginState.channels].
 
-    Channel awareness needs user awareness, or things won't work.
-
-    Note: It's possible to get the topic, WHO, NAMES, modes, creation time etc of
-    channels we're not in, so only update the channel entry if there is one
-    already (and avoid range errors).
+    Channel awareness explicitly requires
+    [kameloso.plugins.common.awareness.UserAwareness|user awareness] and will
+    halt compilation if it is not also mixed in.
 
     Params:
         channelPolicy = What [kameloso.plugins.common.core.ChannelPolicy|ChannelPolicy]
