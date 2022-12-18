@@ -537,22 +537,26 @@ void onUserAwarenessNamesReply(IRCPlugin plugin, const ref IRCEvent event)
     import lu.string : contains, nom;
     import std.algorithm.iteration : splitter;
 
+    if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+    {
+        // Do nothing actually. Twitch NAMES is unreliable noise.
+        return;
+    }
+
     auto names = event.content.splitter(' ');
 
     foreach (immutable userstring; names)
     {
-        string slice = userstring;
-        IRCUser newUser;
+        string slice = userstring;  // mutable
+        IRCUser user;
 
-        if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) ||
-            !slice.contains('!')) // || !slice.contains('@'))  // No need to check for both
+        if (!slice.contains('!'))
         {
+            // No need to check for slice.contains('@'))
             // Freenode-like, only nicknames with possible modesigns
             immutable nickname = slice.stripModesign(plugin.state.server);
-
             if (nickname == plugin.state.client.nickname) continue;
-
-            newUser.nickname = nickname;
+            user.nickname = nickname;
         }
         else
         {
@@ -560,17 +564,17 @@ void onUserAwarenessNamesReply(IRCPlugin plugin, const ref IRCEvent event)
             immutable signed = slice.nom('!');
             immutable nickname = signed.stripModesign(plugin.state.server);
             if (nickname == plugin.state.client.nickname) continue;
-
             immutable ident = slice.nom('@');
 
             // Do addresses ever contain bold, italics, underlined?
             immutable address = slice.contains(IRCControlCharacter.colour) ?
-                stripColours(slice) : slice;
+                stripColours(slice) :
+                slice;
 
-            newUser = IRCUser(nickname, ident, address);
+            user = IRCUser(nickname, ident, address);
         }
 
-        plugin.catchUser(newUser);
+        plugin.catchUser(user);  // this melds with the default conservative strategy
     }
 }
 
