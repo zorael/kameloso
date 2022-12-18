@@ -468,6 +468,71 @@ void onWelcome(PersistenceService service)
 }
 
 
+// onNamesReply
+/++
+    Catch users in a reply for the request for a NAMES list of all the
+    participants in a channel.
+
+    Freenode only sends a list of the nicknames but SpotChat sends the full
+    `user!ident@address` information.
+
+    This was copy/pasted from [kameloso.plugins.common.awareness.onUserAwarenessNamesReply]
+    to spare us the full mixin.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_NAMREPLY)
+)
+void onNamesReply(PersistenceService service, const ref IRCEvent event)
+{
+    import kameloso.plugins.common.misc : catchUser;
+    import kameloso.irccolours : stripColours;
+    import dialect.common : IRCControlCharacter, stripModesign;
+    import lu.string : contains, nom;
+    import std.algorithm.iteration : splitter;
+
+    if (service.state.server.daemon == IRCServer.Daemon.twitch)
+    {
+        // Do nothing actually. Twitch NAMES is unreliable noise.
+        return;
+    }
+
+    auto names = event.content.splitter(' ');
+
+    foreach (immutable userstring; names)
+    {
+        string slice = userstring;
+        IRCUser user;
+
+        if (!slice.contains('!'))
+        {
+            // No need to check for slice.contains('@'))
+            // Freenode-like, only nicknames with possible modesigns
+            immutable nickname = slice.stripModesign(service.state.server);
+            if (nickname == service.state.client.nickname) continue;
+            user.nickname = nickname;
+        }
+        else
+        {
+            // SpotChat-like, names are in full nick!ident@address form
+            immutable signed = slice.nom('!');
+            immutable nickname = signed.stripModesign(service.state.server);
+            if (nickname == service.state.client.nickname) continue;
+
+            immutable ident = slice.nom('@');
+
+            // Do addresses ever contain bold, italics, underlined?
+            immutable address = slice.contains(IRCControlCharacter.colour) ?
+                stripColours(slice) :
+                slice;
+
+            user = IRCUser(nickname, ident, address);
+        }
+
+        service.catchUser(user);  // this melds with the default conservative strategy
+    }
+}
+
+
 // maybeRehash
 /++
     Rehashes cache arrays if we deem enough new users have been added to them
