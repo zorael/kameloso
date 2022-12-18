@@ -533,6 +533,23 @@ void onNamesReply(PersistenceService service, const ref IRCEvent event)
 }
 
 
+// onWhoReply
+/++
+    Catch users in a reply for the request for a WHO list of all the
+    participants in a channel.
+
+    Each reply event is only for one user, unlike with NAMES.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WHOREPLY)
+)
+void onWhoReply(PersistenceService service, const ref IRCEvent event)
+{
+    import kameloso.plugins.common.misc : catchUser;
+    service.catchUser(event.target);
+}
+
+
 // maybeRehash
 /++
     Rehashes cache arrays if we deem enough new users have been added to them
