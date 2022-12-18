@@ -500,34 +500,27 @@ void onNamesReply(PersistenceService service, const ref IRCEvent event)
 
     foreach (immutable userstring; names)
     {
-        string slice = userstring;
-        IRCUser user;
-
-        if (!slice.contains('!'))
+        if (!userstring.contains('!'))
         {
-            // No need to check for slice.contains('@'))
+            // No need to check for slice.contains('@')
             // Freenode-like, only nicknames with possible modesigns
-            immutable nickname = slice.stripModesign(service.state.server);
-            if (nickname == service.state.client.nickname) continue;
-            user.nickname = nickname;
-        }
-        else
-        {
-            // SpotChat-like, names are in full nick!ident@address form
-            immutable signed = slice.nom('!');
-            immutable nickname = signed.stripModesign(service.state.server);
-            if (nickname == service.state.client.nickname) continue;
-            immutable ident = slice.nom('@');
-
-            // Do addresses ever contain bold, italics, underlined?
-            immutable address = slice.contains(IRCControlCharacter.colour) ?
-                stripColours(slice) :
-                slice;
-
-            user = IRCUser(nickname, ident, address);
+            // No point only registering nicknames
+            return;
         }
 
-        service.catchUser(user);  // this melds with the default conservative strategy
+        // SpotChat-like, names are rich in full nick!ident@address form
+        string slice = userstring;
+        immutable signed = slice.nom('!');
+        immutable nickname = signed.stripModesign(service.state.server);
+        //if (nickname == service.state.client.nickname) continue;
+        immutable ident = slice.nom('@');
+
+        // Do addresses ever contain bold, italics, underlined?
+        immutable address = slice.contains(IRCControlCharacter.colour) ?
+            stripColours(slice) :
+            slice;
+
+        service.catchUser(IRCUser(nickname, ident, address));  // this melds with the default conservative strategy
     }
 }
 
