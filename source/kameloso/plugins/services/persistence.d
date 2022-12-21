@@ -622,8 +622,8 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
 
         if (!listFromJSON)
         {
-            json[list] = null;
-            json[list].object = null;
+            // Something's wrong, the file is missing sections and must have been manually modified
+            continue;
         }
 
         try
