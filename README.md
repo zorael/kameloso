@@ -96,7 +96,7 @@ Grab a prebuilt binary from under [Releases](https://github.com/zorael/kameloso/
 
 **kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html) and with the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases). **dmd** compiles very fast, while **ldc** is slower at compiling but produces faster code. Additionally it supports more target architectures than **dmd** does (e.g. ARM). See [here](https://wiki.dlang.org/Compilers) for an overview of the available compiler vendors.
 
-The latest release of the the GCC-based [**gdc**](https://gdcproject.org/downloads) (series **12**) can currently technically compile the project source, but will fail to link it into a usable executable.
+The latest release of the the GCC-based [**gdc**](https://gdcproject.org/downloads) (series **12**) can currently technically compile the project source, but may fail to link it into a usable executable, depending on your particular setup.
 
 You need a compiler based on D version **2.085** or later (March 2019). For **ldc** this is version **1.15**.
 
