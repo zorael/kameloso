@@ -1156,7 +1156,7 @@ void listHostmaskDefinitions(AdminPlugin plugin, const ref IRCEvent event)
     import lu.json : JSONStorage, populateFromJSON;
 
     JSONStorage json;
-    json.reset();
+    //json.reset();
     json.load(plugin.hostmasksFile);
 
     string[string] aa;
