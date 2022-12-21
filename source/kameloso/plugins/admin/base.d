@@ -1444,7 +1444,7 @@ public:
 
 // AdminPlugin
 /++
-    The Admin plugin is a plugin aimed for adḿinistrative use and debugging.
+    The Admin plugin is a plugin aimed for administrative use and debugging.
 
     It was historically part of the [kameloso.plugins.chatbot.ChatbotPlugin|ChatbotPlugin].
  +/

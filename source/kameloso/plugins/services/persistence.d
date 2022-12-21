@@ -64,7 +64,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                 // Drop all privileges
                 newUser.class_ = IRCUser.Class.anyone;
                 newUser.account = string.init;
-                newUser.updated = 1L;
+                newUser.updated = 1L;  // must not be 0L
             }
         }
 
@@ -177,7 +177,8 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
             {
                 // All else failed, consider it a random registered or anyone, depending on server
                 user.class_ = (service.state.server.daemon == IRCServer.Daemon.twitch) ?
-                    IRCUser.Class.anyone : IRCUser.Class.registered;
+                    IRCUser.Class.anyone :
+                    IRCUser.Class.registered;
             }
 
             // Record this channel as being the one the current class_ applies to.
@@ -213,7 +214,7 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
                     break;
 
                 case ACCOUNT:
-                    if ((user.account == "*") && stored.account.length)
+                    if (stored.account.length && (user.account == "*"))
                     {
                         event.aux = stored.account;
                         goto case RPL_WHOISACCOUNT;
@@ -373,6 +374,7 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
             {
                 stored.class_ = IRCUser.Class.anyone;
             }
+
             service.userClassChannelCache.remove(user.nickname);
         }
         else /*if (channel.length)*/
@@ -509,7 +511,7 @@ void onNamesReply(PersistenceService service, const ref IRCEvent event)
         }
 
         // SpotChat-like, names are rich in full nick!ident@address form
-        string slice = userstring;
+        string slice = userstring;  // mutable
         immutable signed = slice.nom('!');
         immutable nickname = signed.stripModesign(service.state.server);
         //if (nickname == service.state.client.nickname) continue;
@@ -595,16 +597,15 @@ void reload(PersistenceService service)
  +/
 void reloadAccountClassifiersFromDisk(PersistenceService service)
 {
+    import lu.conv : Enum;
     import lu.json : JSONStorage;
     import std.json : JSONException;
 
     JSONStorage json;
-    json.reset();
+    //json.reset();
     json.load(service.userFile);
 
     service.channelUsers.clear();
-
-    import lu.conv : Enum;
 
     static immutable classes =
     [
@@ -676,6 +677,7 @@ void reloadHostmasksFromDisk(PersistenceService service)
     import lu.json : JSONStorage, populateFromJSON;
 
     JSONStorage hostmasksJSON;
+    //hostmasksJSON.reset();
     hostmasksJSON.load(service.hostmasksFile);
 
     string[string] accountByHostmask;
@@ -768,7 +770,7 @@ void initAccountResources(PersistenceService service)
     import std.json : JSONException, JSONValue;
 
     JSONStorage json;
-    json.reset();
+    //json.reset();
 
     try
     {
@@ -892,7 +894,7 @@ void initHostmaskResources(PersistenceService service)
     import std.json : JSONException, JSONValue;
 
     JSONStorage json;
-    json.reset();
+    //json.reset();
 
     try
     {
