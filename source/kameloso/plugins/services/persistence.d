@@ -636,12 +636,15 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
 
                 foreach (immutable userJSON; channelAccountJSON.array)
                 {
-                    if (channelName !in service.channelUsers)
+                    auto theseUsers = channelName in service.channelUsers;
+
+                    if (!theseUsers)
                     {
                         service.channelUsers[channelName] = (IRCUser.Class[string]).init;
+                        theseUsers = channelName in service.channelUsers;
                     }
 
-                    service.channelUsers[channelName][userJSON.str] = class_;
+                    (*theseUsers)[userJSON.str] = class_;
                 }
             }
         }
