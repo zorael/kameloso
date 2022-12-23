@@ -13,6 +13,7 @@
         [kameloso.plugins.common.core|plugins.common.core]
         [kameloso.plugins.common.misc|plugins.common.misc]
  +/
+__EOF__
 module kameloso.plugins.quotes;
 
 version(WithQuotesPlugin):
