@@ -13,7 +13,7 @@
         [kameloso.plugins.common.core|plugins.common.core]
         [kameloso.plugins.common.misc|plugins.common.misc]
  +/
-module kameloso.plugins.quotes;
+module kameloso.plugins.quotes2;
 
 version(WithQuotesPlugin):
 
