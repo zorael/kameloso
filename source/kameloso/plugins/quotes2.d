@@ -499,14 +499,14 @@ void onCommandDelQuote(QuotesPlugin plugin, const ref IRCEvent event)
 
     if (isTwitch)
     {
-        void sendUsage()
+        void sendUsageTwitch()
         {
             enum pattern = "Usage: %s%s [index]";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
             chan(plugin.state, event.channel, message);
         }
 
-        if (!event.content.length) return sendUsage();
+        if (!event.content.length) return sendUsageTwitch();
 
         nickname = event.channel[1..$];
         indexString = event.content;
@@ -887,7 +887,7 @@ auto loadQuotes(const string quotesFile)
 /++
     FIXME
  +/
-void saveQuotes(const QuotesPlugin plugin)
+void saveQuotes(QuotesPlugin plugin)
 {
     import lu.json : JSONStorage;
 
@@ -899,17 +899,21 @@ void saveQuotes(const QuotesPlugin plugin)
     {
         json[channelName] = null;
         json[channelName].object = null;
-        auto channelQuotesJSON = channelName in json;
+        //auto channelQuotesJSON = channelName in json;  // mutable
 
         foreach (immutable nickname, quotes; channelQuotes)
         {
-            (*channelQuotesJSON)[nickname] = null;
-            (*channelQuotesJSON)[nickname].array = null;
-            auto quotesJSON = nickname in *channelQuotesJSON;
+            //(*channelQuotesJSON)[nickname] = null;
+            //(*channelQuotesJSON)[nickname].array = null;
+            //auto quotesJSON = nickname in *channelQuotesJSON;  // mutable
+
+            json[channelName][nickname] = null;
+            json[channelName][nickname].array = null;
 
             foreach (quote; quotes)
             {
-                quotesJSON.array ~= quote.toJSON();
+                //quotesJSON.array ~= quote.toJSON();
+                json[channelName][nickname].array ~= quote.toJSON();
             }
         }
     }
