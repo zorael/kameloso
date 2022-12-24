@@ -597,11 +597,11 @@ void sendQuoteToChannel(
     import std.format : format;
 
     const when = SysTime.fromUnixTime(quote.timestamp);
-    enum pattern = "#d %s (%s %d-%d-%d)";
+    enum pattern = "%s (%s #%d %02d-%02d-%02d)";
     immutable message = pattern.format(
-        index,
         quote.line,
         nickname,
+        index,
         when.year,
         when.month,
         when.day);
