@@ -621,11 +621,22 @@ void sendQuoteToChannel(
     import std.datetime.systime : SysTime;
     import std.format : format;
 
+    string possibleDisplayName = nickname;  // mutable
+
+    version(TwitchSupport)
+    {
+        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+        {
+            import kameloso.plugins.common.misc : nameOf;
+            possibleDisplayName = plugin.nameOf(nickname);
+        }
+    }
+
     const when = SysTime.fromUnixTime(quote.timestamp);
     enum pattern = "%s (%s #%d %02d-%02d-%02d)";
     immutable message = pattern.format(
         quote.line,
-        nickname,
+        possibleDisplayName,
         index,
         when.year,
         when.month,
