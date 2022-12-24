@@ -518,7 +518,7 @@ void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
         quotes.length.plurality("quote", "quotes"));
     chan(plugin.state, event.channel, message);
 
-    plugin.quotes[event.channel].remove(target);
+    plugin.quotes[event.channel].remove(source);
     saveQuotes(plugin);
 }
 
