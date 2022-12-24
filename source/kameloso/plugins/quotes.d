@@ -1174,9 +1174,9 @@ void initResources(QuotesPlugin plugin)
                 if (!key.beginsWith('#')) continue;
                 scratchJSON[key] = firstLevel;
             }
-        }
 
-        json = scratchJSON;
+            json = scratchJSON;
+        }
     }
     catch (JSONException e)
     {
