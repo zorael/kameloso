@@ -970,9 +970,37 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     immutable userURL = "https://api.twitch.tv/helix/users?id=" ~ event.aux;
     immutable userJSON = getTwitchEntity(plugin, userURL);
     room.broadcasterDisplayName = userJSON["display_name"].str;
-
     room.follows = getFollows(plugin, room.id);
     room.followsLastCached = event.time;
+
+    version(WithPersistenceService)
+    {
+        import kameloso.thread : ThreadMessage, sendable;
+        import std.concurrency : send;
+
+        immutable nickname = event.channel[1..$];
+        auto broadcasterUser = nickname in plugin.state.users;
+
+        if (broadcasterUser)
+        {
+            if (broadcasterUser.displayName.length) return;
+        }
+        else /*if (!broadcasterUser)*/
+        {
+            // Fake a new user
+            plugin.state.users[nickname] = IRCUser.init;
+            broadcasterUser = nickname in plugin.state.users;
+            broadcasterUser.nickname = nickname;
+            broadcasterUser.ident = nickname;
+            broadcasterUser.address = nickname ~ ".tmi.twitch.tv";
+            broadcasterUser.account = nickname;
+            broadcasterUser.class_ = IRCUser.Class.anyone;
+        }
+
+        IRCUser user = *broadcasterUser;
+        user.displayName = room.broadcasterDisplayName;
+        plugin.state.mainThread.send(ThreadMessage.busMessage("persistence", sendable(user)));
+    }
 }
 
 

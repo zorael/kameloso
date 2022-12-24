@@ -21,6 +21,7 @@ private:
 
 import kameloso.plugins.common.core;
 import kameloso.common : logger;
+import kameloso.thread : Sendable;
 import dialect.defs;
 
 
@@ -941,6 +942,35 @@ void initHostmaskResources(PersistenceService service)
 
     // Adjust saved JSON layout to be more easily edited
     json.save!(JSONStorage.KeyOrderStrategy.passthrough)(service.hostmasksFile);
+}
+
+
+// onBusMessage
+/++
+    Receives a passed [kameloso.thread.BusMessage|BusMessage] with the "`persistence`"
+    header, and catches [dialect.defs.IRCUser|IRCUser]s sent.
+
+    Params:
+        service = The current [PersistenceService].
+        header = String header describing the passed content payload.
+        content = Message content.
+ +/
+void onBusMessage(PersistenceService service, const string header, shared Sendable content)
+{
+    import kameloso.thread : BusMessage;
+
+    if ((service.state.server.daemon != IRCServer.Daemon.twitch) ||
+        (header != "persistence"))
+    {
+        // Not interesting
+        return;
+    }
+
+    auto message = cast(BusMessage!IRCUser)content;
+    assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
+
+    IRCUser user = message.payload;
+    service.state.users[user.nickname] = user;
 }
 
 
