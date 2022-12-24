@@ -676,44 +676,69 @@ in (origEvent.channel.length, "Tried to test Quotes with empty channel in origin
     // ------------ !quote
 
     send("quote");
-    expect("Usage: %squote [nickname] [text to add a new quote]"
+    expect("Usage: %squote [nickname] [optional search term or #index]"
         .format(plugin.state.settings.prefix));
 
     send("quote $¡$¡");
-    expect(`"$¡$¡" is not a valid account or nickname.`);
+    expect("Invalid nickname: $¡$¡");
 
     send("quote flerrp");
-    expect("No quote on record for flerrp.");
+    expect("No quotes on record for flerrp!");
 
-    send("quote flerrp flirrp flarrp flurble");
-    expect("Quote flerrp #0 saved.");
+    send("addquote");
+    expect("Usage: %saddquote [nickname] [new quote]"
+        .format(plugin.state.settings.prefix));
+
+    send("addquote flerrp flirrp flarrp flurble");
+    expect("Quote added at index 0.");
+
+    send("addquote flerrp flirrp flarrp FLARBLE");
+    expect("Quote added at index 1.");
 
     send("quote flerrp");
     awaitReply();
-    enforce(thisFiber.payload.content.stripEffects().endsWith("] flerrp | flirrp flarrp flurble"),
+    enforce(thisFiber.payload.content.stripEffects().beginsWith("flirrp flarrp"),
         thisFiber.payload.content, __FILE__, __LINE__);
 
-    send("modquote flerrp 0 KAAS FLAAS");
-    expect("Quote flerrp #0 modified.");
-
-    send("modquote flerrp 0");
+    send("quote flerrp #1");
     awaitReply();
-    enforce(thisFiber.payload.content.stripEffects().endsWith("] flerrp | KAAS FLAAS"),
+    enforce(thisFiber.payload.content.stripEffects().beginsWith("flirrp flarrp FLARBLE ("),
+        thisFiber.payload.content, __FILE__, __LINE__);
+
+    send("quote flerrp #99");
+    expect("Quote index 99 out of range; valid is 0-1 (inclusive).");
+
+    send("modquote");
+    expect("Usage: %smodquote [nickname] [index] [new quote text]"
+        .format(plugin.state.settings.prefix));
+
+    send("modquote flerrp 0 KAAS FLAAS");
+    expect("Quote modified at index 0; timestamp kept.");
+
+    send("quote flerrp #0");
+    awaitReply();
+    enforce(thisFiber.payload.content.stripEffects().beginsWith("KAAS FLAAS ("),
         thisFiber.payload.content, __FILE__, __LINE__);
 
     send("mergequotes flerrp flirrp");
-    expect("1 quote merged from flerrp into flirrp.");
+    expect("2 quotes merged.");
 
-    send("quote flirrp");
+    send("quote flirrp #0");
     awaitReply();
-    enforce(thisFiber.payload.content.stripEffects().endsWith("] flirrp | KAAS FLAAS"),
+    enforce(thisFiber.payload.content.stripEffects().beginsWith("KAAS FLAAS ("),
         thisFiber.payload.content, __FILE__, __LINE__);
 
-    send("delquote flirrp 0");
-    expect("Quote flirrp #0 removed.");
+    send("quote flerrp");
+    expect("No quotes on record for flerrp!");
 
     send("delquote flirrp 0");
-    expect("No quotes on record for user flirrp.");
+    expect("Quote removed, indexes updated.");
+
+    send("delquote flirrp 0");
+    expect("Quote removed, indexes updated.");
+
+    send("delquote flirrp 0");
+    expect("No quotes on record for flirrp!");
 }
 
 
