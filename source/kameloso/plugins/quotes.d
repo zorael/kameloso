@@ -224,7 +224,7 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
 
             case underrun:
                 // Handled above
-                assert(0);
+                assert(0, "Impossible case");
             }
         }
     }
