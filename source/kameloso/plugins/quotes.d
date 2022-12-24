@@ -831,7 +831,7 @@ Quote getQuoteBySearchTerm(
 
     // Nothing was found; simplify and try again.
     immutable strippedSearchTerm = stripBoth(searchTerm);
-    searchHits.length = 0;
+    searchHits = null;
 
     foreach (immutable i, immutable flattenedQuote; flattenedQuotes)
     {
