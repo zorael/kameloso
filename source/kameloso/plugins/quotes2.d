@@ -33,7 +33,7 @@ mixin ModuleRegistration;
 /++
     All settings for a Quotes plugin, gathered in a struct.
  +/
-@Settings struct Quotes2Settings
+@Settings struct QuotesSettings
 {
     /// Whether or not the Quotes plugin should react to events at all.
     @Enabler bool enabled = true;
@@ -1074,7 +1074,7 @@ private:
     import lu.json : JSONStorage;
 
     /// All Quotes plugin settings gathered.
-    Quotes2Settings quotesSettings;
+    QuotesSettings quotesSettings;
 
     /++
         The in-memory JSON storage of all user quotes.
