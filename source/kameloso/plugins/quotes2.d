@@ -1013,19 +1013,41 @@ final class NoQuotesSearchMatchException : Exception
 void initResources(QuotesPlugin plugin)
 {
     import lu.json : JSONStorage;
+    import lu.string : beginsWith;
     import std.json : JSONException, JSONType;
 
+    enum placeholderChannel = "#<lost+found>";
+
     JSONStorage json;
+    bool dirty;
 
     try
     {
         json.load(plugin.quotesFile);
 
-        if (json.type != JSONType.object)
+        // Convert legacy quotes to new ones
+        JSONStorage scratchJSON;
+
+        foreach (immutable key, firstLevel; json.object)
         {
-            json.storage = null;
-            json.storage.object = null;
+            if (key.beginsWith('#')) continue;
+
+            scratchJSON[placeholderChannel] = null;
+            scratchJSON[placeholderChannel].object = null;
+            scratchJSON[placeholderChannel][key] = firstLevel;
+            dirty = true;
         }
+
+        if (dirty)
+        {
+            foreach (immutable key, firstLevel; json.object)
+            {
+                if (!key.beginsWith('#')) continue;
+                scratchJSON[key] = firstLevel;
+            }
+        }
+
+        json = scratchJSON;
     }
     catch (JSONException e)
     {
