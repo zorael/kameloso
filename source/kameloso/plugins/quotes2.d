@@ -117,6 +117,18 @@ public:
 void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
 {
     import std.format : format;
+    import std.string : representation;
+
+    immutable isTwitch = (plugin.state.server.daemon == IRCServer.Daemon.twitch);
+
+    void sendUsage()
+    {
+        immutable pattern = isTwitch ?
+            "Usage: %s%s [optional search term or #index]" :
+            "Usage: <b>%s%s<b> [nickname] [optional search term or #index]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+    }
 
     void sendNoQuotes()
     {
@@ -124,28 +136,34 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
         chan(plugin.state, event.channel, message);
     }
 
-    immutable isTwitch = (plugin.state.server.daemon == IRCServer.Daemon.twitch);
+    void sendNoQuotesForNickname(const string nickname)
+    {
+        enum pattern = "No quotes on record for <h>%s<h>.";
+        immutable message = pattern.format(nickname);
+        chan(plugin.state, event.channel, message);
+    }
+
+    if (!event.content.length) return sendUsage();
 
     try
     {
         if (isTwitch)
         {
-
             immutable nickname = event.channel[1..$];
             immutable searchTerm = event.content;
 
             const channelQuotes = event.channel in plugin.quotes;
-            if (!channelQuotes) return sendNoQuotes();
+            if (!channelQuotes) return sendNoQuotesForNickname(nickname);
 
             const quotes = nickname in *channelQuotes;
-            if (!quotes) return sendNoQuotes();
+            if (!quotes || !quotes.length) return sendNoQuotesForNickname(nickname);
 
             size_t index;  // mutable
             immutable quote = !searchTerm.length ?
                 getRandomQuote(*quotes, index) :
-                (searchTerm[0] == '#') ?
+                (searchTerm.representation[0] == '#') ?
                     getQuoteByIndexString(*quotes, searchTerm[1..$], index) :
-                    getQuoteBySearchTerm(*quotes, searchTerm, index);
+                    getQuoteBySearchTerm(plugin, *quotes, searchTerm, index);
 
             return sendQuoteToChannel(plugin, quote, event.channel, nickname, index);
         }
@@ -153,23 +171,16 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
         {
             import lu.string : SplitResults, splitInto;
 
-            void sendUsage()
-            {
-                enum pattern = "Usage: <b>%s%s<b> [nickname] [optional search term]";
-                immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-                chan(plugin.state, event.channel, message);
-            }
-
             string slice = event.content;  // mutable
             size_t index;  // mutable
             string nickname;  // mutable
             immutable results = slice.splitInto(nickname);
 
             const channelQuotes = event.channel in plugin.quotes;
-            if (!channelQuotes) return sendNoQuotes();
+            if (!channelQuotes) return sendNoQuotesForNickname(nickname);
 
             const quotes = nickname in *channelQuotes;
-            if (!quotes) return sendNoQuotes();
+            if (!quotes || !quotes.length) return sendNoQuotesForNickname(nickname);
 
             with (SplitResults)
             final switch (results)
@@ -182,7 +193,9 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
             case overrun:
                 // Search term given
                 alias searchTerm = slice;
-                immutable quote = getQuoteByIndexString(*quotes, searchTerm[1..$], index);
+                immutable quote = (searchTerm.representation[0] == '#') ?
+                    getQuoteByIndexString(*quotes, searchTerm[1..$], index) :
+                    getQuoteBySearchTerm(plugin, *quotes, searchTerm, index);
                 return sendQuoteToChannel(plugin, quote, event.channel, nickname, index);
 
             case underrun:
