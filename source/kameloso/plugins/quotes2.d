@@ -342,7 +342,7 @@ void onCommandModQuote(QuotesPlugin plugin, const ref IRCEvent event)
     {
         immutable pattern = isTwitch ?
             "Usage: %s%s [index] [new quote text]" :
-            "Usage: %s%s [nickname] [index] [new quote text]";
+            "Usage: <b>%s%s<b> [nickname] [index] [new quote text]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
         chan(plugin.state, event.channel, message);
     }
@@ -442,7 +442,7 @@ void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
 
     void sendUsage()
     {
-        enum pattern = "Usage: %s%s [source nickname] [target nickname]";
+        enum pattern = "Usage: <b>%s%s<b> [source nickname] [target nickname]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
         chan(plugin.state, event.channel, message);
     }
@@ -469,7 +469,7 @@ void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
 
     plugin.quotes[event.channel][target] ~= *quotes;
 
-    enum pattern = "%d %s merged.";
+    enum pattern = "<b>%d<b> %s merged.";
     immutable message = pattern.format(
         quotes.length,
         quotes.length.plurality("quote", "quotes"));
@@ -540,7 +540,7 @@ void onCommandDelQuote(QuotesPlugin plugin, const ref IRCEvent event)
     {
         void sendUsage()
         {
-            enum pattern = "Usage: %s%s [nickname] [index]";
+            enum pattern = "Usage: <b>%s%s<b> [nickname] [index]";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
             chan(plugin.state, event.channel, message);
         }
@@ -558,7 +558,7 @@ void onCommandDelQuote(QuotesPlugin plugin, const ref IRCEvent event)
     {
         (*channelQuotes).remove(nickname);
 
-        enum pattern = "All quotes for %s removed.";
+        enum pattern = "All quotes for <h>%s<h> removed.";
         immutable message = pattern.format(nickname);
         chan(plugin.state, event.channel, message);
         // Drop down
