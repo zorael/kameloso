@@ -147,7 +147,7 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
 
     void sendNoQuotesForNickname(const string nickname)
     {
-        enum pattern = "No quotes on record for <h>%s<h>.";
+        enum pattern = "No quotes on record for <h>%s<h>!";
         immutable message = pattern.format(nickname);
         chan(plugin.state, event.channel, message);
     }
@@ -234,8 +234,8 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
     }
     catch (QuoteIndexOutOfRangeException e)
     {
-        enum pattern = "Quote index out of range; %d is not less than %d.";
-        immutable message = pattern.format(e.indexGiven, e.upperBound);
+        enum pattern = "Quote index %d out of range; valid is 0-%d (inclusive).";
+        immutable message = pattern.format(e.indexGiven, e.upperBound-1);
         chan(plugin.state, event.channel, message);
     }
     catch (NoQuotesSearchMatchException e)
@@ -440,8 +440,7 @@ void onCommandModQuote(QuotesPlugin plugin, const ref IRCEvent event)
     plugin.quotes[event.channel][nickname][index].line = line;
     saveQuotes(plugin);
 
-    enum pattern = "Quote modified at index %d; timestamp kept.";
-    immutable message = pattern.format(index);
+    enum message = "Quote modified.";
     chan(plugin.state, event.channel, message);
 }
 
@@ -490,7 +489,7 @@ void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
 
     void sendNoQuotes(const string nickname)
     {
-        enum pattern = "No quotes for <h>%s<h> on record!";
+        enum pattern = "No quotes on record for <h>%s<h>!";
         immutable message = pattern.format(nickname);
         chan(plugin.state, event.channel, message);
     }
@@ -550,8 +549,8 @@ void onCommandDelQuote(QuotesPlugin plugin, const ref IRCEvent event)
     void sendNoQuotes(const string nickname)
     {
         immutable pattern = isTwitch ?
-            "No quotes for %s on record!" :
-            "No quotes for <h>%s<h> on record!";
+            "No quotes on record for %s!" :
+            "No quotes on record for <h>%s<h>!";
         immutable message = pattern.format(nickname);
         chan(plugin.state, event.channel, message);
     }
@@ -672,7 +671,7 @@ void sendQuoteToChannel(
     }
 
     const when = SysTime.fromUnixTime(quote.timestamp);
-    enum pattern = "%s (%s #%d %02d-%02d-%02d)";
+    enum pattern = "%s (<h>%s<h> #%d %02d-%02d-%02d)";
     immutable message = pattern.format(
         quote.line,
         possibleDisplayName,
