@@ -672,68 +672,123 @@ auto getQuoteByIndexString(
     FIXME
  +/
 Quote getQuoteBySearchTerm(
+    QuotesPlugin plugin,
     const Quote[] quotes,
     const string searchTermCased,
     out size_t index)
 {
-    import std.string : indexOf;
+    import lu.string : contains;
+    import std.random : uniform;
     import std.uni : toLower;
 
-    auto stripPunctuation(const string quotestring)
+    auto stripPunctuation(const string inputString)
     {
         import std.array : replace;
 
-        return quotestring
+        return inputString
             .replace(".", " ")
             .replace("!", " ")
             .replace("?", " ")
             .replace(",", " ")
             .replace("-", " ")
             .replace("_", " ")
-            .replace("\"", " ")
-            .replace("/", " ");
+            .replace(`"`, " ")
+            .replace("/", " ")
+            .replace("'", string.init);
     }
 
-    string[] flattenedQuotes;
+    auto stripDoubleSpaces(const string inputString)
+    {
+        string output = inputString;  // mutable
+
+        bool hasDoubleSpace = output.contains("  ");  // mutable
+
+        while (hasDoubleSpace)
+        {
+            import std.array : replace;
+            output = output.replace("  ", " ");
+            hasDoubleSpace = output.contains("  ");
+        }
+
+        return output;
+    }
+
+    auto stripBoth(const string inputString)
+    {
+        return stripDoubleSpaces(stripPunctuation(inputString));
+    }
+
+    struct SearchHit
+    {
+        size_t index;
+        string line;
+    }
+
+    SearchHit[] searchHits;
+
+    // Try with the search term that was given first (lowercased)
+    string[] flattenedQuotes;  // mutable
 
     foreach (immutable quote; quotes)
     {
-        string flattenedQuote = quote.line.toLower();  // mutable
-        size_t doubleSpacePos = flattenedQuote.indexOf("  ");  // mutable
-
-        while (doubleSpacePos != -1)
-        {
-            import std.array : replace;
-            flattenedQuote = flattenedQuote.replace("  ", " ");
-        }
-
-        flattenedQuotes ~= flattenedQuote;
+        flattenedQuotes ~= stripDoubleSpaces(quote.line).toLower;
     }
 
-    immutable searchTerm = searchTermCased.toLower();
+    immutable searchTerm = stripDoubleSpaces(searchTermCased).toLower;
 
     foreach (immutable i, immutable flattenedQuote; flattenedQuotes)
     {
-        if (flattenedQuote.indexOf(searchTerm))
+        if (!flattenedQuote.contains(searchTerm)) continue;
+
+        if (plugin.quotesSettings.alwaysPickFirstMatch)
         {
             index = i;
-            return quotes[i];
+            return quotes[index];
         }
+        else
+        {
+            searchHits ~= SearchHit(i, quotes[i].line);
+        }
+    }
+
+    if (searchHits.length)
+    {
+        immutable randomHitsIndex = uniform(0, searchHits.length);
+        index = searchHits[randomHitsIndex].index;
+        return quotes[index];
     }
 
     // Nothing was found; simplify and try again.
+    immutable strippedSearchTerm = stripBoth(searchTerm);
+    searchHits.length = 0;
+
     foreach (immutable i, immutable flattenedQuote; flattenedQuotes)
     {
-        if (stripPunctuation(flattenedQuote).indexOf(searchTerm))
+        if (!stripBoth(flattenedQuote).contains(strippedSearchTerm)) continue;
+
+        if (plugin.quotesSettings.alwaysPickFirstMatch)
         {
             index = i;
-            return quotes[i];
+            return quotes[index];
+        }
+        else
+        {
+            searchHits ~= SearchHit(i, quotes[i].line);
         }
     }
 
-    throw new NoQuotesSearchMatchException(
-        "No quotes found for given search term",
-        searchTermCased);
+    if (searchHits.length)
+    {
+        immutable randomHitsIndex = uniform(0, searchHits.length);
+        index = searchHits[randomHitsIndex].index;
+        return quotes[index];
+    }
+    else
+    {
+        throw new NoQuotesSearchMatchException(
+            "No quotes found for given search term",
+            searchTermCased);
+    }
 }
 
 
