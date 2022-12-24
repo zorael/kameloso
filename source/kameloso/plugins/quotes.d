@@ -9,7 +9,7 @@
         [kameloso.plugins.common.core|plugins.common.core]
         [kameloso.plugins.common.misc|plugins.common.misc]
  +/
-module kameloso.plugins.quotes2;
+module kameloso.plugins.quotes;
 
 version(WithQuotesPlugin):
 
