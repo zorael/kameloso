@@ -745,6 +745,12 @@ Quote getQuoteBySearchTerm(
             .replace("_", " ")
             .replace(`"`, " ")
             .replace("/", " ")
+            .replace(";", " ")
+            .replace("~", " ")
+            .replace(":", " ")
+            .replace("<", " ")
+            .replace(">", " ")
+            .replace("|", " ")
             .replace("'", string.init);
     }
 
