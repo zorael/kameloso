@@ -20,9 +20,10 @@ import std.format : format;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 
-
 pragma(msg, "Compiling tester plugin");
 
+mixin MinimalAuthentication;
+mixin ModuleRegistration;
 
 version(DigitalMars)
 {
@@ -1088,15 +1089,11 @@ in (origEvent.channel.length, "Tried to test Timer with empty channel in origina
 }
 
 
-mixin MinimalAuthentication;
-
-
 public:
 
 /++
  +
  +/
-@IRCPluginHook
 final class TesterPlugin : IRCPlugin
 {
 private:
