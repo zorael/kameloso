@@ -666,6 +666,7 @@ auto getQuoteByIndexString(
     out size_t index)
 {
     import std.conv : ConvException, to;
+    import std.random : uniform;
 
     index = indexString.to!size_t;
 
