@@ -1107,7 +1107,7 @@ private:
     Quote[][string][string] quotes;
 
     /// Filename of file to save the quotes to.
-    @Resource string quotesFile = "quotes2.json";
+    @Resource string quotesFile = "quotes.json";
 
     mixin IRCPluginImpl;
 }
