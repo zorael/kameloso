@@ -465,7 +465,7 @@ void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
     if (!channelQuotes) return sendNoQuotes(source);
 
     const quotes = source in *channelQuotes;
-    if (!quotes) return sendNoQuotes(source);
+    if (!quotes || !quotes.length) return sendNoQuotes(source);
 
     plugin.quotes[event.channel][target] ~= *quotes;
 
@@ -510,6 +510,12 @@ void onCommandDelQuote(QuotesPlugin plugin, const ref IRCEvent event)
             "No quotes for %s on record!" :
             "No quotes for <h>%s<h> on record!";
         immutable message = pattern.format(nickname);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendIndexOutOfRange()
+    {
+        enum message = "Index out of range.";
         chan(plugin.state, event.channel, message);
     }
 
@@ -563,7 +569,7 @@ void onCommandDelQuote(QuotesPlugin plugin, const ref IRCEvent event)
         import std.conv : ConvException, to;
 
         auto quotes = nickname in *channelQuotes;  // mutable
-        if (!quotes) return sendNoQuotes(nickname);
+        if (!quotes || !quotes.length) return sendNoQuotes(nickname);
 
         size_t index;
 
@@ -576,6 +582,8 @@ void onCommandDelQuote(QuotesPlugin plugin, const ref IRCEvent event)
             enum message = "Quote index must be a positive number.";
             return chan(plugin.state, event.channel, message);
         }
+
+        if (index >= quotes.length) return sendIndexOutOfRange();
 
         *quotes = (*quotes).remove!(SwapStrategy.stable)(index);
 
