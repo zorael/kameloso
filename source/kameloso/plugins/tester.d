@@ -25,6 +25,7 @@ pragma(msg, "Compiling tester plugin");
 mixin MinimalAuthentication;
 mixin ModuleRegistration;
 
+
 version(DigitalMars)
 {
     debug
@@ -130,6 +131,7 @@ void onCommandTest(TesterPlugin plugin, const /*ref*/ IRCEvent event)
         testCounterFiber,
         testStopwatchFiber,
         testTimerFiber,
+        testTimeFiber,
     );
 
     top:
@@ -1089,7 +1091,78 @@ in (origEvent.channel.length, "Tried to test Timer with empty channel in origina
 }
 
 
+// testTimeFiber
+/++
+ +
+ +/
+void testTimeFiber(TesterPlugin plugin, const /*ref*/ IRCEvent origEvent, const string botNickname)
+in (origEvent.channel.length, "Tried to test Time with empty channel in original event")
+{
+    auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+    assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
+
+    void send(const string line)
+    {
+        chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
+    }
+
+    void awaitReply()
+    {
+        do Fiber.yield();
+        while ((thisFiber.payload.channel != origEvent.channel) ||
+            (thisFiber.payload.sender.nickname != botNickname));
+    }
+
+    void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
+    {
+        awaitReply();
+        enforce((thisFiber.payload.content.stripEffects() == msg),
+            "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
+    }
+
+    // ------------ !time
+
+    string response;  // mutable
+
+    send("time");
+    awaitReply();
+    response = thisFiber.payload.content.stripEffects();
+    enforce(response.beginsWith("The time is currently "),
+        thisFiber.payload.content, __FILE__, __LINE__);
+    enforce(response.endsWith(" locally."),
+        thisFiber.payload.content, __FILE__, __LINE__);
+
+    send("time CET");
+    awaitReply();
+    response = thisFiber.payload.content.stripEffects();
+    enforce(response.beginsWith("The time is currently "),
+        thisFiber.payload.content, __FILE__, __LINE__);
+    enforce(response.endsWith(" in CET."),
+        thisFiber.payload.content, __FILE__, __LINE__);
+
+    send("time Europe/Stockholm");
+    awaitReply();
+    response = thisFiber.payload.content.stripEffects();
+    enforce(response.beginsWith("The time is currently "),
+        thisFiber.payload.content, __FILE__, __LINE__);
+    enforce(response.endsWith(" in Europe/Stockholm."),
+        thisFiber.payload.content, __FILE__, __LINE__);
+
+    send("time Dubai");
+    awaitReply();
+    response = thisFiber.payload.content.stripEffects();
+    enforce(response.beginsWith("The time is currently "),
+        thisFiber.payload.content, __FILE__, __LINE__);
+    enforce(response.endsWith(" in Dubai."),
+        thisFiber.payload.content, __FILE__, __LINE__);
+
+    send("time honk");
+    expect("Invalid time zone: honk");
+}
+
+
 public:
+
 
 /++
  +
