@@ -120,6 +120,7 @@ public:
 )
 void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
 {
+    import std.conv : ConvException;
     import std.format : format;
     import std.string : representation;
 
@@ -222,6 +223,11 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
     {
         enum pattern = "No quotes found for search term \"%s\"";
         immutable message = pattern.format(e.searchTerm);
+        chan(plugin.state, event.channel, message);
+    }
+    catch (ConvException e)
+    {
+        enum message = "Index must be a positive number.";
         chan(plugin.state, event.channel, message);
     }
 }
@@ -685,7 +691,7 @@ auto getQuoteByIndexString(
     const string indexString,
     out size_t index)
 {
-    import std.conv : ConvException, to;
+    import std.conv : to;
     import std.random : uniform;
 
     index = indexString.to!size_t;
