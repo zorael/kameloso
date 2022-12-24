@@ -952,7 +952,7 @@ auto loadQuotes(const string quotesFile)
         {
             foreach (quoteJSON; nicknameQuotesJSON.array)
             {
-                quotes[channelName][nickname] ~= Quote.fromJSON(nicknameQuotesJSON);
+                quotes[channelName][nickname] ~= Quote.fromJSON(quoteJSON);
             }
         }
     }
