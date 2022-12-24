@@ -1,7 +1,7 @@
 /++
     The Quotes plugin allows for saving and replaying user quotes.
 
-    On Twitch, the `!quote` command does not take a nickname parameter; instead
+    On Twitch, the commands do not take a nickname parameter; instead
     the owner of the channel (the broadcaster) is assumed to be the target.
 
     See_Also:
@@ -609,7 +609,7 @@ void onCommandDelQuote(QuotesPlugin plugin, const ref IRCEvent event)
         quote = The [Quote] to report.
         channelName = Name of the channel to send to.
         nickname = Nickname whose quote it is.
-        index = `out` reference index of the quote in the local storage.
+        index = Index of the quote in the local storage.
  +/
 void sendQuoteToChannel(
     QuotesPlugin plugin,
