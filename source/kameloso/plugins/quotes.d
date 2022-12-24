@@ -123,6 +123,7 @@ public:
 )
 void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
 {
+    import dialect.common : isValidNickname;
     import std.conv : ConvException;
     import std.format : format;
     import std.string : representation;
@@ -179,10 +180,25 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
         {
             import lu.string : SplitResults, splitInto;
 
+            void sendInvalidNickname(const string nickname)
+            {
+                enum pattern = "Invalid nickname: <h>%s<h>";
+                immutable message = pattern.format(nickname);
+                chan(plugin.state, event.channel, message);
+            }
+
             string slice = event.content;  // mutable
             size_t index;  // mutable
             string nickname;  // mutable
             immutable results = slice.splitInto(nickname);
+
+            if (results == SplitResults.underrun)
+            {
+                // Message was just !quote which only works on Twitch
+                return sendUsage();
+            }
+
+            if (!nickname.isValidNickname(plugin.state.server)) return sendInvalidNickname(nickname);
 
             const channelQuotes = event.channel in plugin.quotes;
             if (!channelQuotes) return sendNoQuotesForNickname(nickname);
@@ -207,8 +223,8 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
                 return sendQuoteToChannel(plugin, quote, event.channel, nickname, index);
 
             case underrun:
-                // Message was just !quote which only works on Twitch
-                return sendUsage();
+                // Handled above
+                assert(0);
             }
         }
     }
@@ -282,7 +298,15 @@ void onCommandAddQuote(QuotesPlugin plugin, const ref IRCEvent event)
     }
     else /*if (!isTwitch)*/
     {
+        import dialect.common : isValidNickname;
         import lu.string : SplitResults, splitInto;
+
+        void sendInvalidNickname(const string nickname)
+        {
+            enum pattern = "Invalid nickname: <h>%s<h>";
+            immutable message = pattern.format(nickname);
+            chan(plugin.state, event.channel, message);
+        }
 
         immutable results = slice.splitInto(nickname);
 
@@ -300,6 +324,8 @@ void onCommandAddQuote(QuotesPlugin plugin, const ref IRCEvent event)
             // underrun: Message was just !addquote
             return sendUsage();
         }
+
+        if (!nickname.isValidNickname(plugin.state.server)) return sendInvalidNickname(nickname);
     }
 
     immutable prefixSigns = cast(string)plugin.state.server.prefixchars.keys;
@@ -438,6 +464,7 @@ void onCommandModQuote(QuotesPlugin plugin, const ref IRCEvent event)
 )
 void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
 {
+    import dialect.common : isValidNickname;
     import lu.string : SplitResults, plurality, splitInto;
     import std.format : format;
 
@@ -454,6 +481,13 @@ void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
         chan(plugin.state, event.channel, message);
     }
 
+    void sendInvalidNickname(const string nickname)
+    {
+        enum pattern = "Invalid nickname: <h>%s<h>";
+        immutable message = pattern.format(nickname);
+        chan(plugin.state, event.channel, message);
+    }
+
     void sendNoQuotes(const string nickname)
     {
         enum pattern = "No quotes for <h>%s<h> on record!";
@@ -467,6 +501,8 @@ void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
 
     immutable results = slice.splitInto(source, target);
     if (results != SplitResults.match) return sendUsage();
+
+    if (!target.isValidNickname(plugin.state.server)) return sendInvalidNickname(target);
 
     const channelQuotes = event.channel in plugin.quotes;
     if (!channelQuotes) return sendNoQuotes(source);
