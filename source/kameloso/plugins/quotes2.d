@@ -1,12 +1,8 @@
 /++
     The Quotes plugin allows for saving and replaying user quotes.
 
-    A user quote can be added by triggering the "`quote`" bot command, by use
-    of "`!quote [nickname] [quote text...]`" (assuming a prefix of "`!`").
-    A random one can then be replayed by use of the "`!quote [nickname]`" command.
-
     On Twitch, the `!quote` command does not take a nickname parameter; instead
-    the owner of the channel is assumed to be the target.
+    the owner of the channel (the broadcaster) is assumed to be the target.
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#quotes
@@ -35,7 +31,9 @@ mixin ModuleRegistration;
  +/
 @Settings struct QuotesSettings
 {
-    /// Whether or not the Quotes plugin should react to events at all.
+    /++
+        Whether or not the Quotes plugin should react to events at all.
+     +/
     @Enabler bool enabled = true;
 
     /++
@@ -103,7 +101,7 @@ public:
 
 // onCommandQuote
 /++
-    FIXME
+    Replies with a quote, either fetched randomly, by a search term or by stored index.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -231,7 +229,7 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
 
 // onCommandAddQuote
 /++
-    FIXME
+    Adds a quote to the local storage.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -315,7 +313,7 @@ void onCommandAddQuote(QuotesPlugin plugin, const ref IRCEvent event)
 
 // onCommandModQuote
 /++
-    FIXME
+    Modifies a quote given its index in the storage.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -415,7 +413,7 @@ void onCommandModQuote(QuotesPlugin plugin, const ref IRCEvent event)
 
 // onCommandMergeQuotes
 /++
-    FIXME
+    Merges all quotes of one user to that of another.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -482,7 +480,7 @@ void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
 
 // onCommandDelQuote
 /++
-    FIXME
+    Deletes a quote, given its index in the storage.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -598,7 +596,14 @@ void onCommandDelQuote(QuotesPlugin plugin, const ref IRCEvent event)
 
 // sendQuoteToChannel
 /++
-    FIXME
+    Sends a [Quote] to a channel.
+
+    Params:
+        plugin = The current [QuotesPlugin].
+        quote = The [Quote] to report.
+        channelName = Name of the channel to send to.
+        nickname = Nickname whose quote it is.
+        index = `out` reference index of the quote in the local storage.
  +/
 void sendQuoteToChannel(
     QuotesPlugin plugin,
@@ -638,7 +643,14 @@ void onWelcome(QuotesPlugin plugin)
 
 // getRandomQuote
 /++
-    FIXME
+    Fethes a random [Quote] from an array of such.
+
+    Params:
+        quotes = Array of [Quote]s to get a random one from.
+        index = `out` reference index of the quote selected, in the local storage.
+
+    Returns:
+        A [Quote], randomly selected.
  +/
 auto getRandomQuote(
     const Quote[] quotes,
@@ -658,7 +670,15 @@ auto getRandomQuote(
 
 // getQuoteByIndexString
 /++
-    FIXME
+    Fetches a quote given an index.
+
+    Params:
+        quotes = Array of [Quote]s to get a random one from.
+        indexString = The index of the [Quote] to fetch, as a string.
+        index = `out` reference index of the quote selected, in the local storage.
+
+    Returns:
+        A [Quote], selected based on its index in the storage.
  +/
 auto getQuoteByIndexString(
     const Quote[] quotes,
@@ -684,7 +704,17 @@ auto getQuoteByIndexString(
 
 // getQuoteBySearchTerm
 /++
-    FIXME
+    Fetches a [Quote] whose line matches the passed search term.
+
+    Params:
+        plugin = The current [QuotesPlugin].
+        quotes = Array of [Quote]s to get a random one from.
+        searchTermCased = Search term to apply to the `quotes` array, with letters
+            in original casing.
+        index = `out` reference index of the quote selected, in the local storage.
+
+    Returns:
+        A [Quote] whose line matches the passed search term.
  +/
 Quote getQuoteBySearchTerm(
     QuotesPlugin plugin,
@@ -933,7 +963,7 @@ unittest
 
 // loadQuotes
 /++
-    FIXME
+    Loads quotes from disk into an associative array of [Quote]s.
  +/
 auto loadQuotes(const string quotesFile)
 {
@@ -968,7 +998,7 @@ auto loadQuotes(const string quotesFile)
 
 // saveQuotes
 /++
-    FIXME
+    Saves quotes to disk in JSON file format.
  +/
 void saveQuotes(QuotesPlugin plugin)
 {
@@ -1007,7 +1037,7 @@ void saveQuotes(QuotesPlugin plugin)
 
 // NoQuotesFoundException
 /++
-    FIXME
+    Exception, to be thrown when there were no quotes found for a given user.
  +/
 final class NoQuotesFoundException : Exception
 {
@@ -1027,16 +1057,19 @@ final class NoQuotesFoundException : Exception
 
 // QuoteIndexOutOfRangeException
 /++
-    FIXME
+    Exception, to be thrown when a given quote index was out of bounds.
  +/
 final class QuoteIndexOutOfRangeException : Exception
 {
+    /// Given index (that ended up being out of range).
     size_t indexGiven;
 
+    /// Acutal upper bound.
     size_t upperBound;
 
     /++
-        Constructor.
+        Creates a new [QuoteIndexOutOfRangeException], attaching a given index
+        and an index upper bound.
      +/
     this(
         const string message,
@@ -1067,14 +1100,15 @@ final class QuoteIndexOutOfRangeException : Exception
 
 // NoQuoteSearchMatchException
 /++
-    FIXME
+    Exception, to be thrown when given search terms failed to match any stored quotes.
  +/
 final class NoQuotesSearchMatchException : Exception
 {
+    /// Given search term string.
     string searchTerm;
 
     /++
-        Constructor.
+        Creates a new [NoQuoteSearchMatchException], attaching a search term string.
      +/
     this(
         const string message,
