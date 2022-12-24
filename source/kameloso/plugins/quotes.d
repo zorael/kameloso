@@ -1124,7 +1124,7 @@ final class NoQuotesFoundException : Exception
 final class QuoteIndexOutOfRangeException : Exception
 {
     /// Given index (that ended up being out of range).
-    size_t indexGiven;
+    ptrdiff_t indexGiven;
 
     /// Acutal upper bound.
     size_t upperBound;
@@ -1135,7 +1135,7 @@ final class QuoteIndexOutOfRangeException : Exception
      +/
     this(
         const string message,
-        const size_t indexGiven,
+        const ptrdiff_t indexGiven,
         const size_t upperBound,
         const string file = __FILE__,
         const size_t line = __LINE__,
