@@ -37,6 +37,12 @@ mixin ModuleRegistration;
 {
     /// Whether or not the Quotes plugin should react to events at all.
     @Enabler bool enabled = true;
+
+    /++
+        Whether or not a random result should be picked in case a quote search
+        term had multiple matches.
+     +/
+    bool alwaysPickFirstMatch = false;
 }
 
 
