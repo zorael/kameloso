@@ -300,7 +300,7 @@ void onCommandAddQuote(QuotesPlugin plugin, const ref IRCEvent event)
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .permissionsRequired(Permissions.elevated)
+    .permissionsRequired(Permissions.operator)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
@@ -400,7 +400,7 @@ void onCommandModQuote(QuotesPlugin plugin, const ref IRCEvent event)
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .permissionsRequired(Permissions.elevated)
+    .permissionsRequired(Permissions.operator)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
@@ -467,7 +467,7 @@ void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .permissionsRequired(Permissions.elevated)
+    .permissionsRequired(Permissions.operator)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
