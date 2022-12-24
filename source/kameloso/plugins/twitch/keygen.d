@@ -192,14 +192,7 @@ instructions and log in to authorise the use of this program with your <w>BOT</>
 // requestTwitchSuperKey
 /++
     Start the captive key generation routine at the earliest possible moment,
-    which are the [dialect.defs.IRCEvent.Type.CAP|CAP] events.
-
-    Invoked by [kameloso.plugins.twitch.base.onCAP|onCAP] during capability negotiation.
-
-    We can't do it in [kameloso.plugins.twitch.base.start|start] since the calls to
-    save and exit would go unheard, as `start` happens before the main loop starts.
-    It would then immediately fail to read if too much time has passed,
-    and nothing would be saved.
+    which is at plugin [kameloso.plugins.twitch.base.start|start].
 
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].

@@ -38,9 +38,7 @@
 
     See_Also:
         [kameloso.plugins.common.misc|plugins.common.misc]
-
         [kameloso.plugins.common.mixins|plugins.common.mixins]
-
         [kameloso.plugins.common.delayawait|plugins.common.delayawait]
  +/
 module kameloso.plugins.common.core;
@@ -74,11 +72,11 @@ private:
 public:
     // CommandMetadata
     /++
-        Metadata about a [kameloso.plugins.common.core.IRCEventHandler.Command|IRCEventHandler.Command]- and/or
-        [kameloso.plugins.common.core.IRCEventHandler.Regex|IRCEventHandler.Regex]-annotated event handler.
+        Metadata about a [IRCEventHandler.Command]- and/or
+        [IRCEventHandler.Regex]-annotated event handler.
 
         See_Also:
-            [commands]
+            [IRCPlugin.commands]
      +/
     static struct CommandMetadata
     {
@@ -107,23 +105,45 @@ public:
          +/
         bool hidden;
 
-        /// Constructor. Don't take a `syntax` here, populate it manually.
-        this(
-            const PrefixPolicy policy,
-            const string description,
-            const bool hidden) pure @safe nothrow @nogc
+        // isRegex
+        /++
+            Whether or not the command is based on an `IRCEventHandler.Regex`.
+         +/
+        bool isRegex;
+
+        // this
+        /++
+            Constructor taking an [IRCEventHandler.Command].
+
+            Do not touch [syntaxes]; populate them at the call site.
+         +/
+        this(const IRCEventHandler.Command command) pure @safe nothrow @nogc
         {
-            this.policy = policy;
-            this.description = description;
-            this.hidden = hidden;
+            this.policy = command.policy;
+            this.description = command.description;
+            this.hidden = command.hidden;
+            //this.isRegex = false;
+        }
+
+        // this
+        /++
+            Constructor taking an [IRCEventHandler.Regex].
+
+            Do not touch [syntaxes]; populate them at the call site.
+         +/
+        this(const IRCEventHandler.Regex regex) pure @safe nothrow @nogc
+        {
+            this.policy = regex.policy;
+            this.description = regex.description;
+            this.hidden = regex.hidden;
+            this.isRegex = true;
         }
     }
 
     // state
     /++
-        An [kameloso.plugins.common.core.IRCPluginState|IRCPluginState] instance containing
-        variables and arrays that represent the current state of the plugin.
-        Should generally be passed by reference.
+        An [IRCPluginState] instance containing variables and arrays that represent
+        the current state of the plugin. Should generally be passed by reference.
      +/
     IRCPluginState state;
 
@@ -190,8 +210,7 @@ public:
 
     // printSettings
     /++
-        Called when we want a plugin to print its
-        [kameloso.plugins.common.core.Settings|Settings]-annotated struct of settings.
+        Called when we want a plugin to print its [Settings]-annotated struct of settings.
      +/
     void printSettings() @system const;
 
@@ -215,7 +234,7 @@ public:
         Returns an array of the descriptions of the commands a plugin offers.
 
         Returns:
-            An associative [CommandMetadata] array keyed by string.
+            An associative [IRCPlugin.CommandMetadata] array keyed by string.
      +/
     CommandMetadata[string] commands() pure nothrow @property const;
 
@@ -225,7 +244,7 @@ public:
         plugin offers.
 
         Returns:
-            An associative [CommandMetadata] array keyed by string.
+            An associative [IRCPlugin.CommandMetadata] array keyed by string.
      +/
     CommandMetadata[string] channelSpecificCommands(const string) @system;
 
@@ -270,7 +289,7 @@ public:
     ---
     final class MyPlugin : IRCPlugin
     {
-        @Settings MyPluginSettings myPluginSettings;
+        MyPluginSettings myPluginSettings;  // type should be annotated @Settings at declaration
 
         // ...implementation...
 
@@ -290,13 +309,16 @@ mixin template IRCPluginImpl(
     Flag!"debug_" debug_ = No.debug_,
     string module_ = __MODULE__)
 {
-    private import kameloso.plugins.common.core : FilterResult, IRCPluginState, Permissions;
+    private import kameloso.plugins.common.core : FilterResult, IRCEventHandler, IRCPluginState, Permissions;
     private import dialect.defs : IRCEvent, IRCServer, IRCUser;
+    private import lu.traits : getSymbolsByUDA;
+    private import std.meta : Filter, templateNot, templateOr;
+    private import std.traits : getUDAs, isSomeFunction;
     private import core.thread : Fiber;
 
     /// Symbol needed for the mixin constraints to work.
     // https://forum.dlang.org/post/sk4hqm$12cf$1@digitalmars.com
-    alias mixinParent = __traits(parent, {});
+    private alias mixinParent = __traits(parent, {});
 
     // Use a custom constraint to force the scope to be an IRCPlugin
     static if (!is(mixinParent : IRCPlugin))
@@ -308,20 +330,30 @@ mixin template IRCPluginImpl(
 
         enum pattern = "%s `%s` mixes in `%s` but it is only supposed to be " ~
             "mixed into an `IRCPlugin` subclass";
-        static assert(0, pattern.format(pluginImplParentInfo.type,
-            pluginImplParentInfo.fqn, "IRCPluginImpl"));
+        enum message = pattern.format(
+            pluginImplParentInfo.type,
+            pluginImplParentInfo.fqn,
+            "IRCPluginImpl");
+        static assert(0, message);
     }
 
-    static if (__traits(compiles, this.hasIRCPluginImpl))
+    static if (__traits(compiles, { alias _ = this.hasIRCPluginImpl; }))
     {
         import std.format : format;
+
         enum pattern = "Double mixin of `%s` in `%s`";
-        static assert(0, pattern.format("IRCPluginImpl", typeof(this).stringof));
+        enum message = pattern.format("IRCPluginImpl", typeof(this).stringof);
+        static assert(0, message);
     }
     else
     {
         private enum hasIRCPluginImpl = true;
     }
+
+    mixin("private static import thisModule = ", module_, ";");
+
+    private alias allEventHandlerFunctionsInModule =
+        Filter!(isSomeFunction, getSymbolsByUDA!(thisModule, IRCEventHandler));
 
     @safe:
 
@@ -349,8 +381,8 @@ mixin template IRCPluginImpl(
 
             static if (
                 is(typeof(this.tupleof[i]) == struct) &&
-                (hasUDA!(this.tupleof[i], Settings) ||
-                    hasUDA!(typeof(this.tupleof[i]), Settings)))
+                (hasUDA!(typeof(this.tupleof[i]), Settings) ||
+                    hasUDA!(this.tupleof[i], Settings)))
             {
                 foreach (immutable n, _2; this.tupleof[i].tupleof)
                 {
@@ -365,10 +397,11 @@ mixin template IRCPluginImpl(
 
                             alias UnqualThis = Unqual!(typeof(this));
                             enum pattern = "`%s` has a non-bool `Enabler`: `%s %s`";
-
-                            static assert(0, pattern.format(UnqualThis.stringof,
+                            enum message = pattern.format(
+                                UnqualThis.stringof,
                                 ThisEnabler.stringof,
-                                __traits(identifier, this.tupleof[i].tupleof[n])));
+                                __traits(identifier, this.tupleof[i].tupleof[n]));
+                            static assert(0, message);
                         }
 
                         retval = this.tupleof[i].tupleof[n];
@@ -442,7 +475,8 @@ mixin template IRCPluginImpl(
         }
 
         // Permissions.ignore always passes, even for Class.blacklist.
-        return (permissionsRequired == Permissions.ignore) ? FilterResult.pass :
+        return (permissionsRequired == Permissions.ignore) ?
+            FilterResult.pass :
             filterSender(event, permissionsRequired, state.settings.preferHostmasks);
     }
 
@@ -497,55 +531,47 @@ mixin template IRCPluginImpl(
      +/
     private void onEventImpl(/*const ref*/ IRCEvent origEvent) @system
     {
-        mixin("static import thisModule = ", module_, ";");
-
         // udaSanityCheck
         /++
             Verifies that annotations are as expected.
          +/
-        static bool udaSanityCheck(alias fun)()
+        static bool udaSanityCheck(alias fun, IRCEventHandler uda)()
         {
             import kameloso.plugins.common.core : IRCEventHandler;
-            import std.traits : fullyQualifiedName, getUDAs;
-
-            alias handlerAnnotations = getUDAs!(fun, IRCEventHandler);
-
-            static if (handlerAnnotations.length > 1)
-            {
-                import std.format : format;
-                enum pattern = "`%s` is annotated with more than one `IRCEventHandler`";
-                static assert(0, pattern.format(fullyQualifiedName!fun));
-            }
-
-            static immutable uda = handlerAnnotations[0];
 
             static foreach (immutable type; uda._acceptedEventTypes)
-            {{
+            {
                 static if (type == IRCEvent.Type.UNSET)
                 {
                     import std.format : format;
+                    import std.traits : fullyQualifiedName;
 
                     enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
-                        "`@(IRCEvent.Type.UNSET)`, which is not a valid event type.";
-                    static assert(0, pattern.format(fullyQualifiedName!fun));
+                        "`@(IRCEvent.Type.UNSET)`, which is not a valid event type";
+                    enum message = pattern.format(fullyQualifiedName!fun);
+                    static assert(0, message);
                 }
                 else static if (type == IRCEvent.Type.PRIVMSG)
                 {
                     import std.format : format;
+                    import std.traits : fullyQualifiedName;
 
                     enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
                         "`@(IRCEvent.Type.PRIVMSG)`, which is not a valid event type. " ~
                         "Use `IRCEvent.Type.CHAN` and/or `IRCEvent.Type.QUERY` instead";
-                    static assert(0, pattern.format(fullyQualifiedName!fun));
+                    enum message = pattern.format(fullyQualifiedName!fun);
+                    static assert(0, message);
                 }
                 else static if (type == IRCEvent.Type.WHISPER)
                 {
                     import std.format : format;
+                    import std.traits : fullyQualifiedName;
 
                     enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
                         "`@(IRCEvent.Type.WHISPER)`, which is not a valid event type. " ~
                         "Use `IRCEvent.Type.QUERY` instead";
-                    static assert(0, pattern.format(fullyQualifiedName!fun));
+                    enum message = pattern.format(fullyQualifiedName!fun);
+                    static assert(0, message);
                 }
 
                 static if (uda._commands.length || uda._regexes.length)
@@ -558,15 +584,18 @@ mixin template IRCPluginImpl(
                     {
                         import lu.conv : Enum;
                         import std.format : format;
+                        import std.traits : fullyQualifiedName;
 
                         enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                             "listening for a `Command` and/or `Regex`, but is at the " ~
                             "same time accepting non-message `IRCEvent.Type.%s events`";
-                        static assert(0, pattern.format(fullyQualifiedName!fun,
-                            Enum!(IRCEvent.Type).toString(type)));
+                        enum message = pattern.format(
+                            fullyQualifiedName!fun,
+                            Enum!(IRCEvent.Type).toString(type));
+                        static assert(0, message);
                     }
                 }
-            }}
+            }
 
             static if (uda._commands.length)
             {
@@ -577,19 +606,23 @@ mixin template IRCPluginImpl(
                     static if (!command._word.length)
                     {
                         import std.format : format;
+                        import std.traits : fullyQualifiedName;
 
                         enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                             "listening for a `Command` with an empty trigger word";
-                        static assert(0, pattern.format(fullyQualifiedName!fun));
+                        enum message = pattern.format(fullyQualifiedName!fun);
+                        static assert(0, message);
                     }
                     else static if (command._word.contains(' '))
                     {
                         import std.format : format;
+                        import std.traits : fullyQualifiedName;
 
                         enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                             "listening for a `Command` whose trigger " ~
                             `word "%s" contains a space character`;
-                        static assert(0, pattern.format(fullyQualifiedName!fun, command._word));
+                        enum message = pattern.format(fullyQualifiedName!fun, command._word);
+                        static assert(0, message);
                     }
                 }
             }
@@ -603,33 +636,38 @@ mixin template IRCPluginImpl(
                     static if (!regex._expression.length)
                     {
                         import std.format : format;
+                        import std.traits : fullyQualifiedName;
 
                         enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                             "listening for a `Regex` with an empty expression";
-                        static assert(0, pattern.format(fullyQualifiedName!fun));
+                        enum message = pattern.format(fullyQualifiedName!fun);
+                        static assert(0, message);
                     }
                     else static if (
                         (regex._policy != PrefixPolicy.direct) &&
                         regex._expression.contains(' '))
                     {
                         import std.format : format;
+                        import std.traits : fullyQualifiedName;
 
                         enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                             "listening for a non-`PrefixPolicy.direct`-annotated " ~
                             "`Regex` with an expression containing spaces";
-                        static assert(0, pattern.format(fullyQualifiedName!fun));
+                        enum message = pattern.format(fullyQualifiedName!fun);
+                        static assert(0, message);
                     }
                 }
             }
 
             static if ((uda._permissionsRequired != Permissions.ignore) &&
-                !__traits(compiles, .hasMinimalAuthentication))
+                !__traits(compiles, { alias _ = .hasMinimalAuthentication; }))
             {
                 import std.format : format;
 
                 enum pattern = "`%s` is missing a `MinimalAuthentication` " ~
                     "mixin (needed for `Permissions` checks)";
-                static assert(0, pattern.format(module_));
+                enum message = pattern.format(module_);
+                static assert(0, message);
             }
 
             return true;
@@ -639,7 +677,7 @@ mixin template IRCPluginImpl(
         /++
             Calls the passed function pointer, appropriately.
          +/
-        void call(bool inFiber, Fun)(scope Fun fun, ref IRCEvent event) scope
+        void call(bool inFiber, Fun)(scope Fun fun, const ref IRCEvent event) scope
         {
             import lu.traits : TakesParams;
             import std.traits : ParameterStorageClass, Parameters, arity;
@@ -662,7 +700,8 @@ mixin template IRCPluginImpl(
 
                         enum pattern = "`%s` has a `%s` event handler annotated `.fiber(true)` " ~
                             "that takes an `IRCEvent` by `ref`, which is prone to memory corruption";
-                        static assert(0, pattern.format(module_, Fun.stringof));
+                        enum message = pattern.format(module_, Fun.stringof);
+                        static assert(0, message);
                     }
                 }
             }
@@ -685,7 +724,8 @@ mixin template IRCPluginImpl(
                         enum pattern = "`%s` has a `%s` event handler that takes an " ~
                             "`IRCEvent` of an unsupported storage class; " ~
                             "may not be mutable `ref` or `out`";
-                        static assert(0, pattern.format(module_, Fun.stringof));
+                        enum message = pattern.format(module_, Fun.stringof);
+                        static assert(0, message);
                     }
                 }
             }
@@ -743,7 +783,8 @@ mixin template IRCPluginImpl(
                 import std.format : format;
 
                 enum pattern = "`%s` has an event handler with an unsupported function signature: `%s`";
-                static assert(0, pattern.format(module_, Fun.stringof));
+                enum message = pattern.format(module_, Fun.stringof);
+                static assert(0, message);
             }
         }
 
@@ -1033,8 +1074,10 @@ mixin template IRCPluginImpl(
                     else
                     {
                         import std.format : format;
+
                         enum pattern = "`%s` has an event handler with an unsupported function signature: `%s`";
-                        static assert(0, pattern.format(module_, Fun.stringof));
+                        enum message = pattern.format(module_, Fun.stringof);
+                        static assert(0, message);
                     }
                 }
                 else /*if (result == FilterResult.fail)*/
@@ -1164,6 +1207,8 @@ mixin template IRCPluginImpl(
                 static immutable ctUDAArray = ()
                 {
                     IRCEventHandler[] udas;
+                    if (!__ctfe) return udas;
+
                     udas.length = funlist.length;
 
                     foreach (immutable i, fun; funlist)
@@ -1178,14 +1223,23 @@ mixin template IRCPluginImpl(
             foreach (immutable i, fun; funlist)
             {
                 import std.algorithm.searching : canFind;
-                import std.traits : getUDAs;
-
-                static assert(udaSanityCheck!fun,
-                    __traits(identifier, fun) ~ " UDA sanity check failed.");
 
                 static if (__VERSION__ >= 2096L)
                 {
-                    static immutable uda = getUDAs!(fun, IRCEventHandler)[0];
+                    import std.traits : getUDAs;
+
+                    alias handlerAnnotations = getUDAs!(fun, IRCEventHandler);
+
+                    static if (handlerAnnotations.length != 1)
+                    {
+                        import std.format : format;
+
+                        enum pattern = "`%s` may only be annotated with one and only one `IRCEventHandler`";
+                        enum message = pattern.format(fullyQualifiedName!fun);
+                        static assert(0, message);
+                    }
+
+                    static immutable uda = handlerAnnotations[0];
                 }
                 else
                 {
@@ -1197,6 +1251,9 @@ mixin template IRCPluginImpl(
 
                 enum verbose = (uda._verbose || debug_);
                 enum funName = module_ ~ '.' ~ __traits(identifier, fun);
+
+                static assert(udaSanityCheck!(fun, uda),
+                    funName ~ " UDA sanity check failed.");
 
                 // Make a special check for IRCEvent.Type.ANY at compile-time,
                 // so the processing function won't have to walk the array twice
@@ -1227,6 +1284,10 @@ mixin template IRCPluginImpl(
                     else if (next == NextStep.return_)
                     {
                         return;
+                    }
+                    else /*if (next == NextStep.unset)*/
+                    {
+                        assert(0, "`IRCPluginImpl.onEventImpl.process` returned `Next.unset`");
                     }
                 }
                 catch (Exception e)
@@ -1266,34 +1327,110 @@ mixin template IRCPluginImpl(
                             return;
                         }
                     }
-                    else /*if (next == NextStep.return_)*/
+                    else if (next == NextStep.return_)
                     {
                         return;
+                    }
+                    else /*if (next == NextStep.unset)*/
+                    {
+                        assert(0, "`IRCPluginImpl.onEventImpl.process` returned `Next.unset`");
                     }
                 }
             }
         }
 
-        import kameloso.plugins.common.core : IRCEventHandler;
-        import lu.traits : getSymbolsByUDA;
-        import std.meta : Filter, templateNot, templateOr;
-        import std.traits : getUDAs, isSomeFunction;
+        static if (!this.allEventHandlerFunctionsInModule.length)
+        {
+            version(unittest)
+            {
+                // Skip event handler checks when unittesting, as it triggers
+                // unittests in common/core.d
+            }
+            else
+            {
+                import std.algorithm.searching : endsWith;
+
+                static if (module_.endsWith(".stub"))
+                {
+                    // Defined to be empty
+                }
+                else
+                {
+                    import kameloso.plugins.common.core : PluginModuleInfo;
+
+                    alias PluginModule = PluginModuleInfo!module_;
+
+                    static if (PluginModule.hasPluginClass)
+                    {
+                        enum message = "Warning: `IRCPlugin` subclass `" ~ PluginModule.className ~
+                            "` in module `" ~ module_ ~ "` mixes in `IRCPluginImpl`, but there " ~
+                            "seem to be no module-level event handlers. " ~
+                            "Verify `IRCEventHandler` annotations";
+                        pragma(msg, message);
+                    }
+                }
+            }
+        }
 
         enum isSetupFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.setup);
         enum isEarlyFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.early);
         enum isLateFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.late);
         enum isCleanupFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.cleanup);
-
-        alias hasSpecialTiming = templateOr!(isSetupFun, isEarlyFun,
-            isLateFun, isCleanupFun);
+        alias hasSpecialTiming = templateOr!(isSetupFun, isEarlyFun, isLateFun, isCleanupFun);
         alias isNormalEventHandler = templateNot!hasSpecialTiming;
 
-        alias allFuns = Filter!(isSomeFunction, getSymbolsByUDA!(thisModule, IRCEventHandler));
-        alias setupFuns = Filter!(isSetupFun, allFuns);
-        alias earlyFuns = Filter!(isEarlyFun, allFuns);
-        alias lateFuns = Filter!(isLateFun, allFuns);
-        alias cleanupFuns = Filter!(isCleanupFun, allFuns);
-        alias pluginFuns = Filter!(isNormalEventHandler, allFuns);
+        alias setupFuns = Filter!(isSetupFun, this.allEventHandlerFunctionsInModule);
+        alias earlyFuns = Filter!(isEarlyFun, this.allEventHandlerFunctionsInModule);
+        alias lateFuns = Filter!(isLateFun, this.allEventHandlerFunctionsInModule);
+        alias cleanupFuns = Filter!(isCleanupFun, this.allEventHandlerFunctionsInModule);
+        alias pluginFuns = Filter!(isNormalEventHandler, this.allEventHandlerFunctionsInModule);
+
+        /+
+            It seems we can't trust mixed-in awareness functions to actually get
+            detected, depending on how late in the module the site of mixin is.
+            So statically assert we found some.
+         +/
+        static if (__traits(compiles, { alias _ = .hasMinimalAuthentication; }))
+        {
+            static if (!earlyFuns.length)
+            {
+                import std.format : format;
+
+                enum pattern = "Module `%s` mixes in `MinimalAwareness`, " ~
+                    "yet no `Timing.early` functions were found during introspection. " ~
+                    "Try moving the mixin site to earlier in the module.";
+                immutable message = pattern.format(module_);
+                static assert(0, message);
+            }
+        }
+
+        static if (__traits(compiles, { alias _ = .hasUserAwareness; }))
+        {
+            static if (!cleanupFuns.length)
+            {
+                import std.format : format;
+
+                enum pattern = "Module `%s` mixes in `UserAwareness`, " ~
+                    "yet no `Timing.cleanup` functions were found during introspection. " ~
+                    "Try moving the mixin site to earlier in the module.";
+                immutable message = pattern.format(module_);
+                static assert(0, message);
+            }
+        }
+
+        static if (__traits(compiles, { alias _ = .hasChannelAwareness; }))
+        {
+            static if (!lateFuns.length)
+            {
+                import std.format : format;
+
+                enum pattern = "Module `%s` mixes in `ChannelAwareness`, " ~
+                    "yet no `Timing.late` functions were found during introspection. " ~
+                    "Try moving the mixin site to earlier in the module.";
+                immutable message = pattern.format(module_);
+                static assert(0, message);
+            }
+        }
 
         tryProcess!setupFuns(origEvent);
         tryProcess!earlyFuns(origEvent);
@@ -1355,7 +1492,7 @@ mixin template IRCPluginImpl(
             }
         }
 
-        static if (__traits(compiles, .initialise))
+        static if (__traits(compiles, { alias _ = .initialise; }))
         {
             import lu.traits : TakesParams;
 
@@ -1366,8 +1503,10 @@ mixin template IRCPluginImpl(
             else
             {
                 import std.format : format;
+
                 enum pattern = "`%s.initialise` has an unsupported function signature: `%s`";
-                static assert(0, pattern.format(module_, typeof(.initialise).stringof));
+                enum message = pattern.format(module_, typeof(.initialise).stringof);
+                static assert(0, message);
             }
         }
     }
@@ -1382,7 +1521,7 @@ mixin template IRCPluginImpl(
      +/
     override public void postprocess(ref IRCEvent event) @system
     {
-        static if (__traits(compiles, .postprocess))
+        static if (__traits(compiles, { alias _ = .postprocess; }))
         {
             import lu.traits : TakesParams;
 
@@ -1402,16 +1541,20 @@ mixin template IRCPluginImpl(
                 else
                 {
                     import std.format : format;
+
                     enum pattern = "`%s.postprocess` does not take its " ~
                         "`IRCEvent` parameter by `ref`";
-                    static assert(0, pattern.format(module_,));
+                    enum message = pattern.format(module_,);
+                    static assert(0, message);
                 }
             }
             else
             {
                 import std.format : format;
+
                 enum pattern = "`%s.postprocess` has an unsupported function signature: `%s`";
-                static assert(0, pattern.format(module_, typeof(.postprocess).stringof));
+                enum message = pattern.format(module_, typeof(.postprocess).stringof);
+                static assert(0, message);
             }
         }
     }
@@ -1422,7 +1565,7 @@ mixin template IRCPluginImpl(
      +/
     override public void initResources() @system
     {
-        static if (__traits(compiles, .initResources))
+        static if (__traits(compiles, { alias _ = .initResources; }))
         {
             import lu.traits : TakesParams;
 
@@ -1435,8 +1578,10 @@ mixin template IRCPluginImpl(
             else
             {
                 import std.format : format;
+
                 enum pattern = "`%s.initResources` has an unsupported function signature: `%s`";
-                static assert(0, pattern.format(module_, typeof(.initResources).stringof));
+                enum message = pattern.format(module_, typeof(.initResources).stringof);
+                static assert(0, message);
             }
         }
     }
@@ -1463,7 +1608,7 @@ mixin template IRCPluginImpl(
         out string[][string] missingEntries,
         out string[][string] invalidEntries)
     {
-        import kameloso.config : readConfigInto;
+        import kameloso.configreader : readConfigInto;
         import lu.meld : meldInto;
         import std.traits : hasUDA;
 
@@ -1471,8 +1616,8 @@ mixin template IRCPluginImpl(
         {
             static if (
                 is(typeof(this.tupleof[i]) == struct) &&
-                (hasUDA!(this.tupleof[i], Settings) ||
-                    hasUDA!(typeof(this.tupleof[i]), Settings)))
+                (hasUDA!(typeof(this.tupleof[i]), Settings) ||
+                    hasUDA!(this.tupleof[i], Settings)))
             {
                 if (symbol != typeof(symbol).init)
                 {
@@ -1531,8 +1676,8 @@ mixin template IRCPluginImpl(
         {
             static if (
                 is(typeof(this.tupleof[i]) == struct) &&
-                (hasUDA!(this.tupleof[i], Settings) ||
-                    hasUDA!(typeof(this.tupleof[i]), Settings)))
+                (hasUDA!(typeof(this.tupleof[i]), Settings) ||
+                    hasUDA!(this.tupleof[i], Settings)))
             {
                 success = symbol.setMemberByName(setting, value);
                 break;
@@ -1555,8 +1700,8 @@ mixin template IRCPluginImpl(
         {
             static if (
                 is(typeof(this.tupleof[i]) == struct) &&
-                (hasUDA!(this.tupleof[i], Settings) ||
-                    hasUDA!(typeof(this.tupleof[i]), Settings)))
+                (hasUDA!(typeof(this.tupleof[i]), Settings) ||
+                    hasUDA!(this.tupleof[i], Settings)))
             {
                 import std.typecons : No, Yes;
                 printObject!(No.all)(symbol);
@@ -1596,8 +1741,8 @@ mixin template IRCPluginImpl(
         {
             static if (
                 is(typeof(this.tupleof[i]) == struct) &&
-                (hasUDA!(this.tupleof[i], Settings) ||
-                    hasUDA!(typeof(this.tupleof[i]), Settings)))
+                (hasUDA!(typeof(this.tupleof[i]), Settings) ||
+                    hasUDA!(this.tupleof[i], Settings)))
             {
                 import lu.serialisation : serialise;
 
@@ -1612,7 +1757,7 @@ mixin template IRCPluginImpl(
 
     private import std.meta : AliasSeq;
 
-    // setup, start, teardown, reload
+    // setup, start, reload, teardown
     /+
         Generates functions `setup`, `start`, `reload` and `teardown`. These
         merely pass on calls to module-level `.setup`, `.start`, `.reload` and
@@ -1636,7 +1781,7 @@ mixin template IRCPluginImpl(
          +/
         override public void ` ~ funName ~ `() @system
         {
-            static if (__traits(compiles, .` ~ funName ~ `))
+            static if (__traits(compiles, { alias _ = .` ~ funName ~ `; }))
             {
                 import lu.traits : TakesParams;
 
@@ -1650,7 +1795,8 @@ mixin template IRCPluginImpl(
                 {
                     import std.format : format;
                     ` ~ "enum pattern = \"`%s.%s` has an unsupported function signature: `%s`\";
-                    " ~ `static assert(0, pattern.format(module_, "` ~ funName ~ `", typeof(.` ~ funName ~ `).stringof));
+                    enum message = pattern.format(module_, \"" ~ funName ~ `", typeof(.` ~ funName ~ `).stringof);
+                    static assert(0, message);
                 }
             }
         }`);
@@ -1668,11 +1814,13 @@ mixin template IRCPluginImpl(
     {
         import lu.string : beginsWith;
 
-        static if (module_.beginsWith("kameloso.plugins."))
+        enum modulePrefix = "kameloso.plugins.";
+
+        static if (module_.beginsWith(modulePrefix))
         {
             import std.string : indexOf;
 
-            string slice = module_[17..$];  // mutable
+            string slice = module_[modulePrefix.length..$];  // mutable
             immutable dotPos = slice.indexOf('.');
             if (dotPos == -1) return slice;
             return (slice[dotPos+1..$] == "base") ? slice[0..dotPos] : slice[dotPos+1..$];
@@ -1682,7 +1830,8 @@ mixin template IRCPluginImpl(
             import std.format : format;
 
             enum pattern = "Plugin module `%s` is not under `kameloso.plugins`";
-            static assert(0, pattern.format(module_));
+            enum message = pattern.format(module_);
+            static assert(0, message);
         }
     }
 
@@ -1705,12 +1854,12 @@ mixin template IRCPluginImpl(
 
     // commands
     /++
-        Collects all [kameloso.plugins.common.core.IRCEventHandler.Command|IRCEventHandler.Command]
-        command words and [kameloso.plugins.common.core.IRCEventHandler.Regex|IRCEventHandler.Regex]
-        regex expressions that this plugin offers at compile time, then at runtime
-        returns them alongside their descriptions and their visibility, as an associative
-        array of [kameloso.plugins.common.core.IRCPlugin.CommandMetadata|IRCPlugin.CommandMetadata]s
-        keyed by command name strings.
+        Forwards to [kameloso.plugins.common.core.IRCPluginImpl.commandsImpl|IRCPluginImpl.commandsImpl].
+
+        This is made a separate function to allow plugins to override it and
+        insert their own code, while still leveraging
+        [kameloso.plugins.common.core.IRCPluginImpl.commandsImpl|IRCPluginImpl.commandsImpl]
+        for the actual dirty work.
 
         Returns:
             Associative array of tuples of all command metadata (descriptions,
@@ -1718,30 +1867,50 @@ mixin template IRCPluginImpl(
             [kameloso.plugins.common.core.IRCEventHandler.Command.word|IRCEventHandler.Command.word]s
             and [kameloso.plugins.common.core.IRCEventHandler.Regex.expression|IRCEventHandler.Regex.expression]s.
      +/
+    pragma(inline, true)
     override public IRCPlugin.CommandMetadata[string] commands() pure nothrow @property const
+    {
+        return commandsImpl();
+    }
+
+    // commandsImpl
+    /++
+        Collects all [kameloso.plugins.common.core.IRCEventHandler.Command|IRCEventHandler.Command]
+        command words and [kameloso.plugins.common.core.IRCEventHandler.Regex|IRCEventHandler.Regex]
+        regex expressions that this plugin offers at compile time, then at runtime
+        returns them alongside their descriptions and their visibility, as an associative
+        array of [kameloso.plugins.common.core.IRCPlugin.CommandMetadata|IRCPlugin.CommandMetadata]s
+        keyed by command name strings.
+
+        This function is private, but since it's part of a mixin template it will
+        be visible at the mixin site. Plugins can as such override
+        [kameloso.plugins.common.core.IRCPlugin.commands|IRCPlugin.commands] with
+        their own code and invoke [onCommandsImpl] as a fallback.
+
+        Returns:
+            Associative array of tuples of all command metadata (descriptions,
+            syntaxes, and whether they are hidden), keyed by
+            [kameloso.plugins.common.core.IRCEventHandler.Command.word|IRCEventHandler.Command.word]s
+            and [kameloso.plugins.common.core.IRCEventHandler.Regex.expression|IRCEventHandler.Regex.expression]s.
+     +/
+    private IRCPlugin.CommandMetadata[string] commandsImpl() pure nothrow @property const
     {
         enum ctCommandsEnumLiteral =
         {
             import kameloso.plugins.common.core : IRCEventHandler;
-            import lu.traits : getSymbolsByUDA;
-            import std.meta : Filter;
-            import std.traits : getUDAs, isSomeFunction;
-
-            mixin("static import thisModule = ", module_, ";");
-
-            alias funs = Filter!(isSomeFunction, getSymbolsByUDA!(thisModule, IRCEventHandler));
+            import std.traits : getUDAs;
 
             IRCPlugin.CommandMetadata[string] commandAA;
+            if (!__ctfe) return commandAA;
 
-            foreach (fun; funs)
+            foreach (fun; this.allEventHandlerFunctionsInModule)
             {
                 immutable uda = getUDAs!(fun, IRCEventHandler)[0];
 
-                static foreach (const command; uda._commands)
+                static foreach (immutable command; uda._commands)
                 {{
                     enum key = command._word;
-                    commandAA[key] = IRCPlugin.CommandMetadata
-                        (command._policy, command._description, command._hidden);
+                    commandAA[key] = IRCPlugin.CommandMetadata(command);
 
                     static if (command._hidden)
                     {
@@ -1751,13 +1920,23 @@ mixin template IRCPluginImpl(
                     {
                         static if (command._policy == PrefixPolicy.nickname)
                         {
+                            import lu.string : beginsWith;
+
                             static if (command._syntaxes.length)
                             {
-                                // Prefix the command with the bot's nickname,
-                                // as that's how it's actually used.
                                 foreach (immutable syntax; command._syntaxes)
                                 {
-                                    commandAA[key].syntaxes ~= "$bot: " ~ syntax;
+                                    if (syntax.beginsWith("$bot"))
+                                    {
+                                        // Syntax is already prefixed
+                                        commandAA[key].syntaxes ~= syntax;
+                                    }
+                                    else
+                                    {
+                                        // Prefix the command with the bot's nickname,
+                                        // as that's how it's actually used.
+                                        commandAA[key].syntaxes ~= "$bot: " ~ syntax;
+                                    }
                                 }
                             }
                             else
@@ -1771,7 +1950,7 @@ mixin template IRCPluginImpl(
                         {
                             static if (command._syntaxes.length)
                             {
-                                commandAA[key].syntaxes ~= command._syntaxes;
+                                commandAA[key].syntaxes ~= command._syntaxes.dup;
                             }
                             else
                             {
@@ -1783,16 +1962,17 @@ mixin template IRCPluginImpl(
                     {
                         import std.format : format;
                         import std.traits : fullyQualifiedName;
+
                         enum pattern = "Warning: `%s` non-hidden command word \"%s\" is missing a description";
-                        pragma(msg, pattern.format(fullyQualifiedName!fun, command._word));
+                        enum message = pattern.format(fullyQualifiedName!fun, command._word);
+                        pragma(msg, message);
                     }
                 }}
 
                 static foreach (immutable regex; uda._regexes)
                 {{
                     enum key = `r"` ~ regex._expression ~ `"`;
-                        commandAA[key] = IRCPlugin.CommandMetadata
-                            (regex._policy, regex._description, regex._hidden);
+                    commandAA[key] = IRCPlugin.CommandMetadata(regex);
 
                     static if (regex._description.length)
                     {
@@ -1815,7 +1995,8 @@ mixin template IRCPluginImpl(
                         import std.traits : fullyQualifiedName;
 
                         enum pattern = "Warning: `%s` non-hidden expression \"%s\" is missing a description";
-                        pragma(msg, pattern.format(fullyQualifiedName!fun, regex._expression));
+                        enum message = pattern.format(fullyQualifiedName!fun, regex._expression);
+                        pragma(msg, message);
                     }
                 }}
             }
@@ -1843,7 +2024,7 @@ mixin template IRCPluginImpl(
      +/
     override public void onBusMessage(const string header, shared Sendable content) @system
     {
-        static if (__traits(compiles, .onBusMessage))
+        static if (__traits(compiles, { alias _ = .onBusMessage; }))
         {
             import lu.traits : TakesParams;
 
@@ -1858,8 +2039,10 @@ mixin template IRCPluginImpl(
             else
             {
                 import std.format : format;
+
                 enum pattern = "`%s.onBusMessage` has an unsupported function signature: `%s`";
-                static assert(0, pattern.format(module_, typeof(.onBusMessage).stringof));
+                enum message = pattern.format(module_, typeof(.onBusMessage).stringof);
+                static assert(0, message);
             }
         }
     }
@@ -1909,7 +2092,7 @@ unittest
         `true` if the message is in a context where the event matches the
         `policy`, `false` if not.
  +/
-auto prefixPolicyMatches(bool verbose = false)
+auto prefixPolicyMatches(bool verbose)
     (ref IRCEvent event,
     const PrefixPolicy policy,
     const IRCClient client,
@@ -1922,7 +2105,6 @@ auto prefixPolicyMatches(bool verbose = false)
     static if (verbose)
     {
         import std.stdio : writefln, writeln;
-
         writeln("...prefixPolicyMatches! policy:", policy);
     }
 
@@ -2155,7 +2337,7 @@ auto filterSender(
 struct IRCPluginState
 {
 private:
-    import kameloso.kameloso : ConnectionSettings, CoreSettings, IRCBot;
+    import kameloso.pods : ConnectionSettings, CoreSettings, IRCBot;
     import kameloso.thread : ScheduledDelegate, ScheduledFiber;
     import std.concurrency : Tid;
     import core.thread : Fiber;
@@ -2179,22 +2361,22 @@ public:
         nothing  = 0,
 
         /++
-            `IRCPluginState.bot` was marked as updated.
+            [IRCPluginState.bot] was marked as updated.
          +/
         bot      = 1 << 0,
 
         /++
-            `IRCPluginState.client` was marked as updated.
+            [IRCPluginState.client] was marked as updated.
          +/
         client   = 1 << 1,
 
         /++
-            `IRCPluginState.server` was marked as updated.
+            [IRCPluginState.server] was marked as updated.
          +/
         server   = 1 << 2,
 
         /++
-            `IRCPluginState.settings` was marked as updated.
+            [IRCPluginState.settings] was marked as updated.
          +/
         settings = 1 << 3,
     }
@@ -2215,20 +2397,20 @@ public:
 
     // bot
     /++
-        The current [kameloso.kameloso.IRCBot|IRCBot], containing information
+        The current [kameloso.pods.IRCBot|IRCBot], containing information
         pertaining to the bot in the context of an IRC bot.
      +/
     IRCBot bot;
 
     // settings
     /++
-        The current program-wide [kameloso.kameloso.CoreSettings|CoreSettings].
+        The current program-wide [kameloso.pods.CoreSettings|CoreSettings].
      +/
     CoreSettings settings;
 
     // connSettings
     /++
-        The current program-wide [kameloso.kameloso.ConnectionSettings|ConnectionSettings].
+        The current program-wide [kameloso.pods.ConnectionSettings|ConnectionSettings].
      +/
     ConnectionSettings connSettings;
 
@@ -2374,7 +2556,7 @@ public:
             The numeric ID of the current connection.
      +/
     pragma(inline, true)
-    auto connectionID()
+    auto connectionID() const
     {
         return privateConnectionID;
     }
@@ -2430,8 +2612,11 @@ struct Replay
     /++
         Creates a new [Replay] with a timestamp of the current time.
      +/
-    this(void delegate(Replay) dg, const ref IRCEvent event,
-        const Permissions permissionsRequired, const string caller)
+    this(
+        void delegate(Replay) dg,
+        const ref IRCEvent event,
+        const Permissions permissionsRequired,
+        const string caller)
     {
         import std.datetime.systime : Clock;
 
@@ -2485,7 +2670,7 @@ enum PrefixPolicy
     /++
         The annotated event handler will only trigger if the
         [dialect.defs.IRCEvent.content|IRCEvent.content] member starts with the
-        [kameloso.kameloso.CoreSettings.prefix|CoreSettings.prefix] (e.g. "!").
+        [kameloso.pods.CoreSettings.prefix|CoreSettings.prefix] (e.g. "!").
         All other annotations must also match.
      +/
     prefixed,
@@ -2561,19 +2746,19 @@ enum Permissions
     registered = 20,
 
     /++
-        Only users with a [dialect.defs.IRCClient.Class.whitelist|IRCClient.Class.whitelist]
+        Only users with a [dialect.defs.IRCUser.Class.whitelist|IRCUser.Class.whitelist]
         classifier (or higher) may trigger the annotated function.
      +/
     whitelist = 30,
 
     /++
-        Only users with a [dialect.defs.IRCClient.Class.elevated|IRCClient.Class.elevated]
+        Only users with a [dialect.defs.IRCUser.Class.elevated|IRCUser.Class.elevated]
         classifier (or higher) may trigger the annotated function.
      +/
     elevated = 40,
 
     /++
-        Only users with a [dialect.defs.IRCClient.Class.operator|IRCClient.Class.operator]
+        Only users with a [dialect.defs.IRCUser.Class.operator|IRCUser.Class.operator]
         classifier (or higiher) may trigger the annotated function.
 
         Note: this does not mean IRC "+o" operators.
@@ -2581,7 +2766,7 @@ enum Permissions
     operator = 50,
 
     /++
-        Only users with a [dialect.defs.IRCClient.Class.staff|IRCClient.Class.staff]
+        Only users with a [dialect.defs.IRCUser.Class.staff|IRCUser.Class.staff]
         classifier (or higher) may trigger the annotated function.
 
         These are channel owners.
@@ -2639,7 +2824,7 @@ struct IRCEventHandler
 {
     private import kameloso.traits : UnderscoreOpDispatcher;
 
-    // acceptedEventTypes
+    // _acceptedEventTypes
     /++
         Array of types of [dialect.defs.IRCEvent] that the annotated event
         handler function should accept.
@@ -2653,21 +2838,21 @@ struct IRCEventHandler
      +/
     alias _onEvent = _acceptedEventTypes;
 
-    // permissionsRequired
+    // _permissionsRequired
     /++
         Permissions required of instigating user, below which the annotated
         event handler function should not be triggered.
      +/
     Permissions _permissionsRequired = Permissions.ignore;
 
-    // channelPolicy
+    // _channelPolicy
     /++
         What kind of channel the annotated event handler function may be
         triggered in; homes or mere guest channels.
      +/
     ChannelPolicy _channelPolicy = ChannelPolicy.home;
 
-    // commands
+    // _commands
     /++
         Array of [IRCEventHandler.Command]s the bot should pick up and listen for.
      +/
@@ -2680,7 +2865,7 @@ struct IRCEventHandler
      +/
     alias _addCommand = _commands;
 
-    // regexes
+    // _regexes
     /++
         Array of [IRCEventHandler.Regex]es the bot should pick up and listen for.
      +/
@@ -2693,7 +2878,7 @@ struct IRCEventHandler
      +/
     alias _addRegex = _regexes;
 
-    // chainable
+    // _chainable
     /++
         Whether or not the annotated event handler function should allow other
         functions to fire after it. If not set (default false), it will
@@ -2701,21 +2886,21 @@ struct IRCEventHandler
      +/
     bool _chainable;
 
-    // verbose
+    // _verbose
     /++
         Whether or not additional information should be output to the local
         terminal as the function is (or is not) triggered.
      +/
     bool _verbose;
 
-    // when
+    // _when
     /++
         Special instruction related to the order of which event handler functions
         within a plugin module are triggered.
      +/
     Timing _when;
 
-    // fiber
+    // _fiber
     /++
         Whether or not the annotated event handler should be run from within a
         [core.thread.fiber.Fiber|Fiber].
@@ -2730,19 +2915,19 @@ struct IRCEventHandler
      +/
     static struct Command
     {
-        // policy
+        // _policy
         /++
             In what way the message is required to start for the annotated function to trigger.
          +/
         PrefixPolicy _policy = PrefixPolicy.prefixed;
 
-        // word
+        // _word
         /++
             The command word, without spaces.
          +/
         string _word;
 
-        // description
+        // _description
         /++
             Describes the functionality of the event handler function the parent
             [IRCEventHandler] annotates, and by extension, this [IRCEventHandler.Command].
@@ -2752,13 +2937,13 @@ struct IRCEventHandler
          +/
         string _description;
 
-        // hidden
+        // _hidden
         /++
             Whether this is a hidden command or if it should show up in help listings.
          +/
         bool _hidden;
 
-        // syntax
+        // _syntax
         /++
             Command usage syntax help strings.
          +/
@@ -2782,25 +2967,25 @@ struct IRCEventHandler
     {
         import std.regex : StdRegex = Regex;
 
-        // policy
+        // _policy
         /++
             In what way the message is required to start for the annotated function to trigger.
          +/
         PrefixPolicy _policy = PrefixPolicy.direct;
 
-        // engine
+        // _engine
         /++
             Regex engine to match incoming messages with.
          +/
         StdRegex!char _engine;
 
-        // expression
+        // _expression
         /++
             The regular expression in string form.
          +/
         string _expression;
 
-        // description
+        // _description
         /++
             Describes the functionality of the event handler function the parent
             [IRCEventHandler] annotates, and by extension, this [IRCEventHandler.Regex].
@@ -2810,13 +2995,13 @@ struct IRCEventHandler
          +/
         string _description;
 
-        // hidden
+        // _hidden
         /++
             Whether this is a hidden command or if it should show up in help listings.
          +/
         bool _hidden;
 
-        // expression
+        // _expression
         /++
             The regular expression this [IRCEventHandler.Regex] embodies, in string form.
 
@@ -2851,6 +3036,132 @@ struct IRCEventHandler
 }
 
 
+// PluginModuleInfo
+/++
+    Introspects a module given a string of its fully qualified name and divines
+    the [kameloso.plugins.common.core.IRCPlugin|IRCPlugin] subclass within.
+
+    `.hasPluginClass` will be set to false if there were no plugins in the module,
+    and true if there was. In that case, `.Class` will alias to said plugin class,
+    and `.className` will become the string of its name.
+
+    Params:
+        module_ = String name of a module.
+ +/
+template PluginModuleInfo(string module_)
+{
+    static if (__traits(compiles, { mixin("alias thisModule = " ~ module_ ~ ";"); }))
+    {
+        private:
+
+        import std.meta : ApplyLeft, Filter, NoDuplicates, staticMap;
+
+        mixin("static import thisModule = " ~ module_ ~ ";");
+
+        enum isPlugin(alias T) = is(T : IRCPlugin);
+        alias getMember(alias parent, string memberstring) = __traits(getMember, parent, memberstring);
+        alias allMembers = staticMap!(ApplyLeft!(getMember, thisModule), __traits(allMembers, thisModule));
+        alias allUniqueMembers = NoDuplicates!allMembers;
+        alias Plugins = Filter!(isPlugin, allUniqueMembers);
+
+        /+
+            Perform some sanity checks.
+         +/
+        static if (!Plugins.length)
+        {
+            // It's likely a package or helper module; do nothing but mark as empty
+            public enum hasPluginClass = false;
+        }
+        else static if (Plugins.length > 1)
+        {
+            import std.format : format;
+
+            enum pattern = "Plugin module `%s` is has more than one `IRCPlugin` subclass: `%s`";
+            immutable message = pattern.format(module_, Plugins.stringof);
+            static assert(0, message);
+        }
+        else static if (is(Plugins[0] : IRCPlugin))
+        {
+            // Benign case, should always be true.
+            public alias Class = Plugins[0];
+            public enum className = __traits(identifier, Class);
+            public enum hasPluginClass = true;
+        }
+        else
+        {
+            import std.format : format;
+
+            // Unsure if this ever happens anymore, but may as well keep the error.
+            enum pattern = "Unspecific error encountered when performing sanity " ~
+                "checks on introspected `IRCPlugin` subclasses in module `%s`";
+            immutable message = pattern.format(module_);
+            static assert(0, message);
+        }
+    }
+    else
+    {
+        import std.format : format;
+
+        enum pattern = "Tried to divine the `IRCPlugin` subclass of non-existent module `%s`";
+        enum message = pattern.format(module_);
+        static assert(0, message);
+    }
+}
+
+
+// ModuleRegistration
+/++
+    Mixes in a module constructor that registers any [IRCPlugin] subclasses in
+    the module to be instantiated on program startup/connect.
+
+    Params:
+        priority = Priority at which to instantiate the plugin. A lower priority
+            makes it get instantiated before other plugins. Defaults to `0`.
+        module_ = String name of the module. Should be kept to its default `__MODULE__`.
+ +/
+mixin template ModuleRegistration(
+    int priority = 0,
+    string module_ = __MODULE__)
+{
+    // module constructor
+    /++
+        Mixed-in module constructor that registers any [IRCPlugin] subclasses in
+        the module to be instantiated on program startup.
+     +/
+    shared static this()
+    {
+        import kameloso.plugins.common.core : IRCPluginState, PluginModuleInfo;
+
+        alias PluginModule = PluginModuleInfo!module_;
+
+        static if (!PluginModule.hasPluginClass)
+        {
+            // No class in module, so just ignore it
+            pragma(msg, "Note: Versioned-out or dummy plugin: " ~ module_);
+        }
+        else static if (__traits(compiles, new PluginModule.Class(IRCPluginState.init)))
+        {
+            import kameloso.plugins : registerPlugin;
+
+            static auto ctor(IRCPluginState state)
+            {
+                return new PluginModule.Class(state);
+            }
+
+            registerPlugin(priority, module_, &ctor);
+        }
+        else
+        {
+            import std.format : format;
+
+            enum pattern = "`%s.%s` constructor does not compile";
+            enum message = pattern.format(module_, PluginModule.className);
+            static assert(0, message);
+        }
+    }
+}
+
+
 // Settings
 /++
     Annotation denoting that a struct variable or struct type is to be considered
@@ -2880,10 +3191,3 @@ enum Configuration;
     Annotation denoting that a variable enables and disables a plugin.
  +/
 enum Enabler;
-
-
-// IRCPluginHook
-/++
-    Annotation denoting that a class is a plugin.
- +/
-enum IRCPluginHook;

@@ -1,12 +1,8 @@
 /++
     The Quotes plugin allows for saving and replaying user quotes.
 
-    A user quote can be added by triggering the "`quote`" bot command, by use
-    of "`!quote [nickname] [quote text...]`" (assuming a prefix of "`!`").
-    A random one can then be replayed by use of the "`!quote [nickname]`" command.
-
-    On Twitch, the `!quote` command does not take a nickname parameter; instead
-    the owner of the channel is assumed to be the target.
+    On Twitch, the commands do not take a nickname parameter; instead
+    the owner of the channel (the broadcaster) is assumed to be the target.
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#quotes
@@ -24,7 +20,9 @@ import kameloso.plugins.common.awareness : UserAwareness;
 import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
-import std.typecons : Flag, No, Yes;
+
+mixin UserAwareness;
+mixin ModuleRegistration;
 
 
 // QuotesSettings
@@ -33,8 +31,16 @@ import std.typecons : Flag, No, Yes;
  +/
 @Settings struct QuotesSettings
 {
-    /// Whether or not the Quotes plugin should react to events at all.
+    /++
+        Whether or not the Quotes plugin should react to events at all.
+     +/
     @Enabler bool enabled = true;
+
+    /++
+        Whether or not a random result should be picked in case a quote search
+        term had multiple matches.
+     +/
+    bool alwaysPickFirstMatch = false;
 }
 
 
@@ -48,283 +54,811 @@ private:
     import std.json : JSONValue;
 
 public:
-    /// Quote string line.
+    /++
+        Quote string line.
+     +/
     string line;
 
-    /// When the line was uttered, expressed in UNIX time.
+    /++
+        When the line was uttered, expressed in UNIX time.
+     +/
     long timestamp;
 
-    /// The index of the quote in the quote array.
-    size_t index;
+    // toJSON
+    /++
+        Serialises this [Quote] into a [std.json.JSONValue|JSONValue].
 
-    /// Constructor taking a [std.json.JSONValue|JSONValue] and an index.
-    this(const JSONValue json, const size_t index)
+        Returns:
+            A [std.json.JSONValue|JSONValue] that describes this quote.
+     +/
+    auto toJSON() const
     {
-        this.line = json["line"].str;
-        this.timestamp = json["timestamp"].integer;
-        this.index = index;
+        JSONValue json;
+        json["line"] = JSONValue(this.line);
+        json["timestamp"] = JSONValue(this.timestamp);
+        return json;
     }
-}
 
+    // fromJSON
+    /++
+        Deserialises a [Quote] from a [std.json.JSONValue|JSONValue].
 
-// ManageQuoteAction
-/++
-    What kind of action to take inside [manageQuoteImpl].
- +/
-enum ManageQuoteAction
-{
-    addOrReplay,  /// Add a quote, or replay one.
-    mod,          /// Modify a quote's text.
-    del,          /// Remove a quote by index.
-}
+        Params:
+            json = [std.json.JSONValue|JSONValue] to deserialise.
 
-
-// getRandomQuote
-/++
-    Fetches a random quote for the specified nickname from the in-memory JSON array.
-
-    Example:
-    ---
-    Quote quote = plugin.getRandomQuote(event.sender.nickame);
-    if (quote == Quote.init) return;
-    // ...
-    ---
-
-    Params:
-        plugin = Current [QuotesPlugin].
-        nickname = Nickname of the user to fetch quotes for.
-
-    Returns:
-        A [Quote] containing a random quote string. If no quote is available it
-        returns an empty `Quote.init` instead.
- +/
-auto getRandomQuote(QuotesPlugin plugin, const string nickname)
-{
-    if (const quotesForNickname = nickname in plugin.quotes)
+        Returns:
+            A new [quote] with values loaded from the passed JSON.
+     +/
+    static auto fromJSON(const JSONValue json)
     {
-        import std.random : uniform;
-
-        immutable len = quotesForNickname.array.length;
-
-        if (len == 0) return Quote.init;
-
-        immutable index = uniform(0, len);
-        immutable storedQuoteJSON = quotesForNickname.array[index];
-        return Quote(storedQuoteJSON, index);
-    }
-    else
-    {
-        return Quote.init;
-    }
-}
-
-
-// getSpecificQuote
-/++
-    Fetches a specific quote for the specified nickname from the in-memory JSON array.
-
-    Example:
-    ---
-    Quote quote = plugin.getSpecificQuote(event.sender.nickame, 2);
-    if (quote == Quote.init) return;
-    // ...
-    ---
-
-    Params:
-        plugin = Current [QuotesPlugin].
-        nickname = Nickname of the user to fetch quotes for.
-        index = Index of quote to fetch.
-
-    Returns:
-        A [Quote] containing a the quote string of a specific quote.
-        If no such quote is available it returns an empty `Quote.init` instead.
- +/
-auto getSpecificQuote(QuotesPlugin plugin, const string nickname, const size_t index)
-{
-    if (const quotesForNickname = nickname in plugin.quotes)
-    {
-        if (index >= quotesForNickname.array.length) return Quote.init;
-
-        immutable storedQuoteJSON = quotesForNickname.array[index];
-        return Quote(storedQuoteJSON, index);
-    }
-    else
-    {
-        return Quote.init;
+        Quote quote;
+        quote.line = json["line"].str;
+        quote.timestamp = json["timestamp"].integer;
+        return quote;
     }
 }
 
 
 // onCommandQuote
 /++
-    Fetches and repeats a random quote of a supplied nickname.
-
-    On Twitch, picks a quote from the stored quotes of the current channel owner.
-
-    The quote is read from the in-memory JSON storage, and it is sent to the
-    channel the triggering event occurred in, alternatively in a private message
-    if the request was sent in one such.
+    Replies with a quote, either fetched randomly, by a search term or by stored index.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .onEvent(IRCEvent.Type.QUERY)
-    .permissionsRequired(Permissions.elevated)
+    .permissionsRequired(Permissions.anyone)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
             .word("quote")
             .policy(PrefixPolicy.prefixed)
-            .description("Repeats a random quote of a supplied nickname, or adds a new one.")
-            .addSyntax("$command [nickname]")
-            .addSyntax("$command [nickname] [new quote...]")
-    )
-    .addCommand(
-        IRCEventHandler.Command()
-            .word("addquote")
-            .policy(PrefixPolicy.prefixed)
-            .hidden(true)
+            .description("Repeats a random quote of a supplied nickname, " ~
+                "or finds one by a search term (best-effort)")
+            .addSyntax("On Twitch: $command")
+            .addSyntax("On Twitch: $command [search term]")
+            .addSyntax("On Twitch: $command [#index]")
+            .addSyntax("Elsewhere: $command [nickname]")
+            .addSyntax("Elsewhere: $command [nickname] [search term]")
+            .addSyntax("Elsewhere: $command [nickname] [#index]")
     )
 )
 void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
 {
-    return manageQuoteImpl(plugin, event, ManageQuoteAction.addOrReplay);
+    import std.conv : ConvException;
+    import std.format : format;
+    import std.string : representation;
+
+    immutable isTwitch = (plugin.state.server.daemon == IRCServer.Daemon.twitch);
+
+    void sendUsage()
+    {
+        immutable pattern = isTwitch ?
+            "Usage: %s%s [optional search term or #index]" :
+            "Usage: <b>%s%s<b> [nickname] [optional search term or #index]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendNoQuotes()
+    {
+        enum message = "No quotes on record!";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendNoQuotesForNickname(const string nickname)
+    {
+        enum pattern = "No quotes on record for <h>%s<h>.";
+        immutable message = pattern.format(nickname);
+        chan(plugin.state, event.channel, message);
+    }
+
+    if (!event.content.length) return sendUsage();
+
+    try
+    {
+        if (isTwitch)
+        {
+            immutable nickname = event.channel[1..$];
+            immutable searchTerm = event.content;
+
+            const channelQuotes = event.channel in plugin.quotes;
+            if (!channelQuotes) return sendNoQuotesForNickname(nickname);
+
+            const quotes = nickname in *channelQuotes;
+            if (!quotes || !quotes.length) return sendNoQuotesForNickname(nickname);
+
+            size_t index;  // mutable
+            immutable quote = !searchTerm.length ?
+                getRandomQuote(*quotes, index) :
+                (searchTerm.representation[0] == '#') ?
+                    getQuoteByIndexString(*quotes, searchTerm[1..$], index) :
+                    getQuoteBySearchTerm(plugin, *quotes, searchTerm, index);
+
+            return sendQuoteToChannel(plugin, quote, event.channel, nickname, index);
+        }
+        else /*if (!isTwitch)*/
+        {
+            import lu.string : SplitResults, splitInto;
+
+            string slice = event.content;  // mutable
+            size_t index;  // mutable
+            string nickname;  // mutable
+            immutable results = slice.splitInto(nickname);
+
+            const channelQuotes = event.channel in plugin.quotes;
+            if (!channelQuotes) return sendNoQuotesForNickname(nickname);
+
+            const quotes = nickname in *channelQuotes;
+            if (!quotes || !quotes.length) return sendNoQuotesForNickname(nickname);
+
+            with (SplitResults)
+            final switch (results)
+            {
+            case match:
+                // No search term
+                immutable quote = getRandomQuote(*quotes, index);
+                return sendQuoteToChannel(plugin, quote, event.channel, nickname, index);
+
+            case overrun:
+                // Search term given
+                alias searchTerm = slice;
+                immutable quote = (searchTerm.representation[0] == '#') ?
+                    getQuoteByIndexString(*quotes, searchTerm[1..$], index) :
+                    getQuoteBySearchTerm(plugin, *quotes, searchTerm, index);
+                return sendQuoteToChannel(plugin, quote, event.channel, nickname, index);
+
+            case underrun:
+                // Message was just !quote which only works on Twitch
+                return sendUsage();
+            }
+        }
+    }
+    catch (NoQuotesFoundException e)
+    {
+        return sendNoQuotes();
+    }
+    catch (QuoteIndexOutOfRangeException e)
+    {
+        enum pattern = "Quote index out of range; %d is not less than %d.";
+        immutable message = pattern.format(e.indexGiven, e.upperBound);
+        chan(plugin.state, event.channel, message);
+    }
+    catch (NoQuotesSearchMatchException e)
+    {
+        enum pattern = "No quotes found for search term \"%s\"";
+        immutable message = pattern.format(e.searchTerm);
+        chan(plugin.state, event.channel, message);
+    }
+    catch (ConvException e)
+    {
+        enum message = "Index must be a positive number.";
+        chan(plugin.state, event.channel, message);
+    }
 }
 
 
-// addQuoteAndReport
+// onCommandAddQuote
 /++
-    Adds a quote for the specified user and saves the list to disk. Reports
-    success to the channel in which the command took place, or user directly
-    if in a query.
-
-    Params:
-        plugin = The current [QuotesPlugin].
-        event = The instigating [dialect.defs.IRCEvent|IRCEvent].
-        id = The specified nickname or (preferably) account.
-        rawLine = The quote string to add.
+    Adds a quote to the local storage.
  +/
-void addQuoteAndReport(
-    QuotesPlugin plugin,
-    const ref IRCEvent event,
-    const string id,
-    const string rawLine)
-in (id.length, "Tried to add a quote for an empty user")
-in (rawLine.length, "Tried to add an empty quote")
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.elevated)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("addquote")
+            .policy(PrefixPolicy.prefixed)
+            .description("Adds a new quote.")
+            .addSyntax("On Twitch: $command [new quote]")
+            .addSyntax("Elsewhere: $command [nickname] [new quote]")
+    )
+)
+void onCommandAddQuote(QuotesPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : unquoted;
-    import std.json : JSONException, JSONValue;
+    import std.format : format;
+    import std.datetime.systime : Clock;
+
+    immutable isTwitch = (plugin.state.server.daemon == IRCServer.Daemon.twitch);
+
+    void sendUsage()
+    {
+        immutable pattern = isTwitch ?
+            "Usage: %s%s [new quote]" :
+            "Usage: <b>%s%s<b> [nickname] [new quote]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+    }
+
+    string nickname;  // mutable
+    string slice = event.content;  // mutable
+
+    if (isTwitch)
+    {
+        if (!event.content.length) return sendUsage();
+
+        nickname = event.channel[1..$];
+        // Drop down to create the Quote
+    }
+    else /*if (!isTwitch)*/
+    {
+        import lu.string : SplitResults, splitInto;
+
+        immutable results = slice.splitInto(nickname);
+
+        with (SplitResults)
+        final switch (results)
+        {
+        case overrun:
+            // Nickname plus new quote given
+            // Drop down to create the Quote
+            break;
+
+        case match:
+        case underrun:
+            // match: Only nickname given which only works on Twitch
+            // underrun: Message was just !addquote
+            return sendUsage();
+        }
+    }
 
     immutable prefixSigns = cast(string)plugin.state.server.prefixchars.keys;
-    immutable altered = removeWeeChatHead(rawLine.unquoted, id, prefixSigns).unquoted;
-    immutable line = altered.length ? altered : rawLine;
+    immutable altered = removeWeeChatHead(slice.unquoted, nickname, prefixSigns).unquoted;
+    immutable line = altered.length ? altered : slice;
 
-    try
-    {
-        import std.format : format;
+    Quote quote;
+    quote.line = line;
+    quote.timestamp = Clock.currTime.toUnixTime();
 
-        JSONValue newQuote;
-        newQuote["line"] = line;
-        newQuote["timestamp"] = event.time;
+    plugin.quotes[event.channel][nickname] ~= quote;
+    immutable pos = plugin.quotes[event.channel][nickname].length+(-1);
+    saveQuotes(plugin);
 
-        if (id !in plugin.quotes)
-        {
-            // No previous quotes for nickname
-            // Initialise the JSONValue as an array
-            plugin.quotes[id] = null;
-            plugin.quotes[id].array = null;
-        }
-
-        immutable index = plugin.quotes[id].array.length;
-        plugin.quotes[id].array ~= newQuote;
-        plugin.quotes.save(plugin.quotesFile);
-
-        enum pattern = "Quote <h>%s<h> #<b>%d<b> saved.";
-        immutable message = pattern.format(id, index);
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
-    }
-    catch (JSONException e)
-    {
-        enum pattern = "Could not add quote for <l>%s</>: <l>%s";
-        logger.errorf(pattern, id, e.msg);
-        version(PrintStacktraces) logger.trace(e.info);
-    }
+    enum pattern = "Quote added at index %d.";
+    immutable message = pattern.format(pos);
+    chan(plugin.state, event.channel, message);
 }
 
 
-// modQuoteAndReport
+// onCommandModQuote
 /++
-    Modifies a report in the quote database and reports success to the channel.
-
-    Params:
-        plugin = The current [QuotesPlugin].
-        event = The triggering [dialect.defs.IRCEvent|IRCEvent].
-        id = The identifier (nickname or account) of the quoted user.
-        index = The index of the quote to modify or remove.
-        newText = Optional new text to assign to the quote index; implies
-            a modification is requested, not a removal.
+    Modifies a quote given its index in the storage.
  +/
-void modQuoteAndReport(
-    QuotesPlugin plugin,
-    const ref IRCEvent event,
-    const string id,
-    const size_t index,
-    const string newText = string.init)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("modquote")
+            .policy(PrefixPolicy.prefixed)
+            .description("Modifies an existing quote.")
+            .addSyntax("On Twitch: $command [index] [new quote text]")
+            .addSyntax("Elsewhere: $command [nickname] [index] [new quote text]")
+    )
+)
+void onCommandModQuote(QuotesPlugin plugin, const ref IRCEvent event)
 {
-    import std.algorithm.mutation : SwapStrategy, remove;
+    import lu.string : SplitResults, splitInto, unquoted;
+    import std.conv : ConvException, to;
     import std.format : format;
-    import std.json : JSONException, JSONValue;
+
+    immutable isTwitch = (plugin.state.server.daemon == IRCServer.Daemon.twitch);
+
+    void sendUsage()
+    {
+        immutable pattern = isTwitch ?
+            "Usage: %s%s [index] [new quote text]" :
+            "Usage: <b>%s%s<b> [nickname] [index] [new quote text]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+    }
+
+    string slice = event.content;  // mutable
+    string nickname;  // mutable
+    string indexString;  // mutable
+    size_t index;  // mutable
+
+    if (isTwitch)
+    {
+        nickname = event.channel[1..$];
+        immutable results = slice.splitInto(indexString);
+
+        with (SplitResults)
+        final switch (results)
+        {
+        case overrun:
+            // Index and new quote line was given, drop down
+            break;
+
+        case match:
+        case underrun:
+            // match: Only an index was given
+            // underrun: Message was just !addquote
+            return sendUsage();
+        }
+    }
+    else /*if (!isTwitch)*/
+    {
+        immutable results = slice.splitInto(nickname, indexString);
+
+        with (SplitResults)
+        final switch (results)
+        {
+        case overrun:
+            // Index and new quote line was given, drop down
+            break;
+
+        case match:
+        case underrun:
+            // match: Only an index was given
+            // underrun: Message was just !addquote
+            return sendUsage();
+        }
+    }
 
     try
     {
-        if ((id !in plugin.quotes) || !plugin.quotes[id].array.length)
+        index = indexString.to!size_t;
+    }
+    catch (ConvException e)
+    {
+        enum message = "Quote index must be a positive number.";
+        return chan(plugin.state, event.channel, message);
+    }
+
+    immutable prefixSigns = cast(string)plugin.state.server.prefixchars.keys;
+    immutable altered = removeWeeChatHead(slice.unquoted, nickname, prefixSigns).unquoted;
+    immutable line = altered.length ? altered : slice;
+
+    plugin.quotes[event.channel][nickname][index].line = line;
+    saveQuotes(plugin);
+
+    enum pattern = "Quote modified at index %d; timestamp kept.";
+    immutable message = pattern.format(index);
+    chan(plugin.state, event.channel, message);
+}
+
+
+// onCommandMergeQuotes
+/++
+    Merges all quotes of one user to that of another.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("mergequotes")
+            .policy(PrefixPolicy.prefixed)
+            .description("Merges the quotes of two users.")
+            .addSyntax("$command [source nickname] [target nickname]")
+    )
+)
+void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
+{
+    import lu.string : SplitResults, plurality, splitInto;
+    import std.format : format;
+
+    if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+    {
+        enum message = "You cannot merge quotes on Twitch.";
+        return chan(plugin.state, event.channel, message);
+    }
+
+    void sendUsage()
+    {
+        enum pattern = "Usage: <b>%s%s<b> [source nickname] [target nickname]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendNoQuotes(const string nickname)
+    {
+        enum pattern = "No quotes for <h>%s<h> on record!";
+        immutable message = pattern.format(nickname);
+        chan(plugin.state, event.channel, message);
+    }
+
+    string slice = event.content;  // mutable
+    string source;  // mutable
+    string target;  // mutable
+
+    immutable results = slice.splitInto(source, target);
+    if (results != SplitResults.match) return sendUsage();
+
+    const channelQuotes = event.channel in plugin.quotes;
+    if (!channelQuotes) return sendNoQuotes(source);
+
+    const quotes = source in *channelQuotes;
+    if (!quotes || !quotes.length) return sendNoQuotes(source);
+
+    plugin.quotes[event.channel][target] ~= *quotes;
+
+    enum pattern = "<b>%d<b> %s merged.";
+    immutable message = pattern.format(
+        quotes.length,
+        quotes.length.plurality("quote", "quotes"));
+    chan(plugin.state, event.channel, message);
+
+    plugin.quotes[event.channel].remove(target);
+    saveQuotes(plugin);
+}
+
+
+// onCommandDelQuote
+/++
+    Deletes a quote, given its index in the storage.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("delquote")
+            .policy(PrefixPolicy.prefixed)
+            .description("Deletes a quote.")
+            .addSyntax("On Twitch: $command [index]")
+            .addSyntax("Elsewhere: $command [nickname] [index]")
+    )
+)
+void onCommandDelQuote(QuotesPlugin plugin, const ref IRCEvent event)
+{
+    import lu.string : SplitResults, splitInto;
+    import std.format : format;
+
+    immutable isTwitch = (plugin.state.server.daemon == IRCServer.Daemon.twitch);
+
+    void sendNoQuotes(const string nickname)
+    {
+        immutable pattern = isTwitch ?
+            "No quotes for %s on record!" :
+            "No quotes for <h>%s<h> on record!";
+        immutable message = pattern.format(nickname);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendIndexOutOfRange()
+    {
+        enum message = "Index out of range.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    string nickname;  // mutable
+    string indexString;  // mutable
+
+    if (isTwitch)
+    {
+        void sendUsageTwitch()
         {
-            enum pattern = "No quotes on record for user <h>%s<h>.";
-            immutable message = pattern.format(id);
-            return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            enum pattern = "Usage: %s%s [index]";
+            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+            chan(plugin.state, event.channel, message);
         }
 
-        immutable len = plugin.quotes[id].array.length;
+        if (!event.content.length) return sendUsageTwitch();
 
-        if (index >= len)
+        nickname = event.channel[1..$];
+        indexString = event.content;
+    }
+    else /*if (!isTwitch)*/
+    {
+        void sendUsage()
         {
-            enum pattern = "Index <b>%1$d<b> is out of range. (%1$d >= %2$d)";
-            immutable message = pattern.format(index, len);
-            return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            enum pattern = "Usage: <b>%s%s<b> [nickname] [index]";
+            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+            chan(plugin.state, event.channel, message);
         }
 
-        string pattern;
+        string slice = event.content;  // mutable
 
-        if (newText.length)
+        immutable results = slice.splitInto(nickname, indexString);
+        if (results != SplitResults.match) return sendUsage();
+    }
+
+    auto channelQuotes = event.channel in plugin.quotes;  // mutable
+    if (!channelQuotes) return sendNoQuotes(nickname);
+
+    if (indexString == "*")
+    {
+        (*channelQuotes).remove(nickname);
+
+        enum pattern = "All quotes for <h>%s<h> removed.";
+        immutable message = pattern.format(nickname);
+        chan(plugin.state, event.channel, message);
+        // Drop down
+    }
+    else
+    {
+        import std.algorithm.mutation : SwapStrategy, remove;
+        import std.conv : ConvException, to;
+
+        auto quotes = nickname in *channelQuotes;  // mutable
+        if (!quotes || !quotes.length) return sendNoQuotes(nickname);
+
+        size_t index;
+
+        try
         {
-            // Quote is to be modified
-            plugin.quotes[id].array[index]["line"].str = newText;
-            pattern = "Quote <h>%s<h> #<b>%d<b> modified.";
+            index = indexString.to!size_t;
+        }
+        catch (ConvException e)
+        {
+            enum message = "Quote index must be a positive number.";
+            return chan(plugin.state, event.channel, message);
+        }
+
+        if (index >= quotes.length) return sendIndexOutOfRange();
+
+        *quotes = (*quotes).remove!(SwapStrategy.stable)(index);
+
+        enum message = "Quote removed, indexes updated.";
+        chan(plugin.state, event.channel, message);
+        // Drop down
+    }
+
+    saveQuotes(plugin);
+}
+
+
+// sendQuoteToChannel
+/++
+    Sends a [Quote] to a channel.
+
+    Params:
+        plugin = The current [QuotesPlugin].
+        quote = The [Quote] to report.
+        channelName = Name of the channel to send to.
+        nickname = Nickname whose quote it is.
+        index = Index of the quote in the local storage.
+ +/
+void sendQuoteToChannel(
+    QuotesPlugin plugin,
+    const Quote quote,
+    const string channelName,
+    const string nickname,
+    const size_t index)
+{
+    import std.datetime.systime : SysTime;
+    import std.format : format;
+
+    string possibleDisplayName = nickname;  // mutable
+
+    version(TwitchSupport)
+    {
+        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+        {
+            import kameloso.plugins.common.misc : nameOf;
+            possibleDisplayName = plugin.nameOf(nickname);
+        }
+    }
+
+    const when = SysTime.fromUnixTime(quote.timestamp);
+    enum pattern = "%s (%s #%d %02d-%02d-%02d)";
+    immutable message = pattern.format(
+        quote.line,
+        possibleDisplayName,
+        index,
+        when.year,
+        when.month,
+        when.day);
+    chan(plugin.state, channelName, message);
+}
+
+
+// onWelcome
+/++
+    Initialises the passed [QuotesPlugin]. Loads the quotes from disk.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WELCOME)
+)
+void onWelcome(QuotesPlugin plugin)
+{
+    plugin.reload();
+}
+
+
+// getRandomQuote
+/++
+    Fethes a random [Quote] from an array of such.
+
+    Params:
+        quotes = Array of [Quote]s to get a random one from.
+        index = `out` reference index of the quote selected, in the local storage.
+
+    Returns:
+        A [Quote], randomly selected.
+ +/
+auto getRandomQuote(
+    const Quote[] quotes,
+    out size_t index)
+{
+    import std.random : uniform;
+
+    if (!quotes.length)
+    {
+        throw new NoQuotesFoundException("No quotes found");
+    }
+
+    index = uniform(0, quotes.length);
+    return quotes[index];
+}
+
+
+// getQuoteByIndexString
+/++
+    Fetches a quote given an index.
+
+    Params:
+        quotes = Array of [Quote]s to get a random one from.
+        indexString = The index of the [Quote] to fetch, as a string.
+        index = `out` reference index of the quote selected, in the local storage.
+
+    Returns:
+        A [Quote], selected based on its index in the storage.
+ +/
+auto getQuoteByIndexString(
+    const Quote[] quotes,
+    const string indexString,
+    out size_t index)
+{
+    import std.conv : to;
+    import std.random : uniform;
+
+    index = indexString.to!size_t;
+
+    if (index >= quotes.length)
+    {
+        throw new QuoteIndexOutOfRangeException(
+            "Quote index out of range",
+            index,
+            quotes.length);
+    }
+
+    return quotes[index];
+}
+
+
+// getQuoteBySearchTerm
+/++
+    Fetches a [Quote] whose line matches the passed search term.
+
+    Params:
+        plugin = The current [QuotesPlugin].
+        quotes = Array of [Quote]s to get a random one from.
+        searchTermCased = Search term to apply to the `quotes` array, with letters
+            in original casing.
+        index = `out` reference index of the quote selected, in the local storage.
+
+    Returns:
+        A [Quote] whose line matches the passed search term.
+ +/
+Quote getQuoteBySearchTerm(
+    QuotesPlugin plugin,
+    const Quote[] quotes,
+    const string searchTermCased,
+    out size_t index)
+{
+    import lu.string : contains;
+    import std.random : uniform;
+    import std.uni : toLower;
+
+    auto stripPunctuation(const string inputString)
+    {
+        import std.array : replace;
+
+        return inputString
+            .replace(".", " ")
+            .replace("!", " ")
+            .replace("?", " ")
+            .replace(",", " ")
+            .replace("-", " ")
+            .replace("_", " ")
+            .replace(`"`, " ")
+            .replace("/", " ")
+            .replace(";", " ")
+            .replace("~", " ")
+            .replace(":", " ")
+            .replace("<", " ")
+            .replace(">", " ")
+            .replace("|", " ")
+            .replace("'", string.init);
+    }
+
+    auto stripDoubleSpaces(const string inputString)
+    {
+        string output = inputString;  // mutable
+
+        bool hasDoubleSpace = output.contains("  ");  // mutable
+
+        while (hasDoubleSpace)
+        {
+            import std.array : replace;
+            output = output.replace("  ", " ");
+            hasDoubleSpace = output.contains("  ");
+        }
+
+        return output;
+    }
+
+    auto stripBoth(const string inputString)
+    {
+        return stripDoubleSpaces(stripPunctuation(inputString));
+    }
+
+    struct SearchHit
+    {
+        size_t index;
+        string line;
+    }
+
+    SearchHit[] searchHits;
+
+    // Try with the search term that was given first (lowercased)
+    string[] flattenedQuotes;  // mutable
+
+    foreach (immutable quote; quotes)
+    {
+        flattenedQuotes ~= stripDoubleSpaces(quote.line).toLower;
+    }
+
+    immutable searchTerm = stripDoubleSpaces(searchTermCased).toLower;
+
+    foreach (immutable i, immutable flattenedQuote; flattenedQuotes)
+    {
+        if (!flattenedQuote.contains(searchTerm)) continue;
+
+        if (plugin.quotesSettings.alwaysPickFirstMatch)
+        {
+            index = i;
+            return quotes[index];
         }
         else
         {
-            // Quote is to be removed
-            if (len == 1)
-            {
-                plugin.quotes.object.remove(id);
-            }
-            else
-            {
-                plugin.quotes[id].array = plugin.quotes[id].array
-                    .remove!(SwapStrategy.stable)(index);
-            }
-
-            pattern = "Quote <h>%s<h> #<b>%d<b> removed.";
+            searchHits ~= SearchHit(i, quotes[i].line);
         }
-
-        immutable message = pattern.format(id, index);
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
-        plugin.quotes.save(plugin.quotesFile);
     }
-    catch (JSONException e)
+
+    if (searchHits.length)
     {
-        enum pattern = "Could not remove quote for <l>%s</>: <l>%s";
-        logger.errorf(pattern, id, e.msg);
-        version(PrintStacktraces) logger.trace(e.info);
+        immutable randomHitsIndex = uniform(0, searchHits.length);
+        index = searchHits[randomHitsIndex].index;
+        return quotes[index];
+    }
+
+    // Nothing was found; simplify and try again.
+    immutable strippedSearchTerm = stripBoth(searchTerm);
+    searchHits = null;
+
+    foreach (immutable i, immutable flattenedQuote; flattenedQuotes)
+    {
+        if (!stripBoth(flattenedQuote).contains(strippedSearchTerm)) continue;
+
+        if (plugin.quotesSettings.alwaysPickFirstMatch)
+        {
+            index = i;
+            return quotes[index];
+        }
+        else
+        {
+            searchHits ~= SearchHit(i, quotes[i].line);
+        }
+    }
+
+    if (searchHits.length)
+    {
+        immutable randomHitsIndex = uniform(0, searchHits.length);
+        index = searchHits[randomHitsIndex].index;
+        return quotes[index];
+    }
+    else
+    {
+        throw new NoQuotesSearchMatchException(
+            "No quotes found for given search term",
+            searchTermCased);
     }
 }
 
@@ -345,7 +879,7 @@ void modQuoteAndReport(
 auto removeWeeChatHead(
     const string line,
     const string nickname,
-    const string prefixes) pure @safe @nogc
+    const string prefixes) pure @safe
 in (nickname.length, "Tried to remove WeeChat head for a nickname but the nickname was empty")
 {
     import lu.string : beginsWith, contains, nom, strippedLeft;
@@ -453,403 +987,165 @@ unittest
 }
 
 
-// onCommandDelQuote
+// loadQuotes
 /++
-    Removes a quote from the quote database.
-
-    On Twitch, selects a quote from the stored quotes of the current channel owner.
-
-    The quote is read from the in-memory JSON storage, and it is sent to the
-    channel the triggering event occurred in, alternatively in a private message
-    if the request was sent in one such.
+    Loads quotes from disk into an associative array of [Quote]s.
  +/
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.CHAN)
-    .onEvent(IRCEvent.Type.QUERY)
-    .permissionsRequired(Permissions.operator)
-    .channelPolicy(ChannelPolicy.home)
-    .addCommand(
-        IRCEventHandler.Command()
-            .word("delquote")
-            .policy(PrefixPolicy.prefixed)
-            .description("Removes a quote from the quote database.")
-            .addSyntax("$command [nickname] [quote index]")
-    )
-)
-void onCommandDelQuote(QuotesPlugin plugin, const ref IRCEvent event)
+auto loadQuotes(const string quotesFile)
 {
-    manageQuoteImpl(plugin, event, ManageQuoteAction.del);
-}
+    import lu.json : JSONStorage;
+    import std.json : JSONException, JSONType;
 
+    JSONStorage json;
+    Quote[][string][string] quotes;
 
-// onCommandModQuote
-/++
-    Modifies a quote's text in the quote database.
+    // No need to try-catch loading the JSON; trust in initResources
+    json.load(quotesFile);
 
-    On Twitch, selects a quote from the stored quotes of the current channel owner.
-
-    The quote is read from the in-memory JSON storage, and it is sent to the
-    channel the triggering event occurred in, alternatively in a private message
-    if the request was sent in one such.
- +/
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.CHAN)
-    .onEvent(IRCEvent.Type.QUERY)
-    .permissionsRequired(Permissions.operator)
-    .channelPolicy(ChannelPolicy.home)
-    .addCommand(
-        IRCEventHandler.Command()
-            .word("modquote")
-            .policy(PrefixPolicy.prefixed)
-            .description("Modifies a quote's text in the quote database.")
-            .addSyntax("$command [nickname] [quote index] [new quote text]")
-    )
-)
-void onCommandModQuote(QuotesPlugin plugin, const ref IRCEvent event)
-{
-    manageQuoteImpl(plugin, event, ManageQuoteAction.mod);
-}
-
-
-// manageQuoteImpl
-/++
-    Manages the quote database by either adding a new one (or replaying an
-    existing one), modifying one in-place, or removing an existing one.
-
-    Which action to take depends on the value of the passed `action` [ManageQuoteAction].
-
-    Params:
-        plugin = The current [QuotesPlugin].
-        event = The triggering [dialect.defs.IRCEvent|IRCEvent].
-        action = What action to take; add (or replay), modify or remove.
- +/
-void manageQuoteImpl(
-    QuotesPlugin plugin,
-    const /*ref*/ IRCEvent event,
-    const ManageQuoteAction action)
-{
-    import dialect.common : isValidNickname, stripModesign, toLowerCase;
-    import lu.string : beginsWith, nom, stripped, strippedLeft;
-    import std.format : format;
-    import std.json : JSONException;
-
-    immutable isTwitch = (plugin.state.server.daemon == IRCServer.Daemon.twitch);
-    string slice = event.content.stripped;  // mutable
-    if (slice.beginsWith('@')) slice = slice[1..$];
-
-    void sendUsage()
+    foreach (immutable channelName, channelQuotes; json.object)
     {
-        string pattern;
-
-        with (ManageQuoteAction)
-        final switch (action)
+        foreach (immutable nickname, nicknameQuotesJSON; channelQuotes.object)
         {
-        case addOrReplay:
-            pattern = isTwitch ?
-                "Usage: %s%s [text to add a new quote]" :
-                "Usage: <b>%s%s<b> [nickname] [text to add a new quote]";
-            break;
-
-        case mod:
-            pattern = isTwitch ?
-                "Usage: %s%s [quote index to modify] [new quote text]" :
-                "Usage: <b>%s%s<b> [nickname] [quote index to modify] [new quote text]";
-            break;
-
-        case del:
-            pattern = isTwitch ?
-                "Usage: %s%s [quote index to remove]" :
-                "Usage: <b>%s%s<b> [nickname] [quote index to remove]";
-            break;
-        }
-
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
-    }
-
-    if (!slice.length && !isTwitch)
-    {
-        return sendUsage();
-    }
-
-    version(TwitchSupport)
-    {
-        if (isTwitch)
-        {
-            import kameloso.plugins.common.misc : nameOf;
-
-            if ((slice == event.channel[1..$]) ||
-                (slice == plugin.nameOf(event.channel[1..$])))
+            foreach (quoteJSON; nicknameQuotesJSON.array)
             {
-                // Line was "!quote streamername";
-                // Slice away the name so a new one-word quote isn't added
-                slice = string.init;
+                quotes[channelName][nickname] ~= Quote.fromJSON(quoteJSON);
             }
         }
     }
 
-    immutable specified = isTwitch ?
-        event.channel[1..$] :
-        slice.nom!(Yes.inherit)(' ').stripModesign(plugin.state.server);
-    immutable trailing = slice.strippedLeft;  // Already strippedRight earlier
-
-    if (!isTwitch && !specified.isValidNickname(plugin.state.server))
+    foreach (ref channelQuotes; quotes)
     {
-        enum pattern = `"<h>%s<h>" is not a valid account or nickname.`;
-        immutable message = pattern.format(specified);
-        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        channelQuotes = channelQuotes.rehash();
     }
 
-    /// Quote a quote
-    void playQuote(const string nickname, const Quote quote)
+    return quotes.rehash();
+}
+
+
+// saveQuotes
+/++
+    Saves quotes to disk in JSON file format.
+ +/
+void saveQuotes(QuotesPlugin plugin)
+{
+    import lu.json : JSONStorage;
+
+    JSONStorage json;
+    json.reset();
+    json.object = null;
+
+    foreach (immutable channelName, channelQuotes; plugin.quotes)
     {
-        import std.datetime.systime : SysTime;
+        json[channelName] = null;
+        json[channelName].object = null;
+        //auto channelQuotesJSON = channelName in json;  // mutable
 
-        SysTime when = SysTime.fromUnixTime(quote.timestamp);
-        string message;
-
-        if (isTwitch)
+        foreach (immutable nickname, quotes; channelQuotes)
         {
-            enum pattern = "#%d [%d-%02d-%02d %02d:%02d] %s";
-            message = pattern.format(quote.index,
-                when.year, when.month, when.day, when.hour, when.minute, quote.line);
-        }
-        else
-        {
-            enum pattern = "#%d [%d-%02d-%02d %02d:%02d] <h>%s<h> | %s";
-            message = pattern.format(quote.index,
-                when.year, when.month, when.day, when.hour, when.minute,
-                nickname, quote.line);
-        }
+            //(*channelQuotesJSON)[nickname] = null;
+            //(*channelQuotesJSON)[nickname].array = null;
+            //auto quotesJSON = nickname in *channelQuotesJSON;  // mutable
 
-        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            json[channelName][nickname] = null;
+            json[channelName][nickname].array = null;
+
+            foreach (quote; quotes)
+            {
+                //quotesJSON.array ~= quote.toJSON();
+                json[channelName][nickname].array ~= quote.toJSON();
+            }
+        }
     }
 
-    try
+    json.save(plugin.quotesFile);
+}
+
+
+// NoQuotesFoundException
+/++
+    Exception, to be thrown when there were no quotes found for a given user.
+ +/
+final class NoQuotesFoundException : Exception
+{
+    /++
+        Constructor.
+     +/
+    this(
+        const string message,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
     {
-        void onSuccess(const IRCUser replyUser)
-        {
-            import kameloso.plugins.common.misc : idOf, nameOf;
-            import std.conv : ConvException, to;
-
-            immutable id = idOf(replyUser).toLowerCase(plugin.state.server.caseMapping);
-            immutable display = nameOf(replyUser);
-
-            with (ManageQuoteAction)
-            final switch (action)
-            {
-            case addOrReplay:
-                import std.algorithm.comparison : among;
-
-                if (trailing.length)
-                {
-                    // There is trailing text, assume it was a quote to be added
-                    return addQuoteAndReport(plugin, event, id, trailing);
-                }
-
-                // No point looking up if we already did before onSuccess
-                if (specified.among(id, replyUser.nickname, display))
-                {
-                    immutable quote = plugin.getRandomQuote(id);
-
-                    if (quote.line.length)
-                    {
-                        return playQuote(id, quote);
-                    }
-                }
-                break;
-
-            case mod:
-                try
-                {
-                    import lu.string : contains;
-
-                    if (!slice.contains(' '))
-                    {
-                        immutable index = slice.to!size_t;
-                        immutable quote = getSpecificQuote(plugin, id, index);
-
-                        if (quote.line.length)
-                        {
-                            return playQuote(id, quote);
-                        }
-                        else
-                        {
-                            enum pattern = "No such quote: <h>%s<h> #<b>%d<b>";
-                            immutable message = pattern.format(id, index);
-                            return privmsg(plugin.state, event.channel, event.sender.nickname, message);
-                        }
-                    }
-                    else
-                    {
-                        immutable index = slice.nom(' ').to!size_t;
-                        return modQuoteAndReport(plugin, event, id, index, slice);
-                    }
-                }
-                catch (ConvException e)
-                {
-                    return sendUsage();
-                }
-
-            case del:
-                try
-                {
-                    immutable index = trailing.stripped.to!size_t;
-                    return modQuoteAndReport(plugin, event, id, index);
-                }
-                catch (ConvException e)
-                {
-                    return sendUsage();
-                }
-            }
-
-            enum pattern = "No quote on record for <h>%s<h>.";
-            immutable message = pattern.format(display);
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
-        }
-
-        void onFailure(const IRCUser failureUser)
-        {
-            //logger.trace("(Assuming unauthenticated nickname or offline account was specified)");
-            return onSuccess(failureUser);
-        }
-
-        version(TwitchSupport)
-        {
-            if (isTwitch)
-            {
-                import kameloso.plugins.common.misc : getUser;
-                immutable specifiedUser = getUser(plugin, specified);
-                return onSuccess(specifiedUser);
-            }
-        }
-
-        // Try the specified nickname/account first, in case it's a nickname that
-        // has quotes but resolve to a different account that doesn't.
-        // But only if there's no trailing text; would mean it's a new quote
-        if ((action == ManageQuoteAction.addOrReplay) && !trailing.length)
-        {
-            immutable quote = plugin.getRandomQuote(specified);
-
-            if (quote.line.length)
-            {
-                return playQuote(specified, quote);
-            }
-        }
-
-        import kameloso.plugins.common.mixins : WHOISFiberDelegate;
-
-        mixin WHOISFiberDelegate!(onSuccess, onFailure);
-
-        enqueueAndWHOIS(specified);
-    }
-    catch (JSONException e)
-    {
-        enum pattern = "Could not quote <l>%s</>: <l>%s";
-        logger.errorf(pattern, specified, e.msg);
-        version(PrintStacktraces) logger.trace(e.info);
+        super(message, file, line, nextInChain);
     }
 }
 
 
-// onCommandMergeQuote
+// QuoteIndexOutOfRangeException
 /++
-    Merges the quotes of two users, copying them from one to the other and then
-    removing the originals.
-
-    Does not perform account lookups.
+    Exception, to be thrown when a given quote index was out of bounds.
  +/
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.CHAN)
-    .onEvent(IRCEvent.Type.QUERY)
-    .permissionsRequired(Permissions.operator)
-    .channelPolicy(ChannelPolicy.home)
-    .addCommand(
-        IRCEventHandler.Command()
-            .word("mergequotes")
-            .policy(PrefixPolicy.prefixed)
-            .description("Merges the quotes of two users.")
-            .addSyntax("$command [source] [target]")
-    )
-    .addCommand(
-        IRCEventHandler.Command()
-            .word("mergequote")
-            .policy(PrefixPolicy.prefixed)
-            .hidden(true)
-    )
-)
-void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
+final class QuoteIndexOutOfRangeException : Exception
 {
-    import lu.string : SplitResults, plurality, splitInto;
-    import std.conv : text;
-    import std.format : format;
+    /// Given index (that ended up being out of range).
+    size_t indexGiven;
 
-    string slice = event.content;  // mutable
-    string source;
-    string target;
+    /// Acutal upper bound.
+    size_t upperBound;
 
-    immutable results = slice.splitInto(source, target);
-
-    if (results != SplitResults.match)
+    /++
+        Creates a new [QuoteIndexOutOfRangeException], attaching a given index
+        and an index upper bound.
+     +/
+    this(
+        const string message,
+        const size_t indexGiven,
+        const size_t upperBound,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
     {
-        enum pattern = "Usage: <b>%s%s<b> [source] [target]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        this.indexGiven = indexGiven;
+        this.upperBound = upperBound;
+        super(message, file, line, nextInChain);
     }
 
-    if (source == target)
+    /++
+        Constructor.
+     +/
+    this(
+        const string message,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
     {
-        enum message = "Cannot merge quotes from one user into the same one.";
-        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        super(message, file, line, nextInChain);
     }
-
-    if ((source !in plugin.quotes) || !plugin.quotes[source].array.length)
-    {
-        enum pattern = "<h>%s<h> has no quotes to merge.";
-        immutable message = pattern.format(source);
-        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
-    }
-
-    if (target !in plugin.quotes)
-    {
-        // No previous quotes for nickname
-        // Initialise the JSONValue as an array
-        plugin.quotes[target] = null;
-        plugin.quotes[target].array = null;
-    }
-
-    immutable numToMerge = plugin.quotes[source].array.length;
-    plugin.quotes[target].array ~= plugin.quotes[source].array;
-    plugin.quotes.object.remove(source);
-    plugin.quotes.save(plugin.quotesFile);
-
-    enum pattern = "<b>%d<b> %s merged from <h>%s<h> into <h>%s<h>.";
-    immutable quoteNoun = numToMerge.plurality("quote", "quotes");
-    immutable message = pattern.format(numToMerge, quoteNoun, source, target);
-    privmsg(plugin.state, event.channel, event.sender.nickname, message);
 }
 
 
-// reload
+// NoQuoteSearchMatchException
 /++
-    Reloads the JSON quotes from disk.
+    Exception, to be thrown when given search terms failed to match any stored quotes.
  +/
-void reload(QuotesPlugin plugin)
+final class NoQuotesSearchMatchException : Exception
 {
-    plugin.quotes.load(plugin.quotesFile);
-}
+    /// Given search term string.
+    string searchTerm;
 
-
-// onWelcome
-/++
-    Initialises the passed [QuotesPlugin]. Loads the quotes from disk.
- +/
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.RPL_WELCOME)
-)
-void onWelcome(QuotesPlugin plugin)
-{
-    plugin.reload();
+    /++
+        Creates a new [NoQuoteSearchMatchException], attaching a search term string.
+     +/
+    this(
+        const string message,
+        const string searchTerm,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        this.searchTerm = searchTerm;
+        super(message, file, line, nextInChain);
+    }
 }
 
 
@@ -860,13 +1156,41 @@ void onWelcome(QuotesPlugin plugin)
 void initResources(QuotesPlugin plugin)
 {
     import lu.json : JSONStorage;
-    import std.json : JSONException;
+    import lu.string : beginsWith;
+    import std.json : JSONException, JSONType;
+
+    enum placeholderChannel = "#<lost+found>";
 
     JSONStorage json;
+    bool dirty;
 
     try
     {
         json.load(plugin.quotesFile);
+
+        // Convert legacy quotes to new ones
+        JSONStorage scratchJSON;
+
+        foreach (immutable key, firstLevel; json.object)
+        {
+            if (key.beginsWith('#')) continue;
+
+            scratchJSON[placeholderChannel] = null;
+            scratchJSON[placeholderChannel].object = null;
+            scratchJSON[placeholderChannel][key] = firstLevel;
+            dirty = true;
+        }
+
+        if (dirty)
+        {
+            foreach (immutable key, firstLevel; json.object)
+            {
+                if (!key.beginsWith('#')) continue;
+                scratchJSON[key] = firstLevel;
+            }
+
+            json = scratchJSON;
+        }
     }
     catch (JSONException e)
     {
@@ -887,9 +1211,18 @@ void initResources(QuotesPlugin plugin)
 }
 
 
-mixin UserAwareness;
+// reload
+/++
+    Reloads the JSON quotes from disk.
+ +/
+void reload(QuotesPlugin plugin)
+{
+    plugin.quotes = loadQuotes(plugin.quotesFile);
+}
+
 
 public:
+
 
 // QuotesPlugin
 /++
@@ -900,7 +1233,6 @@ public:
 
     It was historically part of [kameloso.plugins.chatbot.ChatbotPlugin|ChatbotPlugin].
  +/
-@IRCPluginHook
 final class QuotesPlugin : IRCPlugin
 {
 private:
@@ -912,10 +1244,10 @@ private:
     /++
         The in-memory JSON storage of all user quotes.
 
-        It is in the JSON form of `Quote[][string]`, where the first key is the
+        It is in the JSON form of `Quote[][string][string]`, where the first key is the
         nickname of a user.
      +/
-    JSONStorage quotes;
+    Quote[][string][string] quotes;
 
     /// Filename of file to save the quotes to.
     @Resource string quotesFile = "quotes.json";

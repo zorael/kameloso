@@ -124,6 +124,9 @@ if (isSomeFunction!dg)
 
     Returns:
         A [lu.common.Next|Next] dictating what action the caller should take.
+
+    See_Also:
+        [twitchTryCatchDg]
  +/
 private auto twitchTryCatchDgExceptionHandler(
     /*const*/ Exception previouslyThrownException,
@@ -373,7 +376,7 @@ void persistentQuerier(shared QueryResponse[int] bucket, const string caBundleFi
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         url = The URL to query.
         authorisationHeader = Authorisation HTTP header to pass.
-        verb = What HTTP verb to pass.
+        verb = What [arsd.http2.HttpVerb|HttpVerb] to use in the request.
         body_ = Request body to send in case of verbs like `POST` and `PATCH`.
         contentType = "Content-Type" HTTP header to pass.
         id = Numerical ID to use instead of generating a new one.
@@ -520,7 +523,7 @@ in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
         url = URL address to look up.
         authHeader = Authorisation token HTTP header to pass.
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
-        verb = What HTTP verb to pass.
+        verb = What [arsd.http2.HttpVerb|HttpVerb] to use in the request.
         body_ = Request body to send in case of verbs like `POST` and `PATCH`.
         contentType = "Content-Type" HTTP header to use.
 
@@ -605,7 +608,9 @@ auto sendHTTPRequestImpl(
         returned instead.
 
     Throws:
-        [TwitchQueryException] on unexpected JSON.
+        [UnexpectedJSONException] on unexpected JSON.
+
+        [TwitchQueryException] on other JSON errors.
  +/
 auto getTwitchEntity(TwitchPlugin plugin, const string url)
 in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
@@ -673,7 +678,7 @@ in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
         returned instead.
 
     Throws:
-        [TwitchQueryException] on unexpected JSON.
+        [UnexpectedJSONException] on unexpected JSON.
  +/
 auto getChatters(TwitchPlugin plugin, const string broadcaster)
 in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
@@ -744,7 +749,9 @@ in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
         current authorisation header/client ID pair.
 
     Throws:
-        [TwitchQueryException] on failure.
+        [UnexpectedJSONException] on unexpected JSON received.
+
+        [TwitchQueryException] on other failure.
  +/
 auto getValidation(
     TwitchPlugin plugin,
@@ -1333,8 +1340,8 @@ in (Fiber.getThis, "Tried to call `startCommercial` from outside a Fiber")
         idString = ID of a specific poll to get.
 
     Returns:
-        A [std.json.JSONValue|JSONValue] [std.json.JSONType.array|array] with
-        all the matched polls.
+        A [std.json.JSONType.array|JSONType.array]-type [std.json.JSONValue|JSONValue]
+        with all the matched polls.
  +/
 auto getPolls(
     TwitchPlugin plugin,
@@ -1442,7 +1449,7 @@ in (Fiber.getThis, "Tried to call `getPolls` from outside a Fiber")
         [std.json.JSONValue|JSONValue] is instead returned.
 
     Throws:
-        [TwitchQueryException] on unexpected JSON.
+        [UnexpectedJSONException] on unexpected JSON.
  +/
 auto createPoll(
     TwitchPlugin plugin,
@@ -1552,12 +1559,11 @@ in (Fiber.getThis, "Tried to call `createPoll` from outside a Fiber")
             If unset, ends it in an `"ARCHIVED"` way.
 
     Returns:
-        A [std.json.JSONValue|JSONValue] [std.json.JSONType.array|array] with
-        the response returned when ending the poll. On failure, an empty
-        [std.json.JSONValue|JSONValue] is instead returned.
+        A [std.json.JSONType.array|JSONType.array]-type [std.json.JSONValue|JSONValue]
+        with the response returned when ending the poll.
 
     Throws:
-        [TwitchQueryException] on unexpected JSON.
+        [UnexpectedJSONException] on unexpected JSON.
  +/
 auto endPoll(
     TwitchPlugin plugin,

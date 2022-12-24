@@ -40,7 +40,7 @@ public:
 auto stripSeparatedPrefix(
     const string line,
     const string prefix,
-    const Flag!"demandSeparatingChars" demandSep = Yes.demandSeparatingChars) pure @nogc
+    const Flag!"demandSeparatingChars" demandSep = Yes.demandSeparatingChars) pure
 in (prefix.length, "Tried to strip separated prefix but no prefix was given")
 {
     import lu.string : nom, strippedLeft;

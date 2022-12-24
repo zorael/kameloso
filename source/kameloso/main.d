@@ -13,8 +13,9 @@ module kameloso.main;
 private:
 
 import kameloso.common : logger;
-import kameloso.kameloso : Kameloso, CoreSettings;
+import kameloso.kameloso : Kameloso;
 import kameloso.plugins.common.core : IRCPlugin, Replay;
+import kameloso.pods : CoreSettings;
 import dialect.defs;
 import lu.common : Next;
 import std.stdio : stdout;
@@ -25,7 +26,7 @@ import std.typecons : Flag, No, Yes;
 /++
     A value line for [rt_options] to fine-tune the garbage collector.
 
-    Older compilers don't support all the garbeage collector options newer
+    Older compilers don't support all the garbage collector options newer
     compilers do (breakpoints being at `2.085` for the precise garbage collector
     and cleanup behaviour, and `2.098` for the forking one). So in one way or
     another we need to specialise for compiler versions. This is one way.
@@ -46,15 +47,17 @@ enum gcOptions = ()
     {
         sink.put("profile:1 ");
     }
-
-    static if (__VERSION__ >= 2085L)
+    else version(unittest)
     {
-        sink.put("cleanup:finalize ");
+        // Always print profile information on unittest builds
+        sink.put("profile:1 ");
+    }
 
-        version(PreciseGC)
-        {
-            sink.put("gc:precise ");
-        }
+    sink.put("cleanup:finalize ");
+
+    version(PreciseGC)
+    {
+        sink.put("gc:precise ");
     }
 
     static if (__VERSION__ >= 2098L)
@@ -63,12 +66,6 @@ enum gcOptions = ()
         {
             sink.put("fork:1 ");
         }
-    }
-
-    version(unittest)
-    {
-        // Always print profile information on unittest builds
-        sink.put("profile:1 ");
     }
 
     // Tweak these numbers as we see fit
@@ -86,7 +83,8 @@ enum gcOptions = ()
         [gcOptions]
         https://dlang.org/spec/garbage.html
  +/
-extern(C) public __gshared const string[] rt_options =
+extern(C)
+public __gshared const string[] rt_options =
 [
     /++
         Garbage collector options.
@@ -1998,7 +1996,8 @@ void resetSignals() nothrow @nogc
 auto tryGetopt(ref Kameloso instance, string[] args)
 {
     import kameloso.plugins.common.misc : IRCPluginSettingsException;
-    import kameloso.config : ConfigurationFileReadFailureException, handleGetopt;
+    import kameloso.config : handleGetopt;
+    import kameloso.configreader : ConfigurationFileReadFailureException;
     import lu.common : FileTypeMismatchException;
     import lu.serialisation : DeserialisationException;
     import std.conv : ConvException;
@@ -2529,12 +2528,12 @@ void postInstanceSetup(ref Kameloso instance)
 
 // setDefaultDirectories
 /++
-    Sets default directories in the passed [kameloso.kameloso.CoreSettings|CoreSettings].
+    Sets default directories in the passed [kameloso.pods.CoreSettings|CoreSettings].
 
     This is called during early execution.
 
     Params:
-        settings = A reference to some [kameloso.kameloso.CoreSettings|CoreSettings].
+        settings = A reference to some [kameloso.pods.CoreSettings|CoreSettings].
  +/
 void setDefaultDirectories(ref CoreSettings settings)
 {

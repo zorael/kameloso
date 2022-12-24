@@ -21,15 +21,16 @@ private:
 
 import kameloso.plugins.common.core;
 import kameloso.common : logger;
+import kameloso.thread : Sendable;
 import dialect.defs;
 
 
 // postprocess
 /++
     Hijacks a reference to a [dialect.defs.IRCEvent|IRCEvent] after parsing and
-    fleshes out the [dialect.defs.IRCEvent.sender] and/or
-    [dialect.defs.IRCEvent.target] fields, so that things like account names
-    that are only sent sometimes carry over.
+    fleshes out the [dialect.defs.IRCEvent.sender|IRCEvent.sender] and/or
+    [dialect.defs.IRCEvent.target|IRCEvent.target] fields, so that things like
+    account names that are only sent sometimes carry over.
 
     Merely leverages [postprocessCommon].
  +/
@@ -64,7 +65,7 @@ void postprocess(PersistenceService service, ref IRCEvent event)
                 // Drop all privileges
                 newUser.class_ = IRCUser.Class.anyone;
                 newUser.account = string.init;
-                newUser.updated = 1L;
+                newUser.updated = 1L;  // must not be 0L
             }
         }
 
@@ -177,7 +178,8 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
             {
                 // All else failed, consider it a random registered or anyone, depending on server
                 user.class_ = (service.state.server.daemon == IRCServer.Daemon.twitch) ?
-                    IRCUser.Class.anyone : IRCUser.Class.registered;
+                    IRCUser.Class.anyone :
+                    IRCUser.Class.registered;
             }
 
             // Record this channel as being the one the current class_ applies to.
@@ -213,7 +215,7 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
                     break;
 
                 case ACCOUNT:
-                    if ((user.account == "*") && stored.account.length)
+                    if (stored.account.length && (user.account == "*"))
                     {
                         event.aux = stored.account;
                         goto case RPL_WHOISACCOUNT;
@@ -373,6 +375,7 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
             {
                 stored.class_ = IRCUser.Class.anyone;
             }
+
             service.userClassChannelCache.remove(user.nickname);
         }
         else /*if (channel.length)*/
@@ -468,6 +471,80 @@ void onWelcome(PersistenceService service)
 }
 
 
+// onNamesReply
+/++
+    Catch users in a reply for the request for a NAMES list of all the
+    participants in a channel.
+
+    Freenode only sends a list of the nicknames but SpotChat sends the full
+    `user!ident@address` information.
+
+    This was copy/pasted from [kameloso.plugins.common.awareness.onUserAwarenessNamesReply]
+    to spare us the full mixin.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_NAMREPLY)
+)
+void onNamesReply(PersistenceService service, const ref IRCEvent event)
+{
+    import kameloso.plugins.common.misc : catchUser;
+    import kameloso.irccolours : stripColours;
+    import dialect.common : IRCControlCharacter, stripModesign;
+    import lu.string : contains, nom;
+    import std.algorithm.iteration : splitter;
+
+    if (service.state.server.daemon == IRCServer.Daemon.twitch)
+    {
+        // Do nothing actually. Twitch NAMES is unreliable noise.
+        return;
+    }
+
+    auto names = event.content.splitter(' ');
+
+    foreach (immutable userstring; names)
+    {
+        if (!userstring.contains('!'))
+        {
+            // No need to check for slice.contains('@')
+            // Freenode-like, only nicknames with possible modesigns
+            // No point only registering nicknames
+            return;
+        }
+
+        // SpotChat-like, names are rich in full nick!ident@address form
+        string slice = userstring;  // mutable
+        immutable signed = slice.nom('!');
+        immutable nickname = signed.stripModesign(service.state.server);
+        //if (nickname == service.state.client.nickname) continue;
+        immutable ident = slice.nom('@');
+
+        // Do addresses ever contain bold, italics, underlined?
+        immutable address = slice.contains(IRCControlCharacter.colour) ?
+            stripColours(slice) :
+            slice;
+
+        service.catchUser(IRCUser(nickname, ident, address));  // this melds with the default conservative strategy
+    }
+}
+
+
+// onWhoReply
+/++
+    Catch users in a reply for the request for a WHO list of all the
+    participants in a channel.
+
+    Each reply event is only for one user, unlike with NAMES.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WHOREPLY)
+)
+void onWhoReply(PersistenceService service, const ref IRCEvent event)
+{
+    import kameloso.plugins.common.misc : catchUser;
+    service.catchUser(event.target);
+}
+
+
 // maybeRehash
 /++
     Rehashes cache arrays if we deem enough new users have been added to them
@@ -502,7 +579,7 @@ void maybeRehash(PersistenceService service)
 // reload
 /++
     Reloads the service, rehashing the user array and loading
-    admin/whitelist/blacklist classifier definitions from disk.
+    admin/staff/operator/elevated/whitelist/blacklist classifier definitions from disk.
  +/
 void reload(PersistenceService service)
 {
@@ -521,16 +598,15 @@ void reload(PersistenceService service)
  +/
 void reloadAccountClassifiersFromDisk(PersistenceService service)
 {
+    import lu.conv : Enum;
     import lu.json : JSONStorage;
     import std.json : JSONException;
 
     JSONStorage json;
-    json.reset();
+    //json.reset();
     json.load(service.userFile);
 
     service.channelUsers.clear();
-
-    import lu.conv : Enum;
 
     static immutable classes =
     [
@@ -548,8 +624,8 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
 
         if (!listFromJSON)
         {
-            json[list] = null;
-            json[list].object = null;
+            // Something's wrong, the file is missing sections and must have been manually modified
+            continue;
         }
 
         try
@@ -562,12 +638,15 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
 
                 foreach (immutable userJSON; channelAccountJSON.array)
                 {
-                    if (channelName !in service.channelUsers)
+                    auto theseUsers = channelName in service.channelUsers;
+
+                    if (!theseUsers)
                     {
                         service.channelUsers[channelName] = (IRCUser.Class[string]).init;
+                        theseUsers = channelName in service.channelUsers;
                     }
 
-                    service.channelUsers[channelName][userJSON.str] = class_;
+                    (*theseUsers)[userJSON.str] = class_;
                 }
             }
         }
@@ -599,6 +678,7 @@ void reloadHostmasksFromDisk(PersistenceService service)
     import lu.json : JSONStorage, populateFromJSON;
 
     JSONStorage hostmasksJSON;
+    //hostmasksJSON.reset();
     hostmasksJSON.load(service.hostmasksFile);
 
     string[string] accountByHostmask;
@@ -675,8 +755,8 @@ void initResources(PersistenceService service)
     Reads, completes and saves the user classification JSON file, creating one
     if one doesn't exist. Removes any duplicate entries.
 
-    This ensures there will be "whitelist", "operator", "staff" and "blacklist"
-    arrays in it.
+    This ensures there will be "staff", "operator", "elevated", "whitelist"
+    and "blacklist" arrays in it.
 
     Params:
         service = The current [PersistenceService].
@@ -691,7 +771,7 @@ void initAccountResources(PersistenceService service)
     import std.json : JSONException, JSONValue;
 
     JSONStorage json;
-    json.reset();
+    //json.reset();
 
     try
     {
@@ -803,8 +883,7 @@ void initAccountResources(PersistenceService service)
 
 // initHostmaskResources
 /++
-    Reads, completes and saves the hostmasks JSON file, creating one if it
-    doesn't exist.
+    Reads, completes and saves the hostmasks JSON file, creating one if it doesn't exist.
 
     Throws:
         [kameloso.plugins.common.misc.IRCPluginInitialisationException|IRCPluginInitialisationException]
@@ -816,7 +895,7 @@ void initHostmaskResources(PersistenceService service)
     import std.json : JSONException, JSONValue;
 
     JSONStorage json;
-    json.reset();
+    //json.reset();
 
     try
     {
@@ -866,6 +945,37 @@ void initHostmaskResources(PersistenceService service)
 }
 
 
+// onBusMessage
+/++
+    Receives a passed [kameloso.thread.BusMessage|BusMessage] with the "`persistence`"
+    header, and catches [dialect.defs.IRCUser|IRCUser]s sent.
+
+    Params:
+        service = The current [PersistenceService].
+        header = String header describing the passed content payload.
+        content = Message content.
+ +/
+void onBusMessage(PersistenceService service, const string header, shared Sendable content)
+{
+    import kameloso.thread : BusMessage;
+
+    if ((service.state.server.daemon != IRCServer.Daemon.twitch) ||
+        (header != "persistence"))
+    {
+        // Not interesting
+        return;
+    }
+
+    auto message = cast(BusMessage!IRCUser)content;
+    assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
+
+    IRCUser user = message.payload;
+    service.state.users[user.nickname] = user;
+}
+
+
+mixin ModuleRegistration!(-50);
+
 public:
 
 
@@ -884,7 +994,6 @@ public:
     for minimal bookkeeping, not the full package, so we only copy/paste the
     relevant bits to stay slim.
  +/
-@IRCPluginHook
 final class PersistenceService : IRCPlugin
 {
 private:

@@ -283,7 +283,7 @@ A normal URL to any playlist you can modify will work fine.
 
     Params:
         client = [arsd.http2.HttpClient|HttpClient] to use.
-        creds = Credentials aggregate.
+        creds = [Credentials] aggregate.
         code = Spotify authorization code.
 
     Throws:
@@ -345,7 +345,7 @@ void getSpotifyTokens(HttpClient client, ref Credentials creds, const string cod
 
     Params:
         client = [arsd.http2.HttpClient|HttpClient] to use.
-        creds = Credentials aggregate.
+        creds = [Credentials] aggregate.
 
     Throws:
         [kameloso.plugins.twitch.common.UnexpectedJSONException|UnexpectedJSONException]
@@ -403,7 +403,7 @@ void refreshSpotifyToken(HttpClient client, ref Credentials creds)
     and client secret.
 
     Params:
-        creds = Credentials aggregate.
+        creds = [Credentials] aggregate.
 
     Returns:
         A string to be used as a `Basic` authorisation token.
@@ -426,7 +426,7 @@ auto getSpotifyBase64Authorization(const Credentials creds)
 
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
-        creds = Credentials aggregate.
+        creds = [Credentials] aggregate.
         trackID = Spotify track ID of the track to add.
         recursing = Whether or not the function is recursing into itself.
 
@@ -541,7 +541,7 @@ in (Fiber.getThis, "Tried to call `addVideoToSpotifyPlaylist` from outside a Fib
     Fetches information about a Spotify track by its ID and returns the JSON response.
 
     Params:
-        creds = Credentials aggregate.
+        creds = [Credentials] aggregate.
         trackID = Spotify track ID string.
 
     Returns:
@@ -595,7 +595,7 @@ package auto getSpotifyTrackByID(Credentials creds, const string trackID)
 
     Params:
         client = [arsd.http2.HttpClient|HttpClient] to use.
-        creds = Credentials aggregate.
+        creds = [Credentials] aggregate.
 
     Returns:
         The server [std.json.JSONValue|JSONValue] response.

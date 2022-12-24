@@ -36,6 +36,42 @@ import dialect.defs;
 }
 
 
+/+
+    Ensure that one and only one of the matching versions is declared.
+ +/
+version(MatchByStringComparison)
+{
+    version(MatchWithRegex)
+    {
+        version = MatchVersionError;
+    }
+}
+else version(MatchWithRegex)
+{
+    version(MatchByStringComparison)
+    {
+        version = MatchVersionError;
+    }
+}
+else
+{
+    version = MatchVersionError;
+}
+
+
+/+
+    Error out during compilation if the matching versions aren't sane.
+ +/
+version(MatchVersionError)
+{
+    import std.format : format;
+
+    enum pattern = "`%s` needs one of versions `MatchByStringComparison` and `MatchWithRegex` (but not both)";
+    enum message = pattern.format(__MODULE__);
+    static assert(0, message);
+}
+
+
 // onAnyMessage
 /++
     Reacts to the message "same" by agreeing with "same".
@@ -55,11 +91,6 @@ version(MatchByStringComparison)
 )
 void onAnyMessage(SamePlugin plugin, const ref IRCEvent event)
 {
-    version(MatchWithRegex)
-    {
-        static assert(0, "`" ~ __MODULE__ ~ "` has both version `MatchWithRegex` and `MatchByStringComparison`");
-    }
-
     // Reply only if we should
     if (event.content == "same")
     {
@@ -89,21 +120,20 @@ version(MatchWithRegex)
 )
 void onAnyMessageRegex(SamePlugin plugin, const ref IRCEvent event)
 {
-    version(MatchByStringComparison)
-    {
-        static assert(0, "`" ~ __MODULE__ ~ "` has both version `MatchWithRegex` and `MatchByStringComparison`");
-    }
-
     // Reply always, since the function wouldn't have been called if the message didn't match
     chan(plugin.state, event.channel, event.content);
 }
+
+
+mixin ModuleRegistration;
+
+public:
 
 
 // SamePlugin
 /++
     The Same toy plugin, that replies to the text "same" with "same".
  +/
-@IRCPluginHook
 final class SamePlugin : IRCPlugin
 {
     /// All Same plugin settings gathered.

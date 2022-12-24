@@ -156,15 +156,16 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
 
 
 mixin MinimalAuthentication;
-
+mixin ModuleRegistration;
 
 public:
 
+
+// StopWatchPlugin
 /++
     The Stopwatch plugin offers the ability to start stopwatches, and print
     how much time elapsed upon stopping them.
  +/
-@IRCPluginHook
 final class StopwatchPlugin : IRCPlugin
 {
 private:

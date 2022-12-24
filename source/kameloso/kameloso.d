@@ -22,9 +22,11 @@ private:
     import kameloso.constants : BufferSize;
     import kameloso.net : Connection;
     import kameloso.plugins.common.core : IRCPlugin;
+    import kameloso.pods : ConnectionSettings, CoreSettings, IRCBot;
     import dialect.defs : IRCClient, IRCServer;
     import dialect.parsing : IRCParser;
     import lu.container : Buffer;
+    import std.algorithm.comparison : among;
     import std.datetime.systime : SysTime;
 
     // Throttle
@@ -33,19 +35,38 @@ private:
      +/
     static struct Throttle
     {
-        /// Origo of x-axis (last sent message).
+        // t0
+        /++
+            Origo of x-axis (last sent message).
+         +/
         SysTime t0;
 
-        /// y at t0 (ergo y at x = 0, weight at last sent message).
+
+        // m
+        /++
+            y at t0 (ergo y at x = 0, weight at last sent message).
+         +/
         double m = 0.0;
 
-        /// Increment to y on sent message.
+
+        // increment
+        /++
+            Increment to y on sent message.
+         +/
         enum increment = 1.0;
 
-        /// Don't copy this, just keep one instance.
+
+        // this(this)
+        /++
+            Don't copy this, just keep one instance.
+         +/
         @disable this(this);
 
-        /// Resets the throttle values in-place.
+
+        // reset
+        /++
+            Resets the throttle values in-place.
+         +/
         void reset()
         {
             t0 = SysTime.init;
@@ -53,19 +74,25 @@ private:
         }
     }
 
+
+    // privateConnectionID
     /++
         Numeric ID of the current connection, to disambiguate between multiple
         connections in one program run. Private value.
      +/
     shared static uint privateConnectionID;
 
+
 public:
+    // conn
     /++
         The [kameloso.net.Connection|Connection] that houses and wraps the socket
         we use to connect to, write to and read from the server.
      +/
     Connection conn;
 
+
+    // plugins
     /++
         A runtime array of all plugins. We iterate these when we have finished
         parsing an [dialect.defs.IRCEvent|IRCEvent], and call the relevant event
@@ -73,43 +100,67 @@ public:
      +/
     IRCPlugin[] plugins;
 
+
+    // settings
     /++
         The root copy of the program-wide settings.
      +/
     CoreSettings settings;
 
+
+    // connSettings
     /++
         Settings relating to the connection between the bot and the IRC server.
      +/
     ConnectionSettings connSettings;
 
+
+    // previousWhoisTimestamps
     /++
         An associative array o fwhen a nickname was last issued a WHOIS query for,
         UNIX timestamps by nickname key, for hysteresis and rate-limiting.
      +/
     long[string] previousWhoisTimestamps;
 
-    /// Parser instance.
+
+    // parser
+    /++
+        Parser instance.
+     +/
     IRCParser parser;
 
-    /// IRC bot values and state.
+
+    // bot
+    /++
+        IRC bot values and state.
+     +/
     IRCBot bot;
 
-    /// Values and state needed to throttle sending messages.
+
+    // throttle
+    /++
+        Values and state needed to throttle sending messages.
+     +/
     Throttle throttle;
 
+
+    // abort
     /++
         When this is set by signal handlers, the program should exit. Other
         parts of the program will be monitoring it.
      +/
     bool* abort;
 
+
+    // wantLiveSummary
     /++
         When this is set, the main loop should print a connection summary upon
         the next iteration. It is transient.
      +/
     bool wantLiveSummary;
 
+
+    // outbuffer
     /++
         Buffer of outgoing message strings.
 
@@ -118,6 +169,8 @@ public:
      +/
     Buffer!(OutgoingLine, No.dynamic, BufferSize.outbuffer) outbuffer;
 
+
+    // backgroundBuffer
     /++
         Buffer of outgoing background message strings.
 
@@ -134,6 +187,8 @@ public:
      +/
     Buffer!(OutgoingLine, No.dynamic, BufferSize.priorityBuffer) priorityBuffer;
 
+
+    // immediateBuffer
     /++
         Buffer of outgoing message strings to be sent immediately.
 
@@ -142,8 +197,10 @@ public:
      +/
     Buffer!(OutgoingLine, No.dynamic, BufferSize.priorityBuffer) immediateBuffer;
 
+
     version(TwitchSupport)
     {
+        // fastbuffer
         /++
             Buffer of outgoing fast message strings, used on Twitch servers.
 
@@ -153,26 +210,36 @@ public:
         Buffer!(OutgoingLine, No.dynamic, BufferSize.outbuffer*2) fastbuffer;
     }
 
+
+    // missingConfigurationEntries
     /++
         Associative array of string arrays of expected configuration entries
         that were missing.
      +/
     string[][string] missingConfigurationEntries;
 
+
+    // invalidConfigurationEntries
     /++
         Associative array of string arrays of unexpected configuration entries
         that did not belong.
      +/
     string[][string] invalidConfigurationEntries;
 
+
+    // customSettings
     /++
         Custom settings specfied at the command line with the `--set` parameter.
      +/
     string[] customSettings;
 
+
+    // this(this)
     /// Never copy this.
     @disable this(this);
 
+
+    // connectionID
     /++
         Numeric ID of the current connection, to disambiguate between multiple
         connections in one program run. Accessor.
@@ -186,6 +253,8 @@ public:
         return privateConnectionID;
     }
 
+
+    // generateNewConnectionID
     /++
         Generates a new connection ID.
 
@@ -193,12 +262,20 @@ public:
      +/
     void generateNewConnectionID() @safe
     {
+        import std.random : uniform;
+
         synchronized //()
         {
-            import std.random : uniform;
-            privateConnectionID = uniform(1, 1001);
+            immutable previous = privateConnectionID;
+
+            do
+            {
+                privateConnectionID = uniform(1, 1001);
+            }
+            while (privateConnectionID == previous);
         }
     }
+
 
     // throttleline
     /++
@@ -290,7 +367,7 @@ public:
 
             if (dryRun) break;
 
-            if (settings.trace || !buffer.front.quiet)
+            if (!settings.headless && (settings.trace || !buffer.front.quiet))
             {
                 bool printed;
 
@@ -332,10 +409,9 @@ public:
      +/
     void initPlugins() @system
     {
-        import kameloso.plugins : PluginModules;
-        import kameloso.plugins.common.core : IRCPluginHook, IRCPluginState;
+        import kameloso.plugins : instantiatePlugins;
+        import kameloso.plugins.common.core : IRCPluginState, PluginModuleInfo;
         import kameloso.plugins.common.misc : applyCustomSettings;
-        import lu.traits : getSymbolsByUDA;
         import std.concurrency : thisTid;
 
         teardownPlugins();
@@ -349,60 +425,8 @@ public:
         state.connSettings = connSettings;
         state.abort = abort;
 
-        // Instantiate all plugin classes found when introspecting the modules
-        // listed in the `kameloso.plugins.PluginModules` AliasSeq.
-
-        plugins.reserve(PluginModules.length);
-
-        foreach (immutable moduleName; PluginModules)
-        {
-            static if (is(typeof(moduleName) : string) && moduleName.length)
-            {
-                static if (__traits(compiles, { mixin("alias thisModule = " ~ moduleName ~ ".base;"); }))
-                {
-                    static if (!__traits(compiles, { mixin("static import " ~ moduleName ~ ".base;"); }))
-                    {
-                        import std.format : format;
-                        enum pattern = "Plugin module `%s.base` (inferred from listing `%1$s`" ~
-                            "in `plugins/package.d`) fails to compile";
-                        static assert(0, pattern.format(moduleName));
-                    }
-
-                    mixin("static import pluginModule = " ~ moduleName ~ ".base;");
-                }
-                else
-                {
-                    static if (!__traits(compiles, { mixin("static import " ~ moduleName ~ ";"); }))
-                    {
-                        import std.format : format;
-                        enum pattern = "Plugin module `%s` (listed in `plugins/package.d`) fails to compile";
-                        static assert(0, pattern.format(moduleName));
-                    }
-
-                    mixin("static import pluginModule = " ~ moduleName ~ ";");
-                }
-
-                foreach (Plugin; getSymbolsByUDA!(pluginModule, IRCPluginHook))
-                {
-                    static if (__traits(compiles, new Plugin(state)))
-                    {
-                        plugins ~= new Plugin(state);
-                    }
-                    else
-                    {
-                        import std.format : format;
-                        enum pattern = "`%s.%s` constructor does not compile";
-                        static assert(0, pattern.format(moduleName, Class.stringof));
-                    }
-                }
-            }
-            else
-            {
-                import std.conv : text;
-                static assert(0, text("Invalid `PluginModules` entry in `plugins/package.d`: `",
-                    moduleName, '`'));
-            }
-        }
+        // Leverage kameloso.plugins.instantiatePlugins to construct all plugins.
+        plugins = instantiatePlugins(state);
 
         foreach (plugin; plugins)
         {
@@ -435,6 +459,46 @@ public:
     }
 
 
+    // issuePluginCallImpl
+    /++
+        Issues a call to all plugins, where such a call is one of "setup",
+        "start", "initResources" or "reload". This invokes their module-level
+        functions of the same name, where available.
+
+        In the case of "initResources", the call does not care whether the
+        plugins are enabled, but in all other cases they are skipped if so.
+
+        Params:
+            call = String name of call to issue to all plugins.
+     +/
+    private void issuePluginCallImpl(string call)()
+    if (call.among!("setup", "start", "reload", "initResources"))
+    {
+        foreach (plugin; plugins)
+        {
+            static if (call == "initResources")
+            {
+                // Always init resources, even if the plugin is disabled
+                mixin("plugin." ~ call ~ "();");
+            }
+            else
+            {
+                if (!plugin.isEnabled) continue;
+
+                mixin("plugin." ~ call ~ "();");
+                checkPluginForUpdates(plugin);
+            }
+        }
+    }
+
+
+    // setupPlugins
+    /++
+        Sets up all plugins, calling any module-level `setup` functions.
+     +/
+    alias setupPlugins = issuePluginCallImpl!"setup";
+
+
     // initPluginResources
     /++
         Initialises all plugins' resource files.
@@ -443,13 +507,27 @@ public:
         [kameloso.plugins.common.core.IRCPlugin.initResources|IRCPlugin.initResources]
         on each plugin.
      +/
-    void initPluginResources() @system
-    {
-        foreach (plugin; plugins)
-        {
-            plugin.initResources();
-        }
-    }
+    alias initPluginResources = issuePluginCallImpl!"initResources";
+
+
+    // startPlugins
+    /++
+        Starts all plugins by calling any module-level `start` functions.
+
+        This happens after connection has been established.
+
+        Don't start disabled plugins.
+     +/
+    alias startPlugins = issuePluginCallImpl!"start";
+
+
+    // reloadPlugins
+    /++
+        Reloads all plugins by calling any module-level `reload` functions.
+
+        What this actually does is up to the plugins.
+     +/
+    alias reloadPlugins = issuePluginCallImpl!"reload";
 
 
     // teardownPlugins
@@ -506,47 +584,6 @@ public:
 
         // Zero out old plugins array
         plugins = null;
-    }
-
-
-    // setupPlugins
-    /++
-        Sets up all plugins, calling any module-level `setup` functions.
-
-        This has to happen after [initPlugins] or there will not be any plugins
-        in the [plugins] array.
-
-        Don't setup disabled plugins.
-     +/
-    void setupPlugins() @system
-    {
-        foreach (plugin; plugins)
-        {
-            if (!plugin.isEnabled) continue;
-
-            plugin.setup();
-            checkPluginForUpdates(plugin);
-        }
-    }
-
-
-    // startPlugins
-    /++
-        Starts all plugins by calling any module-level `start` functions.
-
-        This happens after connection has been established.
-
-        Don't start disabled plugins.
-     +/
-    void startPlugins() @system
-    {
-        foreach (plugin; plugins)
-        {
-            if (!plugin.isEnabled) continue;
-
-            plugin.start();
-            checkPluginForUpdates(plugin);
-        }
     }
 
 
@@ -618,7 +655,6 @@ public:
     {
         import std.meta : AliasSeq;
 
-        aliasloop:
         foreach (ref sym; AliasSeq!(this, parser))
         {
             foreach (immutable i, ref member; sym.tupleof)
@@ -628,12 +664,11 @@ public:
                 static if (is(T == Thing))
                 {
                     sym.tupleof[i] = thing;
-                    continue aliasloop;
+                    break;
                 }
             }
         }
 
-        pluginloop:
         foreach (plugin; plugins)
         {
             foreach (immutable i, ref member; plugin.state.tupleof)
@@ -643,7 +678,7 @@ public:
                 static if (is(T == Thing))
                 {
                     plugin.state.tupleof[i] = thing;
-                    continue pluginloop;
+                    break;
                 }
             }
         }
@@ -705,220 +740,28 @@ public:
         ulong bytesReceived;
     }
 
-    /// History records of established connections this execution run.
+
+    // connectionHistory
+    /++
+        History records of established connections this execution run.
+     +/
     ConnectionHistoryEntry[] connectionHistory;
 
-    /// Set when the Socket read timeout was requested to be shortened.
+
+    // wantReceiveTimeoutShortened
+    /++
+        Set when the Socket read timeout was requested to be shortened.
+     +/
     bool wantReceiveTimeoutShortened;
+
 
     version(TwitchSupport)
     {
+        // sawWelcome
         /++
             Set when an [dialect.defs.IRCEvent.Type.RPL_WELCOME|RPL_WELCOME]
             event was encountered.
          +/
         bool sawWelcome;
     }
-}
-
-
-// CoreSettings
-/++
-    Aggregate struct containing runtime bot setting variables.
-
-    Kept inside one struct, they're nicely gathered and easy to pass around.
-    Some defaults are hardcoded here.
- +/
-struct CoreSettings
-{
-private:
-    import lu.uda : CannotContainComments, Hidden, Quoted, Unserialisable;
-
-public:
-    version(Colours)
-    {
-        bool monochrome = false;  /// Logger monochrome setting.
-    }
-    else
-    {
-        bool monochrome = true;  /// Non-colours version defaults to true.
-    }
-
-    /// Flag denoting that the terminal has a bright background.
-    bool brightTerminal = false;
-
-    /// Flag denoting that usermasks should be used instead of accounts to authenticate users.
-    bool preferHostmasks = false;
-
-    /// Whether or not to hide outgoing messages, not printing them to screen.
-    bool hideOutgoing = false;
-
-    /// Whether or not to add colours to outgoing messages.
-    bool colouredOutgoing = true;
-
-    /// Flag denoting that we should save configuration changes to file on exit.
-    bool saveOnExit = false;
-
-    /// Whether or not to display a connection summary on program exit.
-    bool exitSummary = false;
-
-    @Hidden
-    {
-        /++
-            Whether to eagerly and exhaustively WHOIS all participants in home channels,
-            or to do a just-in-time lookup when needed.
-         +/
-        bool eagerLookups = false;
-
-        /++
-            Whether or not to be "headless", disabling all terminal output.
-         +/
-        bool headless;
-    }
-
-    /++
-        Path to resource directory.
-     +/
-    @Hidden
-    @CannotContainComments
-    string resourceDirectory;
-
-    /++
-        Character(s) that prefix a bot chat command.
-
-        These decide what bot commands will look like; "!" for "!command",
-        "~" for "~command", "." for ".command", etc. It can be any string and
-        not just one character.
-     +/
-    @Quoted string prefix = "!";
-
-    @Unserialisable
-    {
-        /++
-            Main configuration file.
-         +/
-        string configFile;
-
-        /++
-            Path to configuration directory.
-         +/
-        string configDirectory;
-
-        /++
-            Whether or not to force connecting, skipping some sanity checks.
-         +/
-        bool force;
-
-        /++
-            Whether or not to explicitly set stdout to flush after writing a linebreak to it.
-         +/
-        bool flush;
-
-        /++
-            Whether or not *all* outgoing messages should be echoed to the terminal.
-         +/
-        bool trace;
-
-        /++
-            Whether to print addresses as IPs or as hostnames (where applicable).
-         +/
-        bool numericAddresses;
-    }
-}
-
-
-// ConnectionSettings
-/++
-    Aggregate of values used in the connection between the bot and the IRC server.
- +/
-struct ConnectionSettings
-{
-private:
-    import kameloso.constants : ConnectionDefaultFloats, Timeout;
-    import lu.uda : CannotContainComments, Hidden;
-
-public:
-    /// Whether to connect to IPv6 addresses or only use IPv4 ones.
-    bool ipv6 = true;
-
-    @CannotContainComments
-    @Hidden
-    {
-        /// Path to private (`.pem`) key file, used in SSL connections.
-        string privateKeyFile;
-
-        /// Path to certificate (`.pem`) file.
-        string certFile;
-
-        /// Path to certificate bundle `cacert.pem` file or equivalent.
-        string caBundleFile;
-    }
-
-    /// Whether or not to attempt an SSL connection.
-    bool ssl = false;
-
-    @Hidden
-    {
-        /// Socket receive timeout in milliseconds (how often to check for concurrency messages).
-        uint receiveTimeout = Timeout.receiveMsecs;
-
-        /// How many messages to send per second, maximum.
-        double messageRate = ConnectionDefaultFloats.messageRate;
-
-        /// How many messages to immediately send in one go, before throttling kicks in.
-        double messageBurst = ConnectionDefaultFloats.messageBurst;
-    }
-}
-
-
-// IRCBot
-/++
-    Aggregate of information relevant for an IRC *bot* that goes beyond what is
-    needed for a mere IRC *client*.
- +/
-struct IRCBot
-{
-private:
-    import lu.uda : CannotContainComments, Hidden, Separator, Unserialisable;
-
-public:
-    /// Username to use as services account login name.
-    string account;
-
-    @Hidden
-    @CannotContainComments
-    {
-        /// Password for services account.
-        string password;
-
-        /// Login `PASS`, different from `SASL` and services.
-        string pass;
-
-        /// Default reason given when quitting and not specifying a reason text.
-        string quitReason;
-
-        /// Default reason given when parting a channel and not specifying a reason text.
-        string partReason;
-    }
-
-    @Separator(",")
-    @Separator(" ")
-    {
-        /// The nickname services accounts of administrators, in a bot-like context.
-        string[] admins;
-
-        /// List of home channels for the bot to operate in.
-        @CannotContainComments
-        string[] homeChannels;
-
-        /// Currently inhabited non-home guest channels.
-        @CannotContainComments
-        string[] guestChannels;
-    }
-
-    /++
-        Whether or not we connected without an explicit nickname, and a random
-        guest such was generated.
-     +/
-    @Unserialisable bool hasGuestNickname;
 }

@@ -31,11 +31,11 @@ import std.typecons : Flag, No, Yes;
 
 /+
     For storage location of the FIFO it makes sense to default to /tmp;
-    Posix defines a variable $TMPDIR, which should take precedence.
+    Posix defines a variable `$TMPDIR`, which should take precedence.
     However, this supposedly makes the file really difficult to access on macOS
     where it translates to some really long, programmatically generated path.
     macOS naturally does support /tmp though. So shrug and version it to
-    default-ignore $TMPDIR on macOS but obey it on other platforms.
+    default-ignore `$TMPDIR` on macOS but obey it on other platforms.
  +/
 //version = OSXTMPDIR;
 
@@ -477,6 +477,8 @@ void onBusMessage(PipelinePlugin plugin, const string header, shared Sendable co
 }
 
 
+mixin ModuleRegistration;
+
 public:
 
 
@@ -485,7 +487,6 @@ public:
     The Pipeline plugin reads from a local named pipe (FIFO) for messages to
     send to the server, as well as to live-control the bot to a certain degree.
  +/
-@IRCPluginHook
 final class PipelinePlugin : IRCPlugin
 {
 private:

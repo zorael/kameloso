@@ -859,6 +859,7 @@ void initialise(WebtitlesPlugin plugin)
 
 
 mixin MinimalAuthentication;
+mixin ModuleRegistration;
 
 public:
 
@@ -869,7 +870,6 @@ public:
     their servers and and streams the web page itself, looking for the web page's
     title. This is then reported to the originating channel or personal query.
  +/
-@IRCPluginHook
 final class WebtitlesPlugin : IRCPlugin
 {
 private:

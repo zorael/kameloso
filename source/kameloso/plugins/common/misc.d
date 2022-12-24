@@ -9,9 +9,9 @@ module kameloso.plugins.common.misc;
 
 private:
 
-import kameloso.kameloso : CoreSettings;
 import kameloso.plugins.common.core;
 import kameloso.common : logger;
+import kameloso.pods : CoreSettings;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
@@ -31,7 +31,7 @@ public:
         plugins = Array of all [kameloso.plugins.common.core.IRCPlugin|IRCPlugin]s.
         customSettings = Array of custom settings to apply to plugins' own
             setting, in the string forms of "`plugin.setting=value`".
-        copyOfSettings = A copy of the program-wide [kameloso.kameloso.CoreSettings|CoreSettings].
+        copyOfSettings = A copy of the program-wide [kameloso.pods.CoreSettings|CoreSettings].
 
     Returns:
         `true` if no setting name mismatches occurred, `false` if it did.
@@ -259,9 +259,10 @@ final class IRCPluginInitialisationException : Exception
 
     /++
         Constructs an [IRCPluginInitialisationException], embedding a plugin name
-        and the optional name of a malformed resource file.
+        and the name of a malformed resource file.
      +/
-    this(const string message,
+    this(
+        const string message,
         const string pluginName,
         const string malformedFilename,
         const string file = __FILE__,
@@ -273,12 +274,17 @@ final class IRCPluginInitialisationException : Exception
         super(message, file, line, nextInChain);
     }
 
-    /// Wraps normal Exception constructors.
-    this(const string message,
+    /++
+        Constructs an [IRCPluginInitialisationException], embedding a plugin name.
+     +/
+    this(
+        const string message,
+        const string pluginName,
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
     {
+        this.pluginName = pluginName;
         super(message, file, line, nextInChain);
     }
 }
@@ -424,8 +430,8 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
         caller = String name of the calling function, or something else that gives context.
 
     Returns:
-        A [Replay] with template parameters inferred from the arguments
-        passed to this function.
+        A [kameloso.plugins.common.core.Replay|Replay] with template parameters
+        inferred from the arguments passed to this function.
 
     See_Also:
         [kameloso.plugins.common.core.Replay|Replay]

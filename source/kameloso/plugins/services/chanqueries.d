@@ -446,15 +446,17 @@ void onNoSuchChannel(ChanQueriesService service, const ref IRCEvent event)
 
 version(OmniscientQueries)
 {
-    mixin UserAwareness!(ChannelPolicy.any);
-    mixin ChannelAwareness!(ChannelPolicy.any);
+    enum channelPolicy = ChannelPolicy.any;
 }
 else
 {
-    mixin UserAwareness;
-    mixin ChannelAwareness;
+    enum channelPolicy = ChannelPolicy.home;
 }
 
+
+mixin UserAwareness!channelPolicy;
+mixin ChannelAwareness!channelPolicy;
+mixin ModuleRegistration!(-10);
 
 public:
 
@@ -464,7 +466,6 @@ public:
     The Channel Queries service queries channels for information about them (in
     terms of topic and modes) as well as its list of participants.
  +/
-@IRCPluginHook
 final class ChanQueriesService : IRCPlugin
 {
 private:
@@ -498,7 +499,8 @@ private:
     // isEnabled
     /++
         Override
-        [kameloso.plugins.common.core.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled]
+        [kameloso.plugins.common.core.IRCPlugin.isEnabled|IRCPlugin.isEnabled]
+        (effectively overriding [kameloso.plugins.common.core.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled])
         and inject a server check, so this service does nothing on Twitch servers.
 
         Returns:

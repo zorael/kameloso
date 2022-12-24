@@ -266,33 +266,27 @@ void onCTCPClientinfo(CTCPService service, const ref IRCEvent event)
     enum allCTCPTypes = ()
     {
         import lu.string : beginsWith;
-        import lu.traits : getSymbolsByUDA;
         import std.array : Appender;
-        import std.traits : getUDAs, isSomeFunction;
-
-        mixin("static import thisModule = ", __MODULE__, ";");
+        import std.traits : getUDAs;
 
         Appender!(char[]) sink;
         sink.reserve(128);  // ~95
         sink.put(responseSkeleton);
 
-        foreach (sym; getSymbolsByUDA!(thisModule, IRCEventHandler))
+        foreach (sym; service.allEventHandlerFunctionsInModule)
         {
-            static if (isSomeFunction!sym)
-            {
-                static foreach (immutable type; getUDAs!(sym, IRCEventHandler)[0]._acceptedEventTypes)
-                {{
-                    import lu.conv : Enum;
+            static foreach (immutable type; getUDAs!(sym, IRCEventHandler)[0]._acceptedEventTypes)
+            {{
+                import lu.conv : Enum;
 
-                    enum typestring = Enum!(IRCEvent.Type).toString(type);
+                enum typestring = Enum!(IRCEvent.Type).toString(type);
 
-                    static if (typestring.beginsWith("CTCP_"))
-                    {
-                        sink.put(' ');
-                        sink.put(typestring[5..$]);
-                    }
-                }}
-            }
+                static if (typestring.beginsWith("CTCP_"))
+                {
+                    sink.put(' ');
+                    sink.put(typestring[5..$]);
+                }
+            }}
         }
 
         return sink.data;
@@ -307,6 +301,8 @@ void onCTCPClientinfo(CTCPService service, const ref IRCEvent event)
 }
 
 
+mixin ModuleRegistration!(-20);
+
 public:
 
 
@@ -320,14 +316,14 @@ public:
         - https://modern.ircdocs.horse/ctcp.html
         - http://www.irchelp.org/protocol/ctcpspec.html
  +/
-@IRCPluginHook
 final class CTCPService : IRCPlugin
 {
 private:
     // isEnabled
     /++
         Override
-        [kameloso.plugins.common.core.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled]
+        [kameloso.plugins.common.core.IRCPlugin.isEnabled|IRCPlugin.isEnabled]
+        (effectively overriding [kameloso.plugins.common.core.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled])
         and inject a server check, so this service does nothing on Twitch servers.
 
         Returns:

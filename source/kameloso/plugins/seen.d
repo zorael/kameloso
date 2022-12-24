@@ -58,6 +58,75 @@ private import std.typecons : Flag, No, Yes;
 private import core.time : hours;
 
 
+version(OmniscientSeen)
+{
+    // omniscientChannelPolicy
+    /++
+        The [kameloso.plugins.common.core.ChannelPolicy|ChannelPolicy] annotation dictates
+        whether or not an annotated function should be called based on the *channel*
+        the event took place in, if applicable.
+
+        The three policies are
+        [kameloso.plugins.common.core.ChannelPolicy.home|ChannelPolicy.home],
+        with which only events in channels in the
+        [kameloso.pods.IRCBot.homeChannels|IRCBot.homeChannels]
+        array will be allowed to trigger it;
+        [kameloso.plugins.common.core.ChannelPolicy.guest|ChannelPolicy.guest]
+        with which only events outside of such home channels will be allowed to trigger;
+        or [kameloso.plugins.common.core.ChannelPolicy.any|ChannelPolicy.any],
+        in which case anywhere goes.
+
+        For events that don't correspond to a channel (such as
+        [dialect.defs.IRCEvent.Type.QUERY|QUERY]) the setting doesn't apply and is ignored.
+
+        Thus this [omniscientChannelPolicy] enum constant is a compile-time setting
+        for all event handlers where whether a channel is a home or not is of
+        interest (or even applies). Put in a version block like this it allows
+        us to control the plugin's behaviour via `dub` build configurations.
+     +/
+    private enum omniscientChannelPolicy = ChannelPolicy.any;
+}
+else
+{
+    /// Ditto
+    private enum omniscientChannelPolicy = ChannelPolicy.home;
+}
+
+
+/++
+    [kameloso.plugins.common.awareness.UserAwareness|UserAwareness] is a mixin
+    template; it proxies to a few functions defined in [kameloso.plugins.common.awareness]
+    to deal with common book-keeping that every plugin *that wants to keep track
+    of users* need. If you don't want to track which users you have seen (and are
+    visible to you now), you don't need this.
+
+    Additionally it implicitly mixes in
+    [kameloso.plugins.common.awareness.MinimalAuthentication|MinimalAuthentication],
+    needed as soon as you have any [kameloso.plugins.common.core.PrefixPolicy|PrefixPolicy] checks.
+ +/
+mixin UserAwareness;
+
+
+/++
+    Complementary to [kameloso.plugins.common.awareness.UserAwareness|UserAwareness] is
+    [kameloso.plugins.common.awareness.ChannelAwareness|ChannelAwareness], which
+    will add in book-keeping about the channels the bot is in, their topics, modes,
+    and list of participants. Channel awareness requires user awareness, but not
+    the other way around.
+
+    Depending on the value of [omniscientChannelPolicy] we may want it to limit
+    the amount of tracked users to people in our home channels.
+ +/
+mixin ChannelAwareness!omniscientChannelPolicy;
+
+
+/++
+    Mixes in a module constructor that registers this module's plugin to be
+    instantiated on program startup/connect.
+ +/
+mixin ModuleRegistration;
+
+
 /+
     Most of the module can (and ideally should) be kept private. Our surface
     area here will be restricted to only one [kameloso.plugins.common.core.IRCPlugin|IRCPlugin]
@@ -124,7 +193,7 @@ public:
         to join, which home channels to operate in, the list of administrator accounts, etc.
 
     * [kameloso.plugins.common.core.IRCPluginState.settings|IRCPluginState.settings]
-        is a copy of the "global" [kameloso.kameloso.CoreSettings|CoreSettings],
+        is a copy of the "global" [kameloso.pods.CoreSettings|CoreSettings],
         which contains information about how the bot should output text, whether
         or not to always save to disk upon program exit, and some other program-wide settings.
 
@@ -218,7 +287,6 @@ public:
         is a pointer to the global abort bool. When this is set, it signals the
         rest of the program that we want to terminate cleanly.
  +/
-@IRCPluginHook
 final class SeenPlugin : IRCPlugin
 {
 private:  // Module-level private.
@@ -382,41 +450,6 @@ private:
         as observations. If set, only chatty events will count as being seen.
      +/
     bool ignoreNonChatEvents = false;
-}
-
-
-version(OmniscientSeen)
-{
-    // omniscientChannelPolicy
-    /++
-        The [kameloso.plugins.common.core.ChannelPolicy|ChannelPolicy] annotation dictates
-        whether or not an annotated function should be called based on the *channel*
-        the event took place in, if applicable.
-
-        The three policies are
-        [kameloso.plugins.common.core.ChannelPolicy.home|ChannelPolicy.home],
-        with which only events in channels in the
-        [kameloso.kameloso.IRCBot.homeChannels|IRCBot.homeChannels]
-        array will be allowed to trigger it;
-        [kameloso.plugins.common.core.ChannelPolicy.guest|ChannelPolicy.guest]
-        with which only events outside of such home channels will be allowed to trigger;
-        or [kameloso.plugins.common.core.ChannelPolicy.any|ChannelPolicy.any],
-        in which case anywhere goes.
-
-        For events that don't correspond to a channel (such as
-        [dialect.defs.IRCEvent.Type.QUERY|QUERY]) the setting doesn't apply and is ignored.
-
-        Thus this [omniscientChannelPolicy] enum constant is a compile-time setting
-        for all event handlers where whether a channel is a home or not is of
-        interest (or even applies). Put in a version block like this it allows
-        us to control the plugin's behaviour via `dub` build configurations.
-     +/
-    enum omniscientChannelPolicy = ChannelPolicy.any;
-}
-else
-{
-    /// Ditto
-    enum omniscientChannelPolicy = ChannelPolicy.home;
 }
 
 
@@ -1185,14 +1218,23 @@ import kameloso.thread : Sendable;
 /+
     Only some plugins benefit from this one implementning `onBusMessage`, so omit
     it if they aren't available.
+
+    Use an enum instead of a version, since for some reason this suddenly broke
+    on pre-2.093 compilers.
  +/
 version(WithPipelinePlugin)
 {
-    version = ShouldImplementOnBusMessage;
+    //version = ShouldImplementOnBusMessage;
+    enum shouldImplementOnBusMessage = true;
 }
 else version(WithAdminPlugin)
 {
-    version = ShouldImplementOnBusMessage;
+    //version = ShouldImplementOnBusMessage;
+    enum shouldImplementOnBusMessage = true;
+}
+else
+{
+    enum shouldImplementOnBusMessage = false;
 }
 
 // onBusMessage
@@ -1211,7 +1253,8 @@ else version(WithAdminPlugin)
  +/
 debug
 version(Posix)
-version(ShouldImplementOnBusMessage)
+//version(ShouldImplementOnBusMessage)
+static if (shouldImplementOnBusMessage)
 void onBusMessage(SeenPlugin plugin, const string header, shared Sendable content)
 {
     if (!plugin.isEnabled) return;
@@ -1241,33 +1284,6 @@ void onBusMessage(SeenPlugin plugin, const string header, shared Sendable conten
         break;
     }
 }
-
-
-/++
-    [kameloso.plugins.common.awareness.UserAwareness|UserAwareness] is a mixin
-    template; it proxies to a few functions defined in [kameloso.plugins.common.awareness]
-    to deal with common book-keeping that every plugin *that wants to keep track
-    of users* need. If you don't want to track which users you have seen (and are
-    visible to you now), you don't need this.
-
-    Additionally it implicitly mixes in
-    [kameloso.plugins.common.awareness.MinimalAuthentication|MinimalAuthentication],
-    needed as soon as you have any [kameloso.plugins.common.core.PrefixPolicy|PrefixPolicy] checks.
- +/
-mixin UserAwareness;
-
-
-/++
-    Complementary to [kameloso.plugins.common.awareness.UserAwareness|UserAwareness] is
-    [kameloso.plugins.common.awareness.ChannelAwareness|ChannelAwareness], which
-    will add in book-keeping about the channels the bot is in, their topics, modes,
-    and list of participants. Channel awareness requires user awareness, but not
-    the other way around.
-
-    Depending on the value of [omniscientChannelPolicy] we may want it to limit
-    the amount of tracked users to people in our home channels.
- +/
-mixin ChannelAwareness!omniscientChannelPolicy;
 
 
 /++

@@ -143,7 +143,7 @@ void onAccountInfo(AutomodePlugin plugin, const ref IRCEvent event)
         break;
 
     default:
-        assert(0, "Invalid `IRCEvent.Type` annotation on `" ~ __FUNCTION__ ~ '`');
+        assert(0, "Invalid `onEvent` type annotation on `" ~ __FUNCTION__ ~ '`');
     }
 
     foreach (immutable homeChannel; plugin.state.bot.homeChannels)
@@ -569,7 +569,7 @@ void pruneChannels(ref string[string][string] automodes)
 
 mixin UserAwareness;
 mixin ChannelAwareness;
-
+mixin ModuleRegistration;
 
 public:
 
@@ -581,7 +581,6 @@ public:
 
     Definitions are saved in a JSON file.
  +/
-@IRCPluginHook
 final class AutomodePlugin : IRCPlugin
 {
 private:
@@ -598,8 +597,9 @@ private:
     // isEnabled
     /++
         Override
-        [kameloso.plugins.common.core.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled]
-        and inject a server check, so this plugin does nothing on Twitch servers,
+        [kameloso.plugins.common.core.IRCPlugin.isEnabled|IRCPlugin.isEnabled]
+        (effectively overriding [kameloso.plugins.common.core.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled])
+        and inject a server check, so this service does nothing on Twitch servers,
         in addition to doing nothing when [AutomodeSettings.enabled] is false.
 
         Returns:

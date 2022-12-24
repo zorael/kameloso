@@ -66,7 +66,8 @@ if (isOutputRange!(Sink, char[]))
 
         enum pattern = "Invalid number of units passed to `timeSinceInto`: " ~
             "expected `1` to `7`, got `%d`";
-        static assert(0, pattern.format(numUnits));
+        enum message = pattern.format(numUnits);
+        static assert(0, message);
     }
 
     static if ((truncateUnits < 0) || (truncateUnits > 6))
@@ -75,7 +76,8 @@ if (isOutputRange!(Sink, char[]))
 
         enum pattern = "Invalid number of units to truncate passed to `timeSinceInto`: " ~
             "expected `0` to `6`, got `%d`";
-        static assert(0, pattern.format(truncateUnits));
+        enum message = pattern.format(truncateUnits);
+        static assert(0, message);
     }
 
     immutable duration = signedDuration < Duration.zero ? -signedDuration : signedDuration;

@@ -128,8 +128,7 @@ public:
 
     // getLine
     /++
-        Yields a line from the [lines] array, depending on the [type]
-        of this timer.
+        Yields a line from the [lines] array, depending on the [type] of this timer.
 
         Returns:
             A line string. If the [lines] array is empty, then an empty string
@@ -779,8 +778,9 @@ void onAnyMessage(TimerPlugin plugin, const ref IRCEvent event)
 
 // onWelcome
 /++
-    Loads timers from disk. Additionally sets up a Fiber to periodically call
-    timer [core.thread.fiber.Fiber|Fiber]s with a periodicity of [TimerPlugin.timerPeriodicity].
+    Loads timers from disk. Additionally sets up a [core.thread.fiber.Fiber|Fiber]
+    to periodically call timer [core.thread.fiber.Fiber|Fiber]s with a periodicity
+    of [TimerPlugin.timerPeriodicity].
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
@@ -1147,12 +1147,12 @@ void reload(TimerPlugin plugin)
 
 
 mixin MinimalAuthentication;
+mixin ModuleRegistration;
 
 version(TwitchSupport)
 {
     mixin UserAwareness;
 }
-
 
 public:
 
@@ -1161,7 +1161,6 @@ public:
 /++
     The Timer plugin serves reoccuring (timered) announcements.
  +/
-@IRCPluginHook
 final class TimerPlugin : IRCPlugin
 {
 private:

@@ -420,7 +420,7 @@ void handleNewOneliner(
     /+
         We need to check both hardcoded and soft channel-specific commands
         for conflicts.
-        +/
+     +/
     bool triggerConflicts(const IRCPlugin.CommandMetadata[string][string] aa)
     {
         foreach (immutable pluginName, pluginCommands; aa)
@@ -474,7 +474,7 @@ void handleNewOneliner(
 
 // handleAddToOneliner
 /++
-    Adds or inserts a line to a oneliner, or modifies an existing line.
+    Adds or inserts a line into a oneliner, or modifies an existing line.
 
     Params:
         plugin = The current [OnelinersPlugin].
@@ -867,7 +867,7 @@ void reload(OnelinersPlugin plugin)
 // onGlobalUserstate
 /++
     On Twitch, catch the bot's display name on
-    `dialect.defs.IRCEvent.Type.GLOBALUSERSTATE|GLOBALUSERSTATE`, early after connecting.
+    [dialect.defs.IRCEvent.Type.GLOBALUSERSTATE|GLOBALUSERSTATE], early after connecting.
 
     This lets us replace `$bot` in oneliners with our display name.
  +/
@@ -965,12 +965,12 @@ void initResources(OnelinersPlugin plugin)
 
 mixin UserAwareness;
 mixin ChannelAwareness;
+mixin ModuleRegistration;
 
 version(TwitchSupport)
 {
     mixin TwitchAwareness;
 }
-
 
 public:
 
@@ -980,7 +980,6 @@ public:
     The Oneliners plugin serves to listen to custom commands that can be added,
     modified and removed at runtime. Think `!info`.
  +/
-@IRCPluginHook
 final class OnelinersPlugin : IRCPlugin
 {
 private:

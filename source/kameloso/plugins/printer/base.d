@@ -68,7 +68,10 @@ public:
             /// Whether or not to display Twitch badges next to sender/target names.
             bool twitchBadges = true;
 
-            /// Whether or not to display advanced colours in RRGGBB rather than simple Terminal.
+            /++
+                Whether or not to display advanced colours in `RRGGBB` rather
+                than simple ANSI codes, where available and appropriate.
+             +/
             bool truecolour = true;
 
             /// Whether or not to normalise truecolours; make dark brighter and bright darker.
@@ -471,7 +474,7 @@ void onLoggableEvent(PrinterPlugin plugin, const ref IRCEvent event)
         plugin = The current [PrinterPlugin].
 
     See_Also:
-        [kameloso.plugins.printer.logging.commitLog|printer.logging.commitLog]
+        [kameloso.plugins.printer.logging.commitAllLogsImpl|printer.logging.commitAllLogsImpl]
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.PING)
@@ -702,7 +705,7 @@ void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable con
 
     Example:
     ---
-    event.clearTargetNicknameIfUs(plugin.state.client.nickname);
+    event.clearTargetNicknameIfUs(plugin.state);
     ---
  +/
 void clearTargetNicknameIfUs(ref IRCEvent event, const IRCPluginState state)
@@ -803,6 +806,7 @@ unittest
 
 mixin UserAwareness!(ChannelPolicy.any);
 mixin ChannelAwareness!(ChannelPolicy.any);
+mixin ModuleRegistration!(-40);
 
 public:
 
@@ -810,13 +814,11 @@ public:
 // PrinterPlugin
 /++
     The Printer plugin takes all [dialect.defs.IRCEvent|IRCEvent]s and prints them to
-    the local terminal, formatted and optionally in colour. Alternatively to disk
-    as logs.
+    the local terminal, formatted and optionally in colour. Alternatively to disk as logs.
 
     This used to be part of the core program, but with UDAs it's easy to split
     off into its own plugin.
  +/
-@IRCPluginHook
 final class PrinterPlugin : IRCPlugin
 {
 private:
@@ -854,7 +856,7 @@ package:
     /// [kameloso.terminal.TerminalToken.bell|TerminalToken.bell] as string, for use as bell.
     private enum bellString = ("" ~ cast(char)(TerminalToken.bell));
 
-    /// Effective bell after [kameloso.terminal.isTerminal|isTerminal] checks.
+    /// Effective bell after [kameloso.terminal.isTerminal] checks.
     string bell = bellString;
 
     mixin IRCPluginImpl;

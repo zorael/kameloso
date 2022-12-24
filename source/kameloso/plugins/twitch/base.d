@@ -277,6 +277,13 @@ package struct Credentials
 }
 
 
+// Mixins
+mixin UserAwareness;
+mixin ChannelAwareness;
+mixin TwitchAwareness;
+mixin ModuleRegistration;
+
+
 // onImportant
 /++
     Bells on any important event, like subscriptions, cheers and raids, if the
@@ -963,9 +970,37 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     immutable userURL = "https://api.twitch.tv/helix/users?id=" ~ event.aux;
     immutable userJSON = getTwitchEntity(plugin, userURL);
     room.broadcasterDisplayName = userJSON["display_name"].str;
-
     room.follows = getFollows(plugin, room.id);
     room.followsLastCached = event.time;
+
+    version(WithPersistenceService)
+    {
+        import kameloso.thread : ThreadMessage, sendable;
+        import std.concurrency : send;
+
+        immutable nickname = event.channel[1..$];
+        auto broadcasterUser = nickname in plugin.state.users;
+
+        if (broadcasterUser)
+        {
+            if (broadcasterUser.displayName.length) return;
+        }
+        else /*if (!broadcasterUser)*/
+        {
+            // Fake a new user
+            plugin.state.users[nickname] = IRCUser.init;
+            broadcasterUser = nickname in plugin.state.users;
+            broadcasterUser.nickname = nickname;
+            broadcasterUser.ident = nickname;
+            broadcasterUser.address = nickname ~ ".tmi.twitch.tv";
+            broadcasterUser.account = nickname;
+            broadcasterUser.class_ = IRCUser.Class.anyone;
+        }
+
+        IRCUser user = *broadcasterUser;
+        user.displayName = room.broadcasterDisplayName;
+        plugin.state.mainThread.send(ThreadMessage.busMessage("persistence", sendable(user)));
+    }
 }
 
 
@@ -2142,7 +2177,7 @@ void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             .word("commercial")
             .policy(PrefixPolicy.prefixed)
             .description("Starts a commercial in the current channel.")
-            .addSyntax("$command [commercial length; valid values are 30, 60, 90, 120, 150 and 180]")
+            .addSyntax("$command [commercial duration; valid values are 30, 60, 90, 120, 150 and 180]")
     )
 )
 void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
@@ -2155,7 +2190,7 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     if (!lengthString.length)
     {
-        enum pattern = "Usage: %s%s [commercial length; valid values are 30, 60, 90, 120, 150 and 180]";
+        enum pattern = "Usage: %s%s [commercial duration; valid values are 30, 60, 90, 120, 150 and 180]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
         return chan(plugin.state, event.channel, message);
     }
@@ -2171,7 +2206,7 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     if (!lengthString.among!("30", "60", "90", "120", "150", "180"))
     {
-        enum message = "Commercial length must be one of 30, 60, 90, 120, 150 or 180.";
+        enum message = "Commercial duration must be one of 30, 60, 90, 120, 150 or 180.";
         return chan(plugin.state, event.channel, message);
     }
 
@@ -2360,7 +2395,7 @@ void onMyInfo(TwitchPlugin plugin)
         /+
             Only save watchtimes if there's at least one broadcast currently ongoing.
             Since we save at broadcast stop there won't be anything new to save otherwise.
-            +/
+         +/
         if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
         {
             foreach (const room; plugin.rooms)
@@ -2408,7 +2443,7 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
 
         // More than a week away, just .info
         enum pattern = "Your Twitch authorisation token will expire " ~
-            "in <l>%d days</> on <l>%4d-%02d-%02d</>.";
+            "in <l>%d days</> on <l>%4d-%02d-%02d";
         logger.infof(pattern, numDays, expiresWhen.year, expiresWhen.month, expiresWhen.day);
     }
 
@@ -2423,7 +2458,7 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
         if (numHours > 0)
         {
             enum pattern = "Warning: Your Twitch authorisation token will expire " ~
-                "in <l>%d %s and %d %s</> at <l>%4d-%02d-%02d %02d:%02d</>.";
+                "in <l>%d %s and %d %s</> at <l>%4d-%02d-%02d %02d:%02d";
             logger.warningf(pattern,
                 numDays, numDays.plurality("day", "days"),
                 numHours, numHours.plurality("hour", "hours"),
@@ -2433,7 +2468,7 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
         else
         {
             enum pattern = "Warning: Your Twitch authorisation token will expire " ~
-                "in <l>%d %s</> at <l>%4d-%02d-%02d %02d:%02d</>.";
+                "in <l>%d %s</> at <l>%4d-%02d-%02d %02d:%02d";
             logger.warningf(pattern,
                 numDays, numDays.plurality("day", "days"),
                 expiresWhen.year, expiresWhen.month, expiresWhen.day,
@@ -2452,7 +2487,7 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
         if (numMinutes > 0)
         {
             enum pattern = "WARNING: Your Twitch authorisation token will expire " ~
-                "in <l>%d %s and %d %s</> at <l>%02d:%02d</>.";
+                "in <l>%d %s and %d %s</> at <l>%02d:%02d";
             logger.warningf(pattern,
                 numHours, numHours.plurality("hour", "hours"),
                 numMinutes, numMinutes.plurality("minute", "minutes"),
@@ -2461,7 +2496,7 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
         else
         {
             enum pattern = "WARNING: Your Twitch authorisation token will expire " ~
-                "in <l>%d %s</> at <l>%02d:%02d</>.";
+                "in <l>%d %s</> at <l>%02d:%02d";
             logger.warningf(pattern,
                 numHours, numHours.plurality("hour", "hours"),
                 expiresWhen.hour, expiresWhen.minute);
@@ -2475,7 +2510,7 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
 
         // Less than an hour; warning
         enum pattern = "WARNING: Your Twitch authorisation token will expire " ~
-            "in <l>%d minutes</> at <l>%02d:%02d</>.";
+            "in <l>%d minutes</> at <l>%02d:%02d";
         logger.warningf(pattern,
             numMinutes, expiresWhen.hour, expiresWhen.minute);
     }
@@ -2698,35 +2733,13 @@ void initResources(TwitchPlugin plugin)
     immutable subdir = plugin.ecountFile.dirName;
     if (!subdir.exists) mkdir(subdir);
 
-    immutable oldEcount = buildNormalizedPath(
-        plugin.state.settings.resourceDirectory,
-        "twitch-ecount.json");
-    immutable hasOldEcount = oldEcount.exists;
-    immutable ecountFile = hasOldEcount ? oldEcount : plugin.ecountFile;
-
-    immutable oldViewers = buildNormalizedPath(
-        plugin.state.settings.resourceDirectory,
-        "twitch-viewers.json");
-    immutable hasOldViewers = oldViewers.exists;
-    immutable viewersFile = hasOldViewers ? oldViewers : plugin.viewersFile;
-
-    immutable oldSecrets = buildNormalizedPath(
-        plugin.state.settings.resourceDirectory,
-        "twitch-secrets.json");
-    immutable hasOldSecrets = oldSecrets.exists;
-    immutable secretsFile = hasOldSecrets ? oldSecrets : plugin.secretsFile;
-
-    loadFile(ecountJSON, ecountFile);
-    loadFile(viewersJSON, viewersFile);
-    loadFile(secretsJSON, secretsFile);
+    loadFile(ecountJSON, plugin.ecountFile);
+    loadFile(viewersJSON, plugin.viewersFile);
+    loadFile(secretsJSON, plugin.secretsFile);
 
     ecountJSON.save(plugin.ecountFile);
     viewersJSON.save(plugin.viewersFile);
     secretsJSON.save(plugin.secretsFile);
-
-    if (hasOldEcount) remove(oldEcount);
-    if (hasOldViewers) remove(oldViewers);
-    if (hasOldSecrets) remove(oldSecrets);
 }
 
 
@@ -2812,11 +2825,6 @@ void reload(TwitchPlugin plugin)
 }
 
 
-mixin UserAwareness;
-mixin ChannelAwareness;
-mixin TwitchAwareness;
-
-
 public:
 
 
@@ -2825,7 +2833,6 @@ public:
     The Twitch plugin is an example Twitch streamer bot. It contains some
     basic tools for streamers, and the audience thereof.
  +/
-@IRCPluginHook
 final class TwitchPlugin : IRCPlugin
 {
 private:
@@ -2939,7 +2946,7 @@ package:
      +/
     private enum bellString = "" ~ cast(char)(TerminalToken.bell);
 
-    /// Effective bell after [kameloso.terminal.isTerminal|isTerminal] checks.
+    /// Effective bell after [kameloso.terminal.isTerminal] checks.
     string bell = bellString;
 
     /// The Twitch application ID for kameloso.
@@ -3055,7 +3062,8 @@ package:
     // isEnabled
     /++
         Override
-        [kameloso.plugins.common.core.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled]
+        [kameloso.plugins.common.core.IRCPlugin.isEnabled|IRCPlugin.isEnabled]
+        (effectively overriding [kameloso.plugins.common.core.IRCPluginImpl.isEnabled|IRCPluginImpl.isEnabled])
         and inject a server check, so this plugin only works on Twitch, in addition
         to doing nothing when [TwitchSettings.enabled] is false.
 

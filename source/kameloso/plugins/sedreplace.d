@@ -550,6 +550,7 @@ void onQuit(SedReplacePlugin plugin, const ref IRCEvent event)
 
 
 mixin MinimalAuthentication;
+mixin ModuleRegistration;
 
 public:
 
@@ -560,7 +561,6 @@ public:
     and if a new message comes in with a sed-replace-like pattern in it, tries
     to apply it on the original message as a regex-like replace.
  +/
-@IRCPluginHook
 final class SedReplacePlugin : IRCPlugin
 {
 private:

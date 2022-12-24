@@ -4,8 +4,8 @@
     This was all in one `plugins/common.d` file that just grew too big.
 
     See_Also:
-        [kameloso.plugins.common.core|plugins.common.core]
-        [kameloso.plugins.common.misc|plugins.common.misc]
+        [kameloso.plugins.common.core]
+        [kameloso.plugins.common.misc]
  +/
 module kameloso.plugins.common.mixins;
 
@@ -65,22 +65,28 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
     static if ((paramNames.length == 0) || !is(typeof(mixin(paramNames[0])) : IRCPlugin))
     {
-        static assert(0, "`WHOISFiberDelegate` should be mixed into the context of an event handler. " ~
-            "(First parameter of `" ~ __FUNCTION__ ~ "` is not an `IRCPlugin` or subclass)");
+        import std.format : format;
+
+        enum pattern = "`WHOISFiberDelegate` should be mixed into the context of an event handler. " ~
+            "(First parameter of `%s` is not an `IRCPlugin` subclass)";
+        enum message = pattern.format(__FUNCTION__);
+        static assert(0, message);
     }
     else
     {
         //alias context = mixin(paramNames[0]);  // Only works on 2.088 and later
         // The mixin must be a concatenated string for 2.083 and earlier,
-        // but we only support 2.084+
+        // but we only support 2.085+
         mixin("alias context = ", paramNames[0], ";");
     }
 
-    static if (__traits(compiles, hasWHOISFiber))
+    static if (__traits(compiles, { alias _ = hasWHOISFiber; }))
     {
         import std.format : format;
+
         enum pattern = "Double mixin of `%s` in `%s`";
-        static assert(0, pattern.format("WHOISFiberDelegate", __FUNCTION__));
+        enum message = pattern.format("WHOISFiberDelegate", __FUNCTION__);
+        static assert(0, message);
     }
     else
     {
@@ -88,7 +94,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         enum hasWHOISFiber = true;
     }
 
-    static if (!alwaysLookup && !__traits(compiles, .hasUserAwareness))
+    static if (!alwaysLookup && !__traits(compiles, { alias _ = .hasUserAwareness; }))
     {
         pragma(msg, "Warning: `" ~ __FUNCTION__ ~ "` mixes in `WHOISFiberDelegate` " ~
             "but its parent module does not mix in `UserAwareness`");
@@ -172,8 +178,11 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
                     enum pattern = "Unsupported signature of success function/delegate " ~
                         "alias passed to mixin `WHOISFiberDelegate` in `%s`: `%s %s`";
-                    static assert(0, pattern.format(__FUNCTION__,
-                        typeof(onSuccess).stringof, __traits(identifier, onSuccess)));
+                    enum message = pattern.format(
+                        __FUNCTION__,
+                        typeof(onSuccess).stringof,
+                        __traits(identifier, onSuccess));
+                    static assert(0, message);
                 }
             }
 
@@ -207,8 +216,11 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
                         enum pattern = "Unsupported signature of failure function/delegate " ~
                             "alias passed to mixin `WHOISFiberDelegate` in `%s`: `%s %s`";
-                        static assert(0, pattern.format(__FUNCTION__,
-                            typeof(onFailure).stringof, __traits(identifier, onFailure)));
+                        enum message = pattern.format(
+                            __FUNCTION__,
+                            typeof(onFailure).stringof,
+                            __traits(identifier, onFailure));
+                        static assert(0, message);
                     }
                 }
             }
@@ -290,7 +302,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
         Params:
             nickname = Nickname of the user the enqueueing event relates to.
-            issueWhois = Whether to actually issue WHOIS queries at all or just enqueue.
+            issueWhois = Whether to actually issue `WHOIS` queries at all or just enqueue.
             background = Whether or not to issue queries as low-priority background messages.
 
         Throws:
@@ -328,7 +340,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                     }
                 }
 
-                static if (__traits(compiles, .hasUserAwareness))
+                static if (__traits(compiles, { alias _ = .hasUserAwareness; }))
                 {
                     if (const user = nickname in context.state.users)
                     {
@@ -381,7 +393,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             }
         }
 
-        static if (!alwaysLookup && __traits(compiles, .hasUserAwareness))
+        static if (!alwaysLookup && __traits(compiles, { alias _ = .hasUserAwareness; }))
         {
             if (const user = nickname in context.state.users)
             {
@@ -514,17 +526,22 @@ private:
 
         alias messagingParentInfo = CategoryName!mixinParent;
 
-        private enum pattern = "%s `%s` mixes in `%s` but it is only supposed to be " ~
+        enum pattern = "%s `%s` mixes in `%s` but it is only supposed to be " ~
             "mixed into an `IRCPlugin` subclass";
-        static assert(0, pattern.format(messagingParentInfo.type,
-            messagingParentInfo.fqn, "MessagingProxy"));
+        enum message = pattern.format(
+            messagingParentInfo.type,
+            messagingParentInfo.fqn,
+            "MessagingProxy");
+        static assert(0, message);
     }
 
-    static if (__traits(compiles, this.hasMessagingProxy))
+    static if (__traits(compiles, { alias _ = this.hasMessagingProxy; }))
     {
         import std.format : format;
+
         enum pattern = "Double mixin of `%s` in `%s`";
-        static assert(0, pattern.format("MessagingProxy", typeof(this).stringof));
+        enum message = pattern.format("MessagingProxy", typeof(this).stringof);
+        static assert(0, message);
     }
     else
     {
@@ -862,10 +879,13 @@ unittest
             {
                 //pragma(msg, "ignoring " ~ funstring);
             }
-            else
+            else static if (!__traits(compiles, { mixin("alias _ = plugin2.fromMixin." ~ funstring ~ ";"); }))
             {
-                enum message = "`MessageProxy` is missing a wrapper for `kameloso.messaging." ~ funstring ~ "`";
-                static assert(__traits(compiles, typeof(mixin("plugin2.fromMixin." ~ funstring))), message);
+                import std.format : format;
+
+                enum pattern = "`MessageProxy` is missing a wrapper for `kameloso.messaging.%s`";
+                enum message = pattern.format(funstring);
+                static assert(0, message);
             }
         }
     }

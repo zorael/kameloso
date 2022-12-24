@@ -112,7 +112,7 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
         /*(list == "blacklist") ?*/ "blacklisted users";
 
     JSONStorage json;
-    json.reset();
+    //json.reset();
     json.load(plugin.userFile);
 
     if ((channelName in json[list].object) && json[list][channelName].array.length)
@@ -528,7 +528,7 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
     import std.json : JSONValue;
 
     JSONStorage json;
-    json.reset();
+    //json.reset();
     json.load(plugin.userFile);
 
     if (add)
@@ -636,7 +636,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
     enum examplePlaceholderValue = "<account>";
 
     JSONStorage json;
-    json.reset();
+    //json.reset();
     json.load(plugin.hostmasksFile);
 
     string[string] aa;
