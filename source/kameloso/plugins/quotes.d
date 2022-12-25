@@ -37,8 +37,8 @@ mixin ModuleRegistration;
     @Enabler bool enabled = true;
 
     /++
-        Whether or not a random result should be picked in case a quote search
-        term had multiple matches.
+        Whether or not a random result should be picked in case some quote search
+        terms had multiple matches.
      +/
     bool alwaysPickFirstMatch = false;
 }
@@ -101,7 +101,7 @@ public:
 
 // onCommandQuote
 /++
-    Replies with a quote, either fetched randomly, by a search term or by stored index.
+    Replies with a quote, either fetched randomly, by search terms or by stored index.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -112,12 +112,12 @@ public:
             .word("quote")
             .policy(PrefixPolicy.prefixed)
             .description("Repeats a random quote of a supplied nickname, " ~
-                "or finds one by a search term (best-effort)")
+                "or finds one by search terms (best-effort)")
             .addSyntax("On Twitch: $command")
-            .addSyntax("On Twitch: $command [search term]")
+            .addSyntax("On Twitch: $command [search terms]")
             .addSyntax("On Twitch: $command [#index]")
             .addSyntax("Elsewhere: $command [nickname]")
-            .addSyntax("Elsewhere: $command [nickname] [search term]")
+            .addSyntax("Elsewhere: $command [nickname] [search terms]")
             .addSyntax("Elsewhere: $command [nickname] [#index]")
     )
 )
@@ -133,8 +133,8 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
     void sendUsage()
     {
         immutable pattern = isTwitch ?
-            "Usage: %s%s [optional search term or #index]" :
-            "Usage: <b>%s%s<b> [nickname] [optional search term or #index]";
+            "Usage: %s%s [optional search terms or #index]" :
+            "Usage: <b>%s%s<b> [nickname] [optional search terms or #index]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
         chan(plugin.state, event.channel, message);
     }
@@ -146,7 +146,7 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
         if (isTwitch)
         {
             immutable nickname = event.channel[1..$];
-            immutable searchTerm = event.content;
+            immutable searchTerms = event.content;
 
             const channelQuotes = event.channel in plugin.quotes;
             if (!channelQuotes)
@@ -161,11 +161,11 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
             }
 
             size_t index;  // mutable
-            immutable quote = !searchTerm.length ?
+            immutable quote = !searchTerms.length ?
                 getRandomQuote(*quotes, nickname, index) :
-                (searchTerm.representation[0] == '#') ?
-                    getQuoteByIndexString(*quotes, searchTerm[1..$], index) :
-                    getQuoteBySearchTerm(plugin, *quotes, searchTerm, index);
+                (searchTerms.representation[0] == '#') ?
+                    getQuoteByIndexString(*quotes, searchTerms[1..$], index) :
+                    getQuoteBySearchTerms(plugin, *quotes, searchTerms, index);
 
             return sendQuoteToChannel(plugin, quote, event.channel, nickname, index);
         }
@@ -205,16 +205,16 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
             final switch (results)
             {
             case match:
-                // No search term
+                // No search terms
                 immutable quote = getRandomQuote(*quotes, nickname, index);
                 return sendQuoteToChannel(plugin, quote, event.channel, nickname, index);
 
             case overrun:
-                // Search term given
-                alias searchTerm = slice;
-                immutable quote = (searchTerm.representation[0] == '#') ?
-                    getQuoteByIndexString(*quotes, searchTerm[1..$], index) :
-                    getQuoteBySearchTerm(plugin, *quotes, searchTerm, index);
+                // Search terms given
+                alias searchTerms = slice;
+                immutable quote = (searchTerms.representation[0] == '#') ?
+                    getQuoteByIndexString(*quotes, searchTerms[1..$], index) :
+                    getQuoteBySearchTerms(plugin, *quotes, searchTerms, index);
                 return sendQuoteToChannel(plugin, quote, event.channel, nickname, index);
 
             case underrun:
@@ -233,8 +233,8 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
     }
     catch (NoQuotesSearchMatchException e)
     {
-        enum pattern = "No quotes found for search term \"<b>%s<b>\"";
-        immutable message = pattern.format(e.searchTerm);
+        enum pattern = "No quotes found for search terms \"<b>%s<b>\"";
+        immutable message = pattern.format(e.searchTerms);
         chan(plugin.state, event.channel, message);
     }
     catch (ConvException e)
@@ -827,24 +827,24 @@ auto getQuoteByIndexString(
 }
 
 
-// getQuoteBySearchTerm
+// getQuoteBySearchTerms
 /++
-    Fetches a [Quote] whose line matches the passed search term.
+    Fetches a [Quote] whose line matches the passed search terms.
 
     Params:
         plugin = The current [QuotesPlugin].
-        quotes = Array of [Quote]s to get a random one from.
-        searchTermCased = Search term to apply to the `quotes` array, with letters
+        quotes = Array of [Quote]s to get a specific one from based on search terms.
+        searchTermsCased = Search terms to apply to the `quotes` array, with letters
             in original casing.
         index = `out` reference index of the quote selected, in the local storage.
 
     Returns:
-        A [Quote] whose line matches the passed search term.
+        A [Quote] whose line matches the passed search terms.
  +/
-Quote getQuoteBySearchTerm(
+Quote getQuoteBySearchTerms(
     QuotesPlugin plugin,
     const Quote[] quotes,
-    const string searchTermCased,
+    const string searchTermsCased,
     out size_t index)
 {
     import lu.string : contains;
@@ -902,7 +902,7 @@ Quote getQuoteBySearchTerm(
 
     SearchHit[] searchHits;
 
-    // Try with the search term that was given first (lowercased)
+    // Try with the search terms that were given first (lowercased)
     string[] flattenedQuotes;  // mutable
 
     foreach (immutable quote; quotes)
@@ -910,11 +910,11 @@ Quote getQuoteBySearchTerm(
         flattenedQuotes ~= stripDoubleSpaces(quote.line).toLower;
     }
 
-    immutable searchTerm = stripDoubleSpaces(searchTermCased).toLower;
+    immutable searchTerms = stripDoubleSpaces(searchTermsCased).toLower;
 
     foreach (immutable i, immutable flattenedQuote; flattenedQuotes)
     {
-        if (!flattenedQuote.contains(searchTerm)) continue;
+        if (!flattenedQuote.contains(searchTerms)) continue;
 
         if (plugin.quotesSettings.alwaysPickFirstMatch)
         {
@@ -935,12 +935,12 @@ Quote getQuoteBySearchTerm(
     }
 
     // Nothing was found; simplify and try again.
-    immutable strippedSearchTerm = stripBoth(searchTerm);
+    immutable strippedSearchTerms = stripBoth(searchTerms);
     searchHits = null;
 
     foreach (immutable i, immutable flattenedQuote; flattenedQuotes)
     {
-        if (!stripBoth(flattenedQuote).contains(strippedSearchTerm)) continue;
+        if (!stripBoth(flattenedQuote).contains(strippedSearchTerms)) continue;
 
         if (plugin.quotesSettings.alwaysPickFirstMatch)
         {
@@ -962,8 +962,8 @@ Quote getQuoteBySearchTerm(
     else
     {
         throw new NoQuotesSearchMatchException(
-            "No quotes found for given search term",
-            searchTermCased);
+            "No quotes found for given search terms",
+            searchTermsCased);
     }
 }
 
@@ -1252,20 +1252,20 @@ final class QuoteIndexOutOfRangeException : Exception
  +/
 final class NoQuotesSearchMatchException : Exception
 {
-    /// Given search term string.
-    string searchTerm;
+    /// Given search terms string.
+    string searchTerms;
 
     /++
-        Creates a new [NoQuoteSearchMatchException], attaching a search term string.
+        Creates a new [NoQuoteSearchMatchException], attaching a search terms string.
      +/
     this(
         const string message,
-        const string searchTerm,
+        const string searchTerms,
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
     {
-        this.searchTerm = searchTerm;
+        this.searchTerms = searchTerms;
         super(message, file, line, nextInChain);
     }
 }
@@ -1366,8 +1366,8 @@ private:
     /++
         The in-memory JSON storage of all user quotes.
 
-        It is in the JSON form of `Quote[][string][string]`, where the first key is the
-        nickname of a user.
+        It is in the JSON form of `Quote[][string][string]`, where the first key
+        is a channel name and the second a nickname.
      +/
     Quote[][string][string] quotes;
 
