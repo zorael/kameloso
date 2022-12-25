@@ -795,22 +795,25 @@ auto getRandomQuote(
 
     Params:
         quotes = Array of [Quote]s to get a random one from.
-        indexString = The index of the [Quote] to fetch, as a string.
+        indexStringWithPotentialHash = The index of the [Quote] to fetch,
+            as a string, potentially with a leading octothorpe.
         index = `out` reference index of the quote selected, in the local storage.
 
     Returns:
-        A [Quote], selected based on its index in the storage.
+        A [Quote], selected based on its index in the internal storage.
  +/
 auto getQuoteByIndexString(
     const Quote[] quotes,
-    /*const*/ string indexString,
+    const string indexStringWithPotentialHash,
     out size_t index)
 {
     import lu.string : beginsWith;
     import std.conv : to;
     import std.random : uniform;
 
-    if (indexString.beginsWith('#')) indexString = indexString[1..$];
+    immutable indexString = indexStringWithPotentialHash.beginsWith('#') ?
+        indexStringWithPotentialHash[1..$] :
+        indexStringWithPotentialHash;
     index = indexString.to!size_t;
 
     if (index >= quotes.length)
