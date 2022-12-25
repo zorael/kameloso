@@ -690,10 +690,10 @@ in (origEvent.channel.length, "Tried to test Quotes with empty channel in origin
         .format(plugin.state.settings.prefix));
 
     send("addquote flerrp flirrp flarrp flurble");
-    expect("Quote added at index 0.");
+    expect("Quote added at index #0.");
 
     send("addquote flerrp flirrp flarrp FLARBLE");
-    expect("Quote added at index 1.");
+    expect("Quote added at index #1.");
 
     send("quote flerrp");
     awaitReply();
@@ -706,14 +706,25 @@ in (origEvent.channel.length, "Tried to test Quotes with empty channel in origin
         thisFiber.payload.content, __FILE__, __LINE__);
 
     send("quote flerrp #99");
-    expect("Quote index 99 out of range; valid is 0-1 (inclusive).");
+    expect("Index #99 out of range; valid is [0..1] (inclusive).");
+
+    send("quote flerrp #honk");
+    expect("Index must be a positive number.");
+
+    send("quote flerrp flarble");
+    awaitReply();
+    enforce(thisFiber.payload.content.stripEffects().beginsWith("flirrp flarrp FLARBLE ("),
+        thisFiber.payload.content, __FILE__, __LINE__);
+
+    send("quote flerrp honkedonk");
+    expect("No quotes found for search term \"honkedonk\"");
 
     send("modquote");
     expect("Usage: %smodquote [nickname] [index] [new quote text]"
         .format(plugin.state.settings.prefix));
 
-    send("modquote flerrp 0 KAAS FLAAS");
-    expect("Quote modified at index 0; timestamp kept.");
+    send("modquote flerrp #0 KAAS FLAAS");
+    expect("Quote modified.");
 
     send("quote flerrp #0");
     awaitReply();
@@ -731,13 +742,13 @@ in (origEvent.channel.length, "Tried to test Quotes with empty channel in origin
     send("quote flerrp");
     expect("No quotes on record for flerrp!");
 
-    send("delquote flirrp 0");
+    send("delquote flirrp #0");
     expect("Quote removed, indexes updated.");
 
-    send("delquote flirrp 0");
+    send("delquote flirrp #0");
     expect("Quote removed, indexes updated.");
 
-    send("delquote flirrp 0");
+    send("delquote flirrp #0");
     expect("No quotes on record for flirrp!");
 }
 
