@@ -702,6 +702,12 @@ private:
     // sendIndexOutOfRange
     /++
         Called when a supplied quote index was out of range.
+
+        Params:
+            plugin = The current [QuotesPlugin].
+            event = The original triggering [dialect.defs.IRCEvent|IRCEvent].
+            indexGiven = The index given by the triggering user.
+            upperBound = The actual upper bounds that `indexGiven` failed to fall within.
      +/
     static void sendIndexOutOfRange(
         QuotesPlugin plugin,
@@ -717,6 +723,11 @@ private:
     // sendInvalidNickname
     /++
         Called when a passed nickname contained invalid characters (or similar).
+
+        Params:
+            plugin = The current [QuotesPlugin].
+            event = The original triggering [dialect.defs.IRCEvent|IRCEvent].
+            nickname = The would-be nickname given by the triggering user.
      +/
     static void sendInvalidNickname(
         QuotesPlugin plugin,
@@ -731,6 +742,11 @@ private:
     // sendNoQuotesForNickname
     /++
         Called when there were no quotes to be found for a given nickname.
+
+        Params:
+            plugin = The current [QuotesPlugin].
+            event = The original triggering [dialect.defs.IRCEvent|IRCEvent].
+            nickname = The nickname given by the triggering user.
      +/
     static void sendNoQuotesForNickname(
         QuotesPlugin plugin,
@@ -745,6 +761,10 @@ private:
     // sendIndexMustBePositiveNumber
     /++
         Called when a non-integer or negative integer was given as index.
+
+        Params:
+            plugin = The current [QuotesPlugin].
+            event = The original triggering [dialect.defs.IRCEvent|IRCEvent].
      +/
     static void sendIndexMustBePositiveNumber(
         QuotesPlugin plugin,
