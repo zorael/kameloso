@@ -473,10 +473,13 @@ void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
     import lu.string : SplitResults, plurality, splitInto;
     import std.format : format;
 
-    if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+    version(TwitchSupport)
     {
-        enum message = "You cannot merge quotes on Twitch.";
-        return chan(plugin.state, event.channel, message);
+        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+        {
+            enum message = "You cannot merge quotes on Twitch.";
+            return chan(plugin.state, event.channel, message);
+        }
     }
 
     void sendUsage()
