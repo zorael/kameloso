@@ -10,7 +10,7 @@
 * saving notes to offline users that get played back when they come online
 * logs
 * bugs
-* channel polls, `!seen`, counters, oneliners, timed announcements, stopwatches, modesets, ...
+* channel polls, user quotes, `!seen`, counters, oneliners, timed announcements, stopwatches, modesets, ...
 * some common [Twitch bot features](#twitch-bot)
 * [more random stuff and gimmicks](https://github.com/zorael/kameloso/wiki/Current-plugins)
 
@@ -211,10 +211,14 @@ Additionally, see [this section about permissions](#except-nothing-happens) if n
  kameloso | you | I am a snek
 
     blarf | I am a snek too
-      you | !quote blarf I am a snek too
- kameloso | Quote saved. (5 on record)
+      you | !addquote blarf I am a snek too
+ kameloso | Quote added at index #4.
       you | !quote blarf
- kameloso | #4 [2022-04-04 23:15] blarf | I am a snek too
+ kameloso | I am a snek too (blarf #4 2022-04-04)
+      you | !quote blarf #3
+ kameloso | A Møøse once bit my sister (blarf #3 2022-02-01)
+      you | !quote blarf barnes and noble
+ kameloso | i got kicked out of barnes and noble once for moving all the bibles into the fiction section (blarf #0 2019-08-21)
 
       you | !seen
  kameloso | Usage: !seen [nickname]
@@ -319,6 +323,17 @@ MrOffline joined #channel
  kameloso | Elapsed time: 18 minutes and 42 seconds
       you | !stopwatch stop
  kameloso | Stopwatch stopped after 1 hour, 48 minutes and 10 seconds.
+
+      you | !time
+ kameloso | The time is currently 12:04 locally.
+      you | !time Europe/London
+ kameloso | The time is currently 11:04 in Europe/Stockholm.
+      you | !time Tokyo
+ kameloso | The time is currently 20:05 in Tokyo.
+      you | !setzone Helsinki
+ kameloso | Timezone changed to Europe/Helsinki.
+      you | !time
+ kameloso | The time is currently 12:04 in Europe/Helsinki.
 ```
 
 ### Online help and commands
@@ -482,13 +497,13 @@ If you still can't find what you're looking for, or if you have suggestions on h
 
 ## Windows
 
-**kameloso** uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard library for making secure connections in the Posix sphere (Linux, macOS, ...), but not so on Windows. If you run into errors about missing SSL libraries when attempting to connect on Windows, pass the `--get-openssl` flag to download and launch the installer for [**OpenSSL for Windows **v1.1.\***](https://slproweb.com/products/Win32OpenSSL.html). Make sure to opt to install to Windows system directories when asked.
+**kameloso** uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard library for such in the Posix sphere (Linux, macOS, ...), but not so on Windows. If you run into errors about missing SSL libraries when attempting to connect on Windows, pass the `--get-openssl` flag to download and launch the installer for [**OpenSSL for Windows v1.1.\***](https://slproweb.com/products/Win32OpenSSL.html). Make sure to opt to install to Windows system directories when asked.
 
 # Roadmap
 
 * pipedream zero: **no compiler segfaults** ([#18026](https://issues.dlang.org/show_bug.cgi?id=18026), [#20562](https://issues.dlang.org/show_bug.cgi?id=20562))
 * please send help: Windows Secure Channel SSL
-* **more pairs of eyes**
+* **more pairs of eyes** (if you don't test it, it's broken)
 
 # Built with
 
