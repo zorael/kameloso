@@ -507,7 +507,9 @@ in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
                 e.msg,
                 response.str,
                 response.error,
-                response.code);
+                response.code,
+                e.file,
+                e.line);
         }
     }
 
@@ -657,7 +659,9 @@ in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
             e.msg,
             response.str,
             response.error,
-            response.code);
+            response.code,
+            e.file,
+            e.line);
     }
 }
 
