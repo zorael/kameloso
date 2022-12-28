@@ -28,7 +28,7 @@ import dialect.defs;
 // onCommandTime
 /++
     Reports the time in the specified timezone, in an override specified in the
-    time zones definitions file, or in the one local to the bot.
+    timezones definitions file, or in the one local to the bot.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -38,7 +38,7 @@ import dialect.defs;
         IRCEventHandler.Command()
             .word("time")
             .policy(PrefixPolicy.prefixed)
-            .description("Reports the time in a given time zone.")
+            .description("Reports the time in a given timezone.")
             .addSyntax("$command [optional timezone]")
     )
 )
@@ -62,13 +62,13 @@ void onCommandTime(TimePlugin plugin, const ref IRCEvent event)
     {
         if (specified.length)
         {
-            enum pattern = "Invalid time zone: <b>%s<b>";
+            enum pattern = "Invalid timezone: <b>%s<b>";
             immutable message = pattern.format(specified);
             chan(plugin.state, event.channel, message);
         }
         else if (overrideZone)
         {
-            enum pattern = `Internal error; possible malformed entry "<b>%s<b>" in time zones file.`;
+            enum pattern = `Internal error; possible malformed entry "<b>%s<b>" in timezones file.`;
             immutable message = pattern.format(*overrideZone);
             chan(plugin.state, event.channel, message);
         }
@@ -95,7 +95,7 @@ void onCommandTime(TimePlugin plugin, const ref IRCEvent event)
         {
             import kameloso.plugins.common.misc : nameOf;
 
-            // No specific time zone specified; report the streamer's
+            // No specific timezone specified; report the streamer's
             // (technically the bot's, unless an override was entered in the config file)
             enum pattern = "The time is currently %02d:%02d for %s.";
             immutable message = pattern.format(
@@ -126,13 +126,13 @@ void onCommandTime(TimePlugin plugin, const ref IRCEvent event)
 
 // getTimeZoneByName
 /++
-    Takes a string representation of a time zone (e.g. `Europe/Stockholm`) and
+    Takes a string representation of a timezone (e.g. `Europe/Stockholm`) and
     returns a [std.datetime.timezone.TimeZone|TimeZone] that corresponds to it,
     if one was found.
 
     Params:
-        specified = Time zone identification string.
-        installedTimeZones = Array of available time zone (strings).
+        specified = Timezone identification string.
+        installedTimeZones = Array of available timezone (strings).
 
     Returns:
         A [std.datetime.timezone.TimeZone|TimeZone] that matches the passed
@@ -141,7 +141,7 @@ void onCommandTime(TimePlugin plugin, const ref IRCEvent event)
 auto getTimeZoneByName(
     const string specified,
     const string[] installedTimeZones)
-in (specified.length, "Tried to get time zone of an empty string")
+in (specified.length, "Tried to get timezone of an empty string")
 {
     import lu.string : contains;
     import std.algorithm.searching : canFind;
@@ -207,7 +207,7 @@ in (specified.length, "Tried to get time zone of an empty string")
 
 // onCommandSetZone
 /++
-    Sets the time zone for a channel, to be used to properly pad the output of `!time`.
+    Sets the timezone for a channel, to be used to properly pad the output of `!time`.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -217,8 +217,8 @@ in (specified.length, "Tried to get time zone of an empty string")
         IRCEventHandler.Command()
             .word("setzone")
             .policy(PrefixPolicy.prefixed)
-            .description("Sets the time zone to be used when querying the time in a channel.")
-            .addSyntax("$command [time zone string]")
+            .description("Sets the timezone to be used when querying the time in a channel.")
+            .addSyntax("$command [timezone string]")
     )
 )
 void onCommandSetZone(TimePlugin plugin, const ref IRCEvent event)
@@ -234,7 +234,7 @@ void onCommandSetZone(TimePlugin plugin, const ref IRCEvent event)
         plugin.channelTimeZones.remove(event.channel);
         saveResourceToDisk(plugin.channelTimeZones, plugin.timezonesFile);
 
-        enum message = "Time zone cleared.";
+        enum message = "Timezone cleared.";
         return chan(plugin.state, event.channel, message);
     }
 
@@ -242,7 +242,7 @@ void onCommandSetZone(TimePlugin plugin, const ref IRCEvent event)
 
     if (!timezone || !timezone.name.length)
     {
-        enum pattern = "Invalid time zone: <b>%s<b>";
+        enum pattern = "Invalid timezone: <b>%s<b>";
         immutable message = pattern.format(specified);
         return chan(plugin.state, event.channel, message);
     }
@@ -250,7 +250,7 @@ void onCommandSetZone(TimePlugin plugin, const ref IRCEvent event)
     plugin.channelTimeZones[event.channel] = timezone.name;
     saveResourceToDisk(plugin.channelTimeZones, plugin.timezonesFile);
 
-    enum pattern = "Time zone changed to <b>%s<b>.";
+    enum pattern = "Timezone changed to <b>%s<b>.";
     immutable message = pattern.format(timezone.name);
     chan(plugin.state, event.channel, message);
 }
@@ -258,7 +258,7 @@ void onCommandSetZone(TimePlugin plugin, const ref IRCEvent event)
 
 // saveResourceToDisk
 /++
-    Saves the time zone map to disk, but in JSON format.
+    Saves the timezone map to 0-11disk, but in JSON format.
 
     Params:
         aa = The JSON-convertible resource to save.
@@ -299,7 +299,7 @@ void setup(TimePlugin plugin)
 
 // reload
 /++
-    Reloads the time zones map from disk.
+    Reloads the timezones map from disk.
  +/
 void reload(TimePlugin plugin)
 {
@@ -380,19 +380,19 @@ private:
 
     // installedTimeZones
     /++
-        Array of time zone identification strings, populated during plugin setup.
+        Array of timezone identification strings, populated during plugin setup.
      +/
     string[] installedTimeZones;
 
     // channelTimeZones
     /++
-        Channel time zone map.
+        Channel timezone map.
      +/
     string[string] channelTimeZones;
 
     // timezonesFile
     /++
-        Filename of file to which we should save time zone channel definitions.
+        Filename of file to which we should save timezone channel definitions.
      +/
     @Resource string timezonesFile = "timezones.json";
 
