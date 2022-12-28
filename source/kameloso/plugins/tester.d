@@ -518,31 +518,64 @@ in (origEvent.channel.length, "Tried to test Notes with empty channel in origina
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
+    void cycle()
+    {
+        unawait(plugin, IRCEvent.Type.CHAN);
+        part(plugin.state, origEvent.channel);
+        await(plugin, IRCEvent.Type.SELFPART, Yes.yield);
+        while (thisFiber.payload.channel != origEvent.channel) Fiber.yield();
+        unawait(plugin, IRCEvent.Type.SELFPART);
+
+        join(plugin.state, origEvent.channel);
+        await(plugin, IRCEvent.Type.SELFJOIN, Yes.yield);
+        while (thisFiber.payload.channel != origEvent.channel) Fiber.yield();
+        unawait(plugin, IRCEvent.Type.SELFJOIN);
+        await(plugin, IRCEvent.Type.CHAN, No.yield);
+    }
+
     // ------------ !note
 
     send("note %s test".format(botNickname));
-    expect("You cannot leave the bot a message; it would never be replayed.");
+    expect("You cannot leave me a message; it would never be replayed.");
 
     send("note %s test".format(plugin.state.client.nickname));
-    expect("Note added.");
+    expect("Note saved.");
 
-    unawait(plugin, IRCEvent.Type.CHAN);
-    part(plugin.state, origEvent.channel);
-    await(plugin, IRCEvent.Type.SELFPART, Yes.yield);
-    while (thisFiber.payload.channel != origEvent.channel) Fiber.yield();
-    unawait(plugin, IRCEvent.Type.SELFPART);
+    cycle();
 
-    join(plugin.state, origEvent.channel);
-    await(plugin, IRCEvent.Type.SELFJOIN, Yes.yield);
-    while (thisFiber.payload.channel != origEvent.channel) Fiber.yield();
-    unawait(plugin, IRCEvent.Type.SELFJOIN);
-
-    await(plugin, IRCEvent.Type.CHAN, No.yield);  // awaitReply yields
     awaitReply();
     immutable stripped = thisFiber.payload.content.stripEffects();
     enforce(stripped.beginsWith("%s! %1$s left note"
         .format(plugin.state.client.nickname)) &&
         stripped.endsWith("ago: test"),
+        thisFiber.payload.content, __FILE__, __LINE__);
+
+    send("set notes.playBackOnAnyActivity=false");
+    expect("Setting changed.");
+
+    send("note %s abc def ghi".format(plugin.state.client.nickname));
+    expect("Note saved.");
+
+    send("note %s 123 456 789".format(plugin.state.client.nickname));
+    expect("Note saved.");
+
+    cycle();
+    expect("%s! You have 2 notes.".format(plugin.state.client.nickname));
+
+    await(plugin, IRCEvent.Type.CHAN, No.yield);  // awaitReply yields
+    awaitReply();
+    immutable stripped1 = thisFiber.payload.content.stripEffects();
+    enforce(stripped1.beginsWith(plugin.state.client.nickname),
+        thisFiber.payload.content, __FILE__, __LINE__);
+
+    awaitReply();
+    immutable stripped2 = thisFiber.payload.content.stripEffects();
+    enforce(stripped2.endsWith(": abc def ghi"),
+        thisFiber.payload.content, __FILE__, __LINE__);
+
+    awaitReply();
+    immutable stripped3 = thisFiber.payload.content.stripEffects();
+    enforce(stripped3.endsWith(": 123 456 789"),
         thisFiber.payload.content, __FILE__, __LINE__);
 }
 
