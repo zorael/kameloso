@@ -45,6 +45,8 @@ mixin ModuleRegistration;
         Toggles whether or not notes get played back on activity, and not just
         on [dialect.defs.IRCEvent.Type.JOIN|JOIN]s and
         [dialect.defs.IRCEvent.Type.ACCOUNT|ACCOUNT]s.
+
+        Ignored on Twitch servers.
      +/
     bool playBackOnAnyActivity = true;
 }
@@ -158,7 +160,8 @@ void onJoinOrAccount(NotesPlugin plugin, const ref IRCEvent event)
 )
 void onChannelMessage(NotesPlugin plugin, const ref IRCEvent event)
 {
-    if (plugin.notesSettings.playBackOnAnyActivity)
+    if (plugin.notesSettings.playBackOnAnyActivity ||
+        (plugin.state.server.daemon == IRCServer.Daemon.twitch))
     {
         playbackNotes(plugin, event);
     }
