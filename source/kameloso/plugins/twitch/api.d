@@ -507,7 +507,9 @@ in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
                 e.msg,
                 response.str,
                 response.error,
-                response.code);
+                response.code,
+                e.file,
+                e.line);
         }
     }
 
@@ -657,7 +659,9 @@ in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
             e.msg,
             response.str,
             response.error,
-            response.code);
+            response.code,
+            e.file,
+            e.line);
     }
 }
 
@@ -1734,4 +1738,85 @@ auto getBotList(TwitchPlugin plugin)
     }
 
     return sink.data;
+}
+
+
+// getStream
+/++
+    Fetches information about an ongoing stream.
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        loginName = Account name of user whose stream to fetch information of.
+
+    Returns:
+        A [kameloso.plugins.twitch.base.TwitchPlugin.Room.Stream|Room.Stream]
+        populated with all (relevant) information.
+ +/
+auto getStream(TwitchPlugin plugin, const string loginName)
+{
+    import std.datetime.systime : SysTime;
+    /*import std.algorithm.iteration : map;
+    import std.array : array;*/
+
+    immutable streamURL = "https://api.twitch.tv/helix/streams?user_login=" ~ loginName;
+    immutable streamJSON = getTwitchEntity(plugin, streamURL);
+
+    /*
+    {
+        "data": [
+            {
+                "game_id": "506415",
+                "game_name": "Sekiro: Shadows Die Twice",
+                "id": "47686742845",
+                "is_mature": false,
+                "language": "en",
+                "started_at": "2022-12-26T16:47:58Z",
+                "tag_ids": [
+                    "6ea6bca4-4712-4ab9-a906-e3336a9d8039"
+                ],
+                "tags": [
+                    "darksouls",
+                    "voiceactor",
+                    "challengerunner",
+                    "chill",
+                    "rpg",
+                    "survival",
+                    "creativeprofanity",
+                    "simlish",
+                    "English"
+                ],
+                "thumbnail_url": "https:\/\/static-cdn.jtvnw.net\/previews-ttv\/live_user_lobosjr-{width}x{height}.jpg",
+                "title": "it's been so long! | fresh run",
+                "type": "live",
+                "user_id": "28640725",
+                "user_login": "lobosjr",
+                "user_name": "LobosJr",
+                "viewer_count": 2341
+            }
+        ],
+        "pagination": {
+            "cursor": "eyJiIjp7IkN1cnNvciI6ImV5SnpJam95TXpReExqUTBOelV3T1RZMk9URXdORFFzSW1RaU9tWmhiSE5sTENKMElqcDBjblZsZlE9PSJ9LCJhIjp7IkN1cnNvciI6IiJ9fQ"
+        }
+    }
+    */
+    /*
+    {
+        "data": [],
+        "pagination": {}
+    }
+    */
+
+    auto stream = TwitchPlugin.Room.Stream(streamJSON["id"].str);
+    stream.userIDString = streamJSON["user_id"].str;
+    stream.userLogin = streamJSON["user_login"].str;
+    stream.userDisplayName = streamJSON["user_name"].str;
+    stream.gameIDString = streamJSON["game_id"].str;
+    stream.gameName = streamJSON["game_name"].str;
+    stream.title = streamJSON["title"].str;
+    stream.startTime = SysTime.fromISOExtString(streamJSON["started_at"].str);
+    stream.viewerCount = streamJSON["viewer_count"].integer;
+    //stream.tags = streamJSON["tags"].array.map!(e => e.str).array;
+
+    return stream;
 }

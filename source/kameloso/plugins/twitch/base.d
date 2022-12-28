@@ -317,9 +317,9 @@ void onImportant(TwitchPlugin plugin, const ref IRCEvent event)
     // Record viewer as active
     if (auto room = event.channel in plugin.rooms)
     {
-        if (room.broadcast.active)
+        if (room.stream.up)
         {
-            room.broadcast.activeViewers[event.sender.nickname] = true;
+            room.stream.activeViewers[event.sender.nickname] = true;
         }
     }
 
@@ -405,7 +405,7 @@ void onSelfpart(TwitchPlugin plugin, const ref IRCEvent event)
 {
     if (auto room = event.channel in plugin.rooms)
     {
-        room.broadcast.active = false;  // In case there is a periodicalChattersDg running
+        room.stream.up = false;
         plugin.rooms.remove(event.channel);
     }
 }
@@ -440,250 +440,6 @@ void onCommandUptime(TwitchPlugin plugin, const ref IRCEvent event)
 }
 
 
-// onCommandStart
-/++
-    Marks the start of a broadcast, for later uptime queries.
-
-    Consecutive calls to `!start` are ignored.
-
-    The streamer's name is divined from the `plugin.state.users` associative
-    array by looking at the entry for the nickname this channel corresponds to.
- +/
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.CHAN)
-    .permissionsRequired(Permissions.operator)
-    .channelPolicy(ChannelPolicy.home)
-    .fiber(true)
-    .addCommand(
-        IRCEventHandler.Command()
-            .word("start")
-            .policy(PrefixPolicy.prefixed)
-            .description("Marks the start of a broadcast.")
-            .addSyntax("$command [optional duration time already elapsed]")
-    )
-)
-void onCommandStart(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
-{
-    import kameloso.time : DurationStringException, abbreviatedDuration, timeSince;
-    import std.format : format;
-    import core.thread : Fiber;
-
-    auto room = event.channel in plugin.rooms;
-    assert(room, "Tried to start a broadcast in a nonexistent room");
-
-    void sendUsage()
-    {
-        enum pattern = "Usage: %s%s [optional duration time already elapsed]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-        chan(plugin.state, event.channel, message);
-    }
-
-    void initBroadcast()
-    {
-        // Initialise a Broadcast with a new unique ID by using its constructor
-        room.broadcast = TwitchPlugin.Room.Broadcast(true);
-    }
-
-    if (event.content.length)
-    {
-        import lu.string : contains, nom, stripped;
-        import std.conv : ConvException, to;
-
-        /+
-            A time was given. Allow it to override any existing broadcasts.
-         +/
-        try
-        {
-            initBroadcast();
-            immutable elapsed = abbreviatedDuration(event.content.stripped);
-            room.broadcast.startTime = (event.time - elapsed.total!"seconds");
-
-            enum pattern = "Broadcast start registered (as %s ago)!";
-            immutable message = pattern.format(timeSince(elapsed));
-            chan(plugin.state, event.channel, message);
-        }
-        catch (ConvException e)
-        {
-            return sendUsage();
-        }
-        catch (DurationStringException e)
-        {
-            return chan(plugin.state, event.channel, e.msg);
-        }
-        catch (Exception e)
-        {
-            return sendUsage();
-        }
-    }
-    else
-    {
-        /+
-            No specific time was given. Refuse if there's already a broadcast active.
-         +/
-        if (room.broadcast.active)
-        {
-            return chan(plugin.state, event.channel,
-                room.broadcasterDisplayName ~ " is already live.");
-        }
-
-        initBroadcast();
-        room.broadcast.startTime = event.time;
-        chan(plugin.state, event.channel, "Broadcast start registered!");
-    }
-
-    immutable uniqueIDSnapshot = room.broadcast.uniqueID;
-    uint addedSinceLastRehash;
-
-    while (room.broadcast.active && plugin.useAPIFeatures &&
-        (room.broadcast.uniqueID == uniqueIDSnapshot))
-    {
-        import kameloso.plugins.common.delayawait : delay;
-        import std.json : JSONType;
-
-        const botBlacklist = getBotList(plugin);
-        immutable chattersJSON = getChatters(plugin, room.broadcasterName);
-
-        static immutable chatterTypes =
-        [
-            "admins",
-            //"broadcaster",
-            "global_mods",
-            "moderators",
-            "staff",
-            "viewers",
-            "vips",
-        ];
-
-        uint chatterCount;
-
-        foreach (immutable chatterType; chatterTypes)
-        {
-            foreach (immutable viewerJSON; chattersJSON["chatters"][chatterType].array)
-            {
-                import std.algorithm.searching : canFind, endsWith;
-
-                immutable viewer = viewerJSON.str;
-
-                if (viewer.endsWith("bot") ||
-                    botBlacklist.canFind(viewer) ||
-                    (viewer == plugin.state.client.nickname))
-                {
-                    continue;
-                }
-
-                room.broadcast.chattersSeen[viewer] = true;
-                ++chatterCount;
-
-                // continue early if we shouldn't monitor watchtime
-                if (!plugin.twitchSettings.watchtime) continue;
-
-                if (plugin.twitchSettings.watchtimeExcludesLurkers)
-                {
-                    // Exclude lurkers from watchtime monitoring
-                    if (viewer !in room.broadcast.activeViewers) continue;
-                }
-
-                enum periodicitySeconds = plugin.chattersCheckPeriodicity.total!"seconds";
-
-                if (auto channelViewerTimes = event.channel in plugin.viewerTimesByChannel)
-                {
-                    if (auto viewerTime = viewer in *channelViewerTimes)
-                    {
-                        *viewerTime += periodicitySeconds;
-                    }
-                    else
-                    {
-                        (*channelViewerTimes)[viewer] = periodicitySeconds;
-                        ++addedSinceLastRehash;
-
-                        if ((addedSinceLastRehash > 128) &&
-                            (addedSinceLastRehash > channelViewerTimes.length))
-                        {
-                            // channel-viewer times AA doubled in size; rehash
-                            *channelViewerTimes = (*channelViewerTimes).rehash();
-                            addedSinceLastRehash = 0;
-                        }
-                    }
-                }
-                else
-                {
-                    plugin.viewerTimesByChannel[event.channel][viewer] = periodicitySeconds;
-                    ++addedSinceLastRehash;
-                }
-            }
-        }
-
-        if (chatterCount > room.broadcast.maxConcurrentChatters)
-        {
-            room.broadcast.maxConcurrentChatters = chatterCount;
-        }
-
-        delay(plugin, plugin.chattersCheckPeriodicity, Yes.yield);
-    }
-}
-
-
-// onCommandStop
-/++
-    Marks the stop of a broadcast.
- +/
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.CHAN)
-    .permissionsRequired(Permissions.operator)
-    .channelPolicy(ChannelPolicy.home)
-    .addCommand(
-        IRCEventHandler.Command()
-            .word("stop")
-            .policy(PrefixPolicy.prefixed)
-            .description("Marks the end of a broadcast.")
-    )
-)
-void onCommandStop(TwitchPlugin plugin, const ref IRCEvent event)
-{
-    auto room = event.channel in plugin.rooms;
-    assert(room, "Tried to stop a broadcast in a nonexistent room");
-
-    if (!room.broadcast.active)
-    {
-        if (event.type != IRCEvent.Type.TWITCH_HOSTSTART)
-        {
-            chan(plugin.state, event.channel, "Broadcast was never registered as started...");
-        }
-        return;
-    }
-
-    room.broadcast.active = false;
-    room.broadcast.stopTime = event.time;
-    room.broadcast.numViewersLastStream = room.broadcast.chattersSeen.length;
-    room.broadcast.chattersSeen = null;
-
-    chan(plugin.state, event.channel, "Broadcast ended!");
-    reportStreamTime(plugin, *room, Yes.justNowEnded);
-
-    if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
-    {
-        saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
-    }
-}
-
-
-// onAutomaticStop
-/++
-    Automatically signals a stream stop when a host starts.
-
-    This is generally done as the last thing after a stream session, so it makes
-    sense to automate [onCommandStop].
- +/
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.TWITCH_HOSTSTART)
-    .channelPolicy(ChannelPolicy.home)
-)
-void onAutomaticStop(TwitchPlugin plugin, const ref IRCEvent event)
-{
-    return onCommandStop(plugin, event);
-}
-
-
 // reportStreamTime
 /++
     Reports how long a broadcast has currently been ongoing, up until now lasted,
@@ -692,35 +448,34 @@ void onAutomaticStop(TwitchPlugin plugin, const ref IRCEvent event)
     Params:
         plugin = The current [TwitchPlugin].
         room = The [TwitchPlugin.Room] of the channel.
-        justNowEnded = Whether or not the stream ended just now.
  +/
 void reportStreamTime(
     TwitchPlugin plugin,
-    const TwitchPlugin.Room room,
-    const Flag!"justNowEnded" justNowEnded = No.justNowEnded)
+    const TwitchPlugin.Room room)
 {
     import kameloso.time : timeSince;
-    import std.datetime.systime : Clock, SysTime;
     import std.format : format;
     import core.time : msecs;
 
-    if (room.broadcast.active)
+    if (room.stream.up)
     {
-        assert(!justNowEnded, "Tried to report ended stream time on an active stream");
+        import std.datetime.systime : Clock;
 
         // Remove fractional seconds from the current timestamp
         auto now = Clock.currTime;
         now.fracSecs = 0.msecs;
-        immutable delta = now - SysTime.fromUnixTime(room.broadcast.startTime);
+        immutable delta = now - room.stream.startTime;
         immutable timestring = timeSince(delta);
 
-        if (room.broadcast.chattersSeen.length)
+        if (room.stream.chattersSeen.length)
         {
             enum pattern = "%s has been live for %s, so far with %d unique viewers. " ~
                 "(max at any one time has so far been %d viewers)";
-            immutable message = pattern.format(room.broadcasterDisplayName, timestring,
-                room.broadcast.chattersSeen.length,
-                room.broadcast.maxConcurrentChatters);
+            immutable message = pattern.format(
+                room.broadcasterDisplayName,
+                timestring,
+                room.stream.chattersSeen.length,
+                room.stream.maxConcurrentChatters);
             chan(plugin.state, room.channelName, message);
         }
         else
@@ -732,49 +487,40 @@ void reportStreamTime(
     }
     else
     {
-        if (room.broadcast.stopTime)
+        if (room.previousStream.idString.length)
         {
-            // There was at least one stream this session (we have a stop timestamp)
-            auto end = SysTime.fromUnixTime(room.broadcast.stopTime);
-            end.fracSecs = 0.msecs;
-            immutable delta = end - SysTime.fromUnixTime(room.broadcast.startTime);
+            import std.datetime.systime : SysTime;
+
+            SysTime start = room.previousStream.startTime;
+            SysTime stop = room.previousStream.stopTime;
+            start.fracSecs = 0.msecs;
+            stop.fracSecs = 0.msecs;
+            immutable delta = (stop - start);
             immutable timestring = timeSince(delta);
 
-            if (justNowEnded)
+            if (room.previousStream.maxViewerCount > 0)
             {
-                if (room.broadcast.numViewersLastStream > 0)
-                {
-                    enum pattern = "%s streamed for %s, with %d unique viewers. " ~
-                        "(max at any one time was %d viewers)";
-                    immutable message = pattern.format(room.broadcasterDisplayName, timestring,
-                        room.broadcast.numViewersLastStream,
-                        room.broadcast.maxConcurrentChatters);
-                    chan(plugin.state, room.channelName, message);
-                }
-                else
-                {
-                    enum pattern = "%s streamed for %s.";
-                    immutable message = pattern.format(room.broadcasterDisplayName, timestring);
-                    chan(plugin.state, room.channelName, message);
-                }
+                enum pattern = "%s last streamed for %s, with %d unique viewers. " ~
+                    "(max at any one time was %d viewers)";
+                immutable message = pattern.format(
+                    room.broadcasterDisplayName,
+                    timestring,
+                    room.previousStream.maxViewerCount,
+                    room.previousStream.maxConcurrentChatters);
+                chan(plugin.state, room.channelName, message);
             }
             else
             {
-                enum pattern = "%s is currently not streaming. " ~
-                    "Previous session ended %d-%02d-%02d %02d:%02d with an uptime of %s.";
-                immutable message = pattern.format(room.broadcasterDisplayName,
-                    end.year, end.month, end.day, end.hour, end.minute, timestring);
+                enum pattern = "%s last streamed for %s.";
+                immutable message = pattern.format(room.broadcasterDisplayName, timestring);
                 chan(plugin.state, room.channelName, message);
             }
         }
         else
         {
-            assert(!justNowEnded, "Tried to report stream time of a just ended stream " ~
-                "but no stop time had been recorded");
-
             // No streams this session
-            chan(plugin.state, room.channelName,
-                room.broadcasterDisplayName ~ " is currently not streaming.");
+            immutable message = room.broadcasterDisplayName ~ " is currently not streaming.";
+            chan(plugin.state, room.channelName, message);
         }
     }
 }
@@ -965,13 +711,13 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     room.id = event.aux;
 
-    if (!plugin.useAPIFeatures) return;
-
     immutable userURL = "https://api.twitch.tv/helix/users?id=" ~ event.aux;
     immutable userJSON = getTwitchEntity(plugin, userURL);
     room.broadcasterDisplayName = userJSON["display_name"].str;
     room.follows = getFollows(plugin, room.id);
     room.followsLastCached = event.time;
+
+    startRoomMonitorFibers(plugin, *room);
 
     version(WithPersistenceService)
     {
@@ -1634,9 +1380,9 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
     // Record viewer as active
     if (auto room = event.channel in plugin.rooms)
     {
-        if (room.broadcast.active)
+        if (room.stream.up)
         {
-            room.broadcast.activeViewers[event.sender.nickname] = true;
+            room.stream.activeViewers[event.sender.nickname] = true;
         }
 
         room.lastNMessages.put(event);
@@ -1659,14 +1405,11 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_ENDOFMOTD)
     .onEvent(IRCEvent.Type.ERR_NOMOTD)
-    .fiber(true)
 )
 void onEndOfMOTD(TwitchPlugin plugin)
 {
-    import kameloso.constants : MagicErrorStrings;
     import lu.string : beginsWith;
     import std.concurrency : spawn;
-    import std.datetime.systime : Clock, SysTime;
 
     // Concatenate the Bearer and OAuth headers once.
     // This has to be done *after* connect's register
@@ -1685,109 +1428,7 @@ void onEndOfMOTD(TwitchPlugin plugin)
         plugin.bucket,
         plugin.state.connSettings.caBundleFile);
 
-    enum retriesInCaseOfConnectionErrors = 5;
-    uint retry;
-
-    while (true)
-    {
-        if (plugin.state.settings.headless)
-        {
-            try
-            {
-                import kameloso.plugins.common.delayawait : delay;
-                import kameloso.messaging : quit;
-
-                immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
-                plugin.userID = validationJSON["user_id"].str;
-                immutable expiresIn = validationJSON["expires_in"].integer;
-                immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
-                immutable now = Clock.currTime;
-                immutable delta = (expiresWhen - now);
-
-                // Schedule quitting on expiry
-                delay(plugin, (() => quit(plugin.state)), delta);
-            }
-            catch (TwitchQueryException e)
-            {
-                if ((e.code == 2) && (e.error != MagicErrorStrings.sslLibraryNotFound))
-                {
-                    if (retry++ < retriesInCaseOfConnectionErrors) continue;
-                }
-                plugin.useAPIFeatures = false;
-            }
-            return;
-        }
-
-        try
-        {
-            /*
-            {
-                "client_id": "tjyryd2ojnqr8a51ml19kn1yi2n0v1",
-                "expires_in": 5036421,
-                "login": "zorael",
-                "scopes": [
-                    "bits:read",
-                    "channel:moderate",
-                    "channel:read:subscriptions",
-                    "channel_editor",
-                    "chat:edit",
-                    "chat:read",
-                    "user:edit:broadcast",
-                    "whispers:edit",
-                    "whispers:read"
-                ],
-                "user_id": "22216721"
-            }
-            */
-
-            immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
-            plugin.userID = validationJSON["user_id"].str;
-            immutable expiresIn = validationJSON["expires_in"].integer;
-            immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
-            generateExpiryReminders(plugin, expiresWhen);
-        }
-        catch (TwitchQueryException e)
-        {
-            // Something is deeply wrong.
-
-            if (e.code == 2)
-            {
-                enum wikiMessage = cast(string)MagicErrorStrings.visitWikiOneliner;
-
-                if (e.error == MagicErrorStrings.sslLibraryNotFound)
-                {
-                    enum pattern = "Failed to validate Twitch API keys: <l>%s</> " ~
-                        "<t>(is OpenSSL installed?)";
-                    logger.errorf(pattern, cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten);
-                    logger.error(wikiMessage);
-
-                    version(Windows)
-                    {
-                        enum getoptMessage = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
-                        logger.error(getoptMessage);
-                    }
-                }
-                else
-                {
-                    if (retry++ < retriesInCaseOfConnectionErrors) continue;
-
-                    enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
-                    logger.errorf(pattern, e.msg, e.error, e.code);
-                    logger.error(wikiMessage);
-                }
-            }
-            else
-            {
-                enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
-                logger.errorf(pattern, e.msg, e.error, e.code);
-            }
-
-            logger.warning("Disabling API features. Expect breakage.");
-            //version(PrintStacktraces) logger.trace(e);
-            plugin.useAPIFeatures = false;
-        }
-        return;
-    }
+    startValidator(plugin);
 }
 
 
@@ -2197,7 +1838,7 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     const room = event.channel in plugin.rooms;
 
-    if (!room.broadcast.active)
+    if (!room.stream.up)
     {
         enum pattern = "Broadcast start was never marked with %sstart.";
         immutable message = pattern.format(plugin.state.settings.prefix);
@@ -2343,14 +1984,182 @@ void start(TwitchPlugin plugin)
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_MYINFO)
-    .fiber(true)
 )
 void onMyInfo(TwitchPlugin plugin)
+{
+    // Load ecounts.
+    plugin.reload();
+}
+
+
+// startRoomMonitorFibers
+/++
+    Starts room monitor fibers.
+
+    These detect new streams (and updates ongoing ones), updates chatters,
+    caches followers, and periodically saves resources to disk.
+
+    Params:
+        plugin = The current [TwitchPlugin].
+        room = Reference to the relevant [TwitchPlugin.Room] to update.
+ +/
+void startRoomMonitorFibers(TwitchPlugin plugin, ref TwitchPlugin.Room room)
 {
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.time : nextMidnight;
     import std.datetime.systime : Clock;
-    import core.thread : Fiber;
+
+    void chatterMonitorDg()
+    {
+        import std.json : JSONType;
+
+        immutable streamIDSnapshot = room.stream.idString;
+        uint addedSinceLastRehash;
+
+        while (
+            room.stream.up &&
+            plugin.useAPIFeatures &&
+            (room.stream.idString == streamIDSnapshot))
+        {
+            const botBlacklist = getBotList(plugin);
+            immutable chattersJSON = getChatters(plugin, room.broadcasterName);
+
+            static immutable chatterTypes =
+            [
+                "admins",
+                //"broadcaster",
+                "global_mods",
+                "moderators",
+                "staff",
+                "viewers",
+                "vips",
+            ];
+
+            uint chatterCount;
+
+            foreach (immutable chatterType; chatterTypes)
+            {
+                foreach (immutable viewerJSON; chattersJSON["chatters"][chatterType].array)
+                {
+                    import std.algorithm.searching : canFind, endsWith;
+
+                    immutable viewer = viewerJSON.str;
+
+                    if (viewer.endsWith("bot") ||
+                        botBlacklist.canFind(viewer) ||
+                        (viewer == plugin.state.client.nickname))
+                    {
+                        continue;
+                    }
+
+                    room.stream.chattersSeen[viewer] = true;
+                    ++chatterCount;
+
+                    // continue early if we shouldn't monitor watchtime
+                    if (!plugin.twitchSettings.watchtime) continue;
+
+                    if (plugin.twitchSettings.watchtimeExcludesLurkers)
+                    {
+                        // Exclude lurkers from watchtime monitoring
+                        if (viewer !in room.stream.activeViewers) continue;
+                    }
+
+                    enum periodicitySeconds = plugin.monitorUpdatePeriodicity.total!"seconds";
+
+                    if (auto channelViewerTimes = room.channelName in plugin.viewerTimesByChannel)
+                    {
+                        if (auto viewerTime = viewer in *channelViewerTimes)
+                        {
+                            *viewerTime += periodicitySeconds;
+                        }
+                        else
+                        {
+                            (*channelViewerTimes)[viewer] = periodicitySeconds;
+                            ++addedSinceLastRehash;
+
+                            if ((addedSinceLastRehash > 128) &&
+                                (addedSinceLastRehash > channelViewerTimes.length))
+                            {
+                                // channel-viewer times AA doubled in size; rehash
+                                *channelViewerTimes = (*channelViewerTimes).rehash();
+                                addedSinceLastRehash = 0;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        plugin.viewerTimesByChannel[room.channelName][viewer] = periodicitySeconds;
+                        ++addedSinceLastRehash;
+                    }
+                }
+            }
+
+            if (chatterCount > room.stream.maxConcurrentChatters)
+            {
+                room.stream.maxConcurrentChatters = chatterCount;
+            }
+
+            delay(plugin, plugin.monitorUpdatePeriodicity, Yes.yield);
+        }
+    }
+
+    void uptimeMonitorDg()
+    {
+        static void closeStream(ref TwitchPlugin.Room room)
+        {
+            room.stream.up = false;
+            room.stream.stopTime = Clock.currTime;
+            room.stream.chattersSeen = null;
+            room.previousStream = room.stream;
+        }
+
+        static void rotateStream(ref TwitchPlugin.Room room)
+        {
+            room.previousStream = room.stream;
+            room.stream = TwitchPlugin.Room.Stream.init;
+        }
+
+        while (plugin.useAPIFeatures)
+        {
+            try
+            {
+                auto stream = getStream(plugin, room.broadcasterName);  // may not be const nor immutable
+
+                // If we're here, the stream is up
+                if (room.stream.idString == stream.idString)
+                {
+                    // Same stream running, just update it
+                    room.stream.update(stream);
+                }
+                else
+                {
+                    // New stream! Rotate and insert
+                    closeStream(room);
+                    rotateStream(room);
+                    room.stream = stream;
+
+                    Fiber chatterMonitorFiber = new Fiber(&chatterMonitorDg, BufferSize.fiberStack);
+                    chatterMonitorFiber.call();
+                }
+            }
+            catch (EmptyDataJSONException _)
+            {
+                if (room.stream.up)
+                {
+                    // Was up but just ended
+                    closeStream(room);
+                    rotateStream(room);
+
+                    if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
+                    {
+                        saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
+                    }
+                }
+            }
+
+            delay(plugin, plugin.monitorUpdatePeriodicity, Yes.yield);
+        }
+    }
 
     // Clear and re-cache follows once every midnight
     void cacheFollowersDg()
@@ -2358,59 +2167,185 @@ void onMyInfo(TwitchPlugin plugin)
         while (true)
         {
             immutable now = Clock.currTime;
-
-            if (plugin.isEnabled && plugin.useAPIFeatures)
-            {
-                foreach (immutable channelName, room; plugin.rooms)
-                {
-                    room.follows = getFollows(plugin, room.id);
-                    room.followsLastCached = now.toUnixTime;
-                }
-            }
-
-            delay(plugin, now.nextMidnight-now, Yes.yield);
+            room.follows = getFollows(plugin, room.id);
+            room.followsLastCached = now.toUnixTime;
+            delay(plugin, (now.nextMidnight - now), Yes.yield);
         }
     }
 
-    immutable now = Clock.currTime;
+    void periodicallySaveDg()
+    {
+        // Periodically save ecounts and viewer times
+        while (true)
+        {
+            if (plugin.twitchSettings.ecount && plugin.ecountDirty && plugin.ecount.length)
+            {
+                saveResourceToDisk(plugin.ecount, plugin.ecountFile);
+                plugin.ecountDirty = false;
+            }
+
+            /+
+                Only save watchtimes if there's at least one broadcast currently ongoing.
+                Since we save at broadcast stop there won't be anything new to save otherwise.
+            +/
+            if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
+            {
+                foreach (const room; plugin.rooms)
+                {
+                    if (room.stream.up)
+                    {
+                        // At least one broadcast active
+                        saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
+                        break;
+                    }
+                }
+            }
+
+            delay(plugin, plugin.savePeriodicity, Yes.yield);
+        }
+    }
+
+    //immutable now = Clock.currTime;
+
+    Fiber uptimeMonitorFiber = new Fiber(&uptimeMonitorDg, BufferSize.fiberStack);
+    //delay(plugin, uptimeMonitorFiber, plugin.monitorUpdatePeriodicity);
+    uptimeMonitorFiber.call();
 
     Fiber cacheFollowersFiber = new Fiber(&cacheFollowersDg, BufferSize.fiberStack);
-    delay(plugin, cacheFollowersFiber, now.nextMidnight-now);
+    //delay(plugin, cacheFollowersFiber, (now.nextMidnight - now));
+    cacheFollowersFiber.call();
 
-    // Load ecounts.
-    plugin.reload();
+    Fiber periodicallySaveFiber = new Fiber(&periodicallySaveDg, BufferSize.fiberStack);
+    delay(plugin, periodicallySaveFiber, plugin.savePeriodicity);
+}
 
-    // delay once before looping
-    delay(plugin, plugin.savePeriodicity, Yes.yield);
 
-    // Periodically save ecounts and viewer times
-    while (true)
+// startValidator
+/++
+    Starts a validator [core.thread.fiber.Fiber|Fiber].
+
+    This will validate the API access token and output to the terminal for how
+    much longer it is valid. If it has expired, it will exit the program.
+
+    Params:
+        plugin = The current [TwitchPlugin].
+ +/
+void startValidator(TwitchPlugin plugin)
+{
+    import core.thread : Fiber;
+
+    void validatorDg()
     {
-        if (plugin.twitchSettings.ecount && plugin.ecountDirty && plugin.ecount.length)
-        {
-            saveResourceToDisk(plugin.ecount, plugin.ecountFile);
-            plugin.ecountDirty = false;
-        }
+        import kameloso.constants : MagicErrorStrings;
+        import std.datetime.systime : Clock, SysTime;
 
-        /+
-            Only save watchtimes if there's at least one broadcast currently ongoing.
-            Since we save at broadcast stop there won't be anything new to save otherwise.
-         +/
-        if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
+        enum retriesInCaseOfConnectionErrors = 5;
+        uint retry;
+
+        while (true)
         {
-            foreach (const room; plugin.rooms)
+            if (plugin.state.settings.headless)
             {
-                if (room.broadcast.active)
+                try
                 {
-                    // At least one broadcast active
-                    saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
-                    break;
-                }
-            }
-        }
+                    import kameloso.plugins.common.delayawait : delay;
+                    import kameloso.messaging : quit;
 
-        delay(plugin, plugin.savePeriodicity, Yes.yield);
+                    immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
+                    plugin.userID = validationJSON["user_id"].str;
+                    immutable expiresIn = validationJSON["expires_in"].integer;
+                    immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
+                    immutable now = Clock.currTime;
+                    immutable delta = (expiresWhen - now);
+
+                    // Schedule quitting on expiry
+                    delay(plugin, (() => quit(plugin.state)), delta);
+                }
+                catch (TwitchQueryException e)
+                {
+                    if ((e.code == 2) && (e.error != MagicErrorStrings.sslLibraryNotFound))
+                    {
+                        if (retry++ < retriesInCaseOfConnectionErrors) continue;
+                    }
+                    plugin.useAPIFeatures = false;
+                }
+                return;
+            }
+
+            try
+            {
+                /*
+                {
+                    "client_id": "tjyryd2ojnqr8a51ml19kn1yi2n0v1",
+                    "expires_in": 5036421,
+                    "login": "zorael",
+                    "scopes": [
+                        "bits:read",
+                        "channel:moderate",
+                        "channel:read:subscriptions",
+                        "channel_editor",
+                        "chat:edit",
+                        "chat:read",
+                        "user:edit:broadcast",
+                        "whispers:edit",
+                        "whispers:read"
+                    ],
+                    "user_id": "22216721"
+                }
+                */
+
+                immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
+                plugin.userID = validationJSON["user_id"].str;
+                immutable expiresIn = validationJSON["expires_in"].integer;
+                immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
+                generateExpiryReminders(plugin, expiresWhen);
+            }
+            catch (TwitchQueryException e)
+            {
+                // Something is deeply wrong.
+
+                if (e.code == 2)
+                {
+                    enum wikiMessage = cast(string)MagicErrorStrings.visitWikiOneliner;
+
+                    if (e.error == MagicErrorStrings.sslLibraryNotFound)
+                    {
+                        enum pattern = "Failed to validate Twitch API keys: <l>%s</> " ~
+                            "<t>(is OpenSSL installed?)";
+                        logger.errorf(pattern, cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten);
+                        logger.error(wikiMessage);
+
+                        version(Windows)
+                        {
+                            enum getoptMessage = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
+                            logger.error(getoptMessage);
+                        }
+                    }
+                    else
+                    {
+                        if (retry++ < retriesInCaseOfConnectionErrors) continue;
+
+                        enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
+                        logger.errorf(pattern, e.msg, e.error, e.code);
+                        logger.error(wikiMessage);
+                    }
+                }
+                else
+                {
+                    enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
+                    logger.errorf(pattern, e.msg, e.error, e.code);
+                }
+
+                logger.warning("Disabling API features. Expect breakage.");
+                //version(PrintStacktraces) logger.trace(e);
+                plugin.useAPIFeatures = false;
+            }
+            return;
+        }
     }
+
+    Fiber validatorFiber = new Fiber(&validatorDg, BufferSize.fiberStack);
+    validatorFiber.call();
 }
 
 
@@ -2698,9 +2633,9 @@ void initResources(TwitchPlugin plugin)
 {
     import kameloso.plugins.common.misc : IRCPluginInitialisationException;
     import lu.json : JSONStorage;
-    import std.file : exists, mkdir, remove;
+    import std.file : exists, mkdir;
     import std.json : JSONException;
-    import std.path : baseName, buildNormalizedPath, dirName;
+    import std.path : baseName, dirName;
 
     void loadFile(
         ref JSONStorage json,
@@ -2715,7 +2650,7 @@ void initResources(TwitchPlugin plugin)
         {
             version(PrintStacktraces) logger.error("JSONException: ", e.msg);
             throw new IRCPluginInitialisationException(
-                file ~ " is malformed",
+                file.baseName ~ " is malformed",
                 plugin.name,
                 file,
                 __FILE__,
@@ -2794,7 +2729,7 @@ package void saveSecretsToDisk(const Credentials[string] aa, const string filena
 
 // reload
 /++
-    Reloads the plugin, loading emote counters from disk.
+    Reloads the plugin, loading resources from disk.
  +/
 void reload(TwitchPlugin plugin)
 {
@@ -2839,50 +2774,135 @@ private:
     import kameloso.terminal : TerminalToken;
     import lu.container : CircularBuffer;
     import std.concurrency : Tid;
+    import std.datetime.systime : SysTime;
     import core.time : hours, seconds;
 
 package:
-    /// Contained state of a channel, so that there can be several alongside each other.
+    /++
+        Contained state of a channel, so that there can be several alongside each other.
+     +/
     static struct Room
     {
-        /// Aggregate of a broadcast.
-        static struct Broadcast
+        /++
+            Representation of a broadcast (stream).
+         +/
+        static struct Stream
         {
         private:
-            uint privateUniqueID;
+            /++
+                The unique ID of a stream, as supplied by Twitch.
 
-        public:
-            /// Whether or not the streamer is currently broadcasting.
-            bool active;
+                Cannot be made immutable or generated `opAssign`s break.
+             +/
+            /*immutable*/ string privateIDString;
 
-            /// UNIX timestamp of when broadcasting started.
-            long startTime;
+        package:
+            /++
+                Whether or not the stream is currently ongoing.
+             +/
+            bool up; // = false;
 
-            /// UNIX timestamp of when broadcasting ended.
-            long stopTime;
+            /++
+                The numerical ID of the user/account of the channel owner. In string form.
+             +/
+            string userIDString;
 
-            /// Users seen in the channel.
+            /++
+                The user/account name of the channel owner.
+             +/
+            string userLogin;
+
+            /++
+                The display name of the channel owner.
+             +/
+            string userDisplayName;
+
+            /++
+                The unique ID of a game, as supplied by Twitch. In string form.
+             +/
+            string gameIDString;
+
+            /++
+                The name of the game that's being streamed.
+             +/
+            string gameName;
+
+            /++
+                The title of the stream.
+             +/
+            string title;
+
+            /++
+                When the stream started.
+             +/
+            SysTime startTime;
+
+            /++
+                When the stream ended. Only set when the [Stream] is [TwitchPlugin.Room.previousStream].
+             +/
+            SysTime stopTime;
+
+            /++
+                How many people were viewing the stream the last time the monitor
+                [core.thread.fiber.Fiber|Fiber] checked.
+             +/
+            long viewerCount;
+
+            /++
+                The maximum number of people seen watching this stream.
+             +/
+            long maxViewerCount;
+
+            /++
+                Users seen in the channel.
+             +/
             bool[string] chattersSeen;
 
-            /// How many users were max seen as in the channel at the same time.
+            /++
+                How many users were max seen as in the channel at the same time.
+
+                How well this correlates to [maxViewerCount] is so far not well known.
+             +/
             int maxConcurrentChatters;
 
-            /// How many users visited the channel during the last stream.
-            size_t numViewersLastStream;
-
-            /// Hashmap of active viewers (who have shown activity).
+            /++
+                Hashmap of active viewers (who have shown activity).
+             +/
             bool[string] activeViewers;
 
-            /// Accessor for `privateUniqueID`.
-            auto uniqueID() const
+            /++
+                Accessor to [privateIDString].
+             +/
+            auto idString() const
             {
-                return privateUniqueID;
+                return privateIDString;
             }
 
-            /// Constructor.
-            this(const bool active)
+            /++
+                Takes a second [Stream] and updates this one with values from it.
+             +/
+            void update(const Stream updated)
             {
-                this.active = active;
+                assert(privateIDString.length, "Stream not properly initialised");
+
+                this.userDisplayName = updated.userDisplayName;
+                this.gameIDString = updated.gameIDString;
+                this.gameName = updated.gameName;
+                this.title = updated.title;
+                this.viewerCount = updated.viewerCount;
+
+                if (this.viewerCount > this.maxViewerCount)
+                {
+                    this.maxViewerCount = this.viewerCount;
+                }
+            }
+
+            /++
+                Constructor.
+             +/
+            this(const string idString)
+            {
+                this.privateIDString = idString;
             }
         }
 
@@ -2897,8 +2917,11 @@ package:
         /// Name of the channel.
         string channelName;
 
-        /// Struct instance representing the current broadcast.
-        Broadcast broadcast;
+        /// The current, ongoing stream.
+        Stream stream;
+
+        /// The preivous, ended stream.
+        Stream previousStream;
 
         /// Account name of the broadcaster.
         string broadcasterName;
@@ -3000,9 +3023,9 @@ package:
     enum queryBufferSize = 4096;
 
     /++
-        When broadcasting, how often to check and enumerate chatters.
+        How often to poll the servers for various information about a channel.
      +/
-    static immutable chattersCheckPeriodicity = 60.seconds;
+    static immutable monitorUpdatePeriodicity = 60.seconds;
 
     /// Associative array of viewer times; seconds keyed by nickname keyed by channel.
     long[string][string] viewerTimesByChannel;
