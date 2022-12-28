@@ -2205,16 +2205,18 @@ void startRoomMonitorFibers(TwitchPlugin plugin, ref TwitchPlugin.Room room)
         }
     }
 
-    immutable now = Clock.currTime;
+    //immutable now = Clock.currTime;
 
     Fiber uptimeMonitorFiber = new Fiber(&uptimeMonitorDg, BufferSize.fiberStack);
-    delay(plugin, uptimeMonitorFiber, plugin.monitorUpdatePeriodicity);
+    //delay(plugin, uptimeMonitorFiber, plugin.monitorUpdatePeriodicity);
+    uptimeMonitorFiber.call();
 
     Fiber cacheFollowersFiber = new Fiber(&cacheFollowersDg, BufferSize.fiberStack);
-    delay(plugin, cacheFollowersFiber, (now.nextMidnight - now));
+    //delay(plugin, cacheFollowersFiber, (now.nextMidnight - now));
+    cacheFollowersFiber.call();
 
-    Fiber periodicallySavFiber = new Fiber(&periodicallySaveDg, BufferSize.fiberStack);
-    delay(plugin, periodicallySavFiber, plugin.savePeriodicity);
+    Fiber periodicallySaveFiber = new Fiber(&periodicallySaveDg, BufferSize.fiberStack);
+    delay(plugin, periodicallySaveFiber, plugin.savePeriodicity);
 }
 
 
