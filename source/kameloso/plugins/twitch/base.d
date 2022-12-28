@@ -1427,6 +1427,8 @@ void onEndOfMOTD(TwitchPlugin plugin)
         &persistentQuerier,
         plugin.bucket,
         plugin.state.connSettings.caBundleFile);
+
+    startValidator(plugin);
 }
 
 
@@ -1987,7 +1989,6 @@ void onMyInfo(TwitchPlugin plugin)
 {
     // Load ecounts.
     plugin.reload();
-    startValidator(plugin);
 }
 
 
@@ -2122,7 +2123,7 @@ void startRoomMonitorFibers(TwitchPlugin plugin, ref TwitchPlugin.Room room)
         {
             try
             {
-                auto stream = getStream(plugin, room.channelName);  // may not be const nor immutable
+                auto stream = getStream(plugin, room.broadcasterName);  // may not be const nor immutable
 
                 // If we're here, the stream is up
                 if (room.stream.idString == stream.idString)
