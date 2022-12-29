@@ -2,6 +2,15 @@
     The Notes plugin allows for storing notes to offline users, to be replayed
     when they next join the channel.
 
+    If a note is left in a channel, it is stored as a note under that channel
+    and will be played back when the user joins (or optionally shows activity) there.
+    If a note is left in a private message, it is stored as outside of a channel
+    and will be played back in a private query, depending on the same triggers
+    as those of channel notes.
+
+    Activity in one channel will not play back notes left for another channel,
+    but anything will trigger private message playback.
+
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#notes
         [kameloso.plugins.common.core|plugins.common.core]
@@ -63,12 +72,12 @@ private:
 
 public:
     /++
-        Line of text left as a note.
+        Line of text left as a note, optionally Base64-encoded.
      +/
     string line;
 
     /++
-        String name of the sender. May be a display name.
+        String name of the sender, optionally Base64-encoded. May be a display name.
      +/
     string sender;
 
@@ -111,6 +120,9 @@ public:
 
     /++
         Creates a [Note] from a JSON representation.
+
+        Params:
+            json = [std.json.JSONValue|JSONValue] to build a [Note] from.
      +/
     static auto fromJSON(const JSONValue json)
     {
