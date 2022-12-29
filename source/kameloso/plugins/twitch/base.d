@@ -405,7 +405,20 @@ void onSelfpart(TwitchPlugin plugin, const ref IRCEvent event)
 {
     if (auto room = event.channel in plugin.rooms)
     {
-        room.stream.up = false;
+        if (room.stream.up)
+        {
+            import std.datetime.systime : Clock;
+
+            // We're leaving in the middle of a stream?
+            // Close it and rotate, in case someone has a pointer to it
+            // copied from nested functions in uptimeMonitorDg
+            room.stream.up = false;
+            room.stream.stopTime = Clock.currTime;
+            room.stream.chattersSeen = null;
+            room.previousStream = room.stream;
+            room.stream = TwitchPlugin.Room.Stream.init;
+        }
+
         plugin.rooms.remove(event.channel);
     }
 }
