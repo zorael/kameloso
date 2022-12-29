@@ -441,29 +441,6 @@ void onWelcome(NotesPlugin plugin)
 }
 
 
-// pruneNotes
-/++
-    Prunes the notes database of empty channel entries.
-
-    Individual nickname entries are not touched as they are assumed to be
-    cleared and removed after replaying its notes.
-
-    Params:
-        plugin = Current [NotesPlugin].
- +/
-void pruneNotes(NotesPlugin plugin)
-{
-    foreach (immutable channelName; plugin.notes.keys)
-    {
-        if (!plugin.notes[channelName].length)
-        {
-            // Dead channel
-            plugin.notes.remove(channelName);
-        }
-    }
-}
-
-
 // saveNotes
 /++
     Saves notes to disk, to the [NotesPlugin.notesFile] JSON file.
