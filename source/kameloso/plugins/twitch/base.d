@@ -2101,7 +2101,6 @@ void startRoomMonitorFibers(TwitchPlugin plugin, ref TwitchPlugin.Room room)
             room.stream.up = false;
             room.stream.stopTime = Clock.currTime;
             room.stream.chattersSeen = null;
-            room.previousStream = room.stream;
         }
 
         static void rotateStream(ref TwitchPlugin.Room room)
