@@ -2034,8 +2034,6 @@ void startRoomMonitorFibers(TwitchPlugin plugin, ref TwitchPlugin.Room room)
                 "vips",
             ];
 
-            //uint chatterCount;
-
             foreach (immutable chatterType; chatterTypes)
             {
                 foreach (immutable viewerJSON; chattersJSON["chatters"][chatterType].array)
@@ -2052,7 +2050,6 @@ void startRoomMonitorFibers(TwitchPlugin plugin, ref TwitchPlugin.Room room)
                     }
 
                     room.stream.chattersSeen[viewer] = true;
-                    //++chatterCount;
 
                     // continue early if we shouldn't monitor watchtime
                     if (!plugin.twitchSettings.watchtime) continue;
@@ -2092,11 +2089,6 @@ void startRoomMonitorFibers(TwitchPlugin plugin, ref TwitchPlugin.Room room)
                     }
                 }
             }
-
-            /*if (chatterCount > room.stream.maxConcurrentChatters)
-            {
-                room.stream.maxConcurrentChatters = chatterCount;
-            }*/
 
             delay(plugin, plugin.monitorUpdatePeriodicity, Yes.yield);
         }
@@ -2856,14 +2848,6 @@ package:
                 Users seen in the channel.
              +/
             bool[string] chattersSeen;
-
-            /++
-                How many users were max seen as in the channel at the same time.
-
-                How well this correlates to [maxViewerCount] is so far not well known.
-             +/
-            deprecated("Use `maxViewerCount` instead")
-            int maxConcurrentChatters;
 
             /++
                 Hashmap of active viewers (who have shown activity).
