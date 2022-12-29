@@ -467,15 +467,15 @@ void reportStreamTime(
         immutable delta = now - room.stream.startTime;
         immutable timestring = timeSince(delta);
 
-        if (room.stream.chattersSeen.length)
+        if (room.stream.maxViewerCount > 0)
         {
-            enum pattern = "%s has been live for %s, so far with %d unique viewers. " ~
-                "(max at any one time has so far been %d viewers)";
+            enum pattern = "%s has been live for %s, currently with %d viewers. " ~
+                "(Maximum at any one time has so far been %d viewers.)";
             immutable message = pattern.format(
                 room.broadcasterDisplayName,
                 timestring,
-                room.stream.chattersSeen.length,
-                room.stream.maxConcurrentChatters);
+                room.stream.viewerCount,
+                room.stream.maxViewerCount);
             chan(plugin.state, room.channelName, message);
         }
         else
@@ -500,13 +500,12 @@ void reportStreamTime(
 
             if (room.previousStream.maxViewerCount > 0)
             {
-                enum pattern = "%s last streamed for %s, with %d unique viewers. " ~
-                    "(max at any one time was %d viewers)";
+                enum pattern = "%s last streamed for %s, " ~
+                    "with a maximum of %d viewers at any one time.";
                 immutable message = pattern.format(
                     room.broadcasterDisplayName,
                     timestring,
-                    room.previousStream.maxViewerCount,
-                    room.previousStream.maxConcurrentChatters);
+                    room.previousStream.maxViewerCount);
                 chan(plugin.state, room.channelName, message);
             }
             else
