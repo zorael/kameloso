@@ -156,6 +156,7 @@ void onJoinOrAccount(NotesPlugin plugin, const ref IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.EMOTE)
+    .onEvent(IRCEvent.Type.QUERY)
     .permissionsRequired(Permissions.anyone)
     .channelPolicy(ChannelPolicy.home)
     .chainable(true)
@@ -367,6 +368,7 @@ void playbackNotesImpl(
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
     .permissionsRequired(Permissions.anyone)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
