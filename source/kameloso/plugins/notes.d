@@ -78,21 +78,23 @@ public:
     long timestamp;
 
     /++
-        Encrypts the note, Base64-encoding [line].
+        Encrypts the note, Base64-encoding [line] and [sender].
      +/
     void encrypt()
     {
         import lu.string : encode64;
         line = encode64(line);
+        sender = encode64(sender);
     }
 
     /++
-        Decrypts the note, Base64-decoding [line].
+        Decrypts the note, Base64-decoding [line] and [sender].
      +/
     void decrypt()
     {
         import lu.string : decode64;
         line = decode64(line);
+        sender = decode64(sender);
     }
 
     /++
