@@ -4,8 +4,8 @@
     See_Also:
         [kameloso.plugins.twitch.base|twitch.base]
         [kameloso.plugins.twitch.keygen|twitch.keygen]
-        [kameloso.plugins.twitch.keygen|twitch.google]
-        [kameloso.plugins.twitch.keygen|twitch.spotify]
+        [kameloso.plugins.twitch.google|twitch.google]
+        [kameloso.plugins.twitch.spotify|twitch.spotify]
  +/
 module kameloso.plugins.twitch.api;
 
@@ -20,7 +20,6 @@ import kameloso.plugins.twitch.common;
 import arsd.http2 : HttpVerb;
 import dialect.defs;
 import lu.common : Next;
-import std.json : JSONValue;
 import std.traits : isSomeFunction;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
@@ -134,6 +133,7 @@ private auto twitchTryCatchDgExceptionHandler(
     const size_t retryNum)
 {
     import kameloso.common : logger;
+    import std.json : JSONValue;
 
     version(PrintStacktraces)
     {
@@ -872,11 +872,11 @@ in ((!async || Fiber.getThis), "Tried to call asynchronous `getValidation` from 
 auto getFollows(TwitchPlugin plugin, const string id)
 in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
 {
-    import std.json : JSONType;
+    import std.json : JSONValue;
 
     immutable url = "https://api.twitch.tv/helix/users/follows?to_id=" ~ id;
-    JSONValue[string] allFollowsJSON;
     const entitiesArrayJSON = getMultipleTwitchEntities(plugin, url);
+    JSONValue[string] allFollowsJSON;
 
     foreach (entityJSON; entitiesArrayJSON.array)
     {
@@ -1225,6 +1225,8 @@ in (Fiber.getThis, "Tried to call `modifyChannel` from outside a Fiber")
     import std.array : Appender;
 
     const room = channelName in plugin.rooms;
+    assert(room, "Tried to look up modify channel for which there existed no room");
+
     immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
     immutable url = "https://api.twitch.tv/helix/channels?broadcaster_id=" ~ room.id;
 
@@ -1314,6 +1316,9 @@ in (Fiber.getThis, "Tried to call `startCommercial` from outside a Fiber")
 {
     import std.format : format;
 
+    const room = channelName in plugin.rooms;
+    assert(room, "Tried to look up start commerical in a channel for which there existed no room");
+
     enum url = "https://api.twitch.tv/helix/channels/commercial";
     enum pattern = `
 {
@@ -1321,7 +1326,6 @@ in (Fiber.getThis, "Tried to call `startCommercial` from outside a Fiber")
     "length": %s
 }`;
 
-    const room = channelName in plugin.rooms;
     immutable body_ = pattern.format(room.id, lengthString);
     immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
 
@@ -1353,10 +1357,12 @@ auto getPolls(
     const string idString = string.init)
 in (Fiber.getThis, "Tried to call `getPolls` from outside a Fiber")
 {
-    import std.json : JSONType, parseJSON;
+    import std.json : JSONType, JSONValue, parseJSON;
+
+    const room = channelName in plugin.rooms;
+    assert(room, "Tried to get polls of a channel for which there existed no room");
 
     enum baseURL = "https://api.twitch.tv/helix/polls?broadcaster_id=";
-    const room = channelName in plugin.rooms;
     immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
 
     string url = baseURL ~ room.id;  // mutable;
@@ -1467,6 +1473,9 @@ in (Fiber.getThis, "Tried to call `createPoll` from outside a Fiber")
     import std.format : format;
     import std.json : JSONType, parseJSON;
 
+    const room = channelName in plugin.rooms;
+    assert(room, "Tried to create a poll in a channel for which there existed no room");
+
     enum url = "https://api.twitch.tv/helix/polls";
     enum pattern = `
 {
@@ -1489,11 +1498,9 @@ in (Fiber.getThis, "Tried to call `createPoll` from outside a Fiber")
         sink.put(`"}`);
     }
 
-    const room = channelName in plugin.rooms;
     immutable escapedTitle = title.replace(`"`, `\"`);
     immutable body_ = pattern.format(room.id, escapedTitle, sink.data, durationString);
     immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
-
     immutable response = sendHTTPRequest(plugin, url, authorizationBearer,
         HttpVerb.POST, cast(ubyte[])body_, "application/json");
 
@@ -1579,6 +1586,9 @@ in (Fiber.getThis, "Tried to call `endPoll` from outside a Fiber")
     import std.format : format;
     import std.json : JSONType, parseJSON;
 
+    const room = channelName in plugin.rooms;
+    assert(room, "Tried to end a poll in a channel for which there existed no room");
+
     enum url = "https://api.twitch.tv/helix/polls";
     enum pattern = `
 {
@@ -1587,11 +1597,9 @@ in (Fiber.getThis, "Tried to call `endPoll` from outside a Fiber")
     "status": "%s"
 }`;
 
-    const room = channelName in plugin.rooms;
     immutable status = terminate ? "TERMINATED" : "ARCHIVED";
     immutable body_ = pattern.format(room.id, voteID, status);
     immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
-
     immutable response = sendHTTPRequest(plugin, url, authorizationBearer,
         HttpVerb.PATCH, cast(ubyte[])body_, "application/json");
 
