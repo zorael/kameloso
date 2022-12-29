@@ -321,10 +321,10 @@ void playbackNotesImpl(
             if (notes.length == 1)
             {
                 auto note = (*notes)[0];  // mutable
-                note.decrypt();
                 immutable timestampAsSysTime = SysTime.fromUnixTime(note.timestamp);
                 immutable duration = (nowInUnix - timestampAsSysTime).timeSince!(7, 1)(No.abbreviate);
 
+                note.decrypt();
                 enum pattern = "<h>%s<h>! <h>%s<h> left note <b>%s<b> ago: %s";
                 immutable message = pattern.format(maybeDisplayName, note.sender, duration, note.line);
                 privmsg(plugin.state, channelName, user.nickname, message);
@@ -337,9 +337,10 @@ void playbackNotesImpl(
 
                 foreach (/*const*/ note; *notes)
                 {
-                    note.decrypt();
                     immutable timestampAsSysTime = SysTime.fromUnixTime(note.timestamp);
                     immutable duration = (nowInUnix - timestampAsSysTime).timeSince!(7, 1)(Yes.abbreviate);
+
+                    note.decrypt();
                     enum entryPattern = "<h>%s<h> %s ago: %s";
                     immutable report = entryPattern.format(note.sender, duration, note.line);
                     privmsg(plugin.state, channelName, user.nickname, report);
