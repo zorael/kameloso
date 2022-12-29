@@ -2,6 +2,15 @@
     The Notes plugin allows for storing notes to offline users, to be replayed
     when they next join the channel.
 
+    If a note is left in a channel, it is stored as a note under that channel
+    and will be played back when the user joins (or optionally shows activity) there.
+    If a note is left in a private message, it is stored as outside of a channel
+    and will be played back in a private query, depending on the same triggers
+    as those of channel notes.
+
+    Activity in one channel will not play back notes left for another channel,
+    but anything will trigger private message playback.
+
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#notes
         [kameloso.plugins.common.core|plugins.common.core]
@@ -20,12 +29,14 @@ import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
-
 version(WithChanQueriesService) {}
 else
 {
     pragma(msg, "Warning: The `Notes` plugin will work but not well without the `ChanQueries` service.");
 }
+
+mixin MinimalAuthentication;
+mixin ModuleRegistration;
 
 
 // NotesSettings
@@ -34,18 +45,99 @@ else
  +/
 @Settings struct NotesSettings
 {
-    /// Toggles whether or not the plugin should react to events at all.
+    /++
+        Toggles whether or not the plugin should react to events at all.
+     +/
     @Enabler bool enabled = true;
+
+    /++
+        Toggles whether or not notes get played back on activity, and not just
+        on [dialect.defs.IRCEvent.Type.JOIN|JOIN]s and
+        [dialect.defs.IRCEvent.Type.ACCOUNT|ACCOUNT]s.
+
+        Ignored on Twitch servers.
+     +/
+    bool playBackOnAnyActivity = true;
 }
 
 
-// onReplayEvent
+// Note
+/++
+    Embodies the notion of a note, left for an offline user.
+ +/
+struct Note
+{
+private:
+    import std.json : JSONValue;
+
+public:
+    /++
+        Line of text left as a note, optionally Base64-encoded.
+     +/
+    string line;
+
+    /++
+        String name of the sender, optionally Base64-encoded. May be a display name.
+     +/
+    string sender;
+
+    /++
+        UNIX timestamp of when the note was left.
+     +/
+    long timestamp;
+
+    /++
+        Encrypts the note, Base64-encoding [line] and [sender].
+     +/
+    void encrypt()
+    {
+        import lu.string : encode64;
+        line = encode64(line);
+        sender = encode64(sender);
+    }
+
+    /++
+        Decrypts the note, Base64-decoding [line] and [sender].
+     +/
+    void decrypt()
+    {
+        import lu.string : decode64;
+        line = decode64(line);
+        sender = decode64(sender);
+    }
+
+    /++
+        Converts this [Note] into a JSON representation.
+     +/
+    auto toJSON() const
+    {
+        JSONValue json;
+        json["line"] = JSONValue(this.line);
+        json["sender"] = JSONValue(this.sender);
+        json["timestamp"] = JSONValue(this.timestamp);
+        return json;
+    }
+
+    /++
+        Creates a [Note] from a JSON representation.
+
+        Params:
+            json = [std.json.JSONValue|JSONValue] to build a [Note] from.
+     +/
+    static auto fromJSON(const JSONValue json)
+    {
+        Note note;
+        note.line = json["line"].str;
+        note.sender = json["sender"].str;
+        note.timestamp = json["timestamp"].integer;
+        return note;
+    }
+}
+
+
+// onJoinOrAccount
 /++
     Plays back notes upon someone joining or upon someone authenticating with services.
-
-    There's no need to trigger each `CHAN` since we know we enumerate all
-    users in a channel when querying `WHO` -- except on Twitch, where there
-    is no `WHO`, no `ACCOUNT`, and where we can't trust `JOIN`.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.JOIN)
@@ -53,33 +145,50 @@ else
     .permissionsRequired(Permissions.anyone)
     .channelPolicy(ChannelPolicy.home)
 )
-void onReplayEvent(NotesPlugin plugin, const /*ref*/ IRCEvent event)
+void onJoinOrAccount(NotesPlugin plugin, const ref IRCEvent event)
 {
     version(TwitchSupport)
     {
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
-            // We can't really rely on JOINs on Twitch
+            // We can't really rely on JOINs on Twitch and ACCOUNTs don't happen
             return;
         }
     }
 
-    if (event.channel !in plugin.notes) return;
+    playbackNotes(plugin, event);
+}
 
-    return plugin.playbackNotes(event.sender, event.channel);
+
+// onChannelMessage
+/++
+    Plays back notes upon someone saying something in the channel, provided
+    [NotesSettings.playBackOnAnyActivity] is set.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.EMOTE)
+    .onEvent(IRCEvent.Type.QUERY)
+    .permissionsRequired(Permissions.anyone)
+    .channelPolicy(ChannelPolicy.home)
+    .chainable(true)
+)
+void onChannelMessage(NotesPlugin plugin, const ref IRCEvent event)
+{
+    if (plugin.notesSettings.playBackOnAnyActivity ||
+        (plugin.state.server.daemon == IRCServer.Daemon.twitch))
+    {
+        playbackNotes(plugin, event);
+    }
 }
 
 
 // onTwitchChannelEvent
 /++
-    Plays back notes upon someone speaking in a channel.
-
-    This is the only good way we can detect participants on Twitch.
+    Plays back notes upon someone performing a Twitch-specific action.
  +/
 version(TwitchSupport)
 @(IRCEventHandler()
-    .onEvent(IRCEvent.Type.CHAN)
-    .onEvent(IRCEvent.Type.EMOTE)
     .onEvent(IRCEvent.Type.TWITCH_SUB)
     .onEvent(IRCEvent.Type.TWITCH_SUBGIFT)
     .onEvent(IRCEvent.Type.TWITCH_CHEER)
@@ -94,21 +203,17 @@ version(TwitchSupport)
     .onEvent(IRCEvent.Type.TWITCH_GIFTRECEIVED)
     .onEvent(IRCEvent.Type.TWITCH_PAYFORWARD)
     .onEvent(IRCEvent.Type.TWITCH_RAID)
+    .onEvent(IRCEvent.Type.TWITCH_CROWDCHANT)
+    .onEvent(IRCEvent.Type.TWITCH_ANNOUNCEMENT)
+    .onEvent(IRCEvent.Type.TWITCH_DIRECTCHEER)
     .permissionsRequired(Permissions.ignore)
     .channelPolicy(ChannelPolicy.home)
     .chainable(true)
 )
-void onTwitchChannelEvent(NotesPlugin plugin, const /*ref*/ IRCEvent event)
+void onTwitchChannelEvent(NotesPlugin plugin, const ref IRCEvent event)
 {
-    if (plugin.state.server.daemon != IRCServer.Daemon.twitch)
-    {
-        // Only do stuff on Twitch
-        return;
-    }
-
-    if (event.channel !in plugin.notes) return;
-
-    return plugin.playbackNotes(event.sender, event.channel);
+    // No need to check whether we're on Twitch
+    playbackNotes(plugin, event);
 }
 
 
@@ -122,177 +227,150 @@ void onTwitchChannelEvent(NotesPlugin plugin, const /*ref*/ IRCEvent event)
     [kameloso.pods.CoreSettings.eagerLookups|CoreSettings.eagerLookups] is true,
     as we'd collide with ChanQueries' queries.
 
-    Pass `Yes.background` to [playbackNotes] to ensure it does low-priority background
-    WHOIS queries.
+    Passes `Yes.background` to [playbackNotes] to ensure it does low-priority
+    background WHOIS queries.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WHOREPLY)
     .channelPolicy(ChannelPolicy.home)
 )
-void onWhoReply(NotesPlugin plugin, const /*ref*/ IRCEvent event)
+void onWhoReply(NotesPlugin plugin, const ref IRCEvent event)
 {
     if (plugin.state.settings.eagerLookups) return;
 
-    if (event.channel !in plugin.notes) return;
-
-    return plugin.playbackNotes(event.target, event.channel, Yes.background);
+    playbackNotes(plugin, event, Yes.background);
 }
 
 
 // playbackNotes
 /++
-    Sends notes queued for a user to a channel when they join or show activity.
-    Private notes are also sent, when some exist.
+    Plays back notes. The target is assumed to be the sender of the
+    [dialect.defs.IRCEvent|IRCEvent] passed.
 
-    Nothing is sent if no notes are stored.
+    If the [dialect.defs.IRCEvent|IRCEvent] contains a channel, then playback
+    of both channel and private message notes will be performed. If the channel
+    member is empty, only private message ones.
 
     Params:
         plugin = The current [NotesPlugin].
-        givenUser = The [dialect.defs.IRCUser|IRCUser] for whom we want to replay notes.
-        givenChannel = Name of the channel we want the notes related to.
+        event = The triggering [dialect.defs.IRCEvent|IRCEvent].
         background = Whether or not to issue WHOIS queries as low-priority background messages.
  +/
 void playbackNotes(
     NotesPlugin plugin,
-    const IRCUser givenUser,
-    const string givenChannel,
+    const /*ref*/ IRCEvent event,
     const Flag!"background" background = No.background)
 {
-    import kameloso.time : timeSince;
-    import dialect.common : toLowerCase;
-    import std.datetime.systime : Clock;
-    import std.exception : ErrnoException;
-    import std.file : FileException;
-    import std.format : format;
-    import std.json : JSONException;
-    import std.range : only;
-
-    if (givenUser.nickname == plugin.state.client.nickname) return;
-
-    version(TwitchSupport)
+    if (event.channel.length)
     {
-        // On Twitch, prepend the nickname a message is aimed towards with a @
-        // Make it a string "@" so the alternative can be string.init (and not char.init)
-        immutable atSign = (plugin.state.server.daemon == IRCServer.Daemon.twitch) ?
-            "@" : string.init;
+        import std.range : only;
+
+        // Try both channel and private message notes
+        foreach (immutable wouldBeChannel; only(event.channel, string.init))
+        {
+            playbackNotesImpl(plugin, wouldBeChannel, event.sender, background);
+        }
     }
     else
     {
-        enum atSign = string.init;
+        // Only private message relevant
+        playbackNotesImpl(plugin, string.init, event.sender, background);
     }
+}
 
-    uint i;
 
-    foreach (immutable channelName; only(givenChannel, string.init))
+// playbackNotesImpl
+/++
+    Plays back notes. Implementation function.
+
+    Params:
+        plugin = The current [NotesPlugin].
+        channelName = The name of the channel in which the playback is to take place,
+            or an empty string if it's supposed to take place in a private message.
+        user = [dialect.defs.IRCUser|IRCUser] to replay notes for.
+        background = Whether or not to issue WHOIS queries as low-priority background messages.
+ +/
+void playbackNotesImpl(
+    NotesPlugin plugin,
+    const string channelName,
+    const IRCUser user,
+    const Flag!"background" background)
+{
+    import kameloso.plugins.common.mixins : WHOISFiberDelegate;
+    import std.format : format;
+
+    auto channelNotes = channelName in plugin.notes;
+    if (!channelNotes) return;
+
+    void onSuccess(const IRCUser user)
     {
-        void onSuccess(const IRCUser user)
+        import std.range : only;
+
+        foreach (immutable id; only(user.nickname, user.account))
         {
-            import kameloso.plugins.common.misc : idOf, nameOf;
+            import kameloso.plugins.common.misc : nameOf;
+            import kameloso.time : timeSince;
+            import std.datetime.systime : Clock, SysTime;
 
-            immutable id = user.nickname.toLowerCase(plugin.state.server.caseMapping);
+            auto notes = id in *channelNotes;
+            if (!notes || !notes.length) continue;
 
-            try
+            immutable maybeDisplayName = nameOf(user);
+            immutable nowInUnix = Clock.currTime;
+
+            if (notes.length == 1)
             {
-                const noteArray = plugin.getNotes(channelName, id);
+                auto note = (*notes)[0];  // mutable
+                immutable timestampAsSysTime = SysTime.fromUnixTime(note.timestamp);
+                immutable duration = (nowInUnix - timestampAsSysTime).timeSince!(7, 1)(No.abbreviate);
 
-                if (!noteArray.length) return;
+                note.decrypt();
+                enum pattern = "<h>%s<h>! <h>%s<h> left note <b>%s<b> ago: %s";
+                immutable message = pattern.format(maybeDisplayName, note.sender, duration, note.line);
+                privmsg(plugin.state, channelName, user.nickname, message);
+            }
+            else /*if (notes.length > 1)*/
+            {
+                enum pattern = "<h>%s<h>! You have <b>%d<b> notes.";
+                immutable message = pattern.format(maybeDisplayName, notes.length);
+                privmsg(plugin.state, channelName, user.nickname, message);
 
-                immutable senderName = nameOf(user);
-                immutable currTime = Clock.currTime;
-
-                if (noteArray.length == 1)
+                foreach (/*const*/ note; *notes)
                 {
-                    const note = noteArray[0];
-                    immutable timestamp = (currTime - note.when).timeSince!(7, 1)(No.abbreviate);
+                    immutable timestampAsSysTime = SysTime.fromUnixTime(note.timestamp);
+                    immutable duration = (nowInUnix - timestampAsSysTime).timeSince!(7, 1)(Yes.abbreviate);
 
-                    enum pattern = "%s<h>%s<h>! <h>%s<h> left note <b>%s<b> ago: %s";
-                    immutable message = pattern.format(atSign, senderName, note.sender, timestamp, note.line);
-                    privmsg(plugin.state, channelName, user.nickname, message);
+                    note.decrypt();
+                    enum entryPattern = "<h>%s<h> %s ago: %s";
+                    immutable report = entryPattern.format(note.sender, duration, note.line);
+                    privmsg(plugin.state, channelName, user.nickname, report);
                 }
-                else
-                {
-                    enum pattern = "%s<h>%s<h>! You have <b>%d<b> notes.";
-                    immutable message = pattern.format(atSign, senderName, noteArray.length);
-                    privmsg(plugin.state, channelName, user.nickname, message);
-
-                    foreach (const note; noteArray)
-                    {
-                        immutable timestamp = (currTime - note.when).timeSince!(7, 1)(Yes.abbreviate);
-
-                        enum entryPattern = "<h>%s<h> %s ago: %s";
-                        immutable report = entryPattern.format(note.sender, timestamp, note.line);
-                        privmsg(plugin.state, channelName, user.nickname, report);
-                    }
-                }
-
-                plugin.clearNotes(id, channelName);
-                plugin.notes.save(plugin.notesFile);
             }
-            catch (JSONException e)
-            {
-                enum pattern = "Failed to fetch, replay and clear notes for " ~
-                    "<l>%s</> on <l>%s</>: <l>%s";
-                logger.errorf(pattern, id,
-                    (channelName.length ? channelName : "<no channel>"), e.msg);
 
-                if (e.msg == "JSONValue is not an object")
-                {
-                    logger.warning("Notes file corrupt. Starting from scratch.");
-                    plugin.notes.reset();
-                    plugin.notes.save(plugin.notesFile);
-                }
+            (*channelNotes).remove(id);
+            if (!channelNotes.length) plugin.notes.remove(channelName);
 
-                version(PrintStacktraces) logger.trace(e.info);
-            }
-            catch (FileException e)
-            {
-                enum pattern = "Failed to save notes: <l>%s";
-                logger.errorf(pattern, e.msg);
-                version(PrintStacktraces) logger.trace(e.info);
-            }
-            catch (ErrnoException e)
-            {
-                enum pattern = "Failed to open/close notes file: <l>%s";
-                logger.errorf(pattern, e.msg);
-                version(PrintStacktraces) logger.trace(e.info);
-            }
+            // Don't run the loop twice if the nickname and the account is the same
+            if (user.nickname == user.account) break;
         }
 
-        void onFailure(const IRCUser failureUser)
-        {
-            //logger.trace("(Assuming unauthenticated nickname or offline account was specified)");
-            return onSuccess(failureUser);
-        }
-
-        // Functionally the same as the block below, since everyone has accounts on Twitch
-        /*version(TwitchSupport)
-        {
-            if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
-            {
-                onSuccess(givenUser);
-                continue;
-            }
-        }*/
-
-        if (givenUser.account.length)
-        {
-            onSuccess(givenUser);
-            continue;
-        }
-
-        import kameloso.plugins.common.mixins : WHOISFiberDelegate;
-
-        // Silence warnings about no UserAwareness by passing Yes.alwaysLookup
-        // (it will always look up anyway because of only MinimalAuthentication)
-        // Rely on PesistenceService for account names.
-        mixin WHOISFiberDelegate!(onSuccess, onFailure, Yes.alwaysLookup);
-
-        // Only WHOIS once
-        enqueueAndWHOIS(givenUser.nickname, cast(Flag!"issueWhois")(i++ == 0), background);
-
-        // Break early if givenChannel was empty, and save us a loop and a lookup
-        if (!channelName.length) break;
+        plugin.saveNotes();
     }
+
+    void onFailure(const IRCUser user)
+    {
+        // Merely failed to resolve an account, proceed with success branch
+        return onSuccess(user);
+    }
+
+    if (user.account.length)
+    {
+        return onSuccess(user);
+    }
+
+    mixin WHOISFiberDelegate!(onSuccess, onFailure, Yes.alwaysLookup);
+
+    enqueueAndWHOIS(user.nickname, Yes.issueWhois, background);
 }
 
 
@@ -315,252 +393,51 @@ void playbackNotes(
             .policy(PrefixPolicy.prefixed)
             .description("Adds a note to send to an offline person when they come online, " ~
                 "or when they show activity if already online.")
-            .addSyntax("$command [nickname] [note text...]")
+            .addSyntax("$command [nickname] [note text]")
     )
 )
 void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.common.misc : nameOf;
-    import dialect.common : opEqualsCaseInsensitive, toLowerCase;
     import lu.string : SplitResults, beginsWith, splitInto;
-    import std.format : format;
-    import std.json : JSONException;
-    import std.typecons : No, Yes;
+    import std.datetime.systime : Clock;
+
+    void sendUsage()
+    {
+        import std.format : format;
+
+        enum pattern = "Usage: <b>%s%s<b> [nickname] [note text]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    }
+
+    void sendNoBotMessages()
+    {
+        enum message = "You cannot leave me a message; it would never be replayed.";
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+
+    }
 
     string slice = event.content;  // mutable
-    string target;
+    string target; // mutable
 
     immutable results = slice.splitInto(target);
     if (target.beginsWith('@')) target = target[1..$];
 
-    if ((results != SplitResults.overrun) || !target.length)
-    {
-        enum pattern = "Usage: <b>%s%s<b> [nickname] [note text...]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
-    }
+    if ((results != SplitResults.overrun) || !target.length) return sendUsage();
+    if (target == plugin.state.client.nickname) return sendNoBotMessages();
 
-    if (target.opEqualsCaseInsensitive(plugin.state.client.nickname, plugin.state.server.caseMapping))
-    {
-        return privmsg(plugin.state, event.channel, event.sender.nickname,
-            "You cannot leave the bot a message; it would never be replayed.");
-    }
+    Note note;
+    note.sender = nameOf(event.sender);
+    note.timestamp = Clock.currTime.toUnixTime;
+    note.line = slice;
+    note.encrypt();
 
-    target = target.toLowerCase(plugin.state.server.caseMapping);
+    plugin.notes[event.channel][target] ~= note;
+    plugin.saveNotes();
 
-    try
-    {
-        plugin.addNote(target, nameOf(event.sender), event.channel, slice);
-        privmsg(plugin.state, event.channel, event.sender.nickname, "Note added.");
-        plugin.notes.save(plugin.notesFile);
-    }
-    catch (JSONException e)
-    {
-        privmsg(plugin.state, event.channel, event.sender.nickname,
-            "Failed to add note; " ~ e.msg);
-        /*enum pattern = "Failed to add note: <l>%s";
-        logger.errorf(pattern, e.msg);*/
-        version(PrintStacktraces) logger.trace(e.info);
-    }
-}
-
-
-// reload
-/++
-    Reloads notes from disk.
- +/
-void reload(NotesPlugin plugin)
-{
-    plugin.notes.load(plugin.notesFile);
-}
-
-
-// getNotes
-/++
-    Fetches the notes for a specified user, from the in-memory JSON storage.
-
-    Params:
-        plugin = Current [NotesPlugin].
-        channel = Channel for which the notes were stored.
-        id = Nickname or account of user whose notes to fetch.
-
-    Returns:
-        A Voldemort `Note[]` array, where `Note` is a struct containing a note
-        and metadata thereto.
- +/
-auto getNotes(NotesPlugin plugin, const string channel, const string id)
-{
-    import lu.string : decode64;
-    import std.datetime.systime : SysTime;
-    import std.format : format;
-    import std.json : JSONType;
-
-    static struct Note
-    {
-        string sender, line;
-        SysTime when;
-    }
-
-    Note[] noteArray;
-
-    if (const channelNotesJSON = channel in plugin.notes)
-    {
-        if (channelNotesJSON.type != JSONType.object)
-        {
-            enum pattern = "Invalid channel notes list type for <l>%s</>: `<l>%s</>`";
-            logger.errorf(pattern, channel, channelNotesJSON.type);
-        }
-        else if (const nickNotes = id in channelNotesJSON.object)
-        {
-            if (nickNotes.type != JSONType.array)
-            {
-                enum pattern = "Invalid notes list type for <l>%s</> on <l>%s</>: `<l>%s</>`";
-                logger.errorf(pattern, id, channel, nickNotes.type);
-                return noteArray;
-            }
-
-            noteArray.length = nickNotes.array.length;
-
-            foreach (immutable i, noteJSON; nickNotes.array)
-            {
-                import std.base64 : Base64Exception;
-                noteArray[i].sender = noteJSON["sender"].str;
-                noteArray[i].when = SysTime.fromUnixTime(noteJSON["when"].integer);
-
-                try
-                {
-                    noteArray[i].line = decode64(noteJSON["line"].str);
-                }
-                catch (Base64Exception e)
-                {
-                    noteArray[i].line = "(An error occurred and the note could not be read)";
-                    version(PrintStacktraces) logger.trace(e);
-                }
-            }
-        }
-    }
-
-    return noteArray;
-}
-
-
-// clearNotes
-/++
-    Clears the note storage of any notes pertaining to the specified user, then
-    saves it to disk.
-
-    Params:
-        plugin = Current [NotesPlugin].
-        id = Nickname or account whose notes to clear.
-        channel = Channel for which the notes were stored.
- +/
-void clearNotes(NotesPlugin plugin, const string id, const string channel)
-in (id.length, "Tried to clear notes for an empty id")
-//in (channel.length, "Tried to clear notes with an empty channel string")
-{
-    import std.json : JSONType;
-
-    if (id in plugin.notes[channel])
-    {
-        if (plugin.notes[channel].type != JSONType.object)
-        {
-            enum pattern = "Invalid channel notes list type for <l>%s</>: `<l>%s</>`";
-            return logger.errorf(pattern, channel, plugin.notes[channel].type);
-        }
-
-        plugin.notes[channel].object.remove(id);
-        plugin.pruneNotes();
-    }
-}
-
-
-// pruneNotes
-/++
-    Prunes the notes database of empty channel entries.
-
-    Individual nickname entries are not touched as they are assumed to be
-    cleared and removed after replaying its notes.
-
-    Params:
-        plugin = Current [NotesPlugin].
- +/
-void pruneNotes(NotesPlugin plugin)
-{
-    string[] garbageKeys;
-
-    foreach (immutable channelName, channelNotesJSON; plugin.notes.object)
-    {
-        if (!channelNotesJSON.object.length)
-        {
-            // Dead channel
-            garbageKeys ~= channelName;
-        }
-    }
-
-    foreach (immutable key; garbageKeys)
-    {
-        plugin.notes.object.remove(key);
-    }
-}
-
-
-// addNote
-/++
-    Creates a note and saves it in the in-memory JSON storage.
-
-    Params:
-        plugin = Current [NotesPlugin].
-        id = Identifier (nickname/account) for whom the note is meant.
-        sender = Originating user who places the note.
-        channel = Channel for which we should save the note.
-        line = Note text.
- +/
-void addNote(
-    NotesPlugin plugin,
-    const string id,
-    const string sender,
-    const string channel,
-    const string line)
-in (id.length, "Tried to add a note for an empty id")
-in (sender.length, "Tried to add a note from an empty sender")
-//in (channel.length, "Tried to add a note with an empty channel")
-in (line.length, "Tried to add an empty note")
-{
-    import lu.string : encode64;
-    import std.datetime.systime : Clock;
-    import std.json : JSONValue;
-
-    if (!line.length)
-    {
-        return logger.warning("No message to create note from.");
-    }
-
-    // "when" is long so can't construct a single AA and assign it in one go
-    // (it wouldn't be string[string] then)
-    auto senderAndLine =
-    [
-        "sender" : sender,
-        "line"   : encode64(line),
-        //"when" : Clock.currTime.toUnixTime,
-    ];
-
-    auto asJSON = JSONValue(senderAndLine);
-    asJSON["when"] = Clock.currTime.toUnixTime;  // workaround to the above
-
-    // If there is no channel in the JSON, add it
-    if (channel !in plugin.notes)
-    {
-        plugin.notes[channel] = null;
-        plugin.notes[channel].object = null;
-    }
-
-    if (id !in plugin.notes[channel])
-    {
-        plugin.notes[channel][id] = null;
-        plugin.notes[channel][id].array = null;
-    }
-
-    plugin.notes[channel][id].array ~= asJSON;
+    enum message = "Note saved.";
+    privmsg(plugin.state, event.channel, event.sender.nickname, message);
 }
 
 
@@ -574,6 +451,74 @@ in (line.length, "Tried to add an empty note")
 void onWelcome(NotesPlugin plugin)
 {
     plugin.reload();
+}
+
+
+// saveNotes
+/++
+    Saves notes to disk, to the [NotesPlugin.notesFile] JSON file.
+ +/
+void saveNotes(NotesPlugin plugin)
+{
+    import lu.json : JSONStorage;
+    import std.json : JSONType;
+
+    JSONStorage json;
+
+    foreach (immutable channelName, channelNotes; plugin.notes)
+    {
+        json[channelName] = null;
+        json[channelName].object = null;
+
+        foreach (immutable nickname, notes; channelNotes)
+        {
+            json[channelName][nickname] = null;
+            json[channelName][nickname].array = null;
+
+            foreach (note; notes)
+            {
+                json[channelName][nickname].array ~= note.toJSON();
+            }
+        }
+    }
+
+    if (json.type == JSONType.null_) json.object = null;  // reset to type object if null_
+    json.save(plugin.notesFile);
+}
+
+
+// loadNotes
+/++
+    Loads notes from disk into [NotesPlugin.notes].
+ +/
+void loadNotes(NotesPlugin plugin)
+{
+    import lu.json : JSONStorage;
+
+    JSONStorage json;
+    json.load(plugin.notesFile);
+    plugin.notes.clear();
+
+    foreach (immutable channelName, channelNotesJSON; json.object)
+    {
+        foreach (immutable nickname, notesJSON; channelNotesJSON.object)
+        {
+            foreach (noteJSON; notesJSON.array)
+            {
+                plugin.notes[channelName][nickname] ~= Note.fromJSON(noteJSON);
+            }
+        }
+    }
+}
+
+
+// reload
+/++
+    Reloads notes from disk.
+ +/
+void reload(NotesPlugin plugin)
+{
+    return loadNotes(plugin);
 }
 
 
@@ -611,9 +556,6 @@ void initResources(NotesPlugin plugin)
 }
 
 
-mixin MinimalAuthentication;
-mixin ModuleRegistration;
-
 public:
 
 
@@ -627,7 +569,10 @@ final class NotesPlugin : IRCPlugin
 private:
     import lu.json : JSONStorage;
 
-    /// All Notes plugin settings gathered.
+    // notesSettings
+    /++
+        All Notes plugin settings gathered.
+     +/
     NotesSettings notesSettings;
 
     // notes
@@ -637,9 +582,12 @@ private:
         It is in the JSON form of `Note[][string][string]`, where the first
         string key is a channel and the second a nickname.
      +/
-    JSONStorage notes;
+    Note[][string][string] notes;
 
-    /// Filename of file to save the notes to.
+    // notesFile
+    /++
+        Filename of file to save the notes to.
+     +/
     @Resource string notesFile = "notes.json";
 
     mixin IRCPluginImpl;
