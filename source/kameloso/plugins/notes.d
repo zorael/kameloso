@@ -231,6 +231,10 @@ void onWhoReply(NotesPlugin plugin, const ref IRCEvent event)
     Plays back notes. The target is assumed to be the sender of the
     [dialect.defs.IRCEvent|IRCEvent] passed.
 
+    If the [dialect.defs.IRCEvent|IRCEvent] contains a channel, then playback
+    of both channel and private message notes will be performed. If the channel
+    member is empty, only private message ones.
+
     Params:
         plugin = The current [NotesPlugin].
         event = The triggering [dialect.defs.IRCEvent|IRCEvent].
@@ -241,10 +245,45 @@ void playbackNotes(
     const /*ref*/ IRCEvent event,
     const Flag!"background" background = No.background)
 {
+    if (event.channel.length)
+    {
+        import std.range : only;
+
+        // Try both channel and private message notes
+        foreach (immutable wouldBeChannel; only(event.channel, string.init))
+        {
+            playbackNotesImpl(plugin, wouldBeChannel, event.sender, background);
+        }
+    }
+    else
+    {
+        // Only private message relevant
+        playbackNotesImpl(plugin, string.init, event.sender, background);
+    }
+}
+
+
+// playbackNotesImpl
+/++
+    Plays back notes. Implementation function.
+
+    Params:
+        plugin = The current [NotesPlugin].
+        channelName = The name of the channel in which the playback is to take place,
+            or an empty string if it's supposed to take place in a private message.
+        user = [dialect.defs.IRCUser|IRCUser] to replay notes for.
+        background = Whether or not to issue WHOIS queries as low-priority background messages.
+ +/
+void playbackNotesImpl(
+    NotesPlugin plugin,
+    const string channelName,
+    const IRCUser user,
+    const Flag!"background" background)
+{
     import kameloso.plugins.common.mixins : WHOISFiberDelegate;
     import std.format : format;
 
-    auto channelNotes = event.channel in plugin.notes;
+    auto channelNotes = channelName in plugin.notes;
     if (!channelNotes) return;
 
     void onSuccess(const IRCUser user)
@@ -272,13 +311,13 @@ void playbackNotes(
 
                 enum pattern = "<h>%s<h>! <h>%s<h> left note <b>%s<b> ago: %s";
                 immutable message = pattern.format(maybeDisplayName, note.sender, duration, note.line);
-                privmsg(plugin.state, event.channel, user.nickname, message);
+                privmsg(plugin.state, channelName, user.nickname, message);
             }
             else /*if (notes.length > 1)*/
             {
                 enum pattern = "<h>%s<h>! You have <b>%d<b> notes.";
                 immutable message = pattern.format(maybeDisplayName, notes.length);
-                privmsg(plugin.state, event.channel, user.nickname, message);
+                privmsg(plugin.state, channelName, user.nickname, message);
 
                 foreach (/*const*/ note; *notes)
                 {
@@ -287,12 +326,12 @@ void playbackNotes(
                     immutable duration = (nowInUnix - timestampAsSysTime).timeSince!(7, 1)(Yes.abbreviate);
                     enum entryPattern = "<h>%s<h> %s ago: %s";
                     immutable report = entryPattern.format(note.sender, duration, note.line);
-                    privmsg(plugin.state, event.channel, user.nickname, report);
+                    privmsg(plugin.state, channelName, user.nickname, report);
                 }
             }
 
             (*channelNotes).remove(id);
-            if (!channelNotes.length) plugin.notes.remove(event.channel);
+            if (!channelNotes.length) plugin.notes.remove(channelName);
 
             // Don't run the loop twice if the nickname and the account is the same
             if (user.nickname == user.account) break;
@@ -307,14 +346,14 @@ void playbackNotes(
         return onSuccess(user);
     }
 
-    if (event.sender.account.length)
+    if (user.account.length)
     {
-        return onSuccess(event.sender);
+        return onSuccess(user);
     }
 
     mixin WHOISFiberDelegate!(onSuccess, onFailure, Yes.alwaysLookup);
 
-    enqueueAndWHOIS(event.sender.nickname, Yes.issueWhois, background);
+    enqueueAndWHOIS(user.nickname, Yes.issueWhois, background);
 }
 
 
