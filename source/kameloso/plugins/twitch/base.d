@@ -748,17 +748,15 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         else /*if (!broadcasterUser)*/
         {
             // Fake a new user
-            plugin.state.users[nickname] = IRCUser.init;
+            auto newUser = IRCUser(nickname, nickname, nickname ~ ".tmi.twitch.tv");
+            newUser.account = nickname;
+            newUser.class_ = IRCUser.Class.anyone;
+            plugin.state.users[nickname] = newUser;
             broadcasterUser = nickname in plugin.state.users;
-            broadcasterUser.nickname = nickname;
-            broadcasterUser.ident = nickname;
-            broadcasterUser.address = nickname ~ ".tmi.twitch.tv";
-            broadcasterUser.account = nickname;
-            broadcasterUser.class_ = IRCUser.Class.anyone;
         }
 
-        IRCUser user = *broadcasterUser;
-        user.displayName = room.broadcasterDisplayName;
+        broadcasterUser.displayName = room.broadcasterDisplayName;
+        IRCUser user = *broadcasterUser;  // dereference and copy
         plugin.state.mainThread.send(ThreadMessage.busMessage("persistence", sendable(user)));
     }
 }
