@@ -175,10 +175,23 @@ in (specified.length, "Tried to get timezone of an empty string")
         return string.init;
     }
 
-    immutable withUnderscores = specified.replace(' ', '_');
-    immutable zonestring = installedTimeZones.canFind(withUnderscores) ?
-        withUnderscores :
-        resolvePrefixedTimeZone(withUnderscores);
+    string zonestring;  // mutable
+
+    version(Posix)
+    {
+        // Some common aliases. Add more as they become obvious.
+        if      (specified == "CST") zonestring = "US/Central";
+        else if (specified == "EST") zonestring = "US/Eastern";
+        else if (specified == "PST") zonestring = "US/Pacific";
+    }
+
+    if (!zonestring.length)
+    {
+        immutable withUnderscores = specified.replace(' ', '_');
+        zonestring = installedTimeZones.canFind(withUnderscores) ?
+            withUnderscores :
+            resolvePrefixedTimeZone(withUnderscores);
+    }
 
     try
     {
