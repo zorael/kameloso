@@ -78,67 +78,6 @@ void onCommandSay(ChatbotPlugin plugin, const ref IRCEvent event)
 }
 
 
-// onCommand8ball
-/++
-    Implements magic `8ball` (https://en.wikipedia.org/wiki/Magic_8-Ball).
-
-    Randomises a response from the internal `eightballAnswers` table and sends
-    it back to the channel in which the triggering event happened, or in a query
-    if it was a private message.
- +/
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.CHAN)
-    .onEvent(IRCEvent.Type.QUERY)
-    .permissionsRequired(Permissions.anyone)
-    .channelPolicy(ChannelPolicy.home)
-    .addCommand(
-        IRCEventHandler.Command()
-            .word("8ball")
-            .policy(PrefixPolicy.prefixed)
-            .description("Implements 8ball. Randomises a vague yes/no response.")
-    )
-    .addCommand(
-        IRCEventHandler.Command()
-            .word("eightball")
-            .policy(PrefixPolicy.prefixed)
-            .hidden(true)
-    )
-)
-void onCommand8ball(ChatbotPlugin plugin, const ref IRCEvent event)
-{
-    import std.format : format;
-    import std.random : uniform;
-
-    // Fetched from Wikipedia
-    static immutable string[20] eightballAnswers =
-    [
-        "It is certain",
-        "It is decidedly so",
-        "Without a doubt",
-        "Yes, definitely",
-        "You may rely on it",
-        "As I see it, yes",
-        "Most likely",
-        "Outlook good",
-        "Yes",
-        "Signs point to yes",
-        "Reply hazy try again",
-        "Ask again later",
-        "Better not tell you now",
-        "Cannot predict now",
-        "Concentrate and ask again",
-        "Don't count on it",
-        "My reply is no",
-        "My sources say no",
-        "Outlook not so good",
-        "Very doubtful",
-    ];
-
-    immutable reply = eightballAnswers[uniform(0, eightballAnswers.length)];
-    privmsg(plugin.state, event.channel, event.sender.nickname, reply);
-}
-
-
 // onCommandBash
 /++
     Fetch a random or specified `bash.org` quote.
