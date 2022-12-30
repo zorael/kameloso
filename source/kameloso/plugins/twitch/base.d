@@ -305,6 +305,8 @@ mixin ModuleRegistration!(-5);
     .onEvent(IRCEvent.Type.TWITCH_GIFTRECEIVED)
     .onEvent(IRCEvent.Type.TWITCH_PAYFORWARD)
     .onEvent(IRCEvent.Type.TWITCH_RAID)
+    .onEvent(IRCEvent.Type.TWITCH_CROWDCHANT)
+    .onEvent(IRCEvent.Type.TWITCH_ANNOUNCEMENT)
     .permissionsRequired(Permissions.ignore)
     .channelPolicy(ChannelPolicy.home)
     .chainable(true)
