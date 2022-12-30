@@ -42,7 +42,8 @@ versions \
     "WithPollPlugin" \
     "WithTimerPlugin" \
     "WithWebtitlesPlugin" \
-    "WithTimePlugin"
+    "WithTimePlugin" \
+    "WithBashPlugin"
     //"WithSamePlugin"
 
 /**
