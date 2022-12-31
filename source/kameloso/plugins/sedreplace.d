@@ -113,7 +113,8 @@ struct Line
         relaxSyntax = Whether or not to require the expression to end with the delimiter.
 
     Returns:
-        Original line with the changes the replace pattern incurred.
+        Original line with the changes the replace pattern incurred, or an empty
+        `string.init` if nothing was changed.
  +/
 auto sedReplace(
     const string line,
@@ -221,8 +222,8 @@ unittest
         relaxSyntax = Whether or not to require the expression to end with the delimiter.
 
     Returns:
-        The passed line with the relevant bits replaced, or as is if the expression
-        didn't apply.
+        The passed line with the relevant bits replaced, or `string.init` if the
+        expression didn't apply.
  +/
 auto sedReplaceImpl(char char_)
     (const string line,
@@ -275,22 +276,22 @@ in (expr.length, "Tried to `sedReplaceImpl` with an empty expression")
     }
 
     immutable openEnd = (slice[$-1] != char_);
-    if (openEnd && !relaxSyntax) return line;
+    if (openEnd && !relaxSyntax) return string.init;
 
     immutable delimPos = getNextUnescaped(slice);
-    if (delimPos == -1) return line;
+    if (delimPos == -1) return string.init;
 
     // Defer string-replace until after slice advance and subsequent length check
     string replaceThis = slice[0..delimPos];  // mutable
 
     slice = slice[delimPos+1..$];
-    if (!slice.length) return line;
+    if (!slice.length) return string.init;
 
     // ...to here.
     replaceThis = replaceThis.replace(escapedCharAsString, charAsString);
 
     immutable replaceThisPos = line.indexOf(replaceThis);
-    if (replaceThisPos == -1) return line;
+    if (replaceThisPos == -1) return string.init;
 
     immutable endDelimPos = getNextUnescaped(slice);
 
@@ -304,7 +305,7 @@ in (expr.length, "Tried to `sedReplaceImpl` with an empty expression")
         else
         {
             // Found extra delimiters, expression is malformed; abort
-            return line;
+            return string.init;
         }
     }
     else
@@ -313,7 +314,7 @@ in (expr.length, "Tried to `sedReplaceImpl` with an empty expression")
         {
             // Either there were no more delimiters or one was found before the end
             // Syntax is strict; abort
-            return line;
+            return string.init;
         }
     }
 
@@ -350,7 +351,7 @@ unittest
     {
         immutable replaced = "This is INVALID"
             .sedReplaceImpl!'#'("s#asdfasdf#asdfasdf#asdfafsd#g", No.relaxSyntax);
-        assert((replaced == "This is INVALID"), replaced);
+        assert(!replaced.length, replaced);
     }
     {
         immutable replaced = "Hello D".sedReplaceImpl!'/'("s/Hello D/Hullo C", Yes.relaxSyntax);
@@ -370,19 +371,19 @@ unittest
     }
     {
         immutable replaced = "This is INVALID".sedReplaceImpl!'#'("s#INVALID#valid##", Yes.relaxSyntax);
-        assert((replaced == "This is INVALID"), replaced);
+        assert(!replaced.length, replaced);
     }
     {
         immutable replaced = "snek".sedReplaceImpl!'/'("s/snek/", Yes.relaxSyntax);
-        assert((replaced == "snek"), replaced);
+        assert(!replaced.length, replaced);
     }
     {
         immutable replaced = "snek".sedReplaceImpl!'/'("s/snek", Yes.relaxSyntax);
-        assert((replaced == "snek"), replaced);
+        assert(!replaced.length, replaced);
     }
     {
         immutable replaced = "hink".sedReplaceImpl!'/'("s/honk/henk/", Yes.relaxSyntax);
-        assert((replaced == "hink"), replaced);
+        assert(!replaced.length, replaced);
     }
 }
 
@@ -446,10 +447,10 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
 
         case DelimiterCharacters[0]:
             auto channelLines = event.channel in plugin.prevlines;
-            if (!channelLines) return;
+            if (!channelLines) return;  // Don't save
 
             auto senderLines = event.sender.nickname in *channelLines;
-            if (!senderLines) return;
+            if (!senderLines) return;  // As above
 
             // Work around CircularBuffer pre-1.2.3 having save annotated const
             foreach (immutable line; cast()senderLines.save)
@@ -469,10 +470,11 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
                     break delimiterswitch;
                 }
 
-                immutable result = line.content.sedReplace(event.content,
+                immutable result = line.content.sedReplace(
+                    event.content,
                     cast(Flag!"relaxSyntax")plugin.sedReplaceSettings.relaxSyntax);
 
-                if ((result == line.content) || !result.length) continue;
+                if (!result.length) continue;
 
                 enum pattern = "<h>%s<h> | %s";
                 immutable message = pattern.format(event.sender.nickname, result);
@@ -481,7 +483,9 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
                 // Record as last even if there are more lines
                 return recordLineAsLast(result);
             }
-            break;
+
+            // Don't save as last, this was a query
+            return;
 
         default:
             // Drop down to record line
