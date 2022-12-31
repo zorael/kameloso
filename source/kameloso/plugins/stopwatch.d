@@ -145,6 +145,12 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
         }
 
     case "clear":
+        if (event.sender.class_ < IRCUser.Class.operator)
+        {
+            enum message = "You do not have permissions to clear all stopwatches.";
+            return chan(plugin.state, event.channel, message);
+        }
+
         plugin.stopwatches.remove(event.channel);
         enum pattern = "Clearing all stopwatches in channel <b>%s<b>.";
         immutable message = pattern.format(event.channel);
