@@ -1053,10 +1053,10 @@ auto createTimerFiber(
         }
 
         /// The channel message count at last successful trigger.
-        ulong lastMessageCount = channel.messageCount;  // or creation?
+        ulong lastMessageCount = channel.messageCount;
 
         /// The timestamp at the last successful trigger.
-        long lastTimestamp = Clock.currTime.toUnixTime;  // or creation?
+        long lastTimestamp = Clock.currTime.toUnixTime;
 
         /// `Condition.both` fulfilled (cache).
         bool conditionBothFulfilled;
@@ -1066,8 +1066,6 @@ auto createTimerFiber(
 
         while (true)
         {
-            long now;
-
             if ((timerDef.condition == TimerDefinition.Condition.both) && !conditionBothFulfilled)
             {
                 immutable messageCountUnfulfilled =
@@ -1079,7 +1077,7 @@ auto createTimerFiber(
                     continue;
                 }
 
-                now = Clock.currTime.toUnixTime;
+                immutable now = Clock.currTime.toUnixTime;
                 immutable timerUnfulfilled = ((now - lastTimestamp) < timerDef.timeThreshold);
 
                 if (timerUnfulfilled)
@@ -1092,8 +1090,7 @@ auto createTimerFiber(
             }
             else if ((timerDef.condition == TimerDefinition.Condition.either) && !conditionEitherFulfilled)
             {
-                now = Clock.currTime.toUnixTime;
-
+                immutable now = Clock.currTime.toUnixTime;
                 immutable messageCountUnfulfilled =
                     ((channel.messageCount - lastMessageCount) < timerDef.messageCountThreshold);
                 immutable timerUnfulfilled =
@@ -1106,11 +1103,6 @@ auto createTimerFiber(
                 }
 
                 conditionEitherFulfilled = true;
-            }
-            else
-            {
-                // Don't forget to update this, even when the conditions are fulfilled
-                now = Clock.currTime.toUnixTime;
             }
 
             import std.array : replace;
@@ -1134,7 +1126,7 @@ auto createTimerFiber(
             chan(plugin.state, channelName, line);
 
             lastMessageCount = channel.messageCount;
-            lastTimestamp = now;
+            lastTimestamp = Clock.currTime.toUnixTime;
 
             Fiber.yield();
             //continue;
