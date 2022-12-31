@@ -727,17 +727,21 @@ void handleAddToTimer(
 
     foreach (immutable i, ref timerDef; *timerDefs)
     {
-        if (timerDef.name == name)
+        if (timerDef.name != name) continue;
+
+        void destroyUpdateSave()
         {
-            timerDef.lines ~= slice;
             destroy(channel.timerFibers[i]);
             channel.timerFibers[i] = plugin.createTimerFiber(timerDef, event.channel);
             saveResourceToDisk(plugin.timerDefsByChannel, plugin.timerFile);
-
-            enum pattern = "Line added to timer <b>%s<b>.";
-            immutable message = pattern.format(name);
-            return chan(plugin.state, event.channel, message);
         }
+
+        timerDef.lines ~= slice;
+        destroyUpdateSave();
+
+        enum pattern = "Line added to timer <b>%s<b>.";
+        immutable message = pattern.format(name);
+        return chan(plugin.state, event.channel, message);
     }
 
     // If we're here, no timer was found with the given name
