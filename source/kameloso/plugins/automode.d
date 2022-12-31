@@ -298,6 +298,12 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
     import std.algorithm.searching : count;
     import std.format : format;
 
+    void sendInvalidNickname()
+    {
+        enum message = "Invalid nickname.";
+        chan(plugin.state, event.channel, message);
+    }
+
     string line = event.content;  // mutable
 
     immutable verb = line.nom!(Yes.inherit)(' ');
@@ -314,10 +320,7 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 
         if (nickname.beginsWith('@')) nickname = nickname[1..$];
 
-        if (!nickname.isValidNickname(plugin.state.server))
-        {
-            return chan(plugin.state, event.channel, "Invalid nickname.");
-        }
+        if (!nickname.isValidNickname(plugin.state.server)) return sendInvalidNickname();
 
         if (mode.beginsWith('-'))
         {
@@ -350,10 +353,7 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 
         if (!nickname.length) goto default;
 
-        if (!nickname.isValidNickname(plugin.state.server))
-        {
-            return chan(plugin.state, event.channel, "Invalid nickname.");
-        }
+        if (!nickname.isValidNickname(plugin.state.server)) return sendInvalidNickname();
 
         plugin.modifyAutomode(No.add, nickname, event.channel);
 
