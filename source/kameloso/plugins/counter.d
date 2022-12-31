@@ -114,13 +114,13 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
         {
             if (triggerConflicts(channelSpecificAA)) return;
 
+            plugin.counters[event.channel][slice] = 0;
+            saveResourceToDisk(plugin.counters, plugin.countersFile);
+
             // If we're here there were no conflicts
             enum pattern = "Counter <b>%s<b> added! Access it with <b>%s%s<b>.";
             immutable message = pattern.format(slice, plugin.state.settings.prefix, slice);
-
-            plugin.counters[event.channel][slice] = 0;
             chan(plugin.state, event.channel, message);
-            saveResourceToDisk(plugin.counters, plugin.countersFile);
         }
 
         void dg(IRCPlugin.CommandMetadata[string][string] aa)
@@ -143,16 +143,13 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
             return chan(plugin.state, event.channel, message);
         }
 
-        enum pattern = "Counter <b>%s<b> removed.";
-        immutable message = pattern.format(slice);
-
         plugin.counters[event.channel].remove(slice);
         if (!plugin.counters[event.channel].length) plugin.counters.remove(event.channel);
+        saveResourceToDisk(plugin.counters, plugin.countersFile);
 
         enum pattern = "Counter <b>%s<b> removed.";
         immutable message = pattern.format(slice);
         chan(plugin.state, event.channel, message);
-        saveResourceToDisk(plugin.counters, plugin.countersFile);
         break;
 
     case "list":
@@ -287,12 +284,12 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
         }
 
         *count += step;
+        saveResourceToDisk(plugin.counters, plugin.countersFile);
 
         enum pattern = "<b>%s %s<b>! Current count: <b>%d<b>";
         immutable stepText = (step >= 0) ? ('+' ~ step.text) : step.text;
         immutable message = pattern.format(word, stepText, *count);
         chan(plugin.state, event.channel, message);
-        saveResourceToDisk(plugin.counters, plugin.countersFile);
         break;
 
     case '=':
@@ -317,11 +314,12 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
             return chan(plugin.state, event.channel, message);
         }
 
+        *count = newCount;
+        saveResourceToDisk(plugin.counters, plugin.countersFile);
+
         enum pattern = "<b>%s<b> count assigned to <b>%s<b>!";
         immutable message = pattern.format(word, newCount);
         chan(plugin.state, event.channel, message);
-        *count = newCount;
-        saveResourceToDisk(plugin.counters, plugin.countersFile);
         break;
 
     default:
