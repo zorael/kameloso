@@ -1184,6 +1184,8 @@ void reload(TimerPlugin plugin)
             destroy(fiber);
         }
 
+        channel.timerFibers = null;
+
         if (auto timerDefs = channelName in plugin.timerDefsByChannel)
         {
             foreach (timerDef; *timerDefs)
