@@ -820,7 +820,7 @@ void onAnyMessage(TimerPlugin plugin, const ref IRCEvent event)
     if (!channel)
     {
         // Race...
-        plugin.handleSelfjoin(event.channel);
+        handleSelfjoin(plugin, event.channel, No.force);
         channel = event.channel in plugin.channels;
     }
 
@@ -899,7 +899,7 @@ void onWelcome(TimerPlugin plugin)
 )
 void onSelfjoin(TimerPlugin plugin, const ref IRCEvent event)
 {
-    return plugin.handleSelfjoin(event.channel);
+    return handleSelfjoin(plugin, event.channel, No.force);
 }
 
 
@@ -914,19 +914,45 @@ void onSelfjoin(TimerPlugin plugin, const ref IRCEvent event)
     Params:
         plugin = The current [TimerPlugin].
         channelName = The name of the channel we're supposedly joining.
+        force = Whether or not to always set up the channel, regardless of its
+            current existence.
  +/
-void handleSelfjoin(TimerPlugin plugin, const string channelName)
+void handleSelfjoin(
+    TimerPlugin plugin,
+    const string channelName,
+    const Flag!"force" force = No.force)
 {
-    if (channelName in plugin.channels) return;
+    auto channel = channelName in plugin.channels;
 
-    plugin.channels[channelName] = TimerPlugin.Channel(channelName);
-    auto timerDefs = channelName in plugin.timerDefsByChannel;
-
-    if (timerDefs)
+    if (channel)
     {
-        auto channel = channelName in plugin.channels;
+        // Channel exists
+        if (force)
+        {
+            // ...and we're forced to overwrite it
+            foreach (fiber; channel.timerFibers)
+            {
+                destroy(fiber);
+            }
 
-        foreach (/*const*/ timerDef; *timerDefs)
+            channel.timerFibers = null;
+            *channel = TimerPlugin.Channel(channelName);
+        }
+        else
+        {
+            // No forcing, so just do nothing and return
+            return;
+        }
+    }
+    else
+    {
+        plugin.channels[channelName] = TimerPlugin.Channel(channelName);
+        channel = channelName in plugin.channels;
+    }
+
+    if (auto timerDefs = channelName in plugin.timerDefsByChannel)
+    {
+        foreach (timerDef; *timerDefs)
         {
             channel.timerFibers ~= plugin.createTimerFiber(timerDef, channelName);
         }
