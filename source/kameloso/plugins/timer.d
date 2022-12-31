@@ -298,10 +298,10 @@ void onCommandTimer(TimerPlugin plugin, const ref IRCEvent event)
         return handleNewTimer(plugin, event, slice);
 
     case "insert":
-        return handleInsertLineIntoTimer(plugin, event, slice);
+        return handleModifyTimerLines(plugin, event, slice, Yes.insert);
 
     case "edit":
-        return handleEditTimerLine(plugin, event, slice);
+        return handleModifyTimerLines(plugin, event, slice, No.insert);  // --> Yes.edit
 
     case "add":
         return handleAddToTimer(plugin, event, slice);
@@ -641,19 +641,22 @@ void handleInsertLineIntoTimer(
 }
 
 
-// handleEditTimerLine
+// handleModifyTimerLines
 /++
-    Edits a line of an existing timer.
+    Edits a line of an existing timer, or insert one at a specific line position.
 
     Params:
         plugin = The current [TimerPlugin].
-        event = The [dialect.defs.IRCEvent|IRCEvent] that requested the edit.
+        event = The [dialect.defs.IRCEvent|IRCEvent] that requested the insert or edit.
         slice = Relevant slice of the original request string.
+        shouldInsert = Whether or not an insert action was requested. If `No.shouldInsert`,
+            then an edit action was requested.
  +/
-void handleEditTimerLine(
+void handleModifyTimerLines(
     TimerPlugin plugin,
     const /*ref*/ IRCEvent event,
-    /*const*/ string slice)
+    /*const*/ string slice,
+    const Flag!"insert" shouldInsert)
 {
     import lu.string : SplitResults, splitInto;
     import std.conv : ConvException, to;
@@ -661,9 +664,18 @@ void handleEditTimerLine(
 
     void sendInsertUsage()
     {
-        enum pattern = "Usage: <b>%s%s edit<b> [timer name] [position] [new timer text]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-        chan(plugin.state, event.channel, message);
+        if (shouldInsert)
+        {
+            enum pattern = "Usage: <b>%s%s insert<b> [timer name] [position] [timer text]";
+            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+            chan(plugin.state, event.channel, message);
+        }
+        else
+        {
+            enum pattern = "Usage: <b>%s%s edit<b> [timer name] [position] [new timer text]";
+            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+            chan(plugin.state, event.channel, message);
+        }
     }
 
     void sendNoSuchTimer()
@@ -672,44 +684,74 @@ void handleEditTimerLine(
         chan(plugin.state, event.channel, message);
     }
 
+    void sendOutOfRange(const size_t upperBound)
+    {
+        enum pattern = "Line position out of range; valid is <b>[0..%d]<b> (inclusive).";
+        immutable message = pattern.format(upperBound);
+        chan(plugin.state, event.channel, message);
+    }
+
     string name;
-    string linesPosString;
+    string linePosString;
 
-    immutable results = slice.splitInto(name, linesPosString);
+    immutable results = slice.splitInto(name, linePosString);
     if (results != SplitResults.overrun) return sendInsertUsage();
-
-    auto timerDefs = event.channel in plugin.timerDefsByChannel;
-    if (!timerDefs) return sendNoSuchTimer();
 
     auto channel = event.channel in plugin.channels;
     if (!channel) return sendNoSuchTimer();
+
+    auto timerDefs = event.channel in plugin.timerDefsByChannel;
+    if (!timerDefs) return sendNoSuchTimer();
 
     foreach (immutable i, ref timerDef; *timerDefs)
     {
         if (timerDef.name != name) continue;
 
-        try
+        void destroyUpdateSave()
         {
-            immutable linePos = linesPosString.to!ptrdiff_t;
-
-            if (linePos >= timeDef.lines.length)
-            {
-                enum pattern = "Line position out of range; valid is <b>[0..%d]<b> (inclusive).";
-                immutable message = pattern.format(timeDef.lines.length);
-                return chan(plugin.state, event.channel, message);
-            }
-
-            timerDef.lines[linePos] = slice;
+            destroy(channel.timerFibers[i]);
             channel.timerFibers[i] = plugin.createTimerFiber(timerDef, event.channel);
             saveResourceToDisk(plugin.timerDefsByChannel, plugin.timerFile);
-
-            enum message = "Line edited.";
-            return chan(plugin.state, event.channel, message);
         }
-        catch (ConvException e)
+
+        immutable linePos = linePosString.to!ptrdiff_t;
+        if ((linePos < 0) || (linePos >= timerDef.lines.length)) return sendOutOfRange(timerDef.lines.length);
+
+        if (shouldInsert)
         {
-            enum message = "Argument for which position to edit line at must be a number.";
-            return chan(plugin.state, event.channel, message);
+            try
+            {
+                import std.array : insertInPlace;
+
+                timerDef.lines.insertInPlace(linePos, slice);
+                destroyUpdateSave();
+
+                enum pattern = "Line added to timer <b>%s<b>.";
+                immutable message = pattern.format(name);
+                return chan(plugin.state, event.channel, message);
+            }
+            catch (ConvException e)
+            {
+                enum message = "Argument for which position to insert line at must be a number.";
+                return chan(plugin.state, event.channel, message);
+            }
+        }
+        else
+        {
+            try
+            {
+                timerDef.lines[linePos] = slice;
+                destroyUpdateSave();
+
+                enum pattern = "Line <b>%d<b> of timer <b>%s<b> edited.";
+                immutable message = pattern.format(linePos, name);
+                return chan(plugin.state, event.channel, message);
+            }
+            catch (ConvException e)
+            {
+                enum message = "Argument for which position to edit line at must be a number.";
+                return chan(plugin.state, event.channel, message);
+            }
         }
     }
 
