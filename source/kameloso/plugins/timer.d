@@ -270,8 +270,8 @@ public:
             .description("Adds, removes or lists timers.")
             .addSyntax("$command new [name] [type] [condition] [message count threshold] " ~
                 "[time threshold] [stagger message count] [stagger time]")
-            .addSyntax("$command add [timer name] [timer text...]")
-            .addSyntax("$command insert [timer name] [position] [timer text...]")
+            .addSyntax("$command add [timer name] [timer text]")
+            .addSyntax("$command insert [timer name] [position] [timer text]")
             .addSyntax("$command del [timer name] [optional line number]")
             .addSyntax("$command list")
     )
@@ -583,7 +583,7 @@ void handleInsertLineIntoTimer(
 
     void sendInsertUsage()
     {
-        enum pattern = "Usage: <b>%s%s insert<b> [timer name] [position] [timer text...]";
+        enum pattern = "Usage: <b>%s%s insert<b> [timer name] [position] [timer text]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
         chan(plugin.state, event.channel, message);
     }
@@ -656,7 +656,7 @@ void handleAddToTimer(
 
     void sendAddUsage()
     {
-        enum pattern = "Usage: <b>%s%s add<b> [timer name] [timer text...]";
+        enum pattern = "Usage: <b>%s%s add<b> [timer name] [timer text]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
         chan(plugin.state, event.channel, message);
     }

@@ -1219,7 +1219,7 @@ debug
             .word("bus")
             .policy(PrefixPolicy.nickname)
             .description("[debug] Sends an internal bus message.")
-            .addSyntax("$command [header] [content...]")
+            .addSyntax("$command [header] [content]")
     )
 )
 void onCommandBus(AdminPlugin plugin, const ref IRCEvent event)
