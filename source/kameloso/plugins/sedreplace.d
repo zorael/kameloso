@@ -538,6 +538,22 @@ void onWelcome(SedReplacePlugin plugin)
 }
 
 
+// onPart
+/++
+    Removes the records of previous messages from a user when they leave a channel.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.PART)
+)
+void onPart(SedReplacePlugin plugin, const ref IRCEvent event)
+{
+    auto channelLines = event.channel in plugin.prevlines;
+    if (!channelLines) return;
+
+    (*channelLines).remove(event.sender.nickname);
+}
+
+
 // onQuit
 /++
     Removes the records of previous messages from a user when they quit.
