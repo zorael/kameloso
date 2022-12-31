@@ -1157,12 +1157,9 @@ auto createTimerFiber(
  +/
 void saveResourceToDisk(const TimerDefinition[][string] aa, const string filename)
 {
-    import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import lu.json : JSONStorage;
 
-    JSONValue json;
-    json = null;
-    json.object = null;
+    JSONStorage json;
 
     foreach (immutable channelName, const timerDefs; aa)
     {
@@ -1175,7 +1172,7 @@ void saveResourceToDisk(const TimerDefinition[][string] aa, const string filenam
         }
     }
 
-    File(filename, "w").writeln(json.toPrettyString);
+    json.save(filename);
 }
 
 
