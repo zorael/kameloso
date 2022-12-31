@@ -1245,13 +1245,8 @@ void reload(TimerPlugin plugin)
 
         channel.timerFibers = null;
 
-        if (auto timerDefs = channelName in plugin.timerDefsByChannel)
-        {
-            foreach (timerDef; *timerDefs)
-            {
-                channel.timerFibers ~= plugin.createTimerFiber(timerDef, channelName);
-            }
-        }
+        // Just reuse the SELFJOIN routine, but be sure to force it
+        handleSelfjoin(plugin, channelName, Yes.force);
     }
 }
 
