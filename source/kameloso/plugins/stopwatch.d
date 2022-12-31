@@ -96,7 +96,7 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
     case "end":
     case "status":
     case string.init:
-        immutable id = ((event.sender.class_ >= IRCUser.Class.operator) && slice.length) ?
+        immutable id = slice.length ?
             slice :
             event.sender.nickname;
 
@@ -123,6 +123,12 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
         {
         case "stop":
         case "end":
+            if ((id != event.sender.nickname) && (event.sender.class_ < IRCUser.Class.operator))
+            {
+                enum message = "You cannot end or stop someone else's stopwatch.";
+                return chan(plugin.state, event.channel, message);
+            }
+
             plugin.stopwatches[event.channel].remove(id);
             enum pattern = "Stopwatch stopped after <b>%s<b>.";
             immutable message = pattern.format(diff);
