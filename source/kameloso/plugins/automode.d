@@ -321,7 +321,8 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 
         if (mode.beginsWith('-'))
         {
-            return chan(plugin.state, event.channel, "Can't add a negative automode.");
+            enum message = "Automodes cannot be negative.";
+            return chan(plugin.state, event.channel, message);
         }
 
         while (mode.beginsWith('+'))
@@ -331,12 +332,13 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 
         if (!mode.length)
         {
-            return chan(plugin.state, event.channel, "You must supply a valid mode.");
+            enum message = "You must supply a valid mode.";
+            return chan(plugin.state, event.channel, message);
         }
 
         plugin.modifyAutomode(Yes.add, nickname, event.channel, mode);
 
-        enum pattern = "Automode modified! <h>%s<h> on <b>%s<b>: +<b>%s<b>";
+        enum pattern = "Automode modified! <h>%s<h> in <b>%s<b>: +<b>%s<b>";
         immutable message = pattern.format(nickname, event.channel, mode);
         chan(plugin.state, event.channel, message);
         break;
@@ -366,7 +368,8 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
         if (channelmodes)
         {
             import std.conv : text;
-            chan(plugin.state, event.channel, text("Current automodes: ", *channelmodes));
+            immutable message = text("Current automodes: ", *channelmodes);
+            chan(plugin.state, event.channel, message);
         }
         else
         {

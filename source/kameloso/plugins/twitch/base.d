@@ -593,7 +593,8 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
         if (!user.nickname.length)
         {
-            return chan(plugin.state, event.channel, "No such user: " ~ givenName);
+            immutable message = "No such user: " ~ givenName;
+            return chan(plugin.state, event.channel, message);
         }
 
         idString = user.idString;
@@ -905,7 +906,8 @@ void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
     }
 
     // Also nuke the nuking message in case there were spoilers in it
-    chan(plugin.state, event.channel, text(".delete ", event.id));
+    immutable message = ".delete " ~ event.id;
+    chan(plugin.state, event.channel, message);
 }
 
 
@@ -1577,7 +1579,8 @@ void onCommandWatchtime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
         if (!user.nickname.length)
         {
-            return chan(plugin.state, event.channel, "No such user: " ~ givenName);
+            immutable message = "No such user: " ~ givenName;
+            return chan(plugin.state, event.channel, message);
         }
 
         nickname = user.nickname;

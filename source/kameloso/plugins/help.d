@@ -80,6 +80,7 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
 
         IRCEvent mutEvent = event;  // mutable
         mutEvent.content = mutEvent.content.stripped;
+
         if (plugin.helpSettings.repliesInQuery) mutEvent.channel = string.init;
 
         if (mutEvent.content.length)
@@ -160,7 +161,6 @@ void sendCommandHelpImpl(
         immutable usage = (syntaxes.length == 1) ?
             "<b>Usage<b>: " ~ prefixedSyntax :
             "* " ~ prefixedSyntax;
-
         privmsg(plugin.state, event.channel, event.sender.nickname, usage);
     }
 }
@@ -188,9 +188,10 @@ void sendFullPluginListing(
         cast(string)KamelosoInfo.version_ ~
         "<b>, built " ~
         cast(string)KamelosoInfo.built;
+    enum availableMessage = "Available bot commands per plugin:";
 
     privmsg(plugin.state, event.channel, event.sender.nickname, banner);
-    privmsg(plugin.state, event.channel, event.sender.nickname, "Available bot commands per plugin:");
+    privmsg(plugin.state, event.channel, event.sender.nickname, availableMessage);
 
     foreach (immutable pluginName, pluginCommands; allPluginCommands)
     {

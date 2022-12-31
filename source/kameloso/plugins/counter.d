@@ -74,14 +74,15 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
 
         if (slice.canFind!(c => c.among!('+', '-', '=', '?')))
         {
-            return chan(plugin.state, event.channel,
-                "Counter words must be unique and may not contain any of " ~
-                "the following characters: [<b>+-=?<b>]");
+            enum message = "Counter words must be unique and may not contain any of " ~
+                "the following characters: [<b>+-=?<b>]";
+            return chan(plugin.state, event.channel, message);
         }
 
         if ((event.channel in plugin.counters) && (slice in plugin.counters[event.channel]))
         {
-            return chan(plugin.state, event.channel, "A counter with that name already exists.");
+            enum message = "A counter with that name already exists.";
+            return chan(plugin.state, event.channel, message);
         }
 
         /+
@@ -138,7 +139,8 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
 
         if ((event.channel !in plugin.counters) || (slice !in plugin.counters[event.channel]))
         {
-            return chan(plugin.state, event.channel, "No such counter available.");
+            enum message = "No such counter available.";
+            return chan(plugin.state, event.channel, message);
         }
 
         enum pattern = "Counter <b>%s<b> removed.";
@@ -147,6 +149,8 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
         plugin.counters[event.channel].remove(slice);
         if (!plugin.counters[event.channel].length) plugin.counters.remove(event.channel);
 
+        enum pattern = "Counter <b>%s<b> removed.";
+        immutable message = pattern.format(slice);
         chan(plugin.state, event.channel, message);
         saveResourceToDisk(plugin.counters, plugin.countersFile);
         break;
@@ -154,7 +158,8 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
     case "list":
         if (event.channel !in plugin.counters)
         {
-            return chan(plugin.state, event.channel, "No counters currently active in this channel.");
+            enum message = "No counters currently active in this channel.";
+            return chan(plugin.state, event.channel, message);
         }
 
         enum pattern = "Current counters: %s";
@@ -275,16 +280,15 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
             }
             catch (ConvException e)
             {
-                enum pattern = "Not a number: <b>%s<b>";
+                enum pattern = "<b>%s<b> is not a number.";
                 immutable message = pattern.format(slice);
                 return chan(plugin.state, event.channel, message);
             }
         }
 
-        enum pattern = "<b>%s %s<b>! Current count: <b>%d<b>";
-
         *count += step;
 
+        enum pattern = "<b>%s %s<b>! Current count: <b>%d<b>";
         immutable stepText = (step >= 0) ? ('+' ~ step.text) : step.text;
         immutable message = pattern.format(word, stepText, *count);
         chan(plugin.state, event.channel, message);
@@ -296,7 +300,8 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 
         if (!slice.length)
         {
-            return chan(plugin.state, event.channel, "You must specify a number to set the count to.");
+            enum message = "You must specify a number to set the count to.";
+            return chan(plugin.state, event.channel, message);
         }
 
         long newCount;

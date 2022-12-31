@@ -813,7 +813,8 @@ void listCommands(OnelinersPlugin plugin, const string channelName)
     }
     else
     {
-        chan(plugin.state, channelName, "There are no commands available right now.");
+        enum message = "There are no commands available right now.";
+        chan(plugin.state, channelName, message);
     }
 }
 
