@@ -833,41 +833,59 @@ void onAnyMessage(TimerPlugin plugin, const ref IRCEvent event)
     Loads timers from disk. Additionally sets up a [core.thread.fiber.Fiber|Fiber]
     to periodically call timer [core.thread.fiber.Fiber|Fiber]s with a periodicity
     of [TimerPlugin.timerPeriodicity].
+
+    Don't call `reload` for this! It undoes anything `handleSelfjoin` may have done.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
-    .fiber(true)
 )
 void onWelcome(TimerPlugin plugin)
 {
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.constants : BufferSize;
     import lu.json : JSONStorage;
-    import std.datetime.systime : Clock;
     import core.thread : Fiber;
 
-    plugin.reload();
-    delay(plugin, plugin.timerPeriodicity, Yes.yield);
+    JSONStorage allTimersJSON;
+    allTimersJSON.load(plugin.timerFile);
 
-    while (true)
+    foreach (immutable channelName, const timerDefsJSON; allTimersJSON.object)
     {
-        // Walk through channels, trigger fibers
-        foreach (immutable channelName, room; plugin.channels)
+        foreach (const timerDefJSON; timerDefsJSON.array)
         {
-            foreach (timerFiber; room.timerFibers)
-            {
-                if (!timerFiber || (timerFiber.state != Fiber.State.HOLD))
-                {
-                    logger.error("Dead or busy timer Fiber in channel ", channelName);
-                    continue;
-                }
+            plugin.timerDefsByChannel[channelName] ~= TimerDefinition.fromJSON(timerDefJSON);
+        }
+    }
 
-                timerFiber.call();
+    plugin.timerDefsByChannel = plugin.timerDefsByChannel.rehash();
+
+    void fiberTriggerDg()
+    {
+        while (true)
+        {
+            // Walk through channels, trigger fibers
+            foreach (immutable channelName, room; plugin.channels)
+            {
+                foreach (timerFiber; room.timerFibers)
+                {
+                    if (!timerFiber || (timerFiber.state != Fiber.State.HOLD))
+                    {
+                        logger.error("Dead or busy timer Fiber in channel ", channelName);
+                        continue;
+                    }
+
+                    timerFiber.call();
+                }
             }
+
+            delay(plugin, plugin.timerPeriodicity, Yes.yield);
+            // continue;
         }
 
-        delay(plugin, plugin.timerPeriodicity, Yes.yield);
     }
+
+    Fiber fiberTriggerFiber = new Fiber(&fiberTriggerDg, BufferSize.fiberStack);
+    delay(plugin, fiberTriggerFiber, plugin.timerPeriodicity);
 }
 
 
