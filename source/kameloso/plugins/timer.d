@@ -272,6 +272,7 @@ public:
                 "[time threshold] [stagger message count] [stagger time]")
             .addSyntax("$command add [timer name] [timer text]")
             .addSyntax("$command insert [timer name] [position] [timer text]")
+            .addSyntax("$command edit [timer name] [position] [new timer text]")
             .addSyntax("$command del [timer name] [optional line number]")
             .addSyntax("$command list")
     )
@@ -298,6 +299,9 @@ void onCommandTimer(TimerPlugin plugin, const ref IRCEvent event)
 
     case "insert":
         return handleInsertLineIntoTimer(plugin, event, slice);
+
+    case "edit":
+        return handleEditTimerLine(plugin, event, slice);
 
     case "add":
         return handleAddToTimer(plugin, event, slice);
@@ -629,6 +633,83 @@ void handleInsertLineIntoTimer(
                 enum message = "Argument for which position to insert line at must be a number.";
                 return chan(plugin.state, event.channel, message);
             }
+        }
+    }
+
+    // If we're here, no timer was found with the given name
+    sendNoSuchTimer();
+}
+
+
+// handleEditTimerLine
+/++
+    Edits a line of an existing timer.
+
+    Params:
+        plugin = The current [TimerPlugin].
+        event = The [dialect.defs.IRCEvent|IRCEvent] that requested the edit.
+        slice = Relevant slice of the original request string.
+ +/
+void handleEditTimerLine(
+    TimerPlugin plugin,
+    const /*ref*/ IRCEvent event,
+    /*const*/ string slice)
+{
+    import lu.string : SplitResults, splitInto;
+    import std.conv : ConvException, to;
+    import std.format : format;
+
+    void sendInsertUsage()
+    {
+        enum pattern = "Usage: <b>%s%s edit<b> [timer name] [position] [new timer text]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendNoSuchTimer()
+    {
+        enum message = "There is no timer by that name.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    string name;
+    string linesPosString;
+
+    immutable results = slice.splitInto(name, linesPosString);
+    if (results != SplitResults.overrun) return sendInsertUsage();
+
+    auto timerDefs = event.channel in plugin.timerDefsByChannel;
+    if (!timerDefs) return sendNoSuchTimer();
+
+    auto channel = event.channel in plugin.channels;
+    if (!channel) return sendNoSuchTimer();
+
+    foreach (immutable i, ref timerDef; *timerDefs)
+    {
+        if (timerDef.name != name) continue;
+
+        try
+        {
+            immutable linePos = linesPosString.to!ptrdiff_t;
+
+            if (linePos >= timeDef.lines.length)
+            {
+                enum pattern = "Line position out of range; valid is <b>[0..%d]<b> (inclusive).";
+                immutable message = pattern.format(timeDef.lines.length);
+                return chan(plugin.state, event.channel, message);
+            }
+
+            timerDef.lines[linePos] = slice;
+            channel.timerFibers[i] = plugin.createTimerFiber(timerDef, event.channel);
+            saveResourceToDisk(plugin.timerDefsByChannel, plugin.timerFile);
+
+            enum message = "Line edited.";
+            return chan(plugin.state, event.channel, message);
+        }
+        catch (ConvException e)
+        {
+            enum message = "Argument for which position to edit line at must be a number.";
+            return chan(plugin.state, event.channel, message);
         }
     }
 
