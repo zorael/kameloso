@@ -1058,11 +1058,17 @@ auto createTimerFiber(
         /// The timestamp at the last successful trigger.
         long lastTimestamp = Clock.currTime.toUnixTime;  // or creation?
 
+        /// `Condition.both` fulfilled (cache).
+        bool conditionBothFulfilled;
+
+        /// `Condition.either` fulfilled (cache).
+        bool conditionEitherFulfilled;
+
         while (true)
         {
-            ulong now;
+            long now;
 
-            if (timerDef.condition == TimerDefinition.Condition.both)
+            if ((timerDef.condition == TimerDefinition.Condition.both) && !conditionBothFulfilled)
             {
                 immutable messageCountUnfulfilled =
                     ((channel.messageCount - lastMessageCount) < timerDef.messageCountThreshold);
@@ -1081,8 +1087,10 @@ auto createTimerFiber(
                     Fiber.yield();
                     continue;
                 }
+
+                conditionBothFulfilled = true;
             }
-            else /*if (timerDef.condition == TimerDefinition.Condition.either)*/
+            else if ((timerDef.condition == TimerDefinition.Condition.either) && !conditionEitherFulfilled)
             {
                 now = Clock.currTime.toUnixTime;
 
@@ -1096,13 +1104,20 @@ auto createTimerFiber(
                     Fiber.yield();
                     continue;
                 }
+
+                conditionEitherFulfilled = true;
+            }
+            else
+            {
+                // Don't forget to update this, even when the conditions are fulfilled
+                now = Clock.currTime.toUnixTime;
             }
 
             import std.array : replace;
             import std.conv : text;
             import std.random : uniform;
 
-            string line = timerDef.getLine()
+            string line = timerDef.getLine()  // mutable
                 .replace("$bot", plugin.state.client.nickname)
                 .replace("$channel", channelName[1..$])
                 .replace("$random", uniform!"(]"(0, 100).text);
