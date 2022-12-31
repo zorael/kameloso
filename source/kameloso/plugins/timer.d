@@ -1066,6 +1066,10 @@ auto createTimerFiber(
 
         while (true)
         {
+            import std.array : replace;
+            import std.conv : text;
+            import std.random : uniform;
+
             if ((timerDef.condition == TimerDefinition.Condition.both) && !conditionBothFulfilled)
             {
                 immutable messageCountUnfulfilled =
@@ -1104,10 +1108,6 @@ auto createTimerFiber(
 
                 conditionEitherFulfilled = true;
             }
-
-            import std.array : replace;
-            import std.conv : text;
-            import std.random : uniform;
 
             string line = timerDef.getLine()  // mutable
                 .replace("$bot", plugin.state.client.nickname)
