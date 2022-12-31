@@ -505,9 +505,9 @@ void handleDelTimer(
     assert(channel, "Tried to delete a timer from a non-existent channel");
 
     string name;
-    string linesPosString;
+    string linePosString;
 
-    immutable results = slice.splitInto(name, linesPosString);
+    immutable results = slice.splitInto(name, linePosString);
 
     with (SplitResults)
     final switch (results)
@@ -542,8 +542,8 @@ void handleDelTimer(
             {
                 try
                 {
-                    immutable linesPos = linesPosString.to!size_t;
-                    timerDef.lines = timerDef.lines.remove!(SwapStrategy.stable)(linesPos);
+                    immutable linePos = linePosString.to!size_t;
+                    timerDef.lines = timerDef.lines.remove!(SwapStrategy.stable)(linePos);
                     saveResourceToDisk(plugin.timerDefsByChannel, plugin.timerFile);
 
                     enum pattern = "Line removed from timer. Lines remaining: <b>%d<b>";
