@@ -518,18 +518,18 @@ void handleDelTimer(
 
         foreach (immutable i, timerDef; *timerDefs)
         {
-            if (timerDef.name == name)
-            {
-                // Modifying during foreach...
-                *timerDefs = (*timerDefs).remove!(SwapStrategy.unstable)(i);
-                channel.timerFibers = channel.timerFibers.remove!(SwapStrategy.unstable)(i);
+            if (timerDef.name != name) continue;
 
-                if (!timerDefs.length) plugin.timerDefsByChannel.remove(event.channel);
-                saveResourceToDisk(plugin.timerDefsByChannel, plugin.timerFile);
+            // Modifying during foreach...
+            // We're not continuing the iteration past this point though. Surely safe?
+            *timerDefs = (*timerDefs).remove!(SwapStrategy.unstable)(i);
+            channel.timerFibers = channel.timerFibers.remove!(SwapStrategy.unstable)(i);
 
-                enum message = "Timer removed.";
-                return chan(plugin.state, event.channel, message);
-            }
+            if (!timerDefs.length) plugin.timerDefsByChannel.remove(event.channel);
+            saveResourceToDisk(plugin.timerDefsByChannel, plugin.timerFile);
+
+            enum message = "Timer removed.";
+            return chan(plugin.state, event.channel, message);
         }
 
         return sendNoSuchTimer();
@@ -538,23 +538,22 @@ void handleDelTimer(
         // Remove the specified lines position
         foreach (immutable i, ref timerDef; *timerDefs)
         {
-            if (timerDef.name == name)
-            {
-                try
-                {
-                    immutable linePos = linePosString.to!size_t;
-                    timerDef.lines = timerDef.lines.remove!(SwapStrategy.stable)(linePos);
-                    saveResourceToDisk(plugin.timerDefsByChannel, plugin.timerFile);
+            if (timerDef.name != name) continue;
 
-                    enum pattern = "Line removed from timer. Lines remaining: <b>%d<b>";
-                    immutable message = pattern.format(timerDef.lines.length);
-                    return chan(plugin.state, event.channel, message);
-                }
-                catch (ConvException e)
-                {
-                    enum message = "Argument for which line to remove must be a number.";
-                    return chan(plugin.state, event.channel, message);
-                }
+            try
+            {
+                immutable linePos = linePosString.to!size_t;
+                timerDef.lines = timerDef.lines.remove!(SwapStrategy.stable)(linePos);
+                saveResourceToDisk(plugin.timerDefsByChannel, plugin.timerFile);
+
+                enum pattern = "Line removed from timer <b>%s<b>. Lines remaining: <b>%d<b>";
+                immutable message = pattern.format(name, timerDef.lines.length);
+                return chan(plugin.state, event.channel, message);
+            }
+            catch (ConvException e)
+            {
+                enum message = "Argument for which line to remove must be a number.";
+                return chan(plugin.state, event.channel, message);
             }
         }
 
