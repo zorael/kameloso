@@ -245,8 +245,8 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 
             if (!oneliner.responses.length)
             {
-                enum pattern = "(Empty oneliner; use <b>%soneliner add<b> to add lines.)";
-                immutable message = pattern.format(plugin.state.settings.prefix);
+                enum pattern = "(Empty oneliner; use <b>%soneliner add %s<b> to add lines.)";
+                immutable message = pattern.format(plugin.state.settings.prefix, trigger);
                 return chan(plugin.state, event.channel, message);
             }
 
