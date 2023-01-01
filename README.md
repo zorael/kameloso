@@ -453,7 +453,7 @@ If you prefer to generate the token manually, [**here is the URL you need to fol
 
 Assuming a prefix of `!`, commands to test are:
 
-* `!start`, `!uptime`, `!stop`
+* `!uptime`
 * `!followage`
 * `!vanish`
 * `!repeat`

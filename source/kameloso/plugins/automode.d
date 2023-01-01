@@ -298,6 +298,12 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
     import std.algorithm.searching : count;
     import std.format : format;
 
+    void sendInvalidNickname()
+    {
+        enum message = "Invalid nickname.";
+        chan(plugin.state, event.channel, message);
+    }
+
     string line = event.content;  // mutable
 
     immutable verb = line.nom!(Yes.inherit)(' ');
@@ -314,14 +320,12 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 
         if (nickname.beginsWith('@')) nickname = nickname[1..$];
 
-        if (!nickname.isValidNickname(plugin.state.server))
-        {
-            return chan(plugin.state, event.channel, "Invalid nickname.");
-        }
+        if (!nickname.isValidNickname(plugin.state.server)) return sendInvalidNickname();
 
         if (mode.beginsWith('-'))
         {
-            return chan(plugin.state, event.channel, "Can't add a negative automode.");
+            enum message = "Automodes cannot be negative.";
+            return chan(plugin.state, event.channel, message);
         }
 
         while (mode.beginsWith('+'))
@@ -331,12 +335,13 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 
         if (!mode.length)
         {
-            return chan(plugin.state, event.channel, "You must supply a valid mode.");
+            enum message = "You must supply a valid mode.";
+            return chan(plugin.state, event.channel, message);
         }
 
         plugin.modifyAutomode(Yes.add, nickname, event.channel, mode);
 
-        enum pattern = "Automode modified! <h>%s<h> on <b>%s<b>: +<b>%s<b>";
+        enum pattern = "Automode modified! <h>%s<h> in <b>%s<b>: +<b>%s<b>";
         immutable message = pattern.format(nickname, event.channel, mode);
         chan(plugin.state, event.channel, message);
         break;
@@ -348,10 +353,7 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 
         if (!nickname.length) goto default;
 
-        if (!nickname.isValidNickname(plugin.state.server))
-        {
-            return chan(plugin.state, event.channel, "Invalid nickname.");
-        }
+        if (!nickname.isValidNickname(plugin.state.server)) return sendInvalidNickname();
 
         plugin.modifyAutomode(No.add, nickname, event.channel);
 
@@ -366,7 +368,8 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
         if (channelmodes)
         {
             import std.conv : text;
-            chan(plugin.state, event.channel, text("Current automodes: ", *channelmodes));
+            immutable message = text("Current automodes: ", *channelmodes);
+            chan(plugin.state, event.channel, message);
         }
         else
         {

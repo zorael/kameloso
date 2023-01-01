@@ -917,7 +917,7 @@ Quote getQuoteBySearchTerms(
         return stripDoubleSpaces(stripPunctuation(inputString));
     }
 
-    struct SearchHit
+    static struct SearchHit
     {
         size_t index;
         string line;

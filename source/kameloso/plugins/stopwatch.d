@@ -71,40 +71,42 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
         import kameloso.time : timeSince;
         import core.time : msecs;
 
-        assert((event.channel in plugin.stopwatches),
-            "Tried to access stopwatches from nonexistent channel");
-        assert((id in plugin.stopwatches[event.channel]),
-            "Tried to fetch stopwatch start timestamp for a nonexistent id");
+        auto channelWatches = event.channel in plugin.stopwatches;
+        assert(channelWatches, "Tried to access stopwatches from nonexistent channel");
+
+        auto watch = id in *channelWatches;
+        assert(watch, "Tried to fetch stopwatch start timestamp for a nonexistent id");
 
         auto now = Clock.currTime;
         now.fracSecs = 0.msecs;
-        immutable diff = now - SysTime.fromUnixTime(plugin.stopwatches[event.channel][id]);
+        immutable diff = now - SysTime.fromUnixTime(*watch);
         return timeSince(diff);
     }
 
     switch (verb)
     {
     case "start":
-        immutable stopwatchAlreadyExists = (event.channel in plugin.stopwatches) &&
-            (event.sender.nickname in plugin.stopwatches[event.channel]);
+        auto channelWatches = event.channel in plugin.stopwatches;
+        immutable stopwatchAlreadyExists = (channelWatches && (event.sender.nickname in *channelWatches));
         immutable message = "Stopwatch " ~ (stopwatchAlreadyExists ? "restarted!" : "started!");
         plugin.stopwatches[event.channel][event.sender.nickname] = Clock.currTime.toUnixTime;
-        chan(plugin.state, event.channel, message);
-        break;
+        return chan(plugin.state, event.channel, message);
 
     case "stop":
     case "end":
     case "status":
     case string.init:
-        immutable id = ((event.sender.class_ >= IRCUser.Class.operator) && slice.length) ?
+        immutable id = slice.length ?
             slice :
             event.sender.nickname;
 
-        if ((event.channel !in plugin.stopwatches) || (id !in plugin.stopwatches[event.channel]))
+        auto channelWatches = event.channel in plugin.stopwatches;
+        if (!channelWatches || (id !in *channelWatches))
         {
             if (id == event.sender.nickname)
             {
-                chan(plugin.state, event.channel, "You do not have a stopwatch running.");
+                enum message = "You do not have a stopwatch running.";
+                chan(plugin.state, event.channel, message);
             }
             else
             {
@@ -121,36 +123,43 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
         {
         case "stop":
         case "end":
+            if ((id != event.sender.nickname) && (event.sender.class_ < IRCUser.Class.operator))
+            {
+                enum message = "You cannot end or stop someone else's stopwatch.";
+                return chan(plugin.state, event.channel, message);
+            }
+
+            plugin.stopwatches[event.channel].remove(id);
             enum pattern = "Stopwatch stopped after <b>%s<b>.";
             immutable message = pattern.format(diff);
-            chan(plugin.state, event.channel, message);
-            plugin.stopwatches[event.channel].remove(id);
-            break;
+            return chan(plugin.state, event.channel, message);
 
         case "status":
         case string.init:
             enum pattern = "Elapsed time: <b>%s<b>";
             immutable message = pattern.format(diff);
-            chan(plugin.state, event.channel, message);
-            break;
+            return chan(plugin.state, event.channel, message);
 
         default:
             assert(0, "Unexpected inner case in nested onCommandStopwatch switch");
         }
-        break;
 
     case "clear":
+        if (event.sender.class_ < IRCUser.Class.operator)
+        {
+            enum message = "You do not have permissions to clear all stopwatches.";
+            return chan(plugin.state, event.channel, message);
+        }
+
+        plugin.stopwatches.remove(event.channel);
         enum pattern = "Clearing all stopwatches in channel <b>%s<b>.";
         immutable message = pattern.format(event.channel);
-        chan(plugin.state, event.channel, message);
-        plugin.stopwatches.remove(event.channel);
-        break;
+        return chan(plugin.state, event.channel, message);
 
     default:
         enum pattern = "Usage: <b>%s%s<b> [start|stop|status]";  // hide clear
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-        chan(plugin.state, event.channel, message);
-        break;
+        return chan(plugin.state, event.channel, message);
     }
 }
 

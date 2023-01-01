@@ -113,7 +113,8 @@ struct Line
         relaxSyntax = Whether or not to require the expression to end with the delimiter.
 
     Returns:
-        Original line with the changes the replace pattern incurred.
+        Original line with the changes the replace pattern incurred, or an empty
+        `string.init` if nothing was changed.
  +/
 auto sedReplace(
     const string line,
@@ -221,8 +222,8 @@ unittest
         relaxSyntax = Whether or not to require the expression to end with the delimiter.
 
     Returns:
-        The passed line with the relevant bits replaced, or as is if the expression
-        didn't apply.
+        The passed line with the relevant bits replaced, or `string.init` if the
+        expression didn't apply.
  +/
 auto sedReplaceImpl(char char_)
     (const string line,
@@ -275,22 +276,22 @@ in (expr.length, "Tried to `sedReplaceImpl` with an empty expression")
     }
 
     immutable openEnd = (slice[$-1] != char_);
-    if (openEnd && !relaxSyntax) return line;
+    if (openEnd && !relaxSyntax) return string.init;
 
     immutable delimPos = getNextUnescaped(slice);
-    if (delimPos == -1) return line;
+    if (delimPos == -1) return string.init;
 
     // Defer string-replace until after slice advance and subsequent length check
     string replaceThis = slice[0..delimPos];  // mutable
 
     slice = slice[delimPos+1..$];
-    if (!slice.length) return line;
+    if (!slice.length) return string.init;
 
     // ...to here.
     replaceThis = replaceThis.replace(escapedCharAsString, charAsString);
 
     immutable replaceThisPos = line.indexOf(replaceThis);
-    if (replaceThisPos == -1) return line;
+    if (replaceThisPos == -1) return string.init;
 
     immutable endDelimPos = getNextUnescaped(slice);
 
@@ -304,7 +305,7 @@ in (expr.length, "Tried to `sedReplaceImpl` with an empty expression")
         else
         {
             // Found extra delimiters, expression is malformed; abort
-            return line;
+            return string.init;
         }
     }
     else
@@ -313,20 +314,15 @@ in (expr.length, "Tried to `sedReplaceImpl` with an empty expression")
         {
             // Either there were no more delimiters or one was found before the end
             // Syntax is strict; abort
-            return line;
+            return string.init;
         }
     }
 
     immutable withThis = openEnd ? slice : slice[0..$-1];
 
-    if (global)
-    {
-        return line.replace(replaceThis, withThis);
-    }
-    else
-    {
-        return line.replace(replaceThisPos, replaceThisPos+replaceThis.length, withThis);
-    }
+    return global ?
+        line.replace(replaceThis, withThis) :
+        line.replace(replaceThisPos, replaceThisPos+replaceThis.length, withThis);
 }
 
 ///
@@ -355,7 +351,7 @@ unittest
     {
         immutable replaced = "This is INVALID"
             .sedReplaceImpl!'#'("s#asdfasdf#asdfasdf#asdfafsd#g", No.relaxSyntax);
-        assert((replaced == "This is INVALID"), replaced);
+        assert(!replaced.length, replaced);
     }
     {
         immutable replaced = "Hello D".sedReplaceImpl!'/'("s/Hello D/Hullo C", Yes.relaxSyntax);
@@ -375,19 +371,19 @@ unittest
     }
     {
         immutable replaced = "This is INVALID".sedReplaceImpl!'#'("s#INVALID#valid##", Yes.relaxSyntax);
-        assert((replaced == "This is INVALID"), replaced);
+        assert(!replaced.length, replaced);
     }
     {
         immutable replaced = "snek".sedReplaceImpl!'/'("s/snek/", Yes.relaxSyntax);
-        assert((replaced == "snek"), replaced);
+        assert(!replaced.length, replaced);
     }
     {
         immutable replaced = "snek".sedReplaceImpl!'/'("s/snek", Yes.relaxSyntax);
-        assert((replaced == "snek"), replaced);
+        assert(!replaced.length, replaced);
     }
     {
         immutable replaced = "hink".sedReplaceImpl!'/'("s/honk/henk/", Yes.relaxSyntax);
-        assert((replaced == "hink"), replaced);
+        assert(!replaced.length, replaced);
     }
 }
 
@@ -409,22 +405,24 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
     immutable stripped_ = event.content.stripped;
     if (!stripped_.length) return;
 
-    static void recordLineAsLast(
-        SedReplacePlugin plugin,
-        const string sender,
-        const string string_,
-        const long time)
+    void recordLineAsLast(const string string_)
     {
-        Line line;
-        line.content = string_;
-        line.timestamp = time;
+        Line line = Line(string_, event.time);  // implicit ctor
 
-        auto senderLines = sender in plugin.prevlines;
+        auto channelLines = event.channel in plugin.prevlines;
+
+        if (!channelLines)
+        {
+            plugin.prevlines[event.channel] = typeof(plugin.prevlines[string.init]).init;
+            channelLines = event.channel in plugin.prevlines;
+        }
+
+        auto senderLines = event.sender.nickname in *channelLines;
 
         if (!senderLines)
         {
-            plugin.prevlines[sender] = CircularBuffer!(Line, Yes.dynamic).init;
-            senderLines = sender in plugin.prevlines;
+            (*channelLines)[event.sender.nickname] = typeof((*channelLines)[string.init]).init;
+            senderLines = event.sender.nickname in *channelLines;
             senderLines.resize(plugin.sedReplaceSettings.history);
         }
 
@@ -448,45 +446,46 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
         }
 
         case DelimiterCharacters[0]:
-            if (auto senderLines = event.sender.nickname in plugin.prevlines)
+            auto channelLines = event.channel in plugin.prevlines;
+            if (!channelLines) return;  // Don't save
+
+            auto senderLines = event.sender.nickname in *channelLines;
+            if (!senderLines) return;  // As above
+
+            // Work around CircularBuffer pre-1.2.3 having save annotated const
+            foreach (immutable line; cast()senderLines.save)
             {
-                // Work around CircularBuffer pre-1.2.3 having save annotated const
-                foreach (immutable line; cast()senderLines.save)
+                import kameloso.messaging : chan;
+                import std.format : format;
+
+                if (!line.content.length)
                 {
-                    import kameloso.messaging : chan;
-                    import std.format : format;
-
-                    if (!line.content.length)
-                    {
-                        // line is Line.init
-                        continue;
-                    }
-
-                    if ((event.time - line.timestamp) > plugin.prevlineLifetime)
-                    {
-                        // Entry is too old, any further entries will be even older
-                        break delimiterswitch;
-                    }
-
-                    immutable result = line.content.sedReplace(event.content,
-                        cast(Flag!"relaxSyntax")plugin.sedReplaceSettings.relaxSyntax);
-
-                    if ((result == line.content) || !result.length) continue;
-
-                    enum pattern = "<h>%s<h> | %s";
-                    immutable message = pattern.format(event.sender.nickname, result);
-                    chan(plugin.state, event.channel, message);
-
-                    // Record as last even if there are more lines
-                    return recordLineAsLast(plugin, event.sender.nickname, result, event.time);
+                    // line is Line.init
+                    continue;
                 }
-                break;
+
+                if ((event.time - line.timestamp) > plugin.prevlineLifetime)
+                {
+                    // Entry is too old, any further entries will be even older
+                    break delimiterswitch;
+                }
+
+                immutable result = line.content.sedReplace(
+                    event.content,
+                    cast(Flag!"relaxSyntax")plugin.sedReplaceSettings.relaxSyntax);
+
+                if (!result.length) continue;
+
+                enum pattern = "<h>%s<h> | %s";
+                immutable message = pattern.format(event.sender.nickname, result);
+                chan(plugin.state, event.channel, message);
+
+                // Record as last even if there are more lines
+                return recordLineAsLast(result);
             }
-            else
-            {
-                // No lines to replace; don't record this as a line
-                return;
-            }
+
+            // Don't save as last, this was a query
+            return;
 
         default:
             // Drop down to record line
@@ -494,7 +493,7 @@ void onMessage(SedReplacePlugin plugin, const ref IRCEvent event)
         }
     }
 
-    recordLineAsLast(plugin, event.sender.nickname, stripped_, event.time);
+    recordLineAsLast(stripped_);
 }
 
 
@@ -520,19 +519,38 @@ void onWelcome(SedReplacePlugin plugin)
     {
         immutable now = Clock.currTime.toUnixTime;
 
-        foreach (immutable sender, const lines; plugin.prevlines)
+        foreach (ref channelLines; plugin.prevlines)
         {
-            if (lines.empty ||
-                ((now - lines.front.timestamp) >= plugin.prevlineLifetime))
+            foreach (immutable nickname, const senderLines; channelLines)
             {
-                // Something is either wrong with the sender's entries or
-                // the most recent entry is too old
-                plugin.prevlines.remove(sender);
+                if (senderLines.empty ||
+                    ((now - senderLines.front.timestamp) >= plugin.prevlineLifetime))
+                {
+                    // Something is either wrong with the sender's entries or
+                    // the most recent entry is too old
+                    channelLines.remove(nickname);
+                }
             }
         }
 
         delay(plugin, plugin.timeBetweenPurges, Yes.yield);
     }
+}
+
+
+// onPart
+/++
+    Removes the records of previous messages from a user when they leave a channel.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.PART)
+)
+void onPart(SedReplacePlugin plugin, const ref IRCEvent event)
+{
+    auto channelLines = event.channel in plugin.prevlines;
+    if (!channelLines) return;
+
+    (*channelLines).remove(event.sender.nickname);
 }
 
 
@@ -545,7 +563,10 @@ void onWelcome(SedReplacePlugin plugin)
 )
 void onQuit(SedReplacePlugin plugin, const ref IRCEvent event)
 {
-    plugin.prevlines.remove(event.sender.nickname);
+    foreach (ref channelLines; plugin.prevlines)
+    {
+        channelLines.remove(event.sender.nickname);
+    }
 }
 
 
@@ -575,11 +596,14 @@ private:
     /// How often to purge the [prevlines] list of messages.
     static immutable timeBetweenPurges = (prevlineLifetime * 3).seconds;
 
+    /// What kind of container to use for sent lines.
+    alias BufferType = CircularBuffer!(Line, Yes.dynamic);
+
     /++
-        A [lu.container.CircularBuffer|CircularBuffer]`[string]` associative array
-        of the previous line(s) every user said, with nickname as key.
+        An associative arary of  [BufferType]s of the previous line(s) every user said,
+        keyed by nickname keyed by channel.
      +/
-    CircularBuffer!(Line, Yes.dynamic)[string] prevlines;
+    BufferType[string][string] prevlines;
 
     mixin IRCPluginImpl;
 }

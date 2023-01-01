@@ -270,8 +270,9 @@ public:
             .description("Adds, removes or lists timers.")
             .addSyntax("$command new [name] [type] [condition] [message count threshold] " ~
                 "[time threshold] [stagger message count] [stagger time]")
-            .addSyntax("$command add [timer name] [timer text...]")
-            .addSyntax("$command insert [timer name] [position] [timer text...]")
+            .addSyntax("$command add [timer name] [timer text]")
+            .addSyntax("$command insert [timer name] [position] [timer text]")
+            .addSyntax("$command edit [timer name] [position] [new timer text]")
             .addSyntax("$command del [timer name] [optional line number]")
             .addSyntax("$command list")
     )
@@ -297,7 +298,10 @@ void onCommandTimer(TimerPlugin plugin, const ref IRCEvent event)
         return handleNewTimer(plugin, event, slice);
 
     case "insert":
-        return handleInsertLineIntoTimer(plugin, event, slice);
+        return handleModifyTimerLines(plugin, event, slice, Yes.insert);
+
+    case "edit":
+        return handleModifyTimerLines(plugin, event, slice, No.insert);  // --> Yes.edit
 
     case "add":
         return handleAddToTimer(plugin, event, slice);
@@ -501,9 +505,9 @@ void handleDelTimer(
     assert(channel, "Tried to delete a timer from a non-existent channel");
 
     string name;
-    string linesPosString;
+    string linePosString;
 
-    immutable results = slice.splitInto(name, linesPosString);
+    immutable results = slice.splitInto(name, linePosString);
 
     with (SplitResults)
     final switch (results)
@@ -514,18 +518,18 @@ void handleDelTimer(
 
         foreach (immutable i, timerDef; *timerDefs)
         {
-            if (timerDef.name == name)
-            {
-                // Modifying during foreach...
-                *timerDefs = (*timerDefs).remove!(SwapStrategy.unstable)(i);
-                channel.timerFibers = channel.timerFibers.remove!(SwapStrategy.unstable)(i);
+            if (timerDef.name != name) continue;
 
-                if (!timerDefs.length) plugin.timerDefsByChannel.remove(event.channel);
-                saveResourceToDisk(plugin.timerDefsByChannel, plugin.timerFile);
+            // Modifying during foreach...
+            // We're not continuing the iteration past this point though. Surely safe?
+            *timerDefs = (*timerDefs).remove!(SwapStrategy.unstable)(i);
+            channel.timerFibers = channel.timerFibers.remove!(SwapStrategy.unstable)(i);
 
-                enum message = "Timer removed.";
-                return chan(plugin.state, event.channel, message);
-            }
+            if (!timerDefs.length) plugin.timerDefsByChannel.remove(event.channel);
+            saveResourceToDisk(plugin.timerDefsByChannel, plugin.timerFile);
+
+            enum message = "Timer removed.";
+            return chan(plugin.state, event.channel, message);
         }
 
         return sendNoSuchTimer();
@@ -534,23 +538,22 @@ void handleDelTimer(
         // Remove the specified lines position
         foreach (immutable i, ref timerDef; *timerDefs)
         {
-            if (timerDef.name == name)
-            {
-                try
-                {
-                    immutable linesPos = linesPosString.to!size_t;
-                    timerDef.lines = timerDef.lines.remove!(SwapStrategy.stable)(linesPos);
-                    saveResourceToDisk(plugin.timerDefsByChannel, plugin.timerFile);
+            if (timerDef.name != name) continue;
 
-                    enum pattern = "Line removed from timer. Lines remaining: <b>%d<b>";
-                    immutable message = pattern.format(timerDef.lines.length);
-                    return chan(plugin.state, event.channel, message);
-                }
-                catch (ConvException e)
-                {
-                    enum message = "Argument for which line to remove must be a number.";
-                    return chan(plugin.state, event.channel, message);
-                }
+            try
+            {
+                immutable linePos = linePosString.to!size_t;
+                timerDef.lines = timerDef.lines.remove!(SwapStrategy.stable)(linePos);
+                saveResourceToDisk(plugin.timerDefsByChannel, plugin.timerFile);
+
+                enum pattern = "Line removed from timer <b>%s<b>. Lines remaining: <b>%d<b>";
+                immutable message = pattern.format(name, timerDef.lines.length);
+                return chan(plugin.state, event.channel, message);
+            }
+            catch (ConvException e)
+            {
+                enum message = "Argument for which line to remove must be a number.";
+                return chan(plugin.state, event.channel, message);
             }
         }
 
@@ -563,19 +566,22 @@ void handleDelTimer(
 }
 
 
-// handleInsertLineIntoTimer
+// handleModifyTimerLines
 /++
-    Inserts a line into an existing timer.
+    Edits a line of an existing timer, or insert one at a specific line position.
 
     Params:
         plugin = The current [TimerPlugin].
-        event = The [dialect.defs.IRCEvent|IRCEvent] that requested the insertion.
+        event = The [dialect.defs.IRCEvent|IRCEvent] that requested the insert or edit.
         slice = Relevant slice of the original request string.
+        shouldInsert = Whether or not an insert action was requested. If `No.shouldInsert`,
+            then an edit action was requested.
  +/
-void handleInsertLineIntoTimer(
+void handleModifyTimerLines(
     TimerPlugin plugin,
     const /*ref*/ IRCEvent event,
-    /*const*/ string slice)
+    /*const*/ string slice,
+    const Flag!"insert" shouldInsert)
 {
     import lu.string : SplitResults, splitInto;
     import std.conv : ConvException, to;
@@ -583,9 +589,18 @@ void handleInsertLineIntoTimer(
 
     void sendInsertUsage()
     {
-        enum pattern = "Usage: <b>%s%s insert<b> [timer name] [position] [timer text...]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-        chan(plugin.state, event.channel, message);
+        if (shouldInsert)
+        {
+            enum pattern = "Usage: <b>%s%s insert<b> [timer name] [position] [timer text]";
+            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+            chan(plugin.state, event.channel, message);
+        }
+        else
+        {
+            enum pattern = "Usage: <b>%s%s edit<b> [timer name] [position] [new timer text]";
+            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+            chan(plugin.state, event.channel, message);
+        }
     }
 
     void sendNoSuchTimer()
@@ -594,31 +609,47 @@ void handleInsertLineIntoTimer(
         chan(plugin.state, event.channel, message);
     }
 
+    void sendOutOfRange(const size_t upperBound)
+    {
+        enum pattern = "Line position out of range; valid is <b>[0..%d]<b> (inclusive).";
+        immutable message = pattern.format(upperBound);
+        chan(plugin.state, event.channel, message);
+    }
+
     string name;
-    string linesPosString;
+    string linePosString;
 
-    immutable results = slice.splitInto(name, linesPosString);
+    immutable results = slice.splitInto(name, linePosString);
     if (results != SplitResults.overrun) return sendInsertUsage();
-
-    auto timerDefs = event.channel in plugin.timerDefsByChannel;
-    if (!timerDefs) return sendNoSuchTimer();
 
     auto channel = event.channel in plugin.channels;
     if (!channel) return sendNoSuchTimer();
 
+    auto timerDefs = event.channel in plugin.timerDefsByChannel;
+    if (!timerDefs) return sendNoSuchTimer();
+
     foreach (immutable i, ref timerDef; *timerDefs)
     {
-        if (timerDef.name == name)
+        if (timerDef.name != name) continue;
+
+        void destroyUpdateSave()
+        {
+            destroy(channel.timerFibers[i]);
+            channel.timerFibers[i] = plugin.createTimerFiber(timerDef, event.channel);
+            saveResourceToDisk(plugin.timerDefsByChannel, plugin.timerFile);
+        }
+
+        immutable linePos = linePosString.to!ptrdiff_t;
+        if ((linePos < 0) || (linePos >= timerDef.lines.length)) return sendOutOfRange(timerDef.lines.length);
+
+        if (shouldInsert)
         {
             try
             {
                 import std.array : insertInPlace;
 
-                immutable linesPos = linesPosString.to!size_t;
-                timerDef.lines.insertInPlace(linesPos, slice);
-                destroy(channel.timerFibers[i]);
-                channel.timerFibers[i] = plugin.createTimerFiber(timerDef, event.channel);
-                saveResourceToDisk(plugin.timerDefsByChannel, plugin.timerFile);
+                timerDef.lines.insertInPlace(linePos, slice);
+                destroyUpdateSave();
 
                 enum pattern = "Line added to timer <b>%s<b>.";
                 immutable message = pattern.format(name);
@@ -627,6 +658,23 @@ void handleInsertLineIntoTimer(
             catch (ConvException e)
             {
                 enum message = "Argument for which position to insert line at must be a number.";
+                return chan(plugin.state, event.channel, message);
+            }
+        }
+        else
+        {
+            try
+            {
+                timerDef.lines[linePos] = slice;
+                destroyUpdateSave();
+
+                enum pattern = "Line <b>%d<b> of timer <b>%s<b> edited.";
+                immutable message = pattern.format(linePos, name);
+                return chan(plugin.state, event.channel, message);
+            }
+            catch (ConvException e)
+            {
+                enum message = "Argument for which position to edit line at must be a number.";
                 return chan(plugin.state, event.channel, message);
             }
         }
@@ -656,7 +704,7 @@ void handleAddToTimer(
 
     void sendAddUsage()
     {
-        enum pattern = "Usage: <b>%s%s add<b> [timer name] [timer text...]";
+        enum pattern = "Usage: <b>%s%s add<b> [timer name] [timer text]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
         chan(plugin.state, event.channel, message);
     }
@@ -679,17 +727,21 @@ void handleAddToTimer(
 
     foreach (immutable i, ref timerDef; *timerDefs)
     {
-        if (timerDef.name == name)
+        if (timerDef.name != name) continue;
+
+        void destroyUpdateSave()
         {
-            timerDef.lines ~= slice;
             destroy(channel.timerFibers[i]);
             channel.timerFibers[i] = plugin.createTimerFiber(timerDef, event.channel);
             saveResourceToDisk(plugin.timerDefsByChannel, plugin.timerFile);
-
-            enum pattern = "Line added to timer <b>%s<b>.";
-            immutable message = pattern.format(name);
-            return chan(plugin.state, event.channel, message);
         }
+
+        timerDef.lines ~= slice;
+        destroyUpdateSave();
+
+        enum pattern = "Line added to timer <b>%s<b>.";
+        immutable message = pattern.format(name);
+        return chan(plugin.state, event.channel, message);
     }
 
     // If we're here, no timer was found with the given name
@@ -768,7 +820,7 @@ void onAnyMessage(TimerPlugin plugin, const ref IRCEvent event)
     if (!channel)
     {
         // Race...
-        plugin.handleSelfjoin(event.channel);
+        handleSelfjoin(plugin, event.channel, No.force);
         channel = event.channel in plugin.channels;
     }
 
@@ -781,41 +833,59 @@ void onAnyMessage(TimerPlugin plugin, const ref IRCEvent event)
     Loads timers from disk. Additionally sets up a [core.thread.fiber.Fiber|Fiber]
     to periodically call timer [core.thread.fiber.Fiber|Fiber]s with a periodicity
     of [TimerPlugin.timerPeriodicity].
+
+    Don't call `reload` for this! It undoes anything `handleSelfjoin` may have done.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
-    .fiber(true)
 )
 void onWelcome(TimerPlugin plugin)
 {
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.constants : BufferSize;
     import lu.json : JSONStorage;
-    import std.datetime.systime : Clock;
     import core.thread : Fiber;
 
-    plugin.reload();
-    delay(plugin, plugin.timerPeriodicity, Yes.yield);
+    JSONStorage allTimersJSON;
+    allTimersJSON.load(plugin.timerFile);
 
-    while (true)
+    foreach (immutable channelName, const timerDefsJSON; allTimersJSON.object)
     {
-        // Walk through channels, trigger fibers
-        foreach (immutable channelName, room; plugin.channels)
+        foreach (const timerDefJSON; timerDefsJSON.array)
         {
-            foreach (timerFiber; room.timerFibers)
-            {
-                if (!timerFiber || (timerFiber.state != Fiber.State.HOLD))
-                {
-                    logger.error("Dead or busy timer Fiber in channel ", channelName);
-                    continue;
-                }
+            plugin.timerDefsByChannel[channelName] ~= TimerDefinition.fromJSON(timerDefJSON);
+        }
+    }
 
-                timerFiber.call();
+    plugin.timerDefsByChannel = plugin.timerDefsByChannel.rehash();
+
+    void fiberTriggerDg()
+    {
+        while (true)
+        {
+            // Walk through channels, trigger fibers
+            foreach (immutable channelName, room; plugin.channels)
+            {
+                foreach (timerFiber; room.timerFibers)
+                {
+                    if (!timerFiber || (timerFiber.state != Fiber.State.HOLD))
+                    {
+                        logger.error("Dead or busy timer Fiber in channel ", channelName);
+                        continue;
+                    }
+
+                    timerFiber.call();
+                }
             }
+
+            delay(plugin, plugin.timerPeriodicity, Yes.yield);
+            // continue;
         }
 
-        delay(plugin, plugin.timerPeriodicity, Yes.yield);
     }
+
+    Fiber fiberTriggerFiber = new Fiber(&fiberTriggerDg, BufferSize.fiberStack);
+    delay(plugin, fiberTriggerFiber, plugin.timerPeriodicity);
 }
 
 
@@ -829,7 +899,7 @@ void onWelcome(TimerPlugin plugin)
 )
 void onSelfjoin(TimerPlugin plugin, const ref IRCEvent event)
 {
-    return plugin.handleSelfjoin(event.channel);
+    return handleSelfjoin(plugin, event.channel, No.force);
 }
 
 
@@ -844,19 +914,45 @@ void onSelfjoin(TimerPlugin plugin, const ref IRCEvent event)
     Params:
         plugin = The current [TimerPlugin].
         channelName = The name of the channel we're supposedly joining.
+        force = Whether or not to always set up the channel, regardless of its
+            current existence.
  +/
-void handleSelfjoin(TimerPlugin plugin, const string channelName)
+void handleSelfjoin(
+    TimerPlugin plugin,
+    const string channelName,
+    const Flag!"force" force = No.force)
 {
-    if (channelName in plugin.channels) return;
+    auto channel = channelName in plugin.channels;
 
-    plugin.channels[channelName] = TimerPlugin.Channel(channelName);
-    auto timerDefs = channelName in plugin.timerDefsByChannel;
-
-    if (timerDefs)
+    if (channel)
     {
-        auto channel = channelName in plugin.channels;
+        // Channel exists
+        if (force)
+        {
+            // ...and we're forced to overwrite it
+            foreach (fiber; channel.timerFibers)
+            {
+                destroy(fiber);
+            }
 
-        foreach (/*const*/ timerDef; *timerDefs)
+            channel.timerFibers = null;
+            *channel = TimerPlugin.Channel(channelName);
+        }
+        else
+        {
+            // No forcing, so just do nothing and return
+            return;
+        }
+    }
+    else
+    {
+        plugin.channels[channelName] = TimerPlugin.Channel(channelName);
+        channel = channelName in plugin.channels;
+    }
+
+    if (auto timerDefs = channelName in plugin.timerDefsByChannel)
+    {
+        foreach (timerDef; *timerDefs)
         {
             channel.timerFibers ~= plugin.createTimerFiber(timerDef, channelName);
         }
@@ -957,16 +1053,24 @@ auto createTimerFiber(
         }
 
         /// The channel message count at last successful trigger.
-        ulong lastMessageCount = channel.messageCount;  // or creation?
+        ulong lastMessageCount = channel.messageCount;
 
         /// The timestamp at the last successful trigger.
-        long lastTimestamp = Clock.currTime.toUnixTime;  // or creation?
+        long lastTimestamp = Clock.currTime.toUnixTime;
+
+        /// `Condition.both` fulfilled (cache).
+        bool conditionBothFulfilled;
+
+        /// `Condition.either` fulfilled (cache).
+        bool conditionEitherFulfilled;
 
         while (true)
         {
-            ulong now;
+            import std.array : replace;
+            import std.conv : text;
+            import std.random : uniform;
 
-            if (timerDef.condition == TimerDefinition.Condition.both)
+            if ((timerDef.condition == TimerDefinition.Condition.both) && !conditionBothFulfilled)
             {
                 immutable messageCountUnfulfilled =
                     ((channel.messageCount - lastMessageCount) < timerDef.messageCountThreshold);
@@ -977,7 +1081,7 @@ auto createTimerFiber(
                     continue;
                 }
 
-                now = Clock.currTime.toUnixTime;
+                immutable now = Clock.currTime.toUnixTime;
                 immutable timerUnfulfilled = ((now - lastTimestamp) < timerDef.timeThreshold);
 
                 if (timerUnfulfilled)
@@ -985,11 +1089,12 @@ auto createTimerFiber(
                     Fiber.yield();
                     continue;
                 }
-            }
-            else /*if (timerDef.condition == TimerDefinition.Condition.either)*/
-            {
-                now = Clock.currTime.toUnixTime;
 
+                conditionBothFulfilled = true;
+            }
+            else if ((timerDef.condition == TimerDefinition.Condition.either) && !conditionEitherFulfilled)
+            {
+                immutable now = Clock.currTime.toUnixTime;
                 immutable messageCountUnfulfilled =
                     ((channel.messageCount - lastMessageCount) < timerDef.messageCountThreshold);
                 immutable timerUnfulfilled =
@@ -1000,13 +1105,11 @@ auto createTimerFiber(
                     Fiber.yield();
                     continue;
                 }
+
+                conditionEitherFulfilled = true;
             }
 
-            import std.array : replace;
-            import std.conv : text;
-            import std.random : uniform;
-
-            string line = timerDef.getLine()
+            string line = timerDef.getLine()  // mutable
                 .replace("$bot", plugin.state.client.nickname)
                 .replace("$channel", channelName[1..$])
                 .replace("$random", uniform!"(]"(0, 100).text);
@@ -1023,7 +1126,7 @@ auto createTimerFiber(
             chan(plugin.state, channelName, line);
 
             lastMessageCount = channel.messageCount;
-            lastTimestamp = now;
+            lastTimestamp = Clock.currTime.toUnixTime;
 
             Fiber.yield();
             //continue;
@@ -1046,12 +1149,9 @@ auto createTimerFiber(
  +/
 void saveResourceToDisk(const TimerDefinition[][string] aa, const string filename)
 {
-    import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import lu.json : JSONStorage;
 
-    JSONValue json;
-    json = null;
-    json.object = null;
+    JSONStorage json;
 
     foreach (immutable channelName, const timerDefs; aa)
     {
@@ -1064,7 +1164,7 @@ void saveResourceToDisk(const TimerDefinition[][string] aa, const string filenam
         }
     }
 
-    File(filename, "w").writeln(json.toPrettyString);
+    json.save(filename);
 }
 
 
@@ -1135,13 +1235,10 @@ void reload(TimerPlugin plugin)
             destroy(fiber);
         }
 
-        if (auto timerDefs = channelName in plugin.timerDefsByChannel)
-        {
-            foreach (timerDef; *timerDefs)
-            {
-                channel.timerFibers ~= plugin.createTimerFiber(timerDef, channelName);
-            }
-        }
+        channel.timerFibers = null;
+
+        // Just reuse the SELFJOIN routine, but be sure to force it
+        handleSelfjoin(plugin, channelName, Yes.force);
     }
 }
 

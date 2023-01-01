@@ -295,9 +295,9 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
             .policy(PrefixPolicy.prefixed)
             .description("Manages oneliners.")
             .addSyntax("$command new [trigger] [type]")
-            .addSyntax("$command add [trigger] [text...]")
-            .addSyntax("$command edit [trigger] [position] [new text...]")
-            .addSyntax("$command insert [trigger] [position] [text...]")
+            .addSyntax("$command add [trigger] [text]")
+            .addSyntax("$command edit [trigger] [position] [new text]")
+            .addSyntax("$command insert [trigger] [position] [text]")
             .addSyntax("$command del [trigger] [optional position]")
             .addSyntax("$command list")
     )
@@ -584,8 +584,8 @@ void handleAddToOneliner(
         if (results != SplitResults.overrun)
         {
             immutable pattern = (verb == "insert") ?
-                "Usage: <b>%s%s insert<b> [trigger] [position] [text...]" :
-                "Usage: <b>%s%s edit<b> [trigger] [position] [new text...]";
+                "Usage: <b>%s%s insert<b> [trigger] [position] [text]" :
+                "Usage: <b>%s%s edit<b> [trigger] [position] [new text]";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
             return chan(plugin.state, event.channel, message);
         }
@@ -631,7 +631,7 @@ void handleAddToOneliner(
         immutable results = slice.splitInto(trigger);
         if (results != SplitResults.overrun)
         {
-            enum pattern = "Usage: <b>%s%s add<b> [trigger] [text...]";
+            enum pattern = "Usage: <b>%s%s add<b> [trigger] [text]";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
             return chan(plugin.state, event.channel, message);
         }
@@ -813,7 +813,8 @@ void listCommands(OnelinersPlugin plugin, const string channelName)
     }
     else
     {
-        chan(plugin.state, channelName, "There are no commands available right now.");
+        enum message = "There are no commands available right now.";
+        chan(plugin.state, channelName, message);
     }
 }
 

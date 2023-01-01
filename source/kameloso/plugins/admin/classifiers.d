@@ -265,8 +265,8 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
         if (event.sender.nickname.length)
         {
             // IRC report
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "No nickname supplied.");
+            enum message = "No nickname supplied.";
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
         else
         {
@@ -403,7 +403,8 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
         if (event.sender.nickname.length)
         {
             // IRC report
-            privmsg(plugin.state, event.channel, event.sender.nickname, "No account specified.");
+            enum message = "No account specified.";
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
         else
         {

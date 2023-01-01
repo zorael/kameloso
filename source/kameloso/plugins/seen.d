@@ -875,12 +875,14 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
         else if (requestedUser == state.client.nickname)
         {
             // The requested nick is the bot's.
-            return privmsg(event.channel, event.sender.nickname, "T-that's me though...");
+            enum message = "T-that's me though...";
+            return privmsg(event.channel, event.sender.nickname, message);
         }
         else if (requestedUser == event.sender.nickname)
         {
             // The person is asking for seen information about him-/herself.
-            return privmsg(event.channel, event.sender.nickname, "That's you!");
+            enum message = "That's you!";
+            return privmsg(event.channel, event.sender.nickname, message);
         }
 
         foreach (const channel; state.channels)

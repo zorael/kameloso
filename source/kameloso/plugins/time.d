@@ -145,40 +145,88 @@ in (specified.length, "Tried to get timezone of an empty string")
 {
     import lu.string : contains;
     import std.algorithm.searching : canFind;
-    import std.array : replace;
     import core.time : TimeException;
 
-    static immutable string[6] prefixes =
-    [
-        "Europe/",
-        "America/",
-        "Asia/",
-        "Africa/",
-        "Australia/",
-        "Pacific/",
-    ];
-
-    string resolvePrefixedTimeZone(const string zonestring)
+    version(Posix)
     {
-        if (zonestring.contains('/')) return string.init;
+        static immutable string[6] prefixes =
+        [
+            "Europe/",
+            "America/",
+            "Asia/",
+            "Africa/",
+            "Australia/",
+            "Pacific/",
+        ];
 
-        foreach (immutable prefix; prefixes[])
+        string resolvePrefixedTimeZone(const string zonestring)
         {
-            immutable prefixed = prefix ~ zonestring;
+            if (zonestring.contains('/')) return string.init;
 
-            if (installedTimeZones.canFind(prefixed))
+            foreach (immutable prefix; prefixes[])
             {
-                return prefixed;
+                immutable prefixed = prefix ~ zonestring;
+                if (installedTimeZones.canFind(prefixed)) return prefixed;
             }
-        }
 
-        return string.init;
+            return string.init;
+        }
     }
 
-    immutable withUnderscores = specified.replace(' ', '_');
-    immutable zonestring = installedTimeZones.canFind(withUnderscores) ?
-        withUnderscores :
-        resolvePrefixedTimeZone(withUnderscores);
+    version(Windows)
+    {
+        string resolveStandardTimeZone(const string zonestring)
+        {
+            if (zonestring.contains("Standard Time")) return string.init;
+
+            immutable withStandardTime = zonestring ~ " Standard Time";
+            return installedTimeZones.canFind(withStandardTime) ?
+                withStandardTime :
+                string.init;
+        }
+    }
+
+    string zonestring;  // mutable
+
+    version(Posix)
+    {
+        // Some common aliases. Add more as they become obvious.
+        if      (specified == "CST") zonestring = "US/Central";
+        else if (specified == "EST") zonestring = "US/Eastern";
+        else if (specified == "PST") zonestring = "US/Pacific";
+    }
+    else version(Windows)
+    {
+        // As above
+        if      (specified == "CST") zonestring = "Central Standard Time";
+        else if (specified == "EST") zonestring = "Eastern Standard Time";
+        else if (specified == "PST") zonestring = "Pacific Standard Time";
+        else if (specified == "CET") zonestring = "Central European Standard Time";
+        else if (specified == "GMT") zonestring = "GMT Standard Time";  // technically superfluous
+    }
+
+    if (!zonestring.length)
+    {
+        version(Posix)
+        {
+            import std.array : replace;
+
+            immutable withUnderscores = specified.replace(' ', '_');
+            zonestring = installedTimeZones.canFind(withUnderscores) ?
+                withUnderscores :
+                resolvePrefixedTimeZone(withUnderscores);
+        }
+        else version(Windows)
+        {
+            zonestring = installedTimeZones.canFind(specified) ?
+                specified :
+                resolveStandardTimeZone(specified);
+        }
+        else
+        {
+            static assert(0, "Unsupported platform, please file a bug.");
+        }
+    }
 
     try
     {

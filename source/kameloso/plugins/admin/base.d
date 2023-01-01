@@ -193,7 +193,8 @@ void onCommandSave(AdminPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.thread : ThreadMessage;
 
-    privmsg(plugin.state, event.channel, event.sender.nickname, "Saving configuration to disk.");
+    enum message = "Saving configuration to disk.";
+    privmsg(plugin.state, event.channel, event.sender.nickname, message);
     plugin.state.mainThread.send(ThreadMessage.save());
 }
 
@@ -366,20 +367,23 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
 
     if (!channelName.isValidChannel(plugin.state.server))
     {
-        return privmsg(plugin.state, event.channel, event.sender.nickname, "Invalid channel name.");
+        enum message = "Invalid channel name.";
+        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
     if (plugin.state.bot.homeChannels.canFind(channelName))
     {
-        return privmsg(plugin.state, event.channel, event.sender.nickname,
-            "We are already in that home channel.");
+        enum message = "We are already in that home channel.";
+        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
     // We need to add it to the homeChannels array so as to get ChannelPolicy.home
     // ChannelAwareness to pick up the SELFJOIN.
     plugin.state.bot.homeChannels ~= channelName;
     plugin.state.updates |= typeof(plugin.state.updates).bot;
-    privmsg(plugin.state, event.channel, event.sender.nickname, "Home added.");
+
+    enum addedMessage = "Home added.";
+    privmsg(plugin.state, event.channel, event.sender.nickname, addedMessage);
 
     immutable existingChannelIndex = plugin.state.bot.guestChannels.countUntil(channelName);
 
@@ -457,7 +461,8 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
             break;
 
         default:
-            privmsg(plugin.state, event.channel, event.sender.nickname, "Failed to join home channel.");
+            enum message = "Failed to join home channel.";
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
             break;
         }
 
@@ -521,7 +526,8 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
     {
         // We didn't just leave the channel, so we can report success
         // Otherwise we get ERR_CANNOTSENDTOCHAN
-        privmsg(plugin.state, event.channel, event.sender.nickname, "Home removed.");
+        enum message = "Home removed.";
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 }
 
@@ -763,8 +769,8 @@ void onCommandJoin(AdminPlugin plugin, const ref IRCEvent event)
 
     if (!event.content.length)
     {
-        return privmsg(plugin.state, event.channel, event.sender.nickname,
-            "No channels to join supplied...");
+        enum message = "No channels to join supplied...";
+        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
     string slice = event.content;  // mutable
@@ -799,8 +805,8 @@ void onCommandPart(AdminPlugin plugin, const ref IRCEvent event)
 
     if (!event.content.length)
     {
-        return privmsg(plugin.state, event.channel, event.sender.nickname,
-            "No channels to part supplied...");
+        enum message = "No channels to part supplied...";
+        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
     string slice = event.content;  // mutable
@@ -812,7 +818,7 @@ void onCommandPart(AdminPlugin plugin, const ref IRCEvent event)
 }
 
 
-// onSetCommand
+// onCommandSet
 /++
     Sets a plugin option by variable string name.
  +/
@@ -826,7 +832,7 @@ void onCommandPart(AdminPlugin plugin, const ref IRCEvent event)
             .word("set")
             .policy(PrefixPolicy.nickname)
             .description("Changes a setting of a plugin.")
-            .addSyntax("$command [plugin.setting=value]")
+            .addSyntax("$command [plugin].[setting]=[value]")
     )
 )
 void onCommandSet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
@@ -838,16 +844,81 @@ void onCommandSet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
     {
         if (success)
         {
-            privmsg(plugin.state, event.channel, event.sender.nickname, "Setting changed.");
+            enum message = "Setting changed.";
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
         else
         {
-            privmsg(plugin.state, event.channel, event.sender.nickname,
-                "Invalid syntax or plugin/setting name.");
+            enum message = "Invalid syntax or plugin/setting name.";
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
     }
 
     plugin.state.mainThread.send(ThreadMessage.ChangeSetting(), cast(shared)&dg, event.content);
+}
+
+
+// onCommandGet
+/++
+    Fetches a setting of a given plugin, or a list of all settings of a given plugin
+    if no setting name supplied.
+
+    Filename paths to certificate files and private keys will be visible to users
+    of this, so be careful with what permissions should be required.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .permissionsRequired(Permissions.admin)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("get")
+            .policy(PrefixPolicy.nickname)
+            .description("Fetches a setting of a given plugin, " ~
+                "or a list of all available settings of a given plugin.")
+            .addSyntax("$command [plugin].[setting]")
+            .addSyntax("$command [plugin]")
+    )
+)
+void onCommandGet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
+{
+    import kameloso.thread : ThreadMessage;
+    import std.concurrency : send;
+
+    void dg(string pluginName, string setting, string value)
+    {
+        if (pluginName.length)
+        {
+            if (setting.length)
+            {
+                import lu.string : contains;
+                import std.format : format;
+
+                immutable pattern = value.contains(' ') ?
+                    "%s.%s=\"%s\"" :
+                    "%s.%s=%s";
+                immutable message = pattern.format(pluginName, setting, value);
+                privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            }
+            else if (value.length)
+            {
+                privmsg(plugin.state, event.channel, event.sender.nickname, value);
+            }
+            else
+            {
+                enum message = "Invalid setting.";
+                privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            }
+        }
+        else
+        {
+            enum message = "Invalid plugin.";
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        }
+    }
+
+    plugin.state.mainThread.send(ThreadMessage.GetSetting(), cast(shared)&dg, event.content);
 }
 
 
@@ -967,8 +1038,8 @@ void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 
     if (channelName !in plugin.state.channels)
     {
-        return privmsg(plugin.state, event.channel, event.sender.nickname,
-            "I am not in that channel.");
+        enum message = "I am not in that channel.";
+        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
     if (!slice.length)
@@ -1092,8 +1163,8 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
 
     if (!plugin.state.settings.preferHostmasks)
     {
-        return privmsg(plugin.state, event.channel, event.sender.nickname,
-            "This bot is not currently configured to use hostmasks for authentication.");
+        enum message = "This bot is not currently configured to use hostmasks for authentication.";
+        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
     void sendUsage()
@@ -1219,7 +1290,7 @@ debug
             .word("bus")
             .policy(PrefixPolicy.nickname)
             .description("[debug] Sends an internal bus message.")
-            .addSyntax("$command [header] [content...]")
+            .addSyntax("$command [header] [content]")
     )
 )
 void onCommandBus(AdminPlugin plugin, const ref IRCEvent event)

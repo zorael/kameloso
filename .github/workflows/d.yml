@@ -35,7 +35,7 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: 'Install D compiler'
       uses: dlang-community/setup-dlang@v1
@@ -79,7 +79,7 @@ jobs:
 
     - name: 'Deploy documentation to GitHub Pages'
       if: matrix.dc == 'dmd-latest' && matrix.os == 'ubuntu-latest' && success()
-      uses: crazy-max/ghaction-github-pages@v2.2.0
+      uses: crazy-max/ghaction-github-pages@v3
       with:
         target_branch: gh-pages
         keep_history: false
