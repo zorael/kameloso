@@ -31,9 +31,6 @@ import std.typecons : Flag, No, Yes;
 {
     /// Whether or not the Chatbot plugin should react to events at all.
     @Enabler bool enabled = true;
-
-    /// Enables fetching of `bash.org` quotes.
-    bool bashDotOrgQuotes = true;
 }
 
 
