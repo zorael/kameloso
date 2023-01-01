@@ -168,11 +168,11 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
             // Error: variable operator used before set
             if (event.sender.class_ < IRCUser.Class.operator)
             {
-                sendNoOngoingPoll();
+                return sendNoOngoingPoll();
             }
             else
             {
-                sendUsage();
+                return sendUsage();
             }
         }
 
