@@ -261,6 +261,16 @@ void playbackNotes(
     const /*ref*/ IRCEvent event,
     const Flag!"background" background = No.background)
 {
+    const user = event.sender.nickname.length ?
+        event.sender :
+        event.target;  // on RPL_WHOREPLY
+
+    if (!user.nickname.length)
+    {
+        // Despite everything we don't have a user. Bad annotations on calling event handler?
+        return;
+    }
+
     if (event.channel.length)
     {
         import std.range : only;
@@ -268,13 +278,13 @@ void playbackNotes(
         // Try both channel and private message notes
         foreach (immutable wouldBeChannel; only(event.channel, string.init))
         {
-            playbackNotesImpl(plugin, wouldBeChannel, event.sender, background);
+            playbackNotesImpl(plugin, wouldBeChannel, user, background);
         }
     }
     else
     {
         // Only private message relevant
-        playbackNotesImpl(plugin, string.init, event.sender, background);
+        playbackNotesImpl(plugin, string.init, user, background);
     }
 }
 
