@@ -237,7 +237,7 @@ struct ThreadMessage
     static struct PeekCommands {}
 
     /++
-        Concurrency message askin to apply an expression to change a setting of a plugin.
+        Concurrency message asking to apply an expression to change a setting of a plugin.
      +/
     static struct ChangeSetting {}
 

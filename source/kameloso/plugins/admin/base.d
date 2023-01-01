@@ -818,7 +818,7 @@ void onCommandPart(AdminPlugin plugin, const ref IRCEvent event)
 }
 
 
-// onSetCommand
+// onCommandSet
 /++
     Sets a plugin option by variable string name.
  +/
@@ -832,7 +832,7 @@ void onCommandPart(AdminPlugin plugin, const ref IRCEvent event)
             .word("set")
             .policy(PrefixPolicy.nickname)
             .description("Changes a setting of a plugin.")
-            .addSyntax("$command [plugin.setting=value]")
+            .addSyntax("$command [plugin].[setting]=[value]")
     )
 )
 void onCommandSet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
