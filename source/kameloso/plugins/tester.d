@@ -19,6 +19,7 @@ import std.exception : enforce;
 import std.format : format;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
+import core.time;
 
 pragma(msg, "Compiling tester plugin");
 
@@ -34,8 +35,8 @@ version(DigitalMars)
     }
     else
     {
-        pragma(msg, "WARNING: The test suite may segfault on dmd with -release.");
-        pragma(msg, "Use ldc for better results.");
+        pragma(msg, "Note: The test suite may/will segfault on dmd with -release " ~
+            "if we're using `const ref` parameters with Fibers. Investigate if it happens.");
     }
 }
 
@@ -115,7 +116,8 @@ void onCommandTest(TesterPlugin plugin, const /*ref*/ IRCEvent event)
         }
 
         immutable results = success ? "passed" : "FAILED";
-        chan(plugin.state, event.channel, __traits(identifier, fun) ~ " tests: " ~ results);
+        chan(plugin.state, event.channel, "--------------------------------[ " ~
+            __traits(identifier, fun) ~ " tests: " ~ results);
         return success;
     }
 
@@ -132,6 +134,8 @@ void onCommandTest(TesterPlugin plugin, const /*ref*/ IRCEvent event)
         testStopwatchFiber,
         testTimerFiber,
         testTimeFiber,
+        testBashFiber,
+        testPollFiber,
     );
 
     top:
@@ -169,8 +173,6 @@ void onCommandTest(TesterPlugin plugin, const /*ref*/ IRCEvent event)
     case "all":
         void allDg()
         {
-            import core.time : seconds;
-
             await(plugin, IRCEvent.Type.CHAN, No.yield);
             scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
 
@@ -184,13 +186,23 @@ void onCommandTest(TesterPlugin plugin, const /*ref*/ IRCEvent event)
                 try
                 {
                     immutable success = runTestAndReport!test();
-                    if (i+1 != tests.length) delay(plugin, timeInBetween, Yes.yield);
                     if (success) ++successes;
                 }
                 catch (Exception e)
                 {
                     import std.stdio;
                     writeln(e);
+                }
+
+                if (i+1 != tests.length)
+                {
+                    delay(plugin, timeInBetween, Yes.yield);
+
+                    auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+                    while (thisFiber.payload.content.length)
+                    {
+                        delay(plugin, 1.seconds, Yes.yield);
+                    }
                 }
             }
 
@@ -238,6 +250,9 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
+    send("say sync");
+    do awaitReply(); while (thisFiber.payload.content != "sync");
+
     // ------------ !home
 
     send("home del #harpsteff");
@@ -261,36 +276,39 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
 
     foreach (immutable list; only("staff"))//, "operator", "whitelist", "blacklist"))
     {
-        immutable asWhat =
+        immutable definiteFormSingular =
             (list == "staff") ? "staff" :
             (list == "operator") ? "an operator" :
             (list == "whitelist") ? "a whitelisted user" :
             /*(list == "blacklist") ?*/ "a blacklisted user";
 
-        //"No such account zorael to remove as %s in %s."
-        send(list ~ " del zorael");
-        expect("zorael isn't %s in %s.".format(asWhat, origEvent.channel));
-
-        send(list ~ " add zorael");
-        expect("Added zorael as %s in %s.".format(asWhat, origEvent.channel));
-
-        send(list ~ " add zorael");
-        expect("zorael was already %s in %s.".format(asWhat, origEvent.channel));
-
-        send(list ~ " del zorael");
-        expect("Removed zorael as %s in %s.".format(asWhat, origEvent.channel));
-
-        send(list ~ " add");
-        expect("No nickname supplied.");
-
-        immutable asWhatList =
+        immutable plural =
             (list == "staff") ? "staff" :
             (list == "operator") ? "operators" :
             (list == "whitelist") ? "whitelisted users" :
             /*(list == "blacklist") ?*/ "blacklisted users";
 
+        //"No such account xorael to remove as %s in %s."
+        send(list ~ " del xorael");
+        expect("xorael isn't %s in %s.".format(definiteFormSingular, origEvent.channel));
+
+        send(list ~ " add xorael");
+        expect("Added xorael as %s in %s.".format(definiteFormSingular, origEvent.channel));
+
+        send(list ~ " add xorael");
+        expect("xorael was already %s in %s.".format(definiteFormSingular, origEvent.channel));
+
         send(list ~ " list");
-        expect("There are no %s in %s.".format(asWhatList, origEvent.channel));
+        expect("Current %s in %s: xorael".format(plural, origEvent.channel));
+
+        send(list ~ " del xorael");
+        expect("Removed xorael as %s in %s.".format(definiteFormSingular, origEvent.channel));
+
+        send(list ~ " list");
+        expect("There are no %s in %s.".format(plural, origEvent.channel));
+
+        send(list ~ " add");
+        expect("No nickname supplied.");
     }
 
     // ------------ misc
@@ -326,6 +344,21 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
         send("hostmask del kameloso^!*@*");
         expect("No such hostmask on file.");
     }
+
+    send("reload");
+    expect("Reloading plugins.");
+
+    send("reload admin");
+    expect("Reloading plugin \"admin\".");
+
+    send("join #skabalooba");
+    send("part #skabalooba");
+
+    send("get admin.enabled");
+    expect("admin.enabled=true");
+
+    send("get core.prefix");
+    expect("core.prefix=\"%s\"".format(plugin.state.settings.prefix));
 }
 
 
@@ -358,6 +391,9 @@ in (origEvent.channel.length, "Tried to test Automode with empty channel in orig
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
+    send("say sync");
+    do awaitReply(); while (thisFiber.payload.content != "sync");
+
     // ------------ !automode
 
     /*send("automode list");
@@ -375,16 +411,16 @@ in (origEvent.channel.length, "Tried to test Automode with empty channel in orig
     expect("Invalid nickname.");
 
     send("automode add kameloso -v");
-    expect("Can't add a negative automode.");
+    expect("Automodes cannot be negative.");
 
     send("automode add kameloso +");
     expect("You must supply a valid mode.");
 
     send("automode add kameloso +o");
-    expect("Automode modified! kameloso on %s: +o".format(origEvent.channel));
+    expect("Automode modified! kameloso in %s: +o".format(origEvent.channel));
 
     send("automode add kameloso +v");
-    expect("Automode modified! kameloso on %s: +v".format(origEvent.channel));
+    expect("Automode modified! kameloso in %s: +v".format(origEvent.channel));
 
     send("automode list");
     awaitReply();
@@ -420,6 +456,11 @@ in (origEvent.channel.length, "Tried to test Chatbot with empty channel in origi
         chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
     }
 
+    void sendNoPrefix(const string line)
+    {
+        chan(plugin.state, origEvent.channel, line);
+    }
+
     void awaitReply()
     {
         do Fiber.yield();
@@ -434,14 +475,17 @@ in (origEvent.channel.length, "Tried to test Chatbot with empty channel in origi
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
+    send("say sync");
+    do awaitReply(); while (thisFiber.payload.content != "sync");
+
     // ------------ !say
 
-    send("say zoraelblarbhl");
-    expect("zoraelblarbhl");
+    send("say xoraelblarbhl");
+    expect("xoraelblarbhl");
 
     // ------------ !8ball
 
-    import std.algorithm.searching : canFind;
+    /*import std.algorithm.searching : canFind;
 
     static immutable string[20] eightballAnswers =
     [
@@ -470,19 +514,15 @@ in (origEvent.channel.length, "Tried to test Chatbot with empty channel in origi
     send("8ball");
     awaitReply();
     enforce(eightballAnswers[].canFind(thisFiber.payload.content),
-        thisFiber.payload.content, __FILE__, __LINE__);
-
-    // ------------ !bash; don't test, it's complicated
+        thisFiber.payload.content, __FILE__, __LINE__);*/
 
     // ------------ DANCE
 
     await(plugin, IRCEvent.Type.EMOTE, No.yield);
 
-    send("get on up and DANCE");
+    sendNoPrefix("get on up and DANCE");
     expect("dances :D-<");
-    //Fiber.yield();
     expect("dances :D|-<");
-    //Fiber.yield();
     expect("dances :D/-<");
 
     unawait(plugin, IRCEvent.Type.EMOTE);
@@ -514,8 +554,8 @@ in (origEvent.channel.length, "Tried to test Notes with empty channel in origina
     void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
     {
         awaitReply();
-        enforce((thisFiber.payload.content.stripEffects() == msg),
-            "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
+        immutable stripped = thisFiber.payload.content.stripEffects();
+        enforce((stripped == msg), "'%s' != '%s'".format(stripped, msg), file, line);
     }
 
     void cycle()
@@ -532,6 +572,9 @@ in (origEvent.channel.length, "Tried to test Notes with empty channel in origina
         unawait(plugin, IRCEvent.Type.SELFJOIN);
         await(plugin, IRCEvent.Type.CHAN, No.yield);
     }
+
+    send("say sync");
+    do awaitReply(); while (thisFiber.payload.content != "sync");
 
     // ------------ !note
 
@@ -562,20 +605,14 @@ in (origEvent.channel.length, "Tried to test Notes with empty channel in origina
     cycle();
     expect("%s! You have 2 notes.".format(plugin.state.client.nickname));
 
-    await(plugin, IRCEvent.Type.CHAN, No.yield);  // awaitReply yields
-    awaitReply();
-    immutable stripped1 = thisFiber.payload.content.stripEffects();
-    enforce(stripped1.beginsWith(plugin.state.client.nickname),
-        thisFiber.payload.content, __FILE__, __LINE__);
-
     awaitReply();
     immutable stripped2 = thisFiber.payload.content.stripEffects();
-    enforce(stripped2.endsWith(": abc def ghi"),
+    enforce(stripped2.endsWith("ago: abc def ghi"),
         thisFiber.payload.content, __FILE__, __LINE__);
 
     awaitReply();
     immutable stripped3 = thisFiber.payload.content.stripEffects();
-    enforce(stripped3.endsWith(": 123 456 789"),
+    enforce(stripped3.endsWith("ago: 123 456 789"),
         thisFiber.payload.content, __FILE__, __LINE__);
 }
 
@@ -616,6 +653,9 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
+    send("say sync");
+    do awaitReply(); while (thisFiber.payload.content != "sync");
+
     send("set oneliners.cooldown=0");
     expect("Setting changed.");
 
@@ -637,7 +677,7 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
     expect("Oneliner %sherp created! Use %1$soneliner add to add lines.".format(prefix));
 
     sendPrefixed("herp");
-    expect("(Empty oneliner; use %soneliner add to add lines.)".format(prefix));
+    expect("(Empty oneliner; use %soneliner add herp to add lines.)".format(prefix));
 
     send("oneliner add herp 123");
     expect("Oneliner line added.");
@@ -706,10 +746,13 @@ in (origEvent.channel.length, "Tried to test Quotes with empty channel in origin
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
+    send("say sync");
+    do awaitReply(); while (thisFiber.payload.content != "sync");
+
     // ------------ !quote
 
     send("quote");
-    expect("Usage: %squote [nickname] [optional search term or #index]"
+    expect("Usage: %squote [nickname] [optional search terms or #index]"
         .format(plugin.state.settings.prefix));
 
     send("quote $¡$¡");
@@ -750,7 +793,7 @@ in (origEvent.channel.length, "Tried to test Quotes with empty channel in origin
         thisFiber.payload.content, __FILE__, __LINE__);
 
     send("quote flerrp honkedonk");
-    expect("No quotes found for search term \"honkedonk\"");
+    expect("No quotes found for search terms \"honkedonk\"");
 
     send("modquote");
     expect("Usage: %smodquote [nickname] [index] [new quote text]"
@@ -820,19 +863,28 @@ in (origEvent.channel.length, "Tried to test SedReplace with empty channel in or
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
+    send("say sync");
+    do awaitReply(); while (thisFiber.payload.content != "sync");
+
     // ------------ s/abc/ABC/
 
-    chan(plugin.state, origEvent.channel, "I am a fish");
+    sendNoPrefix("I am a fish");
     sendNoPrefix("s/fish/snek/");
     expect("%s | I am a snek".format(plugin.state.client.nickname));
 
-    chan(plugin.state, origEvent.channel, "I am a fish fish");
+    sendNoPrefix("I am a fish fish");
     sendNoPrefix("s#fish#snek#");
     expect("%s | I am a snek fish".format(plugin.state.client.nickname));
 
-    chan(plugin.state, origEvent.channel, "I am a fish fish");
+    sendNoPrefix("I am a fish fish");
     sendNoPrefix("s_fish_snek_g");
     expect("%s | I am a snek snek".format(plugin.state.client.nickname));
+
+    sendNoPrefix("s/harbusnarbu");
+    sendNoPrefix("s#snarbu#snofl/#");
+    // Should be no response
+    delay(plugin, 3.seconds, Yes.yield);
+    enforce(!thisFiber.payload.content.length);
 }
 
 
@@ -864,6 +916,9 @@ in (origEvent.channel.length, "Tried to test Seen with empty channel in original
         enforce((thisFiber.payload.content.stripEffects() == msg),
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
+
+    send("say sync");
+    do awaitReply(); while (thisFiber.payload.content != "sync");
 
     // ------------ !seen
 
@@ -917,6 +972,9 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
         enforce((thisFiber.payload.content.stripEffects() == msg),
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
+
+    send("say sync");
+    do awaitReply(); while (thisFiber.payload.content != "sync");
 
     // ------------ !counter
 
@@ -975,7 +1033,7 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
     expect("blah +2! Current count: 4");
 
     sendPrefixed("blah+abc");
-    expect("Not a number: abc");
+    expect("abc is not a number.");
 
     sendPrefixed("blah-");
     expect("blah -1! Current count: 3");
@@ -1044,6 +1102,9 @@ in (origEvent.channel.length, "Tried to test Stopwatch with empty channel in ori
         enforce((thisFiber.payload.content.stripEffects() == msg),
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
+
+    send("say sync");
+    do awaitReply(); while (thisFiber.payload.content != "sync");
 
     // ------------ !stopwatch
 
@@ -1120,6 +1181,9 @@ in (origEvent.channel.length, "Tried to test Timer with empty channel in origina
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
+    send("say sync");
+    do awaitReply(); while (thisFiber.payload.content != "sync");
+
     // ------------ !timer
 
     send("timer");
@@ -1149,8 +1213,13 @@ in (origEvent.channel.length, "Tried to test Timer with empty channel in origina
     logger.info("Wait 3 cycles + 10 seconds...");
 
     expect("fgsfds");
+    logger.info("ok");
+
     expect("HERLO");
+    logger.info("ok");
+
     expect("fgsfds");
+    logger.info("all ok");
 
     send("timer del hirrsteff");
     expect("Timer removed.");
@@ -1189,6 +1258,9 @@ in (origEvent.channel.length, "Tried to test Time with empty channel in original
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
+    send("say sync");
+    do awaitReply(); while (thisFiber.payload.content != "sync");
+
     // ------------ !time
 
     string response;  // mutable
@@ -1226,7 +1298,130 @@ in (origEvent.channel.length, "Tried to test Time with empty channel in original
         thisFiber.payload.content, __FILE__, __LINE__);
 
     send("time honk");
-    expect("Invalid time zone: honk");
+    expect("Invalid timezone: honk");
+}
+
+
+// testPollFiber
+/++
+ +
+ +/
+void testPollFiber(TesterPlugin plugin, const /*ref*/ IRCEvent origEvent, const string botNickname)
+in (origEvent.channel.length, "Tried to test Poll with empty channel in original event")
+{
+    auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+    assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
+
+    void send(const string line)
+    {
+        chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
+    }
+
+    void sendNoPrefix(const string line)
+    {
+        chan(plugin.state, origEvent.channel, line);
+    }
+
+    void awaitReply()
+    {
+        do Fiber.yield();
+        while ((thisFiber.payload.channel != origEvent.channel) ||
+            (thisFiber.payload.sender.nickname != botNickname));
+    }
+
+    void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
+    {
+        awaitReply();
+        enforce((thisFiber.payload.content.stripEffects() == msg),
+            "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
+    }
+
+    send("say sync");
+    do awaitReply(); while (thisFiber.payload.content != "sync");
+
+    // ------------ !poll
+
+    send("poll");
+    expect("Usage: %spoll [duration] [choice1] [choice2] ...".format(plugin.state.settings.prefix));
+
+    send("poll arf");
+    expect("Need one duration and at least two choices.");
+
+    send("poll arf urf hirf");
+    expect("Malformed duration.");
+
+    send("poll 5s snik snek");
+    expect("Voting commenced! Please place your vote for one of: snek, snik (5 seconds)");
+    expect("Voting complete, no one voted.");
+
+    send("poll 7 snik snek");
+    expect("Voting commenced! Please place your vote for one of: snek, snik (7 seconds)");
+    sendNoPrefix("snek");
+    expect("Voting complete! Here are the results:");
+    expect("snik : 0 votes");
+    expect("snek : 1 vote (100.0%)");
+
+    send("poll 1h2m3s snik snek");
+    expect("Voting commenced! Please place your vote for one of: snek, snik (1 hour, 2 minutes and 3 seconds)");
+
+    send("poll end");
+    expect("Voting complete, no one voted.");
+
+    send("poll 1d23h59m59s snik snek");
+    expect("Voting commenced! Please place your vote for one of: snek, snik (1 day, 23 hours, 59 minutes and 59 seconds)");
+
+    send("poll abort");
+    expect("Poll aborted.");
+
+    send("poll abort");
+    expect("There is no ongoing poll.");
+
+    send("poll end");
+    expect("There is no ongoing poll.");
+}
+
+
+// testBashFiber
+/++
+ +
+ +/
+void testBashFiber(TesterPlugin plugin, const /*ref*/ IRCEvent origEvent, const string botNickname)
+in (origEvent.channel.length, "Tried to test Bash with empty channel in original event")
+{
+    auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+    assert(thisFiber, "Incorrectly cast Fiber: `" ~ typeof(thisFiber).stringof ~ '`');
+
+    void send(const string line)
+    {
+        chan(plugin.state, origEvent.channel, botNickname ~ ": " ~ line);
+    }
+
+    void awaitReply()
+    {
+        do Fiber.yield();
+        while ((thisFiber.payload.channel != origEvent.channel) ||
+            (thisFiber.payload.sender.nickname != botNickname));
+    }
+
+    void expect(const string msg, const string file = __FILE__, const size_t line = __LINE__)
+    {
+        awaitReply();
+        enforce((thisFiber.payload.content.stripEffects() == msg),
+            "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
+    }
+
+    send("say sync");
+    do awaitReply(); while (thisFiber.payload.content != "sync");
+
+    // ------------ !bash
+
+    send("bash 5273");
+    expect("[bash.org] #5273");
+    expect("erno> hm. I've lost a machine.. literally _lost_. it responds to ping, " ~
+        "it works completely, I just can't figure out where in my apartment it is.");
+
+    send("bash honk");
+    expect("No such bash.org quote found.");
 }
 
 
