@@ -858,6 +858,70 @@ void onCommandSet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 }
 
 
+// onCommandGet
+/++
+    Fetches a setting of a given plugin, or a list of all settings of a given plugin
+    if no setting name supplied.
+
+    Filename paths to certificate files and private keys will be visible to users
+    of this, so be careful with what permissions should be required.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .permissionsRequired(Permissions.admin)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("get")
+            .policy(PrefixPolicy.nickname)
+            .description("Fetches a setting of a given plugin, " ~
+                "or a list of all available settings of a given plugin.")
+            .addSyntax("$command [plugin].[setting]")
+            .addSyntax("$command [plugin]")
+    )
+)
+void onCommandGet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
+{
+    import kameloso.thread : ThreadMessage;
+    import std.concurrency : send;
+
+    void dg(string pluginName, string setting, string value)
+    {
+        if (pluginName.length)
+        {
+            if (setting.length)
+            {
+                import lu.string : contains;
+                import std.format : format;
+
+                immutable pattern = value.contains(' ') ?
+                    "%s.%s=\"%s\"" :
+                    "%s.%s=%s";
+                immutable message = pattern.format(pluginName, setting, value);
+                privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            }
+            else if (value.length)
+            {
+                privmsg(plugin.state, event.channel, event.sender.nickname, value);
+            }
+            else
+            {
+                enum message = "Invalid setting.";
+                privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            }
+        }
+        else
+        {
+            enum message = "Invalid plugin.";
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        }
+    }
+
+    plugin.state.mainThread.send(ThreadMessage.GetSetting(), cast(shared)&dg, event.content);
+}
+
+
 // onCommandAuth
 /++
     Asks the [kameloso.plugins.services.connect.ConnectService|ConnectService] to

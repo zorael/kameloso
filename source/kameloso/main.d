@@ -419,6 +419,107 @@ void messageFiber(ref Kameloso instance)
                 cast(shared(void delegate(bool)))dg, expression);
         }
 
+        /++
+            Fetches the configured value of a setting if given a `plugin.setting`
+            expression, or a list of all available configuration settings if
+            given only a `plugin`.
+         +/
+        void getSetting(
+            ThreadMessage.GetSetting,
+            shared(void delegate(string, string, string)) dg,
+            string expression) scope
+        {
+            import lu.string : beginsWith, contains, nom;
+            import std.array : Appender;
+            import std.algorithm.iteration : splitter;
+
+            string slice = expression;  // mutable
+            immutable specifiedPlugin = slice.nom!(Yes.inherit)('.');
+            alias specifiedSetting = slice;
+
+            Appender!(char[]) sink;
+            sink.reserve(256);  // guesstimate
+
+            void apply()
+            {
+                if (specifiedSetting.length)
+                {
+                    import lu.string : strippedLeft;
+
+                    foreach (const line; sink.data.splitter('\n'))
+                    {
+                        string lineslice = cast(string)line;  // need a string for nom and strippedLeft...
+                        if (lineslice.beginsWith('#')) lineslice = lineslice[1..$];
+                        const thisSetting = lineslice.nom!(Yes.inherit)(' ');
+
+                        if (thisSetting != specifiedSetting) continue;
+
+                        const value = lineslice.strippedLeft;
+                        return dg(specifiedPlugin, specifiedSetting, value);
+                    }
+                }
+                else
+                {
+                    import std.conv : text;
+
+                    string[] allSettings;
+
+                    foreach (const line; sink.data.splitter('\n'))
+                    {
+                        string lineslice = cast(string)line;  // need a string for nom and strippedLeft...
+                        if (!lineslice.beginsWith('[')) allSettings ~= lineslice.nom!(Yes.inherit)(' ');
+                    }
+
+                    return dg(specifiedPlugin, string.init, allSettings.text);
+                }
+
+                // If we're here, no such setting was found
+                return dg(specifiedPlugin, string.init, string.init);
+            }
+
+            switch (specifiedPlugin)
+            {
+            case "core":
+                import lu.serialisation : serialise;
+                sink.serialise(instance.settings);
+                return apply();
+
+            case "connection":
+                // May leak secrets? certFile, privateKey etc...
+                // Careful with how we make this functionality available
+                import lu.serialisation : serialise;
+                sink.serialise(instance.connSettings);
+                return apply();
+
+            default:
+                foreach (plugin; instance.plugins)
+                {
+                    if (plugin.name != specifiedPlugin) continue;
+                    plugin.serialiseConfigInto(sink);
+                    return apply();
+                }
+
+                // If we're here, no plugin was found
+                return dg(string.init, string.init, string.init);
+            }
+        }
+
+        /++
+            Overload of the above because we keep seeing both @safe and @system
+            delegates for no apparent reason.
+
+            Main thread message fiber received unknown Variant:
+            std.typecons.Tuple!(kameloso.thread.ThreadMessage.GetSetting,
+                shared(void delegate(immutable(char)[], immutable(char)[],
+                immutable(char)[])), immutable(char)[]).Tuple
+         +/
+        void getSettingSafeDg(ThreadMessage.ChangeSetting,
+            shared(void delegate(string, string, string) @safe) dg, string expression) scope
+        {
+            getSetting(ThreadMessage.GetSetting(),
+                cast(shared(void delegate(string, string, string)))dg, expression);
+        }
+
         /// Reverse-formats an event and sends it to the server.
         void eventToServer(Message m) scope
         {
@@ -747,6 +848,8 @@ void messageFiber(ref Kameloso instance)
                 &peekCommands,
                 &changeSetting,
                 &changeSettingSafeDg,
+                &getSetting,
+                &getSettingSafeDg,
                 (Variant v) scope
                 {
                     // Caught an unhandled message

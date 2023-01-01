@@ -241,6 +241,11 @@ struct ThreadMessage
      +/
     static struct ChangeSetting {}
 
+    /++
+        Concurrency message asking to get one or all settings of a given plugin.
+     +/
+    static struct GetSetting {}
+
     /+
         Generate a static function for each [Type].
      +/
