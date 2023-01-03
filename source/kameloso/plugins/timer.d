@@ -4,7 +4,6 @@
  +/
 module kameloso.plugins.timer;
 
-version(TwitchSupport):
 version(WithTimerPlugin):
 
 private:
