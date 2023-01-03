@@ -404,16 +404,10 @@ void handleNewTimer(
     switch (type)
     {
     case "random":
-    case "rnd":
-    case "rng":
         timer.type = Timer.Type.random;
         break;
 
     case "ordered":
-    case "order":
-    case "sequential":
-    case "seq":
-    case "sequence":
         timer.type = Timer.Type.ordered;
         break;
 
@@ -425,12 +419,10 @@ void handleNewTimer(
     switch (condition)
     {
     case "both":
-    case "and":
         timer.condition = Timer.Condition.both;
         break;
 
     case "either":
-    case "or":
         timer.condition = Timer.Condition.either;
         break;
 
