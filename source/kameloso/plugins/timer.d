@@ -1023,19 +1023,16 @@ auto createTimerFiber(
         auto timer = name in *channelTimers;
         assert(timer, name ~ " not in *channelTimers");
 
-        /// Initial message count.
-        immutable creationMessageCount = channel.messageCount;
-
-        /// When this timer Fiber was created.
-        immutable creationTime = Clock.currTime.toUnixTime;
+        // Ensure that the Timer was set up with a UNIX timestamp prior to creating this
+        assert((timer.lastTimestamp > 0L), "Timer Fiber " ~ name ~ " created before initial timestamp was set");
 
         // Stagger based on message count and time thresholds
         while (true)
         {
             immutable timeStaggerMet =
-                ((Clock.currTime.toUnixTime - creationTime) >= timer.timeStagger);
+                ((Clock.currTime.toUnixTime - timer.lastTimestamp) >= timer.timeStagger);
             immutable messageStaggerMet =
-                ((channel.messageCount - creationMessageCount) >= timer.messageCountStagger);
+                ((channel.messageCount - timer.lastMessageCount) >= timer.messageCountStagger);
 
             if (timer.condition == Timer.Condition.both)
             {
