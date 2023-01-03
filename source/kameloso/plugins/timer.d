@@ -1300,7 +1300,7 @@ public:
         How often to check whether timers should fire. A smaller number means
         better precision, but also marginally higher gc pressure.
      +/
-    static immutable timerPeriodicity = 15.seconds;
+    static immutable timerPeriodicity = 10.seconds;
 
     mixin IRCPluginImpl;
 }
