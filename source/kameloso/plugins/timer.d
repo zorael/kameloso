@@ -142,6 +142,11 @@ public:
      +/
     size_t position;
 
+    /++
+        Whether or not this [Timer] is suspended and should not output anything.
+     +/
+    bool suspended;
+
     // getLine
     /++
         Yields a line from the [lines] array, depending on the [type] of this timer.
@@ -223,6 +228,7 @@ public:
         json["timeThreshold"] = JSONValue(this.timeThreshold);
         json["messageCountStagger"] = JSONValue(this.messageCountStagger);
         json["timeStagger"] = JSONValue(this.timeStagger);
+        json["suspended"] = JSONValue(this.suspended);
         json["lines"] = null;
         json["lines"].array = null;
 
@@ -259,6 +265,12 @@ public:
             Condition.both :
             Condition.either;
 
+        // Compatibility with older versions, remove later
+        if (const suspendedJSON = "suspended" in json.object)
+        {
+            timer.suspended = suspendedJSON.boolean;
+        }
+
         foreach (const lineJSON; json["lines"].array)
         {
             timer.lines ~= lineJSON.str;
@@ -290,6 +302,8 @@ public:
             .addSyntax("$command insert [timer name] [position] [new timer line]")
             .addSyntax("$command edit [timer name] [position] [new timer line]")
             .addSyntax("$command del [timer name] [optional line number]")
+            .addSyntax("$command suspend [timer name]")
+            .addSyntax("$command resume [timer name]")
             .addSyntax("$command list")
     )
 )
@@ -300,7 +314,7 @@ void onCommandTimer(TimerPlugin plugin, const ref IRCEvent event)
 
     void sendUsage()
     {
-        enum pattern = "Usage: <b>%s%s<b> [new|add|del|list] ...";
+        enum pattern = "Usage: <b>%s%s<b> [new|add|del|suspend|resume|list] ...";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
         chan(plugin.state, event.channel, message);
     }
@@ -324,6 +338,12 @@ void onCommandTimer(TimerPlugin plugin, const ref IRCEvent event)
 
     case "del":
         return handleDelTimer(plugin, event, slice);
+
+    case "suspend":
+        return handleSuspendTimer(plugin, event, slice, Yes.suspend);
+
+    case "resume":
+        return handleSuspendTimer(plugin, event, slice, No.suspend);  // --> Yes.resume
 
     case "list":
         return handleListTimers(plugin, event);
@@ -806,6 +826,76 @@ void handleListTimers(
 }
 
 
+// handleSuspendTimer
+/++
+    Suspends or resumes a timer, by modifying [Timer.suspended].
+
+    Params:
+        plugin = The current [TimerPlugin].
+        event = The [dialect.defs.IRCEvent|IRCEvent] that requested the suspend or resume.
+        slice = Relevant slice of the original request string.
+        suspend = Whether or not a suspend action was requested. If `No.suspend`,
+            then a resume action was requested.
+ +/
+void handleSuspendTimer(
+    TimerPlugin plugin,
+    const ref IRCEvent event,
+    /*const*/ string slice,
+    const Flag!"suspend" suspend)
+{
+    import lu.string : SplitResults, splitInto;
+    import std.format : format;
+
+    void sendUsage()
+    {
+        immutable verb = suspend ? "suspend" : "resume";
+        enum pattern = "Usage: <b>%s%s %s<b> [name]";
+        immutable message = pattern.format(
+            plugin.state.settings.prefix,
+            event.aux,
+            verb);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendNoSuchTimer()
+    {
+        enum message = "There is no timer by that name.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    string name;
+
+    immutable results = slice.splitInto(name);
+    if (results != SplitResults.match) return sendUsage();
+
+    auto channel = event.channel in plugin.channels;
+    if (!channel) return sendNoSuchTimer();
+
+    auto channelTimers = event.channel in plugin.timersByChannel;
+    if (!channelTimers) return sendNoSuchTimer();
+
+    auto timer = name in *channelTimers;
+    if (!timer) return sendNoSuchTimer();
+
+    timer.suspended = suspend;
+
+    if (suspend)
+    {
+        enum pattern = "Timer suspended. Use <b>%s%s resume %s<b> to resume it.";
+        immutable message = pattern.format(
+            plugin.state.settings.prefix,
+            event.aux,
+            name);
+        chan(plugin.state, event.channel, message);
+    }
+    else
+    {
+        enum message = "Timer resumed!";
+        chan(plugin.state, event.channel, message);
+    }
+}
+
+
 // onAnyMessage
 /++
     Bumps the message count for any channel on incoming channel messages.
@@ -1047,9 +1137,14 @@ auto createTimerFiber(
             continue;
         }
 
+        void updateTimer()
+        {
+            timer.lastMessageCount = channel.messageCount;
+            timer.lastTimestamp = Clock.currTime.toUnixTime;
+        }
+
         // Snapshot count and timestamp
-        timer.lastMessageCount = channel.messageCount;
-        timer.lastTimestamp = Clock.currTime.toUnixTime;
+        updateTimer();
 
         // Main loop
         while (true)
@@ -1058,7 +1153,14 @@ auto createTimerFiber(
             import std.conv : text;
             import std.random : uniform;
 
-            string line = timer.getLine()  // mutable
+            if (timer.suspended)
+            {
+                updateTimer();
+                Fiber.yield();
+                continue;
+            }
+
+            string message = timer.getLine()  // mutable
                 .replace("$bot", plugin.state.client.nickname)
                 .replace("$channel", channelName[1..$])
                 .replace("$random", uniform!"(]"(0, 100).text);
@@ -1068,14 +1170,12 @@ auto createTimerFiber(
                 if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
                 {
                     import kameloso.plugins.common.misc : nameOf;
-                    line = line.replace("$streamer", plugin.nameOf(channelName[1..$]));
+                    message = message.replace("$streamer", plugin.nameOf(channelName[1..$]));
                 }
             }
 
-            chan(plugin.state, channelName, line);
-
-            timer.lastMessageCount = channel.messageCount;
-            timer.lastTimestamp = Clock.currTime.toUnixTime;
+            chan(plugin.state, channelName, message);
+            updateTimer();
             Fiber.yield();
             //continue;
         }
