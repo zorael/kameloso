@@ -459,15 +459,14 @@ void handleNewTimer(
         return sendZeroedConditions();
     }
 
-    timer.channelName = event.channel;
-    timer.fiber = createTimerFiber(plugin, timer);
+    timer.fiber = createTimerFiber(plugin, event.channel, timer.name);
     auto channel = event.channel in plugin.channels;
 
-    if (!channel)
+    /*if (!channel)
     {
         plugin.channels[event.channel] = TimerPlugin.Channel.init;
         channel = event.channel in plugin.channels;
-    }
+    }*/
 
     plugin.timersByChannel[event.channel][timer.name] = timer;
     channel.timerPointers[timer.name] = &plugin.timersByChannel[event.channel][timer.name];
@@ -492,9 +491,7 @@ void handleDelTimer(
     const ref IRCEvent event,
     /*const*/ string slice)
 {
-    import lu.string : SplitResults, /*contains, nom,*/ splitInto;
-    import std.algorithm.mutation : SwapStrategy, remove;
-    import std.conv : ConvException, to;
+    import lu.string : SplitResults, splitInto;
     import std.format : format;
 
     void sendDelUsage()
@@ -530,20 +527,20 @@ void handleDelTimer(
         const timerPtr = name in channel.timerPointers;
         if (!timerPtr) return sendNoSuchTimer();
 
-        // Modifying during foreach...
-        // We're not continuing the iteration past this point though.
         channel.timerPointers.remove(name);
         if (!channel.timerPointers.length) plugin.channels.remove(event.channel);
 
         auto channelTimers = event.channel in plugin.timersByChannel;
         (*channelTimers).remove(name);
-        if (channelTimers.length) plugin.timersByChannel.remove(event.channel);
+        if (!channelTimers.length) plugin.timersByChannel.remove(event.channel);
 
-        saveResourceToDisk(plugin);
+        saveTimersToDisk(plugin);
         enum message = "Timer removed.";
         return chan(plugin.state, event.channel, message);
 
     case match:
+        import std.conv : ConvException, to;
+
         // Remove the specified lines position
         auto channelTimers = event.channel in plugin.timersByChannel;
         if (!channelTimers) return sendNoSuchTimer();
@@ -553,10 +550,11 @@ void handleDelTimer(
 
         try
         {
+            import std.algorithm.mutation : SwapStrategy, remove;
+
             immutable linePos = linePosString.to!size_t;
             timer.lines = timer.lines.remove!(SwapStrategy.stable)(linePos);
-            //channel.timerPointers[name] = timer;
-            saveResourceToDisk(plugin);
+            saveTimersToDisk(plugin);
 
             enum pattern = "Line removed from timer <b>%s<b>. Lines remaining: <b>%d<b>";
             immutable message = pattern.format(name, timer.lines.length);
@@ -642,8 +640,8 @@ void handleModifyTimerLines(
     void destroyUpdateSave()
     {
         destroy(timer.fiber);
-        timer.fiber = createTimerFiber(plugin, *timer);
-        saveResourceToDisk(plugin);
+        timer.fiber = createTimerFiber(plugin, event.channel, timer.name);
+        saveTimersToDisk(plugin);
     }
 
     try
@@ -699,7 +697,7 @@ void handleAddToTimer(
 
     void sendAddUsage()
     {
-        enum pattern = "Usage: <b>%s%s add<b> [timer name] [timer text]";
+        enum pattern = "Usage: <b>%s%s add<b> [existing timer name] [new timer line]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
         chan(plugin.state, event.channel, message);
     }
@@ -726,8 +724,8 @@ void handleAddToTimer(
     void destroyUpdateSave()
     {
         destroy(timer.fiber);
-        timer.fiber = createTimerFiber(plugin, *timer);
-        saveResourceToDisk(plugin);
+        timer.fiber = createTimerFiber(plugin, event.channel, timer.name);
+        saveTimersToDisk(plugin);
     }
 
     timer.lines ~= slice;
@@ -769,7 +767,7 @@ void handleListTimers(
     if (!channel) return sendNoTimersForChannel();
 
     auto channelTimers = event.channel in plugin.timersByChannel;
-    if (!channelTimers) return sendNoSuchTimer();
+    if (!channelTimers) return sendNoTimersForChannel();
 
     enum headerPattern = "Current timers for channel <b>%s<b>:";
     immutable headerMessage = headerPattern.format(event.channel);
