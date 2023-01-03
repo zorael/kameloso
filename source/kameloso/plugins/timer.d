@@ -605,14 +605,14 @@ void handleDelTimer(
         plugin = The current [TimerPlugin].
         event = The [dialect.defs.IRCEvent|IRCEvent] that requested the insert or edit.
         slice = Relevant slice of the original request string.
-        shouldInsert = Whether or not an insert action was requested. If `No.shouldInsert`,
+        insert = Whether or not an insert action was requested. If `No.insert`,
             then an edit action was requested.
  +/
 void handleModifyTimerLines(
     TimerPlugin plugin,
     const /*ref*/ IRCEvent event,
     /*const*/ string slice,
-    const Flag!"insert" shouldInsert)
+    const Flag!"insert" insert)
 {
     import lu.string : SplitResults, splitInto;
     import std.conv : ConvException, to;
@@ -620,7 +620,7 @@ void handleModifyTimerLines(
 
     void sendInsertUsage()
     {
-        if (shouldInsert)
+        if (insert)
         {
             enum pattern = "Usage: <b>%s%s insert<b> [timer name] [position] [timer text]";
             immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
@@ -674,7 +674,7 @@ void handleModifyTimerLines(
         immutable linePos = linePosString.to!ptrdiff_t;
         if ((linePos < 0) || (linePos >= timer.lines.length)) return sendOutOfRange(timer.lines.length);
 
-        if (shouldInsert)
+        if (insert)
         {
             import std.array : insertInPlace;
 
