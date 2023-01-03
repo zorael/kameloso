@@ -188,10 +188,9 @@ public:
     auto randomLine() const
     {
         import std.random : uniform;
-
-        if (!lines.length) return string.init;
-
-        return lines[uniform(0, lines.length)];
+        return lines.length ?
+            lines[uniform(0, lines.length)] :
+            string.init;
     }
 
     // toJSON
@@ -1253,7 +1252,6 @@ public:
 final class TimerPlugin : IRCPlugin
 {
 private:
-    import core.thread : Fiber;
     import core.time : seconds;
 
 public:
