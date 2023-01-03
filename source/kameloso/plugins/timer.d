@@ -279,9 +279,9 @@ public:
             .description("Adds, removes or lists timers.")
             .addSyntax("$command new [name] [type] [condition] [message count threshold] " ~
                 "[time threshold] [stagger message count] [stagger time]")
-            .addSyntax("$command add [timer name] [timer text]")
-            .addSyntax("$command insert [timer name] [position] [timer text]")
-            .addSyntax("$command edit [timer name] [position] [new timer text]")
+            .addSyntax("$command add [existing timer name] [new timer line]")
+            .addSyntax("$command insert [timer name] [position] [new timer line]")
+            .addSyntax("$command edit [timer name] [position] [new timer line]")
             .addSyntax("$command del [timer name] [optional line number]")
             .addSyntax("$command list")
     )
