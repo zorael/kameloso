@@ -878,6 +878,7 @@ void handleSuspendTimer(
     if (!timer) return sendNoSuchTimer();
 
     timer.suspended = suspend;
+    saveTimersToDisk(plugin);
 
     if (suspend)
     {
