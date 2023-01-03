@@ -468,15 +468,11 @@ void handleNewTimer(
     }
 
     auto channel = event.channel in plugin.channels;
+    assert(channel, "Tried to create a timer in a channel with no Channel in plugin.channels");
+
     timer.lastMessageCount = channel.messageCount;
     timer.lastTimestamp = event.time;
     timer.fiber = createTimerFiber(plugin, event.channel, timer.name);
-
-    /*if (!channel)
-    {
-        plugin.channels[event.channel] = TimerPlugin.Channel.init;
-        channel = event.channel in plugin.channels;
-    }*/
 
     plugin.timersByChannel[event.channel][timer.name] = timer;
     channel.timerPointers[timer.name] = &plugin.timersByChannel[event.channel][timer.name];
