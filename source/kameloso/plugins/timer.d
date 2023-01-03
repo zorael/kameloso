@@ -964,13 +964,14 @@ void handleSelfjoin(
     [core.thread.fiber.Fiber|Fiber] that implements the timer.
 
     Params:
-        plugin = The current [kameloso.plugins.timer.TimerPlugin|TimerPlugin].
-        timer = Definition of the timer to apply.
+        plugin = The current [TimerPlugin].
         channelName = String channel to which the timer belongs.
+        name = Timer name, used as inner key in [TimerPlugin.timersByChannel].
  +/
 auto createTimerFiber(
     TimerPlugin plugin,
-    /*const*/ Timer timer)
+    const string channelName,
+    const string name)
 {
     import kameloso.constants : BufferSize;
     import core.thread : Fiber;
@@ -980,7 +981,14 @@ auto createTimerFiber(
         import std.datetime.systime : Clock;
 
         /// Channel pointer.
-        const channel = timer.channelName in plugin.channels;
+        const channel = channelName in plugin.channels;
+        assert(channel, channelName ~ " not in plugin.channels");
+
+        auto channelTimers = channelName in plugin.timersByChannel;
+        assert(channelTimers, channelName ~ " not in plugin.timersByChanel");
+
+        auto timer = name in *channelTimers;
+        assert(timer, name ~ " not in *channelTimers");
 
         /// Initial message count.
         immutable creationMessageCount = channel.messageCount;
@@ -1108,7 +1116,7 @@ auto createTimerFiber(
 
             string line = timer.getLine()  // mutable
                 .replace("$bot", plugin.state.client.nickname)
-                .replace("$channel", timer.channelName[1..$])
+                .replace("$channel", channelName[1..$])
                 .replace("$random", uniform!"(]"(0, 100).text);
 
             version(TwitchSupport)
@@ -1116,11 +1124,11 @@ auto createTimerFiber(
                 if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
                 {
                     import kameloso.plugins.common.misc : nameOf;
-                    line = line.replace("$streamer", plugin.nameOf(timer.channelName[1..$]));
+                    line = line.replace("$streamer", plugin.nameOf(channelName[1..$]));
                 }
             }
 
-            chan(plugin.state, timer.channelName, line);
+            chan(plugin.state, channelName, line);
 
             lastMessageCount = channel.messageCount;
             lastTimestamp = Clock.currTime.toUnixTime;
