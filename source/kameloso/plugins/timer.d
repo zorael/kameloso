@@ -1142,17 +1142,14 @@ auto createTimerFiber(
 }
 
 
-// saveResourceToDisk
+// saveTimersToDisk
 /++
-    Saves the passed resource to disk, but in JSON format.
-
-    This is used with the associative arrays for timers.
+    Saves timers to disk in JSON format.
 
     Params:
-        aa = The associative array to convert into JSON and save.
-        filename = Filename of the file to write to.
+        plugin = The current [TimerPlugin].
  +/
-void saveResourceToDisk(TimerPlugin plugin)
+void saveTimersToDisk(TimerPlugin plugin)
 {
     import lu.json : JSONStorage;
 
