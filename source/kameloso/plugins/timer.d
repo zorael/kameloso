@@ -360,6 +360,12 @@ void handleNewTimer(
         chan(plugin.state, event.channel, message);
     }
 
+    void sendZeroedConditions()
+    {
+        enum message = "A timer cannot have a message threshold *and* a time threshold of zero.";
+        chan(plugin.state, event.channel, message);
+    }
+
     Timer timer;
 
     string type;
@@ -458,8 +464,7 @@ void handleNewTimer(
     }
     else if ((timer.messageCountThreshold == 0) && (timer.timeThreshold == 0))
     {
-        enum message = "A timer cannot have a message threshold *and* a time threshold of zero.";
-        return chan(plugin.state, event.channel, message);
+        return sendZeroedConditions();
     }
 
     timer.channelName = event.channel;
