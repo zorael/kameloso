@@ -849,7 +849,12 @@ void onWelcome(TimerPlugin plugin)
     foreach (immutable channelName, const timersJSON; allTimersJSON.object)
     {
         auto channelTimers = channelName in plugin.timersByChannel;
-        if (!channelTimers) plugin.timersByChannel[channelName] = typeof(plugin.timersByChannel[channelName]).init;
+
+        if (!channelTimers)
+        {
+            plugin.timersByChannel[channelName] = typeof(plugin.timersByChannel[channelName]).init;
+            channelTimers = channelName in plugin.timersByChannel;
+        }
 
         foreach (const timerJSON; timersJSON.array)
         {
