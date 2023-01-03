@@ -128,6 +128,16 @@ public:
     long timeStagger;
 
     /++
+        The channel message count at last successful trigger.
+     +/
+    ulong lastMessageCount;
+
+    /++
+        The timestamp at the last successful trigger.
+     +/
+    long lastTimestamp;
+
+    /++
         The current position, kept to keep track of what line should be yielded
         next in the case of ordered timers.
      +/
@@ -457,8 +467,10 @@ void handleNewTimer(
         return sendZeroedConditions();
     }
 
-    timer.fiber = createTimerFiber(plugin, event.channel, timer.name);
     auto channel = event.channel in plugin.channels;
+    timer.lastMessageCount = channel.messageCount;
+    timer.lastTimestamp = event.time;
+    timer.fiber = createTimerFiber(plugin, event.channel, timer.name);
 
     /*if (!channel)
     {
@@ -940,10 +952,16 @@ void handleSelfjoin(
 
     if (channelTimers)
     {
+        import std.datetime.systime : Clock;
+
+        immutable nowInUnix = Clock.currTime.toUnixTime;
+
         // Populate timers
         foreach (ref timer; *channelTimers)
         {
             destroy(timer.fiber);
+            timer.lastMessageCount = channel.messageCount;
+            timer.lastTimestamp = nowInUnix;
             timer.fiber = createTimerFiber(plugin, channelName, timer.name);
             channel.timerPointers[timer.name] = &timer;  // Will this work in release mode?
         }
@@ -1059,8 +1077,9 @@ auto createTimerFiber(
         /// `Condition.both` fulfilled (cache).
         bool conditionBothFulfilled;
 
-        /// `Condition.either` fulfilled (cache).
-        bool conditionEitherFulfilled;
+        // Snapshot count and timestamp
+        timer.lastMessageCount = channel.messageCount;
+        timer.lastTimestamp = Clock.currTime.toUnixTime;
 
         while (true)
         {
@@ -1123,9 +1142,8 @@ auto createTimerFiber(
 
             chan(plugin.state, channelName, line);
 
-            lastMessageCount = channel.messageCount;
-            lastTimestamp = Clock.currTime.toUnixTime;
-
+            timer.lastMessageCount = channel.messageCount;
+            timer.lastTimestamp = Clock.currTime.toUnixTime;
             Fiber.yield();
             //continue;
         }
