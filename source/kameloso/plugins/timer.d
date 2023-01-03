@@ -938,26 +938,11 @@ void handleSelfjoin(
     auto channel = channelName in plugin.channels;
     auto channelTimers = channelName in plugin.timersByChannel;
 
-    if (channel)
-    {
-        if (force && channelTimers)
-        {
-            foreach (timer; *channelTimers)
-            {
-                destroy(timer.fiber);
-            }
-        }
-        else
-        {
-            return;
-        }
-    }
-
     if (!channel || force)
     {
         // No channel or forcing; create
         plugin.channels[channelName] = TimerPlugin.Channel(channelName);  // as above
-        channel = channelName in plugin.channels;
+        if (!channel) channel = channelName in plugin.channels;
     }
 
     if (channelTimers)
@@ -965,7 +950,8 @@ void handleSelfjoin(
         // Populate timers
         foreach (ref timer; *channelTimers)
         {
-            timer.fiber = createTimerFiber(plugin, timer);
+            destroy(timer.fiber);
+            timer.fiber = createTimerFiber(plugin, channelName, timer.name);
             channel.timerPointers[timer.name] = &timer;  // Will this work in release mode?
         }
     }
