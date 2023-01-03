@@ -882,6 +882,11 @@ void onWelcome(TimerPlugin plugin)
     {
         while (true)
         {
+            import std.datetime.systime : Clock;
+
+            // Micro-optimise getting the current time
+            long nowInUnix; // = Clock.currTime.toUnixTime;
+
             // Walk through channels, trigger fibers
             foreach (immutable channelName, channel; plugin.channels)
             {
@@ -893,7 +898,28 @@ void onWelcome(TimerPlugin plugin)
                         continue;
                     }
 
-                    timerPtr.fiber.call();
+                    // Get time here and cache it
+                    if (nowInUnix == 0) nowInUnix = Clock.currTime.toUnixTime;
+
+                    immutable timeConditionMet =
+                        ((nowInUnix - timerPtr.lastTimestamp) >= timerPtr.timeThreshold);
+                    immutable messageConditionMet =
+                        ((channel.messageCount - timerPtr.lastMessageCount) >= timerPtr.messageCountThreshold);
+
+                    if (timerPtr.condition == Timer.Condition.both)
+                    {
+                        if (timeConditionMet && messageConditionMet)
+                        {
+                            timerPtr.fiber.call();
+                        }
+                    }
+                    else /*if (timerPtr.condition == Timer.Condition.either)*/
+                    {
+                        if (timeConditionMet || messageConditionMet)
+                        {
+                            timerPtr.fiber.call();
+                        }
+                    }
                 }
             }
 
@@ -1007,124 +1033,37 @@ auto createTimerFiber(
         /// When this timer Fiber was created.
         immutable creationTime = Clock.currTime.toUnixTime;
 
-        if (timer.condition == Timer.Condition.both)
+        // Stagger based on message count and time thresholds
+        while (true)
         {
-            while (true)
-            {
-                // Stagger messages
-                immutable messageCountUnfulfilled =
-                    ((channel.messageCount - creationMessageCount) < timer.messageCountStagger);
+            immutable timeStaggerMet =
+                ((Clock.currTime.toUnixTime - creationTime) >= timer.timeStagger);
+            immutable messageStaggerMet =
+                ((channel.messageCount - creationMessageCount) >= timer.messageCountStagger);
 
-                if (messageCountUnfulfilled)
-                {
-                    Fiber.yield();
-                    continue;
-                }
-                else
-                {
-                    // ended, so break and join the next loop
-                    break;
-                }
+            if (timer.condition == Timer.Condition.both)
+            {
+                if (timeStaggerMet && messageStaggerMet) break;
+            }
+            else /*if (timer.condition == Timer.Condition.either)*/
+            {
+                if (timeStaggerMet || messageStaggerMet) break;
             }
 
-            while (true)
-            {
-                // Stagger time
-                immutable timerUnfulfilled =
-                    ((Clock.currTime.toUnixTime - creationTime) < timer.timeStagger);
-
-                if (timerUnfulfilled)
-                {
-                    Fiber.yield();
-                    continue;
-                }
-                else
-                {
-                    // ended, so break and join the main loop
-                    break;
-                }
-            }
+            Fiber.yield();
+            continue;
         }
-        else /*if (timer.condition == Timer.Condition.either)*/
-        {
-            while (true)
-            {
-                // Stagger until either is fulfilled
-                immutable messageCountUnfulfilled =
-                    ((channel.messageCount - creationMessageCount) < timer.messageCountStagger);
-                immutable timerUnfulfilled =
-                    ((Clock.currTime.toUnixTime - creationTime) < timer.timeStagger);
-
-                if (timerUnfulfilled && messageCountUnfulfilled)
-                {
-                    Fiber.yield();
-                    continue;
-                }
-                else
-                {
-                    // ended, so break and join the main loop
-                    break;
-                }
-            }
-        }
-
-        /// The channel message count at last successful trigger.
-        ulong lastMessageCount = channel.messageCount;
-
-        /// The timestamp at the last successful trigger.
-        long lastTimestamp = Clock.currTime.toUnixTime;
-
-        /// `Condition.both` fulfilled (cache).
-        bool conditionBothFulfilled;
 
         // Snapshot count and timestamp
         timer.lastMessageCount = channel.messageCount;
         timer.lastTimestamp = Clock.currTime.toUnixTime;
 
+        // Main loop
         while (true)
         {
             import std.array : replace;
             import std.conv : text;
             import std.random : uniform;
-
-            if ((timer.condition == Timer.Condition.both) && !conditionBothFulfilled)
-            {
-                immutable messageCountUnfulfilled =
-                    ((channel.messageCount - lastMessageCount) < timer.messageCountThreshold);
-
-                if (messageCountUnfulfilled)
-                {
-                    Fiber.yield();
-                    continue;
-                }
-
-                immutable now = Clock.currTime.toUnixTime;
-                immutable timerUnfulfilled = ((now - lastTimestamp) < timer.timeThreshold);
-
-                if (timerUnfulfilled)
-                {
-                    Fiber.yield();
-                    continue;
-                }
-
-                conditionBothFulfilled = true;
-            }
-            else if ((timer.condition == Timer.Condition.either) && !conditionEitherFulfilled)
-            {
-                immutable now = Clock.currTime.toUnixTime;
-                immutable messageCountUnfulfilled =
-                    ((channel.messageCount - lastMessageCount) < timer.messageCountThreshold);
-                immutable timerUnfulfilled =
-                    ((now - lastTimestamp) < timer.timeStagger);
-
-                if (timerUnfulfilled && messageCountUnfulfilled)
-                {
-                    Fiber.yield();
-                    continue;
-                }
-
-                conditionEitherFulfilled = true;
-            }
 
             string line = timer.getLine()  // mutable
                 .replace("$bot", plugin.state.client.nickname)
