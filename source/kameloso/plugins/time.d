@@ -306,7 +306,7 @@ void onCommandSetZone(TimePlugin plugin, const ref IRCEvent event)
 
 // saveResourceToDisk
 /++
-    Saves the timezone map to 0-11disk, but in JSON format.
+    Saves the timezone map to disk in JSON format.
 
     Params:
         aa = The JSON-convertible resource to save.
