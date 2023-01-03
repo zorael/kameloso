@@ -24,7 +24,9 @@ import core.thread : Fiber;
  +/
 @Settings struct TimerSettings
 {
-    /// Toggle whether or not this plugin should do anything at all.
+    /++
+        Toggle whether or not this plugin should do anything at all.
+     +/
     @Enabler bool enabled = true;
 }
 
@@ -39,7 +41,6 @@ private:
     import std.json : JSONValue;
 
 public:
-    // Type
     /++
         The different kinds of [Timer]s. Either one that yields a
         [Type.random|random] response each time, or one that yields a
@@ -58,63 +59,58 @@ public:
         ordered = 1,
     }
 
-    // Condition
     /++
         Conditions upon which timers decide whether they are to fire yet, or wait still.
      +/
     enum Condition
     {
-        /// Both message count and time criteria must be fulfilled.
+        /++
+            Both message count and time criteria must be fulfilled.
+         +/
         both = 0,
 
-        /// Either message count or time criteria may be fulfilled.
+        /++
+            Either message count or time criteria may be fulfilled.
+         +/
         either = 1,
     }
 
-    // name
     /++
         String name identifier of this timer.
      +/
     string name;
 
-    // channelName
     /++
         String name of the channel the [Timer] should trigger in.
      +/
     string channelName;
 
-    // lines
     /++
         The timered lines to send to the channel.
      +/
     string[] lines;
 
-    // type
     /++
         What type of [Timer] this is.
      +/
     Type type;
 
-    // fiber
     /++
         Workhorse [core.thread.fiber.Fiber|Fiber].
      +/
     Fiber fiber;
 
-    // condition
     /++
         What message/time conditions this [Timer] abides by.
      +/
     Condition condition;
 
-    // messageCountThreshold
     /++
         How many messages must have been sent since the last announce before we
         will allow another one.
      +/
     long messageCountThreshold;
 
-    // timeThreshold
     /++
         How many seconds must have passed since the last announce before we will
         allow another one.
@@ -126,13 +122,11 @@ public:
      +/
     long messageCountStagger;
 
-    // timeStagger
     /++
         Delay in seconds before the timer initially comes into effect.
      +/
     long timeStagger;
 
-    // position
     /++
         The current position, kept to keep track of what line should be yielded
         next in the case of ordered timers.
@@ -1273,31 +1267,45 @@ private:
     import core.time : seconds;
 
 public:
-    /// Contained state of a channel, so that there can be several alongside each other.
+    /++
+        Contained state of a channel, so that there can be several alongside each other.
+     +/
     static struct Channel
     {
-        /// Name of the channel.
+        /++
+            Name of the channel.
+         +/
         string channelName;
 
-        /// Current message count.
+        /++
+            Current message count.
+         +/
         ulong messageCount;
 
-        /// Pointers to [Timer]s in [TimerPlugin.timersByChannel].
+        /++
+            Pointers to [Timer]s in [TimerPlugin.timersByChannel].
+         +/
         Timer*[string] timerPointers;
     }
 
-    /// All Timer plugin settings.
+    /++
+        All Timer plugin settings.
+     +/
     TimerSettings timerSettings;
 
-    /// Array of active channels' state.
+    /++
+        Array of active channels' state.
+     +/
     Channel[string] channels;
 
     /++
-        FIXME
+        Associative array of [Timer]s, keyed by nickname keyed by channel.
      +/
     Timer[string][string] timersByChannel;
 
-    /// Filename of file with timer definitions.
+    /++
+        Filename of file with timer definitions.
+     +/
     @Resource string timerFile = "timers.json";
 
     /++
