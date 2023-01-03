@@ -886,12 +886,13 @@ void onWelcome(TimerPlugin plugin)
             // Walk through channels, trigger fibers
             foreach (immutable channelName, channel; plugin.channels)
             {
+                innermost:
                 foreach (timerPtr; channel.timerPointers)
                 {
                     if (!timerPtr.fiber || (timerPtr.fiber.state != Fiber.State.HOLD))
                     {
                         logger.error("Dead or busy timer Fiber in channel ", channelName);
-                        continue;
+                        continue innermost;
                     }
 
                     // Get time here and cache it
