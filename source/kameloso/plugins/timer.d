@@ -240,7 +240,6 @@ public:
     {
         Timer timer;
         timer.name = json["name"].str;
-        timer.channelName = json["channelName"].str;
         timer.messageCountThreshold = json["messageCountThreshold"].integer;
         timer.timeThreshold = json["timeThreshold"].integer;
         timer.messageCountStagger = json["messageCountStagger"].integer;
