@@ -802,7 +802,8 @@ void handleListTimers(
             "message count threshold:%d | " ~
             "time threshold:%d | " ~
             "stagger message count:%d | " ~
-            "stagger time:%d";
+            "stagger time:%d | " ~
+            "suspended:%s";
 
         immutable timerMessage = timerPattern.format(
             timer.name,
@@ -813,6 +814,7 @@ void handleListTimers(
             timer.timeThreshold,
             timer.messageCountStagger,
             timer.timeStagger,
+            timer.suspended,
         );
 
         chan(plugin.state, event.channel, timerMessage);
