@@ -80,11 +80,6 @@ public:
     string name;
 
     /++
-        String name of the channel the [Timer] should trigger in.
-     +/
-    string channelName;
-
-    /++
         The timered lines to send to the channel.
      +/
     string[] lines;
@@ -221,7 +216,6 @@ public:
         json.object = null;
 
         json["name"] = JSONValue(this.name);
-        json["channelName"] = JSONValue(this.channelName);
         json["type"] = JSONValue(cast(int)this.type);
         json["condition"] = JSONValue(cast(int)this.condition);
         json["messageCountThreshold"] = JSONValue(this.messageCountThreshold);
