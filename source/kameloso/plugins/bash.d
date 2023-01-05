@@ -85,6 +85,7 @@ void worker(
     const /*ref*/ IRCEvent event)
 {
     import kameloso.constants : KamelosoInfo, Timeout;
+    import lu.string : beginsWith;
     import arsd.dom : Document, htmlEntitiesDecode;
     import arsd.http2 : HttpClient, Uri;
     import std.algorithm.iteration : splitter;
@@ -105,8 +106,12 @@ void worker(
     // Set the global settings so messaging functions don't segfault us
     kameloso.common.settings = &state.settings;
 
-    immutable url = !event.content.length ? "http://bash.org/?random" :
-        ("http://bash.org/?" ~ event.content);
+    immutable quoteID = event.content.beginsWith('#') ?
+        event.content[1..$] :
+        event.content;
+    immutable url = quoteID.length ?
+        ("http://bash.org/?" ~ quoteID) :
+        "http://bash.org/?random";
 
     // No need to keep a static HttpClient since this will be in a new thread every time
     auto client = new HttpClient;

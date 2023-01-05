@@ -24,6 +24,7 @@ import std.typecons : Flag, No, Yes;
 import core.time : Duration;
 
 
+// PollSettings
 /++
     All Poll plugin runtime settings aggregated.
  +/
@@ -50,6 +51,53 @@ import core.time : Duration;
 }
 
 
+// Poll
+/++
+    Embodies the notion of a channel poll.
+ +/
+struct Poll
+{
+private:
+    import std.datetime.systime : SysTime;
+
+    /++
+        Timestamp of when the poll was created.
+     +/
+    SysTime start;
+
+    /++
+        Current vote tallies.
+     +/
+    uint[string] voteCounts;
+
+    /++
+        Map of the original names of the choices keyed by what they were simplified to.
+     +/
+    string[string] origChoiceNames;
+
+    /++
+        Choices, sorted in alphabetical order.
+     +/
+    string[] sortedChoices;
+
+    /++
+        Individual votes, keyed by nicknames of the people who placed them.
+     +/
+    string[string] votes;
+
+    /++
+        Poll duration.
+     +/
+    Duration duration;
+
+    /++
+        Unique identifier to help Fibers know if the poll they belong to is stale
+        or has been replaced.
+     +/
+    int uniqueID;
+}
+
+
 // onCommandPoll
 /++
     Instigates a poll or stops an ongoing one.
@@ -66,6 +114,8 @@ import core.time : Duration;
             .policy(PrefixPolicy.prefixed)
             .description(`Starts or stops a poll. Pass "abort" to abort, or "end" to end early.`)
             .addSyntax("$command [duration] [choice1] [choice2] ...")
+            .addSyntax("$command abort")
+            .addSyntax("$command end")
     )
     .addCommand(
         IRCEventHandler.Command()
@@ -80,58 +130,73 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
     import std.algorithm.searching : count;
     import std.conv : ConvException;
 
-    if (!event.content.length)
+    void sendUsage()
     {
-        import std.format : format;
+        if (event.sender.class_ < IRCUser.Class.operator)
+        {
+            enum message = "You are not authorised to start new polls.";
+            chan(plugin.state, event.channel, message);
+        }
+        else
+        {
+            import std.format : format;
 
-        enum pattern = "Usage: %s%s [duration] [choice1] [choice2] ...";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-        return chan(plugin.state, event.channel, message);
+            enum pattern = "Usage: <b>%s%s<b> [duration] [choice1] [choice2] ...";
+            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+            chan(plugin.state, event.channel, message);
+        }
     }
+
+    void sendNoOngoingPoll()
+    {
+        enum message = "There is no ongoing poll.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    const currentPoll = event.channel in plugin.channelPolls;
 
     switch (event.content)
     {
-    case "abort":
-    case "stop":
-        const currentPollInstance = event.channel in plugin.channelVoteInstances;
-
-        if (currentPollInstance)
+    case string.init:
+        if (currentPoll)
         {
-            plugin.channelVoteInstances.remove(event.channel);
-            enum message = "Poll aborted.";
-            chan(plugin.state, event.channel, message);
+            goto case "status";
         }
         else
         {
-            enum message = "There is no ongoing poll.";
-            chan(plugin.state, event.channel, message);
+            // Can't use a tertiary or it fails to build with older compilers
+            // Error: variable operator used before set
+            if (event.sender.class_ < IRCUser.Class.operator)
+            {
+                return sendNoOngoingPoll();
+            }
+            else
+            {
+                return sendUsage();
+            }
         }
-        return;
+
+    case "status":
+        if (!currentPoll) return sendNoOngoingPoll();
+        return reportStatus(plugin, *currentPoll, event);
+
+    case "abort":
+        if (!currentPoll) return sendNoOngoingPoll();
+
+        plugin.channelPolls.remove(event.channel);
+        enum message = "Poll aborted.";
+        return chan(plugin.state, event.channel, message);
 
     case "end":
-        auto currentPollInstance = event.channel in plugin.channelVoteInstances;
+        if (!currentPoll) return sendNoOngoingPoll();
 
-        if (currentPollInstance)
-        {
-            // Signal that the poll should end early by giving the poll instance
-            // a value of -1. Catch it later in the poll Fiber delegate.
-            *currentPollInstance = PollPlugin.endPollEarlyMagicNumber;
-        }
-        else
-        {
-            enum message = "There is no ongoing poll.";
-            chan(plugin.state, event.channel, message);
-        }
+        reportEndResults(plugin, *currentPoll, event);
+        plugin.channelPolls.remove(event.channel);
         return;
 
     default:
+        // Drop down
         break;
-    }
-
-    if (event.channel in plugin.channelVoteInstances)
-    {
-        enum message = "A poll is already in progress!";
-        return chan(plugin.state, event.channel, message);
     }
 
     if (event.content.count(' ') < 2)
@@ -140,13 +205,13 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
         return chan(plugin.state, event.channel, message);
     }
 
-    Duration dur;
+    Poll poll;
     string slice = event.content;  // mutable
 
     try
     {
         import lu.string : nom;
-        dur = abbreviatedDuration(slice.nom!(Yes.decode)(' '));
+        poll.duration = abbreviatedDuration(slice.nom!(Yes.decode)(' '));
     }
     catch (ConvException e)
     {
@@ -164,7 +229,7 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
         return;
     }
 
-    if (dur <= Duration.zero)
+    if (poll.duration <= Duration.zero)
     {
         enum message = "Duration must not be negative.";
         return chan(plugin.state, event.channel, message);
@@ -179,12 +244,13 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
         return chan(plugin.state, event.channel, message);
     }
 
+    poll.voteCounts = choicesVoldemort.choices;
+    poll.origChoiceNames = choicesVoldemort.origChoiceNames;
+
     return pollImpl(
         plugin,
         event,
-        dur,
-        choicesVoldemort.choices,
-        choicesVoldemort.origChoiceNames);
+        poll);
 }
 
 
@@ -199,7 +265,10 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
         A Voldemort struct with members `choices` and `origChoiceNames` representing
         the choices found in the input string.
  +/
-auto getPollChoices(PollPlugin plugin, const ref IRCEvent event, const string slice)
+auto getPollChoices(
+    PollPlugin plugin,
+    const ref IRCEvent event,
+    const string slice)
 {
     import std.algorithm.iteration : splitter;
 
@@ -267,70 +336,17 @@ auto getPollChoices(PollPlugin plugin, const ref IRCEvent event, const string sl
 void pollImpl(
     PollPlugin plugin,
     const /*ref*/ IRCEvent event,
-    const Duration dur,
-    /*const*/ uint[string] choices,
-    const string[string] origChoiceNames)
+    Poll poll)
 {
     import kameloso.plugins.common.delayawait : await, delay;
-    import kameloso.plugins.common.misc : idOf;
     import kameloso.constants : BufferSize;
     import kameloso.thread : CarryingFiber;
     import kameloso.time : timeSince;
     import std.algorithm.sorting : sort;
+    import std.datetime.systime : Clock;
     import std.format : format;
     import std.random : uniform;
     import core.thread : Fiber;
-
-    /// Unique poll instance identifier
-    immutable uniqueID = uniform(1, 10_000);
-
-    void reportResults()
-    {
-        import std.algorithm.iteration : sum;
-        import std.array : array;
-
-        immutable total = cast(double)choices.byValue.sum;
-
-        if (total == 0)
-        {
-            enum message = "Voting complete, no one voted.";
-            return chan(plugin.state, event.channel, message);
-        }
-
-        enum completeMessage = "Voting complete! Here are the results:";
-        chan(plugin.state, event.channel, completeMessage);
-
-        auto sorted = choices
-            .byKeyValue
-            .array
-            .sort!((a, b) => a.value < b.value);
-
-        foreach (const result; sorted)
-        {
-            if (result.value == 0)
-            {
-                enum pattern = "<b>%s<b> : 0 votes";
-                immutable message = pattern.format(origChoiceNames[result.key]);
-                chan(plugin.state, event.channel, message);
-            }
-            else
-            {
-                import lu.string : plurality;
-
-                immutable noun = result.value.plurality("vote", "votes");
-                immutable double voteRatio = cast(double)result.value / total;
-                immutable double votePercentage = 100 * voteRatio;
-
-                enum pattern = "<b>%s<b> : %d %s (%.1f%%)";
-                immutable message = pattern.format(
-                    origChoiceNames[result.key],
-                    result.value,
-                    noun,
-                    votePercentage);
-                chan(plugin.state, event.channel, message);
-            }
-        }
-    }
 
     // Take into account people leaving or changing nicknames on non-Twitch servers
     // On Twitch NICKs and QUITs don't exist, and PARTs are unreliable.
@@ -343,48 +359,34 @@ void pollImpl(
         IRCEvent.Type.ACCOUNT,
     ];
 
-    void cleanup()
-    {
-        import kameloso.plugins.common.delayawait : unawait;
-
-        unawait(plugin, nonTwitchVoteEventTypes[]);
-        unawait(plugin, IRCEvent.Type.CHAN);
-        plugin.channelVoteInstances.remove(event.channel);
-    }
-
     void pollDg()
     {
-        scope(exit) cleanup();
-
-        /// Which users have already voted.
-        string[string] votedUsers;
+        scope(exit)
+        {
+            import kameloso.plugins.common.delayawait : unawait;
+            unawait(plugin, nonTwitchVoteEventTypes[]);
+            unawait(plugin, IRCEvent.Type.CHAN);
+            plugin.channelPolls.remove(event.channel);
+        }
 
         while (true)
         {
-            const currentPollInstance = event.channel in plugin.channelVoteInstances;
+            import kameloso.plugins.common.misc : idOf;
 
-            if (!currentPollInstance)
-            {
-                return;  // Aborted
-            }
-            else if (*currentPollInstance == PollPlugin.endPollEarlyMagicNumber)
-            {
-                // Magic number, end early
-                return reportResults();
-            }
-            else if (*currentPollInstance != uniqueID)
-            {
-                return;  // Different poll started
-            }
+            auto currentPoll = event.channel in plugin.channelPolls;
+            if (!currentPoll || (currentPoll.uniqueID != poll.uniqueID)) return;
 
             auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
             assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
             immutable thisEvent = thisFiber.payload;
 
-            if (thisEvent == IRCEvent.init)
+            if (!thisEvent.sender.nickname.length) // == IRCEvent.init
             {
                 // Invoked by timer, not by event
-                return reportResults();  // End Fiber
+                // Should never happen now
+                logger.error("Poll Fiber invoked via delay");
+                Fiber.yield();
+                continue;
             }
 
             if (plugin.pollSettings.onlyRegisteredMayVote &&
@@ -402,11 +404,11 @@ void pollImpl(
             switch (event.type)
             {
             case NICK:
-                if (auto previousVote = id in votedUsers)
+                if (auto previousVote = id in currentPoll.votes)
                 {
                     immutable newID = idOf(thisEvent.target);
-                    votedUsers[newID] = *previousVote;
-                    votedUsers.remove(id);
+                    currentPoll.votes[newID] = *previousVote;
+                    currentPoll.votes.remove(id);
                 }
                 break;
 
@@ -426,16 +428,16 @@ void pollImpl(
 
                 immutable lowerVote = vote.toLower;
 
-                if (auto ballot = lowerVote in choices)
+                if (auto ballot = lowerVote in currentPoll.voteCounts)
                 {
-                    if (auto previousVote = id in votedUsers)
+                    if (auto previousVote = id in currentPoll.votes)
                     {
                         if (*previousVote != lowerVote)
                         {
                             // User changed their mind
-                            --choices[*previousVote];
+                            --currentPoll.voteCounts[*previousVote];
                             ++(*ballot);
-                            votedUsers[id] = lowerVote;
+                            currentPoll.votes[id] = lowerVote;
                         }
                         else
                         {
@@ -448,7 +450,7 @@ void pollImpl(
                         // Valid entry, increment vote count
                         // Record user as having voted
                         ++(*ballot);
-                        votedUsers[id] = lowerVote;
+                        currentPoll.votes[id] = lowerVote;
                     }
                 }
                 break;
@@ -460,20 +462,20 @@ void pollImpl(
                     // Old account is in aux; move vote to nickname if necessary
                     if (thisEvent.aux != thisEvent.sender.nickname)
                     {
-                        if (const previousVote = thisEvent.aux in votedUsers)
+                        if (const previousVote = thisEvent.aux in currentPoll.votes)
                         {
-                            votedUsers[thisEvent.sender.nickname] = *previousVote;
-                            votedUsers.remove(thisEvent.aux);
+                            currentPoll.votes[thisEvent.sender.nickname] = *previousVote;
+                            currentPoll.votes.remove(thisEvent.aux);
                         }
                     }
                 }
                 else if (thisEvent.sender.account != thisEvent.sender.nickname)
                 {
-                    if (const previousVote = thisEvent.sender.nickname in votedUsers)
+                    if (const previousVote = thisEvent.sender.nickname in currentPoll.votes)
                     {
                         // Move the old entry to a new one with the account as key
-                        votedUsers[thisEvent.sender.account] = *previousVote;
-                        votedUsers.remove(thisEvent.sender.nickname);
+                        currentPoll.votes[thisEvent.sender.account] = *previousVote;
+                        currentPoll.votes.remove(thisEvent.sender.nickname);
                     }
                 }
                 break;
@@ -482,10 +484,10 @@ void pollImpl(
             case QUIT:
                 if (plugin.pollSettings.onlyOnlineUsersCount)
                 {
-                    if (auto previousVote = id in votedUsers)
+                    if (auto previousVote = id in currentPoll.votes)
                     {
-                        --choices[*previousVote];
-                        votedUsers.remove(id);
+                        --currentPoll.voteCounts[*previousVote];
+                        currentPoll.votes.remove(id);
                     }
                 }
                 break;
@@ -499,7 +501,17 @@ void pollImpl(
         }
     }
 
+    void endPollDg()
+    {
+        scope(exit) plugin.channelPolls.remove(event.channel);
+
+        const currentPoll = event.channel in plugin.channelPolls;
+        if (!currentPoll || (currentPoll.uniqueID != poll.uniqueID)) return;
+        reportEndResults(plugin, *currentPoll, event);
+    }
+
     Fiber fiber = new CarryingFiber!IRCEvent(&pollDg, BufferSize.fiberStack);
+    Fiber endFiber = new Fiber(&endPollDg, BufferSize.fiberStack);
 
     if (plugin.state.server.daemon != IRCServer.Daemon.twitch)
     {
@@ -507,20 +519,114 @@ void pollImpl(
     }
 
     await(plugin, fiber, IRCEvent.Type.CHAN);
-    delay(plugin, fiber, dur);
-    plugin.channelVoteInstances[event.channel] = uniqueID;
+    delay(plugin, endFiber, poll.duration);
 
-    const sortedChoices = choices
+    poll.start = Clock.currTime;
+    poll.uniqueID = uniform(1, 10_000);
+    poll.sortedChoices = poll.voteCounts
         .keys
         .sort
         .release;
+    plugin.channelPolls[event.channel] = poll;
 
-    generateVoteReminders(plugin, event, uniqueID, dur, sortedChoices);
+    generateVoteReminders(plugin, event, poll);
 
-    immutable timeInWords = dur.timeSince!(7, 0);
+    immutable timeInWords = poll.duration.timeSince!(7, 0);
     enum pattern = "<b>Voting commenced!<b> Please place your vote for one of: " ~
         "%-(<b>%s<b>, %)<b> (%s)";  // extra <b> needed outside of %-(%s, %)
-    immutable message = pattern.format(sortedChoices, timeInWords);
+    immutable message = pattern.format(poll.sortedChoices, timeInWords);
+    chan(plugin.state, event.channel, message);
+}
+
+
+// reportEndResults
+/++
+    Reports the result of a [Poll], as if it just ended.
+
+    Params:
+        plugin = The current [PollPlugin].
+        poll = The [Poll] that just ended.
+        event = The triggering [dialect.defs.IRCEvent|IRCEvent].
+ +/
+void reportEndResults(
+    PollPlugin plugin,
+    const Poll poll,
+    const ref IRCEvent event)
+{
+    import std.algorithm.iteration : sum;
+    import std.algorithm.sorting : sort;
+    import std.array : array;
+    import std.format : format;
+
+    immutable total = cast(double)poll.voteCounts.byValue.sum;
+
+    if (total == 0)
+    {
+        enum message = "Voting complete, no one voted.";
+        return chan(plugin.state, event.channel, message);
+    }
+
+    enum completeMessage = "Voting complete! Here are the results:";
+    chan(plugin.state, event.channel, completeMessage);
+
+    auto sorted = poll.voteCounts
+        .byKeyValue
+        .array
+        .sort!((a, b) => a.value < b.value);
+
+    foreach (const result; sorted)
+    {
+        if (result.value == 0)
+        {
+            enum pattern = "<b>%s<b> : 0 votes";
+            immutable message = pattern.format(poll.origChoiceNames[result.key]);
+            chan(plugin.state, event.channel, message);
+        }
+        else
+        {
+            import lu.string : plurality;
+
+            immutable noun = result.value.plurality("vote", "votes");
+            immutable double voteRatio = cast(double)result.value / total;
+            immutable double votePercentage = 100 * voteRatio;
+
+            enum pattern = "<b>%s<b> : %d %s (%.1f%%)";
+            immutable message = pattern.format(
+                poll.origChoiceNames[result.key],
+                result.value,
+                noun,
+                votePercentage);
+            chan(plugin.state, event.channel, message);
+        }
+    }
+}
+
+
+// reportStatus
+/++
+    Reports the status of a [Poll], mid-progress.
+
+    Params:
+        plugin = The current [PollPlugin].
+        poll = The [Poll] that is still ongoing.
+        event = The triggering [dialect.defs.IRCEvent|IRCEvent].
+ +/
+void reportStatus(
+    PollPlugin plugin,
+    const Poll poll,
+    const ref IRCEvent event)
+{
+    import kameloso.time : timeSince;
+    import std.datetime.systime : Clock;
+    import std.format : format;
+
+    immutable now = Clock.currTime;
+    immutable end = (poll.start + poll.duration);
+    immutable delta = (end - now);
+    immutable timeInWords = delta.timeSince!(7,0);
+
+    enum pattern = "There is an ongoing poll! Place your vote for one of: %-(<b>%s<b>, %)<b> (%s)";
+    immutable message = pattern.format(poll.sortedChoices, timeInWords);
     chan(plugin.state, event.channel, message);
 }
 
@@ -539,9 +645,7 @@ void pollImpl(
 void generateVoteReminders(
     PollPlugin plugin,
     const /*ref*/ IRCEvent event,
-    const uint uniqueID,
-    const Duration dur,
-    const string[] sortedChoices)
+    const Poll poll)
 {
     import std.meta : AliasSeq;
     import core.time : days, hours, minutes, seconds;
@@ -553,8 +657,8 @@ void generateVoteReminders(
 
         if (reminderPoint == Duration.zero) return;
 
-        const currentPollInstance = event.channel in plugin.channelVoteInstances;
-        if (!currentPollInstance || (*currentPollInstance != uniqueID)) return;  // Aborted
+        const currentPoll = event.channel in plugin.channelPolls;
+        if (!currentPoll || (currentPoll.uniqueID != poll.uniqueID)) return;  // Aborted or replaced
 
         enum pattern = "<b>%d<b> %s left to vote! (%-(<b>%s<b>, %)<b>)";
         immutable numSeconds = reminderPoint.total!"seconds";
@@ -566,7 +670,7 @@ void generateVoteReminders(
             immutable message = pattern.format(
                 numDays,
                 numDays.plurality("day", "days"),
-                sortedChoices);
+                poll.sortedChoices);
             chan(plugin.state, event.channel, message);
         }
         else if ((numSeconds % 3600) == 0)
@@ -576,7 +680,7 @@ void generateVoteReminders(
             immutable message = pattern.format(
                 numHours,
                 numHours.plurality("hour", "hours"),
-                sortedChoices);
+                poll.sortedChoices);
             chan(plugin.state, event.channel, message);
         }
         else if ((numSeconds % 60) == 0)
@@ -586,13 +690,13 @@ void generateVoteReminders(
             immutable message = pattern.format(
                 numMinutes,
                 numMinutes.plurality("minute", "minutes"),
-                sortedChoices);
+                poll.sortedChoices);
             chan(plugin.state, event.channel, message);
         }
         else
         {
             enum secondsPattern = "<b>%d<b> seconds! (%-(<b>%s<b>, %)<b>)";
-            immutable message = secondsPattern.format(numSeconds, sortedChoices);
+            immutable message = secondsPattern.format(numSeconds, poll.sortedChoices);
             chan(plugin.state, event.channel, message);
         }
     }
@@ -618,10 +722,10 @@ void generateVoteReminders(
 
     foreach (immutable reminderPoint; reminderPoints)
     {
-        if (dur >= (reminderPoint * 2))
+        if (poll.duration >= (reminderPoint * 2))
         {
             import kameloso.plugins.common.delayawait : delay;
-            immutable delta = (dur - reminderPoint);
+            immutable delta = (poll.duration - reminderPoint);
             delay(plugin, (() => reminderDg(reminderPoint)), delta);
         }
     }
@@ -644,14 +748,10 @@ private:
     /// All Poll plugin settings.
     PollSettings pollSettings;
 
-    /// Magic number to use to signal that a poll is to end.
-    enum endPollEarlyMagicNumber = -1;
-
     /++
-        An unique identifier for an ongoing channel poll, as set by
-        [onCommandVote] and monitored inside its [core.thread.fiber.Fiber|Fiber]'s closures.
+        Active polls by channel.
      +/
-    int[string] channelVoteInstances;
+    Poll[string] channelPolls;
 
     mixin IRCPluginImpl;
 }
