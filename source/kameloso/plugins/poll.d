@@ -366,7 +366,13 @@ void pollImpl(
             import kameloso.plugins.common.delayawait : unawait;
             unawait(plugin, nonTwitchVoteEventTypes[]);
             unawait(plugin, IRCEvent.Type.CHAN);
-            plugin.channelPolls.remove(event.channel);
+
+            const currentPoll = event.channel in plugin.channelPolls;
+            if (currentPoll && (currentPoll.uniqueID == poll.uniqueID))
+            {
+                // Only remove it if it's the same poll as when the delegate started
+                plugin.channelPolls.remove(event.channel);
+            }
         }
 
         while (true)
