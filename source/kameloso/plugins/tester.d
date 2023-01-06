@@ -79,6 +79,11 @@ void onCommandTest(TesterPlugin plugin, const /*ref*/ IRCEvent event)
         return;
     }
 
+    void send(const string line)
+    {
+        chan(plugin.state, event.channel, botNickname ~ ": " ~ line);
+    }
+
     void awaitReply()
     {
         auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
@@ -105,13 +110,24 @@ void onCommandTest(TesterPlugin plugin, const /*ref*/ IRCEvent event)
 
         try
         {
+            import std.conv : text;
+            import std.random : uniform;
+
+            auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+            immutable id = uniform(0, 1000);
+
+            send(text("say ", id));
+            do awaitReply(); while (thisFiber.payload.content != id.text);
+
             fun(plugin, event, botNickname);
             logger.info(__traits(identifier, fun), " tests PASSED");
             success = true;
         }
         catch (Exception e)
         {
+            import std.stdio;
             logger.warning(__traits(identifier, fun), " tests FAILED");
+            writeln(e);
             //success = false;
         }
 
@@ -152,17 +168,7 @@ void onCommandTest(TesterPlugin plugin, const /*ref*/ IRCEvent event)
                 await(plugin, IRCEvent.Type.CHAN, No.yield);
                 scope(exit) unawait(plugin, IRCEvent.Type.CHAN);
 
-                //awaitReply();  // advance past current message ("test [nickname] [plugin]")
-
-                try
-                {
-                    runTestAndReport!test();
-                }
-                catch (Exception e)
-                {
-                    import std.stdio;
-                    writeln(e);
-                }
+                runTestAndReport!test();
             }
 
             Fiber fiber = new CarryingFiber!IRCEvent(&caseDg, BufferSize.fiberStack);
@@ -183,16 +189,8 @@ void onCommandTest(TesterPlugin plugin, const /*ref*/ IRCEvent event)
 
             foreach (immutable i, test; tests)
             {
-                try
-                {
-                    immutable success = runTestAndReport!test();
-                    if (success) ++successes;
-                }
-                catch (Exception e)
-                {
-                    import std.stdio;
-                    writeln(e);
-                }
+                immutable success = runTestAndReport!test();
+                if (success) ++successes;
 
                 if (i+1 != tests.length)
                 {
@@ -249,9 +247,6 @@ in (origEvent.channel.length, "Tried to test Admin with empty channel in origina
         enforce((thisFiber.payload.content.stripEffects() == msg),
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
-
-    send("say sync");
-    do awaitReply(); while (thisFiber.payload.content != "sync");
 
     // ------------ !home
 
@@ -391,9 +386,6 @@ in (origEvent.channel.length, "Tried to test Automode with empty channel in orig
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
-    send("say sync");
-    do awaitReply(); while (thisFiber.payload.content != "sync");
-
     // ------------ !automode
 
     /*send("automode list");
@@ -474,9 +466,6 @@ in (origEvent.channel.length, "Tried to test Chatbot with empty channel in origi
         enforce((thisFiber.payload.content.stripEffects() == msg),
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
-
-    send("say sync");
-    do awaitReply(); while (thisFiber.payload.content != "sync");
 
     // ------------ !say
 
@@ -573,9 +562,6 @@ in (origEvent.channel.length, "Tried to test Notes with empty channel in origina
         await(plugin, IRCEvent.Type.CHAN, No.yield);
     }
 
-    send("say sync");
-    do awaitReply(); while (thisFiber.payload.content != "sync");
-
     // ------------ !note
 
     send("note %s test".format(botNickname));
@@ -652,9 +638,6 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
         enforce((thisFiber.payload.content.stripEffects() == msg),
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
-
-    send("say sync");
-    do awaitReply(); while (thisFiber.payload.content != "sync");
 
     send("set oneliners.cooldown=0");
     expect("Setting changed.");
@@ -745,9 +728,6 @@ in (origEvent.channel.length, "Tried to test Quotes with empty channel in origin
         enforce((thisFiber.payload.content.stripEffects() == msg),
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
-
-    send("say sync");
-    do awaitReply(); while (thisFiber.payload.content != "sync");
 
     // ------------ !quote
 
@@ -863,9 +843,6 @@ in (origEvent.channel.length, "Tried to test SedReplace with empty channel in or
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
-    send("say sync");
-    do awaitReply(); while (thisFiber.payload.content != "sync");
-
     // ------------ s/abc/ABC/
 
     sendNoPrefix("I am a fish");
@@ -916,9 +893,6 @@ in (origEvent.channel.length, "Tried to test Seen with empty channel in original
         enforce((thisFiber.payload.content.stripEffects() == msg),
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
-
-    send("say sync");
-    do awaitReply(); while (thisFiber.payload.content != "sync");
 
     // ------------ !seen
 
@@ -972,9 +946,6 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
         enforce((thisFiber.payload.content.stripEffects() == msg),
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
-
-    send("say sync");
-    do awaitReply(); while (thisFiber.payload.content != "sync");
 
     // ------------ !counter
 
@@ -1103,9 +1074,6 @@ in (origEvent.channel.length, "Tried to test Stopwatch with empty channel in ori
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
-    send("say sync");
-    do awaitReply(); while (thisFiber.payload.content != "sync");
-
     // ------------ !stopwatch
 
     send("stopwatch harbl");
@@ -1181,20 +1149,23 @@ in (origEvent.channel.length, "Tried to test Timer with empty channel in origina
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
-    send("say sync");
-    do awaitReply(); while (thisFiber.payload.content != "sync");
-
     // ------------ !timer
 
     send("timer");
-    expect("Usage: !timer [new|add|del|list] ...");
+    expect("Usage: %stimer [new|add|del|suspend|resume|list] ..."
+        .format(plugin.state.settings.prefix));
 
     send("timer new");
-    expect("Usage: !timer new [name] [type] [condition] [message count threshold] " ~
-        "[time threshold] [stagger message count] [stagger time]");
+    expect(("Usage: %stimer new [name] [type] [condition] [message count threshold] " ~
+        "[time threshold] [stagger message count] [stagger time]")
+            .format(plugin.state.settings.prefix));
 
-    send("timer new hirrsteff ordered both 0 10 0 10");
+    send("timer new hirrsteff ordered both 0 10s 0 10s");
     expect("New timer added! Use !timer add to add lines.");
+
+    send("timer suspend hirrsteff");
+    expect("Timer suspended. Use %stimer resume hirrsteff to resume it."
+        .format(plugin.state.settings.prefix));
 
     send("timer add splorf hello");
     expect("No such timer is defined. Add a new one with !timer new.");
@@ -1205,21 +1176,38 @@ in (origEvent.channel.length, "Tried to test Timer with empty channel in origina
     send("timer insert hirrsteff 0 fgsfds");
     expect("Line added to timer hirrsteff.");
 
+    send("timer edit hirrsteff 1 HARLO");
+    expect("Line #1 of timer hirrsteff edited.");
+
     send("timer list");
     expect("Current timers for channel %s:".format(origEvent.channel));
     expect(`["hirrsteff"] lines:2 | type:ordered | condition:both | ` ~
-        "message count threshold:0 | time threshold:10 | stagger message count:0 | stagger time:10");
+        "message count threshold:0 | time threshold:10 | stagger message count:0 | stagger time:10 | suspended:true");
+
+    logger.info("Wait ~1 cycle, nothing should happen...");
+    delay(plugin, 15.seconds, Yes.yield);
+    enforce(!thisFiber.payload.content.length,
+        "'%s' != '%s'".format(thisFiber.payload.content, string.init), __FILE__, __LINE__           );
+
+    send("timer resume hirrsteff");
+    expect("Timer resumed!");
 
     logger.info("Wait 3 cycles + 10 seconds...");
 
     expect("fgsfds");
     logger.info("ok");
 
-    expect("HERLO");
+    expect("HARLO");
     logger.info("ok");
 
     expect("fgsfds");
     logger.info("all ok");
+
+    send("timer del hirrsteff 0");
+    expect("Line removed from timer hirrsteff. Lines remaining: 1");
+
+    expect("HARLO");
+    logger.info("all ok again");
 
     send("timer del hirrsteff");
     expect("Timer removed.");
@@ -1258,8 +1246,7 @@ in (origEvent.channel.length, "Tried to test Time with empty channel in original
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
-    send("say sync");
-    do awaitReply(); while (thisFiber.payload.content != "sync");
+
 
     // ------------ !time
 
@@ -1336,9 +1323,6 @@ in (origEvent.channel.length, "Tried to test Poll with empty channel in original
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
-    send("say sync");
-    do awaitReply(); while (thisFiber.payload.content != "sync");
-
     // ------------ !poll
 
     send("poll");
@@ -1409,9 +1393,6 @@ in (origEvent.channel.length, "Tried to test Bash with empty channel in original
         enforce((thisFiber.payload.content.stripEffects() == msg),
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
-
-    send("say sync");
-    do awaitReply(); while (thisFiber.payload.content != "sync");
 
     // ------------ !bash
 
