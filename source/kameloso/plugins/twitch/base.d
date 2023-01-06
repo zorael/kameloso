@@ -725,13 +725,26 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     }
 
     room.id = event.aux;
-
     immutable userURL = "https://api.twitch.tv/helix/users?id=" ~ event.aux;
-    immutable userJSON = getTwitchData(plugin, userURL);
-    room.broadcasterDisplayName = userJSON["display_name"].str;
+
+    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    {
+        try
+        {
+            immutable userJSON = getTwitchData(plugin, userURL);
+            room.broadcasterDisplayName = userJSON["display_name"].str;
+        }
+        catch (Exception e)
+        {
+            // Can be JSONException
+            // Retry until we reach the retry limit, then rethrow
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+            throw e;  // It's in a Fiber but we get the backtrace anyway
+        }
+    }
+
     room.follows = getFollows(plugin, room.id);
     room.followsLastCached = event.time;
-
     startRoomMonitorFibers(plugin, *room);
 
     version(WithPersistenceService)
