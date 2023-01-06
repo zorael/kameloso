@@ -596,7 +596,7 @@ auto sendHTTPRequestImpl(
 }
 
 
-// getTwitchEntity
+// getTwitchData
 /++
     By following a passed URL, queries Twitch servers for an entity (user or channel).
 
@@ -614,8 +614,8 @@ auto sendHTTPRequestImpl(
 
         [TwitchQueryException] on other JSON errors.
  +/
-auto getTwitchEntity(TwitchPlugin plugin, const string url)
-in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
+auto getTwitchData(TwitchPlugin plugin, const string url)
+in (Fiber.getThis, "Tried to call `getTwitchData` from outside a Fiber")
 {
     import std.json : JSONException, JSONType, parseJSON;
 
@@ -627,7 +627,7 @@ in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
 
         if (responseJSON.type != JSONType.object)
         {
-            enum message = "`getTwitchEntity` query response JSON is not JSONType.object";
+            enum message = "`getTwitchData` query response JSON is not JSONType.object";
             throw new UnexpectedJSONException(message, responseJSON);
         }
         else if (const dataJSON = "data" in responseJSON)
@@ -638,18 +638,18 @@ in (Fiber.getThis, "Tried to call `getTwitchEntity` from outside a Fiber")
             }
             else if (!dataJSON.array.length)
             {
-                enum message = "`getTwitchEntity` query response JSON has empty \"data\"";
+                enum message = "`getTwitchData` query response JSON has empty \"data\"";
                 throw new EmptyDataJSONException(message, responseJSON);
             }
             else
             {
-                enum message = "`getTwitchEntity` query response JSON \"data\" value is not a 1-length array";
+                enum message = "`getTwitchData` query response JSON \"data\" value is not a 1-length array";
                 throw new UnexpectedJSONException(message, *dataJSON);
             }
         }
         else
         {
-            enum message = "`getTwitchEntity` query response JSON does not contain a \"data\" element";
+            enum message = "`getTwitchData` query response JSON does not contain a \"data\" element";
             throw new UnexpectedJSONException(message, responseJSON);
         }
     }
@@ -934,7 +934,7 @@ in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
     {
         try
         {
-            const entitiesArrayJSON = getMultipleTwitchEntities(plugin, url);
+            const entitiesArrayJSON = getMultipleTwitchData(plugin, url);
             JSONValue[string] allFollowsJSON;
 
             foreach (entityJSON; entitiesArrayJSON.array)
@@ -958,7 +958,7 @@ in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
 }
 
 
-// getMultipleTwitchEntities
+// getMultipleTwitchData
 /++
     By following a passed URL, queries Twitch servers for an array of entities
     (such as users or channels).
@@ -973,8 +973,8 @@ in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
         A [std.json.JSONValue|JSONValue] of type `array` containing all returned
         entities, over all paginated queries.
  +/
-auto getMultipleTwitchEntities(TwitchPlugin plugin, const string url)
-in (Fiber.getThis, "Tried to call `getMultipleTwitchEntities` from outside a Fiber")
+auto getMultipleTwitchData(TwitchPlugin plugin, const string url)
+in (Fiber.getThis, "Tried to call `getMultipleTwitchData` from outside a Fiber")
 {
     import std.json : JSONValue, parseJSON;
 
@@ -1250,7 +1250,7 @@ in ((name.length || id.length), "Tried to call `getTwitchGame` with no game name
     {
         try
         {
-            immutable gameJSON = getTwitchEntity(plugin, gameURL);
+            immutable gameJSON = getTwitchData(plugin, gameURL);
 
             /*
             {
@@ -1911,7 +1911,7 @@ auto getStream(TwitchPlugin plugin, const string loginName)
     {
         try
         {
-            immutable streamJSON = getTwitchEntity(plugin, streamURL);
+            immutable streamJSON = getTwitchData(plugin, streamURL);
 
             /*
             {

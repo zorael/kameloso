@@ -727,7 +727,7 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     room.id = event.aux;
 
     immutable userURL = "https://api.twitch.tv/helix/users?id=" ~ event.aux;
-    immutable userJSON = getTwitchEntity(plugin, userURL);
+    immutable userJSON = getTwitchData(plugin, userURL);
     room.broadcasterDisplayName = userJSON["display_name"].str;
     room.follows = getFollows(plugin, room.id);
     room.followsLastCached = event.time;
