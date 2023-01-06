@@ -589,7 +589,7 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     {
         string givenName = slice.nom!(Yes.inherit)(' ');  // mutable
         if (givenName.beginsWith('@')) givenName = givenName[1..$];
-        immutable user = getTwitchUser(plugin, givenName, Yes.searchByDisplayName);
+        immutable user = getTwitchUser(plugin, givenName, string.init, Yes.searchByDisplayName);
 
         if (!user.nickname.length)
         {
@@ -1575,7 +1575,7 @@ void onCommandWatchtime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     {
         string givenName = slice.nom!(Yes.inherit)(' ');  // mutable
         if (givenName.beginsWith('@')) givenName = givenName[1..$];
-        immutable user = getTwitchUser(plugin, givenName, Yes.searchByDisplayName);
+        immutable user = getTwitchUser(plugin, givenName, string.init, Yes.searchByDisplayName);
 
         if (!user.nickname.length)
         {

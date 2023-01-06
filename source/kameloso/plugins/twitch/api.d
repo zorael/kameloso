@@ -1134,6 +1134,7 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         givenName = Name of user to look up.
+        givenIDString = ID of user to look up, if no `givenName` given.
         searchByDisplayName = Whether or not to also attempt to look up `givenName`
             as a display name.
 
@@ -1143,6 +1144,7 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 auto getTwitchUser(
     TwitchPlugin plugin,
     const string givenName,
+    const string givenIDString,
     const Flag!"searchByDisplayName" searchByDisplayName = No.searchByDisplayName)
 in (Fiber.getThis, "Tried to call `getTwitchUser` from outside a Fiber")
 {
@@ -1188,8 +1190,10 @@ in (Fiber.getThis, "Tried to call `getTwitchUser` from outside a Fiber")
         try
         {
             // None on record, look up
-            immutable userURL = "https://api.twitch.tv/helix/users?login=" ~ givenName;
-            immutable userJSON = getTwitchEntity(plugin, userURL);
+            immutable userURL = givenName ?
+                ("https://api.twitch.tv/helix/users?login=" ~ givenName) :
+                ("https://api.twitch.tv/helix/users?login=" ~ givenIDString);
+            immutable userJSON = getTwitchData(plugin, userURL);
 
             if ((userJSON.type != JSONType.object) || ("id" !in userJSON))
             {
