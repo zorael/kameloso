@@ -2127,11 +2127,26 @@ void startRoomMonitorFibers(TwitchPlugin plugin, ref TwitchPlugin.Room room)
 
         while (plugin.useAPIFeatures)
         {
-            try
-            {
-                auto stream = getStream(plugin, room.broadcasterName);  // may not be const nor immutable
+            auto stream = getStream(plugin, room.broadcasterName);  // may not be const nor immutable
 
-                // If we're here, the stream is up
+            if (stream == TwitchPlugin.Room.Stream.init)
+            {
+                // Stream down
+                if (room.stream.up)
+                {
+                    // Was up but just ended
+                    closeStream(room);
+                    rotateStream(room);
+
+                    if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
+                    {
+                        saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
+                    }
+                }
+            }
+            else
+            {
+                // Stream up
                 if (room.stream.idString == stream.idString)
                 {
                     // Same stream running, just update it
@@ -2146,20 +2161,6 @@ void startRoomMonitorFibers(TwitchPlugin plugin, ref TwitchPlugin.Room room)
 
                     Fiber chatterMonitorFiber = new Fiber(&chatterMonitorDg, BufferSize.fiberStack);
                     chatterMonitorFiber.call();
-                }
-            }
-            catch (EmptyDataJSONException _)
-            {
-                if (room.stream.up)
-                {
-                    // Was up but just ended
-                    closeStream(room);
-                    rotateStream(room);
-
-                    if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
-                    {
-                        saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
-                    }
                 }
             }
 
@@ -2245,108 +2246,95 @@ void startValidator(TwitchPlugin plugin)
         import kameloso.constants : MagicErrorStrings;
         import std.datetime.systime : Clock, SysTime;
 
-        enum retriesInCaseOfConnectionErrors = 5;
-        uint retry;
-
-        while (true)
+        if (plugin.state.settings.headless)
         {
-            if (plugin.state.settings.headless)
-            {
-                try
-                {
-                    import kameloso.plugins.common.delayawait : delay;
-                    import kameloso.messaging : quit;
-
-                    immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
-                    plugin.userID = validationJSON["user_id"].str;
-                    immutable expiresIn = validationJSON["expires_in"].integer;
-                    immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
-                    immutable now = Clock.currTime;
-                    immutable delta = (expiresWhen - now);
-
-                    // Schedule quitting on expiry
-                    delay(plugin, (() => quit(plugin.state)), delta);
-                }
-                catch (TwitchQueryException e)
-                {
-                    if ((e.code == 2) && (e.error != MagicErrorStrings.sslLibraryNotFound))
-                    {
-                        if (retry++ < retriesInCaseOfConnectionErrors) continue;
-                    }
-                    plugin.useAPIFeatures = false;
-                }
-                return;
-            }
-
             try
             {
-                /*
-                {
-                    "client_id": "tjyryd2ojnqr8a51ml19kn1yi2n0v1",
-                    "expires_in": 5036421,
-                    "login": "zorael",
-                    "scopes": [
-                        "bits:read",
-                        "channel:moderate",
-                        "channel:read:subscriptions",
-                        "channel_editor",
-                        "chat:edit",
-                        "chat:read",
-                        "user:edit:broadcast",
-                        "whispers:edit",
-                        "whispers:read"
-                    ],
-                    "user_id": "22216721"
-                }
-                */
+                import kameloso.plugins.common.delayawait : delay;
+                import kameloso.messaging : quit;
 
                 immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
                 plugin.userID = validationJSON["user_id"].str;
                 immutable expiresIn = validationJSON["expires_in"].integer;
                 immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
-                generateExpiryReminders(plugin, expiresWhen);
+                immutable now = Clock.currTime;
+                immutable delta = (expiresWhen - now);
+
+                // Schedule quitting on expiry
+                delay(plugin, (() => quit(plugin.state)), delta);
             }
             catch (TwitchQueryException e)
             {
-                // Something is deeply wrong.
+                plugin.useAPIFeatures = false;
+            }
+            return;
+        }
 
-                if (e.code == 2)
+        try
+        {
+            /*
+            {
+                "client_id": "tjyryd2ojnqr8a51ml19kn1yi2n0v1",
+                "expires_in": 5036421,
+                "login": "zorael",
+                "scopes": [
+                    "bits:read",
+                    "channel:moderate",
+                    "channel:read:subscriptions",
+                    "channel_editor",
+                    "chat:edit",
+                    "chat:read",
+                    "user:edit:broadcast",
+                    "whispers:edit",
+                    "whispers:read"
+                ],
+                "user_id": "22216721"
+            }
+            */
+
+            immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
+            plugin.userID = validationJSON["user_id"].str;
+            immutable expiresIn = validationJSON["expires_in"].integer;
+            immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
+            generateExpiryReminders(plugin, expiresWhen);
+        }
+        catch (TwitchQueryException e)
+        {
+            // Something is deeply wrong.
+
+            if (e.code == 2)
+            {
+                enum wikiMessage = cast(string)MagicErrorStrings.visitWikiOneliner;
+
+                if (e.error == MagicErrorStrings.sslLibraryNotFound)
                 {
-                    enum wikiMessage = cast(string)MagicErrorStrings.visitWikiOneliner;
+                    enum pattern = "Failed to validate Twitch API keys: <l>%s</> " ~
+                        "<t>(is OpenSSL installed?)";
+                    logger.errorf(pattern, cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten);
+                    logger.error(wikiMessage);
 
-                    if (e.error == MagicErrorStrings.sslLibraryNotFound)
+                    version(Windows)
                     {
-                        enum pattern = "Failed to validate Twitch API keys: <l>%s</> " ~
-                            "<t>(is OpenSSL installed?)";
-                        logger.errorf(pattern, cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten);
-                        logger.error(wikiMessage);
-
-                        version(Windows)
-                        {
-                            enum getoptMessage = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
-                            logger.error(getoptMessage);
-                        }
-                    }
-                    else
-                    {
-                        if (retry++ < retriesInCaseOfConnectionErrors) continue;
-
-                        enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
-                        logger.errorf(pattern, e.msg, e.error, e.code);
-                        logger.error(wikiMessage);
+                        enum getoptMessage = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
+                        logger.error(getoptMessage);
                     }
                 }
                 else
                 {
                     enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
                     logger.errorf(pattern, e.msg, e.error, e.code);
+                    logger.error(wikiMessage);
                 }
-
-                logger.warning("Disabling API features. Expect breakage.");
-                //version(PrintStacktraces) logger.trace(e);
-                plugin.useAPIFeatures = false;
             }
-            return;
+            else
+            {
+                enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
+                logger.errorf(pattern, e.msg, e.error, e.code);
+            }
+
+            logger.warning("Disabling API features. Expect breakage.");
+            //version(PrintStacktraces) logger.trace(e);
+            plugin.useAPIFeatures = false;
         }
     }
 
@@ -3025,6 +3013,11 @@ package:
         How often to poll the servers for various information about a channel.
      +/
     static immutable monitorUpdatePeriodicity = 60.seconds;
+
+    /++
+        How many times to retry a Twitch server query.
+     +/
+    enum delegateRetries = 5;
 
     /// Associative array of viewer times; seconds keyed by nickname keyed by channel.
     long[string][string] viewerTimesByChannel;
