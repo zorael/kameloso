@@ -684,7 +684,7 @@ void handleModifyTimerLines(
             timer.lines[linePos] = slice;
             destroyUpdateSave();
 
-            enum pattern = "Line <b>%d<b> of timer <b>%s<b> edited.";
+            enum pattern = "Line <b>#%d<b> of timer <b>%s<b> edited.";
             immutable message = pattern.format(linePos, name);
             chan(plugin.state, event.channel, message);
         }
