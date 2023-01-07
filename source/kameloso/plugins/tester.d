@@ -104,21 +104,26 @@ void onCommandTest(TesterPlugin plugin, const /*ref*/ IRCEvent event)
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
+    void sync()
+    {
+        import std.conv : text;
+        import std.random : uniform;
+
+        auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+
+        immutable id = uniform(0, 1000);
+
+        send(text("say ", id));
+        do awaitReply(); while (thisFiber.payload.content != id.text);
+    }
+
     bool runTestAndReport(alias fun)()
     {
         bool success;
 
         try
         {
-            import std.conv : text;
-            import std.random : uniform;
-
-            auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
-            immutable id = uniform(0, 1000);
-
-            send(text("say ", id));
-            do awaitReply(); while (thisFiber.payload.content != id.text);
-
+            sync();
             fun(plugin, event, botNickname);
             logger.info(__traits(identifier, fun), " tests PASSED");
             success = true;
@@ -204,7 +209,10 @@ void onCommandTest(TesterPlugin plugin, const /*ref*/ IRCEvent event)
                 }
             }
 
-            logger.infof("%d/%d tests finished successfully.", successes, tests.length);
+            enum pattern = "%d/%d tests finished successfully.";
+            immutable message = pattern.format(successes, tests.length);
+            logger.info(message);
+            send(message);
         }
 
         Fiber fiber = new CarryingFiber!IRCEvent(&allDg, BufferSize.fiberStack);
