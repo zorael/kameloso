@@ -29,7 +29,9 @@ private:
     import lu.uda : Unserialisable;
 
 public:
-    /// Whether or not this plugin should react to any events.
+    /++
+        Whether or not this plugin should react to any events.
+     +/
     @Enabler bool enabled = true;
 
     /++
@@ -80,10 +82,14 @@ public:
 
     @Unserialisable
     {
-        /// Whether or not to bell on every message.
+        /++
+            Whether or not to bell on every message.
+         +/
         bool bellOnMessage = false;
 
-        /// Whether or not to bell on important events, like subscriptions.
+        /++
+            Whether or not to bell on important events, like subscriptions.
+         +/
         bool bellOnImportant = false;
 
         /++
@@ -137,7 +143,9 @@ private enum SRM
     spotify,
 }
 
-/// Alias to [SRM].
+/++
+    Alias to [SRM].
+ +/
 alias SongRequestMode = SRM;
 
 private import kameloso.plugins.common.core;
@@ -3008,7 +3016,9 @@ package:
             }
         }
 
-        /// Constructor taking a string (channel) name.
+        /++
+            Constructor taking a string (channel) name.
+         +/
         this(const string channelName) @safe pure nothrow @nogc
         {
             this.channelName = channelName;
@@ -3016,34 +3026,54 @@ package:
             this.broadcasterDisplayName = this.broadcasterName;  // until we resolve it
         }
 
-        /// Name of the channel.
+        /++
+            Name of the channel.
+         +/
         string channelName;
 
-        /// The current, ongoing stream.
+        /++
+            The current, ongoing stream.
+         +/
         Stream stream;
 
-        /// The preivous, ended stream.
+        /++
+            The preivous, ended stream.
+         +/
         Stream previousStream;
 
-        /// Account name of the broadcaster.
+        /++
+            Account name of the broadcaster.
+         +/
         string broadcasterName;
 
-        /// Display name of the broadcaster.
+        /++
+            Display name of the broadcaster.
+         +/
         string broadcasterDisplayName;
 
-        /// Broadcaster user/account/room ID (not name).
+        /++
+            Broadcaster user/account/room ID (not name).
+         +/
         string id;
 
-        /// A JSON list of the followers of the channel.
+        /++
+            A JSON list of the followers of the channel.
+         +/
         JSONValue[string] follows;
 
-        /// Unix timestamp of when [follows] was last cached.
+        /++
+            UNIX timestamp of when [follows] was last cached.
+         +/
         long followsLastCached;
 
-        /// How many messages to keep in memory, to allow for nuking.
+        /++
+            How many messages to keep in memory, to allow for nuking.
+         +/
         enum messageMemory = 64;
 
-        /// The last n messages sent in the channel, used by `nuke`.
+        /++
+            The last n messages sent in the channel, used by `nuke`.
+         +/
         CircularBuffer!(IRCEvent, No.dynamic, messageMemory) lastNMessages;
 
         /++
@@ -3055,14 +3085,20 @@ package:
          +/
         enum minimumTimeBetweenSongRequests = 60;
 
-        /// Song request history; UNIX timestamps keyed by nickname.
+        /++
+            Song request history; UNIX timestamps keyed by nickname.
+         +/
         long[string] songrequestHistory;
     }
 
-    /// All Twitch plugin settings.
+    /++
+        All Twitch plugin settings.
+     +/
     TwitchSettings twitchSettings;
 
-    /// Array of active bot channels' state.
+    /++
+        Array of active bot channels' state.
+     +/
     Room[string] rooms;
 
     /++
@@ -3071,19 +3107,29 @@ package:
      +/
     private enum bellString = "" ~ cast(char)(TerminalToken.bell);
 
-    /// Effective bell after [kameloso.terminal.isTerminal] checks.
+    /++
+        Effective bell after [kameloso.terminal.isTerminal] checks.
+     +/
     string bell = bellString;
 
-    /// The Twitch application ID for kameloso.
+    /++
+        The Twitch application ID for kameloso.
+     +/
     enum clientID = "tjyryd2ojnqr8a51ml19kn1yi2n0v1";
 
-    /// Authorisation token for the "Authorization: Bearer <token>".
+    /++
+        Authorisation token for the "Authorization: Bearer <token>".
+     +/
     string authorizationBearer;
 
-    /// Whether or not to use features requiring querying Twitch API.
+    /++
+        Whether or not to use features requiring querying Twitch API.
+     +/
     shared static bool useAPIFeatures = true;
 
-    /// The bot's numeric account/ID.
+    /++
+        The bot's numeric account/ID.
+     +/
     string userID;
 
     /++
@@ -3134,32 +3180,48 @@ package:
      +/
     enum delegateRetries = 5;
 
-    /// Associative array of viewer times; seconds keyed by nickname keyed by channel.
+    /++
+        Associative array of viewer times; seconds keyed by nickname keyed by channel.
+     +/
     long[string][string] viewerTimesByChannel;
 
-    /// API keys and tokens, keyed by channel.
+    /++
+        API keys and tokens, keyed by channel.
+     +/
     Credentials[string] secretsByChannel;
 
-    /// The thread ID of the persistent worker thread.
+    /++
+        The thread ID of the persistent worker thread.
+     +/
     Tid persistentWorkerTid;
 
-    /// The thread ID of the main thread, for access from threads.
+    /++
+        The thread ID of the main thread, for access from threads.
+     +/
     shared static Tid mainThread;
 
-    /// Associative array of responses from async HTTP queries.
+    /++
+        Associative array of responses from async HTTP queries.
+     +/
     shared QueryResponse[int] bucket;
 
     @Resource
     {
         version(Posix)
         {
-            /// File to save emote counters to.
+            /++
+                File to save emote counters to.
+             +/
             string ecountFile = "twitch/ecount.json";
 
-            /// File to save viewer times to.
+            /++
+                File to save viewer times to.
+             +/
             string viewersFile = "twitch/viewers.json";
 
-            /// File to save API keys and tokens to.
+            /++
+                File to save API keys and tokens to.
+             +/
             string secretsFile = "twitch/secrets.json";
         }
         else version(Windows)
@@ -3179,13 +3241,19 @@ package:
         }
     }
 
-    /// Emote counters associative array; counter longs keyed by emote ID string keyed by channel.
+    /++
+        Emote counters associative array; counter longs keyed by emote ID string keyed by channel.
+     +/
     long[string][string] ecount;
 
-    /// Whether or not [ecount] has been modified and there's a point in saving it to disk.
+    /++
+        Whether or not [ecount] has been modified and there's a point in saving it to disk.
+     +/
     bool ecountDirty;
 
-    /// How often to save `ecount`s and viewer times, to ward against losing information to crashes.
+    /++
+        How often to save `ecount`s and viewer times, to ward against losing information to crashes.
+     +/
     static immutable savePeriodicity = 2.hours;
 
 
@@ -3202,7 +3270,8 @@ package:
      +/
     override public bool isEnabled() const @property pure nothrow @nogc
     {
-        return ((state.server.daemon == IRCServer.Daemon.twitch) ||
+        return (
+            (state.server.daemon == IRCServer.Daemon.twitch) ||
             (state.server.daemon == IRCServer.Daemon.unset)) &&
             (twitchSettings.enabled ||
                 twitchSettings.keygen ||
