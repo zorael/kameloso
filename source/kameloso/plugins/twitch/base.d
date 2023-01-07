@@ -978,8 +978,8 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             "Missing Google API credentials and/or YouTube playlist ID." :
             "Missing Spotify API credentials and/or playlist ID.";
         immutable terminalMessage = (plugin.twitchSettings.songrequestMode == SongRequestMode.youtube) ?
-            "Run the program with <l>--set twitch.googleKeygen</> to set up." :
-            "Run the program with <l>--set twitch.spotifyKeygen</> to set up.";
+            channelMessage ~ " Run the program with <l>--set twitch.googleKeygen</> to set one up." :
+            channelMessage ~ " Run the program with <l>--set twitch.spotifyKeygen</> to set one up.";
         chan(plugin.state, event.channel, channelMessage);
         logger.error(terminalMessage);
     }
@@ -1269,8 +1269,8 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     catch (MissingBroadcasterTokenException e)
     {
         enum message = "Missing broadcaster-level API token.";
+        enum superMessage = message ~ " Run the program with <l>--set twitch.superKeygen</> to generate a new one.";
         chan(plugin.state, event.channel, message);
-        enum superMessage = "Run the program with <l>--set twitch.superKeygen</> to generate a new one.";
         logger.error(superMessage);
     }
     catch (TwitchQueryException e)
@@ -1929,8 +1929,7 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     if (!room.stream.up)
     {
-        enum pattern = "Broadcast start was never marked with %sstart.";
-        immutable message = pattern.format(plugin.state.settings.prefix);
+        enum message = "There is no ongoing stream.";
         return chan(plugin.state, event.channel, message);
     }
 
