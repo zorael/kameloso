@@ -405,33 +405,73 @@ in (Fiber.getThis, "Tried to call `addVideoToYouTubePlaylist` from outside a Fib
             }
             */
 
+            /*
+            {
+                "error": {
+                    "code": 401,
+                    "message": "Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.",
+                    "errors": [
+                        {
+                            "message": "Invalid Credentials",
+                            "domain": "global",
+                            "reason": "authError",
+                            "location": "Authorization",
+                            "locationType": "header"
+                        }
+                    ],
+                    "status": "UNAUTHENTICATED"
+                }
+            }
+            */
+
             const json = parseJSON(response.str);
 
             if (json.type != JSONType.object)
             {
-                throw new UnexpectedJSONException("Wrong JSON type in playlist append response", json);
+                enum message = "Wrong JSON type in playlist append response";
+                throw new UnexpectedJSONException(message, json);
             }
 
-            if (auto errorJSON = "error" in json)
+            const errorJSON = "error" in json;
+            if (!errorJSON) return json;  // Success
+
+            if (const statusJSON = "status" in errorJSON.object)
             {
-                if (recursing)
+                if (statusJSON.str == "UNAUTHENTICATED")
                 {
-                    throw new ErrorJSONException(errorJSON.object["message"].str, *errorJSON);
-                }
-                else if (auto statusJSON = "status" in errorJSON.object)
-                {
-                    if (statusJSON.str == "UNAUTHENTICATED")
+                    if (recursing)
+                    {
+                        const errorAAJSON = "errors" in *errorJSON;
+
+                        if (errorAAJSON &&
+                            (errorAAJSON.type == JSONType.array) &&
+                            (errorAAJSON.array.length > 0))
+                        {
+                            immutable message = errorAAJSON.array[0].object["message"].str;
+                            throw new InvalidCredentialsException(message, *errorJSON);
+                        }
+                        else
+                        {
+                            enum message = "A non-specific error occurred.";
+                            throw new ErrorJSONException(message, *errorJSON);
+                        }
+                    }
+                    else
                     {
                         refreshGoogleToken(getHTTPClient(), creds);
                         saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
                         return addVideoToYouTubePlaylist(plugin, creds, videoID, Yes.recursing);
                     }
                 }
-
-                throw new ErrorJSONException(errorJSON.object["message"].str, *errorJSON);
             }
 
-            return json;
+            // If we're here, the above didn't match
+            throw new ErrorJSONException(errorJSON.object["message"].str, *errorJSON);
+        }
+        catch (InvalidCredentialsException e)
+        {
+            // Immediately rethrow
+            throw e;
         }
         catch (Exception e)
         {
@@ -547,7 +587,15 @@ void refreshGoogleToken(HttpClient client, ref Credentials creds)
 
     if (auto errorJSON = "error" in json)
     {
-        throw new ErrorJSONException(errorJSON.str, *errorJSON);
+        if (errorJSON.str == "invalid_grant")
+        {
+            enum message = "Invalid grant";
+            throw new InvalidCredentialsException(message, *errorJSON);
+        }
+        else
+        {
+            throw new ErrorJSONException(errorJSON.str, *errorJSON);
+        }
     }
 
     creds.googleAccessToken = json["access_token"].str;
