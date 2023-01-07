@@ -992,6 +992,14 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         logger.error(terminalMessage);
     }
 
+    void sendInvalidCredentials()
+    {
+        immutable message = (plugin.twitchSettings.songrequestMode == SongRequestMode.youtube) ?
+            "Invalid Google API credentials." :
+            "Invalid Spotify API credentials.";
+        chan(plugin.state, event.channel, message);
+    }
+
     void sendAtLastNSecondsMustPass()
     {
         enum pattern = "At least %d seconds must pass between song requests.";
@@ -1010,6 +1018,12 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         immutable message = (plugin.twitchSettings.songrequestMode == SongRequestMode.youtube) ?
             "Invalid YouTube video URL." :
             "Invalid Spotify track URL.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendNonspecificError()
+    {
+        enum message = "A non-specific error occurred.";
         chan(plugin.state, event.channel, message);
     }
 
@@ -1110,9 +1124,13 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             //immutable position = json["snippet"]["position"].integer;
             return sendAddedToYouTubePlaylist(title);
         }
-        catch (ErrorJSONException e)
+        catch (InvalidCredentialsException _)
         {
-            return sendInvalidURL();
+            return sendInvalidCredentials();
+        }
+        catch (ErrorJSONException _)
+        {
+            return sendNonspecificError();
         }
         // Let other exceptions fall through
     }
