@@ -747,7 +747,7 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     room.follows = getFollows(plugin, room.id);
     room.followsLastCached = event.time;
-    startRoomMonitorFibers(plugin, *room);
+    startRoomMonitorFibers(plugin, event.channel);
 
     version(WithPersistenceService)
     {
@@ -2084,14 +2084,13 @@ void onMyInfo(TwitchPlugin plugin)
 /++
     Starts room monitor fibers.
 
-    These detect new streams (and updates ongoing ones), updates chatters,
-    caches followers, and periodically saves resources to disk.
+    These detect new streams (and updates ongoing ones), updates chatters, and caches followers.
 
     Params:
         plugin = The current [TwitchPlugin].
-        room = Reference to the relevant [TwitchPlugin.Room] to update.
+        channelName = String key of room to start the monitors of.
  +/
-void startRoomMonitorFibers(TwitchPlugin plugin, ref TwitchPlugin.Room room)
+void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
 {
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.time : nextMidnight;
@@ -2099,16 +2098,22 @@ void startRoomMonitorFibers(TwitchPlugin plugin, ref TwitchPlugin.Room room)
 
     void chatterMonitorDg()
     {
-        import std.json : JSONType;
+        auto room = channelName in plugin.rooms;
+        assert(room, "Tried to start chatter monitor delegate on non-existing room");
 
-        immutable streamIDSnapshot = room.stream.idString;
         uint addedSinceLastRehash;
 
-        while (
-            room.stream.up &&
-            plugin.useAPIFeatures &&
-            (room.stream.idString == streamIDSnapshot))
+        while (true)
         {
+            room = channelName in plugin.rooms;
+            if (!room) return;
+
+            if (!room.stream.up)
+            {
+                delay(plugin, plugin.monitorUpdatePeriodicity, Yes.yield);
+                continue;
+            }
+
             const botBlacklist = getBotList(plugin);
             immutable chattersJSON = getChatters(plugin, room.broadcasterName);
 
@@ -2185,18 +2190,21 @@ void startRoomMonitorFibers(TwitchPlugin plugin, ref TwitchPlugin.Room room)
 
     void uptimeMonitorDg()
     {
-        static void closeStream(ref TwitchPlugin.Room room)
+        static void closeStream(TwitchPlugin.Room* room)
         {
             room.stream.up = false;
             room.stream.stopTime = Clock.currTime;
             room.stream.chattersSeen = null;
         }
 
-        static void rotateStream(ref TwitchPlugin.Room room)
+        static void rotateStream(TwitchPlugin.Room* room)
         {
             room.previousStream = room.stream;
             room.stream = TwitchPlugin.Room.Stream.init;
         }
+
+        auto room = channelName in plugin.rooms;
+        assert(room, "Tried to start chatter monitor delegate on non-existing room");
 
         while (plugin.useAPIFeatures)
         {
@@ -2246,6 +2254,9 @@ void startRoomMonitorFibers(TwitchPlugin plugin, ref TwitchPlugin.Room room)
     {
         while (true)
         {
+            auto room = channelName in plugin.rooms;
+            if (!room) return;
+
             immutable now = Clock.currTime;
             room.follows = getFollows(plugin, room.id);
             room.followsLastCached = now.toUnixTime;
@@ -2253,50 +2264,12 @@ void startRoomMonitorFibers(TwitchPlugin plugin, ref TwitchPlugin.Room room)
         }
     }
 
-    void periodicallySaveDg()
-    {
-        // Periodically save ecounts and viewer times
-        while (true)
-        {
-            if (plugin.twitchSettings.ecount && plugin.ecountDirty && plugin.ecount.length)
-            {
-                saveResourceToDisk(plugin.ecount, plugin.ecountFile);
-                plugin.ecountDirty = false;
-            }
-
-            /+
-                Only save watchtimes if there's at least one broadcast currently ongoing.
-                Since we save at broadcast stop there won't be anything new to save otherwise.
-            +/
-            if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
-            {
-                foreach (const room; plugin.rooms)
-                {
-                    if (room.stream.up)
-                    {
-                        // At least one broadcast active
-                        saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
-                        break;
-                    }
-                }
-            }
-
-            delay(plugin, plugin.savePeriodicity, Yes.yield);
-        }
-    }
-
-    //immutable now = Clock.currTime;
-
+    // Don't start a chatter monitor Fiber, the uptime delegate calls it
     Fiber uptimeMonitorFiber = new Fiber(&uptimeMonitorDg, BufferSize.fiberStack);
-    //delay(plugin, uptimeMonitorFiber, plugin.monitorUpdatePeriodicity);
     uptimeMonitorFiber.call();
 
     Fiber cacheFollowersFiber = new Fiber(&cacheFollowersDg, BufferSize.fiberStack);
-    //delay(plugin, cacheFollowersFiber, (now.nextMidnight - now));
     cacheFollowersFiber.call();
-
-    Fiber periodicallySaveFiber = new Fiber(&periodicallySaveDg, BufferSize.fiberStack);
-    delay(plugin, periodicallySaveFiber, plugin.savePeriodicity);
 }
 
 
