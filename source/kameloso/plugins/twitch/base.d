@@ -1772,6 +1772,14 @@ void onCommandSetTitle(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         immutable message = pattern.format(title);
         chan(plugin.state, event.channel, message);
     }
+    catch (MissingBroadcasterTokenException _)
+    {
+        enum channelMessage = "Missing broadcaster-level API key.";
+        enum terminalMessage = channelMessage ~
+            " Run the program with <l>--set twitch.superKeygen</> to set one up.";
+        chan(plugin.state, event.channel, channelMessage);
+        logger.error(terminalMessage);
+    }
     catch (TwitchQueryException e)
     {
         if ((e.code == 401) && (e.error == "Unauthorized"))
@@ -1866,6 +1874,14 @@ void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     {
         enum message = "Could not find a game by that name; check spelling.";
         chan(plugin.state, event.channel, message);
+    }
+    catch (MissingBroadcasterTokenException _)
+    {
+        enum channelMessage = "Missing broadcaster-level API key.";
+        enum terminalMessage = channelMessage ~
+            " Run the program with <l>--set twitch.superKeygen</> to set one up.";
+        chan(plugin.state, event.channel, channelMessage);
+        logger.error(terminalMessage);
     }
     catch (TwitchQueryException e)
     {
