@@ -1505,6 +1505,7 @@ void onEndOfMOTD(TwitchPlugin plugin)
         plugin.state.connSettings.caBundleFile);
 
     startValidator(plugin);
+    startSaver(plugin);
 }
 
 
@@ -2386,6 +2387,57 @@ void startValidator(TwitchPlugin plugin)
 
     Fiber validatorFiber = new Fiber(&validatorDg, BufferSize.fiberStack);
     validatorFiber.call();
+}
+
+
+// startSaver
+/++
+    Starts a saver [core.thread.fiber.Fiber|Fiber].
+
+    This will save resources to disk periodically.
+
+    Params:
+        plugin = The current [TwitchPlugin].
+ +/
+void startSaver(TwitchPlugin plugin)
+{
+    import kameloso.plugins.common.delayawait : delay;
+    import core.thread : Fiber;
+
+    void periodicallySaveDg()
+    {
+        // Periodically save ecounts and viewer times
+        while (true)
+        {
+            if (plugin.twitchSettings.ecount && plugin.ecountDirty && plugin.ecount.length)
+            {
+                saveResourceToDisk(plugin.ecount, plugin.ecountFile);
+                plugin.ecountDirty = false;
+            }
+
+            /+
+                Only save watchtimes if there's at least one broadcast currently ongoing.
+                Since we save at broadcast stop there won't be anything new to save otherwise.
+            +/
+            if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
+            {
+                foreach (const room; plugin.rooms)
+                {
+                    if (room.stream.up)
+                    {
+                        // At least one broadcast active
+                        saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
+                        break;
+                    }
+                }
+            }
+
+            delay(plugin, plugin.savePeriodicity, Yes.yield);
+        }
+    }
+
+    Fiber periodicallySaveFiber = new Fiber(&periodicallySaveDg, BufferSize.fiberStack);
+    delay(plugin, periodicallySaveFiber, plugin.savePeriodicity);
 }
 
 
