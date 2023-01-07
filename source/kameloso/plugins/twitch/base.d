@@ -1929,9 +1929,11 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : stripped;
     import std.algorithm.comparison : among;
+    import std.algorithm.searching : endsWith;
     import std.format : format;
 
-    immutable lengthString = event.content.stripped;
+    string lengthString = event.content.stripped;  // mutable
+    if (lengthString.endsWith('s')) lengthString = lengthString[0..$-1];
 
     if (!lengthString.length)
     {
