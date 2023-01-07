@@ -338,7 +338,7 @@ void onImportant(TwitchPlugin plugin, const ref IRCEvent event)
     Registers a new [TwitchPlugin.Room] as we join a channel, so there's
     always a state struct available.
 
-    Simply passes on execution to [handleSelfjoin].
+    Simply passes on execution to [initRoom].
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.SELFJOIN)
@@ -346,11 +346,14 @@ void onImportant(TwitchPlugin plugin, const ref IRCEvent event)
 )
 void onSelfjoin(TwitchPlugin plugin, const ref IRCEvent event)
 {
-    return plugin.handleSelfjoin(event.channel);
+    if (event.channel !in plugin.rooms)
+    {
+        initRoom(plugin, event.channel);
+    }
 }
 
 
-// handleSelfjoin
+// initRoom
 /++
     Registers a new [TwitchPlugin.Room] as we join a channel, so there's
     always a state struct available.
@@ -359,11 +362,9 @@ void onSelfjoin(TwitchPlugin plugin, const ref IRCEvent event)
         plugin = The current [TwitchPlugin].
         channelName = The name of the channel we're supposedly joining.
  +/
-void handleSelfjoin(TwitchPlugin plugin, const string channelName)
-in (channelName.length, "Tried to handle SELFJOIN with an empty channel string")
+void initRoom(TwitchPlugin plugin, const string channelName)
+in (channelName.length, "Tried to init Room with an empty channel string")
 {
-    if (channelName in plugin.rooms) return;
-
     plugin.rooms[channelName] = TwitchPlugin.Room(channelName);
 }
 
@@ -405,24 +406,24 @@ void onUserstate(const ref IRCEvent event)
 )
 void onSelfpart(TwitchPlugin plugin, const ref IRCEvent event)
 {
-    if (auto room = event.channel in plugin.rooms)
+    auto room = event.channel in plugin.rooms;
+    if (!room) return;
+
+    if (room.stream.up)
     {
-        if (room.stream.up)
-        {
-            import std.datetime.systime : Clock;
+        import std.datetime.systime : Clock;
 
-            // We're leaving in the middle of a stream?
-            // Close it and rotate, in case someone has a pointer to it
-            // copied from nested functions in uptimeMonitorDg
-            room.stream.up = false;
-            room.stream.stopTime = Clock.currTime;
-            room.stream.chattersSeen = null;
-            room.previousStream = room.stream;
-            room.stream = TwitchPlugin.Room.Stream.init;
-        }
-
-        plugin.rooms.remove(event.channel);
+        // We're leaving in the middle of a stream?
+        // Close it and rotate, in case someone has a pointer to it
+        // copied from nested functions in uptimeMonitorDg
+        room.stream.up = false;
+        room.stream.stopTime = Clock.currTime;
+        room.stream.chattersSeen = null;
+        room.previousStream = room.stream;
+        room.stream = TwitchPlugin.Room.Stream.init;
     }
+
+    plugin.rooms.remove(event.channel);
 }
 
 
@@ -572,6 +573,12 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     import std.json : JSONType, JSONValue;
     import core.thread : Fiber;
 
+    void sendNoSuchUser(const string givenName)
+    {
+        immutable message = "No such user: " ~ givenName;
+        chan(plugin.state, event.channel, message);
+    }
+
     if (!plugin.useAPIFeatures) return;
 
     string slice = event.content.stripped;  // mutable
@@ -589,13 +596,8 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     {
         string givenName = slice.nom!(Yes.inherit)(' ');  // mutable
         if (givenName.beginsWith('@')) givenName = givenName[1..$];
-        immutable user = getTwitchUser(plugin, givenName, Yes.searchByDisplayName);
-
-        if (!user.nickname.length)
-        {
-            immutable message = "No such user: " ~ givenName;
-            return chan(plugin.state, event.channel, message);
-        }
+        immutable user = getTwitchUser(plugin, givenName, string.init, Yes.searchByDisplayName);
+        if (!user.nickname.length) return sendNoSuchUser(givenName);
 
         idString = user.idString;
         displayName = user.displayName;
@@ -720,18 +722,31 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     if (!room)
     {
         // Race...
-        plugin.handleSelfjoin(event.channel);
+        initRoom(plugin, event.channel);
         room = event.channel in plugin.rooms;
     }
 
     room.id = event.aux;
-
     immutable userURL = "https://api.twitch.tv/helix/users?id=" ~ event.aux;
-    immutable userJSON = getTwitchEntity(plugin, userURL);
-    room.broadcasterDisplayName = userJSON["display_name"].str;
+
+    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    {
+        try
+        {
+            immutable userJSON = getTwitchData(plugin, userURL);
+            room.broadcasterDisplayName = userJSON["display_name"].str;
+        }
+        catch (Exception e)
+        {
+            // Can be JSONException
+            // Retry until we reach the retry limit, then rethrow
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+            throw e;  // It's in a Fiber but we get the backtrace anyway
+        }
+    }
+
     room.follows = getFollows(plugin, room.id);
     room.followsLastCached = event.time;
-
     startRoomMonitorFibers(plugin, *room);
 
     version(WithPersistenceService)
@@ -827,6 +842,12 @@ void onCommandRepeat(TwitchPlugin plugin, const ref IRCEvent event)
         chan(plugin.state, event.channel, message);
     }
 
+    void sendNumTimesGTZero()
+    {
+        enum message = "Number of times must be greater than 0.";
+        chan(plugin.state, event.channel, message);
+    }
+
     if (!event.content.length || !event.content.count(' ')) return sendUsage();
 
     string slice = event.content;  // mutable
@@ -836,12 +857,7 @@ void onCommandRepeat(TwitchPlugin plugin, const ref IRCEvent event)
     {
         enum maxNumTimes = 10;
         immutable numTimes = min(numTimesString.to!int, maxNumTimes);
-
-        if (numTimes < 1)
-        {
-            enum message = "Number of times must be greater than 0.";
-            return chan(plugin.state, event.channel, message);
-        }
+        if (numTimes < 1) return sendNumTimesGTZero();
 
         foreach (immutable i; 0..numTimes)
         {
@@ -947,11 +963,66 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     import std.format : format;
     import core.time : seconds;
 
+    void sendUsage()
+    {
+        immutable pattern = (plugin.twitchSettings.songrequestMode == SongRequestMode.youtube) ?
+            "Usage: %s%s [YouTube link or video ID]" :
+            "Usage: %s%s [Spotify link or track ID]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendMissingCredentials()
+    {
+        immutable channelMessage = (plugin.twitchSettings.songrequestMode == SongRequestMode.youtube) ?
+            "Missing Google API credentials and/or YouTube playlist ID." :
+            "Missing Spotify API credentials and/or playlist ID.";
+        immutable terminalMessage = (plugin.twitchSettings.songrequestMode == SongRequestMode.youtube) ?
+            "Run the program with <l>--set twitch.googleKeygen</> to set up." :
+            "Run the program with <l>--set twitch.spotifyKeygen</> to set up.";
+        chan(plugin.state, event.channel, channelMessage);
+        logger.error(terminalMessage);
+    }
+
+    void sendAtLastNSecondsMustPass()
+    {
+        enum pattern = "At least %d seconds must pass between song requests.";
+        immutable message = pattern.format(TwitchPlugin.Room.minimumTimeBetweenSongRequests);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendInsufficientPermissions()
+    {
+        enum message = "You do not have the needed permissions to issue song requests.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendInvalidURL()
+    {
+        immutable message = (plugin.twitchSettings.songrequestMode == SongRequestMode.youtube) ?
+            "Invalid YouTube video URL." :
+            "Invalid Spotify track URL.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendAddedToYouTubePlaylist(const string title)
+    {
+        enum pattern = "%s added to playlist.";
+        immutable message = pattern.format(title);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendAddedToSpotifyPlaylist(const string artist, const string track)
+    {
+        enum pattern = "%s - %s added to playlist.";
+        immutable message = pattern.format(artist, track);
+        chan(plugin.state, event.channel, message);
+    }
+
     if (plugin.twitchSettings.songrequestMode == SongRequestMode.disabled) return;
     else if (event.sender.class_ < plugin.twitchSettings.songrequestPermsNeeded)
     {
-        // Issue an error?
-        return logger.error("User does not have the needed permissions to issue song requests.");
+        return sendInsufficientPermissions();
     }
 
     if (event.sender.class_ < IRCUser.class_.operator)
@@ -963,9 +1034,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         {
             if ((event.time - *lastRequestTimestamp) < TwitchPlugin.Room.minimumTimeBetweenSongRequests)
             {
-                enum pattern = "At least %d seconds must pass between song requests.";
-                immutable message = pattern.format(TwitchPlugin.Room.minimumTimeBetweenSongRequests);
-                return chan(plugin.state, event.channel, message);
+                return sendAtLastNSecondsMustPass();
             }
         }
     }
@@ -985,18 +1054,13 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             (!url.contains("youtube.com/") &&
             !url.contains("youtu.be/")))
         {
-            enum pattern = "Usage: %s%s [YouTube link or video ID]";
-            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-            return chan(plugin.state, event.channel, message);
+            return sendUsage();
         }
 
         auto creds = event.channel in plugin.secretsByChannel;
-
         if (!creds || !creds.googleAccessToken.length || !creds.youtubePlaylistID.length)
         {
-            enum message = "Missing Google API credentials and/or YouTube playlist ID. " ~
-                "Run the program with <l>--set twitch.googleKeygen</> to set up.";
-            return logger.error(message);
+            return sendMissingCredentials();
         }
 
         // Patterns:
@@ -1025,7 +1089,8 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         }
         else
         {
-            return logger.warning("Malformed video link?");
+            //return logger.warning("Bad link parsing?");
+            return sendInvalidURL();
         }
 
         try
@@ -1035,17 +1100,13 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             immutable json = addVideoToYouTubePlaylist(plugin, *creds, videoID);
             immutable title = json["snippet"]["title"].str;
             //immutable position = json["snippet"]["position"].integer;
-
-            enum pattern = "%s added to playlist.";
-            immutable message = pattern.format(title);
-            chan(plugin.state, event.channel, message);
+            return sendAddedToYouTubePlaylist(title);
         }
         catch (ErrorJSONException e)
         {
-            enum message = "Invalid YouTube video URL.";
-            chan(plugin.state, event.channel, message);
+            return sendInvalidURL();
         }
-        // Let other exceptions fall down to twitchTryCatchDg
+        // Let other exceptions fall through
     }
     else if (plugin.twitchSettings.songrequestMode == SongRequestMode.spotify)
     {
@@ -1061,18 +1122,14 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             url.contains(' ') ||
             !url.contains("spotify.com/track/"))
         {
-            enum pattern = "Usage: %s%s [Spotify link or track ID]";
-            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-            return chan(plugin.state, event.channel, message);
+            return sendUsage();
         }
 
         auto creds = event.channel in plugin.secretsByChannel;
 
         if (!creds || !creds.spotifyAccessToken.length || !creds.spotifyPlaylistID)
         {
-            enum message = "Missing Spotify API credentials and/or playlist ID. " ~
-                "Run the program with <l>--set twitch.spotifyKeygen</> to set up.";
-            return logger.error(message);
+            return sendMissingCredentials();
         }
 
         // Patterns
@@ -1092,7 +1149,8 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         }
         else
         {
-            return logger.warning("Malformed track link?");
+            //return logger.warning("Bad link parsing?");
+            return sendInvalidURL();
         }
 
         try
@@ -1111,16 +1169,13 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             immutable artist = trackJSON["artists"].array[0].object["name"].str;
             immutable track = trackJSON["name"].str;
 
-            enum pattern = "%s - %s added to playlist.";
-            immutable message = pattern.format(artist, track);
-            chan(plugin.state, event.channel, message);
+            return sendAddedToSpotifyPlaylist(artist, track);
         }
         catch (ErrorJSONException e)
         {
-            enum message = "Invalid Spotify track URL.";
-            chan(plugin.state, event.channel, message);
+            return sendInvalidURL();
         }
-        // Let other exceptions fall down to twitchTryCatchDg
+        // Let other exceptions fall through
     }
 }
 
@@ -1211,6 +1266,13 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         immutable message = pattern.format(responseJSON.array[0].object["title"].str);
         chan(plugin.state, event.channel, message);
     }
+    catch (MissingBroadcasterTokenException e)
+    {
+        enum message = "Missing broadcaster-level API token.";
+        chan(plugin.state, event.channel, message);
+        enum superMessage = "Run the program with <l>--set twitch.superKeygen</> to generate a new one.";
+        logger.error(superMessage);
+    }
     catch (TwitchQueryException e)
     {
         import std.algorithm.searching : endsWith;
@@ -1222,7 +1284,7 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             version(WithVotesPlugin)
             {
                 enum message = "You must be an affiliate to create Twitch polls. " ~
-                    "(Consider using the Votes plugin.)";
+                    "(Consider using the generic Poll plugin.)";
             }
             else
             {
@@ -1473,6 +1535,19 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
 
     if (!plugin.twitchSettings.ecount) return;
 
+    void sendUsage()
+    {
+        enum pattern = "Usage: %s%s [emote]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendNotATwitchEmote()
+    {
+        enum message = "That is not a Twitch emote.";
+        chan(plugin.state, event.channel, message);
+    }
+
     void sendResults(const long count)
     {
         // 425618:3-5
@@ -1501,14 +1576,11 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
 
     if (!event.content.length)
     {
-        enum pattern = "Usage: %s%s [emote]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-        return chan(plugin.state, event.channel, message);
+        return sendUsage();
     }
     else if (!event.emotes.length)
     {
-        enum message = "That is not a Twitch emote.";
-        return chan(plugin.state, event.channel, message);
+        return sendNotATwitchEmote();
     }
 
     const channelcounts = event.channel in plugin.ecount;
@@ -1575,7 +1647,7 @@ void onCommandWatchtime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     {
         string givenName = slice.nom!(Yes.inherit)(' ');  // mutable
         if (givenName.beginsWith('@')) givenName = givenName[1..$];
-        immutable user = getTwitchUser(plugin, givenName, Yes.searchByDisplayName);
+        immutable user = getTwitchUser(plugin, givenName, string.init, Yes.searchByDisplayName);
 
         if (!user.nickname.length)
         {
@@ -1791,7 +1863,7 @@ void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     }
     catch (EmptyDataJSONException e)
     {
-        enum message = "Could not find a game by that name.";
+        enum message = "Could not find a game by that name; check spelling.";
         chan(plugin.state, event.channel, message);
     }
     catch (TwitchQueryException e)
@@ -1852,6 +1924,7 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     }
 
     const room = event.channel in plugin.rooms;
+    assert(room, "Tried to start a commercial in a nonexistent room");
 
     if (!room.stream.up)
     {
@@ -2127,11 +2200,26 @@ void startRoomMonitorFibers(TwitchPlugin plugin, ref TwitchPlugin.Room room)
 
         while (plugin.useAPIFeatures)
         {
-            try
-            {
-                auto stream = getStream(plugin, room.broadcasterName);  // may not be const nor immutable
+            auto stream = getStream(plugin, room.broadcasterName);  // may not be const nor immutable
 
-                // If we're here, the stream is up
+            if (stream == TwitchPlugin.Room.Stream.init)
+            {
+                // Stream down
+                if (room.stream.up)
+                {
+                    // Was up but just ended
+                    closeStream(room);
+                    rotateStream(room);
+
+                    if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
+                    {
+                        saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
+                    }
+                }
+            }
+            else
+            {
+                // Stream up
                 if (room.stream.idString == stream.idString)
                 {
                     // Same stream running, just update it
@@ -2146,20 +2234,6 @@ void startRoomMonitorFibers(TwitchPlugin plugin, ref TwitchPlugin.Room room)
 
                     Fiber chatterMonitorFiber = new Fiber(&chatterMonitorDg, BufferSize.fiberStack);
                     chatterMonitorFiber.call();
-                }
-            }
-            catch (EmptyDataJSONException _)
-            {
-                if (room.stream.up)
-                {
-                    // Was up but just ended
-                    closeStream(room);
-                    rotateStream(room);
-
-                    if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
-                    {
-                        saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
-                    }
                 }
             }
 
@@ -2245,108 +2319,95 @@ void startValidator(TwitchPlugin plugin)
         import kameloso.constants : MagicErrorStrings;
         import std.datetime.systime : Clock, SysTime;
 
-        enum retriesInCaseOfConnectionErrors = 5;
-        uint retry;
-
-        while (true)
+        if (plugin.state.settings.headless)
         {
-            if (plugin.state.settings.headless)
-            {
-                try
-                {
-                    import kameloso.plugins.common.delayawait : delay;
-                    import kameloso.messaging : quit;
-
-                    immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
-                    plugin.userID = validationJSON["user_id"].str;
-                    immutable expiresIn = validationJSON["expires_in"].integer;
-                    immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
-                    immutable now = Clock.currTime;
-                    immutable delta = (expiresWhen - now);
-
-                    // Schedule quitting on expiry
-                    delay(plugin, (() => quit(plugin.state)), delta);
-                }
-                catch (TwitchQueryException e)
-                {
-                    if ((e.code == 2) && (e.error != MagicErrorStrings.sslLibraryNotFound))
-                    {
-                        if (retry++ < retriesInCaseOfConnectionErrors) continue;
-                    }
-                    plugin.useAPIFeatures = false;
-                }
-                return;
-            }
-
             try
             {
-                /*
-                {
-                    "client_id": "tjyryd2ojnqr8a51ml19kn1yi2n0v1",
-                    "expires_in": 5036421,
-                    "login": "zorael",
-                    "scopes": [
-                        "bits:read",
-                        "channel:moderate",
-                        "channel:read:subscriptions",
-                        "channel_editor",
-                        "chat:edit",
-                        "chat:read",
-                        "user:edit:broadcast",
-                        "whispers:edit",
-                        "whispers:read"
-                    ],
-                    "user_id": "22216721"
-                }
-                */
+                import kameloso.plugins.common.delayawait : delay;
+                import kameloso.messaging : quit;
 
                 immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
                 plugin.userID = validationJSON["user_id"].str;
                 immutable expiresIn = validationJSON["expires_in"].integer;
                 immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
-                generateExpiryReminders(plugin, expiresWhen);
+                immutable now = Clock.currTime;
+                immutable delta = (expiresWhen - now);
+
+                // Schedule quitting on expiry
+                delay(plugin, (() => quit(plugin.state)), delta);
             }
             catch (TwitchQueryException e)
             {
-                // Something is deeply wrong.
+                plugin.useAPIFeatures = false;
+            }
+            return;
+        }
 
-                if (e.code == 2)
+        try
+        {
+            /*
+            {
+                "client_id": "tjyryd2ojnqr8a51ml19kn1yi2n0v1",
+                "expires_in": 5036421,
+                "login": "zorael",
+                "scopes": [
+                    "bits:read",
+                    "channel:moderate",
+                    "channel:read:subscriptions",
+                    "channel_editor",
+                    "chat:edit",
+                    "chat:read",
+                    "user:edit:broadcast",
+                    "whispers:edit",
+                    "whispers:read"
+                ],
+                "user_id": "22216721"
+            }
+            */
+
+            immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
+            plugin.userID = validationJSON["user_id"].str;
+            immutable expiresIn = validationJSON["expires_in"].integer;
+            immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
+            generateExpiryReminders(plugin, expiresWhen);
+        }
+        catch (TwitchQueryException e)
+        {
+            // Something is deeply wrong.
+
+            if (e.code == 2)
+            {
+                enum wikiMessage = cast(string)MagicErrorStrings.visitWikiOneliner;
+
+                if (e.error == MagicErrorStrings.sslLibraryNotFound)
                 {
-                    enum wikiMessage = cast(string)MagicErrorStrings.visitWikiOneliner;
+                    enum pattern = "Failed to validate Twitch API keys: <l>%s</> " ~
+                        "<t>(is OpenSSL installed?)";
+                    logger.errorf(pattern, cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten);
+                    logger.error(wikiMessage);
 
-                    if (e.error == MagicErrorStrings.sslLibraryNotFound)
+                    version(Windows)
                     {
-                        enum pattern = "Failed to validate Twitch API keys: <l>%s</> " ~
-                            "<t>(is OpenSSL installed?)";
-                        logger.errorf(pattern, cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten);
-                        logger.error(wikiMessage);
-
-                        version(Windows)
-                        {
-                            enum getoptMessage = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
-                            logger.error(getoptMessage);
-                        }
-                    }
-                    else
-                    {
-                        if (retry++ < retriesInCaseOfConnectionErrors) continue;
-
-                        enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
-                        logger.errorf(pattern, e.msg, e.error, e.code);
-                        logger.error(wikiMessage);
+                        enum getoptMessage = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
+                        logger.error(getoptMessage);
                     }
                 }
                 else
                 {
                     enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
                     logger.errorf(pattern, e.msg, e.error, e.code);
+                    logger.error(wikiMessage);
                 }
-
-                logger.warning("Disabling API features. Expect breakage.");
-                //version(PrintStacktraces) logger.trace(e);
-                plugin.useAPIFeatures = false;
             }
-            return;
+            else
+            {
+                enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
+                logger.errorf(pattern, e.msg, e.error, e.code);
+            }
+
+            logger.warning("Disabling API features. Expect breakage.");
+            //version(PrintStacktraces) logger.trace(e);
+            plugin.useAPIFeatures = false;
         }
     }
 
@@ -2377,7 +2438,7 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
         return (expiresWhen - now) + 59.seconds;
     }
 
-    void warnOnWeekDg()
+    void warnOnWeeksDg()
     {
         immutable numDays = untilExpiry.total!"days";
         if (numDays <= 0) return;
@@ -2488,7 +2549,7 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
         if (trueExpiry >= reminderPoint)
         {
             immutable untilPoint = (trueExpiry - reminderPoint);
-            if (reminderPoint >= 1.weeks) delay(plugin, &warnOnWeekDg, untilPoint);
+            if (reminderPoint >= 1.weeks) delay(plugin, &warnOnWeeksDg, untilPoint);
             else if (reminderPoint >= 1.days) delay(plugin, &warnOnDaysDg, untilPoint);
             else if (reminderPoint >= 1.hours) delay(plugin, &warnOnHoursDg, untilPoint);
             else /*if (reminderPoint >= 1.minutes)*/ delay(plugin, &warnOnMinutesDg, untilPoint);
@@ -2499,7 +2560,7 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
     delay(plugin, &quitOnExpiry, trueExpiry);
 
     // Also announce once normally how much time is left
-    if (trueExpiry >= 1.weeks) warnOnWeekDg();
+    if (trueExpiry >= 1.weeks) warnOnWeeksDg();
     else if (trueExpiry >= 1.days) warnOnDaysDg();
     else if (trueExpiry >= 1.hours) warnOnHoursDg();
     else /*if (trueExpiry >= 1.minutes)*/ warnOnMinutesDg();
@@ -3025,6 +3086,11 @@ package:
         How often to poll the servers for various information about a channel.
      +/
     static immutable monitorUpdatePeriodicity = 60.seconds;
+
+    /++
+        How many times to retry a Twitch server query.
+     +/
+    enum delegateRetries = 5;
 
     /// Associative array of viewer times; seconds keyed by nickname keyed by channel.
     long[string][string] viewerTimesByChannel;

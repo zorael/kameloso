@@ -502,8 +502,22 @@ auto getTokenExpiry(TwitchPlugin plugin, const string authToken)
     import kameloso.plugins.twitch.api : getValidation;
     import std.datetime.systime : Clock, SysTime;
 
-    immutable validationJSON = getValidation(plugin, authToken, No.async);
-    immutable expiresIn = validationJSON["expires_in"].integer;
-    immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
-    return expiresWhen;
+    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    {
+        try
+        {
+            immutable validationJSON = getValidation(plugin, authToken, No.async);
+            immutable expiresIn = validationJSON["expires_in"].integer;
+            immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
+            return expiresWhen;
+        }
+        catch (Exception e)
+        {
+            // Retry until we reach the retry limit, then rethrow
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+            throw e;
+        }
+    }
+
+    assert(0, "Unreachable");
 }

@@ -308,34 +308,48 @@ void getSpotifyTokens(HttpClient client, ref Credentials creds, const string cod
     immutable url = urlPattern.format(code);
 
     if (!client.authorization.length) client.authorization = getSpotifyBase64Authorization(creds);
-    auto req = client.request(Uri(url), HttpVerb.POST);
-    req.requestParameters.contentType = "application/x-www-form-urlencoded";
-    auto res = req.waitForCompletion();
 
-    /*
+    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
     {
-        "access_token": "[redacted]",
-        "token_type": "Bearer",
-        "expires_in": 3600,
-        "refresh_token": "[redacted]",
-        "scope": "playlist-modify-private playlist-modify-public"
+        try
+        {
+            auto req = client.request(Uri(url), HttpVerb.POST);
+            req.requestParameters.contentType = "application/x-www-form-urlencoded";
+            auto res = req.waitForCompletion();
+
+            /*
+            {
+                "access_token": "[redacted]",
+                "token_type": "Bearer",
+                "expires_in": 3600,
+                "refresh_token": "[redacted]",
+                "scope": "playlist-modify-private playlist-modify-public"
+            }
+            */
+
+            const json = parseJSON(res.contentText);
+
+            if (json.type != JSONType.object)
+            {
+                throw new UnexpectedJSONException("Wrong JSON type in token request response", json);
+            }
+
+            if (auto errorJSON = "error" in json)
+            {
+                throw new ErrorJSONException(errorJSON.str, *errorJSON);
+            }
+
+            creds.spotifyAccessToken = json["access_token"].str;
+            creds.spotifyRefreshToken = json["refresh_token"].str;
+            return;
+        }
+        catch (Exception e)
+        {
+            // Retry until we reach the retry limit, then rethrow
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+            throw e;
+        }
     }
-    */
-
-    const json = parseJSON(res.contentText);
-
-    if (json.type != JSONType.object)
-    {
-        throw new UnexpectedJSONException("Wrong JSON type in token request response", json);
-    }
-
-    if (auto errorJSON = "error" in json)
-    {
-        throw new ErrorJSONException(errorJSON.str, *errorJSON);
-    }
-
-    creds.spotifyAccessToken = json["access_token"].str;
-    creds.spotifyRefreshToken = json["refresh_token"].str;
 }
 
 
@@ -367,33 +381,47 @@ void refreshSpotifyToken(HttpClient client, ref Credentials creds)
     immutable url = urlPattern.format(creds.spotifyRefreshToken);
 
     /*if (!client.authorization.length)*/ client.authorization = getSpotifyBase64Authorization(creds);
-    auto req = client.request(Uri(url), HttpVerb.POST);
-    req.requestParameters.contentType = "application/x-www-form-urlencoded";
-    auto res = req.waitForCompletion();
 
-    /*
+    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
     {
-        "access_token": "[redacted]",
-        "token_type": "Bearer",
-        "expires_in": 3600,
-        "scope": "playlist-modify-private playlist-modify-public"
+        try
+        {
+            auto req = client.request(Uri(url), HttpVerb.POST);
+            req.requestParameters.contentType = "application/x-www-form-urlencoded";
+            auto res = req.waitForCompletion();
+
+            /*
+            {
+                "access_token": "[redacted]",
+                "token_type": "Bearer",
+                "expires_in": 3600,
+                "scope": "playlist-modify-private playlist-modify-public"
+            }
+            */
+
+            const json = parseJSON(res.contentText);
+
+            if (json.type != JSONType.object)
+            {
+                throw new UnexpectedJSONException("Wrong JSON type in token refresh response", json);
+            }
+
+            if (auto errorJSON = "error" in json)
+            {
+                throw new ErrorJSONException(errorJSON.str, *errorJSON);
+            }
+
+            creds.spotifyAccessToken = json["access_token"].str;
+            // refreshToken is not present and stays the same as before
+            return;
+        }
+        catch (Exception e)
+        {
+            // Retry until we reach the retry limit, then rethrow
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+            throw e;
+        }
     }
-    */
-
-    const json = parseJSON(res.contentText);
-
-    if (json.type != JSONType.object)
-    {
-        throw new UnexpectedJSONException("Wrong JSON type in token refresh response", json);
-    }
-
-    if (auto errorJSON = "error" in json)
-    {
-        throw new ErrorJSONException(errorJSON.str, *errorJSON);
-    }
-
-    creds.spotifyAccessToken = json["access_token"].str;
-    // refreshToken is not present and stays the same as before
 }
 
 
@@ -478,61 +506,76 @@ in (Fiber.getThis, "Tried to call `addVideoToSpotifyPlaylist` from outside a Fib
 
     immutable ubyte[] data;
     /*immutable*/ int id = getUniqueNumericalID(plugin.bucket);  // Making immutable bumps compilation memory +44mb
-    plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout());
 
-    plugin.persistentWorkerTid.send(
-        id,
-        url,
-        authorizationBearer,
-        HttpVerb.POST,
-        data,
-        string.init);
-
-    static immutable guesstimatePeriodToWaitForCompletion = 300.msecs;
-    delay(plugin, guesstimatePeriodToWaitForCompletion, Yes.yield);
-    immutable response = waitForQueryResponse(plugin, id);
-
-    /*
+    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
     {
-        "snapshot_id" : "[redacted]"
-    }
-    */
-    /*
-    {
-        "error": {
-            "status": 401,
-            "message": "The access token expired"
-        }
-    }
-    */
-
-    const json = parseJSON(response.str);
-
-    if (json.type != JSONType.object)
-    {
-        throw new UnexpectedJSONException("Wrong JSON type in playlist append response", json);
-    }
-
-    if (auto errorJSON = "error" in json)
-    {
-        if (recursing)
+        try
         {
-            throw new ErrorJSONException(errorJSON.object["message"].str, *errorJSON);
-        }
-        else if (auto messageJSON = "message" in errorJSON.object)
-        {
-            if (messageJSON.str == "The access token expired")
+            plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout());
+
+            plugin.persistentWorkerTid.send(
+                id,
+                url,
+                authorizationBearer,
+                HttpVerb.POST,
+                data,
+                string.init);
+
+            static immutable guesstimatePeriodToWaitForCompletion = 300.msecs;
+            delay(plugin, guesstimatePeriodToWaitForCompletion, Yes.yield);
+            immutable response = waitForQueryResponse(plugin, id);
+
+            /*
             {
-                refreshSpotifyToken(getHTTPClient(), creds);
-                saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
-                return addTrackToSpotifyPlaylist(plugin, creds, trackID, Yes.recursing);
+                "snapshot_id" : "[redacted]"
             }
-        }
+            */
+            /*
+            {
+                "error": {
+                    "status": 401,
+                    "message": "The access token expired"
+                }
+            }
+            */
 
-        throw new ErrorJSONException(errorJSON.object["message"].str, *errorJSON);
+            const json = parseJSON(response.str);
+
+            if (json.type != JSONType.object)
+            {
+                throw new UnexpectedJSONException("Wrong JSON type in playlist append response", json);
+            }
+
+            if (auto errorJSON = "error" in json)
+            {
+                if (recursing)
+                {
+                    throw new ErrorJSONException(errorJSON.object["message"].str, *errorJSON);
+                }
+                else if (auto messageJSON = "message" in errorJSON.object)
+                {
+                    if (messageJSON.str == "The access token expired")
+                    {
+                        refreshSpotifyToken(getHTTPClient(), creds);
+                        saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
+                        return addTrackToSpotifyPlaylist(plugin, creds, trackID, Yes.recursing);
+                    }
+                }
+
+                throw new ErrorJSONException(errorJSON.object["message"].str, *errorJSON);
+            }
+
+            return json;
+        }
+        catch (Exception e)
+        {
+            // Retry until we reach the retry limit, then rethrow
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+            throw e;
+        }
     }
 
-    return json;
+    assert(0, "Unreachable");
 }
 
 
@@ -570,21 +613,35 @@ package auto getSpotifyTrackByID(Credentials creds, const string trackID)
         client.authorization = "Bearer " ~ creds.spotifyAccessToken;
     }
 
-    auto req = client.request(Uri(url));
-    auto res = req.waitForCompletion();
-    auto json = parseJSON(res.contentText);
-
-    if (json.type != JSONType.object)
+    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
     {
-        throw new UnexpectedJSONException("Wrong JSON type in track request response", json);
+        try
+        {
+            auto req = client.request(Uri(url));
+            auto res = req.waitForCompletion();
+            auto json = parseJSON(res.contentText);
+
+            if (json.type != JSONType.object)
+            {
+                throw new UnexpectedJSONException("Wrong JSON type in track request response", json);
+            }
+
+            if (auto errorJSON = "error" in json)
+            {
+                throw new ErrorJSONException(errorJSON.str, *errorJSON);
+            }
+
+            return json;
+        }
+        catch (Exception e)
+        {
+            // Retry until we reach the retry limit, then rethrow
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+            throw e;
+        }
     }
 
-    if (auto errorJSON = "error" in json)
-    {
-        throw new ErrorJSONException(errorJSON.str, *errorJSON);
-    }
-
-    return json;
+    assert(0, "Unreachable");
 }
 
 
@@ -615,45 +672,59 @@ auto validateSpotifyToken(HttpClient client, ref Credentials creds)
     enum url = "https://api.spotify.com/v1/me";
     client.authorization = "Bearer " ~ creds.spotifyAccessToken;
 
-    auto req = client.request(Uri(url));
-    auto res = req.waitForCompletion();
-    const json = parseJSON(res.contentText);
-
-    /*
+    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
     {
-        "error": {
-            "message": "The access token expired",
-            "status": 401
+        try
+        {
+            auto req = client.request(Uri(url));
+            auto res = req.waitForCompletion();
+            const json = parseJSON(res.contentText);
+
+            /*
+            {
+                "error": {
+                    "message": "The access token expired",
+                    "status": 401
+                }
+            }
+            */
+            /*
+            {
+                "display_name": "zorael",
+                "external_urls": {
+                    "spotify": "https:\/\/open.spotify.com\/user\/zorael"
+                },
+                "followers": {
+                    "href": null,
+                    "total": 0
+                },
+                "href": "https:\/\/api.spotify.com\/v1\/users\/zorael",
+                "id": "zorael",
+                "images": [],
+                "type": "user",
+                "uri": "spotify:user:zorael"
+            }
+            */
+
+            if (json.type != JSONType.object)
+            {
+                throw new UnexpectedJSONException("Wrong JSON type in token validation response", json);
+            }
+
+            if (auto errorJSON = "error" in json)
+            {
+                throw new ErrorJSONException(errorJSON.str, *errorJSON);
+            }
+
+            return json;
+        }
+        catch (Exception e)
+        {
+            // Retry until we reach the retry limit, then rethrow
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+            throw e;
         }
     }
-    */
-    /*
-    {
-        "display_name": "zorael",
-        "external_urls": {
-            "spotify": "https:\/\/open.spotify.com\/user\/zorael"
-        },
-        "followers": {
-            "href": null,
-            "total": 0
-        },
-        "href": "https:\/\/api.spotify.com\/v1\/users\/zorael",
-        "id": "zorael",
-        "images": [],
-        "type": "user",
-        "uri": "spotify:user:zorael"
-    }
-    */
 
-    if (json.type != JSONType.object)
-    {
-        throw new UnexpectedJSONException("Wrong JSON type in token validation response", json);
-    }
-
-    if (auto errorJSON = "error" in json)
-    {
-        throw new ErrorJSONException(errorJSON.str, *errorJSON);
-    }
-
-    return json;
+    assert(0, "Unreachable");
 }
