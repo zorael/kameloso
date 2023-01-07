@@ -986,8 +986,8 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             "Missing Google API credentials and/or YouTube playlist ID." :
             "Missing Spotify API credentials and/or playlist ID.";
         immutable terminalMessage = (plugin.twitchSettings.songrequestMode == SongRequestMode.youtube) ?
-            channelMessage ~ " Run the program with <l>--set twitch.googleKeygen</> to set one up." :
-            channelMessage ~ " Run the program with <l>--set twitch.spotifyKeygen</> to set one up.";
+            channelMessage ~ " Run the program with <l>--set twitch.googleKeygen</> to set it up." :
+            channelMessage ~ " Run the program with <l>--set twitch.spotifyKeygen</> to set it up.";
         chan(plugin.state, event.channel, channelMessage);
         logger.error(terminalMessage);
     }
@@ -1784,7 +1784,7 @@ void onCommandSetTitle(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     {
         enum channelMessage = "Missing broadcaster-level API key.";
         enum terminalMessage = channelMessage ~
-            " Run the program with <l>--set twitch.superKeygen</> to set one up.";
+            " Run the program with <l>--set twitch.superKeygen</> to set it up.";
         chan(plugin.state, event.channel, channelMessage);
         logger.error(terminalMessage);
     }
@@ -1887,7 +1887,7 @@ void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     {
         enum channelMessage = "Missing broadcaster-level API key.";
         enum terminalMessage = channelMessage ~
-            " Run the program with <l>--set twitch.superKeygen</> to set one up.";
+            " Run the program with <l>--set twitch.superKeygen</> to set it up.";
         chan(plugin.state, event.channel, channelMessage);
         logger.error(terminalMessage);
     }
