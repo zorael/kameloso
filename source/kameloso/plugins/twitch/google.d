@@ -65,6 +65,7 @@ Then pick <i>+ Create Credentials</> -> <i>OAuth client ID</>:
 <i>*</> <l>Application type:</> <i>Desktop app</>
 
 Now you should have a newly-generated client ID and client secret.
+Copy these somewhere; you'll need them soon.
 
 <l>Enabled APIs and Services</> tab -> <i>+ Enable APIs and Services</>
 <i>--></> enter "<i>YouTube Data API v3</>", hit <i>Enable</>
@@ -140,6 +141,8 @@ A normal URL to any playlist you can modify will work fine.
 <l>Attempting to open a Google login page in your default web browser.</>
 
 Follow the instructions and log in to authorise the use of this program with your account.
+Be sure to <l>select a YouTube account</> if presented with several alternatives.
+(One that says <i>YouTube</> underneath it.)
 
 <l>Then paste the address of the empty page you are redirected to afterwards here.</>
 
