@@ -57,9 +57,9 @@ struct QueryResponse
 
     Params:
         dg = `void delegate()` delegate to call.
-        retries = How many times to retry the delegate before giving up.
  +/
-void twitchTryCatchDg(alias dg, uint retries = 5)()
+version(none)
+void twitchTryCatchDg(alias dg)()
 if (isSomeFunction!dg)
 {
     version(PrintStacktraces)
@@ -80,7 +80,7 @@ if (isSomeFunction!dg)
         stdout.flush();
     }
 
-    foreach (immutable retryNum; 0..retries)
+    foreach (immutable retryNum; 0..TwitchPlugin.delegateRetries)
     {
         try
         {
@@ -117,8 +117,6 @@ if (isSomeFunction!dg)
 
     Params:
         previouslyThrownException = The exception that was thrown by (the calling) [twitchTryCatchDg].
-        retries = The number of times [twitchTryCatchDg] would have retried
-            the delegate that threw the exception.
         retryNum = How any times the throwing delegate has been called so far.
 
     Returns:
@@ -127,9 +125,9 @@ if (isSomeFunction!dg)
     See_Also:
         [twitchTryCatchDg]
  +/
+version(none)
 private auto twitchTryCatchDgExceptionHandler(
     /*const*/ Exception previouslyThrownException,
-    const uint retries,
     const size_t retryNum)
 {
     import kameloso.common : logger;
@@ -196,7 +194,8 @@ private auto twitchTryCatchDgExceptionHandler(
             return Next.returnFailure;
         }
 
-        if (retryNum < (retries-1)) return Next.continue_;  // Only proceed to error if all retries failed
+        // Only proceed to error if all retries failed
+        if (retryNum < (TwitchPlugin.delegateRetries-1)) return Next.continue_;
 
         immutable message = (e.error == MagicErrorStrings.sslLibraryNotFound) ?
             MagicErrorStrings.sslLibraryNotFoundRewritten :
@@ -267,7 +266,9 @@ private auto twitchTryCatchDgExceptionHandler(
             values keyed by a unique numerical ID.
         caBundleFile = Path to a `cacert.pem` SSL certificate bundle.
  +/
-void persistentQuerier(shared QueryResponse[int] bucket, const string caBundleFile)
+void persistentQuerier(
+    shared QueryResponse[int] bucket,
+    const string caBundleFile)
 {
     import kameloso.thread : ThreadMessage;
     import std.concurrency : OwnerTerminated, receive;
@@ -619,6 +620,7 @@ in (Fiber.getThis, "Tried to call `getTwitchData` from outside a Fiber")
 {
     import std.json : JSONException, JSONType, parseJSON;
 
+    // Request here outside try-catch to let exceptions fall through
     immutable response = sendHTTPRequest(plugin, url, plugin.authorizationBearer);
 
     try
@@ -727,8 +729,6 @@ in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
             {
                 // Retry until we reach the limit
                 if (i < TwitchPlugin.delegateRetries-1) continue;
-
-                // will get immediately rethrown
                 enum message = "`getChatters` response JSON is not JSONType.object";
                 throw new UnexpectedJSONException(message, responseJSON);
             }
@@ -738,8 +738,6 @@ in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
                 {
                     // As above
                     if (i < TwitchPlugin.delegateRetries-1) continue;
-
-                    // as above re: rethow
                     enum message = "`getChatters` \"chatters\" JSON is not JSONType.object";
                     throw new UnexpectedJSONException(message, *chattersJSON);
                 }
@@ -817,8 +815,6 @@ in ((!async || Fiber.getThis), "Tried to call asynchronous `getValidation` from 
                 {
                     // Retry until we reach the retry limit, then rethrow
                     if (i < TwitchPlugin.delegateRetries-1) continue;
-
-                    // will get immediately rethrown
                     throw new TwitchQueryException(
                         response.error,
                         response.str,
@@ -829,8 +825,6 @@ in ((!async || Fiber.getThis), "Tried to call asynchronous `getValidation` from 
                 {
                     // As above
                     if (i < TwitchPlugin.delegateRetries-1) continue;
-
-                    // as above re: rethrow
                     throw new TwitchQueryException(
                         "Empty response",
                         response.str,
@@ -841,6 +835,8 @@ in ((!async || Fiber.getThis), "Tried to call asynchronous `getValidation` from 
                 {
                     import std.format : format;
                     import std.json : JSONException;
+
+                    if (i < TwitchPlugin.delegateRetries-1) continue;
 
                     try
                     {
@@ -859,7 +855,6 @@ in ((!async || Fiber.getThis), "Tried to call asynchronous `getValidation` from 
                         immutable errorJSON = parseJSON(response.str);
                         enum pattern = "%3d %s: %s";
 
-                        // as above re: rethrow
                         immutable message = pattern.format(
                             errorJSON["status"].integer,
                             errorJSON["error"].str.unquoted,
@@ -870,9 +865,7 @@ in ((!async || Fiber.getThis), "Tried to call asynchronous `getValidation` from 
                     catch (JSONException e)
                     {
                         // As above
-                        if (i < TwitchPlugin.delegateRetries-1) continue;
-
-                        // as above re: rethrow
+                        //if (i < TwitchPlugin.delegateRetries-1) continue;
                         throw new TwitchQueryException(
                             e.msg,
                             response.str,
@@ -888,8 +881,6 @@ in ((!async || Fiber.getThis), "Tried to call asynchronous `getValidation` from 
             {
                 // As above
                 if (i < TwitchPlugin.delegateRetries-1) continue;
-
-                // as above re: rethrow
                 enum message = "Failed to validate Twitch authorisation token; unknown JSON";
                 throw new UnexpectedJSONException(message, validationJSON);
             }
@@ -1092,7 +1083,7 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
     shared QueryResponse* response;
     double accumulatingTime = plugin.approximateQueryTime;
 
-    do
+    while (true)
     {
         response = id in plugin.bucket;
 
@@ -1103,7 +1094,7 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
             if ((now - startTime) >= Timeout.httpGET)
             {
                 response = new shared QueryResponse;
-                break;
+                return *response;
             }
 
             // Miss; fired too early, there is no response available yet
@@ -1117,10 +1108,8 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
         // Make the new approximate query time a weighted average
         plugin.averageApproximateQueryTime(response.msecs);
         plugin.bucket.remove(id);
+        return *response;
     }
-    while (!response || (*response == QueryResponse.init));
-
-    return *response;
 }
 
 
@@ -1185,14 +1174,15 @@ in (Fiber.getThis, "Tried to call `getTwitchUser` from outside a Fiber")
         }
     }
 
+    // None on record, look up
+    immutable userURL = givenName ?
+        ("https://api.twitch.tv/helix/users?login=" ~ givenName) :
+        ("https://api.twitch.tv/helix/users?login=" ~ givenIDString);
+
     foreach (immutable i; 0..TwitchPlugin.delegateRetries)
     {
         try
         {
-            // None on record, look up
-            immutable userURL = givenName ?
-                ("https://api.twitch.tv/helix/users?login=" ~ givenName) :
-                ("https://api.twitch.tv/helix/users?login=" ~ givenIDString);
             immutable userJSON = getTwitchData(plugin, userURL);
 
             if ((userJSON.type != JSONType.object) || ("id" !in userJSON))
@@ -1357,8 +1347,21 @@ in (Fiber.getThis, "Tried to call `modifyChannel` from outside a Fiber")
 
     sink.put('}');
 
-    cast(void)sendHTTPRequest(plugin, url, authorizationBearer,
-        HttpVerb.PATCH, cast(ubyte[])sink.data, "application/json");
+    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    {
+        try
+        {
+            cast(void)sendHTTPRequest(plugin, url, authorizationBearer,
+                HttpVerb.PATCH, cast(ubyte[])sink.data, "application/json");
+            return;
+        }
+        catch (Exception e)
+        {
+            // Retry until we reach the retry limit, then rethrow
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+            throw e;
+        }
+    }
 }
 
 
@@ -1434,8 +1437,21 @@ in (Fiber.getThis, "Tried to call `startCommercial` from outside a Fiber")
     immutable body_ = pattern.format(room.id, lengthString);
     immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
 
-    cast(void)sendHTTPRequest(plugin, url, authorizationBearer,
-        HttpVerb.POST, cast(ubyte[])body_, "application/json");
+    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    {
+        try
+        {
+            cast(void)sendHTTPRequest(plugin, url, authorizationBearer,
+                HttpVerb.POST, cast(ubyte[])body_, "application/json");
+            return;
+        }
+        catch (Exception e)
+        {
+            // Retry until we reach the retry limit, then rethrow
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+            throw e;
+        }
+    }
 }
 
 
@@ -1471,7 +1487,7 @@ in (Fiber.getThis, "Tried to call `getPolls` from outside a Fiber")
     immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
 
     string url = baseURL ~ room.id;  // mutable;
-    if (idString.length) url ~= "id=" ~ idString;
+    if (idString.length) url ~= "&id=" ~ idString;
 
     foreach (immutable i; 0..TwitchPlugin.delegateRetries)
     {
@@ -1481,27 +1497,36 @@ in (Fiber.getThis, "Tried to call `getPolls` from outside a Fiber")
             allPollsJSON = null;
             allPollsJSON.array = null;
             string after;
-            bool retryingOnce;
+            uint retry;
 
-            dowhile:
-            do
+            inner:
+            while (true)
             {
-                immutable paginatedURL = after.length ? (url ~ "&after=" ~ after) : url;
-                immutable response = sendHTTPRequest(plugin, paginatedURL, authorizationBearer,
-                    HttpVerb.GET, cast(ubyte[])null, "application/json");
+                immutable paginatedURL = after.length ?
+                    (url ~ "&after=" ~ after) :
+                    url;
+
+                immutable response = sendHTTPRequest(
+                    plugin,
+                    paginatedURL,
+                    authorizationBearer,
+                    HttpVerb.GET,
+                    cast(ubyte[])null,
+                    "application/json");
+
                 immutable responseJSON = parseJSON(response.str);
 
                 if ((responseJSON.type != JSONType.object) ||
                     ("data" !in responseJSON) ||
-                    responseJSON["data"].type == JSONType.null_)
+                    (responseJSON["data"].type == JSONType.null_))
                 {
                     // Invalid response in some way
-                    if (retryingOnce) break dowhile;
-                    retryingOnce = true;
-                    continue;
+                    if (++retry < TwitchPlugin.delegateRetries) continue inner;
+                    enum message = "`getPolls` response has unexpected JSON";
+                    throw new UnexpectedJSONException(message, responseJSON);
                 }
 
-                retryingOnce = false;
+                retry = 0;
 
                 /*
                 {
@@ -1548,8 +1573,8 @@ in (Fiber.getThis, "Tried to call `getPolls` from outside a Fiber")
                 }
 
                 after = responseJSON["after"].str;
+                if (!after.length) break;
             }
-            while (after.length);
 
             return allPollsJSON;
         }
@@ -1625,59 +1650,80 @@ in (Fiber.getThis, "Tried to call `createPoll` from outside a Fiber")
 
     immutable escapedTitle = title.replace(`"`, `\"`);
     immutable body_ = pattern.format(room.id, escapedTitle, sink.data, durationString);
-    immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
-    immutable response = sendHTTPRequest(plugin, url, authorizationBearer,
-        HttpVerb.POST, cast(ubyte[])body_, "application/json");
 
-    /*
+    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
     {
-        "data": [
+        try
+        {
+            immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
+            immutable response = sendHTTPRequest(
+                plugin,
+                url,
+                authorizationBearer,
+                HttpVerb.POST,
+                cast(ubyte[])body_,
+                "application/json");
+
+            /*
             {
-            "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
-            "broadcaster_id": "141981764",
-            "broadcaster_name": "TwitchDev",
-            "broadcaster_login": "twitchdev",
-            "title": "Heads or Tails?",
-            "choices": [
-                {
-                "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
-                "title": "Heads",
-                "votes": 0,
-                "channel_points_votes": 0,
-                "bits_votes": 0
-                },
-                {
-                "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
-                "title": "Tails",
-                "votes": 0,
-                "channel_points_votes": 0,
-                "bits_votes": 0
-                }
-            ],
-            "bits_voting_enabled": false,
-            "bits_per_vote": 0,
-            "channel_points_voting_enabled": true,
-            "channel_points_per_vote": 100,
-            "status": "ACTIVE",
-            "duration": 1800,
-            "started_at": "2021-03-19T06:08:33.871278372Z"
+                "data": [
+                    {
+                    "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
+                    "broadcaster_id": "141981764",
+                    "broadcaster_name": "TwitchDev",
+                    "broadcaster_login": "twitchdev",
+                    "title": "Heads or Tails?",
+                    "choices": [
+                        {
+                        "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
+                        "title": "Heads",
+                        "votes": 0,
+                        "channel_points_votes": 0,
+                        "bits_votes": 0
+                        },
+                        {
+                        "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
+                        "title": "Tails",
+                        "votes": 0,
+                        "channel_points_votes": 0,
+                        "bits_votes": 0
+                        }
+                    ],
+                    "bits_voting_enabled": false,
+                    "bits_per_vote": 0,
+                    "channel_points_voting_enabled": true,
+                    "channel_points_per_vote": 100,
+                    "status": "ACTIVE",
+                    "duration": 1800,
+                    "started_at": "2021-03-19T06:08:33.871278372Z"
+                    }
+                ]
             }
-        ]
+            */
+
+            immutable responseJSON = parseJSON(response.str);
+
+            if ((responseJSON.type != JSONType.object) ||
+                ("data" !in responseJSON) ||
+                (responseJSON["data"].type != JSONType.array))
+            {
+                // Invalid response in some way
+                if (i < TwitchPlugin.delegateRetries-1) continue;
+                enum message = "`createPoll` response has unexpected JSON";
+                throw new UnexpectedJSONException(message, responseJSON);
+            }
+
+            return responseJSON["data"];
+        }
+        catch (Exception e)
+        {
+            // Retry until we reach the retry limit, then rethrow
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+            throw e;
+        }
     }
-    */
 
-    immutable responseJSON = parseJSON(response.str);
-
-    if ((responseJSON.type != JSONType.object) ||
-        ("data" !in responseJSON) ||
-        (responseJSON["data"].type != JSONType.array))
-    {
-        // Invalid response in some way
-        enum message = "`createPoll` response has unexpected JSON";
-        throw new UnexpectedJSONException(message, responseJSON);
-    }
-
-    return responseJSON["data"];
+    assert(0, "Unreachable");
 }
 
 
@@ -1724,60 +1770,81 @@ in (Fiber.getThis, "Tried to call `endPoll` from outside a Fiber")
 
     immutable status = terminate ? "TERMINATED" : "ARCHIVED";
     immutable body_ = pattern.format(room.id, voteID, status);
-    immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
-    immutable response = sendHTTPRequest(plugin, url, authorizationBearer,
-        HttpVerb.PATCH, cast(ubyte[])body_, "application/json");
 
-    /*
+    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
     {
-        "data": [
+        try
+        {
+            immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
+            immutable response = sendHTTPRequest(
+                plugin,
+                url,
+                authorizationBearer,
+                HttpVerb.PATCH,
+                cast(ubyte[])body_,
+                "application/json");
+
+            /*
             {
-            "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
-            "broadcaster_id": "141981764",
-            "broadcaster_name": "TwitchDev",
-            "broadcaster_login": "twitchdev",
-            "title": "Heads or Tails?",
-            "choices": [
-                {
-                "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
-                "title": "Heads",
-                "votes": 0,
-                "channel_points_votes": 0,
-                "bits_votes": 0
-                },
-                {
-                "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
-                "title": "Tails",
-                "votes": 0,
-                "channel_points_votes": 0,
-                "bits_votes": 0
-                }
-            ],
-            "bits_voting_enabled": false,
-            "bits_per_vote": 0,
-            "channel_points_voting_enabled": true,
-            "channel_points_per_vote": 100,
-            "status": "TERMINATED",
-            "duration": 1800,
-            "started_at": "2021-03-19T06:08:33.871278372Z",
-            "ended_at": "2021-03-19T06:11:26.746889614Z"
+                "data": [
+                    {
+                    "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
+                    "broadcaster_id": "141981764",
+                    "broadcaster_name": "TwitchDev",
+                    "broadcaster_login": "twitchdev",
+                    "title": "Heads or Tails?",
+                    "choices": [
+                        {
+                        "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
+                        "title": "Heads",
+                        "votes": 0,
+                        "channel_points_votes": 0,
+                        "bits_votes": 0
+                        },
+                        {
+                        "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
+                        "title": "Tails",
+                        "votes": 0,
+                        "channel_points_votes": 0,
+                        "bits_votes": 0
+                        }
+                    ],
+                    "bits_voting_enabled": false,
+                    "bits_per_vote": 0,
+                    "channel_points_voting_enabled": true,
+                    "channel_points_per_vote": 100,
+                    "status": "TERMINATED",
+                    "duration": 1800,
+                    "started_at": "2021-03-19T06:08:33.871278372Z",
+                    "ended_at": "2021-03-19T06:11:26.746889614Z"
+                    }
+                ]
             }
-        ]
+            */
+
+            immutable responseJSON = parseJSON(response.str);
+
+            if ((responseJSON.type != JSONType.object) ||
+                ("data" !in responseJSON) ||
+                (responseJSON["data"].type != JSONType.array))
+            {
+                // Invalid response in some way
+                if (i < TwitchPlugin.delegateRetries-1) continue;
+                enum message = "`endPoll` response has unexpected JSON";
+                throw new UnexpectedJSONException(message, responseJSON);
+            }
+
+            return responseJSON["data"].array[0];
+        }
+        catch (Exception e)
+        {
+            // Retry until we reach the retry limit, then rethrow
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+            throw e;
+        }
     }
-    */
 
-    immutable responseJSON = parseJSON(response.str);
-
-    if ((responseJSON.type != JSONType.object) ||
-        ("data" !in responseJSON) ||
-        (responseJSON["data"].type != JSONType.array))
-    {
-        // Invalid response in some way
-        enum message = "`endPoll` response has unexpected JSON";
-        throw new UnexpectedJSONException(message, responseJSON);
-    }
-
-    return responseJSON["data"].array[0];
+    assert(0, "Unreachable");
 }
 
 
@@ -1849,8 +1916,6 @@ auto getBotList(TwitchPlugin plugin)
             {
                 // Invalid response in some way, retry until we reach the limit
                 if (i < TwitchPlugin.delegateRetries-1) continue;
-
-                // will get immediately rethrown
                 enum message = "`getBotList` response has unexpected JSON";
                 throw new UnexpectedJSONException(message, responseJSON);
             }

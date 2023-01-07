@@ -353,77 +353,92 @@ in (Fiber.getThis, "Tried to call `addVideoToYouTubePlaylist` from outside a Fib
 
     immutable data = pattern.format(creds.youtubePlaylistID, videoID).representation;
     /*immutable*/ int id = getUniqueNumericalID(plugin.bucket);  // Making immutable bumps compilation memory +44mb
-    plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout());
 
-    plugin.persistentWorkerTid.send(
-        id,
-        url,
-        authorizationBearer,
-        HttpVerb.POST,
-        data,
-        "application/json");
-
-    static immutable guesstimatePeriodToWaitForCompletion = 600.msecs;
-    delay(plugin, guesstimatePeriodToWaitForCompletion, Yes.yield);
-    immutable response = waitForQueryResponse(plugin, id);
-
-    /*
+    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
     {
-        "kind": "youtube#playlistItem",
-        "etag": "QG1leAsBIlxoG2Y4MxMsV_zIaD8",
-        "id": "UExNNnd5dmt2ME9GTVVfc0IwRUZyWDdUd0pZUHdkMUYwRi4xMkVGQjNCMUM1N0RFNEUx",
-        "snippet": {
-            "publishedAt": "2022-05-24T22:03:44Z",
-            "channelId": "UC_iiOE42xes48ZXeQ4FkKAw",
-            "title": "How Do Sinkholes Form?",
-            "description": "CAN CONTAIN NEWLINES",
-            "thumbnails": {
-                "default": {
-                    "url": "https://i.ytimg.com/vi/e-DVIQPqS8E/default.jpg",
-                    "width": 120,
-                    "height": 90
-                },
-            },
-            "channelTitle": "zorael",
-            "playlistId": "PLM6wyvkv0OFMU_sB0EFrX7TwJYPwd1F0F",
-            "position": 5,
-            "resourceId": {
-                "kind": "youtube#video",
-                "videoId": "e-DVIQPqS8E"
-            },
-            "videoOwnerChannelTitle": "Practical Engineering",
-            "videoOwnerChannelId": "UCMOqf8ab-42UUQIdVoKwjlQ"
-        }
-    }
-    */
-
-    const json = parseJSON(response.str);
-
-    if (json.type != JSONType.object)
-    {
-        throw new UnexpectedJSONException("Wrong JSON type in playlist append response", json);
-    }
-
-    if (auto errorJSON = "error" in json)
-    {
-        if (recursing)
+        try
         {
-            throw new ErrorJSONException(errorJSON.object["message"].str, *errorJSON);
-        }
-        else if (auto statusJSON = "status" in errorJSON.object)
-        {
-            if (statusJSON.str == "UNAUTHENTICATED")
+            plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout());
+
+            plugin.persistentWorkerTid.send(
+                id,
+                url,
+                authorizationBearer,
+                HttpVerb.POST,
+                data,
+                "application/json");
+
+            static immutable guesstimatePeriodToWaitForCompletion = 600.msecs;
+            delay(plugin, guesstimatePeriodToWaitForCompletion, Yes.yield);
+            immutable response = waitForQueryResponse(plugin, id);
+
+            /*
             {
-                refreshGoogleToken(getHTTPClient(), creds);
-                saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
-                return addVideoToYouTubePlaylist(plugin, creds, videoID, Yes.recursing);
+                "kind": "youtube#playlistItem",
+                "etag": "QG1leAsBIlxoG2Y4MxMsV_zIaD8",
+                "id": "UExNNnd5dmt2ME9GTVVfc0IwRUZyWDdUd0pZUHdkMUYwRi4xMkVGQjNCMUM1N0RFNEUx",
+                "snippet": {
+                    "publishedAt": "2022-05-24T22:03:44Z",
+                    "channelId": "UC_iiOE42xes48ZXeQ4FkKAw",
+                    "title": "How Do Sinkholes Form?",
+                    "description": "CAN CONTAIN NEWLINES",
+                    "thumbnails": {
+                        "default": {
+                            "url": "https://i.ytimg.com/vi/e-DVIQPqS8E/default.jpg",
+                            "width": 120,
+                            "height": 90
+                        },
+                    },
+                    "channelTitle": "zorael",
+                    "playlistId": "PLM6wyvkv0OFMU_sB0EFrX7TwJYPwd1F0F",
+                    "position": 5,
+                    "resourceId": {
+                        "kind": "youtube#video",
+                        "videoId": "e-DVIQPqS8E"
+                    },
+                    "videoOwnerChannelTitle": "Practical Engineering",
+                    "videoOwnerChannelId": "UCMOqf8ab-42UUQIdVoKwjlQ"
+                }
             }
-        }
+            */
 
-        throw new ErrorJSONException(errorJSON.object["message"].str, *errorJSON);
+            const json = parseJSON(response.str);
+
+            if (json.type != JSONType.object)
+            {
+                throw new UnexpectedJSONException("Wrong JSON type in playlist append response", json);
+            }
+
+            if (auto errorJSON = "error" in json)
+            {
+                if (recursing)
+                {
+                    throw new ErrorJSONException(errorJSON.object["message"].str, *errorJSON);
+                }
+                else if (auto statusJSON = "status" in errorJSON.object)
+                {
+                    if (statusJSON.str == "UNAUTHENTICATED")
+                    {
+                        refreshGoogleToken(getHTTPClient(), creds);
+                        saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
+                        return addVideoToYouTubePlaylist(plugin, creds, videoID, Yes.recursing);
+                    }
+                }
+
+                throw new ErrorJSONException(errorJSON.object["message"].str, *errorJSON);
+            }
+
+            return json;
+        }
+        catch (Exception e)
+        {
+            // Retry until we reach the retry limit, then rethrow
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+            throw e;
+        }
     }
 
-    return json;
+    assert(0, "Unreachable");
 }
 
 
