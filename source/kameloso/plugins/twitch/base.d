@@ -402,6 +402,22 @@ void onUserstate(const ref IRCEvent event)
 }
 
 
+// onGlobalUserstate
+/++
+    Inherits the bots display name from a
+    [dialect.defs.IRCEvent.Type.GLOBALUSERSTATE|GLOBALUSERSTATE]
+    into [kameloso.plugins.core.IRCPluginState.displayName|IRCPluginState.displayName].
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.GLOBALUSERSTATE)
+)
+void onGlobalUserstate(TwitchPlugin plugin, const ref IRCEvent event)
+{
+    plugin.state.bot.displayName = event.target.displayName;
+    plugin.state.updates |= IRCPluginState.Update.bot;
+}
+
+
 // onSelfpart
 /++
     Removes a channel's corresponding [TwitchPlugin.Room] when we leave it.

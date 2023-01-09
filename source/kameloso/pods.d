@@ -316,10 +316,23 @@ public:
     }
 
 
-    // hasGuestNickname
-    /++
-        Whether or not we connected without an explicit nickname, and a random
-        guest such was generated.
-     +/
-    @Unserialisable bool hasGuestNickname;
+    @Unserialisable
+    {
+        // hasGuestNickname
+        /++
+            Whether or not we connected without an explicit nickname, and a random
+            guest such was generated.
+         +/
+        bool hasGuestNickname;
+
+
+        version(TwitchSupport)
+        {
+            // displayName
+            /++
+                The display name of the bot. Only applicable on Twitch servers.
+            +/
+            string displayName;
+        }
+    }
 }
