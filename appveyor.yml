@@ -22,6 +22,7 @@ branches:
     - gh-pages
     - /dustmite-.*/
     - /github-.*/
+    - onlinetests
 
 install:
   - ps: function SetUpDCompiler
