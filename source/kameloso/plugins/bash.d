@@ -134,6 +134,12 @@ void worker(
             return askToWarn(state, pattern.format(url, res.codeText));
         }
 
+        if (!res.responseText.length)
+        {
+            enum message = "No reponse received from <b>bash.org<b>; is it down?";
+            return privmsg(state, event.channel, event.sender.nickname, message);
+        }
+
         auto doc = new Document;
         doc.parseGarbage("");  // Work around missing null check, causing segfaults on empty pages
         doc.parseGarbage(res.responseText);
