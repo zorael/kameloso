@@ -644,7 +644,7 @@ if (isOutputRange!(Sink, char[]))
             FG.white,
         ];
 
-        if (plugin.printerSettings.randomNickColours)
+        if (plugin.printerSettings.colourfulNicknames)
         {
             import kameloso.terminal.colours : getColourByHash;
             return getColourByHash(nickname, bright ? fgBright[] : fgDark[]);

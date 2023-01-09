@@ -51,8 +51,8 @@ public:
 
     version(Colours)
     {
-        /// Whether or not to display nicks in random colour based on their nickname hash.
-        bool randomNickColours = true;
+        /// Whether or not to display nicks in a colour based on their nickname hash.
+        bool colourfulNicknames = true;
 
         @Unserialisable
         {
@@ -132,6 +132,9 @@ public:
 
         /// Whether or not to buffer writes.
         bool bufferedWrites = true;
+
+        /// Compatibility alias.
+        alias randomNickColours = colourfulNicknames;
     }
 }
 
