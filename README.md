@@ -359,6 +359,8 @@ Before allowing *anyone* to trigger any restricted functionality, the bot will t
 
 Refer to [the wiki page on Twitch](https://github.com/zorael/kameloso/wiki/Twitch) for more in-depth information.
 
+> If you're interested in trying the bot but don't want to run it yourself, contact me and I'll host an instance on a headless server.
+
 ### **Copy paste-friendly concrete setup from scratch**
 
 Pre-compiled binaries for Windows and Linux can be found under [Releases](https://github.com/zorael/kameloso/releases).
@@ -466,7 +468,7 @@ Assuming a prefix of `!`, commands to test are:
 * `!commercial`
 * `!startpoll`/`!endpoll` (*highly* experimental, need help from affiliate)
 
-...alongside `!oneliner`, `!counter`, `!timer`, `!poll` (chat poll), `!stopwatch`, and other non-Twitch-specific commands. Try `!help` or [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins).
+...alongside `!oneliner`, `!counter`, `!timer`, `!poll` (chat poll), `!time`, `!stopwatch`, and other non-Twitch-specific commands. Try `!help` or [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins).
 
 > Note: `.` (dot) and `/` (slash) prefixes will not work on Twitch.
 
@@ -482,7 +484,7 @@ Some functionality, such as setting the channel title or currently played game, 
 $ kameloso --set twitch.superKeygen
 ```
 
-> Mind that you need to be logged into Twitch (in your browser) with your main account while doing this, or the token obtained will be with permissions for the wrong channel.
+> Mind that you need to be logged into Twitch (in your browser) with your **main account** while doing this, or the token obtained will be with permissions for the wrong channel.
 
 ## Further help
 
