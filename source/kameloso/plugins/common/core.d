@@ -2084,7 +2084,6 @@ unittest
         event = Reference to the mutable [dialect.defs.IRCEvent|IRCEvent] we're considering.
         policy = Policy to apply.
         state = The calling [IRCPlugin]'s [IRCPluginState].
-        prefix = The prefix as set in the program-wide settings.
 
     Returns:
         `true` if the message is in a context where the event matches the
