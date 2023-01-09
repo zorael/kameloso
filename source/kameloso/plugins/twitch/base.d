@@ -510,7 +510,7 @@ void reportStreamTime(
         if (room.stream.maxViewerCount > 0)
         {
             enum pattern = "%s has been live for %s, currently with %d viewers. " ~
-                "(Maximum at any one time has so far been %d viewers.)";
+                "(Maximum this stream has so far been %d concurrent viewers.)";
             immutable message = pattern.format(
                 room.broadcasterDisplayName,
                 timestring,
@@ -540,8 +540,8 @@ void reportStreamTime(
 
             if (room.previousStream.maxViewerCount > 0)
             {
-                enum pattern = "%s last streamed for %s, " ~
-                    "with a maximum of %d viewers at any one time.";
+                enum pattern = "%s last streamed for %s " ~
+                    "with a maximum of %d concurrent viewers.";
                 immutable message = pattern.format(
                     room.broadcasterDisplayName,
                     timestring,
