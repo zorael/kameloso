@@ -1117,7 +1117,7 @@ void onChannelAwarenessTopic(IRCPlugin plugin, const ref IRCEvent event)
     auto channel = event.channel in plugin.state.channels;
     if (!channel) return;
 
-    channel.topic = event.content;
+    channel.topic = event.content;  // don't strip
 }
 
 

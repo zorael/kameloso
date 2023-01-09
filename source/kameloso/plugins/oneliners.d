@@ -310,7 +310,7 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 )
 void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : SplitResults, contains, nom, splitInto;
+    import lu.string : SplitResults, contains, nom, splitInto, stripped;
     import std.conv : ConvException, to;
     import std.format : format;
     import std.typecons : Flag, No, Yes;
@@ -325,7 +325,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 
     if (!event.content.length) return sendUsage();
 
-    string slice = event.content;  // mutable
+    string slice = event.content.stripped;  // mutable
     immutable verb = slice.nom!(Yes.inherit, Yes.decode)(' ');
 
     switch (verb)

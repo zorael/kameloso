@@ -527,7 +527,7 @@ void reportStreamTime(
     }
     else
     {
-        if (room.previousStream.idString.length)
+        if (room.previousStream.idString.length)  // == Stream.init
         {
             import std.datetime.systime : SysTime;
 
@@ -853,7 +853,7 @@ void onCommandVanish(TwitchPlugin plugin, const ref IRCEvent event)
 )
 void onCommandRepeat(TwitchPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : nom;
+    import lu.string : nom, stripped;
     import std.algorithm.searching : count;
     import std.algorithm.comparison : min;
     import std.conv : ConvException, to;
@@ -874,7 +874,7 @@ void onCommandRepeat(TwitchPlugin plugin, const ref IRCEvent event)
 
     if (!event.content.length || !event.content.count(' ')) return sendUsage();
 
-    string slice = event.content;  // mutable
+    string slice = event.content.stripped;  // mutable
     immutable numTimesString = slice.nom(' ');
 
     try

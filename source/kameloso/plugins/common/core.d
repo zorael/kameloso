@@ -862,7 +862,7 @@ mixin template IRCPluginImpl(
             }
 
             // Snapshot content and aux for later restoration
-            immutable origContent = event.content;
+            immutable origContent = event.content;  // don't strip
             immutable origAux = event.aux;
 
             scope(exit)

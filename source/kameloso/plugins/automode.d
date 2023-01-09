@@ -294,7 +294,7 @@ unittest
 void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 {
     import dialect.common : isValidNickname;
-    import lu.string : SplitResults, beginsWith, nom, splitInto;
+    import lu.string : SplitResults, beginsWith, nom, splitInto, stripped;
     import std.algorithm.searching : count;
     import std.format : format;
 
@@ -304,8 +304,7 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
         chan(plugin.state, event.channel, message);
     }
 
-    string line = event.content;  // mutable
-
+    string line = event.content.stripped;  // mutable
     immutable verb = line.nom!(Yes.inherit)(' ');
 
     switch (verb)

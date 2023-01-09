@@ -127,6 +127,7 @@ private:
 void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.time : DurationStringException, abbreviatedDuration;
+    import lu.string : stripped;
     import std.algorithm.searching : count;
     import std.conv : ConvException;
 
@@ -206,7 +207,7 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
     }
 
     Poll poll;
-    string slice = event.content;  // mutable
+    string slice = event.content.stripped;  // mutable
 
     try
     {

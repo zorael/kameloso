@@ -233,13 +233,14 @@ void sendSpecificPluginListing(
     const ref IRCEvent event,
     /*const*/ IRCPlugin.CommandMetadata[string][string] allPluginCommands)
 {
+    import lu.string : stripped;
     import std.algorithm.sorting : sort;
     import std.format : format;
 
     assert(event.content.length, "`sendSpecificPluginListing` was called incorrectly; event content is empty");
 
     // Just one word; print a specified plugin's commands
-    immutable specifiedPlugin = event.content;
+    immutable specifiedPlugin = event.content.stripped;
 
     if (auto pluginCommands = specifiedPlugin in allPluginCommands)
     {
@@ -285,14 +286,14 @@ void sendPluginCommandHelp(
     const ref IRCEvent event,
     /*const*/ IRCPlugin.CommandMetadata[string][string] allPluginCommands)
 {
-    import lu.string : contains, nom;
+    import lu.string : contains, nom, stripped;
     import std.format : format;
 
     assert(event.content.contains(' '),
         "`sendPluginCommandHelp` was called incorrectly; the content does not " ~
         "have a space-separated plugin and command");
 
-    string slice = event.content;
+    string slice = event.content.stripped;
     immutable specifiedPlugin = slice.nom!(Yes.decode)(' ');
     immutable specifiedCommand = stripPrefix(plugin, slice);
 
