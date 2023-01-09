@@ -44,7 +44,7 @@ void manageClassLists(
 in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
     list ~ " is not whitelist, elevated, operator, staff nor blacklist")
 {
-    import lu.string : beginsWith, nom, strippedRight;
+    import lu.string : beginsWith, nom, stripped;
     import std.typecons : Flag, No, Yes;
 
     void sendUsage()
@@ -61,7 +61,7 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
         return sendUsage();
     }
 
-    string slice = event.content;  // mutable
+    string slice = event.content.stripped;  // mutable
     immutable verb = slice.nom!(Yes.inherit)(' ');
     if (slice.beginsWith('@')) slice = slice[1..$];
 

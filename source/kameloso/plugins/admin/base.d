@@ -770,7 +770,7 @@ void onCommandPrintBytes(AdminPlugin plugin, const ref IRCEvent event)
 )
 void onCommandJoin(AdminPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : splitInto;
+    import lu.string : splitInto, stripped;
 
     if (!event.content.length)
     {
@@ -778,7 +778,7 @@ void onCommandJoin(AdminPlugin plugin, const ref IRCEvent event)
         return privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
-    string slice = event.content;  // mutable
+    string slice = event.content.stripped;  // mutable
     string channel;
     string key;
 
@@ -806,7 +806,7 @@ void onCommandJoin(AdminPlugin plugin, const ref IRCEvent event)
 )
 void onCommandPart(AdminPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : splitInto;
+    import lu.string : splitInto, stripped;
 
     if (!event.content.length)
     {
@@ -814,7 +814,7 @@ void onCommandPart(AdminPlugin plugin, const ref IRCEvent event)
         return privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
-    string slice = event.content;  // mutable
+    string slice = event.content.stripped;  // mutable
     string channel;
     string reason;
 
@@ -1029,10 +1029,10 @@ void onCommandSummary(AdminPlugin plugin)
 void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.time : DurationStringException, abbreviatedDuration;
-    import lu.string : nom;
+    import lu.string : nom, stripped;
     import std.conv : ConvException, text, to;
 
-    string slice = event.content;  // mutable
+    string slice = event.content.stripped;  // mutable
 
     if (!slice.length)
     {
@@ -1163,7 +1163,7 @@ void cycle(
 )
 void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : SplitResults, contains, nom, splitInto;
+    import lu.string : SplitResults, contains, nom, splitInto, stripped;
     import std.format : format;
 
     if (!plugin.state.settings.preferHostmasks)
@@ -1179,7 +1179,7 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
-    string slice = event.content;  // mutable
+    string slice = event.content.stripped;  // mutable
     immutable verb = slice.nom!(Yes.inherit)(' ');
 
     switch (verb)

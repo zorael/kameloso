@@ -331,3 +331,41 @@ final class MissingBroadcasterTokenException : Exception
         super(message, file, line, nextInChain);
     }
 }
+
+
+// InvalidCredentialsException
+/++
+    Exception, to be thrown when credentials or grants are invalid.
+
+    It is a normal [object.Exception|Exception] but with attached metadata.
+ +/
+final class InvalidCredentialsException : Exception
+{
+@safe:
+    /// The response body that was received.
+    JSONValue json;
+
+    /++
+        Create a new [InvalidCredentialsException], attaching a response body.
+     +/
+    this(const string message,
+        const JSONValue json,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        this.json = json;
+        super(message, file, line, nextInChain);
+    }
+
+    /++
+        Create a new [InvalidCredentialsException], without attaching anything.
+     +/
+    this(const string message,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        super(message, file, line, nextInChain);
+    }
+}

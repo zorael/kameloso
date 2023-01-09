@@ -303,7 +303,7 @@ public:
 )
 void onCommandTimer(TimerPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : nom;
+    import lu.string : nom, stripped;
     import std.format : format;
 
     void sendUsage()
@@ -313,7 +313,7 @@ void onCommandTimer(TimerPlugin plugin, const ref IRCEvent event)
         chan(plugin.state, event.channel, message);
     }
 
-    string slice = event.content;  // mutable
+    string slice = event.content.stripped;  // mutable
     immutable verb = slice.nom!(Yes.inherit)(' ');
 
     switch (verb)

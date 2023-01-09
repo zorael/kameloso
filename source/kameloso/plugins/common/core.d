@@ -862,7 +862,7 @@ mixin template IRCPluginImpl(
             }
 
             // Snapshot content and aux for later restoration
-            immutable origContent = event.content;
+            immutable origContent = event.content;  // don't strip
             immutable origAux = event.aux;
 
             scope(exit)
@@ -901,8 +901,7 @@ mixin template IRCPluginImpl(
                         if (state.settings.flush) stdout.flush();
                     }
 
-                    if (!event.prefixPolicyMatches!verbose
-                        (command._policy, state.client, state.settings.prefix))
+                    if (!event.prefixPolicyMatches!verbose(command._policy, state))
                     {
                         static if (verbose)
                         {
@@ -955,8 +954,7 @@ mixin template IRCPluginImpl(
                         if (state.settings.flush) stdout.flush();
                     }
 
-                    if (!event.prefixPolicyMatches!verbose
-                        (regex._policy, state.client, state.settings.prefix))
+                    if (!event.prefixPolicyMatches!verbose(regex._policy, state))
                     {
                         static if (verbose)
                         {
@@ -2085,8 +2083,7 @@ unittest
         verbose = Whether or not to output verbose debug information to the local terminal.
         event = Reference to the mutable [dialect.defs.IRCEvent|IRCEvent] we're considering.
         policy = Policy to apply.
-        client = [dialect.defs.IRCClient|IRCClient] of the calling [IRCPlugin]'s [IRCPluginState].
-        prefix = The prefix as set in the program-wide settings.
+        state = The calling [IRCPlugin]'s [IRCPluginState].
 
     Returns:
         `true` if the message is in a context where the event matches the
@@ -2095,8 +2092,7 @@ unittest
 auto prefixPolicyMatches(bool verbose)
     (ref IRCEvent event,
     const PrefixPolicy policy,
-    const IRCClient client,
-    const string prefix)
+    const IRCPluginState state)
 {
     import kameloso.string : stripSeparatedPrefix;
     import lu.string : beginsWith;
@@ -2107,6 +2103,8 @@ auto prefixPolicyMatches(bool verbose)
         import std.stdio : writefln, writeln;
         writeln("...prefixPolicyMatches! policy:", policy);
     }
+
+    bool strippedDisplayName;
 
     with (PrefixPolicy)
     final switch (policy)
@@ -2119,14 +2117,14 @@ auto prefixPolicyMatches(bool verbose)
         return true;
 
     case prefixed:
-        if (prefix.length && event.content.beginsWith(prefix))
+        if (state.settings.prefix.length && event.content.beginsWith(state.settings.prefix))
         {
             static if (verbose)
             {
-                writefln("starts with prefix (%s)", prefix);
+                writefln("starts with prefix (%s)", state.settings.prefix);
             }
 
-            event.content = event.content[prefix.length..$];
+            event.content = event.content[state.settings.prefix.length..$];
         }
         else
         {
@@ -2152,7 +2150,40 @@ auto prefixPolicyMatches(bool verbose)
             event.content = event.content[1..$];
         }
 
-        if (event.content.beginsWith(client.nickname))
+        version(TwitchSupport)
+        {
+            if ((state.server.daemon == IRCServer.Daemon.twitch) &&
+                state.bot.displayName.length &&
+                event.content.beginsWith(state.bot.displayName))
+            {
+                static if (verbose)
+                {
+                    writeln("begins with displayName! stripping it");
+                }
+
+                event.content = event.content
+                    .stripSeparatedPrefix(state.bot.displayName, Yes.demandSeparatingChars);
+
+                if (state.settings.prefix.length && event.content.beginsWith(state.settings.prefix))
+                {
+                    static if (verbose)
+                    {
+                        writefln("further starts with prefix (%s)", state.settings.prefix);
+                    }
+
+                    event.content = event.content[state.settings.prefix.length..$];
+                }
+
+                strippedDisplayName = true;
+                // Drop down
+            }
+        }
+
+        if (strippedDisplayName)
+        {
+            // Already did something
+        }
+        else if (event.content.beginsWith(state.client.nickname))
         {
             static if (verbose)
             {
@@ -2160,16 +2191,16 @@ auto prefixPolicyMatches(bool verbose)
             }
 
             event.content = event.content
-                .stripSeparatedPrefix(client.nickname, Yes.demandSeparatingChars);
+                .stripSeparatedPrefix(state.client.nickname, Yes.demandSeparatingChars);
 
-            if (prefix.length && event.content.beginsWith(prefix))
+            if (state.settings.prefix.length && event.content.beginsWith(state.settings.prefix))
             {
                 static if (verbose)
                 {
-                    writefln("starts with prefix (%s)", prefix);
+                    writefln("further starts with prefix (%s)", state.settings.prefix);
                 }
 
-                event.content = event.content[prefix.length..$];
+                event.content = event.content[state.settings.prefix.length..$];
             }
             // Drop down
         }

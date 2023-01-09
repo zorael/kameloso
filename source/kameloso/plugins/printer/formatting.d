@@ -581,7 +581,7 @@ if (isOutputRange!(Sink, char[]))
 
     immutable rawTypestring = Enum!(IRCEvent.Type).toString(event.type);
     immutable typestring = rawTypestring.withoutTypePrefix;
-    string content = event.content;  // mutable
+    string content = event.content;  // mutable, don't strip
     bool shouldBell;
 
     immutable bright = cast(Flag!"brightTerminal")plugin.state.settings.brightTerminal;

@@ -124,6 +124,7 @@ public:
 void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
 {
     import dialect.common : isValidNickname;
+    import lu.string : stripped;
     import std.conv : ConvException;
     import std.format : format;
     import std.string : representation;
@@ -146,7 +147,7 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
         if (isTwitch)
         {
             immutable nickname = event.channel[1..$];
-            immutable searchTerms = event.content;
+            immutable searchTerms = event.content.stripped;
 
             const channelQuotes = event.channel in plugin.quotes;
             if (!channelQuotes)
@@ -173,8 +174,7 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
         {
             import lu.string : SplitResults, splitInto;
 
-            string slice = event.content;  // mutable
-            size_t index;  // mutable
+            string slice = event.content.stripped;  // mutable
             string nickname;  // mutable
             immutable results = slice.splitInto(nickname);
 
@@ -206,12 +206,14 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
             {
             case match:
                 // No search terms
+                size_t index;  // out reference!
                 immutable quote = getRandomQuote(*quotes, nickname, index);
                 return sendQuoteToChannel(plugin, quote, event.channel, nickname, index);
 
             case overrun:
                 // Search terms given
                 alias searchTerms = slice;
+                size_t index;  // out reference!
                 immutable quote = (searchTerms.representation[0] == '#') ?
                     getQuoteByIndexString(*quotes, searchTerms[1..$], index) :
                     getQuoteBySearchTerms(plugin, *quotes, searchTerms, index);
@@ -263,7 +265,7 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
 )
 void onCommandAddQuote(QuotesPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : unquoted;
+    import lu.string : stripped, strippedRight, unquoted;
     import std.format : format;
     import std.datetime.systime : Clock;
 
@@ -279,11 +281,11 @@ void onCommandAddQuote(QuotesPlugin plugin, const ref IRCEvent event)
     }
 
     string nickname;  // mutable
-    string slice = event.content;  // mutable
+    string slice = event.content.stripped;  // mutable
 
     if (isTwitch)
     {
-        if (!event.content.length) return sendUsage();
+        if (!slice.length) return sendUsage();
         nickname = event.channel[1..$];
         // Drop down to create the Quote
     }
@@ -320,7 +322,7 @@ void onCommandAddQuote(QuotesPlugin plugin, const ref IRCEvent event)
     immutable line = altered.length ? altered : slice;
 
     Quote quote;
-    quote.line = line;
+    quote.line = line.strippedRight;
     quote.timestamp = Clock.currTime.toUnixTime();
 
     plugin.quotes[event.channel][nickname] ~= quote;
@@ -352,7 +354,7 @@ void onCommandAddQuote(QuotesPlugin plugin, const ref IRCEvent event)
 )
 void onCommandModQuote(QuotesPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : SplitResults, splitInto, unquoted;
+    import lu.string : SplitResults, splitInto, stripped, strippedRight, unquoted;
     import std.conv : ConvException, to;
     import std.format : format;
 
@@ -367,7 +369,7 @@ void onCommandModQuote(QuotesPlugin plugin, const ref IRCEvent event)
         chan(plugin.state, event.channel, message);
     }
 
-    string slice = event.content;  // mutable
+    string slice = event.content.stripped;  // mutable
     string nickname;  // mutable
     string indexString;  // mutable
     ptrdiff_t index;  // mutable
@@ -443,7 +445,7 @@ void onCommandModQuote(QuotesPlugin plugin, const ref IRCEvent event)
     immutable altered = removeWeeChatHead(slice.unquoted, nickname, prefixSigns).unquoted;
     immutable line = altered.length ? altered : slice;
 
-    (*quotes)[index].line = line;
+    (*quotes)[index].line = line.strippedRight;
     saveQuotes(plugin);
 
     enum message = "Quote modified.";
@@ -470,7 +472,7 @@ void onCommandModQuote(QuotesPlugin plugin, const ref IRCEvent event)
 void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
 {
     import dialect.common : isValidNickname;
-    import lu.string : SplitResults, plurality, splitInto;
+    import lu.string : SplitResults, plurality, splitInto, stripped;
     import std.format : format;
 
     version(TwitchSupport)
@@ -489,7 +491,7 @@ void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
         chan(plugin.state, event.channel, message);
     }
 
-    string slice = event.content;  // mutable
+    string slice = event.content.stripped;  // mutable
     string source;  // mutable
     string target;  // mutable
 
@@ -545,7 +547,7 @@ void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
 )
 void onCommandDelQuote(QuotesPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : SplitResults, splitInto;
+    import lu.string : SplitResults, splitInto, stripped;
     import std.format : format;
 
     immutable isTwitch = (plugin.state.server.daemon == IRCServer.Daemon.twitch);
@@ -567,11 +569,11 @@ void onCommandDelQuote(QuotesPlugin plugin, const ref IRCEvent event)
         if (!event.content.length) return sendUsage();
 
         nickname = event.channel[1..$];
-        indexString = event.content;
+        indexString = event.content.stripped;
     }
     else /*if (!isTwitch)*/
     {
-        string slice = event.content;  // mutable
+        string slice = event.content.stripped;  // mutable
 
         immutable results = slice.splitInto(nickname, indexString);
         if (results != SplitResults.match) return sendUsage();

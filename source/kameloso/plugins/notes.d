@@ -409,7 +409,7 @@ void playbackNotesImpl(
 void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.common.misc : nameOf;
-    import lu.string : SplitResults, beginsWith, splitInto;
+    import lu.string : SplitResults, beginsWith, splitInto, stripped;
     import std.datetime.systime : Clock;
 
     void sendUsage()
@@ -428,7 +428,7 @@ void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
 
     }
 
-    string slice = event.content;  // mutable
+    string slice = event.content.stripped;  // mutable
     string target; // mutable
 
     immutable results = slice.splitInto(target);

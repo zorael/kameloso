@@ -473,7 +473,7 @@ package JSONValue addTrackToSpotifyPlaylist(
     ref Credentials creds,
     const string trackID,
     const Flag!"recursing" recursing = No.recursing)
-in (Fiber.getThis, "Tried to call `addVideoToSpotifyPlaylist` from outside a Fiber")
+in (Fiber.getThis, "Tried to call `addTrackToSpotifyPlaylist` from outside a Fiber")
 {
     import kameloso.plugins.twitch.api : getUniqueNumericalID, waitForQueryResponse;
     import kameloso.plugins.common.delayawait : delay;
@@ -546,15 +546,18 @@ in (Fiber.getThis, "Tried to call `addVideoToSpotifyPlaylist` from outside a Fib
                 throw new UnexpectedJSONException("Wrong JSON type in playlist append response", json);
             }
 
-            if (auto errorJSON = "error" in json)
+            const errorJSON = "error" in json;
+            if (!errorJSON) return json;  // Success
+
+            if (const messageJSON = "message" in errorJSON.object)
             {
-                if (recursing)
+                if (messageJSON.str == "The access token expired")
                 {
-                    throw new ErrorJSONException(errorJSON.object["message"].str, *errorJSON);
-                }
-                else if (auto messageJSON = "message" in errorJSON.object)
-                {
-                    if (messageJSON.str == "The access token expired")
+                    if (recursing)
+                    {
+                        throw new InvalidCredentialsException(messageJSON.str, *errorJSON);
+                    }
+                    else
                     {
                         refreshSpotifyToken(getHTTPClient(), creds);
                         saveSecretsToDisk(plugin.secretsByChannel, plugin.secretsFile);
@@ -562,10 +565,11 @@ in (Fiber.getThis, "Tried to call `addVideoToSpotifyPlaylist` from outside a Fib
                     }
                 }
 
-                throw new ErrorJSONException(errorJSON.object["message"].str, *errorJSON);
+                throw new ErrorJSONException(messageJSON.str, *errorJSON);
             }
 
-            return json;
+            // If we're here, the above didn't match
+            throw new ErrorJSONException(errorJSON.object["message"].str, *errorJSON);
         }
         catch (Exception e)
         {
