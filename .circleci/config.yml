@@ -31,3 +31,4 @@ workflows:
                 - gh-pages
                 - /dustmite-.*/
                 - /github-.*/
+                - onlinetests
