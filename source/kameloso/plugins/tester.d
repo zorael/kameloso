@@ -1405,12 +1405,42 @@ in (origEvent.channel.length, "Tried to test Bash with empty channel in original
     // ------------ !bash
 
     send("bash 5273");
-    expect("[bash.org] #5273");
-    expect("erno> hm. I've lost a machine.. literally _lost_. it responds to ping, " ~
-        "it works completely, I just can't figure out where in my apartment it is.");
+    awaitReply();
+    immutable banner = thisFiber.payload.content.stripEffects();
+
+    if (banner == "[bash.org] #5273")
+    {
+        // Ok
+        expect("erno> hm. I've lost a machine.. literally _lost_. it responds to ping, " ~
+            "it works completely, I just can't figure out where in my apartment it is.");
+    }
+    else if (banner == "No reponse received from bash.org; is it down?")
+    {
+        // Also ok, it's down
+        // Just return without attempting honk fetch
+        return;
+    }
+    else
+    {
+        throw new Exception(banner);
+    }
 
     send("bash honk");
-    expect("No such bash.org quote found.");
+    awaitReply();
+    immutable honk = thisFiber.payload.content.stripEffects();
+
+    if (honk == "No such bash.org quote found.")
+    {
+        // Ok
+    }
+    else if (honk == "No reponse received from bash.org; is it down?")
+    {
+        // Also ok, it's down
+    }
+    else
+    {
+        throw new Exception(honk);
+    }
 }
 
 
