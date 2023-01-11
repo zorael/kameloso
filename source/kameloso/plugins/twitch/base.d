@@ -2196,74 +2196,81 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
                 continue;
             }
 
-            const botBlacklist = getBotList(plugin);
-            immutable chattersJSON = getChatters(plugin, room.broadcasterName);
-
-            static immutable chatterTypes =
-            [
-                "admins",
-                //"broadcaster",
-                "global_mods",
-                "moderators",
-                "staff",
-                "viewers",
-                "vips",
-            ];
-
-            foreach (immutable chatterType; chatterTypes)
+            try
             {
-                foreach (immutable viewerJSON; chattersJSON["chatters"][chatterType].array)
+                const botBlacklist = getBotList(plugin);
+                immutable chattersJSON = getChatters(plugin, room.broadcasterName);
+
+                static immutable chatterTypes =
+                [
+                    "admins",
+                    //"broadcaster",
+                    "global_mods",
+                    "moderators",
+                    "staff",
+                    "viewers",
+                    "vips",
+                ];
+
+                foreach (immutable chatterType; chatterTypes)
                 {
-                    import std.algorithm.searching : canFind, endsWith;
-
-                    immutable viewer = viewerJSON.str;
-
-                    if (viewer.endsWith("bot") ||
-                        botBlacklist.canFind(viewer) ||
-                        (viewer == plugin.state.client.nickname))
+                    foreach (immutable viewerJSON; chattersJSON["chatters"][chatterType].array)
                     {
-                        continue;
-                    }
+                        import std.algorithm.searching : canFind, endsWith;
 
-                    room.stream.chattersSeen[viewer] = true;
+                        immutable viewer = viewerJSON.str;
 
-                    // continue early if we shouldn't monitor watchtime
-                    if (!plugin.twitchSettings.watchtime) continue;
-
-                    if (plugin.twitchSettings.watchtimeExcludesLurkers)
-                    {
-                        // Exclude lurkers from watchtime monitoring
-                        if (viewer !in room.stream.activeViewers) continue;
-                    }
-
-                    enum periodicitySeconds = plugin.monitorUpdatePeriodicity.total!"seconds";
-
-                    if (auto channelViewerTimes = room.channelName in plugin.viewerTimesByChannel)
-                    {
-                        if (auto viewerTime = viewer in *channelViewerTimes)
+                        if (viewer.endsWith("bot") ||
+                            botBlacklist.canFind(viewer) ||
+                            (viewer == plugin.state.client.nickname))
                         {
-                            *viewerTime += periodicitySeconds;
+                            continue;
+                        }
+
+                        room.stream.chattersSeen[viewer] = true;
+
+                        // continue early if we shouldn't monitor watchtime
+                        if (!plugin.twitchSettings.watchtime) continue;
+
+                        if (plugin.twitchSettings.watchtimeExcludesLurkers)
+                        {
+                            // Exclude lurkers from watchtime monitoring
+                            if (viewer !in room.stream.activeViewers) continue;
+                        }
+
+                        enum periodicitySeconds = plugin.monitorUpdatePeriodicity.total!"seconds";
+
+                        if (auto channelViewerTimes = room.channelName in plugin.viewerTimesByChannel)
+                        {
+                            if (auto viewerTime = viewer in *channelViewerTimes)
+                            {
+                                *viewerTime += periodicitySeconds;
+                            }
+                            else
+                            {
+                                (*channelViewerTimes)[viewer] = periodicitySeconds;
+                                ++addedSinceLastRehash;
+
+                                if ((addedSinceLastRehash > 128) &&
+                                    (addedSinceLastRehash > channelViewerTimes.length))
+                                {
+                                    // channel-viewer times AA doubled in size; rehash
+                                    *channelViewerTimes = (*channelViewerTimes).rehash();
+                                    addedSinceLastRehash = 0;
+                                }
+                            }
                         }
                         else
                         {
-                            (*channelViewerTimes)[viewer] = periodicitySeconds;
+                            plugin.viewerTimesByChannel[room.channelName][viewer] = periodicitySeconds;
                             ++addedSinceLastRehash;
-
-                            if ((addedSinceLastRehash > 128) &&
-                                (addedSinceLastRehash > channelViewerTimes.length))
-                            {
-                                // channel-viewer times AA doubled in size; rehash
-                                *channelViewerTimes = (*channelViewerTimes).rehash();
-                                addedSinceLastRehash = 0;
-                            }
                         }
                     }
-                    else
-                    {
-                        plugin.viewerTimesByChannel[room.channelName][viewer] = periodicitySeconds;
-                        ++addedSinceLastRehash;
-                    }
                 }
+            }
+            catch (Exception e)
+            {
+                // Just swallow the exception and retry next time
             }
 
             delay(plugin, plugin.monitorUpdatePeriodicity, Yes.yield);
@@ -2290,41 +2297,48 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
 
         while (plugin.useAPIFeatures)
         {
-            auto stream = getStream(plugin, room.broadcasterName);  // may not be const nor immutable
+            room = channelName in plugin.rooms;
+            if (!room) return;
 
-            if (stream == TwitchPlugin.Room.Stream.init)
+            try
             {
-                // Stream down
-                if (room.stream.up)
-                {
-                    // Was up but just ended
-                    closeStream(room);
-                    rotateStream(room);
+                auto stream = getStream(plugin, room.broadcasterName);  // may not be const nor immutable
 
-                    if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
+                if (stream == TwitchPlugin.Room.Stream.init)
+                {
+                    // Stream down
+                    if (room.stream.up)
                     {
-                        saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
+                        // Was up but just ended
+                        closeStream(room);
+                        rotateStream(room);
+
+                        if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
+                        {
+                            saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
+                        }
                     }
-                }
-            }
-            else
-            {
-                // Stream up
-                if (room.stream.idString == stream.idString)
-                {
-                    // Same stream running, just update it
-                    room.stream.update(stream);
                 }
                 else
                 {
-                    // New stream! Rotate and insert
-                    closeStream(room);
-                    rotateStream(room);
-                    room.stream = stream;
-
-                    Fiber chatterMonitorFiber = new Fiber(&chatterMonitorDg, BufferSize.fiberStack);
-                    chatterMonitorFiber.call();
+                    // Stream up
+                    if (room.stream.idString == stream.idString)
+                    {
+                        // Same stream running, just update it
+                        room.stream.update(stream);
+                    }
+                    else
+                    {
+                        // New stream! Rotate and insert
+                        closeStream(room);
+                        rotateStream(room);
+                        room.stream = stream;
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                // Just swallow the exception and retry next time
             }
 
             delay(plugin, plugin.monitorUpdatePeriodicity, Yes.yield);
@@ -2334,21 +2348,35 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
     // Clear and re-cache follows once every midnight
     void cacheFollowersDg()
     {
+        auto room = channelName in plugin.rooms;
+        assert(room, "Tried to start follower cache delegate on non-existing room");
+
         while (true)
         {
-            auto room = channelName in plugin.rooms;
+            room = channelName in plugin.rooms;
             if (!room) return;
 
             immutable now = Clock.currTime;
-            room.follows = getFollows(plugin, room.id);
-            room.followsLastCached = now.toUnixTime;
+
+            try
+            {
+                room.follows = getFollows(plugin, room.id);
+                room.followsLastCached = now.toUnixTime;
+            }
+            catch (Exception _)
+            {
+                // Just swallow the exception and retry next time
+            }
+
             delay(plugin, (now.nextMidnight - now), Yes.yield);
         }
     }
 
-    // Don't start a chatter monitor Fiber, the uptime delegate calls it
     Fiber uptimeMonitorFiber = new Fiber(&uptimeMonitorDg, BufferSize.fiberStack);
     uptimeMonitorFiber.call();
+
+    Fiber chatterMonitorFiber = new Fiber(&chatterMonitorDg, BufferSize.fiberStack);
+    chatterMonitorFiber.call();
 
     Fiber cacheFollowersFiber = new Fiber(&cacheFollowersDg, BufferSize.fiberStack);
     cacheFollowersFiber.call();
