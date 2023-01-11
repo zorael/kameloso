@@ -2268,7 +2268,7 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
                     }
                 }
             }
-            catch (Exception e)
+            catch (Exception _)
             {
                 // Just swallow the exception and retry next time
             }
@@ -2336,7 +2336,7 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
                     }
                 }
             }
-            catch (Exception e)
+            catch (Exception _)
             {
                 // Just swallow the exception and retry next time
             }
