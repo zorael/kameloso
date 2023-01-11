@@ -1924,7 +1924,12 @@ void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         immutable message = pattern.format(name);
         chan(plugin.state, event.channel, message);
     }
-    catch (EmptyDataJSONException e)
+    catch (EmptyResponseException _)
+    {
+        enum message = "Empty response from server!";
+        chan(plugin.state, event.channel, message);
+    }
+    catch (EmptyDataJSONException _)
     {
         enum message = "Could not find a game by that name; check spelling.";
         chan(plugin.state, event.channel, message);
@@ -2014,6 +2019,11 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     try
     {
         startCommercial(plugin, event.channel, lengthString);
+    }
+    catch (EmptyResponseException _)
+    {
+        enum message = "Empty response from server!";
+        chan(plugin.state, event.channel, message);
     }
     catch (TwitchQueryException e)
     {

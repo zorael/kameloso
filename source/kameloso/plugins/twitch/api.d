@@ -455,11 +455,7 @@ in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
     }
     else if (response.code == 0) //(!response.str.length)
     {
-        throw new TwitchQueryException(
-            "Empty response",
-            response.str,
-            response.error,
-            response.code);
+        throw new EmptyResponseException("Empty response");
     }
     else if ((response.code >= 500) && !recursing)
     {
