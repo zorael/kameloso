@@ -2185,7 +2185,7 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
 
         uint addedSinceLastRehash;
 
-        while (true)
+        while (plugin.useAPIFeatures)
         {
             room = channelName in plugin.rooms;
             if (!room) return;
@@ -2351,7 +2351,7 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
         auto room = channelName in plugin.rooms;
         assert(room, "Tried to start follower cache delegate on non-existing room");
 
-        while (true)
+        while (plugin.useAPIFeatures)
         {
             room = channelName in plugin.rooms;
             if (!room) return;
