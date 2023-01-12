@@ -62,11 +62,11 @@ void onCommandTime(TimePlugin plugin, const ref IRCEvent event)
 
         if (plugin.timeSettings.amPM)
         {
-            immutable amPM = (hour < 12) ? "am" : "pm";
+            immutable amPM = (hour < 12) ? "AM" : "PM";
             hour %= 12;
             if (hour == 0) hour = 12;
 
-            enum pattern = "%d:%02d%s";
+            enum pattern = "%d:%02d %s";
             return pattern.format(hour, minute, amPM);
         }
         else
