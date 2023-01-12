@@ -2183,12 +2183,13 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
         auto room = channelName in plugin.rooms;
         assert(room, "Tried to start chatter monitor delegate on non-existing room");
 
+        immutable idSnapshot = room.uniqueID;
         uint addedSinceLastRehash;
 
         while (plugin.useAPIFeatures)
         {
             room = channelName in plugin.rooms;
-            if (!room) return;
+            if (!room || (room.uniqueID != idSnapshot)) return;
 
             if (!room.stream.up)
             {
@@ -2295,16 +2296,18 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
         auto room = channelName in plugin.rooms;
         assert(room, "Tried to start chatter monitor delegate on non-existing room");
 
+        immutable idSnapshot = room.uniqueID;
+
         while (plugin.useAPIFeatures)
         {
             room = channelName in plugin.rooms;
-            if (!room) return;
+            if (!room || (room.uniqueID != idSnapshot)) return;
 
             try
             {
                 auto stream = getStream(plugin, room.broadcasterName);  // may not be const nor immutable
 
-                if (stream == TwitchPlugin.Room.Stream.init)
+                if (!stream.idString.length)  // == TwitchPlugin.Room.Stream.init)
                 {
                     // Stream down
                     if (room.stream.up)
@@ -2351,10 +2354,12 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
         auto room = channelName in plugin.rooms;
         assert(room, "Tried to start follower cache delegate on non-existing room");
 
+        immutable idSnapshot = room.uniqueID;
+
         while (plugin.useAPIFeatures)
         {
             room = channelName in plugin.rooms;
-            if (!room) return;
+            if (!room || (room.uniqueID != idSnapshot)) return;
 
             immutable now = Clock.currTime;
 
