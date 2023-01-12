@@ -20,8 +20,15 @@ import dialect.defs;
  +/
 @Settings struct TimeSettings
 {
-    /// Toggle whether or not this plugin should do anything at all.
+    /++
+        Toggle whether or not this plugin should do anything at all.
+     +/
     @Enabler bool enabled = true;
+
+    /++
+        Whether to use AM/PM notation instead of 24-hour time.
+     +/
+    bool amPM = false;
 }
 
 
@@ -48,6 +55,26 @@ void onCommandTime(TimePlugin plugin, const ref IRCEvent event)
     import std.datetime.systime : Clock;
     import std.datetime.timezone : LocalTime;
     import std.format : format;
+
+    string getTimestamp(/*const*/ ubyte hour, const ubyte minute)
+    {
+        import std.format : format;
+
+        if (plugin.timeSettings.amPM)
+        {
+            immutable amPM = (hour < 12) ? "am" : "pm";
+            hour %= 12;
+            if (hour == 0) hour = 12;
+
+            enum pattern = "%d:%02d%s";
+            return pattern.format(hour, minute, amPM);
+        }
+        else
+        {
+            enum pattern = "%02d:%02d";
+            return pattern.format(hour, minute);
+        }
+    }
 
     immutable specified = event.content.stripped;
     const overrideZone = event.channel in plugin.channelTimeZones;
@@ -81,11 +108,12 @@ void onCommandTime(TimePlugin plugin, const ref IRCEvent event)
     }
 
     immutable now = Clock.currTime(timezone);
+    immutable timestamp = getTimestamp(now.hour, now.minute);
 
     if (specified.length)
     {
-        enum pattern = "The time is currently <b>%02d:%02d<b> in <b>%s<b>.";
-        immutable message = pattern.format(now.hour, now.minute, specified);
+        enum pattern = "The time is currently <b>%s<b> in <b>%s<b>.";
+        immutable message = pattern.format(timestamp, specified);
         return chan(plugin.state, event.channel, message);
     }
 
@@ -97,28 +125,25 @@ void onCommandTime(TimePlugin plugin, const ref IRCEvent event)
 
             // No specific timezone specified; report the streamer's
             // (technically the bot's, unless an override was entered in the config file)
-            enum pattern = "The time is currently %02d:%02d for %s.";
-            immutable message = pattern.format(
-                now.hour,
-                now.minute,
-                nameOf(plugin, event.channel[1..$]));
+            enum pattern = "The time is currently %s for %s.";
+            immutable name = (plugin.state.client.nickname == event.channel[1..$]) ?
+                "me" :
+                nameOf(plugin, event.channel[1..$]);
+            immutable message = pattern.format(timestamp, name);
             return chan(plugin.state, event.channel, message);
         }
     }
 
     if (overrideZone)
     {
-        enum pattern = "The time is currently <b>%02d:%02d<b> in <b>%s<b>.";
-        immutable message = pattern.format(
-            now.hour,
-            now.minute,
-            *overrideZone);
+        enum pattern = "The time is currently <b>%s<b> in <b>%s<b>.";
+        immutable message = pattern.format(timestamp, *overrideZone);
         chan(plugin.state, event.channel, message);
     }
     else
     {
-        enum pattern = "The time is currently <b>%02d:%02d<b> locally.";
-        immutable message = pattern.format(now.hour, now.minute);
+        enum pattern = "The time is currently <b>%s<b> locally.";
+        immutable message = pattern.format(timestamp);
         chan(plugin.state, event.channel, message);
     }
 }
