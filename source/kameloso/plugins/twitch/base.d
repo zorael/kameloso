@@ -2984,6 +2984,13 @@ package:
      +/
     static struct Room
     {
+    private:
+        /++
+            A unique ID for this instance of a room.
+         +/
+        uint privateUniqueID;
+
+    public:
         /++
             Representation of a broadcast (stream).
          +/
@@ -3103,11 +3110,23 @@ package:
         /++
             Constructor taking a string (channel) name.
          +/
-        this(const string channelName) @safe pure nothrow @nogc
+        this(const string channelName)
         {
+            import std.random : uniform;
+
             this.channelName = channelName;
             this.broadcasterName = channelName[1..$];
             this.broadcasterDisplayName = this.broadcasterName;  // until we resolve it
+            this.privateUniqueID = uniform(1, 10_000);
+        }
+
+        /++
+            Accessor to [Room.privateUniqueID].
+         +/
+        auto uniqueID() const
+        {
+            assert((privateUniqueID > 0), "Room not properly initialised");
+            return privateUniqueID;
         }
 
         /++
