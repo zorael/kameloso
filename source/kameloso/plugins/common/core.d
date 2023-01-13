@@ -1883,7 +1883,7 @@ mixin template IRCPluginImpl(
         This function is private, but since it's part of a mixin template it will
         be visible at the mixin site. Plugins can as such override
         [kameloso.plugins.common.core.IRCPlugin.commands|IRCPlugin.commands] with
-        their own code and invoke [onCommandsImpl] as a fallback.
+        their own code and invoke [commandsImpl] as a fallback.
 
         Returns:
             Associative array of tuples of all command metadata (descriptions,

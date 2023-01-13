@@ -101,7 +101,10 @@ private:
         import kameloso.constants : DefaultColours;
         import kameloso.terminal.colours : TerminalForeground, TerminalReset, colourWith, colour;
 
+        /// Convenience alias.
         alias logcoloursBright = DefaultColours.logcoloursBright;
+
+        /// Ditto
         alias logcoloursDark = DefaultColours.logcoloursDark;
     }
 

@@ -24,7 +24,7 @@ public:
     setting, in string form.
 
     This merely iterates the passed `plugins` and calls their
-    [kameloso.plugins.common.core.IRCPlugin.setSettingByName|IRCPlugin.setSettingByName]
+    [kameloso.plugins.common.core.IRCPlugin.setMemberByName|IRCPlugin.setMemberByName]
     methods.
 
     Params:

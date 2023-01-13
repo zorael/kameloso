@@ -87,7 +87,7 @@ public:
             json = [std.json.JSONValue|JSONValue] to deserialise.
 
         Returns:
-            A new [quote] with values loaded from the passed JSON.
+            A new [Quote] with values loaded from the passed JSON.
      +/
     static auto fromJSON(const JSONValue json)
     {

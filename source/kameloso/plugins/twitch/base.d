@@ -406,7 +406,7 @@ void onUserstate(const ref IRCEvent event)
 /++
     Inherits the bots display name from a
     [dialect.defs.IRCEvent.Type.GLOBALUSERSTATE|GLOBALUSERSTATE]
-    into [kameloso.plugins.core.IRCPluginState.displayName|IRCPluginState.displayName].
+    into [kameloso.pods.IRCBot.displayName|IRCBot.displayName].
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.GLOBALUSERSTATE)
