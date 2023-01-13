@@ -2305,9 +2305,9 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
 
             try
             {
-                auto stream = getStream(plugin, room.broadcasterName);  // may not be const nor immutable
+                auto streamFromServer = getStream(plugin, room.broadcasterName);  // must not be const nor immutable
 
-                if (!stream.idString.length)  // == TwitchPlugin.Room.Stream.init)
+                if (!streamFromServer.idString.length)  // == TwitchPlugin.Room.Stream.init)
                 {
                     // Stream down
                     if (room.stream.up)
@@ -2325,17 +2325,17 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
                 else
                 {
                     // Stream up
-                    if (room.stream.idString == stream.idString)
+                    if (room.stream.idString == streamFromServer.idString)
                     {
                         // Same stream running, just update it
-                        room.stream.update(stream);
+                        room.stream.update(streamFromServer);
                     }
                     else
                     {
                         // New stream! Rotate and insert
                         closeStream(room);
                         rotateStream(room);
-                        room.stream = stream;
+                        room.stream = streamFromServer;
                     }
                 }
             }
