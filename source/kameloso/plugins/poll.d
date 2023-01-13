@@ -59,7 +59,9 @@ struct Poll
 {
 private:
     import std.datetime.systime : SysTime;
+    import std.json : JSONValue;
 
+public:
     /++
         Timestamp of when the poll was created.
      +/
@@ -94,7 +96,71 @@ private:
         Unique identifier to help Fibers know if the poll they belong to is stale
         or has been replaced.
      +/
-    int uniqueID;
+    uint uniqueID;
+
+    // toJSON
+    /++
+        Serialises this [Poll] into a [std.json.JSONValue|JSONValue].
+
+        Returns:
+            A [std.json.JSONValue|JSONValue] that describes this poll.
+     +/
+    auto toJSON() const
+    {
+        JSONValue json;
+        json.object = null;
+        json["start"] = this.start.toUnixTime();
+        json["voteCounts"] = JSONValue(this.voteCounts);
+        json["origChoiceNames"] = JSONValue(this.origChoiceNames);
+        json["sortedChoices"] = JSONValue(this.sortedChoices);
+        json["votes"] = JSONValue(this.votes);
+        json["duration"] = JSONValue(duration.total!"seconds");
+        json["uniqueID"] = JSONValue(uniqueID);
+        return json;
+    }
+
+    // fromJSON
+    /++
+        Deserialises a [Poll] from a [std.json.JSONValue|JSONValue].
+
+        Params:
+            json = [std.json.JSONValue|JSONValue] to deserialise.
+
+        Returns:
+            A new [Poll] with values loaded from the passed JSON.
+     +/
+    static auto fromJSON(const JSONValue json)
+    {
+        import core.time : seconds;
+
+        Poll poll;
+
+        foreach (immutable voteName, const voteCountJSON; json["voteCounts"].object)
+        {
+            poll.voteCounts[voteName] = cast(uint)voteCountJSON.integer;
+        }
+
+        foreach (immutable newName, const origNameJSON; json["origChoiceNames"].object)
+        {
+            poll.origChoiceNames[newName] = origNameJSON.str;
+        }
+
+        foreach (const choiceJSON; json["sortedChoices"].array)
+        {
+            poll.sortedChoices ~= choiceJSON.str;
+        }
+
+        foreach (immutable nickname, const voteJSON; json["votes"].object)
+        {
+            poll.votes[nickname] = voteJSON.str;
+        }
+
+        poll.start = SysTime.fromUnixTime(json["start"].integer);
+        poll.duration = json["duration"].integer.seconds;
+        poll.uniqueID = cast(uint)json["uniqueID"].integer;
+        poll.votes = poll.votes.rehash();
+        return poll;
+    }
 }
 
 
