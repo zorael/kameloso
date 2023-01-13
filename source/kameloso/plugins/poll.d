@@ -30,10 +30,14 @@ import core.time : Duration;
  +/
 @Settings struct PollSettings
 {
-    /// Whether or not this plugin should react to any events.
+    /++
+        Whether or not this plugin should react to any events.
+     +/
     @Enabler bool enabled = true;
 
-    /// Whether or not only votes placed by online users count.
+    /++
+        Whether or not only votes placed by online users count.
+     +/
     bool onlyOnlineUsersCount = true;
 
     /++
@@ -179,7 +183,7 @@ public:
             .word("poll")
             .policy(PrefixPolicy.prefixed)
             .description(`Starts or stops a poll. Pass "abort" to abort, or "end" to end early.`)
-            .addSyntax("$command [duration] [choice1] [choice2] ...")
+            .addSyntax("$command [duration] [choice 1] [choice 2] ...")
             .addSyntax("$command abort")
             .addSyntax("$command end")
     )
@@ -978,12 +982,14 @@ public:
 
 // PollPlugin
 /++
-    The Vote plugin offers the ability to hold votes/polls in a channel.
+    The Poll plugin offers the ability to hold votes/polls in a channel.
  +/
 final class PollPlugin : IRCPlugin
 {
 private:
-    /// All Poll plugin settings.
+    /++
+        All Poll plugin settings.
+     +/
     PollSettings pollSettings;
 
     /++
