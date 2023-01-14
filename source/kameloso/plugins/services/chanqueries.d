@@ -456,7 +456,7 @@ else
 
 mixin UserAwareness!channelPolicy;
 mixin ChannelAwareness!channelPolicy;
-mixin ModuleRegistration!(-10);
+mixin ModuleRegistration!(-10.priority);
 
 public:
 

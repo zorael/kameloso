@@ -29,7 +29,7 @@ module kameloso.plugins;
 
 private:
 
-import kameloso.plugins.common.core : IRCPlugin, IRCPluginState;
+import kameloso.plugins.common.core : IRCPlugin, IRCPluginState, Priority;
 
 
 // PluginRegistrationEntry
@@ -59,7 +59,7 @@ struct PluginRegistrationEntry
         Priority at which to instantiate the plugin. A lower priority makes it
         get instantiated before other plugins.
      +/
-    int priority;
+    Priority priority;
 
     // module_
     /++
@@ -78,14 +78,15 @@ struct PluginRegistrationEntry
         Constructor.
 
         Params:
-            priority = Priority at which to instantiate the plugin. A lower priority
-                makes it get instantiated before other plugins.
+            priority = [kameloso.plugins.common.core.Priority|Priority] at which
+                to instantiate the plugin. A lower priority value makes it get
+                instantiated before other plugins.
             module_ = String name of the module.
             ctor = Function pointer to a "constructor"/builder that instantiates
                 the relevant plugin.
      +/
     this(
-        const int priority,
+        const Priority priority,
         const string module_,
         typeof(this.ctor) ctor) pure @safe nothrow @nogc
     {
@@ -135,7 +136,7 @@ public:
             the relevant plugin.
  +/
 void registerPlugin(
-    const int priority,
+    const Priority priority,
     const string module_,
     IRCPlugin function(IRCPluginState) ctor)
 {
@@ -168,7 +169,7 @@ auto instantiatePlugins(/*const*/ IRCPluginState state)
     uint i;
 
     auto sortedPluginRegistrations = registeredPlugins
-        .sort!((a,b) => a.priority < b.priority);
+        .sort!((a,b) => a.priority.value < b.priority.value);
 
     foreach (registration; sortedPluginRegistrations)
     {

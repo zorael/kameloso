@@ -1596,7 +1596,7 @@ void onBusMessage(ConnectService service, const string header, shared Sendable c
 }
 
 
-mixin ModuleRegistration!(-30);
+mixin ModuleRegistration!(-30.priority);
 
 public:
 

@@ -974,7 +974,7 @@ void onBusMessage(PersistenceService service, const string header, shared Sendab
 }
 
 
-mixin ModuleRegistration!(-50);
+mixin ModuleRegistration!(-50.priority);
 
 public:
 
