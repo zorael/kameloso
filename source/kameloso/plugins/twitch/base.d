@@ -3016,6 +3016,20 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
     /*if (event.sender.nickname.length)*/ postprocessImpl(plugin, event, event.sender);
     if (event.target.nickname.length) postprocessImpl(plugin, event, event.target);
+
+    version(TwitchPromoteEverywhere)
+    {
+        // We don't know if we're in a home channel or not here, because of the version
+        if (plugin.state.bot.homeChannels.canFind(event.channel))
+        {
+            embedCustomEmotes(plugin, event);
+        }
+    }
+    else
+    {
+        // We returned if we weren't in a home channel earlier, so safe to just embed
+        embedCustomEmotes(plugin, event);
+    }
 }
 
 
