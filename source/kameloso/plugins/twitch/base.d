@@ -1492,6 +1492,8 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
 
         foreach (immutable emotestring; event.emotes.splitter('/'))
         {
+            if (!emotestring.length) continue;
+
             auto channelcount = event.channel in plugin.ecount;
 
             if (!channelcount)
