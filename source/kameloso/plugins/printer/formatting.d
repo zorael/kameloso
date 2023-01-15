@@ -1270,7 +1270,7 @@ void highlightEmotesImpl(Sink)
     const Flag!"brightTerminal" brightTerminal)
 if (isOutputRange!(Sink, char[]))
 {
-    import std.algorithm.iteration : splitter;
+    import std.algorithm.iteration : splitter, uniq;
     import std.algorithm.sorting : sort;
     import std.array : Appender;
     import std.conv : to;
@@ -1296,6 +1296,8 @@ if (isOutputRange!(Sink, char[]))
     {
         import lu.string : nom;
 
+        if (!emote.length) continue;
+
         immutable emoteID = emote.nom(':');
 
         foreach (immutable location; emote.splitter(','))
@@ -1310,10 +1312,10 @@ if (isOutputRange!(Sink, char[]))
         }
     }
 
-    const sortedHighlights = highlights.data
+    auto sortedHighlights = highlights.data
         .dup
-        .sort!((a, b) => a.start < b.start)()
-        .release();
+        .sort!((a, b) => (a.start < b.start))
+        .uniq!((a, b) => (a.start == b.start) && (a.end == b.end));
 
     // We need a dstring since we're slicing something that isn't necessarily ASCII
     // Without this highlights become offset a few characters depending on the text
