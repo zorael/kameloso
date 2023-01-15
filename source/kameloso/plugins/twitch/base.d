@@ -3204,6 +3204,12 @@ package:
             Song request history; UNIX timestamps keyed by nickname.
          +/
         long[string] songrequestHistory;
+
+        /++
+            Custom channel-specific BetterTTV, FrankerFaceZ and 7tv emotes, as
+            fetched via API calls.
+         +/
+        bool[dstring] customEmotes;
     }
 
     /++
@@ -3215,6 +3221,11 @@ package:
         Array of active bot channels' state.
      +/
     Room[string] rooms;
+
+    /++
+        Global BetterTTV, FrankerFaceZ and 7tv emotes, as fetched via API calls.
+     +/
+    bool[dstring] customGlobalEmotes;
 
     /++
         [kameloso.terminal.TerminalToken.bell|TerminalToken.bell] as string,
