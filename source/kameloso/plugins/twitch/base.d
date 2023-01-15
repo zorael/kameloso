@@ -2046,6 +2046,173 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 }
 
 
+// importCustomEmotes
+/++
+    Fetches custom channel-specific BetterTTV, FrankerFaceZ and 7tv emotes via API calls.
+
+    Params:
+        plugin = The current [TwitchPlugin].
+        room = Pointer to [TwitchPlugin.Room|Room] to import custom emotes for.
+ +/
+void importCustomEmotes(TwitchPlugin plugin, TwitchPlugin.Room* room)
+in (room, "Tried to import custom emotes for a nonexistent room")
+{
+    try
+    {
+        getBTTVEmotes(plugin, room.customEmotes, room.id);
+    }
+    catch (TwitchQueryException e)
+    {
+        enum pattern = "Failed to fetch custom <l>BetterTTV</> emotes for channel <l>%s";
+        logger.warningf(pattern, room.channelName);
+        version(PrintStacktraces) logger.trace(e.info);
+    }
+
+    try
+    {
+        getFFZEmotes(plugin, room.customEmotes, room.id);
+    }
+    catch (TwitchQueryException e)
+    {
+        enum pattern = "Failed to fetch custom <l>FrankerFaceZ</> emotes for channel <l>%s";
+        logger.warningf(pattern, room.channelName);
+        version(PrintStacktraces) logger.trace(e.info);
+    }
+
+    try
+    {
+        get7tvEmotes(plugin, room.customEmotes, room.id);
+    }
+    catch (TwitchQueryException e)
+    {
+        enum pattern = "Failed to fetch custom <l>7tv</> emotes for channel <l>%s";
+        logger.warningf(pattern, room.channelName);
+        version(PrintStacktraces) logger.trace(e.info);
+    }
+
+    room.customEmotes.rehash();
+}
+
+
+// importCustomGlobalEmotes
+/++
+    Fetches custom global BetterTTV, FrankerFaceZ and 7tv emotes via API calls.
+
+    Params:
+        plugin = The current [TwitchPlugin].
+ +/
+void importCustomGlobalEmotes(TwitchPlugin plugin)
+{
+    try
+    {
+        getBTTVGlobalEmotes(plugin, plugin.customGlobalEmotes);
+    }
+    catch (TwitchQueryException e)
+    {
+        logger.warning("Failed to fetch global BetterTTV emotes");
+        version(PrintStacktraces) logger.trace(e.info);
+    }
+
+    try
+    {
+        get7tvGlobalEmotes(plugin, plugin.customGlobalEmotes);
+    }
+    catch (TwitchQueryException e)
+    {
+        logger.warning("Failed to fetch global 7tv emotes");
+        version(PrintStacktraces) logger.trace(e.info);
+    }
+
+    plugin.customGlobalEmotes.rehash();
+}
+
+
+// embedCustomEmotes
+/++
+    Embeds custom emotes into the [dialect.defs.IRCEvent|IRCEvent] passed by reference,
+    so that the [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin] can
+    highlight them with colours.
+
+    This is called in [postprocess].
+
+    Params:
+        plugin = The current [TwitchPlugin].
+        event = [dialect.defs.IRCEvent|IRCEvent] in flight.
+ +/
+void embedCustomEmotes(TwitchPlugin plugin, ref IRCEvent event)
+{
+    import std.algorithm.comparison : among;
+    import std.conv : to;
+    import std.format : format;
+    import std.range : only;
+    import std.string : indexOf;
+
+    if (!event.type.among!(IRCEvent.Type.CHAN, IRCEvent.Type.EMOTE) || !event.content.length) return;
+
+    auto room = event.channel in plugin.rooms;
+    if (!room) return;
+
+    static dchar[dchar] emoteReplacementTable;
+    if (!emoteReplacementTable.length)
+    {
+        emoteReplacementTable =
+        [
+            ':' : '_',
+            '/' : '|',
+        ];
+    }
+
+    auto range = only(room.customEmotes, plugin.customGlobalEmotes);
+    immutable dline = event.content.to!dstring;
+    ptrdiff_t pos = dline.indexOf(' ');
+    size_t prev;
+
+    void checkWord(const dstring dword)
+    {
+        foreach (emoteMap; range)
+        {
+            if (!emoteMap.length) continue;
+
+            if (dword in emoteMap)
+            {
+                import std.string : translate;
+
+                enum pattern = "/%s:%d-%d";
+                immutable end = (pos == -1) ?
+                    dline.length :
+                    pos;
+
+                immutable dwordWithout = dword.translate(emoteReplacementTable);
+                event.emotes ~= pattern.format(dwordWithout, prev, end-1);
+                return;
+            }
+        }
+    }
+
+    if (pos == -1)
+    {
+        // No bounding space, check entire (one-word) line
+        return checkWord(dline);
+    }
+
+    while (pos != -1)
+    {
+        immutable word = dline[prev..pos];
+        checkWord(word);
+
+        prev = (pos + 1);
+        if (prev >= dline.length) break;
+
+        pos = dline.indexOf(' ', prev);
+        if (pos == -1)
+        {
+            checkWord(dline[prev..$]);
+            break;
+        }
+    }
+}
+
+
 // start
 /++
     Start the captive key generation routine immediately after connection has
