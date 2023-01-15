@@ -414,14 +414,20 @@ void onUserstate(const ref IRCEvent event)
     Inherits the bots display name from a
     [dialect.defs.IRCEvent.Type.GLOBALUSERSTATE|GLOBALUSERSTATE]
     into [kameloso.pods.IRCBot.displayName|IRCBot.displayName].
+
+    Additionally fetches global custom BetterTV, FrankerFaceZ and 7tv emotes
+    if the settings say to do so.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.GLOBALUSERSTATE)
+    .fiber(true)
 )
-void onGlobalUserstate(TwitchPlugin plugin, const ref IRCEvent event)
+void onGlobalUserstate(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     plugin.state.bot.displayName = event.target.displayName;
     plugin.state.updates |= IRCPluginState.Update.bot;
+
+    if (plugin.twitchSettings.bttvFFZ7tvEmotes) importCustomGlobalEmotes(plugin);
 }
 
 
@@ -740,6 +746,9 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 /++
     Records the room ID of a home channel, and queries the Twitch servers for
     the display name of its broadcaster.
+
+    Additionally fetches custom BetterTV, FrankerFaceZ and 7tv emotes for the
+    channel if the settings say to do so.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ROOMSTATE)
@@ -805,6 +814,11 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         broadcasterUser.displayName = room.broadcasterDisplayName;
         IRCUser user = *broadcasterUser;  // dereference and copy
         plugin.state.mainThread.send(ThreadMessage.busMessage("persistence", sendable(user)));
+    }
+
+    if (plugin.twitchSettings.bttvFFZ7tvEmotes)
+    {
+        importCustomEmotes(plugin, room);
     }
 }
 
