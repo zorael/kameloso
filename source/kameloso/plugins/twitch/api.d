@@ -2069,6 +2069,7 @@ void getBTTVEmotes(
     TwitchPlugin plugin,
     ref bool[dstring] emoteMap,
     const string idString)
+in (Fiber.getThis, "Tried to call `getBTTVEmotes` from outside a Fiber")
 {
     import std.conv : to;
     import std.json : parseJSON;
@@ -2199,6 +2200,7 @@ void getBTTVEmotes(
 void getBTTVGlobalEmotes(
     TwitchPlugin plugin,
     ref bool[dstring] emoteMap)
+in (Fiber.getThis, "Tried to call `getBTTVGlobalEmotes` from outside a Fiber")
 {
     import std.conv : to;
     import std.json : parseJSON;
@@ -2266,6 +2268,7 @@ void getFFZEmotes(
     TwitchPlugin plugin,
     ref bool[dstring] emoteMap,
     const string idString)
+in (Fiber.getThis, "Tried to call `getFFZEmotes` from outside a Fiber")
 {
     import std.conv : to;
     import std.json : parseJSON;
@@ -2373,6 +2376,7 @@ void get7tvEmotes(
     TwitchPlugin plugin,
     ref bool[dstring] emoteMap,
     const string idString)
+in (Fiber.getThis, "Tried to call `get7tvEmotes` from outside a Fiber")
 {
     import std.conv : to;
     import std.json : parseJSON;
@@ -2458,6 +2462,7 @@ void get7tvEmotes(
 void get7tvGlobalEmotes(
     TwitchPlugin plugin,
     ref bool[dstring] emoteMap)
+in (Fiber.getThis, "Tried to call `get7tvGlobalEmotes` from outside a Fiber")
 {
     import std.conv : to;
     import std.json : parseJSON;
