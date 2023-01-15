@@ -131,7 +131,11 @@ void worker(
         if (res.code == 2)
         {
             enum pattern = "Bash plugin could not fetch <l>bash.org</> quote at <l>%s</>: <t>%s";
-            return askToWarn(state, pattern.format(url, res.codeText));
+            askToWarn(state, pattern.format(url, res.codeText));
+
+            enum channelPattern = "Could not fetch <b>bash.org<b> quote: %s";
+            immutable channelMessage = channelPattern.format(res.codeText);
+            return privmsg(state, event.channel, event.sender.nickname, channelMessage);
         }
 
         if (!res.responseText.length)
@@ -186,6 +190,11 @@ void worker(
     {
         enum pattern = "Bash plugin could not fetch <l>bash.org</> quote at <l>%s</>: <t>%s";
         askToWarn(state, pattern.format(url, e.msg));
+
+        enum channelPattern = "Could not fetch <b>bash.org<b> quote: %s";
+        immutable channelMessage = channelPattern.format(e.msg);
+        privmsg(state, event.channel, event.sender.nickname, channelMessage);
+
         version(PrintStacktraces) askToTrace(state, e.toString);
     }
 }
