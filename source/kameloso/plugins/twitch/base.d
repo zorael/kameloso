@@ -63,6 +63,13 @@ public:
     IRCUser.Class songrequestPermsNeeded = IRCUser.Class.whitelist;
 
     /++
+        Import custom BetterTTV, FrankerFaceZ and 7tv emotes, allowing the Printer
+        plugin to highlight them, much like it does official Twitch emotes.
+        Imports both global and channel-specific emotes.
+     +/
+    bool bttvFFZ7tvEmotes = false;
+
+    /++
         Whether or not broadcasters are always implicitly class
         [dialect.defs.IRCUser.Class.staff|IRCUser.Class.staff].
      +/
