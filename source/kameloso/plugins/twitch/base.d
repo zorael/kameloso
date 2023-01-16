@@ -823,6 +823,35 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 }
 
 
+// onGuestRoomState
+/++
+    Fetches custom BetterTV, FrankerFaceZ and 7tv emotes for guest channels if
+    the settings say to do so.
+ +/
+version(TwitchCustomEmotesEverywhere)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.ROOMSTATE)
+    .channelPolicy(ChannelPolicy.guest)
+    .fiber(true)
+)
+void onGuestRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+{
+    if (!plugin.twitchSettings.bttvFFZ7tvEmotes) return;
+
+    auto room = event.channel in plugin.rooms;
+
+    if (!room)
+    {
+        // Race...
+        initRoom(plugin, event.channel);
+        room = event.channel in plugin.rooms;
+    }
+
+    room.id = event.aux;
+    importCustomEmotes(plugin, room);
+}
+
+
 // onCommandVanish
 /++
     Hides a user's messages (making them "disappear") by briefly timing them out.
