@@ -2189,8 +2189,9 @@ void importCustomGlobalEmotes(TwitchPlugin plugin)
     This is called in [postprocess].
 
     Params:
-        plugin = The current [TwitchPlugin].
         event = [dialect.defs.IRCEvent|IRCEvent] in flight.
+        customEmotes = `bool[dstring]` associative array of channel-specific custom emotes.
+        customGlobalEmotes = `bool[dstring]` associative array of global custom emotes.
  +/
 void embedCustomEmotes(
     ref IRCEvent event,
@@ -3057,6 +3058,8 @@ void teardown(TwitchPlugin plugin)
 /++
     Hijacks a reference to a [dialect.defs.IRCEvent|IRCEvent] and modifies the
     sender and target class based on their badges (and the current settings).
+
+    Additionally and optionally embeds custom BTTV/FrankerFaceZ/7tv emotes into the event.
  +/
 void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 {
