@@ -2252,6 +2252,50 @@ void embedCustomEmotes(
     }
 }
 
+///
+unittest
+{
+    bool[dstring] customEmotes =
+    [
+        ":tf:"d : true,
+        "FrankerZ"d : true,
+        "NOTED"d : true,
+    ];
+
+    bool[dstring] customGlobalEmotes =
+    [
+        "KEKW"d : true,
+        "NotLikeThis"d : true,
+        "gg"d : true,
+    ];
+
+    IRCEvent event;
+    event.type = IRCEvent.Type.CHAN;
+
+    {
+        event.content = "come on its easy, now rest then talk talk more left, left, " ~
+            "right re st, up, down talk some rest a bit talk poop  :tf:";
+        //event.emotes = string.init;
+        embedCustomEmotes(event, customEmotes, customGlobalEmotes);
+        enum expectedEmotes = ";tf;:113-116";
+        assert((event.emotes == expectedEmotes), event.emotes);
+    }
+    {
+        event.content = "NOTED  FrankerZ  NOTED NOTED    gg";
+        event.emotes = string.init;
+        embedCustomEmotes(event, customEmotes, customGlobalEmotes);
+        enum expectedEmotes = "NOTED:0-4/FrankerZ:7-14/NOTED:17-21,23-27/gg:32-33";
+        assert((event.emotes == expectedEmotes), event.emotes);
+    }
+    {
+        event.content = "No emotes here KAPPA";
+        event.emotes = string.init;
+        embedCustomEmotes(event, customEmotes, customGlobalEmotes);
+        enum expectedEmotes = string.init;
+        assert((event.emotes == expectedEmotes), event.emotes);
+    }
+}
+
 
 // start
 /++
