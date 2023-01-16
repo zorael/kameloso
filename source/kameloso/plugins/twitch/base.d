@@ -3023,14 +3023,47 @@ void teardown(TwitchPlugin plugin)
  +/
 void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 {
-    import std.algorithm.searching : canFind;
-
     if (!event.sender.nickname.length || !event.channel.length) return;
 
-    version(TwitchPromoteEverywhere) {}
+    version(TwitchCustomEmotesEverywhere)
+    {
+        // No checks needed
+        if (const room = event.channel in plugin.rooms)
+        {
+            embedCustomEmotes(event, room.customEmotes, plugin.customGlobalEmotes);
+        }
+    }
     else
     {
-        if (!plugin.state.bot.homeChannels.canFind(event.channel)) return;
+        import std.algorithm.searching : canFind;
+
+        // Only embed if the event is in a home channel
+        immutable isHomeChannel = plugin.state.bot.homeChannels.canFind(event.channel);
+
+        if (isHomeChannel)
+        {
+            if (const room = event.channel in plugin.rooms)
+            {
+                embedCustomEmotes(event, room.customEmotes, plugin.customGlobalEmotes);
+            }
+        }
+    }
+
+    version(TwitchPromoteEverywhere)
+    {
+        // No checks needed
+    }
+    else
+    {
+        version(TwitchCustomEmotesEverywhere)
+        {
+            import std.algorithm.searching : canFind;
+
+            // isHomeChannel only defined if version not TwitchCustomEmotesEverywhere
+            immutable isHomeChannel = plugin.state.bot.homeChannels.canFind(event.channel);
+        }
+
+        if (!isHomeChannel) return;
     }
 
     static void postprocessImpl(const TwitchPlugin plugin,
@@ -3086,20 +3119,6 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
     /*if (event.sender.nickname.length)*/ postprocessImpl(plugin, event, event.sender);
     if (event.target.nickname.length) postprocessImpl(plugin, event, event.target);
-
-    version(TwitchPromoteEverywhere)
-    {
-        // We don't know if we're in a home channel or not here, because of the version
-        if (plugin.state.bot.homeChannels.canFind(event.channel))
-        {
-            embedCustomEmotes(plugin, event);
-        }
-    }
-    else
-    {
-        // We returned if we weren't in a home channel earlier, so safe to just embed
-        embedCustomEmotes(plugin, event);
-    }
 }
 
 
