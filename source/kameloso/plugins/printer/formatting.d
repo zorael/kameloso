@@ -1308,8 +1308,6 @@ if (isOutputRange!(Sink, char[]))
     {
         import lu.string : nom;
 
-        if (!emote.length) continue;
-
         immutable emoteID = emote.nom(':');
 
         foreach (immutable location; emote.splitter(','))
