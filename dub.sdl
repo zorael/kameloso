@@ -132,6 +132,7 @@ configuration "dev" {
         "ExplainReplay" \
         "GCStatsOnExit"
         //"TwitchPromoteEverywhere" \
+        //"TwitchCustomEmotesEverywhere" \
         //"OmniscientSeen" \
         //"OmniscientQueries" \
         //"OSXTMPDIR" \
@@ -154,6 +155,7 @@ configuration "dev-lowmem" {
         "ExplainReplay" \
         "GCStatsOnExit"
         //"TwitchPromoteEverywhere" \
+        //"TwitchCustomEmotesEverywhere" \
         //"OmniscientSeen" \
         //"OmniscientQueries" \
         //"OSXTMPDIR" \
@@ -179,6 +181,7 @@ configuration "unittest" {
         "OSXTMPDIR"
         //"TraceWhois" \
         //"TwitchPromoteEverywhere" \
+        //"TwitchCustomEmotesEverywhere" \
         //"PrintAccountNamesToo" \
         //"PrintClassNamesToo" \
         //"BenchmarkHTTPRequests"
@@ -201,6 +204,7 @@ configuration "unittest-lowmem" {
         "OSXTMPDIR"
         //"TraceWhois" \
         //"TwitchPromoteEverywhere" \
+        //"TwitchCustomEmotesEverywhere" \
         //"PrintAccountNamesToo" \
         //"PrintClassNamesToo" \
         //"BenchmarkHTTPRequests"
