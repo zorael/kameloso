@@ -2155,51 +2155,74 @@ void importCustomGlobalEmotes(TwitchPlugin plugin)
         plugin = The current [TwitchPlugin].
         event = [dialect.defs.IRCEvent|IRCEvent] in flight.
  +/
-void embedCustomEmotes(TwitchPlugin plugin, ref IRCEvent event)
+void embedCustomEmotes(
+    ref IRCEvent event,
+    const bool[dstring] customEmotes,
+    const bool[dstring] customGlobalEmotes)
 {
     import std.algorithm.comparison : among;
+    import std.array : Appender;
     import std.conv : to;
-    import std.format : format;
     import std.range : only;
     import std.string : indexOf;
 
     if (!event.type.among!(IRCEvent.Type.CHAN, IRCEvent.Type.EMOTE) || !event.content.length) return;
 
-    auto room = event.channel in plugin.rooms;
-    if (!room) return;
+    static Appender!(char[]) sink;
 
-    static dchar[dchar] emoteReplacementTable;
-    if (!emoteReplacementTable.length)
+    scope(exit)
     {
-        emoteReplacementTable =
-        [
-            ':' : '_',
-            '/' : '|',
-        ];
+        if (sink.data.length)
+        {
+            event.emotes ~= sink.data;
+            sink.clear();
+        }
     }
 
-    auto range = only(room.customEmotes, plugin.customGlobalEmotes);
+    if (sink.capacity == 0)
+    {
+        sink.reserve(64);  // guesstimate
+    }
+
+    auto range = only(customEmotes, customGlobalEmotes);
     immutable dline = event.content.to!dstring;
     ptrdiff_t pos = dline.indexOf(' ');
+    dstring previousEmote;  // mutable
     size_t prev;
 
     void checkWord(const dstring dword)
     {
         foreach (emoteMap; range)
         {
-            if (!emoteMap.length) continue;
+            import std.array : replace;
+            import std.format : formattedWrite;
 
-            if (dword in emoteMap)
+            if (dword == previousEmote)
             {
-                import std.string : translate;
-
-                enum pattern = "/%s:%d-%d";
+                enum pattern = ",%d-%d";
                 immutable end = (pos == -1) ?
                     dline.length :
                     pos;
 
-                immutable dwordWithout = dword.translate(emoteReplacementTable);
-                event.emotes ~= pattern.format(dwordWithout, prev, end-1);
+                sink.formattedWrite(pattern, prev, end-1);
+                return;
+            }
+
+            if (!emoteMap.length) continue;
+
+            if (dword in emoteMap)
+            {
+                enum pattern = "/%s:%d-%d";
+                immutable slicedPattern = (event.emotes.length || sink.data.length) ?
+                    pattern :
+                    pattern[1..$];
+                immutable dwordEscaped = dword.replace(dchar(':'), dchar(';'));
+                immutable end = (pos == -1) ?
+                    dline.length :
+                    pos;
+
+                sink.formattedWrite(slicedPattern, dwordEscaped, prev, end-1);
+                previousEmote = dword;
                 return;
             }
         }
@@ -2213,8 +2236,10 @@ void embedCustomEmotes(TwitchPlugin plugin, ref IRCEvent event)
 
     while (pos != -1)
     {
-        immutable word = dline[prev..pos];
-        checkWord(word);
+        if (pos > prev)
+        {
+            checkWord(dline[prev..pos]);
+        }
 
         prev = (pos + 1);
         if (prev >= dline.length) break;
@@ -2222,8 +2247,7 @@ void embedCustomEmotes(TwitchPlugin plugin, ref IRCEvent event)
         pos = dline.indexOf(' ', prev);
         if (pos == -1)
         {
-            checkWord(dline[prev..$]);
-            break;
+            return checkWord(dline[prev..$]);
         }
     }
 }
