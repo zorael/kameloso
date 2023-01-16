@@ -1524,7 +1524,6 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
             if (!emotestring.length) continue;
 
             auto channelcount = event.channel in plugin.ecount;
-
             if (!channelcount)
             {
                 plugin.ecount[event.channel][string.init] = 0L;
@@ -1533,9 +1532,9 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
             }
 
             string slice = emotestring;  // mutable
-            immutable id = slice.nom(':');//.to!uint;
-            auto thisEmoteCount = id in *channelcount;
+            immutable id = slice.nom(':');
 
+            auto thisEmoteCount = id in *channelcount;
             if (!thisEmoteCount)
             {
                 (*channelcount)[id] = 0L;
