@@ -1322,10 +1322,19 @@ if (isOutputRange!(Sink, char[]))
         }
     }
 
+    /+
+        We need to use uniq since sometimes there will be custom emotes for which
+        there are already official ones. Example:
+
+            content: Hey Dist, what’s up? distPls distRoll
+            emotes:  emotesv2_1e80339255a84a4ebbd0129851b90aa0:21-27/emotesv2_744f13dfe4a345c5be4becdeb05343ee:29-36/distPls:21-27
+
+        The first and the last are duplicates.
+     +/
     auto sortedHighlights = highlights.data
         .dup
         .sort!((a, b) => (a.start < b.start))
-        .uniq!((a, b) => (a.start == b.start) && (a.end == b.end));
+        .uniq!((a, b) => (a.start == b.start)); // && (a.end == b.end));
 
     // We need a dstring since we're slicing something that isn't necessarily ASCII
     // Without this highlights become offset a few characters depending on the text
