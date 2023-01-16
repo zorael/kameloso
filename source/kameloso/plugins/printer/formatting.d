@@ -1287,8 +1287,20 @@ if (isOutputRange!(Sink, char[]))
     // That is a standard PRIVMSG line with ":) " repeated until 512 chars.
     //enum maxHighlights = 162;
 
-    Appender!(Highlight[]) highlights;
-    highlights.reserve(64);
+    static Appender!(Highlight[]) highlights;
+
+    scope(exit)
+    {
+        if (highlights.data.length)
+        {
+            highlights.clear();
+        }
+    }
+
+    if (highlights.capacity == 0)
+    {
+        highlights.reserve(64);  // guesstimate
+    }
 
     size_t pos;
 
