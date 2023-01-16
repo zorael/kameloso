@@ -1625,6 +1625,7 @@ void onEndOfMOTD(TwitchPlugin plugin)
 void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : nom, stripped;
+    import std.array : replace;
     import std.format : format;
     import std.conv  : to;
 
@@ -1639,7 +1640,9 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
 
     void sendNotATwitchEmote()
     {
-        enum message = "That is not a Twitch emote.";
+        immutable message = plugin.twitchSettings.bttvFFZ7tvEmotes ?
+            "That is not a Twitch, BetterTTV, FrankerFaceZ or 7tv emote." :
+            "That is not a Twitch emote.";
         chan(plugin.state, event.channel, message);
     }
 
@@ -1660,8 +1663,10 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
         rawSlice.nom(" :");
 
         // Slice it as a dstring to (hopefully) get full characters
+        // Undo replacements
         immutable dline = rawSlice.to!dstring;
-        immutable emote = dline[start..end];
+        immutable emote = dline[start..end]
+            .replace(dchar(';'), dchar(':'));
 
         // No real point using plurality since most emotes should have a count > 1
         enum pattern = "%s has been used %d times!";
@@ -1682,7 +1687,11 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
     if (!channelcounts) return sendResults(0L);
 
     string slice = event.emotes;
-    immutable id = slice.nom(':');//.to!uint;
+
+    // Replace emote colons so as not to conflict with emote tag syntax
+    immutable id = slice
+        .nom(':')
+        .replace(':', ';');
 
     auto thisEmoteCount = id in *channelcounts;
     if (!thisEmoteCount) return sendResults(0L);
