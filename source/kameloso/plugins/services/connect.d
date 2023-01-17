@@ -1374,8 +1374,7 @@ void startPingMonitorFiber(ConnectService service)
                     // Timeout. Send a preemptive ping
                     import kameloso.thread : ThreadMessage;
                     import std.concurrency : prioritySend;
-                    immutable message = ThreadMessage.ping(service.state.server.resolvedAddress);
-                    service.state.mainThread.prioritySend(message);
+                    service.state.mainThread.prioritySend(ThreadMessage.ping(service.state.server.resolvedAddress));
                     delay(service, briefWait, Yes.yield);
                 }
                 else
