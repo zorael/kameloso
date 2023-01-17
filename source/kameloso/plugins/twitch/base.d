@@ -810,6 +810,7 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         {
             immutable userJSON = getTwitchData(plugin, userURL);
             room.broadcasterDisplayName = userJSON["display_name"].str;
+            break;
         }
         catch (Exception e)
         {
