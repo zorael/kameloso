@@ -767,6 +767,41 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     }
 
     room.id = event.aux;
+    room.follows = getFollows(plugin, event.aux);
+    room.followsLastCached = event.time;
+    startRoomMonitorFibers(plugin, event.channel);
+
+    if (plugin.twitchSettings.bttvFFZ7tvEmotes)
+    {
+        importCustomEmotes(plugin, room);
+    }
+
+    version(WithPersistenceService)
+    {
+        import kameloso.thread : ThreadMessage, sendable;
+        import std.concurrency : send;
+
+        immutable nickname = event.channel[1..$];
+        auto broadcasterUser = nickname in plugin.state.users;
+
+        if (!broadcasterUser)
+        {
+            // Fake a new user
+            auto newUser = IRCUser(nickname, nickname, nickname ~ ".tmi.twitch.tv");
+            newUser.account = nickname;
+            newUser.class_ = IRCUser.Class.anyone;
+            plugin.state.users[nickname] = newUser;
+            broadcasterUser = nickname in plugin.state.users;
+        }
+
+        if (!broadcasterUser.displayName.length)
+        {
+            broadcasterUser.displayName = room.broadcasterDisplayName;
+            IRCUser user = *broadcasterUser;  // dereference and copy
+            plugin.state.mainThread.send(ThreadMessage.busMessage("persistence", sendable(user)));
+        }
+    }
+
     immutable userURL = "https://api.twitch.tv/helix/users?id=" ~ event.aux;
 
     foreach (immutable i; 0..TwitchPlugin.delegateRetries)
@@ -783,42 +818,6 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             if (i < TwitchPlugin.delegateRetries-1) continue;
             throw e;  // It's in a Fiber but we get the backtrace anyway
         }
-    }
-
-    room.follows = getFollows(plugin, room.id);
-    room.followsLastCached = event.time;
-    startRoomMonitorFibers(plugin, event.channel);
-
-    version(WithPersistenceService)
-    {
-        import kameloso.thread : ThreadMessage, sendable;
-        import std.concurrency : send;
-
-        immutable nickname = event.channel[1..$];
-        auto broadcasterUser = nickname in plugin.state.users;
-
-        if (broadcasterUser)
-        {
-            if (broadcasterUser.displayName.length) return;
-        }
-        else /*if (!broadcasterUser)*/
-        {
-            // Fake a new user
-            auto newUser = IRCUser(nickname, nickname, nickname ~ ".tmi.twitch.tv");
-            newUser.account = nickname;
-            newUser.class_ = IRCUser.Class.anyone;
-            plugin.state.users[nickname] = newUser;
-            broadcasterUser = nickname in plugin.state.users;
-        }
-
-        broadcasterUser.displayName = room.broadcasterDisplayName;
-        IRCUser user = *broadcasterUser;  // dereference and copy
-        plugin.state.mainThread.send(ThreadMessage.busMessage("persistence", sendable(user)));
-    }
-
-    if (plugin.twitchSettings.bttvFFZ7tvEmotes)
-    {
-        importCustomEmotes(plugin, room);
     }
 }
 
