@@ -2110,63 +2110,33 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 void importCustomEmotes(TwitchPlugin plugin, TwitchPlugin.Room* room)
 in (room, "Tried to import custom emotes for a nonexistent room")
 {
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
-    {
-        try
-        {
-            getBTTVEmotes(plugin, room.customEmotes, room.id);
-            break;
-        }
-        catch (Exception e)
-        {
-            // Retry until we reach the retry limit
-            if (i < TwitchPlugin.delegateRetries-1) continue;
+    alias GetEmoteFun = void function(TwitchPlugin, ref bool[dstring], const string);
 
-            enum pattern = "Failed to fetch custom <l>BetterTTV</> emotes for channel <l>%s";
-            logger.warningf(pattern, room.channelName);
-            version(PrintStacktraces) logger.trace(e.info);
-            //throw e;
+    void getEmoteSet(GetEmoteFun fun, const string setName)
+    {
+        foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+        {
+            try
+            {
+                fun(plugin, room.customEmotes, room.id);
+                return;
+            }
+            catch (Exception e)
+            {
+                // Retry until we reach the retry limit
+                if (i < TwitchPlugin.delegateRetries-1) continue;
+
+                enum pattern = "Failed to fetch custom <l>%s</> emotes for channel <l>%s";
+                logger.warningf(pattern, setName, room.channelName);
+                version(PrintStacktraces) logger.trace(e.info);
+                //throw e;
+            }
         }
     }
 
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
-    {
-        try
-        {
-            getFFZEmotes(plugin, room.customEmotes, room.id);
-            break;
-        }
-        catch (Exception e)
-        {
-            // As above
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-
-            enum pattern = "Failed to fetch custom <l>FrankerFaceZ</> emotes for channel <l>%s";
-            logger.warningf(pattern, room.channelName);
-            version(PrintStacktraces) logger.trace(e.info);
-            //throw e;
-        }
-    }
-
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
-    {
-        try
-        {
-            get7tvEmotes(plugin, room.customEmotes, room.id);
-            break;
-        }
-        catch (Exception e)
-        {
-            // As above
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-
-            enum pattern = "Failed to fetch custom <l>7tv</> emotes for channel <l>%s";
-            logger.warningf(pattern, room.channelName);
-            version(PrintStacktraces) logger.trace(e.info);
-            //throw e;
-        }
-    }
-
+    getEmoteSet(&getBTTVEmotes, "BetterTTV");
+    getEmoteSet(&getFFZEmotes, "FrankerFaceZ");
+    getEmoteSet(&get7tvEmotes, "7tv");
     room.customEmotes.rehash();
 }
 
@@ -2180,42 +2150,32 @@ in (room, "Tried to import custom emotes for a nonexistent room")
  +/
 void importCustomGlobalEmotes(TwitchPlugin plugin)
 {
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
-    {
-        try
-        {
-            getBTTVGlobalEmotes(plugin, plugin.customGlobalEmotes);
-            break;
-        }
-        catch (Exception e)
-        {
-            // Retry until we reach the retry limit
-            if (i < TwitchPlugin.delegateRetries-1) continue;
+    alias GetGlobalEmoteFun = void function(TwitchPlugin, ref bool[dstring]);
 
-            logger.warning("Failed to fetch global BetterTTV emotes");
-            version(PrintStacktraces) logger.trace(e.info);
-            //throw e;
+    void getGlobalEmoteSet(GetGlobalEmoteFun fun, const string setName)
+    {
+        foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+        {
+            try
+            {
+                fun(plugin, plugin.customGlobalEmotes);
+                return;
+            }
+            catch (Exception e)
+            {
+                // Retry until we reach the retry limit
+                if (i < TwitchPlugin.delegateRetries-1) continue;
+
+                enum pattern = "Failed to fetch global <l>%s</> emotes";
+                logger.warningf(pattern, setName);
+                version(PrintStacktraces) logger.trace(e.info);
+                //throw e;
+            }
         }
     }
 
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
-    {
-        try
-        {
-            get7tvGlobalEmotes(plugin, plugin.customGlobalEmotes);
-            break;
-        }
-        catch (Exception e)
-        {
-            // As above
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-
-            logger.warning("Failed to fetch global 7tv emotes");
-            version(PrintStacktraces) logger.trace(e.info);
-            //throw e;
-        }
-    }
-
+    getGlobalEmoteSet(&getBTTVGlobalEmotes, "BetterTTV");
+    getGlobalEmoteSet(&get7tvGlobalEmotes, "7tv");
     plugin.customGlobalEmotes.rehash();
 }
 
