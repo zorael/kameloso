@@ -1032,6 +1032,8 @@ void onWelcome(ConnectService service)
     service.registration = Progress.finished;
     service.renameDuringRegistration = string.init;
 
+    version(WithPingMonitor) startPingMonitorFiber(service);
+
     alias separator = ConnectSettings.sendAfterConnectSeparator;
     auto toSendRange = service.connectSettings.sendAfterConnect.splitter(separator);
 
@@ -1320,6 +1322,98 @@ void onUnknownCommand(ConnectService service, const ref IRCEvent event)
         logger.error("As it is, functionality will be greatly limited.");
         service.serverSupportsWHOIS = false;
     }
+}
+
+
+// startPingMonitorFiber
+/++
+    Starts a monitor Fiber that sends a [dialect.defs.IRCEvent.Type.PING|PING]
+    if we haven't received one from the server for a while. This is to ensure
+    that dead connections are properly detected.
+
+    Requires version `WithPingMonitor`. It's not completely obvious whether or not
+    this is worth including, so make it opt-in for now.
+
+    Params:
+        service = The current [ConnectService].
+ +/
+version(WithPingMonitor)
+void startPingMonitorFiber(ConnectService service)
+{
+    import kameloso.plugins.common.delayawait : await, delay, removeDelayedFiber;
+    import kameloso.constants : BufferSize;
+    import kameloso.thread : CarryingFiber;
+    import core.thread : Fiber;
+    import core.time : seconds;
+
+    static immutable pingMonitorPeriodicity = 600.seconds;
+
+    void pingMonitorDg()
+    {
+        static immutable periodicitySeconds = pingMonitorPeriodicity.total!"seconds";
+        static immutable briefWait = 30.seconds;
+        long lastPongTimestamp;
+
+        while (true)
+        {
+            auto thisFiber = cast(CarryingFiber!IRCEvent)(Fiber.getThis);
+            assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+            immutable thisEvent = thisFiber.payload;
+
+            with (IRCEvent.Type)
+            switch (thisEvent.type)
+            {
+            case UNSET:
+                import std.datetime.systime : Clock;
+
+                // Triggered by timer
+                immutable nowInUnix = Clock.currTime.toUnixTime;
+
+                if ((nowInUnix - lastPongTimestamp) >= periodicitySeconds)
+                {
+                    // Timeout. Send a preemptive ping
+                    import kameloso.thread : ThreadMessage;
+                    import std.concurrency : prioritySend;
+                    immutable message = ThreadMessage.ping(service.state.server.resolvedAddress);
+                    service.state.mainThread.prioritySend(message);
+                    delay(service, briefWait, Yes.yield);
+                }
+                else
+                {
+                    // Early trigger, either interleaved with a PONG or due to preemptive PING
+                    // Remove current delay and re-delay at when the next PING check should be
+                    removeDelayedFiber(service);
+                    immutable elapsed = (nowInUnix - lastPongTimestamp);
+                    immutable remaining = (periodicitySeconds - elapsed);
+                    delay(service, remaining.seconds, Yes.yield);
+                }
+                continue;
+
+            case PING:
+            case PONG:
+                // Triggered by PING *or* PONG response from our preemptive PING
+                // Update and remove delay, so we can drop down and re-delay it
+                lastPongTimestamp = thisEvent.time;
+                removeDelayedFiber(service);
+                break;
+
+            default:
+                assert(0, "Impossible case hit in pingMonitorDg");
+            }
+
+            delay(service, pingMonitorPeriodicity, Yes.yield);
+        }
+    }
+
+    static immutable IRCEvent.Type[2] pingPongTypes =
+    [
+        IRCEvent.Type.PING,
+        IRCEvent.Type.PONG,
+    ];
+
+    Fiber pingMonitorFiber = new CarryingFiber!IRCEvent(&pingMonitorDg, BufferSize.fiberStack);
+    await(service, pingMonitorFiber, pingPongTypes[]);
+    delay(service, pingMonitorFiber, pingMonitorPeriodicity);
 }
 
 

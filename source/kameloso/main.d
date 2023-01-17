@@ -264,6 +264,11 @@ void messageFiber(ref Kameloso instance)
                 instance.priorityBuffer.put(OutgoingLine(pongline, Yes.quiet));
                 break;
 
+            case ping:
+                immutable pingline = "PING :" ~ message.content;
+                instance.priorityBuffer.put(OutgoingLine(pingline, Yes.quiet));
+                break;
+
             case sendline:
                 instance.outbuffer.put(OutgoingLine(message.content, cast(Quiet)instance.settings.hideOutgoing));
                 break;

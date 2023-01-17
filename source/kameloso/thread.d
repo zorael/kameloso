@@ -143,6 +143,11 @@ struct ThreadMessage
         pong,
 
         /++
+            Request to send a server [dialect.defs.IRCEvent.Type.PING|PING] query.
+         +/
+        ping,
+
+        /++
             Request to send an outgoing normal line.
          +/
         sendline,
