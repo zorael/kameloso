@@ -122,8 +122,6 @@ auto applyCustomSettings(
         }
         else
         {
-            if (pluginstring == "twitchbot") pluginstring = "twitch";
-
             foreach (plugin; plugins)
             {
                 if (plugin.name != pluginstring) continue;

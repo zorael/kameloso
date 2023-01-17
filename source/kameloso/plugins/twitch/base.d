@@ -2123,16 +2123,12 @@ void start(TwitchPlugin plugin)
 
         // Remove custom Twitch settings so we can reconnect without jumping
         // back into keygens.
-        static immutable string[8] settingsToPop =
+        static immutable string[4] settingsToPop =
         [
             "twitch.keygen",
-            "twitchbot.keygen",
             "twitch.superKeygen",
-            "twitchbot.superKeygen",
             "twitch.googleKeygen",
-            "twitchbot.googleKeygen",
             "twitch.spotifyKeygen",
-            "twitchbot.spotifyKeygen",
         ];
 
         foreach (immutable setting; settingsToPop[])
