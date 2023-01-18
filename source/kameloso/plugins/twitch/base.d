@@ -2092,6 +2092,7 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         room = Pointer to [TwitchPlugin.Room|Room] to import custom emotes for.
  +/
 void importCustomEmotes(TwitchPlugin plugin, TwitchPlugin.Room* room)
+in (Fiber.getThis, "Tried to call `importCustomEmotes` from outside a Fiber")
 in (room, "Tried to import custom emotes for a nonexistent room")
 {
     alias GetEmoteFun = void function(TwitchPlugin, ref bool[dstring], const string);
@@ -2133,6 +2134,7 @@ in (room, "Tried to import custom emotes for a nonexistent room")
         plugin = The current [TwitchPlugin].
  +/
 void importCustomGlobalEmotes(TwitchPlugin plugin)
+in (Fiber.getThis, "Tried to call `importCustomGlobalEmotes` from outside a Fiber")
 {
     alias GetGlobalEmoteFun = void function(TwitchPlugin, ref bool[dstring]);
 
