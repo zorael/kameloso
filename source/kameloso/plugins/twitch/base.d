@@ -63,11 +63,11 @@ public:
     IRCUser.Class songrequestPermsNeeded = IRCUser.Class.whitelist;
 
     /++
-        Import custom BetterTTV, FrankerFaceZ and 7tv emotes, allowing the Printer
+        Import custom BetterTTV, (FrankerFaceZ and) 7tv emotes, allowing the Printer
         plugin to highlight them, much like it does official Twitch emotes.
         Imports both global and channel-specific emotes.
      +/
-    bool bttvFFZ7tvEmotes = false;
+    bool bttv7tvEmotes = false;
 
     /++
         Whether or not broadcasters are always implicitly class
@@ -427,7 +427,7 @@ void onGlobalUserstate(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     plugin.state.bot.displayName = event.target.displayName;
     plugin.state.updates |= IRCPluginState.Update.bot;
 
-    if (plugin.twitchSettings.bttvFFZ7tvEmotes) importCustomGlobalEmotes(plugin);
+    if (plugin.twitchSettings.bttv7tvEmotes) importCustomGlobalEmotes(plugin);
 }
 
 
@@ -771,7 +771,7 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     room.followsLastCached = event.time;
     startRoomMonitorFibers(plugin, event.channel);
 
-    if (plugin.twitchSettings.bttvFFZ7tvEmotes)
+    if (plugin.twitchSettings.bttv7tvEmotes)
     {
         importCustomEmotes(plugin, room);
     }
@@ -836,7 +836,7 @@ version(TwitchCustomEmotesEverywhere)
 )
 void onGuestRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    if (!plugin.twitchSettings.bttvFFZ7tvEmotes) return;
+    if (!plugin.twitchSettings.bttv7tvEmotes) return;
 
     auto room = event.channel in plugin.rooms;
 
@@ -1639,7 +1639,7 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
 
     void sendNotATwitchEmote()
     {
-        immutable message = plugin.twitchSettings.bttvFFZ7tvEmotes ?
+        immutable message = plugin.twitchSettings.bttv7tvEmotes ?
             "That is not a Twitch, BetterTTV, FrankerFaceZ or 7tv emote." :
             "That is not a Twitch emote.";
         chan(plugin.state, event.channel, message);
