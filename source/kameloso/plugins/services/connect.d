@@ -1352,7 +1352,10 @@ void startPingMonitorFiber(ConnectService service)
     {
         static immutable periodicitySeconds = pingMonitorPeriodicity.total!"seconds";
         static immutable briefWait = 30.seconds;
+        static immutable brieferWait = 1.seconds;
         long lastPongTimestamp;
+        enum maxStrikes = 3;
+        uint strikes;
 
         while (true)
         {
@@ -1371,6 +1374,13 @@ void startPingMonitorFiber(ConnectService service)
 
                 if ((nowInUnix - lastPongTimestamp) >= periodicitySeconds)
                 {
+                    // Skip maxStrikes reads in case we resumed from suspend or similar
+                    if (strikes++ < maxStrikes)
+                    {
+                        delay(service, brieferWait, Yes.yield);
+                        continue;
+                    }
+
                     // Timeout. Send a preemptive ping
                     import kameloso.thread : ThreadMessage;
                     import std.concurrency : prioritySend;
@@ -1393,6 +1403,7 @@ void startPingMonitorFiber(ConnectService service)
                 // Triggered by PING *or* PONG response from our preemptive PING
                 // Update and remove delay, so we can drop down and re-delay it
                 lastPongTimestamp = thisEvent.time;
+                strikes = 0;
                 removeDelayedFiber(service);
                 break;
 
