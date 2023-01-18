@@ -133,9 +133,7 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
 
     void sendNonTwitchUsage()
     {
-        immutable pattern = isTwitch ?
-            "Usage: %s%s [optional search terms or #index]" :
-            "Usage: <b>%s%s<b> [nickname] [optional search terms or #index]";
+        enum pattern = "Usage: <b>%s%s<b> [nickname] [optional search terms or #index]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
         chan(plugin.state, event.channel, message);
     }
