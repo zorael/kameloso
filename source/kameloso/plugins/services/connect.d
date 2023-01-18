@@ -1551,7 +1551,7 @@ void register(ConnectService service)
                 if (!serverIsTwitch)
                 {
                     // fake it
-                logger.trace("--> PASS hunter2");
+                    logger.trace("--> PASS hunter2");
                 }
             }
             else
