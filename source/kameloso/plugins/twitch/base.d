@@ -63,13 +63,6 @@ public:
     IRCUser.Class songrequestPermsNeeded = IRCUser.Class.whitelist;
 
     /++
-        Import custom BetterTTV, (FrankerFaceZ and) 7tv emotes, allowing the Printer
-        plugin to highlight them, much like it does official Twitch emotes.
-        Imports both global and channel-specific emotes.
-     +/
-    bool bttv7tvEmotes = false;
-
-    /++
         Whether or not broadcasters are always implicitly class
         [dialect.defs.IRCUser.Class.staff|IRCUser.Class.staff].
      +/
@@ -426,8 +419,7 @@ void onGlobalUserstate(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     plugin.state.bot.displayName = event.target.displayName;
     plugin.state.updates |= IRCPluginState.Update.bot;
-
-    if (plugin.twitchSettings.bttv7tvEmotes) importCustomGlobalEmotes(plugin);
+    importCustomGlobalEmotes(plugin);
 }
 
 
@@ -770,11 +762,7 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     room.follows = getFollows(plugin, event.aux);
     room.followsLastCached = event.time;
     startRoomMonitorFibers(plugin, event.channel);
-
-    if (plugin.twitchSettings.bttv7tvEmotes)
-    {
-        importCustomEmotes(plugin, room);
-    }
+    importCustomEmotes(plugin, room);
 
     version(WithPersistenceService)
     {
@@ -836,8 +824,6 @@ version(TwitchCustomEmotesEverywhere)
 )
 void onGuestRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    if (!plugin.twitchSettings.bttv7tvEmotes) return;
-
     auto room = event.channel in plugin.rooms;
 
     if (!room)
@@ -1639,9 +1625,7 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
 
     void sendNotATwitchEmote()
     {
-        immutable message = plugin.twitchSettings.bttv7tvEmotes ?
-            "That is not a Twitch, BetterTTV, FrankerFaceZ or 7tv emote." :
-            "That is not a Twitch emote.";
+        enum message = "That is not a Twitch, BetterTTV, FrankerFaceZ or 7tv emote.";
         chan(plugin.state, event.channel, message);
     }
 
@@ -3085,7 +3069,7 @@ void teardown(TwitchPlugin plugin)
     Hijacks a reference to a [dialect.defs.IRCEvent|IRCEvent] and modifies the
     sender and target class based on their badges (and the current settings).
 
-    Additionally and optionally embeds custom BTTV/FrankerFaceZ/7tv emotes into the event.
+    Additionally embeds custom BTTV/FrankerFaceZ/7tv emotes into the event.
  +/
 void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 {
