@@ -90,10 +90,9 @@ void printHelp(GetoptResult results)
 }
 
 
-// writeConfig
+// verboselyWriteConfig
 /++
-    Writes configuration to file, verbosely. Additionally gives some empty
-    settings default values..
+    Writes configuration to file, verbosely.
 
     Params:
         instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
@@ -103,7 +102,7 @@ void printHelp(GetoptResult results)
         giveInstructions = Whether or not to give instructions to edit the
             generated file and supply admins and/or home channels.
  +/
-void writeConfig(
+void verboselyWriteConfig(
     ref Kameloso instance,
     ref IRCClient client,
     ref IRCServer server,
@@ -306,7 +305,7 @@ void manageConfigFile(
 
     if (shouldWriteConfig || !configFileExists)
     {
-        writeConfig(
+        verboselyWriteConfig(
             instance,
             instance.parser.client,
             instance.parser.server,
