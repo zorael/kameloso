@@ -2228,23 +2228,47 @@ void embedCustomEmotes(
     dstring previousEmote;  // mutable
     size_t prev;
 
+    static bool isEmoteCharacter(const dchar dc)
+    {
+        // Unsure about '-' and '(' but be conservative and keep
+        return (
+            ((dc >= dchar('a')) && (dc <= dchar('z'))) ||
+            ((dc >= dchar('A')) && (dc <= dchar('Z'))) ||
+            ((dc >= dchar('0')) && (dc <= dchar('9'))) ||
+            dc.among!(dchar(':'), dchar(')'), dchar('-'), dchar('(')));
+    }
+
     void checkWord(const dstring dword)
     {
+        import std.format : formattedWrite;
+
+        // Micro-optimise a bit by skipping AA lookups of words that are unlikely to be emotes
+        if ((dword.length > 1) &&
+            isEmoteCharacter(dword[$-1]) &&
+            isEmoteCharacter(dword[0]))
+        {
+            // Can reasonably be an emote
+        }
+        else
+        {
+            // Can reasonably not
+            return;
+        }
+
+        if (dword == previousEmote)
+        {
+            enum pattern = ",%d-%d";
+            immutable end = (pos == -1) ?
+                dline.length :
+                pos;
+
+            sink.formattedWrite(pattern, prev, end-1);
+            return;
+        }
+
         foreach (emoteMap; range)
         {
             import std.array : replace;
-            import std.format : formattedWrite;
-
-            if (dword == previousEmote)
-            {
-                enum pattern = ",%d-%d";
-                immutable end = (pos == -1) ?
-                    dline.length :
-                    pos;
-
-                sink.formattedWrite(pattern, prev, end-1);
-                return;
-            }
 
             if (!emoteMap.length) continue;
 
@@ -2272,7 +2296,7 @@ void embedCustomEmotes(
         return checkWord(dline);
     }
 
-    while (pos != -1)
+    while (true)
     {
         if (pos > prev)
         {
@@ -2280,7 +2304,7 @@ void embedCustomEmotes(
         }
 
         prev = (pos + 1);
-        if (prev >= dline.length) break;
+        if (prev >= dline.length) return;
 
         pos = dline.indexOf(' ', prev);
         if (pos == -1)
@@ -2288,6 +2312,8 @@ void embedCustomEmotes(
             return checkWord(dline[prev..$]);
         }
     }
+
+    assert(0, "Unreachable");
 }
 
 ///
