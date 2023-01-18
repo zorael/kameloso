@@ -3277,10 +3277,15 @@ package void saveSecretsToDisk(const Credentials[string] aa, const string filena
 // reload
 /++
     Reloads the plugin, loading resources from disk.
+
+    Additionally re-imports custom emotes, both global ones and channel-specific
+    ones for each current room.
  +/
 void reload(TwitchPlugin plugin)
 {
+    import kameloso.constants : BufferSize;
     import lu.json : JSONStorage, populateFromJSON;
+    import core.thread : Fiber;
 
     JSONStorage ecountJSON;
     ecountJSON.load(plugin.ecountFile);
@@ -3304,6 +3309,22 @@ void reload(TwitchPlugin plugin)
     }
 
     plugin.secretsByChannel = plugin.secretsByChannel.rehash();
+
+    // Emote-importing needs to happen in a Fiber because of async stuff
+    void importEmoteDg()
+    {
+        plugin.customGlobalEmotes = null;
+        importCustomGlobalEmotes(plugin);
+
+        foreach (ref room; plugin.rooms)
+        {
+            room.customEmotes = null;
+            importCustomEmotes(plugin, &room);
+        }
+    }
+
+    Fiber importEmoteFiber = new Fiber(&importEmoteDg, BufferSize.fiberStack);
+    importEmoteFiber.call();
 }
 
 
