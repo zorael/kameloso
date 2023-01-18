@@ -131,7 +131,7 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
 
     immutable isTwitch = (plugin.state.server.daemon == IRCServer.Daemon.twitch);
 
-    void sendUsage()
+    void sendNonTwitchUsage()
     {
         immutable pattern = isTwitch ?
             "Usage: %s%s [optional search terms or #index]" :
@@ -140,7 +140,7 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
         chan(plugin.state, event.channel, message);
     }
 
-    if (!event.content.length) return sendUsage();
+    if (!isTwitch && !event.content.length) return sendNonTwitchUsage();
 
     try
     {
@@ -181,7 +181,7 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
             if (results == SplitResults.underrun)
             {
                 // Message was just !quote which only works on Twitch
-                return sendUsage();
+                return sendNonTwitchUsage();
             }
 
             if (!nickname.isValidNickname(plugin.state.server))
