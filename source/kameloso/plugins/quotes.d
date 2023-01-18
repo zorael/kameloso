@@ -755,8 +755,19 @@ private:
         const ref IRCEvent event,
         const string nickname)
     {
+        string possibleDisplayName = nickname;  // mutable
+
+        version(TwitchSupport)
+        {
+            if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+            {
+                import kameloso.plugins.common.misc : nameOf;
+                possibleDisplayName = plugin.nameOf(nickname);
+            }
+        }
+
         enum pattern = "No quotes on record for <h>%s<h>!";
-        immutable message = pattern.format(nickname);
+        immutable message = pattern.format(possibleDisplayName);
         chan(plugin.state, event.channel, message);
     }
 
