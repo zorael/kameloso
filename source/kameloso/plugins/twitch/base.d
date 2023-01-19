@@ -762,10 +762,17 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         }
         catch (Exception e)
         {
+            import std.format : format;
+
             // Can be JSONException
-            // Retry until we reach the retry limit, then rethrow
+            // Retry until we reach the retry limit
             if (i < TwitchPlugin.delegateRetries-1) continue;
-            throw e;  // It's in a Fiber but we get the backtrace anyway
+
+            enum pattern = "Failed to fetch information for channel %s";
+            immutable message = pattern.format(event.channel);
+            logger.error(message);
+            version(PrintStacktraces) logger.trace(e);
+            //break;
         }
     }
 
