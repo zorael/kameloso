@@ -88,6 +88,7 @@ versions \
     "TraceWhois" \
     "PrintAccountNamesToo" \
     "PrintClassNamesToo" \
+    "WithPingMonitor" \
     "Callgrind"
 */
 
@@ -131,7 +132,8 @@ configuration "dev" {
         "OmniscientAdmin" \
         "PrintStacktraces" \
         "ExplainReplay" \
-        "GCStatsOnExit"
+        "GCStatsOnExit" \
+        "WithPingMonitor"
         //"TwitchPromoteEverywhere" \
         //"TwitchCustomEmotesEverywhere" \
         //"OmniscientSeen" \
@@ -154,7 +156,8 @@ configuration "dev-lowmem" {
         "OmniscientAdmin" \
         "PrintStacktraces" \
         "ExplainReplay" \
-        "GCStatsOnExit"
+        "GCStatsOnExit" \
+        "WithPingMonitor"
         //"TwitchPromoteEverywhere" \
         //"TwitchCustomEmotesEverywhere" \
         //"OmniscientSeen" \

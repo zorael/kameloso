@@ -90,10 +90,9 @@ void printHelp(GetoptResult results)
 }
 
 
-// writeConfig
+// verboselyWriteConfig
 /++
-    Writes configuration to file, verbosely. Additionally gives some empty
-    settings default values..
+    Writes configuration to file, verbosely.
 
     Params:
         instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
@@ -103,7 +102,7 @@ void printHelp(GetoptResult results)
         giveInstructions = Whether or not to give instructions to edit the
             generated file and supply admins and/or home channels.
  +/
-void writeConfig(
+void verboselyWriteConfig(
     ref Kameloso instance,
     ref IRCClient client,
     ref IRCServer server,
@@ -111,11 +110,8 @@ void writeConfig(
     const Flag!"giveInstructions" giveInstructions = Yes.giveInstructions) @system
 {
     import kameloso.common : logger, printVersionInfo;
-    import kameloso.constants : KamelosoDefaults;
-    import kameloso.platform : rbd = resourceBaseDirectory;
     import kameloso.printing : printObjects;
     import std.file : exists;
-    import std.path : buildNormalizedPath, expandTilde;
 
     // --save was passed; write configuration to file and quit
 
@@ -129,43 +125,6 @@ void writeConfig(
 
     // If we don't initialise the plugins there'll be no plugins array
     instance.initPlugins();
-
-    // Take the opportunity to set a default quit reason. We can't do this in
-    // applyDefaults because it's a perfectly valid use-case not to have a quit
-    // string, and having it there would enforce the default string if none present.
-    if (!instance.bot.quitReason.length) instance.bot.quitReason = KamelosoDefaults.quitReason;
-
-    // Copied from kameloso.main.resolvePaths
-    version(Windows)
-    {
-        import std.string : replace;
-        immutable escapedServerDirName = instance.parser.server.address.replace(':', '_');
-    }
-    else version(Posix)
-    {
-        immutable escapedServerDirName = instance.parser.server.address;
-    }
-    else
-    {
-        static assert(0, "Unsupported platform, please file a bug.");
-    }
-
-    immutable defaultResourceHomeDir = buildNormalizedPath(rbd, "kameloso");
-    immutable settingsResourceDir = instance.settings.resourceDirectory.expandTilde();
-    immutable defaultFullServerResourceDir = escapedServerDirName.length ?
-        buildNormalizedPath(
-            defaultResourceHomeDir,
-            "server",
-            escapedServerDirName) :
-        string.init;
-
-    if ((settingsResourceDir == defaultResourceHomeDir) ||
-        (settingsResourceDir == defaultFullServerResourceDir))
-    {
-        // If the resource directory is the default (unset),
-        // or if it is what would be automatically inferred, write it out as empty
-        instance.settings.resourceDirectory = string.init;
-    }
 
     immutable shouldGiveBrightTerminalHint =
         !instance.settings.monochrome &&
@@ -346,7 +305,7 @@ void manageConfigFile(
 
     if (shouldWriteConfig || !configFileExists)
     {
-        writeConfig(
+        verboselyWriteConfig(
             instance,
             instance.parser.client,
             instance.parser.server,
@@ -1074,6 +1033,8 @@ auto handleGetopt(ref Kameloso instance, string[] args) @system
     It gathers configuration text from all plugins before formatting it into
     nice columns, then writes it all in one go.
 
+    Additionally gives some empty settings default values.
+
     Example:
     ---
     Kameloso instance;
@@ -1087,41 +1048,87 @@ auto handleGetopt(ref Kameloso instance, string[] args) @system
  +/
 void writeConfigurationFile(ref Kameloso instance, const string filename) @system
 {
+    import kameloso.constants : KamelosoDefaults;
+    import kameloso.platform : rbd = resourceBaseDirectory;
     import lu.serialisation : justifiedEntryValueText, serialise;
     import lu.string : beginsWith, encode64;
     import std.array : Appender;
+    import std.path : buildNormalizedPath, expandTilde;
 
     Appender!(char[]) sink;
     sink.reserve(4096);  // ~2234
 
-    with (instance)
+    // Take the opportunity to set a default quit reason. We can't do this in
+    // applyDefaults because it's a perfectly valid use-case not to have a quit
+    // string, and having it there would enforce the default string if none present.
+    if (!instance.bot.quitReason.length) instance.bot.quitReason = KamelosoDefaults.quitReason;
+
+    // Copied from kameloso.main.resolvePaths
+    version(Windows)
     {
-        if (!instance.settings.force && bot.password.length && !bot.password.beginsWith("base64:"))
-        {
-            bot.password = "base64:" ~ encode64(bot.password);
-        }
-
-        if (!instance.settings.force && bot.pass.length && !bot.pass.beginsWith("base64:"))
-        {
-            bot.pass = "base64:" ~ encode64(bot.pass);
-        }
-
-        sink.serialise(parser.client, bot, parser.server, connSettings, settings);
-        sink.put('\n');
-
-        foreach (immutable i, plugin; instance.plugins)
-        {
-            immutable addedSomething = plugin.serialiseConfigInto(sink);
-
-            if (addedSomething && (i+1 < instance.plugins.length))
-            {
-                sink.put('\n');
-            }
-        }
-
-        immutable justified = sink.data.idup.justifiedEntryValueText;
-        writeToDisk(filename, justified, Yes.addBanner);
+        import std.string : replace;
+        immutable escapedServerDirName = instance.parser.server.address.replace(':', '_');
     }
+    else version(Posix)
+    {
+        immutable escapedServerDirName = instance.parser.server.address;
+    }
+    else
+    {
+        static assert(0, "Unsupported platform, please file a bug.");
+    }
+
+    immutable defaultResourceHomeDir = buildNormalizedPath(rbd, "kameloso");
+    immutable settingsResourceDir = instance.settings.resourceDirectory.expandTilde();
+    immutable defaultFullServerResourceDir = escapedServerDirName.length ?
+        buildNormalizedPath(
+            defaultResourceHomeDir,
+            "server",
+            escapedServerDirName) :
+        string.init;
+
+    if ((settingsResourceDir == defaultResourceHomeDir) ||
+        (settingsResourceDir == defaultFullServerResourceDir))
+    {
+        // If the resource directory is the default (unset),
+        // or if it is what would be automatically inferred, write it out as empty
+        instance.settings.resourceDirectory = string.init;
+    }
+
+    if (!instance.settings.force &&
+        instance.bot.password.length &&
+        !instance.bot.password.beginsWith("base64:"))
+    {
+        instance.bot.password = "base64:" ~ encode64(instance.bot.password);
+    }
+
+    if (!instance.settings.force &&
+        instance.bot.pass.length &&
+        !instance.bot.pass.beginsWith("base64:"))
+    {
+        instance.bot.pass = "base64:" ~ encode64(instance.bot.pass);
+    }
+
+    sink.serialise(
+        instance.parser.client,
+        instance.bot,
+        instance.parser.server,
+        instance.connSettings,
+        instance.settings);
+    sink.put('\n');
+
+    foreach (immutable i, plugin; instance.plugins)
+    {
+        immutable addedSomething = plugin.serialiseConfigInto(sink);
+
+        if (addedSomething && (i+1 < instance.plugins.length))
+        {
+            sink.put('\n');
+        }
+    }
+
+    immutable justified = sink.data.idup.justifiedEntryValueText;
+    writeToDisk(filename, justified, Yes.addBanner);
 }
 
 

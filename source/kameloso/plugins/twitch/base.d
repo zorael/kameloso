@@ -766,6 +766,9 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 )
 void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
+    import kameloso.thread : ThreadMessage;
+    import std.concurrency : send;
+
     auto room = event.channel in plugin.rooms;
 
     if (!room)
@@ -776,37 +779,6 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     }
 
     room.id = event.aux;
-    room.follows = getFollows(plugin, event.aux);
-    room.followsLastCached = event.time;
-    startRoomMonitorFibers(plugin, event.channel);
-    importCustomEmotes(plugin, room);
-
-    version(WithPersistenceService)
-    {
-        import kameloso.thread : ThreadMessage, sendable;
-        import std.concurrency : send;
-
-        immutable nickname = event.channel[1..$];
-        auto broadcasterUser = nickname in plugin.state.users;
-
-        if (!broadcasterUser)
-        {
-            // Fake a new user
-            auto newUser = IRCUser(nickname, nickname, nickname ~ ".tmi.twitch.tv");
-            newUser.account = nickname;
-            newUser.class_ = IRCUser.Class.anyone;
-            plugin.state.users[nickname] = newUser;
-            broadcasterUser = nickname in plugin.state.users;
-        }
-
-        if (!broadcasterUser.displayName.length)
-        {
-            broadcasterUser.displayName = room.broadcasterDisplayName;
-            IRCUser user = *broadcasterUser;  // dereference and copy
-            plugin.state.mainThread.send(ThreadMessage.busMessage("persistence", sendable(user)));
-        }
-    }
-
     immutable userURL = "https://api.twitch.tv/helix/users?id=" ~ event.aux;
 
     foreach (immutable i; 0..TwitchPlugin.delegateRetries)
@@ -815,43 +787,43 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         {
             immutable userJSON = getTwitchData(plugin, userURL);
             room.broadcasterDisplayName = userJSON["display_name"].str;
-            break;
         }
         catch (Exception e)
         {
+            import std.format : format;
+
             // Can be JSONException
-            // Retry until we reach the retry limit, then rethrow
+            // Retry until we reach the retry limit
             if (i < TwitchPlugin.delegateRetries-1) continue;
-            throw e;  // It's in a Fiber but we get the backtrace anyway
+
+            enum pattern = "Failed to fetch information for channel %s";
+            immutable message = pattern.format(event.channel);
+            logger.error(message);
+            version(PrintStacktraces) logger.trace(e);
+            //break;
         }
     }
-}
 
+    immutable nickname = event.channel[1..$];
+    auto broadcasterUser = nickname in plugin.state.users;
 
-// onGuestRoomState
-/++
-    Fetches custom BetterTV, FrankerFaceZ and 7tv emotes for guest channels if
-    the settings say to do so.
- +/
-version(TwitchCustomEmotesEverywhere)
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.ROOMSTATE)
-    .channelPolicy(ChannelPolicy.guest)
-    .fiber(true)
-)
-void onGuestRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
-{
-    auto room = event.channel in plugin.rooms;
-
-    if (!room)
+    if (!broadcasterUser)
     {
-        // Race...
-        initRoom(plugin, event.channel);
-        room = event.channel in plugin.rooms;
+        // Forge a new user
+        auto newUser = IRCUser(nickname, nickname, nickname ~ ".tmi.twitch.tv");
+        newUser.account = nickname;
+        newUser.class_ = IRCUser.Class.anyone;
+        plugin.state.users[nickname] = newUser;
+        broadcasterUser = nickname in plugin.state.users;
     }
 
-    room.id = event.aux;
-    importCustomEmotes(plugin, room);
+    broadcasterUser.displayName = room.broadcasterDisplayName;
+    IRCUser user = *broadcasterUser;  // dereference and copy
+    plugin.state.mainThread.send(ThreadMessage.PutUser(), user);
+
+    room.follows = getFollows(plugin, room.id);
+    room.followsLastCached = event.time;
+    startRoomMonitorFibers(plugin, event.channel);
 }
 
 
@@ -2448,16 +2420,12 @@ void start(TwitchPlugin plugin)
 
         // Remove custom Twitch settings so we can reconnect without jumping
         // back into keygens.
-        static immutable string[8] settingsToPop =
+        static immutable string[4] settingsToPop =
         [
             "twitch.keygen",
-            "twitchbot.keygen",
             "twitch.superKeygen",
-            "twitchbot.superKeygen",
             "twitch.googleKeygen",
-            "twitchbot.googleKeygen",
             "twitch.spotifyKeygen",
-            "twitchbot.spotifyKeygen",
         ];
 
         foreach (immutable setting; settingsToPop[])

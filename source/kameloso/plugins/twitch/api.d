@@ -1861,7 +1861,7 @@ in (Fiber.getThis, "Tried to call `endPoll` from outside a Fiber")
         [TwitchQueryException] on unexpected JSON.
 
     See_Also:
-        https:/twitchinsights.net/bots
+        https://twitchinsights.net/bots
  +/
 auto getBotList(TwitchPlugin plugin)
 {

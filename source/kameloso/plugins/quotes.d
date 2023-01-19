@@ -131,16 +131,14 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
 
     immutable isTwitch = (plugin.state.server.daemon == IRCServer.Daemon.twitch);
 
-    void sendUsage()
+    void sendNonTwitchUsage()
     {
-        immutable pattern = isTwitch ?
-            "Usage: %s%s [optional search terms or #index]" :
-            "Usage: <b>%s%s<b> [nickname] [optional search terms or #index]";
+        enum pattern = "Usage: <b>%s%s<b> [nickname] [optional search terms or #index]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
         chan(plugin.state, event.channel, message);
     }
 
-    if (!event.content.length) return sendUsage();
+    if (!isTwitch && !event.content.length) return sendNonTwitchUsage();
 
     try
     {
@@ -181,7 +179,7 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
             if (results == SplitResults.underrun)
             {
                 // Message was just !quote which only works on Twitch
-                return sendUsage();
+                return sendNonTwitchUsage();
             }
 
             if (!nickname.isValidNickname(plugin.state.server))
@@ -755,8 +753,19 @@ private:
         const ref IRCEvent event,
         const string nickname)
     {
+        string possibleDisplayName = nickname;  // mutable
+
+        version(TwitchSupport)
+        {
+            if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+            {
+                import kameloso.plugins.common.misc : nameOf;
+                possibleDisplayName = plugin.nameOf(nickname);
+            }
+        }
+
         enum pattern = "No quotes on record for <h>%s<h>!";
-        immutable message = pattern.format(nickname);
+        immutable message = pattern.format(possibleDisplayName);
         chan(plugin.state, event.channel, message);
     }
 
