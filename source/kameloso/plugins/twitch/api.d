@@ -2138,12 +2138,23 @@ in (Fiber.getThis, "Tried to call `getBTTVEmotes` from outside a Fiber")
             }
             +/
 
-            auto channelEmotesJSON = "channelEmotes" in responseJSON.object;
-            if (!channelEmotesJSON) throw new TwitchQueryException(
-                `No "channelEmotes" key in JSON response`,
-                response.str);
+            immutable channelEmotesJSON = "channelEmotes" in responseJSON.object;
 
-            auto sharedEmotesJSON = "sharedEmotes" in responseJSON.object;
+            if (!channelEmotesJSON)
+            {
+                const messageJSON = "message" in responseJSON.object;
+                if (messageJSON && (messageJSON.str == "user not found"))
+                {
+                    // Benign
+                    return;
+                }
+
+                throw new TwitchQueryException(
+                    `No "channelEmotes" key in JSON response`,
+                    response.str);
+            }
+
+            const sharedEmotesJSON = "sharedEmotes" in responseJSON.object;
             if (!sharedEmotesJSON) throw new TwitchQueryException(
                 `No "sharedEmotes" key in JSON response`,
                 response.str);
@@ -2544,6 +2555,12 @@ in (Fiber.getThis, "Tried to call `getFFZEmotes` from outside a Fiber")
         catch (ErrorJSONException e)
         {
             // Likely 404
+            const messageJSON = "message" in e.json;
+            if (messageJSON && (messageJSON.str == "No such room"))
+            {
+                // Benign
+                return;
+            }
             throw e;
         }
         catch (TwitchQueryException e)
@@ -2611,6 +2628,20 @@ in (Fiber.getThis, "Tried to call `get7tvEmotes` from outside a Fiber")
                 }
             ]
             +/
+
+            if (responseJSON.type == JSONType.object)
+            {
+                const errorJSON = "error" in responseJSON.object;
+                if (errorJSON && (errorJSON.str == "No Items Found"))
+                {
+                    // Benign
+                    return;
+                }
+
+                throw new TwitchQueryException(
+                    "Response was not a JSON array",
+                    response.str);
+            }
 
             foreach (const emoteJSON; responseJSON.array)
             {
