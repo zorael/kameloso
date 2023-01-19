@@ -750,6 +750,25 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         room = event.channel in plugin.rooms;
     }
 
+    room.id = event.aux;
+    immutable userURL = "https://api.twitch.tv/helix/users?id=" ~ event.aux;
+
+    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    {
+        try
+        {
+            immutable userJSON = getTwitchData(plugin, userURL);
+            room.broadcasterDisplayName = userJSON["display_name"].str;
+        }
+        catch (Exception e)
+        {
+            // Can be JSONException
+            // Retry until we reach the retry limit, then rethrow
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+            throw e;  // It's in a Fiber but we get the backtrace anyway
+        }
+    }
+
     version(WithPersistenceService)
     {
         import kameloso.thread : ThreadMessage;
@@ -771,25 +790,6 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         broadcasterUser.displayName = room.broadcasterDisplayName;
         IRCUser user = *broadcasterUser;  // dereference and copy
         plugin.state.mainThread.send(ThreadMessage.PutUser(), user);
-    }
-
-    room.id = event.aux;
-    immutable userURL = "https://api.twitch.tv/helix/users?id=" ~ event.aux;
-
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
-    {
-        try
-        {
-            immutable userJSON = getTwitchData(plugin, userURL);
-            room.broadcasterDisplayName = userJSON["display_name"].str;
-        }
-        catch (Exception e)
-        {
-            // Can be JSONException
-            // Retry until we reach the retry limit, then rethrow
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-            throw e;  // It's in a Fiber but we get the backtrace anyway
-        }
     }
 
     room.follows = getFollows(plugin, room.id);
