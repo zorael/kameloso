@@ -2072,7 +2072,7 @@ void getBTTVEmotes(
 in (Fiber.getThis, "Tried to call `getBTTVEmotes` from outside a Fiber")
 {
     import std.conv : to;
-    import std.json : parseJSON;
+    import std.json : JSONType, parseJSON;
 
     immutable url = "https://api.betterttv.net/3/cached/users/twitch/" ~ idString;
 
@@ -2159,14 +2159,20 @@ in (Fiber.getThis, "Tried to call `getBTTVEmotes` from outside a Fiber")
         catch (TwitchQueryException e)
         {
             immutable json = parseJSON(e.responseBody);
-            const messageJSON = "message" in json.object;
 
-            if (messageJSON && (messageJSON.str == "user not found"))
+            if (json.type == JSONType.object)
             {
-                // Benign
-                return;
+                const messageJSON = "message" in json.object;
+
+                if (messageJSON && (messageJSON.str == "user not found"))
+                {
+                    // Benign
+                    return;
+                }
+                // Drop down
             }
-            else if (i < TwitchPlugin.delegateRetries-1)
+
+            if (i < TwitchPlugin.delegateRetries-1)
             {
                 // Retry
                 continue;
@@ -2241,6 +2247,10 @@ in (Fiber.getThis, "Tried to call `getBTTVGlobalEmotes` from outside a Fiber")
             // All done
             return;
         }
+        /*catch (TwitchQueryException e)
+        {
+            // Populate once we know how error messages look
+        }*/
         catch (Exception e)
         {
             // Retry until we reach the retry limit, then rethrow
@@ -2271,7 +2281,7 @@ void getFFZEmotes(
 in (Fiber.getThis, "Tried to call `getFFZEmotes` from outside a Fiber")
 {
     import std.conv : to;
-    import std.json : parseJSON;
+    import std.json : JSONType, parseJSON;
 
     immutable url = "https://api.betterttv.net/3/cached/frankerfacez/users/twitch/" ~ idString;
 
@@ -2335,12 +2345,31 @@ in (Fiber.getThis, "Tried to call `getFFZEmotes` from outside a Fiber")
         {
             immutable json = parseJSON(e.responseBody);
 
-            if (!json.array.length)
+            if (json.type == JSONType.object)
+            {
+                // {"message":"internal server error"}
+                const messageJSON = "message" in json;
+
+                if (messageJSON && messageJSON.str == "internal server error")
+                {
+                    if (i < TwitchPlugin.delegateRetries-1)
+                    {
+                        // Retry
+                        continue;
+                    }
+
+                    e.msg = messageJSON.str;
+                    throw e;
+                }
+                // Drop down
+            }
+            else if ((json.type == JSONType.array) && !json.array.length)
             {
                 // Benign
                 return;
             }
-            else if (i < TwitchPlugin.delegateRetries-1)
+
+            if (i < TwitchPlugin.delegateRetries-1)
             {
                 // Retry
                 continue;
@@ -2379,7 +2408,7 @@ void get7tvEmotes(
 in (Fiber.getThis, "Tried to call `get7tvEmotes` from outside a Fiber")
 {
     import std.conv : to;
-    import std.json : parseJSON;
+    import std.json : JSONType, parseJSON;
 
     immutable url = "https://api.7tv.app/v2/users/" ~ idString ~ "/emotes";
 
@@ -2421,14 +2450,20 @@ in (Fiber.getThis, "Tried to call `get7tvEmotes` from outside a Fiber")
         catch (TwitchQueryException e)
         {
             immutable json = parseJSON(e.responseBody);
-            const errorJSON = "error" in json.object;
 
-            if (errorJSON && (errorJSON.str == "No Items Found"))
+            if (json.type == JSONType.object)
             {
-                // Benign
-                return;
+                const errorJSON = "error" in json.object;
+
+                if (errorJSON && (errorJSON.str == "No Items Found"))
+                {
+                    // Benign
+                    return;
+                }
+                // Drop down
             }
-            else if (i < TwitchPlugin.delegateRetries-1)
+
+            if (i < TwitchPlugin.delegateRetries-1)
             {
                 // Retry
                 continue;
@@ -2504,6 +2539,10 @@ in (Fiber.getThis, "Tried to call `get7tvGlobalEmotes` from outside a Fiber")
             // All done
             return;
         }
+        /*catch (TwitchQueryException e)
+        {
+            // Populate once we know how error messages look
+        }*/
         catch (Exception e)
         {
             // Retry until we reach the retry limit, then rethrow
