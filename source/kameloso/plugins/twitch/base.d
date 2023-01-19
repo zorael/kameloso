@@ -756,8 +756,7 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     Records the room ID of a home channel, and queries the Twitch servers for
     the display name of its broadcaster.
 
-    Additionally fetches custom BetterTV, FrankerFaceZ and 7tv emotes for the
-    channel if the settings say to do so.
+    Additionally fetches custom BetterTV, FrankerFaceZ and 7tv emotes for the channel.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ROOMSTATE)
@@ -824,6 +823,33 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     room.follows = getFollows(plugin, room.id);
     room.followsLastCached = event.time;
     startRoomMonitorFibers(plugin, event.channel);
+    importCustomEmotes(plugin, room);
+}
+
+
+// onGuestRoomState
+/++
+    Fetches custom BetterTV, FrankerFaceZ and 7tv emotes for a guest channel iff
+    version `TwitchCustomEmotesEverywhere`.
+ +/
+version(TwitchCustomEmotesEverywhere)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.ROOMSTATE)
+    .channelPolicy(ChannelPolicy.guest)
+    .fiber(true)
+)
+void onGuestRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+{
+    auto room = event.channel in plugin.rooms;
+
+    if (!room)
+    {
+        // Race...
+        initRoom(plugin, event.channel);
+        room = event.channel in plugin.rooms;
+    }
+
+    importCustomEmotes(plugin, room);
 }
 
 
