@@ -2113,23 +2113,17 @@ in (room, "Tried to import custom emotes for a nonexistent room")
 
     void getEmoteSet(GetEmoteFun fun, const string setName)
     {
-        foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+        try
         {
-            try
-            {
-                fun(plugin, room.customEmotes, room.id);
-                return;
-            }
-            catch (Exception e)
-            {
-                // Retry until we reach the retry limit
-                if (i < TwitchPlugin.delegateRetries-1) continue;
-
-                enum pattern = "Failed to fetch custom <l>%s</> emotes for channel <l>%s";
-                logger.warningf(pattern, setName, room.channelName);
-                version(PrintStacktraces) logger.trace(e.info);
-                //throw e;
-            }
+            fun(plugin, room.customEmotes, room.id);
+            return;
+        }
+        catch (Exception e)
+        {
+            enum pattern = "Failed to fetch custom <l>%s</> emotes for channel <l>%s</>: <t>%s";
+            logger.warningf(pattern, setName, room.channelName, e.msg);
+            //version(PrintStacktraces) logger.trace(e.info);
+            //throw e;
         }
     }
 
@@ -2154,23 +2148,17 @@ in (Fiber.getThis, "Tried to call `importCustomGlobalEmotes` from outside a Fibe
 
     void getGlobalEmoteSet(GetGlobalEmoteFun fun, const string setName)
     {
-        foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+        try
         {
-            try
-            {
-                fun(plugin, plugin.customGlobalEmotes);
-                return;
-            }
-            catch (Exception e)
-            {
-                // Retry until we reach the retry limit
-                if (i < TwitchPlugin.delegateRetries-1) continue;
-
-                enum pattern = "Failed to fetch global <l>%s</> emotes";
-                logger.warningf(pattern, setName);
-                version(PrintStacktraces) logger.trace(e.info);
-                //throw e;
-            }
+            fun(plugin, plugin.customGlobalEmotes);
+            return;
+        }
+        catch (Exception e)
+        {
+            enum pattern = "Failed to fetch global <l>%s</> emotes: <t>%s";
+            logger.warningf(pattern, setName, e.msg);
+            //version(PrintStacktraces) logger.trace(e.info);
+            //throw e;
         }
     }
 
