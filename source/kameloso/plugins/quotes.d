@@ -237,7 +237,7 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
         immutable message = pattern.format(e.searchTerms);
         chan(plugin.state, event.channel, message);
     }
-    catch (ConvException e)
+    catch (ConvException _)
     {
         Senders.sendIndexMustBePositiveNumber(plugin, event);
     }
@@ -416,7 +416,7 @@ void onCommandModQuote(QuotesPlugin plugin, const ref IRCEvent event)
         if (indexString.beginsWith('#')) indexString = indexString[1..$];
         index = indexString.to!ptrdiff_t;
     }
-    catch (ConvException e)
+    catch (ConvException _)
     {
         return Senders.sendIndexMustBePositiveNumber(plugin, event);
     }
@@ -611,7 +611,7 @@ void onCommandDelQuote(QuotesPlugin plugin, const ref IRCEvent event)
             if (indexString.beginsWith('#')) indexString = indexString[1..$];
             index = indexString.to!ptrdiff_t;
         }
-        catch (ConvException e)
+        catch (ConvException _)
         {
             return Senders.sendIndexMustBePositiveNumber(plugin, event);
         }

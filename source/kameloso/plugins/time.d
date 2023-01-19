@@ -270,7 +270,7 @@ in (specified.length, "Tried to get timezone of an empty string")
             static assert(0, "Unsupported platform, please file a bug");
         }
     }
-    catch (TimeException e)
+    catch (TimeException _)
     {
         // core.time.TimeException@std/datetime/timezone.d(2096): /usr/share/zoneinfo is not a file.
         return null;

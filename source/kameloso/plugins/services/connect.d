@@ -1515,7 +1515,7 @@ void register(ConnectService service)
                 {
                     return decode64(encoded[7..$]);
                 }
-                catch (Base64Exception e)
+                catch (Base64Exception _)
                 {
                     // says "base64:" but can't be decoded
                     // Something's wrong but be conservative about it.

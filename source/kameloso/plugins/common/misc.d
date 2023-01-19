@@ -111,7 +111,7 @@ auto applyCustomSettings(
                 version(PrintStacktraces) logger.trace(e.info);
                 noErrors = false;
             }
-            catch (ConvException e)
+            catch (ConvException _)
             {
                 enum pattern = `Invalid value for <l>core</>.<l>%s</>: "<l>%s</>"`;
                 logger.warningf(pattern, setting, value);
@@ -138,7 +138,7 @@ auto applyCustomSettings(
                         noErrors = false;
                     }
                 }
-                catch (ConvException e)
+                catch (ConvException _)
                 {
                     enum pattern = `Invalid value for <l>%s</>.<l>%s</>: "<l>%s</>"`;
                     logger.warningf(pattern, pluginstring, setting, value);

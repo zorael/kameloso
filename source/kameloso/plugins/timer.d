@@ -459,7 +459,7 @@ void handleNewTimer(
         if (messageCountStagger.length) timer.messageCountStagger = messageCountStagger.to!long;
         if (timeStagger.length) timer.timeStagger = abbreviatedDuration(timeStagger).total!"seconds";
     }
-    catch (ConvException e)
+    catch (ConvException _)
     {
         return sendBadNumerics();
     }
@@ -579,7 +579,7 @@ void handleDelTimer(
             immutable message = pattern.format(name, timer.lines.length);
             return chan(plugin.state, event.channel, message);
         }
-        catch (ConvException e)
+        catch (ConvException _)
         {
             enum message = "Argument for which line to remove must be a number.";
             return chan(plugin.state, event.channel, message);
@@ -689,7 +689,7 @@ void handleModifyTimerLines(
             chan(plugin.state, event.channel, message);
         }
     }
-    catch (ConvException e)
+    catch (ConvException _)
     {
         enum message = "Position argument must be a number.";
         chan(plugin.state, event.channel, message);

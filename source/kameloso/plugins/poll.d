@@ -288,7 +288,7 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
         import lu.string : nom;
         poll.duration = abbreviatedDuration(slice.nom!(Yes.decode)(' '));
     }
-    catch (ConvException e)
+    catch (ConvException _)
     {
         enum message = "Malformed duration.";
         return chan(plugin.state, event.channel, message);

@@ -939,7 +939,7 @@ void onCommandRepeat(TwitchPlugin plugin, const ref IRCEvent event)
             chan(plugin.state, event.channel, slice);
         }
     }
-    catch (ConvException e)
+    catch (ConvException _)
     {
         return sendUsage();
     }
@@ -1264,7 +1264,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
             return sendAddedToSpotifyPlaylist(artist, track);
         }
-        catch (ErrorJSONException e)
+        catch (ErrorJSONException _)
         {
             return sendInvalidURL();
         }
@@ -1338,7 +1338,7 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             .total!"seconds"
             .to!string;
     }
-    catch (ConvException e)
+    catch (ConvException _)
     {
         enum message = "Invalid duration.";
         return chan(plugin.state, event.channel, message);
@@ -1359,7 +1359,7 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         immutable message = pattern.format(responseJSON.array[0].object["title"].str);
         chan(plugin.state, event.channel, message);
     }
-    catch (MissingBroadcasterTokenException e)
+    catch (MissingBroadcasterTokenException _)
     {
         enum message = "Missing broadcaster-level API token.";
         enum superMessage = message ~ " Run the program with <l>--set twitch.superKeygen</> to generate a new one.";
@@ -2732,7 +2732,7 @@ void startValidator(TwitchPlugin plugin)
                 // Schedule quitting on expiry
                 delay(plugin, (() => quit(plugin.state)), delta);
             }
-            catch (TwitchQueryException e)
+            catch (TwitchQueryException _)
             {
                 plugin.useAPIFeatures = false;
             }

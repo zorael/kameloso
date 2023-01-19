@@ -2035,7 +2035,7 @@ auto getStream(TwitchPlugin plugin, const string loginName)
             //stream.tags = streamJSON["tags"].array.map!(e => e.str).array;
             return stream;
         }
-        catch (EmptyDataJSONException e)
+        catch (EmptyDataJSONException _)
         {
             // Stream is down
             return TwitchPlugin.Room.Stream.init;

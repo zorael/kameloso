@@ -152,7 +152,7 @@ instructions and log in to authorise the use of this program with your <w>BOT</>
             import kameloso.platform : openInBrowser;
             openInBrowser(url);
         }
-        catch (ProcessException e)
+        catch (ProcessException _)
         {
             // Probably we got some platform wrong and command was not found
             logger.warning("Error: could not automatically open browser.");
@@ -327,7 +327,7 @@ instructions and log in to authorise the use of this program with your <w>STREAM
             import kameloso.platform : openInBrowser;
             openInBrowser(url);
         }
-        catch (ProcessException e)
+        catch (ProcessException _)
         {
             // Probably we got some platform wrong and command was not found
             logger.warning("Error: could not automatically open browser.");

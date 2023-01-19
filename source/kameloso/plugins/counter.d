@@ -275,7 +275,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
             {
                 step = slice.to!long * step;
             }
-            catch (ConvException e)
+            catch (ConvException _)
             {
                 enum pattern = "<b>%s<b> is not a number.";
                 immutable message = pattern.format(slice);
@@ -307,7 +307,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
         {
             newCount = slice.to!long;
         }
-        catch (ConvException e)
+        catch (ConvException _)
         {
             enum pattern = "Not a number: <b>%s<b>";
             immutable message = pattern.format(slice);

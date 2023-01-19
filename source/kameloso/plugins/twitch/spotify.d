@@ -166,7 +166,7 @@ A normal URL to any playlist you can modify will work fine.
             import kameloso.platform : openInBrowser;
             browser = openInBrowser(url);
         }
-        catch (ProcessException e)
+        catch (ProcessException _)
         {
             // Probably we got some platform wrong and command was not found
             logger.warning("Error: could not automatically open browser.");

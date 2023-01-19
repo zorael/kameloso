@@ -600,7 +600,7 @@ void handleAddToOneliner(
                 return chan(plugin.state, event.channel, message);
             }
         }
-        catch (ConvException e)
+        catch (ConvException _)
         {
             enum message = "Position passed is not a number.";
             return chan(plugin.state, event.channel, message);
@@ -617,7 +617,7 @@ void handleAddToOneliner(
                 insert(trigger, slice, Action.editExisting, pos);
             }
         }
-        catch (Exception e)
+        catch (Exception _)
         {
             // Already sent error message
             //chan(plugin.state, event.channel, e.msg);
@@ -640,7 +640,7 @@ void handleAddToOneliner(
         {
             return insert(trigger, slice, Action.appendToEnd);
         }
-        catch (Exception e)
+        catch (Exception _)
         {
             // Already sent error message
             //chan(plugin.state, event.channel, e.msg);
@@ -753,7 +753,7 @@ void handleDelFromOneliner(
                 oneliner.position = 0;
             }
         }
-        catch (ConvException e)
+        catch (ConvException _)
         {
             return sendDelUsage();
         }
@@ -853,7 +853,7 @@ void reload(OnelinersPlugin plugin)
             {
                 plugin.onelinersByChannel[channelName][trigger] = Oneliner.fromJSON(onelinerJSON);
             }
-            catch (JSONException e)
+            catch (JSONException _)
             {
                 enum pattern = "Failed to load oneliner \"<l>%s</>\"; <l>%s</> is outdated or corrupt.";
                 logger.errorf(pattern, trigger, plugin.onelinerFile);
