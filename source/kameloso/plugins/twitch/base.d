@@ -795,9 +795,8 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             // Retry until we reach the retry limit
             if (i < TwitchPlugin.delegateRetries-1) continue;
 
-            enum pattern = "Failed to fetch information for channel %s";
-            immutable message = pattern.format(event.channel);
-            logger.error(message);
+            enum pattern = "Failed to fetch information for channel <l>%s</>: <t>%s";
+            logger.errorf(pattern, event.channel, e.msg);
             version(PrintStacktraces) logger.trace(e);
             //break;
         }
