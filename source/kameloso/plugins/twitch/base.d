@@ -2110,6 +2110,11 @@ void importCustomEmotes(TwitchPlugin plugin, TwitchPlugin.Room* room)
 in (Fiber.getThis, "Tried to call `importCustomEmotes` from outside a Fiber")
 in (room, "Tried to import custom emotes for a nonexistent room")
 {
+    import core.memory : GC;
+
+    GC.disable();
+    scope(exit) GC.enable();
+
     alias GetEmoteFun = void function(TwitchPlugin, ref bool[dstring], const string);
     bool[dstring] customEmotes;
 
@@ -2147,6 +2152,11 @@ in (room, "Tried to import custom emotes for a nonexistent room")
 void importCustomGlobalEmotes(TwitchPlugin plugin)
 in (Fiber.getThis, "Tried to call `importCustomGlobalEmotes` from outside a Fiber")
 {
+    import core.memory : GC;
+
+    GC.disable();
+    scope(exit) GC.enable();
+
     alias GetGlobalEmoteFun = void function(TwitchPlugin, ref bool[dstring]);
     bool[dstring] customGlobalEmotes;
 
