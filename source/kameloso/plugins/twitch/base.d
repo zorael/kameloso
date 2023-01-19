@@ -383,21 +383,38 @@ in (channelName.length, "Tried to init Room with an empty channel string")
 
     "You will not get USERSTATE for other people. Only for yourself."
     https://discuss.dev.twitch.tv/t/no-userstate-on-people-joining/11598
+
+    This sometimes happens once per outgoing message sent, causing it to spam
+    the moderator warning.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.USERSTATE)
     .channelPolicy(ChannelPolicy.home)
 )
-void onUserstate(const ref IRCEvent event)
+void onUserstate(TwitchPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : contains;
+    auto room = event.channel in plugin.rooms;
 
-    if (!event.target.badges.contains("moderator/") &&
-        !event.target.badges.contains("broadcaster/"))
+    if (!room)
     {
-        enum pattern = "The bot is not a moderator of home channel <l>%s</>. " ~
-            "Consider elevating it to such to avoid being as rate-limited.";
-        logger.warningf(pattern, event.channel);
+        // Race...
+        initRoom(plugin, event.channel);
+        room = event.channel in plugin.rooms;
+    }
+
+    if (!room.sawUserstate)
+    {
+        import lu.string : contains;
+
+        // First USERSTATE; warn
+        if (!event.target.badges.contains("moderator/") &&
+            !event.target.badges.contains("broadcaster/"))
+        {
+            enum pattern = "The bot is not a moderator of home channel <l>%s</>. " ~
+                "Consider elevating it to such to avoid being as rate-limited.";
+            logger.warningf(pattern, event.channel);
+            room.sawUserstate = true;
+        }
     }
 }
 
@@ -3546,6 +3563,12 @@ package:
             fetched via API calls.
          +/
         bool[dstring] customEmotes;
+
+        /++
+            Set when we see a [dialect.defs.IRCEvent.Type.USERSTATE|USERSTATE]
+            upon joining the channel.
+         +/
+        bool sawUserstate;
     }
 
     /++
