@@ -2130,6 +2130,7 @@ in (room, "Tried to import custom emotes for a nonexistent room")
 
     getEmoteSet(&getBTTVEmotes, "BetterTTV");
     getEmoteSet(&getFFZEmotes, "FrankerFaceZ");
+    //getEmoteSet(&getFFZEmotesFromBTTVCache, "FrankerFaceZ (BTTV)");
     getEmoteSet(&get7tvEmotes, "7tv");
     room.customEmotes.rehash();
 }

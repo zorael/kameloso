@@ -2261,9 +2261,9 @@ in (Fiber.getThis, "Tried to call `getBTTVGlobalEmotes` from outside a Fiber")
 }
 
 
-// getFFZEmotes
+// getFFZEmotesFromBTTVCache
 /++
-    Fetches FrankerFaceZ emotes for a given channel.
+    Fetches FrankerFaceZ emotes for a given channel from BetterTTV cache.
 
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
@@ -2272,9 +2272,11 @@ in (Fiber.getThis, "Tried to call `getBTTVGlobalEmotes` from outside a Fiber")
         idString = Twitch user/channel ID in string form.
 
     See_Also:
+        [getFFZEmotes]
         https://www.frankerfacez.com
  +/
-void getFFZEmotes(
+version(none)
+void getFFZEmotesFromBTTVCache(
     TwitchPlugin plugin,
     ref bool[dstring] emoteMap,
     const string idString)
@@ -2385,6 +2387,171 @@ in (Fiber.getThis, "Tried to call `getFFZEmotes` from outside a Fiber")
     }
 
     assert(0, "Unreachable");
+}
+
+
+// getFFZEmotes
+/++
+    Fetches FrankerFaceZ emotes for a given channel.
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        emoteMap = Reference to the `bool[dstring]` associative array to store
+            the fetched emotes in.
+        idString = Twitch user/channel ID in string form.
+
+    See_Also:
+        https://www.frankerfacez.com
+ +/
+void getFFZEmotes(
+    TwitchPlugin plugin,
+    ref bool[dstring] emoteMap,
+    const string idString)
+in (Fiber.getThis, "Tried to call `getFFZEmotes` from outside a Fiber")
+{
+    import std.conv : to;
+    import std.json : parseJSON;
+
+    immutable url = "https://api.frankerfacez.com/v1/room/id/" ~ idString;
+
+    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    {
+        try
+        {
+            immutable response = sendHTTPRequest(plugin, url);
+            immutable responseJSON = parseJSON(response.str);
+
+            /+
+            {
+                "room": {
+                    "_id": 366358,
+                    "css": null,
+                    "display_name": "GinoMachino",
+                    "id": "ginomachino",
+                    "is_group": false,
+                    "mod_urls": null,
+                    "moderator_badge": null,
+                    "set": 366370,
+                    "twitch_id": 148651829,
+                    "user_badge_ids": {
+                        "2": [
+                            188355608
+                        ]
+                    },
+                    "user_badges": {
+                        "2": [
+                            "machinobot"
+                        ]
+                    },
+                    "vip_badge": null,
+                    "youtube_id": null
+                },
+                "sets": {
+                    "366370": {
+                        "_type": 1,
+                        "css": null,
+                        "emoticons": [
+                            {
+                                "created_at": "2016-11-02T14:52:50.395Z",
+                                "css": null,
+                                "height": 32,
+                                "hidden": false,
+                                "id": 139407,
+                                "last_updated": "2016-11-08T21:26:39.377Z",
+                                "margins": null,
+                                "modifier": false,
+                                "name": "LULW",
+                                "offset": null,
+                                "owner": {
+                                    "_id": 53544,
+                                    "display_name": "Ian678",
+                                    "name": "ian678"
+                                },
+                                "public": true,
+                                "status": 1,
+                                "urls": {
+                                    "1": "\/\/cdn.frankerfacez.com\/emote\/139407\/1",
+                                    "2": "\/\/cdn.frankerfacez.com\/emote\/139407\/2",
+                                    "4": "\/\/cdn.frankerfacez.com\/emote\/139407\/4"
+                                },
+                                "usage_count": 148783,
+                                "width": 28
+                            },
+                            {
+                                "created_at": "2018-11-12T16:03:21.331Z",
+                                "css": null,
+                                "height": 23,
+                                "hidden": false,
+                                "id": 295554,
+                                "last_updated": "2018-11-15T08:31:33.401Z",
+                                "margins": null,
+                                "modifier": false,
+                                "name": "WhiteKnight",
+                                "offset": null,
+                                "owner": {
+                                    "_id": 333730,
+                                    "display_name": "cccclone",
+                                    "name": "cccclone"
+                                },
+                                "public": true,
+                                "status": 1,
+                                "urls": {
+                                    "1": "\/\/cdn.frankerfacez.com\/emote\/295554\/1",
+                                    "2": "\/\/cdn.frankerfacez.com\/emote\/295554\/2",
+                                    "4": "\/\/cdn.frankerfacez.com\/emote\/295554\/4"
+                                },
+                                "usage_count": 35,
+                                "width": 20
+                            }
+                        ],
+                        "icon": null,
+                        "id": 366370,
+                        "title": "Channel: GinoMachino"
+                    }
+                }
+            }
+            +/
+
+            immutable setsJSON = "sets" in responseJSON;
+            if (!setsJSON) throw new TwitchQueryException(
+                `No "sets" key in JSON response`,
+                response.str);
+
+            foreach (immutable _, immutable setJSON; setsJSON.object)
+            {
+                immutable emoticonsJSON = "emoticons" in setJSON;
+                if (!emoticonsJSON) throw new TwitchQueryException(
+                    `No "emoticons" key in JSON response`,
+                    response.str);
+
+                foreach (immutable emoteJSON; emoticonsJSON.array)
+                {
+                    immutable emote = emoteJSON["name"].str.to!dstring;
+                    emoteMap[emote] = true;
+                }
+            }
+
+            // All done
+            return;
+        }
+        catch (ErrorJSONException e)
+        {
+            // Likely 404
+            throw e;
+        }
+        catch (TwitchQueryException e)
+        {
+            // Retry until we reach the retry limit, then rethrow
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+            throw e;
+        }
+        catch (Exception e)
+        {
+            // As above
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+            throw e;
+        }
+    }
 }
 
 
