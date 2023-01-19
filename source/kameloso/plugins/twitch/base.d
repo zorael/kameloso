@@ -2111,13 +2111,13 @@ in (Fiber.getThis, "Tried to call `importCustomEmotes` from outside a Fiber")
 in (room, "Tried to import custom emotes for a nonexistent room")
 {
     alias GetEmoteFun = void function(TwitchPlugin, ref bool[dstring], const string);
+    bool[dstring] customEmotes;
 
     void getEmoteSet(GetEmoteFun fun, const string setName)
     {
         try
         {
-            fun(plugin, room.customEmotes, room.id);
-            return;
+            fun(plugin, customEmotes, room.id);
         }
         catch (Exception e)
         {
@@ -2130,9 +2130,10 @@ in (room, "Tried to import custom emotes for a nonexistent room")
 
     getEmoteSet(&getBTTVEmotes, "BetterTTV");
     getEmoteSet(&getFFZEmotes, "FrankerFaceZ");
-    //getEmoteSet(&getFFZEmotesFromBTTVCache, "FrankerFaceZ (BTTV)");
+    //getEmoteSet(&getFFZEmotesFromBTTVCache, "FrankerFaceZ (BTTV cache)");
     getEmoteSet(&get7tvEmotes, "7tv");
-    room.customEmotes.rehash();
+
+    room.customEmotes = customEmotes.rehash();
 }
 
 
@@ -2147,13 +2148,13 @@ void importCustomGlobalEmotes(TwitchPlugin plugin)
 in (Fiber.getThis, "Tried to call `importCustomGlobalEmotes` from outside a Fiber")
 {
     alias GetGlobalEmoteFun = void function(TwitchPlugin, ref bool[dstring]);
+    bool[dstring] customGlobalEmotes;
 
     void getGlobalEmoteSet(GetGlobalEmoteFun fun, const string setName)
     {
         try
         {
-            fun(plugin, plugin.customGlobalEmotes);
-            return;
+            fun(plugin, customGlobalEmotes);
         }
         catch (Exception e)
         {
@@ -2166,7 +2167,8 @@ in (Fiber.getThis, "Tried to call `importCustomGlobalEmotes` from outside a Fibe
 
     getGlobalEmoteSet(&getBTTVGlobalEmotes, "BetterTTV");
     getGlobalEmoteSet(&get7tvGlobalEmotes, "7tv");
-    plugin.customGlobalEmotes.rehash();
+
+    plugin.customGlobalEmotes = customGlobalEmotes.rehash();
 }
 
 
