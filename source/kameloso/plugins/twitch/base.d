@@ -383,21 +383,38 @@ in (channelName.length, "Tried to init Room with an empty channel string")
 
     "You will not get USERSTATE for other people. Only for yourself."
     https://discuss.dev.twitch.tv/t/no-userstate-on-people-joining/11598
+
+    This sometimes happens once per outgoing message sent, causing it to spam
+    the moderator warning.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.USERSTATE)
     .channelPolicy(ChannelPolicy.home)
 )
-void onUserstate(const ref IRCEvent event)
+void onUserstate(TwitchPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : contains;
+    auto room = event.channel in plugin.rooms;
 
-    if (!event.target.badges.contains("moderator/") &&
-        !event.target.badges.contains("broadcaster/"))
+    if (!room)
     {
-        enum pattern = "The bot is not a moderator of home channel <l>%s</>. " ~
-            "Consider elevating it to such to avoid being as rate-limited.";
-        logger.warningf(pattern, event.channel);
+        // Race...
+        initRoom(plugin, event.channel);
+        room = event.channel in plugin.rooms;
+    }
+
+    if (!room.sawUserstate)
+    {
+        import lu.string : contains;
+
+        // First USERSTATE; warn
+        if (!event.target.badges.contains("moderator/") &&
+            !event.target.badges.contains("broadcaster/"))
+        {
+            enum pattern = "The bot is not a moderator of home channel <l>%s</>. " ~
+                "Consider elevating it to such to avoid being as rate-limited.";
+            logger.warningf(pattern, event.channel);
+            room.sawUserstate = true;
+        }
     }
 }
 
@@ -407,14 +424,19 @@ void onUserstate(const ref IRCEvent event)
     Inherits the bots display name from a
     [dialect.defs.IRCEvent.Type.GLOBALUSERSTATE|GLOBALUSERSTATE]
     into [kameloso.pods.IRCBot.displayName|IRCBot.displayName].
+
+    Additionally fetches global custom BetterTV, FrankerFaceZ and 7tv emotes
+    if the settings say to do so.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.GLOBALUSERSTATE)
+    .fiber(true)
 )
-void onGlobalUserstate(TwitchPlugin plugin, const ref IRCEvent event)
+void onGlobalUserstate(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     plugin.state.bot.displayName = event.target.displayName;
     plugin.state.updates |= IRCPluginState.Update.bot;
+    importCustomGlobalEmotes(plugin);
 }
 
 
@@ -733,6 +755,9 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 /++
     Records the room ID of a home channel, and queries the Twitch servers for
     the display name of its broadcaster.
+
+    Additionally fetches custom BetterTV, FrankerFaceZ and 7tv emotes for the
+    channel if the settings say to do so.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ROOMSTATE)
@@ -1471,8 +1496,9 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
 
         foreach (immutable emotestring; event.emotes.splitter('/'))
         {
-            auto channelcount = event.channel in plugin.ecount;
+            if (!emotestring.length) continue;
 
+            auto channelcount = event.channel in plugin.ecount;
             if (!channelcount)
             {
                 plugin.ecount[event.channel][string.init] = 0L;
@@ -1481,9 +1507,9 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
             }
 
             string slice = emotestring;  // mutable
-            immutable id = slice.nom(':');//.to!uint;
-            auto thisEmoteCount = id in *channelcount;
+            immutable id = slice.nom(':');
 
+            auto thisEmoteCount = id in *channelcount;
             if (!thisEmoteCount)
             {
                 (*channelcount)[id] = 0L;
@@ -1573,6 +1599,7 @@ void onEndOfMOTD(TwitchPlugin plugin)
 void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : nom, stripped;
+    import std.array : replace;
     import std.format : format;
     import std.conv  : to;
 
@@ -1587,7 +1614,7 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
 
     void sendNotATwitchEmote()
     {
-        enum message = "That is not a Twitch emote.";
+        enum message = "That is not a Twitch, BetterTTV, FrankerFaceZ or 7tv emote.";
         chan(plugin.state, event.channel, message);
     }
 
@@ -1608,8 +1635,10 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
         rawSlice.nom(" :");
 
         // Slice it as a dstring to (hopefully) get full characters
+        // Undo replacements
         immutable dline = rawSlice.to!dstring;
-        immutable emote = dline[start..end];
+        immutable emote = dline[start..end]
+            .replace(dchar(';'), dchar(':'));
 
         // No real point using plurality since most emotes should have a count > 1
         enum pattern = "%s has been used %d times!";
@@ -1630,7 +1659,11 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
     if (!channelcounts) return sendResults(0L);
 
     string slice = event.emotes;
-    immutable id = slice.nom(':');//.to!uint;
+
+    // Replace emote colons so as not to conflict with emote tag syntax
+    immutable id = slice
+        .nom(':')
+        .replace(':', ';');
 
     auto thisEmoteCount = id in *channelcounts;
     if (!thisEmoteCount) return sendResults(0L);
@@ -2035,6 +2068,270 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         {
             throw e;
         }
+    }
+}
+
+
+// importCustomEmotes
+/++
+    Fetches custom channel-specific BetterTTV, FrankerFaceZ and 7tv emotes via API calls.
+
+    Params:
+        plugin = The current [TwitchPlugin].
+        room = Pointer to [TwitchPlugin.Room|Room] to import custom emotes for.
+ +/
+void importCustomEmotes(TwitchPlugin plugin, TwitchPlugin.Room* room)
+in (Fiber.getThis, "Tried to call `importCustomEmotes` from outside a Fiber")
+in (room, "Tried to import custom emotes for a nonexistent room")
+{
+    alias GetEmoteFun = void function(TwitchPlugin, ref bool[dstring], const string);
+
+    void getEmoteSet(GetEmoteFun fun, const string setName)
+    {
+        foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+        {
+            try
+            {
+                fun(plugin, room.customEmotes, room.id);
+                return;
+            }
+            catch (Exception e)
+            {
+                // Retry until we reach the retry limit
+                if (i < TwitchPlugin.delegateRetries-1) continue;
+
+                enum pattern = "Failed to fetch custom <l>%s</> emotes for channel <l>%s";
+                logger.warningf(pattern, setName, room.channelName);
+                version(PrintStacktraces) logger.trace(e.info);
+                //throw e;
+            }
+        }
+    }
+
+    getEmoteSet(&getBTTVEmotes, "BetterTTV");
+    getEmoteSet(&getFFZEmotes, "FrankerFaceZ");
+    getEmoteSet(&get7tvEmotes, "7tv");
+    room.customEmotes.rehash();
+}
+
+
+// importCustomGlobalEmotes
+/++
+    Fetches custom global BetterTTV, FrankerFaceZ and 7tv emotes via API calls.
+
+    Params:
+        plugin = The current [TwitchPlugin].
+ +/
+void importCustomGlobalEmotes(TwitchPlugin plugin)
+in (Fiber.getThis, "Tried to call `importCustomGlobalEmotes` from outside a Fiber")
+{
+    alias GetGlobalEmoteFun = void function(TwitchPlugin, ref bool[dstring]);
+
+    void getGlobalEmoteSet(GetGlobalEmoteFun fun, const string setName)
+    {
+        foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+        {
+            try
+            {
+                fun(plugin, plugin.customGlobalEmotes);
+                return;
+            }
+            catch (Exception e)
+            {
+                // Retry until we reach the retry limit
+                if (i < TwitchPlugin.delegateRetries-1) continue;
+
+                enum pattern = "Failed to fetch global <l>%s</> emotes";
+                logger.warningf(pattern, setName);
+                version(PrintStacktraces) logger.trace(e.info);
+                //throw e;
+            }
+        }
+    }
+
+    getGlobalEmoteSet(&getBTTVGlobalEmotes, "BetterTTV");
+    getGlobalEmoteSet(&get7tvGlobalEmotes, "7tv");
+    plugin.customGlobalEmotes.rehash();
+}
+
+
+// embedCustomEmotes
+/++
+    Embeds custom emotes into the [dialect.defs.IRCEvent|IRCEvent] passed by reference,
+    so that the [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin] can
+    highlight them with colours.
+
+    This is called in [postprocess].
+
+    Params:
+        event = [dialect.defs.IRCEvent|IRCEvent] in flight.
+        customEmotes = `bool[dstring]` associative array of channel-specific custom emotes.
+        customGlobalEmotes = `bool[dstring]` associative array of global custom emotes.
+ +/
+void embedCustomEmotes(
+    ref IRCEvent event,
+    const bool[dstring] customEmotes,
+    const bool[dstring] customGlobalEmotes)
+{
+    import std.algorithm.comparison : among;
+    import std.array : Appender;
+    import std.conv : to;
+    import std.range : only;
+    import std.string : indexOf;
+
+    if (!event.type.among!(IRCEvent.Type.CHAN, IRCEvent.Type.EMOTE) || !event.content.length) return;
+
+    static Appender!(char[]) sink;
+
+    scope(exit)
+    {
+        if (sink.data.length)
+        {
+            event.emotes ~= sink.data;
+            sink.clear();
+        }
+    }
+
+    if (sink.capacity == 0)
+    {
+        sink.reserve(64);  // guesstimate
+    }
+
+    auto range = only(customEmotes, customGlobalEmotes);
+    immutable dline = event.content.to!dstring;
+    ptrdiff_t pos = dline.indexOf(' ');
+    dstring previousEmote;  // mutable
+    size_t prev;
+
+    static bool isEmoteCharacter(const dchar dc)
+    {
+        // Unsure about '-' and '(' but be conservative and keep
+        return (
+            ((dc >= dchar('a')) && (dc <= dchar('z'))) ||
+            ((dc >= dchar('A')) && (dc <= dchar('Z'))) ||
+            ((dc >= dchar('0')) && (dc <= dchar('9'))) ||
+            dc.among!(dchar(':'), dchar(')'), dchar('-'), dchar('(')));
+    }
+
+    void checkWord(const dstring dword)
+    {
+        import std.format : formattedWrite;
+
+        // Micro-optimise a bit by skipping AA lookups of words that are unlikely to be emotes
+        if ((dword.length > 1) &&
+            isEmoteCharacter(dword[$-1]) &&
+            isEmoteCharacter(dword[0]))
+        {
+            // Can reasonably be an emote
+        }
+        else
+        {
+            // Can reasonably not
+            return;
+        }
+
+        if (dword == previousEmote)
+        {
+            enum pattern = ",%d-%d";
+            immutable end = (pos == -1) ?
+                dline.length :
+                pos;
+
+            sink.formattedWrite(pattern, prev, end-1);
+            return;
+        }
+
+        foreach (emoteMap; range)
+        {
+            import std.array : replace;
+
+            if (!emoteMap.length) continue;
+
+            if (dword in emoteMap)
+            {
+                enum pattern = "/%s:%d-%d";
+                immutable slicedPattern = (event.emotes.length || sink.data.length) ?
+                    pattern :
+                    pattern[1..$];
+                immutable dwordEscaped = dword.replace(dchar(':'), dchar(';'));
+                immutable end = (pos == -1) ?
+                    dline.length :
+                    pos;
+
+                sink.formattedWrite(slicedPattern, dwordEscaped, prev, end-1);
+                previousEmote = dword;
+                return;
+            }
+        }
+    }
+
+    if (pos == -1)
+    {
+        // No bounding space, check entire (one-word) line
+        return checkWord(dline);
+    }
+
+    while (true)
+    {
+        if (pos > prev)
+        {
+            checkWord(dline[prev..pos]);
+        }
+
+        prev = (pos + 1);
+        if (prev >= dline.length) return;
+
+        pos = dline.indexOf(' ', prev);
+        if (pos == -1)
+        {
+            return checkWord(dline[prev..$]);
+        }
+    }
+
+    assert(0, "Unreachable");
+}
+
+///
+unittest
+{
+    bool[dstring] customEmotes =
+    [
+        ":tf:"d : true,
+        "FrankerZ"d : true,
+        "NOTED"d : true,
+    ];
+
+    bool[dstring] customGlobalEmotes =
+    [
+        "KEKW"d : true,
+        "NotLikeThis"d : true,
+        "gg"d : true,
+    ];
+
+    IRCEvent event;
+    event.type = IRCEvent.Type.CHAN;
+
+    {
+        event.content = "come on its easy, now rest then talk talk more left, left, " ~
+            "right re st, up, down talk some rest a bit talk poop  :tf:";
+        //event.emotes = string.init;
+        embedCustomEmotes(event, customEmotes, customGlobalEmotes);
+        enum expectedEmotes = ";tf;:113-116";
+        assert((event.emotes == expectedEmotes), event.emotes);
+    }
+    {
+        event.content = "NOTED  FrankerZ  NOTED NOTED    gg";
+        event.emotes = string.init;
+        embedCustomEmotes(event, customEmotes, customGlobalEmotes);
+        enum expectedEmotes = "NOTED:0-4/FrankerZ:7-14/NOTED:17-21,23-27/gg:32-33";
+        assert((event.emotes == expectedEmotes), event.emotes);
+    }
+    {
+        event.content = "No emotes here KAPPA";
+        event.emotes = string.init;
+        embedCustomEmotes(event, customEmotes, customGlobalEmotes);
+        enum expectedEmotes = string.init;
+        assert((event.emotes == expectedEmotes), event.emotes);
     }
 }
 
@@ -2758,17 +3055,52 @@ void teardown(TwitchPlugin plugin)
 /++
     Hijacks a reference to a [dialect.defs.IRCEvent|IRCEvent] and modifies the
     sender and target class based on their badges (and the current settings).
+
+    Additionally embeds custom BTTV/FrankerFaceZ/7tv emotes into the event.
  +/
 void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 {
-    import std.algorithm.searching : canFind;
-
     if (!event.sender.nickname.length || !event.channel.length) return;
 
-    version(TwitchPromoteEverywhere) {}
+    version(TwitchCustomEmotesEverywhere)
+    {
+        // No checks needed
+        if (const room = event.channel in plugin.rooms)
+        {
+            embedCustomEmotes(event, room.customEmotes, plugin.customGlobalEmotes);
+        }
+    }
     else
     {
-        if (!plugin.state.bot.homeChannels.canFind(event.channel)) return;
+        import std.algorithm.searching : canFind;
+
+        // Only embed if the event is in a home channel
+        immutable isHomeChannel = plugin.state.bot.homeChannels.canFind(event.channel);
+
+        if (isHomeChannel)
+        {
+            if (const room = event.channel in plugin.rooms)
+            {
+                embedCustomEmotes(event, room.customEmotes, plugin.customGlobalEmotes);
+            }
+        }
+    }
+
+    version(TwitchPromoteEverywhere)
+    {
+        // No checks needed
+    }
+    else
+    {
+        version(TwitchCustomEmotesEverywhere)
+        {
+            import std.algorithm.searching : canFind;
+
+            // isHomeChannel only defined if version not TwitchCustomEmotesEverywhere
+            immutable isHomeChannel = plugin.state.bot.homeChannels.canFind(event.channel);
+        }
+
+        if (!isHomeChannel) return;
     }
 
     static void postprocessImpl(const TwitchPlugin plugin,
@@ -3193,6 +3525,18 @@ package:
             Song request history; UNIX timestamps keyed by nickname.
          +/
         long[string] songrequestHistory;
+
+        /++
+            Custom channel-specific BetterTTV, FrankerFaceZ and 7tv emotes, as
+            fetched via API calls.
+         +/
+        bool[dstring] customEmotes;
+
+        /++
+            Set when we see a [dialect.defs.IRCEvent.Type.USERSTATE|USERSTATE]
+            upon joining the channel.
+         +/
+        bool sawUserstate;
     }
 
     /++
@@ -3204,6 +3548,11 @@ package:
         Array of active bot channels' state.
      +/
     Room[string] rooms;
+
+    /++
+        Global BetterTTV, FrankerFaceZ and 7tv emotes, as fetched via API calls.
+     +/
+    bool[dstring] customGlobalEmotes;
 
     /++
         [kameloso.terminal.TerminalToken.bell|TerminalToken.bell] as string,
