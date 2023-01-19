@@ -848,6 +848,7 @@ void onGuestRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         room = event.channel in plugin.rooms;
     }
 
+    room.id = event.aux;
     importCustomEmotes(plugin, room);
 }
 
