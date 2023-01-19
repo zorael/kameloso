@@ -2139,7 +2139,14 @@ in (Fiber.getThis, "Tried to call `getBTTVEmotes` from outside a Fiber")
             +/
 
             auto channelEmotesJSON = "channelEmotes" in responseJSON.object;
+            if (!channelEmotesJSON) throw new TwitchQueryException(
+                `No "channelEmotes" key in JSON response`,
+                response.str);
+
             auto sharedEmotesJSON = "sharedEmotes" in responseJSON.object;
+            if (!sharedEmotesJSON) throw new TwitchQueryException(
+                `No "sharedEmotes" key in JSON response`,
+                response.str);
 
             foreach (const emoteJSON; channelEmotesJSON.array)
             {
