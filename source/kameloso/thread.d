@@ -251,6 +251,15 @@ struct ThreadMessage
      +/
     static struct GetSetting {}
 
+    /++
+        Concurrency message asking to put an [dialect.defs.IRCUser|IRCUser]
+        into each plugin's (and service's)
+        [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users]
+        associative array.
+
+     +/
+    static struct PutUser {}
+
     /+
         Generate a static function for each [Type].
      +/
