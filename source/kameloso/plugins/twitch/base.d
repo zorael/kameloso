@@ -2191,7 +2191,6 @@ void embedCustomEmotes(
     import std.algorithm.comparison : among;
     import std.array : Appender;
     import std.conv : to;
-    import std.range : only;
     import std.string : indexOf;
 
     if (!event.type.among!(IRCEvent.Type.CHAN, IRCEvent.Type.EMOTE) || !event.content.length) return;
@@ -2212,7 +2211,6 @@ void embedCustomEmotes(
         sink.reserve(64);  // guesstimate
     }
 
-    auto range = only(customEmotes, customGlobalEmotes);
     immutable dline = event.content.to!dstring;
     ptrdiff_t pos = dline.indexOf(' ');
     dstring previousEmote;  // mutable
@@ -2226,6 +2224,24 @@ void embedCustomEmotes(
             ((dc >= dchar('A')) && (dc <= dchar('Z'))) ||
             ((dc >= dchar('0')) && (dc <= dchar('9'))) ||
             dc.among!(dchar(':'), dchar(')'), dchar('-'), dchar('(')));
+    }
+
+    void appendEmote(const dstring dword)
+    {
+        import std.array : replace;
+        import std.format : formattedWrite;
+
+        enum pattern = "/%s:%d-%d";
+        immutable slicedPattern = (event.emotes.length || sink.data.length) ?
+            pattern :
+            pattern[1..$];
+        immutable dwordEscaped = dword.replace(dchar(':'), dchar(';'));
+        immutable end = (pos == -1) ?
+            dline.length :
+            pos;
+
+        sink.formattedWrite(slicedPattern, dwordEscaped, prev, end-1);
+        previousEmote = dword;
     }
 
     void checkWord(const dstring dword)
@@ -2256,27 +2272,13 @@ void embedCustomEmotes(
             return;
         }
 
-        foreach (emoteMap; range)
+        if (dword in customEmotes)
         {
-            import std.array : replace;
-
-            if (!emoteMap.length) continue;
-
-            if (dword in emoteMap)
-            {
-                enum pattern = "/%s:%d-%d";
-                immutable slicedPattern = (event.emotes.length || sink.data.length) ?
-                    pattern :
-                    pattern[1..$];
-                immutable dwordEscaped = dword.replace(dchar(':'), dchar(';'));
-                immutable end = (pos == -1) ?
-                    dline.length :
-                    pos;
-
-                sink.formattedWrite(slicedPattern, dwordEscaped, prev, end-1);
-                previousEmote = dword;
-                return;
-            }
+            return appendEmote(dword);
+        }
+        else if (dword in customGlobalEmotes)
+        {
+            return appendEmote(dword);
         }
     }
 
