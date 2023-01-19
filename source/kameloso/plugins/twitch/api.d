@@ -2229,11 +2229,12 @@ in (Fiber.getThis, "Tried to call `getBTTVGlobalEmotes` from outside a Fiber")
     import std.conv : to;
     import std.json : parseJSON;
 
+    enum url = "https://api.betterttv.net/3/cached/emotes/global";
+
     foreach (immutable i; 0..TwitchPlugin.delegateRetries)
     {
         try
         {
-            enum url = "https://api.betterttv.net/3/cached/emotes/global";
             immutable response = sendHTTPRequest(plugin, url);
             immutable responseJSON = parseJSON(response.str);
 
@@ -2658,6 +2659,7 @@ in (Fiber.getThis, "Tried to call `get7tvEmotes` from outside a Fiber")
 
             if (json.type == JSONType.object)
             {
+                // Shouldn't this be an ErrorJSONException?
                 const errorJSON = "error" in json.object;
 
                 if (errorJSON && (errorJSON.str == "No Items Found"))
