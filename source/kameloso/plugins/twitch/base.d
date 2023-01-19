@@ -741,6 +741,9 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 )
 void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
+    import kameloso.thread : ThreadMessage;
+    import std.concurrency : send;
+
     auto room = event.channel in plugin.rooms;
 
     if (!room)
@@ -776,28 +779,22 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         }
     }
 
-    version(WithPersistenceService)
+    immutable nickname = event.channel[1..$];
+    auto broadcasterUser = nickname in plugin.state.users;
+
+    if (!broadcasterUser)
     {
-        import kameloso.thread : ThreadMessage;
-        import std.concurrency : send;
-
-        immutable nickname = event.channel[1..$];
-        auto broadcasterUser = nickname in plugin.state.users;
-
-        if (!broadcasterUser)
-        {
-            // Forge a new user
-            auto newUser = IRCUser(nickname, nickname, nickname ~ ".tmi.twitch.tv");
-            newUser.account = nickname;
-            newUser.class_ = IRCUser.Class.anyone;
-            plugin.state.users[nickname] = newUser;
-            broadcasterUser = nickname in plugin.state.users;
-        }
-
-        broadcasterUser.displayName = room.broadcasterDisplayName;
-        IRCUser user = *broadcasterUser;  // dereference and copy
-        plugin.state.mainThread.send(ThreadMessage.PutUser(), user);
+        // Forge a new user
+        auto newUser = IRCUser(nickname, nickname, nickname ~ ".tmi.twitch.tv");
+        newUser.account = nickname;
+        newUser.class_ = IRCUser.Class.anyone;
+        plugin.state.users[nickname] = newUser;
+        broadcasterUser = nickname in plugin.state.users;
     }
+
+    broadcasterUser.displayName = room.broadcasterDisplayName;
+    IRCUser user = *broadcasterUser;  // dereference and copy
+    plugin.state.mainThread.send(ThreadMessage.PutUser(), user);
 
     room.follows = getFollows(plugin, room.id);
     room.followsLastCached = event.time;
