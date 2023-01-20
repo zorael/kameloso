@@ -2116,13 +2116,12 @@ in (room, "Tried to import custom emotes for a nonexistent room")
     scope(exit) GC.enable();
 
     alias GetEmoteFun = void function(TwitchPlugin, ref bool[dstring], const string);
-    bool[dstring] customEmotes;
 
     void getEmoteSet(GetEmoteFun fun, const string setName)
     {
         try
         {
-            fun(plugin, customEmotes, room.id);
+            fun(plugin, room.customEmotes, room.id);
         }
         catch (Exception e)
         {
@@ -2138,7 +2137,7 @@ in (room, "Tried to import custom emotes for a nonexistent room")
     //getEmoteSet(&getFFZEmotesFromBTTVCache, "FrankerFaceZ (BTTV cache)");
     getEmoteSet(&get7tvEmotes, "7tv");
 
-    room.customEmotes = customEmotes.rehash();
+    room.customEmotes.rehash();
 }
 
 
@@ -2158,13 +2157,12 @@ in (Fiber.getThis, "Tried to call `importCustomGlobalEmotes` from outside a Fibe
     scope(exit) GC.enable();
 
     alias GetGlobalEmoteFun = void function(TwitchPlugin, ref bool[dstring]);
-    bool[dstring] customGlobalEmotes;
 
     void getGlobalEmoteSet(GetGlobalEmoteFun fun, const string setName)
     {
         try
         {
-            fun(plugin, customGlobalEmotes);
+            fun(plugin, plugin.customGlobalEmotes);
         }
         catch (Exception e)
         {
@@ -2178,7 +2176,7 @@ in (Fiber.getThis, "Tried to call `importCustomGlobalEmotes` from outside a Fibe
     getGlobalEmoteSet(&getBTTVGlobalEmotes, "BetterTTV");
     getGlobalEmoteSet(&get7tvGlobalEmotes, "7tv");
 
-    plugin.customGlobalEmotes = customGlobalEmotes.rehash();
+    plugin.customGlobalEmotes.rehash();
 }
 
 
@@ -3290,6 +3288,17 @@ package void saveSecretsToDisk(const Credentials[string] aa, const string filena
 }
 
 
+// setup
+/++
+    Sets up the plugin, initialising the custom emotes associative array.
+ +/
+void setup(TwitchPlugin plugin)
+{
+    plugin.customGlobalEmotes[dstring.init] = false;
+    plugin.customGlobalEmotes.remove(dstring.init);
+}
+
+
 // reload
 /++
     Reloads the plugin, loading resources from disk.
@@ -3480,6 +3489,9 @@ package:
             this.broadcasterName = channelName[1..$];
             this.broadcasterDisplayName = this.broadcasterName;  // until we resolve it
             this.privateUniqueID = uniform(1, 10_000);
+
+            this.customEmotes[dstring.init] = false;
+            this.customEmotes.remove(dstring.init);
         }
 
         /++
