@@ -822,7 +822,7 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     room.follows = getFollows(plugin, room.id);
     room.followsLastCached = event.time;
     startRoomMonitorFibers(plugin, event.channel);
-    importCustomEmotes(plugin, room);
+    importCustomEmotes(plugin, event.channel, room.id);
 }
 
 
@@ -839,17 +839,7 @@ version(TwitchCustomEmotesEverywhere)
 )
 void onGuestRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    auto room = event.channel in plugin.rooms;
-
-    if (!room)
-    {
-        // Race...
-        initRoom(plugin, event.channel);
-        room = event.channel in plugin.rooms;
-    }
-
-    room.id = event.aux;
-    importCustomEmotes(plugin, room);
+    importCustomEmotes(plugin, event.channel, event.aux);
 }
 
 
@@ -2104,16 +2094,24 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     Params:
         plugin = The current [TwitchPlugin].
-        room = Pointer to [TwitchPlugin.Room|Room] to import custom emotes for.
+        channelName = Name of channel to import emotes for.
+        idString = Twitch ID of channel, in string form.
  +/
-void importCustomEmotes(TwitchPlugin plugin, TwitchPlugin.Room* room)
+void importCustomEmotes(
+    TwitchPlugin plugin,
+    const string channelName,
+    const string idString)
 in (Fiber.getThis, "Tried to call `importCustomEmotes` from outside a Fiber")
-in (room, "Tried to import custom emotes for a nonexistent room")
 {
     import core.memory : GC;
 
     GC.disable();
     scope(exit) GC.enable();
+
+    // Initialise the AA so we can get a pointer to it.
+    plugin.customEmotesByChannel[channelName][dstring.init] = false;
+    auto customEmotes = channelName in plugin.customEmotesByChannel;
+    (*customEmotes).remove(dstring.init);
 
     alias GetEmoteFun = void function(TwitchPlugin, ref bool[dstring], const string);
 
@@ -2121,12 +2119,12 @@ in (room, "Tried to import custom emotes for a nonexistent room")
     {
         try
         {
-            fun(plugin, room.customEmotes, room.id);
+            fun(plugin, *customEmotes, idString);
         }
         catch (Exception e)
         {
             enum pattern = "Failed to fetch custom <l>%s</> emotes for channel <l>%s</>: <t>%s";
-            logger.warningf(pattern, setName, room.channelName, e.msg);
+            logger.warningf(pattern, setName, channelName, e.msg);
             //version(PrintStacktraces) logger.trace(e.info);
             //throw e;
         }
@@ -2136,8 +2134,7 @@ in (room, "Tried to import custom emotes for a nonexistent room")
     getEmoteSet(&getFFZEmotes, "FrankerFaceZ");
     //getEmoteSet(&getFFZEmotesFromBTTVCache, "FrankerFaceZ (BTTV cache)");
     getEmoteSet(&get7tvEmotes, "7tv");
-
-    room.customEmotes.rehash();
+    customEmotes.rehash();
 }
 
 
@@ -2175,7 +2172,6 @@ in (Fiber.getThis, "Tried to call `importCustomGlobalEmotes` from outside a Fibe
 
     getGlobalEmoteSet(&getBTTVGlobalEmotes, "BetterTTV");
     getGlobalEmoteSet(&get7tvGlobalEmotes, "7tv");
-
     plugin.customGlobalEmotes.rehash();
 }
 
@@ -2202,8 +2198,6 @@ void embedCustomEmotes(
     import std.array : Appender;
     import std.conv : to;
     import std.string : indexOf;
-
-    if (!event.type.among!(IRCEvent.Type.CHAN, IRCEvent.Type.EMOTE) || !event.content.length) return;
 
     static Appender!(char[]) sink;
 
@@ -2282,11 +2276,7 @@ void embedCustomEmotes(
             return;
         }
 
-        if (dword in customEmotes)
-        {
-            return appendEmote(dword);
-        }
-        else if (dword in customGlobalEmotes)
+        if ((dword in customEmotes) || (dword in customGlobalEmotes))
         {
             return appendEmote(dword);
         }
@@ -3087,14 +3077,22 @@ void teardown(TwitchPlugin plugin)
  +/
 void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 {
+    import std.algorithm.comparison : among;
+
     if (!event.sender.nickname.length || !event.channel.length) return;
+
+    immutable eventCanContainEmotes = event.content.length &&
+        event.type.among!(IRCEvent.Type.CHAN, IRCEvent.Type.EMOTE);
 
     version(TwitchCustomEmotesEverywhere)
     {
-        // No checks needed
-        if (const room = event.channel in plugin.rooms)
+        if (eventCanContainEmotes)
         {
-            embedCustomEmotes(event, room.customEmotes, plugin.customGlobalEmotes);
+            // No checks needed
+            if (const customEmotes = event.channel in plugin.customEmotesByChannel)
+            {
+                embedCustomEmotes(event, *customEmotes, plugin.customGlobalEmotes);
+            }
         }
     }
     else
@@ -3104,11 +3102,11 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
         // Only embed if the event is in a home channel
         immutable isHomeChannel = plugin.state.bot.homeChannels.canFind(event.channel);
 
-        if (isHomeChannel)
+        if (isHomeChannel && eventCanContainEmotes)
         {
-            if (const room = event.channel in plugin.rooms)
+            if (const customEmotes = event.channel in plugin.customEmotesByChannel)
             {
-                embedCustomEmotes(event, room.customEmotes, plugin.customGlobalEmotes);
+                embedCustomEmotes(event, *customEmotes, plugin.customGlobalEmotes);
             }
         }
     }
@@ -3489,9 +3487,6 @@ package:
             this.broadcasterName = channelName[1..$];
             this.broadcasterDisplayName = this.broadcasterName;  // until we resolve it
             this.privateUniqueID = uniform(1, 10_000);
-
-            this.customEmotes[dstring.init] = false;
-            this.customEmotes.remove(dstring.init);
         }
 
         /++
@@ -3568,12 +3563,6 @@ package:
         long[string] songrequestHistory;
 
         /++
-            Custom channel-specific BetterTTV, FrankerFaceZ and 7tv emotes, as
-            fetched via API calls.
-         +/
-        bool[dstring] customEmotes;
-
-        /++
             Set when we see a [dialect.defs.IRCEvent.Type.USERSTATE|USERSTATE]
             upon joining the channel.
          +/
@@ -3591,7 +3580,13 @@ package:
     Room[string] rooms;
 
     /++
-        Global BetterTTV, FrankerFaceZ and 7tv emotes, as fetched via API calls.
+        Custom channel-specific BetterTTV, FrankerFaceZ and 7tv emotes, as
+        fetched via API calls.
+     +/
+    bool[dstring][string] customEmotesByChannel;
+
+    /++
+        Custom global BetterTTV, FrankerFaceZ and 7tv emotes, as fetched via API calls.
      +/
     bool[dstring] customGlobalEmotes;
 
