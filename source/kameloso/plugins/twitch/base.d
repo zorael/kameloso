@@ -3286,17 +3286,6 @@ package void saveSecretsToDisk(const Credentials[string] aa, const string filena
 }
 
 
-// setup
-/++
-    Sets up the plugin, initialising the custom emotes associative array.
- +/
-void setup(TwitchPlugin plugin)
-{
-    plugin.customGlobalEmotes[dstring.init] = false;
-    plugin.customGlobalEmotes.remove(dstring.init);
-}
-
-
 // reload
 /++
     Reloads the plugin, loading resources from disk.
