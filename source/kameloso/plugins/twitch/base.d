@@ -1711,6 +1711,12 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
             .policy(PrefixPolicy.prefixed)
             .hidden(true)
     )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("hours")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
 )
 void onCommandWatchtime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
