@@ -2200,6 +2200,7 @@ void embedCustomEmotes(
     const bool[dstring] customEmotes,
     const bool[dstring] customGlobalEmotes)
 {
+    import lu.string : strippedRight;
     import std.algorithm.comparison : among;
     import std.array : Appender;
     import std.conv : to;
@@ -2216,12 +2217,9 @@ void embedCustomEmotes(
         }
     }
 
-    if (sink.capacity == 0)
-    {
-        sink.reserve(64);  // guesstimate
-    }
+    if (sink.capacity == 0) sink.reserve(64);  // guesstimate
 
-    immutable dline = event.content.to!dstring;
+    immutable dline = event.content.strippedRight.to!dstring;
     ptrdiff_t pos = dline.indexOf(' ');
     dstring previousEmote;  // mutable
     size_t prev;
@@ -2249,7 +2247,6 @@ void embedCustomEmotes(
         immutable end = (pos == -1) ?
             dline.length :
             pos;
-
         sink.formattedWrite(slicedPattern, dwordEscaped, prev, end-1);
         previousEmote = dword;
     }
@@ -2277,9 +2274,8 @@ void embedCustomEmotes(
             immutable end = (pos == -1) ?
                 dline.length :
                 pos;
-
             sink.formattedWrite(pattern, prev, end-1);
-            return;
+            return;  // cannot return non-void from `void` function
         }
 
         if ((dword in customEmotes) || (dword in customGlobalEmotes))
