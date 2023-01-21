@@ -328,7 +328,9 @@ in (specified.length, "Tried to get timezone of an empty string")
         {
             string resolveStandardTimezone(const string zonestring)
             {
-                if (zonestring.contains("Standard Time")) return string.init;
+                import std.algorithm.searching : endsWith;
+
+                if (zonestring.endsWith("Standard Time")) return string.init;
 
                 immutable withStandardTime = zonestring ~ " Standard Time";
                 return installedTimezones.canFind(withStandardTime) ?
