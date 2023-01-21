@@ -170,6 +170,55 @@ void onCommandTime(TimePlugin plugin, const ref IRCEvent event)
     import std.datetime.timezone : LocalTime;
     import std.format : format;
 
+    void sendInvalidTimezone(const string zonestring)
+    {
+        enum pattern = "Invalid timezone: <b>%s<b>";
+        immutable message = pattern.format(zonestring);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendMalformedEntry(const string overrideString)
+    {
+        enum pattern = `Internal error; possible malformed entry "<b>%s<b>" in timezones file.`;
+        immutable message = pattern.format(overrideString);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendInternalError()
+    {
+        enum message = "Internal error.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendTimestampInZone(const string timestamp, const string specified)
+    {
+        enum pattern = "The time is currently <b>%s<b> in <b>%s<b>.";
+        immutable message = pattern.format(timestamp, specified);
+        return chan(plugin.state, event.channel, message);
+    }
+
+    void sendTimestampLocal(const string timestamp)
+    {
+        enum pattern = "The time is currently <b>%s<b> locally.";
+        immutable message = pattern.format(timestamp);
+        chan(plugin.state, event.channel, message);
+    }
+
+    version(TwitchSupport)
+    void sendTimestampTwitch(const string timestamp)
+    {
+        import kameloso.plugins.common.misc : nameOf;
+
+        // No specific timezone specified; report the streamer's
+        // (technically the bot's, unless an override was entered in the config file)
+        enum pattern = "The time is currently %s for %s.";
+        immutable name = (plugin.state.client.nickname == event.channel[1..$]) ?
+            "me" :
+            nameOf(plugin, event.channel[1..$]);
+        immutable message = pattern.format(timestamp, name);
+        return chan(plugin.state, event.channel, message);
+    }
+
     string getTimestamp(/*const*/ ubyte hour, const ubyte minute)
     {
         import std.format : format;
@@ -201,24 +250,11 @@ void onCommandTime(TimePlugin plugin, const ref IRCEvent event)
 
     if (!timezone)
     {
-        if (specified.length)
-        {
-            enum pattern = "Invalid timezone: <b>%s<b>";
-            immutable message = pattern.format(specified);
-            chan(plugin.state, event.channel, message);
-        }
-        else if (overrideZone)
-        {
-            enum pattern = `Internal error; possible malformed entry "<b>%s<b>" in timezones file.`;
-            immutable message = pattern.format(*overrideZone);
-            chan(plugin.state, event.channel, message);
-        }
-        else
-        {
-            enum message = "Internal error.";
-            chan(plugin.state, event.channel, message);
-        }
-        return;
+        return specified.length ?
+            sendInvalidTimezone(specified) :
+            overrideZone ?
+                sendMalformedEntry(*overrideZone) :
+                sendInternalError();
     }
 
     immutable now = Clock.currTime(timezone);
@@ -226,40 +262,20 @@ void onCommandTime(TimePlugin plugin, const ref IRCEvent event)
 
     if (specified.length)
     {
-        enum pattern = "The time is currently <b>%s<b> in <b>%s<b>.";
-        immutable message = pattern.format(timestamp, specified);
-        return chan(plugin.state, event.channel, message);
+        return sendTimestampInZone(timestamp, specified);
     }
 
     version(TwitchSupport)
     {
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
-            import kameloso.plugins.common.misc : nameOf;
-
-            // No specific timezone specified; report the streamer's
-            // (technically the bot's, unless an override was entered in the config file)
-            enum pattern = "The time is currently %s for %s.";
-            immutable name = (plugin.state.client.nickname == event.channel[1..$]) ?
-                "me" :
-                nameOf(plugin, event.channel[1..$]);
-            immutable message = pattern.format(timestamp, name);
-            return chan(plugin.state, event.channel, message);
+            return sendTimestampTwitch(timestamp);
         }
     }
 
-    if (overrideZone)
-    {
-        enum pattern = "The time is currently <b>%s<b> in <b>%s<b>.";
-        immutable message = pattern.format(timestamp, *overrideZone);
-        chan(plugin.state, event.channel, message);
-    }
-    else
-    {
-        enum pattern = "The time is currently <b>%s<b> locally.";
-        immutable message = pattern.format(timestamp);
-        chan(plugin.state, event.channel, message);
-    }
+    return overrideZone ?
+        sendTimestampInZone(timestamp, *overrideZone) :
+        sendTimestampLocal(timestamp);
 }
 
 
