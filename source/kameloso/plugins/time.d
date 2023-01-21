@@ -299,7 +299,7 @@ in (specified.length, "Tried to get timezone of an empty string")
             {
                 if (zonestring.contains('/')) return string.init;
 
-                static immutable string[6] prefixes =
+                static immutable string[7] prefixes =
                 [
                     "Europe/",
                     "America/",
@@ -307,6 +307,7 @@ in (specified.length, "Tried to get timezone of an empty string")
                     "Africa/",
                     "Australia/",
                     "Pacific/",
+                    "Etc/",
                 ];
 
                 foreach (immutable prefix; prefixes[])
