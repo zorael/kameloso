@@ -357,7 +357,7 @@ in (specified.length, "Tried to get timezone of an empty string")
         }
         else
         {
-            static assert(0, "Unsupported platform, please file a bug");
+            static assert(0, "Unsupported platform, please file a bug.");
         }
 
         return TZ.getTimeZone(getZonestring());
