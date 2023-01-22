@@ -63,6 +63,54 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
     import std.algorithm.searching : canFind;
     import std.format : format;
 
+    void sendUsage()
+    {
+        enum pattern = "Usage: <b>%s%s<b> [add|del|list] [counter word]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendMustBeUnique()
+    {
+        enum message = "Counter words must be unique and may not contain any of " ~
+            "the following characters: [<b>+-=?<b>]";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendCounterAlreadyExists()
+    {
+        enum message = "A counter with that name already exists.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendNoSuchCounter()
+    {
+        enum message = "No such counter available.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendCounterRemoved(const string word)
+    {
+        enum pattern = "Counter <b>%s<b> removed.";
+        immutable message = pattern.format(word);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendNoCountersActive()
+    {
+        enum message = "No counters currently active in this channel.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendCountersList(const string[] counters)
+    {
+        enum pattern = "Current counters: %s";
+        immutable arrayPattern = "%-(<b>" ~ plugin.state.settings.prefix ~ "%s<b>, %)<b>";
+        immutable list = arrayPattern.format(counters);
+        immutable message = pattern.format(list);
+        chan(plugin.state, event.channel, message);
+    }
+
     string slice = event.content.stripped;  // mutable
     immutable verb = slice.nom!(Yes.inherit)(' ');
     slice = slice.strippedLeft;
@@ -74,15 +122,12 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
 
         if (slice.canFind!(c => c.among!('+', '-', '=', '?')))
         {
-            enum message = "Counter words must be unique and may not contain any of " ~
-                "the following characters: [<b>+-=?<b>]";
-            return chan(plugin.state, event.channel, message);
+            return sendMustBeUnique();
         }
 
         if ((event.channel in plugin.counters) && (slice in plugin.counters[event.channel]))
         {
-            enum message = "A counter with that name already exists.";
-            return chan(plugin.state, event.channel, message);
+            return sendCounterAlreadyExists();
         }
 
         /+
@@ -137,40 +182,21 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
     case "del":
         if (!slice.length) goto default;
 
-        if ((event.channel !in plugin.counters) || (slice !in plugin.counters[event.channel]))
-        {
-            enum message = "No such counter available.";
-            return chan(plugin.state, event.channel, message);
-        }
+        auto channelCounters = event.channel in plugin.counters;
+        if (!channelCounters || (slice !in *channelCounters)) return sendNoSuchCounter();
 
-        plugin.counters[event.channel].remove(slice);
-        if (!plugin.counters[event.channel].length) plugin.counters.remove(event.channel);
+        (*channelCounters).remove(slice);
+        if (!channelCounters.length) plugin.counters.remove(event.channel);
         saveResourceToDisk(plugin.counters, plugin.countersFile);
 
-        enum pattern = "Counter <b>%s<b> removed.";
-        immutable message = pattern.format(slice);
-        chan(plugin.state, event.channel, message);
-        break;
+        return sendCounterRemoved(slice);
 
     case "list":
-        if (event.channel !in plugin.counters)
-        {
-            enum message = "No counters currently active in this channel.";
-            return chan(plugin.state, event.channel, message);
-        }
-
-        enum pattern = "Current counters: %s";
-        immutable arrayPattern = "%-(<b>" ~ plugin.state.settings.prefix ~ "%s<b>, %)<b>";
-        immutable list = arrayPattern.format(plugin.counters[event.channel].keys);
-        immutable message = pattern.format(list);
-        chan(plugin.state, event.channel, message);
-        break;
+        if (event.channel !in plugin.counters) return sendNoCountersActive();
+        return sendCountersList(plugin.counters[event.channel].keys);
 
     default:
-        enum pattern = "Usage: <b>%s%s<b> [add|del|list] [counter word]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-        chan(plugin.state, event.channel, message);
-        break;
+        return sendUsage();
     }
 }
 
@@ -197,6 +223,41 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
     import std.format : format;
     import std.meta : aliasSeqOf;
     import std.string : indexOf;
+
+    void sendCurrentCount(const string word, long count)
+    {
+        enum pattern = "<b>%s<b> count so far: <b>%d<b>";
+        immutable message = pattern.format(word, count);
+        return chan(plugin.state, event.channel, message);
+    }
+
+    void sendInputIsNaN(const string input)
+    {
+        enum pattern = "<b>%s<b> is not a number.";
+        immutable message = pattern.format(input);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendCounterModified(const string word, const long step, const long count)
+    {
+        enum pattern = "<b>%s %s<b>! Current count: <b>%d<b>";
+        immutable stepText = (step >= 0) ? ('+' ~ step.text) : step.text;
+        immutable message = pattern.format(word, stepText, count);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendCounterAssigned(const string word, const long count)
+    {
+        enum pattern = "<b>%s<b> count assigned to <b>%d<b>!";
+        immutable message = pattern.format(word, count);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendMustSpecifyNumber()
+    {
+        enum message = "You must specify a number to set the count to.";
+        chan(plugin.state, event.channel, message);
+    }
 
     string slice = event.content.stripped;  // mutable
     if ((slice.length < (plugin.state.settings.prefix.length+1)) &&  // !w
@@ -239,11 +300,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 
     if (!slice.length || (slice[0] == '?'))
     {
-        import std.conv : text;
-
-        enum pattern = "<b>%s<b> count so far: <b>%s<b>";
-        immutable message = pattern.format(word, plugin.counters[event.channel][word]);
-        return chan(plugin.state, event.channel, message);
+        return sendCurrentCount(word, plugin.counters[event.channel][word]);
     }
 
     // Limit modifications to the configured class
@@ -277,28 +334,20 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
             }
             catch (ConvException _)
             {
-                enum pattern = "<b>%s<b> is not a number.";
-                immutable message = pattern.format(slice);
-                return chan(plugin.state, event.channel, message);
+                return sendInputIsNaN(slice);
             }
         }
 
         *count += step;
         saveResourceToDisk(plugin.counters, plugin.countersFile);
-
-        enum pattern = "<b>%s %s<b>! Current count: <b>%d<b>";
-        immutable stepText = (step >= 0) ? ('+' ~ step.text) : step.text;
-        immutable message = pattern.format(word, stepText, *count);
-        chan(plugin.state, event.channel, message);
-        break;
+        return sendCounterModified(word, step, *count);
 
     case '=':
         slice = slice[1..$].strippedLeft;
 
         if (!slice.length)
         {
-            enum message = "You must specify a number to set the count to.";
-            return chan(plugin.state, event.channel, message);
+            return sendMustSpecifyNumber();
         }
 
         long newCount;
@@ -309,18 +358,12 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
         }
         catch (ConvException _)
         {
-            enum pattern = "Not a number: <b>%s<b>";
-            immutable message = pattern.format(slice);
-            return chan(plugin.state, event.channel, message);
+            return sendInputIsNaN(slice);
         }
 
         *count = newCount;
         saveResourceToDisk(plugin.counters, plugin.countersFile);
-
-        enum pattern = "<b>%s<b> count assigned to <b>%s<b>!";
-        immutable message = pattern.format(word, newCount);
-        chan(plugin.state, event.channel, message);
-        break;
+        return sendCounterAssigned(word, newCount);
 
     default:
         assert(0, "Hit impossible default case in onCounterWord sign switch");
