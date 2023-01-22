@@ -1,10 +1,20 @@
 /++
-    This is an example Twitch channel bot. It supports querying uptime or how
-    long a streamer has been live, follower age queries, etc. It can also emit
-    some terminal bells on certain events, to draw attention.
+    This is a Twitch channel bot. It supports song requests, counting how many
+    times an emote has been used, reporting how long a viewer has been a follower,
+    how much time they have spent watching the stream, and some miscellanea.
 
-    One immediately obvious venue of expansion is expression bans, such as if a
-    message has too many capital letters, etc. There is no protection from spam yet.
+    For local use it can also emit some terminal bells on certain events, to draw attention.
+
+    If the `promote*` settings are toggled, viewers will be automatically given
+    privileges based on their channel "status"; one of broadcaster, moderator,
+    vip and subscriber. Viewers that don't fall into any of those categories
+    are not given any special permissions unless awarded manually.
+
+    Mind that the majority of the other plugins still work on Twitch, so you also have
+    the [kameloso.plugins.counter|Counter] plugin for death counters, the
+    [kameloso.plugins.quotes|Quotes] plugin for streamer quotes, the
+    [kameloso.plugins.timer|Timer] plugin for timed announcements, the
+    [kameloso.plugins.oneliners|Oneliners] plugin for oneliner commands, etc.
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#twitch
