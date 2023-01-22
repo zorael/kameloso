@@ -298,9 +298,56 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
     import std.algorithm.searching : count;
     import std.format : format;
 
+    void sendUsage()
+    {
+        enum pattern = "Usage: <b>%s%s<b> [add|clear|list] [nickname/account] [mode]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+    }
+
     void sendInvalidNickname()
     {
         enum message = "Invalid nickname.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendCannotBeNegative()
+    {
+        enum message = "Automodes cannot be negative.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendMustSupplyMode()
+    {
+        enum message = "You must supply a valid mode.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendAutomodeModified(const string nickname, const string mode)
+    {
+        enum pattern = "Automode modified! <h>%s<h> in <b>%s<b>: +<b>%s<b>";
+        immutable message = pattern.format(nickname, event.channel, mode);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendAutomodeCleared(const string nickname)
+    {
+        enum pattern = "Automode for <h>%s<h> cleared.";
+        immutable message = pattern.format(nickname);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendAutomodeList(/*const*/ string[string] channelModes)
+    {
+        import std.conv : text;
+        immutable message = text("Current automodes: ", channelModes);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendNoAutomodes()
+    {
+        enum pattern = "No automodes defined for channel <b>%s<b>.";
+        immutable message = pattern.format(event.channel);
         chan(plugin.state, event.channel, message);
     }
 
@@ -311,8 +358,8 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
     {
     case "add":
         // !automode add nickname mode
-        string nickname;
-        string mode;
+        string nickname;  // mutable
+        string mode;  // mutable
 
         immutable result = line.splitInto(nickname, mode);
         if (result != SplitResults.match) goto default;
@@ -321,29 +368,17 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 
         if (!nickname.isValidNickname(plugin.state.server)) return sendInvalidNickname();
 
-        if (mode.beginsWith('-'))
-        {
-            enum message = "Automodes cannot be negative.";
-            return chan(plugin.state, event.channel, message);
-        }
+        if (mode.beginsWith('-')) return sendCannotBeNegative();
 
         while (mode.beginsWith('+'))
         {
             mode = mode[1..$];
         }
 
-        if (!mode.length)
-        {
-            enum message = "You must supply a valid mode.";
-            return chan(plugin.state, event.channel, message);
-        }
+        if (!mode.length) return sendMustSupplyMode();
 
         plugin.modifyAutomode(Yes.add, nickname, event.channel, mode);
-
-        enum pattern = "Automode modified! <h>%s<h> in <b>%s<b>: +<b>%s<b>";
-        immutable message = pattern.format(nickname, event.channel, mode);
-        chan(plugin.state, event.channel, message);
-        break;
+        return sendAutomodeModified(nickname, mode);
 
     case "clear":
     case "del":
@@ -355,34 +390,21 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
         if (!nickname.isValidNickname(plugin.state.server)) return sendInvalidNickname();
 
         plugin.modifyAutomode(No.add, nickname, event.channel);
-
-        enum pattern = "Automode for <h>%s<h> cleared.";
-        immutable message = pattern.format(nickname);
-        chan(plugin.state, event.channel, message);
-        break;
+        return sendAutomodeCleared(nickname);
 
     case "list":
-        const channelmodes = event.channel in plugin.automodes;
-
-        if (channelmodes)
+        if (auto channelModes = event.channel in plugin.automodes)
         {
-            import std.conv : text;
-            immutable message = text("Current automodes: ", *channelmodes);
-            chan(plugin.state, event.channel, message);
+            // No const to get a better std.conv.text representation of it
+            return sendAutomodeList(*channelModes);
         }
         else
         {
-            enum pattern = "No automodes defined for channel <b>%s<b>.";
-            immutable message = pattern.format(event.channel);
-            chan(plugin.state, event.channel, message);
+            return sendNoAutomodes();
         }
-        break;
 
     default:
-        enum pattern = "Usage: <b>%s%s<b> [add|clear|list] [nickname/account] [mode]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-        chan(plugin.state, event.channel, message);
-        break;
+        return sendUsage();
     }
 }
 
