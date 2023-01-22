@@ -876,6 +876,12 @@ mixin template IRCPluginImpl(
             {
                 import lu.string : strippedLeft;
 
+                if (state.settings.observerMode)
+                {
+                    // Skip all commands
+                    return NextStep.continue_;
+                }
+
                 event.content = event.content.strippedLeft;
 
                 if (!event.content.length)

@@ -160,6 +160,14 @@ public:
             Whether to print addresses as IPs or as hostnames (where applicable).
          +/
         bool numericAddresses;
+
+
+        // observerMode
+        /++
+            Enables observer mode, which makes the bot ignore all commands
+            (but process other events).
+         +/
+        bool observerMode;
     }
 }
 
