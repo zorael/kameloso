@@ -2637,17 +2637,32 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
                 else
                 {
                     // Stream up
-                    if (room.stream.idString == streamFromServer.idString)
+                    if (!room.stream.idString.length)
+                    {
+                        // New stream!
+                        room.stream = streamFromServer;
+
+                        if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
+                        {
+                            saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
+                        }
+                    }
+                    else if (room.stream.idString == streamFromServer.idString)
                     {
                         // Same stream running, just update it
                         room.stream.update(streamFromServer);
                     }
-                    else
+                    else /*if (room.stream.idString != streamFromServer.idString)*/
                     {
-                        // New stream! Rotate and insert
+                        // New stream, but stale one exists. Rotate and insert
                         closeStream(room);
                         rotateStream(room);
                         room.stream = streamFromServer;
+
+                        if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
+                        {
+                            saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
+                        }
                     }
                 }
             }
