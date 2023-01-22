@@ -223,6 +223,15 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 
     if (!event.content.beginsWith(plugin.state.settings.prefix)) return;
 
+    void sendEmptyOneliner(const string trigger)
+    {
+        import std.format : format;
+
+        enum pattern = "(Empty oneliner; use <b>%soneliner add %s<b> to add lines.)";
+        immutable message = pattern.format(plugin.state.settings.prefix, trigger);
+        chan(plugin.state, event.channel, message);
+    }
+
     string slice = event.content[plugin.state.settings.prefix.length..$];
 
     // An empty command is invalid
@@ -245,9 +254,7 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 
             if (!oneliner.responses.length)
             {
-                enum pattern = "(Empty oneliner; use <b>%soneliner add %s<b> to add lines.)";
-                immutable message = pattern.format(plugin.state.settings.prefix, trigger);
-                return chan(plugin.state, event.channel, message);
+                return sendEmptyOneliner(trigger);
             }
 
             if (plugin.onelinersSettings.cooldown > 0)
@@ -387,6 +394,12 @@ void handleNewOneliner(
         chan(plugin.state, event.channel, message);
     }
 
+    void sendMustBeRandomOrOrdered()
+    {
+        enum message = "Oneliner type must be one of <b>random<b> or <b>ordered<b>";
+        chan(plugin.state, event.channel, message);
+    }
+
     string trigger;
     string typestring;
     immutable results = slice.splitInto(trigger, typestring);
@@ -411,8 +424,7 @@ void handleNewOneliner(
         break;
 
     default:
-        enum message = "Oneliner type must be one of <b>random<b> or <b>ordered<b>";
-        return chan(plugin.state, event.channel, message);
+        return sendMustBeRandomOrOrdered();
     }
 
     trigger = stripPrefix(trigger).toLower;
@@ -493,11 +505,39 @@ void handleAddToOneliner(
     import std.format : format;
     import std.uni : toLower;
 
+    void sendInsertEditUsage(const string verb)
+    {
+        immutable pattern = (verb == "insert") ?
+            "Usage: <b>%s%s insert<b> [trigger] [position] [text]" :
+            "Usage: <b>%s%s edit<b> [trigger] [position] [new text]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendAddUsage()
+    {
+        enum pattern = "Usage: <b>%s%s add<b> [trigger] [text]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+    }
+
     void sendNoSuchOneliner(const string trigger)
     {
         // Sent from more than one place so might as well make it a nested function
         enum pattern = "No such oneliner: <b>%s%s<b>";
         immutable message = pattern.format(plugin.state.settings.prefix, trigger);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendPositionNotPositive()
+    {
+        enum message = "Position passed is not a positive number.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendPositionNaN()
+    {
+        enum message = "Position passed is not a number.";
         chan(plugin.state, event.channel, message);
     }
 
@@ -583,11 +623,7 @@ void handleAddToOneliner(
         immutable results = slice.splitInto(trigger, posString);
         if (results != SplitResults.overrun)
         {
-            immutable pattern = (verb == "insert") ?
-                "Usage: <b>%s%s insert<b> [trigger] [position] [text]" :
-                "Usage: <b>%s%s edit<b> [trigger] [position] [new text]";
-            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-            return chan(plugin.state, event.channel, message);
+            return sendInsertEditUsage(verb);
         }
 
         try
@@ -596,14 +632,12 @@ void handleAddToOneliner(
 
             if (pos < 0)
             {
-                enum message = "Position passed is not a positive number.";
-                return chan(plugin.state, event.channel, message);
+                return sendPositionNaN();
             }
         }
         catch (ConvException _)
         {
-            enum message = "Position passed is not a number.";
-            return chan(plugin.state, event.channel, message);
+            return sendPositionNaN();
         }
 
         try
@@ -631,9 +665,7 @@ void handleAddToOneliner(
         immutable results = slice.splitInto(trigger);
         if (results != SplitResults.overrun)
         {
-            enum pattern = "Usage: <b>%s%s add<b> [trigger] [text]";
-            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-            return chan(plugin.state, event.channel, message);
+            return sendAddUsage();
         }
 
         try
@@ -689,15 +721,6 @@ void handleDelFromOneliner(
         chan(plugin.state, event.channel, message);
     }
 
-    // copy/pasted
-    string stripPrefix(const string trigger)
-    {
-        import lu.string : beginsWith;
-        return trigger.beginsWith(plugin.state.settings.prefix) ?
-            trigger[plugin.state.settings.prefix.length..$] :
-            trigger;
-    }
-
     void sendLineRemoved(const string trigger, const size_t pos)
     {
         enum pattern = "Oneliner response <b>%s<b>#%d removed.";
@@ -710,6 +733,15 @@ void handleDelFromOneliner(
         enum pattern = "Oneliner <b>%s%s<b> removed.";
         immutable message = pattern.format(plugin.state.settings.prefix, trigger);
         chan(plugin.state, event.channel, message);
+    }
+
+    // copy/pasted
+    string stripPrefix(const string trigger)
+    {
+        import lu.string : beginsWith;
+        return trigger.beginsWith(plugin.state.settings.prefix) ?
+            trigger[plugin.state.settings.prefix.length..$] :
+            trigger;
     }
 
     if (!slice.length) return sendDelUsage();
