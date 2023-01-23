@@ -274,6 +274,38 @@ public:
     }
 }
 
+///
+unittest
+{
+    Timer timer;
+    timer.lines = [ "abc", "def", "ghi" ];
+
+    {
+        timer.type = Timer.Type.ordered;
+        assert(timer.getLine() == "abc");
+        assert(timer.getLine() == "def");
+        assert(timer.getLine() == "ghi");
+        assert(timer.getLine() == "abc");
+        assert(timer.getLine() == "def");
+        assert(timer.getLine() == "ghi");
+    }
+    {
+        import std.algorithm.comparison : among;
+
+        timer.type = Timer.Type.random;
+        bool[string] linesSeen;
+
+        foreach (immutable i; 0..20)
+        {
+            linesSeen[timer.getLine()] = true;
+        }
+
+        assert("abc" in linesSeen);
+        assert("def" in linesSeen);
+        assert("ghi" in linesSeen);
+    }
+}
+
 
 // onCommandTimer
 /++
