@@ -795,11 +795,15 @@ void messageFiber(ref Kameloso instance)
             {
                 foreach (immutable i, immutable splitLine; lines)
                 {
-                    appropriateline(prelude ~ splitLine);
+                    immutable finalLine = m.event.tags.length ?
+                        (m.event.tags ~ ' ' ~ prelude ~ splitLine) :
+                        (prelude ~ splitLine);
+                    appropriateline(finalLine);
                 }
             }
             else if (line.length)
             {
+                if (m.event.tags.length) line = m.event.tags ~ ' ' ~ line;
                 appropriateline(line);
             }
         }
