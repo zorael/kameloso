@@ -3105,8 +3105,21 @@ void teardown(TwitchPlugin plugin)
 void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 {
     import std.algorithm.comparison : among;
+    import std.algorithm.searching : canFind;
 
-    if (!event.sender.nickname.length || !event.channel.length) return;
+    if (event.type == IRCEvent.Type.QUERY)
+    {
+        immutable channelName = '#' ~ event.sender.nickname;
+        if (plugin.state.bot.homeChannels.canFind(channelName))
+        {
+            event.type = IRCEvent.Type.CHAN;
+            event.channel = channelName;
+        }
+    }
+    else if (!event.sender.nickname.length || !event.channel.length)
+    {
+        return;
+    }
 
     immutable eventCanContainEmotes = event.content.length &&
         event.type.among!(IRCEvent.Type.CHAN, IRCEvent.Type.EMOTE);
@@ -3124,8 +3137,6 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
     }
     else
     {
-        import std.algorithm.searching : canFind;
-
         // Only embed if the event is in a home channel
         immutable isHomeChannel = plugin.state.bot.homeChannels.canFind(event.channel);
 
