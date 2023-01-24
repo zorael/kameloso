@@ -186,15 +186,15 @@ unittest
 
 // reply
 /++
-    Replies to a message in a Twitch channel. Requires version `TwitchSupport`.
+    Replies to a message in a Twitch channel. Requires version `TwitchSupport`,
+    without which it will just pass on to [chan].
 
     Params:
         priority = Whether or not to send the message as a priority message,
             received before other messages are, if there are several.
         state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
-        channelName = Channel in which to send the message.
-        id = Twitch message ID of original message.
+        originalEvent = Original event, to which we're replying.
         content = Message body content to send.
         quiet = Whether or not to echo what was sent to the local terminal.
         background = Whether or not to send it as a low-priority background message.
@@ -202,55 +202,67 @@ unittest
  +/
 void reply(Flag!"priority" priority = No.priority)
     (IRCPluginState state,
-    const string channelName,
-    const string id,
+    const ref IRCEvent originalEvent,
     const string content,
     const Flag!"quiet" quiet = No.quiet,
     const Flag!"background" background = No.background,
     const string caller = __FUNCTION__)
 in (channelName.length, "Tried to reply to a channel message but no channel was given")
 {
-    static if (priority) import std.concurrency : send = prioritySend;
+    version(TwitchSupport)
+    {
+        static if (priority) import std.concurrency : send = prioritySend;
 
-    if (state.server.daemon != IRCServer.Daemon.twitch || !id.length)
+        if (state.server.daemon != IRCServer.Daemon.twitch || !originalEvent.id.length)
+        {
+            return chan!priority(
+                state,
+                originalEvent.channel,
+                content,
+                quiet,
+                background,
+                caller);
+        }
+
+        Message m;
+
+        m.event.type = IRCEvent.Type.CHAN;
+        m.event.channel = originalEvent.channel;
+        m.event.content = content.expandIRCTags;
+        m.event.tags = "@reply-parent-msg-id=" ~ originalEvent.id;
+        m.caller = caller;
+
+        if (quiet) m.properties |= Message.Property.quiet;
+        if (background) m.properties |= Message.Property.background;
+        if (priority) m.properties |= Message.Property.priority;
+
+        import std.algorithm.searching : canFind;
+
+        if (state.bot.homeChannels.canFind(channelName))
+        {
+            // We're in a home channel
+            m.properties |= Message.Property.fast;
+        }
+        /*else if (auto channel = channelName in state.channels)
+        {
+            if ((*channel).ops.canFind(state.client.nickname))
+            {
+                m.properties |= Message.Property.fast;
+            }
+        }*/
+
+        state.mainThread.send(m);
+    }
+    else
     {
         return chan!priority(
             state,
-            channelName,
+            originalEvent.channel,
             content,
             quiet,
             background,
             caller);
     }
-
-    Message m;
-
-    m.event.type = IRCEvent.Type.CHAN;
-    m.event.channel = channelName;
-    m.event.content = content.expandIRCTags;
-    m.event.tags = "@reply-parent-msg-id=" ~ id;
-    m.caller = caller;
-
-    if (quiet) m.properties |= Message.Property.quiet;
-    if (background) m.properties |= Message.Property.background;
-    if (priority) m.properties |= Message.Property.priority;
-
-    import std.algorithm.searching : canFind;
-
-    if (state.bot.homeChannels.canFind(channelName))
-    {
-        // We're in a home channel
-        m.properties |= Message.Property.fast;
-    }
-    /*else if (auto channel = channelName in state.channels)
-    {
-        if ((*channel).ops.canFind(state.client.nickname))
-        {
-            m.properties |= Message.Property.fast;
-        }
-    }*/
-
-    state.mainThread.send(m);
 }
 
 
