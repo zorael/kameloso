@@ -418,10 +418,11 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
         else
         {
             immutable modverb =
+                (mod == "?") ? "query" :
                 (mod == "+") ? "increment" :
                 (mod == "-") ? "decrement" :
                 (mod == "=") ? "assign" :
-                    "Impossible case";
+                    "<<ERROR>>";
 
             return sendCurrentFormatPattern(modverb, counter.patternIncrement);
         }
