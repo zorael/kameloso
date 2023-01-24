@@ -457,7 +457,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
     import kameloso.string : stripSeparatedPrefix;
     import lu.string : beginsWith, stripped, strippedLeft, strippedRight;
     import std.conv : ConvException, text, to;
-    import std.format : FormatException, format;
+    import std.format : format;
     import std.meta : aliasSeqOf;
     import std.string : indexOf;
 
@@ -465,22 +465,13 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
     {
         if (counter.patternQuery.length)
         {
-            try
-            {
-                immutable message = formatMessage(
-                    plugin,
-                    counter.patternQuery,
-                    event,
-                    counter,
-                    0);
-                return chan(plugin.state, event.channel, message);
-            }
-            catch (FormatException e)
-            {
-                enum pattern = "Failed to format counter message: %s";
-                immutable message = pattern.format(e.msg);
-                return chan(plugin.state, event.channel, message);
-            }
+            immutable message = formatMessage(
+                plugin,
+                counter.patternQuery,
+                event,
+                counter,
+                0);
+            return chan(plugin.state, event.channel, message);
         }
 
         enum pattern = "<b>%s<b> count so far: <b>%d<b>";
@@ -492,45 +483,36 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
     {
         enum pattern = "<b>%s<b> is not a number.";
         immutable message = pattern.format(input);
-        chan(plugin.state, event.channel, message);
+        reply(plugin.state, event.channel, event.id, message);
     }
 
     void sendCounterModified(const Counter counter, const long step)
     {
-        try
+        if (step >= 0)
         {
-            if (step >= 0)
+            if (counter.patternIncrement.length)
             {
-                if (counter.patternIncrement.length)
-                {
-                    immutable message = formatMessage(
-                        plugin,
-                        counter.patternIncrement,
-                        event,
-                        counter,
-                        0);
-                    return chan(plugin.state, event.channel, message);
-                }
-            }
-            else /*if (step < 0)*/
-            {
-                if (counter.patternDecrement.length)
-                {
-                    immutable message = formatMessage(
-                        plugin,
-                        counter.patternDecrement,
-                        event,
-                        counter,
-                        0);
-                    return chan(plugin.state, event.channel, message);
-                }
+                immutable message = formatMessage(
+                    plugin,
+                    counter.patternIncrement,
+                    event,
+                    counter,
+                    step);
+                return chan(plugin.state, event.channel, message);
             }
         }
-        catch (FormatException e)
+        else /*if (step < 0)*/
         {
-            enum pattern = "Failed to format counter modified message: %s";
-            immutable message = pattern.format(e.msg);
-            return chan(plugin.state, event.channel, message);
+            if (counter.patternDecrement.length)
+            {
+                immutable message = formatMessage(
+                    plugin,
+                    counter.patternDecrement,
+                    event,
+                    counter,
+                    step);
+                return chan(plugin.state, event.channel, message);
+            }
         }
 
         enum pattern = "<b>%s %s<b>! Current count: <b>%d<b>";
@@ -543,22 +525,13 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
     {
         if (counter.patternAssign.length)
         {
-            try
-            {
-                immutable message = formatMessage(
-                        plugin,
-                        counter.patternAssign,
-                        event,
-                        counter,
-                        0);
-                    return chan(plugin.state, event.channel, message);
-            }
-            catch (FormatException e)
-            {
-                enum pattern = "Failed to format counter assigned message: %s";
-                immutable message = pattern.format(e.msg);
-                return chan(plugin.state, event.channel, message);
-            }
+            immutable message = formatMessage(
+                plugin,
+                counter.patternAssign,
+                event,
+                counter,
+                0);
+            return chan(plugin.state, event.channel, message);
         }
 
         enum pattern = "<b>%s<b> count assigned to <b>%d<b>!";
