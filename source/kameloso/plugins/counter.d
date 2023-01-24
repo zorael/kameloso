@@ -380,52 +380,50 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
 
         if (!mod.length) return sendFormatUsage();
 
+        if (!mod.among!("?", "+", "-", "="))
+        {
+            return sendFormatUsage();
+        }
+
         auto channelCounters = event.channel in plugin.counters;
         if (!channelCounters) return sendNoSuchCounter();
 
         auto counter = word in *channelCounters;
         if (!counter) return sendNoSuchCounter();
 
-        if (mod.among!("?", "+", "-", "="))
+        alias newPattern = slice;
+
+        if (newPattern == "-")
         {
-            alias newPattern = slice;
+            if      (mod == "?") counter.patternQuery = string.init;
+            else if (mod == "+") counter.patternIncrement = string.init;
+            else if (mod == "-") counter.patternDecrement = string.init;
+            else if (mod == "=") counter.patternAssign = string.init;
+            else assert(0, "Impossible case");
 
-            if (newPattern == "-")
-            {
-                if      (mod == "?") counter.patternQuery = string.init;
-                else if (mod == "+") counter.patternIncrement = string.init;
-                else if (mod == "-") counter.patternDecrement = string.init;
-                else if (mod == "=") counter.patternAssign = string.init;
-                else assert(0, "Impossible case");
+            saveCounters(plugin);
+            return sendFormatPatternCleared();
+        }
+        else if (newPattern.length)
+        {
+            if      (mod == "?") counter.patternQuery = newPattern;
+            else if (mod == "+") counter.patternIncrement = newPattern;
+            else if (mod == "-") counter.patternDecrement = newPattern;
+            else if (mod == "=") counter.patternAssign = newPattern;
+            else assert(0, "Impossible case");
 
-                saveCounters(plugin);
-                return sendFormatPatternCleared();
-            }
-            else if (newPattern.length)
-            {
-                if      (mod == "?") counter.patternQuery = newPattern;
-                else if (mod == "+") counter.patternIncrement = newPattern;
-                else if (mod == "-") counter.patternDecrement = newPattern;
-                else if (mod == "=") counter.patternAssign = newPattern;
-                else assert(0, "Impossible case");
-
-                saveCounters(plugin);
-                return sendFormatPatternUpdated();
-            }
-            else
-            {
-                immutable modverb =
-                    (mod == "+") ? "increment" :
-                    (mod == "-") ? "decrement" :
-                    (mod == "=") ? "assign" :
-                        "Impossible case";
-
-                return sendCurrentFormatPattern(modverb, counter.patternIncrement);
-            }
+            saveCounters(plugin);
+            return sendFormatPatternUpdated();
         }
         else
         {
-            return sendFormatUsage();
+            immutable modverb =
+                (mod == "+") ? "increment" :
+                (mod == "-") ? "decrement" :
+                (mod == "=") ? "assign" :
+                    "Impossible case";
+
+            return sendCurrentFormatPattern(modverb, counter.patternIncrement);
         }
 
     case "list":
