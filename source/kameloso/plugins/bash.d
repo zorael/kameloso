@@ -156,8 +156,7 @@ void worker(
 
         if (!res.responseText.length)
         {
-            enum message = "No reponse received from <b>bash.org<b>; is it down?";
-            return privmsg(state, event.channel, event.sender.nickname, message);
+            return sendNoResponseseReceived();
         }
 
         auto doc = new Document;
@@ -168,7 +167,7 @@ void worker(
 
         if (!numBlock.length)
         {
-            return sendNoResponseseReceived();
+            return reportLayoutError();
         }
 
         auto p = numBlock[0].getElementsByTagName("p");
