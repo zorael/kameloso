@@ -733,13 +733,17 @@ auto formatMessage(
         .replace("$step", abs(step).text)
         .replace("$count", counter.count.text)
         .replace("$word", counter.word)
-        .replace("$botNickname", plugin.state.client.nickname)
-        .replace("$streamer", nameOf(plugin, event.channel[1..$]))
-        .replace("$streamerNickname", event.channel[1..$]);
+        .replace("$channel", event.channel)
+        .replace("$nickname", event.sender.nickname)
+        .replace("$botNickname", plugin.state.client.nickname);
 
     version(TwitchSupport)
     {
-        toReturn = toReturn.replace("$bot", plugin.state.bot.displayName);
+        toReturn = toReturn
+            .replace("$bot", plugin.state.bot.displayName)
+            .replace("$streamerNickname", event.channel[1..$])
+            .replace("$streamer", nameOf(plugin, event.channel[1..$]))
+            .replace("$displayName", event.sender.displayName);
     }
 
     return toReturn;
