@@ -568,14 +568,25 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
     {
         slice = slice.stripSeparatedPrefix(plugin.state.client.nickname, Yes.demandSeparatingChars);
     }
-    else if (plugin.state.bot.displayName.length && slice.beginsWith(plugin.state.bot.displayName))
-    {
-        slice = slice.stripSeparatedPrefix(plugin.state.bot.displayName, Yes.demandSeparatingChars);
-    }
     else
     {
-        // Just a random message
-        return;
+        version(TwitchSupport)
+        {
+            if (plugin.state.bot.displayName.length && slice.beginsWith(plugin.state.bot.displayName))
+            {
+                slice = slice.stripSeparatedPrefix(plugin.state.bot.displayName, Yes.demandSeparatingChars);
+            }
+            else
+            {
+                // Just a random message
+                return;
+            }
+        }
+        else
+        {
+            // As above
+            return;
+        }
     }
 
     if (!slice.length) return;
@@ -718,14 +729,20 @@ auto formatMessage(
     import std.array : replace;
     import std.math : abs;
 
-    return pattern
+    string toReturn = pattern
         .replace("$step", abs(step).text)
         .replace("$count", counter.count.text)
         .replace("$word", counter.word)
-        .replace("$bot", plugin.state.bot.displayName)
         .replace("$botNickname", plugin.state.client.nickname)
         .replace("$streamer", nameOf(plugin, event.channel[1..$]))
         .replace("$streamerNickname", event.channel[1..$]);
+
+    version(TwitchSupport)
+    {
+        toReturn = toReturn.replace("$bot", plugin.state.bot.displayName);
+    }
+
+    return toReturn;
 }
 
 
