@@ -401,7 +401,7 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
                     (mod == "+") ? "increment" :
                     (mod == "-") ? "decrement" :
                     (mod == "=") ? "assign" :
-                    assert(0, "Impossible case");
+                        "Impossible case";
 
                 return sendCurrentFormatPattern(modverb, counter.patternIncrement);
             }
