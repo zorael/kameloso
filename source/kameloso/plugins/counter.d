@@ -228,7 +228,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
     {
         enum pattern = "<b>%s<b> count so far: <b>%d<b>";
         immutable message = pattern.format(word, count);
-        return chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel, message);
     }
 
     void sendInputIsNaN(const string input)

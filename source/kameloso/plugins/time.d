@@ -194,7 +194,7 @@ void onCommandTime(TimePlugin plugin, const ref IRCEvent event)
     {
         enum pattern = "The time is currently <b>%s<b> in <b>%s<b>.";
         immutable message = pattern.format(timestamp, specified);
-        return chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel, message);
     }
 
     void sendTimestampLocal(const string timestamp)
@@ -216,7 +216,7 @@ void onCommandTime(TimePlugin plugin, const ref IRCEvent event)
             "me" :
             nameOf(plugin, event.channel[1..$]);
         immutable message = pattern.format(timestamp, name);
-        return chan(plugin.state, event.channel, message);
+        chan(plugin.state, event.channel, message);
     }
 
     string getTimestamp(/*const*/ ubyte hour, const ubyte minute)
