@@ -228,6 +228,36 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
         chan(plugin.state, event.channel, message);
     }
 
+    void sendPollAborted()
+    {
+        enum message = "Poll aborted.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendSyntaxHelp()
+    {
+        enum message = "Need one duration and at least two choices.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendMalformedDuration()
+    {
+        enum message = "Malformed duration.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendNegativeDuration()
+    {
+        enum message = "Duration must not be negative.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendNeedTwoUniqueChoices()
+    {
+        enum message = "Need at least two unique poll choices.";
+        chan(plugin.state, event.channel, message);
+    }
+
     const currentPoll = event.channel in plugin.channelPolls;
 
     switch (event.content)
@@ -259,8 +289,7 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
         if (!currentPoll) return sendNoOngoingPoll();
 
         plugin.channelPolls.remove(event.channel);
-        enum message = "Poll aborted.";
-        return chan(plugin.state, event.channel, message);
+        return sendPollAborted();
 
     case "end":
         if (!currentPoll) return sendNoOngoingPoll();
@@ -276,8 +305,7 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
 
     if (event.content.count(' ') < 2)
     {
-        enum message = "Need one duration and at least two choices.";
-        return chan(plugin.state, event.channel, message);
+        return sendSyntaxHelp();
     }
 
     Poll poll;
@@ -290,8 +318,7 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
     }
     catch (ConvException _)
     {
-        enum message = "Malformed duration.";
-        return chan(plugin.state, event.channel, message);
+        return sendMalformedDuration();
     }
     catch (DurationStringException e)
     {
@@ -306,8 +333,7 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
 
     if (poll.duration <= Duration.zero)
     {
-        enum message = "Duration must not be negative.";
-        return chan(plugin.state, event.channel, message);
+        return sendNegativeDuration();
     }
 
     auto choicesVoldemort = getPollChoices(plugin, event.channel, slice);  // must be mutable
@@ -315,8 +341,7 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
 
     if (choicesVoldemort.choices.length < 2)
     {
-        enum message = "Need at least two unique poll choices.";
-        return chan(plugin.state, event.channel, message);
+        return sendNeedTwoUniqueChoices();
     }
 
     poll.start = Clock.currTime;
@@ -360,6 +385,21 @@ auto getPollChoices(
     const string slice)
 {
     import std.algorithm.iteration : splitter;
+    import std.format : format;
+
+    void sendChoiceMustNotStartWithPrefix()
+    {
+        enum pattern = `Poll choices may not start with the command prefix ("%s").`;
+        immutable message = pattern.format(plugin.state.settings.prefix);
+        chan(plugin.state, channelName, message);
+    }
+
+    void sendDuplicateChoice(const string choice)
+    {
+        enum pattern = `Duplicate choice: "<b>%s<b>"`;
+        immutable message = pattern.format(choice);
+        chan(plugin.state, channelName, message);
+    }
 
     static struct PollChoices
     {
@@ -373,14 +413,11 @@ auto getPollChoices(
     foreach (immutable rawChoice; slice.splitter(' '))
     {
         import lu.string : beginsWith, strippedRight;
-        import std.format : format;
         import std.uni : toLower;
 
         if (plugin.pollSettings.forbidPrefixedChoices && rawChoice.beginsWith(plugin.state.settings.prefix))
         {
-            enum pattern = `Poll choices may not start with the command prefix ("%s").`;
-            immutable message = pattern.format(plugin.state.settings.prefix);
-            chan(plugin.state, channelName, message);
+            /*return*/ sendChoiceMustNotStartWithPrefix();
             return result;
         }
 
@@ -390,14 +427,13 @@ auto getPollChoices(
         immutable choice = strippedChoice.length ?
             strippedChoice :
             rawChoice;
-        if (!choice.length) continue;
-        immutable lower = choice.toLower;
 
+        if (!choice.length) continue;
+
+        immutable lower = choice.toLower;
         if (lower in result.origChoiceNames)
         {
-            enum pattern = `Duplicate choice: "<b>%s<b>"`;
-            immutable message = pattern.format(choice);
-            chan(plugin.state, channelName, message);
+            /*return*/ sendDuplicateChoice(choice);
             return result;
         }
 
