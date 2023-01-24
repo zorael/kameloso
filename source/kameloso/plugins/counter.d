@@ -202,7 +202,7 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
 
     void sendFormatUsage()
     {
-        enum pattern = "Usage: <b>%s%s format<b> [one of ?, +, - and =] [new format pattern]";
+        enum pattern = "Usage: <b>%s%s format<b> [counter word] [one of ?, +, - and =] [format pattern]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
         chan(plugin.state, event.channel, message);
     }
