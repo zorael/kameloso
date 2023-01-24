@@ -521,7 +521,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
         chan(plugin.state, event.channel, message);
     }
 
-    void sendCounterAssigned(const Counter counter)
+    void sendCounterAssigned(const Counter counter, const long step)
     {
         if (counter.patternAssign.length)
         {
@@ -530,7 +530,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
                 counter.patternAssign,
                 event,
                 counter,
-                0);
+                step);
             return chan(plugin.state, event.channel, message);
         }
 
@@ -661,9 +661,10 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
             return sendInputIsNaN(slice);
         }
 
+        immutable step = (newCount - counter.count);
         counter.count = newCount;
         saveCounters(plugin);
-        return sendCounterAssigned(*counter);
+        return sendCounterAssigned(*counter, step);
 
     default:
         assert(0, "Hit impossible default case in onCounterWord sign switch");
