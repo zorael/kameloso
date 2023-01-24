@@ -518,7 +518,11 @@ void loadNotes(NotesPlugin plugin)
                 plugin.notes[channelName][nickname] ~= Note.fromJSON(noteJSON);
             }
         }
+
+        plugin.notes[channelName].rehash();
     }
+
+    plugin.notes.rehash();
 }
 
 
