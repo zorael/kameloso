@@ -200,7 +200,6 @@ unittest
         background = Whether or not to send it as a low-priority background message.
         caller = String name of the calling function, or something else that gives context.
  +/
-version(TwitchSupport)
 void reply(Flag!"priority" priority = No.priority)
     (IRCPluginState state,
     const string channelName,
@@ -210,11 +209,19 @@ void reply(Flag!"priority" priority = No.priority)
     const Flag!"background" background = No.background,
     const string caller = __FUNCTION__)
 in (channelName.length, "Tried to reply to a channel message but no channel was given")
-in (id.length, "Tried to reply to a channel message but no message ID was given")
 {
     static if (priority) import std.concurrency : send = prioritySend;
 
-    if (state.server.daemon != IRCServer.Daemon.twitch) return;
+    if (state.server.daemon != IRCServer.Daemon.twitch || !id.length)
+    {
+        return chan!priority(
+            state,
+            channelName,
+            content,
+            quiet,
+            background,
+            caller);
+    }
 
     Message m;
 
