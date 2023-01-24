@@ -172,7 +172,7 @@ public:
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
-    .permissionsRequired(Permissions.elevated)
+    .permissionsRequired(Permissions.operator)
     .channelPolicy(ChannelPolicy.home)
     .addCommand(
         IRCEventHandler.Command()
