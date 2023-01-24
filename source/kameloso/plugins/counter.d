@@ -254,6 +254,12 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
         chan(plugin.state, event.channel, message);
     }
 
+    void sendFormatPatternCleared()
+    {
+        enum message = "Format pattern cleared.";
+        chan(plugin.state, event.channel, message);
+    }
+
     void sendCurrentFormatPattern(const string mod, const string customPattern)
     {
         enum pattern = `Current <b>%s<b> format pattern: "<b>%s<b>"`;
@@ -384,7 +390,18 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
         {
             alias newPattern = slice;
 
-            if (newPattern.length)
+            if (newPattern == "-")
+            {
+                if      (mod == "?") counter.patternQuery = string.init;
+                else if (mod == "+") counter.patternIncrement = string.init;
+                else if (mod == "-") counter.patternDecrement = string.init;
+                else if (mod == "=") counter.patternAssign = string.init;
+                else assert(0, "Impossible case");
+
+                saveCounters(plugin);
+                return sendFormatPatternCleared();
+            }
+            else if (newPattern.length)
             {
                 if      (mod == "?") counter.patternQuery = newPattern;
                 else if (mod == "+") counter.patternIncrement = newPattern;
