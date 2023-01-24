@@ -108,6 +108,9 @@ public:
 
     /++
         Converts this [Note] into a JSON representation.
+
+        Returns:
+            A [std.json.JSONValue|JSONValue] that describes this [Note].
      +/
     auto toJSON() const
     {

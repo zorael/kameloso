@@ -5,10 +5,11 @@
 
     For local use it can also emit some terminal bells on certain events, to draw attention.
 
-    If the `promote*` settings are toggled, viewers will be automatically given
-    privileges based on their channel "status"; one of broadcaster, moderator,
-    vip and subscriber. Viewers that don't fall into any of those categories
-    are not given any special permissions unless awarded manually.
+    If the `promote*` settings are toggled, some viewers will be automatically given
+    privileges based on their channel "status"; one of broadcaster, moderator and
+    VIPs. Viewers that don't fall into any of those categories are not given any
+    special permissions unless awarded manually. Nothing promotes into the
+    `whitelist` class as it's meant to be assigned to manually.
 
     Mind that the majority of the other plugins still work on Twitch, so you also have
     the [kameloso.plugins.counter|Counter] plugin for death counters, the
