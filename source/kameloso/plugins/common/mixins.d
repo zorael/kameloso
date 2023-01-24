@@ -562,8 +562,34 @@ private:
         const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.chan!priority(state, channelName, content,
-            quiet, background, caller);
+        return kameloso.messaging.chan!priority(
+            state,
+            channelName,
+            content,
+            quiet,
+            background,
+            caller);
+    }
+
+
+    // reply
+    /++
+        Replies to a channel message.
+     +/
+    void reply(Flag!"priority" priority = No.priority)
+        (const ref IRCEvent event,
+        const string content,
+        const Flag!"quiet" quiet = No.quiet,
+        const Flag!"background" background = No.background,
+        const string caller = __FUNCTION__)
+    {
+        return kameloso.messaging.reply!priority(
+            state,
+            event,
+            content,
+            quiet,
+            background,
+            caller);
     }
 
 
@@ -578,8 +604,13 @@ private:
         const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.query!priority(state, nickname, content,
-            quiet, background, caller);
+        return kameloso.messaging.query!priority(
+            state,
+            nickname,
+            content,
+            quiet,
+            background,
+            caller);
     }
 
 
@@ -599,8 +630,14 @@ private:
         const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.privmsg!priority(state, channel, nickname, content,
-            quiet, background, caller);
+        return kameloso.messaging.privmsg!priority(
+            state,
+            channel,
+            nickname,
+            content,
+            quiet,
+            background,
+            caller);
     }
 
 
@@ -615,8 +652,13 @@ private:
         const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.emote!priority(state, emoteTarget, content,
-            quiet, background, caller);
+        return kameloso.messaging.emote!priority(
+            state,
+            emoteTarget,
+            content,
+            quiet,
+            background,
+            caller);
     }
 
 
@@ -634,8 +676,14 @@ private:
         const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.mode!priority(state, channel, modes, content,
-            quiet, background, caller);
+        return kameloso.messaging.mode!priority(
+            state,
+            channel,
+            modes,
+            content,
+            quiet,
+            background,
+            caller);
     }
 
 
@@ -650,8 +698,13 @@ private:
         const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.topic!priority(state, channel, content,
-            quiet, background, caller);
+        return kameloso.messaging.topic!priority(
+            state,
+            channel,
+            content,
+            quiet,
+            background,
+            caller);
     }
 
 
@@ -666,8 +719,13 @@ private:
         const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.invite!priority(state, channel, nickname,
-            quiet, background, caller);
+        return kameloso.messaging.invite!priority(
+            state,
+            channel,
+            nickname,
+            quiet,
+            background,
+            caller);
     }
 
 
@@ -682,8 +740,13 @@ private:
         const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.join!priority(state, channel, key,
-            quiet, background, caller);
+        return kameloso.messaging.join!priority(
+            state,
+            channel,
+            key,
+            quiet,
+            background,
+            caller);
     }
 
 
@@ -699,8 +762,14 @@ private:
         const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.kick!priority(state, channel, nickname, reason,
-            quiet, background, caller);
+        return kameloso.messaging.kick!priority(
+            state,
+            channel,
+            nickname,
+            reason,
+            quiet,
+            background,
+            caller);
     }
 
 
@@ -715,8 +784,13 @@ private:
         const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.part!priority(state, channel, reason,
-            quiet, background, caller);
+        return kameloso.messaging.part!priority(
+            state,
+            channel,
+            reason,
+            quiet,
+            background,
+            caller);
     }
 
 
@@ -729,7 +803,11 @@ private:
         const Flag!"quiet" quiet = No.quiet,
         const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.quit!priority(state, reason, quiet, caller);
+        return kameloso.messaging.quit!priority(
+            state,
+            reason,
+            quiet,
+            caller);
     }
 
 
@@ -744,8 +822,13 @@ private:
         const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.whois!priority(state, nickname, force,
-            quiet, background, caller);
+        return kameloso.messaging.whois!priority(
+            state,
+            nickname,
+            force,
+            quiet,
+            background,
+            caller);
     }
 
 
@@ -762,8 +845,12 @@ private:
         const Flag!"background" background = No.background,
         const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.raw!priority(state, line,
-            quiet, background, caller);
+        return kameloso.messaging.raw!priority(
+            state,
+            line,
+            quiet,
+            background,
+            caller);
     }
 
 
@@ -777,7 +864,11 @@ private:
         const Flag!"quiet" quiet = No.quiet,
         const string caller = __FUNCTION__)
     {
-        return kameloso.messaging.immediate(state, line, quiet, caller);
+        return kameloso.messaging.immediate(
+            state,
+            line,
+            quiet,
+            caller);
     }
 
     /// Merely an alias to [immediate], because we use both terms at different places.

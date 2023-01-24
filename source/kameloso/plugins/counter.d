@@ -423,8 +423,14 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
                 (mod == "-") ? "decrement" :
                 (mod == "=") ? "assign" :
                     "<<ERROR>>";
+            immutable pattern =
+                (mod == "?") ? counter.patternQuery :
+                (mod == "+") ? counter.patternIncrement :
+                (mod == "-") ? counter.patternDecrement :
+                (mod == "=") ? counter.patternAssign :
+                    "<<ERROR>>";
 
-            return sendCurrentFormatPattern(modverb, counter.patternIncrement);
+            return sendCurrentFormatPattern(modverb, pattern);
         }
 
     case "list":
