@@ -483,7 +483,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
     {
         enum pattern = "<b>%s<b> is not a number.";
         immutable message = pattern.format(input);
-        reply(plugin.state, event.channel, event.id, message);
+        chan(plugin.state, event.channel, message);
     }
 
     void sendCounterModified(const Counter counter, const long step)
