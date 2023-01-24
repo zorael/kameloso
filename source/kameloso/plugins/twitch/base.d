@@ -1343,10 +1343,10 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         enum message = "Invalid duration.";
         return chan(plugin.state, event.channel, message);
     }
-    catch (DurationStringException e)
+    /*catch (DurationStringException e)
     {
         return chan(plugin.state, event.channel, e.msg);
-    }
+    }*/
     catch (Exception e)
     {
         return chan(plugin.state, event.channel, e.msg);
