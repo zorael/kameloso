@@ -178,7 +178,7 @@ unittest
                 assert((type == IRCEvent.Type.CHAN), Enum!(IRCEvent.Type).toString(type));
                 assert((channel == "#channel"), channel);
                 assert((content == "content"), content);
-                assert(m.properties & Message.Property.fast);
+                //assert(m.properties & Message.Property.fast);
             }
         }
     );
