@@ -200,7 +200,6 @@ in (channelName.length, "Tried to apply automodes to an empty channel string")
 in (nickname.length, "Tried to apply automodes to an empty nickname")
 in (account.length, "Tried to apply automodes to an empty account")
 {
-    import std.algorithm.searching : canFind;
     import std.string : representation;
 
     auto accountmodes = channelName in plugin.automodes;
@@ -218,7 +217,7 @@ in (account.length, "Tried to apply automodes to an empty account")
     {
         if (const usersWithThisMode = cast(char)mode in channel.mods)
         {
-            if (!usersWithThisMode.length || !(*usersWithThisMode).canFind(nickname))
+            if (!usersWithThisMode.length || (nickname !in *usersWithThisMode))
             {
                 // User doesn't have this mode
                 missingModes ~= mode;
@@ -233,7 +232,7 @@ in (account.length, "Tried to apply automodes to an empty account")
 
     if (!missingModes.length) return;
 
-    if (!channel.ops.canFind(plugin.state.client.nickname))
+    if (plugin.state.client.nickname !in channel.ops)
     {
         enum pattern = "Could not apply <i>+%s</> <i>%s</> in <i>%s</> " ~
             "because we are not an operator in the channel.";
@@ -552,8 +551,7 @@ void onMode(AutomodePlugin plugin, const ref IRCEvent event)
         return;
     }
 
-    if (!plugin.state.channels[event.channel].ops
-        .canFind(plugin.state.client.nickname)) return;
+    if (plugin.state.client.nickname !in plugin.state.channels[event.channel].ops) return;
 
     auto accountmodes = event.channel in plugin.automodes;
     if (!accountmodes) return;

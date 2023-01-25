@@ -142,20 +142,17 @@ in (channelName.length, "Tried to send a channel message but no channel was give
     {
         if (state.server.daemon == IRCServer.Daemon.twitch)
         {
-            import std.algorithm.searching : canFind;
-
-            if (state.bot.homeChannels.canFind(channelName))
+            if (auto channel = channelName in state.channels)
             {
-                // We're in a home channel
-                m.properties |= Message.Property.fast;
-            }
-            /*else if (auto channel = channelName in state.channels)
-            {
-                if ((*channel).ops.canFind(state.client.nickname))
+                if (auto ops = 'o' in channel.mods)
                 {
-                    m.properties |= Message.Property.fast;
+                    if (state.client.nickname in *ops)
+                    {
+                        // We are a moderator and can as such send things fast
+                        m.properties |= Message.Property.fast;
+                    }
                 }
-            }*/
+            }
         }
     }
 
@@ -237,20 +234,23 @@ in (channelName.length, "Tried to reply to a channel message but no channel was 
         if (background) m.properties |= Message.Property.background;
         if (priority) m.properties |= Message.Property.priority;
 
-        import std.algorithm.searching : canFind;
-
-        if (state.bot.homeChannels.canFind(channelName))
+        version(TwitchSupport)
         {
-            // We're in a home channel
-            m.properties |= Message.Property.fast;
-        }
-        /*else if (auto channel = channelName in state.channels)
-        {
-            if ((*channel).ops.canFind(state.client.nickname))
+            if (state.server.daemon == IRCServer.Daemon.twitch)
             {
-                m.properties |= Message.Property.fast;
+                if (auto channel = channelName in state.channels)
+                {
+                    if (auto ops = 'o' in channel.mods)
+                    {
+                        if (state.client.nickname in *ops)
+                        {
+                            // We are a moderator and can as such send things fast
+                            m.properties |= Message.Property.fast;
+                        }
+                    }
+                }
             }
-        }*/
+        }
 
         state.mainThread.send(m);
     }
