@@ -332,15 +332,5 @@ public:
             guest such was generated.
          +/
         bool hasGuestNickname;
-
-
-        version(TwitchSupport)
-        {
-            // displayName
-            /++
-                The display name of the bot. Only applicable on Twitch servers.
-            +/
-            string displayName;
-        }
     }
 }

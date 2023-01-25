@@ -2159,8 +2159,8 @@ auto prefixPolicyMatches(bool verbose)
         version(TwitchSupport)
         {
             if ((state.server.daemon == IRCServer.Daemon.twitch) &&
-                state.bot.displayName.length &&
-                event.content.beginsWith(state.bot.displayName))
+                state.client.displayName.length &&
+                event.content.beginsWith(state.client.displayName))
             {
                 static if (verbose)
                 {
@@ -2168,7 +2168,7 @@ auto prefixPolicyMatches(bool verbose)
                 }
 
                 event.content = event.content
-                    .stripSeparatedPrefix(state.bot.displayName, Yes.demandSeparatingChars);
+                    .stripSeparatedPrefix(state.client.displayName, Yes.demandSeparatingChars);
 
                 if (state.settings.prefix.length && event.content.beginsWith(state.settings.prefix))
                 {

@@ -448,21 +448,16 @@ void onUserstate(TwitchPlugin plugin, const ref IRCEvent event)
 
 // onGlobalUserstate
 /++
-    Inherits the bots display name from a
-    [dialect.defs.IRCEvent.Type.GLOBALUSERSTATE|GLOBALUSERSTATE]
-    into [kameloso.pods.IRCBot.displayName|IRCBot.displayName].
-
-    Additionally fetches global custom BetterTV, FrankerFaceZ and 7tv emotes
-    if the settings say to do so.
+    Fetches global custom BetterTV, FrankerFaceZ and 7tv emotes.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.GLOBALUSERSTATE)
     .fiber(true)
 )
-void onGlobalUserstate(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+void onGlobalUserstate(TwitchPlugin plugin)
 {
-    plugin.state.bot.displayName = event.target.displayName;
-    plugin.state.updates |= IRCPluginState.Update.bot;
+    // dialect sets the display name during parsing
+    //assert(plugin.state.client.displayName == event.target.displayName);
     importCustomGlobalEmotes(plugin);
 }
 

@@ -567,9 +567,9 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
     {
         version(TwitchSupport)
         {
-            if (plugin.state.bot.displayName.length && slice.beginsWith(plugin.state.bot.displayName))
+            if (plugin.state.client.displayName.length && slice.beginsWith(plugin.state.client.displayName))
             {
-                slice = slice.stripSeparatedPrefix(plugin.state.bot.displayName, Yes.demandSeparatingChars);
+                slice = slice.stripSeparatedPrefix(plugin.state.client.displayName, Yes.demandSeparatingChars);
             }
             else
             {
@@ -736,7 +736,7 @@ auto formatMessage(
     version(TwitchSupport)
     {
         toReturn = toReturn
-            .replace("$bot", plugin.state.bot.displayName)
+            .replace("$bot", plugin.state.client.displayName)
             .replace("$streamerNickname", event.channel[1..$])
             .replace("$streamer", nameOf(plugin, event.channel[1..$]))
             .replace("$displayName", event.sender.displayName);
