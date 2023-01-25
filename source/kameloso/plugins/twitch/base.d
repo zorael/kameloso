@@ -425,6 +425,22 @@ void onUserstate(TwitchPlugin plugin, const ref IRCEvent event)
                 "Consider elevating it to such to avoid being as rate-limited.";
             logger.warningf(pattern, event.channel);
             room.sawUserstate = true;
+            return;
+        }
+
+        if (auto channel = event.channel in plugin.state.channels)
+        {
+            if (auto ops = 'o' in channel.mods)
+            {
+                if (plugin.state.client.nickname !in *ops)
+                {
+                    (*ops)[plugin.state.client.nickname] = true;
+                }
+            }
+            else
+            {
+                channel.mods['o'][plugin.state.client.nickname] = true;
+            }
         }
     }
 }
