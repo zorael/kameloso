@@ -74,6 +74,12 @@ public:
     IRCUser.Class songrequestPermsNeeded = IRCUser.Class.whitelist;
 
     /++
+        Whether or not to convert queries received by someone whose channel is a
+        home channel into a channel message in that channel.
+     +/
+    bool fakeChannelFromQueries = false;
+
+    /++
         Whether or not broadcasters are always implicitly class
         [dialect.defs.IRCUser.Class.staff|IRCUser.Class.staff].
      +/
@@ -3119,7 +3125,7 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
     import std.algorithm.comparison : among;
     import std.algorithm.searching : canFind;
 
-    if (event.type == IRCEvent.Type.QUERY)
+    if ((plugin.twitchSettings.fakeChannelFromQueries) && (event.type == IRCEvent.Type.QUERY))
     {
         immutable channelName = '#' ~ event.sender.nickname;
         if (plugin.state.bot.homeChannels.canFind(channelName))
