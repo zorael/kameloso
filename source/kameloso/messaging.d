@@ -211,7 +211,7 @@ in (channelName.length, "Tried to reply to a channel message but no channel was 
     {
         static if (priority) import std.concurrency : send = prioritySend;
 
-        if (state.server.daemon != IRCServer.Daemon.twitch || !originalEvent.id.length)
+        if ((state.server.daemon != IRCServer.Daemon.twitch) || !originalEvent.id.length)
         {
             return chan!priority(
                 state,
