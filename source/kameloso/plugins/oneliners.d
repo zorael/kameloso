@@ -224,8 +224,14 @@ public:
 )
 void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 {
+    import kameloso.plugins.common.misc : nameOf;
     import lu.string : beginsWith, contains, nom;
+    import std.array : replace;
+    import std.conv : text;
+    import std.format : format;
+    import std.random : uniform;
     import std.typecons : Flag, No, Yes;
+    import std.uni : toLower;
 
     if (!event.content.beginsWith(plugin.state.settings.prefix)) return;
 
@@ -238,59 +244,46 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
         chan(plugin.state, event.channel, message);
     }
 
-    string slice = event.content[plugin.state.settings.prefix.length..$];
-
-    // An empty command is invalid
+    string slice = event.content[plugin.state.settings.prefix.length..$];  // mutable
     if (!slice.length) return;
 
-    if (auto channelOneliners = event.channel in plugin.onelinersByChannel)  // mustn't be const
+    auto channelOneliners = event.channel in plugin.onelinersByChannel;  // mustn't be const
+    if (!channelOneliners) return;
+
+    immutable trigger = slice.nom!(Yes.inherit)(' ').toLower;
+
+    auto oneliner = trigger in *channelOneliners;  // mustn't be const
+    if (!oneliner) return;
+
+    if (!oneliner.responses.length) return sendEmptyOneliner(trigger);
+
+    if (oneliner.cooldown > 0)
     {
-        import std.uni : toLower;
-
-        immutable trigger = slice.nom!(Yes.inherit)(' ').toLower;
-        immutable target = slice.beginsWith('@') ? slice[1..$] : slice;
-
-        if (auto oneliner = trigger in *channelOneliners)  // mustn't be const
+        if ((oneliner.lastTriggered + oneliner.cooldown) > event.time)
         {
-            import kameloso.plugins.common.misc : nameOf;
-            import std.array : replace;
-            import std.conv : text;
-            import std.format : format;
-            import std.random : uniform;
-
-            if (!oneliner.responses.length)
-            {
-                return sendEmptyOneliner(trigger);
-            }
-
-            if (oneliner.cooldown > 0)
-            {
-                if ((oneliner.lastTriggered + oneliner.cooldown) > event.time)
-                {
-                    // Too soon
-                    return;
-                }
-                else
-                {
-                    // Record time last fired
-                    oneliner.lastTriggered = event.time;
-                }
-            }
-
-            immutable line = oneliner.getResponse()
-                .replace("$nickname", nameOf(event.sender))
-                .replace("$streamer", plugin.nameOf(event.channel[1..$]))  // Twitch
-                .replace("$bot", plugin.nameOf(plugin.state.client.nickname)) // likewise
-                .replace("$channel", event.channel[1..$])
-                .replace("$random", uniform!"(]"(0, 100).text);
-
-            enum atPattern = "@%s %s";
-            immutable message = target.length ?
-                atPattern.format(plugin.nameOf(target), line) :
-                line;
-            chan(plugin.state, event.channel, message);
+            // Too soon
+            return;
+        }
+        else
+        {
+            // Record time last fired
+            oneliner.lastTriggered = event.time;
         }
     }
+
+    immutable line = oneliner.getResponse()
+        .replace("$nickname", nameOf(event.sender))
+        .replace("$streamer", plugin.nameOf(event.channel[1..$]))  // Twitch
+        .replace("$bot", plugin.nameOf(plugin.state.client.nickname)) // likewise
+        .replace("$channel", event.channel[1..$])
+        .replace("$random", uniform!"(]"(0, 100).text);
+    immutable target = slice.beginsWith('@') ? slice[1..$] : slice;
+
+    enum atPattern = "@%s %s";
+    immutable message = target.length ?
+        atPattern.format(plugin.nameOf(target), line) :
+        line;
+    chan(plugin.state, event.channel, message);
 }
 
 
