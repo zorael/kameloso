@@ -28,13 +28,6 @@ import dialect.defs;
 {
     /// Toggle whether or not this plugin should do anything at all.
     @Enabler bool enabled = true;
-
-    // cooldown
-    /++
-        How many seconds must pass between two invocations of a given oneliner.
-        Introduces an element of hysteresis.
-     +/
-    int cooldown = 3;
 }
 
 
@@ -84,6 +77,13 @@ public:
         yielded next in the case of ordered oneliners.
      +/
     size_t position;
+
+    // cooldown
+    /++
+        How many seconds must pass between two invocations of a oneliner.
+        Introduces an element of hysteresis.
+     +/
+    uint cooldown;
 
     // lastTriggered
     /++
@@ -172,6 +172,7 @@ public:
         json["trigger"] = JSONValue(this.trigger);
         json["type"] = JSONValue(cast(int)this.type);
         json["responses"] = JSONValue(this.responses);
+        json["cooldown"] = JSONValue(this.cooldown);
 
         return json;
     }
@@ -193,6 +194,11 @@ public:
         oneliner.type = (json["type"].integer == cast(int)Type.random) ?
             Type.random :
             Type.ordered;
+
+        if (const cooldownJSON = "cooldown" in json)
+        {
+            oneliner.cooldown = cast(uint)cooldownJSON.integer;
+        }
 
         foreach (const responseJSON; json["responses"].array)
         {
@@ -257,9 +263,9 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
                 return sendEmptyOneliner(trigger);
             }
 
-            if (plugin.onelinersSettings.cooldown > 0)
+            if (oneliner.cooldown > 0)
             {
-                if ((oneliner.lastTriggered + plugin.onelinersSettings.cooldown) > event.time)
+                if ((oneliner.lastTriggered + oneliner.cooldown) > event.time)
                 {
                     // Too soon
                     return;
@@ -301,7 +307,7 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
             .word("oneliner")
             .policy(PrefixPolicy.prefixed)
             .description("Manages oneliners.")
-            .addSyntax("$command new [trigger] [type]")
+            .addSyntax("$command new [trigger] [type] [optional cooldown]")
             .addSyntax("$command add [trigger] [text]")
             .addSyntax("$command edit [trigger] [position] [new text]")
             .addSyntax("$command insert [trigger] [position] [text]")
@@ -389,7 +395,7 @@ void handleNewOneliner(
 
     void sendNewUsage()
     {
-        enum pattern = "Usage: <b>%s%s new<b> [trigger] [type]";
+        enum pattern = "Usage: <b>%s%s new<b> [trigger] [type] [optional cooldown]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
         chan(plugin.state, event.channel, message);
     }
@@ -400,10 +406,18 @@ void handleNewOneliner(
         chan(plugin.state, event.channel, message);
     }
 
+    void sendCooldownMustBeValidPositiveDurationString()
+    {
+        enum message = "Oneliner cooldown must be in the hour-minute-seconds form of <b>*h*m*s<b> " ~
+            "and may not have negative values.";
+        chan(plugin.state, event.channel, message);
+    }
+
     string trigger;
     string typestring;
-    immutable results = slice.splitInto(trigger, typestring);
-    if (results != SplitResults.match) return sendNewUsage();
+    string cooldownString;
+    cast(void)slice.splitInto(trigger, typestring, cooldownString);
+    if (!typestring.length) return sendNewUsage();
 
     Oneliner.Type type;
 
@@ -428,6 +442,22 @@ void handleNewOneliner(
     }
 
     trigger = stripPrefix(trigger).toLower;
+    int cooldownSeconds = Oneliner.init.cooldown;
+
+    if (cooldownString.length)
+    {
+        import kameloso.time : DurationStringException, abbreviatedDuration;
+
+        try
+        {
+            cooldownSeconds = cast(int)abbreviatedDuration(cooldownString).total!"seconds";
+            if (cooldownSeconds < 0) return sendCooldownMustBeValidPositiveDurationString();
+        }
+        catch (DurationStringException _)
+        {
+            return sendCooldownMustBeValidPositiveDurationString();
+        }
+    }
 
     /+
         We need to check both hardcoded and soft channel-specific commands
@@ -463,6 +493,7 @@ void handleNewOneliner(
         Oneliner oneliner;
         oneliner.trigger = trigger;
         oneliner.type = type;
+        oneliner.cooldown = cooldownSeconds;
         //oneliner.responses ~= slice;
 
         plugin.onelinersByChannel[event.channel][trigger] = oneliner;
