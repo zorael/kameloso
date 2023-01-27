@@ -647,9 +647,6 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
             "'%s' != '%s'".format(thisFiber.payload.content, msg), file, line);
     }
 
-    send("set oneliners.cooldown=0");
-    expect("Setting changed.");
-
     // ------------ !oneliner
 
     send("commands");
@@ -662,7 +659,7 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
     expect("No such oneliner: %sherp".format(prefix));
 
     send("oneliner new");
-    expect("Usage: %soneliner new [trigger] [type]".format(prefix));
+    expect("Usage: %soneliner new [trigger] [type] [optional cooldown]".format(prefix));
 
     send("oneliner new herp ordered");
     expect("Oneliner %sherp created! Use %1$soneliner add to add lines.".format(prefix));
@@ -704,6 +701,33 @@ in (origEvent.channel.length, "Tried to test Oneliners with empty channel in ori
     expect("Oneliner %sherp removed.".format(prefix));
 
     send("oneliner list");
+    expect("There are no commands available right now.");
+
+    send("oneliner new herp random 10");
+    expect("Oneliner %sherp created! Use %1$soneliner add to add lines.".format(prefix));
+
+    sendPrefixed("herp");
+    expect("(Empty oneliner; use %soneliner add herp to add lines.)".format(prefix));
+
+    send("oneliner add herp abc");
+    expect("Oneliner line added.");
+
+    sendPrefixed("herp");
+    expect("abc");
+
+    sendPrefixed("herp");
+
+    logger.info("wait 10 seconds...");
+    delay(plugin, 10.seconds, Yes.yield);
+    enforce(!thisFiber.payload.content.length);
+
+    sendPrefixed("herp");
+    expect("abc");
+
+    send("oneliner del herp");
+    expect("Oneliner %sherp removed.".format(prefix));
+
+    send("commands");
     expect("There are no commands available right now.");
 }
 
@@ -958,7 +982,7 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
     // ------------ !counter
 
     send("counter");
-    expect("Usage: !counter [add|del|list] [counter word]");
+    expect("Usage: !counter [add|del|format|list] [counter word]");
 
     send("counter list");
     awaitReply();
@@ -966,10 +990,10 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
         thisFiber.payload.content.beginsWith("Current counters: ")), thisFiber.payload.content);
 
     send("counter last");
-    expect("Usage: !counter [add|del|list] [counter word]");
+    expect("Usage: !counter [add|del|format|list] [counter word]");
 
     send("counter add");
-    expect("Usage: !counter [add|del|list] [counter word]");
+    expect("Usage: !counter [add|del|format|list] [counter word]");
 
     send("counter del blah");
     awaitReply();
@@ -1031,6 +1055,36 @@ in (origEvent.channel.length, "Tried to test Counter with empty channel in origi
 
     sendPrefixed("blah?");
     expect("blah count so far: 10");
+
+    send("counter format blah ? ABC $count DEF");
+    expect("Format pattern updated.");
+
+    send("counter format blah + count +$step = $count");
+    expect("Format pattern updated.");
+
+    send("counter format blah - count -$step = $count");
+    expect("Format pattern updated.");
+
+    send("counter format blah = count := $count");
+    expect("Format pattern updated.");
+
+    sendPrefixed("blah");
+    expect("ABC 10 DEF");
+
+    sendPrefixed("blah+");
+    expect("count +1 = 11");
+
+    sendPrefixed("blah-2");
+    expect("count -2 = 9");
+
+    sendPrefixed("blah=42");
+    expect("count := 42");
+
+    send("counter format blah ? -");
+    expect("Format pattern cleared.");
+
+    sendPrefixed("blah");
+    expect("blah count so far: 42");
 
     // ------------ !counter cleanup
 
