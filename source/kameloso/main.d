@@ -3135,9 +3135,6 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
          +/
         version(Callgrind)
         {
-            /// Assume callgrind is running until proven otherwise.
-            bool callgrindRunning = true;
-
             void dumpCallgrind()
             {
                 import lu.string : beginsWith;
@@ -3156,16 +3153,16 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                 logger.info("$ callgrind_control -d ", thisProcessID);
                 immutable result = execute(dumpCommand);
                 writeln(result.output.chomp);
-
-                if (result.output.beginsWith("Error: Callgrind task with PID"))
-                {
-                    callgrindRunning = false;
-                }
+                instance.callgrindRunning = !result.output.beginsWith("Error: Callgrind task with PID");
             }
 
-            // Dump now and on scope exit
-            dumpCallgrind();
-            scope(exit) if (callgrindRunning) dumpCallgrind();
+            if (instance.callgrindRunning)
+            {
+                // Dump now and on scope exit
+                dumpCallgrind();
+            }
+
+            scope(exit) if (instance.callgrindRunning) dumpCallgrind();
         }
 
         // Start the main loop

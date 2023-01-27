@@ -234,6 +234,19 @@ public:
     string[] customSettings;
 
 
+    version(Callgrind)
+    {
+        // callgrindRunning
+        /++
+            Flag to keep record of whether or not the program is run under the
+            Callgrind profiler.
+
+            Assume it is until proven otherwise.
+         +/
+        bool callgrindRunning = true;
+    }
+
+
     // this(this)
     /// Never copy this.
     @disable this(this);
