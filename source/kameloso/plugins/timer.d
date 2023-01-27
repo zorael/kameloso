@@ -295,7 +295,7 @@ unittest
         timer.type = Timer.Type.random;
         bool[string] linesSeen;
 
-        foreach (immutable i; 0..20)
+        foreach (immutable i; 0..300)
         {
             linesSeen[timer.getLine()] = true;
         }
