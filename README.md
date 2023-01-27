@@ -361,7 +361,7 @@ In the case of **hostmasks mode**, the above still applies but "accounts" are de
 
 ## **Twitch**
 
-> **If you're interested in trying the bot but don't want to run it yourself, contact me and I'll host an instance on a headless server.**
+> **If you're interested in trying the bot but don't want to run it yourself, [contact me](mailto:zorael@gmail.com?subject=kameloso) and I'll host an instance on a headless server.**
 
 ### **Copy paste-friendly concrete setup from scratch**
 
