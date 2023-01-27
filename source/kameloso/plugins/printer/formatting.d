@@ -1270,7 +1270,7 @@ void highlightEmotesImpl(Sink)
     const Flag!"brightTerminal" brightTerminal)
 if (isOutputRange!(Sink, char[]))
 {
-    import std.algorithm.iteration : splitter;
+    import std.algorithm.iteration : splitter, uniq;
     import std.algorithm.sorting : sort;
     import std.array : Appender;
     import std.conv : to;
@@ -1287,8 +1287,20 @@ if (isOutputRange!(Sink, char[]))
     // That is a standard PRIVMSG line with ":) " repeated until 512 chars.
     //enum maxHighlights = 162;
 
-    Appender!(Highlight[]) highlights;
-    highlights.reserve(64);
+    static Appender!(Highlight[]) highlights;
+
+    scope(exit)
+    {
+        if (highlights.data.length)
+        {
+            highlights.clear();
+        }
+    }
+
+    if (highlights.capacity == 0)
+    {
+        highlights.reserve(64);  // guesstimate
+    }
 
     size_t pos;
 
@@ -1310,10 +1322,19 @@ if (isOutputRange!(Sink, char[]))
         }
     }
 
-    const sortedHighlights = highlights.data
+    /+
+        We need to use uniq since sometimes there will be custom emotes for which
+        there are already official ones. Example:
+
+            content: Hey Dist, what’s up? distPls distRoll
+            emotes:  emotesv2_1e80339255a84a4ebbd0129851b90aa0:21-27/emotesv2_744f13dfe4a345c5be4becdeb05343ee:29-36/distPls:21-27
+
+        The first and the last are duplicates.
+     +/
+    auto sortedHighlights = highlights.data
         .dup
-        .sort!((a, b) => a.start < b.start)()
-        .release();
+        .sort!((a, b) => (a.start < b.start))
+        .uniq!((a, b) => (a.start == b.start)); // && (a.end == b.end));
 
     // We need a dstring since we're slicing something that isn't necessarily ASCII
     // Without this highlights become offset a few characters depending on the text
@@ -1462,7 +1483,7 @@ unittest
     getting false positives from similar nicknames.
 
     Tries to detect nicknames enclosed in terminal formatting. As such, call this
-    *after* having translated IRC- to terminal such with
+    *after* having translated IRC-to-terminal such with
     [kameloso.irccolours.mapEffects].
 
     Uses [std.string.indexOf|indexOf] internally with hopes of being more resilient to

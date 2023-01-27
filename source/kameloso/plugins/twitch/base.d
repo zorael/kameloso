@@ -1,10 +1,21 @@
 /++
-    This is an example Twitch channel bot. It supports querying uptime or how
-    long a streamer has been live, follower age queries, etc. It can also emit
-    some terminal bells on certain events, to draw attention.
+    This is a Twitch channel bot. It supports song requests, counting how many
+    times an emote has been used, reporting how long a viewer has been a follower,
+    how much time they have spent watching the stream, and some miscellanea.
 
-    One immediately obvious venue of expansion is expression bans, such as if a
-    message has too many capital letters, etc. There is no protection from spam yet.
+    For local use it can also emit some terminal bells on certain events, to draw attention.
+
+    If the `promote*` settings are toggled, some viewers will be automatically given
+    privileges based on their channel "status"; one of broadcaster, moderator and
+    VIPs. Viewers that don't fall into any of those categories are not given any
+    special permissions unless awarded manually. Nothing promotes into the
+    `whitelist` class as it's meant to be assigned to manually.
+
+    Mind that the majority of the other plugins still work on Twitch, so you also have
+    the [kameloso.plugins.counter|Counter] plugin for death counters, the
+    [kameloso.plugins.quotes|Quotes] plugin for streamer quotes, the
+    [kameloso.plugins.timer|Timer] plugin for timed announcements, the
+    [kameloso.plugins.oneliners|Oneliners] plugin for oneliner commands, etc.
 
     See_Also:
         https://github.com/zorael/kameloso/wiki/Current-plugins#twitch
@@ -61,6 +72,12 @@ public:
         What level of user permissions are needed to issue song requests.
      +/
     IRCUser.Class songrequestPermsNeeded = IRCUser.Class.whitelist;
+
+    /++
+        Whether or not to convert queries received by someone whose channel is a
+        home channel into a channel message in that channel.
+     +/
+    bool fakeChannelFromQueries = false;
 
     /++
         Whether or not broadcasters are always implicitly class
@@ -289,7 +306,7 @@ package struct Credentials
 mixin UserAwareness;
 mixin ChannelAwareness;
 mixin TwitchAwareness;
-mixin ModuleRegistration!(-5);
+mixin ModuleRegistration!(-5.priority);
 
 
 // onImportant
@@ -383,38 +400,71 @@ in (channelName.length, "Tried to init Room with an empty channel string")
 
     "You will not get USERSTATE for other people. Only for yourself."
     https://discuss.dev.twitch.tv/t/no-userstate-on-people-joining/11598
+
+    This sometimes happens once per outgoing message sent, causing it to spam
+    the moderator warning.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.USERSTATE)
     .channelPolicy(ChannelPolicy.home)
 )
-void onUserstate(const ref IRCEvent event)
+void onUserstate(TwitchPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : contains;
+    auto room = event.channel in plugin.rooms;
 
-    if (!event.target.badges.contains("moderator/") &&
-        !event.target.badges.contains("broadcaster/"))
+    if (!room)
     {
-        enum pattern = "The bot is not a moderator of home channel <l>%s</>. " ~
-            "Consider elevating it to such to avoid being as rate-limited.";
-        logger.warningf(pattern, event.channel);
+        // Race...
+        initRoom(plugin, event.channel);
+        room = event.channel in plugin.rooms;
+    }
+
+    if (!room.sawUserstate)
+    {
+        import lu.string : contains;
+
+        // First USERSTATE; warn
+        if (!event.target.badges.contains("moderator/") &&
+            !event.target.badges.contains("broadcaster/"))
+        {
+            enum pattern = "The bot is not a moderator of home channel <l>%s</>. " ~
+                "Consider elevating it to such to avoid being as rate-limited.";
+            logger.warningf(pattern, event.channel);
+            room.sawUserstate = true;
+            return;
+        }
+
+        if (auto channel = event.channel in plugin.state.channels)
+        {
+            if (auto ops = 'o' in channel.mods)
+            {
+                if (plugin.state.client.nickname !in *ops)
+                {
+                    (*ops)[plugin.state.client.nickname] = true;
+                }
+            }
+            else
+            {
+                channel.mods['o'][plugin.state.client.nickname] = true;
+            }
+        }
     }
 }
 
 
 // onGlobalUserstate
 /++
-    Inherits the bots display name from a
-    [dialect.defs.IRCEvent.Type.GLOBALUSERSTATE|GLOBALUSERSTATE]
-    into [kameloso.plugins.core.IRCPluginState.displayName|IRCPluginState.displayName].
+    Fetches global custom BetterTV, FrankerFaceZ and 7tv emotes.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.GLOBALUSERSTATE)
+    .fiber(true)
 )
-void onGlobalUserstate(TwitchPlugin plugin, const ref IRCEvent event)
+void onGlobalUserstate(TwitchPlugin plugin)
 {
-    plugin.state.bot.displayName = event.target.displayName;
-    plugin.state.updates |= IRCPluginState.Update.bot;
+    // dialect sets the display name during parsing
+    //assert(plugin.state.client.displayName == event.target.displayName);
+    importCustomGlobalEmotes(plugin);
 }
 
 
@@ -733,6 +783,8 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 /++
     Records the room ID of a home channel, and queries the Twitch servers for
     the display name of its broadcaster.
+
+    Additionally fetches custom BetterTV, FrankerFaceZ and 7tv emotes for the channel.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ROOMSTATE)
@@ -741,6 +793,9 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 )
 void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
+    import kameloso.thread : ThreadMessage;
+    import std.concurrency : send;
+
     auto room = event.channel in plugin.rooms;
 
     if (!room)
@@ -762,43 +817,57 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         }
         catch (Exception e)
         {
+            import std.format : format;
+
             // Can be JSONException
-            // Retry until we reach the retry limit, then rethrow
+            // Retry until we reach the retry limit
             if (i < TwitchPlugin.delegateRetries-1) continue;
-            throw e;  // It's in a Fiber but we get the backtrace anyway
+
+            enum pattern = "Failed to fetch information for channel <l>%s</>: <t>%s";
+            logger.errorf(pattern, event.channel, e.msg);
+            version(PrintStacktraces) logger.trace(e);
+            //break;
         }
     }
+
+    immutable nickname = event.channel[1..$];
+    auto broadcasterUser = nickname in plugin.state.users;
+
+    if (!broadcasterUser)
+    {
+        // Forge a new user
+        auto newUser = IRCUser(nickname, nickname, nickname ~ ".tmi.twitch.tv");
+        newUser.account = nickname;
+        newUser.class_ = IRCUser.Class.anyone;
+        plugin.state.users[nickname] = newUser;
+        broadcasterUser = nickname in plugin.state.users;
+    }
+
+    broadcasterUser.displayName = room.broadcasterDisplayName;
+    IRCUser user = *broadcasterUser;  // dereference and copy
+    plugin.state.mainThread.send(ThreadMessage.PutUser(), user);
 
     room.follows = getFollows(plugin, room.id);
     room.followsLastCached = event.time;
     startRoomMonitorFibers(plugin, event.channel);
+    importCustomEmotes(plugin, event.channel, room.id);
+}
 
-    version(WithPersistenceService)
-    {
-        import kameloso.thread : ThreadMessage, sendable;
-        import std.concurrency : send;
 
-        immutable nickname = event.channel[1..$];
-        auto broadcasterUser = nickname in plugin.state.users;
-
-        if (broadcasterUser)
-        {
-            if (broadcasterUser.displayName.length) return;
-        }
-        else /*if (!broadcasterUser)*/
-        {
-            // Fake a new user
-            auto newUser = IRCUser(nickname, nickname, nickname ~ ".tmi.twitch.tv");
-            newUser.account = nickname;
-            newUser.class_ = IRCUser.Class.anyone;
-            plugin.state.users[nickname] = newUser;
-            broadcasterUser = nickname in plugin.state.users;
-        }
-
-        broadcasterUser.displayName = room.broadcasterDisplayName;
-        IRCUser user = *broadcasterUser;  // dereference and copy
-        plugin.state.mainThread.send(ThreadMessage.busMessage("persistence", sendable(user)));
-    }
+// onGuestRoomState
+/++
+    Fetches custom BetterTV, FrankerFaceZ and 7tv emotes for a guest channel iff
+    version `TwitchCustomEmotesEverywhere`.
+ +/
+version(TwitchCustomEmotesEverywhere)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.ROOMSTATE)
+    .channelPolicy(ChannelPolicy.guest)
+    .fiber(true)
+)
+void onGuestRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+{
+    importCustomEmotes(plugin, event.channel, event.aux);
 }
 
 
@@ -888,7 +957,7 @@ void onCommandRepeat(TwitchPlugin plugin, const ref IRCEvent event)
             chan(plugin.state, event.channel, slice);
         }
     }
-    catch (ConvException e)
+    catch (ConvException _)
     {
         return sendUsage();
     }
@@ -1213,7 +1282,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
             return sendAddedToSpotifyPlaylist(artist, track);
         }
-        catch (ErrorJSONException e)
+        catch (ErrorJSONException _)
         {
             return sendInvalidURL();
         }
@@ -1240,7 +1309,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         IRCEventHandler.Command()
             .word("startpoll")
             .policy(PrefixPolicy.prefixed)
-            .description("Starts a Twitch poll.")
+            .description("(Experimental) Starts a Twitch poll.")
             .addSyntax(`$command "[poll title]" [duration] [choice1] [choice2] ...`)
     )
     .addCommand(
@@ -1287,15 +1356,15 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             .total!"seconds"
             .to!string;
     }
-    catch (ConvException e)
+    catch (ConvException _)
     {
         enum message = "Invalid duration.";
         return chan(plugin.state, event.channel, message);
     }
-    catch (DurationStringException e)
+    /*catch (DurationStringException e)
     {
         return chan(plugin.state, event.channel, e.msg);
-    }
+    }*/
     catch (Exception e)
     {
         return chan(plugin.state, event.channel, e.msg);
@@ -1308,7 +1377,7 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         immutable message = pattern.format(responseJSON.array[0].object["title"].str);
         chan(plugin.state, event.channel, message);
     }
-    catch (MissingBroadcasterTokenException e)
+    catch (MissingBroadcasterTokenException _)
     {
         enum message = "Missing broadcaster-level API token.";
         enum superMessage = message ~ " Run the program with <l>--set twitch.superKeygen</> to generate a new one.";
@@ -1365,7 +1434,7 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         IRCEventHandler.Command()
             .word("endpoll")
             .policy(PrefixPolicy.prefixed)
-            .description("Ends a Twitch poll.")
+            .description("(Experimental) Ends a Twitch poll.")
             //.addSyntax("$command [terminating]")
     )
     .addCommand(
@@ -1471,8 +1540,9 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
 
         foreach (immutable emotestring; event.emotes.splitter('/'))
         {
-            auto channelcount = event.channel in plugin.ecount;
+            if (!emotestring.length) continue;
 
+            auto channelcount = event.channel in plugin.ecount;
             if (!channelcount)
             {
                 plugin.ecount[event.channel][string.init] = 0L;
@@ -1481,9 +1551,9 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
             }
 
             string slice = emotestring;  // mutable
-            immutable id = slice.nom(':');//.to!uint;
-            auto thisEmoteCount = id in *channelcount;
+            immutable id = slice.nom(':');
 
+            auto thisEmoteCount = id in *channelcount;
             if (!thisEmoteCount)
             {
                 (*channelcount)[id] = 0L;
@@ -1573,6 +1643,7 @@ void onEndOfMOTD(TwitchPlugin plugin)
 void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : nom, stripped;
+    import std.array : replace;
     import std.format : format;
     import std.conv  : to;
 
@@ -1587,7 +1658,7 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
 
     void sendNotATwitchEmote()
     {
-        enum message = "That is not a Twitch emote.";
+        enum message = "That is not a Twitch, BetterTTV, FrankerFaceZ or 7tv emote.";
         chan(plugin.state, event.channel, message);
     }
 
@@ -1608,8 +1679,10 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
         rawSlice.nom(" :");
 
         // Slice it as a dstring to (hopefully) get full characters
+        // Undo replacements
         immutable dline = rawSlice.to!dstring;
-        immutable emote = dline[start..end];
+        immutable emote = dline[start..end]
+            .replace(dchar(';'), dchar(':'));
 
         // No real point using plurality since most emotes should have a count > 1
         enum pattern = "%s has been used %d times!";
@@ -1630,7 +1703,11 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
     if (!channelcounts) return sendResults(0L);
 
     string slice = event.emotes;
-    immutable id = slice.nom(':');//.to!uint;
+
+    // Replace emote colons so as not to conflict with emote tag syntax
+    immutable id = slice
+        .nom(':')
+        .replace(':', ';');
 
     auto thisEmoteCount = id in *channelcounts;
     if (!thisEmoteCount) return sendResults(0L);
@@ -1659,6 +1736,12 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
     .addCommand(
         IRCEventHandler.Command()
             .word("wt")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("hours")
             .policy(PrefixPolicy.prefixed)
             .hidden(true)
     )
@@ -1924,7 +2007,12 @@ void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         immutable message = pattern.format(name);
         chan(plugin.state, event.channel, message);
     }
-    catch (EmptyDataJSONException e)
+    catch (EmptyResponseException _)
+    {
+        enum message = "Empty response from server!";
+        chan(plugin.state, event.channel, message);
+    }
+    catch (EmptyDataJSONException _)
     {
         enum message = "Could not find a game by that name; check spelling.";
         chan(plugin.state, event.channel, message);
@@ -2015,6 +2103,11 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     {
         startCommercial(plugin, event.channel, lengthString);
     }
+    catch (EmptyResponseException _)
+    {
+        enum message = "Empty response from server!";
+        chan(plugin.state, event.channel, message);
+    }
     catch (TwitchQueryException e)
     {
         if ((e.code == 400) && (e.error == "Bad Request"))
@@ -2025,6 +2118,267 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         {
             throw e;
         }
+    }
+}
+
+
+// importCustomEmotes
+/++
+    Fetches custom channel-specific BetterTTV, FrankerFaceZ and 7tv emotes via API calls.
+
+    Params:
+        plugin = The current [TwitchPlugin].
+        channelName = Name of channel to import emotes for.
+        idString = Twitch ID of channel, in string form.
+ +/
+void importCustomEmotes(
+    TwitchPlugin plugin,
+    const string channelName,
+    const string idString)
+in (Fiber.getThis, "Tried to call `importCustomEmotes` from outside a Fiber")
+{
+    import core.memory : GC;
+
+    GC.disable();
+    scope(exit) GC.enable();
+
+    // Initialise the AA so we can get a pointer to it.
+    plugin.customEmotesByChannel[channelName][dstring.init] = false;
+    auto customEmotes = channelName in plugin.customEmotesByChannel;
+    (*customEmotes).remove(dstring.init);
+
+    alias GetEmoteFun = void function(TwitchPlugin, ref bool[dstring], const string);
+
+    void getEmoteSet(GetEmoteFun fun, const string setName)
+    {
+        try
+        {
+            fun(plugin, *customEmotes, idString);
+        }
+        catch (Exception e)
+        {
+            enum pattern = "Failed to fetch custom <l>%s</> emotes for channel <l>%s</>: <t>%s";
+            logger.warningf(pattern, setName, channelName, e.msg);
+            //version(PrintStacktraces) logger.trace(e.info);
+            //throw e;
+        }
+    }
+
+    getEmoteSet(&getBTTVEmotes, "BetterTTV");
+    getEmoteSet(&getFFZEmotes, "FrankerFaceZ");
+    //getEmoteSet(&getFFZEmotesFromBTTVCache, "FrankerFaceZ (BTTV cache)");
+    getEmoteSet(&get7tvEmotes, "7tv");
+    customEmotes.rehash();
+}
+
+
+// importCustomGlobalEmotes
+/++
+    Fetches custom global BetterTTV, FrankerFaceZ and 7tv emotes via API calls.
+
+    Params:
+        plugin = The current [TwitchPlugin].
+ +/
+void importCustomGlobalEmotes(TwitchPlugin plugin)
+in (Fiber.getThis, "Tried to call `importCustomGlobalEmotes` from outside a Fiber")
+{
+    import core.memory : GC;
+
+    GC.disable();
+    scope(exit) GC.enable();
+
+    alias GetGlobalEmoteFun = void function(TwitchPlugin, ref bool[dstring]);
+
+    void getGlobalEmoteSet(GetGlobalEmoteFun fun, const string setName)
+    {
+        try
+        {
+            fun(plugin, plugin.customGlobalEmotes);
+        }
+        catch (Exception e)
+        {
+            enum pattern = "Failed to fetch global <l>%s</> emotes: <t>%s";
+            logger.warningf(pattern, setName, e.msg);
+            //version(PrintStacktraces) logger.trace(e.info);
+            //throw e;
+        }
+    }
+
+    getGlobalEmoteSet(&getBTTVGlobalEmotes, "BetterTTV");
+    getGlobalEmoteSet(&get7tvGlobalEmotes, "7tv");
+    plugin.customGlobalEmotes.rehash();
+}
+
+
+// embedCustomEmotes
+/++
+    Embeds custom emotes into the [dialect.defs.IRCEvent|IRCEvent] passed by reference,
+    so that the [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin] can
+    highlight them with colours.
+
+    This is called in [postprocess].
+
+    Params:
+        event = [dialect.defs.IRCEvent|IRCEvent] in flight.
+        customEmotes = `bool[dstring]` associative array of channel-specific custom emotes.
+        customGlobalEmotes = `bool[dstring]` associative array of global custom emotes.
+ +/
+void embedCustomEmotes(
+    ref IRCEvent event,
+    const bool[dstring] customEmotes,
+    const bool[dstring] customGlobalEmotes)
+{
+    import lu.string : strippedRight;
+    import std.algorithm.comparison : among;
+    import std.array : Appender;
+    import std.conv : to;
+    import std.string : indexOf;
+
+    static Appender!(char[]) sink;
+
+    scope(exit)
+    {
+        if (sink.data.length)
+        {
+            event.emotes ~= sink.data;
+            sink.clear();
+        }
+    }
+
+    if (sink.capacity == 0) sink.reserve(64);  // guesstimate
+
+    immutable dline = event.content.strippedRight.to!dstring;
+    ptrdiff_t pos = dline.indexOf(' ');
+    dstring previousEmote;  // mutable
+    size_t prev;
+
+    static bool isEmoteCharacter(const dchar dc)
+    {
+        // Unsure about '-' and '(' but be conservative and keep
+        return (
+            ((dc >= dchar('a')) && (dc <= dchar('z'))) ||
+            ((dc >= dchar('A')) && (dc <= dchar('Z'))) ||
+            ((dc >= dchar('0')) && (dc <= dchar('9'))) ||
+            dc.among!(dchar(':'), dchar(')'), dchar('-'), dchar('(')));
+    }
+
+    void appendEmote(const dstring dword)
+    {
+        import std.array : replace;
+        import std.format : formattedWrite;
+
+        enum pattern = "/%s:%d-%d";
+        immutable slicedPattern = (event.emotes.length || sink.data.length) ?
+            pattern :
+            pattern[1..$];
+        immutable dwordEscaped = dword.replace(dchar(':'), dchar(';'));
+        immutable end = (pos == -1) ?
+            dline.length :
+            pos;
+        sink.formattedWrite(slicedPattern, dwordEscaped, prev, end-1);
+        previousEmote = dword;
+    }
+
+    void checkWord(const dstring dword)
+    {
+        import std.format : formattedWrite;
+
+        // Micro-optimise a bit by skipping AA lookups of words that are unlikely to be emotes
+        if ((dword.length > 1) &&
+            isEmoteCharacter(dword[$-1]) &&
+            isEmoteCharacter(dword[0]))
+        {
+            // Can reasonably be an emote
+        }
+        else
+        {
+            // Can reasonably not
+            return;
+        }
+
+        if (dword == previousEmote)
+        {
+            enum pattern = ",%d-%d";
+            immutable end = (pos == -1) ?
+                dline.length :
+                pos;
+            sink.formattedWrite(pattern, prev, end-1);
+            return;  // cannot return non-void from `void` function
+        }
+
+        if ((dword in customEmotes) || (dword in customGlobalEmotes))
+        {
+            return appendEmote(dword);
+        }
+    }
+
+    if (pos == -1)
+    {
+        // No bounding space, check entire (one-word) line
+        return checkWord(dline);
+    }
+
+    while (true)
+    {
+        if (pos > prev)
+        {
+            checkWord(dline[prev..pos]);
+        }
+
+        prev = (pos + 1);
+        if (prev >= dline.length) return;
+
+        pos = dline.indexOf(' ', prev);
+        if (pos == -1)
+        {
+            return checkWord(dline[prev..$]);
+        }
+    }
+
+    assert(0, "Unreachable");
+}
+
+///
+unittest
+{
+    bool[dstring] customEmotes =
+    [
+        ":tf:"d : true,
+        "FrankerZ"d : true,
+        "NOTED"d : true,
+    ];
+
+    bool[dstring] customGlobalEmotes =
+    [
+        "KEKW"d : true,
+        "NotLikeThis"d : true,
+        "gg"d : true,
+    ];
+
+    IRCEvent event;
+    event.type = IRCEvent.Type.CHAN;
+
+    {
+        event.content = "come on its easy, now rest then talk talk more left, left, " ~
+            "right re st, up, down talk some rest a bit talk poop  :tf:";
+        //event.emotes = string.init;
+        embedCustomEmotes(event, customEmotes, customGlobalEmotes);
+        enum expectedEmotes = ";tf;:113-116";
+        assert((event.emotes == expectedEmotes), event.emotes);
+    }
+    {
+        event.content = "NOTED  FrankerZ  NOTED NOTED    gg";
+        event.emotes = string.init;
+        embedCustomEmotes(event, customEmotes, customGlobalEmotes);
+        enum expectedEmotes = "NOTED:0-4/FrankerZ:7-14/NOTED:17-21,23-27/gg:32-33";
+        assert((event.emotes == expectedEmotes), event.emotes);
+    }
+    {
+        event.content = "No emotes here KAPPA";
+        event.emotes = string.init;
+        embedCustomEmotes(event, customEmotes, customGlobalEmotes);
+        enum expectedEmotes = string.init;
+        assert((event.emotes == expectedEmotes), event.emotes);
     }
 }
 
@@ -2113,16 +2467,12 @@ void start(TwitchPlugin plugin)
 
         // Remove custom Twitch settings so we can reconnect without jumping
         // back into keygens.
-        static immutable string[8] settingsToPop =
+        static immutable string[4] settingsToPop =
         [
             "twitch.keygen",
-            "twitchbot.keygen",
             "twitch.superKeygen",
-            "twitchbot.superKeygen",
             "twitch.googleKeygen",
-            "twitchbot.googleKeygen",
             "twitch.spotifyKeygen",
-            "twitchbot.spotifyKeygen",
         ];
 
         foreach (immutable setting; settingsToPop[])
@@ -2173,12 +2523,13 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
         auto room = channelName in plugin.rooms;
         assert(room, "Tried to start chatter monitor delegate on non-existing room");
 
+        immutable idSnapshot = room.uniqueID;
         uint addedSinceLastRehash;
 
-        while (true)
+        while (plugin.useAPIFeatures)
         {
             room = channelName in plugin.rooms;
-            if (!room) return;
+            if (!room || (room.uniqueID != idSnapshot)) return;
 
             if (!room.stream.up)
             {
@@ -2186,74 +2537,81 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
                 continue;
             }
 
-            const botBlacklist = getBotList(plugin);
-            immutable chattersJSON = getChatters(plugin, room.broadcasterName);
-
-            static immutable chatterTypes =
-            [
-                "admins",
-                //"broadcaster",
-                "global_mods",
-                "moderators",
-                "staff",
-                "viewers",
-                "vips",
-            ];
-
-            foreach (immutable chatterType; chatterTypes)
+            try
             {
-                foreach (immutable viewerJSON; chattersJSON["chatters"][chatterType].array)
+                const botBlacklist = getBotList(plugin);
+                immutable chattersJSON = getChatters(plugin, room.broadcasterName);
+
+                static immutable chatterTypes =
+                [
+                    "admins",
+                    //"broadcaster",
+                    "global_mods",
+                    "moderators",
+                    "staff",
+                    "viewers",
+                    "vips",
+                ];
+
+                foreach (immutable chatterType; chatterTypes)
                 {
-                    import std.algorithm.searching : canFind, endsWith;
-
-                    immutable viewer = viewerJSON.str;
-
-                    if (viewer.endsWith("bot") ||
-                        botBlacklist.canFind(viewer) ||
-                        (viewer == plugin.state.client.nickname))
+                    foreach (immutable viewerJSON; chattersJSON["chatters"][chatterType].array)
                     {
-                        continue;
-                    }
+                        import std.algorithm.searching : canFind, endsWith;
 
-                    room.stream.chattersSeen[viewer] = true;
+                        immutable viewer = viewerJSON.str;
 
-                    // continue early if we shouldn't monitor watchtime
-                    if (!plugin.twitchSettings.watchtime) continue;
-
-                    if (plugin.twitchSettings.watchtimeExcludesLurkers)
-                    {
-                        // Exclude lurkers from watchtime monitoring
-                        if (viewer !in room.stream.activeViewers) continue;
-                    }
-
-                    enum periodicitySeconds = plugin.monitorUpdatePeriodicity.total!"seconds";
-
-                    if (auto channelViewerTimes = room.channelName in plugin.viewerTimesByChannel)
-                    {
-                        if (auto viewerTime = viewer in *channelViewerTimes)
+                        if (viewer.endsWith("bot") ||
+                            botBlacklist.canFind(viewer) ||
+                            (viewer == plugin.state.client.nickname))
                         {
-                            *viewerTime += periodicitySeconds;
+                            continue;
+                        }
+
+                        room.stream.chattersSeen[viewer] = true;
+
+                        // continue early if we shouldn't monitor watchtime
+                        if (!plugin.twitchSettings.watchtime) continue;
+
+                        if (plugin.twitchSettings.watchtimeExcludesLurkers)
+                        {
+                            // Exclude lurkers from watchtime monitoring
+                            if (viewer !in room.stream.activeViewers) continue;
+                        }
+
+                        enum periodicitySeconds = plugin.monitorUpdatePeriodicity.total!"seconds";
+
+                        if (auto channelViewerTimes = room.channelName in plugin.viewerTimesByChannel)
+                        {
+                            if (auto viewerTime = viewer in *channelViewerTimes)
+                            {
+                                *viewerTime += periodicitySeconds;
+                            }
+                            else
+                            {
+                                (*channelViewerTimes)[viewer] = periodicitySeconds;
+                                ++addedSinceLastRehash;
+
+                                if ((addedSinceLastRehash > 128) &&
+                                    (addedSinceLastRehash > channelViewerTimes.length))
+                                {
+                                    // channel-viewer times AA doubled in size; rehash
+                                    *channelViewerTimes = (*channelViewerTimes).rehash();
+                                    addedSinceLastRehash = 0;
+                                }
+                            }
                         }
                         else
                         {
-                            (*channelViewerTimes)[viewer] = periodicitySeconds;
+                            plugin.viewerTimesByChannel[room.channelName][viewer] = periodicitySeconds;
                             ++addedSinceLastRehash;
-
-                            if ((addedSinceLastRehash > 128) &&
-                                (addedSinceLastRehash > channelViewerTimes.length))
-                            {
-                                // channel-viewer times AA doubled in size; rehash
-                                *channelViewerTimes = (*channelViewerTimes).rehash();
-                                addedSinceLastRehash = 0;
-                            }
                         }
                     }
-                    else
-                    {
-                        plugin.viewerTimesByChannel[room.channelName][viewer] = periodicitySeconds;
-                        ++addedSinceLastRehash;
-                    }
                 }
+            }
+            catch (Exception _)
+            {
+                // Just swallow the exception and retry next time
             }
 
             delay(plugin, plugin.monitorUpdatePeriodicity, Yes.yield);
@@ -2278,43 +2636,67 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
         auto room = channelName in plugin.rooms;
         assert(room, "Tried to start chatter monitor delegate on non-existing room");
 
+        immutable idSnapshot = room.uniqueID;
+
         while (plugin.useAPIFeatures)
         {
-            auto stream = getStream(plugin, room.broadcasterName);  // may not be const nor immutable
+            room = channelName in plugin.rooms;
+            if (!room || (room.uniqueID != idSnapshot)) return;
 
-            if (stream == TwitchPlugin.Room.Stream.init)
+            try
             {
-                // Stream down
-                if (room.stream.up)
-                {
-                    // Was up but just ended
-                    closeStream(room);
-                    rotateStream(room);
+                auto streamFromServer = getStream(plugin, room.broadcasterName);  // must not be const nor immutable
 
-                    if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
+                if (!streamFromServer.idString.length)  // == TwitchPlugin.Room.Stream.init)
+                {
+                    // Stream down
+                    if (room.stream.up)
                     {
-                        saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
+                        // Was up but just ended
+                        closeStream(room);
+                        rotateStream(room);
+
+                        if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
+                        {
+                            saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
+                        }
                     }
-                }
-            }
-            else
-            {
-                // Stream up
-                if (room.stream.idString == stream.idString)
-                {
-                    // Same stream running, just update it
-                    room.stream.update(stream);
                 }
                 else
                 {
-                    // New stream! Rotate and insert
-                    closeStream(room);
-                    rotateStream(room);
-                    room.stream = stream;
+                    // Stream up
+                    if (!room.stream.idString.length)
+                    {
+                        // New stream!
+                        room.stream = streamFromServer;
 
-                    Fiber chatterMonitorFiber = new Fiber(&chatterMonitorDg, BufferSize.fiberStack);
-                    chatterMonitorFiber.call();
+                        if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
+                        {
+                            saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
+                        }
+                    }
+                    else if (room.stream.idString == streamFromServer.idString)
+                    {
+                        // Same stream running, just update it
+                        room.stream.update(streamFromServer);
+                    }
+                    else /*if (room.stream.idString != streamFromServer.idString)*/
+                    {
+                        // New stream, but stale one exists. Rotate and insert
+                        closeStream(room);
+                        rotateStream(room);
+                        room.stream = streamFromServer;
+
+                        if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
+                        {
+                            saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
+                        }
+                    }
                 }
+            }
+            catch (Exception _)
+            {
+                // Just swallow the exception and retry next time
             }
 
             delay(plugin, plugin.monitorUpdatePeriodicity, Yes.yield);
@@ -2324,21 +2706,37 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
     // Clear and re-cache follows once every midnight
     void cacheFollowersDg()
     {
-        while (true)
+        auto room = channelName in plugin.rooms;
+        assert(room, "Tried to start follower cache delegate on non-existing room");
+
+        immutable idSnapshot = room.uniqueID;
+
+        while (plugin.useAPIFeatures)
         {
-            auto room = channelName in plugin.rooms;
-            if (!room) return;
+            room = channelName in plugin.rooms;
+            if (!room || (room.uniqueID != idSnapshot)) return;
 
             immutable now = Clock.currTime;
-            room.follows = getFollows(plugin, room.id);
-            room.followsLastCached = now.toUnixTime;
+
+            try
+            {
+                room.follows = getFollows(plugin, room.id);
+                room.followsLastCached = now.toUnixTime;
+            }
+            catch (Exception _)
+            {
+                // Just swallow the exception and retry next time
+            }
+
             delay(plugin, (now.nextMidnight - now), Yes.yield);
         }
     }
 
-    // Don't start a chatter monitor Fiber, the uptime delegate calls it
     Fiber uptimeMonitorFiber = new Fiber(&uptimeMonitorDg, BufferSize.fiberStack);
     uptimeMonitorFiber.call();
+
+    Fiber chatterMonitorFiber = new Fiber(&chatterMonitorDg, BufferSize.fiberStack);
+    chatterMonitorFiber.call();
 
     Fiber cacheFollowersFiber = new Fiber(&cacheFollowersDg, BufferSize.fiberStack);
     cacheFollowersFiber.call();
@@ -2381,7 +2779,7 @@ void startValidator(TwitchPlugin plugin)
                 // Schedule quitting on expiry
                 delay(plugin, (() => quit(plugin.state)), delta);
             }
-            catch (TwitchQueryException e)
+            catch (TwitchQueryException _)
             {
                 plugin.useAPIFeatures = false;
             }
@@ -2719,17 +3117,71 @@ void teardown(TwitchPlugin plugin)
 /++
     Hijacks a reference to a [dialect.defs.IRCEvent|IRCEvent] and modifies the
     sender and target class based on their badges (and the current settings).
+
+    Additionally embeds custom BTTV/FrankerFaceZ/7tv emotes into the event.
  +/
 void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 {
+    import std.algorithm.comparison : among;
     import std.algorithm.searching : canFind;
 
-    if (!event.sender.nickname.length || !event.channel.length) return;
+    if ((plugin.twitchSettings.fakeChannelFromQueries) && (event.type == IRCEvent.Type.QUERY))
+    {
+        immutable channelName = '#' ~ event.sender.nickname;
+        if (plugin.state.bot.homeChannels.canFind(channelName))
+        {
+            event.type = IRCEvent.Type.CHAN;
+            event.channel = channelName;
+        }
+    }
+    else if (!event.sender.nickname.length || !event.channel.length)
+    {
+        return;
+    }
 
-    version(TwitchPromoteEverywhere) {}
+    immutable eventCanContainEmotes = event.content.length &&
+        event.type.among!(IRCEvent.Type.CHAN, IRCEvent.Type.EMOTE);
+
+    version(TwitchCustomEmotesEverywhere)
+    {
+        if (eventCanContainEmotes)
+        {
+            // No checks needed
+            if (const customEmotes = event.channel in plugin.customEmotesByChannel)
+            {
+                embedCustomEmotes(event, *customEmotes, plugin.customGlobalEmotes);
+            }
+        }
+    }
     else
     {
-        if (!plugin.state.bot.homeChannels.canFind(event.channel)) return;
+        // Only embed if the event is in a home channel
+        immutable isHomeChannel = plugin.state.bot.homeChannels.canFind(event.channel);
+
+        if (isHomeChannel && eventCanContainEmotes)
+        {
+            if (const customEmotes = event.channel in plugin.customEmotesByChannel)
+            {
+                embedCustomEmotes(event, *customEmotes, plugin.customGlobalEmotes);
+            }
+        }
+    }
+
+    version(TwitchPromoteEverywhere)
+    {
+        // No checks needed
+    }
+    else
+    {
+        version(TwitchCustomEmotesEverywhere)
+        {
+            import std.algorithm.searching : canFind;
+
+            // isHomeChannel only defined if version not TwitchCustomEmotesEverywhere
+            immutable isHomeChannel = plugin.state.bot.homeChannels.canFind(event.channel);
+        }
+
+        if (!isHomeChannel) return;
     }
 
     static void postprocessImpl(const TwitchPlugin plugin,
@@ -2946,6 +3398,13 @@ package:
      +/
     static struct Room
     {
+    private:
+        /++
+            A unique ID for this instance of a room.
+         +/
+        uint privateUniqueID;
+
+    public:
         /++
             Representation of a broadcast (stream).
          +/
@@ -3065,11 +3524,23 @@ package:
         /++
             Constructor taking a string (channel) name.
          +/
-        this(const string channelName) @safe pure nothrow @nogc
+        this(const string channelName)
         {
+            import std.random : uniform;
+
             this.channelName = channelName;
             this.broadcasterName = channelName[1..$];
             this.broadcasterDisplayName = this.broadcasterName;  // until we resolve it
+            this.privateUniqueID = uniform(1, 10_000);
+        }
+
+        /++
+            Accessor to [Room.privateUniqueID].
+         +/
+        auto uniqueID() const
+        {
+            assert((privateUniqueID > 0), "Room not properly initialised");
+            return privateUniqueID;
         }
 
         /++
@@ -3135,6 +3606,12 @@ package:
             Song request history; UNIX timestamps keyed by nickname.
          +/
         long[string] songrequestHistory;
+
+        /++
+            Set when we see a [dialect.defs.IRCEvent.Type.USERSTATE|USERSTATE]
+            upon joining the channel.
+         +/
+        bool sawUserstate;
     }
 
     /++
@@ -3146,6 +3623,17 @@ package:
         Array of active bot channels' state.
      +/
     Room[string] rooms;
+
+    /++
+        Custom channel-specific BetterTTV, FrankerFaceZ and 7tv emotes, as
+        fetched via API calls.
+     +/
+    bool[dstring][string] customEmotesByChannel;
+
+    /++
+        Custom global BetterTTV, FrankerFaceZ and 7tv emotes, as fetched via API calls.
+     +/
+    bool[dstring] customGlobalEmotes;
 
     /++
         [kameloso.terminal.TerminalToken.bell|TerminalToken.bell] as string,

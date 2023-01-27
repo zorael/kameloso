@@ -1032,24 +1032,11 @@ void onChannelAwarenessPart(IRCPlugin plugin, const ref IRCEvent event)
     channel.users.remove(event.sender.nickname);
 
     // Remove entries in the mods AA (ops, halfops, voice, ...)
-    foreach (ref modUsers; channel.mods)
+    foreach (/*immutable prefixChar,*/ ref prefixMods; channel.mods)
     {
-        import std.algorithm.mutation : SwapStrategy, remove;
-
-        // There should only be at most one index, but this is easy enough.
-        size_t[] garbage;
-
-        foreach (immutable i, modNickname; modUsers)
+        foreach (immutable modNickname, _; prefixMods)
         {
-            if (modNickname == event.sender.nickname)
-            {
-                garbage ~= i;
-            }
-        }
-
-        foreach_reverse (immutable i; garbage)
-        {
-            modUsers = modUsers.remove!(SwapStrategy.unstable)(i);
+            prefixMods.remove(event.sender.nickname);
         }
     }
 

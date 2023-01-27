@@ -455,11 +455,7 @@ in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
     }
     else if (response.code == 0) //(!response.str.length)
     {
-        throw new TwitchQueryException(
-            "Empty response",
-            response.str,
-            response.error,
-            response.code);
+        throw new EmptyResponseException("Empty response");
     }
     else if ((response.code >= 500) && !recursing)
     {
@@ -1865,7 +1861,7 @@ in (Fiber.getThis, "Tried to call `endPoll` from outside a Fiber")
         [TwitchQueryException] on unexpected JSON.
 
     See_Also:
-        https:/twitchinsights.net/bots
+        https://twitchinsights.net/bots
  +/
 auto getBotList(TwitchPlugin plugin)
 {
@@ -2039,7 +2035,7 @@ auto getStream(TwitchPlugin plugin, const string loginName)
             //stream.tags = streamJSON["tags"].array.map!(e => e.str).array;
             return stream;
         }
-        catch (EmptyDataJSONException e)
+        catch (EmptyDataJSONException _)
         {
             // Stream is down
             return TwitchPlugin.Room.Stream.init;
@@ -2053,4 +2049,712 @@ auto getStream(TwitchPlugin plugin, const string loginName)
     }
 
     assert(0, "Unreachable");
+}
+
+
+// getBTTVEmotes
+/++
+    Fetches BetterTTV emotes for a given channel.
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        emoteMap = Reference to the `bool[dstring]` associative array to store
+            the fetched emotes in.
+        idString = Twitch user/channel ID in string form.
+
+    See_Also:
+        https://betterttv.com
+ +/
+void getBTTVEmotes(
+    TwitchPlugin plugin,
+    ref bool[dstring] emoteMap,
+    const string idString)
+in (Fiber.getThis, "Tried to call `getBTTVEmotes` from outside a Fiber")
+{
+    import std.conv : to;
+    import std.json : JSONType, parseJSON;
+
+    immutable url = "https://api.betterttv.net/3/cached/users/twitch/" ~ idString;
+
+    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    {
+        try
+        {
+            immutable response = sendHTTPRequest(plugin, url);
+            immutable responseJSON = parseJSON(response.str);
+
+            /+
+            {
+                "avatar": "https:\/\/static-cdn.jtvnw.net\/jtv_user_pictures\/lobosjr-profile_image-b5e3a6c3556aed54-300x300.png",
+                "bots": [
+                    "lobotjr",
+                    "dumj01"
+                ],
+                "channelEmotes": [
+                    {
+                        "animated": false,
+                        "code": "FeelsDennyMan",
+                        "id": "58a9cde206e70d0465b2b47e",
+                        "imageType": "png",
+                        "userId": "5575430f9cd396156bd1430c"
+                    },
+                    {
+                        "animated": true,
+                        "code": "lobosSHAKE",
+                        "id": "5b007dc718b2f46a14d40242",
+                        "imageType": "gif",
+                        "userId": "5575430f9cd396156bd1430c"
+                    }
+                ],
+                "id": "5575430f9cd396156bd1430c",
+                "sharedEmotes": [
+                    {
+                        "animated": true,
+                        "code": "(ditto)",
+                        "id": "554da1a289d53f2d12781907",
+                        "imageType": "gif",
+                        "user": {
+                            "displayName": "NightDev",
+                            "id": "5561169bd6b9d206222a8c19",
+                            "name": "nightdev",
+                            "providerId": "29045896"
+                        }
+                    },
+                    {
+                        "animated": true,
+                        "code": "WolfPls",
+                        "height": 28,
+                        "id": "55fdff6e7a4f04b172c506c0",
+                        "imageType": "gif",
+                        "user": {
+                            "displayName": "bearzly",
+                            "id": "5573551240fa91166bb18c67",
+                            "name": "bearzly",
+                            "providerId": "23239904"
+                        },
+                        "width": 21
+                    }
+                ]
+            }
+            +/
+
+            immutable channelEmotesJSON = "channelEmotes" in responseJSON.object;
+
+            if (!channelEmotesJSON)
+            {
+                const messageJSON = "message" in responseJSON.object;
+                if (messageJSON && (messageJSON.str == "user not found"))
+                {
+                    // Benign
+                    return;
+                }
+
+                throw new TwitchQueryException(
+                    `No "channelEmotes" key in JSON response`,
+                    response.str);
+            }
+
+            const sharedEmotesJSON = "sharedEmotes" in responseJSON.object;
+            if (!sharedEmotesJSON) throw new TwitchQueryException(
+                `No "sharedEmotes" key in JSON response`,
+                response.str);
+
+            foreach (const emoteJSON; channelEmotesJSON.array)
+            {
+                immutable emote = emoteJSON["code"].str.to!dstring;
+                emoteMap[emote] = true;
+            }
+
+            foreach (const emoteJSON; sharedEmotesJSON.array)
+            {
+                immutable emote = emoteJSON["code"].str.to!dstring;
+                emoteMap[emote] = true;
+            }
+
+            // All done
+            return;
+        }
+        catch (TwitchQueryException e)
+        {
+            immutable json = parseJSON(e.responseBody);
+
+            if (json.type == JSONType.object)
+            {
+                const messageJSON = "message" in json.object;
+
+                if (messageJSON && (messageJSON.str == "user not found"))
+                {
+                    // Benign
+                    return;
+                }
+                // Drop down
+            }
+
+            if (i < TwitchPlugin.delegateRetries-1)
+            {
+                // Retry
+                continue;
+            }
+            throw e;
+        }
+        catch (Exception e)
+        {
+            // Retry until we reach the retry limit, then rethrow
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+            throw e;
+        }
+    }
+
+    assert(0, "Unreachable");
+}
+
+
+// getBTTVGlobalEmotes
+/++
+    Fetches globalBetterTTV emotes.
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        emoteMap = Reference to the `bool[dstring]` associative array to store
+            the fetched emotes in.
+
+    See_Also:
+        https://betterttv.com/emotes/global
+ +/
+void getBTTVGlobalEmotes(
+    TwitchPlugin plugin,
+    ref bool[dstring] emoteMap)
+in (Fiber.getThis, "Tried to call `getBTTVGlobalEmotes` from outside a Fiber")
+{
+    import std.conv : to;
+    import std.json : parseJSON;
+
+    enum url = "https://api.betterttv.net/3/cached/emotes/global";
+
+    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    {
+        try
+        {
+            immutable response = sendHTTPRequest(plugin, url);
+            immutable responseJSON = parseJSON(response.str);
+
+            /+
+            [
+                {
+                    "animated": false,
+                    "code": ":tf:",
+                    "id": "54fa8f1401e468494b85b537",
+                    "imageType": "png",
+                    "userId": "5561169bd6b9d206222a8c19"
+                },
+                {
+                    "animated": false,
+                    "code": "CiGrip",
+                    "id": "54fa8fce01e468494b85b53c",
+                    "imageType": "png",
+                    "userId": "5561169bd6b9d206222a8c19"
+                }
+            ]
+            +/
+
+            foreach (const emoteJSON; responseJSON.array)
+            {
+                immutable emote = emoteJSON["code"].str.to!dstring;
+                emoteMap[emote] = true;
+            }
+
+            // All done
+            return;
+        }
+        /*catch (TwitchQueryException e)
+        {
+            // Populate once we know how error messages look
+        }*/
+        catch (Exception e)
+        {
+            // Retry until we reach the retry limit, then rethrow
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+            throw e;
+        }
+    }
+}
+
+
+// getFFZEmotesFromBTTVCache
+/++
+    Fetches FrankerFaceZ emotes for a given channel from BetterTTV cache.
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        emoteMap = Reference to the `bool[dstring]` associative array to store
+            the fetched emotes in.
+        idString = Twitch user/channel ID in string form.
+
+    See_Also:
+        [getFFZEmotes]
+        https://www.frankerfacez.com
+ +/
+version(none)
+void getFFZEmotesFromBTTVCache(
+    TwitchPlugin plugin,
+    ref bool[dstring] emoteMap,
+    const string idString)
+in (Fiber.getThis, "Tried to call `getFFZEmotes` from outside a Fiber")
+{
+    import std.conv : to;
+    import std.json : JSONType, parseJSON;
+
+    immutable url = "https://api.betterttv.net/3/cached/frankerfacez/users/twitch/" ~ idString;
+
+    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    {
+        try
+        {
+            immutable response = sendHTTPRequest(plugin, url);
+            immutable responseJSON = parseJSON(response.str);
+
+            /+
+            [
+                {
+                    "animated": false,
+                    "code": "BeardBos",
+                    "id": 14758,
+                    "imageType": "png",
+                    "images": {
+                        "1x": "https:\/\/cdn.betterttv.net\/frankerfacez_emote\/14758\/1",
+                        "2x": null,
+                        "4x": null
+                    },
+                    "user": {
+                        "displayName": "LobosJr",
+                        "id": 2138,
+                        "name": "lobosjr"
+                    }
+                },
+                {
+                    "animated": false,
+                    "code": "CheeseBos",
+                    "id": 14759,
+                    "imageType": "png",
+                    "images": {
+                        "1x": "https:\/\/cdn.betterttv.net\/frankerfacez_emote\/14759\/1",
+                        "2x": null,
+                        "4x": null
+                    },
+                    "user": {
+                        "displayName": "LobosJr",
+                        "id": 2138,
+                        "name": "lobosjr"
+                    }
+                }
+            ]
+            +/
+            /+
+            []
+            +/
+
+            foreach (const emoteJSON; responseJSON.array)
+            {
+                immutable emote = emoteJSON["code"].str.to!dstring;
+                emoteMap[emote] = true;
+            }
+
+            // All done
+            return;
+        }
+        catch (TwitchQueryException e)
+        {
+            immutable json = parseJSON(e.responseBody);
+
+            if (json.type == JSONType.object)
+            {
+                // {"message":"internal server error"}
+                const messageJSON = "message" in json;
+
+                if (messageJSON && messageJSON.str == "internal server error")
+                {
+                    if (i < TwitchPlugin.delegateRetries-1)
+                    {
+                        // Retry
+                        continue;
+                    }
+
+                    e.msg = messageJSON.str;
+                    throw e;
+                }
+                // Drop down
+            }
+            else if ((json.type == JSONType.array) && !json.array.length)
+            {
+                // Benign
+                return;
+            }
+
+            if (i < TwitchPlugin.delegateRetries-1)
+            {
+                // Retry
+                continue;
+            }
+            throw e;
+        }
+        catch (Exception e)
+        {
+            // Retry until we reach the retry limit, then rethrow
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+            throw e;
+        }
+    }
+
+    assert(0, "Unreachable");
+}
+
+
+// getFFZEmotes
+/++
+    Fetches FrankerFaceZ emotes for a given channel.
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        emoteMap = Reference to the `bool[dstring]` associative array to store
+            the fetched emotes in.
+        idString = Twitch user/channel ID in string form.
+
+    See_Also:
+        https://www.frankerfacez.com
+ +/
+void getFFZEmotes(
+    TwitchPlugin plugin,
+    ref bool[dstring] emoteMap,
+    const string idString)
+in (Fiber.getThis, "Tried to call `getFFZEmotes` from outside a Fiber")
+{
+    import std.conv : to;
+    import std.json : parseJSON;
+
+    immutable url = "https://api.frankerfacez.com/v1/room/id/" ~ idString;
+
+    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    {
+        try
+        {
+            immutable response = sendHTTPRequest(plugin, url);
+            immutable responseJSON = parseJSON(response.str);
+
+            /+
+            {
+                "room": {
+                    "_id": 366358,
+                    "css": null,
+                    "display_name": "GinoMachino",
+                    "id": "ginomachino",
+                    "is_group": false,
+                    "mod_urls": null,
+                    "moderator_badge": null,
+                    "set": 366370,
+                    "twitch_id": 148651829,
+                    "user_badge_ids": {
+                        "2": [
+                            188355608
+                        ]
+                    },
+                    "user_badges": {
+                        "2": [
+                            "machinobot"
+                        ]
+                    },
+                    "vip_badge": null,
+                    "youtube_id": null
+                },
+                "sets": {
+                    "366370": {
+                        "_type": 1,
+                        "css": null,
+                        "emoticons": [
+                            {
+                                "created_at": "2016-11-02T14:52:50.395Z",
+                                "css": null,
+                                "height": 32,
+                                "hidden": false,
+                                "id": 139407,
+                                "last_updated": "2016-11-08T21:26:39.377Z",
+                                "margins": null,
+                                "modifier": false,
+                                "name": "LULW",
+                                "offset": null,
+                                "owner": {
+                                    "_id": 53544,
+                                    "display_name": "Ian678",
+                                    "name": "ian678"
+                                },
+                                "public": true,
+                                "status": 1,
+                                "urls": {
+                                    "1": "\/\/cdn.frankerfacez.com\/emote\/139407\/1",
+                                    "2": "\/\/cdn.frankerfacez.com\/emote\/139407\/2",
+                                    "4": "\/\/cdn.frankerfacez.com\/emote\/139407\/4"
+                                },
+                                "usage_count": 148783,
+                                "width": 28
+                            },
+                            {
+                                "created_at": "2018-11-12T16:03:21.331Z",
+                                "css": null,
+                                "height": 23,
+                                "hidden": false,
+                                "id": 295554,
+                                "last_updated": "2018-11-15T08:31:33.401Z",
+                                "margins": null,
+                                "modifier": false,
+                                "name": "WhiteKnight",
+                                "offset": null,
+                                "owner": {
+                                    "_id": 333730,
+                                    "display_name": "cccclone",
+                                    "name": "cccclone"
+                                },
+                                "public": true,
+                                "status": 1,
+                                "urls": {
+                                    "1": "\/\/cdn.frankerfacez.com\/emote\/295554\/1",
+                                    "2": "\/\/cdn.frankerfacez.com\/emote\/295554\/2",
+                                    "4": "\/\/cdn.frankerfacez.com\/emote\/295554\/4"
+                                },
+                                "usage_count": 35,
+                                "width": 20
+                            }
+                        ],
+                        "icon": null,
+                        "id": 366370,
+                        "title": "Channel: GinoMachino"
+                    }
+                }
+            }
+            +/
+
+            immutable setsJSON = "sets" in responseJSON;
+            if (!setsJSON) throw new TwitchQueryException(
+                `No "sets" key in JSON response`,
+                response.str);
+
+            foreach (immutable _, immutable setJSON; setsJSON.object)
+            {
+                immutable emoticonsJSON = "emoticons" in setJSON;
+                if (!emoticonsJSON) throw new TwitchQueryException(
+                    `No "emoticons" key in JSON response`,
+                    response.str);
+
+                foreach (immutable emoteJSON; emoticonsJSON.array)
+                {
+                    immutable emote = emoteJSON["name"].str.to!dstring;
+                    emoteMap[emote] = true;
+                }
+            }
+
+            // All done
+            return;
+        }
+        catch (ErrorJSONException e)
+        {
+            // Likely 404
+            const messageJSON = "message" in e.json;
+            if (messageJSON && (messageJSON.str == "No such room"))
+            {
+                // Benign
+                return;
+            }
+            throw e;
+        }
+        catch (TwitchQueryException e)
+        {
+            // Retry until we reach the retry limit, then rethrow
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+            throw e;
+        }
+        catch (Exception e)
+        {
+            // As above
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+            throw e;
+        }
+    }
+}
+
+
+// get7tvEmotes
+/++
+    Fetches 7tv emotes for a given channel.
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        emoteMap = Reference to the `bool[dstring]` associative array to store
+            the fetched emotes in.
+        idString = Twitch user/channel ID in string form.
+
+    See_Also:
+        https://7tv.app
+ +/
+void get7tvEmotes(
+    TwitchPlugin plugin,
+    ref bool[dstring] emoteMap,
+    const string idString)
+in (Fiber.getThis, "Tried to call `get7tvEmotes` from outside a Fiber")
+{
+    import std.conv : to;
+    import std.json : JSONType, parseJSON;
+
+    immutable url = "https://api.7tv.app/v2/users/" ~ idString ~ "/emotes";
+
+    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    {
+        try
+        {
+            immutable response = sendHTTPRequest(plugin, url);
+            immutable responseJSON = parseJSON(response.str);
+
+            /+
+            [
+                {
+                    "animated": false,
+                    "code": ":tf:",
+                    "id": "54fa8f1401e468494b85b537",
+                    "imageType": "png",
+                    "userId": "5561169bd6b9d206222a8c19"
+                },
+                {
+                    "animated": false,
+                    "code": "CiGrip",
+                    "id": "54fa8fce01e468494b85b53c",
+                    "imageType": "png",
+                    "userId": "5561169bd6b9d206222a8c19"
+                }
+            ]
+            +/
+
+            if (responseJSON.type == JSONType.object)
+            {
+                const errorJSON = "error" in responseJSON.object;
+                if (errorJSON && (errorJSON.str == "No Items Found"))
+                {
+                    // Benign
+                    return;
+                }
+
+                throw new TwitchQueryException(
+                    "Response was not a JSON array",
+                    response.str);
+            }
+
+            foreach (const emoteJSON; responseJSON.array)
+            {
+                immutable emote = emoteJSON["name"].str.to!dstring;
+                emoteMap[emote] = true;
+            }
+
+            // All done
+            return;
+        }
+        catch (TwitchQueryException e)
+        {
+            immutable json = parseJSON(e.responseBody);
+
+            if (json.type == JSONType.object)
+            {
+                // Shouldn't this be an ErrorJSONException?
+                const errorJSON = "error" in json.object;
+
+                if (errorJSON && (errorJSON.str == "No Items Found"))
+                {
+                    // Benign
+                    return;
+                }
+                // Drop down
+            }
+
+            if (i < TwitchPlugin.delegateRetries-1)
+            {
+                // Retry
+                continue;
+            }
+            throw e;
+        }
+        catch (Exception e)
+        {
+            // Retry until we reach the retry limit, then rethrow
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+            throw e;
+        }
+    }
+
+    assert(0, "Unreachable");
+}
+
+
+// get7tvGlobalEmotes
+/++
+    Fetches 7tv emotes.
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        emoteMap = Reference to the `bool[dstring]` associative array to store
+            the fetched emotes in.
+
+    See_Also:
+        https://7tv.app
+ +/
+void get7tvGlobalEmotes(
+    TwitchPlugin plugin,
+    ref bool[dstring] emoteMap)
+in (Fiber.getThis, "Tried to call `get7tvGlobalEmotes` from outside a Fiber")
+{
+    import std.conv : to;
+    import std.json : parseJSON;
+
+    enum url = "https://api.7tv.app/v2/emotes/global";
+
+    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    {
+        try
+        {
+            immutable response = sendHTTPRequest(plugin, url);
+            immutable responseJSON = parseJSON(response.str);
+
+            /+
+            [
+                {
+                    "height": [],
+                    "id": "60421fe677137b000de9e683",
+                    "mime": "image\/webp",
+                    "name": "reckH",
+                    "owner": {},
+                    "status": 3,
+                    "tags": [],
+                    "urls": [],
+                    "visibility": 2,
+                    "visibility_simple": [],
+                    "width": []
+                },
+                [...]
+            ]
+            +/
+
+            foreach (const emoteJSON; responseJSON.array)
+            {
+                immutable emote = emoteJSON["name"].str.to!dstring;
+                emoteMap[emote] = true;
+            }
+
+            // All done
+            return;
+        }
+        /*catch (TwitchQueryException e)
+        {
+            // Populate once we know how error messages look
+        }*/
+        catch (Exception e)
+        {
+            // Retry until we reach the retry limit, then rethrow
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+            throw e;
+        }
+    }
 }

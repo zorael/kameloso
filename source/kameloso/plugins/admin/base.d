@@ -1059,7 +1059,7 @@ void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         immutable delay = abbreviatedDuration(delaystring);
         cycle(plugin, channelName, delay, slice);
     }
-    catch (ConvException e)
+    catch (ConvException _)
     {
         import std.format : format;
 
@@ -1508,7 +1508,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 
 mixin UserAwareness!omniscientChannelPolicy;
 mixin ChannelAwareness!omniscientChannelPolicy;
-mixin ModuleRegistration;
+mixin ModuleRegistration!(-4.priority);
 
 version(TwitchSupport)
 {

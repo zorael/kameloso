@@ -239,17 +239,21 @@ void sendSpecificPluginListing(
 
     assert(event.content.length, "`sendSpecificPluginListing` was called incorrectly; event content is empty");
 
+    void sendNoCommandOfPlugin(const string specifiedPlugin)
+    {
+        immutable message = "No commands available for plugin <b>" ~ specifiedPlugin ~ "<b>";
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    }
+
     // Just one word; print a specified plugin's commands
     immutable specifiedPlugin = event.content.stripped;
 
     if (auto pluginCommands = specifiedPlugin in allPluginCommands)
     {
         const nonhiddenCommands = filterHiddenCommands(*pluginCommands);
-
         if (!nonhiddenCommands.length)
         {
-            immutable message = "No commands available for plugin <b>" ~ event.content ~ "<b>";
-            return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            return sendNoCommandOfPlugin(specifiedPlugin);
         }
 
         enum width = 12;
@@ -293,6 +297,13 @@ void sendPluginCommandHelp(
         "`sendPluginCommandHelp` was called incorrectly; the content does not " ~
         "have a space-separated plugin and command");
 
+    void sendNoHelpForCommandOfPlugin(const string specifiedCommand, const string specifiedPlugin)
+    {
+        enum pattern = "No help available for command <b>%s<b> of plugin <b>%s<b>";
+        immutable message = pattern.format(specifiedCommand, specifiedPlugin);
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    }
+
     string slice = event.content.stripped;
     immutable specifiedPlugin = slice.nom!(Yes.decode)(' ');
     immutable specifiedCommand = stripPrefix(plugin, slice);
@@ -301,14 +312,17 @@ void sendPluginCommandHelp(
     {
         if (const command = specifiedCommand in *pluginCommands)
         {
-            sendCommandHelpImpl(plugin, specifiedPlugin, event, specifiedCommand,
-                command.description, command.syntaxes);
+            sendCommandHelpImpl(
+                plugin,
+                specifiedPlugin,
+                event,
+                specifiedCommand,
+                command.description,
+                command.syntaxes);
         }
         else
         {
-            enum pattern = "No help available for command <b>%s<b> of plugin <b>%s<b>";
-            immutable message = pattern.format(specifiedCommand, specifiedPlugin);
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            return sendNoHelpForCommandOfPlugin(specifiedCommand, specifiedPlugin);
         }
     }
     else
@@ -336,21 +350,31 @@ void sendOnlyCommandHelp(
 {
     import lu.string : beginsWith;
 
+    void sendNoCommandSpecified()
+    {
+        enum message = "No command specified.";
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    }
+
     immutable specifiedCommand = stripPrefix(plugin, event.content);
 
     if (!specifiedCommand.length)
     {
         // Only a prefix was supplied
-        enum message = "No command specified.";
-        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        return sendNoCommandSpecified();
     }
 
     foreach (immutable pluginName, pluginCommands; allPluginCommands)
     {
         if (const command = specifiedCommand in pluginCommands)
         {
-            return sendCommandHelpImpl(plugin, pluginName, event, specifiedCommand,
-                command.description, command.syntaxes);
+            return sendCommandHelpImpl(
+                plugin,
+                pluginName,
+                event,
+                specifiedCommand,
+                command.description,
+                command.syntaxes);
         }
     }
 

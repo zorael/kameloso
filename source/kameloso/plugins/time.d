@@ -20,8 +20,129 @@ import dialect.defs;
  +/
 @Settings struct TimeSettings
 {
-    /// Toggle whether or not this plugin should do anything at all.
+    /++
+        Toggle whether or not this plugin should do anything at all.
+     +/
     @Enabler bool enabled = true;
+
+    /++
+        Whether to use AM/PM notation instead of 24-hour time.
+     +/
+    bool amPM = false;
+}
+
+
+// zonestringAliases
+/++
+    Timezone string aliases.
+
+    Module-level since we can't have static immutable associative arrays, and as
+    such populated in a module constructor.
+
+    The alternative is to put it in [TimePlugin] and have a modul-level `setup`
+    that populates it, but since it never changes during the program's run time,
+    it may as well be here.
+ +/
+immutable string[string] zonestringAliases;
+
+
+// installedTimezones
+/++
+    String array of installed timezone names.
+
+    The reasoning around [zonestringAliases] apply here as well.
+ +/
+immutable string[] installedTimezones;
+
+
+// module ctor
+/++
+    Populates [zonestringAliases] and [installedTimezones].
+ +/
+shared static this()
+{
+    version(Posix)
+    {
+        import std.datetime.timezone : PosixTimeZone;
+
+        installedTimezones = PosixTimeZone.getInstalledTZNames().idup;
+
+        zonestringAliases =
+        [
+            "CST" : "US/Central",
+            "EST" : "US/Eastern",
+            "PST" : "US/Pacific",
+            "Central" : "US/Central",
+            "Eastern" : "US/Eastern",
+            "Pacific" : "US/Pacific",
+        ];
+    }
+    else version(Windows)
+    {
+        import std.datetime.timezone : WindowsTimeZone;
+
+        installedTimezones = WindowsTimeZone.getInstalledTZNames().idup;
+
+        /+
+        Some excerpts:
+        [
+            "Central America Standard Time",
+            "Central Asia Standard Time",
+            "Central Europe Standard Time",
+            "Central European Standard Time",
+            "Central Pacific Standard Time",
+            "Central Standard Time",
+            "Central Standard Time (Mexico)",
+            "E. Africa Standard Time",
+            "E. Australia Standard Time",
+            "E. Europe Standard Time",
+            "E. South America Standard Time",
+            "Eastern Standard Time",
+            "Eastern Standard Time (Mexico)",
+            "GMT Standard Time",
+            "Greenwich Standard Time",
+            "Middle East Standard Time",
+            "Mountain Standard Time",
+            "Mountain Standard Time (Mexico)",
+            "North Asia East Standard Time",
+            "North Asia Standard Time",
+            "Pacific SA Standard Time",
+            "Pacific Standard Time",
+            "Pacific Standard Time (Mexico)",
+            "SA Eastern Standard Time",
+            "SA Pacific Standard Time",
+            "SA Western Standard Time",
+            "SE Asia Standard Time",
+            "US Eastern Standard Time",
+            "US Mountain Standard Time",
+            "UTC",
+            "UTC+12",
+            "UTC+13",
+            "UTC-02",
+            "UTC-08",
+            "UTC-09",
+            "UTC-11",
+            "W. Australia Standard Time",
+            "W. Central Africa Standard Time",
+            "W. Europe Standard Time",
+            "W. Mongolia Standard Time",
+            "West Asia Standard Time",
+            "West Pacific Standard Time",
+        ]
+        +/
+
+        zonestringAliases =
+        [
+            "CST" : "Central Standard Time",
+            "EST" : "Eastern Standard Time",
+            "PST" : "Pacific Standard Time",
+            "CET" : "Central European Standard Time",
+        ];
+    }
+    else
+    {
+        static assert(0, "Unsupported platform, please file a bug.");
+    }
 }
 
 
@@ -49,82 +170,116 @@ void onCommandTime(TimePlugin plugin, const ref IRCEvent event)
     import std.datetime.timezone : LocalTime;
     import std.format : format;
 
+    void sendInvalidTimezone(const string zonestring)
+    {
+        enum pattern = "Invalid timezone: <b>%s<b>";
+        immutable message = pattern.format(zonestring);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendMalformedEntry(const string overrideString)
+    {
+        enum pattern = `Internal error; possible malformed entry "<b>%s<b>" in timezones file.`;
+        immutable message = pattern.format(overrideString);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendInternalError()
+    {
+        enum message = "Internal error.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendTimestampInZone(const string timestamp, const string specified)
+    {
+        enum pattern = "The time is currently <b>%s<b> in <b>%s<b>.";
+        immutable message = pattern.format(timestamp, specified);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendTimestampLocal(const string timestamp)
+    {
+        enum pattern = "The time is currently <b>%s<b> locally.";
+        immutable message = pattern.format(timestamp);
+        chan(plugin.state, event.channel, message);
+    }
+
+    version(TwitchSupport)
+    void sendTimestampTwitch(const string timestamp)
+    {
+        import kameloso.plugins.common.misc : nameOf;
+
+        // No specific timezone specified; report the streamer's
+        // (technically the bot's, unless an override was entered in the config file)
+        enum pattern = "The time is currently %s for %s.";
+        immutable name = (plugin.state.client.nickname == event.channel[1..$]) ?
+            "me" :
+            nameOf(plugin, event.channel[1..$]);
+        immutable message = pattern.format(timestamp, name);
+        chan(plugin.state, event.channel, message);
+    }
+
+    string getTimestamp(/*const*/ ubyte hour, const ubyte minute)
+    {
+        import std.format : format;
+
+        if (plugin.timeSettings.amPM)
+        {
+            immutable amPM = (hour < 12) ? "AM" : "PM";
+            hour %= 12;
+            if (hour == 0) hour = 12;
+
+            enum pattern = "%d:%02d %s";
+            return pattern.format(hour, minute, amPM);
+        }
+        else
+        {
+            enum pattern = "%02d:%02d";
+            return pattern.format(hour, minute);
+        }
+    }
+
     immutable specified = event.content.stripped;
-    const overrideZone = event.channel in plugin.channelTimeZones;
+    const overrideZone = event.channel in plugin.channelTimezones;
 
     immutable timezone = specified.length ?
-        getTimeZoneByName(specified, plugin.installedTimeZones) :
+        getTimezoneByName(specified) :
         overrideZone ?
-            getTimeZoneByName(*overrideZone, plugin.installedTimeZones) :
+            getTimezoneByName(*overrideZone) :
             LocalTime();
 
     if (!timezone)
     {
-        if (specified.length)
-        {
-            enum pattern = "Invalid timezone: <b>%s<b>";
-            immutable message = pattern.format(specified);
-            chan(plugin.state, event.channel, message);
-        }
-        else if (overrideZone)
-        {
-            enum pattern = `Internal error; possible malformed entry "<b>%s<b>" in timezones file.`;
-            immutable message = pattern.format(*overrideZone);
-            chan(plugin.state, event.channel, message);
-        }
-        else
-        {
-            enum message = "Internal error.";
-            chan(plugin.state, event.channel, message);
-        }
-        return;
+        return specified.length ?
+            sendInvalidTimezone(specified) :
+            overrideZone ?
+                sendMalformedEntry(*overrideZone) :
+                sendInternalError();
     }
 
     immutable now = Clock.currTime(timezone);
+    immutable timestamp = getTimestamp(now.hour, now.minute);
 
     if (specified.length)
     {
-        enum pattern = "The time is currently <b>%02d:%02d<b> in <b>%s<b>.";
-        immutable message = pattern.format(now.hour, now.minute, specified);
-        return chan(plugin.state, event.channel, message);
+        return sendTimestampInZone(timestamp, specified);
     }
 
     version(TwitchSupport)
     {
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
-            import kameloso.plugins.common.misc : nameOf;
-
-            // No specific timezone specified; report the streamer's
-            // (technically the bot's, unless an override was entered in the config file)
-            enum pattern = "The time is currently %02d:%02d for %s.";
-            immutable message = pattern.format(
-                now.hour,
-                now.minute,
-                nameOf(plugin, event.channel[1..$]));
-            return chan(plugin.state, event.channel, message);
+            return sendTimestampTwitch(timestamp);
         }
     }
 
-    if (overrideZone)
-    {
-        enum pattern = "The time is currently <b>%02d:%02d<b> in <b>%s<b>.";
-        immutable message = pattern.format(
-            now.hour,
-            now.minute,
-            *overrideZone);
-        chan(plugin.state, event.channel, message);
-    }
-    else
-    {
-        enum pattern = "The time is currently <b>%02d:%02d<b> locally.";
-        immutable message = pattern.format(now.hour, now.minute);
-        chan(plugin.state, event.channel, message);
-    }
+    return overrideZone ?
+        sendTimestampInZone(timestamp, *overrideZone) :
+        sendTimestampLocal(timestamp);
 }
 
 
-// getTimeZoneByName
+// getTimezoneByName
 /++
     Takes a string representation of a timezone (e.g. `Europe/Stockholm`) and
     returns a [std.datetime.timezone.TimeZone|TimeZone] that corresponds to it,
@@ -132,95 +287,76 @@ void onCommandTime(TimePlugin plugin, const ref IRCEvent event)
 
     Params:
         specified = Timezone identification string.
-        installedTimeZones = Array of available timezone (strings).
 
     Returns:
         A [std.datetime.timezone.TimeZone|TimeZone] that matches the passed
         `specified` identification string, or `null` if none was found.
  +/
-auto getTimeZoneByName(
-    const string specified,
-    const string[] installedTimeZones)
+auto getTimezoneByName(const string specified)
 in (specified.length, "Tried to get timezone of an empty string")
 {
-    import lu.string : contains;
-    import std.algorithm.searching : canFind;
     import core.time : TimeException;
 
-    version(Posix)
+    string getZonestring()
     {
-        static immutable string[6] prefixes =
-        [
-            "Europe/",
-            "America/",
-            "Asia/",
-            "Africa/",
-            "Australia/",
-            "Pacific/",
-        ];
+        import lu.string : contains;
+        import std.algorithm.searching : canFind;
 
-        string resolvePrefixedTimeZone(const string zonestring)
+        if (immutable zonestringAlias = specified in zonestringAliases)
         {
-            if (zonestring.contains('/')) return string.init;
-
-            foreach (immutable prefix; prefixes[])
-            {
-                immutable prefixed = prefix ~ zonestring;
-                if (installedTimeZones.canFind(prefixed)) return prefixed;
-            }
-
-            return string.init;
+            return *zonestringAlias;
         }
-    }
 
-    version(Windows)
-    {
-        string resolveStandardTimeZone(const string zonestring)
-        {
-            if (zonestring.contains("Standard Time")) return string.init;
-
-            immutable withStandardTime = zonestring ~ " Standard Time";
-            return installedTimeZones.canFind(withStandardTime) ?
-                withStandardTime :
-                string.init;
-        }
-    }
-
-    string zonestring;  // mutable
-
-    version(Posix)
-    {
-        // Some common aliases. Add more as they become obvious.
-        if      (specified == "CST") zonestring = "US/Central";
-        else if (specified == "EST") zonestring = "US/Eastern";
-        else if (specified == "PST") zonestring = "US/Pacific";
-    }
-    else version(Windows)
-    {
-        // As above
-        if      (specified == "CST") zonestring = "Central Standard Time";
-        else if (specified == "EST") zonestring = "Eastern Standard Time";
-        else if (specified == "PST") zonestring = "Pacific Standard Time";
-        else if (specified == "CET") zonestring = "Central European Standard Time";
-        else if (specified == "GMT") zonestring = "GMT Standard Time";  // technically superfluous
-    }
-
-    if (!zonestring.length)
-    {
         version(Posix)
         {
             import std.array : replace;
 
+            string resolvePrefixedTimezone(const string zonestring)
+            {
+                if (zonestring.contains('/')) return string.init;
+
+                static immutable string[7] prefixes =
+                [
+                    "Europe/",
+                    "America/",
+                    "Asia/",
+                    "Africa/",
+                    "Australia/",
+                    "Pacific/",
+                    "Etc/",
+                ];
+
+                foreach (immutable prefix; prefixes[])
+                {
+                    immutable prefixed = prefix ~ zonestring;
+                    if (installedTimezones.canFind(prefixed)) return prefixed;
+                }
+
+                return string.init;
+            }
+
             immutable withUnderscores = specified.replace(' ', '_');
-            zonestring = installedTimeZones.canFind(withUnderscores) ?
+            return installedTimezones.canFind(withUnderscores) ?
                 withUnderscores :
-                resolvePrefixedTimeZone(withUnderscores);
+                resolvePrefixedTimezone(withUnderscores);
         }
         else version(Windows)
         {
-            zonestring = installedTimeZones.canFind(specified) ?
+            string resolveStandardTimezone(const string zonestring)
+            {
+                import std.algorithm.searching : endsWith;
+
+                if (zonestring.endsWith("Standard Time")) return string.init;
+
+                immutable withStandardTime = zonestring ~ " Standard Time";
+                return installedTimezones.canFind(withStandardTime) ?
+                    withStandardTime :
+                    string.init;
+            }
+
+            return installedTimezones.canFind(specified) ?
                 specified :
-                resolveStandardTimeZone(specified);
+                resolveStandardTimezone(specified);
         }
         else
         {
@@ -232,23 +368,66 @@ in (specified.length, "Tried to get timezone of an empty string")
     {
         version(Windows)
         {
-            import std.datetime.timezone : WindowsTimeZone;
-            return WindowsTimeZone.getTimeZone(zonestring);
+            import std.datetime.timezone : TZ = WindowsTimeZone;
         }
         else version(Posix)
         {
-            import std.datetime.timezone : PosixTimeZone;
-            return PosixTimeZone.getTimeZone(zonestring);
+            import std.datetime.timezone : TZ = PosixTimeZone;
         }
         else
         {
-            static assert(0, "Unsupported platform, please file a bug");
+            static assert(0, "Unsupported platform, please file a bug.");
         }
+
+        return TZ.getTimeZone(getZonestring());
     }
-    catch (TimeException e)
+    catch (TimeException _)
     {
         // core.time.TimeException@std/datetime/timezone.d(2096): /usr/share/zoneinfo is not a file.
+        // On invalid timezone string
         return null;
+    }
+}
+
+///
+unittest
+{
+    import std.exception : assertThrown;
+    import core.time : TimeException;
+
+    // core.time.TimeException@std/datetime/timezone.d(2096): /usr/share/zoneinfo is not a file.
+    // As above
+
+    void assertMatches(const string specified, const string expected)
+    {
+        version(Posix)
+        {
+            import std.datetime.timezone : TZ = PosixTimeZone;
+        }
+        else version(Windows)
+        {
+            import std.datetime.timezone : TZ = WindowsTimeZone;
+        }
+
+        immutable actual = getTimezoneByName(specified);
+        immutable result = TZ.getTimeZone(expected);
+        assert((actual.name == result.name), result.name);
+    }
+
+    version(Posix)
+    {
+        assertMatches("Stockholm", "Europe/Stockholm");
+        assertMatches("CET", "CET");
+        assertMatches("Tokyo", "Asia/Tokyo");
+        assertThrown!TimeException(assertMatches("Nangijala", string.init));
+    }
+    else version(Windows)
+    {
+        assertMatches("CET", "Central European Standard Time");
+        assertMatches("Central", "Central Standard Time");
+        assertMatches("Tokyo", "Tokyo Standard Time");
+        assertMatches("UTC", "UTC");
+        assertThrown!TimeException(assertMatches("Nangijala", string.init));
     }
 }
 
@@ -279,14 +458,14 @@ void onCommandSetZone(TimePlugin plugin, const ref IRCEvent event)
 
     if (specified == "-")
     {
-        plugin.channelTimeZones.remove(event.channel);
-        saveResourceToDisk(plugin.channelTimeZones, plugin.timezonesFile);
+        plugin.channelTimezones.remove(event.channel);
+        saveResourceToDisk(plugin.channelTimezones, plugin.timezonesFile);
 
         enum message = "Timezone cleared.";
         return chan(plugin.state, event.channel, message);
     }
 
-    immutable timezone = getTimeZoneByName(specified, plugin.installedTimeZones);
+    immutable timezone = getTimezoneByName(specified);
 
     if (!timezone || !timezone.name.length)
     {
@@ -295,8 +474,8 @@ void onCommandSetZone(TimePlugin plugin, const ref IRCEvent event)
         return chan(plugin.state, event.channel, message);
     }
 
-    plugin.channelTimeZones[event.channel] = timezone.name;
-    saveResourceToDisk(plugin.channelTimeZones, plugin.timezonesFile);
+    plugin.channelTimezones[event.channel] = timezone.name;
+    saveResourceToDisk(plugin.channelTimezones, plugin.timezonesFile);
 
     enum pattern = "Timezone changed to <b>%s<b>.";
     immutable message = pattern.format(timezone.name);
@@ -322,29 +501,6 @@ in (filename.length, "Tried to save resources to an empty filename string")
 }
 
 
-// setup
-/++
-    Sets up the [TimePlugin].
- +/
-void setup(TimePlugin plugin)
-{
-    version(Windows)
-    {
-        import std.datetime.timezone : WindowsTimeZone;
-        plugin.installedTimeZones = WindowsTimeZone.getInstalledTZNames();
-    }
-    else version(Posix)
-    {
-        import std.datetime.timezone : PosixTimeZone;
-        plugin.installedTimeZones = PosixTimeZone.getInstalledTZNames();
-    }
-    else
-    {
-        static assert(0, "Unsupported platform, please file a bug");
-    }
-}
-
-
 // reload
 /++
     Reloads the timezones map from disk.
@@ -354,10 +510,10 @@ void reload(TimePlugin plugin)
     import lu.json : JSONStorage, populateFromJSON;
     import std.typecons : Flag, No, Yes;
 
-    JSONStorage channelTimeZonesJSON;
-    channelTimeZonesJSON.load(plugin.timezonesFile);
-    plugin.channelTimeZones.clear();
-    plugin.channelTimeZones.populateFromJSON(channelTimeZonesJSON, Yes.lowercaseKeys);
+    JSONStorage channelTimezonesJSON;
+    channelTimezonesJSON.load(plugin.timezonesFile);
+    plugin.channelTimezones.clear();
+    plugin.channelTimezones.populateFromJSON(channelTimezonesJSON, Yes.lowercaseKeys);
 }
 
 
@@ -426,17 +582,11 @@ private:
      +/
     TimeSettings timeSettings;
 
-    // installedTimeZones
-    /++
-        Array of timezone identification strings, populated during plugin setup.
-     +/
-    string[] installedTimeZones;
-
-    // channelTimeZones
+    // channelTimezones
     /++
         Channel timezone map.
      +/
-    string[string] channelTimeZones;
+    string[string] channelTimezones;
 
     // timezonesFile
     /++

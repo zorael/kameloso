@@ -95,13 +95,34 @@ void worker(
     import core.time : seconds;
     static import kameloso.common;
 
+    auto state = cast()sState;
+
     version(Posix)
     {
         import kameloso.thread : setThreadName;
         setThreadName("bashquotes");
     }
 
-    auto state = cast()sState;
+    void sendCouldNotFetchQuote(const string url, const string error)
+    {
+        enum pattern = "Bash plugin could not fetch <l>bash.org</> quote at <l>%s</>: <t>%s";
+        askToWarn(state, pattern.format(url, error));
+
+        enum channelPattern = "Could not fetch <b>bash.org<b> quote: %s";
+        immutable channelMessage = channelPattern.format(error);
+        privmsg(state, event.channel, event.sender.nickname, channelMessage);
+    }
+
+    void sendNoResponseseReceived()
+    {
+        enum message = "No reponse received from <b>bash.org<b>; is it down?";
+        privmsg(state, event.channel, event.sender.nickname, message);
+    }
+
+    void reportLayoutError()
+    {
+        askToError(state, "Failed to parse <l>bash.org</> page; unexpected layout.");
+    }
 
     // Set the global settings so messaging functions don't segfault us
     kameloso.common.settings = &state.settings;
@@ -130,8 +151,12 @@ void worker(
 
         if (res.code == 2)
         {
-            enum pattern = "Bash plugin could not fetch <l>bash.org</> quote at <l>%s</>: <t>%s";
-            return askToWarn(state, pattern.format(url, res.codeText));
+            return sendCouldNotFetchQuote(url, res.codeText);
+        }
+
+        if (!res.responseText.length)
+        {
+            return sendNoResponseseReceived();
         }
 
         if (!res.responseText.length)
@@ -148,13 +173,7 @@ void worker(
 
         if (!numBlock.length)
         {
-            enum message = "No such <b>bash.org<b> quote found.";
-            return privmsg(state, event.channel, event.sender.nickname, message);
-        }
-
-        void reportLayoutError()
-        {
-            askToError(state, "Failed to parse <l>bash.org</> page; unexpected layout.");
+            return reportLayoutError();
         }
 
         auto p = numBlock[0].getElementsByTagName("p");
@@ -184,8 +203,7 @@ void worker(
     }
     catch (Exception e)
     {
-        enum pattern = "Bash plugin could not fetch <l>bash.org</> quote at <l>%s</>: <t>%s";
-        askToWarn(state, pattern.format(url, e.msg));
+        /*return*/ sendCouldNotFetchQuote(url, e.msg);
         version(PrintStacktraces) askToTrace(state, e.toString);
     }
 }

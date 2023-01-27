@@ -876,6 +876,12 @@ mixin template IRCPluginImpl(
             {
                 import lu.string : strippedLeft;
 
+                if (state.settings.observerMode)
+                {
+                    // Skip all commands
+                    return NextStep.continue_;
+                }
+
                 event.content = event.content.strippedLeft;
 
                 if (!event.content.length)
@@ -1883,7 +1889,7 @@ mixin template IRCPluginImpl(
         This function is private, but since it's part of a mixin template it will
         be visible at the mixin site. Plugins can as such override
         [kameloso.plugins.common.core.IRCPlugin.commands|IRCPlugin.commands] with
-        their own code and invoke [onCommandsImpl] as a fallback.
+        their own code and invoke [commandsImpl] as a fallback.
 
         Returns:
             Associative array of tuples of all command metadata (descriptions,
@@ -2153,8 +2159,8 @@ auto prefixPolicyMatches(bool verbose)
         version(TwitchSupport)
         {
             if ((state.server.daemon == IRCServer.Daemon.twitch) &&
-                state.bot.displayName.length &&
-                event.content.beginsWith(state.bot.displayName))
+                state.client.displayName.length &&
+                event.content.beginsWith(state.client.displayName))
             {
                 static if (verbose)
                 {
@@ -2162,7 +2168,7 @@ auto prefixPolicyMatches(bool verbose)
                 }
 
                 event.content = event.content
-                    .stripSeparatedPrefix(state.bot.displayName, Yes.demandSeparatingChars);
+                    .stripSeparatedPrefix(state.client.displayName, Yes.demandSeparatingChars);
 
                 if (state.settings.prefix.length && event.content.beginsWith(state.settings.prefix))
                 {
@@ -3147,11 +3153,11 @@ template PluginModuleInfo(string module_)
 
     Params:
         priority = Priority at which to instantiate the plugin. A lower priority
-            makes it get instantiated before other plugins. Defaults to `0`.
+            makes it get instantiated before other plugins. Defaults to `0.priority`.
         module_ = String name of the module. Should be kept to its default `__MODULE__`.
  +/
 mixin template ModuleRegistration(
-    int priority = 0,
+    Priority priority = 0.priority,
     string module_ = __MODULE__)
 {
     // module constructor
@@ -3191,6 +3197,55 @@ mixin template ModuleRegistration(
         }
     }
 }
+
+
+// Priority
+/++
+    Embodies the notion of a priority at which a plugin should be instantiated,
+    and as such, the order in which they will be called to handle events.
+
+    This also affects in what order they appear in the configuration file.
+ +/
+struct Priority
+{
+    /++
+        Numerical priority value. Lower is higher.
+     +/
+    int value;
+
+    /++
+        Helper `opUnary` to allow for `-10.priority`, instead of having to do the
+        (more correct) `(-10).priority`.
+
+        Example:
+        ---
+        mixin ModuleRegistration!(-10.priority);
+        ---
+
+        Params:
+            op = Operator.
+
+        Returns:
+            A new [Priority] with a [Priority.value|value] equal to the negative of this one's.
+     +/
+    auto opUnary(string op: "-")() const
+    {
+        return Priority(-value);
+    }
+}
+
+
+// priority
+/++
+    Helper alias to use the proper style guide and still be able to instantiate
+    [Priority] instances with UFCS.
+
+    Example:
+    ---
+    mixin ModuleRegistration!(50.priority);
+    ---
+ +/
+alias priority = Priority;
 
 
 // Settings

@@ -24,7 +24,7 @@ public:
     setting, in string form.
 
     This merely iterates the passed `plugins` and calls their
-    [kameloso.plugins.common.core.IRCPlugin.setSettingByName|IRCPlugin.setSettingByName]
+    [kameloso.plugins.common.core.IRCPlugin.setMemberByName|IRCPlugin.setMemberByName]
     methods.
 
     Params:
@@ -111,7 +111,7 @@ auto applyCustomSettings(
                 version(PrintStacktraces) logger.trace(e.info);
                 noErrors = false;
             }
-            catch (ConvException e)
+            catch (ConvException _)
             {
                 enum pattern = `Invalid value for <l>core</>.<l>%s</>: "<l>%s</>"`;
                 logger.warningf(pattern, setting, value);
@@ -122,8 +122,6 @@ auto applyCustomSettings(
         }
         else
         {
-            if (pluginstring == "twitchbot") pluginstring = "twitch";
-
             foreach (plugin; plugins)
             {
                 if (plugin.name != pluginstring) continue;
@@ -140,7 +138,7 @@ auto applyCustomSettings(
                         noErrors = false;
                     }
                 }
-                catch (ConvException e)
+                catch (ConvException _)
                 {
                     enum pattern = `Invalid value for <l>%s</>.<l>%s</>: "<l>%s</>"`;
                     logger.warningf(pattern, pluginstring, setting, value);

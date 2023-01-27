@@ -175,7 +175,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
                     halt = true;
                 }
             },
-            (OwnerTerminated e)
+            (OwnerTerminated _)
             {
                 halt = true;
             },

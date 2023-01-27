@@ -178,7 +178,7 @@ Be sure to <l>select a YouTube account</> if presented with several alternatives
             import kameloso.platform : openInBrowser;
             browser = openInBrowser(url);
         }
-        catch (ProcessException e)
+        catch (ProcessException _)
         {
             // Probably we got some platform wrong and command was not found
             logger.warning("Error: could not automatically open browser.");

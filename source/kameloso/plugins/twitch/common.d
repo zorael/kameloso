@@ -369,3 +369,24 @@ final class InvalidCredentialsException : Exception
         super(message, file, line, nextInChain);
     }
 }
+
+
+// EmptyResponseException
+/++
+    Exception, to be thrown when an API query to the Twitch servers failed,
+    with only an empty response received.
+ +/
+final class EmptyResponseException : Exception
+{
+@safe:
+    /++
+        Create a new [EmptyResponseException].
+     +/
+    this(const string message,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        super(message, file, line, nextInChain);
+    }
+}

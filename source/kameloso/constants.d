@@ -247,7 +247,7 @@ enum ConnectionDefaultFloats : double
 
         FIXME: Tweak value.
      +/
-    messageRateTwitchSlow = 1.0,
+    messageRateTwitchSlow = 0.5,
 
     /++
         How many messages to immediately send in one go, before throttling kicks in.
@@ -255,7 +255,7 @@ enum ConnectionDefaultFloats : double
 
         FIXME: Tweak value.
      +/
-    messageBurstTwitchSlow = 1.0,
+    messageBurstTwitchSlow = 0.5,
 }
 
 

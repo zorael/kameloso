@@ -62,6 +62,65 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
     import std.datetime.systime : Clock, SysTime;
     import std.format : format;
 
+    void sendUsage()
+    {
+        enum pattern = "Usage: <b>%s%s<b> [start|stop|status]";  // hide clear
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendNoStopwatch()
+    {
+        enum message = "You do not have a stopwatch running.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendNoSuchStopwatch(const string id)
+    {
+        enum pattern = "There is no such stopwatch running. (<h>%s<h>)";
+        immutable message = pattern.format(id);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendCannotStopOthersStopwatches()
+    {
+        enum message = "You cannot end or stop someone else's stopwatch.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendStoppedAfter(const string diff)
+    {
+        enum pattern = "Stopwatch stopped after <b>%s<b>.";
+        immutable message = pattern.format(diff);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendElapsedTime(const string diff)
+    {
+        enum pattern = "Elapsed time: <b>%s<b>";
+        immutable message = pattern.format(diff);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendMissingClearPermissions()
+    {
+        enum message = "You do not have permissions to clear all stopwatches.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendClearingStopwatches(const string channelName)
+    {
+        enum pattern = "Clearing all stopwatches in channel <b>%s<b>.";
+        immutable message = pattern.format(channelName);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendStartedOrRestarted(const bool restarted)
+    {
+        immutable message = "Stopwatch " ~ (restarted ? "restarted!" : "started!");
+        chan(plugin.state, event.channel, message);
+    }
+
     string slice = event.content.stripped;  // mutable
     immutable verb = slice.nom!(Yes.inherit)(' ');
     slice = slice.strippedLeft;
@@ -88,9 +147,8 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
     case "start":
         auto channelWatches = event.channel in plugin.stopwatches;
         immutable stopwatchAlreadyExists = (channelWatches && (event.sender.nickname in *channelWatches));
-        immutable message = "Stopwatch " ~ (stopwatchAlreadyExists ? "restarted!" : "started!");
         plugin.stopwatches[event.channel][event.sender.nickname] = Clock.currTime.toUnixTime;
-        return chan(plugin.state, event.channel, message);
+        return sendStartedOrRestarted(stopwatchAlreadyExists);
 
     case "stop":
     case "end":
@@ -103,18 +161,9 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
         auto channelWatches = event.channel in plugin.stopwatches;
         if (!channelWatches || (id !in *channelWatches))
         {
-            if (id == event.sender.nickname)
-            {
-                enum message = "You do not have a stopwatch running.";
-                chan(plugin.state, event.channel, message);
-            }
-            else
-            {
-                enum pattern = "There is no such stopwatch running. (<h>%s<h>)";
-                immutable message = pattern.format(id);
-                chan(plugin.state, event.channel, message);
-            }
-            return;
+            return (id == event.sender.nickname) ?
+                sendNoStopwatch() :
+                sendNoSuchStopwatch(id);
         }
 
         immutable diff = getDiff(id);
@@ -125,20 +174,15 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
         case "end":
             if ((id != event.sender.nickname) && (event.sender.class_ < IRCUser.Class.operator))
             {
-                enum message = "You cannot end or stop someone else's stopwatch.";
-                return chan(plugin.state, event.channel, message);
+                return sendCannotStopOthersStopwatches();
             }
 
             plugin.stopwatches[event.channel].remove(id);
-            enum pattern = "Stopwatch stopped after <b>%s<b>.";
-            immutable message = pattern.format(diff);
-            return chan(plugin.state, event.channel, message);
+            return sendStoppedAfter(diff);
 
         case "status":
         case string.init:
-            enum pattern = "Elapsed time: <b>%s<b>";
-            immutable message = pattern.format(diff);
-            return chan(plugin.state, event.channel, message);
+            return sendElapsedTime(diff);
 
         default:
             assert(0, "Unexpected inner case in nested onCommandStopwatch switch");
@@ -147,19 +191,14 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
     case "clear":
         if (event.sender.class_ < IRCUser.Class.operator)
         {
-            enum message = "You do not have permissions to clear all stopwatches.";
-            return chan(plugin.state, event.channel, message);
+            return sendMissingClearPermissions();
         }
 
         plugin.stopwatches.remove(event.channel);
-        enum pattern = "Clearing all stopwatches in channel <b>%s<b>.";
-        immutable message = pattern.format(event.channel);
-        return chan(plugin.state, event.channel, message);
+        return sendClearingStopwatches(event.channel);
 
     default:
-        enum pattern = "Usage: <b>%s%s<b> [start|stop|status]";  // hide clear
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-        return chan(plugin.state, event.channel, message);
+        return sendUsage();
     }
 }
 

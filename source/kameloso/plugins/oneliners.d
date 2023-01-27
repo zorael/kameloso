@@ -28,13 +28,6 @@ import dialect.defs;
 {
     /// Toggle whether or not this plugin should do anything at all.
     @Enabler bool enabled = true;
-
-    // cooldown
-    /++
-        How many seconds must pass between two invocations of a given oneliner.
-        Introduces an element of hysteresis.
-     +/
-    int cooldown = 3;
 }
 
 
@@ -84,6 +77,13 @@ public:
         yielded next in the case of ordered oneliners.
      +/
     size_t position;
+
+    // cooldown
+    /++
+        How many seconds must pass between two invocations of a oneliner.
+        Introduces an element of hysteresis.
+     +/
+    uint cooldown;
 
     // lastTriggered
     /++
@@ -172,6 +172,7 @@ public:
         json["trigger"] = JSONValue(this.trigger);
         json["type"] = JSONValue(cast(int)this.type);
         json["responses"] = JSONValue(this.responses);
+        json["cooldown"] = JSONValue(this.cooldown);
 
         return json;
     }
@@ -193,6 +194,11 @@ public:
         oneliner.type = (json["type"].integer == cast(int)Type.random) ?
             Type.random :
             Type.ordered;
+
+        if (const cooldownJSON = "cooldown" in json)
+        {
+            oneliner.cooldown = cast(uint)cooldownJSON.integer;
+        }
 
         foreach (const responseJSON; json["responses"].array)
         {
@@ -218,66 +224,66 @@ public:
 )
 void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 {
+    import kameloso.plugins.common.misc : nameOf;
     import lu.string : beginsWith, contains, nom;
+    import std.array : replace;
+    import std.conv : text;
+    import std.format : format;
+    import std.random : uniform;
     import std.typecons : Flag, No, Yes;
+    import std.uni : toLower;
 
     if (!event.content.beginsWith(plugin.state.settings.prefix)) return;
 
-    string slice = event.content[plugin.state.settings.prefix.length..$];
+    void sendEmptyOneliner(const string trigger)
+    {
+        import std.format : format;
 
-    // An empty command is invalid
+        enum pattern = "(Empty oneliner; use <b>%soneliner add %s<b> to add lines.)";
+        immutable message = pattern.format(plugin.state.settings.prefix, trigger);
+        chan(plugin.state, event.channel, message);
+    }
+
+    string slice = event.content[plugin.state.settings.prefix.length..$];  // mutable
     if (!slice.length) return;
 
-    if (auto channelOneliners = event.channel in plugin.onelinersByChannel)  // mustn't be const
+    auto channelOneliners = event.channel in plugin.onelinersByChannel;  // mustn't be const
+    if (!channelOneliners) return;
+
+    immutable trigger = slice.nom!(Yes.inherit)(' ').toLower;
+
+    auto oneliner = trigger in *channelOneliners;  // mustn't be const
+    if (!oneliner) return;
+
+    if (!oneliner.responses.length) return sendEmptyOneliner(trigger);
+
+    if (oneliner.cooldown > 0)
     {
-        import std.uni : toLower;
-
-        immutable trigger = slice.nom!(Yes.inherit)(' ').toLower;
-        immutable target = slice.beginsWith('@') ? slice[1..$] : slice;
-
-        if (auto oneliner = trigger in *channelOneliners)  // mustn't be const
+        if ((oneliner.lastTriggered + oneliner.cooldown) > event.time)
         {
-            import kameloso.plugins.common.misc : nameOf;
-            import std.array : replace;
-            import std.conv : text;
-            import std.format : format;
-            import std.random : uniform;
-
-            if (!oneliner.responses.length)
-            {
-                enum pattern = "(Empty oneliner; use <b>%soneliner add %s<b> to add lines.)";
-                immutable message = pattern.format(plugin.state.settings.prefix, trigger);
-                return chan(plugin.state, event.channel, message);
-            }
-
-            if (plugin.onelinersSettings.cooldown > 0)
-            {
-                if ((oneliner.lastTriggered + plugin.onelinersSettings.cooldown) > event.time)
-                {
-                    // Too soon
-                    return;
-                }
-                else
-                {
-                    // Record time last fired
-                    oneliner.lastTriggered = event.time;
-                }
-            }
-
-            immutable line = oneliner.getResponse()
-                .replace("$nickname", nameOf(event.sender))
-                .replace("$streamer", plugin.nameOf(event.channel[1..$]))  // Twitch
-                .replace("$bot", plugin.nameOf(plugin.state.client.nickname)) // likewise
-                .replace("$channel", event.channel[1..$])
-                .replace("$random", uniform!"(]"(0, 100).text);
-
-            enum atPattern = "@%s %s";
-            immutable message = target.length ?
-                atPattern.format(plugin.nameOf(target), line) :
-                line;
-            chan(plugin.state, event.channel, message);
+            // Too soon
+            return;
+        }
+        else
+        {
+            // Record time last fired
+            oneliner.lastTriggered = event.time;
         }
     }
+
+    immutable line = oneliner.getResponse()
+        .replace("$nickname", nameOf(event.sender))
+        .replace("$streamer", plugin.nameOf(event.channel[1..$]))  // Twitch
+        .replace("$bot", plugin.nameOf(plugin.state.client.nickname)) // likewise
+        .replace("$channel", event.channel[1..$])
+        .replace("$random", uniform!"(]"(0, 100).text);
+    immutable target = slice.beginsWith('@') ? slice[1..$] : slice;
+
+    enum atPattern = "@%s %s";
+    immutable message = target.length ?
+        atPattern.format(plugin.nameOf(target), line) :
+        line;
+    chan(plugin.state, event.channel, message);
 }
 
 
@@ -294,7 +300,7 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
             .word("oneliner")
             .policy(PrefixPolicy.prefixed)
             .description("Manages oneliners.")
-            .addSyntax("$command new [trigger] [type]")
+            .addSyntax("$command new [trigger] [type] [optional cooldown]")
             .addSyntax("$command add [trigger] [text]")
             .addSyntax("$command edit [trigger] [position] [new text]")
             .addSyntax("$command insert [trigger] [position] [text]")
@@ -382,15 +388,29 @@ void handleNewOneliner(
 
     void sendNewUsage()
     {
-        enum pattern = "Usage: <b>%s%s new<b> [trigger] [type]";
+        enum pattern = "Usage: <b>%s%s new<b> [trigger] [type] [optional cooldown]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendMustBeRandomOrOrdered()
+    {
+        enum message = "Oneliner type must be one of <b>random<b> or <b>ordered<b>";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendCooldownMustBeValidPositiveDurationString()
+    {
+        enum message = "Oneliner cooldown must be in the hour-minute-seconds form of <b>*h*m*s<b> " ~
+            "and may not have negative values.";
         chan(plugin.state, event.channel, message);
     }
 
     string trigger;
     string typestring;
-    immutable results = slice.splitInto(trigger, typestring);
-    if (results != SplitResults.match) return sendNewUsage();
+    string cooldownString;
+    cast(void)slice.splitInto(trigger, typestring, cooldownString);
+    if (!typestring.length) return sendNewUsage();
 
     Oneliner.Type type;
 
@@ -411,11 +431,26 @@ void handleNewOneliner(
         break;
 
     default:
-        enum message = "Oneliner type must be one of <b>random<b> or <b>ordered<b>";
-        return chan(plugin.state, event.channel, message);
+        return sendMustBeRandomOrOrdered();
     }
 
     trigger = stripPrefix(trigger).toLower;
+    int cooldownSeconds = Oneliner.init.cooldown;
+
+    if (cooldownString.length)
+    {
+        import kameloso.time : DurationStringException, abbreviatedDuration;
+
+        try
+        {
+            cooldownSeconds = cast(int)abbreviatedDuration(cooldownString).total!"seconds";
+            if (cooldownSeconds < 0) return sendCooldownMustBeValidPositiveDurationString();
+        }
+        catch (DurationStringException _)
+        {
+            return sendCooldownMustBeValidPositiveDurationString();
+        }
+    }
 
     /+
         We need to check both hardcoded and soft channel-specific commands
@@ -451,6 +486,7 @@ void handleNewOneliner(
         Oneliner oneliner;
         oneliner.trigger = trigger;
         oneliner.type = type;
+        oneliner.cooldown = cooldownSeconds;
         //oneliner.responses ~= slice;
 
         plugin.onelinersByChannel[event.channel][trigger] = oneliner;
@@ -493,11 +529,39 @@ void handleAddToOneliner(
     import std.format : format;
     import std.uni : toLower;
 
+    void sendInsertEditUsage(const string verb)
+    {
+        immutable pattern = (verb == "insert") ?
+            "Usage: <b>%s%s insert<b> [trigger] [position] [text]" :
+            "Usage: <b>%s%s edit<b> [trigger] [position] [new text]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendAddUsage()
+    {
+        enum pattern = "Usage: <b>%s%s add<b> [trigger] [text]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+    }
+
     void sendNoSuchOneliner(const string trigger)
     {
         // Sent from more than one place so might as well make it a nested function
         enum pattern = "No such oneliner: <b>%s%s<b>";
         immutable message = pattern.format(plugin.state.settings.prefix, trigger);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendPositionNotPositive()
+    {
+        enum message = "Position passed is not a positive number.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendPositionNaN()
+    {
+        enum message = "Position passed is not a number.";
         chan(plugin.state, event.channel, message);
     }
 
@@ -583,11 +647,7 @@ void handleAddToOneliner(
         immutable results = slice.splitInto(trigger, posString);
         if (results != SplitResults.overrun)
         {
-            immutable pattern = (verb == "insert") ?
-                "Usage: <b>%s%s insert<b> [trigger] [position] [text]" :
-                "Usage: <b>%s%s edit<b> [trigger] [position] [new text]";
-            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-            return chan(plugin.state, event.channel, message);
+            return sendInsertEditUsage(verb);
         }
 
         try
@@ -596,14 +656,12 @@ void handleAddToOneliner(
 
             if (pos < 0)
             {
-                enum message = "Position passed is not a positive number.";
-                return chan(plugin.state, event.channel, message);
+                return sendPositionNaN();
             }
         }
-        catch (ConvException e)
+        catch (ConvException _)
         {
-            enum message = "Position passed is not a number.";
-            return chan(plugin.state, event.channel, message);
+            return sendPositionNaN();
         }
 
         try
@@ -617,7 +675,7 @@ void handleAddToOneliner(
                 insert(trigger, slice, Action.editExisting, pos);
             }
         }
-        catch (Exception e)
+        catch (Exception _)
         {
             // Already sent error message
             //chan(plugin.state, event.channel, e.msg);
@@ -631,16 +689,14 @@ void handleAddToOneliner(
         immutable results = slice.splitInto(trigger);
         if (results != SplitResults.overrun)
         {
-            enum pattern = "Usage: <b>%s%s add<b> [trigger] [text]";
-            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
-            return chan(plugin.state, event.channel, message);
+            return sendAddUsage();
         }
 
         try
         {
             return insert(trigger, slice, Action.appendToEnd);
         }
-        catch (Exception e)
+        catch (Exception _)
         {
             // Already sent error message
             //chan(plugin.state, event.channel, e.msg);
@@ -689,15 +745,6 @@ void handleDelFromOneliner(
         chan(plugin.state, event.channel, message);
     }
 
-    // copy/pasted
-    string stripPrefix(const string trigger)
-    {
-        import lu.string : beginsWith;
-        return trigger.beginsWith(plugin.state.settings.prefix) ?
-            trigger[plugin.state.settings.prefix.length..$] :
-            trigger;
-    }
-
     void sendLineRemoved(const string trigger, const size_t pos)
     {
         enum pattern = "Oneliner response <b>%s<b>#%d removed.";
@@ -710,6 +757,15 @@ void handleDelFromOneliner(
         enum pattern = "Oneliner <b>%s%s<b> removed.";
         immutable message = pattern.format(plugin.state.settings.prefix, trigger);
         chan(plugin.state, event.channel, message);
+    }
+
+    // copy/pasted
+    string stripPrefix(const string trigger)
+    {
+        import lu.string : beginsWith;
+        return trigger.beginsWith(plugin.state.settings.prefix) ?
+            trigger[plugin.state.settings.prefix.length..$] :
+            trigger;
     }
 
     if (!slice.length) return sendDelUsage();
@@ -753,7 +809,7 @@ void handleDelFromOneliner(
                 oneliner.position = 0;
             }
         }
-        catch (ConvException e)
+        catch (ConvException _)
         {
             return sendDelUsage();
         }
@@ -853,7 +909,7 @@ void reload(OnelinersPlugin plugin)
             {
                 plugin.onelinersByChannel[channelName][trigger] = Oneliner.fromJSON(onelinerJSON);
             }
-            catch (JSONException e)
+            catch (JSONException _)
             {
                 enum pattern = "Failed to load oneliner \"<l>%s</>\"; <l>%s</> is outdated or corrupt.";
                 logger.errorf(pattern, trigger, plugin.onelinerFile);

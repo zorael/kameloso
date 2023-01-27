@@ -264,6 +264,11 @@ void messageFiber(ref Kameloso instance)
                 instance.priorityBuffer.put(OutgoingLine(pongline, Yes.quiet));
                 break;
 
+            case ping:
+                immutable pingline = "PING :" ~ message.content;
+                instance.priorityBuffer.put(OutgoingLine(pingline, Yes.quiet));
+                break;
+
             case sendline:
                 instance.outbuffer.put(OutgoingLine(message.content, cast(Quiet)instance.settings.hideOutgoing));
                 break;
@@ -520,6 +525,28 @@ void messageFiber(ref Kameloso instance)
                 cast(shared(void delegate(string, string, string)))dg, expression);
         }
 
+        /++
+            Puts an [dialect.defs.IRCUser|IRCUser] into each plugin's (and service's)
+            [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users]
+            associative array.
+         +/
+        void putUser(ThreadMessage.PutUser, IRCUser user) scope
+        {
+            foreach (plugin; instance.plugins)
+            {
+                if (auto existingUser = user.nickname in plugin.state.users)
+                {
+                    immutable prevClass = existingUser.class_;
+                    *existingUser = user;
+                    existingUser.class_ = prevClass;
+                }
+                else
+                {
+                    plugin.state.users[user.nickname] = user;
+                }
+            }
+        }
+
         /// Reverse-formats an event and sends it to the server.
         void eventToServer(Message m) scope
         {
@@ -768,11 +795,15 @@ void messageFiber(ref Kameloso instance)
             {
                 foreach (immutable i, immutable splitLine; lines)
                 {
-                    appropriateline(prelude ~ splitLine);
+                    immutable finalLine = m.event.tags.length ?
+                        (m.event.tags ~ ' ' ~ prelude ~ splitLine) :
+                        (prelude ~ splitLine);
+                    appropriateline(finalLine);
                 }
             }
             else if (line.length)
             {
+                if (m.event.tags.length) line = m.event.tags ~ ' ' ~ line;
                 appropriateline(line);
             }
         }
@@ -850,6 +881,7 @@ void messageFiber(ref Kameloso instance)
                 &changeSettingSafeDg,
                 &getSetting,
                 &getSettingSafeDg,
+                &putUser,
                 (Variant v) scope
                 {
                     // Caught an unhandled message
