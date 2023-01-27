@@ -345,7 +345,7 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
     }
 
     poll.start = Clock.currTime;
-    poll.uniqueID = uniform(1, 10_000);
+    poll.uniqueID = uniform(1, uint.max);
     poll.voteCounts = choicesVoldemort.choices;
     poll.origChoiceNames = choicesVoldemort.origChoiceNames;
     poll.sortedChoices = poll.voteCounts

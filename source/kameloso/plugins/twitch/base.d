@@ -3531,7 +3531,7 @@ package:
             this.channelName = channelName;
             this.broadcasterName = channelName[1..$];
             this.broadcasterDisplayName = this.broadcasterName;  // until we resolve it
-            this.privateUniqueID = uniform(1, 10_000);
+            this.privateUniqueID = uniform(1, uint.max);
         }
 
         /++

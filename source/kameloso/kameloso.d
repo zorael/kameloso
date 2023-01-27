@@ -270,7 +270,7 @@ public:
 
             do
             {
-                privateConnectionID = uniform(1, 1001);
+                privateConnectionID = uniform(1, uint.max);
             }
             while (privateConnectionID == previous);
         }
