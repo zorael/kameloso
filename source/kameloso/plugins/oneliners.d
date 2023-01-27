@@ -996,7 +996,6 @@ void initResources(OnelinersPlugin plugin)
 {
     import lu.json : JSONStorage;
     import std.json : JSONException;
-    import std.path : baseName;
 
     JSONStorage onelinerJSON;
 

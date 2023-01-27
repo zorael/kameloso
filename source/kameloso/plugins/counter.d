@@ -829,7 +829,6 @@ void initResources(CounterPlugin plugin)
 {
     import lu.json : JSONStorage;
     import std.json : JSONException;
-    import std.path : baseName;
 
     JSONStorage countersJSON;
 

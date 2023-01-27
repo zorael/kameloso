@@ -3012,7 +3012,6 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
 
         import kameloso.plugins.common.misc :
             IRCPluginInitialisationException, pluginNameOfFilename, pluginFileBaseName;
-        import std.path : baseName;
 
         // Ensure initialised resources after resolve so we know we have a
         // valid server to create a directory for.

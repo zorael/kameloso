@@ -1251,7 +1251,6 @@ void initResources(TimerPlugin plugin)
 {
     import lu.json : JSONStorage;
     import std.json : JSONException;
-    import std.path : baseName;
 
     JSONStorage timersJSON;
 
