@@ -700,7 +700,7 @@ void onWelcome(CounterPlugin plugin)
     ---
     immutable pattern = "The $word count was bumped by +$step to $count!";
     immutable message = formatMessage(plugin, pattern, event, counter, step);
-    assert(message == "The curse word was bumped by +1 to 92!");
+    assert(message == "The curse count was bumped by +1 to 92!");
     ---
 
     Params:
