@@ -1,6 +1,11 @@
 /++
     Plugin offering announcement timers; routines that periodically sends lines
     of text to a channel.
+
+    See_Also:
+        https://github.com/zorael/kameloso/wiki/Current-plugins#timer
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.timer;
 

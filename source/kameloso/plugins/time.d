@@ -1,5 +1,10 @@
 /++
     A simple plugin for querying the time in different timezones.
+
+    See_Also:
+        https://github.com/zorael/kameloso/wiki/Current-plugins#time
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.time;
 
