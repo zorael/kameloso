@@ -724,6 +724,19 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
                 yield(attempt);
                 continue;
 
+            static if (int(timedOut) != int(wouldBlock))
+            {
+                case wouldBlock:
+                    /+
+                        Portability Note: In many older Unix systems ...
+                        [EWOULDBLOCK was] a distinct error code different from
+                        EAGAIN. To make your program portable, you should check
+                        for both codes and treat them the same.
+                     +/
+                    // A non-blocking socket operation could not be completed immediately.
+                    goto case timedOut;
+            }
+
             version(Windows)
             {
                 case overlappedIO:
@@ -739,31 +752,15 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
                         without sending a close_notify alert.
                      +/
                     // "The operation completed successfully."
-                    attempt.state = State.error;
-                    yield(attempt);
-                    // Should never get here
-                    assert(0, "Dead `listenFiber` resumed after yield (unexpected EOF)");
-            }
-
-            static if (int(timedOut) != int(wouldBlock))
-            {
-                case wouldBlock:
-                    /+
-                        Portability Note: In many older Unix systems ...
-                        [EWOULDBLOCK was] a distinct error code different from
-                        EAGAIN. To make your program portable, you should check
-                        for both codes and treat them the same.
-                     +/
-                    // A non-blocking socket operation could not be completed immediately.
-                    goto case timedOut;
+                    goto case;
             }
 
             case netDown:
             case netUnreachable:
             case endpointNotConnected:
             case connectionReset:
-                attempt.error = lastSocketError;
                 attempt.state = State.error;
+                attempt.error = lastSocketError;
                 yield(attempt);
                 // Should never get here
                 assert(0, "Dead `listenFiber` resumed after yield (`lastSocketError` error)");
