@@ -646,7 +646,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
 
             enum Errno
             {
-                //success = 0,  // "The operation completed successfully."
+                unexpectedEOF = 0,
                 timedOut = WSAETIMEDOUT,
                 wouldBlock = WSAEWOULDBLOCK,
                 netDown = WSAENETDOWN,
@@ -730,6 +730,19 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
                     // "Overlapped I/O operation is in progress."
                     // seems benign
                     goto case timedOut;
+
+                case unexpectedEOF:
+                    /+
+                        If you're getting 0 from WSAGetLastError, then this is
+                        most likely due to an unexpected EOF occurring on the socket,
+                        i.e. the client has gracefully closed the connection
+                        without sending a close_notify alert.
+                     +/
+                    // "The operation completed successfully."
+                    attempt.state = State.error;
+                    yield(attempt);
+                    // Should never get here
+                    assert(0, "Dead `listenFiber` resumed after yield (unexpected EOF)");
             }
 
             static if (int(timedOut) != int(wouldBlock))
