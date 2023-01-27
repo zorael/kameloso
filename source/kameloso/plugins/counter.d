@@ -378,8 +378,6 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
             return sendFormatUsage();
         }
 
-        if (!mod.length) return sendFormatUsage();
-
         if (!mod.among!("?", "+", "-", "="))
         {
             return sendFormatUsage();
