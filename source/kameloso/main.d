@@ -1385,7 +1385,7 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
 
             // Something asserted
             logger.error("scopeguard tripped.");
-            printEventDebugDetails(event, raw, eventWasInitialised);
+            printEventDebugDetails(event, raw, cast(Flag!"eventWasInitialised")eventWasInitialised);
 
             // Print the raw line char by char if it contains non-printables
             if (raw.canFind!((c) => c < ' '))
@@ -3188,7 +3188,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
 void printEventDebugDetails(
     const ref IRCEvent event,
     const string raw,
-    const bool eventWasInitialised = true)
+    const Flag!"eventWasInitialised" eventWasInitialised = Yes.eventWasInitialised)
 {
     if (globalHeadless || !raw.length) return;
 
