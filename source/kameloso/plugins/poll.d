@@ -49,9 +49,9 @@ import core.time : Duration;
     bool forbidPrefixedChoices = true;
 
     /++
-        Whether or not only users who have authenticated with services may vote.
+        User level required to vote.
      +/
-    bool onlyRegisteredMayVote = false;
+    IRCUser.Class minimumPermissionsNeeded = IRCUser.Class.anyone;
 }
 
 
@@ -513,8 +513,7 @@ void generatePollFiber(
                 continue;
             }
 
-            if (plugin.pollSettings.onlyRegisteredMayVote &&
-                (thisEvent.sender.class_ < IRCUser.Class.registered))
+            if (thisEvent.sender.class_ < plugin.pollSettings.minimumPermissionsNeeded)
             {
                 // User not authorised to vote. Yield and await a new event
                 Fiber.yield();
