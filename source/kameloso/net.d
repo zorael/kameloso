@@ -620,8 +620,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
     {
         version(Posix)
         {
-            import core.stdc.errno : EAGAIN, ECONNRESET, EINTR, ENETDOWN,
-                ENETUNREACH, ENOTCONN, EWOULDBLOCK, errno;
+            import core.stdc.errno;
 
             // https://www-numi.fnal.gov/offline_software/srt_public_context/WebDocs/Errors/unix_system_errors.html
 
@@ -633,13 +632,15 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
                 netUnreachable = ENETUNREACH,
                 endpointNotConnected = ENOTCONN,
                 connectionReset = ECONNRESET,
+                connectionAborted = ECONNABORTED,
                 interrupted = EINTR,
             }
         }
         else version(Windows)
         {
-            import core.sys.windows.winsock2 : WSAECONNRESET, WSAEINTR, WSAENETDOWN,
-                WSAENETUNREACH, WSAENOTCONN, WSAETIMEDOUT, WSAEWOULDBLOCK, errno = WSAGetLastError;
+            import core.sys.windows.winsock2;
+
+            alias errno = WSAGetLastError;
 
             // https://www.hardhats.org/cs/broker/docs/winsock.html
             // https://infosys.beckhoff.com/english.php?content=../content/1033/tcpipserver/html/tcplclibtcpip_e_winsockerror.htm
@@ -653,6 +654,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
                 netUnreachable = WSAENETUNREACH,
                 endpointNotConnected = WSAENOTCONN,
                 connectionReset = WSAECONNRESET,
+                connectionAborted = WSAECONNABORTED,
                 interrupted = WSAEINTR,
                 overlappedIO = 997,
             }
@@ -759,6 +761,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
             case netUnreachable:
             case endpointNotConnected:
             case connectionReset:
+            case connectionAborted:
                 attempt.state = State.error;
                 attempt.error = lastSocketError;
                 yield(attempt);
