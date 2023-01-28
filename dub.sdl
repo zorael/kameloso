@@ -182,7 +182,8 @@ configuration "unittest" {
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
-        "OSXTMPDIR"
+        "OSXTMPDIR" \
+        "WithPingMonitor"
         //"TraceWhois" \
         //"TwitchPromoteEverywhere" \
         //"TwitchCustomEmotesEverywhere" \
@@ -205,7 +206,8 @@ configuration "unittest-lowmem" {
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
-        "OSXTMPDIR"
+        "OSXTMPDIR" \
+        "WithPingMonitor"
         //"TraceWhois" \
         //"TwitchPromoteEverywhere" \
         //"TwitchCustomEmotesEverywhere" \
