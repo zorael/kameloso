@@ -838,7 +838,7 @@ if (isOutputRange!(Sink, char[]))
 
         version(PrintClassNamesToo)
         {
-            .put(sink, ':', event.target.class_);
+            .put!(Yes.colours)(sink, TR.all, ':', event.target.class_);
         }
 
         version(PrintAccountNamesToo)
