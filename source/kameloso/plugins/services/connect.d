@@ -1351,11 +1351,16 @@ void startPingMonitorFiber(ConnectService service)
     void pingMonitorDg()
     {
         static immutable periodicitySeconds = pingMonitorPeriodicity.total!"seconds";
-        static immutable briefWait = 30.seconds;
-        static immutable brieferWait = 1.seconds;
+        static immutable timeToAllowForPingResponse = 30.seconds;
+        static immutable briefWait = 1.seconds;
         long lastPongTimestamp;
-        enum maxStrikes = 3;
         uint strikes;
+
+        enum StrikeBreakpoints
+        {
+            ping = 3,
+            reconnect = 5,
+        }
 
         while (true)
         {
@@ -1374,18 +1379,34 @@ void startPingMonitorFiber(ConnectService service)
 
                 if ((nowInUnix - lastPongTimestamp) >= periodicitySeconds)
                 {
-                    // Skip maxStrikes reads in case we resumed from suspend or similar
-                    if (strikes++ < maxStrikes)
-                    {
-                        delay(service, brieferWait, Yes.yield);
-                        continue;
-                    }
-
-                    // Timeout. Send a preemptive ping
                     import kameloso.thread : ThreadMessage;
                     import std.concurrency : prioritySend;
-                    service.state.mainThread.prioritySend(ThreadMessage.ping(service.state.server.resolvedAddress));
-                    delay(service, briefWait, Yes.yield);
+
+                    /+
+                        Skip first 3 strikes, helps when resuming from suspend and similar,
+                        then allow for two PINGs with `timeToAllowForPingResponse` in between.
+                        Finally, if all else failed, reconnect.
+                     +/
+                    ++strikes;
+
+                    if (strikes <= StrikeBreakpoints.ping)
+                    {
+                        delay(service, briefWait, Yes.yield);
+                        continue;
+                    }
+                    else if (strikes <= StrikeBreakpoints.reconnect)
+                    {
+                        // Timeout. Send a preemptive ping
+                        service.state.mainThread.prioritySend(ThreadMessage.ping(service.state.server.resolvedAddress));
+                        delay(service, timeToAllowForPingResponse, Yes.yield);
+                        continue;
+                    }
+                    else /*if (strikes > StrikeBreakpoints.reconnect)*/
+                    {
+                        // All failed, reconnect
+                        service.state.mainThread.prioritySend(ThreadMessage.reconnect);
+                        return;
+                    }
                 }
                 else
                 {
