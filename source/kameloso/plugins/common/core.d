@@ -539,38 +539,38 @@ mixin template IRCPluginImpl(
         {
             import kameloso.plugins.common.core : IRCEventHandler;
 
+            // Concatenate our own fully qualified name
+            enum fqn = module_ ~ '.' ~ __traits(identifier, fun);
+
             static foreach (immutable type; uda._acceptedEventTypes)
             {
                 static if (type == IRCEvent.Type.UNSET)
                 {
                     import std.format : format;
-                    import std.traits : fullyQualifiedName;
 
                     enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
                         "`@(IRCEvent.Type.UNSET)`, which is not a valid event type";
-                    enum message = pattern.format(fullyQualifiedName!fun);
+                    enum message = pattern.format(fqn);
                     static assert(0, message);
                 }
                 else static if (type == IRCEvent.Type.PRIVMSG)
                 {
                     import std.format : format;
-                    import std.traits : fullyQualifiedName;
 
                     enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
                         "`@(IRCEvent.Type.PRIVMSG)`, which is not a valid event type. " ~
                         "Use `IRCEvent.Type.CHAN` and/or `IRCEvent.Type.QUERY` instead";
-                    enum message = pattern.format(fullyQualifiedName!fun);
+                    enum message = pattern.format(fqn);
                     static assert(0, message);
                 }
                 else static if (type == IRCEvent.Type.WHISPER)
                 {
                     import std.format : format;
-                    import std.traits : fullyQualifiedName;
 
                     enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
                         "`@(IRCEvent.Type.WHISPER)`, which is not a valid event type. " ~
                         "Use `IRCEvent.Type.QUERY` instead";
-                    enum message = pattern.format(fullyQualifiedName!fun);
+                    enum message = pattern.format(fqn);
                     static assert(0, message);
                 }
 
@@ -584,13 +584,12 @@ mixin template IRCPluginImpl(
                     {
                         import lu.conv : Enum;
                         import std.format : format;
-                        import std.traits : fullyQualifiedName;
 
                         enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                             "listening for a `Command` and/or `Regex`, but is at the " ~
                             "same time accepting non-message `IRCEvent.Type.%s events`";
                         enum message = pattern.format(
-                            fullyQualifiedName!fun,
+                            fqn,
                             Enum!(IRCEvent.Type).toString(type));
                         static assert(0, message);
                     }
@@ -606,22 +605,20 @@ mixin template IRCPluginImpl(
                     static if (!command._word.length)
                     {
                         import std.format : format;
-                        import std.traits : fullyQualifiedName;
 
                         enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
-                            "listening for a `Command` with an empty trigger word";
-                        enum message = pattern.format(fullyQualifiedName!fun);
+                            "listening for a `Command` with an empty (or unspecified) trigger word";
+                        enum message = pattern.format(fqn);
                         static assert(0, message);
                     }
                     else static if (command._word.contains(' '))
                     {
                         import std.format : format;
-                        import std.traits : fullyQualifiedName;
 
                         enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                             "listening for a `Command` whose trigger " ~
                             `word "%s" contains a space character`;
-                        enum message = pattern.format(fullyQualifiedName!fun, command._word);
+                        enum message = pattern.format(fqn, command._word);
                         static assert(0, message);
                     }
                 }
@@ -636,11 +633,10 @@ mixin template IRCPluginImpl(
                     static if (!regex._expression.length)
                     {
                         import std.format : format;
-                        import std.traits : fullyQualifiedName;
 
                         enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
-                            "listening for a `Regex` with an empty expression";
-                        enum message = pattern.format(fullyQualifiedName!fun);
+                            "listening for a `Regex` with an empty (or unspecified) expression";
+                        enum message = pattern.format(fqn);
                         static assert(0, message);
                     }
                     else static if (
@@ -648,12 +644,11 @@ mixin template IRCPluginImpl(
                         regex._expression.contains(' '))
                     {
                         import std.format : format;
-                        import std.traits : fullyQualifiedName;
 
                         enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
                             "listening for a non-`PrefixPolicy.direct`-annotated " ~
                             "`Regex` with an expression containing spaces";
-                        enum message = pattern.format(fullyQualifiedName!fun);
+                        enum message = pattern.format(fqn);
                         static assert(0, message);
                     }
                 }
@@ -1238,8 +1233,9 @@ mixin template IRCPluginImpl(
                     {
                         import std.format : format;
 
+                        enum fqn = module_ ~ '.' ~ __traits(identifier, fun);
                         enum pattern = "`%s` may only be annotated with one and only one `IRCEventHandler`";
-                        enum message = pattern.format(fullyQualifiedName!fun);
+                        enum message = pattern.format(fqn);
                         static assert(0, message);
                     }
 
@@ -1965,10 +1961,10 @@ mixin template IRCPluginImpl(
                     else /*static if (!command._hidden && !command._description.length)*/
                     {
                         import std.format : format;
-                        import std.traits : fullyQualifiedName;
 
+                        enum fqn = module_ ~ '.' ~ __traits(identifier, fun);
                         enum pattern = "Warning: `%s` non-hidden command word \"%s\" is missing a description";
-                        enum message = pattern.format(fullyQualifiedName!fun, command._word);
+                        enum message = pattern.format(fqn, command._word);
                         pragma(msg, message);
                     }
                 }}
@@ -1996,10 +1992,10 @@ mixin template IRCPluginImpl(
                     else static if (!regex._hidden)
                     {
                         import std.format : format;
-                        import std.traits : fullyQualifiedName;
 
+                        enum fqn = module_ ~ '.' ~ __traits(identifier, fun);
                         enum pattern = "Warning: `%s` non-hidden expression \"%s\" is missing a description";
-                        enum message = pattern.format(fullyQualifiedName!fun, regex._expression);
+                        enum message = pattern.format(fqn, regex._expression);
                         pragma(msg, message);
                     }
                 }}
