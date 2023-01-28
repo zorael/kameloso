@@ -825,8 +825,10 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
  +/
 struct ConnectionAttempt
 {
+private:
     import std.socket : Address;
 
+public:
     /++
         The various states a connection attempt may be in.
      +/

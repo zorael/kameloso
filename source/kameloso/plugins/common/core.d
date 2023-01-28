@@ -2859,8 +2859,10 @@ enum Timing
  +/
 struct IRCEventHandler
 {
-    private import kameloso.traits : UnderscoreOpDispatcher;
+private:
+    import kameloso.traits : UnderscoreOpDispatcher;
 
+public:
     // _acceptedEventTypes
     /++
         Array of types of [dialect.defs.IRCEvent] that the annotated event
@@ -3002,8 +3004,10 @@ struct IRCEventHandler
      +/
     static struct Regex
     {
+    private:
         import std.regex : StdRegex = Regex;
 
+    public:
         // _policy
         /++
             In what way the message is required to start for the annotated function to trigger.
