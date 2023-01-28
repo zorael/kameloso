@@ -93,10 +93,10 @@ private:
     Socket socket4, socket6;
 
     /// Private cached send timeout setting.
-    uint privateSendTimeout;
+    uint _sendTimeout;
 
     /// Private cached received timeout setting.
-    uint privateReceiveTimeout;
+    uint _receiveTimeout;
 
     /// Private SSL context.
     SSL_CTX* sslContext;
@@ -169,12 +169,12 @@ public:
         Accessor; returns the current send timeout.
 
         Returns:
-            A copy of [privateSendTimeout].
+            A copy of [_sendTimeout].
      +/
     pragma(inline, true)
     auto sendTimeout() const @property pure @nogc nothrow
     {
-        return privateSendTimeout;
+        return _sendTimeout;
     }
 
 
@@ -189,7 +189,7 @@ public:
     void sendTimeout(const uint dur) @property
     {
         setTimeout(SocketOption.SNDTIMEO, dur);
-        privateSendTimeout = dur;
+        _sendTimeout = dur;
     }
 
     // receiveTimeout
@@ -197,12 +197,12 @@ public:
         Accessor; returns the current receive timeout.
 
         Returns:
-            A copy of [privateReceiveTimeout].
+            A copy of [_receiveTimeout].
      +/
     pragma(inline, true)
     auto receiveTimeout() const @property pure @nogc nothrow
     {
-        return privateReceiveTimeout;
+        return _receiveTimeout;
     }
 
     // sendTimeout
@@ -215,7 +215,7 @@ public:
     void receiveTimeout(const uint dur) @property
     {
         setTimeout(SocketOption.RCVTIMEO, dur);
-        privateReceiveTimeout = dur;
+        _receiveTimeout = dur;
     }
 
 
@@ -291,8 +291,8 @@ public:
             setOption(SOCKET, RCVTIMEO, Timeout.receiveMsecs.msecs);
             setOption(SOCKET, SNDTIMEO, Timeout.sendMsecs.msecs);
 
-            privateReceiveTimeout = Timeout.receiveMsecs;
-            privateSendTimeout = Timeout.sendMsecs;
+            _receiveTimeout = Timeout.receiveMsecs;
+            _sendTimeout = Timeout.sendMsecs;
             blocking = true;
         }
     }

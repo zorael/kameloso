@@ -3402,7 +3402,7 @@ package:
         /++
             A unique ID for this instance of a room.
          +/
-        uint privateUniqueID;
+        uint _uniqueID;
 
     public:
         /++
@@ -3416,7 +3416,7 @@ package:
 
                 Cannot be made immutable or generated `opAssign`s break.
              +/
-            /*immutable*/ string privateIDString;
+            /*immutable*/ string _idString;
 
         package:
             /++
@@ -3486,11 +3486,11 @@ package:
             bool[string] activeViewers;
 
             /++
-                Accessor to [privateIDString].
+                Accessor to [_idString].
              +/
             auto idString() const
             {
-                return privateIDString;
+                return _idString;
             }
 
             /++
@@ -3498,7 +3498,7 @@ package:
              +/
             void update(const Stream updated)
             {
-                assert(privateIDString.length, "Stream not properly initialised");
+                assert(_idString.length, "Stream not properly initialised");
 
                 this.userDisplayName = updated.userDisplayName;
                 this.gameIDString = updated.gameIDString;
@@ -3517,7 +3517,7 @@ package:
              +/
             this(const string idString)
             {
-                this.privateIDString = idString;
+                this._idString = idString;
             }
         }
 
@@ -3531,16 +3531,16 @@ package:
             this.channelName = channelName;
             this.broadcasterName = channelName[1..$];
             this.broadcasterDisplayName = this.broadcasterName;  // until we resolve it
-            this.privateUniqueID = uniform(1, uint.max);
+            this._uniqueID = uniform(1, uint.max);
         }
 
         /++
-            Accessor to [Room.privateUniqueID].
+            Accessor to [_uniqueID].
          +/
         auto uniqueID() const
         {
-            assert((privateUniqueID > 0), "Room not properly initialised");
-            return privateUniqueID;
+            assert((_uniqueID > 0), "Room not properly initialised");
+            return _uniqueID;
         }
 
         /++

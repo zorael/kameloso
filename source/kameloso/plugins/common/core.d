@@ -2379,7 +2379,7 @@ private:
         Numeric ID of the current connection, to disambiguate between multiple
         connections in one program run. Private value.
      +/
-    uint privateConnectionID;
+    uint _connectionID;
 
 public:
     // Update
@@ -2591,7 +2591,7 @@ public:
     pragma(inline, true)
     auto connectionID() const
     {
-        return privateConnectionID;
+        return _connectionID;
     }
 
     // this
@@ -2600,7 +2600,7 @@ public:
      +/
     this(const uint connectionID)
     {
-        this.privateConnectionID = connectionID;
+        this._connectionID = connectionID;
     }
 }
 

@@ -75,12 +75,12 @@ private:
     }
 
 
-    // privateConnectionID
+    // _connectionID
     /++
         Numeric ID of the current connection, to disambiguate between multiple
         connections in one program run. Private value.
      +/
-    shared static uint privateConnectionID;
+    shared static uint _connectionID;
 
 
 public:
@@ -263,7 +263,7 @@ public:
     pragma(inline, true)
     static auto connectionID()
     {
-        return privateConnectionID;
+        return _connectionID;
     }
 
 
@@ -279,13 +279,13 @@ public:
 
         synchronized //()
         {
-            immutable previous = privateConnectionID;
+            immutable previous = _connectionID;
 
             do
             {
-                privateConnectionID = uniform(1, uint.max);
+                _connectionID = uniform(1, uint.max);
             }
-            while (privateConnectionID == previous);
+            while (_connectionID == previous);
         }
     }
 
