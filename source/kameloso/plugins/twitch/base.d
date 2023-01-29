@@ -1685,7 +1685,8 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
             .replace(dchar(';'), dchar(':'));
 
         // No real point using plurality since most emotes should have a count > 1
-        enum pattern = "%s has been used %d times!";
+        // Make the pattern "%,?d", and supply an extra ' ' argument to get European grouping
+        enum pattern = "%s has been used %,d times!";
         immutable message = pattern.format(emote, count);
         chan(plugin.state, event.channel, message);
     }
