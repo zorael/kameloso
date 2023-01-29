@@ -548,16 +548,23 @@ private:
     .onEvent(IRCEvent.Type.JOIN)
     .onEvent(IRCEvent.Type.PART)
     .onEvent(IRCEvent.Type.MODE)
-    .onEvent(IRCEvent.Type.TWITCH_BULKGIFT)
-    .onEvent(IRCEvent.Type.TWITCH_CHARITY)
-    .onEvent(IRCEvent.Type.TWITCH_EXTENDSUB)
-    .onEvent(IRCEvent.Type.TWITCH_GIFTCHAIN)
-    .onEvent(IRCEvent.Type.TWITCH_PAYFORWARD)
-    .onEvent(IRCEvent.Type.TWITCH_REWARDGIFT)
-    .onEvent(IRCEvent.Type.TWITCH_RITUAL)
     .onEvent(IRCEvent.Type.TWITCH_SUB)
     .onEvent(IRCEvent.Type.TWITCH_SUBGIFT)
+    .onEvent(IRCEvent.Type.TWITCH_CHEER)
+    .onEvent(IRCEvent.Type.TWITCH_REWARDGIFT)
+    .onEvent(IRCEvent.Type.TWITCH_GIFTCHAIN)
+    .onEvent(IRCEvent.Type.TWITCH_BULKGIFT)
     .onEvent(IRCEvent.Type.TWITCH_SUBUPGRADE)
+    .onEvent(IRCEvent.Type.TWITCH_CHARITY)
+    .onEvent(IRCEvent.Type.TWITCH_BITSBADGETIER)
+    .onEvent(IRCEvent.Type.TWITCH_RITUAL)
+    .onEvent(IRCEvent.Type.TWITCH_EXTENDSUB)
+    .onEvent(IRCEvent.Type.TWITCH_GIFTRECEIVED)
+    .onEvent(IRCEvent.Type.TWITCH_PAYFORWARD)
+    .onEvent(IRCEvent.Type.TWITCH_RAID)
+    .onEvent(IRCEvent.Type.TWITCH_CROWDCHANT)
+    .onEvent(IRCEvent.Type.TWITCH_ANNOUNCEMENT)
+    .onEvent(IRCEvent.Type.TWITCH_DIRECTCHEER)
     .permissionsRequired(Permissions.ignore)
     .channelPolicy(omniscientChannelPolicy)
     .chainable(true)
@@ -577,6 +584,8 @@ void onSomeAction(SeenPlugin plugin, const ref IRCEvent event)
         Don't count non-chatty events if the settings say to ignore them.
      +/
 
+    bool skipTarget;
+
     with (IRCEvent.Type)
     switch (event.type)
     {
@@ -588,18 +597,28 @@ void onSomeAction(SeenPlugin plugin, const ref IRCEvent event)
 
     version(TwitchSupport)
     {
-        case TWITCH_BULKGIFT:
-        case TWITCH_CHARITY:
-        case TWITCH_EXTENDSUB:
-        case TWITCH_GIFTCHAIN:
-        case TWITCH_PAYFORWARD:
-        case TWITCH_REWARDGIFT:
-        case TWITCH_RITUAL:
         case TWITCH_SUB:
-        case TWITCH_SUBGIFT:
+        case TWITCH_CHEER:
         case TWITCH_SUBUPGRADE:
+        case TWITCH_CHARITY:
+        case TWITCH_BITSBADGETIER:
+        case TWITCH_RITUAL:
+        case TWITCH_EXTENDSUB:
+        case TWITCH_RAID:
+        case TWITCH_CROWDCHANT:
+        case TWITCH_ANNOUNCEMENT:
+        case TWITCH_DIRECTCHEER:
             // Consider these as chatty events too
-            // targets might be caught in the crossfire in some cases
+            break;
+
+        case TWITCH_SUBGIFT:
+        case TWITCH_REWARDGIFT:
+        case TWITCH_GIFTCHAIN:
+        case TWITCH_BULKGIFT:
+        case TWITCH_GIFTRECEIVED:
+        case TWITCH_PAYFORWARD:
+            // These carry targets that should not be counted as having showed activity
+            skipTarget = true;
             break;
 
         case JOIN:
@@ -622,7 +641,7 @@ void onSomeAction(SeenPlugin plugin, const ref IRCEvent event)
     {
         plugin.updateUser(event.sender.nickname, event.time);
     }
-    else if (event.target.nickname)
+    else if (!skipTarget && event.target.nickname)
     {
         plugin.updateUser(event.target.nickname, event.time);
     }
