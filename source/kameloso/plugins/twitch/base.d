@@ -3670,7 +3670,7 @@ package:
         /++
             How many messages to keep in memory, to allow for nuking.
          +/
-        enum messageMemory = 64;
+        enum messageMemory = 128;
 
         /++
             The last n messages sent in the channel, used by `nuke`.
