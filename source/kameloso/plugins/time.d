@@ -558,7 +558,7 @@ void initResources(TimePlugin plugin)
 
 
 mixin UserAwareness;
-mixin ModuleRegistration;
+mixin PluginRegistration!TimePlugin;
 
 version(TwitchSupport)
 {

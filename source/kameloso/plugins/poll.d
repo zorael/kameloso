@@ -1010,7 +1010,7 @@ void teardown(PollPlugin plugin)
 
 
 mixin MinimalAuthentication;
-mixin ModuleRegistration;
+mixin PluginRegistration!PollPlugin;
 
 public:
 

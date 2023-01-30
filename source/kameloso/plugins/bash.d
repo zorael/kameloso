@@ -20,7 +20,7 @@ import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
 mixin MinimalAuthentication;
-mixin ModuleRegistration;
+mixin PluginRegistration!BashPlugin;
 
 
 // BashSettings

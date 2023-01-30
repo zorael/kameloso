@@ -1024,7 +1024,7 @@ void initResources(OnelinersPlugin plugin)
 
 mixin UserAwareness;
 mixin ChannelAwareness;
-mixin ModuleRegistration;
+mixin PluginRegistration!OnelinersPlugin;
 
 version(TwitchSupport)
 {

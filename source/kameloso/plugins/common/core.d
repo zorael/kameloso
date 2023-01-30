@@ -3186,46 +3186,41 @@ template PluginModuleInfo(string module_)
 }
 
 
-// ModuleRegistration
+// PluginRegistration
 /++
-    Mixes in a module constructor that registers any [IRCPlugin] subclasses in
-    the module to be instantiated on program startup/connect.
+    Mixes in a module constructor that registers the supplied [IRCPlugin] subclass
+    in the module to be instantiated on program startup/connect.
 
     Params:
+        Plugin = Plugin class of module.
         priority = Priority at which to instantiate the plugin. A lower priority
             makes it get instantiated before other plugins. Defaults to `0.priority`.
-        module_ = String name of the module. Should be kept to its default `__MODULE__`.
+        module_ = String name of the module. Only used in case an error message is needed.
  +/
-mixin template ModuleRegistration(
+mixin template PluginRegistration(
+    Plugin,
     Priority priority = 0.priority,
     string module_ = __MODULE__)
 {
     // module constructor
     /++
-        Mixed-in module constructor that registers any [IRCPlugin] subclasses in
+        Mixed-in module constructor that registers the passed [Plugin] class
         the module to be instantiated on program startup.
      +/
     shared static this()
     {
-        import kameloso.plugins.common.core : IRCPluginState, PluginModuleInfo;
+        import kameloso.plugins.common.core : IRCPluginState;
 
-        alias PluginModule = PluginModuleInfo!module_;
-
-        static if (!PluginModule.hasPluginClass)
-        {
-            // No class in module, so just ignore it
-            pragma(msg, "Note: Versioned-out or dummy plugin: " ~ module_);
-        }
-        else static if (__traits(compiles, new PluginModule.Class(IRCPluginState.init)))
+        static if (__traits(compiles, new Plugin(IRCPluginState.init)))
         {
             import kameloso.plugins : registerPlugin;
 
             static auto ctor(IRCPluginState state)
             {
-                return new PluginModule.Class(state);
+                return new Plugin(state);
             }
 
-            registerPlugin(priority, module_, &ctor);
+            registerPlugin(priority, &ctor);
         }
         else
         {

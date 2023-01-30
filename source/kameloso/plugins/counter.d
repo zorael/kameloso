@@ -857,7 +857,7 @@ void initResources(CounterPlugin plugin)
 
 
 mixin MinimalAuthentication;
-mixin ModuleRegistration;
+mixin PluginRegistration!CounterPlugin;
 
 public:
 

@@ -498,7 +498,7 @@ auto stripPrefix(HelpPlugin plugin, const string prefixed)
 
 
 mixin MinimalAuthentication;
-mixin ModuleRegistration;
+mixin PluginRegistration!HelpPlugin;
 
 public:
 

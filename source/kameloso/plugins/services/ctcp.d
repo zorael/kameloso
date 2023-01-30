@@ -301,7 +301,7 @@ void onCTCPClientinfo(CTCPService service, const ref IRCEvent event)
 }
 
 
-mixin ModuleRegistration!(-20.priority);
+mixin PluginRegistration!(CTCPService, -20.priority);
 
 public:
 

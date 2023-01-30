@@ -1724,7 +1724,7 @@ void onBusMessage(ConnectService service, const string header, shared Sendable c
 }
 
 
-mixin ModuleRegistration!(-30.priority);
+mixin PluginRegistration!(ConnectService, -30.priority);
 
 public:
 

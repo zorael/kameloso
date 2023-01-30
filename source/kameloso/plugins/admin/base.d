@@ -1508,7 +1508,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 
 mixin UserAwareness!omniscientChannelPolicy;
 mixin ChannelAwareness!omniscientChannelPolicy;
-mixin ModuleRegistration!(-4.priority);
+mixin PluginRegistration!(AdminPlugin, -4.priority);
 
 version(TwitchSupport)
 {

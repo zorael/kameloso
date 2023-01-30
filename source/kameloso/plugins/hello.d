@@ -24,4 +24,4 @@ final class HelloPlugin : IRCPlugin
     mixin IRCPluginImpl;
 }
 
-mixin ModuleRegistration;
+mixin PluginRegistration!HelloPlugin;

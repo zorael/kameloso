@@ -22,7 +22,7 @@ import kameloso.messaging;
 import dialect.defs;
 
 mixin UserAwareness;
-mixin ModuleRegistration;
+mixin PluginRegistration!QuotesPlugin;
 
 
 // QuotesSettings

@@ -1318,7 +1318,7 @@ void reload(TimerPlugin plugin)
 
 
 mixin MinimalAuthentication;
-mixin ModuleRegistration;
+mixin PluginRegistration!TimerPlugin;
 
 version(TwitchSupport)
 {

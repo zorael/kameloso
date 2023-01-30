@@ -124,7 +124,7 @@ mixin ChannelAwareness!omniscientChannelPolicy;
     Mixes in a module constructor that registers this module's plugin to be
     instantiated on program startup/connect.
  +/
-mixin ModuleRegistration;
+mixin PluginRegistration!SeenPlugin;
 
 
 /+

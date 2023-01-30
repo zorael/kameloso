@@ -943,7 +943,7 @@ void initHostmaskResources(PersistenceService service)
 }
 
 
-mixin ModuleRegistration!(-50.priority);
+mixin PluginRegistration!(PersistenceService, -50.priority);
 
 public:
 

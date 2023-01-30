@@ -306,7 +306,7 @@ package struct Credentials
 mixin UserAwareness;
 mixin ChannelAwareness;
 mixin TwitchAwareness;
-mixin ModuleRegistration!(-5.priority);
+mixin PluginRegistration!(TwitchPlugin, -5.priority);
 
 
 // onImportant

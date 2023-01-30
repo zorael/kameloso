@@ -61,12 +61,6 @@ struct PluginRegistrationEntry
      +/
     Priority priority;
 
-    // module_
-    /++
-        String name of the module.
-     +/
-    string module_;
-
     // ctor
     /++
         Function pointer to a "constructor"/builder that instantiates the relevant plugin.
@@ -81,17 +75,14 @@ struct PluginRegistrationEntry
             priority = [kameloso.plugins.common.core.Priority|Priority] at which
                 to instantiate the plugin. A lower priority value makes it get
                 instantiated before other plugins.
-            module_ = String name of the module.
             ctor = Function pointer to a "constructor"/builder that instantiates
                 the relevant plugin.
      +/
     this(
         const Priority priority,
-        const string module_,
         typeof(this.ctor) ctor) pure @safe nothrow @nogc
     {
         this.priority = priority;
-        this.module_ = module_;
         this.ctor = ctor;
     }
 }
@@ -131,18 +122,15 @@ public:
     Params:
         priority = Priority at which to instantiate the plugin. A lower priority
             makes it get instantiated before other plugins.
-        module_ = String name of the module.
         ctor = Function pointer to a "constructor"/builder that instantiates
             the relevant plugin.
  +/
 void registerPlugin(
     const Priority priority,
-    const string module_,
     IRCPlugin function(IRCPluginState) ctor)
 {
     registeredPlugins ~= PluginRegistrationEntry(
         priority,
-        module_,
         ctor);
 }
 
