@@ -344,7 +344,7 @@ void onImportant(TwitchPlugin plugin, const ref IRCEvent event)
     // Record viewer as active
     if (auto room = event.channel in plugin.rooms)
     {
-        if (room.stream.up)
+        if (room.stream.live)
         {
             room.stream.activeViewers[event.sender.nickname] = true;
         }
@@ -483,14 +483,14 @@ void onSelfpart(TwitchPlugin plugin, const ref IRCEvent event)
     auto room = event.channel in plugin.rooms;
     if (!room) return;
 
-    if (room.stream.up)
+    if (room.stream.live)
     {
         import std.datetime.systime : Clock;
 
         // We're leaving in the middle of a stream?
         // Close it and rotate, in case someone has a pointer to it
         // copied from nested functions in uptimeMonitorDg
-        room.stream.up = false;
+        room.stream.live = false;
         room.stream.stopTime = Clock.currTime;
         room.stream.chattersSeen = null;
         appendToStreamHistory(plugin, room.stream);
@@ -549,7 +549,7 @@ void reportStreamTime(
     import std.format : format;
     import core.time : msecs;
 
-    if (room.stream.up)
+    if (room.stream.live)
     {
         // Remove fractional seconds from the current timestamp
         auto now = Clock.currTime;
@@ -1582,7 +1582,7 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
     // Record viewer as active
     if (auto room = event.channel in plugin.rooms)
     {
-        if (room.stream.up)
+        if (room.stream.live)
         {
             room.stream.activeViewers[event.sender.nickname] = true;
         }
@@ -2102,7 +2102,7 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     const room = event.channel in plugin.rooms;
     assert(room, "Tried to start a commercial in a nonexistent room");
 
-    if (!room.stream.up)
+    if (!room.stream.live)
     {
         enum message = "There is no ongoing stream.";
         return chan(plugin.state, event.channel, message);
@@ -2546,7 +2546,7 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
             room = channelName in plugin.rooms;
             if (!room || (room.uniqueID != idSnapshot)) return;
 
-            if (!room.stream.up)
+            if (!room.stream.live)
             {
                 delay(plugin, plugin.monitorUpdatePeriodicity, Yes.yield);
                 continue;
@@ -2637,7 +2637,7 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
     {
         static void closeStream(TwitchPlugin.Room* room)
         {
-            room.stream.up = false;
+            room.stream.live = false;
             room.stream.stopTime = Clock.currTime;
             room.stream.chattersSeen = null;
         }
@@ -2665,7 +2665,7 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
                 if (!streamFromServer.idString.length)  // == TwitchPlugin.Room.Stream.init)
                 {
                     // Stream down
-                    if (room.stream.up)
+                    if (room.stream.live)
                     {
                         // Was up but just ended
                         closeStream(room);
@@ -2907,7 +2907,7 @@ void startSaver(TwitchPlugin plugin)
             {
                 foreach (const room; plugin.rooms)
                 {
-                    if (room.stream.up)
+                    if (room.stream.live)
                     {
                         // At least one broadcast active
                         saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
@@ -3463,7 +3463,7 @@ package:
             /++
                 Whether or not the stream is currently ongoing.
              +/
-            bool up; // = false;
+            bool live; // = false;
 
             /++
                 The numerical ID of the user/account of the channel owner. In string form.
