@@ -273,7 +273,7 @@ void onCTCPClientinfo(CTCPService service, const ref IRCEvent event)
         sink.reserve(128);  // ~95
         sink.put(responseSkeleton);
 
-        foreach (sym; service.allEventHandlerFunctionsInModule)
+        foreach (sym; service.Introspection.allEventHandlerFunctionsInModule)
         {
             static foreach (immutable type; getUDAs!(sym, IRCEventHandler)[0]._acceptedEventTypes)
             {{

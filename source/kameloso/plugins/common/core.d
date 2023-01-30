@@ -347,13 +347,48 @@ mixin template IRCPluginImpl(
     }
     else
     {
+        /++
+            Marker declaring that [kameloso.plugins.common.core.IRCPluginImpl|IRCPluginImpl]
+            has been mixed in.
+         +/
         private enum hasIRCPluginImpl = true;
     }
 
     mixin("private static import thisModule = ", module_, ";");
 
-    private alias allEventHandlerFunctionsInModule =
-        Filter!(isSomeFunction, getSymbolsByUDA!(thisModule, IRCEventHandler));
+    // Introspection
+    /++
+        Namespace for the alias sequences of all event handler functions in this
+        module, as well as the one of all [kameloso.plugins.common.core.IRCEventHandler|IRCEventHandler]
+        annotations in the module.
+     +/
+    static struct Introspection
+    {
+        /++
+            Alias sequence of all top-level symbols annotated with
+            [kameloso.plugins.common.core.IRCEventHandler|IRCEventHandler]s
+            in this module.
+         +/
+        alias allEventHandlerFunctionsInModule = getSymbolsByUDA!(thisModule, IRCEventHandler);
+
+        /++
+            Alias sequence of all
+            [kameloso.plugins.common.core.IRCEventHandler|IRCEventHandler]s
+            that are annotations of the symbols in [allEventHandlerFunctionsInModule].
+         +/
+        static immutable allEventHandlerUDAsInModule = ()
+        {
+            IRCEventHandler[] udas;
+            udas.length = allEventHandlerFunctionsInModule.length;
+
+            foreach (immutable i, fun; allEventHandlerFunctionsInModule)
+            {
+                udas[i] = getUDAs!(fun, IRCEventHandler)[0];
+            }
+
+            return udas;
+        }();
+    }
 
     @safe:
 
@@ -372,40 +407,45 @@ mixin template IRCPluginImpl(
      +/
     override public bool isEnabled() const @property pure nothrow @nogc
     {
+        import kameloso.traits : udaIndexOf;
+
         bool retval = true;
 
         top:
         foreach (immutable i, _; this.tupleof)
         {
-            import std.traits : hasUDA;
-
-            static if (
-                is(typeof(this.tupleof[i]) == struct) &&
-                (hasUDA!(typeof(this.tupleof[i]), Settings) ||
-                    hasUDA!(this.tupleof[i], Settings)))
+            static if (is(typeof(this.tupleof[i]) == struct))
             {
-                foreach (immutable n, _2; this.tupleof[i].tupleof)
+                enum typeUDAIndex = udaIndexOf!(typeof(this.tupleof[i]), Settings);
+                enum valueUDAIndex = udaIndexOf!(this.tupleof[i], Settings);
+
+                static if ((typeUDAIndex != -1) || (valueUDAIndex != -1))
                 {
-                    static if (hasUDA!(this.tupleof[i].tupleof[n], Enabler))
+                    foreach (immutable n, _2; this.tupleof[i].tupleof)
                     {
-                        alias ThisEnabler = typeof(this.tupleof[i].tupleof[n]);
+                        enum enablerUDAIndex = udaIndexOf!(this.tupleof[i].tupleof[n], Enabler);
 
-                        static if (!is(ThisEnabler : bool))
+                        static if (enablerUDAIndex != -1)
                         {
-                            import std.format : format;
-                            import std.traits : Unqual;
+                            alias ThisEnabler = typeof(this.tupleof[i].tupleof[n]);
 
-                            alias UnqualThis = Unqual!(typeof(this));
-                            enum pattern = "`%s` has a non-bool `Enabler`: `%s %s`";
-                            enum message = pattern.format(
-                                UnqualThis.stringof,
-                                ThisEnabler.stringof,
-                                __traits(identifier, this.tupleof[i].tupleof[n]));
-                            static assert(0, message);
+                            static if (!is(ThisEnabler : bool))
+                            {
+                                import std.format : format;
+                                import std.traits : Unqual;
+
+                                alias UnqualThis = Unqual!(typeof(this));
+                                enum pattern = "`%s` has a non-bool `Enabler`: `%s %s`";
+                                enum message = pattern.format(
+                                    UnqualThis.stringof,
+                                    ThisEnabler.stringof,
+                                    __traits(identifier, this.tupleof[i].tupleof[n]));
+                                static assert(0, message);
+                            }
+
+                            retval = this.tupleof[i].tupleof[n];
+                            break top;
                         }
-
-                        retval = this.tupleof[i].tupleof[n];
-                        break top;
                     }
                 }
             }
@@ -531,6 +571,8 @@ mixin template IRCPluginImpl(
      +/
     private void onEventImpl(/*const ref*/ IRCEvent origEvent) @system
     {
+        import kameloso.plugins.common.core : Timing;
+
         // udaSanityCheck
         /++
             Verifies that annotations are as expected.
@@ -1185,161 +1227,96 @@ mixin template IRCPluginImpl(
 
         // tryProcess
         /++
-            Wrap all the functions in the passed `funlist` in try-catch blocks.
+            Try a function.
          +/
-        void tryProcess(funlist...)(ref IRCEvent event)
+        NextStep tryProcess(size_t i)(ref IRCEvent event)
         {
-            static if (__VERSION__ < 2096L)
+            import std.algorithm.searching : canFind;
+
+            immutable uda = this.Introspection.allEventHandlerUDAsInModule[i];
+            alias fun = this.Introspection.allEventHandlerFunctionsInModule[i];
+
+            enum verbose = (uda._verbose || debug_);
+            enum funName = module_ ~ '.' ~ __traits(identifier, fun);
+
+            debug static assert(udaSanityCheck!(fun, uda),
+                "`" ~ funName ~ "` UDA sanity check failed.");
+
+            // Make a special check for IRCEvent.Type.ANY at compile-time,
+            // so the processing function won't have to walk the array twice
+            enum acceptsAnyType = uda._acceptedEventTypes.canFind(IRCEvent.Type.ANY);
+
+            try
             {
-                /+
-                    Pre-2.096 needs an ugly workaround so as to not allocate an
-                    array literal every `tryProcess`. 2.096 and onward can make the
-                    UDA a static immutable, but this throws an error on the older
-                    compilers; "Declaration uda is already defined in another scope".
-                    Making them enums means we get enums of dynamic arrays, and
-                    the array literal allocations that entails. We really need
-                    them to be static immutable at some level.
+                immutable next = process!(verbose, cast(bool)uda._fiber)
+                    (&fun, funName, uda, event, acceptsAnyType);
 
-                    So compose an array of all UDAs in this funlist, as static
-                    immutables, at compile-time. It seems to work.
-                 +/
-                static immutable ctUDAArray = ()
+                if (next == NextStep.continue_)
                 {
-                    IRCEventHandler[] udas;
-                    if (!__ctfe) return udas;
-
-                    udas.length = funlist.length;
-
-                    foreach (immutable i, fun; funlist)
-                    {
-                        udas[i] = getUDAs!(fun, IRCEventHandler)[0];
-                    }
-
-                    return udas;
-                }();
+                    return NextStep.continue_;
+                }
+                else if (next == NextStep.repeat)
+                {
+                    // only repeat once so we don't endlessly loop
+                    immutable newNext = process!(verbose, cast(bool)uda._fiber)
+                        (&fun, funName, uda, event, acceptsAnyType);
+                    return newNext;
+                }
+                else if (next == NextStep.return_)
+                {
+                    return NextStep.return_;
+                }
+                else /*if (next == NextStep.unset)*/
+                {
+                    assert(0, "`IRCPluginImpl.onEventImpl.process` returned `Next.unset`");
+                }
             }
-
-            foreach (immutable i, fun; funlist)
+            catch (Exception e)
             {
-                import std.algorithm.searching : canFind;
+                /*enum pattern = "tryProcess some exception on <l>%s</>: <l>%s";
+                logger.warningf(pattern, funName, e);*/
 
-                static if (__VERSION__ >= 2096L)
+                import std.utf : UTFException;
+                import core.exception : UnicodeException;
+
+                immutable isRecoverableException =
+                    (cast(UnicodeException)e !is null) ||
+                    (cast(UTFException)e !is null);
+
+                if (!isRecoverableException) throw e;
+
+                sanitiseEvent(event);
+
+                // Copy-paste, not much we can do otherwise
+                immutable next = process!(verbose, cast(bool)uda._fiber)
+                    (&fun, funName, uda, event, acceptsAnyType);
+
+                if (next == NextStep.continue_)
                 {
-                    import std.traits : getUDAs;
-
-                    alias handlerAnnotations = getUDAs!(fun, IRCEventHandler);
-
-                    static if (handlerAnnotations.length != 1)
-                    {
-                        import std.format : format;
-
-                        enum fqn = module_ ~ '.' ~ __traits(identifier, fun);
-                        enum pattern = "`%s` may only be annotated with one and only one `IRCEventHandler`";
-                        enum message = pattern.format(fqn);
-                        static assert(0, message);
-                    }
-
-                    static immutable uda = handlerAnnotations[0];
+                    return NextStep.continue_;
                 }
-                else
+                else if (next == NextStep.repeat)
                 {
-                    // Can't use static immutables before 2.096
-                    // "Declaration uda is already defined in another scope"
-                    // See `ctUDAArray` above.
-                    immutable uda = ctUDAArray[i];
-                }
-
-                enum verbose = (uda._verbose || debug_);
-                enum funName = module_ ~ '.' ~ __traits(identifier, fun);
-
-                static assert(udaSanityCheck!(fun, uda),
-                    funName ~ " UDA sanity check failed.");
-
-                // Make a special check for IRCEvent.Type.ANY at compile-time,
-                // so the processing function won't have to walk the array twice
-                enum acceptsAnyType = uda._acceptedEventTypes.canFind(IRCEvent.Type.ANY);
-
-                try
-                {
-                    immutable next = process!(verbose, cast(bool)uda._fiber)
+                    // only repeat once so we don't endlessly loop
+                    immutable newNext = process!(verbose, cast(bool)uda._fiber)
                         (&fun, funName, uda, event, acceptsAnyType);
-
-                    if (next == NextStep.continue_)
-                    {
-                        continue;
-                    }
-                    else if (next == NextStep.repeat)
-                    {
-                        // only repeat once so we don't endlessly loop
-                        if (process!(verbose, cast(bool)uda._fiber)
-                            (&fun, funName, uda, event, acceptsAnyType) == NextStep.continue_)
-                        {
-                            continue;
-                        }
-                        else
-                        {
-                            return;
-                        }
-                    }
-                    else if (next == NextStep.return_)
-                    {
-                        return;
-                    }
-                    else /*if (next == NextStep.unset)*/
-                    {
-                        assert(0, "`IRCPluginImpl.onEventImpl.process` returned `Next.unset`");
-                    }
+                    return newNext;
                 }
-                catch (Exception e)
+                else if (next == NextStep.return_)
                 {
-                    /*enum pattern = "tryProcess some exception on <l>%s</>: <l>%s";
-                    logger.warningf(pattern, funName, e);*/
-
-                    import std.utf : UTFException;
-                    import core.exception : UnicodeException;
-
-                    immutable isRecoverableException =
-                        (cast(UnicodeException)e !is null) ||
-                        (cast(UTFException)e !is null);
-
-                    if (!isRecoverableException) throw e;
-
-                    sanitiseEvent(event);
-
-                    // Copy-paste, not much we can do otherwise
-                    immutable next = process!(verbose, cast(bool)uda._fiber)
-                        (&fun, funName, uda, event, acceptsAnyType);
-
-                    if (next == NextStep.continue_)
-                    {
-                        continue;
-                    }
-                    else if (next == NextStep.repeat)
-                    {
-                        // only repeat once so we don't endlessly loop
-                        if (process!(verbose, cast(bool)uda._fiber)
-                            (&fun, funName, uda, event, acceptsAnyType) == NextStep.continue_)
-                        {
-                            continue;
-                        }
-                        else
-                        {
-                            return;
-                        }
-                    }
-                    else if (next == NextStep.return_)
-                    {
-                        return;
-                    }
-                    else /*if (next == NextStep.unset)*/
-                    {
-                        assert(0, "`IRCPluginImpl.onEventImpl.process` returned `Next.unset`");
-                    }
+                    return NextStep.return_;
+                }
+                else /*if (next == NextStep.unset)*/
+                {
+                    assert(0, "`IRCPluginImpl.onEventImpl.process` returned `Next.unset`");
                 }
             }
         }
 
-        static if (!this.allEventHandlerFunctionsInModule.length)
+        /+
+            Perform some sanity checks to make sure nothing is broken.
+         +/
+        static if (!this.Introspection.allEventHandlerFunctionsInModule.length)
         {
             version(unittest)
             {
@@ -1372,18 +1349,32 @@ mixin template IRCPluginImpl(
             }
         }
 
-        enum isSetupFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.setup);
-        enum isEarlyFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.early);
-        enum isLateFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.late);
-        enum isCleanupFun(alias T) = (getUDAs!(T, IRCEventHandler)[0]._when == Timing.cleanup);
-        alias hasSpecialTiming = templateOr!(isSetupFun, isEarlyFun, isLateFun, isCleanupFun);
-        alias isNormalEventHandler = templateNot!hasSpecialTiming;
+        // funIndexByTiming
+        /++
+            Populates an array with indices of functions in `allEventHandlerUDAsInModule`
+            that were annotated with an [IRCEventHandler] with a [Timing] matching
+            the one supplied.
+         +/
+        auto funIndexByTiming(const Timing timing)
+        {
+            size_t[] indexes;
 
-        alias setupFuns = Filter!(isSetupFun, this.allEventHandlerFunctionsInModule);
-        alias earlyFuns = Filter!(isEarlyFun, this.allEventHandlerFunctionsInModule);
-        alias lateFuns = Filter!(isLateFun, this.allEventHandlerFunctionsInModule);
-        alias cleanupFuns = Filter!(isCleanupFun, this.allEventHandlerFunctionsInModule);
-        alias pluginFuns = Filter!(isNormalEventHandler, this.allEventHandlerFunctionsInModule);
+            static foreach (immutable i; 0..this.Introspection.allEventHandlerUDAsInModule.length)
+            {
+                if (this.Introspection.allEventHandlerUDAsInModule[i]._when == timing) indexes ~= i;
+            }
+
+            return indexes;
+        }
+
+        /+
+            Build index arrays, either as enums or static immutables.
+         +/
+        static immutable setupFunIndexes = funIndexByTiming(Timing.setup);
+        static immutable earlyFunIndexes = funIndexByTiming(Timing.early);
+        static immutable lateFunIndexes = funIndexByTiming(Timing.late);
+        static immutable cleanupFunIndexes = funIndexByTiming(Timing.cleanup);
+        static immutable normalFunIndexes = funIndexByTiming(Timing.untimed);
 
         /+
             It seems we can't trust mixed-in awareness functions to actually get
@@ -1392,11 +1383,11 @@ mixin template IRCPluginImpl(
          +/
         static if (__traits(compiles, { alias _ = .hasMinimalAuthentication; }))
         {
-            static if (!earlyFuns.length)
+            static if (!earlyFunIndexes.length)
             {
                 import std.format : format;
 
-                enum pattern = "Module `%s` mixes in `MinimalAwareness`, " ~
+                enum pattern = "Module `%s` mixes in `MinimalAuthentication`, " ~
                     "yet no `Timing.early` functions were found during introspection. " ~
                     "Try moving the mixin site to earlier in the module.";
                 immutable message = pattern.format(module_);
@@ -1406,7 +1397,7 @@ mixin template IRCPluginImpl(
 
         static if (__traits(compiles, { alias _ = .hasUserAwareness; }))
         {
-            static if (!cleanupFuns.length)
+            static if (!cleanupFunIndexes.length)
             {
                 import std.format : format;
 
@@ -1420,7 +1411,7 @@ mixin template IRCPluginImpl(
 
         static if (__traits(compiles, { alias _ = .hasChannelAwareness; }))
         {
-            static if (!lateFuns.length)
+            static if (!lateFunIndexes.length)
             {
                 import std.format : format;
 
@@ -1432,11 +1423,44 @@ mixin template IRCPluginImpl(
             }
         }
 
-        tryProcess!setupFuns(origEvent);
-        tryProcess!earlyFuns(origEvent);
-        tryProcess!pluginFuns(origEvent);
-        tryProcess!lateFuns(origEvent);
-        tryProcess!cleanupFuns(origEvent);
+        alias allFunIndexes = AliasSeq!(
+            setupFunIndexes,
+            earlyFunIndexes,
+            normalFunIndexes,
+            lateFunIndexes,
+            cleanupFunIndexes,
+        );
+
+        /+
+            Process all functions.
+         +/
+        static foreach (funIndexes; allFunIndexes)
+        {{
+            bool doneWithGroup;
+
+            static foreach (immutable i; funIndexes)
+            {
+                if (!doneWithGroup)
+                {
+                    immutable next = tryProcess!i(origEvent);
+
+                    if (next == NextStep.return_)
+                    {
+                        doneWithGroup = true;
+                    }
+                    else if (next == NextStep.repeat)
+                    {
+                        immutable newNext = tryProcess!i(origEvent);
+
+                        // Only repeat once
+                        if (newNext == NextStep.return_)
+                        {
+                            doneWithGroup = true;
+                        }
+                    }
+                }
+            }
+        }}
     }
 
     // this(IRCPluginState)
@@ -1456,7 +1480,6 @@ mixin template IRCPluginImpl(
     public this(IRCPluginState state) @system
     {
         import lu.traits : isSerialisable;
-        import std.traits : hasUDA;
 
         enum numEventTypes = __traits(allMembers, IRCEvent.Type).length;
 
@@ -1479,13 +1502,17 @@ mixin template IRCPluginImpl(
         {
             static if (isSerialisable!member)
             {
+                import kameloso.traits : udaIndexOf;
                 import std.path : buildNormalizedPath;
 
-                static if (hasUDA!(this.tupleof[i], Resource))
+                enum resourceUDAIndex = udaIndexOf!(this.tupleof[i], Resource);
+                enum configurationUDAIndex = udaIndexOf!(this.tupleof[i], Configuration);
+
+                static if (resourceUDAIndex != -1)
                 {
                     member = buildNormalizedPath(state.settings.resourceDirectory, member);
                 }
-                else static if (hasUDA!(this.tupleof[i], Configuration))
+                else static if (configurationUDAIndex != -1)
                 {
                     member = buildNormalizedPath(state.settings.configDirectory, member);
                 }
@@ -1609,29 +1636,33 @@ mixin template IRCPluginImpl(
         out string[][string] invalidEntries)
     {
         import kameloso.configreader : readConfigInto;
+        import kameloso.traits : udaIndexOf;
         import lu.meld : meldInto;
-        import std.traits : hasUDA;
 
         foreach (immutable i, ref symbol; this.tupleof)
         {
-            static if (
-                is(typeof(this.tupleof[i]) == struct) &&
-                (hasUDA!(typeof(this.tupleof[i]), Settings) ||
-                    hasUDA!(this.tupleof[i], Settings)))
+            static if (is(typeof(this.tupleof[i]) == struct))
             {
-                if (symbol != typeof(symbol).init)
+                enum typeUDAIndex = udaIndexOf!(typeof(this.tupleof[i]), Settings);
+                enum valueUDAIndex = udaIndexOf!(this.tupleof[i], Settings);
+
+                static if ((typeUDAIndex != -1) || (valueUDAIndex != -1))
                 {
-                    // This symbol has had configuration applied to it already
-                    continue;
+                    if (symbol != typeof(symbol).init)
+                    {
+                        // This symbol has had configuration applied to it already
+                        continue;
+                    }
+
+                    string[][string] theseMissingEntries;
+                    string[][string] theseInvalidEntries;
+
+                    configFile.readConfigInto(theseMissingEntries, theseInvalidEntries, symbol);
+
+                    theseMissingEntries.meldInto(missingEntries);
+                    theseInvalidEntries.meldInto(invalidEntries);
+                    break;
                 }
-
-                string[][string] theseMissingEntries;
-                string[][string] theseInvalidEntries;
-
-                configFile.readConfigInto(theseMissingEntries, theseInvalidEntries, symbol);
-
-                theseMissingEntries.meldInto(missingEntries);
-                theseInvalidEntries.meldInto(invalidEntries);
             }
         }
     }
@@ -1667,20 +1698,23 @@ mixin template IRCPluginImpl(
      +/
     override public bool setSettingByName(const string setting, const string value)
     {
+        import kameloso.traits : udaIndexOf;
         import lu.objmanip : setMemberByName;
-        import std.traits : hasUDA;
 
         bool success;
 
         foreach (immutable i, ref symbol; this.tupleof)
         {
-            static if (
-                is(typeof(this.tupleof[i]) == struct) &&
-                (hasUDA!(typeof(this.tupleof[i]), Settings) ||
-                    hasUDA!(this.tupleof[i], Settings)))
+            static if (is(typeof(this.tupleof[i]) == struct))
             {
-                success = symbol.setMemberByName(setting, value);
-                break;
+                enum typeUDAIndex = udaIndexOf!(typeof(this.tupleof[i]), Settings);
+                enum valueUDAIndex = udaIndexOf!(this.tupleof[i], Settings);
+
+                static if ((typeUDAIndex != -1) || (valueUDAIndex != -1))
+                {
+                    success = symbol.setMemberByName(setting, value);
+                    break;
+                }
             }
         }
 
@@ -1694,18 +1728,21 @@ mixin template IRCPluginImpl(
     override public void printSettings() const
     {
         import kameloso.printing : printObject;
-        import std.traits : hasUDA;
+        import kameloso.traits : udaIndexOf;
 
         foreach (immutable i, const ref symbol; this.tupleof)
         {
-            static if (
-                is(typeof(this.tupleof[i]) == struct) &&
-                (hasUDA!(typeof(this.tupleof[i]), Settings) ||
-                    hasUDA!(this.tupleof[i], Settings)))
+            static if (is(typeof(this.tupleof[i]) == struct))
             {
-                import std.typecons : No, Yes;
-                printObject!(No.all)(symbol);
-                break;
+                enum typeUDAIndex = udaIndexOf!(typeof(this.tupleof[i]), Settings);
+                enum valueUDAIndex = udaIndexOf!(this.tupleof[i], Settings);
+
+                static if ((typeUDAIndex != -1) || (valueUDAIndex != -1))
+                {
+                    import std.typecons : No, Yes;
+                    printObject!(No.all)(symbol);
+                    break;
+                }
             }
         }
     }
@@ -1733,22 +1770,25 @@ mixin template IRCPluginImpl(
      +/
     override public bool serialiseConfigInto(ref Appender!(char[]) sink) const
     {
-        import std.traits : hasUDA;
+        import kameloso.traits : udaIndexOf;
 
         bool didSomething;
 
         foreach (immutable i, ref symbol; this.tupleof)
         {
-            static if (
-                is(typeof(this.tupleof[i]) == struct) &&
-                (hasUDA!(typeof(this.tupleof[i]), Settings) ||
-                    hasUDA!(this.tupleof[i], Settings)))
+            static if (is(typeof(this.tupleof[i]) == struct))
             {
-                import lu.serialisation : serialise;
+                enum typeUDAIndex = udaIndexOf!(typeof(this.tupleof[i]), Settings);
+                enum valueUDAIndex = udaIndexOf!(this.tupleof[i], Settings);
 
-                sink.serialise(symbol);
-                didSomething = true;
-                break;
+                static if ((typeUDAIndex != -1) || (valueUDAIndex != -1))
+                {
+                    import lu.serialisation : serialise;
+
+                    sink.serialise(symbol);
+                    didSomething = true;
+                    break;
+                }
             }
         }
 
@@ -1903,7 +1943,7 @@ mixin template IRCPluginImpl(
             IRCPlugin.CommandMetadata[string] commandAA;
             if (!__ctfe) return commandAA;
 
-            foreach (fun; this.allEventHandlerFunctionsInModule)
+            foreach (fun; this.Introspection.allEventHandlerFunctionsInModule)
             {
                 immutable uda = getUDAs!(fun, IRCEventHandler)[0];
 
@@ -2822,9 +2862,9 @@ enum Permissions
 enum Timing
 {
     /++
-        Unset.
+        No timing.
      +/
-    unset,
+    untimed,
 
     /++
         To be executed during setup; the first thing to happen.
