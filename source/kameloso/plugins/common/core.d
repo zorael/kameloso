@@ -1333,18 +1333,11 @@ mixin template IRCPluginImpl(
                 }
                 else
                 {
-                    import kameloso.plugins.common.core : PluginModuleInfo;
-
-                    alias PluginModule = PluginModuleInfo!module_;
-
-                    static if (PluginModule.hasPluginClass)
-                    {
-                        enum message = "Warning: `IRCPlugin` subclass `" ~ PluginModule.className ~
-                            "` in module `" ~ module_ ~ "` mixes in `IRCPluginImpl`, but there " ~
-                            "seem to be no module-level event handlers. " ~
-                            "Verify `IRCEventHandler` annotations";
-                        pragma(msg, message);
-                    }
+                    enum message = "Warning: Module `" ~ module_ ~
+                        "` mixes in `IRCPluginImpl`, but there " ~
+                        "seem to be no module-level event handlers. " ~
+                        "Verify `IRCEventHandler` annotations";
+                    pragma(msg, message);
                 }
             }
         }
