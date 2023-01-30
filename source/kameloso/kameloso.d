@@ -423,7 +423,7 @@ public:
     void initPlugins() @system
     {
         import kameloso.plugins : instantiatePlugins;
-        import kameloso.plugins.common.core : IRCPluginState, PluginModuleInfo;
+        import kameloso.plugins.common.core : IRCPluginState;
         import kameloso.plugins.common.misc : applyCustomSettings;
         import std.concurrency : thisTid;
 
