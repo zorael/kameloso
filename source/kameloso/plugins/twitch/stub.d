@@ -11,7 +11,7 @@ private:
 
 import kameloso.plugins.common.core;
 
-mixin ModuleRegistration;
+mixin PluginRegistration!TwitchPlugin;
 
 public:
 
