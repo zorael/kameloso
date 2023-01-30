@@ -1333,11 +1333,11 @@ mixin template IRCPluginImpl(
                 }
                 else
                 {
-                    enum message = "Warning: Module `" ~ module_ ~
+                    enum noEventHandlerMessage = "Warning: Module `" ~ module_ ~
                         "` mixes in `IRCPluginImpl`, but there " ~
                         "seem to be no module-level event handlers. " ~
                         "Verify `IRCEventHandler` annotations";
-                    pragma(msg, message);
+                    pragma(msg, noEventHandlerMessage);
                 }
             }
         }
