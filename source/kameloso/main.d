@@ -360,6 +360,29 @@ void messageFiber(ref Kameloso instance)
                 }
                 break;
 
+            case putUser:
+                import kameloso.thread : BusMessage;
+
+                auto boxedUser = cast(BusMessage!IRCUser)message.payload;
+                assert(boxedUser, "Incorrectly cast message payload: " ~ typeof(boxedUser).stringof);
+
+                auto user = boxedUser.payload;
+
+                foreach (plugin; instance.plugins)
+                {
+                    if (auto existingUser = user.nickname in plugin.state.users)
+                    {
+                        immutable prevClass = existingUser.class_;
+                        *existingUser = user;
+                        existingUser.class_ = prevClass;
+                    }
+                    else
+                    {
+                        plugin.state.users[user.nickname] = user;
+                    }
+                }
+                break;
+
             default:
                 enum pattern = "onMessage received unexpected message type: <l>%s";
                 logger.errorf(pattern, message.type);
@@ -373,7 +396,8 @@ void messageFiber(ref Kameloso instance)
             or all channel-specific soft commands (of all plugins) and calls the
             passed delegate with it as argument.
          +/
-        void peekCommands(ThreadMessage.PeekCommands,
+        void peekCommands(
+            ThreadMessage.PeekCommands,
             shared void delegate(IRCPlugin.CommandMetadata[string][string]) dg,
             string channelName) scope
         {
@@ -395,156 +419,124 @@ void messageFiber(ref Kameloso instance)
         }
 
         /++
-            Applies a `plugin.setting=value` change in setting to whichever plugin
-            matches the expression.
-         +/
-        void changeSetting(ThreadMessage.ChangeSetting,
-            shared(void delegate(bool)) dg, string expression) scope
-        {
-            import kameloso.plugins.common.misc : applyCustomSettings;
+            Does one of two things, depending on whether the passed delegates are
+            null or not.
 
-            // Borrow settings from the first plugin. It's taken by value
-            immutable success = applyCustomSettings(instance.plugins,
-                [ expression ], instance.plugins[0].state.settings);
-            dg(success);
-        }
-
-        /++
-            Overload of the above because we keep seeing both @safe and @system
-            delegates for no apparent reason.
-
-            Main thread message fiber received unknown Variant:
-            std.typecons.Tuple!(kameloso.thread.ThreadMessage.ChangeSetting,
-                shared(void delegate(bool) @safe), immutable(char)[]).Tuple
-         +/
-        void changeSettingSafeDg(ThreadMessage.ChangeSetting,
-            shared(void delegate(bool) @safe) dg, string expression) scope
-        {
-            changeSetting(ThreadMessage.ChangeSetting(),
-                cast(shared(void delegate(bool)))dg, expression);
-        }
-
-        /++
-            Fetches the configured value of a setting if given a `plugin.setting`
+            Either: fetches the configured value of a setting if given a `plugin.setting`
             expression, or a list of all available configuration settings if
             given only a `plugin`.
+
+            Or: applies a `plugin.setting=value` change in setting to whichever plugin
+            matches the expression.
          +/
-        void getSetting(
-            ThreadMessage.GetSetting,
-            shared(void delegate(string, string, string)) dg,
+        void getOrSetSetting(
+            ThreadMessage.GetOrSetSetting,
+            shared(void delegate(string, string, string)) getDg,
+            shared(void delegate(bool)) setDg,
             string expression) scope
         {
-            import lu.string : beginsWith, contains, nom;
-            import std.array : Appender;
-            import std.algorithm.iteration : splitter;
-
-            string slice = expression;  // mutable
-            immutable specifiedPlugin = slice.nom!(Yes.inherit)('.');
-            alias specifiedSetting = slice;
-
-            Appender!(char[]) sink;
-            sink.reserve(256);  // guesstimate
-
-            void apply()
+            if (getDg)
             {
-                if (specifiedSetting.length)
-                {
-                    import lu.string : strippedLeft;
+                import lu.string : beginsWith, contains, nom;
+                import std.array : Appender;
+                import std.algorithm.iteration : splitter;
 
-                    foreach (const line; sink.data.splitter('\n'))
+                string slice = expression;  // mutable
+                immutable specifiedPlugin = slice.nom!(Yes.inherit)('.');
+                alias specifiedSetting = slice;
+
+                Appender!(char[]) sink;
+                sink.reserve(256);  // guesstimate
+
+                void apply()
+                {
+                    if (specifiedSetting.length)
                     {
-                        string lineslice = cast(string)line;  // need a string for nom and strippedLeft...
-                        if (lineslice.beginsWith('#')) lineslice = lineslice[1..$];
-                        const thisSetting = lineslice.nom!(Yes.inherit)(' ');
+                        import lu.string : strippedLeft;
 
-                        if (thisSetting != specifiedSetting) continue;
+                        foreach (const line; sink.data.splitter('\n'))
+                        {
+                            string lineslice = cast(string)line;  // need a string for nom and strippedLeft...
+                            if (lineslice.beginsWith('#')) lineslice = lineslice[1..$];
+                            const thisSetting = lineslice.nom!(Yes.inherit)(' ');
 
-                        const value = lineslice.strippedLeft;
-                        return dg(specifiedPlugin, specifiedSetting, value);
+                            if (thisSetting != specifiedSetting) continue;
+
+                            const value = lineslice.strippedLeft;
+                            return getDg(specifiedPlugin, specifiedSetting, value);
+                        }
                     }
-                }
-                else
-                {
-                    import std.conv : text;
-
-                    string[] allSettings;
-
-                    foreach (const line; sink.data.splitter('\n'))
+                    else
                     {
-                        string lineslice = cast(string)line;  // need a string for nom and strippedLeft...
-                        if (!lineslice.beginsWith('[')) allSettings ~= lineslice.nom!(Yes.inherit)(' ');
+                        import std.conv : text;
+
+                        string[] allSettings;
+
+                        foreach (const line; sink.data.splitter('\n'))
+                        {
+                            string lineslice = cast(string)line;  // need a string for nom and strippedLeft...
+                            if (!lineslice.beginsWith('[')) allSettings ~= lineslice.nom!(Yes.inherit)(' ');
+                        }
+
+                        return getDg(specifiedPlugin, string.init, allSettings.text);
                     }
 
-                    return dg(specifiedPlugin, string.init, allSettings.text);
+                    // If we're here, no such setting was found
+                    return getDg(specifiedPlugin, string.init, string.init);
                 }
 
-                // If we're here, no such setting was found
-                return dg(specifiedPlugin, string.init, string.init);
-            }
-
-            switch (specifiedPlugin)
-            {
-            case "core":
-                import lu.serialisation : serialise;
-                sink.serialise(instance.settings);
-                return apply();
-
-            case "connection":
-                // May leak secrets? certFile, privateKey etc...
-                // Careful with how we make this functionality available
-                import lu.serialisation : serialise;
-                sink.serialise(instance.connSettings);
-                return apply();
-
-            default:
-                foreach (plugin; instance.plugins)
+                switch (specifiedPlugin)
                 {
-                    if (plugin.name != specifiedPlugin) continue;
-                    plugin.serialiseConfigInto(sink);
+                case "core":
+                    import lu.serialisation : serialise;
+                    sink.serialise(instance.settings);
                     return apply();
-                }
 
-                // If we're here, no plugin was found
-                return dg(string.init, string.init, string.init);
+                case "connection":
+                    // May leak secrets? certFile, privateKey etc...
+                    // Careful with how we make this functionality available
+                    import lu.serialisation : serialise;
+                    sink.serialise(instance.connSettings);
+                    return apply();
+
+                default:
+                    foreach (plugin; instance.plugins)
+                    {
+                        if (plugin.name != specifiedPlugin) continue;
+                        plugin.serialiseConfigInto(sink);
+                        return apply();
+                    }
+
+                    // If we're here, no plugin was found
+                    return getDg(string.init, string.init, string.init);
+                }
+            }
+            else /*if (setDg)*/
+            {
+                import kameloso.plugins.common.misc : applyCustomSettings;
+
+                // Borrow settings from the first plugin. It's taken by value
+                immutable success = applyCustomSettings(instance.plugins,
+                    [ expression ], instance.plugins[0].state.settings);
+                return setDg(success);
             }
         }
 
         /++
             Overload of the above because we keep seeing both @safe and @system
             delegates for no apparent reason.
-
-            Main thread message fiber received unknown Variant:
-            std.typecons.Tuple!(kameloso.thread.ThreadMessage.GetSetting,
-                shared(void delegate(immutable(char)[], immutable(char)[],
-                immutable(char)[])), immutable(char)[]).Tuple
          +/
-        void getSettingSafeDg(ThreadMessage.ChangeSetting,
-            shared(void delegate(string, string, string) @safe) dg, string expression) scope
+        void getOrSetSettingSafeDg(
+            ThreadMessage.GetOrSetSetting,
+            shared(void delegate(string, string, string) @safe) getDg,
+            shared(void delegate(bool) @safe) setDg,
+            string expression) scope
         {
-            getSetting(ThreadMessage.GetSetting(),
-                cast(shared(void delegate(string, string, string)))dg, expression);
-        }
-
-        /++
-            Puts an [dialect.defs.IRCUser|IRCUser] into each plugin's (and service's)
-            [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users]
-            associative array.
-         +/
-        void putUser(ThreadMessage.PutUser, IRCUser user) scope
-        {
-            foreach (plugin; instance.plugins)
-            {
-                if (auto existingUser = user.nickname in plugin.state.users)
-                {
-                    immutable prevClass = existingUser.class_;
-                    *existingUser = user;
-                    existingUser.class_ = prevClass;
-                }
-                else
-                {
-                    plugin.state.users[user.nickname] = user;
-                }
-            }
+            getOrSetSetting(
+                ThreadMessage.GetOrSetSetting(),
+                cast(shared(void delegate(string, string, string)))getDg,
+                cast(shared(void delegate(bool)))setDg,
+                expression);
         }
 
         /// Reverse-formats an event and sends it to the server.
@@ -877,11 +869,8 @@ void messageFiber(ref Kameloso instance)
                 &eventToServer,
                 &proxyLoggerMessages,
                 &peekCommands,
-                &changeSetting,
-                &changeSettingSafeDg,
-                &getSetting,
-                &getSettingSafeDg,
-                &putUser,
+                &getOrSetSetting,
+                &getOrSetSettingSafeDg,
                 (Variant v) scope
                 {
                     // Caught an unhandled message

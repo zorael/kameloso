@@ -861,7 +861,11 @@ void onCommandSet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         }
     }
 
-    plugin.state.mainThread.send(ThreadMessage.ChangeSetting(), cast(shared)&dg, event.content);
+    plugin.state.mainThread.send(
+        ThreadMessage.GetOrSetSetting(),
+        cast(shared(void delegate(string, string, string)))null,
+        cast(shared)&dg,
+        event.content);
 }
 
 
@@ -925,7 +929,11 @@ void onCommandGet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         }
     }
 
-    plugin.state.mainThread.send(ThreadMessage.GetSetting(), cast(shared)&dg, event.content);
+    plugin.state.mainThread.send(
+        ThreadMessage.GetOrSetSetting(),
+        cast(shared)&dg,
+        cast(shared(void delegate(bool)))null,
+        event.content);
 }
 
 
@@ -1383,7 +1391,11 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             if (success) logger.log("Setting changed.");
         }
 
-        return plugin.state.mainThread.send(ThreadMessage.ChangeSetting(), cast(shared)&dg, slice);
+        return plugin.state.mainThread.send(
+            ThreadMessage.GetOrSetSetting(),
+            cast(shared(void delegate(string, string, string)))null,
+            cast(shared)&dg,
+            slice);
 
     case "save":
         import kameloso.thread : ThreadMessage;

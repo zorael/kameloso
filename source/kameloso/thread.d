@@ -213,6 +213,13 @@ struct ThreadMessage
             start with the `--set` parameter.
          +/
         popCustomSetting,
+
+        /++
+            Request to put an [dialect.defs.IRCUser|IRCUser] into each plugin's (and service's)
+            [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users]
+            associative array.
+         +/
+        putUser,
     }
 
     /++
@@ -242,23 +249,10 @@ struct ThreadMessage
     static struct PeekCommands {}
 
     /++
+        Concurrency message asking to get one or all settings of a given plugin.
         Concurrency message asking to apply an expression to change a setting of a plugin.
      +/
-    static struct ChangeSetting {}
-
-    /++
-        Concurrency message asking to get one or all settings of a given plugin.
-     +/
-    static struct GetSetting {}
-
-    /++
-        Concurrency message asking to put an [dialect.defs.IRCUser|IRCUser]
-        into each plugin's (and service's)
-        [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users]
-        associative array.
-
-     +/
-    static struct PutUser {}
+    static struct GetOrSetSetting {}
 
     /+
         Generate a static function for each [Type].
