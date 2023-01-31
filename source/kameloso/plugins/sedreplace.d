@@ -571,7 +571,7 @@ void onQuit(SedReplacePlugin plugin, const ref IRCEvent event)
 
 
 mixin MinimalAuthentication;
-mixin ModuleRegistration;
+mixin PluginRegistration!SedReplacePlugin;
 
 public:
 

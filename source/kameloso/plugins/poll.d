@@ -49,9 +49,9 @@ import core.time : Duration;
     bool forbidPrefixedChoices = true;
 
     /++
-        Whether or not only users who have authenticated with services may vote.
+        User level required to vote.
      +/
-    bool onlyRegisteredMayVote = false;
+    IRCUser.Class minimumPermissionsNeeded = IRCUser.Class.anyone;
 }
 
 
@@ -345,7 +345,7 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
     }
 
     poll.start = Clock.currTime;
-    poll.uniqueID = uniform(1, 10_000);
+    poll.uniqueID = uniform(1, uint.max);
     poll.voteCounts = choicesVoldemort.choices;
     poll.origChoiceNames = choicesVoldemort.origChoiceNames;
     poll.sortedChoices = poll.voteCounts
@@ -513,8 +513,7 @@ void generatePollFiber(
                 continue;
             }
 
-            if (plugin.pollSettings.onlyRegisteredMayVote &&
-                (thisEvent.sender.class_ < IRCUser.Class.registered))
+            if (thisEvent.sender.class_ < plugin.pollSettings.minimumPermissionsNeeded)
             {
                 // User not authorised to vote. Yield and await a new event
                 Fiber.yield();
@@ -1011,7 +1010,7 @@ void teardown(PollPlugin plugin)
 
 
 mixin MinimalAuthentication;
-mixin ModuleRegistration;
+mixin PluginRegistration!PollPlugin;
 
 public:
 

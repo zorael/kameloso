@@ -75,12 +75,12 @@ private:
     }
 
 
-    // privateConnectionID
+    // _connectionID
     /++
         Numeric ID of the current connection, to disambiguate between multiple
         connections in one program run. Private value.
      +/
-    shared static uint privateConnectionID;
+    shared static uint _connectionID;
 
 
 public:
@@ -234,6 +234,19 @@ public:
     string[] customSettings;
 
 
+    version(Callgrind)
+    {
+        // callgrindRunning
+        /++
+            Flag to keep record of whether or not the program is run under the
+            Callgrind profiler.
+
+            Assume it is until proven otherwise.
+         +/
+        bool callgrindRunning = true;
+    }
+
+
     // this(this)
     /// Never copy this.
     @disable this(this);
@@ -250,7 +263,7 @@ public:
     pragma(inline, true)
     static auto connectionID()
     {
-        return privateConnectionID;
+        return _connectionID;
     }
 
 
@@ -266,13 +279,13 @@ public:
 
         synchronized //()
         {
-            immutable previous = privateConnectionID;
+            immutable previous = _connectionID;
 
             do
             {
-                privateConnectionID = uniform(1, 1001);
+                _connectionID = uniform(1, uint.max);
             }
-            while (privateConnectionID == previous);
+            while (_connectionID == previous);
         }
     }
 
@@ -302,11 +315,11 @@ public:
             The time remaining until the next message may be sent, so that we
             can reschedule the next server read timeout to happen earlier.
      +/
-    double throttleline(Buffer)
+    auto throttleline(Buffer)
         (ref Buffer buffer,
         const Flag!"dryRun" dryRun = No.dryRun,
         const Flag!"sendFaster" sendFaster = No.sendFaster,
-        const Flag!"immediate" immediate = No.immediate) @system
+        const Flag!"immediate" immediate = No.immediate)
     {
         import std.datetime.systime : Clock;
 
@@ -410,7 +423,7 @@ public:
     void initPlugins() @system
     {
         import kameloso.plugins : instantiatePlugins;
-        import kameloso.plugins.common.core : IRCPluginState, PluginModuleInfo;
+        import kameloso.plugins.common.core : IRCPluginState;
         import kameloso.plugins.common.misc : applyCustomSettings;
         import std.concurrency : thisTid;
 

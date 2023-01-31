@@ -108,6 +108,7 @@ void onAnyEvent(AdminPlugin plugin, const ref IRCEvent event)
     It basically prints the matching [dialect.defs.IRCUser|IRCUsers].
  +/
 debug
+version(IncludeHeavyStuff)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
@@ -205,6 +206,7 @@ void onCommandSave(AdminPlugin plugin, const ref IRCEvent event)
     [kameloso.plugins.common.core.IRCPluginState|IRCPluginState] to the local terminal.
  +/
 debug
+version(IncludeHeavyStuff)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
@@ -859,7 +861,11 @@ void onCommandSet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         }
     }
 
-    plugin.state.mainThread.send(ThreadMessage.ChangeSetting(), cast(shared)&dg, event.content);
+    plugin.state.mainThread.send(
+        ThreadMessage.GetOrSetSetting(),
+        cast(shared(void delegate(string, string, string)))null,
+        cast(shared)&dg,
+        event.content);
 }
 
 
@@ -923,7 +929,11 @@ void onCommandGet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         }
     }
 
-    plugin.state.mainThread.send(ThreadMessage.GetSetting(), cast(shared)&dg, event.content);
+    plugin.state.mainThread.send(
+        ThreadMessage.GetOrSetSetting(),
+        cast(shared)&dg,
+        cast(shared(void delegate(bool)))null,
+        event.content);
 }
 
 
@@ -967,6 +977,7 @@ void onCommandAuth(AdminPlugin plugin)
     This can be very spammy.
  +/
 debug
+version(IncludeHeavyStuff)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
@@ -1321,13 +1332,11 @@ import kameloso.thread : Sendable;
  +/
 void onBusMessage(AdminPlugin plugin, const string header, shared Sendable content)
 {
-    if (header != "admin") return;
-
-    // Don't return if disabled, as it blocks us from re-enabling with verb set
-
-    import kameloso.printing : printObject;
     import kameloso.thread : BusMessage;
     import lu.string : contains, nom, strippedRight;
+
+    // Don't return if disabled, as it blocks us from re-enabling with verb set
+    if (header != "admin") return;
 
     auto message = cast(BusMessage!string)content;
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
@@ -1339,26 +1348,31 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
     {
     debug
     {
-        case "status":
-            return plugin.onCommandStatus();
+        version(IncludeHeavyStuff)
+        {
+            import kameloso.printing : printObject;
 
-        case "users":
-            return plugin.onCommandShowUsers();
+            case "users":
+                return plugin.onCommandShowUsers();
 
-        case "user":
-            if (const user = slice in plugin.state.users)
-            {
-                printObject(*user);
-            }
-            else
-            {
-                logger.error("No such user: <l>", slice);
-            }
-            break;
+            case "status":
+                return plugin.onCommandStatus();
 
-        case "state":
-            printObject(plugin.state);
-            break;
+            case "user":
+                if (const user = slice in plugin.state.users)
+                {
+                    printObject(*user);
+                }
+                else
+                {
+                    logger.error("No such user: <l>", slice);
+                }
+                break;
+
+            case "state":
+                printObject(plugin.state);
+                break;
+        }
 
         case "printraw":
             plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;
@@ -1377,7 +1391,11 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             if (success) logger.log("Setting changed.");
         }
 
-        return plugin.state.mainThread.send(ThreadMessage.ChangeSetting(), cast(shared)&dg, slice);
+        return plugin.state.mainThread.send(
+            ThreadMessage.GetOrSetSetting(),
+            cast(shared(void delegate(string, string, string)))null,
+            cast(shared)&dg,
+            slice);
 
     case "save":
         import kameloso.thread : ThreadMessage;
@@ -1508,7 +1526,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 
 mixin UserAwareness!omniscientChannelPolicy;
 mixin ChannelAwareness!omniscientChannelPolicy;
-mixin ModuleRegistration!(-4.priority);
+mixin PluginRegistration!(AdminPlugin, -4.priority);
 
 version(TwitchSupport)
 {

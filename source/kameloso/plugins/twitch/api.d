@@ -1278,13 +1278,13 @@ auto getUniqueNumericalID(shared QueryResponse[int] bucket)
 {
     import std.random : uniform;
 
-    int id = uniform(0, 1000);
+    int id = uniform(0, int.max);
 
     synchronized //()
     {
         while (id in bucket)
         {
-            id = uniform(0, 1000);
+            id = uniform(0, int.max);
         }
 
         bucket[id] = QueryResponse.init;  // reserve it

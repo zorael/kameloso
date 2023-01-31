@@ -809,7 +809,7 @@ unittest
 
 mixin UserAwareness!(ChannelPolicy.any);
 mixin ChannelAwareness!(ChannelPolicy.any);
-mixin ModuleRegistration!(-40.priority);
+mixin PluginRegistration!(PrinterPlugin, -40.priority);
 
 public:
 

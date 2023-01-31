@@ -1,5 +1,5 @@
 name "kameloso"
-description "IRC and Twitch bot"
+description "IRC bot with Twitch support"
 authors "JR"
 copyright "Copyright © 2016+ JR"
 homepage "https://www.github.com/zorael/kameloso"
@@ -9,6 +9,8 @@ targetType "executable"
 mainSourceFile "source/kameloso/entrypoint.d"
 dflags "-dip25" "-dip1008"
 dflags "-linkonce-templates" "-disable-verify" platform="ldc"  #"-link-defaultlib-shared=false"
+#dflags "-ftime-trace" "-ftime-trace-file=trace.json" platform="ldc"
+#postBuildCommands "tracy-import-chrome ./trace.json ./trace.tracy" platform="ldc"
 dflags "-fall-instantiations" platform="gdc"
 x:ddoxTool "scod"
 
@@ -86,6 +88,7 @@ versions \
     "GCStatsOnExit" \
     "OSXTMPDIR" \
     "TraceWhois" \
+    "IncludeHeavyStuff" \
     "PrintAccountNamesToo" \
     "PrintClassNamesToo" \
     "WithPingMonitor" \
@@ -133,6 +136,7 @@ configuration "dev" {
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
+        "IncludeHeavyStuff" \
         "WithPingMonitor"
         //"TwitchPromoteEverywhere" \
         //"TwitchCustomEmotesEverywhere" \
@@ -157,6 +161,7 @@ configuration "dev-lowmem" {
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
+        "IncludeHeavyStuff" \
         "WithPingMonitor"
         //"TwitchPromoteEverywhere" \
         //"TwitchCustomEmotesEverywhere" \
@@ -182,7 +187,8 @@ configuration "unittest" {
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
-        "OSXTMPDIR"
+        "OSXTMPDIR" \
+        "WithPingMonitor"
         //"TraceWhois" \
         //"TwitchPromoteEverywhere" \
         //"TwitchCustomEmotesEverywhere" \
@@ -205,7 +211,8 @@ configuration "unittest-lowmem" {
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
-        "OSXTMPDIR"
+        "OSXTMPDIR" \
+        "WithPingMonitor"
         //"TraceWhois" \
         //"TwitchPromoteEverywhere" \
         //"TwitchCustomEmotesEverywhere" \

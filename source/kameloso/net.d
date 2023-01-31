@@ -93,10 +93,10 @@ private:
     Socket socket4, socket6;
 
     /// Private cached send timeout setting.
-    uint privateSendTimeout;
+    uint _sendTimeout;
 
     /// Private cached received timeout setting.
-    uint privateReceiveTimeout;
+    uint _receiveTimeout;
 
     /// Private SSL context.
     SSL_CTX* sslContext;
@@ -169,12 +169,12 @@ public:
         Accessor; returns the current send timeout.
 
         Returns:
-            A copy of [privateSendTimeout].
+            A copy of [_sendTimeout].
      +/
     pragma(inline, true)
     auto sendTimeout() const @property pure @nogc nothrow
     {
-        return privateSendTimeout;
+        return _sendTimeout;
     }
 
 
@@ -189,7 +189,7 @@ public:
     void sendTimeout(const uint dur) @property
     {
         setTimeout(SocketOption.SNDTIMEO, dur);
-        privateSendTimeout = dur;
+        _sendTimeout = dur;
     }
 
     // receiveTimeout
@@ -197,12 +197,12 @@ public:
         Accessor; returns the current receive timeout.
 
         Returns:
-            A copy of [privateReceiveTimeout].
+            A copy of [_receiveTimeout].
      +/
     pragma(inline, true)
     auto receiveTimeout() const @property pure @nogc nothrow
     {
-        return privateReceiveTimeout;
+        return _receiveTimeout;
     }
 
     // sendTimeout
@@ -215,7 +215,7 @@ public:
     void receiveTimeout(const uint dur) @property
     {
         setTimeout(SocketOption.RCVTIMEO, dur);
-        privateReceiveTimeout = dur;
+        _receiveTimeout = dur;
     }
 
 
@@ -291,8 +291,8 @@ public:
             setOption(SOCKET, RCVTIMEO, Timeout.receiveMsecs.msecs);
             setOption(SOCKET, SNDTIMEO, Timeout.sendMsecs.msecs);
 
-            privateReceiveTimeout = Timeout.receiveMsecs;
-            privateSendTimeout = Timeout.sendMsecs;
+            _receiveTimeout = Timeout.receiveMsecs;
+            _sendTimeout = Timeout.sendMsecs;
             blocking = true;
         }
     }
@@ -620,8 +620,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
     {
         version(Posix)
         {
-            import core.stdc.errno : EAGAIN, ECONNRESET, EINTR, ENETDOWN,
-                ENETUNREACH, ENOTCONN, EWOULDBLOCK, errno;
+            import core.stdc.errno;
 
             // https://www-numi.fnal.gov/offline_software/srt_public_context/WebDocs/Errors/unix_system_errors.html
 
@@ -633,26 +632,29 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
                 netUnreachable = ENETUNREACH,
                 endpointNotConnected = ENOTCONN,
                 connectionReset = ECONNRESET,
+                connectionAborted = ECONNABORTED,
                 interrupted = EINTR,
             }
         }
         else version(Windows)
         {
-            import core.sys.windows.winsock2 : WSAECONNRESET, WSAEINTR, WSAENETDOWN,
-                WSAENETUNREACH, WSAENOTCONN, WSAETIMEDOUT, WSAEWOULDBLOCK, errno = WSAGetLastError;
+            import core.sys.windows.winsock2;
+
+            alias errno = WSAGetLastError;
 
             // https://www.hardhats.org/cs/broker/docs/winsock.html
             // https://infosys.beckhoff.com/english.php?content=../content/1033/tcpipserver/html/tcplclibtcpip_e_winsockerror.htm
 
             enum Errno
             {
-                //success = 0,  // "The operation completed successfully."
+                unexpectedEOF = 0,
                 timedOut = WSAETIMEDOUT,
                 wouldBlock = WSAEWOULDBLOCK,
                 netDown = WSAENETDOWN,
                 netUnreachable = WSAENETUNREACH,
                 endpointNotConnected = WSAENOTCONN,
                 connectionReset = WSAECONNRESET,
+                connectionAborted = WSAECONNABORTED,
                 interrupted = WSAEINTR,
                 overlappedIO = 997,
             }
@@ -724,14 +726,6 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
                 yield(attempt);
                 continue;
 
-            version(Windows)
-            {
-                case overlappedIO:
-                    // "Overlapped I/O operation is in progress."
-                    // seems benign
-                    goto case timedOut;
-            }
-
             static if (int(timedOut) != int(wouldBlock))
             {
                 case wouldBlock:
@@ -745,12 +739,31 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
                     goto case timedOut;
             }
 
+            version(Windows)
+            {
+                case overlappedIO:
+                    // "Overlapped I/O operation is in progress."
+                    // seems benign
+                    goto case timedOut;
+
+                case unexpectedEOF:
+                    /+
+                        If you're getting 0 from WSAGetLastError, then this is
+                        most likely due to an unexpected EOF occurring on the socket,
+                        i.e. the client has gracefully closed the connection
+                        without sending a close_notify alert.
+                     +/
+                    // "The operation completed successfully."
+                    goto case;
+            }
+
             case netDown:
             case netUnreachable:
             case endpointNotConnected:
             case connectionReset:
-                attempt.error = lastSocketError;
+            case connectionAborted:
                 attempt.state = State.error;
+                attempt.error = lastSocketError;
                 yield(attempt);
                 // Should never get here
                 assert(0, "Dead `listenFiber` resumed after yield (`lastSocketError` error)");
@@ -815,8 +828,10 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
  +/
 struct ConnectionAttempt
 {
+private:
     import std.socket : Address;
 
+public:
     /++
         The various states a connection attempt may be in.
      +/

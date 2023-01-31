@@ -306,7 +306,7 @@ package struct Credentials
 mixin UserAwareness;
 mixin ChannelAwareness;
 mixin TwitchAwareness;
-mixin ModuleRegistration!(-5.priority);
+mixin PluginRegistration!(TwitchPlugin, -5.priority);
 
 
 // onImportant
@@ -344,7 +344,7 @@ void onImportant(TwitchPlugin plugin, const ref IRCEvent event)
     // Record viewer as active
     if (auto room = event.channel in plugin.rooms)
     {
-        if (room.stream.up)
+        if (room.stream.live)
         {
             room.stream.activeViewers[event.sender.nickname] = true;
         }
@@ -483,17 +483,17 @@ void onSelfpart(TwitchPlugin plugin, const ref IRCEvent event)
     auto room = event.channel in plugin.rooms;
     if (!room) return;
 
-    if (room.stream.up)
+    if (room.stream.live)
     {
         import std.datetime.systime : Clock;
 
         // We're leaving in the middle of a stream?
         // Close it and rotate, in case someone has a pointer to it
         // copied from nested functions in uptimeMonitorDg
-        room.stream.up = false;
+        room.stream.live = false;
         room.stream.stopTime = Clock.currTime;
         room.stream.chattersSeen = null;
-        room.previousStream = room.stream;
+        appendToStreamHistory(plugin, room.stream);
         room.stream = TwitchPlugin.Room.Stream.init;
     }
 
@@ -544,73 +544,87 @@ void reportStreamTime(
     const TwitchPlugin.Room room)
 {
     import kameloso.time : timeSince;
+    import lu.json : JSONStorage;
+    import std.datetime.systime : Clock, SysTime;
     import std.format : format;
     import core.time : msecs;
 
-    if (room.stream.up)
+    if (room.stream.live)
     {
-        import std.datetime.systime : Clock;
-
         // Remove fractional seconds from the current timestamp
         auto now = Clock.currTime;
         now.fracSecs = 0.msecs;
-        immutable delta = now - room.stream.startTime;
-        immutable timestring = timeSince(delta);
+        immutable delta = (now - room.stream.startTime);
+        immutable timestring = timeSince!(7,1)(delta);
 
         if (room.stream.maxViewerCount > 0)
         {
-            enum pattern = "%s has been live for %s, currently with %d viewers. " ~
+            enum pattern = "%s has been live streaming %s for %s, currently with %d viewers. " ~
                 "(Maximum this stream has so far been %d concurrent viewers.)";
             immutable message = pattern.format(
                 room.broadcasterDisplayName,
+                room.stream.gameName,
                 timestring,
                 room.stream.viewerCount,
                 room.stream.maxViewerCount);
-            chan(plugin.state, room.channelName, message);
+            return chan(plugin.state, room.channelName, message);
         }
         else
         {
-            enum pattern = "%s has been live for %s.";
-            immutable message = pattern.format(room.broadcasterDisplayName, timestring);
-            chan(plugin.state, room.channelName, message);
+            enum pattern = "%s has been live streaming %s for %s.";
+            immutable message = pattern.format(
+                room.broadcasterDisplayName,
+                room.stream.gameName,
+                timestring);
+            return chan(plugin.state, room.channelName, message);
         }
+    }
+
+    // Stream down, check if we have one on record to report instead
+    JSONStorage json;
+    json.load(plugin.streamHistoryFile);
+
+    if (!json.array.length)
+    {
+        // No streams this session and none on record
+        immutable message = room.broadcasterDisplayName ~ " is currently not streaming.";
+        return chan(plugin.state, room.channelName, message);
+    }
+
+    const previousStream = TwitchPlugin.Room.Stream.fromJSON(json.array[$-1]);
+    immutable delta = (previousStream.stopTime - previousStream.startTime);
+    immutable timestring = timeSince!(7,1)(delta);
+    immutable gameName = previousStream.gameName.length ?
+        previousStream.gameName :
+        "something";
+
+    if (previousStream.maxViewerCount > 0)
+    {
+        enum pattern = "%s is currently not streaming. " ~
+            "Last streamed %s on %4d-%02d-%02d for %s, " ~
+            "with a maximum of %d concurrent viewers.";
+        immutable message = pattern.format(
+            room.broadcasterDisplayName,
+            gameName,
+            previousStream.stopTime.year,
+            cast(int)previousStream.stopTime.month,
+            previousStream.stopTime.day,
+            timestring,
+            previousStream.maxViewerCount);
+        return chan(plugin.state, room.channelName, message);
     }
     else
     {
-        if (room.previousStream.idString.length)  // == Stream.init
-        {
-            import std.datetime.systime : SysTime;
-
-            SysTime start = room.previousStream.startTime;
-            SysTime stop = room.previousStream.stopTime;
-            start.fracSecs = 0.msecs;
-            stop.fracSecs = 0.msecs;
-            immutable delta = (stop - start);
-            immutable timestring = timeSince(delta);
-
-            if (room.previousStream.maxViewerCount > 0)
-            {
-                enum pattern = "%s last streamed for %s " ~
-                    "with a maximum of %d concurrent viewers.";
-                immutable message = pattern.format(
-                    room.broadcasterDisplayName,
-                    timestring,
-                    room.previousStream.maxViewerCount);
-                chan(plugin.state, room.channelName, message);
-            }
-            else
-            {
-                enum pattern = "%s last streamed for %s.";
-                immutable message = pattern.format(room.broadcasterDisplayName, timestring);
-                chan(plugin.state, room.channelName, message);
-            }
-        }
-        else
-        {
-            // No streams this session
-            immutable message = room.broadcasterDisplayName ~ " is currently not streaming.";
-            chan(plugin.state, room.channelName, message);
-        }
+        enum pattern = "%s is currently not streaming. " ~
+            "Last streamed %s on %4d-%02d-%02d for %s.";
+        immutable message = pattern.format(
+            room.broadcasterDisplayName,
+            gameName,
+            previousStream.stopTime.year,
+            cast(int)previousStream.stopTime.month,
+            previousStream.stopTime.day,
+            timestring);
+        return chan(plugin.state, room.channelName, message);
     }
 }
 
@@ -793,7 +807,7 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 )
 void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.thread : ThreadMessage;
+    import kameloso.thread : ThreadMessage, sendable;
     import std.concurrency : send;
 
     auto room = event.channel in plugin.rooms;
@@ -845,7 +859,7 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     broadcasterUser.displayName = room.broadcasterDisplayName;
     IRCUser user = *broadcasterUser;  // dereference and copy
-    plugin.state.mainThread.send(ThreadMessage.PutUser(), user);
+    plugin.state.mainThread.send(ThreadMessage.putUser(string.init, sendable(user)));
 
     room.follows = getFollows(plugin, room.id);
     room.followsLastCached = event.time;
@@ -1568,7 +1582,7 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
     // Record viewer as active
     if (auto room = event.channel in plugin.rooms)
     {
-        if (room.stream.up)
+        if (room.stream.live)
         {
             room.stream.activeViewers[event.sender.nickname] = true;
         }
@@ -1685,7 +1699,8 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
             .replace(dchar(';'), dchar(':'));
 
         // No real point using plurality since most emotes should have a count > 1
-        enum pattern = "%s has been used %d times!";
+        // Make the pattern "%,?d", and supply an extra ' ' argument to get European grouping
+        enum pattern = "%s has been used %,d times!";
         immutable message = pattern.format(emote, count);
         chan(plugin.state, event.channel, message);
     }
@@ -2087,7 +2102,7 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     const room = event.channel in plugin.rooms;
     assert(room, "Tried to start a commercial in a nonexistent room");
 
-    if (!room.stream.up)
+    if (!room.stream.live)
     {
         enum message = "There is no ongoing stream.";
         return chan(plugin.state, event.channel, message);
@@ -2531,7 +2546,7 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
             room = channelName in plugin.rooms;
             if (!room || (room.uniqueID != idSnapshot)) return;
 
-            if (!room.stream.up)
+            if (!room.stream.live)
             {
                 delay(plugin, plugin.monitorUpdatePeriodicity, Yes.yield);
                 continue;
@@ -2622,14 +2637,14 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
     {
         static void closeStream(TwitchPlugin.Room* room)
         {
-            room.stream.up = false;
+            room.stream.live = false;
             room.stream.stopTime = Clock.currTime;
             room.stream.chattersSeen = null;
         }
 
-        static void rotateStream(TwitchPlugin.Room* room)
+        void rotateStream(TwitchPlugin.Room* room)
         {
-            room.previousStream = room.stream;
+            appendToStreamHistory(plugin, room.stream);
             room.stream = TwitchPlugin.Room.Stream.init;
         }
 
@@ -2650,7 +2665,7 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
                 if (!streamFromServer.idString.length)  // == TwitchPlugin.Room.Stream.init)
                 {
                     // Stream down
-                    if (room.stream.up)
+                    if (room.stream.live)
                     {
                         // Was up but just ended
                         closeStream(room);
@@ -2892,7 +2907,7 @@ void startSaver(TwitchPlugin plugin)
             {
                 foreach (const room; plugin.rooms)
                 {
-                    if (room.stream.up)
+                    if (room.stream.live)
                     {
                         // At least one broadcast active
                         saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
@@ -3058,6 +3073,25 @@ void generateExpiryReminders(TwitchPlugin plugin, const SysTime expiresWhen)
     else if (trueExpiry >= 1.days) warnOnDaysDg();
     else if (trueExpiry >= 1.hours) warnOnHoursDg();
     else /*if (trueExpiry >= 1.minutes)*/ warnOnMinutesDg();
+}
+
+
+// appendToStreamHistory
+/++
+    Appends a [TwitchPlugin.Room.Stream|Stream] to the history file.
+
+    Params:
+        plugin = The current [TwitchPlugin].
+        stream = The (presumably ended) stream to save to record.
+ +/
+void appendToStreamHistory(TwitchPlugin plugin, const TwitchPlugin.Room.Stream stream)
+{
+    import lu.json : JSONStorage;
+
+    JSONStorage json;
+    json.load(plugin.streamHistoryFile);
+    json.array ~= stream.toJSON();
+    json.save(plugin.streamHistoryFile);
 }
 
 
@@ -3249,7 +3283,7 @@ void initResources(TwitchPlugin plugin)
     import kameloso.plugins.common.misc : IRCPluginInitialisationException;
     import lu.json : JSONStorage;
     import std.file : exists, mkdir;
-    import std.json : JSONException;
+    import std.json : JSONException, JSONType;
     import std.path : baseName, dirName;
 
     void loadFile(
@@ -3278,6 +3312,7 @@ void initResources(TwitchPlugin plugin)
     JSONStorage ecountJSON;
     JSONStorage viewersJSON;
     JSONStorage secretsJSON;
+    JSONStorage historyJSON;
 
     // Ensure the subdirectory exists
     immutable subdir = plugin.ecountFile.dirName;
@@ -3286,10 +3321,14 @@ void initResources(TwitchPlugin plugin)
     loadFile(ecountJSON, plugin.ecountFile);
     loadFile(viewersJSON, plugin.viewersFile);
     loadFile(secretsJSON, plugin.secretsFile);
+    loadFile(historyJSON, plugin.streamHistoryFile);
+
+    if (historyJSON.type != JSONType.array) historyJSON.array = null;  // coerce to array if needed
 
     ecountJSON.save(plugin.ecountFile);
     viewersJSON.save(plugin.viewersFile);
     secretsJSON.save(plugin.secretsFile);
+    historyJSON.save(plugin.streamHistoryFile);
 }
 
 
@@ -3402,7 +3441,7 @@ package:
         /++
             A unique ID for this instance of a room.
          +/
-        uint privateUniqueID;
+        uint _uniqueID;
 
     public:
         /++
@@ -3411,18 +3450,20 @@ package:
         static struct Stream
         {
         private:
+            import std.json : JSONValue;
+
             /++
                 The unique ID of a stream, as supplied by Twitch.
 
                 Cannot be made immutable or generated `opAssign`s break.
              +/
-            /*immutable*/ string privateIDString;
+            /*immutable*/ string _idString;
 
         package:
             /++
                 Whether or not the stream is currently ongoing.
              +/
-            bool up; // = false;
+            bool live; // = false;
 
             /++
                 The numerical ID of the user/account of the channel owner. In string form.
@@ -3460,7 +3501,7 @@ package:
             SysTime startTime;
 
             /++
-                When the stream ended. Only set when the [Stream] is [TwitchPlugin.Room.previousStream].
+                When the stream ended.
              +/
             SysTime stopTime;
 
@@ -3486,11 +3527,11 @@ package:
             bool[string] activeViewers;
 
             /++
-                Accessor to [privateIDString].
+                Accessor to [_idString].
              +/
             auto idString() const
             {
-                return privateIDString;
+                return _idString;
             }
 
             /++
@@ -3498,7 +3539,7 @@ package:
              +/
             void update(const Stream updated)
             {
-                assert(privateIDString.length, "Stream not properly initialised");
+                assert(_idString.length, "Stream not properly initialised");
 
                 this.userDisplayName = updated.userDisplayName;
                 this.gameIDString = updated.gameIDString;
@@ -3517,7 +3558,55 @@ package:
              +/
             this(const string idString)
             {
-                this.privateIDString = idString;
+                this._idString = idString;
+            }
+
+            /++
+                Serialises this [Stream] into a JSON representation.
+
+                Returns:
+                    A [std.json.JSONValue|JSONValue] that represents this [Stream].
+             +/
+            auto toJSON() const
+            {
+                JSONValue json;
+                json = null;
+                json.object = null;
+
+                json["gameIDString"] = JSONValue(this.gameIDString);
+                json["gameName"] = JSONValue(this.gameName);
+                json["title"] = JSONValue(this.title);
+                json["startTimeUnix"] = JSONValue(this.startTime.toUnixTime());
+                json["stopTimeUnix"] = JSONValue(this.stopTime.toUnixTime());
+                json["maxViewerCount"] = JSONValue(this.maxViewerCount);
+                return json;
+            }
+
+            /++
+                Deserialises a [Stream] from a JSON representation.
+
+                Params:
+                    json = [std.json.JSONValue|JSONValue] to build a [Stream] from.
+             +/
+            static auto fromJSON(const JSONValue json)
+            {
+                import std.json : JSONType;
+
+                typeof(this) stream;
+
+                if ("gameIDString" !in json.object)
+                {
+                    // Empty file
+                    return stream;
+                }
+
+                stream.gameIDString = json["gameIDString"].str;
+                stream.gameName = json["gameName"].str;
+                stream.title = json["title"].str;
+                stream.startTime = SysTime.fromUnixTime(json["startTimeUnix"].integer);
+                stream.stopTime = SysTime.fromUnixTime(json["stopTimeUnix"].integer);
+                stream.maxViewerCount = json["maxViewerCount"].integer;
+                return stream;
             }
         }
 
@@ -3531,16 +3620,16 @@ package:
             this.channelName = channelName;
             this.broadcasterName = channelName[1..$];
             this.broadcasterDisplayName = this.broadcasterName;  // until we resolve it
-            this.privateUniqueID = uniform(1, 10_000);
+            this._uniqueID = uniform(1, uint.max);
         }
 
         /++
-            Accessor to [Room.privateUniqueID].
+            Accessor to [_uniqueID].
          +/
         auto uniqueID() const
         {
-            assert((privateUniqueID > 0), "Room not properly initialised");
-            return privateUniqueID;
+            assert((_uniqueID > 0), "Room not properly initialised");
+            return _uniqueID;
         }
 
         /++
@@ -3552,11 +3641,6 @@ package:
             The current, ongoing stream.
          +/
         Stream stream;
-
-        /++
-            The preivous, ended stream.
-         +/
-        Stream previousStream;
 
         /++
             Account name of the broadcaster.
@@ -3586,7 +3670,7 @@ package:
         /++
             How many messages to keep in memory, to allow for nuking.
          +/
-        enum messageMemory = 64;
+        enum messageMemory = 128;
 
         /++
             The last n messages sent in the channel, used by `nuke`.
@@ -3757,6 +3841,11 @@ package:
                 File to save API keys and tokens to.
              +/
             string secretsFile = "twitch/secrets.json";
+
+            /++
+                File to save stream history to.
+             +/
+            string streamHistoryFile = "twitch/history.json";
         }
         else version(Windows)
         {
@@ -3768,6 +3857,9 @@ package:
 
             // ditto
             string secretsFile = "twitch\\secrets.json";
+
+            // ditto
+            string streamHistoryFile = "twitch\\history.json";
         }
         else
         {

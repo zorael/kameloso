@@ -1,5 +1,10 @@
 /++
     A simple plugin for querying the time in different timezones.
+
+    See_Also:
+        https://github.com/zorael/kameloso/wiki/Current-plugins#time
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.time;
 
@@ -526,7 +531,6 @@ void initResources(TimePlugin plugin)
 {
     import lu.json : JSONStorage;
     import std.json : JSONException;
-    import std.path : baseName;
 
     JSONStorage timezonesJSON;
 
@@ -554,7 +558,7 @@ void initResources(TimePlugin plugin)
 
 
 mixin UserAwareness;
-mixin ModuleRegistration;
+mixin PluginRegistration!TimePlugin;
 
 version(TwitchSupport)
 {

@@ -378,8 +378,6 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
             return sendFormatUsage();
         }
 
-        if (!mod.length) return sendFormatUsage();
-
         if (!mod.among!("?", "+", "-", "="))
         {
             return sendFormatUsage();
@@ -700,7 +698,7 @@ void onWelcome(CounterPlugin plugin)
     ---
     immutable pattern = "The $word count was bumped by +$step to $count!";
     immutable message = formatMessage(plugin, pattern, event, counter, step);
-    assert(message == "The curse word was bumped by +1 to 92!");
+    assert(message == "The curse count was bumped by +1 to 92!");
     ---
 
     Params:
@@ -730,16 +728,16 @@ auto formatMessage(
         .replace("$count", counter.count.text)
         .replace("$word", counter.word)
         .replace("$channel", event.channel)
-        .replace("$nickname", event.sender.nickname)
-        .replace("$botNickname", plugin.state.client.nickname);
+        .replace("$senderNickname", event.sender.nickname)
+        .replace("$sender", nameOf(event.sender))
+        .replace("$botNickname", plugin.state.client.nickname)
+        .replace("$bot", nameOf(plugin, plugin.state.client.nickname));
 
     version(TwitchSupport)
     {
         toReturn = toReturn
-            .replace("$bot", plugin.state.client.displayName)
             .replace("$streamerNickname", event.channel[1..$])
-            .replace("$streamer", nameOf(plugin, event.channel[1..$]))
-            .replace("$displayName", event.sender.displayName);
+            .replace("$streamer", nameOf(plugin, event.channel[1..$]));
     }
 
     return toReturn;
@@ -831,7 +829,6 @@ void initResources(CounterPlugin plugin)
 {
     import lu.json : JSONStorage;
     import std.json : JSONException;
-    import std.path : baseName;
 
     JSONStorage countersJSON;
 
@@ -860,7 +857,7 @@ void initResources(CounterPlugin plugin)
 
 
 mixin MinimalAuthentication;
-mixin ModuleRegistration;
+mixin PluginRegistration!CounterPlugin;
 
 public:
 

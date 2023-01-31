@@ -862,7 +862,6 @@ void initAccountResources(PersistenceService service)
             {
                 import kameloso.plugins.common.misc : IRCPluginInitialisationException;
                 import kameloso.common : logger;
-                import std.path : baseName;
 
                 version(PrintStacktraces) logger.trace(e);
                 throw new IRCPluginInitialisationException(
@@ -905,7 +904,6 @@ void initHostmaskResources(PersistenceService service)
     {
         import kameloso.plugins.common.misc : IRCPluginInitialisationException;
         import kameloso.common : logger;
-        import std.path : baseName;
 
         version(PrintStacktraces) logger.trace(e);
         throw new IRCPluginInitialisationException(
@@ -945,7 +943,7 @@ void initHostmaskResources(PersistenceService service)
 }
 
 
-mixin ModuleRegistration!(-50.priority);
+mixin PluginRegistration!(PersistenceService, -50.priority);
 
 public:
 

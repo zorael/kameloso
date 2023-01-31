@@ -1,6 +1,11 @@
 /++
     Plugin offering announcement timers; routines that periodically sends lines
     of text to a channel.
+
+    See_Also:
+        https://github.com/zorael/kameloso/wiki/Current-plugins#timer
+        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.misc|plugins.common.misc]
  +/
 module kameloso.plugins.timer;
 
@@ -295,7 +300,7 @@ unittest
         timer.type = Timer.Type.random;
         bool[string] linesSeen;
 
-        foreach (immutable i; 0..20)
+        foreach (immutable i; 0..300)
         {
             linesSeen[timer.getLine()] = true;
         }
@@ -1251,7 +1256,6 @@ void initResources(TimerPlugin plugin)
 {
     import lu.json : JSONStorage;
     import std.json : JSONException;
-    import std.path : baseName;
 
     JSONStorage timersJSON;
 
@@ -1314,7 +1318,7 @@ void reload(TimerPlugin plugin)
 
 
 mixin MinimalAuthentication;
-mixin ModuleRegistration;
+mixin PluginRegistration!TimerPlugin;
 
 version(TwitchSupport)
 {

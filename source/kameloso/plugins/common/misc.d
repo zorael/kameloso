@@ -353,10 +353,14 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
             version(TwitchWarnings)
             {
                 import kameloso.common : logger;
-                import kameloso.printing : printObject;
 
                 logger.warning(caller, " tried to WHOIS on Twitch");
-                printObject(event);
+
+                version(IncludeHeavyStuff)
+                {
+                    import kameloso.printing : printObject;
+                    printObject(event);
+                }
 
                 version(PrintStacktraces)
                 {

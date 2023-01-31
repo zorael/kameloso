@@ -36,7 +36,7 @@ else
 }
 
 mixin MinimalAuthentication;
-mixin ModuleRegistration;
+mixin PluginRegistration!NotesPlugin;
 
 
 // NotesSettings

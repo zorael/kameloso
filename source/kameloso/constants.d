@@ -49,14 +49,16 @@ auto buildCompilerVersionString()
 {
     import lu.conv : toAlphaInto;
     import std.array : Appender;
-    import std.compiler : version_major, version_minor;
+
+    enum major = cast(uint)(__VERSION__ / 1000);
+    enum minor = cast(uint)(__VERSION__ % 1000);
 
     Appender!(char[]) sink;
     sink.reserve(5);  // 2.098
 
-    version_major.toAlphaInto(sink);
+    major.toAlphaInto(sink);
     sink.put('.');
-    version_minor.toAlphaInto!(3,3)(sink);
+    minor.toAlphaInto!(3,3)(sink);
 
     return sink.data.idup;
 }

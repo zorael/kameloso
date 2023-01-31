@@ -272,11 +272,14 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
     }
 
     immutable line = oneliner.getResponse()
-        .replace("$nickname", nameOf(event.sender))
-        .replace("$streamer", plugin.nameOf(event.channel[1..$]))  // Twitch
-        .replace("$bot", plugin.nameOf(plugin.state.client.nickname)) // likewise
-        .replace("$channel", event.channel[1..$])
-        .replace("$random", uniform!"(]"(0, 100).text);
+        .replace("$channel", event.channel)
+        .replace("$senderNickname", event.sender.nickname)
+        .replace("$sender", nameOf(event.sender))
+        .replace("$botNickname", plugin.state.client.nickname)
+        .replace("$bot", nameOf(plugin, plugin.state.client.nickname)) // likewise
+        .replace("$streamerNickname", event.channel[1..$])  // Twitch
+        .replace("$streamer", nameOf(plugin, event.channel[1..$]))  // Twitch
+        .replace("$random", uniform(0, 100).text);
     immutable target = slice.beginsWith('@') ? slice[1..$] : slice;
 
     enum atPattern = "@%s %s";
@@ -993,7 +996,6 @@ void initResources(OnelinersPlugin plugin)
 {
     import lu.json : JSONStorage;
     import std.json : JSONException;
-    import std.path : baseName;
 
     JSONStorage onelinerJSON;
 
@@ -1022,7 +1024,7 @@ void initResources(OnelinersPlugin plugin)
 
 mixin UserAwareness;
 mixin ChannelAwareness;
-mixin ModuleRegistration;
+mixin PluginRegistration!OnelinersPlugin;
 
 version(TwitchSupport)
 {
