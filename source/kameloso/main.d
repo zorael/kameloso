@@ -408,9 +408,9 @@ void messageFiber(ref Kameloso instance)
          +/
         void handleDelegates(
             ThreadMessage.HandleDelegates,
-            shared(void delegate(IRCPlugin.CommandMetadata[string][string])) peekDg,
-            shared(void delegate(string, string, string)) getSettingDg,
-            shared(void delegate(bool)) setSettingDg,
+            shared(void delegate(IRCPlugin.CommandMetadata[string][string]) @system) peekDg,
+            shared(void delegate(string, string, string) @system) getSettingDg,
+            shared(void delegate(bool) @system) setSettingDg,
             string contextual)
         in ((peekDg || getSettingDg || setSettingDg), "All delegates passed to `handleDelegates` were null")
         {
@@ -522,25 +522,6 @@ void messageFiber(ref Kameloso instance)
                     [ expression ], instance.plugins[0].state.settings);
                 return setSettingDg(success);
             }
-        }
-
-        /++
-            Overload of the above because we keep seeing both @safe and @system
-            delegates for no apparent reason.
-         +/
-        void handleDelegatesSafeDg(
-            ThreadMessage.HandleDelegates,
-            shared(void delegate(IRCPlugin.CommandMetadata[string][string]) @safe) peekDg,
-            shared(void delegate(string, string, string) @safe) getDg,
-            shared(void delegate(bool) @safe) setDg,
-            string expression) scope
-        {
-            handleDelegates(
-                ThreadMessage.HandleDelegates(),
-                cast(shared(void delegate(IRCPlugin.CommandMetadata[string][string])))peekDg,
-                cast(shared(void delegate(string, string, string)))getDg,
-                cast(shared(void delegate(bool)))setDg,
-                expression);
         }
 
         /// Reverse-formats an event and sends it to the server.
@@ -873,7 +854,6 @@ void messageFiber(ref Kameloso instance)
                 &eventToServer,
                 &proxyLoggerMessages,
                 &handleDelegates,
-                &handleDelegatesSafeDg,
                 (Variant v) scope
                 {
                     // Caught an unhandled message

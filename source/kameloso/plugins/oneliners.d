@@ -507,18 +507,18 @@ void handleNewOneliner(
         // Arcane message used to minimise template instantiations and lower memory requirements
         plugin.state.mainThread.send(
             ThreadMessage.HandleDelegates(),
-            cast(shared)&channelSpecificDg,
-            cast(shared(void delegate(string, string, string)))null,
-            cast(shared(void delegate(bool)))null,
+            cast(shared(void delegate(IRCPlugin.CommandMetadata[string][string]) @system))&channelSpecificDg,
+            cast(shared(void delegate(string, string, string) @system))null,
+            cast(shared(void delegate(bool) @system))null,
             event.channel);
     }
 
     // As above
     plugin.state.mainThread.send(
         ThreadMessage.HandleDelegates(),
-        cast(shared)&dg,
-        cast(shared(void delegate(string, string, string)))null,
-        cast(shared(void delegate(bool)))null,
+        cast(shared(void delegate(IRCPlugin.CommandMetadata[string][string]) @system))&dg,
+        cast(shared(void delegate(string, string, string) @system))null,
+        cast(shared(void delegate(bool) @system))null,
         string.init);
 }
 
