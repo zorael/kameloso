@@ -406,13 +406,13 @@ void messageFiber(ref Kameloso instance)
             3. Applies a `plugin.setting=value` change in setting to whichever plugin
                matches the expression.
          +/
-        void handleDelegates(
-            ThreadMessage.HandleDelegates,
+        void peekGetSet(
+            ThreadMessage.PeekGetSet,
             shared(void delegate(IRCPlugin.CommandMetadata[string][string]) @system) peekDg,
             shared(void delegate(string, string, string) @system) getSettingDg,
             shared(void delegate(bool) @system) setSettingDg,
             string contextual)
-        in ((peekDg || getSettingDg || setSettingDg), "All delegates passed to `handleDelegates` were null")
+        in ((peekDg || getSettingDg || setSettingDg), "All delegates passed to `peekGetSet` were null")
         {
             if (peekDg)
             {
@@ -853,7 +853,7 @@ void messageFiber(ref Kameloso instance)
                 &onMessage,
                 &eventToServer,
                 &proxyLoggerMessages,
-                &handleDelegates,
+                &peekGetSet,
                 (Variant v) scope
                 {
                     // Caught an unhandled message

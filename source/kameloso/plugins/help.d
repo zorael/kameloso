@@ -114,7 +114,7 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
 
     // Arcane message used to minimise template instantiations and lower memory requirements
     plugin.state.mainThread.send(
-        ThreadMessage.HandleDelegates(),
+        ThreadMessage.PeekGetSet(),
         cast(shared(void delegate(IRCPlugin.CommandMetadata[string][string]) @system))&dg,
         cast(shared(void delegate(string, string, string) @system))null,
         cast(shared(void delegate(bool) @system))null,

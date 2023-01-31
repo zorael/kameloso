@@ -249,7 +249,7 @@ struct ThreadMessage
         2. Concurrency message asking to get one or all settings of a given plugin.
         3. Concurrency message asking to apply an expression to change a setting of a plugin.
      +/
-    static struct HandleDelegates {}
+    static struct PeekGetSet {}
 
     /+
         Generate a static function for each [Type].

@@ -863,7 +863,7 @@ void onCommandSet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 
     // Arcane message used to minimise template instantiations and lower memory requirements
     plugin.state.mainThread.send(
-        ThreadMessage.HandleDelegates(),
+        ThreadMessage.PeekGetSet(),
         cast(shared(void delegate(IRCPlugin.CommandMetadata[string][string]) @system))null,
         cast(shared(void delegate(string, string, string) @system))null,
         cast(shared(void delegate(bool) @system))&dg,
@@ -933,7 +933,7 @@ void onCommandGet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 
     // Arcane message used to minimise template instantiations and lower memory requirements
     plugin.state.mainThread.send(
-        ThreadMessage.HandleDelegates(),
+        ThreadMessage.PeekGetSet(),
         cast(shared(void delegate(IRCPlugin.CommandMetadata[string][string]) @system))null,
         cast(shared(void delegate(string, string, string) @system))&dg,
         cast(shared(void delegate(bool) @system))null,
@@ -1397,7 +1397,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 
         // Arcane message used to minimise template instantiations and lower memory requirements
         return plugin.state.mainThread.send(
-            ThreadMessage.HandleDelegates(),
+            ThreadMessage.PeekGetSet(),
             cast(shared(void delegate(IRCPlugin.CommandMetadata[string][string]) @system))null,
             cast(shared(void delegate(string, string, string) @system))null,
             cast(shared(void delegate(bool) @system))&dg,
