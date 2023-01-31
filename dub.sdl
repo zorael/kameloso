@@ -136,6 +136,7 @@ configuration "dev" {
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
+        "IncludeHeavyStuff" \
         "WithPingMonitor"
         //"TwitchPromoteEverywhere" \
         //"TwitchCustomEmotesEverywhere" \
@@ -160,6 +161,7 @@ configuration "dev-lowmem" {
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
+        "IncludeHeavyStuff" \
         "WithPingMonitor"
         //"TwitchPromoteEverywhere" \
         //"TwitchCustomEmotesEverywhere" \
