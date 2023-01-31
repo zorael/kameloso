@@ -841,7 +841,7 @@ mixin template IRCPluginImpl(
         /++
             Process a function.
          +/
-        NextStep process(bool verbose, bool inFiber, Fun)
+        NextStep process(bool verbose, bool inFiber, bool hasRegexes, Fun)
             (scope Fun fun,
             const string funName,
             const IRCEventHandler uda,
@@ -986,65 +986,68 @@ mixin template IRCPluginImpl(
             }
 
             // Iff no match from Commands, evaluate Regexes
-            if (uda._regexes.length && !commandMatch)
+            static if (hasRegexes)
             {
-                regexForeach:
-                foreach (const regex; uda._regexes)
+                if (/*uda._regexes.length &&*/ !commandMatch)
                 {
-                    static if (verbose)
-                    {
-                        writeln("   ...Regex: `", regex._expression, "`");
-                        if (state.settings.flush) stdout.flush();
-                    }
-
-                    if (!event.prefixPolicyMatches!verbose(regex._policy, state))
+                    regexForeach:
+                    foreach (const regex; uda._regexes)
                     {
                         static if (verbose)
                         {
-                            writeln("   ...policy doesn't match; continue next Regex");
+                            writeln("   ...Regex: `", regex._expression, "`");
                             if (state.settings.flush) stdout.flush();
                         }
 
-                        // Do nothing, proceed to next regex
-                        continue regexForeach;
-                    }
-                    else
-                    {
-                        try
-                        {
-                            import std.regex : matchFirst;
-
-                            const hits = event.content.matchFirst(regex._engine);
-
-                            if (!hits.empty)
-                            {
-                                static if (verbose)
-                                {
-                                    writeln("   ...expression matches!");
-                                    if (state.settings.flush) stdout.flush();
-                                }
-
-                                event.aux = hits[0];
-                                commandMatch = true;
-                                break regexForeach;
-                            }
-                            else
-                            {
-                                static if (verbose)
-                                {
-                                    writefln(`   ...matching "%s" against expression "%s" failed.`,
-                                        event.content, regex._expression);
-                                    if (state.settings.flush) stdout.flush();
-                                }
-                            }
-                        }
-                        catch (Exception e)
+                        if (!event.prefixPolicyMatches!verbose(regex._policy, state))
                         {
                             static if (verbose)
                             {
-                                writeln("   ...Regex exception: ", e.msg);
-                                version(PrintStacktraces) writeln(e);
+                                writeln("   ...policy doesn't match; continue next Regex");
                                 if (state.settings.flush) stdout.flush();
+                            }
+
+                            // Do nothing, proceed to next regex
+                            continue regexForeach;
+                        }
+                        else
+                        {
+                            try
+                            {
+                                import std.regex : matchFirst;
+
+                                const hits = event.content.matchFirst(regex._engine);
+
+                                if (!hits.empty)
+                                {
+                                    static if (verbose)
+                                    {
+                                        writeln("   ...expression matches!");
+                                        if (state.settings.flush) stdout.flush();
+                                    }
+
+                                    event.aux = hits[0];
+                                    commandMatch = true;
+                                    break regexForeach;
+                                }
+                                else
+                                {
+                                    static if (verbose)
+                                    {
+                                        writefln(`   ...matching "%s" against expression "%s" failed.`,
+                                            event.content, regex._expression);
+                                        if (state.settings.flush) stdout.flush();
+                                    }
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                static if (verbose)
+                                {
+                                    writeln("   ...Regex exception: ", e.msg);
+                                    version(PrintStacktraces) writeln(e);
+                                    if (state.settings.flush) stdout.flush();
+                                }
                             }
                         }
                     }
@@ -1248,7 +1251,7 @@ mixin template IRCPluginImpl(
 
             try
             {
-                immutable next = process!(verbose, cast(bool)uda._fiber)
+                immutable next = process!(verbose, cast(bool)uda._fiber, cast(bool)uda._regexes.length)
                     (&fun, funName, uda, event, acceptsAnyType);
 
                 if (next == NextStep.continue_)
@@ -1258,7 +1261,7 @@ mixin template IRCPluginImpl(
                 else if (next == NextStep.repeat)
                 {
                     // only repeat once so we don't endlessly loop
-                    immutable newNext = process!(verbose, cast(bool)uda._fiber)
+                    immutable newNext = process!(verbose, cast(bool)uda._fiber, cast(bool)uda._regexes.length)
                         (&fun, funName, uda, event, acceptsAnyType);
                     return newNext;
                 }
@@ -1288,7 +1291,7 @@ mixin template IRCPluginImpl(
                 sanitiseEvent(event);
 
                 // Copy-paste, not much we can do otherwise
-                immutable next = process!(verbose, cast(bool)uda._fiber)
+                immutable next = process!(verbose, cast(bool)uda._fiber, cast(bool)uda._regexes.length)
                     (&fun, funName, uda, event, acceptsAnyType);
 
                 if (next == NextStep.continue_)
@@ -1298,7 +1301,7 @@ mixin template IRCPluginImpl(
                 else if (next == NextStep.repeat)
                 {
                     // only repeat once so we don't endlessly loop
-                    immutable newNext = process!(verbose, cast(bool)uda._fiber)
+                    immutable newNext = process!(verbose, cast(bool)uda._fiber, cast(bool)uda._regexes.length)
                         (&fun, funName, uda, event, acceptsAnyType);
                     return newNext;
                 }
@@ -1365,9 +1368,9 @@ mixin template IRCPluginImpl(
          +/
         static immutable setupFunIndexes = funIndexByTiming(Timing.setup);
         static immutable earlyFunIndexes = funIndexByTiming(Timing.early);
+        static immutable normalFunIndexes = funIndexByTiming(Timing.untimed);
         static immutable lateFunIndexes = funIndexByTiming(Timing.late);
         static immutable cleanupFunIndexes = funIndexByTiming(Timing.cleanup);
-        static immutable normalFunIndexes = funIndexByTiming(Timing.untimed);
 
         /+
             It seems we can't trust mixed-in awareness functions to actually get
@@ -3092,7 +3095,7 @@ public:
             Returns:
                 A `this` reference to the current struct instance.
          +/
-        ref auto expression(const string expression)
+        ref auto expression()(const string expression)
         {
             import std.regex : regex;
 

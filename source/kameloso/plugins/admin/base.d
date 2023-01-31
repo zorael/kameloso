@@ -108,6 +108,7 @@ void onAnyEvent(AdminPlugin plugin, const ref IRCEvent event)
     It basically prints the matching [dialect.defs.IRCUser|IRCUsers].
  +/
 debug
+version(IncludeHeavyStuff)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
@@ -205,6 +206,7 @@ void onCommandSave(AdminPlugin plugin, const ref IRCEvent event)
     [kameloso.plugins.common.core.IRCPluginState|IRCPluginState] to the local terminal.
  +/
 debug
+version(IncludeHeavyStuff)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
@@ -967,6 +969,7 @@ void onCommandAuth(AdminPlugin plugin)
     This can be very spammy.
  +/
 debug
+version(IncludeHeavyStuff)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
@@ -1321,13 +1324,11 @@ import kameloso.thread : Sendable;
  +/
 void onBusMessage(AdminPlugin plugin, const string header, shared Sendable content)
 {
-    if (header != "admin") return;
-
-    // Don't return if disabled, as it blocks us from re-enabling with verb set
-
-    import kameloso.printing : printObject;
     import kameloso.thread : BusMessage;
     import lu.string : contains, nom, strippedRight;
+
+    // Don't return if disabled, as it blocks us from re-enabling with verb set
+    if (header != "admin") return;
 
     auto message = cast(BusMessage!string)content;
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
@@ -1339,26 +1340,31 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
     {
     debug
     {
-        case "status":
-            return plugin.onCommandStatus();
+        version(IncludeHeavyStuff)
+        {
+            import kameloso.printing : printObject;
 
-        case "users":
-            return plugin.onCommandShowUsers();
+            case "users":
+                return plugin.onCommandShowUsers();
 
-        case "user":
-            if (const user = slice in plugin.state.users)
-            {
-                printObject(*user);
-            }
-            else
-            {
-                logger.error("No such user: <l>", slice);
-            }
-            break;
+            case "status":
+                return plugin.onCommandStatus();
 
-        case "state":
-            printObject(plugin.state);
-            break;
+            case "user":
+                if (const user = slice in plugin.state.users)
+                {
+                    printObject(*user);
+                }
+                else
+                {
+                    logger.error("No such user: <l>", slice);
+                }
+                break;
+
+            case "state":
+                printObject(plugin.state);
+                break;
+        }
 
         case "printraw":
             plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;

@@ -3192,29 +3192,41 @@ void printEventDebugDetails(
 {
     if (globalHeadless || !raw.length) return;
 
-    if (!eventWasInitialised || (event == IRCEvent.init))
+    version(IncludeHeavyStuff)
+    {
+        enum onlyPrintRaw = false;
+    }
+    else
+    {
+        enum onlyPrintRaw = true;
+    }
+
+    if (onlyPrintRaw || !eventWasInitialised || !event.raw.length) // == IRCEvent.init
     {
         enum pattern = `Offending line: "<l>%s</>"`;
         logger.warningf(pattern, raw);
     }
     else
     {
-        import kameloso.printing : printObject;
-        import std.typecons : Flag, No, Yes;
-
-        // Offending line included in event, in raw
-        printObject!(Yes.all)(event);
-
-        if (event.sender != IRCUser.init)
+        version(IncludeHeavyStuff)
         {
-            logger.trace("sender:");
-            printObject(event.sender);
-        }
+            import kameloso.printing : printObject;
+            import std.typecons : Flag, No, Yes;
 
-        if (event.target != IRCUser.init)
-        {
-            logger.trace("target:");
-            printObject(event.target);
+            // Offending line included in event, in raw
+            printObject!(Yes.all)(event);
+
+            if (event.sender != IRCUser.init)
+            {
+                logger.trace("sender:");
+                printObject(event.sender);
+            }
+
+            if (event.target != IRCUser.init)
+            {
+                logger.trace("target:");
+                printObject(event.target);
+            }
         }
     }
 }

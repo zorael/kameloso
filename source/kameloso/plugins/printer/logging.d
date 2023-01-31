@@ -230,8 +230,6 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
             }
             else
             {
-                import kameloso.printing : formatObjects;
-
                 LogLineBuffer* errBuffer = key in plugin.buffers;
 
                 if (!errBuffer)
@@ -243,19 +241,51 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 
                 if (plugin.printerSettings.bufferedWrites)
                 {
-                    errBuffer.lines ~= formatObjects!(Yes.all, No.coloured)
-                        (No.brightTerminal, event);
-
-                    if (event.sender.nickname.length || event.sender.address.length)
+                    version(IncludeHeavyStuff)
                     {
+                        import kameloso.printing : formatObjects;
+
                         errBuffer.lines ~= formatObjects!(Yes.all, No.coloured)
-                            (No.brightTerminal, event.sender);
+                            (No.brightTerminal, event);
+
+                        if (event.sender.nickname.length || event.sender.address.length)
+                        {
+                            errBuffer.lines ~= formatObjects!(Yes.all, No.coloured)
+                                (No.brightTerminal, event.sender);
+                        }
+
+                        if (event.target.nickname.length || event.target.address.length)
+                        {
+                            errBuffer.lines ~= formatObjects!(Yes.all, No.coloured)
+                                (No.brightTerminal, event.target);
+                        }
                     }
-
-                    if (event.target.nickname.length || event.target.address.length)
+                    else
                     {
-                        errBuffer.lines ~= formatObjects!(Yes.all, No.coloured)
-                            (No.brightTerminal, event.target);
+                        import lu.conv : Enum;
+                        import std.conv : text;
+
+                        errBuffer.lines ~= text('@', event.tags, ' ', event.raw);
+
+                        if (event.sender.nickname.length || event.sender.address.length)
+                        {
+                            errBuffer.lines ~= text(
+                                event.sender.nickname, '!',
+                                event.sender.ident, '@',
+                                event.sender.address, ':',
+                                event.sender.account, " -- ",
+                                Enum!(IRCUser.Class).toString(event.sender.class_), "\n\n");
+                        }
+
+                        if (event.target.nickname.length || event.target.address.length)
+                        {
+                            errBuffer.lines ~= text(
+                                event.target.nickname, '!',
+                                event.target.ident, '@',
+                                event.target.address, ':',
+                                event.target.account, " -- ",
+                                Enum!(IRCUser.Class).toString(event.target.class_), "\n\n");
+                        }
                     }
 
                     errBuffer.lines ~= "/////////////////////////////////////" ~
@@ -270,25 +300,57 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                     // This is an abuse of plugin.linebuffer and is pretty much
                     // guaranteed to grow it, but what do?
 
-                    formatObjects!(Yes.all, No.coloured)(plugin.linebuffer,
-                        No.brightTerminal, event);
-                    errFile.writeln(plugin.linebuffer.data);
-                    plugin.linebuffer.clear();
-
-                    if (event.sender.nickname.length || event.sender.address.length)
+                    version(IncludeHeavyStuff)
                     {
+                        import kameloso.printing : formatObjects;
+
                         formatObjects!(Yes.all, No.coloured)(plugin.linebuffer,
-                            No.brightTerminal, event.sender);
+                            No.brightTerminal, event);
                         errFile.writeln(plugin.linebuffer.data);
                         plugin.linebuffer.clear();
+
+                        if (event.sender.nickname.length || event.sender.address.length)
+                        {
+                            formatObjects!(Yes.all, No.coloured)(plugin.linebuffer,
+                                No.brightTerminal, event.sender);
+                            errFile.writeln(plugin.linebuffer.data);
+                            plugin.linebuffer.clear();
+                        }
+
+                        if (event.target.nickname.length || event.target.address.length)
+                        {
+                            formatObjects!(Yes.all, No.coloured)(plugin.linebuffer,
+                                No.brightTerminal, event.target);
+                            errFile.writeln(plugin.linebuffer.data);
+                            plugin.linebuffer.clear();
+                        }
                     }
-
-                    if (event.target.nickname.length || event.target.address.length)
+                    else
                     {
-                        formatObjects!(Yes.all, No.coloured)(plugin.linebuffer,
-                            No.brightTerminal, event.target);
-                        errFile.writeln(plugin.linebuffer.data);
-                        plugin.linebuffer.clear();
+                        import lu.conv : Enum;
+                        import std.conv : text;
+
+                        errFile.writeln('@', event.tags, ' ', event.raw);
+
+                        if (event.sender.nickname.length || event.sender.address.length)
+                        {
+                            errFile.writeln(
+                                event.sender.nickname, '!',
+                                event.sender.ident, '@',
+                                event.sender.address, ':',
+                                event.sender.account, " -- ",
+                                Enum!(IRCUser.Class).toString(event.sender.class_), "\n\n");
+                        }
+
+                        if (event.target.nickname.length || event.target.address.length)
+                        {
+                            errFile.writeln(
+                                event.target.nickname, '!',
+                                event.target.ident, '@',
+                                event.target.address, ':',
+                                event.target.account, " -- ",
+                                Enum!(IRCUser.Class).toString(event.target.class_), "\n\n");
+                        }
                     }
 
                     errFile.writeln("/////////////////////////////////////" ~

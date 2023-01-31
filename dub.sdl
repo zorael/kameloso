@@ -86,6 +86,7 @@ versions \
     "GCStatsOnExit" \
     "OSXTMPDIR" \
     "TraceWhois" \
+    "IncludeHeavyStuff" \
     "PrintAccountNamesToo" \
     "PrintClassNamesToo" \
     "WithPingMonitor" \
