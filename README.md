@@ -14,7 +14,7 @@
 * some common [Twitch bot features](#twitch-bot)
 * [more random stuff and gimmicks](https://github.com/zorael/kameloso/wiki/Current-plugins)
 
-All of the above are plugins and can be disabled at runtime or omitted from compilation entirely. It is modular and easy to extend. A skeletal Hello World plugin is less than [30 lines of code](source/kameloso/plugins/hello.d).
+All of the above are plugins and can be disabled at runtime or omitted from compilation entirely. It is modular and easy to extend. A skeletal Hello World plugin is [less than 30 lines of code](source/kameloso/plugins/hello.d).
 
 Testing is primarily done on [**Libera.Chat**](https://libera.chat) and on [**Twitch**](https://www.twitch.tv), so support and coverage is best there.
 
@@ -94,11 +94,9 @@ Grab a prebuilt binary from under [**Releases**](https://github.com/zorael/kamel
 
 ## Prerequisites
 
-**kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html) and with the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases). **dmd** compiles very fast, while **ldc** is slower at compiling but produces faster code. Additionally it supports more target architectures than **dmd** does (e.g. ARM). See [here](https://wiki.dlang.org/Compilers) for an overview of the available compiler vendors.
+**kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html), with the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases) and with the GCC-based [**gdc**](https://gdcproject.org/downloads). **dmd** compiles very fast, while **ldc** and **gdc** are slower at compiling but produce faster code. Additionally, the latter two support more target architectures than **dmd** does (e.g. ARM). See [here](https://wiki.dlang.org/Compilers) for an overview of the available compiler vendors.
 
-The latest release of the the GCC-based [**gdc**](https://gdcproject.org/downloads) (series **12**) can currently technically compile the project source, but may fail to link it into a usable executable, depending on your particular setup.
-
-You need a compiler based on D version **2.085** or later (March 2019). For **ldc** this is version **1.15**.
+You need a compiler based on D version **2.085** or later (March 2019). For **ldc** this is version **1.15**, and for **gdc** this is release series **12**.
 
 If your repositories (or other software sources) don't have compilers new enough, you can use the official [`install.sh`](https://dlang.org/install.html) installation script to download current ones, or any version of choice. (**gdc** is not available via this script.)
 

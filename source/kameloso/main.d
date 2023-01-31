@@ -392,55 +392,55 @@ void messageFiber(ref Kameloso instance)
         }
 
         /++
-            Constructs an associative array of either all hardcoded commands
-            or all channel-specific soft commands (of all plugins) and calls the
-            passed delegate with it as argument.
-         +/
-        void peekCommands(
-            ThreadMessage.PeekCommands,
-            shared void delegate(IRCPlugin.CommandMetadata[string][string]) dg,
-            string channelName) scope
-        {
-            IRCPlugin.CommandMetadata[string][string] commandAA;
+            Does one of three things, depending on the delegates passed to it
+            (and their nullness);
 
-            foreach (plugin; instance.plugins)
+            1. Constructs an associative array of either all hardcoded commands
+               or all channel-specific soft commands (of all plugins) and calls
+               the passed delegate with it as argument.
+
+            2. Fetches the configured value of a setting if given a `plugin.setting`
+               expression, or a list of all available configuration settings if
+               given only a `plugin`.
+
+            3. Applies a `plugin.setting=value` change in setting to whichever plugin
+               matches the expression.
+         +/
+        void handleDelegates(
+            ThreadMessage.HandleDelegates,
+            shared(void delegate(IRCPlugin.CommandMetadata[string][string]) @system) peekDg,
+            shared(void delegate(string, string, string) @system) getSettingDg,
+            shared(void delegate(bool) @system) setSettingDg,
+            string contextual)
+        in ((peekDg || getSettingDg || setSettingDg), "All delegates passed to `handleDelegates` were null")
+        {
+            if (peekDg)
             {
-                if (channelName.length)
+                alias channelName = contextual;
+
+                IRCPlugin.CommandMetadata[string][string] commandAA;
+
+                foreach (plugin; instance.plugins)
                 {
-                    commandAA[plugin.name] = plugin.channelSpecificCommands(channelName);
+                    if (channelName.length)
+                    {
+                        commandAA[plugin.name] = plugin.channelSpecificCommands(channelName);
+                    }
+                    else
+                    {
+                        commandAA[plugin.name] = plugin.commands;
+                    }
                 }
-                else
-                {
-                    commandAA[plugin.name] = plugin.commands;
-                }
+
+                return peekDg(commandAA);
             }
-
-            dg(commandAA);
-        }
-
-        /++
-            Does one of two things, depending on whether the passed delegates are
-            null or not.
-
-            Either: fetches the configured value of a setting if given a `plugin.setting`
-            expression, or a list of all available configuration settings if
-            given only a `plugin`.
-
-            Or: applies a `plugin.setting=value` change in setting to whichever plugin
-            matches the expression.
-         +/
-        void getOrSetSetting(
-            ThreadMessage.GetOrSetSetting,
-            shared(void delegate(string, string, string)) getDg,
-            shared(void delegate(bool)) setDg,
-            string expression) scope
-        {
-            if (getDg)
+            else if (getSettingDg)
             {
                 import lu.string : beginsWith, contains, nom;
                 import std.array : Appender;
                 import std.algorithm.iteration : splitter;
 
+                alias expression = contextual;
                 string slice = expression;  // mutable
                 immutable specifiedPlugin = slice.nom!(Yes.inherit)('.');
                 alias specifiedSetting = slice;
@@ -463,7 +463,7 @@ void messageFiber(ref Kameloso instance)
                             if (thisSetting != specifiedSetting) continue;
 
                             const value = lineslice.strippedLeft;
-                            return getDg(specifiedPlugin, specifiedSetting, value);
+                            return getSettingDg(specifiedPlugin, specifiedSetting, value);
                         }
                     }
                     else
@@ -478,11 +478,11 @@ void messageFiber(ref Kameloso instance)
                             if (!lineslice.beginsWith('[')) allSettings ~= lineslice.nom!(Yes.inherit)(' ');
                         }
 
-                        return getDg(specifiedPlugin, string.init, allSettings.text);
+                        return getSettingDg(specifiedPlugin, string.init, allSettings.text);
                     }
 
                     // If we're here, no such setting was found
-                    return getDg(specifiedPlugin, string.init, string.init);
+                    return getSettingDg(specifiedPlugin, string.init, string.init);
                 }
 
                 switch (specifiedPlugin)
@@ -508,35 +508,20 @@ void messageFiber(ref Kameloso instance)
                     }
 
                     // If we're here, no plugin was found
-                    return getDg(string.init, string.init, string.init);
+                    return getSettingDg(string.init, string.init, string.init);
                 }
             }
-            else /*if (setDg)*/
+            else if (setSettingDg)
             {
                 import kameloso.plugins.common.misc : applyCustomSettings;
+
+                alias expression = contextual;
 
                 // Borrow settings from the first plugin. It's taken by value
                 immutable success = applyCustomSettings(instance.plugins,
                     [ expression ], instance.plugins[0].state.settings);
-                return setDg(success);
+                return setSettingDg(success);
             }
-        }
-
-        /++
-            Overload of the above because we keep seeing both @safe and @system
-            delegates for no apparent reason.
-         +/
-        void getOrSetSettingSafeDg(
-            ThreadMessage.GetOrSetSetting,
-            shared(void delegate(string, string, string) @safe) getDg,
-            shared(void delegate(bool) @safe) setDg,
-            string expression) scope
-        {
-            getOrSetSetting(
-                ThreadMessage.GetOrSetSetting(),
-                cast(shared(void delegate(string, string, string)))getDg,
-                cast(shared(void delegate(bool)))setDg,
-                expression);
         }
 
         /// Reverse-formats an event and sends it to the server.
@@ -868,9 +853,7 @@ void messageFiber(ref Kameloso instance)
                 &onMessage,
                 &eventToServer,
                 &proxyLoggerMessages,
-                &peekCommands,
-                &getOrSetSetting,
-                &getOrSetSettingSafeDg,
+                &handleDelegates,
                 (Variant v) scope
                 {
                     // Caught an unhandled message

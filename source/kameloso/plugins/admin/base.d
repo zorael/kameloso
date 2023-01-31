@@ -861,10 +861,12 @@ void onCommandSet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         }
     }
 
+    // Arcane message used to minimise template instantiations and lower memory requirements
     plugin.state.mainThread.send(
-        ThreadMessage.GetOrSetSetting(),
-        cast(shared(void delegate(string, string, string)))null,
-        cast(shared)&dg,
+        ThreadMessage.HandleDelegates(),
+        cast(shared(void delegate(IRCPlugin.CommandMetadata[string][string]) @system))null,
+        cast(shared(void delegate(string, string, string) @system))null,
+        cast(shared(void delegate(bool) @system))&dg,
         event.content);
 }
 
@@ -929,10 +931,12 @@ void onCommandGet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         }
     }
 
+    // Arcane message used to minimise template instantiations and lower memory requirements
     plugin.state.mainThread.send(
-        ThreadMessage.GetOrSetSetting(),
-        cast(shared)&dg,
-        cast(shared(void delegate(bool)))null,
+        ThreadMessage.HandleDelegates(),
+        cast(shared(void delegate(IRCPlugin.CommandMetadata[string][string]) @system))null,
+        cast(shared(void delegate(string, string, string) @system))&dg,
+        cast(shared(void delegate(bool) @system))null,
         event.content);
 }
 
@@ -1391,10 +1395,12 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             if (success) logger.log("Setting changed.");
         }
 
+        // Arcane message used to minimise template instantiations and lower memory requirements
         return plugin.state.mainThread.send(
-            ThreadMessage.GetOrSetSetting(),
-            cast(shared(void delegate(string, string, string)))null,
-            cast(shared)&dg,
+            ThreadMessage.HandleDelegates(),
+            cast(shared(void delegate(IRCPlugin.CommandMetadata[string][string]) @system))null,
+            cast(shared(void delegate(string, string, string) @system))null,
+            cast(shared(void delegate(bool) @system))&dg,
             slice);
 
     case "save":

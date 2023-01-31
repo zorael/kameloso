@@ -503,11 +503,23 @@ void handleNewOneliner(
     void dg(IRCPlugin.CommandMetadata[string][string] aa)
     {
         if (triggerConflicts(aa)) return;
-        plugin.state.mainThread.send(ThreadMessage.PeekCommands(),
-            cast(shared)&channelSpecificDg, event.channel);
+
+        // Arcane message used to minimise template instantiations and lower memory requirements
+        plugin.state.mainThread.send(
+            ThreadMessage.HandleDelegates(),
+            cast(shared(void delegate(IRCPlugin.CommandMetadata[string][string]) @system))&channelSpecificDg,
+            cast(shared(void delegate(string, string, string) @system))null,
+            cast(shared(void delegate(bool) @system))null,
+            event.channel);
     }
 
-    plugin.state.mainThread.send(ThreadMessage.PeekCommands(), cast(shared)&dg, string.init);
+    // As above
+    plugin.state.mainThread.send(
+        ThreadMessage.HandleDelegates(),
+        cast(shared(void delegate(IRCPlugin.CommandMetadata[string][string]) @system))&dg,
+        cast(shared(void delegate(string, string, string) @system))null,
+        cast(shared(void delegate(bool) @system))null,
+        string.init);
 }
 
 
