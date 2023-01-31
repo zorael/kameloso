@@ -24,7 +24,7 @@ import core.time;
 pragma(msg, "Compiling tester plugin");
 
 mixin MinimalAuthentication;
-mixin ModuleRegistration;
+mixin PluginRegistration!TesterPlugin;
 
 
 version(DigitalMars)
