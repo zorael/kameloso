@@ -243,16 +243,13 @@ struct ThreadMessage
     bool quiet;
 
     /++
-        Concurrency message asking for an associative array of a description of
-        all plugins' commands.
-     +/
-    static struct PeekCommands {}
+        Signifies one of three things, depending on the bundled delegates;
 
-    /++
-        Concurrency message asking to get one or all settings of a given plugin.
-        Concurrency message asking to apply an expression to change a setting of a plugin.
+        1. Concurrency message asking for an associative array of a description of all plugins' commands.
+        2. Concurrency message asking to get one or all settings of a given plugin.
+        3. Concurrency message asking to apply an expression to change a setting of a plugin.
      +/
-    static struct GetOrSetSetting {}
+    static struct HandleDelegates {}
 
     /+
         Generate a static function for each [Type].

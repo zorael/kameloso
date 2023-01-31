@@ -112,7 +112,13 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
         }
     }
 
-    plugin.state.mainThread.send(ThreadMessage.PeekCommands(), cast(shared)&dg, string.init);
+    // Arcane message used to minimise template instantiations and lower memory requirements
+    plugin.state.mainThread.send(
+        ThreadMessage.HandleDelegates(),
+        cast(shared)&dg,
+        cast(shared(void delegate(string, string, string)))null,
+        cast(shared(void delegate(bool)))null,
+        string.init);
 }
 
 
