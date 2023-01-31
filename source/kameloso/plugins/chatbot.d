@@ -1,7 +1,6 @@
 /++
-    The Chatbot plugin is a collection of small, harmless functions like `8ball`
-    for magic eightball, `bash` for fetching specified or random bash.org quotes,
-    and `say`/`echo` for simple repeating of text.
+    The Chatbot plugin is a diminishing collection of small, harmless features;
+    like `say`/`echo` for simple repeating of text.
 
     It's mostly legacy.
 
