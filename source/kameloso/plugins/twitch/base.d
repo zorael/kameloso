@@ -2435,7 +2435,7 @@ void start(TwitchPlugin plugin)
 
         // Some keygen, reload to load secrets so existing ones are read
         // Not strictly needed for normal keygen
-        plugin.reload();
+        loadResources(plugin);
 
         bool needSeparator;
         enum separator = "---------------------------------------------------------------------";
@@ -2512,8 +2512,8 @@ void start(TwitchPlugin plugin)
 )
 void onMyInfo(TwitchPlugin plugin)
 {
-    // Load ecounts.
-    plugin.reload();
+    // Load ecounts and such.
+    loadResources(plugin);
 }
 
 
@@ -3381,11 +3381,11 @@ package void saveSecretsToDisk(const Credentials[string] aa, const string filena
 }
 
 
-// reload
+// loadResources
 /++
-    Reloads the plugin, loading resources from disk.
+    Loads all resources from disk.
  +/
-void reload(TwitchPlugin plugin)
+void loadResources(TwitchPlugin plugin)
 {
     import lu.json : JSONStorage, populateFromJSON;
 
@@ -3411,6 +3411,34 @@ void reload(TwitchPlugin plugin)
     }
 
     plugin.secretsByChannel = plugin.secretsByChannel.rehash();
+}
+
+
+// reload
+/++
+    Reloads the plugin, loading resources from disk and re-importing custom emotes.
+ +/
+void reload(TwitchPlugin plugin)
+{
+    import kameloso.constants : BufferSize;
+    import core.thread : Fiber;
+
+    loadResources(plugin);
+
+    void importDg()
+    {
+        plugin.customGlobalEmotes = null;
+        importCustomGlobalEmotes(plugin);
+
+        foreach (immutable channelName, const room; plugin.rooms)
+        {
+            plugin.customEmotesByChannel.remove(channelName);
+            importCustomEmotes(plugin, channelName, room.id);
+        }
+    }
+
+    Fiber importFiber = new Fiber(&importDg, BufferSize.fiberStack);
+    importFiber.call();
 }
 
 
