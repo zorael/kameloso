@@ -222,10 +222,13 @@ void signalHandler(int sig) nothrow @nogc @system
 void messageFiber(ref Kameloso instance)
 {
     import kameloso.common : OutgoingLine;
+    import kameloso.constants : Timeout;
     import kameloso.messaging : Message;
     import kameloso.string : replaceTokens;
     import kameloso.thread : OutputRequest, ThreadMessage;
     import std.concurrency : yield;
+    import std.datetime.systime : Clock;
+    import core.time : Duration, msecs;
 
     // The Generator we use this function with popFronts the first thing it does
     // after being instantiated. We're not ready for that yet, so catch the next
@@ -236,8 +239,6 @@ void messageFiber(ref Kameloso instance)
     while (true)
     {
         auto next = Next.continue_;
-
-        alias Quiet = Flag!"quiet";
 
         /++
             Handle [kameloso.thread.ThreadMessage]s based on their
@@ -270,7 +271,8 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             case sendline:
-                instance.outbuffer.put(OutgoingLine(message.content, cast(Quiet)instance.settings.hideOutgoing));
+                instance.outbuffer.put(OutgoingLine(message.content,
+                    cast(Flag!"quiet")instance.settings.hideOutgoing));
                 break;
 
             case quietline:
@@ -278,7 +280,8 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             case immediateline:
-                instance.immediateBuffer.put(OutgoingLine(message.content, cast(Quiet)instance.settings.hideOutgoing));
+                instance.immediateBuffer.put(OutgoingLine(message.content,
+                    cast(Flag!"quiet")instance.settings.hideOutgoing));
                 break;
 
             case shortenReceiveTimeout:
@@ -296,7 +299,7 @@ void messageFiber(ref Kameloso instance)
                 // This will automatically close the connection.
                 immutable reason = message.content.length ? message.content : instance.bot.quitReason;
                 instance.priorityBuffer.put(OutgoingLine("QUIT :" ~
-                    reason.replaceTokens(instance.parser.client), cast(Quiet)message.quiet));
+                    reason.replaceTokens(instance.parser.client), cast(Flag!"quiet")message.quiet));
                 next = Next.returnSuccess;
                 break;
 
@@ -518,8 +521,10 @@ void messageFiber(ref Kameloso instance)
                 alias expression = contextual;
 
                 // Borrow settings from the first plugin. It's taken by value
-                immutable success = applyCustomSettings(instance.plugins,
-                    [ expression ], instance.plugins[0].state.settings);
+                immutable success = applyCustomSettings(
+                    instance.plugins,
+                    [ expression ],
+                    instance.plugins[0].state.settings);
                 return setSettingDg(success);
             }
         }
@@ -535,6 +540,7 @@ void messageFiber(ref Kameloso instance)
 
             version(TwitchSupport)
             {
+                // The first two checks are probably superfluous
                 immutable fast =
                     (instance.parser.server.daemon == IRCServer.Daemon.twitch) &&
                     (m.event.type != IRCEvent.Type.QUERY) &&
@@ -542,8 +548,8 @@ void messageFiber(ref Kameloso instance)
             }
 
             immutable background = (m.properties & Message.Property.background);
-            immutable quietFlag = cast(Quiet)(instance.settings.hideOutgoing ||
-                (m.properties & Message.Property.quiet));
+            immutable quietFlag = cast(Flag!"quiet")
+                (instance.settings.hideOutgoing || (m.properties & Message.Property.quiet));
             immutable force = (m.properties & Message.Property.forced);
             immutable priority = (m.properties & Message.Property.priority);
             immutable immediate = (m.properties & Message.Property.immediate);
@@ -584,7 +590,8 @@ void messageFiber(ref Kameloso instance)
 
             case EMOTE:
                 immutable emoteTarget = m.event.target.nickname.length ?
-                    m.event.target.nickname : m.event.channel;
+                    m.event.target.nickname :
+                    m.event.channel;
 
                 version(TwitchSupport)
                 {
@@ -608,7 +615,7 @@ void messageFiber(ref Kameloso instance)
                 import lu.string : strippedRight;
 
                 enum pattern = "MODE %s %s %s";
-                line = format(pattern, m.event.channel, m.event.aux, m.event.content).strippedRight;
+                line = format(pattern, m.event.channel, m.event.aux, m.event.content.strippedRight);
                 break;
 
             case TOPIC:
@@ -635,7 +642,9 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             case KICK:
-                immutable reason = m.event.content.length ? " :" ~ m.event.content : string.init;
+                immutable reason = m.event.content.length ?
+                    " :" ~ m.event.content :
+                    string.init;
                 enum pattern = "KICK %s %s%s";
                 line = format(pattern, m.event.channel, m.event.target.nickname, reason);
                 break;
@@ -644,7 +653,8 @@ void messageFiber(ref Kameloso instance)
                 if (m.event.content.length)
                 {
                     // Reason given, assume only one channel
-                    line = text("PART ", m.event.channel, " :",
+                    line = text(
+                        "PART ", m.event.channel, " :",
                         m.event.content.replaceTokens(instance.parser.client));
                 }
                 else
@@ -682,8 +692,12 @@ void messageFiber(ref Kameloso instance)
 
                     enum pattern = "[TraceWhois] messageFiber caught request to " ~
                         "WHOIS \"%s\" from %s (quiet:%s, background:%s)";
-                    writef(pattern, m.event.target.nickname, m.caller,
-                        cast(bool)quietFlag, cast(bool)background);
+                    writef(
+                        pattern,
+                        m.event.target.nickname,
+                        m.caller,
+                        cast(bool)quietFlag,
+                        cast(bool)background);
                 }
 
                 if ((now - then) > hysteresis)
@@ -712,7 +726,9 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             case QUIT:
-                immutable rawReason = m.event.content.length ? m.event.content : instance.bot.quitReason;
+                immutable rawReason = m.event.content.length ?
+                    m.event.content :
+                    instance.bot.quitReason;
                 immutable reason = rawReason.replaceTokens(instance.parser.client);
                 line = "QUIT :" ~ reason;
                 next = Next.returnSuccess;
@@ -723,11 +739,7 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             default:
-                import lu.conv : Enum;
-
-                // Changing this to use Enum lowered compilation memory use from 4168 to 3775...
-                logger.warning("No outgoing event case for type ",
-                    Enum!(IRCEvent.Type).toString(m.event.type));
+                logger.error("No outgoing event case for type <l>", m.event.type);
                 break;
             }
 
@@ -741,7 +753,7 @@ void messageFiber(ref Kameloso instance)
 
                 version(TwitchSupport)
                 {
-                    if ((instance.parser.server.daemon == IRCServer.Daemon.twitch) && fast)
+                    if (/*(instance.parser.server.daemon == IRCServer.Daemon.twitch) &&*/ fast)
                     {
                         // Send a line via the fastbuffer, faster than normal sends.
                         instance.fastbuffer.put(OutgoingLine(finalLine, quietFlag));
@@ -764,7 +776,7 @@ void messageFiber(ref Kameloso instance)
                 }
                 else
                 {
-                    instance.outbuffer.put(OutgoingLine(finalLine, cast(Quiet)instance.settings.hideOutgoing));
+                    instance.outbuffer.put(OutgoingLine(finalLine, cast(Flag!"quiet")instance.settings.hideOutgoing));
                 }
             }
 
@@ -773,14 +785,14 @@ void messageFiber(ref Kameloso instance)
                 foreach (immutable i, immutable splitLine; lines)
                 {
                     immutable finalLine = m.event.tags.length ?
-                        (m.event.tags ~ ' ' ~ prelude ~ splitLine) :
-                        (prelude ~ splitLine);
+                        text(m.event.tags, ' ', prelude, splitLine) :
+                        text(prelude, splitLine);
                     appropriateline(finalLine);
                 }
             }
             else if (line.length)
             {
-                if (m.event.tags.length) line = m.event.tags ~ ' ' ~ line;
+                if (m.event.tags.length) line = text(m.event.tags, ' ', line);
                 appropriateline(line);
             }
         }
@@ -832,13 +844,8 @@ void messageFiber(ref Kameloso instance)
             }
         }
 
-        import kameloso.constants : Timeout;
-        import std.datetime.systime : Clock;
-        import core.time : Duration, msecs;
-
         /// Timestamp of when the loop started.
         immutable loopStartTime = Clock.currTime;
-
         static immutable instant = Duration.zero;
         static immutable maxReceiveTime = Timeout.messageReadMsecs.msecs;
 
