@@ -227,7 +227,7 @@ in (channelName.length, "Tried to reply to a channel message but no channel was 
         m.event.type = IRCEvent.Type.CHAN;
         m.event.channel = originalEvent.channel;
         m.event.content = content.expandIRCTags;
-        m.event.tags = "@reply-parent-msg-id=" ~ originalEvent.id;
+        m.event.tags = "reply-parent-msg-id=" ~ originalEvent.id;
         m.caller = caller;
 
         if (quiet) m.properties |= Message.Property.quiet;

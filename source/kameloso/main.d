@@ -785,14 +785,14 @@ void messageFiber(ref Kameloso instance)
                 foreach (immutable i, immutable splitLine; lines)
                 {
                     immutable finalLine = m.event.tags.length ?
-                        text(m.event.tags, ' ', prelude, splitLine) :
+                        text('@', m.event.tags, ' ', prelude, splitLine) :
                         text(prelude, splitLine);
                     appropriateline(finalLine);
                 }
             }
             else if (line.length)
             {
-                if (m.event.tags.length) line = text(m.event.tags, ' ', line);
+                if (m.event.tags.length) line = text('@', m.event.tags, ' ', line);
                 appropriateline(line);
             }
         }
