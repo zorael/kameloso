@@ -3431,7 +3431,6 @@ auto run(string[] args)
     import kameloso.string : replaceTokens;
     import std.algorithm.comparison : among;
     import std.exception : ErrnoException;
-    import core.stdc.errno : errno;
 
     // Set up the Kameloso instance.
     Kameloso instance;
@@ -3503,7 +3502,7 @@ auto run(string[] args)
         catch (ErrnoException e)
         {
             import std.stdio : writeln;
-            if (!instance.settings.headless) writeln("Failed to set stdout buffer mode/size! errno:", errno);
+            if (!instance.settings.headless) writeln("Failed to set stdout buffer mode/size! errno:", e.errno);
             if (!instance.settings.force) return ShellReturnValue.terminalSetupFailure;
         }
         catch (Exception e)
