@@ -1391,14 +1391,12 @@ void startPingMonitorFiber(ConnectService service)
 
                     if (strikes <= StrikeBreakpoints.ping)
                     {
-                        logger.warning("PING monitor empty tick, strike ", strikes);
                         delay(service, briefWait, Yes.yield);
                         continue;
                     }
                     else if (strikes <= StrikeBreakpoints.reconnect)
                     {
                         // Timeout. Send a preemptive ping
-                        logger.warning("PING monitor ping, strike ", strikes);
                         service.state.mainThread.prioritySend(ThreadMessage.ping(service.state.server.resolvedAddress));
                         delay(service, timeToAllowForPingResponse, Yes.yield);
                         continue;
@@ -1406,7 +1404,6 @@ void startPingMonitorFiber(ConnectService service)
                     else /*if (strikes > StrikeBreakpoints.reconnect)*/
                     {
                         // All failed, reconnect
-                        logger.warning("PING monitor reconnect.");
                         service.state.mainThread.prioritySend(ThreadMessage.reconnect);
                         return;
                     }
