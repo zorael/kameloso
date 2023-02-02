@@ -3161,11 +3161,12 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
     if ((plugin.twitchSettings.fakeChannelFromQueries) && (event.type == IRCEvent.Type.QUERY))
     {
-        immutable channelName = '#' ~ event.sender.nickname;
-        if (plugin.state.bot.homeChannels.canFind(channelName))
+        alias pred = (homeChannelEntry, senderNickname) => (homeChannelEntry[1..$] == senderNickname);
+
+        if (plugin.state.bot.homeChannels.canFind!pred(event.sender.nickname))
         {
             event.type = IRCEvent.Type.CHAN;
-            event.channel = channelName;
+            event.channel = '#' ~ event.sender.nickname;
         }
     }
     else if (!event.sender.nickname.length || !event.channel.length)
