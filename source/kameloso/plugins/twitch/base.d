@@ -282,6 +282,9 @@ package struct Credentials
 
         Params:
             json = JSON representation of some [Credentials].
+
+        Returns:
+            A new [Credentials] with values from the paseed `json`.
      +/
     static auto fromJSON(const JSONValue json)
     {
@@ -3557,6 +3560,9 @@ package:
 
             /++
                 Accessor to [_idString].
+
+                Returns:
+                    This stream's ID, as reported by Twitch, in string form.
              +/
             auto idString() const
             {
@@ -3565,6 +3571,9 @@ package:
 
             /++
                 Takes a second [Stream] and updates this one with values from it.
+
+                Params:
+                    A second [Stream] from which to inherit values.
              +/
             void update(const Stream updated)
             {
@@ -3584,6 +3593,9 @@ package:
 
             /++
                 Constructor.
+
+                Params:
+                    idString = This stream's ID, as reported by Twitch, in string form.
              +/
             this(const string idString)
             {
@@ -3616,6 +3628,9 @@ package:
 
                 Params:
                     json = [std.json.JSONValue|JSONValue] to build a [Stream] from.
+
+                Returns:
+                    A new [Stream] with values from the passed `json`.
              +/
             static auto fromJSON(const JSONValue json)
             {
@@ -3641,6 +3656,9 @@ package:
 
         /++
             Constructor taking a string (channel) name.
+
+            Params:
+                channelName = Name of the channel.
          +/
         this(const string channelName)
         {
@@ -3654,6 +3672,9 @@ package:
 
         /++
             Accessor to [_uniqueID].
+
+            Returns:
+                A unique ID, in the form of the value of `_uniqueID`.
          +/
         auto uniqueID() const
         {
