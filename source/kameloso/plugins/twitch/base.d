@@ -1388,7 +1388,7 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     {
         immutable responseJSON = createPoll(plugin, event.channel, title, durationString, choices);
         enum pattern = `Poll "%s" created.`;
-        immutable message = pattern.format(responseJSON.array[0].object["title"].str);
+        immutable message = pattern.format(responseJSON[0].object["title"].str);
         chan(plugin.state, event.channel, message);
     }
     catch (MissingBroadcasterTokenException _)
@@ -1463,15 +1463,15 @@ void onCommandEndPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     import std.json : JSONType;
     import std.stdio : writeln;
 
-    immutable pollInfoJSON = getPolls(plugin, event.channel);
+    const pollInfoJSON = getPolls(plugin, event.channel);
 
-    if (!pollInfoJSON.array.length)
+    if (!pollInfoJSON.length)
     {
         enum message = "There are no active polls to end.";
         return chan(plugin.state, event.channel, message);
     }
 
-    immutable voteID = pollInfoJSON.array[0].object["id"].str;
+    immutable voteID = pollInfoJSON[0].object["id"].str;
     immutable endResponseJSON = endPoll(plugin, event.channel, voteID, Yes.terminate);
 
     if ((endResponseJSON.type != JSONType.object) ||

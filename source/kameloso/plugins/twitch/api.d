@@ -628,7 +628,7 @@ in (Fiber.getThis, "Tried to call `getTwitchData` from outside a Fiber")
             enum message = "`getTwitchData` query response JSON is not JSONType.object";
             throw new UnexpectedJSONException(message, responseJSON);
         }
-        else if (const dataJSON = "data" in responseJSON)
+        else if (immutable dataJSON = "data" in responseJSON)
         {
             if (dataJSON.array.length == 1)
             {
@@ -728,15 +728,14 @@ in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
                 enum message = "`getChatters` response JSON is not JSONType.object";
                 throw new UnexpectedJSONException(message, responseJSON);
             }
-            else if (const chattersJSON = "chatters" in responseJSON)
+
+            immutable chattersJSON = "chatters" in responseJSON;
+            if (!chattersJSON)
             {
-                if (chattersJSON.type != JSONType.object)
-                {
-                    // As above
-                    if (i < TwitchPlugin.delegateRetries-1) continue;
-                    enum message = "`getChatters` \"chatters\" JSON is not JSONType.object";
-                    throw new UnexpectedJSONException(message, *chattersJSON);
-                }
+                // For some reason we received an object that didn't contain chatters
+                if (i < TwitchPlugin.delegateRetries-1) continue;
+                enum message = "`getChatters` \"chatters\" JSON is not JSONType.object";
+                throw new UnexpectedJSONException(message, *chattersJSON);
             }
 
             // Don't return `chattersJSON`, as we would lose "chatter_count".
@@ -915,7 +914,7 @@ in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
 {
     import std.json : JSONValue;
 
-    immutable url = "https://api.twitch.tv/helix/users/follows?to_id=" ~ id;
+    immutable url = "https://api.twitch.tv/helix/users/follows?first=100&to_id=" ~ id;
 
     foreach (immutable i; 0..TwitchPlugin.delegateRetries)
     {
@@ -924,9 +923,9 @@ in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
             const entitiesArrayJSON = getMultipleTwitchData(plugin, url);
             JSONValue[string] allFollowsJSON;
 
-            foreach (entityJSON; entitiesArrayJSON.array)
+            foreach (entityJSON; entitiesArrayJSON)
             {
-                immutable key = entityJSON.object["from_id"].str;
+                immutable key = entityJSON["from_id"].str;
                 allFollowsJSON[key] = null;
                 allFollowsJSON[key] = entityJSON;
             }
@@ -968,31 +967,33 @@ in (Fiber.getThis, "Tried to call `getMultipleTwitchData` from outside a Fiber")
     JSONValue allEntitiesJSON;
     allEntitiesJSON = null;
     allEntitiesJSON.array = null;
-    long total;
     string after;
 
     do
     {
         immutable paginatedURL = after.length ?
-            ("&after=" ~ after) :
+            (url ~ "&after=" ~ after) :
             url;
-
         immutable response = sendHTTPRequest(plugin, paginatedURL, plugin.authorizationBearer);
         immutable responseJSON = parseJSON(response.str);
-        const cursor = "cursor" in responseJSON["pagination"];
 
-        if (!total) total = responseJSON["total"].integer;
+        immutable dataJSON = "data" in responseJSON;
+        if (!dataJSON) break;  // Invalid response
 
-        foreach (thisResponseJSON; responseJSON["data"].array)
+        foreach (thisResponseJSON; dataJSON.array)
         {
             allEntitiesJSON.array ~= thisResponseJSON;
         }
 
-        after = ((allEntitiesJSON.array.length != total) && cursor) ? cursor.str : string.init;
+        immutable cursor = "cursor" in responseJSON["pagination"];
+
+        after = cursor ?
+            cursor.str :
+            string.init;
     }
     while (after.length);
 
-    return allEntitiesJSON;
+    return allEntitiesJSON.array;
 }
 
 
@@ -1233,8 +1234,8 @@ in ((name.length || id.length), "Tried to call `getTwitchGame` with no game name
     }
 
     immutable gameURL = id.length ?
-        "https://api.twitch.tv/helix/games?id=" ~ id :
-        "https://api.twitch.tv/helix/games?name=" ~ name;
+        ("https://api.twitch.tv/helix/games?id=" ~ id) :
+        ("https://api.twitch.tv/helix/games?name=" ~ name);
 
     foreach (immutable i; 0..TwitchPlugin.delegateRetries)
     {
@@ -1347,8 +1348,13 @@ in (Fiber.getThis, "Tried to call `modifyChannel` from outside a Fiber")
     {
         try
         {
-            cast(void)sendHTTPRequest(plugin, url, authorizationBearer,
-                HttpVerb.PATCH, cast(ubyte[])sink.data, "application/json");
+            cast(void)sendHTTPRequest(
+                plugin,
+                url,
+                authorizationBearer,
+                HttpVerb.PATCH,
+                cast(ubyte[])sink.data,
+                "application/json");
             return;
         }
         catch (Exception e)
@@ -1437,8 +1443,13 @@ in (Fiber.getThis, "Tried to call `startCommercial` from outside a Fiber")
     {
         try
         {
-            cast(void)sendHTTPRequest(plugin, url, authorizationBearer,
-                HttpVerb.POST, cast(ubyte[])body_, "application/json");
+            cast(void)sendHTTPRequest(
+                plugin,
+                url,
+                authorizationBearer,
+                HttpVerb.POST,
+                cast(ubyte[])body_,
+                "application/json");
             return;
         }
         catch (Exception e)
@@ -1485,23 +1496,23 @@ in (Fiber.getThis, "Tried to call `getPolls` from outside a Fiber")
     string url = baseURL ~ room.id;  // mutable;
     if (idString.length) url ~= "&id=" ~ idString;
 
+    JSONValue allPollsJSON;
+    allPollsJSON = null;
+    allPollsJSON.array = null;
+    string after;
+
     foreach (immutable i; 0..TwitchPlugin.delegateRetries)
     {
         try
         {
-            JSONValue allPollsJSON;
-            allPollsJSON = null;
-            allPollsJSON.array = null;
-            string after;
             uint retry;
 
             inner:
-            while (true)
+            do
             {
                 immutable paginatedURL = after.length ?
                     (url ~ "&after=" ~ after) :
                     url;
-
                 immutable response = sendHTTPRequest(
                     plugin,
                     paginatedURL,
@@ -1509,12 +1520,9 @@ in (Fiber.getThis, "Tried to call `getPolls` from outside a Fiber")
                     HttpVerb.GET,
                     cast(ubyte[])null,
                     "application/json");
-
                 immutable responseJSON = parseJSON(response.str);
 
-                if ((responseJSON.type != JSONType.object) ||
-                    ("data" !in responseJSON) ||
-                    (responseJSON["data"].type == JSONType.null_))
+                if ((responseJSON.type != JSONType.object) || ("data" !in responseJSON))
                 {
                     // Invalid response in some way
                     if (++retry < TwitchPlugin.delegateRetries) continue inner;
@@ -1569,10 +1577,10 @@ in (Fiber.getThis, "Tried to call `getPolls` from outside a Fiber")
                 }
 
                 after = responseJSON["after"].str;
-                if (!after.length) break;
             }
+            while (after.length);
 
-            return allPollsJSON;
+            return allPollsJSON.array;
         }
         catch (Exception e)
         {
@@ -1659,6 +1667,7 @@ in (Fiber.getThis, "Tried to call `createPoll` from outside a Fiber")
                 HttpVerb.POST,
                 cast(ubyte[])body_,
                 "application/json");
+            immutable responseJSON = parseJSON(response.str);
 
             /*
             {
@@ -1697,11 +1706,7 @@ in (Fiber.getThis, "Tried to call `createPoll` from outside a Fiber")
             }
             */
 
-            immutable responseJSON = parseJSON(response.str);
-
-            if ((responseJSON.type != JSONType.object) ||
-                ("data" !in responseJSON) ||
-                (responseJSON["data"].type != JSONType.array))
+            if ((responseJSON.type != JSONType.object) || ("data" !in responseJSON))
             {
                 // Invalid response in some way
                 if (i < TwitchPlugin.delegateRetries-1) continue;
@@ -1709,7 +1714,7 @@ in (Fiber.getThis, "Tried to call `createPoll` from outside a Fiber")
                 throw new UnexpectedJSONException(message, responseJSON);
             }
 
-            return responseJSON["data"];
+            return responseJSON["data"].array;
         }
         catch (Exception e)
         {
@@ -1779,6 +1784,7 @@ in (Fiber.getThis, "Tried to call `endPoll` from outside a Fiber")
                 HttpVerb.PATCH,
                 cast(ubyte[])body_,
                 "application/json");
+            immutable responseJSON = parseJSON(response.str);
 
             /*
             {
@@ -1818,11 +1824,7 @@ in (Fiber.getThis, "Tried to call `endPoll` from outside a Fiber")
             }
             */
 
-            immutable responseJSON = parseJSON(response.str);
-
-            if ((responseJSON.type != JSONType.object) ||
-                ("data" !in responseJSON) ||
-                (responseJSON["data"].type != JSONType.array))
+            if ((responseJSON.type != JSONType.object) || ("data" !in responseJSON))
             {
                 // Invalid response in some way
                 if (i < TwitchPlugin.delegateRetries-1) continue;
@@ -1905,10 +1907,7 @@ auto getBotList(TwitchPlugin plugin)
             }
             */
 
-            if ((responseJSON.type != JSONType.object) ||
-                ("_total" !in responseJSON) ||
-                ("bots" !in responseJSON) ||
-                (responseJSON["bots"].type != JSONType.array))
+            if ((responseJSON.type != JSONType.object) || ("bots" !in responseJSON))
             {
                 // Invalid response in some way, retry until we reach the limit
                 if (i < TwitchPlugin.delegateRetries-1) continue;
@@ -2138,11 +2137,11 @@ in (Fiber.getThis, "Tried to call `getBTTVEmotes` from outside a Fiber")
             }
             +/
 
-            immutable channelEmotesJSON = "channelEmotes" in responseJSON.object;
+            immutable channelEmotesJSON = "channelEmotes" in responseJSON;
 
             if (!channelEmotesJSON)
             {
-                const messageJSON = "message" in responseJSON.object;
+                immutable messageJSON = "message" in responseJSON;
                 if (messageJSON && (messageJSON.str == "user not found"))
                 {
                     // Benign
@@ -2154,7 +2153,7 @@ in (Fiber.getThis, "Tried to call `getBTTVEmotes` from outside a Fiber")
                     response.str);
             }
 
-            const sharedEmotesJSON = "sharedEmotes" in responseJSON.object;
+            immutable sharedEmotesJSON = "sharedEmotes" in responseJSON;
             if (!sharedEmotesJSON) throw new TwitchQueryException(
                 `No "sharedEmotes" key in JSON response`,
                 response.str);
@@ -2180,7 +2179,7 @@ in (Fiber.getThis, "Tried to call `getBTTVEmotes` from outside a Fiber")
 
             if (json.type == JSONType.object)
             {
-                const messageJSON = "message" in json.object;
+                immutable messageJSON = "message" in json;
 
                 if (messageJSON && (messageJSON.str == "user not found"))
                 {
@@ -2257,7 +2256,7 @@ in (Fiber.getThis, "Tried to call `getBTTVGlobalEmotes` from outside a Fiber")
             ]
             +/
 
-            foreach (const emoteJSON; responseJSON.array)
+            foreach (immutable emoteJSON; responseJSON.array)
             {
                 immutable emote = emoteJSON["code"].str.to!dstring;
                 emoteMap[emote] = true;
@@ -2300,7 +2299,7 @@ void getFFZEmotes(
 in (Fiber.getThis, "Tried to call `getFFZEmotes` from outside a Fiber")
 {
     import std.conv : to;
-    import std.json : parseJSON;
+    import std.json : JSONType, parseJSON;
 
     immutable url = "https://api.frankerfacez.com/v1/room/id/" ~ idString;
 
@@ -2402,12 +2401,15 @@ in (Fiber.getThis, "Tried to call `getFFZEmotes` from outside a Fiber")
             }
             +/
 
-            immutable setsJSON = "sets" in responseJSON;
-            if (!setsJSON) throw new TwitchQueryException(
-                `No "sets" key in JSON response`,
-                response.str);
+            if ((responseJSON.type != JSONType.object) || ("sets" !in responseJSON))
+            {
+                // Invalid response in some way
+                if (i < TwitchPlugin.delegateRetries-1) continue;
+                enum message = "`getFFZEmotes` response has unexpected JSON";
+                throw new UnexpectedJSONException(message, responseJSON);
+            }
 
-            foreach (immutable _, immutable setJSON; setsJSON.object)
+            foreach (immutable setJSON; responseJSON["sets"].object)
             {
                 immutable emoticonsJSON = "emoticons" in setJSON;
                 if (!emoticonsJSON) throw new TwitchQueryException(
@@ -2503,7 +2505,7 @@ in (Fiber.getThis, "Tried to call `get7tvEmotes` from outside a Fiber")
 
             if (responseJSON.type == JSONType.object)
             {
-                const errorJSON = "error" in responseJSON.object;
+                immutable errorJSON = "error" in responseJSON;
                 if (errorJSON && (errorJSON.str == "No Items Found"))
                 {
                     // Benign
@@ -2515,7 +2517,7 @@ in (Fiber.getThis, "Tried to call `get7tvEmotes` from outside a Fiber")
                     response.str);
             }
 
-            foreach (const emoteJSON; responseJSON.array)
+            foreach (immutable emoteJSON; responseJSON.array)
             {
                 immutable emote = emoteJSON["name"].str.to!dstring;
                 emoteMap[emote] = true;
@@ -2531,7 +2533,7 @@ in (Fiber.getThis, "Tried to call `get7tvEmotes` from outside a Fiber")
             if (json.type == JSONType.object)
             {
                 // Shouldn't this be an ErrorJSONException?
-                const errorJSON = "error" in json.object;
+                immutable errorJSON = "error" in json;
 
                 if (errorJSON && (errorJSON.str == "No Items Found"))
                 {
