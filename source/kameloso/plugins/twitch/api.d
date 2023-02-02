@@ -2758,3 +2758,160 @@ in (Fiber.getThis, "Tried to call `get7tvGlobalEmotes` from outside a Fiber")
         }
     }
 }
+
+
+// getSubscribers
+/++
+    Fetches a list of all subscribers of the specified channel. A broadcaster-level
+    access token is required.
+
+    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        channelName = Name of channel to fetch subscribers of.
+
+    Returns:
+        An array of Voldemort subscribers.
+ +/
+version(none)
+auto getSubscribers(
+    TwitchPlugin plugin,
+    const string channelName)
+in (Fiber.getThis, "Tried to call `getSubscribers` from outside a Fiber")
+{
+    import std.array : Appender;
+    import std.format : format;
+    import std.json : JSONType, JSONValue, parseJSON;
+
+    const room = channelName in plugin.rooms;
+    assert(room, "Tried to get subscribers of a channel for which there existed no room");
+
+    static struct User
+    {
+        string id;
+        string name;
+        string displayName;
+    }
+
+    static struct Subscription
+    {
+        User user;
+        User gifter;
+        bool wasGift;
+    }
+
+    enum url = "https://api.twitch.tv/helix/subscribers";
+    enum initialPattern = `
+{
+    "broadcaster_id": "%s",
+    "first": "100"
+}`;
+
+    enum subsequentPattern = `
+{
+    "broadcaster_id": "%s",
+    "after": "%s",
+}`;
+
+    Appender!(Subscription[]) subs;
+    string after;
+
+    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    {
+        try
+        {
+            uint retry;
+
+            inner:
+            do
+            {
+                immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
+                immutable body_ = after.length ?
+                    subsequentPattern.format(room.id, after) :
+                    initialPattern.format(room.id);
+                immutable response = sendHTTPRequest(
+                    plugin,
+                    url,
+                    authorizationBearer,
+                    HttpVerb.GET,
+                    cast(ubyte[])body_,
+                    "application/json");
+                immutable responseJSON = parseJSON(response.str);
+
+                /*
+                {
+                    "data": [
+                        {
+                            "broadcaster_id": "141981764",
+                            "broadcaster_login": "twitchdev",
+                            "broadcaster_name": "TwitchDev",
+                            "gifter_id": "12826",
+                            "gifter_login": "twitch",
+                            "gifter_name": "Twitch",
+                            "is_gift": true,
+                            "tier": "1000",
+                            "plan_name": "Channel Subscription (twitchdev)",
+                            "user_id": "527115020",
+                            "user_name": "twitchgaming",
+                            "user_login": "twitchgaming"
+                        },
+                    ],
+                    "pagination": {
+                        "cursor": "xxxx"
+                    },
+                    "total": 13,
+                    "points": 13
+                }
+                */
+
+                if ((responseJSON.type != JSONType.object) || ("data" !in responseJSON))
+                {
+                    // Invalid response in some way
+                    if (++retry < TwitchPlugin.delegateRetries) continue inner;
+                    enum message = "`getSubscribers` response has unexpected JSON";
+                    throw new UnexpectedJSONException(message, responseJSON);
+                }
+
+                retry = 0;
+
+                if (!subs.capacity)
+                {
+                    subs.reserve(responseJSON["total"].integer);
+                }
+
+                foreach (immutable subJSON; responseJSON["data"].array)
+                {
+                    Subscription sub;
+                    sub.user.id = subJSON["user_id"].str;
+                    sub.user.name = subJSON["user_login"].str;
+                    sub.user.displayName = subJSON["user_name"].str;
+                    sub.wasGift = subJSON["is_gift"].boolean;
+                    sub.gifter.id = subJSON["gifter_id"].str;
+                    sub.gifter.name = subJSON["gifter_login"].str;
+                    sub.gifter.displayName = subJSON["gifter_name"].str;
+                    subs.put(sub);
+                }
+
+                immutable paginationJSON = "pagination" in responseJSON;
+                if (!paginationJSON) break;
+
+                immutable cursorJSON = "cursor" in *paginationJSON;
+                if (!cursorJSON) break;
+
+                after = cursorJSON.str;
+            }
+            while (after.length);
+
+            return subs;
+        }
+        catch (Exception e)
+        {
+            // Retry until we reach the retry limit, then rethrow
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+            throw e;
+        }
+    }
+
+    assert(0, "Unreachable");
+}
