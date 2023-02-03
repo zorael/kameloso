@@ -1466,52 +1466,63 @@ void onCommandEndPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     import std.json : JSONType;
     import std.stdio : writeln;
 
-    const pollInfoJSON = getPolls(plugin, event.channel);
-
-    if (!pollInfoJSON.length)
+    try
     {
-        enum message = "There are no active polls to end.";
-        return chan(plugin.state, event.channel, message);
+        const pollInfoJSON = getPolls(plugin, event.channel);
+
+        if (!pollInfoJSON.length)
+        {
+            enum message = "There are no active polls to end.";
+            return chan(plugin.state, event.channel, message);
+        }
+
+        immutable voteID = pollInfoJSON[0].object["id"].str;
+        immutable endResponseJSON = endPoll(plugin, event.channel, voteID, Yes.terminate);
+
+        if ((endResponseJSON.type != JSONType.object) ||
+            ("choices" !in endResponseJSON) ||
+            (endResponseJSON["choices"].array.length < 2))
+        {
+            // Invalid response in some way
+            logger.error("Unexpected response from server when ending a poll");
+            writeln(endResponseJSON.toPrettyString);
+            return;
+        }
+
+        /*static struct Choice
+        {
+            string title;
+            long votes;
+        }
+
+        Choice[] choices;
+        long totalVotes;
+
+        foreach (immutable i, const choiceJSON; endResponseJSON["choices"].array)
+        {
+            Choice choice;
+            choice.title = choiceJSON["title"].str;
+            choice.votes =
+                choiceJSON["votes"].integer +
+                choiceJSON["channel_points_votes"].integer +
+                choiceJSON["bits_votes"].integer;
+            choices ~= choice;
+            totalVotes += choice.votes;
+        }
+
+        auto sortedChoices = choices.sort!((a,b) => a.votes > b.votes);*/
+
+        enum message = "Poll ended.";
+        chan(plugin.state, event.channel, message);
     }
-
-    immutable voteID = pollInfoJSON[0].object["id"].str;
-    immutable endResponseJSON = endPoll(plugin, event.channel, voteID, Yes.terminate);
-
-    if ((endResponseJSON.type != JSONType.object) ||
-        ("choices" !in endResponseJSON) ||
-        (endResponseJSON["choices"].array.length < 2))
+    catch (MissingBroadcasterTokenException e)
     {
-        // Invalid response in some way
-        logger.error("Unexpected response from server when ending a poll");
-        writeln(endResponseJSON.toPrettyString);
-        return;
+        enum pattern = "Missing broadcaster-level API token for channel <l>%s</>.";
+        logger.errorf(pattern, e.channelName);
+
+        enum superMessage = "Run the program with <l>--set twitch.superKeygen</> to generate a new one.";
+        logger.error(superMessage);
     }
-
-    /*static struct Choice
-    {
-        string title;
-        long votes;
-    }
-
-    Choice[] choices;
-    long totalVotes;
-
-    foreach (immutable i, const choiceJSON; endResponseJSON["choices"].array)
-    {
-        Choice choice;
-        choice.title = choiceJSON["title"].str;
-        choice.votes =
-            choiceJSON["votes"].integer +
-            choiceJSON["channel_points_votes"].integer +
-            choiceJSON["bits_votes"].integer;
-        choices ~= choice;
-        totalVotes += choice.votes;
-    }
-
-    auto sortedChoices = choices.sort!((a,b) => a.votes > b.votes);*/
-
-    enum message = "Poll ended.";
-    chan(plugin.state, event.channel, message);
 }
 
 
@@ -2120,6 +2131,14 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     try
     {
         startCommercial(plugin, event.channel, lengthString);
+    }
+    catch (MissingBroadcasterTokenException e)
+    {
+        enum pattern = "Missing broadcaster-level API token for channel <l>%s</>.";
+        logger.errorf(pattern, e.channelName);
+
+        enum superMessage = "Run the program with <l>--set twitch.superKeygen</> to generate a new one.";
+        logger.error(superMessage);
     }
     catch (EmptyResponseException _)
     {
