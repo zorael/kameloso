@@ -1582,6 +1582,10 @@ in (Fiber.getThis, "Tried to call `getPolls` from outside a Fiber")
 
             return allPollsJSON.array;
         }
+        /*catch (MissingBroadcasterTokenException e)
+        {
+            throw e;
+        }*/
         catch (Exception e)
         {
             // Retry until we reach the retry limit, then rethrow
@@ -1716,6 +1720,10 @@ in (Fiber.getThis, "Tried to call `createPoll` from outside a Fiber")
 
             return responseJSON["data"].array;
         }
+        catch (MissingBroadcasterTokenException e)
+        {
+            throw e;
+        }
         catch (Exception e)
         {
             // Retry until we reach the retry limit, then rethrow
@@ -1833,6 +1841,10 @@ in (Fiber.getThis, "Tried to call `endPoll` from outside a Fiber")
             }
 
             return responseJSON["data"].array[0];
+        }
+        catch (MissingBroadcasterTokenException e)
+        {
+            throw e;
         }
         catch (Exception e)
         {
@@ -2777,6 +2789,10 @@ in (Fiber.getThis, "Tried to call `getSubscribers` from outside a Fiber")
             while (after.length);
 
             return subs;
+        }
+        catch (MissingBroadcasterTokenException e)
+        {
+            throw e;
         }
         catch (Exception e)
         {
