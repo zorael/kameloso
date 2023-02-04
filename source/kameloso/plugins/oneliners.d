@@ -328,7 +328,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
     void sendUsage()
     {
         enum pattern = "Usage: <b>%s%s<b> [new|insert|add|edit|del|list] ...";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.auxstrings[0]);
         chan(plugin.state, event.channel, message);
     }
 
@@ -392,7 +392,7 @@ void handleNewOneliner(
     void sendNewUsage()
     {
         enum pattern = "Usage: <b>%s%s new<b> [trigger] [type] [optional cooldown]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.auxstrings[0]);
         chan(plugin.state, event.channel, message);
     }
 
@@ -496,7 +496,7 @@ void handleNewOneliner(
         saveResourceToDisk(plugin.onelinersByChannel, plugin.onelinerFile);
 
         enum pattern = "Oneliner <b>%s%s<b> created! Use <b>%1$s%3$s add<b> to add lines.";
-        immutable message = pattern.format(plugin.state.settings.prefix, trigger, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, trigger, event.auxstrings[0]);
         chan(plugin.state, event.channel, message);
     }
 
@@ -549,14 +549,14 @@ void handleAddToOneliner(
         immutable pattern = (verb == "insert") ?
             "Usage: <b>%s%s insert<b> [trigger] [position] [text]" :
             "Usage: <b>%s%s edit<b> [trigger] [position] [new text]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.auxstrings[0]);
         chan(plugin.state, event.channel, message);
     }
 
     void sendAddUsage()
     {
         enum pattern = "Usage: <b>%s%s add<b> [trigger] [text]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.auxstrings[0]);
         chan(plugin.state, event.channel, message);
     }
 
@@ -748,7 +748,7 @@ void handleDelFromOneliner(
     void sendDelUsage()
     {
         enum pattern = "Usage: <b>%s%s del<b> [trigger] [optional position]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.auxstrings[0]);
         chan(plugin.state, event.channel, message);
     }
 

@@ -900,13 +900,21 @@ mixin template IRCPluginImpl(
 
             // Snapshot content and aux for later restoration
             immutable origContent = event.content;  // don't strip
-            immutable origAux = event.aux;
+            string[] origAuxStrings;
+            bool auxStringsDirty;
 
             scope(exit)
             {
                 // Restore content and aux as they may have been altered
                 event.content = origContent;
-                event.aux = origAux;
+
+                if (auxStringsDirty)
+                {
+                    foreach (immutable i, immutable origString; origAuxStrings)
+                    {
+                        event.auxstrings[i] = origString;
+                    }
+                }
             }
 
             if (uda._commands.length || uda._regexes.length)
@@ -972,7 +980,13 @@ mixin template IRCPluginImpl(
                                 if (state.settings.flush) stdout.flush();
                             }
 
-                            event.aux = thisCommand;
+                            if (!auxStringsDirty)
+                            {
+                                origAuxStrings = event.auxstrings.dup;
+                                auxStringsDirty = true;
+                            }
+
+                            event.auxstrings[0] = thisCommand;
                             commandMatch = true;
                             break commandForeach;
                         }
@@ -1026,7 +1040,13 @@ mixin template IRCPluginImpl(
                                         if (state.settings.flush) stdout.flush();
                                     }
 
-                                    event.aux = hits[0];
+                                    if (!auxStringsDirty)
+                                    {
+                                        origAuxStrings = event.auxstrings.dup;
+                                        auxStringsDirty = true;
+                                    }
+
+                                    event.auxstrings[0] = hits[0];
                                     commandMatch = true;
                                     break regexForeach;
                                 }
@@ -1207,10 +1227,14 @@ mixin template IRCPluginImpl(
             event.raw = sanitize(event.raw);
             event.channel = sanitize(event.channel);
             event.content = sanitize(event.content);
-            event.aux = sanitize(event.aux);
             event.tags = sanitize(event.tags);
             event.errors = sanitize(event.errors);
             event.errors ~= event.errors.length ? " | Sanitised" : "Sanitised";
+
+            foreach (immutable i, ref aux; event.auxstrings)
+            {
+                aux = sanitize(aux);
+            }
 
             foreach (user; only(&event.sender, &event.target))
             {

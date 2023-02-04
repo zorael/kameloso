@@ -217,7 +217,7 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
                 case ACCOUNT:
                     if (stored.account.length && (user.account == "*"))
                     {
-                        event.aux = stored.account;
+                        event.auxstrings[0] = stored.account;
                         goto case RPL_WHOISACCOUNT;
                     }
                     break;

@@ -187,8 +187,10 @@ if (isOutputRange!(Sink, char[]))
     import kameloso.irccolours : stripEffects;
     import lu.conv : Enum;
     import std.algorithm.comparison : equal;
+    import std.algorithm.iteration : filter;
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
+    import std.format : formattedWrite;
     import std.uni : asLowerCase, asUpperCase;
 
     immutable typestring = Enum!(IRCEvent.Type).toString(event.type).withoutTypePrefix;
@@ -419,11 +421,12 @@ if (isOutputRange!(Sink, char[]))
              (event.type == IRCEvent.Type.SELFCHAN) ||
              (event.type == IRCEvent.Type.EMOTE)) &&
             event.target.nickname.length &&
-            event.aux.length)
+            event.auxstrings[0].length)
         {
             /*if (content.length)*/ putContent();
-            if (event.target.nickname.length) putTarget();
-            if (event.aux.length) .put(sink, `: "`, event.aux, '"');
+            putTarget();
+            .put(sink, `: "`, event.auxstrings[0], '"');
+
             putQuotedTwitchMessage = true;
         }
     }
@@ -432,12 +435,23 @@ if (isOutputRange!(Sink, char[]))
     {
         if (event.target.nickname.length) putTarget();
         if (content.length) putContent();
-        if (event.aux.length) .put(sink, " (", event.aux, ')');
+
+        auto auxstrings = event.auxstrings.filter!(s => s.length);
+
+        if (!auxstrings.empty)
+        {
+            enum pattern = " (%-(%s%| | %))";
+            sink.formattedWrite(pattern, auxstrings);
+        }
     }
 
-    if (event.count != long.min) .put(sink, " {", event.count, '}');
+    auto counts = event.counts.filter!(n => !n.isNull);
 
-    if (event.altcount != long.min) .put(sink, " {", event.altcount, '}');
+    if (!counts.empty)
+    {
+        enum pattern = " {%-(%s%|} {%)}";
+        sink.formattedWrite(pattern, counts);
+    }
 
     if (event.num > 0)
     {
@@ -518,7 +532,7 @@ if (isOutputRange!(Sink, char[]))
     event.channel = string.init;
     event.content = string.init;
     event.sender.account = "n1ckn4m3";
-    event.aux = "n1ckn4m3";
+    event.auxstrings[0] = "n1ckn4m3";
 
     plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError);
     immutable accountLine = sink.data[11..$].idup;
@@ -529,8 +543,8 @@ if (isOutputRange!(Sink, char[]))
     event.errors = "DANGER WILL ROBINSON";
     event.content = "Blah balah";
     event.num = 666;
-    event.count = -42;
-    event.aux = string.init;
+    event.counts[0] = -42;
+    event.auxstrings[0] = string.init;
     event.type = IRCEvent.Type.ERROR;
 
     plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError);
@@ -571,6 +585,7 @@ if (isOutputRange!(Sink, char[]))
     import kameloso.constants : DefaultColours;
     import kameloso.terminal.colours : FG = TerminalForeground, TR = TerminalReset, colourWith;
     import lu.conv : Enum;
+    import std.algorithm.iteration : filter;
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
     import std.format : formattedWrite;
@@ -1019,16 +1034,13 @@ if (isOutputRange!(Sink, char[]))
              (event.type == IRCEvent.Type.SELFCHAN) ||
              (event.type == IRCEvent.Type.EMOTE)) &&
             event.target.nickname.length &&
-            event.aux.length)
+            event.auxstrings[0].length)
         {
             /*if (content.length)*/ putContent();
-            if (event.target.nickname.length) putTarget();
-            if (event.aux.length)
-            {
-                .put!(Yes.colours)(sink,
-                    TerminalForeground(bright ? Bright.content : Dark.content),
-                    `: "`, event.aux, '"');
-            }
+            putTarget();
+            .put!(Yes.colours)(sink,
+                TerminalForeground(bright ? Bright.content : Dark.content),
+                `: "`, event.auxstrings[0], '"');
 
             putQuotedTwitchMessage = true;
         }
@@ -1038,24 +1050,24 @@ if (isOutputRange!(Sink, char[]))
     {
         if (event.target.nickname.length) putTarget();
         if (content.length) putContent();
-        if (event.aux.length)
+
+        auto auxstrings = event.auxstrings.filter!(s => s.length);
+
+        if (!auxstrings.empty)
         {
-            .put!(Yes.colours)(sink,
-                TerminalForeground(bright ? Bright.aux : Dark.aux),
-                " (", event.aux, ')');
+            enum pattern = " (%-(%s%| | %))";
+            sink.colourWith(TerminalForeground(bright ? Bright.aux : Dark.aux));
+            sink.formattedWrite(pattern, auxstrings);
         }
     }
 
-    if (event.count != long.min)
-    {
-        sink.colourWith(TerminalForeground(bright ? Bright.count : Dark.count));
-        .put(sink, " {", event.count, '}');
-    }
+    auto counts = event.counts.filter!(n => !n.isNull);
 
-    if (event.altcount != long.min)
+    if (!counts.empty)
     {
-        sink.colourWith(TerminalForeground(bright ? Bright.altcount : Dark.altcount));
-        .put(sink, " {", event.altcount, '}');
+        enum pattern = " {%-(%s%|} {%)}";
+        sink.colourWith(TerminalForeground(bright ? Bright.count : Dark.count));
+        sink.formattedWrite(pattern, counts);
     }
 
     if (event.num > 0)

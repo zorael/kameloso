@@ -667,7 +667,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
 
     immutable content = event.content.strippedRight;
 
-    switch (event.aux)
+    switch (event.auxstrings[0])
     {
     case "LS":
         import std.algorithm.iteration : splitter;
@@ -820,7 +820,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
         break;
 
     default:
-        //logger.warning("Unhandled capability type: ", event.aux);
+        //logger.warning("Unhandled capability type: ", event.auxstrings[0]);
         break;
     }
 
@@ -1314,7 +1314,7 @@ void onReconnect(ConnectService service)
 )
 void onUnknownCommand(ConnectService service, const ref IRCEvent event)
 {
-    if (service.serverSupportsWHOIS && !service.state.settings.preferHostmasks && (event.aux == "WHOIS"))
+    if (service.serverSupportsWHOIS && !service.state.settings.preferHostmasks && (event.auxstrings[0] == "WHOIS"))
     {
         logger.error("Error: This server does not seem to support user accounts.");
         enum message = "Consider enabling <l>Core</>.<l>preferHostmasks</>.";

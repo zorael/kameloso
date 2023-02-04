@@ -220,7 +220,7 @@ void sendFullPluginListing(
 
     enum pattern = "Use <b>%s%s<b> [<b>plugin<b>] [<b>command<b>] " ~
         "for information about a command.";
-    immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+    immutable message = pattern.format(plugin.state.settings.prefix, event.auxstrings[0]);
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
 }
 
