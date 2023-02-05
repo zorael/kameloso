@@ -2790,8 +2790,6 @@ void startValidator(TwitchPlugin plugin)
     void validatorDg()
     {
         import kameloso.plugins.common.delayawait : delay;
-        import kameloso.constants : MagicErrorStrings;
-        import std.datetime.systime : Clock, SysTime;
         import core.time : minutes;
 
         while (!plugin.userID.length)
@@ -2803,6 +2801,7 @@ void startValidator(TwitchPlugin plugin)
                 try
                 {
                     import kameloso.messaging : quit;
+                    import std.datetime.systime : Clock, SysTime;
 
                     immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
                     plugin.userID = validationJSON["user_id"].str;
@@ -2859,8 +2858,9 @@ void startValidator(TwitchPlugin plugin)
             }
             catch (TwitchQueryException e)
             {
-                // Something is deeply wrong.
+                import kameloso.constants : MagicErrorStrings;
 
+                // Something is deeply wrong.
                 if (e.code == 2)
                 {
                     enum wikiMessage = cast(string)MagicErrorStrings.visitWikiOneliner;
