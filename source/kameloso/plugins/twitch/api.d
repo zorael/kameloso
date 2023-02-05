@@ -161,8 +161,6 @@ private auto twitchTryCatchDgExceptionHandler(
         }
     }
 
-    if (!TwitchPlugin.useAPIFeatures) return Next.returnFailure;
-
     try
     {
         throw previouslyThrownException;

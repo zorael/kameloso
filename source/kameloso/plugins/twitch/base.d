@@ -670,8 +670,6 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         chan(plugin.state, event.channel, message);
     }
 
-    if (!plugin.useAPIFeatures) return;
-
     string slice = event.content.stripped;  // mutable
     string idString;
     string displayName;
@@ -1784,8 +1782,7 @@ void onCommandWatchtime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     import core.thread : Fiber;
     import core.time : Duration, seconds;
 
-    if (!plugin.useAPIFeatures) return;
-    else if (!plugin.twitchSettings.watchtime) return;
+    if (!plugin.twitchSettings.watchtime) return;
 
     string slice = event.content.stripped;  // mutable
     string nickname;
@@ -1911,8 +1908,6 @@ void onCommandSetTitle(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     import std.array : replace;
     import std.format : format;
 
-    if (!plugin.useAPIFeatures) return;
-
     immutable unescapedTitle = event.content.stripped;
 
     if (!unescapedTitle.length)
@@ -1995,8 +1990,6 @@ void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     import std.format : format;
     import std.string : isNumeric;
     import std.uri : encodeComponent;
-
-    if (!plugin.useAPIFeatures) return;
 
     immutable unescapedGameName = event.content.stripped;
 
@@ -2563,7 +2556,7 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
         immutable idSnapshot = room.uniqueID;
         uint addedSinceLastRehash;
 
-        while (plugin.useAPIFeatures)
+        while (true)
         {
             room = channelName in plugin.rooms;
             if (!room || (room.uniqueID != idSnapshot)) return;
@@ -2675,7 +2668,7 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
 
         immutable idSnapshot = room.uniqueID;
 
-        while (plugin.useAPIFeatures)
+        while (true)
         {
             room = channelName in plugin.rooms;
             if (!room || (room.uniqueID != idSnapshot)) return;
@@ -2748,7 +2741,7 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
 
         immutable idSnapshot = room.uniqueID;
 
-        while (plugin.useAPIFeatures)
+        while (true)
         {
             room = channelName in plugin.rooms;
             if (!room || (room.uniqueID != idSnapshot)) return;
@@ -3151,9 +3144,6 @@ void initialise(TwitchPlugin plugin)
 {
     import kameloso.terminal : isTerminal;
     import std.concurrency : thisTid;
-
-    // Reset the shared static useAPIFeatures between instantiations.
-    plugin.useAPIFeatures = true;
 
     // Register this thread as the main thread.
     plugin.mainThread = cast(shared)thisTid;
@@ -3834,11 +3824,6 @@ package:
         Authorisation token for the "Authorization: Bearer <token>".
      +/
     string authorizationBearer;
-
-    /++
-        Whether or not to use features requiring querying Twitch API.
-     +/
-    shared static bool useAPIFeatures = true;
 
     /++
         The bot's numeric account/ID.
