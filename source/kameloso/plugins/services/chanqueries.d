@@ -302,7 +302,7 @@ void startChannelQueries(ChanQueriesService service)
                 }
 
             case ERR_UNKNOWNCOMMAND:
-                if (!thisFiber.payload.auxstrings[0].length)
+                if (!thisFiber.payload.aux[0].length)
                 {
                     // A different flavour of ERR_UNKNOWNCOMMAND doesn't include the command
                     // We can't say for sure it's erroring on "WHOIS" specifically
@@ -319,7 +319,7 @@ void startChannelQueries(ChanQueriesService service)
                         return;
                     }
                 }
-                else if (thisFiber.payload.auxstrings[0] == "WHOIS")
+                else if (thisFiber.payload.aux[0] == "WHOIS")
                 {
                     // Cannot WHOIS on this server
                     // Connect will display an error, so don't do it here again

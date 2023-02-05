@@ -900,19 +900,19 @@ mixin template IRCPluginImpl(
 
             // Snapshot content and aux for later restoration
             immutable origContent = event.content;  // don't strip
-            string[] origAuxStrings;
-            bool auxStringsDirty;
+            string[] origAux;
+            bool auxDirty;
 
             scope(exit)
             {
                 // Restore content and aux as they may have been altered
                 event.content = origContent;
 
-                if (auxStringsDirty)
+                if (auxDirty)
                 {
-                    foreach (immutable i, immutable origString; origAuxStrings)
+                    foreach (immutable i, immutable origString; origAux)
                     {
-                        event.auxstrings[i] = origString;
+                        event.aux[i] = origString;
                     }
                 }
             }
@@ -980,13 +980,13 @@ mixin template IRCPluginImpl(
                                 if (state.settings.flush) stdout.flush();
                             }
 
-                            if (!auxStringsDirty)
+                            if (!auxDirty)
                             {
-                                origAuxStrings = event.auxstrings.dup;
-                                auxStringsDirty = true;
+                                origAux = event.aux;  // copies
+                                auxDirty = true;
                             }
 
-                            event.auxstrings[0] = thisCommand;
+                            event.aux[0] = thisCommand;
                             commandMatch = true;
                             break commandForeach;
                         }
@@ -1040,13 +1040,13 @@ mixin template IRCPluginImpl(
                                         if (state.settings.flush) stdout.flush();
                                     }
 
-                                    if (!auxStringsDirty)
+                                    if (!auxDirty)
                                     {
-                                        origAuxStrings = event.auxstrings.dup;
-                                        auxStringsDirty = true;
+                                        origAux = event.aux.dup;
+                                        auxDirty = true;
                                     }
 
-                                    event.auxstrings[0] = hits[0];
+                                    event.aux[0] = hits[0];
                                     commandMatch = true;
                                     break regexForeach;
                                 }
@@ -1231,7 +1231,7 @@ mixin template IRCPluginImpl(
             event.errors = sanitize(event.errors);
             event.errors ~= event.errors.length ? " | Sanitised" : "Sanitised";
 
-            foreach (immutable i, ref aux; event.auxstrings)
+            foreach (immutable i, ref aux; event.aux)
             {
                 aux = sanitize(aux);
             }

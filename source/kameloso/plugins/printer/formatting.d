@@ -421,11 +421,11 @@ if (isOutputRange!(Sink, char[]))
              (event.type == IRCEvent.Type.SELFCHAN) ||
              (event.type == IRCEvent.Type.EMOTE)) &&
             event.target.nickname.length &&
-            event.auxstrings[0].length)
+            event.aux[0].length)
         {
             /*if (content.length)*/ putContent();
             putTarget();
-            .put(sink, `: "`, event.auxstrings[0], '"');
+            .put(sink, `: "`, event.aux[0], '"');
 
             putQuotedTwitchMessage = true;
         }
@@ -436,21 +436,21 @@ if (isOutputRange!(Sink, char[]))
         if (event.target.nickname.length) putTarget();
         if (content.length) putContent();
 
-        auto auxstrings = event.auxstrings.filter!(s => s.length);
+        auto aux = event.aux[].filter!(s => s.length);
 
-        if (!auxstrings.empty)
+        if (!aux.empty)
         {
             enum pattern = " (%-(%s%| | %))";
-            sink.formattedWrite(pattern, auxstrings);
+            sink.formattedWrite(pattern, aux);
         }
     }
 
-    auto counts = event.counts.filter!(n => !n.isNull);
+    auto count = event.count[].filter!(n => !n.isNull);
 
-    if (!counts.empty)
+    if (!count.empty)
     {
         enum pattern = " {%-(%s%|} {%)}";
-        sink.formattedWrite(pattern, counts);
+        sink.formattedWrite(pattern, count);
     }
 
     if (event.num > 0)
@@ -532,7 +532,7 @@ if (isOutputRange!(Sink, char[]))
     event.channel = string.init;
     event.content = string.init;
     event.sender.account = "n1ckn4m3";
-    event.auxstrings[0] = "n1ckn4m3";
+    event.aux[0] = "n1ckn4m3";
 
     plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError);
     immutable accountLine = sink.data[11..$].idup;
@@ -543,8 +543,8 @@ if (isOutputRange!(Sink, char[]))
     event.errors = "DANGER WILL ROBINSON";
     event.content = "Blah balah";
     event.num = 666;
-    event.counts[0] = -42;
-    event.auxstrings[0] = string.init;
+    event.count[0] = -42;
+    event.aux[0] = string.init;
     event.type = IRCEvent.Type.ERROR;
 
     plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError);
@@ -1034,13 +1034,13 @@ if (isOutputRange!(Sink, char[]))
              (event.type == IRCEvent.Type.SELFCHAN) ||
              (event.type == IRCEvent.Type.EMOTE)) &&
             event.target.nickname.length &&
-            event.auxstrings[0].length)
+            event.aux[0].length)
         {
             /*if (content.length)*/ putContent();
             putTarget();
             .put!(Yes.colours)(sink,
                 TerminalForeground(bright ? Bright.content : Dark.content),
-                `: "`, event.auxstrings[0], '"');
+                `: "`, event.aux[0], '"');
 
             putQuotedTwitchMessage = true;
         }
@@ -1051,23 +1051,23 @@ if (isOutputRange!(Sink, char[]))
         if (event.target.nickname.length) putTarget();
         if (content.length) putContent();
 
-        auto auxstrings = event.auxstrings.filter!(s => s.length);
+        auto aux = event.aux[].filter!(s => s.length);
 
-        if (!auxstrings.empty)
+        if (!aux.empty)
         {
             enum pattern = " (%-(%s%| | %))";
             sink.colourWith(TerminalForeground(bright ? Bright.aux : Dark.aux));
-            sink.formattedWrite(pattern, auxstrings);
+            sink.formattedWrite(pattern, aux);
         }
     }
 
-    auto counts = event.counts.filter!(n => !n.isNull);
+    auto count = event.count[].filter!(n => !n.isNull);
 
-    if (!counts.empty)
+    if (!count.empty)
     {
         enum pattern = " {%-(%s%|} {%)}";
         sink.colourWith(TerminalForeground(bright ? Bright.count : Dark.count));
-        sink.formattedWrite(pattern, counts);
+        sink.formattedWrite(pattern, count);
     }
 
     if (event.num > 0)

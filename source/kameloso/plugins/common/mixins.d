@@ -227,7 +227,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
             if (whoisEvent.type == IRCEvent.Type.ERR_UNKNOWNCOMMAND)
             {
-                if (!whoisEvent.auxstrings[0].length || (whoisEvent.auxstrings[0] == "WHOIS"))
+                if (!whoisEvent.aux[0].length || (whoisEvent.aux[0] == "WHOIS"))
                 {
                     // WHOIS query failed due to unknown command.
                     // Some flavours of ERR_UNKNOWNCOMMAND don't say what the
