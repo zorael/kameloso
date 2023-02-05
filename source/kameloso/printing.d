@@ -401,8 +401,7 @@ private struct FormatArrayMemberArguments
 
 // formatArrayMemberImpl
 /++
-    Formats the description of an associative array for insertion into a
-    [formatObjects] listing.
+    Formats the description of an array for insertion into a [formatObjects] listing.
 
     Broken out of [formatObjects] to reduce template bloat.
 
@@ -487,7 +486,8 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
 
 // formatAssociativeArrayMemberImpl
 /++
-    Formats the description of an array for insertion into a [formatObjects] listing.
+    Formats the description of an associative array for insertion into a
+    [formatObjects] listing.
 
     Broken out of [formatObjects] to reduce template bloat.
 
@@ -495,7 +495,7 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
         coloured = Whether or no to display terminal colours.
         sink = Output range to store output in.
         args = Argument aggregate for easier passing.
-        content = The array we're describing.
+        content = The associative array we're describing.
  +/
 private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
     (auto ref Sink sink, const FormatArrayMemberArguments args, const auto ref T content)
