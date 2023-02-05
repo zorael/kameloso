@@ -2173,6 +2173,8 @@ void importCustomEmotes(
     const string channelName,
     const string idString)
 in (Fiber.getThis, "Tried to call `importCustomEmotes` from outside a Fiber")
+in (channelName.length, "Tried to import custom emotes with an empty channel name string")
+in (idString.length, "Tried to import custom emotes with an empty ID string")
 {
     import core.memory : GC;
 
@@ -2550,6 +2552,7 @@ void onMyInfo(TwitchPlugin plugin)
         channelName = String key of room to start the monitors of.
  +/
 void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
+in (channelName.length, "Tried to start room monitor fibers with an empty channel name string")
 {
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.time : nextMidnight;

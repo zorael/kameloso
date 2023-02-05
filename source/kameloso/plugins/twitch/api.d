@@ -401,6 +401,7 @@ QueryResponse sendHTTPRequest(
     int id = -1,
     const Flag!"recursing" recursing = No.recursing)
 in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
+in (url.length, "Tried to send an HTTP request without an URL")
 {
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.thread : ThreadMessage;
@@ -684,6 +685,7 @@ in (Fiber.getThis, "Tried to call `getTwitchData` from outside a Fiber")
  +/
 auto getChatters(TwitchPlugin plugin, const string broadcaster)
 in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
+in (broadcaster.length, "Tried to get chatters with an empty broadcaster string")
 {
     import std.conv : text;
     import std.json : JSONType, parseJSON;
@@ -778,6 +780,7 @@ auto getValidation(
     /*const*/ string authToken,
     const Flag!"async" async)
 in ((!async || Fiber.getThis), "Tried to call asynchronous `getValidation` from outside a Fiber")
+in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 {
     import lu.string : beginsWith;
     import std.json : JSONType, JSONValue, parseJSON;
@@ -911,6 +914,7 @@ in ((!async || Fiber.getThis), "Tried to call asynchronous `getValidation` from 
  +/
 auto getFollows(TwitchPlugin plugin, const string id)
 in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
+in (id.length, "Tried to get follows with an empty ID string")
 {
     import std.json : JSONValue;
 
@@ -1133,6 +1137,8 @@ auto getTwitchUser(
     const string givenIDString,
     const Flag!"searchByDisplayName" searchByDisplayName = No.searchByDisplayName)
 in (Fiber.getThis, "Tried to call `getTwitchUser` from outside a Fiber")
+in ((givenName.length || givenIDString.length),
+    "Tried to get Twitch user without supplying a name nor an ID")
 {
     import std.conv : to;
     import std.json : JSONType;
@@ -1313,6 +1319,8 @@ void modifyChannel(
     const string title,
     const string gameID)
 in (Fiber.getThis, "Tried to call `modifyChannel` from outside a Fiber")
+in (channelName.length, "Tried to modify a channel with an empty channel name string")
+in ((title.length || gameID.length), "Tried to modify a channel with no title nor game ID supplied")
 {
     import std.array : Appender;
 
@@ -1384,6 +1392,7 @@ in (Fiber.getThis, "Tried to call `modifyChannel` from outside a Fiber")
         for the supplied channel in the secrets storage.
  +/
 auto getBroadcasterAuthorisation(TwitchPlugin plugin, const string channelName)
+in (channelName.length, "Tried to get broadcaster authorisation with an empty channel name string")
 {
     static string[string] authorizationByChannel;
 
@@ -1423,6 +1432,7 @@ auto getBroadcasterAuthorisation(TwitchPlugin plugin, const string channelName)
  +/
 void startCommercial(TwitchPlugin plugin, const string channelName, const string lengthString)
 in (Fiber.getThis, "Tried to call `startCommercial` from outside a Fiber")
+in (channelName.length, "Tried to start a commercial with an empty channel name string")
 {
     import std.format : format;
 
@@ -1484,6 +1494,7 @@ auto getPolls(
     const string channelName,
     const string idString = string.init)
 in (Fiber.getThis, "Tried to call `getPolls` from outside a Fiber")
+in (channelName.length, "Tried to get polls with an empty channel name string")
 {
     import std.json : JSONType, JSONValue, parseJSON;
 
@@ -1626,6 +1637,7 @@ auto createPoll(
     const string durationString,
     const string[] choices)
 in (Fiber.getThis, "Tried to call `createPoll` from outside a Fiber")
+in (channelName.length, "Tried to create a poll with an empty channel name string")
 {
     import std.array : Appender, replace;
     import std.format : format;
@@ -1762,6 +1774,7 @@ auto endPoll(
     const string voteID,
     const Flag!"terminate" terminate)
 in (Fiber.getThis, "Tried to call `endPoll` from outside a Fiber")
+in (channelName.length, "Tried to end a poll with an empty channel name string")
 {
     import std.format : format;
     import std.json : JSONType, parseJSON;
@@ -1976,6 +1989,7 @@ auto getBotList(TwitchPlugin plugin)
         populated with all (relevant) information.
  +/
 auto getStream(TwitchPlugin plugin, const string loginName)
+in (loginName.length, "Tried to get a stream with an empty login name string")
 {
     import std.datetime.systime : SysTime;
     /*import std.algorithm.iteration : map;
@@ -2081,6 +2095,7 @@ void getBTTVEmotes(
     ref bool[dstring] emoteMap,
     const string idString)
 in (Fiber.getThis, "Tried to call `getBTTVEmotes` from outside a Fiber")
+in (idString.length, "Tried to get BTTV emotes with an empty ID string")
 {
     import std.conv : to;
     import std.json : JSONType, parseJSON;
@@ -2309,6 +2324,7 @@ void getFFZEmotes(
     ref bool[dstring] emoteMap,
     const string idString)
 in (Fiber.getThis, "Tried to call `getFFZEmotes` from outside a Fiber")
+in (idString.length, "Tried to get FFZ emotes with an empty ID string")
 {
     import std.conv : to;
     import std.json : JSONType, parseJSON;
@@ -2483,6 +2499,7 @@ void get7tvEmotes(
     ref bool[dstring] emoteMap,
     const string idString)
 in (Fiber.getThis, "Tried to call `get7tvEmotes` from outside a Fiber")
+in (idString.length, "Tried to get 7tv emotes with an empty ID string")
 {
     import std.conv : to;
     import std.json : JSONType, parseJSON;
@@ -2664,6 +2681,7 @@ auto getSubscribers(
     TwitchPlugin plugin,
     const string channelName)
 in (Fiber.getThis, "Tried to call `getSubscribers` from outside a Fiber")
+in (channelName.length, "Tried to get subscribers with an empty channel name string")
 {
     import std.array : Appender;
     import std.format : format;
