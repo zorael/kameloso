@@ -39,21 +39,6 @@ import kameloso.plugins.common.core : IRCPlugin, IRCPluginState, Priority;
  +/
 struct PluginRegistrationEntry
 {
-    // Priority
-    /++
-        To be used instead of a magic number priority integer.
-     +/
-    version(none)
-    static struct Priority
-    {
-        int value;
-
-        auto opUnary(string op : "-")()
-        {
-            return Priority(-value);
-        }
-    }
-
     // priority
     /++
         Priority at which to instantiate the plugin. A lower priority makes it
