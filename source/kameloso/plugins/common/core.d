@@ -3174,7 +3174,7 @@ mixin template PluginRegistration(
             import std.format : format;
 
             enum pattern = "`%s.%s` constructor does not compile";
-            enum message = pattern.format(module_, PluginModule.className);
+            enum message = pattern.format(module_, Plugin.stringof);
             static assert(0, message);
         }
     }
