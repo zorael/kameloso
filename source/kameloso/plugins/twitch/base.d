@@ -2796,98 +2796,124 @@ void startValidator(TwitchPlugin plugin)
 
     void validatorDg()
     {
+        import kameloso.plugins.common.delayawait : delay;
         import kameloso.constants : MagicErrorStrings;
         import std.datetime.systime : Clock, SysTime;
+        import core.time : minutes;
 
-        if (plugin.state.settings.headless)
+        while (!plugin.userID.length)
         {
+            static immutable retryDelay = 1.minutes;
+
+            if (plugin.state.settings.headless)
+            {
+                try
+                {
+                    import kameloso.messaging : quit;
+
+                    immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
+                    plugin.userID = validationJSON["user_id"].str;
+                    immutable expiresIn = validationJSON["expires_in"].integer;
+                    immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
+                    immutable now = Clock.currTime;
+                    immutable delta = (expiresWhen - now);
+
+                    // Schedule quitting on expiry
+                    delay(plugin, (() => quit(plugin.state)), delta);
+                }
+                catch (TwitchQueryException e)
+                {
+                    version(PrintStacktraces) logger.trace(e);
+                    delay(plugin, retryDelay, Yes.yield);
+                    continue;
+                }
+                catch (EmptyResponseException e)
+                {
+                    version(PrintStacktraces) logger.trace(e);
+                    delay(plugin, retryDelay, Yes.yield);
+                    continue;
+                }
+                return;
+            }
+
             try
             {
-                import kameloso.plugins.common.delayawait : delay;
-                import kameloso.messaging : quit;
+                /*
+                {
+                    "client_id": "tjyryd2ojnqr8a51ml19kn1yi2n0v1",
+                    "expires_in": 5036421,
+                    "login": "zorael",
+                    "scopes": [
+                        "bits:read",
+                        "channel:moderate",
+                        "channel:read:subscriptions",
+                        "channel_editor",
+                        "chat:edit",
+                        "chat:read",
+                        "user:edit:broadcast",
+                        "whispers:edit",
+                        "whispers:read"
+                    ],
+                    "user_id": "22216721"
+                }
+                */
 
                 immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
                 plugin.userID = validationJSON["user_id"].str;
                 immutable expiresIn = validationJSON["expires_in"].integer;
                 immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
-                immutable now = Clock.currTime;
-                immutable delta = (expiresWhen - now);
-
-                // Schedule quitting on expiry
-                delay(plugin, (() => quit(plugin.state)), delta);
+                generateExpiryReminders(plugin, expiresWhen);
             }
-            catch (TwitchQueryException _)
+            catch (TwitchQueryException e)
             {
-                plugin.useAPIFeatures = false;
-            }
-            return;
-        }
+                // Something is deeply wrong.
 
-        try
-        {
-            /*
-            {
-                "client_id": "tjyryd2ojnqr8a51ml19kn1yi2n0v1",
-                "expires_in": 5036421,
-                "login": "zorael",
-                "scopes": [
-                    "bits:read",
-                    "channel:moderate",
-                    "channel:read:subscriptions",
-                    "channel_editor",
-                    "chat:edit",
-                    "chat:read",
-                    "user:edit:broadcast",
-                    "whispers:edit",
-                    "whispers:read"
-                ],
-                "user_id": "22216721"
-            }
-            */
-
-            immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
-            plugin.userID = validationJSON["user_id"].str;
-            immutable expiresIn = validationJSON["expires_in"].integer;
-            immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
-            generateExpiryReminders(plugin, expiresWhen);
-        }
-        catch (TwitchQueryException e)
-        {
-            // Something is deeply wrong.
-
-            if (e.code == 2)
-            {
-                enum wikiMessage = cast(string)MagicErrorStrings.visitWikiOneliner;
-
-                if (e.error == MagicErrorStrings.sslLibraryNotFound)
+                if (e.code == 2)
                 {
-                    enum pattern = "Failed to validate Twitch API keys: <l>%s</> " ~
-                        "<t>(is OpenSSL installed?)";
-                    logger.errorf(pattern, cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten);
-                    logger.error(wikiMessage);
+                    enum wikiMessage = cast(string)MagicErrorStrings.visitWikiOneliner;
 
-                    version(Windows)
+                    if (e.error == MagicErrorStrings.sslLibraryNotFound)
                     {
-                        enum getoptMessage = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
-                        logger.error(getoptMessage);
+                        enum pattern = "Failed to validate Twitch API keys: <l>%s</> " ~
+                            "<t>(is OpenSSL installed?)";
+                        logger.errorf(pattern, cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten);
+                        logger.error(wikiMessage);
+
+                        version(Windows)
+                        {
+                            enum getoptMessage = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
+                            logger.error(getoptMessage);
+                        }
+
+                        // Unrecoverable
+                        return;
+                    }
+                    else
+                    {
+                        enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
+                        logger.errorf(pattern, e.msg, e.error, e.code);
+                        logger.error(wikiMessage);
                     }
                 }
                 else
                 {
                     enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
                     logger.errorf(pattern, e.msg, e.error, e.code);
-                    logger.error(wikiMessage);
                 }
-            }
-            else
-            {
-                enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
-                logger.errorf(pattern, e.msg, e.error, e.code);
-            }
 
-            logger.warning("Disabling API features. Expect breakage.");
-            //version(PrintStacktraces) logger.trace(e);
-            plugin.useAPIFeatures = false;
+                version(PrintStacktraces) logger.trace(e);
+                delay(plugin, retryDelay, Yes.yield);
+                continue;
+            }
+            catch (EmptyResponseException e)
+            {
+                // HTTP query failed; just retry
+                enum pattern = "Failed to validate Twitch API keys: <t>%s</>";
+                logger.errorf(pattern, e.msg);
+                version(PrintStacktraces) logger.trace(e);
+                delay(plugin, retryDelay, Yes.yield);
+                continue;
+            }
         }
     }
 
