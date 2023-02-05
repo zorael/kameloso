@@ -96,20 +96,21 @@ versions \
 */
 
 configuration "application" {
-    targetType "executable"
-    // Mustn't be empty
+    subConfiguration "dialect" "bot"
 }
 
 configuration "application-lowmem" {
+    subConfiguration "dialect" "bot"
     dflags "-lowmem"
 }
 
 configuration "lowmem" {
+    subConfiguration "dialect" "bot"
     dflags "-lowmem"
 }
 
 configuration "twitch" {
-    subConfiguration "dialect" "twitch"
+    subConfiguration "dialect" "twitchbot"
 
     versions \
         "TwitchSupport" \
@@ -117,7 +118,7 @@ configuration "twitch" {
 }
 
 configuration "twitch-lowmem" {
-    subConfiguration "dialect" "twitch"
+    subConfiguration "dialect" "twitchbot"
     dflags "-lowmem"
 
     versions \
