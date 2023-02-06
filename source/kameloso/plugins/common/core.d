@@ -1050,7 +1050,7 @@ mixin template IRCPluginImpl(
 
                                     if (!auxDirty)
                                     {
-                                        origAux = event.aux.dup;
+                                        origAux = event.aux;  // copies
                                         auxDirty = true;
                                     }
 
