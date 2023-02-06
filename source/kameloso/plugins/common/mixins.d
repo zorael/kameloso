@@ -55,11 +55,8 @@ mixin template WHOISFiberDelegate(
 if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSomeFunction!onFailure))
 {
     import kameloso.plugins.common.core : IRCPlugin;
-    import lu.traits : MixinConstraints, MixinScope;
     import std.traits : ParameterIdentifierTuple;
     import std.typecons : Flag, No, Yes;
-
-    mixin MixinConstraints!(MixinScope.function_, "WHOISFiberDelegate");
 
     alias paramNames = ParameterIdentifierTuple!(mixin(__FUNCTION__));
 
