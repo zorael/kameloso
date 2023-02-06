@@ -584,6 +584,16 @@ mixin template IRCPluginImpl(
             // Concatenate our own fully qualified name
             enum fqn = module_ ~ '.' ~ __traits(identifier, fun);
 
+            static if (!uda._acceptedEventTypes.length)
+            {
+                import std.format : format;
+
+                enum pattern = "`%s` is annotated with an `IRCEventHandler` but it is " ~
+                    "not declared to accept any `IRCEvent.Type`s";
+                enum message = pattern.format(fqn);
+                static assert(0, message);
+            }
+
             static foreach (immutable type; uda._acceptedEventTypes)
             {
                 static if (type == IRCEvent.Type.UNSET)
