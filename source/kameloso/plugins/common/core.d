@@ -900,7 +900,7 @@ mixin template IRCPluginImpl(
 
             // Snapshot content and aux for later restoration
             immutable origContent = event.content;  // don't strip
-            string[] origAux;
+            typeof(IRCEvent.aux) origAux;
             bool auxDirty;
 
             scope(exit)
@@ -910,10 +910,7 @@ mixin template IRCPluginImpl(
 
                 if (auxDirty)
                 {
-                    foreach (immutable i, immutable origString; origAux)
-                    {
-                        event.aux[i] = origString;
-                    }
+                    event.aux = origAux;
                 }
             }
 
