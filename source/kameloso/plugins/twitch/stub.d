@@ -12,7 +12,7 @@ private:
 import kameloso.plugins;
 import kameloso.plugins.common.core;
 
-mixin PluginRegistration!TwitchPlugin;
+mixin PluginRegistration!(TwitchPlugin, -5.priority);
 
 public:
 
