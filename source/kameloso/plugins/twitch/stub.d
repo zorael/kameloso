@@ -9,6 +9,7 @@ else version(WithTwitchPluginStub):
 
 private:
 
+import kameloso.plugins;
 import kameloso.plugins.common.core;
 
 mixin PluginRegistration!TwitchPlugin;
