@@ -174,6 +174,7 @@ private:
 
 import kameloso.plugins.twitch.api;
 import kameloso.plugins.twitch.common;
+import dialect.postprocessors.twitch;  // To trigger the module ctor
 
 import kameloso.plugins;
 import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
