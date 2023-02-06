@@ -1400,8 +1400,6 @@ mixin template TwitchAwareness(
         .onEvent(IRCEvent.Type.TWITCH_SUB)
         .onEvent(IRCEvent.Type.TWITCH_CHEER)
         .onEvent(IRCEvent.Type.TWITCH_SUBGIFT)
-        .onEvent(IRCEvent.Type.TWITCH_HOSTSTART)
-        .onEvent(IRCEvent.Type.TWITCH_HOSTEND)
         .onEvent(IRCEvent.Type.TWITCH_BITSBADGETIER)
         .onEvent(IRCEvent.Type.TWITCH_RAID)
         .onEvent(IRCEvent.Type.TWITCH_UNRAID)

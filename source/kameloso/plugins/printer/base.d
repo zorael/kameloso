@@ -758,7 +758,6 @@ void clearTargetNicknameIfUs(ref IRCEvent event, const IRCPluginState state)
             case TWITCH_GIFTRECEIVED:
             case TWITCH_SUBGIFT:
             case TWITCH_TIMEOUT:
-            case TWITCH_HOSTSTART:
             case CHAN:
             case EMOTE:
                 // Likewise
