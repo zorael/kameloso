@@ -25,6 +25,7 @@ private:
 import kameloso.plugins.printer.formatting;
 import kameloso.plugins.printer.logging;
 
+import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
 import dialect.defs;

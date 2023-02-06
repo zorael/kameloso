@@ -13,6 +13,7 @@ version(WithTimerPlugin):
 
 private:
 
+import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication, UserAwareness;
 import kameloso.common : logger;

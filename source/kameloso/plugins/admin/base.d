@@ -22,6 +22,7 @@ private:
 import kameloso.plugins.admin.classifiers;
 debug import kameloso.plugins.admin.debugging;
 
+import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness;
 import kameloso.common : logger;

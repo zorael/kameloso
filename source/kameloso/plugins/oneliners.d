@@ -16,6 +16,7 @@ version(WithOnelinersPlugin):
 
 private:
 
+import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
 import kameloso.common : logger;

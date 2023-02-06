@@ -175,6 +175,7 @@ private:
 import kameloso.plugins.twitch.api;
 import kameloso.plugins.twitch.common;
 
+import kameloso.plugins;
 import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
 import kameloso.common : logger;
 import kameloso.constants : BufferSize;

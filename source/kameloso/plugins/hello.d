@@ -2,6 +2,7 @@ module kameloso.plugins.hello;
 
 version(none):  // Remove to enable
 
+import kameloso.plugins;
 import kameloso.plugins.common;
 import kameloso.messaging;
 import dialect.defs;

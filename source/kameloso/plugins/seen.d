@@ -36,6 +36,9 @@ module kameloso.plugins.seen;
 // We only want to compile this if we're compiling specifically this plugin.
 version(WithSeenPlugin):
 
+// We need the bits to register the plugin to be automatically instantiated.
+private import kameloso.plugins;
+
 // We need the definition of an [kameloso.plugins.core.IRCPlugin|IRCPlugin] and other crucial things.
 private import kameloso.plugins.common.core;
 

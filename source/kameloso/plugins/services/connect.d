@@ -16,6 +16,7 @@ version(WithConnectService):
 
 private:
 
+import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.common : logger;
 import kameloso.messaging;

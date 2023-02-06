@@ -20,6 +20,7 @@ version = MatchByStringComparison;
 
 private:
 
+import kameloso.plugins;
 import kameloso.plugins.common;
 import kameloso.messaging;
 import dialect.defs;

@@ -14,6 +14,7 @@ version(WithAutomodePlugin):
 
 private:
 
+import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
 import kameloso.common : logger;
