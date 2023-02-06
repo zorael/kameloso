@@ -27,6 +27,7 @@
 
     mixin UserAwareness;
     mixin ChannelAwareness;
+    mixin PluginRegistration!FooPlugin;
 
     final class FooPlugin : IRCPlugin
     {
@@ -601,7 +602,7 @@ mixin template IRCPluginImpl(
                     import std.format : format;
 
                     enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
-                        "`@(IRCEvent.Type.UNSET)`, which is not a valid event type";
+                        "`IRCEvent.Type.UNSET`, which is not a valid event type";
                     enum message = pattern.format(fqn);
                     static assert(0, message);
                 }
@@ -610,7 +611,7 @@ mixin template IRCPluginImpl(
                     import std.format : format;
 
                     enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
-                        "`@(IRCEvent.Type.PRIVMSG)`, which is not a valid event type. " ~
+                        "`IRCEvent.Type.PRIVMSG`, which is not a valid event type. " ~
                         "Use `IRCEvent.Type.CHAN` and/or `IRCEvent.Type.QUERY` instead";
                     enum message = pattern.format(fqn);
                     static assert(0, message);
@@ -620,7 +621,7 @@ mixin template IRCPluginImpl(
                     import std.format : format;
 
                     enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
-                        "`@(IRCEvent.Type.WHISPER)`, which is not a valid event type. " ~
+                        "`IRCEvent.Type.WHISPER`, which is not a valid event type. " ~
                         "Use `IRCEvent.Type.QUERY` instead";
                     enum message = pattern.format(fqn);
                     static assert(0, message);
