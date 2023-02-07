@@ -560,12 +560,55 @@ public:
         {
             import std.exception : ErrnoException;
             import core.memory : GC;
+            import core.thread : Fiber;
 
             if (!plugin.isEnabled) continue;
 
             try
             {
                 plugin.teardown();
+
+                foreach (scheduledFiber; plugin.state.scheduledFibers)
+                {
+                    // All Fibers should be at HOLD state but be conservative
+                    if (scheduledFiber.fiber.state != Fiber.State.EXEC)
+                    {
+                        destroy(scheduledFiber.fiber);
+                    }
+                }
+
+                plugin.state.scheduledFibers = null;
+
+                foreach (scheduledDelegate; plugin.state.scheduledDelegates)
+                {
+                    destroy(scheduledDelegate.dg);
+                }
+
+                plugin.state.scheduledDelegates = null;
+
+                foreach (immutable type, ref fibersForType; plugin.state.awaitingFibers)
+                {
+                    foreach (fiber; fibersForType)
+                    {
+                        // As above
+                        if (fiber.state != Fiber.State.EXEC)
+                        {
+                            destroy(fiber);
+                        }
+                    }
+                }
+
+                plugin.state.awaitingFibers = null;
+
+                foreach (immutable type, ref dgsForType; plugin.state.awaitingDelegates)
+                {
+                    foreach (ref dg; dgsForType)
+                    {
+                        destroy(dg);
+                    }
+                }
+
+                plugin.state.awaitingDelegates = null;
             }
             catch (ErrnoException e)
             {
