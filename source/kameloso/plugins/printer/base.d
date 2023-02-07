@@ -80,6 +80,9 @@ public:
 
             /// Whether or not emotes should be highlit in colours.
             bool colourfulEmotes = true;
+
+            /// Compatibility alias.
+            alias randomNickColours = colourfulNicknames;
         }
     }
 
@@ -133,9 +136,6 @@ public:
 
         /// Whether or not to buffer writes.
         bool bufferedWrites = true;
-
-        /// Compatibility alias.
-        alias randomNickColours = colourfulNicknames;
     }
 }
 
