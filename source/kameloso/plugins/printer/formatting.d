@@ -438,8 +438,13 @@ if (isOutputRange!(Sink, char[]))
 
         if (!aux.empty)
         {
+            import std.array : array;
+
+            // "Deprecation: scope variable `aux` assigned to non-scope parameter `_param_2` calling `formattedWrite"
+            // Work around it and revisit this when we know a better approach.
+            auto auxCopy = aux.array.dup;
             enum pattern = " (%-(%s%| | %))";
-            sink.formattedWrite(pattern, aux);
+            sink.formattedWrite(pattern, auxCopy);
         }
     }
 
@@ -1053,9 +1058,14 @@ if (isOutputRange!(Sink, char[]))
 
         if (!aux.empty)
         {
+            import std.array : array;
+
+            // "Deprecation: scope variable `aux` assigned to non-scope parameter `_param_2` calling `formattedWrite"
+            // Work around it and revisit this when we know a better approach.
+            auto auxCopy = aux.array.dup;
             enum pattern = " (%-(%s%| | %))";
             sink.colourWith(TerminalForeground(bright ? Bright.aux : Dark.aux));
-            sink.formattedWrite(pattern, aux);
+            sink.formattedWrite(pattern, auxCopy);
         }
     }
 
