@@ -660,21 +660,21 @@ public:
         if (plugin.state.updates & Update.bot)
         {
             // Something changed the bot; propagate
-            plugin.state.updates ^= Update.bot;
+            plugin.state.updates &= ~Update.bot;
             propagate(plugin.state.bot);
         }
 
         if (plugin.state.updates & Update.client)
         {
             // Something changed the client; propagate
-            plugin.state.updates ^= Update.client;
+            plugin.state.updates &= ~Update.client;
             propagate(plugin.state.client);
         }
 
         if (plugin.state.updates & Update.server)
         {
             // Something changed the server; propagate
-            plugin.state.updates ^= Update.server;
+            plugin.state.updates &= ~Update.server;
             propagate(plugin.state.server);
         }
 
@@ -683,7 +683,7 @@ public:
             static import kameloso.common;
 
             // Something changed the settings; propagate
-            plugin.state.updates ^= Update.settings;
+            plugin.state.updates &= ~Update.settings;
             propagate(plugin.state.settings);
             this.settings = plugin.state.settings;
 
