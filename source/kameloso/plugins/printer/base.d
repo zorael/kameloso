@@ -25,6 +25,7 @@ private:
 import kameloso.plugins.printer.formatting;
 import kameloso.plugins.printer.logging;
 
+import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
 import dialect.defs;
@@ -758,7 +759,6 @@ void clearTargetNicknameIfUs(ref IRCEvent event, const IRCPluginState state)
             case TWITCH_GIFTRECEIVED:
             case TWITCH_SUBGIFT:
             case TWITCH_TIMEOUT:
-            case TWITCH_HOSTSTART:
             case CHAN:
             case EMOTE:
                 // Likewise

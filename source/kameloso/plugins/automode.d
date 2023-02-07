@@ -14,6 +14,7 @@ version(WithAutomodePlugin):
 
 private:
 
+import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
 import kameloso.common : logger;
@@ -260,11 +261,11 @@ unittest
         {
             assert((m.event.type == IRCEvent.Type.MODE), Enum!(IRCEvent.Type).toString(m.event.type));
             assert((m.event.channel == "#channel"), m.event.channel);
-            assert((m.event.aux == "+ov"), m.event.aux);
+            assert((m.event.aux[0] == "+ov"), m.event.aux[0]);
             assert((m.event.content == "mydude"), m.event.content);
             assert(m.properties == Message.Property.init);
 
-            immutable line = "MODE %s %s %s".format(m.event.channel, m.event.aux, m.event.content);
+            immutable line = "MODE %s %s %s".format(m.event.channel, m.event.aux[0], m.event.content);
             assert((line == "MODE #channel +ov mydude"), line);
         }
     );
@@ -300,7 +301,7 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
     void sendUsage()
     {
         enum pattern = "Usage: <b>%s%s<b> [add|clear|list] [nickname/account] [mode]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[0]);
         chan(plugin.state, event.channel, message);
     }
 

@@ -8,11 +8,11 @@ license "BSL-1.0"
 targetType "executable"
 mainSourceFile "source/kameloso/entrypoint.d"
 dflags "-dip25" "-dip1008"
-dflags "-linkonce-templates" "-disable-verify" platform="ldc"  #"-link-defaultlib-shared=false"
+dflags "-fall-instantiations" platform="gdc"
+dflags "-linkonce-templates" "-disable-verify" platform="ldc"
+#dflags "-link-defaultlib-shared=false" platform="ldc"
 #dflags "-ftime-trace" "-ftime-trace-file=trace.json" platform="ldc"
 #postBuildCommands "tracy-import-chrome ./trace.json ./trace.tracy" platform="ldc"
-dflags "-fall-instantiations" platform="gdc"
-x:ddoxTool "scod"
 
 dependency "lu" version="~>1.2.1"
 dependency "dialect" version="~>1.5.0"
@@ -92,6 +92,7 @@ versions \
     "PrintAccountNamesToo" \
     "PrintClassNamesToo" \
     "WithPingMonitor" \
+    "BenchmarkHTTPRequests" \
     "Callgrind"
 */
 

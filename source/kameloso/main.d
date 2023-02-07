@@ -615,7 +615,7 @@ void messageFiber(ref Kameloso instance)
                 import lu.string : strippedRight;
 
                 enum pattern = "MODE %s %s %s";
-                line = format(pattern, m.event.channel, m.event.aux, m.event.content.strippedRight);
+                line = format(pattern, m.event.channel, m.event.aux[0], m.event.content.strippedRight);
                 break;
 
             case TOPIC:
@@ -629,10 +629,10 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             case JOIN:
-                if (m.event.aux.length)
+                if (m.event.aux[0].length)
                 {
                     // Key, assume only one channel
-                    line = text("JOIN ", m.event.channel, ' ', m.event.aux);
+                    line = text("JOIN ", m.event.channel, ' ', m.event.aux[0]);
                 }
                 else
                 {

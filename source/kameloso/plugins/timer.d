@@ -13,6 +13,7 @@ version(WithTimerPlugin):
 
 private:
 
+import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication, UserAwareness;
 import kameloso.common : logger;
@@ -346,7 +347,7 @@ void onCommandTimer(TimerPlugin plugin, const ref IRCEvent event)
     void sendUsage()
     {
         enum pattern = "Usage: <b>%s%s<b> [new|add|del|suspend|resume|list] ...";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[0]);
         chan(plugin.state, event.channel, message);
     }
 
@@ -408,7 +409,7 @@ void handleNewTimer(
     {
         enum pattern = "Usage: <b>%s%s new<b> [name] [type] [condition] [message count threshold] " ~
             "[time threshold] [stagger message count] [stagger time]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[0]);
         chan(plugin.state, event.channel, message);
     }
 
@@ -528,7 +529,7 @@ void handleNewTimer(
     channel.timerPointers[timer.name] = &plugin.timersByChannel[event.channel][timer.name];
 
     enum appendPattern = "New timer added! Use <b>%s%s add<b> to add lines.";
-    immutable message = appendPattern.format(plugin.state.settings.prefix, event.aux);
+    immutable message = appendPattern.format(plugin.state.settings.prefix, event.aux[0]);
     chan(plugin.state, event.channel, message);
 }
 
@@ -553,7 +554,7 @@ void handleDelTimer(
     void sendDelUsage()
     {
         enum pattern = "Usage: <b>%s%s del<b> [timer name] [optional line number]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[0]);
         chan(plugin.state, event.channel, message);
     }
 
@@ -654,13 +655,13 @@ void handleModifyTimerLines(
         if (insert)
         {
             enum pattern = "Usage: <b>%s%s insert<b> [timer name] [position] [timer text]";
-            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+            immutable message = pattern.format(plugin.state.settings.prefix, event.aux[0]);
             chan(plugin.state, event.channel, message);
         }
         else
         {
             enum pattern = "Usage: <b>%s%s edit<b> [timer name] [position] [new timer text]";
-            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+            immutable message = pattern.format(plugin.state.settings.prefix, event.aux[0]);
             chan(plugin.state, event.channel, message);
         }
     }
@@ -754,14 +755,14 @@ void handleAddToTimer(
     void sendAddUsage()
     {
         enum pattern = "Usage: <b>%s%s add<b> [existing timer name] [new timer line]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[0]);
         chan(plugin.state, event.channel, message);
     }
 
     void sendNoSuchTimer()
     {
         enum noSuchTimerPattern = "No such timer is defined. Add a new one with <b>%s%s new<b>.";
-        immutable noSuchTimerMessage = noSuchTimerPattern.format(plugin.state.settings.prefix, event.aux);
+        immutable noSuchTimerMessage = noSuchTimerPattern.format(plugin.state.settings.prefix, event.aux[0]);
         chan(plugin.state, event.channel, noSuchTimerMessage);
     }
 
@@ -885,7 +886,7 @@ void handleSuspendTimer(
         enum pattern = "Usage: <b>%s%s %s<b> [name]";
         immutable message = pattern.format(
             plugin.state.settings.prefix,
-            event.aux,
+            event.aux[0],
             verb);
         chan(plugin.state, event.channel, message);
     }
@@ -918,7 +919,7 @@ void handleSuspendTimer(
         enum pattern = "Timer suspended. Use <b>%s%s resume %s<b> to resume it.";
         immutable message = pattern.format(
             plugin.state.settings.prefix,
-            event.aux,
+            event.aux[0],
             name);
         chan(plugin.state, event.channel, message);
     }

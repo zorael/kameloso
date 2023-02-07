@@ -174,7 +174,9 @@ private:
 
 import kameloso.plugins.twitch.api;
 import kameloso.plugins.twitch.common;
+import dialect.postprocessors.twitch;  // To trigger the module ctor
 
+import kameloso.plugins;
 import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
 import kameloso.common : logger;
 import kameloso.constants : BufferSize;
@@ -820,8 +822,8 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         room = event.channel in plugin.rooms;
     }
 
-    room.id = event.aux;
-    immutable userURL = "https://api.twitch.tv/helix/users?id=" ~ event.aux;
+    room.id = event.aux[0];
+    immutable userURL = "https://api.twitch.tv/helix/users?id=" ~ event.aux[0];
 
     foreach (immutable i; 0..TwitchPlugin.delegateRetries)
     {
@@ -882,7 +884,7 @@ version(TwitchCustomEmotesEverywhere)
 )
 void onGuestRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    importCustomEmotes(plugin, event.channel, event.aux);
+    importCustomEmotes(plugin, event.channel, event.aux[0]);
 }
 
 
@@ -946,7 +948,7 @@ void onCommandRepeat(TwitchPlugin plugin, const ref IRCEvent event)
     void sendUsage()
     {
         enum pattern = "Usage: %s%s [number of times] [text...]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[0]);
         chan(plugin.state, event.channel, message);
     }
 
@@ -1007,7 +1009,7 @@ void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
     {
         import std.format : format;
         enum pattern = "Usage: %s%s [word or phrase]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[0]);
         return chan(plugin.state, event.channel, message);
     }
 
@@ -1076,7 +1078,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         immutable pattern = (plugin.twitchSettings.songrequestMode == SongRequestMode.youtube) ?
             "Usage: %s%s [YouTube link or video ID]" :
             "Usage: %s%s [Spotify link or track ID]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[0]);
         chan(plugin.state, event.channel, message);
     }
 
@@ -1352,7 +1354,7 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     {
         import std.format : format;
         enum pattern = `Usage: %s%s "[poll title]" [duration] [choice1] [choice2] ...`;
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[0]);
         chan(plugin.state, event.channel, message);
     }
 
@@ -1678,7 +1680,7 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
     void sendUsage()
     {
         enum pattern = "Usage: %s%s [emote]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[0]);
         chan(plugin.state, event.channel, message);
     }
 
@@ -1913,7 +1915,7 @@ void onCommandSetTitle(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     if (!unescapedTitle.length)
     {
         enum pattern = "Usage: %s%s [title]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[0]);
         return chan(plugin.state, event.channel, message);
     }
 
@@ -1996,7 +1998,7 @@ void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     if (!unescapedGameName.length)
     {
         enum pattern = "Usage: %s%s [game name]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[0]);
         return chan(plugin.state, event.channel, message);
     }
 
@@ -2102,7 +2104,7 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     if (!lengthString.length)
     {
         enum pattern = "Usage: %s%s [commercial duration; valid values are 30, 60, 90, 120, 150 and 180]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[0]);
         return chan(plugin.state, event.channel, message);
     }
 
@@ -2166,6 +2168,8 @@ void importCustomEmotes(
     const string channelName,
     const string idString)
 in (Fiber.getThis, "Tried to call `importCustomEmotes` from outside a Fiber")
+in (channelName.length, "Tried to import custom emotes with an empty channel name string")
+in (idString.length, "Tried to import custom emotes with an empty ID string")
 {
     import core.memory : GC;
 
@@ -2543,6 +2547,7 @@ void onMyInfo(TwitchPlugin plugin)
         channelName = String key of room to start the monitors of.
  +/
 void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
+in (channelName.length, "Tried to start room monitor fibers with an empty channel name string")
 {
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.time : nextMidnight;

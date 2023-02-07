@@ -55,11 +55,8 @@ mixin template WHOISFiberDelegate(
 if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSomeFunction!onFailure))
 {
     import kameloso.plugins.common.core : IRCPlugin;
-    import lu.traits : MixinConstraints, MixinScope;
     import std.traits : ParameterIdentifierTuple;
     import std.typecons : Flag, No, Yes;
-
-    mixin MixinConstraints!(MixinScope.function_, "WHOISFiberDelegate");
 
     alias paramNames = ParameterIdentifierTuple!(mixin(__FUNCTION__));
 
@@ -227,7 +224,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
             if (whoisEvent.type == IRCEvent.Type.ERR_UNKNOWNCOMMAND)
             {
-                if (!whoisEvent.aux.length || (whoisEvent.aux == "WHOIS"))
+                if (!whoisEvent.aux[0].length || (whoisEvent.aux[0] == "WHOIS"))
                 {
                     // WHOIS query failed due to unknown command.
                     // Some flavours of ERR_UNKNOWNCOMMAND don't say what the

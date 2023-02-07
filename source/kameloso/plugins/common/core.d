@@ -27,6 +27,7 @@
 
     mixin UserAwareness;
     mixin ChannelAwareness;
+    mixin PluginRegistration!FooPlugin;
 
     final class FooPlugin : IRCPlugin
     {
@@ -584,6 +585,16 @@ mixin template IRCPluginImpl(
             // Concatenate our own fully qualified name
             enum fqn = module_ ~ '.' ~ __traits(identifier, fun);
 
+            static if (!uda._acceptedEventTypes.length)
+            {
+                import std.format : format;
+
+                enum pattern = "`%s` is annotated with an `IRCEventHandler` but it is " ~
+                    "not declared to accept any `IRCEvent.Type`s";
+                enum message = pattern.format(fqn);
+                static assert(0, message);
+            }
+
             static foreach (immutable type; uda._acceptedEventTypes)
             {
                 static if (type == IRCEvent.Type.UNSET)
@@ -591,7 +602,7 @@ mixin template IRCPluginImpl(
                     import std.format : format;
 
                     enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
-                        "`@(IRCEvent.Type.UNSET)`, which is not a valid event type";
+                        "`IRCEvent.Type.UNSET`, which is not a valid event type";
                     enum message = pattern.format(fqn);
                     static assert(0, message);
                 }
@@ -600,7 +611,7 @@ mixin template IRCPluginImpl(
                     import std.format : format;
 
                     enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
-                        "`@(IRCEvent.Type.PRIVMSG)`, which is not a valid event type. " ~
+                        "`IRCEvent.Type.PRIVMSG`, which is not a valid event type. " ~
                         "Use `IRCEvent.Type.CHAN` and/or `IRCEvent.Type.QUERY` instead";
                     enum message = pattern.format(fqn);
                     static assert(0, message);
@@ -610,7 +621,7 @@ mixin template IRCPluginImpl(
                     import std.format : format;
 
                     enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
-                        "`@(IRCEvent.Type.WHISPER)`, which is not a valid event type. " ~
+                        "`IRCEvent.Type.WHISPER`, which is not a valid event type. " ~
                         "Use `IRCEvent.Type.QUERY` instead";
                     enum message = pattern.format(fqn);
                     static assert(0, message);
@@ -900,13 +911,18 @@ mixin template IRCPluginImpl(
 
             // Snapshot content and aux for later restoration
             immutable origContent = event.content;  // don't strip
-            immutable origAux = event.aux;
+            typeof(IRCEvent.aux) origAux;
+            bool auxDirty;
 
             scope(exit)
             {
                 // Restore content and aux as they may have been altered
                 event.content = origContent;
-                event.aux = origAux;
+
+                if (auxDirty)
+                {
+                    event.aux = origAux;
+                }
             }
 
             if (uda._commands.length || uda._regexes.length)
@@ -972,7 +988,13 @@ mixin template IRCPluginImpl(
                                 if (state.settings.flush) stdout.flush();
                             }
 
-                            event.aux = thisCommand;
+                            if (!auxDirty)
+                            {
+                                origAux = event.aux;  // copies
+                                auxDirty = true;
+                            }
+
+                            event.aux[0] = thisCommand;
                             commandMatch = true;
                             break commandForeach;
                         }
@@ -1026,7 +1048,13 @@ mixin template IRCPluginImpl(
                                         if (state.settings.flush) stdout.flush();
                                     }
 
-                                    event.aux = hits[0];
+                                    if (!auxDirty)
+                                    {
+                                        origAux = event.aux;  // copies
+                                        auxDirty = true;
+                                    }
+
+                                    event.aux[0] = hits[0];
                                     commandMatch = true;
                                     break regexForeach;
                                 }
@@ -1207,10 +1235,14 @@ mixin template IRCPluginImpl(
             event.raw = sanitize(event.raw);
             event.channel = sanitize(event.channel);
             event.content = sanitize(event.content);
-            event.aux = sanitize(event.aux);
             event.tags = sanitize(event.tags);
             event.errors = sanitize(event.errors);
             event.errors ~= event.errors.length ? " | Sanitised" : "Sanitised";
+
+            foreach (immutable i, ref aux; event.aux)
+            {
+                aux = sanitize(aux);
+            }
 
             foreach (user; only(&event.sender, &event.target))
             {
@@ -3107,103 +3139,6 @@ public:
         mixin UnderscoreOpDispatcher;
     }
 }
-
-
-// PluginRegistration
-/++
-    Mixes in a module constructor that registers the supplied [IRCPlugin] subclass
-    in the module to be instantiated on program startup/connect.
-
-    Params:
-        Plugin = Plugin class of module.
-        priority = Priority at which to instantiate the plugin. A lower priority
-            makes it get instantiated before other plugins. Defaults to `0.priority`.
-        module_ = String name of the module. Only used in case an error message is needed.
- +/
-mixin template PluginRegistration(
-    Plugin,
-    Priority priority = 0.priority,
-    string module_ = __MODULE__)
-{
-    // module constructor
-    /++
-        Mixed-in module constructor that registers the passed [Plugin] class
-        the module to be instantiated on program startup.
-     +/
-    shared static this()
-    {
-        import kameloso.plugins.common.core : IRCPluginState;
-
-        static if (__traits(compiles, new Plugin(IRCPluginState.init)))
-        {
-            import kameloso.plugins : registerPlugin;
-
-            static auto ctor(IRCPluginState state)
-            {
-                return new Plugin(state);
-            }
-
-            registerPlugin(priority, &ctor);
-        }
-        else
-        {
-            import std.format : format;
-
-            enum pattern = "`%s.%s` constructor does not compile";
-            enum message = pattern.format(module_, PluginModule.className);
-            static assert(0, message);
-        }
-    }
-}
-
-
-// Priority
-/++
-    Embodies the notion of a priority at which a plugin should be instantiated,
-    and as such, the order in which they will be called to handle events.
-
-    This also affects in what order they appear in the configuration file.
- +/
-struct Priority
-{
-    /++
-        Numerical priority value. Lower is higher.
-     +/
-    int value;
-
-    /++
-        Helper `opUnary` to allow for `-10.priority`, instead of having to do the
-        (more correct) `(-10).priority`.
-
-        Example:
-        ---
-        mixin ModuleRegistration!(-10.priority);
-        ---
-
-        Params:
-            op = Operator.
-
-        Returns:
-            A new [Priority] with a [Priority.value|value] equal to the negative of this one's.
-     +/
-    auto opUnary(string op: "-")() const
-    {
-        return Priority(-value);
-    }
-}
-
-
-// priority
-/++
-    Helper alias to use the proper style guide and still be able to instantiate
-    [Priority] instances with UFCS.
-
-    Example:
-    ---
-    mixin ModuleRegistration!(50.priority);
-    ---
- +/
-alias priority = Priority;
 
 
 // Settings

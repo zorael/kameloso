@@ -12,6 +12,7 @@ version(WithTimePlugin):
 
 private:
 
+import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : UserAwareness;
 import kameloso.common : logger;

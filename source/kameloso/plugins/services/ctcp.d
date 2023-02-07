@@ -15,6 +15,7 @@ version(WithCTCPService):
 
 private:
 
+import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.messaging;
 import dialect.defs;

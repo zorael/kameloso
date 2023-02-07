@@ -197,7 +197,7 @@ void onMinimalAuthenticationAccountInfoTarget(IRCPlugin plugin, const ref IRCEve
  +/
 void onMinimalAuthenticationUnknownCommandWHOIS(IRCPlugin plugin, const ref IRCEvent event) @system
 {
-    if (event.aux != "WHOIS") return;
+    if (event.aux[0] != "WHOIS") return;
 
     // We're on a server that doesn't support WHOIS
     // Trigger queued replays of a Permissions.anyone nature, since
@@ -1117,7 +1117,7 @@ void onChannelAwarenessCreationTime(IRCPlugin plugin, const ref IRCEvent event)
     auto channel = event.channel in plugin.state.channels;
     if (!channel) return;
 
-    channel.created = event.count;
+    channel.created = event.count[0].get;
 }
 
 
@@ -1143,7 +1143,7 @@ void onChannelAwarenessMode(IRCPlugin plugin, const ref IRCEvent event)
     if (!channel) return;
 
     import dialect.common : setMode;
-    (*channel).setMode(event.aux, event.content, plugin.state.server);
+    (*channel).setMode(event.aux[0], event.content, plugin.state.server);
 }
 
 
@@ -1163,12 +1163,12 @@ void onChannelAwarenessWhoReply(IRCPlugin plugin, const ref IRCEvent event)
     if (!channel) return;
 
     // User awareness bits add the IRCUser
-    if (event.aux.length)
+    if (event.aux[0].length)
     {
         // Register operators, half-ops, voiced etc
         // Can be more than one if multi-prefix capability is enabled
         // Server-sent string, can assume ASCII (@,%,+...) and go char by char
-        foreach (immutable modesign; event.aux.representation)
+        foreach (immutable modesign; event.aux[0].representation)
         {
             if (const modechar = modesign in plugin.state.server.prefixchars)
             {
@@ -1326,7 +1326,7 @@ void onChannelAwarenessChannelModeIs(IRCPlugin plugin, const ref IRCEvent event)
 
     import dialect.common : setMode;
     // :niven.freenode.net 324 kameloso^ ##linux +CLPcnprtf ##linux-overflow
-    (*channel).setMode(event.aux, event.content, plugin.state.server);
+    (*channel).setMode(event.aux[0], event.content, plugin.state.server);
 }
 
 
@@ -1400,8 +1400,6 @@ mixin template TwitchAwareness(
         .onEvent(IRCEvent.Type.TWITCH_SUB)
         .onEvent(IRCEvent.Type.TWITCH_CHEER)
         .onEvent(IRCEvent.Type.TWITCH_SUBGIFT)
-        .onEvent(IRCEvent.Type.TWITCH_HOSTSTART)
-        .onEvent(IRCEvent.Type.TWITCH_HOSTEND)
         .onEvent(IRCEvent.Type.TWITCH_BITSBADGETIER)
         .onEvent(IRCEvent.Type.TWITCH_RAID)
         .onEvent(IRCEvent.Type.TWITCH_UNRAID)

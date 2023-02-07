@@ -14,6 +14,7 @@ version(WithStopwatchPlugin):
 
 private:
 
+import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.messaging;
@@ -65,7 +66,7 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
     void sendUsage()
     {
         enum pattern = "Usage: <b>%s%s<b> [start|stop|status]";  // hide clear
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[0]);
         chan(plugin.state, event.channel, message);
     }
 

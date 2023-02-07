@@ -543,7 +543,7 @@ in (channel.length, "Tried to set a mode but no channel was given")
 
     m.event.type = IRCEvent.Type.MODE;
     m.event.channel = channel;
-    m.event.aux = modes.idup;
+    m.event.aux[0] = modes.idup;
     m.event.content = content.expandIRCTags;
     m.caller = caller;
 
@@ -570,7 +570,7 @@ unittest
                 assert((type == IRCEvent.Type.MODE), Enum!(IRCEvent.Type).toString(type));
                 assert((channel == "#channel"), channel);
                 assert((content == "content"), content);
-                assert((aux == "+o"), aux);
+                assert((aux[0] == "+o"), aux[0]);
                 assert(m.properties == Message.Property.init);
             }
         }
@@ -735,7 +735,7 @@ in (channel.length, "Tried to join a channel but no channel was given")
 
     m.event.type = IRCEvent.Type.JOIN;
     m.event.channel = channel;
-    m.event.aux = key;
+    m.event.aux[0] = key;
     m.caller = caller;
 
     if (quiet) m.properties |= Message.Property.quiet;
