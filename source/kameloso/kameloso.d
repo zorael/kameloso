@@ -422,7 +422,7 @@ public:
      +/
     void initPlugins() @system
     {
-        import kameloso.plugins : instantiatePlugins;
+        static import kameloso.plugins;
         import kameloso.plugins.common.core : IRCPluginState;
         import kameloso.plugins.common.misc : applyCustomSettings;
         import std.concurrency : thisTid;
@@ -439,7 +439,7 @@ public:
         state.abort = abort;
 
         // Leverage kameloso.plugins.instantiatePlugins to construct all plugins.
-        plugins = instantiatePlugins(state);
+        plugins = kameloso.plugins.instantiatePlugins(state);
 
         foreach (plugin; plugins)
         {
@@ -680,8 +680,6 @@ public:
 
         if (plugin.state.updates & Update.settings)
         {
-            static import kameloso.common;
-
             // Something changed the settings; propagate
             plugin.state.updates &= ~Update.settings;
             propagate(plugin.state.settings);
