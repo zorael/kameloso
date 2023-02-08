@@ -317,27 +317,6 @@ mixin template IRCPluginImpl(
     private import std.traits : getUDAs, isSomeFunction;
     private import core.thread : Fiber;
 
-    /// Symbol needed for the mixin constraints to work.
-    // https://forum.dlang.org/post/sk4hqm$12cf$1@digitalmars.com
-    private alias mixinParent = __traits(parent, {});
-
-    // Use a custom constraint to force the scope to be an IRCPlugin
-    static if (!is(mixinParent : IRCPlugin))
-    {
-        import lu.traits : CategoryName;
-        import std.format : format;
-
-        alias pluginImplParentInfo = CategoryName!mixinParent;
-
-        enum pattern = "%s `%s` mixes in `%s` but it is only supposed to be " ~
-            "mixed into an `IRCPlugin` subclass";
-        enum message = pattern.format(
-            pluginImplParentInfo.type,
-            pluginImplParentInfo.fqn,
-            "IRCPluginImpl");
-        static assert(0, message);
-    }
-
     static if (__traits(compiles, { alias _ = this.hasIRCPluginImpl; }))
     {
         import std.format : format;

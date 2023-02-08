@@ -511,27 +511,6 @@ private:
     import kameloso.plugins.common.core : IRCPlugin;
     import std.typecons : Flag, No, Yes;
 
-    /// Symbol needed for the mixin constraints to work.
-    // https://forum.dlang.org/post/sk4hqm$12cf$1@digitalmars.com
-    alias mixinParent = __traits(parent, {});
-
-    // Use a custom constraint to force the scope to be an IRCPlugin
-    static if (!is(mixinParent : IRCPlugin))
-    {
-        import lu.traits : CategoryName;
-        import std.format : format;
-
-        alias messagingParentInfo = CategoryName!mixinParent;
-
-        enum pattern = "%s `%s` mixes in `%s` but it is only supposed to be " ~
-            "mixed into an `IRCPlugin` subclass";
-        enum message = pattern.format(
-            messagingParentInfo.type,
-            messagingParentInfo.fqn,
-            "MessagingProxy");
-        static assert(0, message);
-    }
-
     static if (__traits(compiles, { alias _ = this.hasMessagingProxy; }))
     {
         import std.format : format;
