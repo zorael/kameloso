@@ -226,7 +226,7 @@ unittest
     IRCPluginState state;
     auto service = new CTCPService(state);
 
-    foreach (immutable type; getUDAs!(onCTCPs, IRCEventHandler)[0]._acceptedEventTypes)
+    foreach (immutable type; getUDAs!(onCTCPs, IRCEventHandler)[0].acceptedEventTypes)
     {
         IRCEvent event;
         event.type = type;
@@ -276,7 +276,7 @@ void onCTCPClientinfo(CTCPService service, const ref IRCEvent event)
 
         foreach (sym; service.Introspection.allEventHandlerFunctionsInModule)
         {
-            static foreach (immutable type; getUDAs!(sym, IRCEventHandler)[0]._acceptedEventTypes)
+            static foreach (immutable type; getUDAs!(sym, IRCEventHandler)[0].acceptedEventTypes)
             {{
                 import lu.conv : Enum;
 

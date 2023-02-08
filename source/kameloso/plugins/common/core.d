@@ -586,7 +586,7 @@ mixin template IRCPluginImpl(
             // Concatenate our own fully qualified name
             enum fqn = module_ ~ '.' ~ __traits(identifier, fun);
 
-            static if (!uda._acceptedEventTypes.length)
+            static if (!uda.acceptedEventTypes.length)
             {
                 import std.format : format;
 
@@ -596,7 +596,7 @@ mixin template IRCPluginImpl(
                 static assert(0, message);
             }
 
-            static foreach (immutable type; uda._acceptedEventTypes)
+            static foreach (immutable type; uda.acceptedEventTypes)
             {
                 static if (type == IRCEvent.Type.UNSET)
                 {
@@ -628,7 +628,7 @@ mixin template IRCPluginImpl(
                     static assert(0, message);
                 }
 
-                static if (uda._commands.length || uda._regexes.length)
+                static if (uda.commands.length || uda.regexes.length)
                 {
                     static if (
                         (type != IRCEvent.Type.CHAN) &&
@@ -650,11 +650,11 @@ mixin template IRCPluginImpl(
                 }
             }
 
-            static if (uda._commands.length)
+            static if (uda.commands.length)
             {
                 import lu.string : contains;
 
-                static foreach (immutable command; uda._commands)
+                static foreach (immutable command; uda.commands)
                 {
                     static if (!command._word.length)
                     {
@@ -678,9 +678,9 @@ mixin template IRCPluginImpl(
                 }
             }
 
-            static if (uda._regexes.length)
+            static if (uda.regexes.length)
             {
-                static foreach (immutable regex; uda._regexes)
+                static foreach (immutable regex; uda.regexes)
                 {
                     import lu.string : contains;
 
@@ -920,7 +920,7 @@ mixin template IRCPluginImpl(
                 }
             }
 
-            if (uda._commands.length || uda._regexes.length)
+            if (uda.commands.length || uda.regexes.length)
             {
                 import lu.string : strippedLeft;
 
@@ -944,10 +944,10 @@ mixin template IRCPluginImpl(
             bool commandMatch;
 
             // Evaluate each Command UDAs with the current event
-            if (uda._commands.length)
+            if (uda.commands.length)
             {
                 commandForeach:
-                foreach (const command; uda._commands)
+                foreach (const command; uda.commands)
                 {
                     static if (verbose)
                     {
@@ -1005,10 +1005,10 @@ mixin template IRCPluginImpl(
             // Iff no match from Commands, evaluate Regexes
             static if (hasRegexes)
             {
-                if (/*uda._regexes.length &&*/ !commandMatch)
+                if (/*uda.regexes.length &&*/ !commandMatch)
                 {
                     regexForeach:
-                    foreach (const regex; uda._regexes)
+                    foreach (const regex; uda.regexes)
                     {
                         static if (verbose)
                         {
@@ -1077,7 +1077,7 @@ mixin template IRCPluginImpl(
                 }
             }
 
-            if (uda._commands.length || uda._regexes.length)
+            if (uda.commands.length || uda.regexes.length)
             {
                 if (!commandMatch)
                 {
@@ -1299,7 +1299,7 @@ mixin template IRCPluginImpl(
                 immutable next = process!
                     (verbose,
                     cast(bool)uda._fiber,
-                    cast(bool)uda._regexes.length)
+                    cast(bool)uda.regexes.length)
                     (&fun,
                     funName,
                     uda,
@@ -1315,7 +1315,7 @@ mixin template IRCPluginImpl(
                     immutable newNext = process!
                         (verbose,
                         cast(bool)uda._fiber,
-                        cast(bool)uda._regexes.length)
+                        cast(bool)uda.regexes.length)
                         (&fun,
                         funName,
                         uda,
@@ -1351,7 +1351,7 @@ mixin template IRCPluginImpl(
                 immutable next = process!
                     (verbose,
                     cast(bool)uda._fiber,
-                    cast(bool)uda._regexes.length)
+                    cast(bool)uda.regexes.length)
                     (&fun,
                     funName,
                     uda,
@@ -1367,7 +1367,7 @@ mixin template IRCPluginImpl(
                     immutable newNext = process!
                         (verbose,
                         cast(bool)uda._fiber,
-                        cast(bool)uda._regexes.length)
+                        cast(bool)uda.regexes.length)
                         (&fun,
                         funName,
                         uda,
@@ -2012,7 +2012,7 @@ mixin template IRCPluginImpl(
             {
                 immutable uda = getUDAs!(fun, IRCEventHandler)[0];
 
-                static foreach (immutable command; uda._commands)
+                static foreach (immutable command; uda.commands)
                 {{
                     enum key = command._word;
                     commandAA[key] = IRCPlugin.CommandMetadata(command);
@@ -2074,7 +2074,7 @@ mixin template IRCPluginImpl(
                     }
                 }}
 
-                static foreach (immutable regex; uda._regexes)
+                static foreach (immutable regex; uda.regexes)
                 {{
                     enum key = `r"` ~ regex._expression ~ `"`;
                     commandAA[key] = IRCPlugin.CommandMetadata(regex);
@@ -2964,19 +2964,19 @@ private:
     import kameloso.traits : UnderscoreOpDispatcher;
 
 public:
-    // _acceptedEventTypes
+    // acceptedEventTypes
     /++
         Array of types of [dialect.defs.IRCEvent] that the annotated event
         handler function should accept.
      +/
-    IRCEvent.Type[] _acceptedEventTypes;
+    IRCEvent.Type[] acceptedEventTypes;
 
     // _onEvent
     /++
         Alias to make [kameloso.traits.UnderscoreOpDispatcher] redirect calls to
-        [_acceptedEventTypes] but by the name `onEvent`.
+        [acceptedEventTypes] but by the name `onEvent`.
      +/
-    alias _onEvent = _acceptedEventTypes;
+    alias _onEvent = acceptedEventTypes;
 
     // _permissionsRequired
     /++
@@ -2992,31 +2992,31 @@ public:
      +/
     ChannelPolicy _channelPolicy = ChannelPolicy.home;
 
-    // _commands
+    // commands
     /++
         Array of [IRCEventHandler.Command]s the bot should pick up and listen for.
      +/
-    Command[] _commands;
+    Command[] commands;
 
     // _addCommand
     /++
         Alias to make [kameloso.traits.UnderscoreOpDispatcher] redirect calls to
-        [_commands] but by the name `addCommand`.
+        [commands] but by the name `addCommand`.
      +/
-    alias _addCommand = _commands;
+    alias _addCommand = commands;
 
-    // _regexes
+    // regexes
     /++
         Array of [IRCEventHandler.Regex]es the bot should pick up and listen for.
      +/
-    Regex[] _regexes;
+    Regex[] regexes;
 
     // _addRegex
     /++
         Alias to make [kameloso.traits.UnderscoreOpDispatcher] redirect calls to
-        [_regexes] but by the name `addRegex`.
+        [regexes] but by the name `addRegex`.
      +/
-    alias _addRegex = _regexes;
+    alias _addRegex = regexes;
 
     // _chainable
     /++
@@ -3055,11 +3055,11 @@ public:
 
     // generateTypemap
     /++
-        Generates [acceptedEventTypeMap] from [_acceptedEventTypes].
+        Generates [acceptedEventTypeMap] from [acceptedEventTypes].
      +/
     void generateTypemap() pure @safe nothrow
     {
-        foreach (immutable type; _acceptedEventTypes)
+        foreach (immutable type; acceptedEventTypes)
         {
             if (type >= acceptedEventTypeMap.length) acceptedEventTypeMap.length = type+1;
             acceptedEventTypeMap[type] = true;
