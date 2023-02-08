@@ -385,6 +385,7 @@ mixin template IRCPluginImpl(
             foreach (immutable i, fun; allEventHandlerFunctionsInModule)
             {
                 udas[i] = getUDAs!(fun, IRCEventHandler)[0];
+                udas[i].generateTypemap();
             }
 
             return udas;
@@ -856,8 +857,7 @@ mixin template IRCPluginImpl(
             (scope Fun fun,
             const string funName,
             const IRCEventHandler uda,
-            ref IRCEvent event,
-            const bool acceptsAnyType) scope
+            ref IRCEvent event) scope
         {
             import std.algorithm.searching : canFind;
 
@@ -865,11 +865,6 @@ mixin template IRCPluginImpl(
             {
                 import lu.conv : Enum;
                 import std.stdio : stdout, writeln, writefln;
-            }
-
-            if (!acceptsAnyType)
-            {
-                if (!uda._acceptedEventTypes.canFind(event.type)) return NextStep.continue_;
             }
 
             static if (verbose)
@@ -1277,14 +1272,38 @@ mixin template IRCPluginImpl(
             debug static assert(udaSanityCheck!(fun, uda),
                 "`" ~ funName ~ "` UDA sanity check failed.");
 
-            // Make a special check for IRCEvent.Type.ANY at compile-time,
-            // so the processing function won't have to walk the array twice
-            enum acceptsAnyType = uda._acceptedEventTypes.canFind(IRCEvent.Type.ANY);
+            /+
+                Return if the event handler does not accept this type of event.
+             +/
+            if ((uda.acceptedEventTypeMap.length >= IRCEvent.Type.ANY) &&
+                uda.acceptedEventTypeMap[IRCEvent.Type.ANY])
+            {
+                // ANY; drop down
+            }
+            else if (event.type >= uda.acceptedEventTypeMap.length)
+            {
+                // Out of bounds, cannot possibly be an accepted type
+                return NextStep.continue_;
+            }
+            else if (uda.acceptedEventTypeMap[event.type])
+            {
+                // Drop down
+            }
+            else
+            {
+                return NextStep.continue_;
+            }
 
             try
             {
-                immutable next = process!(verbose, cast(bool)uda._fiber, cast(bool)uda._regexes.length)
-                    (&fun, funName, uda, event, acceptsAnyType);
+                immutable next = process!
+                    (verbose,
+                    cast(bool)uda._fiber,
+                    cast(bool)uda._regexes.length)
+                    (&fun,
+                    funName,
+                    uda,
+                    event);
 
                 if (next == NextStep.continue_)
                 {
@@ -1293,8 +1312,14 @@ mixin template IRCPluginImpl(
                 else if (next == NextStep.repeat)
                 {
                     // only repeat once so we don't endlessly loop
-                    immutable newNext = process!(verbose, cast(bool)uda._fiber, cast(bool)uda._regexes.length)
-                        (&fun, funName, uda, event, acceptsAnyType);
+                    immutable newNext = process!
+                        (verbose,
+                        cast(bool)uda._fiber,
+                        cast(bool)uda._regexes.length)
+                        (&fun,
+                        funName,
+                        uda,
+                        event);
                     return newNext;
                 }
                 else if (next == NextStep.return_)
@@ -1323,8 +1348,14 @@ mixin template IRCPluginImpl(
                 sanitiseEvent(event);
 
                 // Copy-paste, not much we can do otherwise
-                immutable next = process!(verbose, cast(bool)uda._fiber, cast(bool)uda._regexes.length)
-                    (&fun, funName, uda, event, acceptsAnyType);
+                immutable next = process!
+                    (verbose,
+                    cast(bool)uda._fiber,
+                    cast(bool)uda._regexes.length)
+                    (&fun,
+                    funName,
+                    uda,
+                    event);
 
                 if (next == NextStep.continue_)
                 {
@@ -1333,8 +1364,14 @@ mixin template IRCPluginImpl(
                 else if (next == NextStep.repeat)
                 {
                     // only repeat once so we don't endlessly loop
-                    immutable newNext = process!(verbose, cast(bool)uda._fiber, cast(bool)uda._regexes.length)
-                        (&fun, funName, uda, event, acceptsAnyType);
+                    immutable newNext = process!
+                        (verbose,
+                        cast(bool)uda._fiber,
+                        cast(bool)uda._regexes.length)
+                        (&fun,
+                        funName,
+                        uda,
+                        event);
                     return newNext;
                 }
                 else if (next == NextStep.return_)
@@ -3009,6 +3046,25 @@ public:
         [core.thread.fiber.Fiber|Fiber].
      +/
     bool _fiber;
+
+    // acceptedEventTypeMap
+    /++
+        Array of accepted [dialect.defs.IRCEvent.Type|IRCEvent.Type]s.
+     +/
+    bool[] acceptedEventTypeMap;
+
+    // generateTypemap
+    /++
+        Generates [acceptedEventTypeMap] from [_acceptedEventTypes].
+     +/
+    void generateTypemap() pure @safe nothrow
+    {
+        foreach (immutable type; _acceptedEventTypes)
+        {
+            if (type >= acceptedEventTypeMap.length) acceptedEventTypeMap.length = type+1;
+            acceptedEventTypeMap[type] = true;
+        }
+    }
 
     mixin UnderscoreOpDispatcher;
 
