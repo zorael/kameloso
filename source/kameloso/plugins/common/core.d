@@ -2009,9 +2009,9 @@ mixin template IRCPluginImpl(
                         {
                             import lu.string : beginsWith;
 
-                            static if (command._syntaxes.length)
+                            static if (command.syntaxes.length)
                             {
-                                foreach (immutable syntax; command._syntaxes)
+                                foreach (immutable syntax; command.syntaxes)
                                 {
                                     if (syntax.beginsWith("$bot"))
                                     {
@@ -2035,9 +2035,9 @@ mixin template IRCPluginImpl(
                         }
                         else
                         {
-                            static if (command._syntaxes.length)
+                            static if (command.syntaxes.length)
                             {
-                                commandAA[key].syntaxes ~= command._syntaxes.dup;
+                                commandAA[key].syntaxes ~= command.syntaxes.dup;
                             }
                             else
                             {
@@ -3086,18 +3086,18 @@ public:
          +/
         bool _hidden;
 
-        // _syntax
+        // syntaxes
         /++
             Command usage syntax help strings.
          +/
-        string[] _syntaxes;
+        string[] syntaxes;
 
         // _addSyntax
         /++
             Alias to make [kameloso.traits.UnderscoreOpDispatcher] redirect calls to
-            [_syntaxes] but by the name `addSyntax`.
+            [syntaxes] but by the name `addSyntax`.
          +/
-        alias _addSyntax = _syntaxes;
+        alias _addSyntax = syntaxes;
 
         mixin UnderscoreOpDispatcher;
     }
