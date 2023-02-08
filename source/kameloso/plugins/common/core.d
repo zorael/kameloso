@@ -1479,33 +1479,35 @@ mixin template IRCPluginImpl(
         /+
             Process all functions.
          +/
-        static foreach (funIndexes; allFunIndexes)
-        {{
-            bool doneWithGroup;
-
+        aliasLoop:
+        foreach (funIndexes; allFunIndexes)
+        {
             static foreach (immutable i; funIndexes)
-            {
-                if (!doneWithGroup)
+            {{
+                immutable next = tryProcess!i(origEvent);
+
+                if (next == NextStep.return_)
                 {
-                    immutable next = tryProcess!i(origEvent);
+                    // return_; end loop, proceed with next index alias
+                    continue aliasLoop;
+                }
+                /*else if (next == NextStep.continue_)
+                {
+                    // continue_; iterate to next function within this alias
+                }*/
+                else if (next == NextStep.repeat)
+                {
+                    immutable newNext = tryProcess!i(origEvent);
 
-                    if (next == NextStep.return_)
+                    // Only repeat once
+                    if (newNext == NextStep.return_)
                     {
-                        doneWithGroup = true;
-                    }
-                    else if (next == NextStep.repeat)
-                    {
-                        immutable newNext = tryProcess!i(origEvent);
-
-                        // Only repeat once
-                        if (newNext == NextStep.return_)
-                        {
-                            doneWithGroup = true;
-                        }
+                        // as above, end index loop
+                        continue aliasLoop;
                     }
                 }
-            }
-        }}
+            }}
+        }
     }
 
     // this(IRCPluginState)
