@@ -323,13 +323,19 @@ public:
             // Before SSL_new
             if (!certFile.exists)
             {
-                throw new SSLFileException("No such certificate file",
-                    certFile, __FILE__, __LINE__);
+                enum message = "No such certificate file";
+                throw new SSLFileException(
+                    message,
+                    certFile,
+                    __FILE__,
+                    __LINE__);
             }
 
             immutable filetype = (certFile.extension == ".pem") ? 1 : 0;
-            immutable code = openssl.SSL_CTX_use_certificate_file(sslContext,
-                toStringz(certFile), filetype);
+            immutable code = openssl.SSL_CTX_use_certificate_file(
+                sslContext,
+                toStringz(certFile),
+                filetype);
             if (code != 1) throw new SSLException("Failed to set certificate", code);
         }
 
@@ -338,13 +344,19 @@ public:
             // Ditto
             if (!privateKeyFile.exists)
             {
-                throw new SSLFileException("No such private key file",
-                    privateKeyFile, __FILE__, __LINE__);
+                enum message = "No such private key file";
+                throw new SSLFileException(
+                    message,
+                    privateKeyFile,
+                    __FILE__,
+                    __LINE__);
             }
 
             immutable filetype = (privateKeyFile.extension == ".pem") ? 1 : 0;
-            immutable code = openssl.SSL_CTX_use_PrivateKey_file(sslContext,
-                toStringz(privateKeyFile), filetype);
+            immutable code = openssl.SSL_CTX_use_PrivateKey_file(
+                sslContext,
+                toStringz(privateKeyFile),
+                filetype);
             if (code != 1) throw new SSLException("Failed to set private key", code);
         }
 
@@ -988,8 +1000,9 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
 
                         if (code != 1)
                         {
-                            throw new SSLException("Failed to establish SSL connection " ~
-                                "after successful connect", code);
+                            enum message = "Failed to establish SSL connection " ~
+                                "after successful connect";
+                            throw new SSLException(message, code);
                         }
                     }
 

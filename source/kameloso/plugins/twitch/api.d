@@ -1410,7 +1410,11 @@ in (channelName.length, "Tried to get broadcaster authorisation with an empty ch
 
     if (!authorizationBearer)
     {
-        throw new MissingBroadcasterTokenException("Missing broadcaster key", channelName, __FILE__);
+        enum message = "Missing broadcaster key";
+        throw new MissingBroadcasterTokenException(
+            message,
+            channelName,
+            __FILE__);
     }
 
     return *authorizationBearer;

@@ -344,9 +344,10 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                         static if (TakesParams!(onSuccess, IRCEvent))
                         {
                             // Can't WHOIS on Twitch
-                            throw new Exception("Tried to enqueue a `" ~
+                            enum message = "Tried to enqueue a `" ~
                                 typeof(onSuccess).stringof ~ " onSuccess` function " ~
-                                "when on Twitch (can't WHOIS)");
+                                "when on Twitch (can't WHOIS)";
+                            throw new Exception(message);
                         }
                         else static if (TakesParams!(onSuccess, IRCUser))
                         {
@@ -371,9 +372,10 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                     TakesParams!(onSuccess, IRCUser))
                 {
                     // Can't WHOIS on Twitch
-                    throw new Exception("Tried to enqueue a `" ~
+                    enum message = "Tried to enqueue a `" ~
                         typeof(onSuccess).stringof ~ " onSuccess` function " ~
-                        "when on Twitch without `UserAwareness` (can't WHOIS)");
+                        "when on Twitch without `UserAwareness` (can't WHOIS)";
+                    throw new Exception(message);
                 }
                 else static if (TakesParams!(onSuccess, string))
                 {
