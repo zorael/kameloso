@@ -844,10 +844,7 @@ mixin template IRCPluginImpl(
             {
                 import lu.conv : Enum;
                 import std.stdio : stdout, writeln, writefln;
-            }
 
-            static if (verbose)
-            {
                 writeln("-- ", funName, " @ ", Enum!(IRCEvent.Type).toString(event.type));
                 writeln("   ...", Enum!ChannelPolicy.toString(uda._channelPolicy));
                 if (state.settings.flush) stdout.flush();
@@ -1240,8 +1237,6 @@ mixin template IRCPluginImpl(
          +/
         NextStep tryProcess(size_t i)(ref IRCEvent event)
         {
-            import std.algorithm.searching : canFind;
-
             immutable uda = this.Introspection.allEventHandlerUDAsInModule[i];
             alias fun = this.Introspection.allEventHandlerFunctionsInModule[i];
 
@@ -2345,7 +2340,6 @@ auto filterSender(
     const bool preferHostmasks) @safe
 {
     import kameloso.constants : Timeout;
-    import std.algorithm.searching : canFind;
 
     version(WithPersistenceService) {}
     else
