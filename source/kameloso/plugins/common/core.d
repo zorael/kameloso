@@ -1402,6 +1402,7 @@ mixin template IRCPluginImpl(
         auto funIndexByTiming(const Timing timing)
         {
             size_t[] indexes;
+            if (!__ctfe) return indexes;
 
             static foreach (immutable i; 0..this.Introspection.allEventHandlerUDAsInModule.length)
             {
@@ -3038,6 +3039,8 @@ public:
      +/
     void generateTypemap() pure @safe nothrow
     {
+        if (!__ctfe) return;
+
         foreach (immutable type; acceptedEventTypes)
         {
             if (type >= acceptedEventTypeMap.length) acceptedEventTypeMap.length = type+1;
