@@ -2738,9 +2738,7 @@ struct Replay
         const Permissions permissionsRequired,
         const string caller)
     {
-        import std.datetime.systime : Clock;
-
-        timestamp = Clock.currTime.toUnixTime;
+        timestamp = event.time;
         this.dg = dg;
         this.event = event;
         this.permissionsRequired = permissionsRequired;
