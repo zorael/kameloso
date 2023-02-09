@@ -174,7 +174,9 @@ private:
 
 import kameloso.plugins.twitch.api;
 import kameloso.plugins.twitch.common;
+import dialect.postprocessors.twitch;  // To trigger the module ctor
 
+import kameloso.plugins;
 import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
 import kameloso.common : logger;
 import kameloso.constants : BufferSize;
@@ -282,6 +284,9 @@ package struct Credentials
 
         Params:
             json = JSON representation of some [Credentials].
+
+        Returns:
+            A new [Credentials] with values from the paseed `json`.
      +/
     static auto fromJSON(const JSONValue json)
     {
@@ -667,8 +672,6 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         chan(plugin.state, event.channel, message);
     }
 
-    if (!plugin.useAPIFeatures) return;
-
     string slice = event.content.stripped;  // mutable
     string idString;
     string displayName;
@@ -819,8 +822,8 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         room = event.channel in plugin.rooms;
     }
 
-    room.id = event.aux;
-    immutable userURL = "https://api.twitch.tv/helix/users?id=" ~ event.aux;
+    room.id = event.aux[0];
+    immutable userURL = "https://api.twitch.tv/helix/users?id=" ~ event.aux[0];
 
     foreach (immutable i; 0..TwitchPlugin.delegateRetries)
     {
@@ -881,7 +884,7 @@ version(TwitchCustomEmotesEverywhere)
 )
 void onGuestRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    importCustomEmotes(plugin, event.channel, event.aux);
+    importCustomEmotes(plugin, event.channel, event.aux[0]);
 }
 
 
@@ -945,7 +948,7 @@ void onCommandRepeat(TwitchPlugin plugin, const ref IRCEvent event)
     void sendUsage()
     {
         enum pattern = "Usage: %s%s [number of times] [text...]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel, message);
     }
 
@@ -1006,7 +1009,7 @@ void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
     {
         import std.format : format;
         enum pattern = "Usage: %s%s [word or phrase]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
         return chan(plugin.state, event.channel, message);
     }
 
@@ -1075,7 +1078,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         immutable pattern = (plugin.twitchSettings.songrequestMode == SongRequestMode.youtube) ?
             "Usage: %s%s [YouTube link or video ID]" :
             "Usage: %s%s [Spotify link or track ID]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel, message);
     }
 
@@ -1351,7 +1354,7 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     {
         import std.format : format;
         enum pattern = `Usage: %s%s "[poll title]" [duration] [choice1] [choice2] ...`;
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel, message);
     }
 
@@ -1388,7 +1391,7 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     {
         immutable responseJSON = createPoll(plugin, event.channel, title, durationString, choices);
         enum pattern = `Poll "%s" created.`;
-        immutable message = pattern.format(responseJSON.array[0].object["title"].str);
+        immutable message = pattern.format(responseJSON[0].object["title"].str);
         chan(plugin.state, event.channel, message);
     }
     catch (MissingBroadcasterTokenException _)
@@ -1463,52 +1466,63 @@ void onCommandEndPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     import std.json : JSONType;
     import std.stdio : writeln;
 
-    immutable pollInfoJSON = getPolls(plugin, event.channel);
-
-    if (!pollInfoJSON.array.length)
+    try
     {
-        enum message = "There are no active polls to end.";
-        return chan(plugin.state, event.channel, message);
+        const pollInfoJSON = getPolls(plugin, event.channel);
+
+        if (!pollInfoJSON.length)
+        {
+            enum message = "There are no active polls to end.";
+            return chan(plugin.state, event.channel, message);
+        }
+
+        immutable voteID = pollInfoJSON[0].object["id"].str;
+        immutable endResponseJSON = endPoll(plugin, event.channel, voteID, Yes.terminate);
+
+        if ((endResponseJSON.type != JSONType.object) ||
+            ("choices" !in endResponseJSON) ||
+            (endResponseJSON["choices"].array.length < 2))
+        {
+            // Invalid response in some way
+            logger.error("Unexpected response from server when ending a poll");
+            writeln(endResponseJSON.toPrettyString);
+            return;
+        }
+
+        /*static struct Choice
+        {
+            string title;
+            long votes;
+        }
+
+        Choice[] choices;
+        long totalVotes;
+
+        foreach (immutable i, const choiceJSON; endResponseJSON["choices"].array)
+        {
+            Choice choice;
+            choice.title = choiceJSON["title"].str;
+            choice.votes =
+                choiceJSON["votes"].integer +
+                choiceJSON["channel_points_votes"].integer +
+                choiceJSON["bits_votes"].integer;
+            choices ~= choice;
+            totalVotes += choice.votes;
+        }
+
+        auto sortedChoices = choices.sort!((a,b) => a.votes > b.votes);*/
+
+        enum message = "Poll ended.";
+        chan(plugin.state, event.channel, message);
     }
-
-    immutable voteID = pollInfoJSON.array[0].object["id"].str;
-    immutable endResponseJSON = endPoll(plugin, event.channel, voteID, Yes.terminate);
-
-    if ((endResponseJSON.type != JSONType.object) ||
-        ("choices" !in endResponseJSON) ||
-        (endResponseJSON["choices"].array.length < 2))
+    catch (MissingBroadcasterTokenException e)
     {
-        // Invalid response in some way
-        logger.error("Unexpected response from server when ending a poll");
-        writeln(endResponseJSON.toPrettyString);
-        return;
+        enum pattern = "Missing broadcaster-level API token for channel <l>%s</>.";
+        logger.errorf(pattern, e.channelName);
+
+        enum superMessage = "Run the program with <l>--set twitch.superKeygen</> to generate a new one.";
+        logger.error(superMessage);
     }
-
-    /*static struct Choice
-    {
-        string title;
-        long votes;
-    }
-
-    Choice[] choices;
-    long totalVotes;
-
-    foreach (immutable i, const choiceJSON; endResponseJSON["choices"].array)
-    {
-        Choice choice;
-        choice.title = choiceJSON["title"].str;
-        choice.votes =
-            choiceJSON["votes"].integer +
-            choiceJSON["channel_points_votes"].integer +
-            choiceJSON["bits_votes"].integer;
-        choices ~= choice;
-        totalVotes += choice.votes;
-    }
-
-    auto sortedChoices = choices.sort!((a,b) => a.votes > b.votes);*/
-
-    enum message = "Poll ended.";
-    chan(plugin.state, event.channel, message);
 }
 
 
@@ -1666,7 +1680,7 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
     void sendUsage()
     {
         enum pattern = "Usage: %s%s [emote]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel, message);
     }
 
@@ -1770,8 +1784,7 @@ void onCommandWatchtime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     import core.thread : Fiber;
     import core.time : Duration, seconds;
 
-    if (!plugin.useAPIFeatures) return;
-    else if (!plugin.twitchSettings.watchtime) return;
+    if (!plugin.twitchSettings.watchtime) return;
 
     string slice = event.content.stripped;  // mutable
     string nickname;
@@ -1897,14 +1910,12 @@ void onCommandSetTitle(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     import std.array : replace;
     import std.format : format;
 
-    if (!plugin.useAPIFeatures) return;
-
     immutable unescapedTitle = event.content.stripped;
 
     if (!unescapedTitle.length)
     {
         enum pattern = "Usage: %s%s [title]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
         return chan(plugin.state, event.channel, message);
     }
 
@@ -1982,14 +1993,12 @@ void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     import std.string : isNumeric;
     import std.uri : encodeComponent;
 
-    if (!plugin.useAPIFeatures) return;
-
     immutable unescapedGameName = event.content.stripped;
 
     if (!unescapedGameName.length)
     {
         enum pattern = "Usage: %s%s [game name]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
         return chan(plugin.state, event.channel, message);
     }
 
@@ -2095,7 +2104,7 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     if (!lengthString.length)
     {
         enum pattern = "Usage: %s%s [commercial duration; valid values are 30, 60, 90, 120, 150 and 180]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
         return chan(plugin.state, event.channel, message);
     }
 
@@ -2117,6 +2126,14 @@ void onCommandCommercial(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     try
     {
         startCommercial(plugin, event.channel, lengthString);
+    }
+    catch (MissingBroadcasterTokenException e)
+    {
+        enum pattern = "Missing broadcaster-level API token for channel <l>%s</>.";
+        logger.errorf(pattern, e.channelName);
+
+        enum superMessage = "Run the program with <l>--set twitch.superKeygen</> to generate a new one.";
+        logger.error(superMessage);
     }
     catch (EmptyResponseException _)
     {
@@ -2151,6 +2168,8 @@ void importCustomEmotes(
     const string channelName,
     const string idString)
 in (Fiber.getThis, "Tried to call `importCustomEmotes` from outside a Fiber")
+in (channelName.length, "Tried to import custom emotes with an empty channel name string")
+in (idString.length, "Tried to import custom emotes with an empty ID string")
 {
     import core.memory : GC;
 
@@ -2435,7 +2454,7 @@ void start(TwitchPlugin plugin)
 
         // Some keygen, reload to load secrets so existing ones are read
         // Not strictly needed for normal keygen
-        plugin.reload();
+        loadResources(plugin);
 
         bool needSeparator;
         enum separator = "---------------------------------------------------------------------";
@@ -2512,8 +2531,8 @@ void start(TwitchPlugin plugin)
 )
 void onMyInfo(TwitchPlugin plugin)
 {
-    // Load ecounts.
-    plugin.reload();
+    // Load ecounts and such.
+    loadResources(plugin);
 }
 
 
@@ -2528,6 +2547,7 @@ void onMyInfo(TwitchPlugin plugin)
         channelName = String key of room to start the monitors of.
  +/
 void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
+in (channelName.length, "Tried to start room monitor fibers with an empty channel name string")
 {
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.time : nextMidnight;
@@ -2541,7 +2561,7 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
         immutable idSnapshot = room.uniqueID;
         uint addedSinceLastRehash;
 
-        while (plugin.useAPIFeatures)
+        while (true)
         {
             room = channelName in plugin.rooms;
             if (!room || (room.uniqueID != idSnapshot)) return;
@@ -2653,7 +2673,7 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
 
         immutable idSnapshot = room.uniqueID;
 
-        while (plugin.useAPIFeatures)
+        while (true)
         {
             room = channelName in plugin.rooms;
             if (!room || (room.uniqueID != idSnapshot)) return;
@@ -2726,7 +2746,7 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
 
         immutable idSnapshot = room.uniqueID;
 
-        while (plugin.useAPIFeatures)
+        while (true)
         {
             room = channelName in plugin.rooms;
             if (!room || (room.uniqueID != idSnapshot)) return;
@@ -2774,98 +2794,126 @@ void startValidator(TwitchPlugin plugin)
 
     void validatorDg()
     {
-        import kameloso.constants : MagicErrorStrings;
-        import std.datetime.systime : Clock, SysTime;
+        import kameloso.plugins.common.delayawait : delay;
+        import core.time : minutes;
 
-        if (plugin.state.settings.headless)
+        while (!plugin.userID.length)
         {
+            static immutable retryDelay = 1.minutes;
+
+            if (plugin.state.settings.headless)
+            {
+                try
+                {
+                    import kameloso.messaging : quit;
+                    import std.datetime.systime : Clock, SysTime;
+
+                    immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
+                    plugin.userID = validationJSON["user_id"].str;
+                    immutable expiresIn = validationJSON["expires_in"].integer;
+                    immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
+                    immutable now = Clock.currTime;
+                    immutable delta = (expiresWhen - now);
+
+                    // Schedule quitting on expiry
+                    delay(plugin, (() => quit(plugin.state)), delta);
+                }
+                catch (TwitchQueryException e)
+                {
+                    version(PrintStacktraces) logger.trace(e);
+                    delay(plugin, retryDelay, Yes.yield);
+                    continue;
+                }
+                catch (EmptyResponseException e)
+                {
+                    version(PrintStacktraces) logger.trace(e);
+                    delay(plugin, retryDelay, Yes.yield);
+                    continue;
+                }
+                return;
+            }
+
             try
             {
-                import kameloso.plugins.common.delayawait : delay;
-                import kameloso.messaging : quit;
+                import std.datetime.systime : Clock;
+
+                /*
+                {
+                    "client_id": "tjyryd2ojnqr8a51ml19kn1yi2n0v1",
+                    "expires_in": 5036421,
+                    "login": "zorael",
+                    "scopes": [
+                        "bits:read",
+                        "channel:moderate",
+                        "channel:read:subscriptions",
+                        "channel_editor",
+                        "chat:edit",
+                        "chat:read",
+                        "user:edit:broadcast",
+                        "whispers:edit",
+                        "whispers:read"
+                    ],
+                    "user_id": "22216721"
+                }
+                */
 
                 immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
                 plugin.userID = validationJSON["user_id"].str;
                 immutable expiresIn = validationJSON["expires_in"].integer;
                 immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
-                immutable now = Clock.currTime;
-                immutable delta = (expiresWhen - now);
-
-                // Schedule quitting on expiry
-                delay(plugin, (() => quit(plugin.state)), delta);
+                generateExpiryReminders(plugin, expiresWhen);
             }
-            catch (TwitchQueryException _)
+            catch (TwitchQueryException e)
             {
-                plugin.useAPIFeatures = false;
-            }
-            return;
-        }
+                import kameloso.constants : MagicErrorStrings;
 
-        try
-        {
-            /*
-            {
-                "client_id": "tjyryd2ojnqr8a51ml19kn1yi2n0v1",
-                "expires_in": 5036421,
-                "login": "zorael",
-                "scopes": [
-                    "bits:read",
-                    "channel:moderate",
-                    "channel:read:subscriptions",
-                    "channel_editor",
-                    "chat:edit",
-                    "chat:read",
-                    "user:edit:broadcast",
-                    "whispers:edit",
-                    "whispers:read"
-                ],
-                "user_id": "22216721"
-            }
-            */
-
-            immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
-            plugin.userID = validationJSON["user_id"].str;
-            immutable expiresIn = validationJSON["expires_in"].integer;
-            immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
-            generateExpiryReminders(plugin, expiresWhen);
-        }
-        catch (TwitchQueryException e)
-        {
-            // Something is deeply wrong.
-
-            if (e.code == 2)
-            {
-                enum wikiMessage = cast(string)MagicErrorStrings.visitWikiOneliner;
-
-                if (e.error == MagicErrorStrings.sslLibraryNotFound)
+                // Something is deeply wrong.
+                if (e.code == 2)
                 {
-                    enum pattern = "Failed to validate Twitch API keys: <l>%s</> " ~
-                        "<t>(is OpenSSL installed?)";
-                    logger.errorf(pattern, cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten);
-                    logger.error(wikiMessage);
+                    enum wikiMessage = cast(string)MagicErrorStrings.visitWikiOneliner;
 
-                    version(Windows)
+                    if (e.error == MagicErrorStrings.sslLibraryNotFound)
                     {
-                        enum getoptMessage = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
-                        logger.error(getoptMessage);
+                        enum pattern = "Failed to validate Twitch API keys: <l>%s</> " ~
+                            "<t>(is OpenSSL installed?)";
+                        logger.errorf(pattern, cast(string)MagicErrorStrings.sslLibraryNotFoundRewritten);
+                        logger.error(wikiMessage);
+
+                        version(Windows)
+                        {
+                            enum getoptMessage = cast(string)MagicErrorStrings.getOpenSSLSuggestion;
+                            logger.error(getoptMessage);
+                        }
+
+                        // Unrecoverable
+                        return;
+                    }
+                    else
+                    {
+                        enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
+                        logger.errorf(pattern, e.msg, e.error, e.code);
+                        logger.error(wikiMessage);
                     }
                 }
                 else
                 {
                     enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
                     logger.errorf(pattern, e.msg, e.error, e.code);
-                    logger.error(wikiMessage);
                 }
-            }
-            else
-            {
-                enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
-                logger.errorf(pattern, e.msg, e.error, e.code);
-            }
 
-            logger.warning("Disabling API features. Expect breakage.");
-            //version(PrintStacktraces) logger.trace(e);
-            plugin.useAPIFeatures = false;
+                version(PrintStacktraces) logger.trace(e);
+                delay(plugin, retryDelay, Yes.yield);
+                continue;
+            }
+            catch (EmptyResponseException e)
+            {
+                // HTTP query failed; just retry
+                enum pattern = "Failed to validate Twitch API keys: <t>%s</>";
+                logger.errorf(pattern, e.msg);
+                version(PrintStacktraces) logger.trace(e);
+                delay(plugin, retryDelay, Yes.yield);
+                continue;
+            }
         }
     }
 
@@ -3104,9 +3152,6 @@ void initialise(TwitchPlugin plugin)
     import kameloso.terminal : isTerminal;
     import std.concurrency : thisTid;
 
-    // Reset the shared static useAPIFeatures between instantiations.
-    plugin.useAPIFeatures = true;
-
     // Register this thread as the main thread.
     plugin.mainThread = cast(shared)thisTid;
 
@@ -3161,11 +3206,12 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
 
     if ((plugin.twitchSettings.fakeChannelFromQueries) && (event.type == IRCEvent.Type.QUERY))
     {
-        immutable channelName = '#' ~ event.sender.nickname;
-        if (plugin.state.bot.homeChannels.canFind(channelName))
+        alias pred = (homeChannelEntry, senderNickname) => (homeChannelEntry[1..$] == senderNickname);
+
+        if (plugin.state.bot.homeChannels.canFind!pred(event.sender.nickname))
         {
             event.type = IRCEvent.Type.CHAN;
-            event.channel = channelName;
+            event.channel = '#' ~ event.sender.nickname;
         }
     }
     else if (!event.sender.nickname.length || !event.channel.length)
@@ -3381,11 +3427,11 @@ package void saveSecretsToDisk(const Credentials[string] aa, const string filena
 }
 
 
-// reload
+// loadResources
 /++
-    Reloads the plugin, loading resources from disk.
+    Loads all resources from disk.
  +/
-void reload(TwitchPlugin plugin)
+void loadResources(TwitchPlugin plugin)
 {
     import lu.json : JSONStorage, populateFromJSON;
 
@@ -3411,6 +3457,34 @@ void reload(TwitchPlugin plugin)
     }
 
     plugin.secretsByChannel = plugin.secretsByChannel.rehash();
+}
+
+
+// reload
+/++
+    Reloads the plugin, loading resources from disk and re-importing custom emotes.
+ +/
+void reload(TwitchPlugin plugin)
+{
+    import kameloso.constants : BufferSize;
+    import core.thread : Fiber;
+
+    loadResources(plugin);
+
+    void importDg()
+    {
+        plugin.customGlobalEmotes = null;
+        importCustomGlobalEmotes(plugin);
+
+        foreach (immutable channelName, const room; plugin.rooms)
+        {
+            plugin.customEmotesByChannel.remove(channelName);
+            importCustomEmotes(plugin, channelName, room.id);
+        }
+    }
+
+    Fiber importFiber = new Fiber(&importDg, BufferSize.fiberStack);
+    importFiber.call();
 }
 
 
@@ -3528,6 +3602,9 @@ package:
 
             /++
                 Accessor to [_idString].
+
+                Returns:
+                    This stream's ID, as reported by Twitch, in string form.
              +/
             auto idString() const
             {
@@ -3536,6 +3613,9 @@ package:
 
             /++
                 Takes a second [Stream] and updates this one with values from it.
+
+                Params:
+                    A second [Stream] from which to inherit values.
              +/
             void update(const Stream updated)
             {
@@ -3555,6 +3635,9 @@ package:
 
             /++
                 Constructor.
+
+                Params:
+                    idString = This stream's ID, as reported by Twitch, in string form.
              +/
             this(const string idString)
             {
@@ -3587,6 +3670,9 @@ package:
 
                 Params:
                     json = [std.json.JSONValue|JSONValue] to build a [Stream] from.
+
+                Returns:
+                    A new [Stream] with values from the passed `json`.
              +/
             static auto fromJSON(const JSONValue json)
             {
@@ -3612,6 +3698,9 @@ package:
 
         /++
             Constructor taking a string (channel) name.
+
+            Params:
+                channelName = Name of the channel.
          +/
         this(const string channelName)
         {
@@ -3625,6 +3714,9 @@ package:
 
         /++
             Accessor to [_uniqueID].
+
+            Returns:
+                A unique ID, in the form of the value of `_uniqueID`.
          +/
         auto uniqueID() const
         {
@@ -3739,11 +3831,6 @@ package:
         Authorisation token for the "Authorization: Bearer <token>".
      +/
     string authorizationBearer;
-
-    /++
-        Whether or not to use features requiring querying Twitch API.
-     +/
-    shared static bool useAPIFeatures = true;
 
     /++
         The bot's numeric account/ID.

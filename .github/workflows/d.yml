@@ -25,13 +25,12 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-latest, macOS-latest, windows-latest ]
-        dc: [ dmd-latest, dmd-2.086.0, ldc-latest, ldc-1.16.0 ]
+        dc: [ dmd-latest, dmd-2.086.0, ldc-latest, ldc-1.25.0 ]
         exclude:
           - { os: macOS-latest, dc: dmd-2.086.0 }
-          - { os: macOS-latest, dc: ldc-1.16.0 }
 
     runs-on: ${{ matrix.os }}
-    continue-on-error: true
+    continue-on-error: false
     env:
       ACTIONS_ALLOW_UNSECURE_COMMANDS: true
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

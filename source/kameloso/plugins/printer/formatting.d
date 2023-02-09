@@ -43,9 +43,8 @@ version(Colours)
         target    = TF.cyan,
         channel   = TF.yellow,
         content   = TF.default_,
-        aux       = TF.white,
+        aux       = TF.darkgrey,
         count     = TF.green,
-        altcount  = TF.lightgreen,
         num       = TF.darkgrey,
         badge     = TF.white,
         emote     = TF.cyan,
@@ -64,9 +63,8 @@ version(Colours)
         target    = TF.cyan,
         channel   = TF.yellow,
         content   = TF.default_,
-        aux       = TF.black,
+        aux       = TF.default_,
         count     = TF.lightgreen,
-        altcount  = TF.green,
         num       = TF.default_,
         badge     = TF.black,
         emote     = TF.lightcyan,
@@ -187,8 +185,10 @@ if (isOutputRange!(Sink, char[]))
     import kameloso.irccolours : stripEffects;
     import lu.conv : Enum;
     import std.algorithm.comparison : equal;
+    import std.algorithm.iteration : filter;
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
+    import std.format : formattedWrite;
     import std.uni : asLowerCase, asUpperCase;
 
     immutable typestring = Enum!(IRCEvent.Type).toString(event.type).withoutTypePrefix;
@@ -419,11 +419,12 @@ if (isOutputRange!(Sink, char[]))
              (event.type == IRCEvent.Type.SELFCHAN) ||
              (event.type == IRCEvent.Type.EMOTE)) &&
             event.target.nickname.length &&
-            event.aux.length)
+            event.aux[0].length)
         {
             /*if (content.length)*/ putContent();
-            if (event.target.nickname.length) putTarget();
-            if (event.aux.length) .put(sink, `: "`, event.aux, '"');
+            putTarget();
+            .put(sink, `: "`, event.aux[0], '"');
+
             putQuotedTwitchMessage = true;
         }
     }
@@ -432,12 +433,28 @@ if (isOutputRange!(Sink, char[]))
     {
         if (event.target.nickname.length) putTarget();
         if (content.length) putContent();
-        if (event.aux.length) .put(sink, " (", event.aux, ')');
+
+        auto aux = event.aux[].filter!(s => s.length);
+
+        if (!aux.empty)
+        {
+            import std.array : array;
+
+            // "Deprecation: scope variable `aux` assigned to non-scope parameter `_param_2` calling `formattedWrite"
+            // Work around it and revisit this when we know a better approach.
+            auto auxCopy = aux.array.dup;
+            enum pattern = " (%-(%s%| | %))";
+            sink.formattedWrite(pattern, auxCopy);
+        }
     }
 
-    if (event.count != long.min) .put(sink, " {", event.count, '}');
+    auto count = event.count[].filter!(n => !n.isNull);
 
-    if (event.altcount != long.min) .put(sink, " {", event.altcount, '}');
+    if (!count.empty)
+    {
+        enum pattern = " {%-(%s%|} {%)}";
+        sink.formattedWrite(pattern, count);
+    }
 
     if (event.num > 0)
     {
@@ -518,7 +535,7 @@ if (isOutputRange!(Sink, char[]))
     event.channel = string.init;
     event.content = string.init;
     event.sender.account = "n1ckn4m3";
-    event.aux = "n1ckn4m3";
+    event.aux[0] = "n1ckn4m3";
 
     plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError);
     immutable accountLine = sink.data[11..$].idup;
@@ -529,8 +546,8 @@ if (isOutputRange!(Sink, char[]))
     event.errors = "DANGER WILL ROBINSON";
     event.content = "Blah balah";
     event.num = 666;
-    event.count = -42;
-    event.aux = string.init;
+    event.count[0] = -42;
+    event.aux[0] = string.init;
     event.type = IRCEvent.Type.ERROR;
 
     plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError);
@@ -571,6 +588,7 @@ if (isOutputRange!(Sink, char[]))
     import kameloso.constants : DefaultColours;
     import kameloso.terminal.colours : FG = TerminalForeground, TR = TerminalReset, colourWith;
     import lu.conv : Enum;
+    import std.algorithm.iteration : filter;
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
     import std.format : formattedWrite;
@@ -1019,16 +1037,13 @@ if (isOutputRange!(Sink, char[]))
              (event.type == IRCEvent.Type.SELFCHAN) ||
              (event.type == IRCEvent.Type.EMOTE)) &&
             event.target.nickname.length &&
-            event.aux.length)
+            event.aux[0].length)
         {
             /*if (content.length)*/ putContent();
-            if (event.target.nickname.length) putTarget();
-            if (event.aux.length)
-            {
-                .put!(Yes.colours)(sink,
-                    TerminalForeground(bright ? Bright.content : Dark.content),
-                    `: "`, event.aux, '"');
-            }
+            putTarget();
+            .put!(Yes.colours)(sink,
+                TerminalForeground(bright ? Bright.content : Dark.content),
+                `: "`, event.aux[0], '"');
 
             putQuotedTwitchMessage = true;
         }
@@ -1038,24 +1053,29 @@ if (isOutputRange!(Sink, char[]))
     {
         if (event.target.nickname.length) putTarget();
         if (content.length) putContent();
-        if (event.aux.length)
+
+        auto aux = event.aux[].filter!(s => s.length);
+
+        if (!aux.empty)
         {
-            .put!(Yes.colours)(sink,
-                TerminalForeground(bright ? Bright.aux : Dark.aux),
-                " (", event.aux, ')');
+            import std.array : array;
+
+            // "Deprecation: scope variable `aux` assigned to non-scope parameter `_param_2` calling `formattedWrite"
+            // Work around it and revisit this when we know a better approach.
+            auto auxCopy = aux.array.dup;
+            enum pattern = " (%-(%s%| | %))";
+            sink.colourWith(TerminalForeground(bright ? Bright.aux : Dark.aux));
+            sink.formattedWrite(pattern, auxCopy);
         }
     }
 
-    if (event.count != long.min)
-    {
-        sink.colourWith(TerminalForeground(bright ? Bright.count : Dark.count));
-        .put(sink, " {", event.count, '}');
-    }
+    auto count = event.count[].filter!(n => !n.isNull);
 
-    if (event.altcount != long.min)
+    if (!count.empty)
     {
-        sink.colourWith(TerminalForeground(bright ? Bright.altcount : Dark.altcount));
-        .put(sink, " {", event.altcount, '}');
+        enum pattern = " {%-(%s%|} {%)}";
+        sink.colourWith(TerminalForeground(bright ? Bright.count : Dark.count));
+        sink.formattedWrite(pattern, count);
     }
 
     if (event.num > 0)

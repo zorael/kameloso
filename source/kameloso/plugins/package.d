@@ -5,6 +5,7 @@
 
     Example:
     ---
+    import kameloso.plugins;
     import kameloso.plugins.common.core;
 
     final class MyPlugin : IRCPlugin
@@ -29,7 +30,7 @@ module kameloso.plugins;
 
 private:
 
-import kameloso.plugins.common.core : IRCPlugin, IRCPluginState, Priority;
+import kameloso.plugins.common.core : IRCPlugin, IRCPluginState;
 
 
 // PluginRegistrationEntry
@@ -39,21 +40,6 @@ import kameloso.plugins.common.core : IRCPlugin, IRCPluginState, Priority;
  +/
 struct PluginRegistrationEntry
 {
-    // Priority
-    /++
-        To be used instead of a magic number priority integer.
-     +/
-    version(none)
-    static struct Priority
-    {
-        int value;
-
-        auto opUnary(string op : "-")()
-        {
-            return Priority(-value);
-        }
-    }
-
     // priority
     /++
         Priority at which to instantiate the plugin. A lower priority makes it
@@ -140,7 +126,7 @@ void registerPlugin(
     Instantiates all plugins represented by a [PluginRegistrationEntry] in
     [registeredPlugins].
 
-    Plugin modules may register themselves by mixing in [kameloso.plugins.common.core.ModuleRegistration].
+    Plugin modules may register their plugin classes by mixing in [PluginRegistration].
 
     Params:
         state = The current plugin state on which to base new plugin instances.
@@ -166,3 +152,100 @@ auto instantiatePlugins(/*const*/ IRCPluginState state)
 
     return plugins;
 }
+
+
+// PluginRegistration
+/++
+    Mixes in a module constructor that registers the supplied [IRCPlugin] subclass
+    to be instantiated on program startup/connect.
+
+    Params:
+        Plugin = Plugin class of module.
+        priority = Priority at which to instantiate the plugin. A lower priority
+            makes it get instantiated before other plugins. Defaults to `0.priority`.
+        module_ = String name of the module. Only used in case an error message is needed.
+ +/
+mixin template PluginRegistration(
+    Plugin,
+    Priority priority = 0.priority,
+    string module_ = __MODULE__)
+{
+    // module constructor
+    /++
+        Mixed-in module constructor that registers the passed [Plugin] class
+        to be instantiated on program startup.
+     +/
+    shared static this()
+    {
+        import kameloso.plugins.common.core : IRCPluginState;
+
+        static if (__traits(compiles, new Plugin(IRCPluginState.init)))
+        {
+            import kameloso.plugins : registerPlugin;
+
+            static auto ctor(IRCPluginState state)
+            {
+                return new Plugin(state);
+            }
+
+            registerPlugin(priority, &ctor);
+        }
+        else
+        {
+            import std.format : format;
+
+            enum pattern = "`%s.%s` constructor does not compile";
+            enum message = pattern.format(module_, Plugin.stringof);
+            static assert(0, message);
+        }
+    }
+}
+
+
+// Priority
+/++
+    Embodies the notion of a priority at which a plugin should be instantiated,
+    and as such, the order in which they will be called to handle events.
+
+    This also affects in what order they appear in the configuration file.
+ +/
+struct Priority
+{
+    /++
+        Numerical priority value. Lower is higher.
+     +/
+    int value;
+
+    /++
+        Helper `opUnary` to allow for `-10.priority`, instead of having to do the
+        (more correct) `(-10).priority`.
+
+        Example:
+        ---
+        mixin PluginRegistration!(MyPlugin, -10.priority);
+        ---
+
+        Params:
+            op = Operator.
+
+        Returns:
+            A new [Priority] with a [Priority.value|value] equal to the negative of this one's.
+     +/
+    auto opUnary(string op: "-")() const
+    {
+        return Priority(-value);
+    }
+}
+
+
+// priority
+/++
+    Helper alias to use the proper style guide and still be able to instantiate
+    [Priority] instances with UFCS.
+
+    Example:
+    ---
+    mixin PluginRegistration!(MyPlugin, 50.priority);
+    ---
+ +/
+alias priority = Priority;

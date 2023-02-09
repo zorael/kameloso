@@ -401,8 +401,7 @@ private struct FormatArrayMemberArguments
 
 // formatArrayMemberImpl
 /++
-    Formats the description of an associative array for insertion into a
-    [formatObjects] listing.
+    Formats the description of an array for insertion into a [formatObjects] listing.
 
     Broken out of [formatObjects] to reduce template bloat.
 
@@ -410,14 +409,43 @@ private struct FormatArrayMemberArguments
         coloured = Whether or no to display terminal colours.
         sink = Output range to store output in.
         args = Argument aggregate for easier passing.
-        content = The associative array we're describing.
+        rawContent = The array we're describing.
  +/
 private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
-    (auto ref Sink sink, const FormatArrayMemberArguments args, const auto ref T content)
+    (auto ref Sink sink, const FormatArrayMemberArguments args, const auto ref T rawContent)
 {
     import std.format : formattedWrite;
+    import std.range.primitives : ElementEncodingType;
+    import std.traits : TemplateOf;
+    import std.typecons : Nullable;
 
     enum truncateAfter = 5;
+
+    static if (__traits(isSame, TemplateOf!(ElementEncodingType!T), Nullable))
+    {
+        import std.array : replace;
+        import std.conv : to;
+        import std.traits : TemplateArgsOf;
+
+        immutable typestring = "N!" ~ TemplateArgsOf!(ElementEncodingType!T).stringof;
+        immutable endIndex = (args.truncate && (rawContent.length > truncateAfter)) ?
+            truncateAfter :
+            rawContent.length;
+        immutable content = rawContent[0..endIndex]
+            .to!string
+            .replace("Nullable.null", "N.null");
+        immutable length = rawContent.length;
+        enum alreadyTruncated = true;
+    }
+    else
+    {
+        import lu.traits : UnqualArray;
+
+        immutable typestring = UnqualArray!T.stringof;
+        alias content = rawContent;
+        immutable length = content.length;
+        enum alreadyTruncated = false;
+    }
 
     static if (coloured)
     {
@@ -428,17 +456,17 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
         immutable lengthCode = args.bright ? F.default_ : F.darkgrey;
         immutable typeCode   = args.bright ? F.lightcyan : F.cyan;
 
-        if (args.truncate && (content.length > truncateAfter))
+        if (!alreadyTruncated && args.truncate && (content.length > truncateAfter))
         {
             immutable rtArrayPattern = args.elemIsCharacter ?
                 "%s%*s %s%-*s %s[%(%s, %)]%s ... (%d)\n" :
                 "%s%*s %s%-*s %s%s%s ... (%d)\n";
 
             sink.formattedWrite(rtArrayPattern,
-                typeCode.colour, args.typewidth, args.typestring,
+                typeCode.colour, args.typewidth, typestring,
                 memberCode.colour, args.namewidth, args.memberstring,
                 valueCode.colour, content[0..truncateAfter],
-                lengthCode.colour, content.length);
+                lengthCode.colour, length);
         }
         else
         {
@@ -447,26 +475,25 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
                 "%s%*s %s%-*s %s%s%s%s(%d)\n";
 
             sink.formattedWrite(rtArrayPattern,
-                typeCode.colour, args.typewidth, args.typestring,
+                typeCode.colour, args.typewidth, typestring,
                 memberCode.colour, args.namewidth, args.memberstring,
                 (content.length ? string.init : " "),
                 valueCode.colour, content,
-                lengthCode.colour, content.length);
+                lengthCode.colour, length);
         }
     }
     else
     {
-        if (args.truncate && (content.length > truncateAfter))
+        if (!alreadyTruncated && args.truncate && (content.length > truncateAfter))
         {
             immutable rtArrayPattern = args.elemIsCharacter ?
                 "%*s %-*s [%(%s, %)] ... (%d)\n" :
                 "%*s %-*s %s ... (%d)\n";
 
             sink.formattedWrite(rtArrayPattern,
-                args.typewidth, args.typestring,
+                args.typewidth, typestring,
                 args.namewidth, args.memberstring,
-                content[0..truncateAfter],
-                content.length);
+                content[0..truncateAfter], length);
         }
         else
         {
@@ -475,11 +502,10 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
                 "%*s %-*s %s%s(%d)\n";
 
             sink.formattedWrite(rtArrayPattern,
-                args.typewidth, args.typestring,
+                args.typewidth, typestring,
                 args.namewidth, args.memberstring,
                 (content.length ? string.init : " "),
-                content,
-                content.length);
+                content, length);
         }
     }
 }
@@ -487,7 +513,8 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
 
 // formatAssociativeArrayMemberImpl
 /++
-    Formats the description of an array for insertion into a [formatObjects] listing.
+    Formats the description of an associative array for insertion into a
+    [formatObjects] listing.
 
     Broken out of [formatObjects] to reduce template bloat.
 
@@ -495,7 +522,7 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
         coloured = Whether or no to display terminal colours.
         sink = Output range to store output in.
         args = Argument aggregate for easier passing.
-        content = The array we're describing.
+        content = The associative array we're describing.
  +/
 private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
     (auto ref Sink sink, const FormatArrayMemberArguments args, const auto ref T content)

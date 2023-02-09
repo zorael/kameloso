@@ -22,6 +22,7 @@ version(WithPipelinePlugin):
 
 private:
 
+import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.common : logger;
 import kameloso.messaging;
@@ -248,7 +249,11 @@ in (filename.length, "Tried to create a FIFO with an empty filename")
 
         if (mkfifo.status != 0)
         {
-            throw new ReturnValueException("Could not create FIFO", "mkfifo", mkfifo.status);
+            enum message = "Could not create FIFO";
+            throw new ReturnValueException(
+                message,
+                "mkfifo",
+                mkfifo.status);
         }
     }
     else
@@ -260,14 +265,23 @@ in (filename.length, "Tried to create a FIFO with an empty filename")
 
         if (S_ISFIFO(attrs))
         {
-            throw new FileExistsException("A FIFO with that name already exists",
-                filename, __FILE__, __LINE__);
+            enum message = "A FIFO with that name already exists";
+            throw new FileExistsException(
+                message,
+                filename,
+                __FILE__,
+                __LINE__);
         }
         else
         {
-            throw new FileTypeMismatchException("Wanted to create a FIFO but a file or "
-                ~ "directory with the desired name already exists",
-                filename, attrs, __FILE__, __LINE__);
+            enum message = "Wanted to create a FIFO but a file or directory " ~
+                "with the desired name already exists";
+            throw new FileTypeMismatchException(
+                message,
+                filename,
+                attrs,
+                __FILE__,
+                __LINE__);
         }
     }
 }

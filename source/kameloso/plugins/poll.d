@@ -15,6 +15,7 @@ version(WithPollPlugin):
 
 private:
 
+import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.common : logger;
@@ -217,7 +218,7 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
             import std.format : format;
 
             enum pattern = "Usage: <b>%s%s<b> [duration] [choice1] [choice2] ...";
-            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+            immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
             chan(plugin.state, event.channel, message);
         }
     }
@@ -583,12 +584,12 @@ void generatePollFiber(
                 {
                     // User logged out
                     // Old account is in aux; move vote to nickname if necessary
-                    if (thisEvent.aux != thisEvent.sender.nickname)
+                    if (thisEvent.aux[0] != thisEvent.sender.nickname)
                     {
-                        if (const previousVote = thisEvent.aux in currentPoll.votes)
+                        if (const previousVote = thisEvent.aux[0] in currentPoll.votes)
                         {
                             currentPoll.votes[thisEvent.sender.nickname] = *previousVote;
-                            currentPoll.votes.remove(thisEvent.aux);
+                            currentPoll.votes.remove(thisEvent.aux[0]);
                         }
                     }
                 }

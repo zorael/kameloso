@@ -55,11 +55,8 @@ mixin template WHOISFiberDelegate(
 if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSomeFunction!onFailure))
 {
     import kameloso.plugins.common.core : IRCPlugin;
-    import lu.traits : MixinConstraints, MixinScope;
     import std.traits : ParameterIdentifierTuple;
     import std.typecons : Flag, No, Yes;
-
-    mixin MixinConstraints!(MixinScope.function_, "WHOISFiberDelegate");
 
     alias paramNames = ParameterIdentifierTuple!(mixin(__FUNCTION__));
 
@@ -227,7 +224,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
             if (whoisEvent.type == IRCEvent.Type.ERR_UNKNOWNCOMMAND)
             {
-                if (!whoisEvent.aux.length || (whoisEvent.aux == "WHOIS"))
+                if (!whoisEvent.aux[0].length || (whoisEvent.aux[0] == "WHOIS"))
                 {
                     // WHOIS query failed due to unknown command.
                     // Some flavours of ERR_UNKNOWNCOMMAND don't say what the
@@ -347,9 +344,10 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                         static if (TakesParams!(onSuccess, IRCEvent))
                         {
                             // Can't WHOIS on Twitch
-                            throw new Exception("Tried to enqueue a `" ~
+                            enum message = "Tried to enqueue a `" ~
                                 typeof(onSuccess).stringof ~ " onSuccess` function " ~
-                                "when on Twitch (can't WHOIS)");
+                                "when on Twitch (can't WHOIS)";
+                            throw new Exception(message);
                         }
                         else static if (TakesParams!(onSuccess, IRCUser))
                         {
@@ -374,9 +372,10 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                     TakesParams!(onSuccess, IRCUser))
                 {
                     // Can't WHOIS on Twitch
-                    throw new Exception("Tried to enqueue a `" ~
+                    enum message = "Tried to enqueue a `" ~
                         typeof(onSuccess).stringof ~ " onSuccess` function " ~
-                        "when on Twitch without `UserAwareness` (can't WHOIS)");
+                        "when on Twitch without `UserAwareness` (can't WHOIS)";
+                    throw new Exception(message);
                 }
                 else static if (TakesParams!(onSuccess, string))
                 {
@@ -513,27 +512,6 @@ private:
     static import kameloso.messaging;
     import kameloso.plugins.common.core : IRCPlugin;
     import std.typecons : Flag, No, Yes;
-
-    /// Symbol needed for the mixin constraints to work.
-    // https://forum.dlang.org/post/sk4hqm$12cf$1@digitalmars.com
-    alias mixinParent = __traits(parent, {});
-
-    // Use a custom constraint to force the scope to be an IRCPlugin
-    static if (!is(mixinParent : IRCPlugin))
-    {
-        import lu.traits : CategoryName;
-        import std.format : format;
-
-        alias messagingParentInfo = CategoryName!mixinParent;
-
-        enum pattern = "%s `%s` mixes in `%s` but it is only supposed to be " ~
-            "mixed into an `IRCPlugin` subclass";
-        enum message = pattern.format(
-            messagingParentInfo.type,
-            messagingParentInfo.fqn,
-            "MessagingProxy");
-        static assert(0, message);
-    }
 
     static if (__traits(compiles, { alias _ = this.hasMessagingProxy; }))
     {

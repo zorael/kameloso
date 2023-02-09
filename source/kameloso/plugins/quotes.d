@@ -15,6 +15,7 @@ version(WithQuotesPlugin):
 
 private:
 
+import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : UserAwareness;
 import kameloso.common : logger;
@@ -134,7 +135,7 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
     void sendNonTwitchUsage()
     {
         enum pattern = "Usage: <b>%s%s<b> [nickname] [optional search terms or #index]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel, message);
     }
 
@@ -274,7 +275,7 @@ void onCommandAddQuote(QuotesPlugin plugin, const ref IRCEvent event)
         immutable pattern = isTwitch ?
             "Usage: %s%s [new quote]" :
             "Usage: <b>%s%s<b> [nickname] [new quote]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel, message);
     }
 
@@ -363,7 +364,7 @@ void onCommandModQuote(QuotesPlugin plugin, const ref IRCEvent event)
         immutable pattern = isTwitch ?
             "Usage: %s%s [index] [new quote text]" :
             "Usage: <b>%s%s<b> [nickname] [index] [new quote text]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel, message);
     }
 
@@ -485,7 +486,7 @@ void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
     void sendUsage()
     {
         enum pattern = "Usage: <b>%s%s<b> [source nickname] [target nickname]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel, message);
     }
 
@@ -555,7 +556,7 @@ void onCommandDelQuote(QuotesPlugin plugin, const ref IRCEvent event)
         immutable pattern = isTwitch ?
             "Usage: %s%s [index]" :
             "Usage: <b>%s%s<b> [nickname] [index]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel, message);
     }
 

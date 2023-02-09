@@ -36,6 +36,9 @@ module kameloso.plugins.seen;
 // We only want to compile this if we're compiling specifically this plugin.
 version(WithSeenPlugin):
 
+// We need the bits to register the plugin to be automatically instantiated.
+private import kameloso.plugins;
+
 // We need the definition of an [kameloso.plugins.core.IRCPlugin|IRCPlugin] and other crucial things.
 private import kameloso.plugins.common.core;
 
@@ -786,7 +789,7 @@ void onNamesReply(SeenPlugin plugin, const ref IRCEvent event)
     "`seen`", since we annotated this function with such a
     [kameloso.plugins.common.core.IRCEventHandler.Command|IRCEventHandler.Command].
     It will since have been sliced off, so we're left only with the "arguments"
-    to "`seen`". [dialect.defs.IRCEvent.aux|IRCEvent.aux] contains the triggering
+    to "`seen`". [dialect.defs.IRCEvent.aux|IRCEvent.aux[$-1]] contains the triggering
     word, if it's needed.
 
     If this is a [dialect.defs.IRCEvent.Type.CHAN|CHAN] event, the original lines
@@ -805,7 +808,7 @@ void onNamesReply(SeenPlugin plugin, const ref IRCEvent event)
     event.sender.address = "baz.foo.bar.org";
     event.channel = "#bar";
     event.content = "Joe";
-    event.aux = "seen";
+    event.aux[$-1] = "seen";
     ---
 
     Lastly, the
@@ -881,8 +884,8 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
     {
         if (!requestedUser.length)
         {
-            immutable message = "Usage: <b>" ~ plugin.state.settings.prefix ~
-                event.aux ~ "<b> [nickname]";
+            enum pattern = "Usage: <b>%s%s<b> [nickname]";
+            immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
             return privmsg(event.channel, event.sender.nickname, message);
         }
         else if (!requestedUser.isValidNickname(plugin.state.server))

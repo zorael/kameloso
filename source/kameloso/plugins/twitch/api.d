@@ -161,8 +161,6 @@ private auto twitchTryCatchDgExceptionHandler(
         }
     }
 
-    if (!TwitchPlugin.useAPIFeatures) return Next.returnFailure;
-
     try
     {
         throw previouslyThrownException;
@@ -401,6 +399,7 @@ QueryResponse sendHTTPRequest(
     int id = -1,
     const Flag!"recursing" recursing = No.recursing)
 in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
+in (url.length, "Tried to send an HTTP request without an URL")
 {
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.thread : ThreadMessage;
@@ -628,7 +627,7 @@ in (Fiber.getThis, "Tried to call `getTwitchData` from outside a Fiber")
             enum message = "`getTwitchData` query response JSON is not JSONType.object";
             throw new UnexpectedJSONException(message, responseJSON);
         }
-        else if (const dataJSON = "data" in responseJSON)
+        else if (immutable dataJSON = "data" in responseJSON)
         {
             if (dataJSON.array.length == 1)
             {
@@ -684,6 +683,7 @@ in (Fiber.getThis, "Tried to call `getTwitchData` from outside a Fiber")
  +/
 auto getChatters(TwitchPlugin plugin, const string broadcaster)
 in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
+in (broadcaster.length, "Tried to get chatters with an empty broadcaster string")
 {
     import std.conv : text;
     import std.json : JSONType, parseJSON;
@@ -728,15 +728,14 @@ in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
                 enum message = "`getChatters` response JSON is not JSONType.object";
                 throw new UnexpectedJSONException(message, responseJSON);
             }
-            else if (const chattersJSON = "chatters" in responseJSON)
+
+            immutable chattersJSON = "chatters" in responseJSON;
+            if (!chattersJSON)
             {
-                if (chattersJSON.type != JSONType.object)
-                {
-                    // As above
-                    if (i < TwitchPlugin.delegateRetries-1) continue;
-                    enum message = "`getChatters` \"chatters\" JSON is not JSONType.object";
-                    throw new UnexpectedJSONException(message, *chattersJSON);
-                }
+                // For some reason we received an object that didn't contain chatters
+                if (i < TwitchPlugin.delegateRetries-1) continue;
+                enum message = "`getChatters` \"chatters\" JSON is not JSONType.object";
+                throw new UnexpectedJSONException(message, *chattersJSON);
             }
 
             // Don't return `chattersJSON`, as we would lose "chatter_count".
@@ -779,6 +778,7 @@ auto getValidation(
     /*const*/ string authToken,
     const Flag!"async" async)
 in ((!async || Fiber.getThis), "Tried to call asynchronous `getValidation` from outside a Fiber")
+in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 {
     import lu.string : beginsWith;
     import std.json : JSONType, JSONValue, parseJSON;
@@ -912,10 +912,11 @@ in ((!async || Fiber.getThis), "Tried to call asynchronous `getValidation` from 
  +/
 auto getFollows(TwitchPlugin plugin, const string id)
 in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
+in (id.length, "Tried to get follows with an empty ID string")
 {
     import std.json : JSONValue;
 
-    immutable url = "https://api.twitch.tv/helix/users/follows?to_id=" ~ id;
+    immutable url = "https://api.twitch.tv/helix/users/follows?first=100&to_id=" ~ id;
 
     foreach (immutable i; 0..TwitchPlugin.delegateRetries)
     {
@@ -924,9 +925,9 @@ in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
             const entitiesArrayJSON = getMultipleTwitchData(plugin, url);
             JSONValue[string] allFollowsJSON;
 
-            foreach (entityJSON; entitiesArrayJSON.array)
+            foreach (entityJSON; entitiesArrayJSON)
             {
-                immutable key = entityJSON.object["from_id"].str;
+                immutable key = entityJSON["from_id"].str;
                 allFollowsJSON[key] = null;
                 allFollowsJSON[key] = entityJSON;
             }
@@ -968,31 +969,33 @@ in (Fiber.getThis, "Tried to call `getMultipleTwitchData` from outside a Fiber")
     JSONValue allEntitiesJSON;
     allEntitiesJSON = null;
     allEntitiesJSON.array = null;
-    long total;
     string after;
 
     do
     {
         immutable paginatedURL = after.length ?
-            ("&after=" ~ after) :
+            (url ~ "&after=" ~ after) :
             url;
-
         immutable response = sendHTTPRequest(plugin, paginatedURL, plugin.authorizationBearer);
         immutable responseJSON = parseJSON(response.str);
-        const cursor = "cursor" in responseJSON["pagination"];
 
-        if (!total) total = responseJSON["total"].integer;
+        immutable dataJSON = "data" in responseJSON;
+        if (!dataJSON) break;  // Invalid response
 
-        foreach (thisResponseJSON; responseJSON["data"].array)
+        foreach (thisResponseJSON; dataJSON.array)
         {
             allEntitiesJSON.array ~= thisResponseJSON;
         }
 
-        after = ((allEntitiesJSON.array.length != total) && cursor) ? cursor.str : string.init;
+        immutable cursor = "cursor" in responseJSON["pagination"];
+
+        after = cursor ?
+            cursor.str :
+            string.init;
     }
     while (after.length);
 
-    return allEntitiesJSON;
+    return allEntitiesJSON.array;
 }
 
 
@@ -1132,6 +1135,8 @@ auto getTwitchUser(
     const string givenIDString,
     const Flag!"searchByDisplayName" searchByDisplayName = No.searchByDisplayName)
 in (Fiber.getThis, "Tried to call `getTwitchUser` from outside a Fiber")
+in ((givenName.length || givenIDString.length),
+    "Tried to get Twitch user without supplying a name nor an ID")
 {
     import std.conv : to;
     import std.json : JSONType;
@@ -1233,8 +1238,8 @@ in ((name.length || id.length), "Tried to call `getTwitchGame` with no game name
     }
 
     immutable gameURL = id.length ?
-        "https://api.twitch.tv/helix/games?id=" ~ id :
-        "https://api.twitch.tv/helix/games?name=" ~ name;
+        ("https://api.twitch.tv/helix/games?id=" ~ id) :
+        ("https://api.twitch.tv/helix/games?name=" ~ name);
 
     foreach (immutable i; 0..TwitchPlugin.delegateRetries)
     {
@@ -1312,6 +1317,8 @@ void modifyChannel(
     const string title,
     const string gameID)
 in (Fiber.getThis, "Tried to call `modifyChannel` from outside a Fiber")
+in (channelName.length, "Tried to modify a channel with an empty channel name string")
+in ((title.length || gameID.length), "Tried to modify a channel with no title nor game ID supplied")
 {
     import std.array : Appender;
 
@@ -1347,8 +1354,13 @@ in (Fiber.getThis, "Tried to call `modifyChannel` from outside a Fiber")
     {
         try
         {
-            cast(void)sendHTTPRequest(plugin, url, authorizationBearer,
-                HttpVerb.PATCH, cast(ubyte[])sink.data, "application/json");
+            cast(void)sendHTTPRequest(
+                plugin,
+                url,
+                authorizationBearer,
+                HttpVerb.PATCH,
+                cast(ubyte[])sink.data,
+                "application/json");
             return;
         }
         catch (Exception e)
@@ -1378,6 +1390,7 @@ in (Fiber.getThis, "Tried to call `modifyChannel` from outside a Fiber")
         for the supplied channel in the secrets storage.
  +/
 auto getBroadcasterAuthorisation(TwitchPlugin plugin, const string channelName)
+in (channelName.length, "Tried to get broadcaster authorisation with an empty channel name string")
 {
     static string[string] authorizationByChannel;
 
@@ -1397,7 +1410,11 @@ auto getBroadcasterAuthorisation(TwitchPlugin plugin, const string channelName)
 
     if (!authorizationBearer)
     {
-        throw new MissingBroadcasterTokenException("Missing broadcaster key", channelName, __FILE__);
+        enum message = "Missing broadcaster key";
+        throw new MissingBroadcasterTokenException(
+            message,
+            channelName,
+            __FILE__);
     }
 
     return *authorizationBearer;
@@ -1417,6 +1434,7 @@ auto getBroadcasterAuthorisation(TwitchPlugin plugin, const string channelName)
  +/
 void startCommercial(TwitchPlugin plugin, const string channelName, const string lengthString)
 in (Fiber.getThis, "Tried to call `startCommercial` from outside a Fiber")
+in (channelName.length, "Tried to start a commercial with an empty channel name string")
 {
     import std.format : format;
 
@@ -1437,8 +1455,13 @@ in (Fiber.getThis, "Tried to call `startCommercial` from outside a Fiber")
     {
         try
         {
-            cast(void)sendHTTPRequest(plugin, url, authorizationBearer,
-                HttpVerb.POST, cast(ubyte[])body_, "application/json");
+            cast(void)sendHTTPRequest(
+                plugin,
+                url,
+                authorizationBearer,
+                HttpVerb.POST,
+                cast(ubyte[])body_,
+                "application/json");
             return;
         }
         catch (Exception e)
@@ -1473,6 +1496,7 @@ auto getPolls(
     const string channelName,
     const string idString = string.init)
 in (Fiber.getThis, "Tried to call `getPolls` from outside a Fiber")
+in (channelName.length, "Tried to get polls with an empty channel name string")
 {
     import std.json : JSONType, JSONValue, parseJSON;
 
@@ -1485,23 +1509,23 @@ in (Fiber.getThis, "Tried to call `getPolls` from outside a Fiber")
     string url = baseURL ~ room.id;  // mutable;
     if (idString.length) url ~= "&id=" ~ idString;
 
+    JSONValue allPollsJSON;
+    allPollsJSON = null;
+    allPollsJSON.array = null;
+    string after;
+
     foreach (immutable i; 0..TwitchPlugin.delegateRetries)
     {
         try
         {
-            JSONValue allPollsJSON;
-            allPollsJSON = null;
-            allPollsJSON.array = null;
-            string after;
             uint retry;
 
             inner:
-            while (true)
+            do
             {
                 immutable paginatedURL = after.length ?
                     (url ~ "&after=" ~ after) :
                     url;
-
                 immutable response = sendHTTPRequest(
                     plugin,
                     paginatedURL,
@@ -1509,12 +1533,9 @@ in (Fiber.getThis, "Tried to call `getPolls` from outside a Fiber")
                     HttpVerb.GET,
                     cast(ubyte[])null,
                     "application/json");
-
                 immutable responseJSON = parseJSON(response.str);
 
-                if ((responseJSON.type != JSONType.object) ||
-                    ("data" !in responseJSON) ||
-                    (responseJSON["data"].type == JSONType.null_))
+                if ((responseJSON.type != JSONType.object) || ("data" !in responseJSON))
                 {
                     // Invalid response in some way
                     if (++retry < TwitchPlugin.delegateRetries) continue inner;
@@ -1569,11 +1590,15 @@ in (Fiber.getThis, "Tried to call `getPolls` from outside a Fiber")
                 }
 
                 after = responseJSON["after"].str;
-                if (!after.length) break;
             }
+            while (after.length);
 
-            return allPollsJSON;
+            return allPollsJSON.array;
         }
+        /*catch (MissingBroadcasterTokenException e)
+        {
+            throw e;
+        }*/
         catch (Exception e)
         {
             // Retry until we reach the retry limit, then rethrow
@@ -1614,6 +1639,7 @@ auto createPoll(
     const string durationString,
     const string[] choices)
 in (Fiber.getThis, "Tried to call `createPoll` from outside a Fiber")
+in (channelName.length, "Tried to create a poll with an empty channel name string")
 {
     import std.array : Appender, replace;
     import std.format : format;
@@ -1659,6 +1685,7 @@ in (Fiber.getThis, "Tried to call `createPoll` from outside a Fiber")
                 HttpVerb.POST,
                 cast(ubyte[])body_,
                 "application/json");
+            immutable responseJSON = parseJSON(response.str);
 
             /*
             {
@@ -1697,11 +1724,7 @@ in (Fiber.getThis, "Tried to call `createPoll` from outside a Fiber")
             }
             */
 
-            immutable responseJSON = parseJSON(response.str);
-
-            if ((responseJSON.type != JSONType.object) ||
-                ("data" !in responseJSON) ||
-                (responseJSON["data"].type != JSONType.array))
+            if ((responseJSON.type != JSONType.object) || ("data" !in responseJSON))
             {
                 // Invalid response in some way
                 if (i < TwitchPlugin.delegateRetries-1) continue;
@@ -1709,7 +1732,11 @@ in (Fiber.getThis, "Tried to call `createPoll` from outside a Fiber")
                 throw new UnexpectedJSONException(message, responseJSON);
             }
 
-            return responseJSON["data"];
+            return responseJSON["data"].array;
+        }
+        catch (MissingBroadcasterTokenException e)
+        {
+            throw e;
         }
         catch (Exception e)
         {
@@ -1749,6 +1776,7 @@ auto endPoll(
     const string voteID,
     const Flag!"terminate" terminate)
 in (Fiber.getThis, "Tried to call `endPoll` from outside a Fiber")
+in (channelName.length, "Tried to end a poll with an empty channel name string")
 {
     import std.format : format;
     import std.json : JSONType, parseJSON;
@@ -1779,6 +1807,7 @@ in (Fiber.getThis, "Tried to call `endPoll` from outside a Fiber")
                 HttpVerb.PATCH,
                 cast(ubyte[])body_,
                 "application/json");
+            immutable responseJSON = parseJSON(response.str);
 
             /*
             {
@@ -1818,11 +1847,7 @@ in (Fiber.getThis, "Tried to call `endPoll` from outside a Fiber")
             }
             */
 
-            immutable responseJSON = parseJSON(response.str);
-
-            if ((responseJSON.type != JSONType.object) ||
-                ("data" !in responseJSON) ||
-                (responseJSON["data"].type != JSONType.array))
+            if ((responseJSON.type != JSONType.object) || ("data" !in responseJSON))
             {
                 // Invalid response in some way
                 if (i < TwitchPlugin.delegateRetries-1) continue;
@@ -1831,6 +1856,10 @@ in (Fiber.getThis, "Tried to call `endPoll` from outside a Fiber")
             }
 
             return responseJSON["data"].array[0];
+        }
+        catch (MissingBroadcasterTokenException e)
+        {
+            throw e;
         }
         catch (Exception e)
         {
@@ -1905,10 +1934,7 @@ auto getBotList(TwitchPlugin plugin)
             }
             */
 
-            if ((responseJSON.type != JSONType.object) ||
-                ("_total" !in responseJSON) ||
-                ("bots" !in responseJSON) ||
-                (responseJSON["bots"].type != JSONType.array))
+            if ((responseJSON.type != JSONType.object) || ("bots" !in responseJSON))
             {
                 // Invalid response in some way, retry until we reach the limit
                 if (i < TwitchPlugin.delegateRetries-1) continue;
@@ -1965,6 +1991,7 @@ auto getBotList(TwitchPlugin plugin)
         populated with all (relevant) information.
  +/
 auto getStream(TwitchPlugin plugin, const string loginName)
+in (loginName.length, "Tried to get a stream with an empty login name string")
 {
     import std.datetime.systime : SysTime;
     /*import std.algorithm.iteration : map;
@@ -2070,6 +2097,7 @@ void getBTTVEmotes(
     ref bool[dstring] emoteMap,
     const string idString)
 in (Fiber.getThis, "Tried to call `getBTTVEmotes` from outside a Fiber")
+in (idString.length, "Tried to get BTTV emotes with an empty ID string")
 {
     import std.conv : to;
     import std.json : JSONType, parseJSON;
@@ -2138,11 +2166,11 @@ in (Fiber.getThis, "Tried to call `getBTTVEmotes` from outside a Fiber")
             }
             +/
 
-            immutable channelEmotesJSON = "channelEmotes" in responseJSON.object;
+            immutable channelEmotesJSON = "channelEmotes" in responseJSON;
 
             if (!channelEmotesJSON)
             {
-                const messageJSON = "message" in responseJSON.object;
+                immutable messageJSON = "message" in responseJSON;
                 if (messageJSON && (messageJSON.str == "user not found"))
                 {
                     // Benign
@@ -2154,7 +2182,7 @@ in (Fiber.getThis, "Tried to call `getBTTVEmotes` from outside a Fiber")
                     response.str);
             }
 
-            const sharedEmotesJSON = "sharedEmotes" in responseJSON.object;
+            immutable sharedEmotesJSON = "sharedEmotes" in responseJSON;
             if (!sharedEmotesJSON) throw new TwitchQueryException(
                 `No "sharedEmotes" key in JSON response`,
                 response.str);
@@ -2180,7 +2208,7 @@ in (Fiber.getThis, "Tried to call `getBTTVEmotes` from outside a Fiber")
 
             if (json.type == JSONType.object)
             {
-                const messageJSON = "message" in json.object;
+                immutable messageJSON = "message" in json;
 
                 if (messageJSON && (messageJSON.str == "user not found"))
                 {
@@ -2257,7 +2285,7 @@ in (Fiber.getThis, "Tried to call `getBTTVGlobalEmotes` from outside a Fiber")
             ]
             +/
 
-            foreach (const emoteJSON; responseJSON.array)
+            foreach (immutable emoteJSON; responseJSON.array)
             {
                 immutable emote = emoteJSON["code"].str.to!dstring;
                 emoteMap[emote] = true;
@@ -2280,135 +2308,6 @@ in (Fiber.getThis, "Tried to call `getBTTVGlobalEmotes` from outside a Fiber")
 }
 
 
-// getFFZEmotesFromBTTVCache
-/++
-    Fetches FrankerFaceZ emotes for a given channel from BetterTTV cache.
-
-    Params:
-        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
-        emoteMap = Reference to the `bool[dstring]` associative array to store
-            the fetched emotes in.
-        idString = Twitch user/channel ID in string form.
-
-    See_Also:
-        [getFFZEmotes]
-        https://www.frankerfacez.com
- +/
-version(none)
-void getFFZEmotesFromBTTVCache(
-    TwitchPlugin plugin,
-    ref bool[dstring] emoteMap,
-    const string idString)
-in (Fiber.getThis, "Tried to call `getFFZEmotes` from outside a Fiber")
-{
-    import std.conv : to;
-    import std.json : JSONType, parseJSON;
-
-    immutable url = "https://api.betterttv.net/3/cached/frankerfacez/users/twitch/" ~ idString;
-
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
-    {
-        try
-        {
-            immutable response = sendHTTPRequest(plugin, url);
-            immutable responseJSON = parseJSON(response.str);
-
-            /+
-            [
-                {
-                    "animated": false,
-                    "code": "BeardBos",
-                    "id": 14758,
-                    "imageType": "png",
-                    "images": {
-                        "1x": "https:\/\/cdn.betterttv.net\/frankerfacez_emote\/14758\/1",
-                        "2x": null,
-                        "4x": null
-                    },
-                    "user": {
-                        "displayName": "LobosJr",
-                        "id": 2138,
-                        "name": "lobosjr"
-                    }
-                },
-                {
-                    "animated": false,
-                    "code": "CheeseBos",
-                    "id": 14759,
-                    "imageType": "png",
-                    "images": {
-                        "1x": "https:\/\/cdn.betterttv.net\/frankerfacez_emote\/14759\/1",
-                        "2x": null,
-                        "4x": null
-                    },
-                    "user": {
-                        "displayName": "LobosJr",
-                        "id": 2138,
-                        "name": "lobosjr"
-                    }
-                }
-            ]
-            +/
-            /+
-            []
-            +/
-
-            foreach (const emoteJSON; responseJSON.array)
-            {
-                immutable emote = emoteJSON["code"].str.to!dstring;
-                emoteMap[emote] = true;
-            }
-
-            // All done
-            return;
-        }
-        catch (TwitchQueryException e)
-        {
-            immutable json = parseJSON(e.responseBody);
-
-            if (json.type == JSONType.object)
-            {
-                // {"message":"internal server error"}
-                const messageJSON = "message" in json;
-
-                if (messageJSON && messageJSON.str == "internal server error")
-                {
-                    if (i < TwitchPlugin.delegateRetries-1)
-                    {
-                        // Retry
-                        continue;
-                    }
-
-                    e.msg = messageJSON.str;
-                    throw e;
-                }
-                // Drop down
-            }
-            else if ((json.type == JSONType.array) && !json.array.length)
-            {
-                // Benign
-                return;
-            }
-
-            if (i < TwitchPlugin.delegateRetries-1)
-            {
-                // Retry
-                continue;
-            }
-            throw e;
-        }
-        catch (Exception e)
-        {
-            // Retry until we reach the retry limit, then rethrow
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-            throw e;
-        }
-    }
-
-    assert(0, "Unreachable");
-}
-
-
 // getFFZEmotes
 /++
     Fetches FrankerFaceZ emotes for a given channel.
@@ -2427,9 +2326,10 @@ void getFFZEmotes(
     ref bool[dstring] emoteMap,
     const string idString)
 in (Fiber.getThis, "Tried to call `getFFZEmotes` from outside a Fiber")
+in (idString.length, "Tried to get FFZ emotes with an empty ID string")
 {
     import std.conv : to;
-    import std.json : parseJSON;
+    import std.json : JSONType, parseJSON;
 
     immutable url = "https://api.frankerfacez.com/v1/room/id/" ~ idString;
 
@@ -2531,12 +2431,15 @@ in (Fiber.getThis, "Tried to call `getFFZEmotes` from outside a Fiber")
             }
             +/
 
-            immutable setsJSON = "sets" in responseJSON;
-            if (!setsJSON) throw new TwitchQueryException(
-                `No "sets" key in JSON response`,
-                response.str);
+            if ((responseJSON.type != JSONType.object) || ("sets" !in responseJSON))
+            {
+                // Invalid response in some way
+                if (i < TwitchPlugin.delegateRetries-1) continue;
+                enum message = "`getFFZEmotes` response has unexpected JSON";
+                throw new UnexpectedJSONException(message, responseJSON);
+            }
 
-            foreach (immutable _, immutable setJSON; setsJSON.object)
+            foreach (immutable setJSON; responseJSON["sets"].object)
             {
                 immutable emoticonsJSON = "emoticons" in setJSON;
                 if (!emoticonsJSON) throw new TwitchQueryException(
@@ -2598,6 +2501,7 @@ void get7tvEmotes(
     ref bool[dstring] emoteMap,
     const string idString)
 in (Fiber.getThis, "Tried to call `get7tvEmotes` from outside a Fiber")
+in (idString.length, "Tried to get 7tv emotes with an empty ID string")
 {
     import std.conv : to;
     import std.json : JSONType, parseJSON;
@@ -2632,7 +2536,7 @@ in (Fiber.getThis, "Tried to call `get7tvEmotes` from outside a Fiber")
 
             if (responseJSON.type == JSONType.object)
             {
-                const errorJSON = "error" in responseJSON.object;
+                immutable errorJSON = "error" in responseJSON;
                 if (errorJSON && (errorJSON.str == "No Items Found"))
                 {
                     // Benign
@@ -2644,7 +2548,7 @@ in (Fiber.getThis, "Tried to call `get7tvEmotes` from outside a Fiber")
                     response.str);
             }
 
-            foreach (const emoteJSON; responseJSON.array)
+            foreach (immutable emoteJSON; responseJSON.array)
             {
                 immutable emote = emoteJSON["name"].str.to!dstring;
                 emoteMap[emote] = true;
@@ -2660,7 +2564,7 @@ in (Fiber.getThis, "Tried to call `get7tvEmotes` from outside a Fiber")
             if (json.type == JSONType.object)
             {
                 // Shouldn't this be an ErrorJSONException?
-                const errorJSON = "error" in json.object;
+                immutable errorJSON = "error" in json;
 
                 if (errorJSON && (errorJSON.str == "No Items Found"))
                 {
@@ -2757,4 +2661,166 @@ in (Fiber.getThis, "Tried to call `get7tvGlobalEmotes` from outside a Fiber")
             throw e;
         }
     }
+}
+
+
+// getSubscribers
+/++
+    Fetches a list of all subscribers of the specified channel. A broadcaster-level
+    access token is required.
+
+    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        channelName = Name of channel to fetch subscribers of.
+
+    Returns:
+        An array of Voldemort subscribers.
+ +/
+version(none)
+auto getSubscribers(
+    TwitchPlugin plugin,
+    const string channelName)
+in (Fiber.getThis, "Tried to call `getSubscribers` from outside a Fiber")
+in (channelName.length, "Tried to get subscribers with an empty channel name string")
+{
+    import std.array : Appender;
+    import std.format : format;
+    import std.json : JSONType, JSONValue, parseJSON;
+
+    const room = channelName in plugin.rooms;
+    assert(room, "Tried to get subscribers of a channel for which there existed no room");
+
+    static struct User
+    {
+        string id;
+        string name;
+        string displayName;
+    }
+
+    static struct Subscription
+    {
+        User user;
+        User gifter;
+        bool wasGift;
+    }
+
+    enum url = "https://api.twitch.tv/helix/subscribers";
+    enum initialPattern = `
+{
+    "broadcaster_id": "%s",
+    "first": "100"
+}`;
+
+    enum subsequentPattern = `
+{
+    "broadcaster_id": "%s",
+    "after": "%s",
+}`;
+
+    Appender!(Subscription[]) subs;
+    string after;
+
+    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    {
+        try
+        {
+            uint retry;
+
+            inner:
+            do
+            {
+                immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
+                immutable body_ = after.length ?
+                    subsequentPattern.format(room.id, after) :
+                    initialPattern.format(room.id);
+                immutable response = sendHTTPRequest(
+                    plugin,
+                    url,
+                    authorizationBearer,
+                    HttpVerb.GET,
+                    cast(ubyte[])body_,
+                    "application/json");
+                immutable responseJSON = parseJSON(response.str);
+
+                /*
+                {
+                    "data": [
+                        {
+                            "broadcaster_id": "141981764",
+                            "broadcaster_login": "twitchdev",
+                            "broadcaster_name": "TwitchDev",
+                            "gifter_id": "12826",
+                            "gifter_login": "twitch",
+                            "gifter_name": "Twitch",
+                            "is_gift": true,
+                            "tier": "1000",
+                            "plan_name": "Channel Subscription (twitchdev)",
+                            "user_id": "527115020",
+                            "user_name": "twitchgaming",
+                            "user_login": "twitchgaming"
+                        },
+                    ],
+                    "pagination": {
+                        "cursor": "xxxx"
+                    },
+                    "total": 13,
+                    "points": 13
+                }
+                */
+
+                if ((responseJSON.type != JSONType.object) || ("data" !in responseJSON))
+                {
+                    // Invalid response in some way
+                    if (++retry < TwitchPlugin.delegateRetries) continue inner;
+                    enum message = "`getSubscribers` response has unexpected JSON";
+                    throw new UnexpectedJSONException(message, responseJSON);
+                }
+
+                retry = 0;
+
+                if (!subs.capacity)
+                {
+                    subs.reserve(responseJSON["total"].integer);
+                }
+
+                foreach (immutable subJSON; responseJSON["data"].array)
+                {
+                    Subscription sub;
+                    sub.user.id = subJSON["user_id"].str;
+                    sub.user.name = subJSON["user_login"].str;
+                    sub.user.displayName = subJSON["user_name"].str;
+                    sub.wasGift = subJSON["is_gift"].boolean;
+                    sub.gifter.id = subJSON["gifter_id"].str;
+                    sub.gifter.name = subJSON["gifter_login"].str;
+                    sub.gifter.displayName = subJSON["gifter_name"].str;
+                    subs.put(sub);
+                }
+
+                immutable paginationJSON = "pagination" in responseJSON;
+                if (!paginationJSON) break;
+
+                immutable cursorJSON = "cursor" in *paginationJSON;
+                if (!cursorJSON) break;
+
+                after = cursorJSON.str;
+            }
+            while (after.length);
+
+            return subs;
+        }
+        catch (MissingBroadcasterTokenException e)
+        {
+            throw e;
+        }
+        catch (Exception e)
+        {
+            // Retry until we reach the retry limit, then rethrow
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+            throw e;
+        }
+    }
+
+    assert(0, "Unreachable");
 }

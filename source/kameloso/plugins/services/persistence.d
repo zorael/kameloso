@@ -19,6 +19,7 @@ version(WithPersistenceService):
 
 private:
 
+import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.common : logger;
 import kameloso.thread : Sendable;
@@ -217,7 +218,7 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
                 case ACCOUNT:
                     if (stored.account.length && (user.account == "*"))
                     {
-                        event.aux = stored.account;
+                        event.aux[0] = stored.account;
                         goto case RPL_WHOISACCOUNT;
                     }
                     break;

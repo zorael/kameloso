@@ -16,6 +16,7 @@ version(WithConnectService):
 
 private:
 
+import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.common : logger;
 import kameloso.messaging;
@@ -651,8 +652,6 @@ void onInvite(ConnectService service, const ref IRCEvent event)
 )
 void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
 {
-    import lu.string : strippedRight;
-
     // http://ircv3.net/irc
     // https://blog.irccloud.com/ircv3
 
@@ -665,9 +664,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
 
     service.capabilityNegotiation = Progress.inProgress;
 
-    immutable content = event.content.strippedRight;
-
-    switch (event.aux)
+    switch (event.content)
     {
     case "LS":
         import std.algorithm.iteration : splitter;
@@ -676,9 +673,11 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
         Appender!(string[]) capsToReq;
         capsToReq.reserve(8);  // guesstimate
 
-        foreach (immutable rawCap; content.splitter(' '))
+        foreach (immutable rawCap; event.aux[])
         {
             import lu.string : beginsWith, contains, nom;
+
+            if (!rawCap.length) continue;
 
             string slice = rawCap;  // mutable
             immutable cap = slice.nom!(Yes.inherit)('=');
@@ -775,8 +774,10 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
     case "ACK":
         import std.algorithm.iteration : splitter;
 
-        foreach (cap; content.splitter(" "))
+        foreach (cap; event.aux[])
         {
+            if (!cap.length) continue;
+
             switch (cap)
             {
             case "sasl":
@@ -799,8 +800,10 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
     case "NAK":
         import std.algorithm.iteration : splitter;
 
-        foreach (cap; content.splitter(" "))
+        foreach (cap; event.aux[])
         {
+            if (!cap.length) continue;
+
             switch (cap)
             {
             case "sasl":
@@ -820,7 +823,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
         break;
 
     default:
-        //logger.warning("Unhandled capability type: ", event.aux);
+        //logger.warning("Unhandled capability type: ", event.content);
         break;
     }
 
@@ -1274,9 +1277,9 @@ void onWHOISUser(ConnectService service, const ref IRCEvent event)
 )
 void onISUPPORT(ConnectService service, const ref IRCEvent event)
 {
-    import lu.string : contains;
+    import std.algorithm.searching : canFind;
 
-    if (event.content.contains("CODEPAGES"))
+    if (event.aux[].canFind("CODEPAGES"))
     {
         raw(service.state, "CODEPAGE UTF-8", Yes.quiet);
     }
@@ -1314,7 +1317,7 @@ void onReconnect(ConnectService service)
 )
 void onUnknownCommand(ConnectService service, const ref IRCEvent event)
 {
-    if (service.serverSupportsWHOIS && !service.state.settings.preferHostmasks && (event.aux == "WHOIS"))
+    if (service.serverSupportsWHOIS && !service.state.settings.preferHostmasks && (event.aux[0] == "WHOIS"))
     {
         logger.error("Error: This server does not seem to support user accounts.");
         enum message = "Consider enabling <l>Core</>.<l>preferHostmasks</>.";
@@ -1391,14 +1394,12 @@ void startPingMonitorFiber(ConnectService service)
 
                     if (strikes <= StrikeBreakpoints.ping)
                     {
-                        logger.warning("PING monitor empty tick, strike ", strikes);
                         delay(service, briefWait, Yes.yield);
                         continue;
                     }
                     else if (strikes <= StrikeBreakpoints.reconnect)
                     {
                         // Timeout. Send a preemptive ping
-                        logger.warning("PING monitor ping, strike ", strikes);
                         service.state.mainThread.prioritySend(ThreadMessage.ping(service.state.server.resolvedAddress));
                         delay(service, timeToAllowForPingResponse, Yes.yield);
                         continue;
@@ -1406,7 +1407,6 @@ void startPingMonitorFiber(ConnectService service)
                     else /*if (strikes > StrikeBreakpoints.reconnect)*/
                     {
                         // All failed, reconnect
-                        logger.warning("PING monitor reconnect.");
                         service.state.mainThread.prioritySend(ThreadMessage.reconnect);
                         return;
                     }

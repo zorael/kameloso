@@ -22,6 +22,7 @@ private:
 import kameloso.plugins.admin.classifiers;
 debug import kameloso.plugins.admin.debugging;
 
+import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness;
 import kameloso.common : logger;
@@ -311,7 +312,7 @@ void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
     void sendUsage()
     {
         enum pattern = "Usage: <b>%s%s<b> [add|del|list] [channel]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
@@ -1190,7 +1191,7 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
     void sendUsage()
     {
         enum pattern = "Usage: <b>%s%s<b> [add|del|list] [args...]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
@@ -1208,7 +1209,7 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
         if (results != SplitResults.match)
         {
             enum pattern = "Usage: <b>%s%s add<b> [account] [hostmask]";
-            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+            immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
             return privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
 
@@ -1219,7 +1220,7 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
         if (!slice.length || slice.contains(' '))
         {
             enum pattern = "Usage: <b>%s%s del<b> [hostmask]";
-            immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+            immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
             return privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
 

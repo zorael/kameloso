@@ -22,6 +22,7 @@ version(WithNotesPlugin):
 
 private:
 
+import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.common : logger;
@@ -420,7 +421,7 @@ void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
         import std.format : format;
 
         enum pattern = "Usage: <b>%s%s<b> [nickname] [note text]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 

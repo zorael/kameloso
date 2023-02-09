@@ -422,7 +422,7 @@ public:
      +/
     void initPlugins() @system
     {
-        import kameloso.plugins : instantiatePlugins;
+        static import kameloso.plugins;
         import kameloso.plugins.common.core : IRCPluginState;
         import kameloso.plugins.common.misc : applyCustomSettings;
         import std.concurrency : thisTid;
@@ -439,7 +439,7 @@ public:
         state.abort = abort;
 
         // Leverage kameloso.plugins.instantiatePlugins to construct all plugins.
-        plugins = instantiatePlugins(state);
+        plugins = kameloso.plugins.instantiatePlugins(state);
 
         foreach (plugin; plugins)
         {
@@ -560,12 +560,55 @@ public:
         {
             import std.exception : ErrnoException;
             import core.memory : GC;
+            import core.thread : Fiber;
 
             if (!plugin.isEnabled) continue;
 
             try
             {
                 plugin.teardown();
+
+                foreach (scheduledFiber; plugin.state.scheduledFibers)
+                {
+                    // All Fibers should be at HOLD state but be conservative
+                    if (scheduledFiber.fiber.state != Fiber.State.EXEC)
+                    {
+                        destroy(scheduledFiber.fiber);
+                    }
+                }
+
+                plugin.state.scheduledFibers = null;
+
+                foreach (scheduledDelegate; plugin.state.scheduledDelegates)
+                {
+                    destroy(scheduledDelegate.dg);
+                }
+
+                plugin.state.scheduledDelegates = null;
+
+                foreach (immutable type, ref fibersForType; plugin.state.awaitingFibers)
+                {
+                    foreach (fiber; fibersForType)
+                    {
+                        // As above
+                        if (fiber.state != Fiber.State.EXEC)
+                        {
+                            destroy(fiber);
+                        }
+                    }
+                }
+
+                plugin.state.awaitingFibers = null;
+
+                foreach (immutable type, ref dgsForType; plugin.state.awaitingDelegates)
+                {
+                    foreach (ref dg; dgsForType)
+                    {
+                        destroy(dg);
+                    }
+                }
+
+                plugin.state.awaitingDelegates = null;
             }
             catch (ErrnoException e)
             {
@@ -617,30 +660,28 @@ public:
         if (plugin.state.updates & Update.bot)
         {
             // Something changed the bot; propagate
-            plugin.state.updates ^= Update.bot;
+            plugin.state.updates &= ~Update.bot;
             propagate(plugin.state.bot);
         }
 
         if (plugin.state.updates & Update.client)
         {
             // Something changed the client; propagate
-            plugin.state.updates ^= Update.client;
+            plugin.state.updates &= ~Update.client;
             propagate(plugin.state.client);
         }
 
         if (plugin.state.updates & Update.server)
         {
             // Something changed the server; propagate
-            plugin.state.updates ^= Update.server;
+            plugin.state.updates &= ~Update.server;
             propagate(plugin.state.server);
         }
 
         if (plugin.state.updates & Update.settings)
         {
-            static import kameloso.common;
-
             // Something changed the settings; propagate
-            plugin.state.updates ^= Update.settings;
+            plugin.state.updates &= ~Update.settings;
             propagate(plugin.state.settings);
             this.settings = plugin.state.settings;
 

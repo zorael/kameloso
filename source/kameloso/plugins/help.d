@@ -14,6 +14,7 @@ version(WithHelpPlugin):
 
 private:
 
+import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.common : logger;
@@ -220,7 +221,7 @@ void sendFullPluginListing(
 
     enum pattern = "Use <b>%s%s<b> [<b>plugin<b>] [<b>command<b>] " ~
         "for information about a command.";
-    immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+    immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
 }
 

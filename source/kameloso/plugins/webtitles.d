@@ -16,6 +16,7 @@ version(WithWebtitlesPlugin):
 
 private:
 
+import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.messaging;
@@ -513,7 +514,12 @@ auto lookupTitle(
     if ((res.code == 2) || (res.code >= 400) || !res.contentText.length)
     {
         // res.codeText among Bad Request, probably Not Found, ...
-        throw new TitleFetchException(res.codeText, url, res.code, __FILE__, __LINE__);
+        throw new TitleFetchException(
+            res.codeText,
+            url,
+            res.code,
+            __FILE__,
+            __LINE__);
     }
 
     auto doc = new Document;
@@ -522,7 +528,13 @@ auto lookupTitle(
 
     if (!doc.title.length)
     {
-        throw new TitleFetchException("No title tag found", url, res.code, __FILE__, __LINE__);
+        enum message = "No title tag found";
+        throw new TitleFetchException(
+            message,
+            url,
+            res.code,
+            __FILE__,
+            __LINE__);
     }
 
     string slice = url;  // mutable

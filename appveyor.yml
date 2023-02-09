@@ -75,7 +75,7 @@ test_script:
  #- echo "Full tests may fail due to https://issues.dlang.org/show_bug.cgi?id=20048"
  - dub test           --compiler=%DC% --arch=%Darch%
  - dub build --nodeps --compiler=%DC% --arch=%Darch% -b debug -c dev
- - mv kameloso.exe kameloso-dev.exe
+ #- mv kameloso.exe kameloso-dev.exe
  - dub build --nodeps --compiler=%DC% --arch=%Darch% -b plain -c dev
  #- mv kameloso.exe kameloso-dev-plain.exe
  - dub build --nodeps --compiler=%DC% --arch=%Darch% -b release -c dev
@@ -86,5 +86,4 @@ test_script:
 after_test:
  - ps: if ($env:APPVEYOR_REPO_TAG -eq "True") {
          Push-AppveyorArtifact kameloso.exe -DeploymentName "Full build";
-         Push-AppveyorArtifact kameloso-dev.exe -DeploymentName "Development build";
        }
