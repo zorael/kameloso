@@ -823,7 +823,7 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
         break;
 
     default:
-        //logger.warning("Unhandled capability type: ", event.aux[0]);
+        //logger.warning("Unhandled capability type: ", event.content);
         break;
     }
 

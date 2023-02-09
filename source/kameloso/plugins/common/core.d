@@ -988,7 +988,7 @@ mixin template IRCPluginImpl(
                     {
                         static if (verbose)
                         {
-                            writeln("   ...Regex: `", regex._expression, "`");
+                            writefln(`   ...Regex r"%s"`, regex._expression);
                             if (state.settings.flush) stdout.flush();
                         }
 
@@ -1033,8 +1033,8 @@ mixin template IRCPluginImpl(
                                 {
                                     static if (verbose)
                                     {
-                                        writefln(`   ...matching "%s" against expression "%s" failed.`,
-                                            event.content, regex._expression);
+                                        enum pattern = `   ...matching "%s" against expression "%s" failed.`;
+                                        writefln(pattern, event.content, regex._expression);
                                         if (state.settings.flush) stdout.flush();
                                     }
                                 }
@@ -2196,7 +2196,7 @@ auto prefixPolicyMatches(bool verbose)
     case direct:
         static if (verbose)
         {
-            writefln("direct, so just passes.");
+            writeln("direct, so just passes.");
         }
         return true;
 
