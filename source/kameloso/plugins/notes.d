@@ -421,7 +421,7 @@ void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
         import std.format : format;
 
         enum pattern = "Usage: <b>%s%s<b> [nickname] [note text]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[0]);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 

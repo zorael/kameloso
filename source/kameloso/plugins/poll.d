@@ -218,7 +218,7 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
             import std.format : format;
 
             enum pattern = "Usage: <b>%s%s<b> [duration] [choice1] [choice2] ...";
-            immutable message = pattern.format(plugin.state.settings.prefix, event.aux[0]);
+            immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
             chan(plugin.state, event.channel, message);
         }
     }

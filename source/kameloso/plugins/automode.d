@@ -301,7 +301,7 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
     void sendUsage()
     {
         enum pattern = "Usage: <b>%s%s<b> [add|clear|list] [nickname/account] [mode]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[0]);
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel, message);
     }
 

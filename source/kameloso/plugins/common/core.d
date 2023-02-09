@@ -965,7 +965,7 @@ mixin template IRCPluginImpl(
                                 auxDirty = true;
                             }
 
-                            event.aux[0] = thisCommand;
+                            event.aux[$-1] = thisCommand;
                             commandMatch = true;
                             break commandForeach;
                         }
@@ -1025,7 +1025,7 @@ mixin template IRCPluginImpl(
                                         auxDirty = true;
                                     }
 
-                                    event.aux[0] = hits[0];
+                                    event.aux[$-1] = hits[0];
                                     commandMatch = true;
                                     break regexForeach;
                                 }
