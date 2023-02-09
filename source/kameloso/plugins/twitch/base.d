@@ -428,14 +428,15 @@ void onUserstate(TwitchPlugin plugin, const ref IRCEvent event)
     {
         import lu.string : contains;
 
-        // First USERSTATE; warn
+        // First USERSTATE; warn if applicable
+        room.sawUserstate = true;
+
         if (!event.target.badges.contains("moderator/") &&
             !event.target.badges.contains("broadcaster/"))
         {
             enum pattern = "The bot is not a moderator of home channel <l>%s</>. " ~
                 "Consider elevating it to such to avoid being as rate-limited.";
             logger.warningf(pattern, event.channel);
-            room.sawUserstate = true;
             return;
         }
 
