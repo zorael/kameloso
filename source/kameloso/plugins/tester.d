@@ -5,6 +5,7 @@ module kameloso.plugins.tester;
 
 private:
 
+import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.plugins.common.delayawait;
@@ -36,7 +37,7 @@ version(DigitalMars)
     else
     {
         pragma(msg, "Note: The test suite may/will segfault on dmd with -release " ~
-            "if we're using `const ref` parameters with Fibers. Investigate if it happens.");
+            "because of memory corruption. Not much we can do. Use ldc for better results.");
     }
 }
 
@@ -75,7 +76,7 @@ void onCommandTest(TesterPlugin plugin, const /*ref*/ IRCEvent event)
     {
         privmsg(plugin.state, event.channel, event.sender.nickname,
             "Usage: %s%s [target bot nickname] [plugin]"
-            .format(plugin.state.settings.prefix, event.aux));
+            .format(plugin.state.settings.prefix, event.aux[$-1]));
         return;
     }
 
