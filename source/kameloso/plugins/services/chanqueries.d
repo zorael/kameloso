@@ -72,7 +72,7 @@ enum ChannelState : ubyte
 )
 void startChannelQueries(ChanQueriesService service)
 {
-    import kameloso.thread : CarryingFiber, ThreadMessage, sendable;
+    import kameloso.thread : CarryingFiber, ThreadMessage, boxed;
     import std.concurrency : send;
     import std.datetime.systime : Clock;
     import std.string : representation;
@@ -137,7 +137,7 @@ void startChannelQueries(ChanQueriesService service)
             version(WithPrinterPlugin)
             {
                 service.state.mainThread.send(
-                    ThreadMessage.busMessage("printer", sendable(squelchMessage)));
+                    ThreadMessage.busMessage("printer", boxed(squelchMessage)));
             }
 
             raw(service.state, text(command, ' ', channelName), Yes.quiet, Yes.background);
@@ -183,7 +183,7 @@ void startChannelQueries(ChanQueriesService service)
                 // [chanoprivsneeded] [#d] sinisalo.freenode.net: "You're not a channel operator" (#482)
                 // Ask the Printer to squelch those messages too.
                 service.state.mainThread.send(
-                    ThreadMessage.busMessage("printer", sendable(squelchMessage)));
+                    ThreadMessage.busMessage("printer", boxed(squelchMessage)));
             }
 
             mode(service.state, channelName, text('+', cast(char)modechar),
@@ -240,7 +240,7 @@ void startChannelQueries(ChanQueriesService service)
         version(WithPrinterPlugin)
         {
             service.state.mainThread.send(
-                ThreadMessage.busMessage("printer", sendable("unsquelch")));
+                ThreadMessage.busMessage("printer", boxed("unsquelch")));
         }
     }
 
@@ -272,7 +272,7 @@ void startChannelQueries(ChanQueriesService service)
         version(WithPrinterPlugin)
         {
             service.state.mainThread.send(
-                ThreadMessage.busMessage("printer", sendable("squelch " ~ nickname)));
+                ThreadMessage.busMessage("printer", boxed("squelch " ~ nickname)));
         }
 
         whois(service.state, nickname, No.force, Yes.quiet, Yes.background);

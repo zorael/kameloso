@@ -968,10 +968,10 @@ void onCommandAuth(AdminPlugin plugin)
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch) return;
     }
 
-    import kameloso.thread : ThreadMessage, sendable;
+    import kameloso.thread : ThreadMessage, boxed;
     import std.concurrency : send;
 
-    plugin.state.mainThread.send(ThreadMessage.busMessage("connect", sendable("auth")));
+    plugin.state.mainThread.send(ThreadMessage.busMessage("connect", boxed("auth")));
 }
 
 
@@ -1324,7 +1324,7 @@ import kameloso.thread : Sendable;
 
 // onBusMessage
 /++
-    Receives a passed [kameloso.thread.BusMessage|BusMessage] with the "`admin`"
+    Receives a passed [kameloso.thread.Boxed|Boxed] instance with the "`admin`"
     header, and calls functions based on the payload message.
 
     This is used in the Pipeline plugin, to allow us to trigger admin verbs via
@@ -1337,13 +1337,13 @@ import kameloso.thread : Sendable;
  +/
 void onBusMessage(AdminPlugin plugin, const string header, shared Sendable content)
 {
-    import kameloso.thread : BusMessage;
+    import kameloso.thread : Boxed;
     import lu.string : contains, nom, strippedRight;
 
     // Don't return if disabled, as it blocks us from re-enabling with verb set
     if (header != "admin") return;
 
-    auto message = cast(BusMessage!string)content;
+    auto message = cast(Boxed!string)content;
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
 
     string slice = message.payload.strippedRight;

@@ -813,7 +813,7 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 )
 void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.thread : ThreadMessage, sendable;
+    import kameloso.thread : ThreadMessage, boxed;
     import std.concurrency : send;
 
     auto room = event.channel in plugin.rooms;
@@ -865,7 +865,7 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     broadcasterUser.displayName = room.broadcasterDisplayName;
     IRCUser user = *broadcasterUser;  // dereference and copy
-    plugin.state.mainThread.send(ThreadMessage.putUser(string.init, sendable(user)));
+    plugin.state.mainThread.send(ThreadMessage.putUser(string.init, boxed(user)));
 
     room.follows = getFollows(plugin, room.id);
     room.followsLastCached = event.time;

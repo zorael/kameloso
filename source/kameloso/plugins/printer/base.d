@@ -657,7 +657,7 @@ import kameloso.thread : Sendable;
 
 // onBusMessage
 /++
-    Receives a passed [kameloso.thread.BusMessage|BusMessage] with the "`printer`" header,
+    Receives a passed [kameloso.thread.Boxed|Boxed] instance with the "`printer`" header,
     listening for cues to ignore the next events caused by the
     [kameloso.plugins.services.chanqueries.ChanQueriesService|ChanQueriesService]
     querying current channel for information on the channels and their users.
@@ -669,13 +669,13 @@ import kameloso.thread : Sendable;
  +/
 void onBusMessage(PrinterPlugin plugin, const string header, shared Sendable content)
 {
-    import kameloso.thread : BusMessage;
+    import kameloso.thread : Boxed;
     import lu.string : nom;
     import std.typecons : Flag, No, Yes;
 
     if (header != "printer") return;
 
-    auto message = cast(BusMessage!string)content;
+    auto message = cast(Boxed!string)content;
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
 
     string slice = message.payload;

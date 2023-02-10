@@ -364,9 +364,9 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             case putUser:
-                import kameloso.thread : BusMessage;
+                import kameloso.thread : Boxed;
 
-                auto boxedUser = cast(BusMessage!IRCUser)message.payload;
+                auto boxedUser = cast(Boxed!IRCUser)message.payload;
                 assert(boxedUser, "Incorrectly cast message payload: " ~ typeof(boxedUser).stringof);
 
                 auto user = boxedUser.payload;

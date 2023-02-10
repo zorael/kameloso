@@ -1139,10 +1139,10 @@ void onWelcome(ConnectService service)
 
                     version(WithPrinterPlugin)
                     {
-                        import kameloso.thread : ThreadMessage, sendable;
+                        import kameloso.thread : ThreadMessage, boxed;
                         import std.concurrency : send;
                         service.state.mainThread.send(
-                            ThreadMessage.busMessage("printer", sendable(squelchVerb)));
+                            ThreadMessage.busMessage("printer", boxed(squelchVerb)));
                     }
 
                     raw(service.state, "NICK " ~ service.state.client.origNickname,
@@ -1170,10 +1170,10 @@ version(WithPrinterPlugin)
 )
 void onSelfnickSuccessOrFailure(ConnectService service)
 {
-    import kameloso.thread : ThreadMessage, sendable;
+    import kameloso.thread : ThreadMessage, boxed;
     import std.concurrency : send;
     service.state.mainThread.send(
-        ThreadMessage.busMessage("printer", sendable("unsquelch " ~ service.state.client.origNickname)));
+        ThreadMessage.busMessage("printer", boxed("unsquelch " ~ service.state.client.origNickname)));
 }
 
 
@@ -1692,11 +1692,11 @@ void start(ConnectService service)
 }
 
 
-import kameloso.thread : BusMessage, Sendable;
+import kameloso.thread : Boxed, Sendable;
 
 // onBusMessage
 /++
-    Receives a passed [kameloso.thread.BusMessage|BusMessage] with the "`connect`" header,
+    Receives a passed [kameloso.thread.Boxed|Boxed] instance with the "`connect`" header,
     and calls functions based on the payload message.
 
     This is used to let other plugins trigger re-authentication with services.
@@ -1710,7 +1710,7 @@ void onBusMessage(ConnectService service, const string header, shared Sendable c
 {
     if (header != "connect") return;
 
-    auto message = cast(BusMessage!string)content;
+    auto message = cast(Boxed!string)content;
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
 
     if (message.payload == "auth")

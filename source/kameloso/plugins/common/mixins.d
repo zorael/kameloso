@@ -468,10 +468,10 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
         version(WithPrinterPlugin)
         {
-            import kameloso.thread : ThreadMessage, sendable;
+            import kameloso.thread : ThreadMessage, boxed;
             import std.concurrency : send;
 
-            plugin.state.mainThread.send(ThreadMessage.busMessage("printer", sendable("squelch " ~ nicknamePart)));
+            plugin.state.mainThread.send(ThreadMessage.busMessage("printer", boxed("squelch " ~ nicknamePart)));
         }
 
         if (issueWhois)

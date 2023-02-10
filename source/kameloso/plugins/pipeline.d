@@ -126,14 +126,14 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
 
             if (line[0] == ':')
             {
-                import kameloso.thread : sendable;
+                import kameloso.thread : boxed;
                 import lu.string : contains, nom;
 
                 if (line.contains(' '))
                 {
                     string slice = line[1..$];
                     immutable header = slice.nom(' ');
-                    state.mainThread.send(ThreadMessage.busMessage(header, sendable(slice)));
+                    state.mainThread.send(ThreadMessage.busMessage(header, boxed(slice)));
                 }
                 else
                 {
@@ -161,7 +161,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
             break;
         }
 
-        import kameloso.thread : sendable;
+        import kameloso.thread : boxed;
         import core.time : Duration;
 
         static immutable instant = Duration.zero;
@@ -185,7 +185,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
             {
                 enum variantPattern = "Pipeline plugin received Variant: <l>%s";
                 state.askToError(variantPattern.format(v.toString));
-                state.mainThread.send(ThreadMessage.busMessage("pipeline", sendable("halted")));
+                state.mainThread.send(ThreadMessage.busMessage("pipeline", boxed("halted")));
                 halt = true;
             }
         );
@@ -206,7 +206,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
                 enum fifoPattern = "Pipeline plugin failed to reopen FIFO: <l>%s";
                 state.askToError(fifoPattern.format(e.msg));
                 version(PrintStacktraces) state.askToTrace(e.info.toString);
-                state.mainThread.send(ThreadMessage.busMessage("pipeline", sendable("halted")));
+                state.mainThread.send(ThreadMessage.busMessage("pipeline", boxed("halted")));
             }
             return;
         }
@@ -480,9 +480,9 @@ void onBusMessage(PipelinePlugin plugin, const string header, shared Sendable co
     if (!plugin.isEnabled) return;
     if (header != "pipeline") return;
 
-    import kameloso.thread : BusMessage;
+    import kameloso.thread : Boxed;
 
-    auto message = cast(BusMessage!string)content;
+    auto message = cast(Boxed!string)content;
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
 
     if (message.payload == "halted")
