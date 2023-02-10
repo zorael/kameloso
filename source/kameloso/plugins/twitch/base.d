@@ -33,7 +33,7 @@ module kameloso.plugins.twitch.base;
     even on non-`WithTwitchPlugin` builds, so that the Twitch stub may
     import it and provide lines to the configuration file.
  +/
-package @Settings struct TwitchSettings
+@Settings package struct TwitchSettings
 {
 private:
     import dialect.defs : IRCUser;
@@ -291,6 +291,7 @@ package struct Credentials
     static auto fromJSON(const JSONValue json)
     {
         typeof(this) creds;
+
         creds.broadcasterKey = json["broadcasterKey"].str;
         creds.googleClientID = json["googleClientID"].str;
         creds.googleClientSecret = json["googleClientSecret"].str;
@@ -302,6 +303,7 @@ package struct Credentials
         creds.spotifyAccessToken = json["spotifyAccessToken"].str;
         creds.spotifyRefreshToken = json["spotifyRefreshToken"].str;
         creds.spotifyPlaylistID = json["spotifyPlaylistID"].str;
+
         return creds;
     }
 }
@@ -428,14 +430,15 @@ void onUserstate(TwitchPlugin plugin, const ref IRCEvent event)
     {
         import lu.string : contains;
 
-        // First USERSTATE; warn
+        // First USERSTATE; warn if applicable
+        room.sawUserstate = true;
+
         if (!event.target.badges.contains("moderator/") &&
             !event.target.badges.contains("broadcaster/"))
         {
             enum pattern = "The bot is not a moderator of home channel <l>%s</>. " ~
                 "Consider elevating it to such to avoid being as rate-limited.";
             logger.warningf(pattern, event.channel);
-            room.sawUserstate = true;
             return;
         }
 
@@ -3845,30 +3848,37 @@ package:
      +/
     long approximateQueryTime = 700;
 
+    // QueryConstants
     /++
-        The multiplier of how much the query time should temporarily increase
-        when it turned out to be a bit short.
+        Constants used when scheduling API queries.
      +/
-    enum approximateQueryGrowthMultiplier = 1.1;
+    enum QueryConstants : double
+    {
+        /++
+            The multiplier of how much the query time should temporarily increase
+            when it turned out to be a bit short.
+         +/
+        growthMultiplier = 1.1,
 
-    /++
-        The divisor of how much to wait before retrying a query, after the
-        timed waited turned out to be a bit short.
-     +/
-    enum approximateQueryRetryTimeDivisor = 3;
+        /++
+            The divisor of how much to wait before retrying a query, after the
+            timed waited turned out to be a bit short.
+         +/
+        retryTimeDivisor = 3,
 
-    /++
-        By how many milliseconds to pad measurements of how long a query took
-        to be on the conservative side.
-     +/
-    enum approximateQueryMeasurementPadding = 30;
+        /++
+            By how many milliseconds to pad measurements of how long a query took
+            to be on the conservative side.
+         +/
+        measurementPadding = 30,
 
-    /++
-        The weight to assign the current approximate query time before
-        making a weighted average based on a new value. This gives the
-        averaging some inertia.
-     +/
-    enum approximateQueryAveragingWeight = 3;
+        /++
+            The weight to assign the current approximate query time before
+            making a weighted average based on a new value. This gives the
+            averaging some inertia.
+         +/
+        averagingWeight = 3,
+    }
 
     /++
         How big a buffer to preallocate when doing HTTP API queries.

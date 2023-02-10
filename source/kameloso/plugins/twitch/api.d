@@ -1005,9 +1005,9 @@ in (Fiber.getThis, "Tried to call `getMultipleTwitchData` from outside a Fiber")
     the weighted averages of the old value and said new measurement.
 
     The old value is given a weight of
-    [kameloso.plugins.twitch.base.TwitchPlugin.approximateQueryAveragingWeight|approximateQueryAveragingWeight]
+    [kameloso.plugins.twitch.base.TwitchPlugin.QueryConstants.averagingWeight|averagingWeight]
     and the new measurement a weight of 1. Additionally the measurement is padded by
-    [kameloso.plugins.twitch.base.TwitchPlugin.approximateQueryMeasurementPadding|approximateQueryMeasurementPadding]
+    [kameloso.plugins.twitch.base.TwitchPlugin.QueryConstants.measurementPadding|measurementPadding]
     to be on the safe side.
 
     Params:
@@ -1019,19 +1019,20 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
 {
     import std.algorithm.comparison : min;
 
+    alias QC = TwitchPlugin.QueryConstants;
     enum maxDeltaToResponse = 1000;
 
     immutable current = plugin.approximateQueryTime;
-    alias weight = plugin.approximateQueryAveragingWeight;
-    alias padding = plugin.approximateQueryMeasurementPadding;
-    immutable responseAdjusted = min(responseMsecs, (current + maxDeltaToResponse));
+    alias weight = QC.averagingWeight;
+    alias padding = QC.measurementPadding;
+    immutable responseAdjusted = cast(long)min(responseMsecs, (current + maxDeltaToResponse));
     immutable average = ((weight * current) + (responseAdjusted + padding)) / (weight + 1);
 
     version(BenchmarkHTTPRequests)
     {
         import std.stdio : writefln;
-        writefln("time:%s | response: %d~%d (+%d) | new average:%s",
-            current, responseMsecs, responseAdjusted, padding, average);
+        enum pattern = "time:%s | response: %d~%d (+%d) | new average:%s";
+        writefln!pattern(current, responseMsecs, responseAdjusted, cast(long)padding, average);
     }
 
     plugin.approximateQueryTime = cast(long)average;
@@ -1078,6 +1079,12 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
     import std.datetime.systime : Clock;
     import core.time : msecs;
 
+    version(BenchmarkHTTPRequests)
+    {
+        import std.stdio : writefln;
+        uint misses;
+    }
+
     immutable startTime = Clock.currTime.toUnixTime;
     shared QueryResponse* response;
     double accumulatingTime = plugin.approximateQueryTime;
@@ -1096,12 +1103,36 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
                 return *response;
             }
 
+            version(BenchmarkHTTPRequests)
+            {
+                ++misses;
+                immutable oldAccumulatingTime = accumulatingTime;
+            }
+
             // Miss; fired too early, there is no response available yet
-            accumulatingTime *= plugin.approximateQueryGrowthMultiplier;
-            alias divisor = plugin.approximateQueryRetryTimeDivisor;
-            immutable briefWait = cast(long)(accumulatingTime / divisor);
+            alias QC = TwitchPlugin.QueryConstants;
+            accumulatingTime *= QC.growthMultiplier;
+            immutable briefWait = cast(long)(accumulatingTime / QC.retryTimeDivisor);
+
+            version(BenchmarkHTTPRequests)
+            {
+                enum pattern = "MISS! elapsed: %s | old: %d --> new: %d | wait: %d";
+                writefln(pattern,
+                    (now-startTime),
+                    cast(long)oldAccumulatingTime,
+                    cast(long)accumulatingTime,
+                    cast(long)briefWait);
+            }
+
             delay(plugin, briefWait.msecs, Yes.yield);
             continue;
+        }
+
+        version(BenchmarkHTTPRequests)
+        {
+            enum pattern = "HIT! elapsed: %s | response: %s | misses: %d";
+            immutable now = Clock.currTime.toUnixTime;
+            writefln!pattern((now-startTime), response.msecs, misses);
         }
 
         // Make the new approximate query time a weighted average
