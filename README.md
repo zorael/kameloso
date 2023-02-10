@@ -4,13 +4,13 @@
 
 ## Current functionality includes:
 
-* chat monitoring in bedazzling colours or mesmerising monochrome
+* chat monitoring in your terminal
+* channel polls, user quotes, `!seen`, counters, oneliners, timed announcements, ...
 * reporting titles of pasted URLs, YouTube video information fetch
 * `sed`-replacement of messages (`s/this/that/` substitution)
 * saving notes to offline users that get played back when they come online
 * logs
 * bugs
-* channel polls, user quotes, `!seen`, counters, oneliners, timed announcements, stopwatches, modesets, ...
 * some common [Twitch bot features](#twitch-bot)
 * [more random stuff and gimmicks](https://github.com/zorael/kameloso/wiki/Current-plugins)
 
@@ -36,7 +36,7 @@ Testing is primarily done on [**Libera.Chat**](https://libera.chat) and on [**Tw
              --save Write configuration to file
 ```
 
-Prebuilt binaries for Windows and Linux can be found under [Releases](https://github.com/zorael/kameloso/releases).
+Prebuilt binaries for Windows and Linux can be found under [**Releases**](https://github.com/zorael/kameloso/releases).
 
 To compile it yourself:
 
@@ -98,7 +98,7 @@ Grab a prebuilt binary from under [**Releases**](https://github.com/zorael/kamel
 
 You need a compiler based on D version **2.085** or later (March 2019). For **ldc** this is version **1.15**, and for **gdc** this is release series **12**.
 
-If your repositories (or other software sources) don't have compilers new enough, you can use the official [`install.sh`](https://dlang.org/install.html) installation script to download current ones, or any version of choice. (**gdc** is not available via this script.)
+If your repositories (or other software sources) don't have compilers recent enough, you can use the official [`install.sh`](https://dlang.org/install.html) installation script to download current ones, or any version of choice. (**gdc** is not available via this script.)
 
 The package manager [**dub**](https://code.dlang.org) is used to facilitate compilation and dependency management. On Windows it comes bundled in the compiler archive, while on Linux it may need to be installed separately. Refer to your repositories.
 
@@ -121,6 +121,8 @@ $ dub build
 ```
 
 This will compile the bot in the default **debug** build type, which adds some extra code and debugging symbols. You can omit these and perform some optimisations by building it in **release** mode with `dub build -b release`. Mind that build times will increase accordingly. Refer to the output of `dub build --print-builds` for more build types.
+
+It is not recommended to use **dmd** if you want a release mode build; partly due to **ldc** and **gdc** being the obvious choice by merit of simply being so much better at optimising code, but mostly because the program becomes prone to memory corruption and crashes in certain and distinct parts of it when compiled with **dmd**'s optimisations enabled. ([#159](https://github.com/zorael/kameloso/issues/159))
 
 ### Build configurations
 
@@ -159,7 +161,7 @@ A new `kameloso.conf` will be created in a directory dependent on your platform.
 
 Open the file in a normal text editor.
 
-> As a shortcut you can pass `--gedit` to attempt to open it in a `g`raphical `edit`or, or `--edit` to open it in your default terminal one, as defined in the `$EDITOR` environment variable.
+> As a shortcut you can pass `--gedit` to attempt to open it in a **g**raphical **edit**or, or `--edit` to open it in your default terminal one, as defined in the `$EDITOR` environment variable.
 
 ### Command-line arguments
 
@@ -384,7 +386,7 @@ The `--setup-twitch` command creates a configuration file with the server addres
 * Add your channel to `homeChannels`. Channel names are account names (which are always lowercase) with a `#` in front, so the Twitch user `Streamer123` would have the channel `#streamer123`.
 * Optionally add an account name to `admins` to give them global low-level control of the bot. Owners of channels (broadcasters) automatically have high privileges in the scope of their own channels, so it's not strictly needed.
 * You can ignore `nickname`, `user`, `realName`, `account` and `password`, as they're not applicable on Twitch. Do not enter your Twitch password anywhere.
-* Peruse the file for other settings if you want; you can always get back to it by passing `--gedit` (short for `g`raphical `edit`or).
+* Peruse the file for other settings if you want; you can always get back to it by passing `--gedit` (short for **g**raphical **edit**or).
 
 The program can then be run normally.
 
