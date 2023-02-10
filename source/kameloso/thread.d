@@ -251,19 +251,23 @@ struct ThreadMessage
      +/
     static struct HandleDelegates {}
 
-    /+
-        Generate a static function for each [Type].
+    /++
+        An `opDispatch`, constructing one function for each member in [Type].
+
+        What the parameters functionally do is contextual to each [Type].
+
+        Params:
+            memberstring = String name of a member of [Type].
+            content = Optional content string.
+            payload = Optional boxed [Sendable] payloda.
+            quiet = Whether or not to pass a flag for the action to be done quietly.
      +/
-    static foreach (immutable memberstring; __traits(allMembers, Type))
+    static auto opDispatch(string memberstring)
+        (const string content = string.init,
+        shared Sendable payload = null,
+        const bool quiet = false)
     {
-        mixin(`
-            static auto ` ~ memberstring ~ `
-                (const string content = string.init,
-                shared Sendable payload = null,
-                const bool quiet = false)
-            {
-                return ThreadMessage(Type.` ~ memberstring ~ `, content, payload, quiet);
-            }`);
+        mixin("return ThreadMessage(Type." ~ memberstring ~ ", content, payload, quiet);");
     }
 }
 
