@@ -1813,6 +1813,10 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledDelegate`s with an uns
             logger.warningf(pattern, plugin.name, i, e.msg);
             version(PrintStacktraces) logger.trace(e);
         }
+        finally
+        {
+            destroy(scheduledDg.dg);
+        }
 
         toRemove ~= i;  // Always removed a scheduled delegate after processing
     }
