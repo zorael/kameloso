@@ -89,12 +89,12 @@ public:
 void pipereader(shared IRCPluginState newState, const string filename)
 in (filename.length, "Tried to set up a pipereader with an empty filename")
 {
-    import kameloso.thread : ThreadMessage, setThreadName;
+    import kameloso.thread : ThreadMessage, boxed, setThreadName;
     import std.concurrency : OwnerTerminated, receiveTimeout, send;
-    import std.file : exists, remove;
     import std.format : format;
     import std.stdio : File;
     import std.variant : Variant;
+    import core.time : Duration;
     static import kameloso.common;
 
     // The whole module is version Posix, no need to encase here
@@ -110,9 +110,26 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
     state.askToLog(pattern.format(filename));
 
     File fifo = File(filename, "r");
-    scope(exit) if (filename.exists) remove(filename);
 
-    toploop:
+    static void tryRemove(const string filename)
+    {
+        import std.file : exists, remove;
+
+        if (filename.exists)
+        {
+            try
+            {
+                remove(filename);
+            }
+            catch (Exception _)
+            {
+                // Race, ignore
+            }
+        }
+    }
+
+    scope(exit) tryRemove(filename);
+
     while (true)
     {
         // foreach but always break after processing one line, to be responsive
@@ -152,7 +169,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
                 {
                     quit(state);
                 }
-                break toploop;
+                return;
             }
             else
             {
@@ -162,34 +179,35 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
             break;
         }
 
-        import kameloso.thread : boxed;
-        import core.time : Duration;
-
         static immutable instant = Duration.zero;
         bool halt;
 
-        cast(void)receiveTimeout(instant,
-            (ThreadMessage message)
-            {
-                if (message.type == ThreadMessage.Type.teardown)
+        void checkMessages()
+        {
+            cast(void)receiveTimeout(instant,
+                (ThreadMessage message)
+                {
+                    if (message.type == ThreadMessage.Type.teardown)
+                    {
+                        halt = true;
+                    }
+                },
+                (OwnerTerminated _)
                 {
                     halt = true;
+                },
+                (Variant v)
+                {
+                    enum variantPattern = "Pipeline plugin received Variant: <l>%s";
+                    state.askToError(variantPattern.format(v.toString));
+                    state.mainThread.send(ThreadMessage.busMessage("pipeline", boxed("halted")));
+                    halt = true;
                 }
-            },
-            (OwnerTerminated _)
-            {
-                halt = true;
-            },
-            (Variant v)
-            {
-                enum variantPattern = "Pipeline plugin received Variant: <l>%s";
-                state.askToError(variantPattern.format(v.toString));
-                state.mainThread.send(ThreadMessage.busMessage("pipeline", boxed("halted")));
-                halt = true;
-            }
-        );
+            );
+        }
 
-        if (halt) break toploop;
+        checkMessages();
+        if (halt) return;
 
         import std.exception : ErrnoException;
 
@@ -199,17 +217,23 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
         }
         catch (ErrnoException e)
         {
+            checkMessages();
+            if (halt) return;
+
             enum fifoPattern = "Pipeline plugin failed to reopen FIFO: <l>%s";
             state.askToError(fifoPattern.format(e.msg));
             version(PrintStacktraces) state.askToTrace(e.info.toString);
-            state.mainThread.send(ThreadMessage.busMessage("pipeline", sendable("halted")));
-            break toploop;
+            state.mainThread.send(ThreadMessage.busMessage("pipeline", boxed("halted")));
+            return;
         }
         catch (Exception e)
         {
+            checkMessages();
+            if (halt) return;
+
             state.askToError("Pipeline plugin saw unexpected exception");
             version(PrintStacktraces) state.askToTrace(e.toString);
-            break toploop;
+            return;
         }
     }
 }
