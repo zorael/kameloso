@@ -536,18 +536,14 @@ private:
     void chan(
         const string channelName,
         const string content,
-        const Flag!"quiet" quiet = No.quiet,
-        const Flag!"background" background = No.background,
-        const Flag!"priority" priority = No.priority,
+        const Message.Property properties = Message.Property.none,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.chan(
             state,
             channelName,
             content,
-            quiet,
-            background,
-            priority,
+            properties,
             caller);
     }
 
@@ -559,18 +555,14 @@ private:
     void reply(
         const ref IRCEvent event,
         const string content,
-        const Flag!"quiet" quiet = No.quiet,
-        const Flag!"background" background = No.background,
-        const Flag!"priority" priority = No.priority,
+        const Message.Property properties = Message.Property.none,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.reply(
             state,
             event,
             content,
-            quiet,
-            background,
-            priority,
+            properties,
             caller);
     }
 
@@ -582,18 +574,14 @@ private:
     void query(
         const string nickname,
         const string content,
-        const Flag!"quiet" quiet = No.quiet,
-        const Flag!"background" background = No.background,
-        const Flag!"priority" priority = No.priority,
+        const Message.Property properties = Message.Property.none,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.query(
             state,
             nickname,
             content,
-            quiet,
-            background,
-            priority,
+            properties,
             caller);
     }
 
@@ -610,9 +598,7 @@ private:
         const string channel,
         const string nickname,
         const string content,
-        const Flag!"quiet" quiet = No.quiet,
-        const Flag!"background" background = No.background,
-        const Flag!"priority" priority = No.priority,
+        const Message.Property properties = Message.Property.none,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.privmsg(
@@ -620,9 +606,7 @@ private:
             channel,
             nickname,
             content,
-            quiet,
-            background,
-            priority,
+            properties,
             caller);
     }
 
@@ -634,18 +618,14 @@ private:
     void emote(
         const string emoteTarget,
         const string content,
-        const Flag!"quiet" quiet = No.quiet,
-        const Flag!"background" background = No.background,
-        const Flag!"priority" priority = No.priority,
+        const Message.Property properties = Message.Property.none,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.emote(
             state,
             emoteTarget,
             content,
-            quiet,
-            background,
-            priority,
+            properties,
             caller);
     }
 
@@ -660,9 +640,7 @@ private:
         const string channel,
         const const(char)[] modes,
         const string content = string.init,
-        const Flag!"quiet" quiet = No.quiet,
-        const Flag!"background" background = No.background,
-        const Flag!"priority" priority = No.priority,
+        const Message.Property properties = Message.Property.none,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.mode(
@@ -670,9 +648,7 @@ private:
             channel,
             modes,
             content,
-            quiet,
-            background,
-            priority,
+            properties,
             caller);
     }
 
@@ -684,18 +660,14 @@ private:
     void topic(
         const string channel,
         const string content,
-        const Flag!"quiet" quiet = No.quiet,
-        const Flag!"background" background = No.background,
-        const Flag!"priority" priority = No.priority,
+        const Message.Property properties = Message.Property.none,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.topic(
             state,
             channel,
             content,
-            quiet,
-            background,
-            priority,
+            properties,
             caller);
     }
 
@@ -707,18 +679,14 @@ private:
     void invite(
         const string channel,
         const string nickname,
-        const Flag!"quiet" quiet = No.quiet,
-        const Flag!"background" background = No.background,
-        const Flag!"priority" priority = No.priority,
+        const Message.Property properties = Message.Property.none,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.invite(
             state,
             channel,
             nickname,
-            quiet,
-            background,
-            priority,
+            properties,
             caller);
     }
 
@@ -730,18 +698,14 @@ private:
     void join(
         const string channel,
         const string key = string.init,
-        const Flag!"quiet" quiet = No.quiet,
-        const Flag!"background" background = No.background,
-        const Flag!"priority" priority = No.priority,
+        const Message.Property properties = Message.Property.none,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.join(
             state,
             channel,
             key,
-            quiet,
-            background,
-            priority,
+            properties,
             caller);
     }
 
@@ -754,9 +718,7 @@ private:
         const string channel,
         const string nickname,
         const string reason = string.init,
-        const Flag!"quiet" quiet = No.quiet,
-        const Flag!"background" background = No.background,
-        const Flag!"priority" priority = No.priority,
+        const Message.Property properties = Message.Property.none,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.kick(
@@ -764,9 +726,7 @@ private:
             channel,
             nickname,
             reason,
-            quiet,
-            background,
-            priority,
+            properties,
             caller);
     }
 
@@ -778,18 +738,14 @@ private:
     void part(
         const string channel,
         const string reason = string.init,
-        const Flag!"quiet" quiet = No.quiet,
-        const Flag!"background" background = No.background,
-        const Flag!"priority" priority = No.priority,
+        const Message.Property properties = Message.Property.none,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.part(
             state,
             channel,
             reason,
-            quiet,
-            background,
-            priority,
+            properties,
             caller);
     }
 
@@ -800,15 +756,13 @@ private:
      +/
     void quit(
         const string reason = string.init,
-        const Flag!"quiet" quiet = No.quiet,
-        const Flag!"priority" priority = Yes.priority,
+        const Message.Property properties = Message.Property.none,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.quit(
             state,
             reason,
-            quiet,
-            priority,
+            properties,
             caller);
     }
 
@@ -819,19 +773,13 @@ private:
      +/
     void whois(
         const string nickname,
-        const Flag!"force" force = No.force,
-        const Flag!"quiet" quiet = No.quiet,
-        const Flag!"background" background = No.background,
-        const Flag!"priority" priority = No.priority,
+        const Message.Property properties = Message.Property.none,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.whois(
             state,
             nickname,
-            force,
-            quiet,
-            background,
-            priority,
+            properties,
             caller);
     }
 
@@ -845,17 +793,13 @@ private:
      +/
     void raw(
         const string line,
-        const Flag!"quiet" quiet = No.quiet,
-        const Flag!"background" background = No.background,
-        const Flag!"priority" priority = No.priority,
+        const Message.Property properties = Message.Property.none,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.raw(
             state,
             line,
-            quiet,
-            background,
-            priority,
+            properties,
             caller);
     }
 
@@ -867,13 +811,13 @@ private:
      +/
     void immediate(
         const string line,
-        const Flag!"quiet" quiet = No.quiet,
+        const Message.Property properties = Message.Property.none,
         const string caller = __FUNCTION__)
     {
         return kameloso.messaging.immediate(
             state,
             line,
-            quiet,
+            properties,
             caller);
     }
 

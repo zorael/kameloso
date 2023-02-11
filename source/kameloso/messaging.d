@@ -73,7 +73,7 @@ struct Message
      +/
     enum Property
     {
-        unset       = 1 << 0,  /// Unset value.
+        none       = 1 << 0,  /// Unset value.
         fast        = 1 << 1,  /// Message should be sent faster than normal. (Twitch)
         quiet       = 1 << 2,  /// Message should be sent without echoing it to the terminal.
         background  = 1 << 3,  /// Message should be lazily sent in the background.
@@ -110,19 +110,15 @@ struct Message
             via which to send messages to the server.
         channelName = Channel in which to send the message.
         content = Message body content to send.
-        quiet = Whether or not to echo what was sent to the local terminal.
-        background = Whether or not to send it as a low-priority background message.
-        priority = Whether or not to send the message as a priority message,
-            received before other messages are, if there are several.
+        properties = Custom message properties, such as [Message.Property.quiet]
+            and [Message.Property.forced].
         caller = String name of the calling function, or something else that gives context.
  +/
 void chan(
     IRCPluginState state,
     const string channelName,
     const string content,
-    const Flag!"quiet" quiet = No.quiet,
-    const Flag!"background" background = No.background,
-    const Flag!"priority" priority = No.priority,
+    const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
 in (channelName.length, "Tried to send a channel message but no channel was given")
 {
@@ -131,11 +127,8 @@ in (channelName.length, "Tried to send a channel message but no channel was give
     m.event.type = IRCEvent.Type.CHAN;
     m.event.channel = channelName;
     m.event.content = content.expandIRCTags;
+    m.properties = properties;
     m.caller = caller;
-
-    if (quiet) m.properties |= Message.Property.quiet;
-    if (background) m.properties |= Message.Property.background;
-    if (priority) m.properties |= Message.Property.priority;
 
     version(TwitchSupport)
     {
@@ -154,8 +147,7 @@ in (channelName.length, "Tried to send a channel message but no channel was give
             }
         }
     }
-
-    if (priority) state.mainThread.prioritySend(m);
+    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
     else state.mainThread.send(m);
 }
 
@@ -165,7 +157,8 @@ unittest
     IRCPluginState state;
     state.mainThread = thisTid;
 
-    chan(state, "#channel", "content", Yes.quiet, Yes.background);
+    enum properties = (Message.Property.quiet | Message.Property.background);
+    chan(state, "#channel", "content", properties);
 
     receive(
         (Message m)
@@ -192,19 +185,15 @@ unittest
             via which to send messages to the server.
         event = Original event, to which we're replying.
         content = Message body content to send.
-        quiet = Whether or not to echo what was sent to the local terminal.
-        background = Whether or not to send it as a low-priority background message.
-        priority = Whether or not to send the message as a priority message,
-            received before other messages are, if there are several.
+        properties = Custom message properties, such as [Message.Property.quiet]
+            and [Message.Property.forced].
         caller = String name of the calling function, or something else that gives context.
  +/
 void reply(
     IRCPluginState state,
     const ref IRCEvent event,
     const string content,
-    const Flag!"quiet" quiet = No.quiet,
-    const Flag!"background" background = No.background,
-    const Flag!"priority" priority = No.priority,
+    const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
 in (event.channel.length, "Tried to reply to a channel message but no channel was given")
 {
@@ -216,9 +205,7 @@ in (event.channel.length, "Tried to reply to a channel message but no channel wa
                 state,
                 event.channel,
                 content,
-                quiet,
-                background,
-                priority,
+                properties,
                 caller);
         }
 
@@ -228,11 +215,8 @@ in (event.channel.length, "Tried to reply to a channel message but no channel wa
         m.event.channel = event.channel;
         m.event.content = content.expandIRCTags;
         m.event.tags = "reply-parent-msg-id=" ~ event.id;
+        m.properties = properties;
         m.caller = caller;
-
-        if (quiet) m.properties |= Message.Property.quiet;
-        if (background) m.properties |= Message.Property.background;
-        if (priority) m.properties |= Message.Property.priority;
 
         if (auto channel = m.event.channel in state.channels)
         {
@@ -246,7 +230,7 @@ in (event.channel.length, "Tried to reply to a channel message but no channel wa
             }
         }
 
-        if (priority) state.mainThread.prioritySend(m);
+        if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
         else state.mainThread.send(m);
     }
     else
@@ -255,9 +239,7 @@ in (event.channel.length, "Tried to reply to a channel message but no channel wa
             state,
             event.channel,
             content,
-            quiet,
-            background,
-            priority,
+            properties,
             caller);
     }
 }
@@ -272,19 +254,15 @@ in (event.channel.length, "Tried to reply to a channel message but no channel wa
             via which to send messages to the server.
         nickname = Nickname of user to which to send the private message.
         content = Message body content to send.
-        quiet = Whether or not to echo what was sent to the local terminal.
-        background = Whether or not to send it as a low-priority background message.
-        priority = Whether or not to send the message as a priority message,
-            received before other messages are, if there are several.
+        properties = Custom message properties, such as [Message.Property.quiet]
+            and [Message.Property.forced].
         caller = String name of the calling function, or something else that gives context.
  +/
 void query(
     IRCPluginState state,
     const string nickname,
     const string content,
-    const Flag!"quiet" quiet = No.quiet,
-    const Flag!"background" background = No.background,
-    const Flag!"priority" priority = No.priority,
+    const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
 in (nickname.length, "Tried to send a private query but no nickname was given")
 {
@@ -293,13 +271,10 @@ in (nickname.length, "Tried to send a private query but no nickname was given")
     m.event.type = IRCEvent.Type.QUERY;
     m.event.target.nickname = nickname;
     m.event.content = content.expandIRCTags;
+    m.properties = properties;
     m.caller = caller;
 
-    if (quiet) m.properties |= Message.Property.quiet;
-    if (background) m.properties |= Message.Property.background;
-    if (priority) m.properties |= Message.Property.priority;
-
-    if (priority) state.mainThread.prioritySend(m);
+    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
     else state.mainThread.send(m);
 }
 
@@ -340,10 +315,8 @@ unittest
         channel = Channel in which to send the message, if applicable.
         nickname = Nickname of user to which to send the message, if applicable.
         content = Message body content to send.
-        quiet = Whether or not to echo what was sent to the local terminal.
-        background = Whether or not to send it as a low-priority background message.
-        priority = Whether or not to send the message as a priority message,
-            received before other messages are, if there are several.
+        properties = Custom message properties, such as [Message.Property.quiet]
+            and [Message.Property.forced].
         caller = String name of the calling function, or something else that gives context.
  +/
 void privmsg(
@@ -351,9 +324,7 @@ void privmsg(
     const string channel,
     const string nickname,
     const string content,
-    const Flag!"quiet" quiet = No.quiet,
-    const Flag!"background" background = No.background,
-    const Flag!"priority" priority = No.priority,
+    const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
 in ((channel.length || nickname.length), "Tried to send a PRIVMSG but no channel nor nickname was given")
 {
@@ -361,11 +332,11 @@ in ((channel.length || nickname.length), "Tried to send a PRIVMSG but no channel
 
     if (channel.length)
     {
-        return chan(state, channel, expandedContent, quiet, background, priority, caller);
+        return chan(state, channel, expandedContent, properties, caller);
     }
     else if (nickname.length)
     {
-        return query(state, nickname, expandedContent, quiet, background, priority, caller);
+        return query(state, nickname, expandedContent, properties, caller);
     }
     else
     {
@@ -424,19 +395,15 @@ unittest
         emoteTarget = Target of the emote, either a nickname to be sent as a
             private message, or a channel.
         content = Message body content to send.
-        quiet = Whether or not to echo what was sent to the local terminal.
-        background = Whether or not to send it as a low-priority background message.
-        priority = Whether or not to send the message as a priority message,
-            received before other messages are, if there are several.
+        properties = Custom message properties, such as [Message.Property.quiet]
+            and [Message.Property.forced].
         caller = String name of the calling function, or something else that gives context.
  +/
 void emote(
     IRCPluginState state,
     const string emoteTarget,
     const string content,
-    const Flag!"quiet" quiet = No.quiet,
-    const Flag!"background" background = No.background,
-    const Flag!"priority" priority = No.priority,
+    const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
 in (emoteTarget.length, "Tried to send an emote but no target was given")
 {
@@ -446,11 +413,8 @@ in (emoteTarget.length, "Tried to send an emote but no target was given")
 
     m.event.type = IRCEvent.Type.EMOTE;
     m.event.content = content.expandIRCTags;
+    m.properties = properties;
     m.caller = caller;
-
-    if (quiet) m.properties |= Message.Property.quiet;
-    if (background) m.properties |= Message.Property.background;
-    if (priority) m.properties |= Message.Property.priority;
 
     if (state.server.chantypes.contains(emoteTarget[0]))
     {
@@ -461,7 +425,7 @@ in (emoteTarget.length, "Tried to send an emote but no target was given")
         m.event.target.nickname = emoteTarget;
     }
 
-    if (priority) state.mainThread.prioritySend(m);
+    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
     else state.mainThread.send(m);
 }
 
@@ -517,10 +481,8 @@ unittest
         channel = Channel to change the modes of.
         modes = Mode characters to apply to the channel.
         content = Target of mode change, if applicable.
-        quiet = Whether or not to echo what was sent to the local terminal.
-        background = Whether or not to send it as a low-priority background message.
-        priority = Whether or not to send the message as a priority message,
-            received before other messages are, if there are several.
+        properties = Custom message properties, such as [Message.Property.quiet]
+            and [Message.Property.forced].
         caller = String name of the calling function, or something else that gives context.
  +/
 void mode(
@@ -528,9 +490,7 @@ void mode(
     const string channel,
     const const(char)[] modes,
     const string content = string.init,
-    const Flag!"quiet" quiet = No.quiet,
-    const Flag!"background" background = No.background,
-    const Flag!"priority" priority = No.priority,
+    const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
 in (channel.length, "Tried to set a mode but no channel was given")
 {
@@ -540,13 +500,10 @@ in (channel.length, "Tried to set a mode but no channel was given")
     m.event.channel = channel;
     m.event.aux[0] = modes.idup;
     m.event.content = content.expandIRCTags;
+    m.properties = properties;
     m.caller = caller;
 
-    if (quiet) m.properties |= Message.Property.quiet;
-    if (background) m.properties |= Message.Property.background;
-    if (priority) m.properties |= Message.Property.priority;
-
-    if (priority) state.mainThread.prioritySend(m);
+    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
     else state.mainThread.send(m);
 }
 
@@ -583,19 +540,15 @@ unittest
             via which to send messages to the server.
         channel = Channel whose topic to change.
         content = Topic body text.
-        quiet = Whether or not to echo what was sent to the local terminal.
-        background = Whether or not to send it as a low-priority background message.
-        priority = Whether or not to send the message as a priority message,
-            received before other messages are, if there are several.
+        properties = Custom message properties, such as [Message.Property.quiet]
+            and [Message.Property.forced].
         caller = String name of the calling function, or something else that gives context.
  +/
 void topic(
     IRCPluginState state,
     const string channel,
     const string content,
-    const Flag!"quiet" quiet = No.quiet,
-    const Flag!"background" background = No.background,
-    const Flag!"priority" priority = No.priority,
+    const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
 in (channel.length, "Tried to set a topic but no channel was given")
 {
@@ -604,13 +557,10 @@ in (channel.length, "Tried to set a topic but no channel was given")
     m.event.type = IRCEvent.Type.TOPIC;
     m.event.channel = channel;
     m.event.content = content.expandIRCTags;
+    m.properties = properties;
     m.caller = caller;
 
-    if (quiet) m.properties |= Message.Property.quiet;
-    if (background) m.properties |= Message.Property.background;
-    if (priority) m.properties |= Message.Property.priority;
-
-    if (priority) state.mainThread.prioritySend(m);
+    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
     else state.mainThread.send(m);
 }
 
@@ -646,19 +596,15 @@ unittest
             via which to send messages to the server.
         channel = Channel to which to invite the user.
         nickname = Nickname of user to invite.
-        quiet = Whether or not to echo what was sent to the local terminal.
-        background = Whether or not to send it as a low-priority background message.
-        priority = Whether or not to send the message as a priority message,
-            received before other messages are, if there are several.
+        properties = Custom message properties, such as [Message.Property.quiet]
+            and [Message.Property.forced].
         caller = String name of the calling function, or something else that gives context.
  +/
 void invite(
     IRCPluginState state,
     const string channel,
     const string nickname,
-    const Flag!"quiet" quiet = No.quiet,
-    const Flag!"background" background = No.background,
-    const Flag!"priority" priority = No.priority,
+    const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
 in (channel.length, "Tried to send an invite but no channel was given")
 in (nickname.length, "Tried to send an invite but no nickname was given")
@@ -668,13 +614,10 @@ in (nickname.length, "Tried to send an invite but no nickname was given")
     m.event.type = IRCEvent.Type.INVITE;
     m.event.channel = channel;
     m.event.target.nickname = nickname;
+    m.properties = properties;
     m.caller = caller;
 
-    if (quiet) m.properties |= Message.Property.quiet;
-    if (background) m.properties |= Message.Property.background;
-    if (priority) m.properties |= Message.Property.priority;
-
-    if (priority) state.mainThread.prioritySend(m);
+    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
     else state.mainThread.send(m);
 }
 
@@ -710,19 +653,15 @@ unittest
             via which to send messages to the server.
         channel = Channel to join.
         key = Channel key to join the channel with, if it's locked.
-        quiet = Whether or not to echo what was sent to the local terminal.
-        background = Whether or not to send it as a low-priority background message.
-        priority = Whether or not to send the message as a priority message,
-            received before other messages are, if there are several.
+        properties = Custom message properties, such as [Message.Property.quiet]
+            and [Message.Property.forced].
         caller = String name of the calling function, or something else that gives context.
  +/
 void join(
     IRCPluginState state,
     const string channel,
     const string key = string.init,
-    const Flag!"quiet" quiet = No.quiet,
-    const Flag!"background" background = No.background,
-    const Flag!"priority" priority = No.priority,
+    const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
 in (channel.length, "Tried to join a channel but no channel was given")
 {
@@ -731,13 +670,10 @@ in (channel.length, "Tried to join a channel but no channel was given")
     m.event.type = IRCEvent.Type.JOIN;
     m.event.channel = channel;
     m.event.aux[0] = key;
+    m.properties = properties;
     m.caller = caller;
 
-    if (quiet) m.properties |= Message.Property.quiet;
-    if (background) m.properties |= Message.Property.background;
-    if (priority) m.properties |= Message.Property.priority;
-
-    if (priority) state.mainThread.prioritySend(m);
+    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
     else state.mainThread.send(m);
 }
 
@@ -773,10 +709,8 @@ unittest
         channel = Channel from which to kick the user.
         nickname = Nickname of user to kick.
         reason = Optionally the reason behind the kick.
-        quiet = Whether or not to echo what was sent to the local terminal.
-        background = Whether or not to send it as a low-priority background message.
-        priority = Whether or not to send the message as a priority message,
-            received before other messages are, if there are several.
+        properties = Custom message properties, such as [Message.Property.quiet]
+            and [Message.Property.forced].
         caller = String name of the calling function, or something else that gives context.
  +/
 void kick(
@@ -784,9 +718,7 @@ void kick(
     const string channel,
     const string nickname,
     const string reason = string.init,
-    const Flag!"quiet" quiet = No.quiet,
-    const Flag!"background" background = No.background,
-    const Flag!"priority" priority = No.priority,
+    const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
 in (channel.length, "Tried to kick someone but no channel was given")
 in (nickname.length, "Tried to kick someone but no nickname was given")
@@ -797,13 +729,10 @@ in (nickname.length, "Tried to kick someone but no nickname was given")
     m.event.channel = channel;
     m.event.target.nickname = nickname;
     m.event.content = reason.expandIRCTags;
+    m.properties = properties;
     m.caller = caller;
 
-    if (quiet) m.properties |= Message.Property.quiet;
-    if (background) m.properties |= Message.Property.background;
-    if (priority) m.properties |= Message.Property.priority;
-
-    if (priority) state.mainThread.prioritySend(m);
+    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
     else state.mainThread.send(m);
 }
 
@@ -840,19 +769,15 @@ unittest
             via which to send messages to the server.
         channel = Channel to leave.
         reason = Optionally, reason behind leaving.
-        quiet = Whether or not to echo what was sent to the local terminal.
-        background = Whether or not to send it as a low-priority background message.
-        priority = Whether or not to send the message as a priority message,
-            received before other messages are, if there are several.
+        properties = Custom message properties, such as [Message.Property.quiet]
+            and [Message.Property.forced].
         caller = String name of the calling function, or something else that gives context.
  +/
 void part(
     IRCPluginState state,
     const string channel,
     const string reason = string.init,
-    const Flag!"quiet" quiet = No.quiet,
-    const Flag!"background" background = No.background,
-    const Flag!"priority" priority = No.priority,
+    const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
 in (channel.length, "Tried to part a channel but no channel was given")
 {
@@ -861,13 +786,10 @@ in (channel.length, "Tried to part a channel but no channel was given")
     m.event.type = IRCEvent.Type.PART;
     m.event.channel = channel;
     m.event.content = reason.length ? reason.expandIRCTags : state.bot.partReason;
+    m.properties = properties;
     m.caller = caller;
 
-    if (quiet) m.properties |= Message.Property.quiet;
-    if (background) m.properties |= Message.Property.background;
-    if (priority) m.properties |= Message.Property.priority;
-
-    if (priority) state.mainThread.prioritySend(m);
+    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
     else state.mainThread.send(m);
 }
 
@@ -902,17 +824,15 @@ unittest
         state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         reason = Optionally, the reason for quitting.
-        quiet = Whether or not to echo what was sent to the local terminal.
-        priority = Whether or not to send the message as a priority message,
-            received before other messages are, if there are several.
-            Default to `Yes.priority`, since we're quitting.
+        properties = Custom message properties, such as [Message.Property.quiet]
+            and [Message.Property.forced].
         caller = String name of the calling function, or something else that gives context.
  +/
+
 void quit(
     IRCPluginState state,
     const string reason = string.init,
-    const Flag!"quiet" quiet = No.quiet,
-    const Flag!"priority" priority = Yes.priority,
+    const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
 {
     import kameloso.thread : ThreadMessage;
@@ -922,11 +842,9 @@ void quit(
     m.event.type = IRCEvent.Type.QUIT;
     m.event.content = reason.length ? reason : state.bot.quitReason;
     m.caller = caller;
-    m.properties |= (Message.Property.forced | Message.Property.priority);
+    m.properties = (properties | Message.Property.priority);
 
-    if (quiet) m.properties |= Message.Property.quiet;
-
-    if (priority) state.mainThread.prioritySend(m);
+    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
     else state.mainThread.send(m);
 }
 
@@ -938,7 +856,8 @@ unittest
     IRCPluginState state;
     state.mainThread = thisTid;
 
-    quit(state, "reason", Yes.quiet);
+    enum properties = Message.Property.quiet;
+    quit(state, "reason", properties);
 
     receive(
         (Message m)
@@ -963,20 +882,14 @@ unittest
         state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         nickname = String nickname to query for.
-        force = Whether or not to force the WHOIS, skipping any hysteresis queues.
-        quiet = Whether or not to echo what was sent to the local terminal.
-        background = Whether or not to send it as a low-priority background message.
-        priority = Whether or not to send the message as a priority message,
-            received before other messages are, if there are several.
+        properties = Custom message properties, such as [Message.Property.quiet]
+            and [Message.Property.forced].
         caller = String name of the calling function, or something else that gives context.
  +/
 void whois(
     IRCPluginState state,
     const string nickname,
-    const Flag!"force" force = No.force,
-    const Flag!"quiet" quiet = No.quiet,
-    const Flag!"background" background = No.background,
-    const Flag!"priority" priority = No.priority,
+    const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
 in (nickname.length, caller ~ " tried to WHOIS but no nickname was given")
 {
@@ -984,12 +897,8 @@ in (nickname.length, caller ~ " tried to WHOIS but no nickname was given")
 
     m.event.type = IRCEvent.Type.RPL_WHOISACCOUNT;
     m.event.target.nickname = nickname;
+    m.properties = properties;
     m.caller = caller;
-
-    if (quiet) m.properties |= Message.Property.quiet;
-    if (background) m.properties |= Message.Property.background;
-    if (force) m.properties |= Message.Property.forced;
-    if (priority) m.properties |= Message.Property.priority;
 
     version(TraceWhois)
     {
@@ -1000,7 +909,7 @@ in (nickname.length, caller ~ " tried to WHOIS but no nickname was given")
         if (state.settings.flush) stdout.flush();
     }
 
-    if (priority) state.mainThread.prioritySend(m);
+    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
     else state.mainThread.send(m);
 }
 
@@ -1010,7 +919,8 @@ unittest
     IRCPluginState state;
     state.mainThread = thisTid;
 
-    whois(state, "kameloso", Yes.force);
+    enum properties = Message.Property.forced;
+    whois(state, "kameloso", properties);
 
     receive(
         (Message m)
@@ -1039,31 +949,24 @@ unittest
         state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         line = Raw IRC string to send to the server.
-        quiet = Whether or not to echo what was sent to the local terminal.
-        background = Whether or not to send it as a low-priority background message.
-        priority = Whether or not to send the message as a priority message,
-            received before other messages are, if there are several.
+        properties = Custom message properties, such as [Message.Property.quiet]
+            and [Message.Property.forced].
         caller = String name of the calling function, or something else that gives context.
  +/
 void raw(
     IRCPluginState state,
     const string line,
-    const Flag!"quiet" quiet = No.quiet,
-    const Flag!"background" background = No.background,
-    const Flag!"priority" priority = No.priority,
+    const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
 {
     Message m;
 
     m.event.type = IRCEvent.Type.UNSET;
     m.event.content = line.expandIRCTags;
+    m.properties = properties;
     m.caller = caller;
 
-    if (quiet) m.properties |= Message.Property.quiet;
-    if (background) m.properties |= Message.Property.background;
-    if (priority) m.properties |= Message.Property.priority;
-
-    if (priority) state.mainThread.prioritySend(m);
+    if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
     else state.mainThread.send(m);
 }
 
@@ -1103,13 +1006,14 @@ unittest
         state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         line = Raw IRC string to send to the server.
-        quiet = Whether or not to echo what was sent to the local terminal.
+        properties = Custom message properties, such as [Message.Property.quiet]
+            and [Message.Property.forced].
         caller = String name of the calling function, or something else that gives context.
  +/
 void immediate(
     IRCPluginState state,
     const string line,
-    const Flag!"quiet" quiet = No.quiet,
+    const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
 {
     import kameloso.thread : ThreadMessage;
@@ -1119,9 +1023,7 @@ void immediate(
     m.event.type = IRCEvent.Type.UNSET;
     m.event.content = line.expandIRCTags;
     m.caller = caller;
-    m.properties |= Message.Property.immediate;
-
-    if (quiet) m.properties |= Message.Property.quiet;
+    m.properties = (properties | Message.Property.immediate);
 
     state.mainThread.prioritySend(m);
 }
