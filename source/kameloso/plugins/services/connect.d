@@ -501,7 +501,11 @@ void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
         logger.log(message);
 
         // Exit and let the user tend to it.
-        quit!(Yes.priority)(service.state, event.content, No.quiet);
+        quit(
+            service.state,
+            event.content,
+            No.quiet,
+            Yes.priority);
     }
     else
     {
@@ -511,7 +515,7 @@ void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
         case "Login authentication failed":
         case "Login unsuccessful":
             logger.error("The bot was not compiled with Twitch support enabled.");
-            return quit!(Yes.priority)(service.state, "Missing Twitch support", No.quiet);
+            return quit(service.state, "Missing Twitch support", No.quiet, Yes.priority);
 
         default:
             return;
@@ -1215,7 +1219,13 @@ void onEndOfMotd(ConnectService service)
     if ((service.state.server.daemon != IRCServer.Daemon.twitch) &&
         !service.state.client.ident.length)
     {
-        whois!(Yes.priority)(service.state, service.state.client.nickname, Yes.force, Yes.quiet);
+        whois(
+            service.state,
+            service.state.client.nickname,
+            Yes.force,
+            Yes.quiet,
+            No.background,
+            Yes.priority);
     }
 
     version(TwitchSupport)

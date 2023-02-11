@@ -47,7 +47,7 @@ private:
 import kameloso.plugins.common.core : IRCPluginState;
 import kameloso.irccolours : expandIRCTags;
 import dialect.defs;
-import std.concurrency : Tid, send;
+import std.concurrency : Tid, prioritySend, send;
 import std.typecons : Flag, No, Yes;
 static import kameloso.common;
 
@@ -106,27 +106,26 @@ struct Message
     Sends a channel message.
 
     Params:
-        priority = Whether or not to send the message as a priority message,
-            received before other messages are, if there are several.
         state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         channelName = Channel in which to send the message.
         content = Message body content to send.
         quiet = Whether or not to echo what was sent to the local terminal.
         background = Whether or not to send it as a low-priority background message.
+        priority = Whether or not to send the message as a priority message,
+            received before other messages are, if there are several.
         caller = String name of the calling function, or something else that gives context.
  +/
-void chan(Flag!"priority" priority = No.priority)
-    (IRCPluginState state,
+void chan(
+    IRCPluginState state,
     const string channelName,
     const string content,
     const Flag!"quiet" quiet = No.quiet,
     const Flag!"background" background = No.background,
+    const Flag!"priority" priority = No.priority,
     const string caller = __FUNCTION__)
 in (channelName.length, "Tried to send a channel message but no channel was given")
 {
-    static if (priority) import std.concurrency : send = prioritySend;
-
     Message m;
 
     m.event.type = IRCEvent.Type.CHAN;
@@ -156,7 +155,8 @@ in (channelName.length, "Tried to send a channel message but no channel was give
         }
     }
 
-    state.mainThread.send(m);
+    if (priority) state.mainThread.prioritySend(m);
+    else state.mainThread.send(m);
 }
 
 ///
@@ -188,80 +188,76 @@ unittest
     without which it will just pass on to [chan].
 
     Params:
-        priority = Whether or not to send the message as a priority message,
-            received before other messages are, if there are several.
         state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
-        originalEvent = Original event, to which we're replying.
+        event = Original event, to which we're replying.
         content = Message body content to send.
         quiet = Whether or not to echo what was sent to the local terminal.
         background = Whether or not to send it as a low-priority background message.
+        priority = Whether or not to send the message as a priority message,
+            received before other messages are, if there are several.
         caller = String name of the calling function, or something else that gives context.
  +/
-void reply(Flag!"priority" priority = No.priority)
-    (IRCPluginState state,
-    const ref IRCEvent originalEvent,
+void reply(
+    IRCPluginState state,
+    const ref IRCEvent event,
     const string content,
     const Flag!"quiet" quiet = No.quiet,
     const Flag!"background" background = No.background,
+    const Flag!"priority" priority = No.priority,
     const string caller = __FUNCTION__)
-in (channelName.length, "Tried to reply to a channel message but no channel was given")
+in (event.channel.length, "Tried to reply to a channel message but no channel was given")
 {
     version(TwitchSupport)
     {
-        static if (priority) import std.concurrency : send = prioritySend;
-
-        if ((state.server.daemon != IRCServer.Daemon.twitch) || !originalEvent.id.length)
+        if ((state.server.daemon != IRCServer.Daemon.twitch) || !event.id.length)
         {
-            return chan!priority(
+            return chan(
                 state,
-                originalEvent.channel,
+                event.channel,
                 content,
                 quiet,
                 background,
+                priority,
                 caller);
         }
 
         Message m;
 
         m.event.type = IRCEvent.Type.CHAN;
-        m.event.channel = originalEvent.channel;
+        m.event.channel = event.channel;
         m.event.content = content.expandIRCTags;
-        m.event.tags = "reply-parent-msg-id=" ~ originalEvent.id;
+        m.event.tags = "reply-parent-msg-id=" ~ event.id;
         m.caller = caller;
 
         if (quiet) m.properties |= Message.Property.quiet;
         if (background) m.properties |= Message.Property.background;
         if (priority) m.properties |= Message.Property.priority;
 
-        version(TwitchSupport)
+        if (auto channel = m.event.channel in state.channels)
         {
-            if (state.server.daemon == IRCServer.Daemon.twitch)
+            if (auto ops = 'o' in channel.mods)
             {
-                if (auto channel = channelName in state.channels)
+                if (state.client.nickname in *ops)
                 {
-                    if (auto ops = 'o' in channel.mods)
-                    {
-                        if (state.client.nickname in *ops)
-                        {
-                            // We are a moderator and can as such send things fast
-                            m.properties |= Message.Property.fast;
-                        }
-                    }
+                    // We are a moderator and can as such send things fast
+                    m.properties |= Message.Property.fast;
                 }
             }
         }
 
-        state.mainThread.send(m);
+        if (priority) state.mainThread.prioritySend(m);
+        else state.mainThread.send(m);
     }
     else
     {
-        return chan!priority(
+        return chan(
             state,
-            originalEvent.channel,
+            event.channel,
             content,
             quiet,
             background,
+            priority,
             caller);
     }
 }
@@ -272,27 +268,26 @@ in (channelName.length, "Tried to reply to a channel message but no channel was 
     Sends a private query message to a user.
 
     Params:
-        priority = Whether or not to send the message as a priority message,
-            received before other messages are, if there are several.
         state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         nickname = Nickname of user to which to send the private message.
         content = Message body content to send.
         quiet = Whether or not to echo what was sent to the local terminal.
         background = Whether or not to send it as a low-priority background message.
+        priority = Whether or not to send the message as a priority message,
+            received before other messages are, if there are several.
         caller = String name of the calling function, or something else that gives context.
  +/
-void query(Flag!"priority" priority = No.priority)
-    (IRCPluginState state,
+void query(
+    IRCPluginState state,
     const string nickname,
     const string content,
     const Flag!"quiet" quiet = No.quiet,
     const Flag!"background" background = No.background,
+    const Flag!"priority" priority = No.priority,
     const string caller = __FUNCTION__)
 in (nickname.length, "Tried to send a private query but no nickname was given")
 {
-    static if (priority) import std.concurrency : send = prioritySend;
-
     Message m;
 
     m.event.type = IRCEvent.Type.QUERY;
@@ -304,7 +299,8 @@ in (nickname.length, "Tried to send a private query but no nickname was given")
     if (background) m.properties |= Message.Property.background;
     if (priority) m.properties |= Message.Property.priority;
 
-    state.mainThread.send(m);
+    if (priority) state.mainThread.prioritySend(m);
+    else state.mainThread.send(m);
 }
 
 ///
@@ -339,8 +335,6 @@ unittest
     underlying same type; [dialect.defs.IRCEvent.Type.PRIVMSG|PRIVMSG].
 
     Params:
-        priority = Whether or not to send the message as a priority message,
-            received before other messages are, if there are several.
         state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         channel = Channel in which to send the message, if applicable.
@@ -348,29 +342,30 @@ unittest
         content = Message body content to send.
         quiet = Whether or not to echo what was sent to the local terminal.
         background = Whether or not to send it as a low-priority background message.
+        priority = Whether or not to send the message as a priority message,
+            received before other messages are, if there are several.
         caller = String name of the calling function, or something else that gives context.
  +/
-void privmsg(Flag!"priority" priority = No.priority)
-    (IRCPluginState state,
+void privmsg(
+    IRCPluginState state,
     const string channel,
     const string nickname,
     const string content,
     const Flag!"quiet" quiet = No.quiet,
     const Flag!"background" background = No.background,
+    const Flag!"priority" priority = No.priority,
     const string caller = __FUNCTION__)
 in ((channel.length || nickname.length), "Tried to send a PRIVMSG but no channel nor nickname was given")
 {
-    static if (priority) import std.concurrency : send = prioritySend;
-
     immutable expandedContent = content.expandIRCTags;
 
     if (channel.length)
     {
-        return chan!priority(state, channel, expandedContent, quiet, background, caller);
+        return chan(state, channel, expandedContent, quiet, background, priority, caller);
     }
     else if (nickname.length)
     {
-        return query!priority(state, nickname, expandedContent, quiet, background, caller);
+        return query(state, nickname, expandedContent, quiet, background, priority, caller);
     }
     else
     {
@@ -424,8 +419,6 @@ unittest
     Sends an `ACTION` "emote" to the supplied target (nickname or channel).
 
     Params:
-        priority = Whether or not to send the message as a priority message,
-            received before other messages are, if there are several.
         state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         emoteTarget = Target of the emote, either a nickname to be sent as a
@@ -433,18 +426,20 @@ unittest
         content = Message body content to send.
         quiet = Whether or not to echo what was sent to the local terminal.
         background = Whether or not to send it as a low-priority background message.
+        priority = Whether or not to send the message as a priority message,
+            received before other messages are, if there are several.
         caller = String name of the calling function, or something else that gives context.
  +/
-void emote(Flag!"priority" priority = No.priority)
-    (IRCPluginState state,
+void emote(
+    IRCPluginState state,
     const string emoteTarget,
     const string content,
     const Flag!"quiet" quiet = No.quiet,
     const Flag!"background" background = No.background,
+    const Flag!"priority" priority = No.priority,
     const string caller = __FUNCTION__)
 in (emoteTarget.length, "Tried to send an emote but no target was given")
 {
-    static if (priority) import std.concurrency : send = prioritySend;
     import lu.string : contains;
 
     Message m;
@@ -466,7 +461,8 @@ in (emoteTarget.length, "Tried to send an emote but no target was given")
         m.event.target.nickname = emoteTarget;
     }
 
-    state.mainThread.send(m);
+    if (priority) state.mainThread.prioritySend(m);
+    else state.mainThread.send(m);
 }
 
 ///
@@ -516,8 +512,6 @@ unittest
     This includes modes that pertain to a user in the context of a channel, like bans.
 
     Params:
-        priority = Whether or not to send the message as a priority message,
-            received before other messages are, if there are several.
         state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         channel = Channel to change the modes of.
@@ -525,20 +519,21 @@ unittest
         content = Target of mode change, if applicable.
         quiet = Whether or not to echo what was sent to the local terminal.
         background = Whether or not to send it as a low-priority background message.
+        priority = Whether or not to send the message as a priority message,
+            received before other messages are, if there are several.
         caller = String name of the calling function, or something else that gives context.
  +/
-void mode(Flag!"priority" priority = No.priority)
-    (IRCPluginState state,
+void mode(
+    IRCPluginState state,
     const string channel,
     const const(char)[] modes,
     const string content = string.init,
     const Flag!"quiet" quiet = No.quiet,
     const Flag!"background" background = No.background,
+    const Flag!"priority" priority = No.priority,
     const string caller = __FUNCTION__)
 in (channel.length, "Tried to set a mode but no channel was given")
 {
-    static if (priority) import std.concurrency : send = prioritySend;
-
     Message m;
 
     m.event.type = IRCEvent.Type.MODE;
@@ -551,7 +546,8 @@ in (channel.length, "Tried to set a mode but no channel was given")
     if (background) m.properties |= Message.Property.background;
     if (priority) m.properties |= Message.Property.priority;
 
-    state.mainThread.send(m);
+    if (priority) state.mainThread.prioritySend(m);
+    else state.mainThread.send(m);
 }
 
 ///
@@ -583,27 +579,26 @@ unittest
     Sets the topic of a channel.
 
     Params:
-        priority = Whether or not to send the message as a priority message,
-            received before other messages are, if there are several.
         state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         channel = Channel whose topic to change.
         content = Topic body text.
         quiet = Whether or not to echo what was sent to the local terminal.
         background = Whether or not to send it as a low-priority background message.
+        priority = Whether or not to send the message as a priority message,
+            received before other messages are, if there are several.
         caller = String name of the calling function, or something else that gives context.
  +/
-void topic(Flag!"priority" priority = No.priority)
-    (IRCPluginState state,
+void topic(
+    IRCPluginState state,
     const string channel,
     const string content,
     const Flag!"quiet" quiet = No.quiet,
     const Flag!"background" background = No.background,
+    const Flag!"priority" priority = No.priority,
     const string caller = __FUNCTION__)
 in (channel.length, "Tried to set a topic but no channel was given")
 {
-    static if (priority) import std.concurrency : send = prioritySend;
-
     Message m;
 
     m.event.type = IRCEvent.Type.TOPIC;
@@ -615,7 +610,8 @@ in (channel.length, "Tried to set a topic but no channel was given")
     if (background) m.properties |= Message.Property.background;
     if (priority) m.properties |= Message.Property.priority;
 
-    state.mainThread.send(m);
+    if (priority) state.mainThread.prioritySend(m);
+    else state.mainThread.send(m);
 }
 
 ///
@@ -646,28 +642,27 @@ unittest
     Invites a user to a channel.
 
     Params:
-        priority = Whether or not to send the message as a priority message,
-            received before other messages are, if there are several.
         state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         channel = Channel to which to invite the user.
         nickname = Nickname of user to invite.
         quiet = Whether or not to echo what was sent to the local terminal.
         background = Whether or not to send it as a low-priority background message.
+        priority = Whether or not to send the message as a priority message,
+            received before other messages are, if there are several.
         caller = String name of the calling function, or something else that gives context.
  +/
-void invite(Flag!"priority" priority = No.priority)
-    (IRCPluginState state,
+void invite(
+    IRCPluginState state,
     const string channel,
     const string nickname,
     const Flag!"quiet" quiet = No.quiet,
     const Flag!"background" background = No.background,
+    const Flag!"priority" priority = No.priority,
     const string caller = __FUNCTION__)
 in (channel.length, "Tried to send an invite but no channel was given")
 in (nickname.length, "Tried to send an invite but no nickname was given")
 {
-    static if (priority) import std.concurrency : send = prioritySend;
-
     Message m;
 
     m.event.type = IRCEvent.Type.INVITE;
@@ -679,7 +674,8 @@ in (nickname.length, "Tried to send an invite but no nickname was given")
     if (background) m.properties |= Message.Property.background;
     if (priority) m.properties |= Message.Property.priority;
 
-    state.mainThread.send(m);
+    if (priority) state.mainThread.prioritySend(m);
+    else state.mainThread.send(m);
 }
 
 ///
@@ -710,27 +706,26 @@ unittest
     Joins a channel.
 
     Params:
-        priority = Whether or not to send the message as a priority message,
-            received before other messages are, if there are several.
         state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         channel = Channel to join.
         key = Channel key to join the channel with, if it's locked.
         quiet = Whether or not to echo what was sent to the local terminal.
         background = Whether or not to send it as a low-priority background message.
+        priority = Whether or not to send the message as a priority message,
+            received before other messages are, if there are several.
         caller = String name of the calling function, or something else that gives context.
  +/
-void join(Flag!"priority" priority = No.priority)
-    (IRCPluginState state,
+void join(
+    IRCPluginState state,
     const string channel,
     const string key = string.init,
     const Flag!"quiet" quiet = No.quiet,
     const Flag!"background" background = No.background,
+    const Flag!"priority" priority = No.priority,
     const string caller = __FUNCTION__)
 in (channel.length, "Tried to join a channel but no channel was given")
 {
-    static if (priority) import std.concurrency : send = prioritySend;
-
     Message m;
 
     m.event.type = IRCEvent.Type.JOIN;
@@ -742,7 +737,8 @@ in (channel.length, "Tried to join a channel but no channel was given")
     if (background) m.properties |= Message.Property.background;
     if (priority) m.properties |= Message.Property.priority;
 
-    state.mainThread.send(m);
+    if (priority) state.mainThread.prioritySend(m);
+    else state.mainThread.send(m);
 }
 
 ///
@@ -772,8 +768,6 @@ unittest
     Kicks a user from a channel.
 
     Params:
-        priority = Whether or not to send the message as a priority message,
-            received before other messages are, if there are several.
         state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         channel = Channel from which to kick the user.
@@ -781,21 +775,22 @@ unittest
         reason = Optionally the reason behind the kick.
         quiet = Whether or not to echo what was sent to the local terminal.
         background = Whether or not to send it as a low-priority background message.
+        priority = Whether or not to send the message as a priority message,
+            received before other messages are, if there are several.
         caller = String name of the calling function, or something else that gives context.
  +/
-void kick(Flag!"priority" priority = No.priority)
-    (IRCPluginState state,
+void kick(
+    IRCPluginState state,
     const string channel,
     const string nickname,
     const string reason = string.init,
     const Flag!"quiet" quiet = No.quiet,
     const Flag!"background" background = No.background,
+    const Flag!"priority" priority = No.priority,
     const string caller = __FUNCTION__)
 in (channel.length, "Tried to kick someone but no channel was given")
 in (nickname.length, "Tried to kick someone but no nickname was given")
 {
-    static if (priority) import std.concurrency : send = prioritySend;
-
     Message m;
 
     m.event.type = IRCEvent.Type.KICK;
@@ -808,7 +803,8 @@ in (nickname.length, "Tried to kick someone but no nickname was given")
     if (background) m.properties |= Message.Property.background;
     if (priority) m.properties |= Message.Property.priority;
 
-    state.mainThread.send(m);
+    if (priority) state.mainThread.prioritySend(m);
+    else state.mainThread.send(m);
 }
 
 ///
@@ -840,27 +836,26 @@ unittest
     Leaves a channel.
 
     Params:
-        priority = Whether or not to send the message as a priority message,
-            received before other messages are, if there are several.
         state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         channel = Channel to leave.
         reason = Optionally, reason behind leaving.
         quiet = Whether or not to echo what was sent to the local terminal.
         background = Whether or not to send it as a low-priority background message.
+        priority = Whether or not to send the message as a priority message,
+            received before other messages are, if there are several.
         caller = String name of the calling function, or something else that gives context.
  +/
-void part(Flag!"priority" priority = No.priority)
-    (IRCPluginState state,
+void part(
+    IRCPluginState state,
     const string channel,
     const string reason = string.init,
     const Flag!"quiet" quiet = No.quiet,
     const Flag!"background" background = No.background,
+    const Flag!"priority" priority = No.priority,
     const string caller = __FUNCTION__)
 in (channel.length, "Tried to part a channel but no channel was given")
 {
-    static if (priority) import std.concurrency : send = prioritySend;
-
     Message m;
 
     m.event.type = IRCEvent.Type.PART;
@@ -872,7 +867,8 @@ in (channel.length, "Tried to part a channel but no channel was given")
     if (background) m.properties |= Message.Property.background;
     if (priority) m.properties |= Message.Property.priority;
 
-    state.mainThread.send(m);
+    if (priority) state.mainThread.prioritySend(m);
+    else state.mainThread.send(m);
 }
 
 ///
@@ -903,22 +899,22 @@ unittest
     Disconnects from the server, optionally with a quit reason.
 
     Params:
-        priority = Whether or not to send the message as a priority message,
-            received before other messages are, if there are several.
-            Default to `Yes.priority`, since we're quitting.
         state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         reason = Optionally, the reason for quitting.
         quiet = Whether or not to echo what was sent to the local terminal.
+        priority = Whether or not to send the message as a priority message,
+            received before other messages are, if there are several.
+            Default to `Yes.priority`, since we're quitting.
         caller = String name of the calling function, or something else that gives context.
  +/
-void quit(Flag!"priority" priority = Yes.priority)
-    (IRCPluginState state,
+void quit(
+    IRCPluginState state,
     const string reason = string.init,
     const Flag!"quiet" quiet = No.quiet,
+    const Flag!"priority" priority = Yes.priority,
     const string caller = __FUNCTION__)
 {
-    static if (priority) import std.concurrency : send = prioritySend;
     import kameloso.thread : ThreadMessage;
 
     Message m;
@@ -930,7 +926,8 @@ void quit(Flag!"priority" priority = Yes.priority)
 
     if (quiet) m.properties |= Message.Property.quiet;
 
-    state.mainThread.send(m);
+    if (priority) state.mainThread.prioritySend(m);
+    else state.mainThread.send(m);
 }
 
 ///
@@ -963,27 +960,26 @@ unittest
     Queries the server for WHOIS information about a user.
 
     Params:
-        priority = Whether or not to send the message as a priority message,
-            received before other messages are, if there are several.
         state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         nickname = String nickname to query for.
         force = Whether or not to force the WHOIS, skipping any hysteresis queues.
         quiet = Whether or not to echo what was sent to the local terminal.
         background = Whether or not to send it as a low-priority background message.
+        priority = Whether or not to send the message as a priority message,
+            received before other messages are, if there are several.
         caller = String name of the calling function, or something else that gives context.
  +/
-void whois(Flag!"priority" priority = No.priority)
-    (IRCPluginState state,
+void whois(
+    IRCPluginState state,
     const string nickname,
     const Flag!"force" force = No.force,
     const Flag!"quiet" quiet = No.quiet,
     const Flag!"background" background = No.background,
+    const Flag!"priority" priority = No.priority,
     const string caller = __FUNCTION__)
 in (nickname.length, caller ~ " tried to WHOIS but no nickname was given")
 {
-    static if (priority) import std.concurrency : send = prioritySend;
-
     Message m;
 
     m.event.type = IRCEvent.Type.RPL_WHOISACCOUNT;
@@ -1004,7 +1000,8 @@ in (nickname.length, caller ~ " tried to WHOIS but no nickname was given")
         if (state.settings.flush) stdout.flush();
     }
 
-    state.mainThread.send(m);
+    if (priority) state.mainThread.prioritySend(m);
+    else state.mainThread.send(m);
 }
 
 ///
@@ -1039,24 +1036,23 @@ unittest
         [immediate]
 
     Params:
-        priority = Whether or not to send the message as a priority message,
-            received before other messages are, if there are several.
         state = The current plugin's [kameloso.plugins.common.core.IRCPluginState|IRCPluginState],
             via which to send messages to the server.
         line = Raw IRC string to send to the server.
         quiet = Whether or not to echo what was sent to the local terminal.
         background = Whether or not to send it as a low-priority background message.
+        priority = Whether or not to send the message as a priority message,
+            received before other messages are, if there are several.
         caller = String name of the calling function, or something else that gives context.
  +/
-void raw(Flag!"priority" priority = No.priority)
-    (IRCPluginState state,
+void raw(
+    IRCPluginState state,
     const string line,
     const Flag!"quiet" quiet = No.quiet,
     const Flag!"background" background = No.background,
+    const Flag!"priority" priority = No.priority,
     const string caller = __FUNCTION__)
 {
-    static if (priority) import std.concurrency : send = prioritySend;
-
     Message m;
 
     m.event.type = IRCEvent.Type.UNSET;
@@ -1067,7 +1063,8 @@ void raw(Flag!"priority" priority = No.priority)
     if (background) m.properties |= Message.Property.background;
     if (priority) m.properties |= Message.Property.priority;
 
-    state.mainThread.send(m);
+    if (priority) state.mainThread.prioritySend(m);
+    else state.mainThread.send(m);
 }
 
 ///
@@ -1116,7 +1113,6 @@ void immediate(
     const string caller = __FUNCTION__)
 {
     import kameloso.thread : ThreadMessage;
-    import std.concurrency : prioritySend;
 
     Message m;
 
