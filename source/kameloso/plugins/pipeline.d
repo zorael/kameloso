@@ -112,6 +112,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
     File fifo = File(filename, "r");
     scope(exit) if (filename.exists) remove(filename);
 
+    toploop:
     while (true)
     {
         // foreach but always break after processing one line, to be responsive
@@ -151,7 +152,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
                 {
                     quit(state);
                 }
-                return;
+                break toploop;
             }
             else
             {
@@ -166,7 +167,6 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
 
         static immutable instant = Duration.zero;
         bool halt;
-        bool ownerTerminated;
 
         cast(void)receiveTimeout(instant,
             (ThreadMessage message)
@@ -179,7 +179,6 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
             (OwnerTerminated _)
             {
                 halt = true;
-                ownerTerminated = true;
             },
             (Variant v)
             {
@@ -190,7 +189,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
             }
         );
 
-        if (halt) return;
+        if (halt) break toploop;
 
         import std.exception : ErrnoException;
 
@@ -200,21 +199,17 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
         }
         catch (ErrnoException e)
         {
-            // No need to output errors if the program crashed
-            if (!ownerTerminated)
-            {
-                enum fifoPattern = "Pipeline plugin failed to reopen FIFO: <l>%s";
-                state.askToError(fifoPattern.format(e.msg));
-                version(PrintStacktraces) state.askToTrace(e.info.toString);
-                state.mainThread.send(ThreadMessage.busMessage("pipeline", boxed("halted")));
-            }
-            return;
+            enum fifoPattern = "Pipeline plugin failed to reopen FIFO: <l>%s";
+            state.askToError(fifoPattern.format(e.msg));
+            version(PrintStacktraces) state.askToTrace(e.info.toString);
+            state.mainThread.send(ThreadMessage.busMessage("pipeline", sendable("halted")));
+            break toploop;
         }
         catch (Exception e)
         {
             state.askToError("Pipeline plugin saw unexpected exception");
             version(PrintStacktraces) state.askToTrace(e.toString);
-            return;
+            break toploop;
         }
     }
 }
