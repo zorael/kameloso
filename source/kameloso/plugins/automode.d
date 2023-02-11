@@ -499,7 +499,8 @@ void onCommandOp(AutomodePlugin plugin, const ref IRCEvent event)
     else
     {
         import kameloso.messaging : whois;
-        whois(plugin.state, event.sender.nickname, Yes.force);
+        enum properties = Message.Property.forced;
+        whois(plugin.state, event.sender.nickname, properties);
     }
 }
 

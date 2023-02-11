@@ -478,13 +478,21 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         {
             if (background)
             {
-                // Need Yes.force to not miss events
-                whois(context.state, nicknamePart, Yes.force, Yes.quiet, Yes.background);
+                // Need Property.forced to not miss events
+                enum properties =
+                    Message.Property.forced |
+                    Message.Property.quiet |
+                    Message.Property.background;
+                whois(context.state, nicknamePart, properties);
             }
             else
             {
                 // Ditto
-                whois(context.state, nicknamePart, Yes.force, Yes.quiet, No.background, Yes.priority);
+                enum properties =
+                    Message.Property.forced |
+                    Message.Property.quiet |
+                    Message.Property.priority;
+                whois(context.state, nicknamePart, properties);
             }
         }
 
@@ -509,9 +517,10 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 mixin template MessagingProxy(Flag!"debug_" debug_ = No.debug_)
 {
 private:
-    static import kameloso.messaging;
     import kameloso.plugins.common.core : IRCPlugin;
+    import kameloso.messaging : Message;
     import std.typecons : Flag, No, Yes;
+    static import kameloso.messaging;
 
     static if (__traits(compiles, { alias _ = this.hasMessagingProxy; }))
     {
@@ -831,8 +840,14 @@ private:
         Generates the functions `askToWriteln`, `askToTrace`, `askToLog`,
         `askToInfo`, `askToWarning`, and `askToError`,
      +/
-    static foreach (immutable verb; AliasSeq!("Writeln", "Trace", "Log",
-        "Info", "Warn", "Warning", "Error"))
+    static foreach (immutable verb; AliasSeq!(
+        "Writeln",
+        "Trace",
+        "Log",
+        "Info",
+        "Warn",
+        "Warning",
+        "Error"))
     {
         /++
             Generated `askToVerb` function. Asks the main thread to output text
@@ -881,7 +896,8 @@ unittest
         kick(string.init, string.init, string.init);
         part(string.init, string.init);
         quit(string.init);
-        whois(string.init, Yes.force, Yes.quiet, No.background);
+        enum whoisProperties = (Message.Property.forced | Message.Property.quiet);
+        whois(string.init, whoisProperties);
         raw(string.init);
         immediate(string.init);
         immediateline(string.init);

@@ -1030,13 +1030,9 @@ void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
 
         if (storedEvent.content.asLowerCase.canFind(phraseToLower))
         {
-            chan(
-                plugin.state,
-                event.channel,
-                text(".delete ", storedEvent.id),
-                No.quiet,
-                No.background,
-                Yes.priority);
+            enum properties = Message.Property.priority;
+            immutable message = text(".delete ", storedEvent.id);
+            chan(plugin.state, event.channel, message, properties);
         }
     }
 

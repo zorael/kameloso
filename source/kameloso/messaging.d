@@ -244,6 +244,36 @@ in (event.channel.length, "Tried to reply to a channel message but no channel wa
     }
 }
 
+///
+version(TwitchSupport)
+unittest
+{
+    IRCPluginState state;
+    state.server.daemon = IRCServer.Daemon.twitch;
+    state.mainThread = thisTid;
+
+    IRCEvent event;
+    event.sender.nickname = "kameloso";
+    event.channel = "#channel";
+    event.content = "content";
+    event.id = "some-reply-id";
+
+    reply(state, event, "reply content");
+
+    receive(
+        (Message m)
+        {
+            with (m.event)
+            {
+                assert((type == IRCEvent.Type.CHAN), Enum!(IRCEvent.Type).toString(type));
+                assert((content == "reply content"), content);
+                assert((tags == "reply-parent-msg-id=some-reply-id"), tags);
+                assert((m.properties == Message.Property.init));
+            }
+        }
+    );
+}
+
 
 // query
 /++

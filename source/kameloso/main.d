@@ -1990,7 +1990,7 @@ void processReadyReplays(ref Kameloso instance, IRCPlugin plugin)
 void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
 {
     import kameloso.constants : Timeout;
-    import kameloso.messaging : whois;
+    import kameloso.messaging : Message, whois;
     import std.datetime.systime : Clock;
 
     // Walk through replays and call WHOIS on those that haven't been
@@ -2032,7 +2032,8 @@ void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
             instance.previousWhoisTimestamps[nickname] = now;
             instance.propagateWhoisTimestamp(nickname, now);*/
 
-            whois(plugin.state, nickname, Yes.force, Yes.quiet);
+            enum properties = (Message.Property.forced | Message.Property.quiet);
+            whois(plugin.state, nickname, properties);
         }
         else
         {

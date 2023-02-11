@@ -73,6 +73,7 @@ enum ChannelState : ubyte
 void startChannelQueries(ChanQueriesService service)
 {
     import kameloso.thread : CarryingFiber, ThreadMessage, boxed;
+    import kameloso.messaging : Message, mode, raw;
     import std.concurrency : send;
     import std.datetime.systime : Clock;
     import std.string : representation;
@@ -128,7 +129,6 @@ void startChannelQueries(ChanQueriesService service)
         /// Common code to send a query, await the results and unlist the fiber.
         void queryAwaitAndUnlist(Types)(const string command, const Types types)
         {
-            import kameloso.messaging : raw;
             import std.conv : text;
 
             await(service, types, No.yield);
@@ -140,7 +140,9 @@ void startChannelQueries(ChanQueriesService service)
                     ThreadMessage.busMessage("printer", boxed(squelchMessage)));
             }
 
-            raw(service.state, text(command, ' ', channelName), Yes.quiet, Yes.background);
+            enum properties = (Message.Property.quiet | Message.Property.background);
+            immutable message = text(command, ' ', channelName);
+            raw(service.state, message, properties);
 
             do Fiber.yield();  // Awaiting specified types
             while (thisFiber.payload.channel != channelName);
@@ -166,7 +168,6 @@ void startChannelQueries(ChanQueriesService service)
 
         foreach (immutable n, immutable modechar; service.state.server.aModes.representation)
         {
-            import kameloso.messaging : mode;
             import std.conv : text;
 
             if (n > 0)
@@ -186,8 +187,14 @@ void startChannelQueries(ChanQueriesService service)
                     ThreadMessage.busMessage("printer", boxed(squelchMessage)));
             }
 
-            mode(service.state, channelName, text('+', cast(char)modechar),
-                string.init, Yes.quiet, Yes.background);
+            enum properties = (Message.Property.quiet | Message.Property.background);
+            immutable modeline = text('+', cast(char)modechar);
+            mode(
+                service.state,
+                channelName,
+                modeline,
+                string.init,
+                properties);
         }
 
         if (channelName !in service.channelStates) continue chanloop;
@@ -275,7 +282,8 @@ void startChannelQueries(ChanQueriesService service)
                 ThreadMessage.busMessage("printer", boxed("squelch " ~ nickname)));
         }
 
-        whois(service.state, nickname, No.force, Yes.quiet, Yes.background);
+        enum properties = (Message.Property.quiet | Message.Property.background);
+        whois(service.state, nickname, properties);
         Fiber.yield();  // Await whois types registered above
 
         enum maxConsecutiveUnknownCommands = 3;
