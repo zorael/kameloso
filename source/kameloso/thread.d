@@ -261,6 +261,9 @@ struct ThreadMessage
             content = Optional content string.
             payload = Optional boxed [Sendable] payloda.
             quiet = Whether or not to pass a flag for the action to be done quietly.
+
+        Returns:
+            A [ThreadMessage] whose members have the passed values.
      +/
     static auto opDispatch(string memberstring)
         (const string content = string.init,
