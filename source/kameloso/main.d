@@ -1944,7 +1944,6 @@ void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
  +/
 void processSpecialRequests(ref Kameloso instance, IRCPlugin plugin)
 {
-    import kameloso.plugins.common.core;
     import kameloso.thread : CarryingFiber;
     import std.typecons : Tuple;
     import core.thread : Fiber;

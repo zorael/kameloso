@@ -3211,6 +3211,9 @@ public:
 
     The template parameter `T` defines that kind of
     [kameloso.thread.CarryingFiber|CarryingFiber] is embedded into it.
+
+    Params:
+        T = Type to instantiate the [kameloso.thread.CarryingFiber|CarryingFiber] with.
  +/
 final class SpecialRequestImpl(T) : SpecialRequest
 {
@@ -3246,6 +3249,9 @@ public:
     // context
     /++
         String context of the request. May be anything; highly request-specific.
+
+        Returns:
+            A string.
      +/
     string context()
     {
@@ -3255,6 +3261,10 @@ public:
     // fiber
     /++
         [kameloso.thread.CarryingFiber|CarryingFiber] embedded into the request.
+
+        Returns:
+            A [kameloso.thread.CarryingFiber|CarryingFiber] in the guise of a
+            [core.thread.Fiber|Fiber].
      +/
     Fiber fiber()
     {
@@ -3269,6 +3279,7 @@ public:
     with the inferred type `T` as payload.
 
     Params:
+        T = Type to instantiate [SpecialRequestImpl] with.
         context = String context of the request.
         fiber = [kameloso.thread.CarryingFiber|CarryingFiber] to embed into the request.
 

@@ -514,10 +514,7 @@ void handleNewOneliner(
         Fiber.yield();
 
         IRCPlugin.CommandMetadata[string][string] channelSpecificAA = thisFiber.payload[0];
-        import std.stdio;
-        writeln(channelSpecificAA);
         if (triggerConflicts(channelSpecificAA)) return;
-
 
         // If we're here there were no conflicts
         Oneliner oneliner;
