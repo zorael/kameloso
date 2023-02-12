@@ -282,6 +282,11 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
     switch (verb)
     {
     case "add":
+        import kameloso.constants : BufferSize;
+        import kameloso.thread : CarryingFiber;
+        import std.typecons : Tuple;
+        import core.thread : Fiber;
+
         if (!slice.length) goto default;
 
         if (slice.canFind!(c => c.among!('+', '-', '=', '?')))
@@ -298,9 +303,6 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
             We need to check both hardcoded and soft channel-specific commands
             for conflicts.
          +/
-
-        import kameloso.thread : ThreadMessage;
-        import std.concurrency : send;
 
         bool triggerConflicts(const IRCPlugin.CommandMetadata[string][string] aa)
         {
@@ -319,39 +321,34 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
             return false;
         }
 
-        void channelSpecificDg(IRCPlugin.CommandMetadata[string][string] channelSpecificAA)
+        alias Payload = Tuple!(IRCPlugin.CommandMetadata[string][string]);
+
+        void dg()
         {
+            auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis;
+            assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+
+            IRCPlugin.CommandMetadata[string][string] aa = thisFiber.payload[0];
+            if (triggerConflicts(aa)) return;
+
+            // Get channel AAs
+            plugin.state.specialRequests ~= specialRequest!Payload(event.channel, thisFiber);
+            Fiber.yield();
+
+            IRCPlugin.CommandMetadata[string][string] channelSpecificAA = thisFiber.payload[0];
             if (triggerConflicts(channelSpecificAA)) return;
 
+            // If we're here there were no conflicts
             plugin.counters[event.channel][slice] = Counter(slice);
             saveCounters(plugin);
 
-            // If we're here there were no conflicts
             enum pattern = "Counter <b>%s<b> added! Access it with <b>%s%s<b>.";
             immutable message = pattern.format(slice, plugin.state.settings.prefix, slice);
             chan(plugin.state, event.channel, message);
         }
 
-        void dg(IRCPlugin.CommandMetadata[string][string] aa)
-        {
-            if (triggerConflicts(aa)) return;
-
-            // Arcane message used to minimise template instantiations and lower memory requirements
-            plugin.state.mainThread.send(
-                ThreadMessage.PeekGetSet(),
-                cast(shared(void delegate(IRCPlugin.CommandMetadata[string][string]) @system))&channelSpecificDg,
-                cast(shared(void delegate(string, string, string) @system))null,
-                cast(shared(void delegate(bool) @system))null,
-                event.channel);
-        }
-
-        // As above
-        plugin.state.mainThread.send(
-            ThreadMessage.PeekGetSet(),
-            cast(shared(void delegate(IRCPlugin.CommandMetadata[string][string]) @system))&dg,
-            cast(shared(void delegate(string, string, string) @system))null,
-            cast(shared(void delegate(bool) @system))null,
-            string.init);
+        auto fiber = new CarryingFiber!Payload(&dg, BufferSize.fiberStack);
+        plugin.state.specialRequests ~= specialRequest!Payload(string.init, fiber);
         break;
 
     case "remove":

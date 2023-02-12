@@ -72,12 +72,21 @@ import std.typecons : Flag, No, Yes;
 )
 void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.thread : ThreadMessage;
-    import std.concurrency : send;
+    import kameloso.constants : BufferSize;
+    import kameloso.thread : CarryingFiber;
+    import std.typecons : Tuple;
+    import core.thread : Fiber;
 
-    void dg(IRCPlugin.CommandMetadata[string][string] allPluginCommands)
+    alias Payload = Tuple!(IRCPlugin.CommandMetadata[string][string]);
+
+    void dg()
     {
         import lu.string : beginsWith, contains, stripped;
+
+        auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis;
+        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+
+        IRCPlugin.CommandMetadata[string][string] allPluginCommands = thisFiber.payload[0];
 
         IRCEvent mutEvent = event;  // mutable
         mutEvent.content = mutEvent.content.stripped;
@@ -113,13 +122,8 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
         }
     }
 
-    // Arcane message used to minimise template instantiations and lower memory requirements
-    plugin.state.mainThread.send(
-        ThreadMessage.PeekGetSet(),
-        cast(shared(void delegate(IRCPlugin.CommandMetadata[string][string]) @system))&dg,
-        cast(shared(void delegate(string, string, string) @system))null,
-        cast(shared(void delegate(bool) @system))null,
-        string.init);
+    auto fiber = new CarryingFiber!Payload(&dg, BufferSize.fiberStack);
+    plugin.state.specialRequests ~= specialRequest!Payload(string.init, fiber);
 }
 
 

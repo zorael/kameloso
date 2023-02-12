@@ -9,7 +9,7 @@
     mainThread.send(ThreadMessage.sendline("Message to send to server"));
     mainThread.send(ThreadMessage.pong("irc.libera.chat"));
     mainThread.send(OutputRequest(ThreadMessage.TerminalOutput.writeln, "writeln this for me please"));
-    mainThread.send(ThreadMessage.busMessage("header", busMessage("payload")));
+    mainThread.send(ThreadMessage.busMessage("header", boxed("payload")));
 
     auto fiber = new CarryingFiber!string(&someDelegate, BufferSize.fiberStack);
     fiber.payload = "This string is carried by the Fiber and can be accessed from within it";
@@ -243,27 +243,25 @@ struct ThreadMessage
     bool quiet;
 
     /++
-        Signifies one of three things, depending on the bundled delegates;
+        An `opDispatch`, constructing one function for each member in [Type].
 
-        1. Concurrency message asking for an associative array of a description of all plugins' commands.
-        2. Concurrency message asking to get one or all settings of a given plugin.
-        3. Concurrency message asking to apply an expression to change a setting of a plugin.
-     +/
-    static struct PeekGetSet {}
+        What the parameters functionally do is contextual to each [Type].
 
-    /+
-        Generate a static function for each [Type].
+        Params:
+            memberstring = String name of a member of [Type].
+            content = Optional content string.
+            payload = Optional boxed [Sendable] payloda.
+            quiet = Whether or not to pass a flag for the action to be done quietly.
+
+        Returns:
+            A [ThreadMessage] whose members have the passed values.
      +/
-    static foreach (immutable memberstring; __traits(allMembers, Type))
+    static auto opDispatch(string memberstring)
+        (const string content = string.init,
+        shared Sendable payload = null,
+        const bool quiet = false)
     {
-        mixin(`
-            static auto ` ~ memberstring ~ `
-                (const string content = string.init,
-                shared Sendable payload = null,
-                const bool quiet = false)
-            {
-                return ThreadMessage(Type.` ~ memberstring ~ `, content, payload, quiet);
-            }`);
+        mixin("return ThreadMessage(Type." ~ memberstring ~ ", content, payload, quiet);");
     }
 }
 
@@ -316,22 +314,22 @@ struct OutputRequest
 interface Sendable {}
 
 
-// BusMessage
+// Boxed
 /++
     A payload of type `T` wrapped in a class implementing the [Sendable] interface.
     Used to box values for sending via the message bus.
 
     Params:
-        T = Type to embed into the [BusMessage] as the type of the payload.
+        T = Type to embed into the [Boxed] as the type of the payload.
  +/
-final class BusMessage(T) : Sendable
+final class Boxed(T) : Sendable
 {
     /// Payload value embedded in this message.
     T payload;
 
     /++
         Constructor that adds a passed payload to the internal stored [payload],
-        creating a *shared* `BusMessage`.
+        creating a *shared* `Boxed`.
      +/
     auto this(T payload) shared
     {
@@ -340,51 +338,67 @@ final class BusMessage(T) : Sendable
 }
 
 
-// sendable
+// BusMessage
 /++
-    Constructor function to create a `shared` [BusMessage] with an unqualified
+    Deprecated alias to [Boxed].
+ +/
+deprecated("Use `Boxed!T` instead")
+alias BusMessage = Boxed;
+
+
+// boxed
+/++
+    Constructor function to create a `shared` [Boxed] with an unqualified
     template type.
 
     Example:
     ---
     IRCEvent event;  // ...
-    mainThread.send(ThreadMessage.busMessage("header", busMessage(event)));
-    mainThread.send(ThreadMessage.busMessage("other header", busMessage("text payload")));
-    mainThread.send(ThreadMessage.busMessage("ladida", busMessage(42)));
+    mainThread.send(ThreadMessage.busMessage("header", boxed(event)));
+    mainThread.send(ThreadMessage.busMessage("other header", boxed("text payload")));
+    mainThread.send(ThreadMessage.busMessage("ladida", boxed(42)));
     ---
 
     Params:
-        payload = Payload whose type to instantiate the [BusMessage] with, and
+        payload = Payload whose type to instantiate the [Boxed] with, and
             then assign to its internal `payload`.
 
     Returns:
-        A `shared` `BusMessage!T` where `T` is the unqualified type of the payload.
+        A `shared` [Boxed]!T` where `T` is the unqualified type of the payload.
  +/
-shared(Sendable) sendable(T)(T payload)
+shared(Sendable) boxed(T)(T payload)
 {
     import std.traits : Unqual;
-    return new shared BusMessage!(Unqual!T)(payload);
+    return new shared Boxed!(Unqual!T)(payload);
 }
+
+
+// sendable
+/++
+    Deprecated alias to [boxed].
+ +/
+deprecated("Use `boxed` instead")
+alias sendable = boxed;
 
 ///
 unittest
 {
     {
-        auto msg = sendable("asdf");
-        auto asCast = cast(BusMessage!string)msg;
+        auto msg = boxed("asdf");
+        auto asCast = cast(Boxed!string)msg;
         assert((msg !is null), "Incorrectly cast message: " ~ typeof(asCast).stringof);
         asCast = null;  // silence dscanner
     }
     {
-        auto msg = sendable(123_456);
-        auto asCast = cast(BusMessage!int)msg;
+        auto msg = boxed(123_456);
+        auto asCast = cast(Boxed!int)msg;
         assert((msg !is null), "Incorrectly cast message: " ~ typeof(asCast).stringof);
         asCast = null;  // silence dscanner
     }
     {
         struct Foo {}
-        auto msg = sendable(Foo());
-        auto asCast = cast(BusMessage!Foo)msg;
+        auto msg = boxed(Foo());
+        auto asCast = cast(Boxed!Foo)msg;
         assert((msg !is null), "Incorrectly cast message: " ~ typeof(asCast).stringof);
         asCast = null;  // silence dscanner
     }

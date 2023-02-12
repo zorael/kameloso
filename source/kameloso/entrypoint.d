@@ -33,7 +33,7 @@ version(DigitalMars)
     version(D_Optimized)
     {
         pragma(msg, "WARNING: The program is prone to memory corruption and segfaults " ~
-            "in certain parts of the code when compiled with dmd in -release mode. ");
+            "in certain parts of the code when compiled with dmd in -release mode.");
         pragma(msg, "See issue #159: https://github.com/zorael/kameloso/issues/159");
         pragma(msg, "Use ldc or gdc for better results.");
     }

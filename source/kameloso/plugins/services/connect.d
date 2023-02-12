@@ -123,12 +123,13 @@ void joinChannels(ConnectService service)
         return;
     }
 
-    import kameloso.messaging : joinChannel = join;
+    import kameloso.messaging : Message;
     import lu.string : plurality;
     import std.algorithm.iteration : filter, uniq;
     import std.algorithm.sorting : sort;
     import std.array : array, join;
     import std.range : walkLength;
+    static import kameloso.messaging;
 
     auto homelist = service.state.bot.homeChannels
         .filter!(channelName => (channelName != "-"))
@@ -148,11 +149,19 @@ void joinChannels(ConnectService service)
     logger.logf(pattern, numChans, numChans.plurality("channel", "channels"));
 
     // Join in two steps so home channels don't get shoved away by guest channels
-    if (service.state.bot.homeChannels.length) joinChannel(service.state,
-        homelist.join(','), string.init, Yes.quiet);
+    if (service.state.bot.homeChannels.length)
+    {
+        enum properties = Message.Property.quiet;
+        immutable channelString = homelist.join(',');
+        kameloso.messaging.join(service.state, channelString, string.init, properties);
+    }
 
-    if (service.state.bot.guestChannels.length) joinChannel(service.state,
-        guestlist.join(','), string.init, Yes.quiet);
+    if (service.state.bot.guestChannels.length)
+    {
+        enum properties = Message.Property.quiet;
+        immutable channelString = guestlist.join(',');
+        kameloso.messaging.join(service.state, channelString, string.init, properties);
+    }
 
     version(TwitchSupport)
     {
@@ -234,7 +243,8 @@ void onSelfjoin(ConnectService service, const ref IRCEvent event)
 )
 void onToConnectType(ConnectService service, const ref IRCEvent event)
 {
-    immediate(service.state, event.content, Yes.quiet);
+    enum properties = Message.Property.quiet;
+    immediate(service.state, event.content, properties);
 }
 
 
@@ -328,7 +338,9 @@ void tryAuth(ConnectService service)
             return;
         }
 
-        query(service.state, serviceNick, text(verb, ' ', password), Yes.quiet);
+        enum properties = Message.Property.quiet;
+        immutable message = text(verb, ' ', password);
+        query(service.state, serviceNick, message, properties);
 
         if (!service.state.settings.hideOutgoing && !service.state.settings.trace)
         {
@@ -354,7 +366,9 @@ void tryAuth(ConnectService service)
             account = service.state.client.origNickname;
         }
 
-        query(service.state, serviceNick, text(verb, ' ', account, ' ', password), Yes.quiet);
+        enum properties = Message.Property.quiet;
+        immutable message = text(verb, ' ', account, ' ', password);
+        query(service.state, serviceNick, message, properties);
 
         if (!service.state.settings.hideOutgoing && !service.state.settings.trace)
         {
@@ -364,12 +378,21 @@ void tryAuth(ConnectService service)
         break;
 
     case rusnet:
-        // Doesn't want a PRIVMSG
-        raw(service.state, "NICKSERV IDENTIFY " ~ password, Yes.quiet);
-
-        if (!service.state.settings.hideOutgoing && !service.state.settings.trace)
+        /+
+            This fails to compile on <2.097 compilers.
+            "Error: switch skips declaration of variable kameloso.plugins.services.connect.tryAuth.message"
+            Worrisome, but work around the issue for now by adding braces.
+         +/
         {
-            logger.trace("--> NICKSERV IDENTIFY hunter2");
+            // Doesn't want a PRIVMSG
+            enum properties = Message.Property.quiet;
+            immutable message = "NICKSERV IDENTIFY " ~ password;
+            raw(service.state, message, properties);
+
+            if (!service.state.settings.hideOutgoing && !service.state.settings.trace)
+            {
+                logger.trace("--> NICKSERV IDENTIFY hunter2");
+            }
         }
         break;
 
@@ -501,7 +524,8 @@ void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
         logger.log(message);
 
         // Exit and let the user tend to it.
-        quit!(Yes.priority)(service.state, event.content, No.quiet);
+        enum properties = Message.Property.priority;
+        quit(service.state, event.content, properties);
     }
     else
     {
@@ -511,7 +535,9 @@ void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
         case "Login authentication failed":
         case "Login unsuccessful":
             logger.error("The bot was not compiled with Twitch support enabled.");
-            return quit!(Yes.priority)(service.state, "Missing Twitch support", No.quiet);
+            enum properties = Message.Property.priority;
+            enum message = "Missing Twitch support";
+            return quit(service.state, message, properties);
 
         default:
             return;
@@ -546,7 +572,8 @@ void onNickInUse(ConnectService service)
         }
 
         service.renameDuringRegistration ~= uniform(0, 10).text;
-        immediate(service.state, "NICK " ~ service.renameDuringRegistration);
+        immutable message = "NICK " ~ service.renameDuringRegistration;
+        immediate(service.state, message);
     }
 }
 
@@ -575,7 +602,8 @@ void onBadNick(ConnectService service)
             logger.error("Your nickname is invalid: it is reserved, too long, or contains invalid characters.");
         }
 
-        quit(service.state, "Invalid nickname");
+        enum message = "Invalid nickname";
+        quit(service.state, message);
     }
 }
 
@@ -592,7 +620,8 @@ void onBadNick(ConnectService service)
 void onBanned(ConnectService service)
 {
     logger.error("You are banned!");
-    quit(service.state, "Banned");
+    enum message = "Banned";
+    quit(service.state, message);
 }
 
 
@@ -614,7 +643,8 @@ void onPassMismatch(ConnectService service)
     }
 
     logger.error("Pass mismatch!");
-    quit(service.state, "Incorrect pass");
+    enum message = "Incorrect pass";
+    quit(service.state, message);
 }
 
 
@@ -767,7 +797,10 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
         {
             import std.algorithm.iteration : joiner;
             import std.conv : text;
-            immediate(service.state, text("CAP REQ :", capsToReq.data.joiner(" ")), Yes.quiet);
+
+            enum properties = Message.Property.quiet;
+            immutable message = text("CAP REQ :", capsToReq.data.joiner(" "));
+            immediate(service.state, message, properties);
         }
         break;
 
@@ -781,12 +814,13 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
             switch (cap)
             {
             case "sasl":
+                enum properties = Message.Property.quiet;
                 immutable hasKey = (service.state.connSettings.privateKeyFile.length ||
                     service.state.connSettings.certFile.length);
                 immutable mechanism = (service.state.connSettings.ssl && hasKey) ?
                     "AUTHENTICATE EXTERNAL" :
                     "AUTHENTICATE PLAIN";
-                immediate(service.state, mechanism, Yes.quiet);
+                immediate(service.state, mechanism, properties);
                 break;
 
             default:
@@ -809,8 +843,8 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
             case "sasl":
                 if (service.connectSettings.exitOnSASLFailure)
                 {
-                    quit(service.state, "SASL Negotiation Failure");
-                    return;
+                    enum message = "SASL Negotiation Failure";
+                    return quit(service.state, message);
                 }
                 break;
 
@@ -831,7 +865,9 @@ void onCapabilityNegotiation(ConnectService service, const ref IRCEvent event)
         (service.capabilityNegotiation == Progress.inProgress))
     {
         service.capabilityNegotiation = Progress.finished;
-        immediate(service.state, "CAP END", Yes.quiet);
+        enum properties = Message.Property.quiet;
+        enum message = "CAP END";
+        immediate(service.state, message, properties);
 
         if (!service.issuedNICK)
         {
@@ -860,7 +896,8 @@ void onSASLAuthenticate(ConnectService service)
         (service.saslExternal == Progress.notStarted))
     {
         service.saslExternal = Progress.inProgress;
-        immediate(service.state, "AUTHENTICATE +");
+        enum message = "AUTHENTICATE +";
+        immediate(service.state, message);
         return;
     }
 
@@ -909,8 +946,10 @@ auto trySASLPlain(ConnectService service)
 
         immutable authToken = text(account_, '\0', account_, '\0', password_);
         immutable encoded = encode64(authToken);
+        immutable message = "AUTHENTICATE " ~ encoded;
 
-        immediate(service.state, "AUTHENTICATE " ~ encoded, Yes.quiet);
+        enum properties = Message.Property.quiet;
+        immediate(service.state, message, properties);
 
         if (!service.state.settings.hideOutgoing && !service.state.settings.trace)
         {
@@ -961,7 +1000,9 @@ void onSASLSuccess(ConnectService service)
         (service.capabilityNegotiation == Progress.inProgress))
     {
         service.capabilityNegotiation = Progress.finished;
-        immediate(service.state, "CAP END", Yes.quiet);
+        enum properties = Message.Property.quiet;
+        enum message = "CAP END";
+        immediate(service.state, message, properties);
 
         if ((service.registration == Progress.inProgress) && !service.issuedNICK)
         {
@@ -988,14 +1029,16 @@ void onSASLFailure(ConnectService service)
     {
         // Fall back to PLAIN
         service.saslExternal = Progress.finished;
-        immediate(service.state, "AUTHENTICATE PLAIN", Yes.quiet);
+        enum properties = Message.Property.quiet;
+        enum message = "AUTHENTICATE PLAIN";
+        immediate(service.state, message, properties);
         return;
     }
 
     if (service.connectSettings.exitOnSASLFailure)
     {
-        quit(service.state, "SASL Negotiation Failure");
-        return;
+        enum message = "SASL Negotiation Failure";
+        return quit(service.state, message);
     }
 
     // Auth failed and will fail even if we try NickServ, so flag as
@@ -1006,7 +1049,9 @@ void onSASLFailure(ConnectService service)
         (service.capabilityNegotiation == Progress.inProgress))
     {
         service.capabilityNegotiation = Progress.finished;
-        immediate(service.state, "CAP END", Yes.quiet);
+        enum properties = Message.Property.quiet;
+        enum message = "CAP END";
+        immediate(service.state, message, properties);
 
         if ((service.registration == Progress.inProgress) && !service.issuedNICK)
         {
@@ -1139,14 +1184,15 @@ void onWelcome(ConnectService service)
 
                     version(WithPrinterPlugin)
                     {
-                        import kameloso.thread : ThreadMessage, sendable;
+                        import kameloso.thread : ThreadMessage, boxed;
                         import std.concurrency : send;
                         service.state.mainThread.send(
-                            ThreadMessage.busMessage("printer", sendable(squelchVerb)));
+                            ThreadMessage.busMessage("printer", boxed(squelchVerb)));
                     }
 
-                    raw(service.state, "NICK " ~ service.state.client.origNickname,
-                        Yes.quiet, Yes.background);
+                    enum properties = (Message.Property.quiet | Message.Property.background);
+                    immutable message = "NICK " ~ service.state.client.origNickname;
+                    raw(service.state, message, properties);
                     delay(service, service.nickRegainPeriodicity, Yes.yield);
                 }
             }
@@ -1170,10 +1216,10 @@ version(WithPrinterPlugin)
 )
 void onSelfnickSuccessOrFailure(ConnectService service)
 {
-    import kameloso.thread : ThreadMessage, sendable;
+    import kameloso.thread : ThreadMessage, boxed;
     import std.concurrency : send;
     service.state.mainThread.send(
-        ThreadMessage.busMessage("printer", sendable("unsquelch " ~ service.state.client.origNickname)));
+        ThreadMessage.busMessage("printer", boxed("unsquelch " ~ service.state.client.origNickname)));
 }
 
 
@@ -1193,7 +1239,8 @@ void onQuit(ConnectService service, const ref IRCEvent event)
         // The regain Fiber will end itself when it is next triggered
         enum pattern = "Attempting to regain nickname <l>%s</>...";
         logger.infof(pattern, service.state.client.origNickname);
-        raw(service.state, "NICK " ~ service.state.client.origNickname, No.quiet, No.background);
+        immutable message = "NICK " ~ service.state.client.origNickname;
+        raw(service.state, message);
     }
 }
 
@@ -1215,7 +1262,11 @@ void onEndOfMotd(ConnectService service)
     if ((service.state.server.daemon != IRCServer.Daemon.twitch) &&
         !service.state.client.ident.length)
     {
-        whois!(Yes.priority)(service.state, service.state.client.nickname, Yes.force, Yes.quiet);
+        enum properties =
+            Message.Property.forced |
+            Message.Property.quiet |
+            Message.Property.priority;
+        whois(service.state, service.state.client.nickname, properties);
     }
 
     version(TwitchSupport)
@@ -1281,7 +1332,9 @@ void onISUPPORT(ConnectService service, const ref IRCEvent event)
 
     if (event.aux[].canFind("CODEPAGES"))
     {
-        raw(service.state, "CODEPAGE UTF-8", Yes.quiet);
+        enum properties = Message.Property.quiet;
+        enum message = "CODEPAGE UTF-8";
+        raw(service.state, message, properties);
     }
 }
 
@@ -1517,7 +1570,9 @@ void register(ConnectService service)
 
     if (!serverBlacklisted || service.state.settings.force)
     {
-        immediate(service.state, "CAP LS 302", Yes.quiet);
+        enum properties = Message.Property.quiet;
+        enum message = "CAP LS 302";
+        immediate(service.state, message, properties);
     }
 
     version(TwitchSupport)
@@ -1566,7 +1621,9 @@ void register(ConnectService service)
         if (!service.state.bot.pass.length) service.state.bot.pass = decoded;
         service.state.updates |= typeof(service.state.updates).bot;
 
-        immediate(service.state, "PASS " ~ service.state.bot.pass, Yes.quiet);
+        enum properties = Message.Property.quiet;
+        immutable message = "PASS " ~ service.state.bot.pass;
+        immediate(service.state, message, properties);
 
         if (!service.state.settings.hideOutgoing && !service.state.settings.trace)
         {
@@ -1663,14 +1720,18 @@ void negotiateNick(ConnectService service)
                 O - local operator flag;
                 s - marks a user for receipt of server notices.
          +/
+        enum properties = Message.Property.quiet;
         enum pattern = "USER %s 8 * :%s";
         immutable message = pattern.format(service.state.client.user,
             service.state.client.realName.replaceTokens(service.state.client));
-        immediate(service.state, message, Yes.quiet);
+        immediate(service.state, message, properties);
     }
 
-    immediate(service.state, "NICK " ~ service.state.client.nickname,
-        serverIsTwitch ? Yes.quiet : No.quiet);
+    immutable properties = serverIsTwitch ?
+        Message.Property.quiet :
+        Message.Property.none;
+    immutable message = "NICK " ~ service.state.client.nickname;
+    immediate(service.state, message, properties);
     service.issuedNICK = true;
 }
 
@@ -1692,11 +1753,11 @@ void start(ConnectService service)
 }
 
 
-import kameloso.thread : BusMessage, Sendable;
+import kameloso.thread : Boxed, Sendable;
 
 // onBusMessage
 /++
-    Receives a passed [kameloso.thread.BusMessage|BusMessage] with the "`connect`" header,
+    Receives a passed [kameloso.thread.Boxed|Boxed] instance with the "`connect`" header,
     and calls functions based on the payload message.
 
     This is used to let other plugins trigger re-authentication with services.
@@ -1710,7 +1771,7 @@ void onBusMessage(ConnectService service, const string header, shared Sendable c
 {
     if (header != "connect") return;
 
-    auto message = cast(BusMessage!string)content;
+    auto message = cast(Boxed!string)content;
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
 
     if (message.payload == "auth")

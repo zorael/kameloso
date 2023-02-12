@@ -1263,7 +1263,7 @@ else
 
 // onBusMessage
 /++
-    Receive a passed [kameloso.thread.BusMessage|BusMessage] with the "`seen`" header,
+    Receive a passed [kameloso.thread.Boxed|Boxed] instance with the "`seen`" header,
     and calls functions based on the payload message.
 
     This is used in the Pipeline plugin, to allow us to trigger seen verbs via
@@ -1284,10 +1284,10 @@ void onBusMessage(SeenPlugin plugin, const string header, shared Sendable conten
     if (!plugin.isEnabled) return;
     if (header != "seen") return;
 
-    import kameloso.thread : BusMessage;
+    import kameloso.thread : Boxed;
     import lu.string : strippedRight;
 
-    auto message = cast(BusMessage!string)content;
+    auto message = cast(Boxed!string)content;
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
 
     immutable verb = message.payload.strippedRight;

@@ -364,9 +364,9 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             case putUser:
-                import kameloso.thread : BusMessage;
+                import kameloso.thread : Boxed;
 
-                auto boxedUser = cast(BusMessage!IRCUser)message.payload;
+                auto boxedUser = cast(Boxed!IRCUser)message.payload;
                 assert(boxedUser, "Incorrectly cast message payload: " ~ typeof(boxedUser).stringof);
 
                 auto user = boxedUser.payload;
@@ -391,141 +391,6 @@ void messageFiber(ref Kameloso instance)
                 logger.errorf(pattern, message.type);
                 if (instance.settings.flush) stdout.flush();
                 break;
-            }
-        }
-
-        /++
-            Does one of three things, depending on the delegates passed to it
-            (and their nullness);
-
-            1. Constructs an associative array of either all hardcoded commands
-               or all channel-specific soft commands (of all plugins) and calls
-               the passed delegate with it as argument.
-
-            2. Fetches the configured value of a setting if given a `plugin.setting`
-               expression, or a list of all available configuration settings if
-               given only a `plugin`.
-
-            3. Applies a `plugin.setting=value` change in setting to whichever plugin
-               matches the expression.
-         +/
-        void peekGetSet(
-            ThreadMessage.PeekGetSet,
-            shared(void delegate(IRCPlugin.CommandMetadata[string][string]) @system) peekDg,
-            shared(void delegate(string, string, string) @system) getSettingDg,
-            shared(void delegate(bool) @system) setSettingDg,
-            string contextual)
-        in ((peekDg || getSettingDg || setSettingDg), "All delegates passed to `peekGetSet` were null")
-        {
-            if (peekDg)
-            {
-                alias channelName = contextual;
-
-                IRCPlugin.CommandMetadata[string][string] commandAA;
-
-                foreach (plugin; instance.plugins)
-                {
-                    if (channelName.length)
-                    {
-                        commandAA[plugin.name] = plugin.channelSpecificCommands(channelName);
-                    }
-                    else
-                    {
-                        commandAA[plugin.name] = plugin.commands;
-                    }
-                }
-
-                return peekDg(commandAA);
-            }
-            else if (getSettingDg)
-            {
-                import lu.string : beginsWith, contains, nom;
-                import std.array : Appender;
-                import std.algorithm.iteration : splitter;
-
-                alias expression = contextual;
-                string slice = expression;  // mutable
-                immutable specifiedPlugin = slice.nom!(Yes.inherit)('.');
-                alias specifiedSetting = slice;
-
-                Appender!(char[]) sink;
-                sink.reserve(256);  // guesstimate
-
-                void apply()
-                {
-                    if (specifiedSetting.length)
-                    {
-                        import lu.string : strippedLeft;
-
-                        foreach (const line; sink.data.splitter('\n'))
-                        {
-                            string lineslice = cast(string)line;  // need a string for nom and strippedLeft...
-                            if (lineslice.beginsWith('#')) lineslice = lineslice[1..$];
-                            const thisSetting = lineslice.nom!(Yes.inherit)(' ');
-
-                            if (thisSetting != specifiedSetting) continue;
-
-                            const value = lineslice.strippedLeft;
-                            return getSettingDg(specifiedPlugin, specifiedSetting, value);
-                        }
-                    }
-                    else
-                    {
-                        import std.conv : text;
-
-                        string[] allSettings;
-
-                        foreach (const line; sink.data.splitter('\n'))
-                        {
-                            string lineslice = cast(string)line;  // need a string for nom and strippedLeft...
-                            if (!lineslice.beginsWith('[')) allSettings ~= lineslice.nom!(Yes.inherit)(' ');
-                        }
-
-                        return getSettingDg(specifiedPlugin, string.init, allSettings.text);
-                    }
-
-                    // If we're here, no such setting was found
-                    return getSettingDg(specifiedPlugin, string.init, string.init);
-                }
-
-                switch (specifiedPlugin)
-                {
-                case "core":
-                    import lu.serialisation : serialise;
-                    sink.serialise(instance.settings);
-                    return apply();
-
-                case "connection":
-                    // May leak secrets? certFile, privateKey etc...
-                    // Careful with how we make this functionality available
-                    import lu.serialisation : serialise;
-                    sink.serialise(instance.connSettings);
-                    return apply();
-
-                default:
-                    foreach (plugin; instance.plugins)
-                    {
-                        if (plugin.name != specifiedPlugin) continue;
-                        plugin.serialiseConfigInto(sink);
-                        return apply();
-                    }
-
-                    // If we're here, no plugin was found
-                    return getSettingDg(string.init, string.init, string.init);
-                }
-            }
-            else if (setSettingDg)
-            {
-                import kameloso.plugins.common.misc : applyCustomSettings;
-
-                alias expression = contextual;
-
-                // Borrow settings from the first plugin. It's taken by value
-                immutable success = applyCustomSettings(
-                    instance.plugins,
-                    [ expression ],
-                    instance.plugins[0].state.settings);
-                return setSettingDg(success);
             }
         }
 
@@ -860,7 +725,6 @@ void messageFiber(ref Kameloso instance)
                 &onMessage,
                 &eventToServer,
                 &proxyLoggerMessages,
-                &peekGetSet,
                 (Variant v) scope
                 {
                     // Caught an unhandled message
@@ -1020,6 +884,11 @@ auto mainLoop(ref Kameloso instance)
         foreach (plugin; instance.plugins)
         {
             if (!plugin.isEnabled) continue;
+
+            if (plugin.state.specialRequests.length)
+            {
+                processSpecialRequests(instance, plugin);
+            }
 
             if (!plugin.state.scheduledFibers.length &&
                 !plugin.state.scheduledDelegates.length) continue;
@@ -1813,6 +1682,10 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledDelegate`s with an uns
             logger.warningf(pattern, plugin.name, i, e.msg);
             version(PrintStacktraces) logger.trace(e);
         }
+        finally
+        {
+            destroy(scheduledDg.dg);
+        }
 
         toRemove ~= i;  // Always removed a scheduled delegate after processing
     }
@@ -1986,7 +1859,7 @@ void processReadyReplays(ref Kameloso instance, IRCPlugin plugin)
 void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
 {
     import kameloso.constants : Timeout;
-    import kameloso.messaging : whois;
+    import kameloso.messaging : Message, whois;
     import std.datetime.systime : Clock;
 
     // Walk through replays and call WHOIS on those that haven't been
@@ -2028,7 +1901,8 @@ void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
             instance.previousWhoisTimestamps[nickname] = now;
             instance.propagateWhoisTimestamp(nickname, now);*/
 
-            whois(plugin.state, nickname, Yes.force, Yes.quiet);
+            enum properties = (Message.Property.forced | Message.Property.quiet);
+            whois(plugin.state, nickname, properties);
         }
         else
         {
@@ -2045,6 +1919,201 @@ void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
         {
             if (instance.settings.flush) stdout.flush();
         }
+    }
+}
+
+
+// processSpecialRequests
+/++
+    Iterates through a plugin's array of [kameloso.plugins.core.SpecialRequest|SpecialRequest]s.
+    Depending on what their [kameloso.plugins.core.SpecialRequest.fiber|fiber] member
+    (which is in actualy a [kameloso.thread.CarryingFiber|CarryingFiber]) can be
+    cast to, it prepares a payload, assigns it to the
+    [kameloso.thread.CarryingFiber|CarryingFiber], and calls it.
+
+    If plugins need support for new types of requests, they must be defined and
+    hardcoded here. There's no way to let plugins process the requests themselves
+    without letting them peek into [kameloso.kameloso.Kameloso|the Kameloso instance].
+
+    The array is always cleared after iteration, so requests that yield must
+    first re-queue themselves.
+
+    Params:
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        plugin = The relevant [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
+ +/
+void processSpecialRequests(ref Kameloso instance, IRCPlugin plugin)
+{
+    import kameloso.plugins.common.core;
+    import kameloso.thread : CarryingFiber;
+    import std.typecons : Tuple;
+    import core.thread : Fiber;
+
+    auto specialRequestsSnapshot = plugin.state.specialRequests;
+    plugin.state.specialRequests = null;
+
+    top:
+    foreach (request; specialRequestsSnapshot)
+    {
+        scope(exit)
+        {
+            if (request.fiber.state == Fiber.State.TERM)
+            {
+                // Clean up
+                destroy(request.fiber);
+            }
+
+            destroy(request);
+        }
+
+        alias PeekCommandsPayload = Tuple!(IRCPlugin.CommandMetadata[string][string]);
+        alias GetSettingPayload = Tuple!(string, string, string);
+        alias SetSettingPayload = Tuple!(bool);
+
+        if (auto fiber = cast(CarryingFiber!(PeekCommandsPayload))(request.fiber))
+        {
+            immutable channelName = request.context;
+
+            IRCPlugin.CommandMetadata[string][string] commandAA;
+
+            foreach (thisPlugin; instance.plugins)
+            {
+                if (channelName.length)
+                {
+                    commandAA[thisPlugin.name] = thisPlugin.channelSpecificCommands(channelName);
+                }
+                else
+                {
+                    commandAA[thisPlugin.name] = thisPlugin.commands;
+                }
+            }
+
+            fiber.payload[0] = commandAA;
+            fiber.call();
+            continue;
+        }
+        else if (auto fiber = cast(CarryingFiber!(GetSettingPayload))(request.fiber))
+        {
+            import lu.string : beginsWith, contains, nom;
+            import std.array : Appender;
+            import std.algorithm.iteration : splitter;
+
+            immutable expression = request.context;
+            string slice = expression;  // mutable
+            immutable pluginName = slice.nom!(Yes.inherit)('.');
+            alias setting = slice;
+
+            Appender!(char[]) sink;
+            sink.reserve(256);  // guesstimate
+
+            void apply()
+            {
+                if (setting.length)
+                {
+                    import lu.string : strippedLeft;
+
+                    foreach (const line; sink.data.splitter('\n'))
+                    {
+                        string lineslice = cast(string)line;  // need a string for nom and strippedLeft...
+                        if (lineslice.beginsWith('#')) lineslice = lineslice[1..$];
+                        const thisSetting = lineslice.nom!(Yes.inherit)(' ');
+
+                        if (thisSetting != setting) continue;
+
+                        const value = lineslice.strippedLeft;
+                        fiber.payload[0] = pluginName;
+                        fiber.payload[1] = setting;
+                        fiber.payload[2] = value;
+                        fiber.call();
+                        return;
+                    }
+                }
+                else
+                {
+                    import std.conv : to;
+
+                    string[] allSettings;
+
+                    foreach (const line; sink.data.splitter('\n'))
+                    {
+                        string lineslice = cast(string)line;  // need a string for nom and strippedLeft...
+                        if (!lineslice.beginsWith('[')) allSettings ~= lineslice.nom!(Yes.inherit)(' ');
+                    }
+
+                    fiber.payload[0] = pluginName;
+                    //fiber.payload[1] = string.init;
+                    fiber.payload[2] = allSettings.to!string;
+                    fiber.call();
+                    return;
+                }
+
+                // If we're here, no such setting was found
+                fiber.payload[0] = pluginName;
+                //fiber.payload[1] = string.init;
+                //fiber.payload[2] = string.init;
+                fiber.call();
+                return;
+            }
+
+            switch (pluginName)
+            {
+            case "core":
+                import lu.serialisation : serialise;
+                sink.serialise(instance.settings);
+                apply();
+                continue;
+
+            case "connection":
+                // May leak secrets? certFile, privateKey etc...
+                // Careful with how we make this functionality available
+                import lu.serialisation : serialise;
+                sink.serialise(instance.connSettings);
+                apply();
+                continue;
+
+            default:
+                foreach (thisPlugin; instance.plugins)
+                {
+                    if (thisPlugin.name != pluginName) continue;
+                    thisPlugin.serialiseConfigInto(sink);
+                    apply();
+                    continue top;
+                }
+
+                // If we're here, no plugin was found
+                //fiber.payload[0] = string.init;
+                //fiber.payload[1] = string.init;
+                //fiber.payload[2] = string.init;
+                fiber.call();
+                continue;
+            }
+        }
+        else if (auto fiber = cast(CarryingFiber!(SetSettingPayload))(request.fiber))
+        {
+            import kameloso.plugins.common.misc : applyCustomSettings;
+
+            immutable expression = request.context;
+
+            // Borrow settings from the first plugin. It's taken by value
+            immutable success = applyCustomSettings(
+                instance.plugins,
+                [ expression ],
+                instance.plugins[0].state.settings);
+
+            fiber.payload[0] = success;
+            fiber.call();
+            continue;
+        }
+        else
+        {
+            logger.error("Unknown special request type: " ~ typeof(request).stringof);
+        }
+    }
+
+    if (plugin.state.specialRequests.length)
+    {
+        // One or more new requests were added while processing these ones
+        return processSpecialRequests(instance, plugin);
     }
 }
 

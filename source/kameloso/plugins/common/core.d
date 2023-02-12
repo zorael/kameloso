@@ -46,8 +46,10 @@ module kameloso.plugins.common.core;
 
 private:
 
+import kameloso.thread : CarryingFiber;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
+import core.thread : Fiber;
 
 public:
 
@@ -2683,6 +2685,12 @@ public:
     {
         this._connectionID = connectionID;
     }
+
+    // specialRequests
+    /++
+        This plugin's array of [SpecialRequest]s.
+     +/
+    SpecialRequest[] specialRequests;
 }
 
 
@@ -3170,6 +3178,106 @@ public:
 
         mixin UnderscoreOpDispatcher;
     }
+}
+
+
+// SpecialRequest
+/++
+    Embodies the notion of a special request a plugin issues to the main thread.
+ +/
+interface SpecialRequest
+{
+private:
+    import core.thread : Fiber;
+
+public:
+    // context
+    /++
+        String context of the request.
+     +/
+    string context();
+
+    // fiber
+    /++
+        Fiber embedded into the request.
+     +/
+    Fiber fiber();
+}
+
+
+// SpecialRequestImpl
+/++
+    Concrete implementation of a [SpecialRequest].
+
+    The template parameter `T` defines that kind of
+    [kameloso.thread.CarryingFiber|CarryingFiber] is embedded into it.
+ +/
+final class SpecialRequestImpl(T) : SpecialRequest
+{
+private:
+    import kameloso.thread : CarryingFiber;
+    import core.thread : Fiber;
+
+    /++
+        Private context string.
+     +/
+    string _context;
+
+    /++
+        Private [kameloso.thread.CarryingFiber|CarryingFiber].
+     +/
+    CarryingFiber!T _fiber;
+
+public:
+    // this
+    /++
+        Constructor.
+
+        Params:
+            context = String context of the request.
+            fiber = [kameloso.thread.CarryingFiber|CarryingFiber] to embed into the request.
+     +/
+    this(string context, CarryingFiber!T fiber)
+    {
+        this._context = context;
+        this._fiber = fiber;
+    }
+
+    // context
+    /++
+        String context of the request. May be anything; highly request-specific.
+     +/
+    string context()
+    {
+        return _context;
+    }
+
+    // fiber
+    /++
+        [kameloso.thread.CarryingFiber|CarryingFiber] embedded into the request.
+     +/
+    Fiber fiber()
+    {
+        return _fiber;
+    }
+}
+
+
+// specialRequest
+/++
+    Instantiates a [SpecialRequestImpl] in the guise of a [SpecialRequest]
+    with the inferred type `T` as payload.
+
+    Params:
+        context = String context of the request.
+        fiber = [kameloso.thread.CarryingFiber|CarryingFiber] to embed into the request.
+
+    Returns:
+        A new [SpecialRequest] that is in actualy a [SpecialRequestImpl].
+ +/
+SpecialRequest specialRequest(T)(const string context, CarryingFiber!T fiber)
+{
+    return new SpecialRequestImpl!T(context, fiber);
 }
 
 
