@@ -375,11 +375,13 @@ void handleNewOneliner(
     const /*ref*/ IRCEvent event,
     /*const*/ string slice)
 {
-    import kameloso.thread : ThreadMessage;
+    import kameloso.constants : BufferSize;
+    import kameloso.thread : CarryingFiber;
     import lu.string : SplitResults, splitInto;
-    import std.concurrency : send;
     import std.format : format;
+    import std.typecons : Tuple;
     import std.uni : toLower;
+    import core.thread : Fiber;
 
     // copy/pasted
     string stripPrefix(const string trigger)
@@ -483,10 +485,27 @@ void handleNewOneliner(
         return false;
     }
 
-    void channelSpecificDg(IRCPlugin.CommandMetadata[string][string] channelSpecificAA)
+    alias Payload = Tuple!(IRCPlugin.CommandMetadata[string][string]);
+
+    void dg()
     {
+        auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis;
+        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+
+        IRCPlugin.CommandMetadata[string][string] aa = thisFiber.payload[0];
+        if (triggerConflicts(aa)) return;
+
+        // Get channel AAs
+        plugin.state.specialRequests ~= specialRequest!Payload(event.channel, thisFiber);
+        Fiber.yield();
+
+        IRCPlugin.CommandMetadata[string][string] channelSpecificAA = thisFiber.payload[0];
+        import std.stdio;
+        writeln(channelSpecificAA);
         if (triggerConflicts(channelSpecificAA)) return;
 
+
+        // If we're here there were no conflicts
         Oneliner oneliner;
         oneliner.trigger = trigger;
         oneliner.type = type;
@@ -501,26 +520,8 @@ void handleNewOneliner(
         chan(plugin.state, event.channel, message);
     }
 
-    void dg(IRCPlugin.CommandMetadata[string][string] aa)
-    {
-        if (triggerConflicts(aa)) return;
-
-        // Arcane message used to minimise template instantiations and lower memory requirements
-        plugin.state.mainThread.send(
-            ThreadMessage.HandleDelegates(),
-            cast(shared(void delegate(IRCPlugin.CommandMetadata[string][string]) @system))&channelSpecificDg,
-            cast(shared(void delegate(string, string, string) @system))null,
-            cast(shared(void delegate(bool) @system))null,
-            event.channel);
-    }
-
-    // As above
-    plugin.state.mainThread.send(
-        ThreadMessage.HandleDelegates(),
-        cast(shared(void delegate(IRCPlugin.CommandMetadata[string][string]) @system))&dg,
-        cast(shared(void delegate(string, string, string) @system))null,
-        cast(shared(void delegate(bool) @system))null,
-        string.init);
+    auto fiber = new CarryingFiber!Payload(&dg, BufferSize.fiberStack);
+    plugin.state.specialRequests ~= specialRequest!Payload(string.init, fiber);
 }
 
 
