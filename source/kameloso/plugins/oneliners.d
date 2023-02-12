@@ -412,6 +412,13 @@ void handleNewOneliner(
         chan(plugin.state, event.channel, message);
     }
 
+    void sendOnelinerAlreadyExists(const string trigger)
+    {
+        enum pattern = `A oneliner with the trigger word "<b>%s<b>" already exists.`;
+        immutable message = pattern.format(trigger);
+        chan(plugin.state, event.channel, message);
+    }
+
     string trigger;
     string typestring;
     string cooldownString;
@@ -441,6 +448,13 @@ void handleNewOneliner(
     }
 
     trigger = stripPrefix(trigger).toLower;
+
+    const channelTriggers = event.channel in plugin.onelinersByChannel;
+    if (channelTriggers && (trigger in *channelTriggers))
+    {
+        return sendOnelinerAlreadyExists(trigger);
+    }
+
     int cooldownSeconds = Oneliner.init.cooldown;
 
     if (cooldownString.length)
