@@ -122,8 +122,6 @@ $ dub build
 
 This will compile the bot in the default **debug** build type, which adds some extra code and debugging symbols. You can omit these and perform some optimisations by building it in **release** mode with `dub build -b release`. Mind that build times will increase accordingly. Refer to the output of `dub build --print-builds` for more build types.
 
-It is not recommended to use **dmd** if you want a release mode build; partly due to **ldc** and **gdc** being the obvious choice by merit of simply being so much better at optimising code, but mostly because the program becomes prone to memory corruption and crashes in certain and distinct parts of it when compiled with **dmd**'s optimisations enabled. ([#159](https://github.com/zorael/kameloso/issues/159))
-
 ### Build configurations
 
 There are two major configurations in which the bot may be built.
