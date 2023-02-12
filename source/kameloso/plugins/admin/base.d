@@ -845,11 +845,20 @@ void onCommandPart(AdminPlugin plugin, const ref IRCEvent event)
 )
 void onCommandSet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.thread : ThreadMessage;
-    import std.concurrency : send;
+    import kameloso.thread : CarryingFiber, ThreadMessage;
+    import kameloso.constants : BufferSize;
+    import std.typecons : Tuple;
+    import core.thread : Fiber;
 
-    void dg(bool success)
+    alias Payload = Tuple!(bool);
+
+    void dg()
     {
+        auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis;
+        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+
+        immutable success = thisFiber.payload[0];
+
         if (success)
         {
             enum message = "Setting changed.";
@@ -862,13 +871,8 @@ void onCommandSet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         }
     }
 
-    // Arcane message used to minimise template instantiations and lower memory requirements
-    plugin.state.mainThread.send(
-        ThreadMessage.HandleDelegates(),
-        cast(shared(void delegate(IRCPlugin.CommandMetadata[string][string]) @system))null,
-        cast(shared(void delegate(string, string, string) @system))null,
-        cast(shared(void delegate(bool) @system))&dg,
-        event.content);
+    auto fiber = new CarryingFiber!Payload(&dg, BufferSize.fiberStack);
+    plugin.state.specialRequests ~= specialRequest!Payload(event.content, fiber);
 }
 
 
@@ -897,11 +901,22 @@ void onCommandSet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 )
 void onCommandGet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.thread : ThreadMessage;
-    import std.concurrency : send;
+    import kameloso.constants : BufferSize;
+    import kameloso.thread : CarryingFiber, ThreadMessage;
+    import std.typecons : Tuple;
+    import core.thread : Fiber;
 
-    void dg(string pluginName, string setting, string value)
+    alias Payload = Tuple!(string, string, string);
+
+    void dg()
     {
+        auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis;
+        assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+
+        immutable pluginName = thisFiber.payload[0];
+        immutable setting = thisFiber.payload[1];
+        immutable value = thisFiber.payload[2];
+
         if (pluginName.length)
         {
             if (setting.length)
@@ -932,13 +947,8 @@ void onCommandGet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         }
     }
 
-    // Arcane message used to minimise template instantiations and lower memory requirements
-    plugin.state.mainThread.send(
-        ThreadMessage.HandleDelegates(),
-        cast(shared(void delegate(IRCPlugin.CommandMetadata[string][string]) @system))null,
-        cast(shared(void delegate(string, string, string) @system))&dg,
-        cast(shared(void delegate(bool) @system))null,
-        event.content);
+    auto fiber = new CarryingFiber!Payload(&dg, BufferSize.fiberStack);
+    plugin.state.specialRequests ~= specialRequest!Payload(event.content, fiber);
 }
 
 
@@ -1389,20 +1399,33 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
     }
 
     case "set":
-        import kameloso.thread : ThreadMessage;
+        import kameloso.constants : BufferSize;
+        import kameloso.thread : CarryingFiber;
+        import std.typecons : Tuple;
+        import core.thread : Fiber;
 
-        void dg(bool success)
+        alias Payload = Tuple!(bool);
+
+        void dg()
         {
-            if (success) logger.log("Setting changed.");
+            auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis;
+            assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
+
+            immutable success = thisFiber.payload[0];
+
+            if (success)
+            {
+                logger.log("Setting changed.");
+            }
+            else
+            {
+                logger.error("Invalid syntax or plugin/setting name.");
+            }
         }
 
-        // Arcane message used to minimise template instantiations and lower memory requirements
-        return plugin.state.mainThread.send(
-            ThreadMessage.HandleDelegates(),
-            cast(shared(void delegate(IRCPlugin.CommandMetadata[string][string]) @system))null,
-            cast(shared(void delegate(string, string, string) @system))null,
-            cast(shared(void delegate(bool) @system))&dg,
-            slice);
+        auto fiber = new CarryingFiber!Payload(&dg, BufferSize.fiberStack);
+        plugin.state.specialRequests ~= specialRequest!Payload(slice, fiber);
+        return;
 
     case "save":
         import kameloso.thread : ThreadMessage;

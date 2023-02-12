@@ -243,15 +243,6 @@ struct ThreadMessage
     bool quiet;
 
     /++
-        Signifies one of three things, depending on the bundled delegates;
-
-        1. Concurrency message asking for an associative array of a description of all plugins' commands.
-        2. Concurrency message asking to get one or all settings of a given plugin.
-        3. Concurrency message asking to apply an expression to change a setting of a plugin.
-     +/
-    static struct HandleDelegates {}
-
-    /++
         An `opDispatch`, constructing one function for each member in [Type].
 
         What the parameters functionally do is contextual to each [Type].
