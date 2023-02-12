@@ -570,7 +570,7 @@ void handleAddToOneliner(
 
     void sendAddUsage()
     {
-        enum pattern = "Usage: <b>%s%s add<b> [trigger] [text]";
+        enum pattern = "Usage: <b>%s%s add<b> [existing trigger] [text]";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel, message);
     }
