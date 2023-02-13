@@ -97,14 +97,12 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             "but its parent module does not mix in `UserAwareness`");
     }
 
-
     // _kamelosoCarriedNickname
     /++
         Nickname being looked up, stored outside of any separate function to make
         it available to all of them.
      +/
     string _kamelosoCarriedNickname;
-
 
     /++
         Event types that we may encounter as responses to WHOIS queries.
@@ -119,13 +117,13 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         IRCEvent.Type.ERR_UNKNOWNCOMMAND,
     ];
 
-
     // whoisFiberDelegate
     /++
         Reusable mixin that catches WHOIS results.
      +/
     void whoisFiberDelegate()
     {
+        import kameloso.plugins.common.delayawait : unawait;
         import kameloso.thread : CarryingFiber;
         import dialect.common : opEqualsCaseInsensitive;
         import dialect.defs : IRCEvent, IRCUser;
@@ -249,8 +247,6 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                 continue;
             }
 
-            import kameloso.plugins.common.delayawait : unawait;
-
             // Clean up awaiting fiber entries on exit, just to be neat.
             scope(exit) unawait(context, thisFiber, whoisEventTypes[]);
 
@@ -288,7 +284,6 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         }
     }
 
-
     // enqueueAndWHOIS
     /++
         Constructs a [kameloso.thread.CarryingFiber|CarryingFiber] carrying a
@@ -311,6 +306,8 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         const Flag!"issueWhois" issueWhois = Yes.issueWhois,
         const Flag!"background" background = No.background)
     {
+        import kameloso.plugins.common.delayawait : await;
+        import kameloso.constants : BufferSize;
         import kameloso.messaging : whois;
         import kameloso.thread : CarryingFiber;
         import lu.string : contains, nom;
@@ -368,7 +365,8 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                     }
                 }
 
-                static if (TakesParams!(onSuccess, IRCEvent) ||
+                static if (
+                    TakesParams!(onSuccess, IRCEvent) ||
                     TakesParams!(onSuccess, IRCUser))
                 {
                     // Can't WHOIS on Twitch
@@ -454,14 +452,10 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             }
         }
 
-        import kameloso.plugins.common.delayawait : await;
-        import kameloso.constants : BufferSize;
-
         Fiber fiber = new CarryingFiber!IRCEvent(&whoisFiberDelegate, BufferSize.fiberStack);
         await(context, fiber, whoisEventTypes[]);
 
-        string slice = nickname;
-
+        string slice = nickname;  // mutable
         immutable nicknamePart = slice.contains('!') ?
             slice.nom('!') :
             slice;
@@ -822,9 +816,6 @@ private:
         Merely an alias to [immediate], because we use both terms at different places.
      +/
     alias immediateline = immediate;
-
-
-    import std.meta : AliasSeq;
 
     /+
         Generates the functions `askToWriteln`, `askToTrace`, `askToLog`,

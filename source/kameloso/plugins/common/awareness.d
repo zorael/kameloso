@@ -95,7 +95,6 @@ mixin template MinimalAuthentication(
      +/
     package enum hasMinimalAuthentication = true;
 
-
     // onMinimalAuthenticationAccountInfoTargetMixin
     /++
         Proxies to
@@ -115,7 +114,6 @@ mixin template MinimalAuthentication(
     {
         return kameloso.plugins.common.awareness.onMinimalAuthenticationAccountInfoTarget(plugin, event);
     }
-
 
     // onMinimalAuthenticationUnknownCommandWHOISMixin
     /++
@@ -260,7 +258,6 @@ mixin template UserAwareness(
         mixin kameloso.plugins.common.awareness.MinimalAuthentication!(debug_, module_);
     }
 
-
     // onUserAwarenessQuitMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onUserAwarenessQuit|onUserAwarenessQuit].
@@ -278,7 +275,6 @@ mixin template UserAwareness(
         return kameloso.plugins.common.awareness.onUserAwarenessQuit(plugin, event);
     }
 
-
     // onUserAwarenessNickMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onUserAwarenessNick|onUserAwarenessNick].
@@ -295,7 +291,6 @@ mixin template UserAwareness(
     {
         return kameloso.plugins.common.awareness.onUserAwarenessNick(plugin, event);
     }
-
 
     // onUserAwarenessCatchTargetMixin
     /++
@@ -318,7 +313,6 @@ mixin template UserAwareness(
     {
         return kameloso.plugins.common.awareness.onUserAwarenessCatchTarget(plugin, event);
     }
-
 
     // onUserAwarenessCatchSenderMixin
     /++
@@ -344,7 +338,6 @@ mixin template UserAwareness(
         return kameloso.plugins.common.awareness.onUserAwarenessCatchSender!channelPolicy(plugin, event);
     }
 
-
     // onUserAwarenessNamesReplyMixin
     /++
         Proxies to
@@ -363,7 +356,6 @@ mixin template UserAwareness(
     {
         return kameloso.plugins.common.awareness.onUserAwarenessNamesReply(plugin, event);
     }
-
 
     // onUserAwarenessEndOfListMixin
     /++
@@ -384,7 +376,6 @@ mixin template UserAwareness(
     {
         return kameloso.plugins.common.awareness.onUserAwarenessEndOfList(plugin, event);
     }
-
 
     // onUserAwarenessPingMixin
     /++
@@ -684,7 +675,6 @@ mixin template ChannelAwareness(
         static assert(0, message);
     }
 
-
     // onChannelAwarenessSelfjoinMixin
     /++
         Proxies to
@@ -703,7 +693,6 @@ mixin template ChannelAwareness(
     {
         return kameloso.plugins.common.awareness.onChannelAwarenessSelfjoin(plugin, event);
     }
-
 
     // onChannelAwarenessSelfpartMixin
     /++
@@ -725,7 +714,6 @@ mixin template ChannelAwareness(
         return kameloso.plugins.common.awareness.onChannelAwarenessSelfpart(plugin, event);
     }
 
-
     // onChannelAwarenessJoinMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessJoin|onChannelAwarenessJoin].
@@ -743,7 +731,6 @@ mixin template ChannelAwareness(
     {
         return kameloso.plugins.common.awareness.onChannelAwarenessJoin(plugin, event);
     }
-
 
     // onChannelAwarenessPartMixin
     /++
@@ -763,7 +750,6 @@ mixin template ChannelAwareness(
         return kameloso.plugins.common.awareness.onChannelAwarenessPart(plugin, event);
     }
 
-
     // onChannelAwarenessNickMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessNick|onChannelAwarenessNick].
@@ -781,7 +767,6 @@ mixin template ChannelAwareness(
         return kameloso.plugins.common.awareness.onChannelAwarenessNick(plugin, event);
     }
 
-
     // onChannelAwarenessQuitMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessQuit|onChannelAwarenessQuit].
@@ -798,7 +783,6 @@ mixin template ChannelAwareness(
     {
         return kameloso.plugins.common.awareness.onChannelAwarenessQuit(plugin, event);
     }
-
 
     // onChannelAwarenessTopicMixin
     /++
@@ -819,7 +803,6 @@ mixin template ChannelAwareness(
         return kameloso.plugins.common.awareness.onChannelAwarenessTopic(plugin, event);
     }
 
-
     // onChannelAwarenessCreationTimeMixin
     /++
         Proxies to
@@ -839,7 +822,6 @@ mixin template ChannelAwareness(
         return kameloso.plugins.common.awareness.onChannelAwarenessCreationTime(plugin, event);
     }
 
-
     // onChannelAwarenessModeMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessMode|onChannelAwarenessMode].
@@ -857,7 +839,6 @@ mixin template ChannelAwareness(
     {
         return kameloso.plugins.common.awareness.onChannelAwarenessMode(plugin, event);
     }
-
 
     // onChannelAwarenessWhoReplyMixin
     /++
@@ -878,7 +859,6 @@ mixin template ChannelAwareness(
         return kameloso.plugins.common.awareness.onChannelAwarenessWhoReply(plugin, event);
     }
 
-
     // onChannelAwarenessNamesReplyMixin
     /++
         Proxies to
@@ -897,7 +877,6 @@ mixin template ChannelAwareness(
     {
         return kameloso.plugins.common.awareness.onChannelAwarenessNamesReply(plugin, event);
     }
-
 
     // onChannelAwarenessModeListsMixin
     /++
@@ -921,7 +900,6 @@ mixin template ChannelAwareness(
     {
         return kameloso.plugins.common.awareness.onChannelAwarenessModeLists(plugin, event);
     }
-
 
     // onChannelAwarenessChannelModeIsMixin
     /++
@@ -1382,7 +1360,6 @@ mixin template TwitchAwareness(
         static assert(0, message);
     }
 
-
     // onTwitchAwarenessSenderCarryingEventMixin
     /++
         Proxies to
@@ -1423,7 +1400,6 @@ mixin template TwitchAwareness(
     {
         return kameloso.plugins.common.awareness.onTwitchAwarenessSenderCarryingEvent(plugin, event);
     }
-
 
     // onTwitchAwarenessTargetCarryingEventMixin
     /++
