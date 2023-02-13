@@ -1142,7 +1142,7 @@ auto listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
     case warning:
         // Benign socket error; break foreach and try again
         import kameloso.constants : Timeout;
-        import core.thread : Thread;
+        import kameloso.thread : interruptibleSleep;
         import core.time : msecs;
 
         version(Posix)
@@ -1162,7 +1162,8 @@ auto listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
         }
 
         // Sleep briefly so it won't flood the screen on chains of errors
-        Thread.sleep(Timeout.readErrorGracePeriodMsecs.msecs);
+        static immutable readErrorGracePeriod = Timeout.readErrorGracePeriodMsecs.msecs;
+        interruptibleSleep(readErrorGracePeriod, *instance.abort);
         return Next.retry;
 
     case timeout:
