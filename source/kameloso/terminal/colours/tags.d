@@ -98,7 +98,13 @@ if (isSomeString!T)
     bool dirty;
     bool escaping;
 
-    immutable asBytes = line.representation;
+    // Work around the immutability being lost with -dip1000
+    // The alternative is to use .idup, which is not really desireable here
+    immutable asBytes = () @trusted
+    {
+        return cast(immutable)line.representation;
+    }();
+
     immutable toReserve = (asBytes.length + 16);
 
     byteloop:
