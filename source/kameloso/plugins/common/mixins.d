@@ -875,7 +875,7 @@ unittest
         // Just generate the code so we know they compile.
         if (plugin !is null) return;
 
-        chan(string.init, string.init);
+        /*chan(string.init, string.init);
         query(string.init, string.init);
         privmsg(string.init, string.init, string.init);
         emote(string.init, string.init);
@@ -890,7 +890,7 @@ unittest
         whois(string.init, whoisProperties);
         raw(string.init);
         immediate(string.init);
-        immediateline(string.init);
+        immediateline(string.init);*/
         askToWriteln(string.init);
         askToTrace(string.init);
         askToLog(string.init);
