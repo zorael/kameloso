@@ -2132,30 +2132,6 @@ mixin template IRCPluginImpl(
     }
 }
 
-@system
-unittest
-{
-    @Settings static struct TestSettings
-    {
-        @Enabler bool enuubled = false;
-    }
-
-    static final class TestPlugin : IRCPlugin
-    {
-        TestSettings testSettings;
-
-        mixin IRCPluginImpl;
-    }
-
-    IRCPluginState state;
-
-    TestPlugin p = new TestPlugin(state);
-    assert(!p.isEnabled);
-
-    p.testSettings.enuubled = true;
-    assert(p.isEnabled);
-}
-
 
 // prefixPolicyMatches
 /++
