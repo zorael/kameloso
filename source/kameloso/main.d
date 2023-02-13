@@ -784,11 +784,8 @@ auto mainLoop(ref Kameloso instance)
 
     scope(exit)
     {
-        import core.memory : GC;
         destroy(listener);
-        GC.free(&listener);
         destroy(messenger);
-        GC.free(&messenger);
     }
 
     /++
@@ -1628,8 +1625,6 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
     // Clean up processed Fibers
     foreach (expiredFiber; expiredFibers)
     {
-        import core.memory : GC;
-
         // Detect duplicates that were already destroyed and skip
         if (!expiredFiber) continue;
 
@@ -1647,7 +1642,6 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
         }
 
         destroy(expiredFiber);
-        GC.free(&expiredFiber);
     }
 }
 
@@ -1742,9 +1736,7 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
             // destroy the Fiber if it has ended
             if (scheduledFiber.fiber.state == Fiber.State.TERM)
             {
-                import core.memory : GC;
                 destroy(scheduledFiber.fiber);
-                GC.free(&scheduledFiber.fiber);
             }
         }
 
@@ -2272,12 +2264,7 @@ auto tryConnect(ref Kameloso instance)
     auto connector = new Generator!ConnectionAttempt(() =>
         connectFiber(instance.conn, ConnectionDefaultIntegers.retries, *instance.abort));
 
-    scope(exit)
-    {
-        import core.memory : GC;
-        destroy(connector);
-        GC.free(&connector);
-    }
+    scope(exit) destroy(connector);
 
     try
     {
@@ -2574,12 +2561,7 @@ auto tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
         resolveFiber(instance.conn, instance.parser.server.address,
             instance.parser.server.port, instance.connSettings.ipv6, *instance.abort));
 
-    scope(exit)
-    {
-        import core.memory : GC;
-        destroy(resolver);
-        GC.free(&resolver);
-    }
+    scope(exit) destroy(resolver);
 
     uint incrementedRetryDelay = Timeout.connectionRetry;
     enum incrementMultiplier = 1.2;

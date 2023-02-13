@@ -559,7 +559,6 @@ public:
         foreach (plugin; plugins)
         {
             import std.exception : ErrnoException;
-            import core.memory : GC;
             import core.thread : Fiber;
 
             if (!plugin.isEnabled) continue;
@@ -635,7 +634,6 @@ public:
             }
 
             destroy(plugin);
-            GC.free(&plugin);
         }
 
         // Zero out old plugins array
