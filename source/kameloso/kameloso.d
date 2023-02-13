@@ -80,7 +80,7 @@ private:
         Numeric ID of the current connection, to disambiguate between multiple
         connections in one program run. Private value.
      +/
-    shared static uint _connectionID;
+    uint _connectionID;
 
 
 public:
@@ -261,7 +261,7 @@ public:
             The numeric ID of the current connection.
      +/
     pragma(inline, true)
-    static auto connectionID()
+    auto connectionID() const
     {
         return _connectionID;
     }
