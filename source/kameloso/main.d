@@ -1503,10 +1503,7 @@ void processAwaitingDelegates(IRCPlugin plugin, const ref IRCEvent event)
     /++
         Handle awaiting delegates of a specified type.
      +/
-    static void processImpl(
-        IRCPlugin plugin,
-        const ref IRCEvent event,
-        void delegate(IRCEvent)[] dgsForType)
+    void processImpl(void delegate(IRCEvent)[] dgsForType)
     {
         foreach (immutable i, dg; dgsForType)
         {
@@ -1526,12 +1523,12 @@ void processAwaitingDelegates(IRCPlugin plugin, const ref IRCEvent event)
 
     if (plugin.state.awaitingDelegates[event.type].length)
     {
-        processImpl(plugin, event, plugin.state.awaitingDelegates[event.type]);
+        processImpl(plugin.state.awaitingDelegates[event.type]);
     }
 
     if (plugin.state.awaitingDelegates[IRCEvent.Type.ANY].length)
     {
-        processImpl(plugin, event, plugin.state.awaitingDelegates[IRCEvent.Type.ANY]);
+        processImpl(plugin.state.awaitingDelegates[IRCEvent.Type.ANY]);
     }
 }
 
@@ -1556,9 +1553,7 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
     /++
         Handle awaiting Fibers of a specified type.
      +/
-    static void processAwaitingFibersImpl(
-        IRCPlugin plugin,
-        const ref IRCEvent event,
+    void processAwaitingFibersImpl(
         Fiber[] fibersForType,
         ref Fiber[] expiredFibers)
     {
@@ -1610,14 +1605,16 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
 
     if (plugin.state.awaitingFibers[event.type].length)
     {
-        processAwaitingFibersImpl(plugin, event,
-            plugin.state.awaitingFibers[event.type], expiredFibers);
+        processAwaitingFibersImpl(
+            plugin.state.awaitingFibers[event.type],
+            expiredFibers);
     }
 
     if (plugin.state.awaitingFibers[IRCEvent.Type.ANY].length)
     {
-        processAwaitingFibersImpl(plugin, event,
-            plugin.state.awaitingFibers[IRCEvent.Type.ANY], expiredFibers);
+        processAwaitingFibersImpl(
+            plugin.state.awaitingFibers[IRCEvent.Type.ANY],
+            expiredFibers);
     }
 
     if (!expiredFibers.length) return;
