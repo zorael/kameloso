@@ -1829,6 +1829,10 @@ void processReadyReplays(ref Kameloso instance, IRCPlugin plugin)
             printEventDebugDetails(replay.event, replay.event.raw);
             version(PrintStacktraces) logger.trace(e);
         }
+        finally
+        {
+            destroy(replay.dg);
+        }
     }
 
     // All ready replays guaranteed exhausted
