@@ -210,13 +210,13 @@ unittest
         import std.math : isClose = approxEqual;
     }
 
-    import std.conv : text;
+    import std.conv : to;
 
     assert((ps.s == "abc def ghi"), ps.s);
-    assert((ps.i == 42), ps.i.text);
-    assert(isClose(ps.f, 3.14f), ps.f.text);
+    assert((ps.i == 42), ps.i.to!string);
+    assert(isClose(ps.f, 3.14f), ps.f.to!string);
     assert(ps.b);
-    assert(isClose(ps.d, 99.99), ps.d.text);
+    assert(isClose(ps.d, 99.99), ps.d.to!string);
 }
 
 

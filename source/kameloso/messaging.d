@@ -1202,7 +1202,7 @@ unittest
         receiveTimeout(Duration.zero,
             (OutputRequest request)
             {
-                assert((request.logLevel == expectedLevels[i]), request.logLevel.text);
+                assert((request.logLevel == expectedLevels[i]), request.logLevel.to!string);
                 assert((request.line == expectedMessages[i]), request.line);
             },
             (Variant _)

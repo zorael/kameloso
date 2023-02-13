@@ -559,7 +559,7 @@ void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
 )
 void onNickInUse(ConnectService service)
 {
-    import std.conv : text;
+    import std.conv : to;
     import std.random : uniform;
 
     if (service.registration == Progress.inProgress)
@@ -571,7 +571,7 @@ void onNickInUse(ConnectService service)
                 KamelosoDefaults.altNickSeparator;
         }
 
-        service.renameDuringRegistration ~= uniform(0, 10).text;
+        service.renameDuringRegistration ~= uniform(0, 10).to!string;
         immutable message = "NICK " ~ service.renameDuringRegistration;
         immediate(service.state, message);
     }

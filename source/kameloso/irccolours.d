@@ -294,7 +294,7 @@ unittest
     Returns the passed something wrapped in between IRC bold control characters.
 
     Params:
-        something = Something [std.conv.text]-convertible to enwrap in bold.
+        something = Something [std.conv.to]-convertible to enwrap in bold.
 
     Returns:
         The passed something, as a string, in IRC bold.
@@ -310,7 +310,7 @@ auto ircBold(T)(T something) //pure nothrow
 ///
 unittest
 {
-    import std.conv : text;
+    import std.conv : to;
     alias I = IRCControlCharacter;
 
     {
@@ -321,7 +321,7 @@ unittest
     {
         immutable number = 1234;
         immutable line = number.ircBold;
-        immutable expected = I.bold ~ number.text ~ I.bold;
+        immutable expected = I.bold ~ number.to!string ~ I.bold;
         assert((line == expected), line);
     }
     {
@@ -338,7 +338,7 @@ unittest
     Returns the passed something wrapped in between IRC italics control characters.
 
     Params:
-        something = Something [std.conv.text]-convertible to enwrap in italics.
+        something = Something [std.conv.to]-convertible to enwrap in italics.
 
     Returns:
         The passed something, as a string, in IRC italics.
@@ -354,7 +354,7 @@ auto ircItalics(T)(T something) //pure nothrow
 ///
 unittest
 {
-    import std.conv : text;
+    import std.conv : to;
     alias I = IRCControlCharacter;
 
     {
@@ -365,7 +365,7 @@ unittest
     {
         immutable number = 1234;
         immutable line = number.ircItalics;
-        immutable expected = I.italics ~ number.text ~ I.italics;
+        immutable expected = I.italics ~ number.to!string ~ I.italics;
         assert((line == expected), line);
     }
     {
@@ -382,7 +382,7 @@ unittest
     Returns the passed something wrapped in between IRC underlined control characters.
 
     Params:
-        something = Something [std.conv.text]-convertible to enwrap in underlined.
+        something = Something [std.conv.to]-convertible to enwrap in underlined.
 
     Returns:
         The passed something, as a string, in IRC underlined.
@@ -398,7 +398,7 @@ auto ircUnderlined(T)(T something) //pure nothrow
 ///
 unittest
 {
-    import std.conv : text;
+    import std.conv : to;
     alias I = IRCControlCharacter;
 
     {
@@ -409,7 +409,7 @@ unittest
     {
         immutable number = 1234;
         immutable line = number.ircUnderlined;
-        immutable expected = I.underlined ~ number.text ~ I.underlined;
+        immutable expected = I.underlined ~ number.to!string ~ I.underlined;
         assert((line == expected), line);
     }
     {

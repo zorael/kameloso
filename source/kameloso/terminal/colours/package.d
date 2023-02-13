@@ -993,26 +993,26 @@ auto colourByHash(const string word, const Flag!"brightTerminal" bright) pure no
 ///
 unittest
 {
-    import std.conv : text;
+    import std.conv : to;
 
     {
         immutable coloured = "kameloso".colourByHash(No.brightTerminal);
         assert((coloured == "\033[93mkameloso\033[0m"),
-            "kameloso".getColourByHash(No.brightTerminal).text);
+            "kameloso".getColourByHash(No.brightTerminal).to!string);
     }
     {
         immutable coloured = "kameloso".colourByHash(Yes.brightTerminal);
         assert((coloured == "\033[93mkameloso\033[0m"),
-            "kameloso".getColourByHash(Yes.brightTerminal).text);
+            "kameloso".getColourByHash(Yes.brightTerminal).to!string);
     }
     {
         immutable coloured = "zorael".colourByHash(No.brightTerminal);
         assert((coloured == "\033[37mzorael\033[0m"),
-            "zorael".getColourByHash(No.brightTerminal).text);
+            "zorael".getColourByHash(No.brightTerminal).to!string);
     }
     {
         immutable coloured = "NO".colourByHash(No.brightTerminal);
         assert((coloured == "\033[91mNO\033[0m"),
-            "NO".getColourByHash(No.brightTerminal).text);
+            "NO".getColourByHash(No.brightTerminal).to!string);
     }
 }

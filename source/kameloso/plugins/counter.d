@@ -530,7 +530,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
         }
 
         enum pattern = "<b>%s %s<b>! Current count: <b>%d<b>";
-        immutable stepText = (step >= 0) ? ('+' ~ step.text) : step.text;
+        immutable stepText = (step >= 0) ? text('+', step) : step.to!string;
         immutable message = pattern.format(counter.word, stepText, counter.count);
         chan(plugin.state, event.channel, message);
     }
@@ -729,13 +729,13 @@ auto formatMessage(
     const long step)
 {
     import kameloso.plugins.common.misc : nameOf;
-    import std.conv : text;
+    import std.conv : to;
     import std.array : replace;
     import std.math : abs;
 
     string toReturn = pattern
-        .replace("$step", abs(step).text)
-        .replace("$count", counter.count.text)
+        .replace("$step", abs(step).to!string)
+        .replace("$count", counter.count.to!string)
         .replace("$word", counter.word)
         .replace("$channel", event.channel)
         .replace("$senderNickname", event.sender.nickname)

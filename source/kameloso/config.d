@@ -443,27 +443,27 @@ auto flatten(string separator = " ", T)(const T[] arr)
 ///
 unittest
 {
-    import std.conv : text;
+    import std.conv : to;
 
     {
         auto arr = [ "a", "b", "c d e   ", "f" ];
         arr = flatten(arr);
-        assert((arr == [ "a", "b", "c", "d", "e", "f" ]), arr.text);
+        assert((arr == [ "a", "b", "c", "d", "e", "f" ]), arr.to!string);
     }
     {
         auto arr = [ "a", "b", "c,d,e,,,", "f" ];
         arr = flatten!","(arr);
-        assert((arr == [ "a", "b", "c", "d", "e", "f" ]), arr.text);
+        assert((arr == [ "a", "b", "c", "d", "e", "f" ]), arr.to!string);
     }
     {
         auto arr = [ "a", "b", "c dhonk  e ", "f" ];
         arr = flatten!"honk"(arr);
-        assert((arr == [ "a", "b", "c d", "e", "f" ]), arr.text);
+        assert((arr == [ "a", "b", "c d", "e", "f" ]), arr.to!string);
     }
     {
         auto arr = [ "a", "b", "c" ];
         arr = flatten(arr);
-        assert((arr == [ "a", "b", "c" ]), arr.text);
+        assert((arr == [ "a", "b", "c" ]), arr.to!string);
     }
 }
 
@@ -1302,7 +1302,7 @@ out (; (bot.partReason.length), "Empty bot part reason")
 unittest
 {
     import kameloso.constants : KamelosoDefaults, KamelosoDefaultIntegers;
-    import std.conv : text;
+    import std.conv : to;
 
     IRCClient client;
     IRCServer server;
@@ -1313,7 +1313,7 @@ unittest
     assert(!client.ident.length, client.ident);
     assert(!client.realName.length, client.realName);
     assert(!server.address, server.address);
-    assert((server.port == 0), server.port.text);
+    assert((server.port == 0), server.port.to!string);
 
     applyDefaults(client, server, bot);
 
@@ -1322,7 +1322,7 @@ unittest
     assert(!client.ident.length, client.ident);
     assert((client.realName == KamelosoDefaults.realName), client.realName);
     assert((server.address == KamelosoDefaults.serverAddress), server.address);
-    assert((server.port == KamelosoDefaultIntegers.port), server.port.text);
+    assert((server.port == KamelosoDefaultIntegers.port), server.port.to!string);
     assert((bot.quitReason == KamelosoDefaults.quitReason), bot.quitReason);
     assert((bot.partReason == KamelosoDefaults.partReason), bot.partReason);
 

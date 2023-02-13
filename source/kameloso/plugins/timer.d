@@ -1185,7 +1185,7 @@ auto createTimerFiber(
         while (true)
         {
             import std.array : replace;
-            import std.conv : text;
+            import std.conv : to;
             import std.random : uniform;
 
             if (timer.suspended)
@@ -1198,7 +1198,7 @@ auto createTimerFiber(
             string message = timer.getLine()  // mutable
                 .replace("$bot", plugin.state.client.nickname)
                 .replace("$channel", channelName[1..$])
-                .replace("$random", uniform!"(]"(0, 100).text);
+                .replace("$random", uniform!"(]"(0, 100).to!string);
 
             version(TwitchSupport)
             {

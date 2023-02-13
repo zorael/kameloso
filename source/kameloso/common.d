@@ -269,34 +269,34 @@ auto findURLs(const string line) @safe pure
 ///
 unittest
 {
-    import std.conv : text;
+    import std.conv : to;
 
     {
         const urls = findURLs("http://google.com");
-        assert((urls.length == 1), urls.text);
+        assert((urls.length == 1), urls.to!string);
         assert((urls[0] == "http://google.com"), urls[0]);
     }
     {
         const urls = findURLs("blah https://a.com http://b.com shttps://c https://d.asdf.asdf.asdf        ");
-        assert((urls.length == 3), urls.text);
-        assert((urls == [ "https://a.com", "http://b.com", "https://d.asdf.asdf.asdf" ]), urls.text);
+        assert((urls.length == 3), urls.to!string);
+        assert((urls == [ "https://a.com", "http://b.com", "https://d.asdf.asdf.asdf" ]), urls.to!string);
     }
     {
         const urls = findURLs("http:// http://asdf https:// asdfhttpasdf http://google.com");
-        assert((urls.length == 1), urls.text);
+        assert((urls.length == 1), urls.to!string);
     }
     {
         const urls = findURLs("http://a.sehttp://a.shttp://a.http://http:");
-        assert(!urls.length, urls.text);
+        assert(!urls.length, urls.to!string);
     }
     {
         const urls = findURLs("blahblah https://motorbörsen.se blhblah");
-        assert(urls.length, urls.text);
+        assert(urls.length, urls.to!string);
     }
     {
         // Let dlang-requests attempt complex URLs, don't validate more than necessary
         const urls = findURLs("blahblah https://高所恐怖症。co.jp blhblah");
-        assert(urls.length, urls.text);
+        assert(urls.length, urls.to!string);
     }
     {
         const urls = findURLs("nyaa is now at https://nyaa.si, https://nyaa.si? " ~
@@ -309,15 +309,15 @@ unittest
     }
     {
         const urls = findURLs("https://google.se httpx://google.se https://google.se");
-        assert((urls == [ "https://google.se", "https://google.se" ]), urls.text);
+        assert((urls == [ "https://google.se", "https://google.se" ]), urls.to!string);
     }
     {
         const urls = findURLs("https://               ");
-        assert(!urls.length, urls.text);
+        assert(!urls.length, urls.to!string);
     }
     {
         const urls = findURLs("http://               ");
-        assert(!urls.length, urls.text);
+        assert(!urls.length, urls.to!string);
     }
 }
 

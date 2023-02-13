@@ -3169,7 +3169,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             void dumpCallgrind()
             {
                 import lu.string : beginsWith;
-                import std.conv : text;
+                import std.conv : to;
                 import std.process : execute, thisProcessID;
                 import std.stdio : writeln;
                 import std.string : chomp;
@@ -3178,7 +3178,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                 [
                     "callgrind_control",
                     "-d",
-                    thisProcessID.text,
+                    thisProcessID.to!string,
                 ];
 
                 logger.info("$ callgrind_control -d ", thisProcessID);

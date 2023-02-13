@@ -228,7 +228,7 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
     import kameloso.plugins.common.misc : nameOf;
     import lu.string : beginsWith, contains, nom;
     import std.array : replace;
-    import std.conv : text;
+    import std.conv : to;
     import std.format : format;
     import std.random : uniform;
     import std.typecons : Flag, No, Yes;
@@ -280,7 +280,7 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
         .replace("$bot", nameOf(plugin, plugin.state.client.nickname)) // likewise
         .replace("$streamerNickname", event.channel[1..$])  // Twitch
         .replace("$streamer", nameOf(plugin, event.channel[1..$]))  // Twitch
-        .replace("$random", uniform(0, 100).text);
+        .replace("$random", uniform(0, 100).to!string);
     immutable target = slice.beginsWith('@') ? slice[1..$] : slice;
 
     enum atPattern = "@%s %s";

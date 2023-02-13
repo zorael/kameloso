@@ -813,10 +813,10 @@ void initAccountResources(PersistenceService service)
     unittest
     {
         auto users = JSONValue([ "foo", "bar", "baz", "bar", "foo" ]);
-        assert((users.array.length == 5), users.array.length.text);
+        assert((users.array.length == 5), users.array.length.to!string);
 
         users = deduplicated(users);
-        assert((users == JSONValue([ "bar", "baz", "foo" ])), users.array.text);
+        assert((users == JSONValue([ "bar", "baz", "foo" ])), users.array.to!string);
     }+/
 
     //import std.range : only;
