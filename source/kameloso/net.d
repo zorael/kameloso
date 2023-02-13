@@ -177,7 +177,6 @@ public:
         return _sendTimeout;
     }
 
-
     // sendTimeout
     /++
         Mutator; sets the send timeout socket option to the passed duration.
@@ -218,7 +217,6 @@ public:
         _receiveTimeout = dur;
     }
 
-
     // reset
     /++
         (Re-)initialises the sockets and sets the IPv4 one as the active one.
@@ -232,7 +230,6 @@ public:
         connected = false;
     }
 
-
     // resetSSL
     /++
         Resets the SSL context and resources of this [Connection].
@@ -243,7 +240,6 @@ public:
         teardownSSL();
         setupSSL();
     }
-
 
     // getSSLErrorMessage
     /++
@@ -266,7 +262,6 @@ public:
             .fromStringz
             .idup;
     }
-
 
     // setDefaultOptions
     /++
@@ -296,7 +291,6 @@ public:
             blocking = true;
         }
     }
-
 
     // setupSSL
     /++
@@ -365,7 +359,6 @@ public:
         if (code != 1) throw new SSLException("Failed to attach socket handle", code);
     }
 
-
     // teardownSSL
     /++
         Frees SSL context and resources.
@@ -376,7 +369,6 @@ public:
         if (sslInstance) openssl.SSL_free(sslInstance);
         if (sslContext) openssl.SSL_CTX_free(sslContext);
     }
-
 
     // teardown
     /++
@@ -396,7 +388,6 @@ public:
         }
     }
 
-
     // setup
     /++
         Initialises new [std.socket.Socket|Socket]s and sets their options.
@@ -412,7 +403,6 @@ public:
         setDefaultOptions(socket4);
         setDefaultOptions(socket6);
     }
-
 
     // sendline
     /++

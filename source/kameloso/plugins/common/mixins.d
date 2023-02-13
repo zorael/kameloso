@@ -519,6 +519,7 @@ mixin template MessagingProxy(Flag!"debug_" debug_ = No.debug_)
 private:
     import kameloso.plugins.common.core : IRCPlugin;
     import kameloso.messaging : Message;
+    import std.meta : AliasSeq;
     import std.typecons : Flag, No, Yes;
     static import kameloso.messaging;
 
@@ -556,7 +557,6 @@ private:
             caller);
     }
 
-
     // reply
     /++
         Replies to a channel message.
@@ -575,7 +575,6 @@ private:
             caller);
     }
 
-
     // query
     /++
         Sends a private query message to a user.
@@ -593,7 +592,6 @@ private:
             properties,
             caller);
     }
-
 
     // privmsg
     /++
@@ -619,7 +617,6 @@ private:
             caller);
     }
 
-
     // emote
     /++
         Sends an `ACTION` "emote" to the supplied target (nickname or channel).
@@ -637,7 +634,6 @@ private:
             properties,
             caller);
     }
-
 
     // mode
     /++
@@ -661,7 +657,6 @@ private:
             caller);
     }
 
-
     // topic
     /++
         Sets the topic of a channel.
@@ -679,7 +674,6 @@ private:
             properties,
             caller);
     }
-
 
     // invite
     /++
@@ -699,7 +693,6 @@ private:
             caller);
     }
 
-
     // join
     /++
         Joins a channel.
@@ -717,7 +710,6 @@ private:
             properties,
             caller);
     }
-
 
     // kick
     /++
@@ -739,7 +731,6 @@ private:
             caller);
     }
 
-
     // part
     /++
         Leaves a channel.
@@ -758,7 +749,6 @@ private:
             caller);
     }
 
-
     // quit
     /++
         Disconnects from the server, optionally with a quit reason.
@@ -775,7 +765,6 @@ private:
             caller);
     }
 
-
     // whois
     /++
         Queries the server for WHOIS information about a user.
@@ -791,7 +780,6 @@ private:
             properties,
             caller);
     }
-
 
     // raw
     /++
@@ -812,7 +800,6 @@ private:
             caller);
     }
 
-
     // immediate
     /++
         Sends raw text to the server, verbatim, bypassing all queues and
@@ -830,7 +817,10 @@ private:
             caller);
     }
 
-    /// Merely an alias to [immediate], because we use both terms at different places.
+    // immediateline
+    /++
+        Merely an alias to [immediate], because we use both terms at different places.
+     +/
     alias immediateline = immediate;
 
 

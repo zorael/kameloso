@@ -333,8 +333,6 @@ public:
 
         version(TwitchSupport)
         {
-            import dialect.defs : IRCServer;
-
             if (parser.server.daemon == IRCServer.Daemon.twitch)
             {
                 import kameloso.constants : ConnectionDefaultFloats;
@@ -422,10 +420,10 @@ public:
      +/
     void initPlugins() @system
     {
-        static import kameloso.plugins;
         import kameloso.plugins.common.core : IRCPluginState;
         import kameloso.plugins.common.misc : applyCustomSettings;
         import std.concurrency : thisTid;
+        static import kameloso.plugins;
 
         teardownPlugins();
 
@@ -448,8 +446,10 @@ public:
             string[][string] theseMissingEntries;
             string[][string] theseInvalidEntries;
 
-            plugin.deserialiseConfigFrom(settings.configFile,
-                theseMissingEntries, theseInvalidEntries);
+            plugin.deserialiseConfigFrom(
+                settings.configFile,
+                theseMissingEntries,
+                theseInvalidEntries);
 
             if (theseMissingEntries.length)
             {

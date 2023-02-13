@@ -147,6 +147,7 @@ in (channelName.length, "Tried to send a channel message but no channel was give
             }
         }
     }
+
     if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
     else state.mainThread.send(m);
 }
