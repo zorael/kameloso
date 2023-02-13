@@ -1011,7 +1011,7 @@ mixin template IRCPluginImpl(
                             {
                                 import std.regex : matchFirst;
 
-                                const hits = event.content.matchFirst(regex._engine);
+                                const hits = event.content.matchFirst(regex.engine);
 
                                 if (!hits.empty)
                                 {
@@ -3118,11 +3118,11 @@ public:
          +/
         PrefixPolicy _policy = PrefixPolicy.direct;
 
-        // _engine
+        // engine
         /++
             Regex engine to match incoming messages with.
          +/
-        StdRegex!char _engine;
+        StdRegex!char engine;
 
         // _expression
         /++
@@ -3172,7 +3172,7 @@ public:
             import std.regex : regex;
 
             this._expression = expression;
-            this._engine = expression.regex;
+            this.engine = expression.regex;
             return this;
         }
 
