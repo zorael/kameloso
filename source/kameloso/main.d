@@ -3374,8 +3374,8 @@ void syncGuestChannels(ref Kameloso instance)
 {
     foreach (plugin; instance.plugins)
     {
-        // Find a plugin that seems to mixin channel awareness
-        if (plugin.state.channels.length) continue;
+        // Skip plugins that don't seem to mix in ChannelAwareness
+        if (!plugin.state.channels.length) continue;
 
         foreach (immutable channelName; plugin.state.channels.byKey)
         {
