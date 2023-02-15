@@ -934,7 +934,9 @@ private:
     import kameloso.common : RehashingAA;
     import kameloso.constants : KamelosoFilenames;
 
-    /// Placeholder values.
+    /++
+        Placeholder values.
+     +/
     enum Placeholder
     {
         /// Hostmask placeholder 1.
@@ -953,10 +955,14 @@ private:
         account2 = "<account2>",
     }
 
-    /// File with user definitions.
+    /++
+        File with user definitions.
+     +/
     @Resource string userFile = KamelosoFilenames.users;
 
-    /// File with user hostmasks.
+    /++
+        File with user hostmasks.
+     +/
     @Resource string hostmasksFile = KamelosoFilenames.hostmasks;
 
     /++
@@ -964,7 +970,9 @@ private:
      +/
     RehashingAA!(string, IRCUser.Class)[string] channelUsers;
 
-    /// Hostmask definitions as read from file. Should be considered read-only.
+    /++
+        Hostmask definitions as read from file. Should be considered read-only.
+     +/
     IRCUser[] hostmaskUsers;
 
     /++
