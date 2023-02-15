@@ -618,7 +618,7 @@ auto replay(Plugin, Fun)
     [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users]
     associative array and the ones in each [dialect.defs.IRCChannel.users] associative arrays.
 
-    This optimises lookup and should be done every so often,
+    This optimises lookup and should be done every so often.
 
     Params:
         plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].
