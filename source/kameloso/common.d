@@ -18,8 +18,6 @@ import std.typecons : Flag, No, Yes;
 
 public:
 
-@safe:
-
 version(unittest)
 shared static this()
 {
@@ -76,7 +74,7 @@ void initLogger(
     const Flag!"monochrome" monochrome,
     const Flag!"brightTerminal" bright,
     const Flag!"headless" headless,
-    const Flag!"flush" flush)
+    const Flag!"flush" flush) @safe
 out (; (logger !is null), "Failed to initialise logger")
 {
     import kameloso.logger : KamelosoLogger;
