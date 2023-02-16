@@ -52,13 +52,11 @@ void postprocess(PersistenceService service, ref IRCEvent event)
         // Clone the stored sender into a new stored target.
         // Don't delete the old user yet.
 
-        if (const stored = event.sender.nickname in service.state.users)
+        if (const stored = event.sender.nickname in service.users)
         {
-            service.state.users[event.target.nickname] = *stored;
-            ++service.usersAddedSinceLastRehash;
-            service.maybeRehash();
+            service.users[event.target.nickname] = *stored;
 
-            auto newUser = event.target.nickname in service.state.users;
+            auto newUser = event.target.nickname in service.users;
             newUser.nickname = event.target.nickname;
 
             if (service.state.settings.preferHostmasks)
@@ -191,7 +189,7 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
         // Save cache lookups so we don't do them more than once.
         string* cachedChannel;
 
-        auto stored = user.nickname in service.state.users;
+        auto stored = user.nickname in service.users;
         immutable persistentCacheMiss = stored is null;
 
         if (service.state.settings.preferHostmasks)
@@ -238,10 +236,8 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
 
         if (persistentCacheMiss)
         {
-            service.state.users[user.nickname] = user;
-            ++service.usersAddedSinceLastRehash;
-            service.maybeRehash();
-            stored = user.nickname in service.state.users;
+            service.users[user.nickname] = user;
+            stored = user.nickname in service.users;
         }
         else
         {
@@ -424,7 +420,7 @@ void onQuit(PersistenceService service, const ref IRCEvent event)
         service.hostmaskNicknameAccountCache.remove(event.sender.nickname);
     }
 
-    service.state.users.remove(event.sender.nickname);
+    service.users.remove(event.sender.nickname);
     service.userClassChannelCache.remove(event.sender.nickname);
 }
 
@@ -451,8 +447,7 @@ void onNick(PersistenceService service, const ref IRCEvent event)
 
 // onWelcome
 /++
-    Reloads classifier definitions from disk. Additionally rehashes the user array,
-    allowing for optimised access.
+    Reloads classifier definitions from disk.
 
     This is normally done as part of user awareness, but we're not mixing that
     in so we have to reinvent it.
@@ -546,37 +541,6 @@ void onWhoReply(PersistenceService service, const ref IRCEvent event)
 }
 
 
-// maybeRehash
-/++
-    Rehashes cache arrays if we deem enough new users have been added to them
-    since the last rehash to warrant it.
-
-    Params:
-        service = Current [PersistenceService].
- +/
-void maybeRehash(PersistenceService service)
-{
-    enum minimumAddedNeededForRehash = 128;
-    enum rehashThresholdMultiplier = 1.0;
-
-    if ((service.usersAddedSinceLastRehash > minimumAddedNeededForRehash) &&
-        (service.usersAddedSinceLastRehash > (service.state.users.length * rehashThresholdMultiplier)))
-    {
-        service.state.users = service.state.users.rehash();
-        service.userClassChannelCache = service.userClassChannelCache.rehash();
-        service.hostmaskNicknameAccountCache = service.hostmaskNicknameAccountCache.rehash();
-        service.channelUsers = service.channelUsers.rehash();
-
-        foreach (ref channelUsers; service.channelUsers)
-        {
-            channelUsers = channelUsers.rehash();
-        }
-
-        service.usersAddedSinceLastRehash = 0;
-    }
-}
-
-
 // reload
 /++
     Reloads the service, rehashing the user array and loading
@@ -584,7 +548,7 @@ void maybeRehash(PersistenceService service)
  +/
 void reload(PersistenceService service)
 {
-    service.state.users = service.state.users.rehash();
+    service.users = service.users.rehash();
     service.reloadAccountClassifiersFromDisk();
     if (service.state.settings.preferHostmasks) service.reloadHostmasksFromDisk();
 }
@@ -967,6 +931,7 @@ public:
 final class PersistenceService : IRCPlugin
 {
 private:
+    import kameloso.common : RehashingAA;
     import kameloso.constants : KamelosoFilenames;
 
     /++
@@ -1000,26 +965,31 @@ private:
      +/
     @Resource string hostmasksFile = KamelosoFilenames.hostmasks;
 
-    /// Associative array of permanent user classifications, per account and channel name.
-    IRCUser.Class[string][string] channelUsers;
+    /++
+        Associative array of permanent user classifications, per account and channel name.
+     +/
+    RehashingAA!(string, IRCUser.Class)[string] channelUsers;
 
     /++
         Hostmask definitions as read from file. Should be considered read-only.
      +/
     IRCUser[] hostmaskUsers;
 
-    /// Cached nicknames matched to defined hostmasks.
-    string[string] hostmaskNicknameAccountCache;
-
-    /// Associative array of which channel the latest class lookup for an account related to.
-    string[string] userClassChannelCache;
+    /++
+        Cached nicknames matched to defined hostmasks.
+     +/
+    RehashingAA!(string, string) hostmaskNicknameAccountCache;
 
     /++
-        How many users have been added to the
-        [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users]
-        associative array since it was last rehashed.
+        Associative array of which channel the latest class lookup for an account related to.
      +/
-    uint usersAddedSinceLastRehash;
+    RehashingAA!(string, string) userClassChannelCache;
+
+    /++
+        Associative array of users. Replaces
+        [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users].
+     +/
+    RehashingAA!(string, IRCUser) users;
 
     mixin IRCPluginImpl;
 }

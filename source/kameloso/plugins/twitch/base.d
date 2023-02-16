@@ -178,7 +178,7 @@ import dialect.postprocessors.twitch;  // To trigger the module ctor
 
 import kameloso.plugins;
 import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
-import kameloso.common : logger;
+import kameloso.common : RehashingAA, logger;
 import kameloso.constants : BufferSize;
 import kameloso.messaging;
 import dialect.defs;
@@ -2615,7 +2615,6 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
         assert(room, "Tried to start chatter monitor delegate on non-existing room");
 
         immutable idSnapshot = room.uniqueID;
-        uint addedSinceLastRehash;
 
         while (true)
         {
@@ -2681,21 +2680,11 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
                             else
                             {
                                 (*channelViewerTimes)[viewer] = periodicitySeconds;
-                                ++addedSinceLastRehash;
-
-                                if ((addedSinceLastRehash > 128) &&
-                                    (addedSinceLastRehash > channelViewerTimes.length))
-                                {
-                                    // channel-viewer times AA doubled in size; rehash
-                                    *channelViewerTimes = (*channelViewerTimes).rehash();
-                                    addedSinceLastRehash = 0;
-                                }
                             }
                         }
                         else
                         {
                             plugin.viewerTimesByChannel[room.channelName][viewer] = periodicitySeconds;
-                            ++addedSinceLastRehash;
                         }
                     }
                 }
@@ -3445,12 +3434,19 @@ void initResources(TwitchPlugin plugin)
         aa = The associative array to convert into JSON and save.
         filename = Filename of the file to write to.
  +/
-void saveResourceToDisk(const long[string][string] aa, const string filename)
+void saveResourceToDisk(/*const*/ RehashingAA!(string, long)[string] aa, const string filename)
 {
     import std.json : JSONValue;
     import std.stdio : File, writeln;
 
-    const json = JSONValue(aa);
+    long[string][string] tempAA;
+
+    foreach (immutable channelName, rehashingAA; aa)
+    {
+        tempAA[channelName] = rehashingAA.aaOf;
+    }
+
+    immutable json = JSONValue(tempAA);
     File(filename, "w").writeln(json.toPrettyString);
 }
 
@@ -3492,16 +3488,26 @@ void loadResources(TwitchPlugin plugin)
     import lu.json : JSONStorage, populateFromJSON;
 
     JSONStorage ecountJSON;
+    long[string][string] tempEcount;
     ecountJSON.load(plugin.ecountFile);
+    tempEcount.populateFromJSON(ecountJSON);
     plugin.ecount.clear();
-    plugin.ecount.populateFromJSON(ecountJSON);
-    plugin.ecount = plugin.ecount.rehash();
+
+    foreach (immutable channelName, channelCounts; tempEcount)
+    {
+        plugin.ecount[channelName] = RehashingAA!(string, long)(channelCounts);
+    }
 
     JSONStorage viewersJSON;
+    long[string][string] tempViewers;
     viewersJSON.load(plugin.viewersFile);
+    tempViewers.populateFromJSON(viewersJSON);
     plugin.viewerTimesByChannel.clear();
-    plugin.viewerTimesByChannel.populateFromJSON(viewersJSON);
-    plugin.viewerTimesByChannel = plugin.viewerTimesByChannel.rehash();
+
+    foreach (immutable channelName, channelViewers; tempViewers)
+    {
+        plugin.viewerTimesByChannel[channelName] = RehashingAA!(string, long)(channelViewers);
+    }
 
     JSONStorage secretsJSON;
     secretsJSON.load(plugin.secretsFile);
@@ -3649,12 +3655,12 @@ package:
             /++
                 Users seen in the channel.
              +/
-            bool[string] chattersSeen;
+            RehashingAA!(string, bool) chattersSeen;
 
             /++
                 Hashmap of active viewers (who have shown activity).
              +/
-            bool[string] activeViewers;
+            RehashingAA!(string, bool) activeViewers;
 
             /++
                 Accessor to [_idString].
@@ -3951,7 +3957,7 @@ package:
     /++
         Associative array of viewer times; seconds keyed by nickname keyed by channel.
      +/
-    long[string][string] viewerTimesByChannel;
+    RehashingAA!(string, long)[string] viewerTimesByChannel;
 
     /++
         API keys and tokens, keyed by channel.
@@ -4020,7 +4026,7 @@ package:
     /++
         Emote counters associative array; counter longs keyed by emote ID string keyed by channel.
      +/
-    long[string][string] ecount;
+    RehashingAA!(string, long)[string] ecount;
 
     /++
         Whether or not [ecount] has been modified and there's a point in saving it to disk.
