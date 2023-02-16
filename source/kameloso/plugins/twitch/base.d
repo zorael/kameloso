@@ -309,6 +309,64 @@ package struct Credentials
 }
 
 
+// Follow
+/++
+    Embodiment of the notion of someone following another on Twitch.
+ +/
+package struct Follow
+{
+private:
+    import std.datetime.systime : SysTime;
+
+public:
+    /++
+        Display name of follower.
+     +/
+    string displayName;
+
+    /++
+        Time when the follow action took place.
+     +/
+    SysTime when;
+
+    /++
+        Twitch ID of follower.
+     +/
+    uint followerID;
+
+    // fromJSON
+    /++
+        Constructs a [Follow] from a JSON representation.
+
+        Params:
+            json = JSON representation of a follow.
+
+        Returns:
+            A new [Follow] with values derived from the passed JSON.
+     +/
+    static auto fromJSON(const JSONValue json)
+    {
+        import std.conv : to;
+
+        /*{
+            "followed_at": "2019-09-13T13:07:43Z",
+            "from_id": "20739840",
+            "from_name": "mike_bison",
+            "to_id": "22216721",
+            "to_name": "Zorael"
+        }*/
+
+        Follow follow;
+
+        follow.displayName = json["from_name"].str;
+        follow.when = SysTime.fromISOExtString(json["followed_at"].str);
+        follow.followerID = json["from_id"].str.to!uint;
+
+        return follow;
+    }
+}
+
+
 // Mixins
 mixin UserAwareness;
 mixin ChannelAwareness;
@@ -697,7 +755,7 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         displayName = user.displayName;
     }
 
-    void reportFollowAge(const JSONValue followingUserJSON)
+    void reportFollowAge(const Follow follow)
     {
         import kameloso.time : timeSince;
         import std.datetime.systime : Clock, SysTime;
@@ -719,24 +777,17 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             "December",
         ];
 
-        /*{
-            "followed_at": "2019-09-13T13:07:43Z",
-            "from_id": "20739840",
-            "from_name": "mike_bison",
-            "to_id": "22216721",
-            "to_name": "Zorael"
-        }*/
-
         enum datestampPattern = "%s %d";
-        immutable when = SysTime.fromISOExtString(followingUserJSON["followed_at"].str);
-        immutable diff = Clock.currTime - when;
+        immutable diff = Clock.currTime - follow.when;
         immutable timeline = diff.timeSince!(7, 3);
-        immutable datestamp = datestampPattern.format(months[cast(int)when.month-1], when.year);
+        immutable datestamp = datestampPattern.format(
+            months[cast(int)follow.when.month-1],
+            follow.when.year);
 
         if (nameSpecified)
         {
             enum pattern = "%s has been a follower for %s, since %s.";
-            immutable message = pattern.format(displayName, timeline, datestamp);
+            immutable message = pattern.format(follow.displayName, timeline, datestamp);
             chan(plugin.state, event.channel, message);
         }
         else
@@ -3763,7 +3814,7 @@ package:
         /++
             A JSON list of the followers of the channel.
          +/
-        JSONValue[string] follows;
+        Follow[string] follows;
 
         /++
             UNIX timestamp of when [follows] was last cached.

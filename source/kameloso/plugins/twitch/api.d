@@ -914,8 +914,6 @@ auto getFollows(TwitchPlugin plugin, const string id)
 in (Fiber.getThis, "Tried to call `getFollows` from outside a Fiber")
 in (id.length, "Tried to get follows with an empty ID string")
 {
-    import std.json : JSONValue;
-
     immutable url = "https://api.twitch.tv/helix/users/follows?first=100&to_id=" ~ id;
 
     foreach (immutable i; 0..TwitchPlugin.delegateRetries)
@@ -923,16 +921,15 @@ in (id.length, "Tried to get follows with an empty ID string")
         try
         {
             const entitiesArrayJSON = getMultipleTwitchData(plugin, url);
-            JSONValue[string] allFollowsJSON;
+            Follow[string] allFollows;
 
             foreach (entityJSON; entitiesArrayJSON)
             {
                 immutable key = entityJSON["from_id"].str;
-                allFollowsJSON[key] = null;
-                allFollowsJSON[key] = entityJSON;
+                allFollows[key] = Follow.fromJSON(entityJSON);
             }
 
-            return allFollowsJSON;
+            return allFollows;
         }
         catch (Exception e)
         {
