@@ -1032,8 +1032,8 @@ auto loadSeen(const string filename)
         version(PrintStacktraces) logger.trace(e.info);
     }
 
-    // Rehash the AA, since we potentially added a *lot* of users.
-    return aa.rehash();
+    // No need to rehash the AA; RehashingAA will do it on assignment
+    return aa;  //.rehash();
 }
 
 
