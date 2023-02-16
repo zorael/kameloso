@@ -48,8 +48,8 @@ private import kameloso.plugins.common.awareness : ChannelAwareness, UserAwarene
 // Likewise [dialect.defs], for the definitions of an IRC event.
 private import dialect.defs;
 
-// [kameloso.common] for the global logger instance.
-private import kameloso.common : logger;
+// [kameloso.common] for the global logger instance and the rehashing AA.
+private import kameloso.common : RehashingAA, logger;
 
 // [std.datetime.systime] for the [std.datetime.systime.Clock|Clock], to update times with.
 private import std.datetime.systime : Clock;
@@ -317,7 +317,7 @@ private:  // Module-level private.
         writeln("Seconds since we last saw joe: ", (now - seenUsers["joe"]));
         ---
      +/
-    long[string] seenUsers;
+    RehashingAA!(string, long) seenUsers;
 
 
     // seenFile
@@ -1100,19 +1100,17 @@ auto loadSeen(const string filename)
     This is a convenient way to serialise the array.
 
     Params:
-        seenUsers = The associative array of seen users to save.
-        filename = Filename of the file to write to.
+        plugin = The current [SeenPlugin].
  +/
-void saveSeen(const long[string] seenUsers, const string filename)
-in (filename.length, "Tried to save seen users to an empty filename")
+void saveSeen(SeenPlugin plugin)
 {
     import std.json : JSONValue;
     import std.stdio : File, writeln;
 
-    if (!seenUsers.length) return;
+    if (!plugin.seenUsers.length) return;
 
-    auto file = File(filename, "w");
-    file.writeln(JSONValue(seenUsers).toPrettyString);
+    auto file = File(plugin.seenFile, "w");
+    file.writeln(JSONValue(plugin.seenUsers.aaOf).toPrettyString);
     //file.flush();
 }
 
@@ -1144,7 +1142,7 @@ void onWelcome(SeenPlugin plugin)
         {
             plugin.updateAllObservedUsers();
             plugin.maybeRehash();
-            plugin.seenUsers.saveSeen(plugin.seenFile);
+            saveSeen(plugin);
             delay(plugin, plugin.timeBetweenSaves, Yes.yield);
         }
     }
@@ -1195,7 +1193,7 @@ void reload(SeenPlugin plugin)
 void teardown(SeenPlugin plugin)
 {
     plugin.updateAllObservedUsers();
-    plugin.seenUsers.saveSeen(plugin.seenFile);
+    saveSeen(plugin);
 }
 
 
@@ -1299,7 +1297,7 @@ void onBusMessage(SeenPlugin plugin, const string header, shared Sendable conten
 
     case "save":
         plugin.updateAllObservedUsers();
-        plugin.seenUsers.saveSeen(plugin.seenFile);
+        saveSeen(plugin);
         logger.info("Seen users saved to disk.");
         break;
 
