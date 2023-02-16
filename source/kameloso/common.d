@@ -741,6 +741,18 @@ public:
         return copy;
     }
 
+    // this
+    /++
+        Constructor.
+
+        Params:
+            aa = Associative arary to inherit. Taken by reference for now.
+     +/
+    this(V[K] aa)
+    {
+        this.aa = aa;
+    }
+
     // onRehashDg
     /++
         Delegate called when rehashing takes place.
