@@ -750,6 +750,7 @@ public:
     /++
         `alias this` with regards to [aa].
      +/
+    version(none)
     alias aa this;
 }
 
