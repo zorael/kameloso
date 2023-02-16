@@ -601,7 +601,7 @@ public:
         Returns:
             The internal associative array.
      +/
-    auto aaOf() const
+    inout(V[K]) aaOf() inout
     {
         return aa;
     }
