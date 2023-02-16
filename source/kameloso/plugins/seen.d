@@ -341,39 +341,6 @@ private:  // Module-level private.
     static immutable timeBetweenSaves = 1.hours;
 
 
-    // rehashThresholdMultiplier
-    /++
-        The multiplier to multiply the length of [seenUsers] with; if the number
-        of users added since the last rehash exceeds this value, rehash again.
-
-        ---
-        if (plugin.addedSinceLastRehash >
-            (plugin.seenUsers.length * plugin.rehashThresholdMultiplier))
-        {
-            plugin.seenUsers = plugin.seenUsers.rehash();
-            plugin.addedSinceLastRehash = 0;
-        }
-        ---
-
-        See_Also:
-            [addedSinceLastRehash]
-     +/
-    enum rehashThresholdMultiplier = 1.0;
-
-
-    // addedSinceLastRehash
-    /++
-        How many users have been added to [seenUsers] since the last rehash.
-
-        If this is below the number of entries in [seenUsers] multiplied by
-        [rehashThresholdMultiplier], don't rehash, since there's no need.
-
-        See_Also:
-            [rehashThresholdMultiplier]
-     +/
-    uint addedSinceLastRehash;
-
-
     // IRCPluginImpl
     /++
         This mixes in functions that fully implement an
@@ -987,29 +954,6 @@ in (signed.length, "Tried to update a user with an empty (signed) nickname")
     {
         // New user; add an entry and bump the added counter
         plugin.seenUsers[nickname] = time;
-        ++plugin.addedSinceLastRehash;
-        plugin.maybeRehash();
-    }
-}
-
-
-// maybeRehash
-/++
-    Rehash the [SeenPlugin.seenUsers|seenUsers] associative array if we deem
-    enough new users have been added to it since the last rehash to warrant it.
-
-    Params:
-        plugin = Current [SeenPlugin].
- +/
-void maybeRehash(SeenPlugin plugin)
-{
-    enum minimumAddedNeededForRehash = 128;
-
-    if ((plugin.addedSinceLastRehash > minimumAddedNeededForRehash) &&
-        (plugin.addedSinceLastRehash > (plugin.seenUsers.length * plugin.rehashThresholdMultiplier)))
-    {
-        plugin.seenUsers = plugin.seenUsers.rehash();
-        plugin.addedSinceLastRehash = 0;
     }
 }
 
@@ -1141,7 +1085,6 @@ void onWelcome(SeenPlugin plugin)
         while (true)
         {
             plugin.updateAllObservedUsers();
-            plugin.maybeRehash();
             saveSeen(plugin);
             delay(plugin, plugin.timeBetweenSaves, Yes.yield);
         }
