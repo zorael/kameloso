@@ -594,6 +594,18 @@ public:
         return aa;
     }
 
+    // aaOf
+    /++
+        Returns the internal associative array, for when the wrapper is insufficient.
+
+        Returns:
+            The internal associative array.
+     +/
+    auto aaOf() const
+    {
+        return aa;
+    }
+
     // remove
     /++
         Removes a key from the [aa] associative array by merely invoking `.remove`.
