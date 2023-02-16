@@ -18,7 +18,7 @@ private:
 import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
-import kameloso.common : logger;
+import kameloso.common : RehashingAA, logger;
 import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
@@ -90,7 +90,7 @@ public:
     /++
         Individual votes, keyed by nicknames of the people who placed them.
      +/
-    string[string] votes;
+    RehashingAA!(string, string) votes;
 
     /++
         Poll duration.
@@ -118,7 +118,7 @@ public:
         json["voteCounts"] = JSONValue(this.voteCounts);
         json["origChoiceNames"] = JSONValue(this.origChoiceNames);
         json["sortedChoices"] = JSONValue(this.sortedChoices);
-        json["votes"] = JSONValue(this.votes);
+        json["votes"] = JSONValue(this.votes.aaOf);
         json["duration"] = JSONValue(duration.total!"seconds");
         json["uniqueID"] = JSONValue(uniqueID);
         return json;
