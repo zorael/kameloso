@@ -602,10 +602,11 @@ auto sendHTTPRequestImpl(
 
     Returns:
         A singular user or channel regardless of how many were asked for in the URL.
-        If nothing was found, an empty [std.json.JSONValue|JSONValue].init is
-        returned instead.
+        If nothing was found, an exception is thrown instead.
 
     Throws:
+        [EmptyDataJSONException] if the `"data"` field is empty for some reason.
+
         [UnexpectedJSONException] on unexpected JSON.
 
         [TwitchQueryException] on other JSON errors.
@@ -675,8 +676,7 @@ in (Fiber.getThis, "Tried to call `getTwitchData` from outside a Fiber")
 
     Returns:
         A [std.json.JSONValue|JSONValue] with "`chatters`" and "`chatter_count`" keys.
-        If nothing was found, an empty [std.json.JSONValue|JSONValue].init is
-        returned instead.
+        If nothing was found, an exception is thrown instead.
 
     Throws:
         [UnexpectedJSONException] on unexpected JSON.
@@ -781,7 +781,7 @@ in ((!async || Fiber.getThis), "Tried to call asynchronous `getValidation` from 
 in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 {
     import lu.string : beginsWith;
-    import std.json : JSONType, JSONValue, parseJSON;
+    import std.json : JSONType, parseJSON;
 
     enum url = "https://id.twitch.tv/oauth2/validate";
 
@@ -1516,8 +1516,7 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
         idString = ID of a specific poll to get.
 
     Returns:
-        A [std.json.JSONType.array|JSONType.array]-type [std.json.JSONValue|JSONValue]
-        with all the matched polls.
+        An arary of [std.json.JSONValue|JSONValue]s with all the matched polls.
  +/
 auto getPolls(
     TwitchPlugin plugin,
@@ -1653,7 +1652,7 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
         choices = A string array of poll choices.
 
     Returns:
-        A [std.json.JSONValue|JSONValue] [std.json.JSONType.array|array] with
+        An array of [std.json.JSONValue|JSONValue]s with
         the response returned when creating the poll. On failure, an empty
         [std.json.JSONValue|JSONValue] is instead returned.
 
@@ -1792,8 +1791,7 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
             If unset, ends it in an `"ARCHIVED"` way.
 
     Returns:
-        A [std.json.JSONType.array|JSONType.array]-type [std.json.JSONValue|JSONValue]
-        with the response returned when ending the poll.
+        The [std.json.JSONValue|JSONValue] of the first response returned when ending the poll.
 
     Throws:
         [UnexpectedJSONException] on unexpected JSON.
@@ -2715,7 +2713,7 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
 {
     import std.array : Appender;
     import std.format : format;
-    import std.json : JSONType, JSONValue, parseJSON;
+    import std.json : JSONType, parseJSON;
 
     const room = channelName in plugin.rooms;
     assert(room, "Tried to get subscribers of a channel for which there existed no room");

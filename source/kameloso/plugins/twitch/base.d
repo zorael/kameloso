@@ -311,7 +311,10 @@ package struct Credentials
 
 // Follow
 /++
-    Embodiment of the notion of someone following another on Twitch.
+    Embodiment of the notion of someone following someone else on Twitch.
+
+    This cannot be a Voldemort type inside [kameloso.plugins.twitch.api.getFollows|getFollows]
+    since we need an array of them inside [TwitchPlugin.Room].
  +/
 package struct Follow
 {
@@ -2499,7 +2502,7 @@ void start(TwitchPlugin plugin)
             logger.trace();
         }
 
-        // Not conncting to Twitch, return early
+        // Not connecting to Twitch, return early
         return;
     }
 
