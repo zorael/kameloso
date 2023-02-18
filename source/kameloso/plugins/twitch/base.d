@@ -2067,8 +2067,13 @@ void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     if (!unescapedGameName.length)
     {
-        enum pattern = "Usage: %s%s [game name]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        const channelInfo = getChannel(plugin, event.channel);
+
+        enum pattern = "Currently playing game: %s";
+        immutable gameName = channelInfo.gameName.length ?
+            channelInfo.gameName :
+            "(nothing)";
+        immutable message = pattern.format(gameName);
         return chan(plugin.state, event.channel, message);
     }
 
