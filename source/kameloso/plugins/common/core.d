@@ -1547,18 +1547,42 @@ mixin template IRCPluginImpl(
             static if (isSerialisable!member)
             {
                 import kameloso.traits : udaIndexOf;
-                import std.path : buildNormalizedPath;
 
                 enum resourceUDAIndex = udaIndexOf!(this.tupleof[i], Resource);
                 enum configurationUDAIndex = udaIndexOf!(this.tupleof[i], Configuration);
+                alias attrs = __traits(getAttributes, this.tupleof[i]);
 
                 static if (resourceUDAIndex != -1)
                 {
-                    member = buildNormalizedPath(state.settings.resourceDirectory, member);
+                    import std.path : buildNormalizedPath;
+
+                    static if (is(typeof(attrs[resourceUDAIndex])))
+                    {
+                        member = buildNormalizedPath(
+                            state.settings.resourceDirectory,
+                            attrs[resourceUDAIndex].subdirectory,
+                            member);
+                    }
+                    else
+                    {
+                        member = buildNormalizedPath(state.settings.resourceDirectory, member);
+                    }
                 }
                 else static if (configurationUDAIndex != -1)
                 {
-                    member = buildNormalizedPath(state.settings.configDirectory, member);
+                    import std.path : buildNormalizedPath;
+
+                    static if (is(typeof(attrs[configurationUDAIndex])))
+                    {
+                        member = buildNormalizedPath(
+                            state.settings.configDirectory,
+                            attrs[configurationUDAIndex].subdirectory,
+                            member);
+                    }
+                    else
+                    {
+                        member = buildNormalizedPath(state.settings.configDirectory, member);
+                    }
                 }
             }
         }
@@ -3281,7 +3305,13 @@ enum Settings;
 /++
     Annotation denoting that a variable is the basename of a resource file or directory.
  +/
-enum Resource;
+struct Resource
+{
+    /++
+        Subdirectory in which to put the annotated filename.
+     +/
+    string subdirectory;
+}
 
 
 // Configuration
@@ -3289,7 +3319,13 @@ enum Resource;
     Annotation denoting that a variable is the basename of a configuration
     file or directory.
  +/
-enum Configuration;
+struct Configuration
+{
+    /++
+        Subdirectory in which to put the annotated filename.
+     +/
+    string subdirectory;
+}
 
 
 // Enabler
