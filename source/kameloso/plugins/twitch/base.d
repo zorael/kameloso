@@ -3721,6 +3721,7 @@ package:
                 json = null;
                 json.object = null;
 
+                json["idString"] = JSONValue(this._idString);
                 json["gameIDString"] = JSONValue(this.gameIDString);
                 json["gameName"] = JSONValue(this.gameName);
                 json["title"] = JSONValue(this.title);
@@ -3741,16 +3742,14 @@ package:
              +/
             static auto fromJSON(const JSONValue json)
             {
-                import std.json : JSONType;
-
-                typeof(this) stream;
-
-                if ("gameIDString" !in json.object)
+                if ("idString" !in json.object)
                 {
-                    // Empty file
-                    return stream;
+                    // Invalid entry
+                    enum message = "No `idString` key in Stream JSON representation";
+                    throw new UnexpectedJSONException(message);
                 }
 
+                auto stream = Stream(json["idString"].str);
                 stream.gameIDString = json["gameIDString"].str;
                 stream.gameName = json["gameName"].str;
                 stream.title = json["title"].str;
