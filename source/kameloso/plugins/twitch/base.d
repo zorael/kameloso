@@ -1283,6 +1283,14 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             import std.json : JSONType;
 
             immutable json = addVideoToYouTubePlaylist(plugin, *creds, videoID);
+
+            if ((json.type != JSONType.object) || ("snippet" !in json))
+            {
+                logger.error("Unexpected JSON in YouTube response.");
+                logger.trace(json.toPrettyString);
+                return;
+            }
+
             immutable title = json["snippet"]["title"].str;
             //immutable position = json["snippet"]["position"].integer;
             room.songrequestHistory[event.sender.nickname] = event.time;
@@ -1350,9 +1358,11 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
             immutable json = addTrackToSpotifyPlaylist(plugin, *creds, trackID);
 
-            if ((json.type != JSONType.object)  || "snapshot_id" !in json)
+            if ((json.type != JSONType.object) || ("snapshot_id" !in json))
             {
-                return logger.error("An error occurred.\n", json.toPrettyString);
+                logger.error("Unexpected JSON in Spotify response.");
+                logger.trace(json.toPrettyString);
+                return;
             }
 
             const trackJSON = getSpotifyTrackByID(*creds, trackID);
