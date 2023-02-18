@@ -4008,48 +4008,27 @@ package:
      +/
     shared QueryResponse[int] bucket;
 
-    @Resource
+    @Resource("twitch")
     {
-        version(Posix)
-        {
-            /++
-                File to save emote counters to.
-             +/
-            string ecountFile = "twitch/ecount.json";
+        /++
+            File to save emote counters to.
+         +/
+        string ecountFile = "ecount.json";
 
-            /++
-                File to save viewer times to.
-             +/
-            string viewersFile = "twitch/viewers.json";
+        /++
+            File to save viewer times to.
+         +/
+        string viewersFile = "viewers.json";
 
-            /++
-                File to save API keys and tokens to.
-             +/
-            string secretsFile = "twitch/secrets.json";
+        /++
+            File to save API keys and tokens to.
+         +/
+        string secretsFile = "secrets.json";
 
-            /++
-                File to save stream history to.
-             +/
-            string streamHistoryFile = "twitch/history.json";
-        }
-        else version(Windows)
-        {
-            // As above.
-            string ecountFile = "twitch\\ecount.json";
-
-            // ditto
-            string viewersFile = "twitch\\viewers.json";
-
-            // ditto
-            string secretsFile = "twitch\\secrets.json";
-
-            // ditto
-            string streamHistoryFile = "twitch\\history.json";
-        }
-        else
-        {
-            static assert(0, "Unsupported platform, please file a bug.");
-        }
+        /++
+            File to save stream history to.
+         +/
+        string streamHistoryFile = "history.json";
     }
 
     /++
