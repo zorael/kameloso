@@ -1481,7 +1481,7 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             (e.error == "Forbidden") &&
             e.msg.endsWith("is not a partner or affiliate"))
         {
-            version(WithVotesPlugin)
+            version(WithPollPlugin)
             {
                 enum message = "You must be an affiliate to create Twitch polls. " ~
                     "(Consider using the generic Poll plugin.)";
