@@ -246,7 +246,7 @@ MrOffline joined #channel
  kameloso sets mode +o ray
 
       you | !oneliner new
- kameloso | Usage: !oneliner new [trigger] [type]
+ kameloso | Usage: !oneliner new [trigger] [type] [optional cooldown]
       you | !oneliner new info random
  kameloso | Oneliner !info created! Use !oneliner add to add lines.
       you | !oneliner add info @$nickname: for more information just use Google
@@ -307,7 +307,7 @@ MrOffline joined #channel
 
 (context: playing a video game)
       you | !counter
- kameloso | Usage: !counter [add|del|list] [counter word]
+ kameloso | Usage: !counter [add|del|format|list] [counter word]
       you | !counter add deaths
  kameloso | Counter deaths added! Access it with !deaths.
       you | !deaths+
