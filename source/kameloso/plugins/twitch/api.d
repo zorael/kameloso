@@ -1401,6 +1401,85 @@ in ((title.length || gameID.length), "Tried to modify a channel with no title no
 }
 
 
+// getChannel
+/++
+    Fetches information about a channel; its title, what game is being played,
+    the channel tags, etc.
+
+    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        channelName = Name of channel to fetch information about.
+ +/
+auto getChannel(
+    TwitchPlugin plugin,
+    const string channelName)
+in (Fiber.getThis, "Tried to call `modifyChannel` from outside a Fiber")
+in (channelName.length, "Tried to modify a channel with an empty channel name string")
+{
+    import std.algorithm.iteration : map;
+    import std.array : array;
+    import std.json : parseJSON;
+
+    const room = channelName in plugin.rooms;
+    assert(room, "Tried to look up a channel for which there existed no room");
+
+    immutable url = "https://api.twitch.tv/helix/channels?broadcaster_id=" ~ room.id;
+
+    static struct Channel
+    {
+        string gameIDString;
+        string gameName;
+        string[] tags;
+        string title;
+    }
+
+    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    {
+        try
+        {
+            immutable gameDataJSON = getTwitchData(plugin, url);
+
+            /+
+            {
+                "data": [
+                    {
+                        "broadcaster_id": "22216721",
+                        "broadcaster_language": "en",
+                        "broadcaster_login": "zorael",
+                        "broadcaster_name": "zorael",
+                        "delay": 0,
+                        "game_id": "",
+                        "game_name": "",
+                        "tags": [],
+                        "title": "bleph"
+                    }
+                ]
+            }
+            +/
+
+            Channel channel;
+            channel.gameIDString = gameDataJSON["game_id"].str;
+            channel.gameName = gameDataJSON["game_name"].str;
+            channel.tags = gameDataJSON["tags"].array
+                .map!(tagJSON => tagJSON.str)
+                .array;
+            channel.title = gameDataJSON["title"].str;
+            return channel;
+        }
+        catch (Exception e)
+        {
+            // Retry until we reach the retry limit, then rethrow
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+            throw e;
+        }
+    }
+
+    assert(0, "Unreachable");
+}
+
+
 // getBroadcasterAuthorisation
 /++
     Returns a broadcaster-level "Bearer" authorisation token for a channel,
