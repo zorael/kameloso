@@ -624,7 +624,7 @@ void reportStreamTime(
         auto now = Clock.currTime;
         now.fracSecs = 0.msecs;
         immutable delta = (now - room.stream.startTime);
-        immutable timestring = timeSince!(7,1)(delta);
+        immutable timestring = timeSince!(7, 1)(delta);
 
         if (room.stream.maxViewerCount > 0)
         {
@@ -662,7 +662,7 @@ void reportStreamTime(
 
     const previousStream = TwitchPlugin.Room.Stream.fromJSON(json.array[$-1]);
     immutable delta = (previousStream.stopTime - previousStream.startTime);
-    immutable timestring = timeSince!(7,1)(delta);
+    immutable timestring = timeSince!(7, 1)(delta);
     immutable gameName = previousStream.gameName.length ?
         previousStream.gameName :
         "something";
@@ -891,8 +891,6 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         }
         catch (Exception e)
         {
-            import std.format : format;
-
             // Can be JSONException
             // Retry until we reach the retry limit
             if (i < TwitchPlugin.delegateRetries-1) continue;
@@ -1233,10 +1231,10 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         {
             // Probably a video ID
         }
-        else if (!url.length ||
+        else if (
+            !url.length ||
             url.contains(' ') ||
-            (!url.contains("youtube.com/") &&
-            !url.contains("youtu.be/")))
+            (!url.contains("youtube.com/") && !url.contains("youtu.be/")))
         {
             return sendUsage();
         }
@@ -1316,7 +1314,8 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         {
             // Probably a track ID
         }
-        else if (!url.length ||
+        else if (
+            !url.length ||
             url.contains(' ') ||
             !url.contains("spotify.com/track/"))
         {
@@ -1324,7 +1323,6 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         }
 
         auto creds = event.channel in plugin.secretsByChannel;
-
         if (!creds || !creds.spotifyAccessToken.length || !creds.spotifyPlaylistID)
         {
             return sendMissingCredentials();
@@ -1536,7 +1534,6 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 void onCommandEndPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import std.json : JSONType;
-    import std.stdio : writeln;
 
     try
     {
@@ -1557,7 +1554,7 @@ void onCommandEndPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         {
             // Invalid response in some way
             logger.error("Unexpected response from server when ending a poll");
-            writeln(endResponseJSON.toPrettyString);
+            logger.trace(endResponseJSON.toPrettyString);
             return;
         }
 
@@ -1603,7 +1600,8 @@ void onCommandEndPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     Bells on any message, if the [TwitchSettings.bellOnMessage] setting is set.
     Also counts emotes for `ecount` and records active viewers.
 
-    Belling is useful with small audiences, so you don't miss messages.
+    Belling is useful with small audiences so you don't miss messages, but
+    obviously only makes sense when run locally.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -1764,7 +1762,7 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
 
     void sendResults(const long count)
     {
-        // 425618:3-5
+        // 425618:3-5,7-8/peepoLeave:9-18
         string slice = event.emotes;  // mutable
         slice.nom(':');
 
@@ -1851,10 +1849,8 @@ void onCommandWatchtime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.time : timeSince;
     import lu.string : beginsWith, nom, stripped;
-    import std.conv : to;
     import std.format : format;
-    import core.thread : Fiber;
-    import core.time : Duration, seconds;
+    import core.time : Duration;
 
     if (!plugin.twitchSettings.watchtime) return;
 
@@ -1937,6 +1933,8 @@ void onCommandWatchtime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     {
         if (auto viewerTime = nickname in *channelViewerTimes)
         {
+            import core.time : seconds;
+
             return nameSpecified ?
                 reportViewerTime((*viewerTime).seconds) :
                 reportViewerTimeInvoker((*viewerTime).seconds);
@@ -2272,7 +2270,6 @@ in (idString.length, "Tried to import custom emotes with an empty ID string")
 
     getEmoteSet(&getBTTVEmotes, "BetterTTV");
     getEmoteSet(&getFFZEmotes, "FrankerFaceZ");
-    //getEmoteSet(&getFFZEmotesFromBTTVCache, "FrankerFaceZ (BTTV cache)");
     getEmoteSet(&get7tvEmotes, "7tv");
     customEmotes.rehash();
 }
@@ -2622,7 +2619,6 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
 in (channelName.length, "Tried to start room monitor fibers with an empty channel name string")
 {
     import kameloso.plugins.common.delayawait : delay;
-    import kameloso.time : nextMidnight;
     import std.datetime.systime : Clock;
 
     void chatterMonitorDg()
@@ -2660,7 +2656,7 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
 
                 immutable chattersJSON = getChatters(plugin, room.broadcasterName);
 
-                static immutable chatterTypes =
+                static immutable string[6] chatterTypes =
                 [
                     "admins",
                     //"broadcaster",
@@ -2671,7 +2667,7 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
                     "vips",
                 ];
 
-                foreach (immutable chatterType; chatterTypes)
+                foreach (immutable chatterType; chatterTypes[])
                 {
                     foreach (immutable viewerJSON; chattersJSON["chatters"][chatterType].array)
                     {
@@ -2826,6 +2822,8 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
 
         while (true)
         {
+            import kameloso.time : nextMidnight;
+
             room = channelName in plugin.rooms;
             if (!room || (room.uniqueID != idSnapshot)) return;
 
@@ -3765,7 +3763,7 @@ package:
              +/
             static auto fromJSON(const JSONValue json)
             {
-                if ("idString" !in json.object)
+                if ("idString" !in json)
                 {
                     // Invalid entry
                     enum message = "No `idString` key in Stream JSON representation";
