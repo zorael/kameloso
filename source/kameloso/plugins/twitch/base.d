@@ -2714,6 +2714,8 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
                         {
                             plugin.viewerTimesByChannel[room.channelName][viewer] = periodicitySeconds;
                         }
+
+                        plugin.viewerTimesDirty = true;
                     }
                 }
             }
@@ -2764,9 +2766,10 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
                         closeStream(room);
                         rotateStream(room);
 
-                        if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
+                        if (plugin.twitchSettings.watchtime && plugin.viewerTimesDirty)
                         {
                             saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
+                            plugin.viewerTimesDirty = false;
                         }
                     }
                 }
@@ -2778,10 +2781,11 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
                         // New stream!
                         room.stream = streamFromServer;
 
-                        if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
+                        /*if (plugin.twitchSettings.watchtime && plugin.viewerTimesDirty)
                         {
                             saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
-                        }
+                            plugin.viewerTimesDirty = false;
+                        }*/
                     }
                     else if (room.stream.idString == streamFromServer.idString)
                     {
@@ -2795,9 +2799,10 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
                         rotateStream(room);
                         room.stream = streamFromServer;
 
-                        if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
+                        if (plugin.twitchSettings.watchtime && plugin.viewerTimesDirty)
                         {
                             saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
+                            plugin.viewerTimesDirty = false;
                         }
                     }
                 }
@@ -3024,17 +3029,10 @@ void startSaver(TwitchPlugin plugin)
                 Only save watchtimes if there's at least one broadcast currently ongoing.
                 Since we save at broadcast stop there won't be anything new to save otherwise.
             +/
-            if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
+            if (plugin.twitchSettings.watchtime && plugin.viewerTimesDirty)
             {
-                foreach (const room; plugin.rooms)
-                {
-                    if (room.stream.live)
-                    {
-                        // At least one broadcast active
-                        saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
-                        break;
-                    }
-                }
+                saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
+                plugin.viewerTimesDirty = false;
             }
 
             delay(plugin, plugin.savePeriodicity, Yes.yield);
@@ -3251,15 +3249,15 @@ void teardown(TwitchPlugin plugin)
         plugin.persistentWorkerTid.send(ThreadMessage.teardown());
     }
 
-    if (plugin.twitchSettings.ecount && /*plugin.ecountDirty &&*/ plugin.ecount.length)
+    if (plugin.twitchSettings.ecount && plugin.ecount.length)
     {
-        // Might as well always save on exit.
+        // Might as well always save on exit. Ignore dirty flag.
         saveResourceToDisk(plugin.ecount, plugin.ecountFile);
-        //plugin.ecountDirty = false;
     }
 
     if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
     {
+        // As above
         saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
     }
 }
@@ -3985,6 +3983,12 @@ package:
         Associative array of viewer times; seconds keyed by nickname keyed by channel.
      +/
     RehashingAA!(string, long)[string] viewerTimesByChannel;
+
+    /++
+        Whether or not [viewerTimesByChannel] has been modified and there's a
+        point in saving it to disk.
+     +/
+    bool viewerTimesDirty;
 
     /++
         API keys and tokens, keyed by channel.
