@@ -2632,6 +2632,10 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
 
         immutable idSnapshot = room.uniqueID;
 
+        enum botUpdatePeriodicity = (6 * 3600);
+        long lastBotUpdateTimestamp;
+        string[] botBlacklist;
+
         while (true)
         {
             room = channelName in plugin.rooms;
@@ -2645,7 +2649,15 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
 
             try
             {
-                const botBlacklist = getBotList(plugin);
+                immutable nowInUnix = Clock.currTime.toUnixTime;
+                immutable sinceBotUpdate = (nowInUnix - lastBotUpdateTimestamp);
+
+                if (sinceBotUpdate >= botUpdatePeriodicity)
+                {
+                    botBlacklist = getBotList(plugin);
+                    lastBotUpdateTimestamp = nowInUnix;
+                }
+
                 immutable chattersJSON = getChatters(plugin, room.broadcasterName);
 
                 static immutable chatterTypes =
