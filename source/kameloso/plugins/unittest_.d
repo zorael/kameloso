@@ -92,6 +92,11 @@ final class UnittestPlugin : IRCPlugin
      +/
     UnittestSettings unittestSettings;
 
+    @Resource resFileWithoutSubdir = "unittest.delme";
+    @Resource("unittest") resFileWithSubdir = "unittest.delme";
+    @Configuration confFileWithoutSubdir = "unittest.delme";
+    @Configuration("unittest") confFileWithSubdir = "unittest.delme";
+
     mixin MessagingProxy;
     mixin IRCPluginImpl!(Yes.debug_);
 }
@@ -100,8 +105,11 @@ final class UnittestPlugin : IRCPlugin
 unittest
 {
     import std.conv : to;
+    import std.path : buildNormalizedPath;
 
     IRCPluginState state;
+    state.settings.configDirectory = "conf";
+    state.settings.resourceDirectory = "res";
     auto plugin = new UnittestPlugin(state);
 
     assert((plugin.name == "unittest_"), plugin.name);
@@ -114,4 +122,26 @@ unittest
         plugin.Introspection.allEventHandlerUDAsInModule.length.to!string);
     assert((plugin.Introspection.allEventHandlerFunctionsInModule.length > 2),
         plugin.Introspection.allEventHandlerFunctionsInModule.length.to!string);
+
+    immutable resPathWithout = buildNormalizedPath(
+        plugin.state.settings.resourceDirectory,
+        "unittest.delme");
+    immutable resPathWith = buildNormalizedPath(
+        plugin.state.settings.resourceDirectory,
+        "unittest",
+        "unittest.delme");
+
+    assert((plugin.resFileWithoutSubdir == resPathWithout), plugin.resFileWithoutSubdir);
+    assert((plugin.resFileWithSubdir == resPathWith), plugin.resFileWithSubdir);
+
+    immutable confPathWithout = buildNormalizedPath(
+        plugin.state.settings.configDirectory,
+        "unittest.delme");
+    immutable confPathWith = buildNormalizedPath(
+        plugin.state.settings.configDirectory,
+        "unittest",
+        "unittest.delme");
+
+    assert((plugin.confFileWithoutSubdir == confPathWithout), plugin.confFileWithoutSubdir);
+    assert((plugin.confFileWithSubdir == confPathWith), plugin.confFileWithSubdir);
 }
