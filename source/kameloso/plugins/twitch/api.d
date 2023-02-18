@@ -1351,7 +1351,7 @@ in ((title.length || gameID.length), "Tried to modify a channel with no title no
     import std.array : Appender;
 
     const room = channelName in plugin.rooms;
-    assert(room, "Tried to look up modify channel for which there existed no room");
+    assert(room, "Tried to modify a channel for which there existed no room");
 
     immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
     immutable url = "https://api.twitch.tv/helix/channels?broadcaster_id=" ~ room.id;
@@ -1415,8 +1415,8 @@ in ((title.length || gameID.length), "Tried to modify a channel with no title no
 auto getChannel(
     TwitchPlugin plugin,
     const string channelName)
-in (Fiber.getThis, "Tried to call `modifyChannel` from outside a Fiber")
-in (channelName.length, "Tried to modify a channel with an empty channel name string")
+in (Fiber.getThis, "Tried to call `getChannel` from outside a Fiber")
+in (channelName.length, "Tried to fetch a channel with an empty channel name string")
 {
     import std.algorithm.iteration : map;
     import std.array : array;
