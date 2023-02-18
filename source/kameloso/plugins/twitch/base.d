@@ -1203,16 +1203,17 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     }
 
     if (plugin.twitchSettings.songrequestMode == SongRequestMode.disabled) return;
-    else if (event.sender.class_ < plugin.twitchSettings.songrequestPermsNeeded)
+
+    if (event.sender.class_ < plugin.twitchSettings.songrequestPermsNeeded)
     {
         return sendInsufficientPermissions();
     }
 
+    auto room = event.channel in plugin.rooms;  // must be mutable for history
+    assert(room, "Tried to make a song request in a nonexistent room");
+
     if (event.sender.class_ < IRCUser.class_.operator)
     {
-        const room = event.channel in plugin.rooms;
-        assert(room, "Tried to make a song request in a nonexistent room");
-
         if (const lastRequestTimestamp = event.sender.nickname in room.songrequestHistory)
         {
             if ((event.time - *lastRequestTimestamp) < TwitchPlugin.Room.minimumTimeBetweenSongRequests)
@@ -1279,10 +1280,12 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         try
         {
             import kameloso.plugins.twitch.google : addVideoToYouTubePlaylist;
+            import std.json : JSONType;
 
             immutable json = addVideoToYouTubePlaylist(plugin, *creds, videoID);
             immutable title = json["snippet"]["title"].str;
             //immutable position = json["snippet"]["position"].integer;
+            room.songrequestHistory[event.sender.nickname] = event.time;
             return sendAddedToYouTubePlaylist(title);
         }
         catch (InvalidCredentialsException _)
@@ -1355,7 +1358,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             const trackJSON = getSpotifyTrackByID(*creds, trackID);
             immutable artist = trackJSON["artists"].array[0].object["name"].str;
             immutable track = trackJSON["name"].str;
-
+            room.songrequestHistory[event.sender.nickname] = event.time;
             return sendAddedToSpotifyPlaylist(artist, track);
         }
         catch (ErrorJSONException _)
