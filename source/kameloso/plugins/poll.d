@@ -532,8 +532,12 @@ void generatePollFiber(
                 if (auto previousVote = id in currentPoll.votes)
                 {
                     immutable newID = idOf(thisEvent.target);
-                    currentPoll.votes[newID] = *previousVote;
-                    currentPoll.votes.remove(id);
+
+                    if (id != newID)
+                    {
+                        currentPoll.votes[newID] = *previousVote;
+                        currentPoll.votes.remove(id);
+                    }
                 }
                 break;
 
