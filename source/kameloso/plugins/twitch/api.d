@@ -2098,9 +2098,9 @@ auto getBotList(TwitchPlugin plugin)
 auto getStream(TwitchPlugin plugin, const string loginName)
 in (loginName.length, "Tried to get a stream with an empty login name string")
 {
+    import std.algorithm.iteration : map;
+    import std.array : array;
     import std.datetime.systime : SysTime;
-    /*import std.algorithm.iteration : map;
-    import std.array : array;*/
 
     immutable streamURL = "https://api.twitch.tv/helix/streams?user_login=" ~ loginName;
 
@@ -2164,7 +2164,9 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
             stream.title = streamJSON["title"].str;
             stream.startTime = SysTime.fromISOExtString(streamJSON["started_at"].str);
             stream.viewerCount = streamJSON["viewer_count"].integer;
-            //stream.tags = streamJSON["tags"].array.map!(e => e.str).array;
+            stream.tags = streamJSON["tags"].array
+                .map!(tag => tag.str)
+                .array;
             return stream;
         }
         catch (EmptyDataJSONException _)

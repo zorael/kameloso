@@ -3656,6 +3656,11 @@ package:
             string title;
 
             /++
+                Stream tags.
+             +/
+            string[] tags;
+
+            /++
                 When the stream started.
              +/
             SysTime startTime;
@@ -3712,6 +3717,7 @@ package:
                 this.gameName = updated.gameName;
                 this.title = updated.title;
                 this.viewerCount = updated.viewerCount;
+                this.tags = updated.tags.dup;
 
                 if (this.viewerCount > this.maxViewerCount)
                 {
@@ -3749,6 +3755,7 @@ package:
                 json["startTimeUnix"] = JSONValue(this.startTime.toUnixTime());
                 json["stopTimeUnix"] = JSONValue(this.stopTime.toUnixTime());
                 json["maxViewerCount"] = JSONValue(this.maxViewerCount);
+                json["tags"] = JSONValue(this.tags);
                 return json;
             }
 
@@ -3763,6 +3770,9 @@ package:
              +/
             static auto fromJSON(const JSONValue json)
             {
+                import std.algorithm.iteration : map;
+                import std.array : array;
+
                 if ("idString" !in json)
                 {
                     // Invalid entry
@@ -3777,6 +3787,9 @@ package:
                 stream.startTime = SysTime.fromUnixTime(json["startTimeUnix"].integer);
                 stream.stopTime = SysTime.fromUnixTime(json["stopTimeUnix"].integer);
                 stream.maxViewerCount = json["maxViewerCount"].integer;
+                stream.tags = json["tags"].array
+                    .map!(tag => tag.str)
+                    .array;
                 return stream;
             }
         }
