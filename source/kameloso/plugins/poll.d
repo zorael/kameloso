@@ -385,7 +385,7 @@ auto getPollChoices(
     const string channelName,
     const string slice)
 {
-    import std.algorithm.iteration : splitter;
+    import lu.string : splitWithQuotes;
     import std.format : format;
 
     void sendChoiceMustNotStartWithPrefix()
@@ -411,7 +411,7 @@ auto getPollChoices(
 
     PollChoices result;
 
-    foreach (immutable rawChoice; slice.splitter(' '))
+    foreach (immutable rawChoice; splitWithQuotes(slice))
     {
         import lu.string : beginsWith, strippedRight;
         import std.uni : toLower;
@@ -538,31 +538,23 @@ void generatePollFiber(
                 break;
 
             case CHAN:
-                import lu.string : contains, stripped;
+                import lu.string : stripped;
                 import std.uni : toLower;
 
                 if (thisEvent.channel != channelName) break;
 
-                immutable vote = thisEvent.content.stripped;
+                immutable vote = thisEvent.content.stripped.toLower;
 
-                if (!vote.length || vote.contains!(Yes.decode)(' '))
-                {
-                    // Not a vote; drop down to yield and await a new event
-                    break;
-                }
-
-                immutable lowerVote = vote.toLower;
-
-                if (auto ballot = lowerVote in currentPoll.voteCounts)
+                if (auto ballot = vote in currentPoll.voteCounts)
                 {
                     if (auto previousVote = id in currentPoll.votes)
                     {
-                        if (*previousVote != lowerVote)
+                        if (*previousVote != vote)
                         {
                             // User changed their mind
                             --currentPoll.voteCounts[*previousVote];
                             ++(*ballot);
-                            currentPoll.votes[id] = lowerVote;
+                            currentPoll.votes[id] = vote;
                         }
                         else
                         {
@@ -575,7 +567,7 @@ void generatePollFiber(
                         // Valid entry, increment vote count
                         // Record user as having voted
                         ++(*ballot);
-                        currentPoll.votes[id] = lowerVote;
+                        currentPoll.votes[id] = vote;
                     }
                 }
                 break;
