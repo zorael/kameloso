@@ -483,6 +483,7 @@ void generatePollFiber(
         scope(exit)
         {
             import kameloso.plugins.common.delayawait : unawait;
+
             unawait(plugin, nonTwitchVoteEventTypes[]);
             unawait(plugin, IRCEvent.Type.CHAN);
 
@@ -655,7 +656,9 @@ void reportEndResults(
     import std.array : array;
     import std.format : format;
 
-    immutable total = cast(double)poll.voteCounts.byValue.sum;
+    immutable total = cast(double)poll.voteCounts
+        .byValue
+        .sum;
 
     if (total == 0)
     {
@@ -720,7 +723,7 @@ void reportStatus(
     immutable now = Clock.currTime;
     immutable end = (poll.start + poll.duration);
     immutable delta = (end - now);
-    immutable timeInWords = delta.timeSince!(7,0);
+    immutable timeInWords = delta.timeSince!(7, 0);
 
     enum pattern = "There is an ongoing poll! Place your vote for one of: %-(<b>%s<b>, %)<b> (%s)";
     immutable message = pattern.format(poll.sortedChoices, timeInWords);

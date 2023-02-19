@@ -58,7 +58,7 @@ auto buildCompilerVersionString()
 
     major.toAlphaInto(sink);
     sink.put('.');
-    minor.toAlphaInto!(3,3)(sink);
+    minor.toAlphaInto!(3, 3)(sink);
 
     return sink.data.idup;
 }

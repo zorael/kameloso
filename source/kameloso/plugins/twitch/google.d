@@ -270,7 +270,7 @@ Be sure to <l>select a YouTube account</> if presented with several alternatives
     immutable expiresIn = validationJSON["expires_in"].str.to!uint;
 
     enum isValidPattern = "Your key is valid for another <l>%s</> but will be automatically refreshed.";
-    logger.infof(isValidPattern, expiresIn.seconds.timeSince!(3,1));
+    logger.infof(isValidPattern, expiresIn.seconds.timeSince!(3, 1));
     logger.trace();
 
     if (auto storedCreds = channel in plugin.secretsByChannel)

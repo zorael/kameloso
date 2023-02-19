@@ -292,8 +292,13 @@ void persistentQuerier(
             immutable pre = Clock.currTime;
         }
 
-        immutable response = sendHTTPRequestImpl(url, authToken,
-            caBundleFile, verb, cast(ubyte[])body_, contentType);
+        immutable response = sendHTTPRequestImpl(
+            url,
+            authToken,
+            caBundleFile,
+            verb,
+            cast(ubyte[])body_,
+            contentType);
 
         synchronized //()
         {
@@ -804,7 +809,10 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
             }
             else
             {
-                response = sendHTTPRequestImpl(url, authorizationHeader, plugin.state.connSettings.caBundleFile);
+                response = sendHTTPRequestImpl(
+                    url,
+                    authorizationHeader,
+                    plugin.state.connSettings.caBundleFile);
 
                 // Copy/paste error handling...
                 if (response.code == 2)
@@ -1016,12 +1024,11 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
 {
     import std.algorithm.comparison : min;
 
-    alias QC = TwitchPlugin.QueryConstants;
     enum maxDeltaToResponse = 1000;
 
     immutable current = plugin.approximateQueryTime;
-    alias weight = QC.averagingWeight;
-    alias padding = QC.measurementPadding;
+    alias weight = TwitchPlugin.QueryConstants.averagingWeight;
+    alias padding = TwitchPlugin.QueryConstants.measurementPadding;
     immutable responseAdjusted = cast(long)min(responseMsecs, (current + maxDeltaToResponse));
     immutable average = ((weight * current) + (responseAdjusted + padding)) / (weight + 1);
 

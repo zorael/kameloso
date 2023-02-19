@@ -290,7 +290,7 @@ package struct Credentials
      +/
     static auto fromJSON(const JSONValue json)
     {
-        typeof(this) creds;
+        Credentials creds;
 
         creds.broadcasterKey = json["broadcasterKey"].str;
         creds.googleClientID = json["googleClientID"].str;
@@ -727,8 +727,6 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : beginsWith, nom, stripped;
     import std.conv : to;
-    import std.json : JSONType, JSONValue;
-    import core.thread : Fiber;
 
     void sendNoSuchUser(const string givenName)
     {
@@ -880,7 +878,7 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     }
 
     room.id = event.aux[0];
-    immutable userURL = "https://api.twitch.tv/helix/users?id=" ~ event.aux[0];
+    immutable userURL = "https://api.twitch.tv/helix/users?id=" ~ room.id;
 
     foreach (immutable i; 0..TwitchPlugin.delegateRetries)
     {
@@ -1345,7 +1343,6 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         }
         else
         {
-            //return logger.warning("Bad link parsing?");
             return sendInvalidURL();
         }
 
