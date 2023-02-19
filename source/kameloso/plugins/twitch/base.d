@@ -1394,7 +1394,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             .word("startpoll")
             .policy(PrefixPolicy.prefixed)
             .description("(Experimental) Starts a Twitch poll.")
-            .addSyntax(`$command "[poll title]" [duration] [choice1] [choice2] ...`)
+            .addSyntax(`$command "[poll title]" [duration] "[choice 1]" "[choice 2]" ...`)
     )
     .addCommand(
         IRCEventHandler.Command()
@@ -1412,7 +1412,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.time : DurationStringException, abbreviatedDuration;
-    import lu.string : splitInto;
+    import lu.string : splitWithQuotes;
     import std.conv : ConvException, to;
     import std.format : format;
     import std.json : JSONType;
@@ -1420,18 +1420,17 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     void sendUsage()
     {
         import std.format : format;
-        enum pattern = `Usage: %s%s "[poll title]" [duration] [choice1] [choice2] ...`;
+        enum pattern = `Usage: %s%s "[poll title]" [duration] "[choice 1]" "[choice 2]" ...`;
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel, message);
     }
 
-    // mutable
-    string title;
-    string durationString;
-    string[] choices;
+    immutable chunks = splitWithQuotes(event.content);
+    if (chunks.length < 4) return sendUsage();
 
-    event.content.splitInto(title, durationString, choices);
-    if (choices.length < 2) return sendUsage();
+    immutable title = chunks[0];
+    string durationString = chunks[1];  // mutable
+    immutable choices = chunks[2..$];
 
     try
     {
