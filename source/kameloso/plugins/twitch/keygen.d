@@ -36,7 +36,7 @@ void requestTwitchKey(TwitchPlugin plugin)
     import std.concurrency : prioritySend;
     import std.datetime.systime : Clock;
     import std.process : Pid, ProcessException, wait;
-    import std.stdio : stdout, writefln, writeln;
+    import std.stdio : stdout, writeln;
 
     scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
@@ -193,7 +193,7 @@ instructions and log in to authorise the use of this program with your <w>BOT</>
 void requestTwitchSuperKey(TwitchPlugin plugin)
 {
     import std.process : Pid, ProcessException, wait;
-    import std.stdio : stdout, writefln, writeln;
+    import std.stdio : stdout, writeln;
     import std.datetime.systime : Clock;
 
     scope(exit) if (plugin.state.settings.flush) stdout.flush();

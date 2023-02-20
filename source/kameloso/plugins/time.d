@@ -501,7 +501,7 @@ void saveResourceToDisk(const string[string] aa, const string filename)
 in (filename.length, "Tried to save resources to an empty filename string")
 {
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     File(filename, "w").writeln(JSONValue(aa).toPrettyString);
 }

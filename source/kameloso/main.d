@@ -15,7 +15,7 @@ private:
 import kameloso.common : logger;
 import kameloso.kameloso : Kameloso;
 import kameloso.net : ListenAttempt;
-import kameloso.plugins.common.core : IRCPlugin, Replay;
+import kameloso.plugins.common.core : IRCPlugin;
 import kameloso.pods : CoreSettings;
 import dialect.defs;
 import lu.common : Next;
@@ -2007,7 +2007,7 @@ void processSpecialRequests(ref Kameloso instance, IRCPlugin plugin)
         }
         else if (auto fiber = cast(CarryingFiber!(GetSettingPayload))(request.fiber))
         {
-            import lu.string : beginsWith, contains, nom;
+            import lu.string : beginsWith, nom;
             import std.array : Appender;
             import std.algorithm.iteration : splitter;
 

@@ -189,7 +189,7 @@ if (isOutputRange!(Sink, char[]))
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
     import std.format : formattedWrite;
-    import std.uni : asLowerCase, asUpperCase;
+    import std.uni : asLowerCase;
 
     immutable typestring = Enum!(IRCEvent.Type).toString(event.type).withoutTypePrefix;
     string content = stripEffects(event.content);  // mutable

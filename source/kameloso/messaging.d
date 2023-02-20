@@ -1097,7 +1097,7 @@ alias immediateline = immediate;
  +/
 void askToOutputImpl(string logLevel)(IRCPluginState state, const string line)
 {
-    import kameloso.thread : OutputRequest, ThreadMessage;
+    import kameloso.thread : OutputRequest;
     import std.concurrency : prioritySend;
 
     mixin("state.mainThread.prioritySend(OutputRequest(OutputRequest.Level.", logLevel, ", line));");

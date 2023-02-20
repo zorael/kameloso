@@ -750,7 +750,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 {
     static if (coloured)
     {
-        import kameloso.terminal.colours : F = TerminalForeground, colour, colourWith;
+        import kameloso.terminal.colours : F = TerminalForeground, colourWith;
     }
 
     import lu.string : stripSuffix;

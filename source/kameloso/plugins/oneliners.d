@@ -226,7 +226,7 @@ public:
 void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.common.misc : nameOf;
-    import lu.string : beginsWith, contains, nom;
+    import lu.string : beginsWith, nom;
     import std.array : replace;
     import std.conv : to;
     import std.format : format;
@@ -320,8 +320,7 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 )
 void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : SplitResults, contains, nom, splitInto, stripped;
-    import std.conv : ConvException, to;
+    import lu.string : nom, stripped;
     import std.format : format;
     import std.typecons : Flag, No, Yes;
     import std.uni : toLower;
@@ -989,7 +988,7 @@ void saveResourceToDisk(const Oneliner[string][string] aa, const string filename
 in (filename.length, "Tried to save resources to an empty filename string")
 {
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     JSONValue json;
     json = null;

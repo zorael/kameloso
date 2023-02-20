@@ -44,7 +44,7 @@ package void requestSpotifyKeys(TwitchPlugin plugin)
     import lu.string : contains, nom, stripped;
     import std.format : format;
     import std.process : Pid, ProcessException, wait;
-    import std.stdio : File, readln, stdin, stdout, write, writefln, writeln;
+    import std.stdio : File, readln, stdin, stdout, write, writeln;
 
     scope(exit) if (plugin.state.settings.flush) stdout.flush();
 

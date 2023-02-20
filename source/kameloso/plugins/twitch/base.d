@@ -1122,8 +1122,6 @@ void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
 )
 void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.constants : KamelosoInfo, Timeout;
-    import arsd.http2 : HttpClient, HttpVerb, Uri;
     import lu.string : contains, nom, stripped;
     import std.format : format;
     import core.time : seconds;
@@ -1736,7 +1734,7 @@ void onEndOfMOTD(TwitchPlugin plugin)
 )
 void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : nom, stripped;
+    import lu.string : nom;
     import std.array : replace;
     import std.format : format;
     import std.conv  : to;
@@ -3457,7 +3455,7 @@ void initResources(TwitchPlugin plugin)
 void saveResourceToDisk(/*const*/ RehashingAA!(string, long)[string] aa, const string filename)
 {
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     long[string][string] tempAA;
 
@@ -3482,7 +3480,7 @@ void saveResourceToDisk(/*const*/ RehashingAA!(string, long)[string] aa, const s
 package void saveSecretsToDisk(const Credentials[string] aa, const string filename)
 {
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     JSONValue json;
     json = null;

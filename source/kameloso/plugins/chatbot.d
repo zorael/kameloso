@@ -88,9 +88,7 @@ void onCommandSay(ChatbotPlugin plugin, const ref IRCEvent event)
 )
 void onDance(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.plugins.common.delayawait : delay;
     import kameloso.constants : BufferSize;
-    import kameloso.messaging : emote;
     import lu.string : strippedRight;
     import std.string : indexOf;
     import core.thread : Fiber;

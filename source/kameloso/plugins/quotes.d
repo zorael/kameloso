@@ -1134,7 +1134,7 @@ unittest
 auto loadQuotes(const string quotesFile)
 {
     import lu.json : JSONStorage;
-    import std.json : JSONException, JSONType;
+    import std.json : JSONException;
 
     JSONStorage json;
     Quote[][string][string] quotes;
@@ -1314,7 +1314,7 @@ void initResources(QuotesPlugin plugin)
 {
     import lu.json : JSONStorage;
     import lu.string : beginsWith;
-    import std.json : JSONException, JSONType;
+    import std.json : JSONException;
 
     enum placeholderChannel = "#<lost+found>";
 

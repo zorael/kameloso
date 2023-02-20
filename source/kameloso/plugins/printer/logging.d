@@ -132,7 +132,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                     "Tried to add datestamp to uninitialised buffer");
 
                 import std.file : exists, isDir, mkdirRecurse;
-                import std.stdio : File, writeln;
+                import std.stdio : File;
 
                 if (!buffer.dir.exists)
                 {
@@ -293,7 +293,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                 }
                 else
                 {
-                    import std.stdio : File, writeln;
+                    import std.stdio : File;
 
                     auto errFile = File(errBuffer.file, "a");
 
@@ -614,7 +614,7 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
         import std.array : join;
         import std.encoding : sanitize;
         import std.file : exists, isDir, mkdirRecurse;
-        import std.stdio : File, writeln;
+        import std.stdio : File;
 
         if (!buffer.dir.exists)
         {

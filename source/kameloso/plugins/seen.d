@@ -807,7 +807,7 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.time : timeSince;
     import dialect.common : isValidNickname;
-    import lu.string : beginsWith, contains;
+    import lu.string : beginsWith;
     import std.algorithm.searching : canFind;
     import std.datetime.systime : SysTime;
     import std.format : format;
@@ -1049,7 +1049,7 @@ auto loadSeen(const string filename)
 void saveSeen(SeenPlugin plugin)
 {
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     if (!plugin.seenUsers.length) return;
 

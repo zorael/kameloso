@@ -273,7 +273,6 @@ public:
      +/
     void setDefaultOptions(Socket socketToSetup)
     {
-        import kameloso.constants : BufferSize, Timeout;
         import std.socket : SocketOption, SocketOptionLevel;
         import core.time : msecs;
 
@@ -394,7 +393,7 @@ public:
      +/
     void setup()
     {
-        import std.socket : TcpSocket, AddressFamily, SocketShutdown, SocketType;
+        import std.socket : TcpSocket, AddressFamily, SocketType;
 
         socket4 = new TcpSocket;
         socket6 = new Socket(AddressFamily.INET6, SocketType.STREAM);
@@ -935,7 +934,7 @@ in (!conn.connected, "Tried to set up a connecting fiber on an already live conn
 in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
 {
     import std.concurrency : yield;
-    import std.socket : AddressFamily, Socket, SocketException;
+    import std.socket : AddressFamily, SocketException;
 
     if (abort) return;
 

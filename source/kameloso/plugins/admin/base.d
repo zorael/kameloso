@@ -845,7 +845,7 @@ void onCommandPart(AdminPlugin plugin, const ref IRCEvent event)
 )
 void onCommandSet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.thread : CarryingFiber, ThreadMessage;
+    import kameloso.thread : CarryingFiber;
     import kameloso.constants : BufferSize;
     import std.typecons : Tuple;
     import core.thread : Fiber;
@@ -902,7 +902,7 @@ void onCommandSet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 void onCommandGet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.constants : BufferSize;
-    import kameloso.thread : CarryingFiber, ThreadMessage;
+    import kameloso.thread : CarryingFiber;
     import std.typecons : Tuple;
     import core.thread : Fiber;
 
@@ -1056,7 +1056,7 @@ void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.time : DurationStringException, abbreviatedDuration;
     import lu.string : nom, stripped;
-    import std.conv : ConvException, text, to;
+    import std.conv : ConvException;
 
     string slice = event.content.stripped;  // mutable
 

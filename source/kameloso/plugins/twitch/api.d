@@ -408,7 +408,7 @@ in (url.length, "Tried to send an HTTP request without an URL")
 {
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.thread : ThreadMessage;
-    import std.concurrency : prioritySend, send, spawn;
+    import std.concurrency : prioritySend, send;
     import std.datetime.systime : Clock, SysTime;
     import core.time : msecs;
 

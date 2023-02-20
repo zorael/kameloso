@@ -140,7 +140,7 @@ void onMessage(WebtitlesPlugin plugin, const ref IRCEvent event)
 void lookupURLs(WebtitlesPlugin plugin, const /*ref*/ IRCEvent event, string[] urls)
 {
     import kameloso.common : logger;
-    import lu.string : beginsWith, contains, nom;
+    import lu.string : beginsWith, nom;
     import std.concurrency : spawn;
 
     bool[string] uniques;
@@ -480,7 +480,7 @@ auto lookupTitle(
     const string caBundleFile)
 {
     import kameloso.constants : KamelosoInfo, Timeout;
-    import lu.string : beginsWith, contains, nom;
+    import lu.string : beginsWith, nom;
     import arsd.dom : Document;
     import arsd.http2 : HttpClient, Uri;
     import std.algorithm.comparison : among;

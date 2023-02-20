@@ -18,7 +18,7 @@ private:
 import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
-import kameloso.common : RehashingAA, logger;
+import kameloso.common : logger;
 import kameloso.messaging;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
@@ -63,6 +63,7 @@ import core.time : Duration;
 struct Poll
 {
 private:
+    import kameloso.common : RehashingAA;
     import std.datetime.systime : SysTime;
     import std.json : JSONValue;
 
@@ -461,7 +462,7 @@ void generatePollFiber(
     const string channelName,
     Poll poll)
 {
-    import kameloso.plugins.common.delayawait : await, delay;
+    import kameloso.plugins.common.delayawait : await;
     import kameloso.constants : BufferSize;
     import kameloso.thread : CarryingFiber;
     import std.format : format;

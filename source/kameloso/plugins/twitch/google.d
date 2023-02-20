@@ -43,7 +43,7 @@ package void requestGoogleKeys(TwitchPlugin plugin)
     import std.conv : to;
     import std.format : format;
     import std.process : Pid, ProcessException, wait;
-    import std.stdio : File, readln, stdin, stdout, write, writefln, writeln;
+    import std.stdio : File, readln, stdin, stdout, write, writeln;
     import core.time : seconds;
 
     scope(exit) if (plugin.state.settings.flush) stdout.flush();

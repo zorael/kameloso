@@ -1577,7 +1577,7 @@ void register(ConnectService service)
 
     version(TwitchSupport)
     {
-        import std.algorithm : endsWith;
+        import std.algorithm.searching : endsWith;
         immutable serverIsTwitch = service.state.server.address.endsWith(".twitch.tv");
     }
 

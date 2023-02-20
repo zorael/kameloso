@@ -357,7 +357,7 @@ void writeToDisk(
 {
     import std.file : mkdirRecurse;
     import std.path : dirName;
-    import std.stdio : File, writefln, writeln;
+    import std.stdio : File;
 
     immutable dir = filename.dirName;
     mkdirRecurse(dir);

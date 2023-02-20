@@ -23,7 +23,7 @@ package:
 auto getHTTPClient()
 {
     import kameloso.constants : KamelosoInfo, Timeout;
-    import arsd.http2 : HttpClient, Uri;
+    import arsd.http2 : HttpClient;
     import core.time : seconds;
 
     static HttpClient client;

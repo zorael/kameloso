@@ -856,7 +856,7 @@ void initAccountResources(PersistenceService service)
 void initHostmaskResources(PersistenceService service)
 {
     import lu.json : JSONStorage;
-    import std.json : JSONException, JSONValue;
+    import std.json : JSONException;
 
     JSONStorage json;
     //json.reset();

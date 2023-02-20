@@ -315,8 +315,7 @@ mixin template IRCPluginImpl(
     private import kameloso.plugins.common.core : FilterResult, IRCEventHandler, IRCPluginState, Permissions;
     private import dialect.defs : IRCEvent, IRCServer, IRCUser;
     private import lu.traits : getSymbolsByUDA;
-    private import std.meta : Filter, templateNot, templateOr;
-    private import std.traits : getUDAs, isSomeFunction;
+    private import std.traits : getUDAs;
     private import core.thread : Fiber;
 
     static if (__traits(compiles, { alias _ = this.hasIRCPluginImpl; }))
