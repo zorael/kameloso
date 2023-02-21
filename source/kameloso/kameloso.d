@@ -41,13 +41,11 @@ private:
          +/
         SysTime t0;
 
-
         // m
         /++
             y at t0 (ergo y at x = 0, weight at last sent message).
          +/
         double m = 0.0;
-
 
         // increment
         /++
@@ -55,13 +53,11 @@ private:
          +/
         enum increment = 1.0;
 
-
         // this(this)
         /++
             Don't copy this, just keep one instance.
          +/
         @disable this(this);
-
 
         // reset
         /++
@@ -74,14 +70,12 @@ private:
         }
     }
 
-
     // _connectionID
     /++
         Numeric ID of the current connection, to disambiguate between multiple
         connections in one program run. Private value.
      +/
     uint _connectionID;
-
 
 public:
     // conn
@@ -91,7 +85,6 @@ public:
      +/
     Connection conn;
 
-
     // plugins
     /++
         A runtime array of all plugins. We iterate these when we have finished
@@ -100,20 +93,17 @@ public:
      +/
     IRCPlugin[] plugins;
 
-
     // settings
     /++
         The root copy of the program-wide settings.
      +/
     CoreSettings settings;
 
-
     // connSettings
     /++
         Settings relating to the connection between the bot and the IRC server.
      +/
     ConnectionSettings connSettings;
-
 
     // previousWhoisTimestamps
     /++
@@ -122,13 +112,11 @@ public:
      +/
     long[string] previousWhoisTimestamps;
 
-
     // parser
     /++
         Parser instance.
      +/
     IRCParser parser;
-
 
     // bot
     /++
@@ -136,13 +124,11 @@ public:
      +/
     IRCBot bot;
 
-
     // throttle
     /++
         Values and state needed to throttle sending messages.
      +/
     Throttle throttle;
-
 
     // abort
     /++
@@ -151,14 +137,12 @@ public:
      +/
     bool* abort;
 
-
     // wantLiveSummary
     /++
         When this is set, the main loop should print a connection summary upon
         the next iteration. It is transient.
      +/
     bool wantLiveSummary;
-
 
     // outbuffer
     /++
@@ -169,7 +153,6 @@ public:
      +/
     Buffer!(OutgoingLine, No.dynamic, BufferSize.outbuffer) outbuffer;
 
-
     // backgroundBuffer
     /++
         Buffer of outgoing background message strings.
@@ -179,6 +162,7 @@ public:
      +/
     Buffer!(OutgoingLine, No.dynamic, BufferSize.outbuffer) backgroundBuffer;
 
+    // priorityBuffer
     /++
         Buffer of outgoing priority message strings.
 
@@ -186,7 +170,6 @@ public:
         we can comfortably keep it arbitrarily high.
      +/
     Buffer!(OutgoingLine, No.dynamic, BufferSize.priorityBuffer) priorityBuffer;
-
 
     // immediateBuffer
     /++
@@ -196,7 +179,6 @@ public:
         we can comfortably keep it arbitrarily high.
      +/
     Buffer!(OutgoingLine, No.dynamic, BufferSize.priorityBuffer) immediateBuffer;
-
 
     version(TwitchSupport)
     {
@@ -210,14 +192,12 @@ public:
         Buffer!(OutgoingLine, No.dynamic, BufferSize.outbuffer*2) fastbuffer;
     }
 
-
     // missingConfigurationEntries
     /++
         Associative array of string arrays of expected configuration entries
         that were missing.
      +/
     string[][string] missingConfigurationEntries;
-
 
     // invalidConfigurationEntries
     /++
@@ -226,13 +206,11 @@ public:
      +/
     string[][string] invalidConfigurationEntries;
 
-
     // customSettings
     /++
         Custom settings specfied at the command line with the `--set` parameter.
      +/
     string[] customSettings;
-
 
     version(Callgrind)
     {
@@ -246,11 +224,9 @@ public:
         bool callgrindRunning = true;
     }
 
-
     // this(this)
     /// Never copy this.
     @disable this(this);
-
 
     // connectionID
     /++
@@ -265,7 +241,6 @@ public:
     {
         return _connectionID;
     }
-
 
     // generateNewConnectionID
     /++
@@ -288,7 +263,6 @@ public:
             while (_connectionID == previous);
         }
     }
-
 
     // throttleline
     /++
@@ -406,7 +380,6 @@ public:
         return 0.0;
     }
 
-
     // initPlugins
     /++
         Resets and *minimally* initialises all plugins.
@@ -471,7 +444,6 @@ public:
         }
     }
 
-
     // issuePluginCallImpl
     /++
         Issues a call to all plugins, where such a call is one of "setup",
@@ -504,13 +476,11 @@ public:
         }
     }
 
-
     // setupPlugins
     /++
         Sets up all plugins, calling any module-level `setup` functions.
      +/
     alias setupPlugins = issuePluginCallImpl!"setup";
-
 
     // initPluginResources
     /++
@@ -522,7 +492,6 @@ public:
      +/
     alias initPluginResources = issuePluginCallImpl!"initResources";
 
-
     // startPlugins
     /++
         Starts all plugins by calling any module-level `start` functions.
@@ -533,7 +502,6 @@ public:
      +/
     alias startPlugins = issuePluginCallImpl!"start";
 
-
     // reloadPlugins
     /++
         Reloads all plugins by calling any module-level `reload` functions.
@@ -541,7 +509,6 @@ public:
         What this actually does is up to the plugins.
      +/
     alias reloadPlugins = issuePluginCallImpl!"reload";
-
 
     // teardownPlugins
     /++
@@ -640,7 +607,6 @@ public:
         plugins = null;
     }
 
-
     // checkPluginForUpdates
     /++
         Propagates updated bots, clients, servers and/or settings, to `this`,
@@ -691,7 +657,6 @@ public:
             "`IRCPluginState.updates` was not reset after checking and propagation");
     }
 
-
     // propagate
     /++
         Propgates an updated struct, to `this`, [parser], and to each plugins'
@@ -736,7 +701,6 @@ public:
         }
     }
 
-
     // propagateWhoisTimestamp
     /++
         Propagates a single update to the the [previousWhoisTimestamps]
@@ -754,7 +718,6 @@ public:
         }
     }
 
-
     // propagateWhoisTimestamps
     /++
         Propagates the [previousWhoisTimestamps] associative array to all plugins.
@@ -771,7 +734,6 @@ public:
             plugin.state.previousWhoisTimestamps = copy;
         }
     }
-
 
     // ConnectionHistoryEntry
     /++
@@ -792,20 +754,17 @@ public:
         ulong bytesReceived;
     }
 
-
     // connectionHistory
     /++
         History records of established connections this execution run.
      +/
     ConnectionHistoryEntry[] connectionHistory;
 
-
     // wantReceiveTimeoutShortened
     /++
         Set when the Socket read timeout was requested to be shortened.
      +/
     bool wantReceiveTimeoutShortened;
-
 
     version(TwitchSupport)
     {

@@ -580,7 +580,7 @@ void generatePollFiber(
                 if (!thisEvent.sender.account.length)
                 {
                     // User logged out
-                    // Old account is in aux; move vote to nickname if necessary
+                    // Old account is in aux[0]; move vote to nickname if necessary
                     if (thisEvent.aux[0] != thisEvent.sender.nickname)
                     {
                         if (const previousVote = thisEvent.aux[0] in currentPoll.votes)

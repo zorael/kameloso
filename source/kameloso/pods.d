@@ -189,7 +189,6 @@ public:
      +/
     bool ipv6 = true;
 
-
     @CannotContainComments
     @Hidden
     {
@@ -199,13 +198,11 @@ public:
          +/
         string privateKeyFile;
 
-
         // certFile
         /++
             Path to certificate (`.pem`) file.
          +/
         string certFile;
-
 
         // caBundleFile
         /++
@@ -220,7 +217,6 @@ public:
      +/
     bool ssl = false;
 
-
     @Hidden
     {
         // receiveTimeout
@@ -229,13 +225,11 @@ public:
          +/
         uint receiveTimeout = Timeout.receiveMsecs;
 
-
         // messageRate
         /++
             How many messages to send per second, maximum.
          +/
         double messageRate = ConnectionDefaultFloats.messageRate;
-
 
         // messageBurst
         /++
@@ -264,7 +258,6 @@ public:
      +/
     string account;
 
-
     @Hidden
     @CannotContainComments
     {
@@ -274,13 +267,11 @@ public:
          +/
         string password;
 
-
         // pass
         /++
             Login `PASS`, different from `SASL` and services.
          +/
         string pass;
-
 
         // quitReason
         /++
@@ -288,14 +279,12 @@ public:
          +/
         string quitReason;
 
-
         // partReason
         /++
             Default reason given when parting a channel and not specifying a reason text.
          +/
         string partReason;
     }
-
 
     @Separator(",")
     @Separator(" ")
@@ -306,14 +295,12 @@ public:
          +/
         string[] admins;
 
-
         // homeChannels
         /++
             List of home channels for the bot to operate in.
          +/
         @CannotContainComments
         string[] homeChannels;
-
 
         // guestChannels
         /++
@@ -322,7 +309,6 @@ public:
         @CannotContainComments
         string[] guestChannels;
     }
-
 
     @Unserialisable
     {
