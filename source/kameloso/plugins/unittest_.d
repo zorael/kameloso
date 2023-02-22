@@ -10,7 +10,7 @@ private:
 import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness;
-import kameloso.plugins.common.mixins : MessagingProxy;
+import kameloso.plugins.common.mixins;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
@@ -52,7 +52,18 @@ void onCommand(UnittestPlugin plugin, const ref IRCEvent event)
 {
     with (plugin)
     {
-        chan(event.channel, event.content);
+        void onSuccess(IRCUser user)
+        {
+            chan(event.channel, "success:" ~ user.account);
+        }
+
+        void onFailure()
+        {
+            chan(event.channel, "failure");
+        }
+
+        mixin WHOISFiberDelegate!(onSuccess, onFailure, Yes.alwaysLookup);
+        enqueueAndWHOIS(event.sender.nickname);
     }
 }
 
