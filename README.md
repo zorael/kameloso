@@ -96,15 +96,15 @@ Grab a prebuilt binary from under [**Releases**](https://github.com/zorael/kamel
 
 **kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html), with the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases) and with the GCC-based [**gdc**](https://gdcproject.org/downloads). **dmd** compiles very fast, while **ldc** and **gdc** are slower at compiling but produce faster code. Additionally, the latter two support more target architectures than **dmd** does (e.g. ARM). See [here](https://wiki.dlang.org/Compilers) for an overview of the available compiler vendors.
 
-You need a compiler based on D version **2.085** or later (March 2019). For **ldc** this is version **1.15**, and for **gdc** this is release series **12**.
+You need a compiler based on D version **2.085** or later (March 2019). For **ldc** this is version **1.15**, and for **gdc** you need release series **12**.
 
 If your repositories (or other software sources) don't have compilers recent enough, you can use the official [`install.sh`](https://dlang.org/install.html) installation script to download current ones, or any version of choice. (**gdc** is not available via this script.)
 
-The package manager [**dub**](https://code.dlang.org) is used to facilitate compilation and dependency management. On Windows it comes bundled in the compiler archive, while on Linux it may need to be installed separately. Refer to your repositories.
+The package manager [**dub**](https://code.dlang.org) is used to facilitate compilation and dependency management. On Windows it is included in the compiler archive, while on Linux it may need to be installed separately. Refer to your repositories.
 
 ### SSL libraries on Windows
 
-See the [known issues](#known-issues) section on Windows for information on libraries needed to connect to SSL servers and to allow plugins secure access to the Internet.
+See the [known issues](#known-issues) section on Windows for information on libraries needed to make encrypted connections to IRC servers and to allow plugins secure access to the Internet.
 
 ## Downloading source
 
@@ -137,13 +137,13 @@ List configurations with `dub build --print-configs`. You can specify which to c
 $ dub build -c twitch
 ```
 
-> If you want to slim down the program and customise your own build to only compile the plugins you want to use, see the larger `versions` lists in `dub.sdl`. Simply add a character to the line corresponding to the plugin(s) you want to omit, thus invalidating the version identifiers and effectively disabling the code they relate to. Mind that disabling any of the "**service**" plugins may/will break the bot in subtle ways.
+> If you want to slim down the program and customise your own build to only compile the plugins you want to use, see the larger `versions` lists in `dub.sdl`. Simply add a character to the lines corresponding to the plugins you want to omit, thus invalidating the version identifiers and effectively disabling the code they relate to. Mind that disabling any of the "**service**" plugins may/will break the bot in subtle ways.
 
 # How to use
 
 ## Configuration
 
-The bot ideally wants the account name of one or more administrators of the bot, and/or one or more home channels to operate in. Without either it's just a read-only log bot, which is a completely valid use-case. To define these you can either specify them on the command line, with flags listed by calling the program with `--help`, or generate a configuration file with `--save` and enter them there.
+The bot ideally wants the account name of one or more administrators of the bot, and/or one or more home channels to operate in. Without either it's just a read-only log bot, which is a completely valid use-case. To define these you can either supply them on the command line, with flags listed by calling the program with `--help`, or generate a configuration file with `--save` and enter them there.
 
 ```console
 $ kameloso --save
@@ -196,7 +196,7 @@ More server-specific resource files will be created the first time you connect t
 
 ## Example use
 
-See [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins) for more information on available plugins and their commands.
+Refer to [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins) for more information on available plugins and their commands.
 
 Additionally, see [this section about permissions](#except-nothing-happens) if nothing happens when you try to invoke commands.
 
@@ -349,7 +349,7 @@ The command **prefix** (here "`!`") is configurable; refer to your configuration
 prefix                      "!"
 ```
 
-It can technically be any string and not just one character. It may include spaces if enclosed within quotes, like `"please "` (making it `please note`, `please quote`, ...). Additionally, prefixing commands with the bot's nickname also always works, as in `kameloso: seen MrOffline`. This is to be able to disambiguate between several bots in the same channel. Moreover, many administrative commands only work when called this way, notably everything that only outputs information to the local terminal.
+It can technically be any string and not just one character. It may include spaces if enclosed within quotes, like `"please "` (making it `please note`, `please quote`, ...). Additionally, prefixing commands with the bot's nickname also always works, as in `kameloso: seen MrOffline`. This is to be able to disambiguate between several bots in the same channel. Moreover, many administrative commands only work when called this way; notably everything that only outputs information to the local terminal.
 
 ### ***Except nothing happens***
 
@@ -392,7 +392,7 @@ The program can then be run normally.
 kameloso
 ```
 
-It will connect to Twitch and start the guide to requesting a new *authorisation token* in your terminal, upon detecting it's missing one. See the ["long story"](#long-story) section below for details.
+It will now connect to Twitch and start the guide to requesting a new *authorisation token* in your terminal, upon detecting it's missing one. See the ["long story"](#long-story) section below for details.
 
 **Note that it will request a token for the user you are currently logged in as in your browser**. If you want one for a different "bot user" instead, open up a private/incognito window, log into Twitch normally **with the bot account** there, copy [**this link**](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true), then paste it into that browser window instead. (Then follow the terminal instructions again.)
 
@@ -431,7 +431,7 @@ promoteModerators           true
 promoteVIPs                 true
 ```
 
-The secure port is **6697** (or **443**). For non-encrypted traffic, use the default port **6667**.
+The secure port is **6697** (alternatively **443**). For non-encrypted traffic, use the default port **6667**.
 
 ### **Long story**
 
@@ -478,7 +478,7 @@ To get song requests to work, you need to register an *application* to interface
 
 #### Certain commands require higher permissions
 
-Some functionality, such as setting the channel title or currently played game, require elevated credentials with the permissions of the channel owner (broadcaster). As such, if you want to use such commands, you will need to generate an OAuth authorisation token for **your main account** separately, much as you generated one to be able to connect with the bot account. This will request a token from Twitch with more permissions, and the authorisation browser page should reflect this.
+Some functionality, such as setting the channel title or currently played game, require elevated credentials with the permissions of the channel owner (broadcaster), as opposed to those of any moderator. As such, if you want to use such commands, you will need to generate an OAuth authorisation token for **your main account** separately, much as you generated one to be able to connect with the bot account. This will request a token from Twitch with more permissions, and the authorisation browser page should reflect this.
 
 ```shell
 $ kameloso --set twitch.superKeygen
