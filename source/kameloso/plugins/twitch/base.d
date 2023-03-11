@@ -478,31 +478,11 @@ in (channelName.length, "Tried to init Room with an empty channel string")
 )
 void onUserstate(TwitchPlugin plugin, const ref IRCEvent event)
 {
-    auto room = event.channel in plugin.rooms;
+    import lu.string : contains;
 
-    if (!room)
+    if (event.target.badges.contains("moderator/") ||
+        event.target.badges.contains("broadcaster/"))
     {
-        // Race...
-        initRoom(plugin, event.channel);
-        room = event.channel in plugin.rooms;
-    }
-
-    if (!room.sawUserstate)
-    {
-        import lu.string : contains;
-
-        // First USERSTATE; warn if applicable
-        room.sawUserstate = true;
-
-        if (!event.target.badges.contains("moderator/") &&
-            !event.target.badges.contains("broadcaster/"))
-        {
-            enum pattern = "The bot is not a moderator of home channel <l>%s</>. " ~
-                "Consider elevating it to such to avoid being as rate-limited.";
-            logger.warningf(pattern, event.channel);
-            return;
-        }
-
         if (auto channel = event.channel in plugin.state.channels)
         {
             if (auto ops = 'o' in channel.mods)
@@ -516,6 +496,26 @@ void onUserstate(TwitchPlugin plugin, const ref IRCEvent event)
             {
                 channel.mods['o'][plugin.state.client.nickname] = true;
             }
+        }
+    }
+    else
+    {
+        auto room = event.channel in plugin.rooms;
+
+        if (!room)
+        {
+            // Race...
+            initRoom(plugin, event.channel);
+            room = event.channel in plugin.rooms;
+        }
+
+        if (!room.sawUserstate)
+        {
+            // First USERSTATE; warn about not being mod
+            room.sawUserstate = true;
+            enum pattern = "The bot is not a moderator of home channel <l>%s</>. " ~
+                "Consider elevating it to such to avoid being as rate-limited.";
+            logger.warningf(pattern, event.channel);
         }
     }
 }
