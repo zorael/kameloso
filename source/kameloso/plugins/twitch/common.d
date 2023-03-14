@@ -108,18 +108,20 @@ auto readNamedString(
  +/
 void printManualURL(const string url)
 {
+    import kameloso.logger : LogLevel;
+    import kameloso.terminal.colours.tags : expandTags;
     import std.stdio : writefln;
 
     enum copyPastePattern = `
 <l>Copy and paste this link manually into your browser, and log in as asked:
 
-<i>8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<</>
+<i>8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8\<</>
 
 %s
 
-<i>8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8<</>
+<i>8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8\<</>
 `;
-    writefln(copyPastePattern, url);
+    writefln(copyPastePattern.expandTags(LogLevel.off), url);
 }
 
 
