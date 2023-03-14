@@ -185,6 +185,12 @@ Be sure to <l>select a YouTube account</> if presented with several alternatives
             printManualURL(url);
             if (plugin.state.settings.flush) stdout.flush();
         }
+        catch (Exception _)
+        {
+            logger.warning("Error: no graphical environment detected");
+            printManualURL(url);
+            if (plugin.state.settings.flush) stdout.flush();
+        }
     }
 
     string code;

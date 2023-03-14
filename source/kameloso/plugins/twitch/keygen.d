@@ -159,6 +159,12 @@ instructions and log in to authorise the use of this program with your <w>BOT</>
             printManualURL(url);
             if (plugin.state.settings.flush) stdout.flush();
         }
+        catch (Exception _)
+        {
+            logger.warning("Error: no graphical environment detected");
+            printManualURL(url);
+            if (plugin.state.settings.flush) stdout.flush();
+        }
     }
 
     plugin.state.bot.pass = readURLAndParseKey(plugin, authNode);

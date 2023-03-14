@@ -173,6 +173,12 @@ A normal URL to any playlist you can modify will work fine.
             printManualURL(url);
             if (plugin.state.settings.flush) stdout.flush();
         }
+        catch (Exception _)
+        {
+            logger.warning("Error: no graphical environment detected");
+            printManualURL(url);
+            if (plugin.state.settings.flush) stdout.flush();
+        }
     }
 
     string code;

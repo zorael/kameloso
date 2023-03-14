@@ -233,6 +233,11 @@ unittest
 
     Returns:
         A [std.process.Pid|Pid] of the spawned process. Remember to [std.process.wait|wait].
+
+    Throws:
+        [object.Exception|Exception] if there were no `DISPLAY` environment
+        variable on non-macOS Posix platforms, indicative of no X.org server or
+        Wayland compositor running.
  +/
 auto openInBrowser(const string url)
 {
@@ -250,6 +255,11 @@ auto openInBrowser(const string url)
         {
             // Assume XDG
             enum open = "xdg-open";
+
+            if (!environment.get("DISPLAY", string.init).length)
+            {
+                throw new Exception("No graphical interface detected");
+            }
         }
 
         immutable browserExecutable = environment.get("BROWSER", open);
