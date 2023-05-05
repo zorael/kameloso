@@ -29,6 +29,16 @@ import dialect.defs;
 {
     /// Toggle whether or not this plugin should do anything at all.
     @Enabler bool enabled = true;
+
+    version(TwitchSupport)
+    {
+        /++
+            Send oneliners as Twitch replies to the triggering message.
+
+            Only affects Twitch connections.
+         +/
+        bool onelinersAsReplies = false;
+    }
 }
 
 
@@ -242,7 +252,7 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 
         enum pattern = "(Empty oneliner; use <b>%soneliner add %s<b> to add lines.)";
         immutable message = pattern.format(plugin.state.settings.prefix, trigger);
-        chan(plugin.state, event.channel, message);
+        sendOneliner(plugin, event, message);
     }
 
     string slice = event.content[plugin.state.settings.prefix.length..$];  // mutable
@@ -287,7 +297,7 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
     immutable message = target.length ?
         atPattern.format(plugin.nameOf(target), line) :
         line;
-    chan(plugin.state, event.channel, message);
+    sendOneliner(plugin, event, message);
 }
 
 
@@ -352,7 +362,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
         return handleDelFromOneliner(plugin, event, slice);
 
     case "list":
-        return plugin.listCommands(event.channel);
+        return plugin.listCommands(event);
 
     default:
         return sendUsage();
@@ -870,7 +880,7 @@ void handleDelFromOneliner(
 )
 void onCommandCommands(OnelinersPlugin plugin, const ref IRCEvent event)
 {
-    return plugin.listCommands(event.channel);
+    return plugin.listCommands(event);
 }
 
 
@@ -880,24 +890,24 @@ void onCommandCommands(OnelinersPlugin plugin, const ref IRCEvent event)
 
     Params:
         plugin = The current [OnelinersPlugin].
-        channelName = Name of the channel to send the list to.
+        event = The querying [dialect.defs.IRCEvent|IRCEvent].
  +/
-void listCommands(OnelinersPlugin plugin, const string channelName)
+void listCommands(OnelinersPlugin plugin, const ref IRCEvent event)
 {
     import std.format : format;
 
-    auto channelOneliners = channelName in plugin.onelinersByChannel;
+    auto channelOneliners = event.channel in plugin.onelinersByChannel;
 
     if (channelOneliners && channelOneliners.length)
     {
         immutable rtPattern = "Available commands: %-(<b>" ~ plugin.state.settings.prefix ~ "%s<b>, %)<b>";
         immutable message = rtPattern.format(channelOneliners.byKey);
-        chan(plugin.state, channelName, message);
+        sendOneliner(plugin, event, message);
     }
     else
     {
         enum message = "There are no commands available right now.";
-        chan(plugin.state, channelName, message);
+        sendOneliner(plugin, event, message);
     }
 }
 
@@ -963,6 +973,37 @@ void onGlobalUserstate(OnelinersPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.common.misc : catchUser;
     plugin.catchUser(event.target);
+}
+
+
+// sendOneliner
+/++
+    Sends a oneliner reply.
+
+    If connected to a Twitch server and with version `TwitchSupport` set and
+    [OnelinersSettings.onelinersAsReplies] true, sends the message as a
+    Twitch [kameloso.messaging.reply|reply].
+
+    Params:
+        plugin = The current [OnelinersPlugin].
+        event = The querying [dialect.defs.IRCEvent|IRCEvent].
+        message = The message string to send.
+ +/
+void sendOneliner(
+    OnelinersPlugin plugin,
+    const ref IRCEvent event,
+    const string message)
+{
+    version(TwitchSupport)
+    {
+        if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
+            (plugin.onelinersSettings.onelinersAsReplies))
+        {
+            return reply(plugin.state, event, message);
+        }
+    }
+
+    chan(plugin.state, event.channel, message);
 }
 
 
