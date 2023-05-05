@@ -1,5 +1,5 @@
 /++
-    Module for the main [Kameloso] instance struct and its settings structs.
+    Module for the main [Kameloso] instance struct.
  +/
 module kameloso.kameloso;
 
