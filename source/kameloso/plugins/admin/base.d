@@ -1332,7 +1332,10 @@ import kameloso.thread : Sendable;
         header = String header describing the passed content payload.
         content = Message content.
  +/
-void onBusMessage(AdminPlugin plugin, const string header, shared Sendable content)
+void onBusMessage(
+    AdminPlugin plugin,
+    const string header,
+    shared Sendable content)
 {
     import kameloso.thread : Boxed;
     import lu.string : contains, nom, strippedRight;
