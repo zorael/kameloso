@@ -568,7 +568,6 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
     import std.json : JSONException;
 
     JSONStorage json;
-    //json.reset();
     json.load(service.userFile);
 
     service.channelUsers.clear();
@@ -736,7 +735,6 @@ void initAccountResources(PersistenceService service)
     import std.json : JSONException, JSONValue;
 
     JSONStorage json;
-    //json.reset();
 
     try
     {
@@ -859,7 +857,6 @@ void initHostmaskResources(PersistenceService service)
     import std.json : JSONException;
 
     JSONStorage json;
-    //json.reset();
 
     try
     {
