@@ -249,7 +249,7 @@ debug
 )
 void onCommandSudo(AdminPlugin plugin, const ref IRCEvent event)
 {
-    return onCommandSudoImpl(plugin, event);
+    onCommandSudoImpl(plugin, event);
 }
 
 
@@ -560,7 +560,7 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
 )
 void onCommandWhitelist(AdminPlugin plugin, const ref IRCEvent event)
 {
-    return plugin.manageClassLists(event, "whitelist");
+    plugin.manageClassLists(event, "whitelist");
 }
 
 
@@ -589,7 +589,7 @@ void onCommandWhitelist(AdminPlugin plugin, const ref IRCEvent event)
 )
 void onCommandElevated(AdminPlugin plugin, const ref IRCEvent event)
 {
-    return plugin.manageClassLists(event, "elevated");
+    plugin.manageClassLists(event, "elevated");
 }
 
 
@@ -615,7 +615,7 @@ void onCommandElevated(AdminPlugin plugin, const ref IRCEvent event)
 )
 void onCommandOperator(AdminPlugin plugin, const ref IRCEvent event)
 {
-    return plugin.manageClassLists(event, "operator");
+    plugin.manageClassLists(event, "operator");
 }
 
 
@@ -669,7 +669,7 @@ void onCommandStaff(AdminPlugin plugin, const ref IRCEvent event)
 )
 void onCommandBlacklist(AdminPlugin plugin, const ref IRCEvent event)
 {
-    return plugin.manageClassLists(event, "blacklist");
+    plugin.manageClassLists(event, "blacklist");
 }
 
 
