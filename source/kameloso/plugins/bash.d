@@ -18,7 +18,6 @@ import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.messaging;
 import dialect.defs;
-import std.typecons : Flag, No, Yes;
 
 mixin MinimalAuthentication;
 mixin PluginRegistration!BashPlugin;

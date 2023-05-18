@@ -1116,7 +1116,8 @@ void cycle(
     const Duration delay_ = Duration.zero,
     const string key = string.init)
 {
-    import kameloso.plugins.common.delayawait : await, delay;
+    import kameloso.plugins.common.delayawait : await, delay, unawait;
+    import kameloso.constants : BufferSize;
     import kameloso.thread : CarryingFiber;
     import core.thread : Fiber;
 
@@ -1152,8 +1153,6 @@ void cycle(
             Fiber.yield();
         }
     }
-
-    import kameloso.constants : BufferSize;
 
     Fiber fiber = new CarryingFiber!IRCEvent(&dg, BufferSize.fiberStack);
     await(plugin, fiber, IRCEvent.Type.SELFPART);

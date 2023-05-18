@@ -866,8 +866,6 @@ void quit(
     const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
 {
-    import kameloso.thread : ThreadMessage;
-
     Message m;
 
     m.event.type = IRCEvent.Type.QUIT;
@@ -882,8 +880,6 @@ void quit(
 ///
 unittest
 {
-    import kameloso.thread : ThreadMessage;
-
     IRCPluginState state;
     state.mainThread = thisTid;
 
@@ -1047,8 +1043,6 @@ void immediate(
     const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
 {
-    import kameloso.thread : ThreadMessage;
-
     Message m;
 
     m.event.type = IRCEvent.Type.UNSET;
@@ -1154,7 +1148,7 @@ else
 
 unittest
 {
-    import kameloso.thread : OutputRequest, ThreadMessage;
+    import kameloso.thread : OutputRequest;
 
     IRCPluginState state;
     state.mainThread = thisTid;
@@ -1196,7 +1190,6 @@ unittest
     foreach (immutable i; 0..expectedMessages.length)
     {
         import std.concurrency : receiveTimeout;
-        import std.conv : text;
         import std.variant : Variant;
         import core.time : Duration;
 
