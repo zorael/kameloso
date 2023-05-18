@@ -1031,6 +1031,8 @@ void onCommandStatus(AdminPlugin plugin)
 void onCommandSummary(AdminPlugin plugin)
 {
     import kameloso.thread : ThreadMessage;
+
+    if (plugin.state.settings.headless) return;
     plugin.state.mainThread.send(ThreadMessage.wantLiveSummary());
 }
 
@@ -1272,6 +1274,8 @@ void listHostmaskDefinitions(AdminPlugin plugin, const ref IRCEvent event)
         {
             import std.json : JSONValue;
             import std.stdio : stdout, writeln;
+
+            if (plugin.state.settings.headless) return;
 
             logger.log("Current hostmasks:");
             // json can contain the example placeholder, so make a new one out of aa
