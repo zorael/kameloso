@@ -1200,7 +1200,7 @@ unittest
         import std.variant : Variant;
         import core.time : Duration;
 
-        receiveTimeout(Duration.zero,
+        cast(void)receiveTimeout(Duration.zero,
             (OutputRequest request)
             {
                 assert((request.logLevel == expectedLevels[i]), request.logLevel.to!string);

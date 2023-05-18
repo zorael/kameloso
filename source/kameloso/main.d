@@ -723,7 +723,6 @@ void messageFiber(ref Kameloso instance)
 
         /// Timestamp of when the loop started.
         immutable loopStartTime = Clock.currTime;
-        static immutable instant = Duration.zero;
         static immutable maxReceiveTime = Timeout.messageReadMsecs.msecs;
 
         while (!*instance.abort &&
@@ -733,7 +732,7 @@ void messageFiber(ref Kameloso instance)
             import std.concurrency : receiveTimeout;
             import std.variant : Variant;
 
-            immutable receivedSomething = receiveTimeout(instant,
+            immutable receivedSomething = receiveTimeout(Duration.zero,
                 &onThreadMessage,
                 &eventToServer,
                 &proxyLoggerMessages,
@@ -3452,14 +3451,13 @@ auto getQuitMessageInFlight(ref Kameloso instance)
     import std.variant : Variant;
     import core.time : Duration;
 
-    static immutable instant = Duration.zero;
     ThreadMessage returnMessage;
     bool receivedSomething;
     bool halt;
 
     do
     {
-        receivedSomething = receiveTimeout(instant,
+        receivedSomething = receiveTimeout(Duration.zero,
             (ThreadMessage message) scope
             {
                 if (message.type == ThreadMessage.Type.quit)

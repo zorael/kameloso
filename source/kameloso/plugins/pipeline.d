@@ -178,12 +178,11 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
             break;
         }
 
-        static immutable instant = Duration.zero;
         bool halt;
 
         void checkMessages()
         {
-            cast(void)receiveTimeout(instant,
+            cast(void)receiveTimeout(Duration.zero,
                 (ThreadMessage message)
                 {
                     if (message.type == ThreadMessage.Type.teardown)
