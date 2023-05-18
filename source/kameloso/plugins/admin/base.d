@@ -1129,15 +1129,11 @@ void cycle(
                     join(plugin.state, channelName, key);
                 }
 
-                if (delay_ == Duration.zero)
-                {
-                    return joinDg();
-                }
-                else
-                {
-                    import core.time : seconds;
-                    return delay(plugin, &joinDg, delay_);
-                }
+                unawait(plugin, Fiber.getThis, IRCEvent.Type.SELFPART);
+
+                return (delay_ == Duration.zero) ?
+                    joinDg() :
+                    delay(plugin, &joinDg, delay_);
             }
 
             // Wrong channel, wait for the next SELFPART
