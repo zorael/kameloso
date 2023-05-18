@@ -857,18 +857,10 @@ void onCommandSet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis;
         assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
 
-        immutable success = thisFiber.payload[0];
-
-        if (success)
-        {
-            enum message = "Setting changed.";
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
-        }
-        else
-        {
-            enum message = "Invalid syntax or plugin/setting name.";
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
-        }
+        immutable message = thisFiber.payload[0] ?
+            "Setting changed." :
+            "Invalid syntax or plugin/setting name.";
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
     auto fiber = new CarryingFiber!Payload(&dg, BufferSize.fiberStack);
@@ -917,32 +909,29 @@ void onCommandGet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         immutable setting = thisFiber.payload[1];
         immutable value = thisFiber.payload[2];
 
-        if (pluginName.length)
+        if (!pluginName.length)
         {
-            if (setting.length)
-            {
-                import lu.string : contains;
-                import std.format : format;
+            enum message = "Invalid plugin.";
+            return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        }
+        else if (setting.length)
+        {
+            import lu.string : contains;
+            import std.format : format;
 
-                immutable pattern = value.contains(' ') ?
-                    "%s.%s=\"%s\"" :
-                    "%s.%s=%s";
-                immutable message = pattern.format(pluginName, setting, value);
-                privmsg(plugin.state, event.channel, event.sender.nickname, message);
-            }
-            else if (value.length)
-            {
-                privmsg(plugin.state, event.channel, event.sender.nickname, value);
-            }
-            else
-            {
-                enum message = "Invalid setting.";
-                privmsg(plugin.state, event.channel, event.sender.nickname, message);
-            }
+            immutable pattern = value.contains(' ') ?
+                "%s.%s=\"%s\"" :
+                "%s.%s=%s";
+            immutable message = pattern.format(pluginName, setting, value);
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        }
+        else if (value.length)
+        {
+            privmsg(plugin.state, event.channel, event.sender.nickname, value);
         }
         else
         {
-            enum message = "Invalid plugin.";
+            enum message = "Invalid setting.";
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
     }
