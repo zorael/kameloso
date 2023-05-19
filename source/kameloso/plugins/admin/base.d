@@ -1243,6 +1243,8 @@ void listHostmaskDefinitions(AdminPlugin plugin, const ref IRCEvent event)
 {
     import lu.json : JSONStorage, populateFromJSON;
 
+    if (plugin.state.settings.headless) return;
+
     JSONStorage json;
     json.load(plugin.hostmasksFile);
 

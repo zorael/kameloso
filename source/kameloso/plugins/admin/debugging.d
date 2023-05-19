@@ -41,6 +41,8 @@ void onAnyEventImpl(AdminPlugin plugin, const ref IRCEvent event)
 {
     import std.stdio : write, writefln, writeln;
 
+    if (plugin.state.settings.headless) return;
+
     if (plugin.adminSettings.printRaw)
     {
         if (event.tags.length) write('@', event.tags, ' ');
@@ -73,6 +75,8 @@ void onCommandShowUserImpl(AdminPlugin plugin, const ref IRCEvent event)
     import kameloso.printing : printObject;
     import std.algorithm.iteration : splitter;
 
+    if (plugin.state.settings.headless) return;
+
     foreach (immutable username; event.content.splitter(' '))
     {
         if (const user = username in plugin.state.users)
@@ -101,6 +105,8 @@ void onCommandShowUsersImpl(AdminPlugin plugin)
 {
     import kameloso.printing : printObject;
     import std.stdio : writeln;
+
+    if (plugin.state.settings.headless) return;
 
     foreach (immutable name, const user; plugin.state.users)
     {
@@ -175,6 +181,8 @@ void onCommandStatusImpl(AdminPlugin plugin)
     import kameloso.common : logger;
     import kameloso.printing : printObjects;
     import std.stdio : writeln;
+
+    if (plugin.state.settings.headless) return;
 
     logger.log("Current state:");
     printObjects!(Yes.all)(plugin.state.client, plugin.state.server);
