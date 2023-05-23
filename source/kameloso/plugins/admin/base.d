@@ -962,13 +962,13 @@ version(WithConnectService)
 )
 void onCommandAuth(AdminPlugin plugin)
 {
+    import kameloso.thread : ThreadMessage, boxed;
+    import std.concurrency : send;
+
     version(TwitchSupport)
     {
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch) return;
     }
-
-    import kameloso.thread : ThreadMessage, boxed;
-    import std.concurrency : send;
 
     plugin.state.mainThread.send(ThreadMessage.busMessage("connect", boxed("auth")));
 }
