@@ -1451,10 +1451,10 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
     string url = baseURL ~ room.id;  // mutable;
     if (idString.length) url ~= "&id=" ~ idString;
 
+    immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
+
     auto getPollsDg()
     {
-        immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
-
         JSONValue allPollsJSON;
         allPollsJSON = null;
         allPollsJSON.array = null;
@@ -1603,10 +1603,10 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
 
     immutable escapedTitle = title.replace(`"`, `\"`);
     immutable body_ = pattern.format(room.id, escapedTitle, sink.data, durationString);
+    immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
 
     auto createPollDg()
     {
-        immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
         immutable response = sendHTTPRequest(
             plugin,
             url,
@@ -1710,10 +1710,10 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
 
     immutable status = terminate ? "TERMINATED" : "ARCHIVED";
     immutable body_ = pattern.format(room.id, voteID, status);
+    immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
 
     auto endPollDg()
     {
-        immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
         immutable response = sendHTTPRequest(
             plugin,
             url,
@@ -2534,6 +2534,8 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
     const room = channelName in plugin.rooms;
     assert(room, "Tried to get subscribers of a channel for which there existed no room");
 
+    immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
+
     auto getSubscribersDg()
     {
         static struct User
@@ -2570,7 +2572,6 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
         inner:
         do
         {
-            immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
             immutable body_ = after.length ?
                 subsequentPattern.format(room.id, after) :
                 initialPattern.format(room.id);
