@@ -877,7 +877,7 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         room = event.channel in plugin.rooms;
     }
 
-    room.id = event.aux[0];
+    room.id = event.aux[$-1];
     immutable userURL = "https://api.twitch.tv/helix/users?id=" ~ room.id;
 
     foreach (immutable i; 0..TwitchPlugin.delegateRetries)
@@ -937,7 +937,7 @@ version(TwitchCustomEmotesEverywhere)
 )
 void onGuestRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    importCustomEmotes(plugin, event.channel, event.aux[0]);
+    importCustomEmotes(plugin, event.channel, event.aux[$-1]);
 }
 
 
