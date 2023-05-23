@@ -135,7 +135,7 @@ auto retryDelegate(Dg)(Dg dg)
             }
             throw e;
         }
-        catch (Exception e)
+        catch (EmptyDataJSONException e)
         {
             // Ditto
             if (i < TwitchPlugin.delegateRetries-1) continue;
@@ -144,6 +144,18 @@ auto retryDelegate(Dg)(Dg dg)
             {
                 import kameloso.common : logger;
                 logger.trace(e.info);
+            }
+            throw e;
+        }
+        catch (Exception e)
+        {
+            // Ditto
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+
+            version(PrintStacktraces)
+            {
+                import kameloso.common : logger;
+                logger.trace(e.msg);
             }
             throw e;
         }
