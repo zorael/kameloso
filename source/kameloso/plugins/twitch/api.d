@@ -1448,18 +1448,18 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
     assert(room, "Tried to get polls of a channel for which there existed no room");
 
     enum baseURL = "https://api.twitch.tv/helix/polls?broadcaster_id=";
-    immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
-
     string url = baseURL ~ room.id;  // mutable;
     if (idString.length) url ~= "&id=" ~ idString;
 
-    JSONValue allPollsJSON;
-    allPollsJSON = null;
-    allPollsJSON.array = null;
-    string after;
-
     auto getPollsDg()
     {
+        immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
+
+        JSONValue allPollsJSON;
+        allPollsJSON = null;
+        allPollsJSON.array = null;
+
+        string after;
         uint retry;
 
         inner:
@@ -1874,8 +1874,6 @@ auto getBotList(TwitchPlugin plugin)
 /++
     Fetches information about an ongoing stream.
 
-    Does not reuse [retryDelegate] since it has special parsing for errors.
-
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         loginName = Account name of user whose stream to fetch information of.
@@ -1893,7 +1891,7 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
 
     immutable streamURL = "https://api.twitch.tv/helix/streams?user_login=" ~ loginName;
 
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    auto getStreamDg()
     {
         try
         {
@@ -1963,35 +1961,19 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
             // Stream is down
             return TwitchPlugin.Room.Stream.init;
         }
-        catch (ErrorJSONException e)
-        {
-            // Retry until we reach the retry limit, then rethrow after potentially printing details
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-
-            version(PrintStacktraces)
-            {
-                import std.stdio : writeln;
-                writeln(e.json.toPrettyString);
-            }
-            throw e;
-        }
         catch (Exception e)
         {
-            // Retry on all other Exceptions until we reach the retry limit, then rethrow
-            if (i < TwitchPlugin.delegateRetries-1) continue;
             throw e;
         }
     }
 
-    assert(0, "Unreachable");
+    return retryDelegate(&getStreamDg);
 }
 
 
 // getBTTVEmotes
 /++
     Fetches BetterTTV emotes for a given channel.
-
-    Does not reuse [retryDelegate] since it has special parsing for errors.
 
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
@@ -2014,7 +1996,7 @@ in (idString.length, "Tried to get BTTV emotes with an empty ID string")
 
     immutable url = "https://api.betterttv.net/3/cached/users/twitch/" ~ idString;
 
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    auto getBTTVEmotesDg()
     {
         try
         {
@@ -2110,7 +2092,6 @@ in (idString.length, "Tried to get BTTV emotes with an empty ID string")
             }
 
             // All done
-            return;
         }
         catch (TwitchQueryException e)
         {
@@ -2127,35 +2108,15 @@ in (idString.length, "Tried to get BTTV emotes with an empty ID string")
                 }
                 // Drop down
             }
-
-            if (i < TwitchPlugin.delegateRetries-1)
-            {
-                // Retry
-                continue;
-            }
-            throw e;
-        }
-        catch (ErrorJSONException e)
-        {
-            // Retry until we reach the retry limit, then rethrow after potentially printing details
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-
-            version(PrintStacktraces)
-            {
-                import std.stdio : writeln;
-                writeln(e.json.toPrettyString);
-            }
             throw e;
         }
         catch (Exception e)
         {
-            // Retry until we reach the retry limit, then rethrow
-            if (i < TwitchPlugin.delegateRetries-1) continue;
             throw e;
         }
     }
 
-    assert(0, "Unreachable");
+    return retryDelegate(&getBTTVEmotesDg);
 }
 
 
@@ -2222,8 +2183,6 @@ in (Fiber.getThis, "Tried to call `getBTTVGlobalEmotes` from outside a Fiber")
 /++
     Fetches FrankerFaceZ emotes for a given channel.
 
-    Does not reuse [retryDelegate] since it has special parsing for errors.
-
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         emoteMap = Reference to the `bool[dstring]` associative array to store
@@ -2245,7 +2204,7 @@ in (idString.length, "Tried to get FFZ emotes with an empty ID string")
 
     immutable url = "https://api.frankerfacez.com/v1/room/id/" ~ idString;
 
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    auto getFFZEmotesDg()
     {
         try
         {
@@ -2346,7 +2305,6 @@ in (idString.length, "Tried to get FFZ emotes with an empty ID string")
             if ((responseJSON.type != JSONType.object) || ("sets" !in responseJSON))
             {
                 // Invalid response in some way
-                if (i < TwitchPlugin.delegateRetries-1) continue;
                 enum message = "`getFFZEmotes` response has unexpected JSON";
                 throw new UnexpectedJSONException(message, responseJSON);
             }
@@ -2366,7 +2324,6 @@ in (idString.length, "Tried to get FFZ emotes with an empty ID string")
             }
 
             // All done
-            return;
         }
         catch (ErrorJSONException e)
         {
@@ -2379,27 +2336,19 @@ in (idString.length, "Tried to get FFZ emotes with an empty ID string")
             }
             throw e;
         }
-        catch (TwitchQueryException e)
-        {
-            // Retry until we reach the retry limit, then rethrow
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-            throw e;
-        }
         catch (Exception e)
         {
-            // As above
-            if (i < TwitchPlugin.delegateRetries-1) continue;
             throw e;
         }
     }
+
+    return retryDelegate(&getFFZEmotesDg);
 }
 
 
 // get7tvEmotes
 /++
     Fetches 7tv emotes for a given channel.
-
-    Does not reuse [retryDelegate] since it has special parsing for errors.
 
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
@@ -2422,7 +2371,7 @@ in (idString.length, "Tried to get 7tv emotes with an empty ID string")
 
     immutable url = "https://api.7tv.app/v2/users/" ~ idString ~ "/emotes";
 
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    auto get7tvEmotesDg()
     {
         try
         {
@@ -2469,7 +2418,6 @@ in (idString.length, "Tried to get 7tv emotes with an empty ID string")
             }
 
             // All done
-            return;
         }
         catch (TwitchQueryException e)
         {
@@ -2487,35 +2435,15 @@ in (idString.length, "Tried to get 7tv emotes with an empty ID string")
                 }
                 // Drop down
             }
-
-            if (i < TwitchPlugin.delegateRetries-1)
-            {
-                // Retry
-                continue;
-            }
-            throw e;
-        }
-        catch (ErrorJSONException e)
-        {
-            // Retry until we reach the retry limit, then rethrow after potentially printing details
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-
-            version(PrintStacktraces)
-            {
-                import std.stdio : writeln;
-                writeln(e.json.toPrettyString);
-            }
             throw e;
         }
         catch (Exception e)
         {
-            // Retry until we reach the retry limit, then rethrow
-            if (i < TwitchPlugin.delegateRetries-1) continue;
             throw e;
         }
     }
 
-    assert(0, "Unreachable");
+    return retryDelegate(&get7tvEmotesDg);
 }
 
 
