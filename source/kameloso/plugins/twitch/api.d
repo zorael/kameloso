@@ -249,6 +249,100 @@ private auto twitchTryCatchDgExceptionHandler(
 }
 
 
+// retryDelegate
+/++
+    Retries a passed delegate until it no longer throws or until the hardcoded
+    number of retries
+    ([kameloso.plugins.twitch.base.TwitchPlugin.delegateRetries|TwitchPlugin.delegateRetries])
+    is reached.
+
+    Params:
+        dg = Delegate to call.
+
+    Returns:
+        Whatever the passed delegate returns.
+ +/
+auto retryDelegate(Dg)(Dg dg)
+{
+    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    {
+        try
+        {
+            return dg();
+        }
+        catch (MissingBroadcasterTokenException e)
+        {
+            // This is never a transient error
+            throw e;
+        }
+        catch (TwitchQueryException e)
+        {
+            // Retry until we reach the retry limit, then rethrow after potentially printing details
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+
+            version(PrintStacktraces)
+            {
+                import std.json : JSONException, parseJSON;
+                import std.stdio : stdout, writeln;
+
+                logger.trace(e.info);
+
+                try
+                {
+                    writeln(parseJSON(e.responseBody).toPrettyString);
+                }
+                catch (JSONException _)
+                {
+                    writeln(e.responseBody);
+                }
+
+                stdout.flush();
+            }
+            throw e;
+        }
+        catch (UnexpectedJSONException e)
+        {
+            // Ditto
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+
+            version(PrintStacktraces)
+            {
+                import std.stdio : stdout, writeln;
+
+                logger.trace(e.info);
+                writeln(e.json.toPrettyString);
+                stdout.flush();
+            }
+            throw e;
+        }
+        catch (ErrorJSONException e)
+        {
+            // Ditto
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+
+            version(PrintStacktraces)
+            {
+                import std.stdio : stdout, writeln;
+
+                logger.trace(e.info);
+                writeln(e.json.toPrettyString);
+                stdout.flush();
+            }
+            throw e;
+        }
+        catch (Exception e)
+        {
+            // Ditto
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+            version(PrintStacktraces) logger.trace(e.info);
+            throw e;
+        }
+    }
+
+    assert(0, "unreachable");
+}
+
+
 // persistentQuerier
 /++
     Persistent worker issuing Twitch API queries based on the concurrency messages
@@ -695,78 +789,54 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
 
     immutable chattersURL = text("https://tmi.twitch.tv/group/user/", broadcaster, "/chatters");
 
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    auto getChattersDg()
     {
-        try
+        immutable response = sendHTTPRequest(plugin, chattersURL, plugin.authorizationBearer);
+        immutable responseJSON = parseJSON(response.str);
+
+        /*
         {
-            immutable response = sendHTTPRequest(plugin, chattersURL, plugin.authorizationBearer);
-            immutable responseJSON = parseJSON(response.str);
-
-            /*
-            {
-                "_links": {},
-                "chatter_count": 93,
-                "chatters": {
-                    "broadcaster": [
-                        "streamernick"
-                    ],
-                    "vips": [],
-                    "moderators": [
-                        "somemod"
-                    ],
-                    "staff": [],
-                    "admins": [],
-                    "global_mods": [],
-                    "viewers": [
-                        "abc",
-                        "def",
-                        "ghi"
-                    ]
-                }
+            "_links": {},
+            "chatter_count": 93,
+            "chatters": {
+                "broadcaster": [
+                    "streamernick"
+                ],
+                "vips": [],
+                "moderators": [
+                    "somemod"
+                ],
+                "staff": [],
+                "admins": [],
+                "global_mods": [],
+                "viewers": [
+                    "abc",
+                    "def",
+                    "ghi"
+                ]
             }
-            */
-
-            if (responseJSON.type != JSONType.object)
-            {
-                // Retry until we reach the limit
-                if (i < TwitchPlugin.delegateRetries-1) continue;
-                enum message = "`getChatters` response JSON is not JSONType.object";
-                throw new UnexpectedJSONException(message, responseJSON);
-            }
-
-            immutable chattersJSON = "chatters" in responseJSON;
-            if (!chattersJSON)
-            {
-                // For some reason we received an object that didn't contain chatters
-                if (i < TwitchPlugin.delegateRetries-1) continue;
-                enum message = "`getChatters` \"chatters\" JSON is not JSONType.object";
-                throw new UnexpectedJSONException(message, *chattersJSON);
-            }
-
-            // Don't return `chattersJSON`, as we would lose "chatter_count".
-            return responseJSON;
         }
-        catch (ErrorJSONException e)
+        */
+
+        if (responseJSON.type != JSONType.object)
         {
-            // Retry until we reach the retry limit, then rethrow after potentially printing details
-            if (i < TwitchPlugin.delegateRetries-1) continue;
+            enum message = "`getChatters` response JSON is not JSONType.object";
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
 
-            version(PrintStacktraces)
-            {
-                import std.stdio : writeln;
-                writeln(e.json.toPrettyString);
-            }
-            throw e;
-        }
-        catch (Exception e)
+        immutable chattersJSON = "chatters" in responseJSON;
+        if (!chattersJSON)
         {
-            // Retry until we reach the retry limit, then rethrow
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-            throw e;
+            // For some reason we received an object that didn't contain chatters
+            enum message = "`getChatters` \"chatters\" JSON is not JSONType.object";
+            throw new UnexpectedJSONException(message, *chattersJSON);
         }
+
+        // Don't return `chattersJSON`, as we would lose "chatter_count".
+        return responseJSON;
     }
 
-    assert(0, "Unreachable");
+    return retryDelegate(&getChattersDg);
 }
 
 
@@ -809,121 +879,90 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
         authToken;
     immutable authorizationHeader = "OAuth " ~ authToken;
 
-    QueryResponse response;
-
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    auto getValidationDg()
     {
-        try
-        {
-            if (async)
-            {
-                response = sendHTTPRequest(plugin, url, authorizationHeader);
-            }
-            else
-            {
-                response = sendHTTPRequestImpl(
-                    url,
-                    authorizationHeader,
-                    plugin.state.connSettings.caBundleFile);
+        QueryResponse response;
 
-                // Copy/paste error handling...
-                if (response.code == 2)
+        if (async)
+        {
+            response = sendHTTPRequest(plugin, url, authorizationHeader);
+        }
+        else
+        {
+            response = sendHTTPRequestImpl(
+                url,
+                authorizationHeader,
+                plugin.state.connSettings.caBundleFile);
+
+            // Copy/paste error handling...
+            if (response.code == 2)
+            {
+                throw new TwitchQueryException(
+                    response.error,
+                    response.str,
+                    response.error,
+                    response.code);
+            }
+            else if (response.code == 0) //(!response.str.length)
+            {
+                throw new TwitchQueryException(
+                    "Empty response",
+                    response.str,
+                    response.error,
+                    response.code);
+            }
+            else if (response.code >= 400)
+            {
+                import std.format : format;
+                import std.json : JSONException;
+
+                try
                 {
-                    // Retry until we reach the retry limit, then rethrow
-                    if (i < TwitchPlugin.delegateRetries-1) continue;
+                    import lu.string : unquoted;
+                    import std.json : parseJSON;
+                    import std.string : chomp;
+
+                    // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
+                    /*
+                    {
+                        "error": "Unauthorized",
+                        "message": "Client ID and OAuth token do not match",
+                        "status": 401
+                    }
+                    */
+                    immutable errorJSON = parseJSON(response.str);
+                    enum pattern = "%3d %s: %s";
+
+                    immutable message = pattern.format(
+                        errorJSON["status"].integer,
+                        errorJSON["error"].str.unquoted,
+                        errorJSON["message"].str.chomp.unquoted);
+
+                    throw new TwitchQueryException(message, response.str, response.error, response.code);
+                }
+                catch (JSONException e)
+                {
                     throw new TwitchQueryException(
-                        response.error,
+                        e.msg,
                         response.str,
                         response.error,
                         response.code);
                 }
-                else if (response.code == 0) //(!response.str.length)
-                {
-                    // As above
-                    if (i < TwitchPlugin.delegateRetries-1) continue;
-                    throw new TwitchQueryException(
-                        "Empty response",
-                        response.str,
-                        response.error,
-                        response.code);
-                }
-                else if (response.code >= 400)
-                {
-                    import std.format : format;
-                    import std.json : JSONException;
-
-                    if (i < TwitchPlugin.delegateRetries-1) continue;
-
-                    try
-                    {
-                        import lu.string : unquoted;
-                        import std.json : parseJSON;
-                        import std.string : chomp;
-
-                        // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
-                        /*
-                        {
-                            "error": "Unauthorized",
-                            "message": "Client ID and OAuth token do not match",
-                            "status": 401
-                        }
-                        */
-                        immutable errorJSON = parseJSON(response.str);
-                        enum pattern = "%3d %s: %s";
-
-                        immutable message = pattern.format(
-                            errorJSON["status"].integer,
-                            errorJSON["error"].str.unquoted,
-                            errorJSON["message"].str.chomp.unquoted);
-
-                        throw new TwitchQueryException(message, response.str, response.error, response.code);
-                    }
-                    catch (JSONException e)
-                    {
-                        // As above
-                        //if (i < TwitchPlugin.delegateRetries-1) continue;
-                        throw new TwitchQueryException(
-                            e.msg,
-                            response.str,
-                            response.error,
-                            response.code);
-                    }
-                }
             }
-
-            immutable validationJSON = parseJSON(response.str);
-
-            if ((validationJSON.type != JSONType.object) || ("client_id" !in validationJSON))
-            {
-                // As above
-                if (i < TwitchPlugin.delegateRetries-1) continue;
-                enum message = "Failed to validate Twitch authorisation token; unknown JSON";
-                throw new UnexpectedJSONException(message, validationJSON);
-            }
-
-            return validationJSON;
         }
-        catch (ErrorJSONException e)
+
+        immutable validationJSON = parseJSON(response.str);
+
+        if ((validationJSON.type != JSONType.object) || ("client_id" !in validationJSON))
         {
-            // Retry until we reach the retry limit, then rethrow after potentially printing details
-            if (i < TwitchPlugin.delegateRetries-1) continue;
+            enum message = "Failed to validate Twitch authorisation token; unknown JSON";
+            throw new UnexpectedJSONException(message, validationJSON);
+        }
 
-            version(PrintStacktraces)
-            {
-                import std.stdio : writeln;
-                writeln(e.json.toPrettyString);
-            }
-            throw e;
-        }
-        catch (Exception e)
-        {
-            // Retry until we reach the retry limit, then rethrow
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-            throw e;
-        }
+        return validationJSON;
     }
 
-    assert(0, "Unreachable");
+    return retryDelegate(&getValidationDg);
 }
 
 
@@ -948,42 +987,21 @@ in (id.length, "Tried to get follows with an empty ID string")
 {
     immutable url = "https://api.twitch.tv/helix/users/follows?first=100&to_id=" ~ id;
 
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    auto getFollowsDg()
     {
-        try
-        {
-            const entitiesArrayJSON = getMultipleTwitchData(plugin, url);
-            Follow[string] allFollows;
+        const entitiesArrayJSON = getMultipleTwitchData(plugin, url);
+        Follow[string] allFollows;
 
-            foreach (entityJSON; entitiesArrayJSON)
-            {
-                immutable key = entityJSON["from_id"].str;
-                allFollows[key] = Follow.fromJSON(entityJSON);
-            }
-
-            return allFollows;
-        }
-        catch (ErrorJSONException e)
+        foreach (entityJSON; entitiesArrayJSON)
         {
-            // Retry until we reach the retry limit, then rethrow after potentially printing details
-            if (i < TwitchPlugin.delegateRetries-1) continue;
+            immutable key = entityJSON["from_id"].str;
+            allFollows[key] = Follow.fromJSON(entityJSON);
+        }
 
-            version(PrintStacktraces)
-            {
-                import std.stdio : writeln;
-                writeln(e.json.toPrettyString);
-            }
-            throw e;
-        }
-        catch (Exception e)
-        {
-            // Retry until we reach the retry limit, then rethrow
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-            throw e;
-        }
+        return allFollows;
     }
 
-    assert(0, "Unreachable");
+    return retryDelegate(&getFollowsDg);
 }
 
 
@@ -1251,46 +1269,23 @@ in ((givenName.length || givenIDString.length),
         ("https://api.twitch.tv/helix/users?login=" ~ givenName) :
         ("https://api.twitch.tv/helix/users?login=" ~ givenIDString);
 
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    auto getTwitchUserDg()
     {
-        try
-        {
-            immutable userJSON = getTwitchData(plugin, userURL);
+        immutable userJSON = getTwitchData(plugin, userURL);
 
-            if ((userJSON.type != JSONType.object) || ("id" !in userJSON))
-            {
-                // No such user
-                // Retry until we reach the retry limit
-                if (i < TwitchPlugin.delegateRetries-1) continue;
-                return user; //User.init;
-            }
-
-            user.idString = userJSON["id"].str;
-            user.nickname = userJSON["login"].str;
-            user.displayName = userJSON["display_name"].str;
-            return user;
-        }
-        catch (ErrorJSONException e)
+        if ((userJSON.type != JSONType.object) || ("id" !in userJSON))
         {
-            // Retry until we reach the retry limit, then rethrow after potentially printing details
-            if (i < TwitchPlugin.delegateRetries-1) continue;
+            // No such user
+            return user; //User.init;
+        }
 
-            version(PrintStacktraces)
-            {
-                import std.stdio : writeln;
-                writeln(e.json.toPrettyString);
-            }
-            throw e;
-        }
-        catch (Exception e)
-        {
-            // Retry until we reach the retry limit, then rethrow
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-            throw e;
-        }
+        user.idString = userJSON["id"].str;
+        user.nickname = userJSON["login"].str;
+        user.displayName = userJSON["display_name"].str;
+        return user;
     }
 
-    assert(0, "Unreachable");
+    return retryDelegate(&getTwitchUserDg);
 }
 
 
@@ -1324,43 +1319,22 @@ in ((name.length || id.length), "Tried to call `getTwitchGame` with no game name
         ("https://api.twitch.tv/helix/games?id=" ~ id) :
         ("https://api.twitch.tv/helix/games?name=" ~ name);
 
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    auto getTwitchGameDg()
     {
-        try
-        {
-            immutable gameJSON = getTwitchData(plugin, gameURL);
+        immutable gameJSON = getTwitchData(plugin, gameURL);
 
-            /*
-            {
-                "id": "512953",
-                "name": "Elden Ring",
-                "box_art_url": "https://static-cdn.jtvnw.net/ttv-boxart/512953_IGDB-{width}x{height}.jpg"
-            }
-            */
-
-            return Game(gameJSON["id"].str, gameJSON["name"].str);
-        }
-        catch (ErrorJSONException e)
+        /*
         {
-            // Retry until we reach the retry limit, then rethrow after potentially printing details
-            if (i < TwitchPlugin.delegateRetries-1) continue;
+            "id": "512953",
+            "name": "Elden Ring",
+            "box_art_url": "https://static-cdn.jtvnw.net/ttv-boxart/512953_IGDB-{width}x{height}.jpg"
+        }
+        */
 
-            version(PrintStacktraces)
-            {
-                import std.stdio : writeln;
-                writeln(e.json.toPrettyString);
-            }
-            throw e;
-        }
-        catch (Exception e)
-        {
-            // Retry until we reach the retry limit, then rethrow
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-            throw e;
-        }
+        return Game(gameJSON["id"].str, gameJSON["name"].str);
     }
 
-    assert(0, "Unreachable");
+    return retryDelegate(&getTwitchGameDg);
 }
 
 
@@ -1445,38 +1419,18 @@ in ((title.length || gameID.length), "Tried to modify a channel with no title no
 
     sink.put('}');
 
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    void modifyChannelDg()
     {
-        try
-        {
-            cast(void)sendHTTPRequest(
-                plugin,
-                url,
-                authorizationBearer,
-                HttpVerb.PATCH,
-                cast(ubyte[])sink.data,
-                "application/json");
-            return;
-        }
-        catch (ErrorJSONException e)
-        {
-            // Retry until we reach the retry limit, then rethrow after potentially printing details
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-
-            version(PrintStacktraces)
-            {
-                import std.stdio : writeln;
-                writeln(e.json.toPrettyString);
-            }
-            throw e;
-        }
-        catch (Exception e)
-        {
-            // Retry until we reach the retry limit, then rethrow
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-            throw e;
-        }
+        cast(void)sendHTTPRequest(
+            plugin,
+            url,
+            authorizationBearer,
+            HttpVerb.PATCH,
+            cast(ubyte[])sink.data,
+            "application/json");
     }
+
+    return retryDelegate(&modifyChannelDg);
 }
 
 
@@ -1514,60 +1468,39 @@ in (channelName.length, "Tried to fetch a channel with an empty channel name str
         string title;
     }
 
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    auto getChannelDg()
     {
-        try
-        {
-            immutable gameDataJSON = getTwitchData(plugin, url);
+        immutable gameDataJSON = getTwitchData(plugin, url);
 
-            /+
-            {
-                "data": [
-                    {
-                        "broadcaster_id": "22216721",
-                        "broadcaster_language": "en",
-                        "broadcaster_login": "zorael",
-                        "broadcaster_name": "zorael",
-                        "delay": 0,
-                        "game_id": "",
-                        "game_name": "",
-                        "tags": [],
-                        "title": "bleph"
-                    }
-                ]
-            }
-            +/
-
-            Channel channel;
-            channel.gameIDString = gameDataJSON["game_id"].str;
-            channel.gameName = gameDataJSON["game_name"].str;
-            channel.tags = gameDataJSON["tags"].array
-                .map!(tagJSON => tagJSON.str)
-                .array;
-            channel.title = gameDataJSON["title"].str;
-            return channel;
-        }
-        catch (ErrorJSONException e)
+        /+
         {
-            // Retry until we reach the retry limit, then rethrow after potentially printing details
-            if (i < TwitchPlugin.delegateRetries-1) continue;
+            "data": [
+                {
+                    "broadcaster_id": "22216721",
+                    "broadcaster_language": "en",
+                    "broadcaster_login": "zorael",
+                    "broadcaster_name": "zorael",
+                    "delay": 0,
+                    "game_id": "",
+                    "game_name": "",
+                    "tags": [],
+                    "title": "bleph"
+                }
+            ]
+        }
+        +/
 
-            version(PrintStacktraces)
-            {
-                import std.stdio : writeln;
-                writeln(e.json.toPrettyString);
-            }
-            throw e;
-        }
-        catch (Exception e)
-        {
-            // Retry until we reach the retry limit, then rethrow
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-            throw e;
-        }
+        Channel channel;
+        channel.gameIDString = gameDataJSON["game_id"].str;
+        channel.gameName = gameDataJSON["game_name"].str;
+        channel.tags = gameDataJSON["tags"].array
+            .map!(tagJSON => tagJSON.str)
+            .array;
+        channel.title = gameDataJSON["title"].str;
+        return channel;
     }
 
-    assert(0, "Unreachable");
+    return retryDelegate(&getChannelDg);
 }
 
 
@@ -1649,38 +1582,18 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
     immutable body_ = pattern.format(room.id, lengthString);
     immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
 
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    void startCommercialDg()
     {
-        try
-        {
-            cast(void)sendHTTPRequest(
-                plugin,
-                url,
-                authorizationBearer,
-                HttpVerb.POST,
-                cast(ubyte[])body_,
-                "application/json");
-            return;
-        }
-        catch (ErrorJSONException e)
-        {
-            // Retry until we reach the retry limit, then rethrow after potentially printing details
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-
-            version(PrintStacktraces)
-            {
-                import std.stdio : writeln;
-                writeln(e.json.toPrettyString);
-            }
-            throw e;
-        }
-        catch (Exception e)
-        {
-            // Retry until we reach the retry limit, then rethrow
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-            throw e;
-        }
+        cast(void)sendHTTPRequest(
+            plugin,
+            url,
+            authorizationBearer,
+            HttpVerb.POST,
+            cast(ubyte[])body_,
+            "application/json");
     }
+
+    return retryDelegate(&startCommercialDg);
 }
 
 
@@ -1723,112 +1636,87 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
     allPollsJSON.array = null;
     string after;
 
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    auto getPollsDg()
     {
-        try
+        uint retry;
+
+        inner:
+        do
         {
-            uint retry;
+            immutable paginatedURL = after.length ?
+                (url ~ "&after=" ~ after) :
+                url;
+            immutable response = sendHTTPRequest(
+                plugin,
+                paginatedURL,
+                authorizationBearer,
+                HttpVerb.GET,
+                cast(ubyte[])null,
+                "application/json");
+            immutable responseJSON = parseJSON(response.str);
 
-            inner:
-            do
+            if ((responseJSON.type != JSONType.object) || ("data" !in responseJSON))
             {
-                immutable paginatedURL = after.length ?
-                    (url ~ "&after=" ~ after) :
-                    url;
-                immutable response = sendHTTPRequest(
-                    plugin,
-                    paginatedURL,
-                    authorizationBearer,
-                    HttpVerb.GET,
-                    cast(ubyte[])null,
-                    "application/json");
-                immutable responseJSON = parseJSON(response.str);
+                // Invalid response in some way
+                if (++retry < TwitchPlugin.delegateRetries) continue inner;
+                enum message = "`getPolls` response has unexpected JSON";
+                throw new UnexpectedJSONException(message, responseJSON);
+            }
 
-                if ((responseJSON.type != JSONType.object) || ("data" !in responseJSON))
-                {
-                    // Invalid response in some way
-                    if (++retry < TwitchPlugin.delegateRetries) continue inner;
-                    enum message = "`getPolls` response has unexpected JSON";
-                    throw new UnexpectedJSONException(message, responseJSON);
-                }
+            retry = 0;
 
-                retry = 0;
-
-                /*
-                {
-                    "data": [
+            /*
+            {
+                "data": [
+                    {
+                    "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
+                    "broadcaster_id": "55696719",
+                    "broadcaster_name": "TwitchDev",
+                    "broadcaster_login": "twitchdev",
+                    "title": "Heads or Tails?",
+                    "choices": [
                         {
-                        "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
-                        "broadcaster_id": "55696719",
-                        "broadcaster_name": "TwitchDev",
-                        "broadcaster_login": "twitchdev",
-                        "title": "Heads or Tails?",
-                        "choices": [
-                            {
-                            "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
-                            "title": "Heads",
-                            "votes": 0,
-                            "channel_points_votes": 0,
-                            "bits_votes": 0
-                            },
-                            {
-                            "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
-                            "title": "Tails",
-                            "votes": 0,
-                            "channel_points_votes": 0,
-                            "bits_votes": 0
-                            }
-                        ],
-                        "bits_voting_enabled": false,
-                        "bits_per_vote": 0,
-                        "channel_points_voting_enabled": false,
-                        "channel_points_per_vote": 0,
-                        "status": "ACTIVE",
-                        "duration": 1800,
-                        "started_at": "2021-03-19T06:08:33.871278372Z"
+                        "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
+                        "title": "Heads",
+                        "votes": 0,
+                        "channel_points_votes": 0,
+                        "bits_votes": 0
+                        },
+                        {
+                        "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
+                        "title": "Tails",
+                        "votes": 0,
+                        "channel_points_votes": 0,
+                        "bits_votes": 0
                         }
                     ],
-                    "pagination": {}
-                }
-                */
-
-                foreach (const pollJSON; responseJSON["data"].array)
-                {
-                    if (pollJSON["status"].str != "ACTIVE") continue;
-                    allPollsJSON.array ~= pollJSON;
-                }
-
-                after = responseJSON["after"].str;
+                    "bits_voting_enabled": false,
+                    "bits_per_vote": 0,
+                    "channel_points_voting_enabled": false,
+                    "channel_points_per_vote": 0,
+                    "status": "ACTIVE",
+                    "duration": 1800,
+                    "started_at": "2021-03-19T06:08:33.871278372Z"
+                    }
+                ],
+                "pagination": {}
             }
-            while (after.length);
+            */
 
-            return allPollsJSON.array;
-        }
-        /*catch (MissingBroadcasterTokenException e)
-        {
-            throw e;
-        }*/
-        catch (ErrorJSONException e)
-        {
-            // Retry until we reach the retry limit, then rethrow after potentially printing details
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-
-            version(PrintStacktraces)
+            foreach (const pollJSON; responseJSON["data"].array)
             {
-                import std.stdio : writeln;
-                writeln(e.json.toPrettyString);
+                if (pollJSON["status"].str != "ACTIVE") continue;
+                allPollsJSON.array ~= pollJSON;
             }
-            throw e;
+
+            after = responseJSON["after"].str;
         }
-        catch (Exception e)
-        {
-            // Retry until we reach the retry limit, then rethrow
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-            throw e;
-        }
+        while (after.length);
+
+        return allPollsJSON.array;
     }
 
-    assert(0, "Unreachable");
+    return retryDelegate(&getPollsDg);
 }
 
 
@@ -1894,92 +1782,66 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
     immutable escapedTitle = title.replace(`"`, `\"`);
     immutable body_ = pattern.format(room.id, escapedTitle, sink.data, durationString);
 
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    auto createPollDg()
     {
-        try
-        {
-            immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
-            immutable response = sendHTTPRequest(
-                plugin,
-                url,
-                authorizationBearer,
-                HttpVerb.POST,
-                cast(ubyte[])body_,
-                "application/json");
-            immutable responseJSON = parseJSON(response.str);
+        immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
+        immutable response = sendHTTPRequest(
+            plugin,
+            url,
+            authorizationBearer,
+            HttpVerb.POST,
+            cast(ubyte[])body_,
+            "application/json");
+        immutable responseJSON = parseJSON(response.str);
 
-            /*
-            {
-                "data": [
+        /*
+        {
+            "data": [
+                {
+                "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
+                "broadcaster_id": "141981764",
+                "broadcaster_name": "TwitchDev",
+                "broadcaster_login": "twitchdev",
+                "title": "Heads or Tails?",
+                "choices": [
                     {
-                    "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
-                    "broadcaster_id": "141981764",
-                    "broadcaster_name": "TwitchDev",
-                    "broadcaster_login": "twitchdev",
-                    "title": "Heads or Tails?",
-                    "choices": [
-                        {
-                        "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
-                        "title": "Heads",
-                        "votes": 0,
-                        "channel_points_votes": 0,
-                        "bits_votes": 0
-                        },
-                        {
-                        "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
-                        "title": "Tails",
-                        "votes": 0,
-                        "channel_points_votes": 0,
-                        "bits_votes": 0
-                        }
-                    ],
-                    "bits_voting_enabled": false,
-                    "bits_per_vote": 0,
-                    "channel_points_voting_enabled": true,
-                    "channel_points_per_vote": 100,
-                    "status": "ACTIVE",
-                    "duration": 1800,
-                    "started_at": "2021-03-19T06:08:33.871278372Z"
+                    "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
+                    "title": "Heads",
+                    "votes": 0,
+                    "channel_points_votes": 0,
+                    "bits_votes": 0
+                    },
+                    {
+                    "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
+                    "title": "Tails",
+                    "votes": 0,
+                    "channel_points_votes": 0,
+                    "bits_votes": 0
                     }
-                ]
-            }
-            */
+                ],
+                "bits_voting_enabled": false,
+                "bits_per_vote": 0,
+                "channel_points_voting_enabled": true,
+                "channel_points_per_vote": 100,
+                "status": "ACTIVE",
+                "duration": 1800,
+                "started_at": "2021-03-19T06:08:33.871278372Z"
+                }
+            ]
+        }
+        */
 
-            if ((responseJSON.type != JSONType.object) || ("data" !in responseJSON))
-            {
-                // Invalid response in some way
-                if (i < TwitchPlugin.delegateRetries-1) continue;
-                enum message = "`createPoll` response has unexpected JSON";
-                throw new UnexpectedJSONException(message, responseJSON);
-            }
+        if ((responseJSON.type != JSONType.object) || ("data" !in responseJSON))
+        {
+            // Invalid response in some way
+            enum message = "`createPoll` response has unexpected JSON";
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
 
-            return responseJSON["data"].array;
-        }
-        catch (MissingBroadcasterTokenException e)
-        {
-            throw e;
-        }
-        catch (ErrorJSONException e)
-        {
-            // Retry until we reach the retry limit, then rethrow after potentially printing details
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-
-            version(PrintStacktraces)
-            {
-                import std.stdio : writeln;
-                writeln(e.json.toPrettyString);
-            }
-            throw e;
-        }
-        catch (Exception e)
-        {
-            // Retry until we reach the retry limit, then rethrow
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-            throw e;
-        }
+        return responseJSON["data"].array;
     }
 
-    assert(0, "Unreachable");
+    return retryDelegate(&createPollDg);
 }
 
 
@@ -2027,93 +1889,67 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
     immutable status = terminate ? "TERMINATED" : "ARCHIVED";
     immutable body_ = pattern.format(room.id, voteID, status);
 
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    auto endPollDg()
     {
-        try
-        {
-            immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
-            immutable response = sendHTTPRequest(
-                plugin,
-                url,
-                authorizationBearer,
-                HttpVerb.PATCH,
-                cast(ubyte[])body_,
-                "application/json");
-            immutable responseJSON = parseJSON(response.str);
+        immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
+        immutable response = sendHTTPRequest(
+            plugin,
+            url,
+            authorizationBearer,
+            HttpVerb.PATCH,
+            cast(ubyte[])body_,
+            "application/json");
+        immutable responseJSON = parseJSON(response.str);
 
-            /*
-            {
-                "data": [
+        /*
+        {
+            "data": [
+                {
+                "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
+                "broadcaster_id": "141981764",
+                "broadcaster_name": "TwitchDev",
+                "broadcaster_login": "twitchdev",
+                "title": "Heads or Tails?",
+                "choices": [
                     {
-                    "id": "ed961efd-8a3f-4cf5-a9d0-e616c590cd2a",
-                    "broadcaster_id": "141981764",
-                    "broadcaster_name": "TwitchDev",
-                    "broadcaster_login": "twitchdev",
-                    "title": "Heads or Tails?",
-                    "choices": [
-                        {
-                        "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
-                        "title": "Heads",
-                        "votes": 0,
-                        "channel_points_votes": 0,
-                        "bits_votes": 0
-                        },
-                        {
-                        "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
-                        "title": "Tails",
-                        "votes": 0,
-                        "channel_points_votes": 0,
-                        "bits_votes": 0
-                        }
-                    ],
-                    "bits_voting_enabled": false,
-                    "bits_per_vote": 0,
-                    "channel_points_voting_enabled": true,
-                    "channel_points_per_vote": 100,
-                    "status": "TERMINATED",
-                    "duration": 1800,
-                    "started_at": "2021-03-19T06:08:33.871278372Z",
-                    "ended_at": "2021-03-19T06:11:26.746889614Z"
+                    "id": "4c123012-1351-4f33-84b7-43856e7a0f47",
+                    "title": "Heads",
+                    "votes": 0,
+                    "channel_points_votes": 0,
+                    "bits_votes": 0
+                    },
+                    {
+                    "id": "279087e3-54a7-467e-bcd0-c1393fcea4f0",
+                    "title": "Tails",
+                    "votes": 0,
+                    "channel_points_votes": 0,
+                    "bits_votes": 0
                     }
-                ]
-            }
-            */
+                ],
+                "bits_voting_enabled": false,
+                "bits_per_vote": 0,
+                "channel_points_voting_enabled": true,
+                "channel_points_per_vote": 100,
+                "status": "TERMINATED",
+                "duration": 1800,
+                "started_at": "2021-03-19T06:08:33.871278372Z",
+                "ended_at": "2021-03-19T06:11:26.746889614Z"
+                }
+            ]
+        }
+        */
 
-            if ((responseJSON.type != JSONType.object) || ("data" !in responseJSON))
-            {
-                // Invalid response in some way
-                if (i < TwitchPlugin.delegateRetries-1) continue;
-                enum message = "`endPoll` response has unexpected JSON";
-                throw new UnexpectedJSONException(message, responseJSON);
-            }
+        if ((responseJSON.type != JSONType.object) || ("data" !in responseJSON))
+        {
+            // Invalid response in some way
+            enum message = "`endPoll` response has unexpected JSON";
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
 
-            return responseJSON["data"].array[0];
-        }
-        catch (MissingBroadcasterTokenException e)
-        {
-            throw e;
-        }
-        catch (ErrorJSONException e)
-        {
-            // Retry until we reach the retry limit, then rethrow after potentially printing details
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-
-            version(PrintStacktraces)
-            {
-                import std.stdio : writeln;
-                writeln(e.json.toPrettyString);
-            }
-            throw e;
-        }
-        catch (Exception e)
-        {
-            // Retry until we reach the retry limit, then rethrow
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-            throw e;
-        }
+        return responseJSON["data"].array[0];
     }
 
-    assert(0, "Unreachable");
+    return retryDelegate(&endPollDg);
 }
 
 
@@ -2142,101 +1978,81 @@ auto getBotList(TwitchPlugin plugin)
     import std.array : Appender;
     import std.json : JSONType, parseJSON;
 
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    auto getBotListDg()
     {
-        try
+        enum url = "https://api.twitchinsights.net/v1/bots/online";
+        immutable response = sendHTTPRequest(plugin, url);
+        immutable responseJSON = parseJSON(response.str);
+
+        /*
         {
-            enum url = "https://api.twitchinsights.net/v1/bots/online";
-            immutable response = sendHTTPRequest(plugin, url);
-            immutable responseJSON = parseJSON(response.str);
-
-            /*
-            {
-                "_total": 78,
-                "bots": [
-                    [
-                        "commanderroot",
-                        55158,
-                        1664543800
-                    ],
-                    [
-                        "alexisthenexis",
-                        54928,
-                        1664543800
-                    ],
-                    [
-                        "anna_banana_10",
-                        54636,
-                        1664543800
-                    ],
-                    [
-                        "sophiafox21",
-                        54587,
-                        1664543800
-                    ]
-                ]
-            }
-            */
-
-            if ((responseJSON.type != JSONType.object) || ("bots" !in responseJSON))
-            {
-                // Invalid response in some way, retry until we reach the limit
-                if (i < TwitchPlugin.delegateRetries-1) continue;
-                enum message = "`getBotList` response has unexpected JSON";
-                throw new UnexpectedJSONException(message, responseJSON);
-            }
-
-            Appender!(string[]) sink;
-            sink.reserve(responseJSON["_total"].integer);
-
-            foreach (const botEntryJSON; responseJSON["bots"].array)
-            {
-                /*
+            "_total": 78,
+            "bots": [
                 [
                     "commanderroot",
                     55158,
                     1664543800
+                ],
+                [
+                    "alexisthenexis",
+                    54928,
+                    1664543800
+                ],
+                [
+                    "anna_banana_10",
+                    54636,
+                    1664543800
+                ],
+                [
+                    "sophiafox21",
+                    54587,
+                    1664543800
                 ]
-                */
-
-                immutable botAccountName = botEntryJSON.array[0].str;
-
-                if (!botAccountName.endsWith("bot"))
-                {
-                    // Only add bots whose names don't end with "bot", since we automatically filter those
-                    sink.put(botAccountName);
-                }
-            }
-
-            return sink.data;
+            ]
         }
-        catch (ErrorJSONException e)
-        {
-            // Retry until we reach the retry limit, then rethrow after potentially printing details
-            if (i < TwitchPlugin.delegateRetries-1) continue;
+        */
 
-            version(PrintStacktraces)
+        if ((responseJSON.type != JSONType.object) || ("bots" !in responseJSON))
+        {
+            // Invalid response in some way, retry until we reach the limit
+            enum message = "`getBotList` response has unexpected JSON";
+            throw new UnexpectedJSONException(message, responseJSON);
+        }
+
+        Appender!(string[]) sink;
+        sink.reserve(responseJSON["_total"].integer);
+
+        foreach (const botEntryJSON; responseJSON["bots"].array)
+        {
+            /*
+            [
+                "commanderroot",
+                55158,
+                1664543800
+            ]
+            */
+
+            immutable botAccountName = botEntryJSON.array[0].str;
+
+            if (!botAccountName.endsWith("bot"))
             {
-                import std.stdio : writeln;
-                writeln(e.json.toPrettyString);
+                // Only add bots whose names don't end with "bot", since we automatically filter those
+                sink.put(botAccountName);
             }
-            throw e;
         }
-        catch (Exception e)
-        {
-            // Retry until we reach the retry limit, then rethrow
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-            throw e;
-        }
+
+        return sink.data;
     }
 
-    assert(0, "Unreachable");
+    return retryDelegate(&getBotListDg);
 }
 
 
 // getStream
 /++
     Fetches information about an ongoing stream.
+
+    Does not reuse [retryDelegate] since it has special parsing for errors.
 
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
@@ -2352,6 +2168,8 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
 // getBTTVEmotes
 /++
     Fetches BetterTTV emotes for a given channel.
+
+    Does not reuse [retryDelegate] since it has special parsing for errors.
 
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
@@ -2539,72 +2357,50 @@ in (Fiber.getThis, "Tried to call `getBTTVGlobalEmotes` from outside a Fiber")
     import std.conv : to;
     import std.json : parseJSON;
 
-    enum url = "https://api.betterttv.net/3/cached/emotes/global";
-
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    void getBTTVGlobalEmotesDg()
     {
-        try
-        {
-            immutable response = sendHTTPRequest(plugin, url);
-            immutable responseJSON = parseJSON(response.str);
+        enum url = "https://api.betterttv.net/3/cached/emotes/global";
 
-            /+
-            [
-                {
-                    "animated": false,
-                    "code": ":tf:",
-                    "id": "54fa8f1401e468494b85b537",
-                    "imageType": "png",
-                    "userId": "5561169bd6b9d206222a8c19"
-                },
-                {
-                    "animated": false,
-                    "code": "CiGrip",
-                    "id": "54fa8fce01e468494b85b53c",
-                    "imageType": "png",
-                    "userId": "5561169bd6b9d206222a8c19"
-                }
-            ]
-            +/
+        immutable response = sendHTTPRequest(plugin, url);
+        immutable responseJSON = parseJSON(response.str);
 
-            foreach (immutable emoteJSON; responseJSON.array)
+        /+
+        [
             {
-                immutable emote = emoteJSON["code"].str.to!dstring;
-                emoteMap[emote] = true;
-            }
-
-            // All done
-            return;
-        }
-        /*catch (TwitchQueryException e)
-        {
-            // Populate once we know how error messages look
-        }*/
-        catch (ErrorJSONException e)
-        {
-            // Retry until we reach the retry limit, then rethrow after potentially printing details
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-
-            version(PrintStacktraces)
+                "animated": false,
+                "code": ":tf:",
+                "id": "54fa8f1401e468494b85b537",
+                "imageType": "png",
+                "userId": "5561169bd6b9d206222a8c19"
+            },
             {
-                import std.stdio : writeln;
-                writeln(e.json.toPrettyString);
+                "animated": false,
+                "code": "CiGrip",
+                "id": "54fa8fce01e468494b85b53c",
+                "imageType": "png",
+                "userId": "5561169bd6b9d206222a8c19"
             }
-            throw e;
-        }
-        catch (Exception e)
+        ]
+        +/
+
+        foreach (immutable emoteJSON; responseJSON.array)
         {
-            // Retry until we reach the retry limit, then rethrow
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-            throw e;
+            immutable emote = emoteJSON["code"].str.to!dstring;
+            emoteMap[emote] = true;
         }
+
+        // All done
     }
+
+    return retryDelegate(&getBTTVGlobalEmotesDg);
 }
 
 
 // getFFZEmotes
 /++
     Fetches FrankerFaceZ emotes for a given channel.
+
+    Does not reuse [retryDelegate] since it has special parsing for errors.
 
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
@@ -2781,6 +2577,8 @@ in (idString.length, "Tried to get FFZ emotes with an empty ID string")
 /++
     Fetches 7tv emotes for a given channel.
 
+    Does not reuse [retryDelegate] since it has special parsing for errors.
+
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         emoteMap = Reference to the `bool[dstring]` associative array to store
@@ -2919,66 +2717,42 @@ in (Fiber.getThis, "Tried to call `get7tvGlobalEmotes` from outside a Fiber")
     import std.conv : to;
     import std.json : parseJSON;
 
-    enum url = "https://api.7tv.app/v2/emotes/global";
-
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    void get7tvGlobalEmotesDg()
     {
-        try
-        {
-            immutable response = sendHTTPRequest(plugin, url);
-            immutable responseJSON = parseJSON(response.str);
+        enum url = "https://api.7tv.app/v2/emotes/global";
 
-            /+
-            [
-                {
-                    "height": [],
-                    "id": "60421fe677137b000de9e683",
-                    "mime": "image\/webp",
-                    "name": "reckH",
-                    "owner": {},
-                    "status": 3,
-                    "tags": [],
-                    "urls": [],
-                    "visibility": 2,
-                    "visibility_simple": [],
-                    "width": []
-                },
-                [...]
-            ]
-            +/
+        immutable response = sendHTTPRequest(plugin, url);
+        immutable responseJSON = parseJSON(response.str);
 
-            foreach (const emoteJSON; responseJSON.array)
+        /+
+        [
             {
-                immutable emote = emoteJSON["name"].str.to!dstring;
-                emoteMap[emote] = true;
-            }
+                "height": [],
+                "id": "60421fe677137b000de9e683",
+                "mime": "image\/webp",
+                "name": "reckH",
+                "owner": {},
+                "status": 3,
+                "tags": [],
+                "urls": [],
+                "visibility": 2,
+                "visibility_simple": [],
+                "width": []
+            },
+            [...]
+        ]
+        +/
 
-            // All done
-            return;
+        foreach (const emoteJSON; responseJSON.array)
+        {
+            immutable emote = emoteJSON["name"].str.to!dstring;
+            emoteMap[emote] = true;
         }
-        /*catch (TwitchQueryException e)
-        {
-            // Populate once we know how error messages look
-        }*/
-        catch (ErrorJSONException e)
-        {
-            // Retry until we reach the retry limit, then rethrow after potentially printing details
-            if (i < TwitchPlugin.delegateRetries-1) continue;
 
-            version(PrintStacktraces)
-            {
-                import std.stdio : writeln;
-                writeln(e.json.toPrettyString);
-            }
-            throw e;
-        }
-        catch (Exception e)
-        {
-            // Retry until we reach the retry limit, then rethrow
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-            throw e;
-        }
+        // All done
     }
+
+    return retryDelegate(&get7tvGlobalEmotesDg);
 }
 
 
@@ -3010,22 +2784,24 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
     const room = channelName in plugin.rooms;
     assert(room, "Tried to get subscribers of a channel for which there existed no room");
 
-    static struct User
+    auto getSubscribersDg()
     {
-        string id;
-        string name;
-        string displayName;
-    }
+        static struct User
+        {
+            string id;
+            string name;
+            string displayName;
+        }
 
-    static struct Subscription
-    {
-        User user;
-        User gifter;
-        bool wasGift;
-    }
+        static struct Subscription
+        {
+            User user;
+            User gifter;
+            bool wasGift;
+        }
 
-    enum url = "https://api.twitch.tv/helix/subscribers";
-    enum initialPattern = `
+        enum url = "https://api.twitch.tv/helix/subscribers";
+        enum initialPattern = `
 {
     "broadcaster_id": "%s",
     "first": "100"
@@ -3037,120 +2813,92 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
     "after": "%s",
 }`;
 
-    Appender!(Subscription[]) subs;
-    string after;
+        Appender!(Subscription[]) subs;
+        string after;
+        uint retry;
 
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
-    {
-        try
+        inner:
+        do
         {
-            uint retry;
+            immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
+            immutable body_ = after.length ?
+                subsequentPattern.format(room.id, after) :
+                initialPattern.format(room.id);
+            immutable response = sendHTTPRequest(
+                plugin,
+                url,
+                authorizationBearer,
+                HttpVerb.GET,
+                cast(ubyte[])body_,
+                "application/json");
+            immutable responseJSON = parseJSON(response.str);
 
-            inner:
-            do
+            /*
             {
-                immutable authorizationBearer = getBroadcasterAuthorisation(plugin, channelName);
-                immutable body_ = after.length ?
-                    subsequentPattern.format(room.id, after) :
-                    initialPattern.format(room.id);
-                immutable response = sendHTTPRequest(
-                    plugin,
-                    url,
-                    authorizationBearer,
-                    HttpVerb.GET,
-                    cast(ubyte[])body_,
-                    "application/json");
-                immutable responseJSON = parseJSON(response.str);
-
-                /*
-                {
-                    "data": [
-                        {
-                            "broadcaster_id": "141981764",
-                            "broadcaster_login": "twitchdev",
-                            "broadcaster_name": "TwitchDev",
-                            "gifter_id": "12826",
-                            "gifter_login": "twitch",
-                            "gifter_name": "Twitch",
-                            "is_gift": true,
-                            "tier": "1000",
-                            "plan_name": "Channel Subscription (twitchdev)",
-                            "user_id": "527115020",
-                            "user_name": "twitchgaming",
-                            "user_login": "twitchgaming"
-                        },
-                    ],
-                    "pagination": {
-                        "cursor": "xxxx"
+                "data": [
+                    {
+                        "broadcaster_id": "141981764",
+                        "broadcaster_login": "twitchdev",
+                        "broadcaster_name": "TwitchDev",
+                        "gifter_id": "12826",
+                        "gifter_login": "twitch",
+                        "gifter_name": "Twitch",
+                        "is_gift": true,
+                        "tier": "1000",
+                        "plan_name": "Channel Subscription (twitchdev)",
+                        "user_id": "527115020",
+                        "user_name": "twitchgaming",
+                        "user_login": "twitchgaming"
                     },
-                    "total": 13,
-                    "points": 13
-                }
-                */
-
-                if ((responseJSON.type != JSONType.object) || ("data" !in responseJSON))
-                {
-                    // Invalid response in some way
-                    if (++retry < TwitchPlugin.delegateRetries) continue inner;
-                    enum message = "`getSubscribers` response has unexpected JSON";
-                    throw new UnexpectedJSONException(message, responseJSON);
-                }
-
-                retry = 0;
-
-                if (!subs.capacity)
-                {
-                    subs.reserve(responseJSON["total"].integer);
-                }
-
-                foreach (immutable subJSON; responseJSON["data"].array)
-                {
-                    Subscription sub;
-                    sub.user.id = subJSON["user_id"].str;
-                    sub.user.name = subJSON["user_login"].str;
-                    sub.user.displayName = subJSON["user_name"].str;
-                    sub.wasGift = subJSON["is_gift"].boolean;
-                    sub.gifter.id = subJSON["gifter_id"].str;
-                    sub.gifter.name = subJSON["gifter_login"].str;
-                    sub.gifter.displayName = subJSON["gifter_name"].str;
-                    subs.put(sub);
-                }
-
-                immutable paginationJSON = "pagination" in responseJSON;
-                if (!paginationJSON) break;
-
-                immutable cursorJSON = "cursor" in *paginationJSON;
-                if (!cursorJSON) break;
-
-                after = cursorJSON.str;
+                ],
+                "pagination": {
+                    "cursor": "xxxx"
+                },
+                "total": 13,
+                "points": 13
             }
-            while (after.length);
+            */
 
-            return subs;
-        }
-        catch (MissingBroadcasterTokenException e)
-        {
-            throw e;
-        }
-        catch (ErrorJSONException e)
-        {
-            // Retry until we reach the retry limit, then rethrow after potentially printing details
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-
-            version(PrintStacktraces)
+            if ((responseJSON.type != JSONType.object) || ("data" !in responseJSON))
             {
-                import std.stdio : writeln;
-                writeln(e.json.toPrettyString);
+                // Invalid response in some way
+                if (++retry < TwitchPlugin.delegateRetries) continue inner;
+                enum message = "`getSubscribers` response has unexpected JSON";
+                throw new UnexpectedJSONException(message, responseJSON);
             }
-            throw e;
+
+            retry = 0;
+
+            if (!subs.capacity)
+            {
+                subs.reserve(responseJSON["total"].integer);
+            }
+
+            foreach (immutable subJSON; responseJSON["data"].array)
+            {
+                Subscription sub;
+                sub.user.id = subJSON["user_id"].str;
+                sub.user.name = subJSON["user_login"].str;
+                sub.user.displayName = subJSON["user_name"].str;
+                sub.wasGift = subJSON["is_gift"].boolean;
+                sub.gifter.id = subJSON["gifter_id"].str;
+                sub.gifter.name = subJSON["gifter_login"].str;
+                sub.gifter.displayName = subJSON["gifter_name"].str;
+                subs.put(sub);
+            }
+
+            immutable paginationJSON = "pagination" in responseJSON;
+            if (!paginationJSON) break;
+
+            immutable cursorJSON = "cursor" in *paginationJSON;
+            if (!cursorJSON) break;
+
+            after = cursorJSON.str;
         }
-        catch (Exception e)
-        {
-            // Retry until we reach the retry limit, then rethrow
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-            throw e;
-        }
+        while (after.length);
+
+        return subs;
     }
 
-    assert(0, "Unreachable");
+    return retryDelegate(&getSubscribersDg);
 }
