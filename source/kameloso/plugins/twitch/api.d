@@ -155,7 +155,7 @@ auto retryDelegate(Dg)(Dg dg)
             version(PrintStacktraces)
             {
                 import kameloso.common : logger;
-                logger.trace(e.msg);
+                logger.trace(e);
             }
             throw e;
         }
