@@ -2257,7 +2257,7 @@ in (idString.length, "Tried to import custom emotes with an empty ID string")
         {
             enum pattern = "Failed to fetch custom <l>%s</> emotes for channel <l>%s</>: <t>%s";
             logger.warningf(pattern, setName, channelName, e.msg);
-            //version(PrintStacktraces) logger.trace(e.info);
+            version(PrintStacktraces) logger.trace(e.msg);
             //throw e;
         }
     }
@@ -2296,7 +2296,7 @@ in (Fiber.getThis, "Tried to call `importCustomGlobalEmotes` from outside a Fibe
         {
             enum pattern = "Failed to fetch global <l>%s</> emotes: <t>%s";
             logger.warningf(pattern, setName, e.msg);
-            //version(PrintStacktraces) logger.trace(e.info);
+            version(PrintStacktraces) logger.trace(e.msg);
             //throw e;
         }
     }
