@@ -84,6 +84,7 @@ auto retryDelegate(Dg)(Dg dg)
 
             version(PrintStacktraces)
             {
+                import kameloso.common : logger;
                 import std.json : JSONException, parseJSON;
                 import std.stdio : stdout, writeln;
 
@@ -109,6 +110,7 @@ auto retryDelegate(Dg)(Dg dg)
 
             version(PrintStacktraces)
             {
+                import kameloso.common : logger;
                 import std.stdio : stdout, writeln;
 
                 logger.trace(e.info);
@@ -124,6 +126,7 @@ auto retryDelegate(Dg)(Dg dg)
 
             version(PrintStacktraces)
             {
+                import kameloso.common : logger;
                 import std.stdio : stdout, writeln;
 
                 logger.trace(e.info);
@@ -136,7 +139,12 @@ auto retryDelegate(Dg)(Dg dg)
         {
             // Ditto
             if (i < TwitchPlugin.delegateRetries-1) continue;
-            version(PrintStacktraces) logger.trace(e.info);
+
+            version(PrintStacktraces)
+            {
+                import kameloso.common : logger;
+                logger.trace(e.info);
+            }
             throw e;
         }
     }
