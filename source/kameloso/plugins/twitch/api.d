@@ -407,16 +407,72 @@ in (url.length, "Tried to send an HTTP request without an URL")
                 "message": "Client ID and OAuth token do not match",
                 "status": 401
             }
+            {
+                "error": "Unknown Emote Set",
+                "error_code": 70441,
+                "status": "Not Found",
+                "status_code": 404
+                }
             */
             immutable errorJSON = parseJSON(response.str);
+            long statusCode;
+            string error;
+            string message;
+
+            if (const statusJSON = "status_code" in errorJSON)
+            {
+                statusCode = (*statusJSON).integer;
+            }
+            else if (const statusJSON = "status" in errorJSON)
+            {
+                import std.json : JSONException;
+
+                try
+                {
+                    statusCode = (*statusJSON).integer;
+                }
+                catch (JSONException _)
+                {
+                    // Missing status code
+                    statusCode = -1;
+                }
+            }
+            else
+            {
+                // Missing status code
+                statusCode = -1;
+            }
+
+            if (const messageJSON = "message" in errorJSON)
+            {
+                message = (*messageJSON).str;
+            }
+            else if (const messageJSON = "error" in errorJSON)
+            {
+                message = (*messageJSON).str;
+            }
+            else
+            {
+                // Missing message
+                message = "Unspecified error";
+            }
+
+            if (const errorStringJSON = "error" in errorJSON)
+            {
+                error = (*errorStringJSON).str;
+            }
+            else
+            {
+                error = "Unspecified error";
+            }
+
             enum pattern = "%3d %s: %s";
+            immutable exceptionMessage = pattern.format(
+                statusCode,
+                error.chomp.unquoted,
+                message.chomp.unquoted);
 
-            immutable message = pattern.format(
-                errorJSON["status"].integer,
-                errorJSON["error"].str.unquoted,
-                errorJSON["message"].str.chomp.unquoted);
-
-            throw new ErrorJSONException(message, errorJSON);
+            throw new ErrorJSONException(exceptionMessage, errorJSON);
         }
         catch (JSONException e)
         {
