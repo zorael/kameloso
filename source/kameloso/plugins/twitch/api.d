@@ -746,6 +746,18 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
             // Don't return `chattersJSON`, as we would lose "chatter_count".
             return responseJSON;
         }
+        catch (ErrorJSONException e)
+        {
+            // Retry until we reach the retry limit, then rethrow after potentially printing details
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+
+            version(PrintStacktraces)
+            {
+                import std.stdio : writeln;
+                writeln(e.json.toPrettyString);
+            }
+            throw e;
+        }
         catch (Exception e)
         {
             // Retry until we reach the retry limit, then rethrow
@@ -891,6 +903,18 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 
             return validationJSON;
         }
+        catch (ErrorJSONException e)
+        {
+            // Retry until we reach the retry limit, then rethrow after potentially printing details
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+
+            version(PrintStacktraces)
+            {
+                import std.stdio : writeln;
+                writeln(e.json.toPrettyString);
+            }
+            throw e;
+        }
         catch (Exception e)
         {
             // Retry until we reach the retry limit, then rethrow
@@ -938,6 +962,18 @@ in (id.length, "Tried to get follows with an empty ID string")
             }
 
             return allFollows;
+        }
+        catch (ErrorJSONException e)
+        {
+            // Retry until we reach the retry limit, then rethrow after potentially printing details
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+
+            version(PrintStacktraces)
+            {
+                import std.stdio : writeln;
+                writeln(e.json.toPrettyString);
+            }
+            throw e;
         }
         catch (Exception e)
         {
@@ -1234,6 +1270,18 @@ in ((givenName.length || givenIDString.length),
             user.displayName = userJSON["display_name"].str;
             return user;
         }
+        catch (ErrorJSONException e)
+        {
+            // Retry until we reach the retry limit, then rethrow after potentially printing details
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+
+            version(PrintStacktraces)
+            {
+                import std.stdio : writeln;
+                writeln(e.json.toPrettyString);
+            }
+            throw e;
+        }
         catch (Exception e)
         {
             // Retry until we reach the retry limit, then rethrow
@@ -1291,6 +1339,18 @@ in ((name.length || id.length), "Tried to call `getTwitchGame` with no game name
             */
 
             return Game(gameJSON["id"].str, gameJSON["name"].str);
+        }
+        catch (ErrorJSONException e)
+        {
+            // Retry until we reach the retry limit, then rethrow after potentially printing details
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+
+            version(PrintStacktraces)
+            {
+                import std.stdio : writeln;
+                writeln(e.json.toPrettyString);
+            }
+            throw e;
         }
         catch (Exception e)
         {
@@ -1398,6 +1458,18 @@ in ((title.length || gameID.length), "Tried to modify a channel with no title no
                 "application/json");
             return;
         }
+        catch (ErrorJSONException e)
+        {
+            // Retry until we reach the retry limit, then rethrow after potentially printing details
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+
+            version(PrintStacktraces)
+            {
+                import std.stdio : writeln;
+                writeln(e.json.toPrettyString);
+            }
+            throw e;
+        }
         catch (Exception e)
         {
             // Retry until we reach the retry limit, then rethrow
@@ -1474,6 +1546,18 @@ in (channelName.length, "Tried to fetch a channel with an empty channel name str
                 .array;
             channel.title = gameDataJSON["title"].str;
             return channel;
+        }
+        catch (ErrorJSONException e)
+        {
+            // Retry until we reach the retry limit, then rethrow after potentially printing details
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+
+            version(PrintStacktraces)
+            {
+                import std.stdio : writeln;
+                writeln(e.json.toPrettyString);
+            }
+            throw e;
         }
         catch (Exception e)
         {
@@ -1577,6 +1661,18 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
                 cast(ubyte[])body_,
                 "application/json");
             return;
+        }
+        catch (ErrorJSONException e)
+        {
+            // Retry until we reach the retry limit, then rethrow after potentially printing details
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+
+            version(PrintStacktraces)
+            {
+                import std.stdio : writeln;
+                writeln(e.json.toPrettyString);
+            }
+            throw e;
         }
         catch (Exception e)
         {
@@ -1712,6 +1808,18 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
         {
             throw e;
         }*/
+        catch (ErrorJSONException e)
+        {
+            // Retry until we reach the retry limit, then rethrow after potentially printing details
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+
+            version(PrintStacktraces)
+            {
+                import std.stdio : writeln;
+                writeln(e.json.toPrettyString);
+            }
+            throw e;
+        }
         catch (Exception e)
         {
             // Retry until we reach the retry limit, then rethrow
@@ -1851,6 +1959,18 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
         {
             throw e;
         }
+        catch (ErrorJSONException e)
+        {
+            // Retry until we reach the retry limit, then rethrow after potentially printing details
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+
+            version(PrintStacktraces)
+            {
+                import std.stdio : writeln;
+                writeln(e.json.toPrettyString);
+            }
+            throw e;
+        }
         catch (Exception e)
         {
             // Retry until we reach the retry limit, then rethrow
@@ -1973,6 +2093,18 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
         {
             throw e;
         }
+        catch (ErrorJSONException e)
+        {
+            // Retry until we reach the retry limit, then rethrow after potentially printing details
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+
+            version(PrintStacktraces)
+            {
+                import std.stdio : writeln;
+                writeln(e.json.toPrettyString);
+            }
+            throw e;
+        }
         catch (Exception e)
         {
             // Retry until we reach the retry limit, then rethrow
@@ -2078,6 +2210,18 @@ auto getBotList(TwitchPlugin plugin)
 
             return sink.data;
         }
+        catch (ErrorJSONException e)
+        {
+            // Retry until we reach the retry limit, then rethrow after potentially printing details
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+
+            version(PrintStacktraces)
+            {
+                import std.stdio : writeln;
+                writeln(e.json.toPrettyString);
+            }
+            throw e;
+        }
         catch (Exception e)
         {
             // Retry until we reach the retry limit, then rethrow
@@ -2180,6 +2324,18 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
         {
             // Stream is down
             return TwitchPlugin.Room.Stream.init;
+        }
+        catch (ErrorJSONException e)
+        {
+            // Retry until we reach the retry limit, then rethrow after potentially printing details
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+
+            version(PrintStacktraces)
+            {
+                import std.stdio : writeln;
+                writeln(e.json.toPrettyString);
+            }
+            throw e;
         }
         catch (Exception e)
         {
@@ -2339,6 +2495,18 @@ in (idString.length, "Tried to get BTTV emotes with an empty ID string")
             }
             throw e;
         }
+        catch (ErrorJSONException e)
+        {
+            // Retry until we reach the retry limit, then rethrow after potentially printing details
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+
+            version(PrintStacktraces)
+            {
+                import std.stdio : writeln;
+                writeln(e.json.toPrettyString);
+            }
+            throw e;
+        }
         catch (Exception e)
         {
             // Retry until we reach the retry limit, then rethrow
@@ -2412,6 +2580,18 @@ in (Fiber.getThis, "Tried to call `getBTTVGlobalEmotes` from outside a Fiber")
         {
             // Populate once we know how error messages look
         }*/
+        catch (ErrorJSONException e)
+        {
+            // Retry until we reach the retry limit, then rethrow after potentially printing details
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+
+            version(PrintStacktraces)
+            {
+                import std.stdio : writeln;
+                writeln(e.json.toPrettyString);
+            }
+            throw e;
+        }
         catch (Exception e)
         {
             // Retry until we reach the retry limit, then rethrow
@@ -2695,6 +2875,18 @@ in (idString.length, "Tried to get 7tv emotes with an empty ID string")
             }
             throw e;
         }
+        catch (ErrorJSONException e)
+        {
+            // Retry until we reach the retry limit, then rethrow after potentially printing details
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+
+            version(PrintStacktraces)
+            {
+                import std.stdio : writeln;
+                writeln(e.json.toPrettyString);
+            }
+            throw e;
+        }
         catch (Exception e)
         {
             // Retry until we reach the retry limit, then rethrow
@@ -2768,6 +2960,18 @@ in (Fiber.getThis, "Tried to call `get7tvGlobalEmotes` from outside a Fiber")
         {
             // Populate once we know how error messages look
         }*/
+        catch (ErrorJSONException e)
+        {
+            // Retry until we reach the retry limit, then rethrow after potentially printing details
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+
+            version(PrintStacktraces)
+            {
+                import std.stdio : writeln;
+                writeln(e.json.toPrettyString);
+            }
+            throw e;
+        }
         catch (Exception e)
         {
             // Retry until we reach the retry limit, then rethrow
@@ -2926,6 +3130,18 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
         }
         catch (MissingBroadcasterTokenException e)
         {
+            throw e;
+        }
+        catch (ErrorJSONException e)
+        {
+            // Retry until we reach the retry limit, then rethrow after potentially printing details
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+
+            version(PrintStacktraces)
+            {
+                import std.stdio : writeln;
+                writeln(e.json.toPrettyString);
+            }
             throw e;
         }
         catch (Exception e)
