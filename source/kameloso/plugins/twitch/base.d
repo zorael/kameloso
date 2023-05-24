@@ -2257,7 +2257,7 @@ in (idString.length, "Tried to import custom emotes with an empty ID string")
         {
             enum pattern = "Failed to fetch custom <l>%s</> emotes for channel <l>%s</>: <t>%s";
             logger.warningf(pattern, setName, channelName, e.msg);
-            version(PrintStacktraces) logger.trace(e.msg);
+            version(PrintStacktraces) logger.trace(e);
             //throw e;
         }
     }
