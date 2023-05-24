@@ -440,15 +440,19 @@ in (url.length, "Tried to send an HTTP request without an URL")
                 }
                 catch (JSONException _)
                 {
-                    // Missing status code
                     code = 0;
                     status = "Error";
                     message = json["message"].str;
                 }
             }
+            else if (const messageJSON = "message" in json)
+            {
+                code = 0;
+                status = "Error";
+                message = (*messageJSON).str;
+            }
             else
             {
-                // Missing status code
                 code = 0;
                 status = "Error";
                 message = "An unspecified error occured";
@@ -2145,13 +2149,11 @@ in (idString.length, "Tried to get BTTV emotes with an empty ID string")
 
             // All done
         }
-        catch (TwitchQueryException e)
+        catch (ErrorJSONException e)
         {
-            immutable json = parseJSON(e.responseBody);
-
-            if (json.type == JSONType.object)
+            if (e.json.type == JSONType.object)
             {
-                immutable messageJSON = "message" in json;
+                const messageJSON = "message" in e.json;
 
                 if (messageJSON && (messageJSON.str == "user not found"))
                 {
@@ -2381,6 +2383,7 @@ in (idString.length, "Tried to get FFZ emotes with an empty ID string")
         {
             // Likely 404
             const messageJSON = "message" in e.json;
+
             if (messageJSON && (messageJSON.str == "No such room"))
             {
                 // Benign
@@ -2471,21 +2474,14 @@ in (idString.length, "Tried to get 7tv emotes with an empty ID string")
 
             // All done
         }
-        catch (TwitchQueryException e)
+        catch (ErrorJSONException e)
         {
-            immutable json = parseJSON(e.responseBody);
+            const errorJSON = "error" in e.json;
 
-            if (json.type == JSONType.object)
+            if (errorJSON && (errorJSON.str == "No Items Found"))
             {
-                // Shouldn't this be an ErrorJSONException?
-                immutable errorJSON = "error" in json;
-
-                if (errorJSON && (errorJSON.str == "No Items Found"))
-                {
-                    // Benign
-                    return;
-                }
-                // Drop down
+                // Benign
+                return;
             }
             throw e;
         }
