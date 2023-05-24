@@ -418,17 +418,17 @@ in (url.length, "Tried to send an HTTP request without an URL")
             }
             */
             immutable json = parseJSON(response.str);
-            long code;
+            long code = response.code;
             string status;
             string message;
 
-            if (const statusCodeJSON = "status_code" in json)
+            if (immutable statusCodeJSON = "status_code" in json)
             {
                 code = (*statusCodeJSON).integer;
                 status = json["status"].str;
                 message = json["error"].str;
             }
-            else if (const statusJSON = "status" in json)
+            else if (immutable statusJSON = "status" in json)
             {
                 import std.json : JSONException;
 
@@ -440,20 +440,17 @@ in (url.length, "Tried to send an HTTP request without an URL")
                 }
                 catch (JSONException _)
                 {
-                    code = 0;
                     status = "Error";
                     message = json["message"].str;
                 }
             }
-            else if (const messageJSON = "message" in json)
+            else if (immutable messageJSON = "message" in json)
             {
-                code = 0;
                 status = "Error";
                 message = (*messageJSON).str;
             }
             else
             {
-                code = 0;
                 status = "Error";
                 message = "An unspecified error occured";
 
@@ -2116,26 +2113,13 @@ in (idString.length, "Tried to get BTTV emotes with an empty ID string")
 
             if (responseJSON.type != JSONType.object)
             {
-                enum message = "`getBTTVEmotes` response has unexpected JSON";
+                enum message = "`getBTTVEmotes` response has unexpected JSON " ~
+                    "(response is wrong type)";
                 throw new UnexpectedJSONException(message, responseJSON);
             }
 
             immutable channelEmotesJSON = "channelEmotes" in responseJSON;
             immutable sharedEmotesJSON = "sharedEmotes" in responseJSON;
-
-            if (!channelEmotesJSON || !sharedEmotesJSON)
-            {
-                immutable messageJSON = "message" in responseJSON;
-
-                if (messageJSON && (messageJSON.str == "user not found"))
-                {
-                    // Benign
-                    return;
-                }
-
-                enum message = "`getBTTVEmotes` response has unexpected JSON";
-                throw new UnexpectedJSONException(message, responseJSON);
-            }
 
             foreach (const emoteJSON; channelEmotesJSON.array)
             {
@@ -2377,7 +2361,8 @@ in (idString.length, "Tried to get FFZ emotes with an empty ID string")
             }
 
             // Invalid response in some way
-            enum message = "`getFFZEmotes` response has unexpected JSON";
+            enum message = "`getFFZEmotes` response has unexpected JSON " ~
+                "(response JSON is of wrong type)";
             throw new UnexpectedJSONException(message, responseJSON);
         }
         catch (ErrorJSONException e)
@@ -2453,19 +2438,7 @@ in (idString.length, "Tried to get 7tv emotes with an empty ID string")
             ]
             +/
 
-            if (responseJSON.type == JSONType.object)
-            {
-                immutable errorJSON = "error" in responseJSON;
-
-                if (errorJSON && (errorJSON.str == "No Items Found"))
-                {
-                    // Benign
-                    return;
-                }
-
-                // Drop down
-            }
-            else if (responseJSON.type == JSONType.array)
+            if (responseJSON.type == JSONType.array)
             {
                 foreach (immutable emoteJSON; responseJSON.array)
                 {
@@ -2478,17 +2451,20 @@ in (idString.length, "Tried to get 7tv emotes with an empty ID string")
             }
 
             // Invalid response in some way
-            enum message = "`get7tvEmotes` response has unexpected JSON";
+            enum message = "`get7tvEmotes` response has unexpected JSON " ~
+                "(response is not object nor array)";
             throw new UnexpectedJSONException(message, responseJSON);
         }
         catch (ErrorJSONException e)
         {
-            const errorJSON = "error" in e.json;
-
-            if (errorJSON && (errorJSON.str == "No Items Found"))
+            if (const errorJSON = "error" in e.json)
             {
-                // Benign
-                return;
+                if ((errorJSON.str == "No Items Found") ||
+                    (errorJSON.str == "Unknown Emote Set"))
+                {
+                    // Benign
+                    return;
+                }
             }
             throw e;
         }
