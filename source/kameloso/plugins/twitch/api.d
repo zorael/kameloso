@@ -2346,23 +2346,25 @@ in (idString.length, "Tried to get FFZ emotes with an empty ID string")
             {
                 if (immutable setsJSON = "sets" in responseJSON)
                 {
-                    if (immutable emoticonsJSON = "emoticons" in *setsJSON)
+                    foreach (immutable setJSON; (*setsJSON).object)
                     {
-                        foreach (immutable emotesJSON; (*emoticonsJSON).array)
+                        if (immutable emoticonsArrayJSON = "emoticons" in setJSON)
                         {
-                            immutable emote = emotesJSON["name"].str.to!dstring;
-                            emoteMap[emote] = true;
-                        }
+                            foreach (immutable emoteJSON; (*emoticonsArrayJSON).array)
+                            {
+                                immutable emote = emoteJSON["name"].str.to!dstring;
+                                emoteMap[emote] = true;
+                            }
 
-                        // All done
-                        return;
+                            // All done
+                            return;
+                        }
                     }
                 }
             }
 
             // Invalid response in some way
-            enum message = "`getFFZEmotes` response has unexpected JSON " ~
-                "(response JSON is of wrong type)";
+            enum message = "`getFFZEmotes` response has unexpected JSON";
             throw new UnexpectedJSONException(message, responseJSON);
         }
         catch (ErrorJSONException e)
