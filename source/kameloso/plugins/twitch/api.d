@@ -412,67 +412,63 @@ in (url.length, "Tried to send an HTTP request without an URL")
                 "error_code": 70441,
                 "status": "Not Found",
                 "status_code": 404
-                }
+            }
+            {
+                "message": "user not found"
+            }
             */
-            immutable errorJSON = parseJSON(response.str);
-            long statusCode;
-            string error;
+            immutable json = parseJSON(response.str);
+            long code;
+            string status;
             string message;
 
-            if (const statusJSON = "status_code" in errorJSON)
+            if (const statusCodeJSON = "status_code" in json)
             {
-                statusCode = (*statusJSON).integer;
+                code = (*statusCodeJSON).integer;
+                status = json["status"].str;
+                message = json["error"].str;
             }
-            else if (const statusJSON = "status" in errorJSON)
+            else if (const statusJSON = "status" in json)
             {
                 import std.json : JSONException;
 
                 try
                 {
-                    statusCode = (*statusJSON).integer;
+                    code = (*statusJSON).integer;
+                    status = json["error"].str;
+                    message = json["message"].str;
                 }
                 catch (JSONException _)
                 {
                     // Missing status code
-                    statusCode = -1;
+                    code = 0;
+                    status = "Error";
+                    message = json["message"].str;
                 }
             }
             else
             {
                 // Missing status code
-                statusCode = -1;
-            }
+                code = 0;
+                status = "Error";
+                message = "An unspecified error occured";
 
-            if (const messageJSON = "message" in errorJSON)
-            {
-                message = (*messageJSON).str;
-            }
-            else if (const messageJSON = "error" in errorJSON)
-            {
-                message = (*messageJSON).str;
-            }
-            else
-            {
-                // Missing message
-                message = "Unspecified error";
-            }
+                version(PrintStacktraces)
+                {
+                    import std.stdio : stdout, writeln;
 
-            if (const errorStringJSON = "error" in errorJSON)
-            {
-                error = (*errorStringJSON).str;
-            }
-            else
-            {
-                error = "Unspecified error";
+                    writeln(json.toPrettyString);
+                    stdout.flush();
+                }
             }
 
             enum pattern = "%3d %s: %s";
             immutable exceptionMessage = pattern.format(
-                statusCode,
-                error.chomp.unquoted,
+                code,
+                status.chomp.unquoted,
                 message.chomp.unquoted);
 
-            throw new ErrorJSONException(exceptionMessage, errorJSON);
+            throw new ErrorJSONException(exceptionMessage, json);
         }
         catch (JSONException e)
         {
