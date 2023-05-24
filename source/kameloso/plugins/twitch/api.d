@@ -2114,26 +2114,28 @@ in (idString.length, "Tried to get BTTV emotes with an empty ID string")
             }
             +/
 
-            immutable channelEmotesJSON = "channelEmotes" in responseJSON;
+            if (responseJSON.type != JSONType.object)
+            {
+                enum message = "`getBTTVEmotes` response has unexpected JSON";
+                throw new UnexpectedJSONException(message, responseJSON);
+            }
 
-            if (!channelEmotesJSON)
+            immutable channelEmotesJSON = "channelEmotes" in responseJSON;
+            immutable sharedEmotesJSON = "sharedEmotes" in responseJSON;
+
+            if (!channelEmotesJSON || !sharedEmotesJSON)
             {
                 immutable messageJSON = "message" in responseJSON;
+
                 if (messageJSON && (messageJSON.str == "user not found"))
                 {
                     // Benign
                     return;
                 }
 
-                throw new TwitchQueryException(
-                    `No "channelEmotes" key in JSON response`,
-                    response.str);
+                enum message = "`getBTTVEmotes` response has unexpected JSON";
+                throw new UnexpectedJSONException(message, responseJSON);
             }
-
-            immutable sharedEmotesJSON = "sharedEmotes" in responseJSON;
-            if (!sharedEmotesJSON) throw new TwitchQueryException(
-                `No "sharedEmotes" key in JSON response`,
-                response.str);
 
             foreach (const emoteJSON; channelEmotesJSON.array)
             {
@@ -2356,28 +2358,27 @@ in (idString.length, "Tried to get FFZ emotes with an empty ID string")
             }
             +/
 
-            if ((responseJSON.type != JSONType.object) || ("sets" !in responseJSON))
+            if (responseJSON.type == JSONType.object)
             {
-                // Invalid response in some way
-                enum message = "`getFFZEmotes` response has unexpected JSON";
-                throw new UnexpectedJSONException(message, responseJSON);
-            }
-
-            foreach (immutable setJSON; responseJSON["sets"].object)
-            {
-                immutable emoticonsJSON = "emoticons" in setJSON;
-                if (!emoticonsJSON) throw new TwitchQueryException(
-                    `No "emoticons" key in JSON response`,
-                    response.str);
-
-                foreach (immutable emoteJSON; emoticonsJSON.array)
+                if (immutable setsJSON = "sets" in responseJSON)
                 {
-                    immutable emote = emoteJSON["name"].str.to!dstring;
-                    emoteMap[emote] = true;
+                    if (immutable emoticonsJSON = "emoticons" in *setsJSON)
+                    {
+                        foreach (immutable emotesJSON; (*emoticonsJSON).array)
+                        {
+                            immutable emote = emotesJSON["name"].str.to!dstring;
+                            emoteMap[emote] = true;
+                        }
+
+                        // All done
+                        return;
+                    }
                 }
             }
 
-            // All done
+            // Invalid response in some way
+            enum message = "`getFFZEmotes` response has unexpected JSON";
+            throw new UnexpectedJSONException(message, responseJSON);
         }
         catch (ErrorJSONException e)
         {
@@ -2455,24 +2456,30 @@ in (idString.length, "Tried to get 7tv emotes with an empty ID string")
             if (responseJSON.type == JSONType.object)
             {
                 immutable errorJSON = "error" in responseJSON;
+
                 if (errorJSON && (errorJSON.str == "No Items Found"))
                 {
                     // Benign
                     return;
                 }
 
-                throw new TwitchQueryException(
-                    "Response was not a JSON array",
-                    response.str);
+                // Drop down
             }
-
-            foreach (immutable emoteJSON; responseJSON.array)
+            else if (responseJSON.type == JSONType.array)
             {
-                immutable emote = emoteJSON["name"].str.to!dstring;
-                emoteMap[emote] = true;
+                foreach (immutable emoteJSON; responseJSON.array)
+                {
+                    immutable emote = emoteJSON["name"].str.to!dstring;
+                    emoteMap[emote] = true;
+                }
+
+                // All done
+                return;
             }
 
-            // All done
+            // Invalid response in some way
+            enum message = "`get7tvEmotes` response has unexpected JSON";
+            throw new UnexpectedJSONException(message, responseJSON);
         }
         catch (ErrorJSONException e)
         {
