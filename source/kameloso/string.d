@@ -171,3 +171,180 @@ auto replaceTokens(const string line) @safe pure nothrow
         .replace("$version", cast(string)KamelosoInfo.version_)
         .replace("$source", cast(string)KamelosoInfo.source);
 }
+
+
+// replaceRandom
+/++
+    Replaces `$random` and `$random(i..n)` tokens in a string with corresponding
+    random values.
+
+    If given only `$random`, a value between the passed `defaultLowerBound` inclusive
+    to `defaultUpperBound` exclusive is substituted, whereas if a range of
+    `$random(i..n)` is given, a value between `i` inclusive and `n` exclusive is
+    substituted.
+
+    On syntax errors, or if `n` is not greater than `i`, the original line is
+    silently returned.
+
+    Params:
+        line = String to replace tokens in.
+        defaultLowerBound = Default lower bound when no range given.
+        defaultUpperBound = Default upper bound when no range given.
+
+    Returns:
+        A new string with occurences of `$random` and `$random(i..n)` replaced,
+        or the original string if there were no changes made.
+ +/
+auto replaceRandom(
+    const string line,
+    const long defaultLowerBound = 0,
+    const long defaultUpperBound = 100) @safe
+{
+    import std.conv : text;
+    import std.random : uniform;
+    import std.string : indexOf;
+
+    immutable randomPos = line.indexOf("$random");
+
+    if (randomPos == -1)
+    {
+        // No $random token
+        return line;
+    }
+
+    if (line.length > randomPos)
+    {
+        immutable openParen = randomPos + "$random".length;
+
+        if (line.length == openParen)
+        {
+            immutable randomNumber = uniform(defaultLowerBound, defaultUpperBound);
+            return text(line[0..randomPos], randomNumber);
+        }
+        else if (line[openParen] == '(')
+        {
+            immutable dots = line.indexOf("..", openParen);
+
+            if (dots != -1)
+            {
+                immutable endParen = line.indexOf(')', dots);
+
+                if (endParen != -1)
+                {
+                    try
+                    {
+                        import std.conv : to;
+
+                        immutable lowerBound = line[openParen+1..dots].to!long;
+                        immutable upperBound = line[dots+2..endParen].to!long;
+                        immutable randomNumber = uniform(lowerBound, upperBound);
+                        return text(line[0..randomPos], randomNumber, line[endParen+1..$]);
+                    }
+                    catch (Exception _)
+                    {
+                        return line;
+                    }
+                }
+            }
+        }
+        else if (line[openParen] == ' ')
+        {
+            immutable randomNumber = uniform(defaultLowerBound, defaultUpperBound);
+            return text(line[0..randomPos], randomNumber, line[openParen..$]);
+        }
+    }
+
+    return line;
+}
+
+///
+unittest
+{
+    import lu.string : nom;
+    import std.conv : to;
+
+    {
+        enum line = "$random bottles of beer on the wall";
+        string replaced = line.replaceRandom();  // mutable
+        immutable number = replaced.nom(' ').to!int;
+        assert(((number >= 0) && (number < 100)), number.to!string);
+    }
+    {
+        enum line = "$random(100..200) bottles of beer on the wall";
+        string replaced = line.replaceRandom();  // mutable
+        immutable number = replaced.nom(' ').to!int;
+        assert(((number >= 100) && (number < 200)), number.to!string);
+    }
+    {
+        enum line = "$random(-20..-10) bottles of beer on the wall";
+        string replaced = line.replaceRandom();  // mutable
+        immutable number = replaced.nom(' ').to!int;
+        assert(((number >= -20) && (number < -10)), number.to!string);
+    }
+    {
+        enum line = "$random(-9223372036854775808..9223372036854775807) bottles of beer on the wall";
+        string replaced = line.replaceRandom();  // mutable
+        immutable number = replaced.nom(' ').to!long;
+        assert(((number >= cast(long)-9223372036854775808) && (number < 9223372036854775807)), number.to!string);
+    }
+    {
+        // syntax error, no bounds given
+        enum line = "$random() bottles of beer on the wall";
+        immutable replaced = line.replaceRandom();
+        assert((replaced == line), replaced);
+    }
+    {
+        // syntax error, no closing paren
+        enum line = "$random( bottles of beer on the wall";
+        immutable replaced = line.replaceRandom();
+        assert((replaced == line), replaced);
+    }
+    {
+        // syntax error, no upper bound given
+        enum line = "$random(0..) bottles of beer on the wall";
+        immutable replaced = line.replaceRandom();
+        assert((replaced == line), replaced);
+    }
+    {
+        // syntax error, no boudns given
+        enum line = "$random(..) bottles of beer on the wall";
+        immutable replaced = line.replaceRandom();
+        assert((replaced == line), replaced);
+    }
+    {
+        // syntax error, missing closing paren
+        enum line = "$random(0..100 bottles of beer on the wall";
+        immutable replaced = line.replaceRandom();
+        assert((replaced == line), replaced);
+    }
+    {
+        // syntax error, parens include text
+        enum line = "$random(0..100 bottles of beer on the wall)";
+        immutable replaced = line.replaceRandom();
+        assert((replaced == line), replaced);
+    }
+    {
+        // syntax error, i == n
+        enum line = "$random(0..0) bottles of beer on the wall";
+        immutable replaced = line.replaceRandom();
+        assert((replaced == line), replaced);
+    }
+    {
+        // syntax error, i > n
+        enum line = "$random(2..1) bottles of beer on the wall";
+        immutable replaced = line.replaceRandom();
+        assert((replaced == line), replaced);
+    }
+    {
+        // empty string
+        enum line = string.init;
+        string replaced = line.replaceRandom();
+        assert(!replaced.length, replaced);
+    }
+    {
+        // no $random token
+        enum line = "99 bottles of beer on the wall";
+        immutable replaced = line.replaceRandom();
+        assert((replaced == line), replaced);
+    }
+}
