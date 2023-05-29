@@ -1184,6 +1184,7 @@ auto createTimerFiber(
         // Main loop
         while (true)
         {
+            import kameloso.string : replaceRandom;
             import std.array : replace;
             import std.conv : to;
             import std.random : uniform;
@@ -1198,7 +1199,7 @@ auto createTimerFiber(
             string message = timer.getLine()  // mutable
                 .replace("$bot", plugin.state.client.nickname)
                 .replace("$channel", channelName[1..$])
-                .replace("$random", uniform(0, 100).to!string);
+                .replaceRandom();
 
             version(TwitchSupport)
             {
