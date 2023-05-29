@@ -1198,7 +1198,7 @@ auto createTimerFiber(
             string message = timer.getLine()  // mutable
                 .replace("$bot", plugin.state.client.nickname)
                 .replace("$channel", channelName[1..$])
-                .replace("$random", uniform!"(]"(0, 100).to!string);
+                .replace("$random", uniform(0, 100).to!string);
 
             version(TwitchSupport)
             {
