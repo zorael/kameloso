@@ -1205,7 +1205,7 @@ auto createTimerFiber(
                 if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
                 {
                     import kameloso.plugins.common.misc : nameOf;
-                    message = message.replace("$streamer", plugin.nameOf(channelName[1..$]));
+                    message = message.replace("$streamer", nameOf(plugin, channelName[1..$]));
                 }
             }
 

@@ -661,7 +661,7 @@ void sendQuoteToChannel(
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
             import kameloso.plugins.common.misc : nameOf;
-            possibleDisplayName = plugin.nameOf(nickname);
+            possibleDisplayName = nameOf(plugin, nickname);
         }
     }
 
@@ -761,7 +761,7 @@ private:
             if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
             {
                 import kameloso.plugins.common.misc : nameOf;
-                possibleDisplayName = plugin.nameOf(nickname);
+                possibleDisplayName = nameOf(plugin, nickname);
             }
         }
 
