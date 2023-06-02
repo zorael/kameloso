@@ -88,7 +88,7 @@ auto retryDelegate(Dg)(Dg dg)
                 import std.json : JSONException, parseJSON;
                 import std.stdio : stdout, writeln;
 
-                logger.trace(e.info);
+                logger.trace(e);
 
                 try
                 {
@@ -113,7 +113,7 @@ auto retryDelegate(Dg)(Dg dg)
                 import kameloso.common : logger;
                 import std.stdio : stdout, writeln;
 
-                logger.trace(e.info);
+                logger.trace(e);
                 writeln(e.json.toPrettyString);
                 stdout.flush();
             }
@@ -129,7 +129,7 @@ auto retryDelegate(Dg)(Dg dg)
                 import kameloso.common : logger;
                 import std.stdio : stdout, writeln;
 
-                logger.trace(e.info);
+                logger.trace(e);
                 writeln(e.json.toPrettyString);
                 stdout.flush();
             }
@@ -143,7 +143,7 @@ auto retryDelegate(Dg)(Dg dg)
             version(PrintStacktraces)
             {
                 import kameloso.common : logger;
-                logger.trace(e.info);
+                logger.trace(e);
             }
             throw e;
         }
