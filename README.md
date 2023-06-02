@@ -40,7 +40,7 @@ Prebuilt binaries for Windows and Linux can be found under [**Releases**](https:
 
 To compile it yourself:
 
-```console
+```shell
 $ dub run kameloso -- --server irc.libera.chat --homeChannels "#mychannel" --guestChannels "#d"
 
 ## alternatively, guaranteed latest
@@ -108,7 +108,7 @@ See the [known issues](#known-issues) section on Windows for information on libr
 
 ## Downloading source
 
-```console
+```shell
 $ git clone https://github.com/zorael/kameloso.git
 ```
 
@@ -116,7 +116,7 @@ It can also be downloaded as a [`.zip` archive](https://github.com/zorael/kamelo
 
 ## Compiling
 
-```console
+```shell
 $ dub build
 ```
 
@@ -133,7 +133,7 @@ Both configurations come in `-lowmem` variants (e.g. `application-lowmem` and `t
 
 List configurations with `dub build --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default `application` configuration.
 
-```console
+```shell
 $ dub build -c twitch
 ```
 
@@ -145,7 +145,7 @@ $ dub build -c twitch
 
 The bot ideally wants the account name of one or more administrators of the bot, and/or one or more home channels to operate in. Without either it's just a read-only log bot, which is a completely valid use-case. To define these you can either supply them on the command line, with flags listed by calling the program with `--help`, or generate a configuration file with `--save` and enter them there.
 
-```console
+```shell
 $ kameloso --save
 ```
 
@@ -182,7 +182,7 @@ Settings not touched will keep their values.
 
 ### Display settings
 
-**kameloso**'s text colours are by default set to go well with dark terminal backgrounds. If you have a bright background, text may be difficult to read (e.g. white on white), depending on your terminal emulator. If so, pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses 7 colours out of [8-colour ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more colours are too dark or bright even with the right `brightTerminal` setting, please refer to your terminal appearance settings.
+**kameloso**'s uses [terminal ANSI colouring](https://en.wikipedia.org/wiki/ANSI_escape_code#3-bit_and_4-bit), and text colours are by default set to go well with dark terminal backgrounds. If you have a bright background, text may be difficult to read (e.g. white on white), depending on your terminal emulator. If so, try passing the `--bright` argument, and/or modify the configuration file to enable `brightTerminal` under `[Core]`. If only some colours work, try limiting colouring to those by disabling `extendedColours`, also under `[Core]`. If one or more colours are still too dark or too bright even with the right `brightTerminal` setting, please refer to your terminal appearance settings.
 
 An alternative is to disable colours entirely with `--monochrome`.
 
