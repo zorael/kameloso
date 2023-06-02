@@ -10,14 +10,15 @@
 
     // Output range version
     sink.put("Hello ");
-    sink.applyANSI(TerminalForeground.red);
+    sink.applyANSI(TerminalForeground.red, ANSICodeType.foreground);
     sink.put("world!");
-    sink.applyANSI(TerminalForeground.default_);
+    sink.applyANSI(TerminalForeground.default_, ANSICodeType.foreground);
 
     with (TerminalForeground)
     {
-        // Normal string-returning version
+        // Normal string-returning versions
         writeln("Hello ", red.asANSI, "world!", default_.asANSI);
+        writeln("H3LL0".withANSI(red)), ' ', "W0RLD!".withANSI(default_));
     }
 
     // Also accepts RGB form
@@ -28,15 +29,15 @@
 
     with (TerminalForeground)
     {
-        writeln("Also ", asTruecolour(128, 128, 255), "magic", default_.colour);
+        writeln("Also ", asTruecolour(128, 128, 255), "magic", default_.asANSI);
     }
 
     immutable line = "Surrounding text kameloso surrounding text";
     immutable kamelosoInverted = line.invert("kameloso");
     assert(line != kamelosoInverted);
 
-    immutable nicknameTint = "nickname".getColourByHash(Yes.brightTerminal);
-    immutable substringTint = "substring".getColourByHash(No.brightTerminal);
+    immutable nicknameTint = "nickname".getColourByHash(*kameloso.common.settings);
+    immutable substringTint = "substring".getColourByHash(*kameloso.common.settings);
     ---
 
     It is used heavily in the Printer plugin, to format sections of its output
@@ -70,6 +71,16 @@ public:
 // applyANSI
 /++
     Applies an ANSI code to a passed output range.
+
+    Example:
+    ---
+    Appender!(char[]) sink;
+
+    sink.put("Hello ");
+    sink.applyANSI(TerminalForeground.red, ANSICodeType.foreground);
+    sink.put("world!");
+    sink.applyANSI(TerminalForeground.default_, ANSICodeType.foreground);
+    ---
 
     Params:
         sink = Output range sink to write to.
@@ -191,6 +202,16 @@ if (isOutputRange!(Sink, char[]))
     Applies an ANSI code to a passed string and returns it as a new one.
     Convenience function to colour a piece of text without being passed an
     output sink to fill into.
+
+    Example:
+    ---
+    with (TerminalForeground)
+    {
+        // Normal string-returning versions
+        writeln("Hello ", red.asANSI, "world!", default_.asANSI);
+        writeln("H3LL0".withANSI(red)), ' ', "W0RLD!".withANSI(default_));
+    }
+    ---
 
     Params:
         text = Original string.
@@ -592,7 +613,7 @@ unittest
     ---
     immutable line = "This is an example!";
     writeln(line.invert("example"));  // "example" substring visually inverted
-    writeln(line.invert!(Yes.caseInsensitive)("EXAMPLE")); // "example" inverted as "EXAMPLE"
+    writeln(line.invert("EXAMPLE", Yes.caseInsensitive)); // "example" inverted as "EXAMPLE"
     ---
 
     Params:
@@ -853,24 +874,23 @@ unittest
 
 // getColourByHash
 /++
-    Hashes the passed string and picks an ANSI colour by modulo.
+    Hashes the passed string and picks an ANSI colour for it by modulo.
 
-    Overload that picks any colour, taking care not to pick black or white based on
-    the value of the passed `bright` bool (which signifies a bright terminal background).
+    Picks any colour, taking care not to pick black or white based on
+    the passed [kameloso.pods.CoreSettings|CoreSettings] struct (which has a
+    field that signifies a bright terminal background).
 
     Example:
     ---
-    immutable nickColour = "kameloso".getColourByHash(No.brightTerminal);
-    immutable brightNickColour = "kameloso".getColourByHash(Yes.brightTerminal);
+    immutable nickColour = "kameloso".getColourByHash(*kameloso.common.settings);
     ---
 
     Params:
         word = String to hash and base colour on.
-        bright = Whether or not the colour should be appropriate for a bright
-            terminal background.
+        settings = A copy of the program-global [kameloso.pods.CoreSettings|CoreSettings].
 
     Returns:
-        A [TerminalForeground] based on the passed string.
+        A `uint` that can be used in an ANSI foreground colour sequence.
  +/
 auto getColourByHash(const string word, const CoreSettings settings) pure @safe /*@nogc*/ nothrow
 in (word.length, "Tried to get colour by hash but no word was given")
@@ -968,7 +988,7 @@ unittest
 
     Params:
         word = String to colour.
-        bright = Whether or not the colour should be adapted for a bright terminal background.
+        settings = A copy of the program-global [kameloso.pods.CoreSettings|CoreSettings].
 
     Returns:
         `word`, now in colour based on the hash of its contents.

@@ -97,9 +97,9 @@ enum TerminalReset
  +/
 enum ANSICodeType
 {
-    unset      = 0,
-    foreground = 1 << 0,
-    background = 1 << 1,
-    format     = 1 << 2,
-    reset      = 1 << 3,
+    unset      = 0,       // init value.
+    foreground = 1 << 0,  // Foreground colour.
+    background = 1 << 1,  // Background colour.
+    format     = 1 << 2,  // Format token.
+    reset      = 1 << 3,  // Reset token.
 }
