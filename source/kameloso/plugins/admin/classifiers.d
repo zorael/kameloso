@@ -625,7 +625,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
     else
     {
         // No-colours passthrough noop
-        static string colourByHash(const string word, const CoreSettings settings)
+        static string colourByHash(const string word, const CoreSettings _)
         {
             return word;
         }
