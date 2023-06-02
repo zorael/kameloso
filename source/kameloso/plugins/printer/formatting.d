@@ -678,11 +678,9 @@ if (isOutputRange!(Sink, char[]))
                 if ((event.sender.displayName != event.sender.nickname) &&
                     !event.sender.displayName.asLowerCase.equal(event.sender.nickname))
                 {
-                    //.put!(Yes.colours)(sink, TR.all, " (");
                     sink.applyANSI(TR.all);
                     sink.put(" (");
                     colourUserTruecolour(sink, event.sender);
-                    //.put!(Yes.colours)(sink, event.sender.nickname, TR.all, ')');
                     sink.put(event.sender.nickname);
                     sink.applyANSI(TR.all);
                     sink.put(')');
@@ -698,7 +696,6 @@ if (isOutputRange!(Sink, char[]))
 
         version(PrintClassNamesToo)
         {
-            //.put!(Yes.colours)(sink, TR.all, ':', event.sender.class_);
             sink.applyANSI(TR.all);
             .put(sink, ':', event.sender.class_);
         }
@@ -709,7 +706,6 @@ if (isOutputRange!(Sink, char[]))
             if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
                 event.sender.account.length)
             {
-                //.put!(Yes.colours)(sink, TR.all, '(', event.sender.account, ')');
                 sink.applyANSI(TR.all);
                 .put(sink, '(', event.sender.account, ')');
             }
@@ -730,10 +726,6 @@ if (isOutputRange!(Sink, char[]))
                     break;
 
                 default:
-                    /*.put!(Yes.colours)(sink,
-                        TR.all,
-                        TerminalForeground(bright ? Bright.badge : Dark.badge),
-                        " [", event.sender.badges, ']');*/
                     immutable code = bright ? Bright.badge : Dark.badge;
                     sink.applyANSI(TR.all);
                     sink.applyANSI(code, ANSICodeType.foreground);
@@ -760,11 +752,9 @@ if (isOutputRange!(Sink, char[]))
                 // Add more as they become apparent
                 sink.applyANSI(TR.all);
                 sink.put(" <- ");
-                //.put!(Yes.colours)(sink, TR.all, " <- ");
                 break;
 
             default:
-                //.put!(Yes.colours)(sink, TR.all, " -> ");
                 sink.applyANSI(TR.all);
                 sink.put(" -> ");
                 break;
@@ -786,7 +776,6 @@ if (isOutputRange!(Sink, char[]))
                 {
                     sink.put(" (");
                     colourUserTruecolour(sink, event.target);
-                    //.put!(Yes.colours)(sink, event.target.nickname, TR.all, ')');
                     sink.put(event.target.nickname);
                     sink.applyANSI(TR.all);
                     sink.put(')');
@@ -797,7 +786,6 @@ if (isOutputRange!(Sink, char[]))
         if (!putArrow)
         {
             // No need to check isServer; target is never server
-            //.put!(Yes.colours)(sink, TR.all, " -> ");
             sink.applyANSI(TR.all);
             sink.put(" -> ");
             colourUserTruecolour(sink, event.target);
@@ -810,7 +798,6 @@ if (isOutputRange!(Sink, char[]))
 
         version(PrintClassNamesToo)
         {
-            //.put!(Yes.colours)(sink, TR.all, ':', event.target.class_);
             sink.applyANSI(TR.all);
             .put(sink, ':', event.target.class_);
         }
@@ -821,7 +808,6 @@ if (isOutputRange!(Sink, char[]))
             if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
                 event.target.account.length)
             {
-                .put!(Yes.colours)(sink, TR.all, '(', event.target.account, ')');
                 sink.applyANSI(TR.all);
                 sink.put('(', event.target.account, ')');
             }
@@ -832,10 +818,6 @@ if (isOutputRange!(Sink, char[]))
             if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
                 plugin.printerSettings.twitchBadges && event.target.badges.length)
             {
-                /*.put!(Yes.colours)(sink,
-                    TR.all,
-                    TerminalForeground(bright ? Bright.badge : Dark.badge),
-                    " [", event.target.badges, ']');*/
                 immutable code = bright ? Bright.badge : Dark.badge;
                 sink.applyANSI(TR.all);
                 sink.applyANSI(code, ANSICodeType.foreground);
@@ -937,11 +919,9 @@ if (isOutputRange!(Sink, char[]))
         // Reset the background to ward off bad backgrounds bleeding out
         sink.applyANSI(fgBase, ANSICodeType.foreground); //, TerminalBackground.default_);
         sink.applyANSI(TerminalBackground.default_);
-        //sink.applyANSI(TerminalBackground.default_);
         if (!isEmote) sink.put('"');
     }
 
-    //.put!(Yes.colours)(sink, TerminalForeground(bright ? Timestamp.bright : Timestamp.dark), '[');
     immutable timestampCode = bright ? Timestamp.bright : Timestamp.dark;
     sink.applyANSI(timestampCode, ANSICodeType.foreground);
     sink.put('[');
@@ -990,9 +970,6 @@ if (isOutputRange!(Sink, char[]))
 
     if (event.channel.length)
     {
-        /*.put!(Yes.colours)(sink,
-            TerminalForeground(bright ? Bright.channel : Dark.channel),
-            '[', event.channel, "] ");*/
         immutable code = bright ? Bright.channel : Dark.channel;
         sink.applyANSI(code, ANSICodeType.foreground);
         .put(sink, '[', event.channel, "] ");
@@ -1012,9 +989,6 @@ if (isOutputRange!(Sink, char[]))
         {
             /*if (content.length)*/ putContent();
             putTarget();
-            /*.put!(Yes.colours)(sink,
-                TerminalForeground(bright ? Bright.content : Dark.content),
-                `: "`, event.aux[0], '"');*/
             immutable code = bright ? Bright.content : Dark.content;
             sink.applyANSI(code, ANSICodeType.foreground);
             .put(sink, `: "`, event.aux[0], '"');
@@ -1055,7 +1029,6 @@ if (isOutputRange!(Sink, char[]))
     if (event.num > 0)
     {
         import lu.conv : toAlphaInto;
-        //import std.format : formattedWrite;
 
         sink.applyANSI(bright ? Bright.num : Dark.num);
 
@@ -1067,9 +1040,6 @@ if (isOutputRange!(Sink, char[]))
 
     if (event.errors.length)
     {
-        /*.put!(Yes.colours)(sink,
-            TerminalForeground(bright ? Bright.error : Dark.error),
-            " ! ", event.errors, " !");*/
         immutable code = bright ? Bright.error : Dark.error;
         sink.applyANSI(code, ANSICodeType.foreground);
         .put(sink, " ! ", event.errors, " !");
