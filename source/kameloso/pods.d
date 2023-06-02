@@ -44,11 +44,11 @@ public:
      +/
     bool brightTerminal = false;
 
-    // extendedANSIColours
+    // extendedColours
     /++
-        FIXME
+        Flag denoting that the bot should output text using extended ANSI sequences.
      +/
-    bool extendedANSIColours = true;
+    bool extendedColours = true;
 
     // preferHostmasks
     /++

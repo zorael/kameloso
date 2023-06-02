@@ -941,7 +941,7 @@ in (word.length, "Tried to get colour by hash but no word was given")
         return colourTable;
     }();
 
-    const table = settings.extendedANSIColours ?
+    const table = settings.extendedColours ?
         settings.brightTerminal ?
             brightTableExtended[] :
             darkTableExtended []

@@ -619,7 +619,7 @@ if (isOutputRange!(Sink, char[]))
         {
             if (!user.isServer && user.colour.length &&
                 plugin.printerSettings.truecolour &&
-                plugin.state.settings.extendedANSIColours)
+                plugin.state.settings.extendedColours)
             {
                 import kameloso.terminal.colours : applyTruecolour;
                 import lu.conv : rgbFromHex;
