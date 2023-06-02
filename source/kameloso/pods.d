@@ -44,6 +44,12 @@ public:
      +/
     bool brightTerminal = false;
 
+    // extendedANSIColours
+    /++
+        FIXME
+     +/
+    bool extendedANSIColours = true;
+
     // preferHostmasks
     /++
         Flag denoting that usermasks should be used instead of accounts to authenticate users.
