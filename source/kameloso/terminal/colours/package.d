@@ -18,7 +18,7 @@
     {
         // Normal string-returning versions
         writeln("Hello ", red.asANSI, "world!", default_.asANSI);
-        writeln("H3LL0".withANSI(red)), ' ', "W0RLD!".withANSI(default_));
+        writeln("H3LL0".withANSI(red), ' ', "W0RLD!".withANSI(default_));
     }
 
     // Also accepts RGB form
@@ -209,7 +209,7 @@ if (isOutputRange!(Sink, char[]))
     {
         // Normal string-returning versions
         writeln("Hello ", red.asANSI, "world!", default_.asANSI);
-        writeln("H3LL0".withANSI(red)), ' ', "W0RLD!".withANSI(default_));
+        writeln("H3LL0".withANSI(red), ' ', "W0RLD!".withANSI(default_));
     }
     ---
 
