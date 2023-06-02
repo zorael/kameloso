@@ -80,9 +80,6 @@ public:
 
             /// Whether or not emotes should be highlit in colours.
             bool colourfulEmotes = true;
-
-            /// Compatibility alias.
-            alias randomNickColours = colourfulNicknames;
         }
     }
 
