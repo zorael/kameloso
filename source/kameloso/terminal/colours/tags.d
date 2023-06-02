@@ -484,18 +484,24 @@ unittest
     version(Colours)
     {
         import kameloso.terminal.colours : colourByHash;
+        import kameloso.pods : CoreSettings;
+
+        CoreSettings brightSettings;
+        CoreSettings darkSettings;
+        brightSettings.brightTerminal = true;
 
         {
             immutable line = "hello<h>kameloso</>hello";
             immutable replaced = line.expandTags(LogLevel.off, No.strip);
-            immutable expected = text("hello", colourByHash("kameloso", No.brightTerminal), logger.offtint, "hello");
+            immutable expected = text("hello", colourByHash("kameloso",
+                darkSettings), logger.offtint, "hello");
             assert((replaced == expected), replaced);
         }
         {
             immutable line = `hello\<harbl>kameloso<h>hello</>hi`;
             immutable replaced = line.expandTags(LogLevel.off, No.strip);
             immutable expected = text("hello<harbl>kameloso", colourByHash("hello",
-                No.brightTerminal), logger.offtint, "hi");
+                darkSettings), logger.offtint, "hi");
             assert((replaced == expected), replaced);
         }
         {
@@ -514,7 +520,7 @@ unittest
             immutable line = "Added <h>hirrsteff</> as a blacklisted user in #garderoben";
             immutable replaced = line.expandTags(LogLevel.off, No.strip);
             immutable expected = "Added " ~
-                colourByHash("hirrsteff", No.brightTerminal) ~
+                colourByHash("hirrsteff", brightSettings) ~
                 logger.offtint ~ " as a blacklisted user in #garderoben";
             assert((replaced == expected), replaced);
         }

@@ -939,20 +939,24 @@ unittest
 {
     import std.conv : to;
 
+    CoreSettings brightSettings;
+    CoreSettings darkSettings;
+    brightSettings.brightTerminal = true;
+
     {
-        immutable hash = getColourByHash("kameloso", No.brightTerminal);
+        immutable hash = getColourByHash("kameloso", darkSettings);
         assert((hash == 227), hash.to!string);
     }
     {
-        immutable hash = getColourByHash("kameloso^", No.brightTerminal);
+        immutable hash = getColourByHash("kameloso^", darkSettings);
         assert((hash == 46), hash.to!string);
     }
     {
-        immutable hash = getColourByHash("zorael", No.brightTerminal);
+        immutable hash = getColourByHash("zorael", brightSettings);
         assert((hash == 35), hash.to!string);
     }
     {
-        immutable hash = getColourByHash("NO", No.brightTerminal);
+        immutable hash = getColourByHash("NO", brightSettings);
         assert((hash == 90), hash.to!string);
     }
 }
@@ -979,20 +983,24 @@ unittest
 {
     import std.conv : to;
 
+    CoreSettings brightSettings;
+    CoreSettings darkSettings;
+    brightSettings.brightTerminal = true;
+
     {
-        immutable coloured = "kameloso".colourByHash(No.brightTerminal);
+        immutable coloured = "kameloso".colourByHash(darkSettings);
         assert((coloured == "\033[38;5;227mkameloso\033[0m"), coloured);
     }
     {
-        immutable coloured = "kameloso".colourByHash(Yes.brightTerminal);
+        immutable coloured = "kameloso".colourByHash(brightSettings);
         assert((coloured == "\033[38;5;222mkameloso\033[0m"), coloured);
     }
     {
-        immutable coloured = "zorael".colourByHash(No.brightTerminal);
+        immutable coloured = "zorael".colourByHash(darkSettings);
         assert((coloured == "\033[35mzorael\033[0m"), coloured);
     }
     {
-        immutable coloured = "NO".colourByHash(No.brightTerminal);
+        immutable coloured = "NO".colourByHash(brightSettings);
         assert((coloured == "\033[90mNO\033[0m"), coloured);
     }
 }
