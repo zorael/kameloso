@@ -610,8 +610,7 @@ if (isOutputRange!(Sink, char[]))
         This is for Twitch servers that assign such values to users' messages.
         By catching it we can honour the setting by tinting users accordingly.
      +/
-    void colourUserTruecolour(Sink)(auto ref Sink sink, const IRCUser user)
-    if (isOutputRange!(Sink, char[]))
+    void colourUserTruecolour(const IRCUser user)
     {
         bool coloured;
 
@@ -654,7 +653,7 @@ if (isOutputRange!(Sink, char[]))
     {
         scope(exit) sink.applyANSI(TR.all);
 
-        colourUserTruecolour(sink, event.sender);
+        colourUserTruecolour(event.sender);
 
         if (event.sender.isServer)
         {
@@ -679,7 +678,7 @@ if (isOutputRange!(Sink, char[]))
                 {
                     sink.applyANSI(TR.all);
                     sink.put(" (");
-                    colourUserTruecolour(sink, event.sender);
+                    colourUserTruecolour(event.sender);
                     sink.put(event.sender.nickname);
                     sink.applyANSI(TR.all);
                     sink.put(')');
@@ -759,7 +758,7 @@ if (isOutputRange!(Sink, char[]))
                 break;
             }
 
-            colourUserTruecolour(sink, event.target);
+            colourUserTruecolour(event.target);
             putArrow = true;
 
             if (event.target.displayName.length)
@@ -774,7 +773,7 @@ if (isOutputRange!(Sink, char[]))
                     !event.target.displayName.asLowerCase.equal(event.target.nickname))
                 {
                     sink.put(" (");
-                    colourUserTruecolour(sink, event.target);
+                    colourUserTruecolour(event.target);
                     sink.put(event.target.nickname);
                     sink.applyANSI(TR.all);
                     sink.put(')');
@@ -787,7 +786,7 @@ if (isOutputRange!(Sink, char[]))
             // No need to check isServer; target is never server
             sink.applyANSI(TR.all);
             sink.put(" -> ");
-            colourUserTruecolour(sink, event.target);
+            colourUserTruecolour(event.target);
         }
 
         if (!putDisplayName)
