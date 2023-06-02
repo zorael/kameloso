@@ -434,10 +434,9 @@ if (isOutputRange!(Sink, char[]))
     {
         import lu.conv : toAlphaInto;
 
-        //sink.formattedWrite(" (#%03d)", num);
-        sink.put(" (#");
+        sink.put(" [#");
         event.num.toAlphaInto!(3, 3)(sink);
-        sink.put(')');
+        sink.put(']');
     }
 
     if (event.errors.length)
@@ -526,9 +525,9 @@ if (isOutputRange!(Sink, char[]))
 
     plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError);
     immutable errorLine = sink.data[11..$].idup;
-    version(TwitchSupport) assert((errorLine == `[error] Nickname: "Blah balah" {-42} (#666) ` ~
+    version(TwitchSupport) assert((errorLine == `[error] Nickname: "Blah balah" {-42} [#666] ` ~
         "! DANGER WILL ROBINSON !"), errorLine);
-    else assert((errorLine == `[error] nickname: "Blah balah" {-42} (#666) ` ~
+    else assert((errorLine == `[error] nickname: "Blah balah" {-42} [#666] ` ~
         "! DANGER WILL ROBINSON !"), errorLine);
     //sink.clear();
 }
@@ -1031,11 +1030,9 @@ if (isOutputRange!(Sink, char[]))
         import lu.conv : toAlphaInto;
 
         sink.applyANSI(bright ? Bright.num : Dark.num);
-
-        //sink.formattedWrite(" (#%03d)", event.num);
-        sink.put(" (#");
+        sink.put(" [#");
         event.num.toAlphaInto!(3, 3)(sink);
-        sink.put(')');
+        sink.put(']');
     }
 
     if (event.errors.length)
