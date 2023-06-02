@@ -31,7 +31,7 @@ import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
-version(Colours) import kameloso.terminal.colours : TerminalForeground;
+version(Colours) import kameloso.terminal.colours.defs : TerminalForeground;
 
 
 // PrinterSettings

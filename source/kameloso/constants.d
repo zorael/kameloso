@@ -532,7 +532,7 @@ struct DefaultColours
 {
 private:
     import kameloso.logger : LogLevel;
-    import kameloso.terminal.colours : TerminalForeground;
+    import kameloso.terminal.colours.defs : TerminalForeground;
 
     alias TF = TerminalForeground;
 

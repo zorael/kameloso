@@ -99,7 +99,8 @@ private:
     version(Colours)
     {
         import kameloso.constants : DefaultColours;
-        import kameloso.terminal.colours : TerminalForeground, TerminalReset, colourWith, colour;
+        import kameloso.terminal.colours.defs : TerminalForeground, TerminalReset;
+        import kameloso.terminal.colours : applyANSI, asANSI;
 
         /// Convenience alias.
         alias logcoloursBright = DefaultColours.logcoloursBright;
@@ -177,7 +178,7 @@ public:
             Example:
             ---
             TerminalForeground errtint = KamelosoLogger.tint(LogLevel.error, No.brightTerminal);
-            immutable errtintString = errtint.colour;
+            immutable errtintString = errtint.asANSI;
             ---
 
             Params:
@@ -187,10 +188,10 @@ public:
 
             Returns:
                 A [kameloso.terminal.colours.TerminalForeground|TerminalForeground] of
-                the right colour. Use with [kameloso.terminal.colours.colour|colour]
+                the right colour. Use with [kameloso.terminal.colours.asANSI|asANSI]
                 to get a string.
          +/
-        static auto tint(const LogLevel level, const Flag!"brightTerminal" bright) pure nothrow @nogc @safe
+        static uint tint(const LogLevel level, const Flag!"brightTerminal" bright) pure nothrow @nogc @safe
         {
             return bright ? logcoloursBright[level] : logcoloursDark[level];
         }
@@ -240,12 +241,12 @@ public:
             }
             else if (brightTerminal)
             {
-                enum ctTintBright = tint(level, Yes.brightTerminal).colour.idup;
+                enum ctTintBright = tint(level, Yes.brightTerminal).asANSI.idup;
                 return ctTintBright;
             }
             else
             {
-                enum ctTintDark = tint(level, No.brightTerminal).colour.idup;
+                enum ctTintDark = tint(level, No.brightTerminal).asANSI.idup;
                 return ctTintDark;
             }
         }
@@ -320,7 +321,8 @@ public:
             if (!monochrome)
             {
                 alias Timestamp = DefaultColours.TimestampColour;
-                linebuffer.colourWith(brightTerminal ? Timestamp.bright : Timestamp.dark);
+                //linebuffer.applyANSI(brightTerminal ? Timestamp.bright : Timestamp.dark);
+                linebuffer.applyANSI(TerminalReset.all);
             }
         }
 
@@ -332,7 +334,7 @@ public:
         {
             if (!monochrome)
             {
-                linebuffer.colourWith(brightTerminal ?
+                linebuffer.applyANSI(brightTerminal ?
                     logcoloursBright[logLevel] :
                     logcoloursDark[logLevel]);
             }
@@ -345,6 +347,7 @@ public:
      +/
     private void finishLogMsg() @trusted  // writeln trusts stdout.flush, so we should be able to too
     {
+        import kameloso.terminal.colours : applyANSI;
         import std.stdio : stdout, writeln;
 
         version(Colours)
@@ -352,7 +355,7 @@ public:
             if (!monochrome)
             {
                 // Reset.blink in case a fatal message was thrown
-                linebuffer.colourWith(TerminalReset.all);
+                linebuffer.applyANSI(TerminalReset.all);
             }
         }
 
