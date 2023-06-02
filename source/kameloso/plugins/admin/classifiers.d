@@ -609,6 +609,7 @@ void modifyHostmaskDefinition(
 in ((!add || account.length), "Tried to add a hostmask with no account to map it to")
 in (mask.length, "Tried to add an empty hostmask definition")
 {
+    import kameloso.pods : CoreSettings;
     import kameloso.thread : ThreadMessage;
     import lu.json : JSONStorage, populateFromJSON;
     import lu.string : contains;
@@ -624,7 +625,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
     else
     {
         // No-colours passthrough noop
-        static string colourByHash(const string word, const Flag!"brightTerminal")
+        static string colourByHash(const string word, const CoreSettings settings)
         {
             return word;
         }
@@ -639,8 +640,6 @@ in (mask.length, "Tried to add an empty hostmask definition")
 
     string[string] aa;
     aa.populateFromJSON(json);
-
-    immutable brightFlag = cast(Flag!"brightTerminal")plugin.state.settings.brightTerminal;
 
     if (add)
     {
@@ -671,7 +670,7 @@ in (mask.length, "Tried to add an empty hostmask definition")
 
         if (event == IRCEvent.init)
         {
-            immutable colouredAccount = colourByHash(account, brightFlag);
+            immutable colouredAccount = colourByHash(account, plugin.state.settings);
             enum pattern = `Added hostmask "<l>%s</>", mapped to account <h>%s</>.`;
             logger.infof(pattern, mask, colouredAccount);
         }

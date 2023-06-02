@@ -18,6 +18,7 @@ private:
 
 import kameloso.plugins.printer.base;
 
+import kameloso.pods : CoreSettings;
 import dialect.defs;
 import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;
@@ -597,10 +598,10 @@ if (isOutputRange!(Sink, char[]))
         if (!plugin.printerSettings.colourfulNicknames)
         {
             // Don't differentiate between sender and target? Consistency?
-            return bright ? Bright.sender : Dark.sender;
+            return plugin.state.settings.brightTerminal ? Bright.sender : Dark.sender;
         }
 
-        return getColourByHash(nickname, bright);
+        return getColourByHash(nickname, plugin.state.settings);
     }
 
     /++
@@ -617,7 +618,9 @@ if (isOutputRange!(Sink, char[]))
 
         version(TwitchSupport)
         {
-            if (!user.isServer && user.colour.length && plugin.printerSettings.truecolour)
+            if (!user.isServer && user.colour.length &&
+                plugin.printerSettings.truecolour &&
+                plugin.state.settings.extendedANSIColours)
             {
                 import kameloso.terminal.colours : applyTruecolour;
                 import lu.conv : rgbFromHex;
@@ -884,7 +887,7 @@ if (isOutputRange!(Sink, char[]))
             {
                 content = highlightEmotes(event,
                     cast(Flag!"colourful")plugin.printerSettings.colourfulEmotes,
-                    cast(Flag!"brightTerminal")plugin.state.settings.brightTerminal);
+                    plugin.state.settings);
             }
         }
 
@@ -1177,7 +1180,7 @@ version(TwitchSupport)
 auto highlightEmotes(
     const ref IRCEvent event,
     const Flag!"colourful" colourful,
-    const Flag!"brightTerminal" brightTerminal)
+    const CoreSettings settings)
 {
     import kameloso.constants : DefaultColours;
     import kameloso.terminal.colours : applyANSI;
@@ -1193,7 +1196,7 @@ auto highlightEmotes(
     scope(exit) sink.clear();
     sink.reserve(event.content.length + 60);  // mostly +10
 
-    immutable TerminalForeground highlight = brightTerminal ?
+    immutable TerminalForeground highlight = settings.brightTerminal ?
         Bright.highlight : Dark.highlight;
     immutable isEmoteOnly = !colourful && event.tags.contains("emote-only=1");
 
@@ -1211,10 +1214,10 @@ auto highlightEmotes(
         }
 
         // Emote but mixed text and emotes OR we're doing colourful emotes
-        immutable TerminalForeground emoteFgBase = brightTerminal ?
+        immutable TerminalForeground emoteFgBase = settings.brightTerminal ?
             Bright.emote : Dark.emote;
         sink.highlightEmotesImpl(event.content, event.emotes, highlight,
-            emoteFgBase, colourful, brightTerminal);
+            emoteFgBase, colourful, settings);
         break;
 
     default:
@@ -1225,10 +1228,10 @@ auto highlightEmotes(
         }
 
         // Normal content, normal text, normal emotes
-        immutable TerminalForeground contentFgBase = brightTerminal ?
+        immutable TerminalForeground contentFgBase = settings.brightTerminal ?
             Bright.content : Dark.content;
         sink.highlightEmotesImpl(event.content, event.emotes, highlight,
-            contentFgBase, colourful, brightTerminal);
+            contentFgBase, colourful, settings);
         break;
     }
 
@@ -1261,7 +1264,7 @@ void highlightEmotesImpl(Sink)
     const TerminalForeground pre,
     const TerminalForeground post,
     const Flag!"colourful" colourful,
-    const Flag!"brightTerminal" brightTerminal)
+    const CoreSettings settings)
 if (isOutputRange!(Sink, char[]))
 {
     import std.algorithm.iteration : splitter, uniq;
@@ -1340,7 +1343,7 @@ if (isOutputRange!(Sink, char[]))
         import kameloso.terminal.colours : applyANSI, getColourByHash;
 
         immutable colour = colourful ?
-            getColourByHash(highlight.id, brightTerminal) :
+            getColourByHash(highlight.id, settings) :
             pre;
 
         sink.put(dline[pos..highlight.start]);

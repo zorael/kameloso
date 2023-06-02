@@ -287,9 +287,7 @@ if (isSomeString!T)
                                 {
                                     import kameloso.terminal.colours : colourByHash;
 
-                                    immutable bright =
-                                        cast(Flag!"brightTerminal")kameloso.common.settings.brightTerminal;
-                                    sink.put(colourByHash(word, bright));
+                                    sink.put(colourByHash(word, *kameloso.common.settings));
 
                                     with (LogLevel)
                                     final switch (baseLevel)

@@ -60,6 +60,7 @@ private:
 
 import kameloso.terminal : TerminalToken;
 import kameloso.terminal.colours.defs : ANSICodeType;
+import kameloso.pods : CoreSettings;
 import std.range : isOutputRange;
 import std.typecons : Flag, No, Yes;
 
@@ -871,13 +872,22 @@ unittest
     Returns:
         A [TerminalForeground] based on the passed string.
  +/
-auto getColourByHash(const string word, const Flag!"brightTerminal" bright) pure @safe /*@nogc*/ nothrow
+auto getColourByHash(const string word, const CoreSettings settings) pure @safe /*@nogc*/ nothrow
 in (word.length, "Tried to get colour by hash but no word was given")
 {
     import kameloso.irccolours : ircANSIColourMap;
     import kameloso.terminal.colours.defs : TerminalForeground;
+    import std.traits : EnumMembers;
 
-    enum brightTable = ()
+    static immutable basicForegroundMembers = [ EnumMembers!TerminalForeground ];
+
+    static immutable uint[basicForegroundMembers.length+(-2)] brightTableBasic =
+        TerminalForeground.black ~ basicForegroundMembers[2..$-1];
+
+    static immutable uint[basicForegroundMembers.length+(-2)] darkTableBasic =
+        TerminalForeground.white ~ basicForegroundMembers[2..$-1];
+
+    enum brightTableExtended = ()
     {
         uint[98] colourTable = ircANSIColourMap[1..$].dup;
 
@@ -892,7 +902,7 @@ in (word.length, "Tried to get colour by hash but no word was given")
         return colourTable;
     }();
 
-    enum darkTable = ()
+    enum darkTableExtended = ()
     {
         uint[98] colourTable = ircANSIColourMap[1..$].dup;
 
@@ -911,7 +921,15 @@ in (word.length, "Tried to get colour by hash but no word was given")
         return colourTable;
     }();
 
-    const table = bright ? brightTable[] : darkTable[];
+    const table = settings.extendedANSIColours ?
+        settings.brightTerminal ?
+            brightTableExtended[] :
+            darkTableExtended []
+            :
+        settings.brightTerminal ?
+            brightTableBasic[] :
+            darkTableBasic [];
+
     immutable colourIndex = (hashOf(word) % table.length);
     return table[colourIndex];
 }
@@ -951,9 +969,9 @@ unittest
     Returns:
         `word`, now in colour based on the hash of its contents.
  +/
-auto colourByHash(const string word, const Flag!"brightTerminal" bright) pure @safe nothrow
+auto colourByHash(const string word, const CoreSettings settings) pure @safe nothrow
 {
-    return word.withANSI(getColourByHash(word, bright));
+    return word.withANSI(getColourByHash(word, settings));
 }
 
 ///
