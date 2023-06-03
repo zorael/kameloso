@@ -1142,7 +1142,7 @@ in ((givenName.length || givenIDString.length),
     // None on record, look up
     immutable userURL = givenName ?
         ("https://api.twitch.tv/helix/users?login=" ~ givenName) :
-        ("https://api.twitch.tv/helix/users?login=" ~ givenIDString);
+        ("https://api.twitch.tv/helix/users?id=" ~ givenIDString);
 
     auto getTwitchUserDg()
     {
