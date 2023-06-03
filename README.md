@@ -1,14 +1,14 @@
 # kameloso [![Linux/macOS/Windows](https://img.shields.io/github/actions/workflow/status/zorael/kameloso/d.yml?branch=master)](https://github.com/zorael/kameloso/actions?query=workflow%3AD) [![Linux](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?logo=circleci&style=flat&maxAge=3600)](https://circleci.com/gh/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?logo=appveyor&style=flat&maxAge=3600)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v3.9.0.svg?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/compare/v3.9.0...master)
 
-**kameloso** is an IRC bot with [Twitch support](#twitch).
+**kameloso** is an IRC bot with [Twitch support](#twitch). It is text-based and runs in your terminal or console.
 
-## Current functionality includes:
+### So what does it do
 
-* chat monitoring in your terminal
+* real-time chat monitoring
 * channel polls, user quotes, `!seen`, counters, oneliners, timed announcements, ...
-* reporting titles of pasted URLs, YouTube video information fetch
-* `sed`-replacement of messages (`s/this/that/` substitution)
 * saving notes to offline users that get played back when they come online
+* reporting titles of pasted URLs, displaying YouTube video information
+* `sed`-replacement of messages (`s/this/that/` substitution)
 * logs
 * bugs
 * some common [Twitch bot features](#twitch-bot)
@@ -50,7 +50,7 @@ $ dub build
 $ ./kameloso --server irc.libera.chat --homeChannels "#mychannel" --guestChannels "#d"
 ```
 
-If there's anyone talking it should show up on your screen.
+If there's anyone chatting it should show up on your screen.
 
 ---
 
@@ -126,10 +126,10 @@ This will compile the bot in the default **debug** build type, which adds some e
 
 There are two major configurations in which the bot may be built.
 
-* `application`: base configuration; everything needed for an IRC bot
+* `application`: default, base configuration; everything needed for an IRC bot
 * `twitch`: additionally includes Twitch chat support and the Twitch bot plugin
 
-Both configurations come in `-lowmem` variants (e.g. `application-lowmem` and `twitch-lowmem`) that lower compilation memory required at the cost of increasing compilation time, which may help on memory-constrained systems.
+Both configurations come in `-lowmem` variants (e.g. `application-lowmem` and `twitch-lowmem`) that lower compilation memory required at the cost of increasing compilation time, which may help on memory-constrained systems (such as the Raspberry Pi).
 
 List configurations with `dub build --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default `application` configuration.
 
@@ -182,7 +182,7 @@ Settings not touched will keep their values.
 
 ### Display settings
 
-**kameloso**'s uses [terminal ANSI colouring](https://en.wikipedia.org/wiki/ANSI_escape_code#3-bit_and_4-bit), and text colours are by default set to go well with dark terminal backgrounds. If you have a bright background, text may be difficult to read (e.g. white on white), depending on your terminal emulator. If so, try passing the `--bright` argument, and/or modify the configuration file to enable `brightTerminal` under `[Core]`. If only some colours work, try limiting colouring to those by disabling `extendedColours`, also under `[Core]`. If one or more colours are still too dark or too bright even with the right `brightTerminal` setting, please refer to your terminal appearance settings.
+The bot uses [terminal ANSI colouring](https://en.wikipedia.org/wiki/ANSI_escape_code#3-bit_and_4-bit), and text colours are by default set to go well with dark terminal backgrounds. If you instead have a bright background, text may be difficult to read (e.g. white on white), depending on your terminal emulator. If so, try passing the `--bright` argument, and/or modify the configuration file to enable `brightTerminal` under `[Core]`. If only some colours work, try limiting colouring to only those by disabling `extendedColours`, also under `[Core]`. If one or more colours are still too dark or too bright even with the right `brightTerminal` setting, please refer to your terminal appearance settings.
 
 An alternative is to disable colours entirely with `--monochrome`.
 
@@ -328,7 +328,7 @@ MrOffline joined #channel
 
       you | !time
  kameloso | The time is currently 12:04 locally.
-      you | !time Europe/London
+      you | !time Europe/Stockholm
  kameloso | The time is currently 11:04 in Europe/Stockholm.
       you | !time Tokyo
  kameloso | The time is currently 20:05 in Tokyo.
@@ -363,9 +363,9 @@ In the case of **hostmasks mode**, the above still applies but "accounts" are de
 
 ### **Copy paste-friendly concrete setup from scratch**
 
-Pre-compiled binaries for Windows and Linux can be found under [Releases](https://github.com/zorael/kameloso/releases).
+Prebuilt binaries for Windows and Linux can be found under [Releases](https://github.com/zorael/kameloso/releases).
 
-If you're on Windows, you must first [install the **OpenSSL** library](#windows). Run this command to download and launch the installer for it, then opt to install to Windows system directories when asked:
+If you're on **Windows**, you must first [install the **OpenSSL** library](#windows). Run this command to download and launch the installer for it, then opt to install to Windows system directories when asked:
 
 ```shell
 kameloso --get-openssl
@@ -466,6 +466,7 @@ Assuming a prefix of `!`, commands to test are:
 * `!settitle`
 * `!setgame`
 * `!commercial`
+* `!shoutout`
 * `!startpoll`/`!endpoll` (*highly* experimental, need help from affiliate)
 
 ...alongside `!oneliner`, `!counter`, `!timer`, `!poll` (chat poll), `!time`, `!stopwatch`, and other non-Twitch-specific commands. Try `!help` or [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins).
@@ -509,7 +510,7 @@ If you still can't find what you're looking for, or if you have suggestions on h
 
 ## Windows
 
-**kameloso** uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard library for such in the Posix sphere (Linux, macOS, ...), but not so on Windows. If you run into errors about missing SSL libraries when attempting to connect on Windows, pass the `--get-openssl` flag to download and launch the installer for [**OpenSSL for Windows v1.1.\***](https://slproweb.com/products/Win32OpenSSL.html). Make sure to opt to install to Windows system directories when asked.
+The bot uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard library for such in the Posix sphere (Linux, macOS, ...), but not so on Windows. If you run into errors about missing SSL libraries when attempting to connect on Windows, pass the `--get-openssl` flag to download and launch the installer for [**OpenSSL for Windows v1.1.\***](https://slproweb.com/products/Win32OpenSSL.html). Make sure to opt to install to Windows system directories when asked.
 
 ## Google/YouTube song request playlist integration
 
