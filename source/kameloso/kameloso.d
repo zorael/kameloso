@@ -766,6 +766,13 @@ public:
      +/
     bool wantReceiveTimeoutShortened;
 
+    // askedToReconnect
+    /++
+        Set when the server asked us to reconnect (by way of a
+        [dialect.defs.IRCEvent.Type.RECONNECT|RECONNECT] event).
+     +/
+    bool askedToReconnect;
+
     version(TwitchSupport)
     {
         // sawWelcome

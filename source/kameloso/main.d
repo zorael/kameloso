@@ -314,6 +314,7 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             case reconnect:
+                instance.askedToReconnect = true;
                 instance.priorityBuffer.put(OutgoingLine(
                     "QUIT :Reconnecting.",
                     No.quiet));
@@ -2971,10 +2972,14 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                 import std.algorithm.searching : endsWith;
                 import core.time : msecs;
 
-                if (instance.parser.server.address.endsWith(".twitch.tv") && !instance.sawWelcome)
+                if (instance.parser.server.address.endsWith(".twitch.tv") &&
+                    (!instance.sawWelcome || instance.askedToReconnect))
                 {
-                    // We probably saw an instant disconnect before even getting to RPL_WELCOME
-                    // Quickly attempt again
+                    /+
+                        We either saw an instant disconnect before even getting
+                        to RPL_WELCOME, or we're reconnecting.
+                        Quickly attempt again.
+                     +/
                     static immutable twitchRegistrationFailConnectionRetry =
                         Timeout.twitchRegistrationFailConnectionRetryMsecs.msecs;
                     gracePeriodBeforeReconnect = twitchRegistrationFailConnectionRetry;
@@ -3225,6 +3230,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         }
 
         // Start the main loop
+        instance.askedToReconnect = false;
         attempt.next = instance.mainLoop();
         attempt.firstConnect = false;
     }
