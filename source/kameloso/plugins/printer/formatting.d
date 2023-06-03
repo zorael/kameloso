@@ -412,13 +412,19 @@ if (isOutputRange!(Sink, char[]))
 
         if (!aux.empty)
         {
-            import std.array : array;
-
-            // "Deprecation: scope variable `aux` assigned to non-scope parameter `_param_2` calling `formattedWrite"
-            // Work around it and revisit this when we know a better approach.
-            auto auxCopy = aux.array.dup;
             enum pattern = " (%-(%s%|) (%))";
-            sink.formattedWrite(pattern, auxCopy);
+
+            static if ((__VERSION__ >= 2101L) && (__VERSION__ <= 2102L))
+            {
+                import std.array : array;
+                // "Deprecation: scope variable `aux` assigned to non-scope parameter `_param_2` calling `formattedWrite"
+                // Seemingly only on 2.101 and 2.102
+                sink.formattedWrite(pattern, aux.array.dup);
+            }
+            else
+            {
+                sink.formattedWrite(pattern, aux);
+            }
         }
     }
 
@@ -1021,14 +1027,20 @@ if (isOutputRange!(Sink, char[]))
 
         if (!aux.empty)
         {
-            import std.array : array;
-
-            // "Deprecation: scope variable `aux` assigned to non-scope parameter `_param_2` calling `formattedWrite"
-            // Work around it and revisit this when we know a better approach.
-            auto auxCopy = aux.array.dup;
             enum pattern = " (%-(%s%|) (%))";
             sink.applyANSI(bright ? Bright.aux : Dark.aux);
-            sink.formattedWrite(pattern, auxCopy);
+
+            static if ((__VERSION__ >= 2101L) && (__VERSION__ <= 2102L))
+            {
+                import std.array : array;
+                // "Deprecation: scope variable `aux` assigned to non-scope parameter `_param_2` calling `formattedWrite"
+                // Seemingly only on 2.101 and 2.102
+                sink.formattedWrite(pattern, aux.array.dup);
+            }
+            else
+            {
+                sink.formattedWrite(pattern, aux);
+            }
         }
     }
 
