@@ -1996,6 +1996,7 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
             */
 
             auto stream = TwitchPlugin.Room.Stream(streamJSON["id"].str);
+            stream.live = true;
             stream.userIDString = streamJSON["user_id"].str;
             stream.userLogin = streamJSON["user_login"].str;
             stream.userDisplayName = streamJSON["user_name"].str;
