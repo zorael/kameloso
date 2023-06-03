@@ -386,6 +386,7 @@ if (isOutputRange!(Sink, char[]))
     putSender();
 
     bool putQuotedTwitchMessage;
+    auto auxRange = event.aux[].filter!(s => s.length);
 
     version(TwitchSupport)
     {
@@ -400,6 +401,7 @@ if (isOutputRange!(Sink, char[]))
             .put(sink, `: "`, event.aux[0], '"');
 
             putQuotedTwitchMessage = true;
+            auxRange.popFront();
         }
     }
 
@@ -407,33 +409,31 @@ if (isOutputRange!(Sink, char[]))
     {
         if (event.target.nickname.length) putTarget();
         if (content.length) putContent();
+    }
 
-        auto aux = event.aux[].filter!(s => s.length);
+    if (!auxRange.empty)
+    {
+        enum pattern = " (%-(%s%|) (%))";
 
-        if (!aux.empty)
+        static if ((__VERSION__ >= 2101L) && (__VERSION__ <= 2102L))
         {
-            enum pattern = " (%-(%s%|) (%))";
-
-            static if ((__VERSION__ >= 2101L) && (__VERSION__ <= 2102L))
-            {
-                import std.array : array;
-                // "Deprecation: scope variable `aux` assigned to non-scope parameter `_param_2` calling `formattedWrite"
-                // Seemingly only on 2.101 and 2.102
-                sink.formattedWrite(pattern, aux.array.dup);
-            }
-            else
-            {
-                sink.formattedWrite(pattern, aux);
-            }
+            import std.array : array;
+            // "Deprecation: scope variable `aux` assigned to non-scope parameter `_param_2` calling `formattedWrite"
+            // Seemingly only on 2.101 and 2.102
+            sink.formattedWrite(pattern, auxRange.array.dup);
+        }
+        else
+        {
+            sink.formattedWrite(pattern, auxRange);
         }
     }
 
-    auto count = event.count[].filter!(n => !n.isNull);
+    auto countRange = event.count[].filter!(n => !n.isNull);
 
-    if (!count.empty)
+    if (!countRange.empty)
     {
         enum pattern = " {%-(%s%|} {%)}";
-        sink.formattedWrite(pattern, count);
+        sink.formattedWrite(pattern, countRange);
     }
 
     if (event.num > 0)
@@ -1001,6 +1001,7 @@ if (isOutputRange!(Sink, char[]))
     putSender();
 
     bool putQuotedTwitchMessage;
+    auto auxRange = event.aux[].filter!(s => s.length);
 
     version(TwitchSupport)
     {
@@ -1017,6 +1018,7 @@ if (isOutputRange!(Sink, char[]))
             .put(sink, `: "`, event.aux[0], '"');
 
             putQuotedTwitchMessage = true;
+            auxRange.popFront();
         }
     }
 
@@ -1024,35 +1026,33 @@ if (isOutputRange!(Sink, char[]))
     {
         if (event.target.nickname.length) putTarget();
         if (content.length) putContent();
+    }
 
-        auto aux = event.aux[].filter!(s => s.length);
+    if (!auxRange.empty)
+    {
+        enum pattern = " (%-(%s%|) (%))";
+        sink.applyANSI(bright ? Bright.aux : Dark.aux);
 
-        if (!aux.empty)
+        static if ((__VERSION__ >= 2101L) && (__VERSION__ <= 2102L))
         {
-            enum pattern = " (%-(%s%|) (%))";
-            sink.applyANSI(bright ? Bright.aux : Dark.aux);
-
-            static if ((__VERSION__ >= 2101L) && (__VERSION__ <= 2102L))
-            {
-                import std.array : array;
-                // "Deprecation: scope variable `aux` assigned to non-scope parameter `_param_2` calling `formattedWrite"
-                // Seemingly only on 2.101 and 2.102
-                sink.formattedWrite(pattern, aux.array.dup);
-            }
-            else
-            {
-                sink.formattedWrite(pattern, aux);
-            }
+            import std.array : array;
+            // "Deprecation: scope variable `aux` assigned to non-scope parameter `_param_2` calling `formattedWrite"
+            // Seemingly only on 2.101 and 2.102
+            sink.formattedWrite(pattern, auxRange.array.dup);
+        }
+        else
+        {
+            sink.formattedWrite(pattern, auxRange);
         }
     }
 
-    auto count = event.count[].filter!(n => !n.isNull);
+    auto countRange = event.count[].filter!(n => !n.isNull);
 
-    if (!count.empty)
+    if (!countRange.empty)
     {
         enum pattern = " {%-(%s%|} {%)}";
         sink.applyANSI(bright ? Bright.count : Dark.count);
-        sink.formattedWrite(pattern, count);
+        sink.formattedWrite(pattern, countRange);
     }
 
     if (event.num > 0)
