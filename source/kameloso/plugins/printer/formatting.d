@@ -444,7 +444,8 @@ if (isOutputRange!(Sink, char[]))
         .put(sink, " ! ", event.errors, " !");
     }
 
-    shouldBell = shouldBell || ((event.type == IRCEvent.Type.QUERY) && bellOnMention) ||
+    shouldBell = shouldBell ||
+        ((event.type == IRCEvent.Type.QUERY) && bellOnMention) ||
         (event.errors.length && bellOnError);
 
     if (shouldBell) sink.put(plugin.bell);
@@ -520,15 +521,25 @@ if (isOutputRange!(Sink, char[]))
     event.content = "Blah balah";
     event.num = 666;
     event.count[0] = -42;
+    event.count[1] = 123;
+    event.count[5] = 420;
     event.aux[0] = string.init;
+    event.aux[1] = "aux1";
+    event.aux[4] = "aux5";
     event.type = IRCEvent.Type.ERROR;
 
     plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError);
     immutable errorLine = sink.data[11..$].idup;
-    version(TwitchSupport) assert((errorLine == `[error] Nickname: "Blah balah" {-42} [#666] ` ~
-        "! DANGER WILL ROBINSON !"), errorLine);
-    else assert((errorLine == `[error] nickname: "Blah balah" {-42} [#666] ` ~
-        "! DANGER WILL ROBINSON !"), errorLine);
+    version(TwitchSupport)
+    {
+        enum expected = `[error] Nickname: "Blah balah" {-42} [#666] ! DANGER WILL ROBINSON !`;
+        assert((errorLine == expected), errorLine);
+    }
+    else
+    {
+        enum expected = `[error] nickname: "Blah balah" {-42} [#666] ! DANGER WILL ROBINSON !`;
+        assert((errorLine == expected), errorLine);
+    }
     //sink.clear();
 }
 
@@ -559,13 +570,14 @@ void formatMessageColoured(Sink)
 if (isOutputRange!(Sink, char[]))
 {
     import kameloso.constants : DefaultColours;
-    import kameloso.terminal.colours.defs : FG = TerminalForeground, TR = TerminalReset, ANSICodeType;
+    import kameloso.terminal.colours.defs : ANSICodeType, TerminalReset;
     import kameloso.terminal.colours : applyANSI;
     import lu.conv : Enum;
     import std.algorithm.iteration : filter;
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
     import std.format : formattedWrite;
+    import std.uni : asLowerCase;
 
     alias Bright = EventPrintingBright;
     alias Dark = EventPrintingDark;
@@ -616,7 +628,8 @@ if (isOutputRange!(Sink, char[]))
 
         version(TwitchSupport)
         {
-            if (!user.isServer && user.colour.length &&
+            if (!user.isServer &&
+                user.colour.length &&
                 plugin.printerSettings.truecolour &&
                 plugin.state.settings.extendedColours)
             {
@@ -651,7 +664,7 @@ if (isOutputRange!(Sink, char[]))
 
     void putSender()
     {
-        scope(exit) sink.applyANSI(TR.all);
+        scope(exit) sink.applyANSI(TerminalReset.all);
 
         colourUserTruecolour(event.sender);
 
@@ -676,11 +689,11 @@ if (isOutputRange!(Sink, char[]))
                 if ((event.sender.displayName != event.sender.nickname) &&
                     !event.sender.displayName.asLowerCase.equal(event.sender.nickname))
                 {
-                    sink.applyANSI(TR.all);
+                    sink.applyANSI(TerminalReset.all);
                     sink.put(" (");
                     colourUserTruecolour(event.sender);
                     sink.put(event.sender.nickname);
-                    sink.applyANSI(TR.all);
+                    sink.applyANSI(TerminalReset.all);
                     sink.put(')');
                 }
             }
@@ -694,7 +707,7 @@ if (isOutputRange!(Sink, char[]))
 
         version(PrintClassNamesToo)
         {
-            sink.applyANSI(TR.all);
+            sink.applyANSI(TerminalReset.all);
             .put(sink, ':', event.sender.class_);
         }
 
@@ -704,7 +717,7 @@ if (isOutputRange!(Sink, char[]))
             if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
                 event.sender.account.length)
             {
-                sink.applyANSI(TR.all);
+                sink.applyANSI(TerminalReset.all);
                 .put(sink, '(', event.sender.account, ')');
             }
         }
@@ -712,7 +725,8 @@ if (isOutputRange!(Sink, char[]))
         version(TwitchSupport)
         {
             if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-                plugin.printerSettings.twitchBadges && event.sender.badges.length)
+                plugin.printerSettings.twitchBadges &&
+                event.sender.badges.length)
             {
                 with (IRCEvent.Type)
                 switch (event.type)
@@ -725,7 +739,7 @@ if (isOutputRange!(Sink, char[]))
 
                 default:
                     immutable code = bright ? Bright.badge : Dark.badge;
-                    sink.applyANSI(TR.all);
+                    sink.applyANSI(TerminalReset.all);
                     sink.applyANSI(code, ANSICodeType.foreground);
                     .put(sink, " [", event.sender.badges, ']');
                     break;
@@ -736,7 +750,7 @@ if (isOutputRange!(Sink, char[]))
 
     void putTarget()
     {
-        scope(exit) sink.applyANSI(TR.all, ANSICodeType.reset);
+        scope(exit) sink.applyANSI(TerminalReset.all, ANSICodeType.reset);
 
         bool putArrow;
         bool putDisplayName;
@@ -748,12 +762,12 @@ if (isOutputRange!(Sink, char[]))
             {
             case TWITCH_GIFTCHAIN:
                 // Add more as they become apparent
-                sink.applyANSI(TR.all);
+                sink.applyANSI(TerminalReset.all);
                 sink.put(" <- ");
                 break;
 
             default:
-                sink.applyANSI(TR.all);
+                sink.applyANSI(TerminalReset.all);
                 sink.put(" -> ");
                 break;
             }
@@ -775,7 +789,7 @@ if (isOutputRange!(Sink, char[]))
                     sink.put(" (");
                     colourUserTruecolour(event.target);
                     sink.put(event.target.nickname);
-                    sink.applyANSI(TR.all);
+                    sink.applyANSI(TerminalReset.all);
                     sink.put(')');
                 }
             }
@@ -784,7 +798,7 @@ if (isOutputRange!(Sink, char[]))
         if (!putArrow)
         {
             // No need to check isServer; target is never server
-            sink.applyANSI(TR.all);
+            sink.applyANSI(TerminalReset.all);
             sink.put(" -> ");
             colourUserTruecolour(event.target);
         }
@@ -796,7 +810,7 @@ if (isOutputRange!(Sink, char[]))
 
         version(PrintClassNamesToo)
         {
-            sink.applyANSI(TR.all);
+            sink.applyANSI(TerminalReset.all);
             .put(sink, ':', event.target.class_);
         }
 
@@ -806,7 +820,7 @@ if (isOutputRange!(Sink, char[]))
             if ((plugin.state.server.daemon != IRCServer.Daemon.twitch) &&
                 event.target.account.length)
             {
-                sink.applyANSI(TR.all);
+                sink.applyANSI(TerminalReset.all);
                 sink.put('(', event.target.account, ')');
             }
         }
@@ -814,10 +828,11 @@ if (isOutputRange!(Sink, char[]))
         version(TwitchSupport)
         {
             if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-                plugin.printerSettings.twitchBadges && event.target.badges.length)
+                plugin.printerSettings.twitchBadges &&
+                event.target.badges.length)
             {
                 immutable code = bright ? Bright.badge : Dark.badge;
-                sink.applyANSI(TR.all);
+                sink.applyANSI(TerminalReset.all);
                 sink.applyANSI(code, ANSICodeType.foreground);
                 .put(sink, " [", event.target.badges, ']');
             }
@@ -826,14 +841,15 @@ if (isOutputRange!(Sink, char[]))
 
     void putContent()
     {
-        import kameloso.terminal.colours.defs : TerminalBackground, ANSICodeType;
+        import kameloso.terminal.colours.defs : ANSICodeType, TerminalBackground, TerminalForeground;
         import kameloso.terminal.colours : applyANSI;
 
-        scope(exit) sink.applyANSI(TR.all);
+        scope(exit) sink.applyANSI(TerminalReset.all);
 
-        immutable FG contentFgBase = bright ? Bright.content : Dark.content;
-        immutable FG emoteFgBase = bright ? Bright.emote : Dark.emote;
-        immutable isEmote = (event.type == IRCEvent.Type.EMOTE) ||
+        immutable TerminalForeground contentFgBase = bright ? Bright.content : Dark.content;
+        immutable TerminalForeground emoteFgBase = bright ? Bright.emote : Dark.emote;
+        immutable isEmote =
+            (event.type == IRCEvent.Type.EMOTE) ||
             (event.type == IRCEvent.Type.SELFEMOTE);
         immutable fgBase = isEmote ? emoteFgBase : contentFgBase;
 
@@ -865,7 +881,8 @@ if (isOutputRange!(Sink, char[]))
         {
             version(TwitchSupport)
             {
-                content = highlightEmotes(event,
+                content = highlightEmotes(
+                    event,
                     cast(Flag!"colourful")plugin.printerSettings.colourfulEmotes,
                     plugin.state.settings);
             }
@@ -943,15 +960,15 @@ if (isOutputRange!(Sink, char[]))
     {
         if (bright)
         {
-            sink.applyANSI((event.type == IRCEvent.Type.QUERY) ? Bright.query : Bright.type);
+            immutable code = (event.type == IRCEvent.Type.QUERY) ? Bright.query : Bright.type;
+            sink.applyANSI(code, ANSICodeType.foreground);
         }
         else
         {
-            sink.applyANSI((event.type == IRCEvent.Type.QUERY) ? Dark.query : Dark.type);
+            immutable code = (event.type == IRCEvent.Type.QUERY) ? Dark.query : Dark.type;
+            sink.applyANSI(code, ANSICodeType.foreground);
         }
     }
-
-    import std.uni : asLowerCase;
 
     sink.put(" [");
 
@@ -1041,9 +1058,10 @@ if (isOutputRange!(Sink, char[]))
         .put(sink, " ! ", event.errors, " !");
     }
 
-    sink.applyANSI(TR.all);
+    sink.applyANSI(TerminalReset.all);
 
-    shouldBell = shouldBell || ((event.type == IRCEvent.Type.QUERY) && bellOnMention) ||
+    shouldBell = shouldBell ||
+        ((event.type == IRCEvent.Type.QUERY) && bellOnMention) ||
         (event.errors.length && bellOnError);
 
     if (shouldBell) sink.put(plugin.bell);
@@ -1163,7 +1181,8 @@ auto highlightEmotes(
     sink.reserve(event.content.length + 60);  // mostly +10
 
     immutable TerminalForeground highlight = settings.brightTerminal ?
-        Bright.highlight : Dark.highlight;
+        Bright.highlight :
+        Dark.highlight;
     immutable isEmoteOnly = !colourful && event.tags.contains("emote-only=1");
 
     with (IRCEvent.Type)
@@ -1181,9 +1200,16 @@ auto highlightEmotes(
 
         // Emote but mixed text and emotes OR we're doing colourful emotes
         immutable TerminalForeground emoteFgBase = settings.brightTerminal ?
-            Bright.emote : Dark.emote;
-        sink.highlightEmotesImpl(event.content, event.emotes, highlight,
-            emoteFgBase, colourful, settings);
+            Bright.emote :
+            Dark.emote;
+
+        sink.highlightEmotesImpl(
+            event.content,
+            event.emotes,
+            highlight,
+            emoteFgBase,
+            colourful,
+            settings);
         break;
 
     default:
@@ -1195,9 +1221,16 @@ auto highlightEmotes(
 
         // Normal content, normal text, normal emotes
         immutable TerminalForeground contentFgBase = settings.brightTerminal ?
-            Bright.content : Dark.content;
-        sink.highlightEmotesImpl(event.content, event.emotes, highlight,
-            contentFgBase, colourful, settings);
+            Bright.content :
+            Dark.content;
+
+        sink.highlightEmotesImpl(
+            event.content,
+            event.emotes,
+            highlight,
+            contentFgBase,
+            colourful,
+            settings);
         break;
     }
 
@@ -1267,7 +1300,7 @@ if (isOutputRange!(Sink, char[]))
 
     size_t pos;
 
-    foreach (emote; emotes.splitter('/'))
+    foreach (/*const*/ emote; emotes.splitter('/'))
     {
         import lu.string : nom;
 

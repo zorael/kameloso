@@ -109,7 +109,8 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
     if (!plugin.printerSettings.logs) return;
 
     /// Write buffered lines.
-    static void writeEventToFile(PrinterPlugin plugin,
+    static void writeEventToFile(
+        PrinterPlugin plugin,
         const ref IRCEvent event,
         const string key,
         const string givenPath = string.init,
@@ -183,8 +184,11 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                     if (plugin.printerSettings.bufferedWrites)
                     {
                         // Normal log
-                        plugin.formatMessageMonochrome(plugin.linebuffer, event,
-                            No.bellOnMention, No.bellOnError);
+                        plugin.formatMessageMonochrome(
+                            plugin.linebuffer,
+                            event,
+                            No.bellOnMention,
+                            No.bellOnError);
                         buffer.lines ~= plugin.linebuffer.data.idup;
                         plugin.linebuffer.clear();
                     }
@@ -203,8 +207,11 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                             return;
                         }
 
-                        plugin.formatMessageMonochrome(plugin.linebuffer, event,
-                            No.bellOnMention, No.bellOnError);
+                        plugin.formatMessageMonochrome(
+                            plugin.linebuffer,
+                            event,
+                            No.bellOnMention,
+                            No.bellOnError);
                         scope(exit) plugin.linebuffer.clear();
 
                         auto file = File(buffer.file, "a");
@@ -311,16 +318,20 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 
                         if (event.sender.nickname.length || event.sender.address.length)
                         {
-                            formatObjects!(Yes.all, No.coloured)(plugin.linebuffer,
-                                No.brightTerminal, event.sender);
+                            formatObjects!(Yes.all, No.coloured)(
+                                plugin.linebuffer,
+                                No.brightTerminal,
+                                event.sender);
                             errFile.writeln(plugin.linebuffer.data);
                             plugin.linebuffer.clear();
                         }
 
                         if (event.target.nickname.length || event.target.address.length)
                         {
-                            formatObjects!(Yes.all, No.coloured)(plugin.linebuffer,
-                                No.brightTerminal, event.target);
+                            formatObjects!(Yes.all, No.coloured)(
+                                plugin.linebuffer,
+                                No.brightTerminal,
+                                event.target);
                             errFile.writeln(plugin.linebuffer.data);
                             plugin.linebuffer.clear();
                         }
@@ -361,7 +372,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
         }
         catch (FileException e)
         {
-            enum pattern = "File exception caught when writing to log: <l>%s";
+            enum pattern = "File exception caught when writing to log: <t>%s";
             logger.warningf(pattern, e.msg);
             version(PrintStacktraces) logger.trace(e.info);
         }
@@ -372,14 +383,14 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                 import kameloso.common : errnoStrings;
                 import core.stdc.errno : errno;
 
-                enum pattern = "ErrnoException (<l>%s</>) caught when writing to log: <l>%s";
+                enum pattern = "ErrnoException (<l>%s</>) caught when writing to log: <t>%s";
                 logger.warningf(pattern, errnoStrings[errno], e.msg);
             }
             else version(Windows)
             {
                 import core.stdc.errno : errno;
 
-                enum pattern = "ErrnoException (<l>%d</>) caught when writing to log: <l>%s";
+                enum pattern = "ErrnoException (<l>%d</>) caught when writing to log: <t>%s";
                 logger.warningf(pattern, errno, e.msg);
             }
             else
@@ -391,7 +402,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
         }
         catch (Exception e)
         {
-            enum pattern = "Unhandles exception caught when writing to log: <l>%s";
+            enum pattern = "Unhandles exception caught when writing to log: <t>%s";
             logger.warningf(pattern, e.msg);
             version(PrintStacktraces) logger.trace(e);
         }
@@ -400,19 +411,33 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
     // Write raw (if we should) before exiting early due to not a home (if we should)
     if (plugin.printerSettings.logRaw)
     {
-        writeEventToFile(plugin, event, "<raw>", "raw.log", No.extendPath, Yes.raw);
+        writeEventToFile(
+            plugin,
+            event,
+            "<raw>",
+            "raw.log",
+            No.extendPath,
+            Yes.raw);
     }
 
     if (event.errors.length && plugin.printerSettings.logErrors)
     {
         // This logs errors in guest channels. Consider making configurable.
-        writeEventToFile(plugin, event, "<error>", "error.log", No.extendPath, No.raw, Yes.errors);
+        writeEventToFile(
+            plugin,
+            event,
+            "<error>",
+            "error.log",
+            No.extendPath,
+            No.raw,
+            Yes.errors);
     }
 
     import std.algorithm.searching : canFind;
 
     if (!plugin.printerSettings.logGuestChannels &&
-        event.channel.length && !plugin.state.bot.homeChannels.canFind(event.channel))
+        event.channel.length &&
+        !plugin.state.bot.homeChannels.canFind(event.channel))
     {
         // Not logging all channels and this is not a home.
         return;
@@ -491,11 +516,17 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                 writeEventToFile(plugin, event, event.sender.nickname);
             }
         }
-        else if (plugin.printerSettings.logServer && !event.sender.nickname.length &&
+        else if (plugin.printerSettings.logServer &&
+            !event.sender.nickname.length &&
             event.sender.address.length)
         {
             // Server
-            writeEventToFile(plugin, event, plugin.state.server.address, "server.log", No.extendPath);
+            writeEventToFile(
+                plugin,
+                event,
+                plugin.state.server.address,
+                "server.log",
+                No.extendPath);
         }
         else
         {
@@ -644,7 +675,7 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
     }
     catch (FileException e)
     {
-        enum pattern = "File exception caught when committing log <l>%s</>: <l>%s%s";
+        enum pattern = "File exception caught when committing log <l>%s</>: <t>%s%s";
         logger.warningf(pattern, buffer.file, e.msg, plugin.bell);
         version(PrintStacktraces) logger.trace(e.info);
     }
@@ -653,12 +684,12 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
         version(Posix)
         {
             import kameloso.common : errnoStrings;
-            enum pattern = "ErrnoException <l>%s</> caught when committing log to <l>%s</>: <l>%s%s";
+            enum pattern = "ErrnoException <l>%s</> caught when committing log to <l>%s</>: <t>%s%s";
             logger.warningf(pattern, errnoStrings[e.errno], buffer.file, e.msg, plugin.bell);
         }
         else version(Windows)
         {
-            enum pattern = "ErrnoException <l>%d</> caught when committing log to <l>%s</>: <l>%s%s";
+            enum pattern = "ErrnoException <l>%d</> caught when committing log to <l>%s</>: <t>%s%s";
             logger.warningf(pattern, e.errno, buffer.file, e.msg, plugin.bell);
         }
         else
@@ -670,7 +701,7 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
     }
     catch (Exception e)
     {
-        enum pattern = "Unexpected exception caught when committing log <l>%s</>: <l>%s%s";
+        enum pattern = "Unexpected exception caught when committing log <l>%s</>: <t>%s%s";
         logger.warningf(pattern, buffer.file, e.msg, plugin.bell);
         version(PrintStacktraces) logger.trace(e);
     }
