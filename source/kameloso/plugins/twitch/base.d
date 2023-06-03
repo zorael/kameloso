@@ -941,6 +941,121 @@ void onGuestRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 }
 
 
+// onCommandShoutout
+/++
+    Emits a shoutout to another streamer.
+
+    Merely gives a link to their channel and echoes what game they last streamed.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .fiber(true)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("shoutout")
+            .policy(PrefixPolicy.prefixed)
+            .description("Emits a shoutout to another streamer.")
+            .addSyntax("$command [name of streamer] [optional number of times to spam]")
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("so")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
+)
+void onCommandShoutout(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+{
+    import kameloso.plugins.common.misc : idOf;
+    import dialect.common : isValidNickname;
+    import lu.string : SplitResults, beginsWith, splitInto, stripped;
+    import std.format : format;
+    import std.json : JSONType, parseJSON;
+
+    if (!plugin.useAPIFeatures) return;
+
+    void sendUsage()
+    {
+        enum pattern = "Usage: %s%s [name of streamer] [optional number of times to spam]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux);
+        chan(plugin.state, event.channel, message);
+    }
+
+    string slice = event.content.stripped;  // mutable
+    string target;
+    string numTimesString;
+
+    immutable results = slice.splitInto(target, numTimesString);
+    if (target.beginsWith('@')) target = target[1..$];
+
+    if (!target.length || (results == SplitResults.overrun))
+    {
+        return sendUsage();
+    }
+
+    // Limit number of times to spam to an outrageous 10
+    enum numTimesCap = 10;
+    uint numTimes = 1;
+
+    if (numTimesString.length)
+    {
+        import std.conv : ConvException, to;
+
+        try
+        {
+            import std.algorithm.comparison : min;
+            numTimes = min(numTimesString.to!uint, numTimesCap);
+        }
+        catch (ConvException e)
+        {
+            return sendUsage();
+        }
+    }
+
+    immutable nickname = idOf(plugin, target);
+
+    if (!nickname.isValidNickname(plugin.state.server))
+    {
+        chan(plugin.state, event.channel, "Invalid streamer name.");
+        return;
+    }
+
+    immutable userURL = "https://api.twitch.tv/helix/users?login=" ~ nickname;
+    immutable userJSON = getTwitchEntity(plugin, userURL);
+
+    if ((userJSON.type != JSONType.object) || ("id" !in userJSON))
+    {
+        chan(plugin.state, event.channel, "No such user: " ~ target);
+        return;
+    }
+
+    immutable id = userJSON["id"].str;
+    immutable login = userJSON["login"].str;
+    immutable channelURL = "https://api.twitch.tv/helix/channels?broadcaster_id=" ~ id;
+    immutable channelJSON = getTwitchEntity(plugin, channelURL);
+
+    if ((channelJSON.type != JSONType.object) || ("broadcaster_name" !in channelJSON))
+    {
+        chan(plugin.state, event.channel, "Impossible error; user has no channel?");
+        return;
+    }
+
+    immutable broadcasterDisplayName = channelJSON["broadcaster_name"].str;
+    immutable gameName = channelJSON["game_name"].str;
+    immutable lastSeenPlayingPattern = gameName.length ?
+        " (last seen playing %s)" : "%s";
+    immutable pattern = "Shoutout to %s! Visit them at https://twitch.tv/%s!" ~ lastSeenPlayingPattern;
+    immutable message = pattern.format(broadcasterDisplayName, login, gameName);
+
+    foreach (immutable i; 0..numTimes)
+    {
+        chan(plugin.state, event.channel, message);
+    }
+}
+
+
 // onCommandVanish
 /++
     Hides a user's messages (making them "disappear") by briefly timing them out.
