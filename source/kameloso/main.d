@@ -1299,6 +1299,29 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
 
         version(TwitchSupport)
         {
+            if (instance.parser.server.daemon == IRCServer.Daemon.twitch && event.content.length)
+            {
+                import std.algorithm.searching : endsWith;
+
+                /+
+                    On Twitch, sometimes the content string ends with an invisible
+                    [ 243, 160, 128, 128 ], possibly because of a browser extension
+                    circumventing the duplicate message block.
+
+                    It wrecks things. So slice it away if detected.
+                 +/
+
+                static immutable ubyte[] badTail = [ 243, 160, 128, 128 ];
+
+                if ((cast(ubyte[])event.content).endsWith(badTail))
+                {
+                    event.content = cast(string)(cast(ubyte[])event.content[0..$-badTail.length]);
+                }
+            }
+        }
+
+        version(TwitchSupport)
+        {
             // If it's an RPL_WELCOME event, record it as having been seen so we
             // know we can't reconnect without waiting a bit.
             if (event.type == IRCEvent.Type.RPL_WELCOME)
