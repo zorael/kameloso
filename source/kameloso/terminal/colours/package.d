@@ -1,8 +1,8 @@
 /++
-    A collection of enums and functions that relate to a terminal shell.
+    A collection of functions that relate to applying ANSI effects to text.
 
-    This submodule has to do with terminal text colouring and its contents are
-    therefore version `Colours`.
+    This submodule has to do with terminal text colouring and is therefore
+    gated behind version `Colours`.
 
     Example:
     ---
@@ -10,33 +10,34 @@
 
     // Output range version
     sink.put("Hello ");
-    sink.colourWith(TerminalForeground.red);
+    sink.applyANSI(TerminalForeground.red, ANSICodeType.foreground);
     sink.put("world!");
-    sink.colourWith(TerminalForeground.default_);
+    sink.applyANSI(TerminalForeground.default_, ANSICodeType.foreground);
 
     with (TerminalForeground)
     {
-        // Normal string-returning version
-        writeln("Hello ", red.colour, "world!", default_.colour);
+        // Normal string-returning versions
+        writeln("Hello ", red.asANSI, "world!", default_.asANSI);
+        writeln("H3LL0".withANSI(red), ' ', "W0RLD!".withANSI(default_));
     }
 
     // Also accepts RGB form
     sink.put(" Also");
-    sink.truecolour(128, 128, 255);
+    sink.applyTruecolour(128, 128, 255);
     sink.put("magic");
-    sink.colourWith(TerminalForeground.default_);
+    sink.applyANSI(TerminalForeground.default_);
 
     with (TerminalForeground)
     {
-        writeln("Also ", truecolour(128, 128, 255), "magic", default_.colour);
+        writeln("Also ", asTruecolour(128, 128, 255), "magic", default_.asANSI);
     }
 
     immutable line = "Surrounding text kameloso surrounding text";
     immutable kamelosoInverted = line.invert("kameloso");
     assert(line != kamelosoInverted);
 
-    immutable nicknameTint = "nickname".getColourByHash(Yes.brightTerminal);
-    immutable substringTint = "substring".getColourByHash(No.brightTerminal);
+    immutable nicknameTint = "nickname".getColourByHash(*kameloso.common.settings);
+    immutable substringTint = "substring".getColourByHash(*kameloso.common.settings);
     ---
 
     It is used heavily in the Printer plugin, to format sections of its output
@@ -46,215 +47,216 @@
     of strings generated.
 
     See_Also:
+        [kameloso.terminal.colours.defs]
+
+        [kameloso.terminal.colours.tags]
+
         [kameloso.terminal]
  +/
-
 module kameloso.terminal.colours;
+
+version(Colours):
 
 private:
 
 import kameloso.terminal : TerminalToken;
-import std.meta : allSatisfy;
-import std.range.primitives : isOutputRange;
+import kameloso.terminal.colours.defs : ANSICodeType;
+import kameloso.pods : CoreSettings;
+import std.range : isOutputRange;
 import std.typecons : Flag, No, Yes;
 
 public:
 
-@safe:
 
+// applyANSI
 /++
-    Format codes that work like terminal colouring does, except here for formats
-    like bold, dim, italics, etc.
- +/
-enum TerminalFormat
-{
-    unset       = 0,  /// Seemingly resets to nothing.
-    bold        = 1,  /// Bold.
-    dim         = 2,  /// Dim, darkens it a bit.
-    italics     = 3,  /// Italics; usually has some other effect.
-    underlined  = 4,  /// Underlined.
-    blink       = 5,  /// Blinking text.
-    reverse     = 7,  /// Inverts text foreground and background.
-    hidden      = 8,  /// "Hidden" text.
-}
-
-/// Foreground colour codes for terminal colouring.
-enum TerminalForeground
-{
-    default_     = 39,  /// Default grey.
-    black        = 30,  /// Black.
-    red          = 31,  /// Red.
-    green        = 32,  /// Green.
-    yellow       = 33,  /// Yellow.
-    blue         = 34,  /// Blue.
-    magenta      = 35,  /// Magenta.
-    cyan         = 36,  /// Cyan.
-    lightgrey    = 37,  /// Light grey.
-    darkgrey     = 90,  /// Dark grey.
-    lightred     = 91,  /// Light red.
-    lightgreen   = 92,  /// Light green.
-    lightyellow  = 93,  /// Light yellow.
-    lightblue    = 94,  /// Light blue.
-    lightmagenta = 95,  /// Light magenta.
-    lightcyan    = 96,  /// Light cyan.
-    white        = 97,  /// White.
-}
-
-/// Background colour codes for terminal colouring.
-enum TerminalBackground
-{
-    default_     = 49,  /// Default background colour.
-    black        = 40,  /// Black.
-    red          = 41,  /// Red.
-    green        = 42,  /// Green.
-    yellow       = 43,  /// Yellow.
-    blue         = 44,  /// Blue.
-    magenta      = 45,  /// Magenta.
-    cyan         = 46,  /// Cyan.
-    lightgrey    = 47,  /// Light grey.
-    darkgrey     = 100, /// Dark grey.
-    lightred     = 101, /// Light red.
-    lightgreen   = 102, /// Light green.
-    lightyellow  = 103, /// Light yellow.
-    lightblue    = 104, /// Light blue.
-    lightmagenta = 105, /// Light magenta.
-    lightcyan    = 106, /// Light cyan.
-    white        = 107, /// White.
-}
-
-/// Terminal colour/format reset codes.
-enum TerminalReset
-{
-    all         = 0,    /// Resets everything.
-    bright      = 21,   /// Resets "brighter" colours.
-    dim         = 22,   /// Resets "dim" colours.
-    underlined  = 24,   /// Resets underlined text.
-    blink       = 25,   /// Resets blinking text.
-    invert      = 27,   /// Resets inverted text.
-    hidden      = 28,   /// Resets hidden text.
-}
-
-
-version(Colours):
-
-// isAColourCode
-/++
-    Bool of whether or not a type is a colour code enum.
- +/
-enum isAColourCode(T) =
-    is(T : TerminalForeground) ||
-    is(T : TerminalBackground) ||
-    is(T : TerminalFormat) ||
-    is(T : TerminalReset);/* ||
-    is(T == int);*/
-
-
-// colour
-/++
-    Takes a mix of a [TerminalForeground], a [TerminalBackground], a
-    [TerminalFormat] and/or a [TerminalReset] and composes them into a single
-    terminal format code token. Overload that creates an [std.array.Appender|Appender]
-    and fills it with the return value of the output range version of `colour`.
+    Applies an ANSI code to a passed output range.
 
     Example:
     ---
-    string blinkOn = colour(TerminalForeground.white, TerminalBackground.yellow, TerminalFormat.blink);
-    string blinkOff = colour(TerminalForeground.default_, TerminalBackground.default_, TerminalReset.blink);
-    string blinkyName = blinkOn ~ "Foo" ~ blinkOff;
+    Appender!(char[]) sink;
+
+    sink.put("Hello ");
+    sink.applyANSI(TerminalForeground.red, ANSICodeType.foreground);
+    sink.put("world!");
+    sink.applyANSI(TerminalForeground.default_, ANSICodeType.foreground);
     ---
 
     Params:
-        codes = Variadic list of terminal format codes.
+        sink = Output range sink to write to.
+        code = ANSI code to apply.
+        overrideType = Force a specific [kameloso.terminal.colour.defs.ANSICodeType|ANSICodeType]
+            in cases where there is ambiguity.
+ +/
+void applyANSI(Sink)
+    (auto ref Sink sink,
+    const uint code,
+    const ANSICodeType overrideType = ANSICodeType.unset)
+if (isOutputRange!(Sink, char[]))
+{
+    import lu.conv : toAlphaInto;
+
+    void putBasic()
+    {
+        code.toAlphaInto(sink);
+    }
+
+    void putExtendedForegroundColour()
+    {
+        enum foregroundPrelude = "38;5;";
+        sink.put(foregroundPrelude);
+        code.toAlphaInto(sink);
+    }
+
+    void putExtendedBackgroundColour()
+    {
+        enum backgroundPrelude = "48;5;";
+        sink.put(backgroundPrelude);
+        code.toAlphaInto(sink);
+    }
+
+    sink.put(cast(char)TerminalToken.format);
+    sink.put('[');
+    scope(exit) sink.put('m');
+
+    with (ANSICodeType)
+    final switch (overrideType)
+    {
+    case foreground:
+        if (((code >= 30) && (code <= 39)) ||
+            ((code >= 90) && (code <= 97)))
+        {
+            // Basic foreground colour
+            return putBasic();
+        }
+        else
+        {
+            // Extended foreground colour
+            return putExtendedForegroundColour();
+        }
+
+    case background:
+        if (((code >= 40) && (code <= 49)) ||
+            ((code >= 100) && (code <= 107)))
+        {
+            // Basic background colour
+            return putBasic();
+        }
+        else
+        {
+            // Extended background colour
+            return putExtendedBackgroundColour();
+        }
+
+    case format:
+    case reset:
+        return putBasic();
+
+    case unset:
+        // Infer as best as possible
+        switch (code)
+        {
+        case 1:
+        ..
+        case 8:
+            // Format
+            goto case;
+
+        case 0:
+        case 21:
+        ..
+        case 28:
+            // Reset token
+            goto case;
+
+        case 40:
+        ..
+        case 49:
+        case 100:
+        ..
+        case 107:
+            // Background colour
+            //enum backgroundPrelude = "48;5;";
+            //sink.put(backgroundPrelude);
+            goto case;
+
+        case 30:
+        ..
+        case 39:
+        case 90:
+        ..
+        case 97:
+            // Basic foreground colour
+            return putBasic();
+
+        default:
+            // Extended foreground colour
+            return putExtendedForegroundColour();
+        }
+    }
+}
+
+
+// withANSI
+/++
+    Applies an ANSI code to a passed string and returns it as a new one.
+    Convenience function to colour a piece of text without being passed an
+    output sink to fill into.
+
+    Example:
+    ---
+    with (TerminalForeground)
+    {
+        // Normal string-returning versions
+        writeln("Hello ", red.asANSI, "world!", default_.asANSI);
+        writeln("H3LL0".withANSI(red), ' ', "W0RLD!".withANSI(default_));
+    }
+    ---
+
+    Params:
+        text = Original string.
+        code = ANSI code.
+        overrideType = Force a specific [kameloso.terminal.colour.defs.ANSICodeType|ANSICodeType]
+            in cases where there is ambiguity.
 
     Returns:
-        A terminal code sequence of the passed codes.
+        A new string consisting of the passed `text` argument, but with the supplied
+        ANSI code applied.
  +/
-string colour(Codes...)(const Codes codes) pure nothrow
-if (Codes.length && allSatisfy!(isAColourCode, Codes))
+string withANSI(
+    const string text,
+    const uint code,
+    const ANSICodeType overrideType = ANSICodeType.unset) pure @safe nothrow
+{
+    import kameloso.terminal.colours.defs : TerminalReset;
+    import std.array : Appender;
+
+    Appender!(char[]) sink;
+    sink.reserve(text.length + 8);
+    sink.applyANSI(code, overrideType);
+    sink.put(text);
+    sink.applyANSI(TerminalReset.all);
+    return sink.data;
+}
+
+
+// asANSI
+/++
+    Returns an ANSI format sequence containing the passed code.
+
+    Params:
+        code = ANSI code.
+
+    Returns:
+        A string containing the passed ANSI `code` as an ANSI sequence.
+ +/
+string asANSI(const uint code) pure @safe nothrow
 {
     import std.array : Appender;
 
     Appender!(char[]) sink;
     sink.reserve(16);
-
-    sink.colourWith(codes);
-    return sink.data;
-}
-
-
-// colourWith
-/++
-    Takes a mix of a [TerminalForeground], a [TerminalBackground], a
-    [TerminalFormat] and/or a [TerminalReset] and composes them into a format code token.
-
-    This is the composing overload that fills its result into an output range.
-
-    Example:
-    ---
-    Appender!(char[]) sink;
-    sink.colourWith(TerminalForeground.red, TerminalFormat.bold);
-    sink.put("Foo");
-    sink.colourWith(TerminalForeground.default_, TerminalReset.bold);
-    ---
-
-    Params:
-        sink = Output range to write output to.
-        codes = Variadic list of terminal format codes.
- +/
-void colourWith(Sink, Codes...)(auto ref Sink sink, const Codes codes)
-if (isOutputRange!(Sink, char[]) && Codes.length && allSatisfy!(isAColourCode, Codes))
-{
-    /*sink.put(TerminalToken.format);
-    sink.put('[');*/
-
-    enum string prelude = TerminalToken.format ~ "[";
-    sink.put(prelude);
-
-    uint numCodes;
-
-    foreach (immutable code; codes)
-    {
-        import lu.conv : toAlphaInto;
-        import std.conv : to;
-
-        if (++numCodes > 1) sink.put(';');
-
-        //sink.put((cast(uint)code).to!string);
-        (cast(uint)code).toAlphaInto(sink);
-    }
-
-    sink.put('m');
-}
-
-
-// colour
-/++
-    Convenience function to colour or format a piece of text without an output
-    buffer to fill into.
-
-    Example:
-    ---
-    string foo = "Foo Bar".colour(TerminalForeground.bold, TerminalFormat.reverse);
-    ---
-
-    Params:
-        text = Text to format.
-        codes = Terminal formatting codes (colour, underscore, bold, ...) to apply.
-
-    Returns:
-        A terminal code sequence of the passed codes, encompassing the passed text.
- +/
-string colour(Codes...)(const string text, const Codes codes) pure nothrow
-if (Codes.length && allSatisfy!(isAColourCode, Codes))
-{
-    import std.array : Appender;
-
-    Appender!(char[]) sink;
-    sink.reserve(text.length + 15);
-
-    sink.colourWith(codes);
-    sink.put(text);
-    sink.colourWith(TerminalReset.all);
+    sink.applyANSI(code);
     return sink.data;
 }
 
@@ -280,7 +282,7 @@ if (Codes.length && allSatisfy!(isAColourCode, Codes))
         g = Reference to a green value.
         b = Reference to a blue value.
  +/
-private void normaliseColoursBright(ref uint r, ref uint g, ref uint b) pure nothrow @nogc
+private void normaliseColoursBright(ref uint r, ref uint g, ref uint b) pure @safe nothrow @nogc
 {
     enum pureWhiteReplacement = 120;
     enum pureWhiteRange = 200;
@@ -343,7 +345,7 @@ private void normaliseColoursBright(ref uint r, ref uint g, ref uint b) pure not
         g = Reference to a green value.
         b = Reference to a blue value.
  +/
-private void normaliseColours(ref uint r, ref uint g, ref uint b) pure nothrow @nogc
+private void normaliseColours(ref uint r, ref uint g, ref uint b) pure @safe nothrow @nogc
 {
     enum pureBlackReplacement = 120;
 
@@ -476,19 +478,19 @@ unittest
 }
 
 
-// truecolour
+// applyTruecolour
 /++
     Produces a terminal colour token for the colour passed, expressed in terms
-    of red, green and blue.
+    of red, green and blue, then writes it to the passed output range.
 
     Example:
     ---
     Appender!(char[]) sink;
     int r, g, b;
     numFromHex("3C507D", r, g, b);
-    sink.truecolour(r, g, b);
+    sink.applyTruecolour(r, g, b);
     sink.put("Foo");
-    sink.colourWith(TerminalReset.all);
+    sink.applyANSI(TerminalReset.all);
     writeln(sink);  // "Foo" in #3C507D
     ---
 
@@ -501,7 +503,7 @@ unittest
         normalise = Whether or not to normalise colours so that they aren't too
             dark or too bright.
  +/
-void truecolour(Sink)
+void applyTruecolour(Sink)
     (auto ref Sink sink,
     uint r,
     uint g,
@@ -540,18 +542,19 @@ if (isOutputRange!(Sink, char[]))
 }
 
 
-// truecolour
+// asTruecolour
 /++
-    Convenience function to colour a piece of text without being passed an
-    output sink to fill into.
+    Produces a terminal colour token for the colour passed, expressed in terms
+    of red, green and blue. Convenience function to colour a piece of text
+    without being passed an output sink to fill into.
 
     Example:
     ---
-    string foo = "Foo Bar".truecolour(172, 172, 255);
+    string foo = "Foo Bar".asTruecolour(172, 172, 255);
 
     int r, g, b;
     numFromHex("003388", r, g, b);
-    string bar = "Bar Foo".truecolour(r, g, b);
+    string bar = "Bar Foo".asTruecolour(r, g, b);
     ---
 
     Params:
@@ -566,14 +569,15 @@ if (isOutputRange!(Sink, char[]))
     Returns:
         The passed string word encompassed by terminal colour tags.
  +/
-string truecolour(
+string asTruecolour(
     const string word,
     const uint r,
     const uint g,
     const uint b,
     const Flag!"brightTerminal" bright = No.brightTerminal,
-    const Flag!"normalise" normalise = Yes.normalise) pure
+    const Flag!"normalise" normalise = Yes.normalise) pure @safe
 {
+    import kameloso.terminal.colours.defs : TerminalReset;
     import std.array : Appender;
 
     Appender!(char[]) sink;
@@ -581,9 +585,9 @@ string truecolour(
     // \033[48 for background
     sink.reserve(word.length + 23);
 
-    sink.truecolour(r, g, b, bright, normalise);
+    sink.applyTruecolour(r, g, b, bright, normalise);
     sink.put(word);
-    sink.colourWith(TerminalReset.all);
+    sink.applyANSI(TerminalReset.all);
     return sink.data;
 }
 
@@ -592,7 +596,7 @@ unittest
 {
     import std.format : format;
 
-    immutable name = "blarbhl".truecolour(255, 255, 255, No.brightTerminal, No.normalise);
+    immutable name = "blarbhl".asTruecolour(255, 255, 255, No.brightTerminal, No.normalise);
     immutable alsoName = "%c[38;2;%d;%d;%dm%s%c[0m"
         .format(cast(char)TerminalToken.format, 255, 255, 255,
            "blarbhl", cast(char)TerminalToken.format);
@@ -609,7 +613,7 @@ unittest
     ---
     immutable line = "This is an example!";
     writeln(line.invert("example"));  // "example" substring visually inverted
-    writeln(line.invert!(Yes.caseInsensitive)("EXAMPLE")); // "example" inverted as "EXAMPLE"
+    writeln(line.invert("EXAMPLE", Yes.caseInsensitive)); // "example" inverted as "EXAMPLE"
     ---
 
     Params:
@@ -625,8 +629,9 @@ unittest
 string invert(
     const string line,
     const string toInvert,
-    const Flag!"caseSensitive" caseSensitive = Yes.caseSensitive) pure
+    const Flag!"caseSensitive" caseSensitive = Yes.caseSensitive) pure @safe
 {
+    import kameloso.terminal.colours.defs : TerminalFormat, TerminalReset;
     import dialect.common : isValidNicknameCharacter;
     import std.array : Appender;
     import std.format : format;
@@ -649,8 +654,12 @@ string invert(
     if (startpos == -1) return line;
 
     enum pattern = "%c[%dm%s%c[%dm";
-    immutable inverted = format(pattern, TerminalToken.format, TerminalFormat.reverse,
-        toInvert, TerminalToken.format, TerminalReset.invert);
+    immutable inverted = pattern.format(
+        TerminalToken.format,
+        TerminalFormat.reverse,
+        toInvert,
+        TerminalToken.format,
+        TerminalReset.invert);
 
     Appender!(char[]) sink;
     sink.reserve(line.length + 16);
@@ -706,6 +715,7 @@ string invert(
 ///
 unittest
 {
+    import kameloso.terminal.colours.defs : TerminalFormat, TerminalReset;
     import std.format : format;
 
     immutable pre = "%c[%dm".format(TerminalToken.format, TerminalFormat.reverse);
@@ -864,112 +874,110 @@ unittest
 
 // getColourByHash
 /++
-    Hashes the passed string and picks a [TerminalForeground] colour by modulo.
-    Overload that takes an array of [TerminalForeground]s, to pick between.
+    Hashes the passed string and picks an ANSI colour for it by modulo.
 
-    Params:
-        word = String to hash and base colour on.
-        fgArray = Array of [TerminalForeground]s to pick a colour from.
-
-    Returns:
-        A [TerminalForeground] based on the passed string, picked from the
-            passed `fgArray` array.
- +/
-auto getColourByHash(const string word, const TerminalForeground[] fgArray) pure @nogc nothrow
-in (word.length, "Tried to get colour by hash but no word was given")
-in (fgArray.length, "Tried to get colour by hash but with an empty colour array")
-{
-    size_t colourIndex = hashOf(word) % fgArray.length;
-    return fgArray[colourIndex];
-}
-
-///
-unittest
-{
-    import lu.conv : Enum;
-
-    alias FG = TerminalForeground;
-
-    TerminalForeground[3] fgArray =
-    [
-        FG.red,
-        FG.green,
-        FG.blue,
-    ];
-
-    {
-        immutable foreground = "kameloso".getColourByHash(fgArray[]);
-        assert((foreground == FG.blue), Enum!FG.toString(foreground));
-    }
-    {
-        immutable foreground = "zorael".getColourByHash(fgArray[]);
-        assert((foreground == FG.green), Enum!FG.toString(foreground));
-    }
-    {
-        immutable foreground = "hirrsteff".getColourByHash(fgArray[]);
-        assert((foreground == FG.red), Enum!FG.toString(foreground));
-    }
-}
-
-
-// getColourByHash
-/++
-    Hashes the passed string and picks a [TerminalForeground] colour by modulo.
-    Overload that picks any colour, taking care not to pick black or white based on
-    the value of the passed `bright` bool (which signifies a bright terminal background).
+    Picks any colour, taking care not to pick black or white based on
+    the passed [kameloso.pods.CoreSettings|CoreSettings] struct (which has a
+    field that signifies a bright terminal background).
 
     Example:
     ---
-    immutable nickColour = "kameloso".getColourByHash(No.brightTerminal);
-    immutable brightNickColour = "kameloso".getColourByHash(Yes.brightTerminal);
+    immutable nickColour = "kameloso".getColourByHash(*kameloso.common.settings);
     ---
 
     Params:
         word = String to hash and base colour on.
-        bright = Whether or not the colour should be appropriate for a bright
-            terminal background.
+        settings = A copy of the program-global [kameloso.pods.CoreSettings|CoreSettings].
 
     Returns:
-        A [TerminalForeground] based on the passed string.
+        A `uint` that can be used in an ANSI foreground colour sequence.
  +/
-auto getColourByHash(const string word, const Flag!"brightTerminal" bright) pure @nogc nothrow
+auto getColourByHash(const string word, const CoreSettings settings) pure @safe /*@nogc*/ nothrow
 in (word.length, "Tried to get colour by hash but no word was given")
 {
+    import kameloso.irccolours : ircANSIColourMap;
+    import kameloso.terminal.colours.defs : TerminalForeground;
     import std.traits : EnumMembers;
 
-    alias foregroundMembers = EnumMembers!TerminalForeground;
+    static immutable basicForegroundMembers = [ EnumMembers!TerminalForeground ];
 
-    static immutable TerminalForeground[foregroundMembers.length+(-2)] fgBright =
-        TerminalForeground.black ~ [ foregroundMembers ][2..$-1];
+    static immutable uint[basicForegroundMembers.length+(-2)] brightTableBasic =
+        TerminalForeground.black ~ basicForegroundMembers[2..$-1];
 
-    static immutable TerminalForeground[foregroundMembers.length+(-2)] fgDark =
-        TerminalForeground.white ~ [ foregroundMembers ][2..$-1];
+    static immutable uint[basicForegroundMembers.length+(-2)] darkTableBasic =
+        TerminalForeground.white ~ basicForegroundMembers[2..$-1];
 
-    return bright ? word.getColourByHash(fgBright[]) : word.getColourByHash(fgDark[]);
+    enum brightTableExtended = ()
+    {
+        uint[98] colourTable = ircANSIColourMap[1..$].dup;
+
+        // Tweak colours, darken some very bright ones
+        colourTable[0] = TerminalForeground.black;
+        colourTable[11] = TerminalForeground.yellow;
+        colourTable[53] = 224;
+        colourTable[65] = 222;
+        colourTable[77] = 223;
+        colourTable[78] = 190;
+
+        return colourTable;
+    }();
+
+    enum darkTableExtended = ()
+    {
+        uint[98] colourTable = ircANSIColourMap[1..$].dup;
+
+        // Tweak colours, brighten some very dark ones
+        colourTable[15] = 55;
+        colourTable[23] = 20;
+        colourTable[24] = 56;
+        colourTable[25] = 57;
+        colourTable[35] = 21;
+        colourTable[33] = 243;
+        colourTable[87] = 241;
+        colourTable[88] = 242;
+        colourTable[89] = 243;
+        colourTable[90] = 243;
+        colourTable[97] = 240;
+        return colourTable;
+    }();
+
+    const table = settings.extendedColours ?
+        settings.brightTerminal ?
+            brightTableExtended[] :
+            darkTableExtended []
+            :
+        settings.brightTerminal ?
+            brightTableBasic[] :
+            darkTableBasic [];
+
+    immutable colourIndex = (hashOf(word) % table.length);
+    return table[colourIndex];
 }
 
 ///
 unittest
 {
-    import lu.conv : Enum;
+    import std.conv : to;
 
-    alias FG = TerminalForeground;
+    CoreSettings brightSettings;
+    CoreSettings darkSettings;
+    brightSettings.brightTerminal = true;
 
     {
-        immutable hash = getColourByHash("kameloso", No.brightTerminal);
-        assert((hash == FG.lightyellow), Enum!FG.toString(hash));
+        immutable hash = getColourByHash("kameloso", darkSettings);
+        assert((hash == 227), hash.to!string);
     }
     {
-        immutable hash = getColourByHash("kameloso^", No.brightTerminal);
-        assert((hash == FG.green), Enum!FG.toString(hash));
+        immutable hash = getColourByHash("kameloso^", darkSettings);
+        assert((hash == 46), hash.to!string);
     }
     {
-        immutable hash = getColourByHash("zorael", No.brightTerminal);
-        assert((hash == FG.lightgrey), Enum!FG.toString(hash));
+        immutable hash = getColourByHash("zorael", brightSettings);
+        assert((hash == 35), hash.to!string);
     }
     {
-        immutable hash = getColourByHash("NO", No.brightTerminal);
-        assert((hash == FG.lightred), Enum!FG.toString(hash));
+        immutable hash = getColourByHash("NO", brightSettings);
+        assert((hash == 90), hash.to!string);
     }
 }
 
@@ -980,14 +988,14 @@ unittest
 
     Params:
         word = String to colour.
-        bright = Whether or not the colour should be adapted for a bright terminal background.
+        settings = A copy of the program-global [kameloso.pods.CoreSettings|CoreSettings].
 
     Returns:
         `word`, now in colour based on the hash of its contents.
  +/
-auto colourByHash(const string word, const Flag!"brightTerminal" bright) pure nothrow
+auto colourByHash(const string word, const CoreSettings settings) pure @safe nothrow
 {
-    return word.colour(getColourByHash(word, bright));
+    return word.withANSI(getColourByHash(word, settings));
 }
 
 ///
@@ -995,24 +1003,24 @@ unittest
 {
     import std.conv : to;
 
+    CoreSettings brightSettings;
+    CoreSettings darkSettings;
+    brightSettings.brightTerminal = true;
+
     {
-        immutable coloured = "kameloso".colourByHash(No.brightTerminal);
-        assert((coloured == "\033[93mkameloso\033[0m"),
-            "kameloso".getColourByHash(No.brightTerminal).to!string);
+        immutable coloured = "kameloso".colourByHash(darkSettings);
+        assert((coloured == "\033[38;5;227mkameloso\033[0m"), coloured);
     }
     {
-        immutable coloured = "kameloso".colourByHash(Yes.brightTerminal);
-        assert((coloured == "\033[93mkameloso\033[0m"),
-            "kameloso".getColourByHash(Yes.brightTerminal).to!string);
+        immutable coloured = "kameloso".colourByHash(brightSettings);
+        assert((coloured == "\033[38;5;222mkameloso\033[0m"), coloured);
     }
     {
-        immutable coloured = "zorael".colourByHash(No.brightTerminal);
-        assert((coloured == "\033[37mzorael\033[0m"),
-            "zorael".getColourByHash(No.brightTerminal).to!string);
+        immutable coloured = "zorael".colourByHash(darkSettings);
+        assert((coloured == "\033[35mzorael\033[0m"), coloured);
     }
     {
-        immutable coloured = "NO".colourByHash(No.brightTerminal);
-        assert((coloured == "\033[91mNO\033[0m"),
-            "NO".getColourByHash(No.brightTerminal).to!string);
+        immutable coloured = "NO".colourByHash(brightSettings);
+        assert((coloured == "\033[90mNO\033[0m"), coloured);
     }
 }

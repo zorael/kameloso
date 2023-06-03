@@ -18,7 +18,7 @@ module kameloso.irccolours;
 
 private:
 
-import kameloso.terminal.colours : TerminalBackground, TerminalForeground,
+import kameloso.terminal.colours.defs : TerminalBackground, TerminalForeground,
     TerminalFormat, TerminalReset;
 import dialect.common : IRCControlCharacter;
 import std.range.primitives : isOutputRange;
@@ -41,7 +41,7 @@ enum IRCColour
     green       = 3,   /// Green
     red         = 4,   /// Red
     brown       = 5,   /// Brown
-    purple      = 6,   /// Purple
+    magenta     = 6,   /// Magenta
     orange      = 7,   /// Orange
     yellow      = 8,   /// Yellow
     lightgreen  = 9,   /// Light green
@@ -55,6 +55,117 @@ enum IRCColour
 }
 
 
+// ircANSIColourMap
+/++
+    Map of IRC colour values above 16 to ANSI terminal colours, as per ircdocs.
+
+    See_Also:
+        https://modern.ircdocs.horse/formatting.html#colors-16-98.
+ +/
+immutable uint[99] ircANSIColourMap =
+[
+     0 : TerminalForeground.default_,
+     1 : TerminalForeground.white,  // replace with .black on bright terminals
+     2 : TerminalForeground.red,
+     3 : TerminalForeground.green,
+     4 : TerminalForeground.yellow,
+     5 : TerminalForeground.blue,
+     6 : TerminalForeground.magenta,
+     7 : TerminalForeground.cyan,
+     8 : TerminalForeground.lightgrey,
+     9 : TerminalForeground.darkgrey,
+    10 : TerminalForeground.lightred,
+    11 : TerminalForeground.lightgreen,
+    12 : TerminalForeground.lightyellow,
+    13 : TerminalForeground.lightblue,
+    14 : TerminalForeground.lightmagenta,
+    15 : TerminalForeground.lightcyan,
+    16 : 52,
+    17 : 94,
+    18 : 100,
+    19 : 58,
+    20 : 22,
+    21 : 29,
+    22 : 23,
+    23 : 24,
+    24 : 17,
+    25 : 54,
+    26 : 53,
+    27 : 89,
+    28 : 88,
+    29 : 130,
+    30 : 142,
+    31 : 64,
+    32 : 28,
+    33 : 35,
+    34 : 30,
+    35 : 25,
+    36 : 18,
+    37 : 91,
+    38 : 90,
+    39 : 125,
+    40 : 124,
+    41 : 166,
+    42 : 184,
+    43 : 106,
+    44 : 34,
+    45 : 49,
+    46 : 37,
+    47 : 33,
+    48 : 19,
+    49 : 129,
+    50 : 127,
+    51 : 161,
+    52 : 196,
+    53 : 208,
+    54 : 226,
+    55 : 154,
+    56 : 46,
+    57 : 86,
+    58 : 51,
+    59 : 75,
+    60 : 21,
+    61 : 171,
+    62 : 201,
+    63 : 198,
+    64 : 203,
+    65 : 215,
+    66 : 227,
+    67 : 191,
+    68 : 83,
+    69 : 122,
+    70 : 87,
+    71 : 111,
+    72 : 63,
+    73 : 177,
+    74 : 207,
+    75 : 205,
+    76 : 217,
+    77 : 223,
+    78 : 229,
+    79 : 193,
+    80 : 157,
+    81 : 158,
+    82 : 159,
+    83 : 153,
+    84 : 147,
+    85 : 183,
+    86 : 219,
+    87 : 212,
+    88 : 16,
+    89 : 233,
+    90 : 235,
+    91 : 237,
+    92 : 239,
+    93 : 241,
+    94 : 244,
+    95 : 247,
+    96 : 250,
+    97 : 254,
+    98 : 231,
+];
+
+
 // ircColourInto
 /++
     Colour-codes the passed string with mIRC colouring, foreground and background.
@@ -63,14 +174,14 @@ enum IRCColour
     Params:
         line = Line to tint.
         sink = Output range sink to fill with the function's output.
-        fg = Foreground [IRCColour].
-        bg = Optional background [IRCColour].
+        fg = Foreground [IRCColour] integer.
+        bg = Optional background [IRCColour] integer.
  +/
 void ircColourInto(Sink)
     (const string line,
     auto ref Sink sink,
-    const IRCColour fg,
-    const IRCColour bg = IRCColour.unset)
+    const int fg,
+    const int bg = IRCColour.unset)
 if (isOutputRange!(Sink, char[]))
 in (line.length, "Tried to apply IRC colours to a string but no string was given")
 {
@@ -114,16 +225,16 @@ unittest
 
     Params:
         line = Line to tint.
-        fg = Foreground [IRCColour].
-        bg = Optional background [IRCColour].
+        fg = Foreground [IRCColour] integer.
+        bg = Optional background [IRCColour] integer.
 
     Returns:
         The passed line, encased within IRC colour tags.
  +/
 string ircColour(
     const string line,
-    const IRCColour fg,
-    const IRCColour bg = IRCColour.unset) pure
+    const int fg,
+    const int bg = IRCColour.unset) pure
 in (line.length, "Tried to apply IRC colours to a string but no string was given")
 {
     import std.array : Appender;
@@ -254,10 +365,11 @@ in (word.length, "Tried to apply IRC colours by hash to a string but no string w
     Appender!(char[]) sink;
     sink.reserve(word.length + 4);  // colour, index, word, colour
 
-    immutable colourIndex = hashOf(word) % 16;
+    immutable colourIndex = (hashOf(word) % ircANSIColourMap.length);
+    immutable colourInteger = ircANSIColourMap[colourIndex];
 
     sink.put(cast(char)IRCControlCharacter.colour);
-    colourIndex.toAlphaInto!(2, 2)(sink);
+    colourInteger.toAlphaInto!(3, 2)(sink);
     sink.put(word);
     sink.put(cast(char)IRCControlCharacter.colour);
 
@@ -273,17 +385,17 @@ unittest
 
     {
         immutable actual = "kameloso".ircColourByHash;
-        immutable expected = I.colour ~ "01kameloso" ~ I.colour;
+        immutable expected = I.colour ~ "24kameloso" ~ I.colour;
         assert((actual == expected), actual);
     }
     {
         immutable actual = "kameloso^".ircColourByHash;
-        immutable expected = I.colour ~ "09kameloso^" ~ I.colour;
+        immutable expected = I.colour ~ "46kameloso^" ~ I.colour;
         assert((actual == expected), actual);
     }
     {
         immutable actual = "kameloso^11".ircColourByHash;
-        immutable expected = I.colour ~ "05kameloso^11" ~ I.colour;
+        immutable expected = I.colour ~ "237kameloso^11" ~ I.colour;
         assert((actual == expected), actual);
     }
 }
@@ -993,7 +1105,7 @@ private string mapEffectsImpl(Flag!"strip" strip, IRCControlCharacter mircToken,
     static if (!strip)
     {
         import kameloso.terminal : TerminalToken;
-        import kameloso.terminal.colours : colourWith;
+        import kameloso.terminal.colours : applyANSI;
 
         enum terminalToken = TerminalToken.format ~ "[" ~ toAlpha(terminalFormatCode) ~ "m";
         sink.reserve(cast(size_t)(line.length * 1.5));
@@ -1040,7 +1152,7 @@ private string mapEffectsImpl(Flag!"strip" strip, IRCControlCharacter mircToken,
                 else
                 {
                     //logger.warning("Unknown terminal effect code: ", TerminalFormatCode);
-                    sink.colourWith(TerminalReset.all);
+                    sink.applyANSI(TerminalReset.all);
                 }
 
                 open = false;
@@ -1055,7 +1167,7 @@ private string mapEffectsImpl(Flag!"strip" strip, IRCControlCharacter mircToken,
 
     static if (!strip)
     {
-        if (open) sink.colourWith(TerminalReset.all);
+        if (open) sink.applyANSI(TerminalReset.all);
     }
 
     return sink.data;
@@ -1293,7 +1405,7 @@ T expandIRCTags(T)(const T line) @system
     {
         immutable line = "hello<h>kameloso<h>hello";
         immutable expanded = line.expandIRCTags;
-        immutable expected = "hello" ~ I.colour ~ "01kameloso" ~ I.colour ~ "hello";
+        immutable expected = "hello" ~ I.colour ~ "24kameloso" ~ I.colour ~ "hello";
         assert((expanded == expected), expanded);
     }
     {

@@ -38,13 +38,17 @@ public:
         bool monochrome = true;
     }
 
-
     // brightTerminal
     /++
         Flag denoting that the terminal has a bright background.
      +/
     bool brightTerminal = false;
 
+    // extendedColours
+    /++
+        Flag denoting that the bot should output text using extended ANSI sequences.
+     +/
+    bool extendedColours = true;
 
     // preferHostmasks
     /++
@@ -52,13 +56,11 @@ public:
      +/
     bool preferHostmasks = false;
 
-
     // hideOutgoing
     /++
         Whether or not to hide outgoing messages, not printing them to screen.
      +/
     bool hideOutgoing = false;
-
 
     // colouredOutgoing
     /++
@@ -66,20 +68,17 @@ public:
      +/
     bool colouredOutgoing = true;
 
-
     // saveOnExit
     /++
         Flag denoting that we should save configuration changes to file on exit.
      +/
     bool saveOnExit = false;
 
-
     // exitSummary
     /++
         Whether or not to display a connection summary on program exit.
      +/
     bool exitSummary = false;
-
 
     @Hidden
     {
@@ -90,14 +89,12 @@ public:
          +/
         bool eagerLookups = false;
 
-
         // headless
         /++
             Whether or not to be "headless", disabling all terminal output.
          +/
         bool headless;
     }
-
 
     // resourceDirectory
     /++
@@ -106,7 +103,6 @@ public:
     @Hidden
     @CannotContainComments
     string resourceDirectory;
-
 
     // prefix
     /++
@@ -118,7 +114,6 @@ public:
      +/
     @Quoted string prefix = "!";
 
-
     @Unserialisable
     {
         // configFile
@@ -127,20 +122,17 @@ public:
          +/
         string configFile;
 
-
         // configDirectory
         /++
             Path to configuration directory.
          +/
         string configDirectory;
 
-
         // force
         /++
             Whether or not to force connecting, skipping some sanity checks.
          +/
         bool force;
-
 
         // flush
         /++
@@ -154,13 +146,11 @@ public:
          +/
         bool trace;
 
-
         // numericAddresses
         /++
             Whether to print addresses as IPs or as hostnames (where applicable).
          +/
         bool numericAddresses;
-
 
         // observerMode
         /++
