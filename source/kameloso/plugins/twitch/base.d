@@ -941,6 +941,160 @@ void onGuestRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 }
 
 
+// onCommandShoutout
+/++
+    Emits a shoutout to another streamer.
+
+    Merely gives a link to their channel and echoes what game they last streamed
+    (or are currently streaming).
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .fiber(true)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("shoutout")
+            .policy(PrefixPolicy.prefixed)
+            .description("Emits a shoutout to another streamer.")
+            .addSyntax("$command [name of streamer] [optional number of times to spam]")
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("so")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
+)
+void onCommandShoutout(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+{
+    import kameloso.plugins.common.misc : idOf;
+    import lu.string : SplitResults, beginsWith, splitInto, stripped;
+    import std.format : format;
+    import std.json : JSONType, parseJSON;
+
+    void sendUsage()
+    {
+        enum pattern = "Usage: %s%s [name of streamer] [optional number of times to spam]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendCountNotANumber()
+    {
+        enum message = "The passed count is not a number.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendInvalidStreamerName()
+    {
+        enum message = "Invalid streamer name.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendNoSuchUser(const string target)
+    {
+        immutable message = "No such user: " ~ target;
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendUserHasNoChannel()
+    {
+        enum message = "Impossible error; user has no channel?";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendNoShoutoutOfCurrentChannel()
+    {
+        enum message = "Can't give a shoutout to the current channel...";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendOtherError()
+    {
+        enum message = "An error occured when preparing the shoutout.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    string slice = event.content.stripped;  // mutable
+    string target;  // ditto
+    string numTimesString;  // ditto
+
+    immutable results = slice.splitInto(target, numTimesString);
+
+    if (target.beginsWith('@')) target = target[1..$].stripped;
+
+    if (!target.length || (results == SplitResults.overrun))
+    {
+        return sendUsage();
+    }
+
+    immutable login = idOf(plugin, target);
+
+    if (login == event.channel[1..$])
+    {
+        return sendNoShoutoutOfCurrentChannel();
+    }
+
+    // Limit number of times to spam to an outrageous 10
+    enum numTimesCap = 10;
+    uint numTimes = 1;
+
+    if (numTimesString.length)
+    {
+        import std.conv : ConvException, to;
+
+        try
+        {
+            import std.algorithm.comparison : min;
+            numTimes = min(numTimesString.stripped.to!uint, numTimesCap);
+        }
+        catch (ConvException e)
+        {
+            return sendCountNotANumber();
+        }
+    }
+
+    immutable shoutout = createShoutout(plugin, login);
+
+    with (typeof(shoutout).State)
+    final switch (shoutout.state)
+    {
+    case success:
+        // Drop down
+        break;
+
+    case noSuchUser:
+        return sendNoSuchUser(login);
+
+    case noChannel:
+        return sendUserHasNoChannel();
+
+    case otherError:
+        return sendOtherError();
+    }
+
+    const stream = getStream(plugin, login);
+    string lastSeenPlayingPattern = "%s";  // mutable
+
+    if (shoutout.gameName.length)
+    {
+        lastSeenPlayingPattern = stream.live ?
+            " (currently playing %s)" :
+            " (last seen playing %s)";
+    }
+
+    immutable pattern = "Shoutout to %s! Visit them at https://twitch.tv/%s !" ~ lastSeenPlayingPattern;
+    immutable message = pattern.format(shoutout.displayName, login, shoutout.gameName);
+
+    foreach (immutable i; 0..numTimes)
+    {
+        chan(plugin.state, event.channel, message);
+    }
+}
+
+
 // onCommandVanish
 /++
     Hides a user's messages (making them "disappear") by briefly timing them out.

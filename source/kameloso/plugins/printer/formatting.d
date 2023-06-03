@@ -415,7 +415,7 @@ if (isOutputRange!(Sink, char[]))
     {
         enum pattern = " (%-(%s%|) (%))";
 
-        static if ((__VERSION__ >= 2101L) && (__VERSION__ <= 2102L))
+        static if ((__VERSION__ == 2101L) || (__VERSION__ == 2102L))
         {
             import std.array : array;
             // "Deprecation: scope variable `aux` assigned to non-scope parameter `_param_2` calling `formattedWrite"
@@ -1033,7 +1033,7 @@ if (isOutputRange!(Sink, char[]))
         enum pattern = " (%-(%s%|) (%))";
         sink.applyANSI(bright ? Bright.aux : Dark.aux);
 
-        static if ((__VERSION__ >= 2101L) && (__VERSION__ <= 2102L))
+        static if ((__VERSION__ == 2101L) || (__VERSION__ == 2102L))
         {
             import std.array : array;
             // "Deprecation: scope variable `aux` assigned to non-scope parameter `_param_2` calling `formattedWrite"
