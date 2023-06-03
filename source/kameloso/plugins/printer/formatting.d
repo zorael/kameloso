@@ -538,12 +538,14 @@ if (isOutputRange!(Sink, char[]))
     immutable errorLine = sink.data[11..$].idup;
     version(TwitchSupport)
     {
-        enum expected = `[error] Nickname: "Blah balah" {-42} [#666] ! DANGER WILL ROBINSON !`;
+        enum expected = `[error] Nickname: "Blah balah" (aux1) (aux5) ` ~
+            "{-42} {123} {420} [#666] ! DANGER WILL ROBINSON !";
         assert((errorLine == expected), errorLine);
     }
     else
     {
-        enum expected = `[error] nickname: "Blah balah" {-42} [#666] ! DANGER WILL ROBINSON !`;
+        enum expected = `[error] nickname: "Blah balah" (aux1) (aux5) ` ~
+            "{-42} {123} {420} [#666] ! DANGER WILL ROBINSON !";
         assert((errorLine == expected), errorLine);
     }
     //sink.clear();
