@@ -2687,3 +2687,85 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
 
     return retryDelegate(&getSubscribersDg);
 }
+
+
+// createShoutout
+/++
+    Prepares a `Shoutout` Voldemort struct with information needed to compose a shoutout.
+
+    Note: Must be called from inside a [core.thread.fiber.Fiber|Fiber].
+
+    Params:
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        login = Login name of other streamer to prepare a shoutout for.
+
+    Returns:
+        Voldemort `Shoutout` struct.
+ +/
+auto createShoutout(
+    TwitchPlugin plugin,
+    const string login)
+in (Fiber.getThis, "Tried to call `createShoutout` from outside a Fiber")
+in (login.length, "Tried to create a shoutout with an empty login name string")
+{
+    import std.json : JSONType;
+
+    static struct Shoutout
+    {
+        enum State
+        {
+            success,
+            noSuchUser,
+            noChannel,
+            otherError,
+        }
+
+        State state;
+        string displayName;
+        string gameName;
+    }
+
+    auto shoutoutDg()
+    {
+        Shoutout shoutout;
+
+        try
+        {
+            immutable userURL = "https://api.twitch.tv/helix/users?login=" ~ login;
+            immutable userJSON = getTwitchData(plugin, userURL);
+            immutable id = userJSON["id"].str;
+            //immutable login = userJSON["login"].str;
+            immutable channelURL = "https://api.twitch.tv/helix/channels?broadcaster_id=" ~ id;
+            immutable channelJSON = getTwitchData(plugin, channelURL);
+
+            shoutout.state = Shoutout.State.success;
+            shoutout.displayName = channelJSON["broadcaster_name"].str;
+            shoutout.gameName = channelJSON["game_name"].str;
+            return shoutout;
+        }
+        catch (ErrorJSONException e)
+        {
+            if ((e.json["status"].integer = 400) &&
+                (e.json["error"].str == "Bad Request") &&
+                (e.json["message"].str == "Invalid username(s), email(s), or ID(s). Bad Identifiers."))
+            {
+                shoutout.state = Shoutout.State.noSuchUser;
+                return shoutout;
+            }
+
+            shoutout.state = Shoutout.State.otherError;
+            return shoutout;
+        }
+        catch (EmptyDataJSONException _)
+        {
+            shoutout.state = Shoutout.State.noSuchUser;
+            return shoutout;
+        }
+        catch (Exception e)
+        {
+            throw e;
+        }
+    }
+
+    return retryDelegate(&shoutoutDg);
+}
