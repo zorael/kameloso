@@ -81,6 +81,7 @@ If there's anyone chatting it should show up on your screen.
   * [Further help](#further-help)
 * [Known issues](#known-issues)
   * [Windows](#windows)
+  * [Google/YouTube song request playlist integration](#googleyoutube-song-request-playlist-integration)
 * [Roadmap](#roadmap)
 * [Built with](#built-with)
 * [License](#license)
@@ -146,7 +147,7 @@ $ dub build -c twitch
 The bot ideally wants the account name of one or more administrators of the bot, and/or one or more home channels to operate in. Without either it's just a read-only log bot, which is a completely valid use-case. To define these you can either supply them on the command line, with flags listed by calling the program with `--help`, or generate a configuration file with `--save` and enter them there.
 
 ```shell
-$ kameloso --save
+$ ./kameloso --save
 ```
 
 A new `kameloso.conf` will be created in a directory dependent on your platform.
@@ -166,10 +167,10 @@ Open the file in a normal text editor.
 You can make changes to your configuration file in-place by specifying some at the command line and adding `--save`.
 
 ```shell
-$ kameloso \
+$ ./kameloso \
     --server irc.libera.chat \
-    --nickname "kameloso" \
-    --admins "you" \
+    --nickname "mybot" \
+    --admins "me" \
     --homeChannels "#mychannel" \
     --guestChannels "#d,##networking" \
     --monochrome
@@ -482,7 +483,7 @@ To get song requests to work, you need to register an *application* to interface
 Some functionality, such as setting the channel title or currently played game, require elevated credentials with the permissions of the channel owner (broadcaster), as opposed to those of any moderator. As such, if you want to use such commands, you will need to generate an OAuth authorisation token for **your main account** separately, much as you generated one to be able to connect with the bot account. This will request a token from Twitch with more permissions, and the authorisation browser page should reflect this.
 
 ```shell
-$ kameloso --set twitch.superKeygen
+$ ./kameloso --set twitch.superKeygen
 ```
 
 > Mind that you need to be logged into Twitch (in your browser) with your **main account** while doing this, or the token obtained will be with permissions for the wrong channel.
@@ -490,7 +491,7 @@ $ kameloso --set twitch.superKeygen
 All keygens can be triggered at the same time.
 
 ```shell
-$ kameloso \
+$ ./kameloso \
     --set twitch.keygen \
     --set twitch.superKeygen \
     --set twitch.googleKeygen \
