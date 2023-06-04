@@ -59,17 +59,26 @@ struct QueryResponse
     is reached.
 
     Params:
+        plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         dg = Delegate to call.
 
     Returns:
         Whatever the passed delegate returns.
  +/
-auto retryDelegate(Dg)(Dg dg)
+auto retryDelegate(Dg)(TwitchPlugin plugin, Dg dg)
 {
     foreach (immutable i; 0..TwitchPlugin.delegateRetries)
     {
         try
         {
+            if (i > 0)
+            {
+                import kameloso.plugins.common.delayawait : delay;
+                import core.time : seconds;
+
+                static immutable retryDelay = 1.seconds;
+                delay(plugin, retryDelay, Yes.yield);
+            }
             return dg();
         }
         catch (MissingBroadcasterTokenException e)
@@ -161,7 +170,7 @@ auto retryDelegate(Dg)(Dg dg)
         }
     }
 
-    assert(0, "unreachable");
+    assert(0, "Unreachable");
 }
 
 
@@ -711,7 +720,7 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
         return responseJSON;
     }
 
-    return retryDelegate(&getChattersDg);
+    return retryDelegate(plugin, &getChattersDg);
 }
 
 
@@ -837,7 +846,7 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
         return validationJSON;
     }
 
-    return retryDelegate(&getValidationDg);
+    return retryDelegate(plugin, &getValidationDg);
 }
 
 
@@ -876,7 +885,7 @@ in (id.length, "Tried to get follows with an empty ID string")
         return allFollows;
     }
 
-    return retryDelegate(&getFollowsDg);
+    return retryDelegate(plugin, &getFollowsDg);
 }
 
 
@@ -1160,7 +1169,7 @@ in ((givenName.length || givenIDString.length),
         return user;
     }
 
-    return retryDelegate(&getTwitchUserDg);
+    return retryDelegate(plugin, &getTwitchUserDg);
 }
 
 
@@ -1209,7 +1218,7 @@ in ((name.length || id.length), "Tried to call `getTwitchGame` with no game name
         return Game(gameJSON["id"].str, gameJSON["name"].str);
     }
 
-    return retryDelegate(&getTwitchGameDg);
+    return retryDelegate(plugin, &getTwitchGameDg);
 }
 
 
@@ -1305,7 +1314,7 @@ in ((title.length || gameID.length), "Tried to modify a channel with no title no
             "application/json");
     }
 
-    return retryDelegate(&modifyChannelDg);
+    return retryDelegate(plugin, &modifyChannelDg);
 }
 
 
@@ -1375,7 +1384,7 @@ in (channelName.length, "Tried to fetch a channel with an empty channel name str
         return channel;
     }
 
-    return retryDelegate(&getChannelDg);
+    return retryDelegate(plugin, &getChannelDg);
 }
 
 
@@ -1468,7 +1477,7 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
             "application/json");
     }
 
-    return retryDelegate(&startCommercialDg);
+    return retryDelegate(plugin, &startCommercialDg);
 }
 
 
@@ -1591,7 +1600,7 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
         return allPollsJSON.array;
     }
 
-    return retryDelegate(&getPollsDg);
+    return retryDelegate(plugin, &getPollsDg);
 }
 
 
@@ -1716,7 +1725,7 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
         return responseJSON["data"].array;
     }
 
-    return retryDelegate(&createPollDg);
+    return retryDelegate(plugin, &createPollDg);
 }
 
 
@@ -1824,7 +1833,7 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
         return responseJSON["data"].array[0];
     }
 
-    return retryDelegate(&endPollDg);
+    return retryDelegate(plugin, &endPollDg);
 }
 
 
@@ -1919,7 +1928,7 @@ auto getBotList(TwitchPlugin plugin)
         return sink.data;
     }
 
-    return retryDelegate(&getBotListDg);
+    return retryDelegate(plugin, &getBotListDg);
 }
 
 
@@ -2021,7 +2030,7 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
         }
     }
 
-    return retryDelegate(&getStreamDg);
+    return retryDelegate(plugin, &getStreamDg);
 }
 
 
@@ -2157,7 +2166,7 @@ in (idString.length, "Tried to get BTTV emotes with an empty ID string")
         }
     }
 
-    return retryDelegate(&getBTTVEmotesDg);
+    return retryDelegate(plugin, &getBTTVEmotesDg);
 }
 
 
@@ -2216,7 +2225,7 @@ in (Fiber.getThis, "Tried to call `getBTTVGlobalEmotes` from outside a Fiber")
         // All done
     }
 
-    return retryDelegate(&getBTTVGlobalEmotesDg);
+    return retryDelegate(plugin, &getBTTVGlobalEmotesDg);
 }
 
 
@@ -2386,7 +2395,7 @@ in (idString.length, "Tried to get FFZ emotes with an empty ID string")
         }
     }
 
-    return retryDelegate(&getFFZEmotesDg);
+    return retryDelegate(plugin, &getFFZEmotesDg);
 }
 
 
@@ -2477,7 +2486,7 @@ in (idString.length, "Tried to get 7tv emotes with an empty ID string")
         }
     }
 
-    return retryDelegate(&get7tvEmotesDg);
+    return retryDelegate(plugin, &get7tvEmotesDg);
 }
 
 
@@ -2536,7 +2545,7 @@ in (Fiber.getThis, "Tried to call `get7tvGlobalEmotes` from outside a Fiber")
         // All done
     }
 
-    return retryDelegate(&get7tvGlobalEmotesDg);
+    return retryDelegate(plugin, &get7tvGlobalEmotesDg);
 }
 
 
@@ -2685,7 +2694,7 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
         return subs;
     }
 
-    return retryDelegate(&getSubscribersDg);
+    return retryDelegate(plugin, &getSubscribersDg);
 }
 
 
@@ -2767,5 +2776,5 @@ in (login.length, "Tried to create a shoutout with an empty login name string")
         }
     }
 
-    return retryDelegate(&shoutoutDg);
+    return retryDelegate(plugin, &shoutoutDg);
 }
