@@ -1280,6 +1280,12 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     import std.format : format;
     import core.time : seconds;
 
+    /+
+        The minimum amount of time in seconds that must have passed between
+        two song requests by one non-operator person.
+    +/
+    enum minimumTimeBetweenSongRequests = 60;
+
     void sendUsage()
     {
         immutable pattern = (plugin.twitchSettings.songrequestMode == SongRequestMode.youtube) ?
@@ -1312,7 +1318,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     void sendAtLastNSecondsMustPass()
     {
         enum pattern = "At least %d seconds must pass between song requests.";
-        immutable message = pattern.format(TwitchPlugin.Room.minimumTimeBetweenSongRequests);
+        immutable message = pattern.format(minimumTimeBetweenSongRequests);
         chan(plugin.state, event.channel, message);
     }
 
@@ -1364,7 +1370,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     {
         if (const lastRequestTimestamp = event.sender.nickname in room.songrequestHistory)
         {
-            if ((event.time - *lastRequestTimestamp) < TwitchPlugin.Room.minimumTimeBetweenSongRequests)
+            if ((event.time - *lastRequestTimestamp) < minimumTimeBetweenSongRequests)
             {
                 return sendAtLastNSecondsMustPass();
             }
@@ -2768,6 +2774,10 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
 {
     import kameloso.plugins.common.delayawait : delay;
     import std.datetime.systime : Clock;
+    import core.time : seconds;
+
+    // How often to poll the servers for various information about a channel.
+    static immutable monitorUpdatePeriodicity = 60.seconds;
 
     void chatterMonitorDg()
     {
@@ -2787,7 +2797,7 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
 
             if (!room.stream.live)
             {
-                delay(plugin, plugin.monitorUpdatePeriodicity, Yes.yield);
+                delay(plugin, monitorUpdatePeriodicity, Yes.yield);
                 continue;
             }
 
@@ -2841,7 +2851,7 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
                             if (viewer !in room.stream.activeViewers) continue;
                         }
 
-                        enum periodicitySeconds = plugin.monitorUpdatePeriodicity.total!"seconds";
+                        enum periodicitySeconds = monitorUpdatePeriodicity.total!"seconds";
 
                         if (auto channelViewerTimes = room.channelName in plugin.viewerTimesByChannel)
                         {
@@ -2868,7 +2878,7 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
                 // Just swallow the exception and retry next time
             }
 
-            delay(plugin, plugin.monitorUpdatePeriodicity, Yes.yield);
+            delay(plugin, monitorUpdatePeriodicity, Yes.yield);
         }
     }
 
@@ -2956,7 +2966,7 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
                 // Just swallow the exception and retry next time
             }
 
-            delay(plugin, plugin.monitorUpdatePeriodicity, Yes.yield);
+            delay(plugin, monitorUpdatePeriodicity, Yes.yield);
         }
     }
 
@@ -3159,6 +3169,10 @@ void startSaver(TwitchPlugin plugin)
 {
     import kameloso.plugins.common.delayawait : delay;
     import core.thread : Fiber;
+    import core.time : hours;
+
+    // How often to save `ecount`s and viewer times, to ward against losing information to crashes.
+    static immutable savePeriodicity = 2.hours;
 
     void periodicallySaveDg()
     {
@@ -3181,12 +3195,12 @@ void startSaver(TwitchPlugin plugin)
                 plugin.viewerTimesDirty = false;
             }
 
-            delay(plugin, plugin.savePeriodicity, Yes.yield);
+            delay(plugin, savePeriodicity, Yes.yield);
         }
     }
 
     Fiber periodicallySaveFiber = new Fiber(&periodicallySaveDg, BufferSize.fiberStack);
-    delay(plugin, periodicallySaveFiber, plugin.savePeriodicity);
+    delay(plugin, periodicallySaveFiber, savePeriodicity);
 }
 
 
@@ -3367,10 +3381,6 @@ void appendToStreamHistory(TwitchPlugin plugin, const TwitchPlugin.Room.Stream s
 void initialise(TwitchPlugin plugin)
 {
     import kameloso.terminal : isTerminal;
-    import std.concurrency : thisTid;
-
-    // Register this thread as the main thread.
-    plugin.mainThread = cast(shared)thisTid;
 
     if (!isTerminal)
     {
@@ -3737,7 +3747,6 @@ private:
     import lu.container : CircularBuffer;
     import std.concurrency : Tid;
     import std.datetime.systime : SysTime;
-    import core.time : hours, seconds;
 
 package:
     /++
@@ -4016,15 +4025,6 @@ package:
         CircularBuffer!(IRCEvent, No.dynamic, messageMemory) lastNMessages;
 
         /++
-            The minimum amount of time in seconds that must have passed between
-            two song requests by one person.
-
-            Users of class [dialect.defs.IRCUser.Class.operator|operator] or
-            higher are exempt.
-         +/
-        enum minimumTimeBetweenSongRequests = 60;
-
-        /++
             Song request history; UNIX timestamps keyed by nickname.
          +/
         long[string] songrequestHistory;
@@ -4124,16 +4124,6 @@ package:
     }
 
     /++
-        How big a buffer to preallocate when doing HTTP API queries.
-     +/
-    enum queryBufferSize = 4096;
-
-    /++
-        How often to poll the servers for various information about a channel.
-     +/
-    static immutable monitorUpdatePeriodicity = 60.seconds;
-
-    /++
         How many times to retry a Twitch server query.
      +/
     enum delegateRetries = 5;
@@ -4158,11 +4148,6 @@ package:
         The thread ID of the persistent worker thread.
      +/
     Tid persistentWorkerTid;
-
-    /++
-        The thread ID of the main thread, for access from threads.
-     +/
-    shared static Tid mainThread;
 
     /++
         Associative array of responses from async HTTP queries.
@@ -4201,12 +4186,6 @@ package:
         Whether or not [ecount] has been modified and there's a point in saving it to disk.
      +/
     bool ecountDirty;
-
-    /++
-        How often to save `ecount`s and viewer times, to ward against losing information to crashes.
-     +/
-    static immutable savePeriodicity = 2.hours;
-
 
     // isEnabled
     /++
