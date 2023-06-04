@@ -1358,6 +1358,7 @@ void onBusMessage(
         version(IncludeHeavyStuff)
         {
             import kameloso.printing : printObject;
+            import core.memory : GC;
 
             case "users":
                 return plugin.onCommandShowUsers();
@@ -1377,8 +1378,30 @@ void onBusMessage(
                 break;
 
             case "state":
-                printObject(plugin.state);
-                break;
+                return printObject(plugin.state);
+
+            case "gc.stats":
+                logger.info("Memory statistics:");
+                immutable stats = GC.stats();
+
+                static if (__VERSION__ >= 2087L)
+                {
+                    immutable allocated = stats.allocatedInCurrentThread;
+                    enum pattern = "Allocated in current thread: <l>%,d</> bytes";
+                    logger.infof(pattern, allocated);
+                }
+
+                enum memoryUsedPattern = "Memory used: <l>%,d</> bytes, free <l>%,d</> bytes";
+                return logger.infof(memoryUsedPattern,
+                    stats.usedSize, stats.freeSize);
+
+            case "gc.collect":
+                GC.collect();
+                return logger.info("Garbage collected.");
+
+            case "gc.minimize":
+                GC.minimize();
+                return logger.info("Memory minimised.");
         }
 
         case "printraw":
