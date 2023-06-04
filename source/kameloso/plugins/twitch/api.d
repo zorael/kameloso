@@ -962,7 +962,7 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
 {
     import std.algorithm.comparison : min;
 
-    enum maxDeltaToResponse = 1000;
+    enum maxDeltaToResponse = 5000;
 
     immutable current = plugin.approximateQueryTime;
     alias weight = TwitchPlugin.QueryConstants.averagingWeight;
