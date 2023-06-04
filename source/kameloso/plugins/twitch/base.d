@@ -4136,7 +4136,7 @@ package:
     /++
         How many times to retry a Twitch server query.
      +/
-    enum delegateRetries = 3;
+    enum delegateRetries = 5;
 
     /++
         Associative array of viewer times; seconds keyed by nickname keyed by channel.
