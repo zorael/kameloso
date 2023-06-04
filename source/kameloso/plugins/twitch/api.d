@@ -974,7 +974,13 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
     {
         import std.stdio : writefln;
         enum pattern = "time:%s | response: %d~%d (+%d) | new average:%s";
-        writefln!pattern(current, responseMsecs, responseAdjusted, cast(long)padding, average);
+        writefln(
+            pattern,
+            current,
+            responseMsecs,
+            responseAdjusted,
+            cast(long)padding,
+            average);
     }
 
     plugin.approximateQueryTime = cast(long)average;
@@ -1058,8 +1064,10 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
 
             version(BenchmarkHTTPRequests)
             {
-                enum pattern = "MISS! elapsed: %s | old: %d --> new: %d | wait: %d";
-                writefln(pattern,
+                enum pattern = "MISS %d! elapsed: %s | old: %d --> new: %d | wait: %d";
+                writefln(
+                    pattern,
+                    misses,
                     (now-startTime),
                     cast(long)oldAccumulatingTime,
                     cast(long)accumulatingTime,
@@ -1074,7 +1082,7 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
         {
             enum pattern = "HIT! elapsed: %s | response: %s | misses: %d";
             immutable now = Clock.currTime.toUnixTime;
-            writefln!pattern((now-startTime), response.msecs, misses);
+            writefln(pattern, (now-startTime), response.msecs, misses);
         }
 
         // Make the new approximate query time a weighted average
