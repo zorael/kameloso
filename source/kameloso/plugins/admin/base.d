@@ -1398,11 +1398,19 @@ void onBusMessage(
             case "gc.collect":
                 import std.datetime.systime : Clock;
 
-                immutable pre = Clock.currTime;
+                immutable statsPre = GC.stats();
+                immutable timestampPre = Clock.currTime;
+                immutable memoryUsedPre = statsPre.usedSize;
                 GC.collect();
-                immutable post = Clock.currTime;
-                immutable duration = (post - pre);
-                return logger.info("Garbage collected, took ", duration);
+                immutable statsPost = GC.stats();
+                immutable timestampPost = Clock.currTime;
+                immutable memoryUsedPost = statsPost.usedSize;
+
+                immutable memoryCollected = (memoryUsedPre - memoryUsedPost);
+                immutable duration = (timestampPost - timestampPre);
+
+                enum pattern = "Collected <l>%,d</> bytes of garbage in <l>%s";
+                return logger.infof(pattern, memoryCollected, duration);
 
             case "gc.minimize":
                 GC.minimize();
