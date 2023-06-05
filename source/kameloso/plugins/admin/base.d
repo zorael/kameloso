@@ -1381,7 +1381,7 @@ void onBusMessage(
                 return printObject(plugin.state);
 
             case "gc.stats":
-                logger.info("Memory statistics:");
+                logger.info("-- Memory statistics --");
                 immutable stats = GC.stats();
 
                 static if (__VERSION__ >= 2087L)
@@ -1396,8 +1396,13 @@ void onBusMessage(
                     stats.usedSize, stats.freeSize);
 
             case "gc.collect":
+                import std.datetime.systime : Clock;
+
+                immutable pre = Clock.currTime;
                 GC.collect();
-                return logger.info("Garbage collected.");
+                immutable post = Clock.currTime;
+                immutable duration = (post - pre);
+                return logger.info("Garbage collected, took ", duration);
 
             case "gc.minimize":
                 GC.minimize();
