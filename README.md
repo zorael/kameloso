@@ -121,7 +121,7 @@ It can also be downloaded as a [`.zip` archive](https://github.com/zorael/kamelo
 $ dub build
 ```
 
-This will compile the bot in the default **debug** build type, which adds some extra code and debugging symbols. You can omit these and perform some optimisations by building it in **release** mode with `dub build -b release`. Mind that build times will increase accordingly. Refer to the output of `dub build --print-builds` for more build types.
+This will compile the bot in the default **debug** build type, which adds some extra code and debugging symbols. You can omit these and perform some optimisations by building it in **release** mode with `dub build -b release`. Mind that build times will increase accordingly. Refer to the output of `dub --annotate --print-builds` for more build types.
 
 ### Build configurations
 
@@ -132,7 +132,7 @@ There are two major configurations in which the bot may be built.
 
 Both configurations come in `-lowmem` variants (e.g. `application-lowmem` and `twitch-lowmem`) that lower compilation memory required at the cost of increasing compilation time, which may help on memory-constrained systems (such as the Raspberry Pi).
 
-List configurations with `dub build --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default `application` configuration.
+List configurations with `dub --annotate --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default `application` configuration.
 
 ```shell
 $ dub build -c twitch
