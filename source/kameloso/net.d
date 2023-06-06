@@ -422,6 +422,10 @@ public:
                 characters. A final linebreak is added to the end of the send.
             maxLineLength = Maximum line length before the sent message will be truncated.
             linebreak = Characters to use as linebreak, marking the end of a line to send.
+
+        Throws:
+            [SocketSendException] if the call to send data through the socket
+            returns [std.socket.Socket.ERROR|Socket.ERROR].
      +/
     void sendline(
         const string rawline,
@@ -429,7 +433,6 @@ public:
         const string linebreak = "\r\n") @system
     in (connected, "Tried to send a line on an unconnected `Connection`")
     {
-        import std.algorithm.iteration : splitter;
         import std.string : indexOf;
 
         if (!rawline.length) return;
@@ -440,18 +443,32 @@ public:
         {
             import std.algorithm.comparison : min;
 
-            immutable length = min(line.length, maxAvailableLength);
+            immutable lineLength = min(line.length, maxAvailableLength);
+            size_t totalSent;
 
-            if (ssl)
+            auto sendSubstring(const string substring)
+            in (substring.length, "Tried to send empty substring to server")
             {
-                openssl.SSL_write(sslInstance, line.ptr, cast(int)length);
-                openssl.SSL_write(sslInstance, linebreak.ptr, cast(int)linebreak.length);
+                immutable bytesSent = ssl ?
+                    openssl.SSL_write(sslInstance, substring.ptr, cast(int)substring.length) :
+                    socket.send(substring);
+
+                if (bytesSent == Socket.ERROR)
+                {
+                    enum message = "Socket.ERROR returned when sending data to server";
+                    throw new SocketSendException(message);
+                }
+
+                return bytesSent;
             }
-            else
+
+            while (totalSent < lineLength)
             {
-                socket.send(line[0..length]);
-                socket.send(linebreak);
+                totalSent += sendSubstring(line[totalSent..lineLength]);
             }
+
+            // Always end the line with a linebreak
+            sendSubstring(linebreak);
         }
 
         auto newlinePos = rawline.indexOf('\n');  // mutable

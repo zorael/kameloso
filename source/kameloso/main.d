@@ -1005,16 +1005,26 @@ auto mainLoop(ref Kameloso instance)
 
         if (bufferHasMessages)
         {
-            immutable untilNext = sendLines(instance);
+            import kameloso.net : SocketSendException;
 
-            if ((untilNext > 0.0) && (untilNext < instance.connSettings.messageBurst))
+            try
             {
-                immutable untilNextMsecs = cast(uint)(untilNext * 1000);
+                immutable untilNext = sendLines(instance);
 
-                if (untilNextMsecs < instance.conn.receiveTimeout)
+                if ((untilNext > 0.0) && (untilNext < instance.connSettings.messageBurst))
                 {
-                    timeoutFromMessages = untilNextMsecs;
+                    immutable untilNextMsecs = cast(uint)(untilNext * 1000);
+
+                    if (untilNextMsecs < instance.conn.receiveTimeout)
+                    {
+                        timeoutFromMessages = untilNextMsecs;
+                    }
                 }
+            }
+            catch (SocketSendException _)
+            {
+                logger.error("Failure sending data to server! Connection lost?");
+                return Next.retry;
             }
         }
 
