@@ -1381,17 +1381,16 @@ void onBusMessage(
                 return printObject(plugin.state);
 
             case "gc.stats":
-                logger.info("-- Memory statistics --");
                 immutable stats = GC.stats();
 
                 static if (__VERSION__ >= 2087L)
                 {
                     immutable allocated = stats.allocatedInCurrentThread;
-                    enum pattern = "Allocated in current thread: <l>%,d</> bytes";
+                    enum pattern = "Lifetime allocated in current thread: <l>%,d</> bytes";
                     logger.infof(pattern, allocated);
                 }
 
-                enum memoryUsedPattern = "Memory used: <l>%,d</> bytes, free <l>%,d</> bytes";
+                enum memoryUsedPattern = "Memory currently used: <l>%,d</> bytes, <l>%,d</> bytes reserved";
                 return logger.infof(memoryUsedPattern,
                     stats.usedSize, stats.freeSize);
 
