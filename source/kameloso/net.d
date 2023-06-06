@@ -1430,3 +1430,20 @@ final class SSLFileException : Exception
         super(msg, file, line, nextInChain);
     }
 }
+
+
+// SocketSendException
+/++
+    Exception thrown when a socket send action returned [std.socket.Socket.ERROR|Socket.ERROR].
+ +/
+final class SocketSendException : Exception
+{
+    /// Passthrough constructor.
+    this(const string msg,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        super(msg, file, line, nextInChain);
+    }
+}
