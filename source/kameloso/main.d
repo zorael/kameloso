@@ -3842,14 +3842,12 @@ auto run(string[] args)
 
             static if (__VERSION__ >= 2087L)
             {
-                immutable allocated = stats.allocatedInCurrentThread;
                 enum pattern = "Lifetime allocated in current thread: <l>%,d</> bytes";
-                logger.infof(pattern, allocated);
+                logger.infof(pattern, stats.allocatedInCurrentThread);
             }
 
             enum memoryUsedPattern = "Memory currently used: <l>%,d</> bytes, <l>%,d</> bytes reserved";
-            logger.infof(memoryUsedPattern,
-                stats.usedSize, stats.freeSize);
+            logger.infof(memoryUsedPattern, stats.usedSize, stats.freeSize);
         }
 
         if (*instance.abort)
