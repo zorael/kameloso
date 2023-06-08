@@ -3846,7 +3846,8 @@ auto run(string[] args)
                 logger.infof(pattern, stats.allocatedInCurrentThread);
             }
 
-            enum memoryUsedPattern = "Memory currently used: <l>%,d</> bytes, <l>%,d</> bytes reserved";
+            enum memoryUsedPattern = "Memory currently used: <l>%,d</> bytes, " ~
+                "<l>%,d</> additional bytes reserved";
             logger.infof(memoryUsedPattern, stats.usedSize, stats.freeSize);
         }
 

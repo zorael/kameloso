@@ -1390,7 +1390,8 @@ void onBusMessage(
                     logger.infof(pattern, allocated);
                 }
 
-                enum memoryUsedPattern = "Memory currently used: <l>%,d</> bytes, <l>%,d</> bytes reserved";
+                enum memoryUsedPattern = "Memory currently used: <l>%,d</> bytes, " ~
+                    "<l>%,d</> additional bytes reserved";
                 return logger.infof(memoryUsedPattern,
                     stats.usedSize, stats.freeSize);
 
