@@ -137,7 +137,7 @@ configuration "dev" {
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
-        "IncludeHeavyStuff" \
+        "IncludeHeavyStuff"
         //"TwitchPromoteEverywhere" \
         //"TwitchCustomEmotesEverywhere" \
         //"OmniscientSeen" \
@@ -146,7 +146,7 @@ configuration "dev" {
         //"TraceWhois" \
         //"PrintAccountNamesToo" \
         //"PrintClassNamesToo" \
-        //"BenchmarkHTTPRequests"
+        //"BenchmarkHTTPRequests" \
 }
 
 configuration "dev-lowmem" {
@@ -161,7 +161,7 @@ configuration "dev-lowmem" {
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
-        "IncludeHeavyStuff" \
+        "IncludeHeavyStuff"
         //"TwitchPromoteEverywhere" \
         //"TwitchCustomEmotesEverywhere" \
         //"OmniscientSeen" \
@@ -170,7 +170,7 @@ configuration "dev-lowmem" {
         //"TraceWhois" \
         //"PrintAccountNamesToo" \
         //"PrintClassNamesToo" \
-        //"BenchmarkHTTPRequests"
+        //"BenchmarkHTTPRequests" \
 }
 
 configuration "unittest" {
@@ -186,13 +186,13 @@ configuration "unittest" {
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
-        "OSXTMPDIR" \
+        "OSXTMPDIR"
         //"TraceWhois" \
         //"TwitchPromoteEverywhere" \
         //"TwitchCustomEmotesEverywhere" \
         //"PrintAccountNamesToo" \
         //"PrintClassNamesToo" \
-        //"BenchmarkHTTPRequests"
+        //"BenchmarkHTTPRequests" \
 }
 
 configuration "unittest-lowmem" {
@@ -209,11 +209,11 @@ configuration "unittest-lowmem" {
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
-        "OSXTMPDIR" \
+        "OSXTMPDIR"
         //"TraceWhois" \
         //"TwitchPromoteEverywhere" \
         //"TwitchCustomEmotesEverywhere" \
         //"PrintAccountNamesToo" \
         //"PrintClassNamesToo" \
-        //"BenchmarkHTTPRequests"
+        //"BenchmarkHTTPRequests" \
 }
