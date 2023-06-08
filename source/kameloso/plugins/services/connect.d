@@ -1414,8 +1414,8 @@ void startPingMonitorFiber(ConnectService service)
 
         enum StrikeBreakpoints
         {
+            wait = 2,
             ping = 3,
-            reconnect = 5,
         }
 
         while (true)
@@ -1439,25 +1439,29 @@ void startPingMonitorFiber(ConnectService service)
                     import std.concurrency : prioritySend;
 
                     /+
-                        Skip first 3 strikes, helps when resuming from suspend and similar,
-                        then allow for two PINGs with `timeToAllowForPingResponse` in between.
+                        Skip first two strikes; helps when resuming from suspend and similar,
+                        then allow for a PING with `timeToAllowForPingResponse` as timeout.
                         Finally, if all else failed, reconnect.
                      +/
                     ++strikes;
 
-                    if (strikes <= StrikeBreakpoints.ping)
+                    if (strikes <= StrikeBreakpoints.wait)
                     {
+                        if (service.state.settings.trace && (strikes > 1))
+                        {
+                            logger.warning("Server is suspiciously quiet.");
+                        }
                         delay(service, briefWait, Yes.yield);
                         continue;
                     }
-                    else if (strikes <= StrikeBreakpoints.reconnect)
+                    else if (strikes == StrikeBreakpoints.ping)
                     {
                         // Timeout. Send a preemptive ping
                         service.state.mainThread.prioritySend(ThreadMessage.ping(service.state.server.resolvedAddress));
                         delay(service, timeToAllowForPingResponse, Yes.yield);
                         continue;
                     }
-                    else /*if (strikes > StrikeBreakpoints.reconnect)*/
+                    else /*if (strikes > StrikeBreakpoints.ping)*/
                     {
                         // All failed, reconnect
                         logger.warning("No response from server. Reconnecting.");
