@@ -1387,13 +1387,9 @@ void onUnknownCommand(ConnectService service, const ref IRCEvent event)
     if we haven't received one from the server for a while. This is to ensure
     that dead connections are properly detected.
 
-    Requires version `WithPingMonitor`. It's not completely obvious whether or not
-    this is worth including, so make it opt-in for now.
-
     Params:
         service = The current [ConnectService].
  +/
-version(WithPingMonitor)
 void startPingMonitorFiber(ConnectService service)
 {
     import kameloso.plugins.common.delayawait : await, delay, removeDelayedFiber;

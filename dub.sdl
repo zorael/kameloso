@@ -91,7 +91,6 @@ versions \
     "IncludeHeavyStuff" \
     "PrintAccountNamesToo" \
     "PrintClassNamesToo" \
-    "WithPingMonitor" \
     "BenchmarkHTTPRequests" \
     "Callgrind"
 */
@@ -139,7 +138,6 @@ configuration "dev" {
         "ExplainReplay" \
         "GCStatsOnExit" \
         "IncludeHeavyStuff" \
-        "WithPingMonitor"
         //"TwitchPromoteEverywhere" \
         //"TwitchCustomEmotesEverywhere" \
         //"OmniscientSeen" \
@@ -164,7 +162,6 @@ configuration "dev-lowmem" {
         "ExplainReplay" \
         "GCStatsOnExit" \
         "IncludeHeavyStuff" \
-        "WithPingMonitor"
         //"TwitchPromoteEverywhere" \
         //"TwitchCustomEmotesEverywhere" \
         //"OmniscientSeen" \
@@ -190,7 +187,6 @@ configuration "unittest" {
         "ExplainReplay" \
         "GCStatsOnExit" \
         "OSXTMPDIR" \
-        "WithPingMonitor"
         //"TraceWhois" \
         //"TwitchPromoteEverywhere" \
         //"TwitchCustomEmotesEverywhere" \
@@ -214,7 +210,6 @@ configuration "unittest-lowmem" {
         "ExplainReplay" \
         "GCStatsOnExit" \
         "OSXTMPDIR" \
-        "WithPingMonitor"
         //"TraceWhois" \
         //"TwitchPromoteEverywhere" \
         //"TwitchCustomEmotesEverywhere" \
