@@ -1460,6 +1460,7 @@ void startPingMonitorFiber(ConnectService service)
                     else /*if (strikes > StrikeBreakpoints.reconnect)*/
                     {
                         // All failed, reconnect
+                        logger.warning("No response from server. Reconnecting.");
                         service.state.mainThread.prioritySend(ThreadMessage.reconnect);
                         return;
                     }
