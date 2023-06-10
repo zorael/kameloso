@@ -648,7 +648,7 @@ auto handleGetopt(ref Kameloso instance) @system
 
         version(Windows)
         {
-            immutable geditProgramString = settings.force ?
+            immutable geditProgramString = instance.settings.force ?
                 defaultGeditProgramString :
                 "[<i>notepad.exe</>]";
         }
@@ -984,7 +984,7 @@ auto handleGetopt(ref Kameloso instance) @system
                 cast(Flag!"shouldDownloadCacert")shouldDownloadCacert,
                 cast(Flag!"shouldDownloadOpenSSL")shouldDownloadOpenSSL);
 
-            if (*abort) return Next.returnFailure;
+            if (*instance.abort) return Next.returnFailure;
 
             if (settingsTouched)
             {
