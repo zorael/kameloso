@@ -2979,6 +2979,16 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             import kameloso.thread : exhaustMessages, interruptibleSleep;
             import core.time : seconds;
 
+            if (instance.settings.reexecToReconnect)
+            {
+                import std.stdio : writeln;
+
+                logger.trace();
+                logger.warning("Re-executing to reconnect as per settings.");
+                writeln();
+                instance.execvp();
+            }
+
             // Carry some values but otherwise restore the pristine client backup
             backupClient.nickname = instance.parser.client.nickname;
             //instance.parser.client = backupClient;  // Initialised below

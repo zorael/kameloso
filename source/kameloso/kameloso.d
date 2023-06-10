@@ -788,4 +788,90 @@ public:
          +/
         bool sawWelcome;
     }
+
+    version(Posix)
+    {
+        // execvp
+        /++
+            Re-executes the program.
+
+            Filters out any captive `--set twitch.*` keygen settings from the
+            arguments originally passed to the program, then calls `execvp`.
+         +/
+        void execvp()
+        {
+            import std.process : execvp;
+
+            if (args.length > 1)
+            {
+                size_t[] toRemove;
+
+                foreach (immutable i, const arg; args)
+                {
+                    import lu.string : beginsWith, nom;
+                    import std.algorithm.comparison : among;
+
+                    if (i == 0) continue;
+
+                    if ((arg == "--set") && (args.length > i+1))
+                    {
+                        string fullSetting = args[i+1];  // mutable
+
+                        if (fullSetting.beginsWith("twitch."))
+                        {
+                            immutable setting = fullSetting.nom!(Yes.inherit)('=');
+
+                            if (setting.among!(
+                                "twitch.keygen",
+                                "twitch.superKeygen",
+                                "twitch.googleKeygen",
+                                "twitch.spotifyKeygen"))
+                            {
+                                toRemove ~= i;
+                                toRemove ~= i+1;
+                            }
+                        }
+                    }
+                    else if (arg == "--setup-twitch")
+                    {
+                        toRemove ~= i;
+                    }
+                    /*else if (arg.among!(
+                        "--setup-twitch",
+                        "--get-cacert",
+                        "--get-openssl"))
+                    {
+                        toRemove ~= i;
+                    }*/
+                }
+
+                foreach_reverse (immutable i; toRemove)
+                {
+                    import std.algorithm.mutation : SwapStrategy, remove;
+                    args = args.remove!(SwapStrategy.stable)(i);
+                }
+            }
+
+            execvp(args[0], args);
+        }
+    }
+    /*else version(Windows)
+    {
+        // execvp
+        /++
+            Ditto
+         +/
+        void execvp()
+        {
+            import std.process : spawnProcess;
+            import core.stdc.stdlib : _exit;
+
+            spawnProcess(commandLine);
+            _exit(0);
+        }
+    }
+    else
+    {
+        static assert(0, "Unsupported platform, please file a bug.");
+    }*/
 }
