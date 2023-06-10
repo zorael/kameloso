@@ -856,7 +856,11 @@ public:
                 }
             }
 
-            execvp(args[0], args);
+            immutable result = execvp(args[0], args);
+
+            // If we're here, the call failed
+            enum pattern = "Failed to <l>execvp</> with an error value of <l>%d</>.";
+            logger.errorf(pattern, result);
         }
     }
     /*else version(Windows)
