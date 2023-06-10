@@ -2217,12 +2217,11 @@ void resetSignals() nothrow @nogc
 
     Params:
         instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
-        args = The arguments passed to the program.
 
     Returns:
         [lu.common.Next|Next].* depending on what action the calling site should take.
  +/
-auto tryGetopt(ref Kameloso instance, string[] args)
+auto tryGetopt(ref Kameloso instance)
 {
     import kameloso.plugins.common.misc : IRCPluginSettingsException;
     import kameloso.config : handleGetopt;
@@ -2236,7 +2235,7 @@ auto tryGetopt(ref Kameloso instance, string[] args)
     try
     {
         // Act on arguments getopt, pass return value to main
-        return instance.handleGetopt(args);
+        return handleGetopt(instance);
     }
     catch (GetOptException e)
     {
@@ -3610,7 +3609,7 @@ auto run(string[] args)
         resetSignals();
     }
 
-    immutable actionAfterGetopt = instance.tryGetopt(args);
+    immutable actionAfterGetopt = tryGetopt(instance);
     globalHeadless = instance.settings.headless;
 
     with (Next)
