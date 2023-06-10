@@ -796,7 +796,8 @@ public:
             Re-executes the program.
 
             Filters out any captive `--set twitch.*` keygen settings from the
-            arguments originally passed to the program, then calls `execvp`.
+            arguments originally passed to the program, then calls
+            [std.process.execvp|execvp].
          +/
         void execvp()
         {
@@ -806,15 +807,17 @@ public:
             {
                 size_t[] toRemove;
 
-                foreach (immutable i, const arg; args)
+                for (size_t i; i<args.length; ++i)
                 {
                     import lu.string : beginsWith, nom;
                     import std.algorithm.comparison : among;
 
                     if (i == 0) continue;
 
-                    if ((arg == "--set") && (args.length > i+1))
+                    if (args[i] == "--set")
                     {
+                        if (args.length <= i+1) continue;  // should never happen
+
                         string fullSetting = args[i+1];  // mutable
 
                         if (fullSetting.beginsWith("twitch."))
@@ -829,14 +832,15 @@ public:
                             {
                                 toRemove ~= i;
                                 toRemove ~= i+1;
+                                ++i;  // Skip next entry
                             }
                         }
                     }
-                    else if (arg == "--setup-twitch")
+                    else if (args[i] == "--setup-twitch")
                     {
                         toRemove ~= i;
                     }
-                    /*else if (arg.among!(
+                    /*else if (args[i].among!(
                         "--setup-twitch",
                         "--get-cacert",
                         "--get-openssl"))
