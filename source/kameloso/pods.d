@@ -80,15 +80,6 @@ public:
      +/
     bool exitSummary = false;
 
-    version(Posix)
-    {
-        // reexecToReconnect
-        /++
-            Re-executes the program instead of reconnecting hot.
-         +/
-        bool reexecToReconnect = false;
-    }
-
     @Hidden
     {
         // eagerLookups
@@ -167,6 +158,15 @@ public:
             (but process other events).
          +/
         bool observerMode;
+
+        version(Posix)
+        {
+            // reexecToReconnect
+            /++
+                Re-executes the program instead of reconnecting hot.
+             +/
+            bool reexecToReconnect = false;
+        }
     }
 }
 
