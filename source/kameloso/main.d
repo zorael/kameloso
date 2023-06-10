@@ -2979,9 +2979,21 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             import kameloso.thread : exhaustMessages, interruptibleSleep;
             import core.time : seconds;
 
+            version(TwitchSupport)
+            {
+                import std.algorithm.searching : endsWith;
+                immutable lastConnectAttemptFizzled =
+                    instance.parser.server.address.endsWith(".twitch.tv") &&
+                    !instance.sawWelcome;
+            }
+            else
+            {
+                enum lastConnectAttemptFizzled = false;
+            }
+
             version(Posix)
             {
-                if (instance.settings.reexecToReconnect)
+                if (!lastConnectAttemptFizzled && instance.settings.reexecToReconnect)
                 {
                     import std.stdio : writeln;
 
@@ -3014,12 +3026,10 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
 
             version(TwitchSupport)
             {
-                import std.algorithm.searching : endsWith;
-                import core.time : msecs;
-
-                if (instance.parser.server.address.endsWith(".twitch.tv") &&
-                    (!instance.sawWelcome || instance.askedToReconnect))
+                if (lastConnectAttemptFizzled || instance.askedToReconnect)
                 {
+                    import core.time : msecs;
+
                     /+
                         We either saw an instant disconnect before even getting
                         to RPL_WELCOME, or we're reconnecting.
