@@ -2997,7 +2997,6 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                 {
                     import std.stdio : writeln;
 
-                    logger.trace();
                     logger.warning("Re-executing to reconnect as per settings.");
                     writeln();
                     instance.execvp();
