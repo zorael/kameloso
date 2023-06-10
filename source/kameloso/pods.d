@@ -80,6 +80,15 @@ public:
      +/
     bool exitSummary = false;
 
+    version(Posix)
+    {
+        // reexecToReconnect
+        /++
+            Re-executes the program instead of reconnecting hot.
+         +/
+        bool reexecToReconnect = false;
+    }
+
     @Hidden
     {
         // eagerLookups
