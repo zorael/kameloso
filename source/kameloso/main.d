@@ -3575,6 +3575,7 @@ auto run(string[] args)
 
     // Set up the Kameloso instance.
     Kameloso instance;
+    instance.args = args;
     instance.postInstanceSetup();
 
     // Set pointers.

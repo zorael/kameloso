@@ -78,6 +78,12 @@ private:
     uint _connectionID;
 
 public:
+    // args
+    /++
+        Command-line arguments passed to the program.
+     +/
+    string[] args;
+
     // conn
     /++
         The [kameloso.net.Connection|Connection] that houses and wraps the socket
