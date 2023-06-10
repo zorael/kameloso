@@ -3041,7 +3041,11 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                 }
             }
 
-            logger.log("One moment...");
+            if (!lastConnectAttemptFizzled && !instance.askedToReconnect)
+            {
+                logger.log("One moment...");
+            }
+
             interruptibleSleep(gracePeriodBeforeReconnect, *instance.abort);
             if (*instance.abort) break outerloop;
 
