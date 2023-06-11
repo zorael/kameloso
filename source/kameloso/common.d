@@ -795,3 +795,32 @@ unittest
     assert("jkl" in aa2);
     assert("jkl" !in aa);
 }
+
+
+version(GCStatsOnExit) version = BuildPrintGCStats;
+else version(IncludeHeavyStuff) version = BuildPrintGCStats;
+
+
+// printGCStats
+/++
+    Prints garbage collector statistics to the local terminal.
+
+    Gated behind either version `GCStatsOnExit` *or* `IncludeHeavyStuff`.
+ +/
+version(BuildPrintGCStats)
+void printGCStats()
+{
+    import core.memory : GC;
+
+    immutable stats = GC.stats();
+
+    static if (__VERSION__ >= 2087L)
+    {
+        enum pattern = "Lifetime allocated in current thread: <l>%,d</> bytes";
+        logger.infof(pattern, stats.allocatedInCurrentThread);
+    }
+
+    enum memoryUsedPattern = "Memory currently in use: <l>%,d</> bytes, " ~
+        "<l>%,d</> additional bytes reserved";
+    logger.infof(memoryUsedPattern, stats.usedSize, stats.freeSize);
+}
