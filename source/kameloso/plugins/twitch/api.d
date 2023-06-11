@@ -340,8 +340,8 @@ in (url.length, "Tried to send an HTTP request without an URL")
     if (plugin.state.settings.trace)
     {
         import kameloso.common : logger;
-        enum pattern = "GET: <i>%s";
-        logger.tracef(pattern, url);
+        enum pattern = "%s: <i>%s";
+        logger.tracef(pattern, verb, url);
     }
 
     plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout());
