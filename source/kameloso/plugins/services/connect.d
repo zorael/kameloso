@@ -1402,11 +1402,12 @@ void startPingMonitorFiber(ConnectService service)
     import core.thread : Fiber;
     import core.time : seconds;
 
-    static immutable pingMonitorPeriodicity = 600.seconds;
+    if (service.connectSettings.maxPingPeriodAllowed <= 0) return;
+
+    immutable pingMonitorPeriodicity = service.connectSettings.maxPingPeriodAllowed.seconds;
 
     void pingMonitorDg()
     {
-        static immutable periodicitySeconds = pingMonitorPeriodicity.total!"seconds";
         static immutable timeToAllowForPingResponse = 30.seconds;
         static immutable briefWait = 1.seconds;
         long lastPongTimestamp;
@@ -1433,7 +1434,7 @@ void startPingMonitorFiber(ConnectService service)
                 // Triggered by timer
                 immutable nowInUnix = Clock.currTime.toUnixTime;
 
-                if ((nowInUnix - lastPongTimestamp) >= periodicitySeconds)
+                if ((nowInUnix - lastPongTimestamp) >= service.connectSettings.maxPingPeriodAllowed)
                 {
                     import kameloso.thread : ThreadMessage;
                     import std.concurrency : prioritySend;
@@ -1475,7 +1476,7 @@ void startPingMonitorFiber(ConnectService service)
                     // Remove current delay and re-delay at when the next PING check should be
                     removeDelayedFiber(service);
                     immutable elapsed = (nowInUnix - lastPongTimestamp);
-                    immutable remaining = (periodicitySeconds - elapsed);
+                    immutable remaining = (service.connectSettings.maxPingPeriodAllowed - elapsed);
                     delay(service, remaining.seconds, Yes.yield);
                 }
                 continue;
