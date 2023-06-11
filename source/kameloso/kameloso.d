@@ -78,6 +78,15 @@ private:
     uint _connectionID;
 
 public:
+    // ctor
+    /++
+        Constructor taking an [args] string array.
+     +/
+    this(string[] args)
+    {
+        this.args = args;
+    }
+
     // args
     /++
         Command-line arguments passed to the program.

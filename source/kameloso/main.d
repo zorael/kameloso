@@ -3599,8 +3599,7 @@ auto run(string[] args)
     static import kameloso.common;
 
     // Set up the Kameloso instance.
-    Kameloso instance;
-    instance.args = args;
+    auto instance = Kameloso(args);
     instance.postInstanceSetup();
 
     // Set pointers.
