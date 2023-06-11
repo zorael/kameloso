@@ -60,8 +60,12 @@ public:
 
     /// Lines to send after successfully connecting and registering.
     //@Separator(";;")
-    @CannotContainComments
-    string sendAfterConnect;
+    @CannotContainComments string sendAfterConnect;
+
+    /++
+        How much time to allow between incoming PINGs before suspecting something is wrong.
+     +/
+    @Unserialisable int maxPingPeriodAllowed = 660;
 }
 
 
