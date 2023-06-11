@@ -1381,19 +1381,8 @@ void onBusMessage(
                 return printObject(plugin.state);
 
             case "gc.stats":
-                immutable stats = GC.stats();
-
-                static if (__VERSION__ >= 2087L)
-                {
-                    immutable allocated = stats.allocatedInCurrentThread;
-                    enum pattern = "Lifetime allocated in current thread: <l>%,d</> bytes";
-                    logger.infof(pattern, allocated);
-                }
-
-                enum memoryUsedPattern = "Memory currently used: <l>%,d</> bytes, " ~
-                    "<l>%,d</> additional bytes reserved";
-                return logger.infof(memoryUsedPattern,
-                    stats.usedSize, stats.freeSize);
+                import kameloso.common : printGCStats;
+                return printGCStats();
 
             case "gc.collect":
                 import std.datetime.systime : Clock;

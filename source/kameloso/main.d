@@ -3871,22 +3871,7 @@ auto run(string[] args)
             instance.printSummary();
         }
 
-        version(GCStatsOnExit)
-        {
-            import core.memory : GC;
-
-            immutable stats = GC.stats();
-
-            static if (__VERSION__ >= 2087L)
-            {
-                enum pattern = "Lifetime allocated in current thread: <l>%,d</> bytes";
-                logger.infof(pattern, stats.allocatedInCurrentThread);
-            }
-
-            enum memoryUsedPattern = "Memory currently used: <l>%,d</> bytes, " ~
-                "<l>%,d</> additional bytes reserved";
-            logger.infof(memoryUsedPattern, stats.usedSize, stats.freeSize);
-        }
+        version(GCStatsOnExit) printGCStats();
 
         if (*instance.abort)
         {
