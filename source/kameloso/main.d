@@ -3006,7 +3006,11 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                             instance.printSummary();
                         }
 
-                        version(GCStatsOnExit) printGCStats();
+                        version(GCStatsOnExit)
+                        {
+                            import kameloso.common : printGCStats;
+                            printGCStats();
+                        }
 
                         writeln();
                     }
@@ -3871,7 +3875,11 @@ auto run(string[] args)
             instance.printSummary();
         }
 
-        version(GCStatsOnExit) printGCStats();
+        version(GCStatsOnExit)
+        {
+            import kameloso.common : printGCStats;
+            printGCStats();
+        }
 
         if (*instance.abort)
         {
