@@ -2995,11 +2995,11 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             {
                 if (!lastConnectAttemptFizzled && instance.settings.reexecToReconnect)
                 {
-                    logger.warning("Re-executing to reconnect as per settings.");
-
                     if (!instance.settings.headless)
                     {
                         import std.stdio : writeln;
+
+                        logger.warning("Re-executing to reconnect as per settings.");
 
                         if (instance.settings.exitSummary && instance.connectionHistory.length)
                         {
