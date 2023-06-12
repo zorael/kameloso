@@ -103,10 +103,7 @@ if (allSatisfy!(isStruct, T))
  +/
 auto configurationText(const string configFile)
 {
-    import lu.common : FileTypeMismatchException;
-    import std.array : replace;
     import std.file : exists, getAttributes, isFile, readText;
-    import std.string : chomp;
 
     if (!configFile.exists)
     {
@@ -114,6 +111,7 @@ auto configurationText(const string configFile)
     }
     else if (!configFile.isFile)
     {
+        import lu.common : FileTypeMismatchException;
         throw new FileTypeMismatchException(
             "Configuration file is not a file",
             configFile,
@@ -123,6 +121,9 @@ auto configurationText(const string configFile)
 
     try
     {
+        import std.array : replace;
+        import std.string : chomp;
+
         return configFile
             .readText
             .replace("[Votes]\n", "[Poll]\n")
