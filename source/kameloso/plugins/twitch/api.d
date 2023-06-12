@@ -93,22 +93,25 @@ auto retryDelegate(Dg)(TwitchPlugin plugin, Dg dg)
 
             version(PrintStacktraces)
             {
-                import kameloso.common : logger;
-                import std.json : JSONException, parseJSON;
-                import std.stdio : stdout, writeln;
-
-                logger.trace(e);
-
-                try
+                if (!plugin.state.settings.headless)
                 {
-                    writeln(parseJSON(e.responseBody).toPrettyString);
-                }
-                catch (JSONException _)
-                {
-                    writeln(e.responseBody);
-                }
+                    import kameloso.common : logger;
+                    import std.json : JSONException, parseJSON;
+                    import std.stdio : stdout, writeln;
 
-                stdout.flush();
+                    logger.trace(e);
+
+                    try
+                    {
+                        writeln(parseJSON(e.responseBody).toPrettyString);
+                    }
+                    catch (JSONException _)
+                    {
+                        writeln(e.responseBody);
+                    }
+
+                    stdout.flush();
+                }
             }
             throw e;
         }
@@ -119,12 +122,15 @@ auto retryDelegate(Dg)(TwitchPlugin plugin, Dg dg)
 
             version(PrintStacktraces)
             {
-                import kameloso.common : logger;
-                import std.stdio : stdout, writeln;
+                if (!plugin.state.settings.headless)
+                {
+                    import kameloso.common : logger;
+                    import std.stdio : stdout, writeln;
 
-                logger.trace(e);
-                writeln(e.json.toPrettyString);
-                stdout.flush();
+                    logger.trace(e);
+                    writeln(e.json.toPrettyString);
+                    stdout.flush();
+                }
             }
             throw e;
         }
@@ -135,12 +141,15 @@ auto retryDelegate(Dg)(TwitchPlugin plugin, Dg dg)
 
             version(PrintStacktraces)
             {
-                import kameloso.common : logger;
-                import std.stdio : stdout, writeln;
+                if (!plugin.state.settings.headless)
+                {
+                    import kameloso.common : logger;
+                    import std.stdio : stdout, writeln;
 
-                logger.trace(e);
-                writeln(e.json.toPrettyString);
-                stdout.flush();
+                    logger.trace(e);
+                    writeln(e.json.toPrettyString);
+                    stdout.flush();
+                }
             }
             throw e;
         }
@@ -465,10 +474,13 @@ in (url.length, "Tried to send an HTTP request without an URL")
 
                 version(PrintStacktraces)
                 {
-                    import std.stdio : stdout, writeln;
+                    if (!plugin.state.settings.headless)
+                    {
+                        import std.stdio : stdout, writeln;
 
-                    writeln(json.toPrettyString);
-                    stdout.flush();
+                        writeln(json.toPrettyString);
+                        stdout.flush();
+                    }
                 }
             }
 
