@@ -212,6 +212,8 @@ void persistentQuerier(
         setThreadName("twitchworker");
     }
 
+    bool halt;
+
     void invokeSendHTTPRequestImpl(
         const int id,
         const string url,
@@ -247,44 +249,55 @@ void persistentQuerier(
         }
     }
 
-    bool halt;
+    void sendWithBody(
+        int id,
+        string url,
+        string authToken,
+        HttpVerb verb,
+        immutable(ubyte)[] body_,
+        string contentType) scope
+    {
+        invokeSendHTTPRequestImpl(
+            id,
+            url,
+            authToken,
+            verb,
+            body_,
+            contentType);
+    }
+
+    void sendWithoutBody(
+        int id,
+        string url,
+        string authToken) scope
+    {
+        // Shorthand
+        invokeSendHTTPRequestImpl(
+            id,
+            url,
+            authToken,
+            HttpVerb.GET,
+            cast(immutable(ubyte)[])null,
+            string.init);
+    }
+
+    void onMessage(ThreadMessage message) scope
+    {
+        halt = (message.type == ThreadMessage.Type.teardown);
+    }
+
+    void onOwnerTerminated(OwnerTerminated _) scope
+    {
+        halt = true;
+    }
 
     while (!halt)
     {
         receive(
-            (int id, string url, string authToken, HttpVerb verb,
-                immutable(ubyte)[] body_, string contentType) scope
-            {
-                invokeSendHTTPRequestImpl(
-                    id,
-                    url,
-                    authToken,
-                    verb,
-                    body_,
-                    contentType);
-            },
-            (int id, string url, string authToken) scope
-            {
-                // Shorthand
-                invokeSendHTTPRequestImpl(
-                    id,
-                    url,
-                    authToken,
-                    HttpVerb.GET,
-                    cast(immutable(ubyte)[])null,
-                    string.init);
-            },
-            (ThreadMessage message) scope
-            {
-                if (message.type == ThreadMessage.Type.teardown)
-                {
-                    halt = true;
-                }
-            },
-            (OwnerTerminated _) scope
-            {
-                halt = true;
-            },
+            &sendWithBody,
+            &sendWithoutBody,
+            &onMessage,
+            &onOwnerTerminated,
             (Variant v) scope
             {
                 import std.stdio : writeln;
