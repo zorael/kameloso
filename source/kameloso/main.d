@@ -3387,7 +3387,7 @@ void printSummary(const ref Kameloso instance)
     ulong totalBytesReceived;
     uint i;
 
-    logger.info("-- Connection summary --");
+    logger.info("== Connection summary ==");
 
     foreach (const entry; instance.connectionHistory)
     {

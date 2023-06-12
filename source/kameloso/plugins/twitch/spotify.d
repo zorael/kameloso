@@ -49,7 +49,7 @@ package void requestSpotifyKeys(TwitchPlugin plugin)
     scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
     logger.trace();
-    logger.info("-- Spotify authorisation key generation mode --");
+    logger.info("== Spotify authorisation key generation mode ==");
     enum message = "
 To access the Spotify API you need a <i>client ID</> and a <i>client secret</>.
 

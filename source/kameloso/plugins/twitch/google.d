@@ -49,7 +49,7 @@ package void requestGoogleKeys(TwitchPlugin plugin)
     scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
     logger.trace();
-    logger.info("-- Google authorisation key generation mode --");
+    logger.info("== Google authorisation key generation mode ==");
     enum message = `
 To access the Google API you need a <i>client ID</> and a <i>client secret</>.
 
