@@ -167,7 +167,7 @@ in ((fiber !is null), "Tried to remove a delayed null Fiber")
 void removeDelayedFiber(IRCPlugin plugin)
 in (Fiber.getThis, "Tried to call `removeDelayedFiber` from outside a Fiber")
 {
-    return plugin.removeDelayedFiber(Fiber.getThis);
+    return removeDelayedFiber(plugin, Fiber.getThis);
 }
 
 

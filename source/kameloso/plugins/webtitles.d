@@ -126,7 +126,7 @@ void onMessage(WebtitlesPlugin plugin, const ref IRCEvent event)
     string[] urls = findURLs(event.content);  // mutable so nom works
     if (!urls.length) return;
 
-    return plugin.lookupURLs(event, urls);
+    return lookupURLs(plugin, event, urls);
 }
 
 

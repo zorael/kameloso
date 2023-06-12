@@ -368,7 +368,7 @@ void playbackNotesImpl(
             if (user.nickname == user.account) break;
         }
 
-        plugin.saveNotes();
+        saveNotes(plugin);
     }
 
     void onFailure(const IRCUser user)
@@ -448,7 +448,7 @@ void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
     note.encrypt();
 
     plugin.notes[event.channel][target] ~= note;
-    plugin.saveNotes();
+    saveNotes(plugin);
 
     enum message = "Note saved.";
     privmsg(plugin.state, event.channel, event.sender.nickname, message);

@@ -418,7 +418,7 @@ void onEndOfNames(ChanQueriesService service)
 {
     if (!service.querying && service.queriedAtLeastOnce)
     {
-        service.startChannelQueries();
+        startChannelQueries(service);
     }
 }
 
@@ -434,7 +434,7 @@ void onEndOfNames(ChanQueriesService service)
 void onMyInfo(ChanQueriesService service)
 {
     delay(service, service.timeBeforeInitialQueries, Yes.yield);
-    service.startChannelQueries();
+    startChannelQueries(service);
 }
 
 

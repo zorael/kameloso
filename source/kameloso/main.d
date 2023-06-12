@@ -907,8 +907,8 @@ auto mainLoop(ref Kameloso instance)
             {
                 if (plugin.state.nextScheduledTimestamp <= nowInHnsecs)
                 {
-                    plugin.processScheduledDelegates(nowInHnsecs);
-                    plugin.processScheduledFibers(nowInHnsecs);
+                    processScheduledDelegates(plugin, nowInHnsecs);
+                    processScheduledFibers(plugin, nowInHnsecs);
                     plugin.state.updateSchedule();  // Something is always removed
                     instance.conn.socket.blocking = false;  // Instantly timeout read to check messages
                     socketBlockingDisabled = true;

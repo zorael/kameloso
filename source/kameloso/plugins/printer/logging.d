@@ -184,7 +184,8 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                     if (plugin.printerSettings.bufferedWrites)
                     {
                         // Normal log
-                        plugin.formatMessageMonochrome(
+                        formatMessageMonochrome(
+                            plugin,
                             plugin.linebuffer,
                             event,
                             No.bellOnMention,
@@ -207,7 +208,8 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                             return;
                         }
 
-                        plugin.formatMessageMonochrome(
+                        formatMessageMonochrome(
+                            plugin,
                             plugin.linebuffer,
                             event,
                             No.bellOnMention,
@@ -549,7 +551,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
     Example:
     ---
     assert(!("~/logs".isDir));
-    bool locationIsOkay = plugin.establishLogLocation("~/logs");
+    bool locationIsOkay = establishLogLocation(plugin, "~/logs");
     assert("~/logs".isDir);
     ---
 

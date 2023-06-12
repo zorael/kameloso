@@ -2694,7 +2694,7 @@ void start(TwitchPlugin plugin)
             (!plugin.state.bot.pass.length && !plugin.state.settings.force))
         {
             import kameloso.plugins.twitch.keygen : requestTwitchKey;
-            plugin.requestTwitchKey();
+            requestTwitchKey(plugin);
             if (*plugin.state.abort) return;
             plugin.twitchSettings.keygen = false;
             needSeparator = true;
@@ -2704,7 +2704,7 @@ void start(TwitchPlugin plugin)
         {
             import kameloso.plugins.twitch.keygen : requestTwitchSuperKey;
             if (needSeparator) logger.trace(separator);
-            plugin.requestTwitchSuperKey();
+            requestTwitchSuperKey(plugin);
             if (*plugin.state.abort) return;
             plugin.twitchSettings.superKeygen = false;
             needSeparator = true;
@@ -2714,7 +2714,7 @@ void start(TwitchPlugin plugin)
         {
             import kameloso.plugins.twitch.google : requestGoogleKeys;
             if (needSeparator) logger.trace(separator);
-            plugin.requestGoogleKeys();
+            requestGoogleKeys(plugin);
             if (*plugin.state.abort) return;
             plugin.twitchSettings.googleKeygen = false;
             needSeparator = true;
@@ -2724,7 +2724,7 @@ void start(TwitchPlugin plugin)
         {
             import kameloso.plugins.twitch.spotify : requestSpotifyKeys;
             if (needSeparator) logger.trace(separator);
-            plugin.requestSpotifyKeys();
+            requestSpotifyKeys(plugin);
             if (*plugin.state.abort) return;
             plugin.twitchSettings.spotifyKeygen = false;
         }

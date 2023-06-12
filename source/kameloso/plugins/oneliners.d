@@ -363,7 +363,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
         return handleDelFromOneliner(plugin, event, slice);
 
     case "list":
-        return plugin.listCommands(event);
+        return listCommands(plugin, event);
 
     default:
         return sendUsage();
@@ -881,7 +881,7 @@ void handleDelFromOneliner(
 )
 void onCommandCommands(OnelinersPlugin plugin, const ref IRCEvent event)
 {
-    return plugin.listCommands(event);
+    return listCommands(plugin, event);
 }
 
 
@@ -973,7 +973,7 @@ version(TwitchSupport)
 void onGlobalUserstate(OnelinersPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.common.misc : catchUser;
-    plugin.catchUser(event.target);
+    catchUser(plugin, event.target);
 }
 
 

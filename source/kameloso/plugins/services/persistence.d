@@ -462,8 +462,8 @@ void onWelcome(PersistenceService service)
     import std.typecons : Flag, No, Yes;
     import core.thread : Fiber;
 
-    service.reloadAccountClassifiersFromDisk();
-    if (service.state.settings.preferHostmasks) service.reloadHostmasksFromDisk();
+    reloadAccountClassifiersFromDisk(service);
+    if (service.state.settings.preferHostmasks) reloadHostmasksFromDisk(service);
 }
 
 
@@ -519,7 +519,7 @@ void onNamesReply(PersistenceService service, const ref IRCEvent event)
             stripColours(slice) :
             slice;
 
-        service.catchUser(IRCUser(nickname, ident, address));  // this melds with the default conservative strategy
+        catchUser(service, IRCUser(nickname, ident, address));  // this melds with the default conservative strategy
     }
 }
 
@@ -537,7 +537,7 @@ void onNamesReply(PersistenceService service, const ref IRCEvent event)
 void onWhoReply(PersistenceService service, const ref IRCEvent event)
 {
     import kameloso.plugins.common.misc : catchUser;
-    service.catchUser(event.target);
+    catchUser(service, event.target);
 }
 
 
@@ -549,8 +549,8 @@ void onWhoReply(PersistenceService service, const ref IRCEvent event)
 void reload(PersistenceService service)
 {
     service.users = service.users.rehash();
-    service.reloadAccountClassifiersFromDisk();
-    if (service.state.settings.preferHostmasks) service.reloadHostmasksFromDisk();
+    reloadAccountClassifiersFromDisk(service);
+    if (service.state.settings.preferHostmasks) reloadHostmasksFromDisk(service);
 }
 
 
@@ -709,8 +709,8 @@ void reloadHostmasksFromDisk(PersistenceService service)
  +/
 void initResources(PersistenceService service)
 {
-    service.initAccountResources();
-    service.initHostmaskResources();
+    initAccountResources(service);
+    initHostmaskResources(service);
 }
 
 

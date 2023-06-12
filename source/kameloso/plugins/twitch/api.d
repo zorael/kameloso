@@ -394,7 +394,7 @@ in (url.length, "Tried to send an HTTP request without an URL")
     immutable post = Clock.currTime;
     immutable diff = (post - pre);
     immutable msecs_ = diff.total!"msecs";
-    plugin.averageApproximateQueryTime(msecs_);
+    averageApproximateQueryTime(plugin, msecs_);
 
     if (response.code == 2)
     {
@@ -1111,7 +1111,7 @@ in (Fiber.getThis, "Tried to call `waitForQueryResponse` from outside a Fiber")
         }
 
         // Make the new approximate query time a weighted average
-        plugin.averageApproximateQueryTime(response.msecs);
+        averageApproximateQueryTime(plugin, response.msecs);
         plugin.bucket.remove(id);
         return *response;
     }

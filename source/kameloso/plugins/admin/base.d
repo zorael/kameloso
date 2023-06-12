@@ -327,10 +327,10 @@ void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
     switch (verb)
     {
     case "add":
-        return plugin.addHome(event, slice);
+        return addHome(plugin, event, slice);
 
     case "del":
-        return plugin.delHome(event, slice);
+        return delHome(plugin, event, slice);
 
     case "list":
         enum pattern = "Current home channels: %-(<b>%s<b>, %)<b>";
@@ -560,7 +560,7 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
 )
 void onCommandWhitelist(AdminPlugin plugin, const ref IRCEvent event)
 {
-    plugin.manageClassLists(event, "whitelist");
+    manageClassLists(plugin, event, "whitelist");
 }
 
 
@@ -589,7 +589,7 @@ void onCommandWhitelist(AdminPlugin plugin, const ref IRCEvent event)
 )
 void onCommandElevated(AdminPlugin plugin, const ref IRCEvent event)
 {
-    plugin.manageClassLists(event, "elevated");
+    manageClassLists(plugin, event, "elevated");
 }
 
 
@@ -615,7 +615,7 @@ void onCommandElevated(AdminPlugin plugin, const ref IRCEvent event)
 )
 void onCommandOperator(AdminPlugin plugin, const ref IRCEvent event)
 {
-    plugin.manageClassLists(event, "operator");
+    manageClassLists(plugin, event, "operator");
 }
 
 
@@ -641,7 +641,7 @@ void onCommandOperator(AdminPlugin plugin, const ref IRCEvent event)
 )
 void onCommandStaff(AdminPlugin plugin, const ref IRCEvent event)
 {
-    return plugin.manageClassLists(event, "staff");
+    return manageClassLists(plugin, event, "staff");
 }
 
 
@@ -669,7 +669,7 @@ void onCommandStaff(AdminPlugin plugin, const ref IRCEvent event)
 )
 void onCommandBlacklist(AdminPlugin plugin, const ref IRCEvent event)
 {
-    plugin.manageClassLists(event, "blacklist");
+    manageClassLists(plugin, event, "blacklist");
 }
 
 
@@ -1209,7 +1209,7 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
             return privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
 
-        return plugin.modifyHostmaskDefinition(Yes.add, account, mask, event);
+        return modifyHostmaskDefinition(plugin, Yes.add, account, mask, event);
 
     case "del":
     case "remove":
@@ -1220,10 +1220,10 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
             return privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
 
-        return plugin.modifyHostmaskDefinition(No.add, string.init, slice, event);
+        return modifyHostmaskDefinition(plugin, No.add, string.init, slice, event);
 
     case "list":
-        return plugin.listHostmaskDefinitions(event);
+        return listHostmaskDefinitions(plugin, event);
 
     default:
         return sendUsage();
@@ -1361,10 +1361,10 @@ void onBusMessage(
             import core.memory : GC;
 
             case "users":
-                return plugin.onCommandShowUsers();
+                return onCommandShowUsers(plugin);
 
             case "status":
-                return plugin.onCommandStatus();
+                return onCommandStatus(plugin);
 
             case "user":
                 if (const user = slice in plugin.state.users)
@@ -1498,15 +1498,15 @@ void onBusMessage(
 
             if (subverb == "add")
             {
-                return plugin.lookupEnlist(user, verb, channelName);
+                return lookupEnlist(plugin, user, verb, channelName);
             }
             else /*if (subverb == "del")*/
             {
-                return plugin.delist(user, verb, channelName);
+                return delist(plugin, user, verb, channelName);
             }
 
         case "list":
-            return plugin.listList(channelName, verb);
+            return listList(plugin, channelName, verb);
 
         default:
             enum pattern = "Invalid bus message <l>%s</> subverb <l>%s";
@@ -1561,7 +1561,7 @@ void onBusMessage(
         break;
 
     case "summary":
-        return plugin.onCommandSummary();
+        return onCommandSummary(plugin);
 
     default:
         enum pattern = "[admin] Unimplemented bus message verb: <l>%s";

@@ -68,13 +68,13 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
     switch (verb)
     {
     case "add":
-        return plugin.lookupEnlist(slice, list, event.channel, event);
+        return lookupEnlist(plugin, slice, list, event.channel, event);
 
     case "del":
-        return plugin.delist(slice, list, event.channel, event);
+        return delist(plugin, slice, list, event.channel, event);
 
     case "list":
-        return plugin.listList(event.channel, list, event);
+        return listList(plugin, event.channel, list, event);
 
     default:
         return sendUsage();
@@ -253,10 +253,22 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
         foreach (immutable thisList; listTypes)
         {
             if (thisList == list) continue;
-            plugin.alterAccountClassifier(No.add, thisList, user.account, channelName);
+
+            alterAccountClassifier(
+                plugin,
+                No.add,
+                thisList,
+                user.account,
+                channelName);
         }
 
-        immutable result = plugin.alterAccountClassifier(Yes.add, list, user.account, channelName);
+        immutable result = alterAccountClassifier(
+            plugin,
+            Yes.add,
+            list,
+            user.account,
+            channelName);
+
         return report(result, nameOf(*user));
     }
     else if (!specified.length)
@@ -308,10 +320,22 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
                     foreach (immutable thisList; listTypes)
                     {
                         if (thisList == list) continue;
-                        plugin.alterAccountClassifier(No.add, thisList, id, channelName);
+
+                        alterAccountClassifier(
+                            plugin,
+                            No.add,
+                            thisList,
+                            id,
+                            channelName);
                     }
 
-                    immutable result = plugin.alterAccountClassifier(Yes.add, list, id, channelName);
+                    immutable result = alterAccountClassifier(
+                        plugin,
+                        Yes.add,
+                        list,
+                        id,
+                        channelName);
+
                     return report(result, nameOf(*userInList));
                 }
 
@@ -326,12 +350,21 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
                     {
                         if (thisList == list) continue;
 
-                        plugin.alterAccountClassifier(No.add, thisList,
-                            usersWithThisDisplayName.front.account, channelName);
+                        alterAccountClassifier(
+                            plugin,
+                            No.add,
+                            thisList,
+                            usersWithThisDisplayName.front.account,
+                            channelName);
                     }
 
-                    immutable result = plugin.alterAccountClassifier(Yes.add,
-                        list, usersWithThisDisplayName.front.account, channelName);
+                    immutable result = alterAccountClassifier(
+                        plugin,
+                        Yes.add,
+                        list,
+                        usersWithThisDisplayName.front.account,
+                        channelName);
+
                     return report(result, id);
                 }
 
@@ -342,10 +375,22 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
         foreach (immutable thisList; listTypes)
         {
             if (thisList == list) continue;
-            plugin.alterAccountClassifier(No.add, thisList, id, channelName);
+
+            alterAccountClassifier(
+                plugin,
+                No.add,
+                thisList,
+                id,
+                channelName);
         }
 
-        immutable result = plugin.alterAccountClassifier(Yes.add, list, id, channelName);
+        immutable result = alterAccountClassifier(
+            plugin,
+            Yes.add,
+            list,
+            id,
+            channelName);
+
         report(result, id);
     }
 
@@ -420,7 +465,12 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
         (list == "whitelist") ? "a whitelisted user" :
         /*(list == "blacklist") ?*/ "a blacklisted user";
 
-    immutable result = plugin.alterAccountClassifier(No.add, list, account, channelName);
+    immutable result = alterAccountClassifier(
+        plugin,
+        No.add,
+        list,
+        account,
+        channelName);
 
     if (event.sender.nickname.length)
     {

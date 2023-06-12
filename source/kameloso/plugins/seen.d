@@ -609,11 +609,11 @@ void onSomeAction(SeenPlugin plugin, const ref IRCEvent event)
     // This to stop it from updating seen time when someone is the target of e.g. a sub gift
     if (event.sender.nickname)
     {
-        plugin.updateUser(event.sender.nickname, event.time);
+        updateUser(plugin, event.sender.nickname, event.time);
     }
     else if (!skipTarget && event.target.nickname)
     {
-        plugin.updateUser(event.target.nickname, event.time);
+        updateUser(plugin, event.target.nickname, event.time);
     }
 }
 
@@ -683,7 +683,7 @@ void onNick(SeenPlugin plugin, const ref IRCEvent event)
 void onWHOReply(SeenPlugin plugin, const ref IRCEvent event)
 {
     // Update the user's entry
-    plugin.updateUser(event.target.nickname, event.time);
+    updateUser(plugin, event.target.nickname, event.time);
 }
 
 
@@ -720,7 +720,7 @@ void onNamesReply(SeenPlugin plugin, const ref IRCEvent event)
 
         string slice = entry;  // mutable
         slice = slice.nom!(Yes.inherit)('!'); // In case SpotChat-like, full nick!ident@address form
-        plugin.updateUser(slice, event.time);
+        updateUser(plugin, slice, event.time);
     }
 }
 
@@ -922,7 +922,7 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
     ---
     string potentiallySignedNickname = "@kameloso";
     long now = Clock.currTime.toUnixTime;
-    plugin.updateUser(potentiallySignedNickname, now);
+    updateUser(plugin, potentiallySignedNickname, now);
     ---
 
     Params:
@@ -984,7 +984,7 @@ void updateAllObservedUsers(SeenPlugin plugin)
 
     foreach (immutable nickname; uniqueUsers.byKey)
     {
-        plugin.updateUser(nickname, now, Yes.skipModesignStrip);
+        updateUser(plugin, nickname, now, Yes.skipModesignStrip);
     }
 }
 
@@ -1084,7 +1084,7 @@ void onWelcome(SeenPlugin plugin)
     {
         while (true)
         {
-            plugin.updateAllObservedUsers();
+            updateAllObservedUsers(plugin);
             saveSeen(plugin);
             delay(plugin, plugin.timeBetweenSaves, Yes.yield);
         }
@@ -1135,7 +1135,7 @@ void reload(SeenPlugin plugin)
  +/
 void teardown(SeenPlugin plugin)
 {
-    plugin.updateAllObservedUsers();
+    updateAllObservedUsers(plugin);
     saveSeen(plugin);
 }
 
@@ -1239,7 +1239,7 @@ void onBusMessage(SeenPlugin plugin, const string header, shared Sendable conten
         return .reload(plugin);
 
     case "save":
-        plugin.updateAllObservedUsers();
+        updateAllObservedUsers(plugin);
         saveSeen(plugin);
         logger.info("Seen users saved to disk.");
         break;

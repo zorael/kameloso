@@ -427,7 +427,8 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         {
             if (!plugin.state.settings.monochrome)
             {
-                plugin.formatMessageColoured(
+                formatMessageColoured(
+                    plugin,
                     plugin.linebuffer,
                     event,
                     cast(BellOnMention)plugin.printerSettings.bellOnMention,
@@ -438,7 +439,8 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 
         if (!put)
         {
-            plugin.formatMessageMonochrome(
+            formatMessageMonochrome(
+                plugin,
                 plugin.linebuffer,
                 event,
                 cast(BellOnMention)plugin.printerSettings.bellOnMention,
@@ -611,7 +613,7 @@ void start(PrinterPlugin plugin)
 
                 if (plugin.printerSettings.logs)
                 {
-                    plugin.commitAllLogs();
+                    commitAllLogs(plugin);
                     plugin.buffers.clear();  // Uncommitted lines will be LOST. Not trivial to work around.
                 }
             }

@@ -318,7 +318,7 @@ in (filename.length, "Tried to create a FIFO with an empty filename")
 )
 void onWelcome(PipelinePlugin plugin)
 {
-    plugin.initPipe();
+    initPipe(plugin);
 }
 
 
@@ -332,7 +332,7 @@ void reload(PipelinePlugin plugin)
 {
     if (!plugin.workerRunning)
     {
-        plugin.initPipe();
+        initPipe(plugin);
     }
 }
 

@@ -436,7 +436,7 @@ void tryAuth(ConnectService service)
 
         if (!service.joinedChannels)
         {
-            service.joinChannels();
+            joinChannels(service);
         }
     }
 
@@ -463,7 +463,7 @@ void onAuthEnd(ConnectService service, const ref IRCEvent event)
     {
         if (!service.joinedChannels)
         {
-            service.joinChannels();
+            joinChannels(service);
         }
     }
 }
@@ -909,7 +909,7 @@ void onSASLAuthenticate(ConnectService service)
 
     if (!plainSuccess)
     {
-        service.onSASLFailure();
+        onSASLFailure(service);
     }
 }
 
@@ -1297,7 +1297,7 @@ void onEndOfMotd(ConnectService service)
         // `service.authentication` would be set much later.
         // Twitch servers can't auth so join immediately
         // but don't do anything if we already joined channels.
-        service.joinChannels();
+        joinChannels(service);
     }
 }
 
@@ -1782,7 +1782,7 @@ void onBusMessage(ConnectService service, const string header, shared Sendable c
 
     if (message.payload == "auth")
     {
-        service.tryAuth();
+        tryAuth(service);
     }
     else
     {

@@ -483,7 +483,7 @@ if (isOutputRange!(Sink, char[]))
     event.type = IRCEvent.Type.JOIN;
     event.channel = "#channel";
 
-    plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError);
+    formatMessageMonochrome(plugin, sink, event, No.bellOnMention, No.bellOnError);
     immutable joinLine = sink.data[11..$].idup;
     version(TwitchSupport) assert((joinLine == "[join] [#channel] Nickname"), joinLine);
     else assert((joinLine == "[join] [#channel] nickname"), joinLine);
@@ -492,7 +492,7 @@ if (isOutputRange!(Sink, char[]))
     event.type = IRCEvent.Type.CHAN;
     event.content = "Harbl snarbl";
 
-    plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError);
+    formatMessageMonochrome(plugin, sink, event, No.bellOnMention, No.bellOnError);
     immutable chanLine = sink.data[11..$].idup;
     version(TwitchSupport) assert((chanLine == `[chan] [#channel] Nickname: "Harbl snarbl"`), chanLine);
     else assert((chanLine == `[chan] [#channel] nickname: "Harbl snarbl"`), chanLine);
@@ -503,7 +503,7 @@ if (isOutputRange!(Sink, char[]))
         event.sender.badges = "broadcaster/0,moderator/1,subscriber/9";
         //colour = "#3c507d";
 
-        plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError);
+        formatMessageMonochrome(plugin, sink, event, No.bellOnMention, No.bellOnError);
         immutable twitchLine = sink.data[11..$].idup;
         assert((twitchLine == `[chan] [#channel] Nickname [broadcaster/0,moderator/1,subscriber/9]: "Harbl snarbl"`),
             twitchLine);
@@ -517,7 +517,7 @@ if (isOutputRange!(Sink, char[]))
     event.sender.account = "n1ckn4m3";
     event.aux[0] = "n1ckn4m3";
 
-    plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError);
+    formatMessageMonochrome(plugin, sink, event, No.bellOnMention, No.bellOnError);
     immutable accountLine = sink.data[11..$].idup;
     version(TwitchSupport) assert((accountLine == "[account] Nickname (n1ckn4m3)"), accountLine);
     else assert((accountLine == "[account] nickname (n1ckn4m3)"), accountLine);
@@ -534,7 +534,7 @@ if (isOutputRange!(Sink, char[]))
     event.aux[4] = "aux5";
     event.type = IRCEvent.Type.ERROR;
 
-    plugin.formatMessageMonochrome(sink, event, No.bellOnMention, No.bellOnError);
+    formatMessageMonochrome(plugin, sink, event, No.bellOnMention, No.bellOnError);
     immutable errorLine = sink.data[11..$].idup;
     version(TwitchSupport)
     {
