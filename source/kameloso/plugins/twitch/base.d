@@ -2675,6 +2675,13 @@ void start(TwitchPlugin plugin)
         import kameloso.thread : ThreadMessage;
         import std.concurrency : prioritySend;
 
+        if (plugin.state.settings.headless)
+        {
+            // Headless mode is enabled, so a captive keygen session doesn't make sense
+            enum message = "Cannot start a Twitch keygen session when in headless mode";
+            return quit(plugin.state, message);
+        }
+
         // Some keygen, reload to load secrets so existing ones are read
         // Not strictly needed for normal keygen
         loadResources(plugin);
