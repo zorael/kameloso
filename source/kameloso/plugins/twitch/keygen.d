@@ -205,7 +205,7 @@ void requestTwitchSuperKey(TwitchPlugin plugin)
     scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
     logger.trace();
-    logger.info("-- Twitch authorisation super key generation mode --");
+    logger.info("== Twitch authorisation super key generation mode ==");
     enum message = `
 To access certain Twitch functionality like changing channel settings
 (what game is currently being played, etc), the program needs an authorisation
