@@ -361,6 +361,7 @@ void addHome(AdminPlugin plugin, const /*ref*/ IRCEvent event, const string rawC
 in (rawChannel.length, "Tried to add a home but the channel string was empty")
 {
     import kameloso.plugins.common.delayawait : await, unawait;
+    import kameloso.constants : BufferSize;
     import dialect.common : isValidChannel;
     import lu.string : stripped;
     import std.algorithm.searching : canFind, countUntil;
@@ -428,7 +429,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
         IRCEvent.Type.SELFJOIN,
     ];
 
-    void dg()
+    void joinHomeDg()
     {
         CarryingFiber!IRCEvent thisFiber;
 
@@ -487,9 +488,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
         }*/
     }
 
-    import kameloso.constants : BufferSize;
-
-    Fiber fiber = new CarryingFiber!IRCEvent(&dg, BufferSize.fiberStack);
+    Fiber fiber = new CarryingFiber!IRCEvent(&joinHomeDg, BufferSize.fiberStack);
     await(plugin, fiber, joinTypes);
 }
 
@@ -852,7 +851,7 @@ void onCommandSet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 
     alias Payload = Tuple!(bool);
 
-    void dg()
+    void setSettingDg()
     {
         auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis;
         assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
@@ -863,7 +862,7 @@ void onCommandSet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
-    auto fiber = new CarryingFiber!Payload(&dg, BufferSize.fiberStack);
+    auto fiber = new CarryingFiber!Payload(&setSettingDg, BufferSize.fiberStack);
     plugin.state.specialRequests ~= specialRequest!Payload(event.content, fiber);
 }
 
@@ -900,7 +899,7 @@ void onCommandGet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 
     alias Payload = Tuple!(string, string, string);
 
-    void dg()
+    void getSettingDg()
     {
         auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis;
         assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
@@ -936,7 +935,7 @@ void onCommandGet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         }
     }
 
-    auto fiber = new CarryingFiber!Payload(&dg, BufferSize.fiberStack);
+    auto fiber = new CarryingFiber!Payload(&getSettingDg, BufferSize.fiberStack);
     plugin.state.specialRequests ~= specialRequest!Payload(event.content, fiber);
 }
 
@@ -1112,7 +1111,7 @@ void cycle(
     import kameloso.thread : CarryingFiber;
     import core.thread : Fiber;
 
-    void dg()
+    void cycleDg()
     {
         while (true)
         {
@@ -1141,7 +1140,7 @@ void cycle(
         }
     }
 
-    Fiber fiber = new CarryingFiber!IRCEvent(&dg, BufferSize.fiberStack);
+    Fiber fiber = new CarryingFiber!IRCEvent(&cycleDg, BufferSize.fiberStack);
     await(plugin, fiber, IRCEvent.Type.SELFPART);
     part(plugin.state, channelName, "Cycling");
 }
@@ -1423,7 +1422,7 @@ void onBusMessage(
 
         alias Payload = Tuple!(bool);
 
-        void dg()
+        void setSettingBusDg()
         {
             auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis;
             assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
@@ -1440,7 +1439,7 @@ void onBusMessage(
             }
         }
 
-        auto fiber = new CarryingFiber!Payload(&dg, BufferSize.fiberStack);
+        auto fiber = new CarryingFiber!Payload(&setSettingBusDg, BufferSize.fiberStack);
         plugin.state.specialRequests ~= specialRequest!Payload(slice, fiber);
         return;
 

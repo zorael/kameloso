@@ -79,7 +79,7 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
 
     alias Payload = Tuple!(IRCPlugin.CommandMetadata[string][string]);
 
-    void dg()
+    void sendHelpDg()
     {
         import lu.string : beginsWith, contains, stripped;
 
@@ -122,7 +122,7 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
         }
     }
 
-    auto fiber = new CarryingFiber!Payload(&dg, BufferSize.fiberStack);
+    auto fiber = new CarryingFiber!Payload(&sendHelpDg, BufferSize.fiberStack);
     plugin.state.specialRequests ~= specialRequest!Payload(string.init, fiber);
 }
 

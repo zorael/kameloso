@@ -446,7 +446,7 @@ auto replay(Plugin, Fun)
     const bool inFiber,
     const string caller = __FUNCTION__)
 {
-    void dg(Replay replay)
+    void replayDg(Replay replay)
     {
         import lu.conv : Enum;
         import lu.string : beginsWith;
@@ -608,7 +608,7 @@ auto replay(Plugin, Fun)
         version(ExplainReplay) explainRefuse();
     }
 
-    return Replay(&dg, event, permissionsRequired, caller);
+    return Replay(&replayDg, event, permissionsRequired, caller);
 }
 
 

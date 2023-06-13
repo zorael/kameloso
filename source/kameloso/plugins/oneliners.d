@@ -511,7 +511,7 @@ void handleNewOneliner(
 
     alias Payload = Tuple!(IRCPlugin.CommandMetadata[string][string]);
 
-    void dg()
+    void addNewOnelinerDg()
     {
         auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis;
         assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
@@ -541,7 +541,7 @@ void handleNewOneliner(
         chan(plugin.state, event.channel, message);
     }
 
-    auto fiber = new CarryingFiber!Payload(&dg, BufferSize.fiberStack);
+    auto fiber = new CarryingFiber!Payload(&addNewOnelinerDg, BufferSize.fiberStack);
     plugin.state.specialRequests ~= specialRequest!Payload(string.init, fiber);
 }
 

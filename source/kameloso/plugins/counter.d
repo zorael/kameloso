@@ -323,7 +323,7 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
 
         alias Payload = Tuple!(IRCPlugin.CommandMetadata[string][string]);
 
-        void dg()
+        void addCounterDg()
         {
             auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis;
             assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
@@ -347,7 +347,7 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
             chan(plugin.state, event.channel, message);
         }
 
-        auto fiber = new CarryingFiber!Payload(&dg, BufferSize.fiberStack);
+        auto fiber = new CarryingFiber!Payload(&addCounterDg, BufferSize.fiberStack);
         plugin.state.specialRequests ~= specialRequest!Payload(string.init, fiber);
         break;
 
