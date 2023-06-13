@@ -3245,6 +3245,22 @@ public:
         this._fiber = fiber;
     }
 
+    // this
+    /++
+        Constructor.
+
+        Params:
+            context = String context of the request.
+            dg = Delegate to create a [kameloso.thread.CarryingFiber|CarryingFiber] from.
+     +/
+    this(string context, void delegate() dg)
+    {
+        import kameloso.constants : BufferSize;
+
+        this._context = context;
+        this._fiber = new CarryingFiber!T(dg, BufferSize.fiberStack);
+    }
+
     // context
     /++
         String context of the request. May be anything; highly request-specific.
@@ -3275,7 +3291,7 @@ public:
 // specialRequest
 /++
     Instantiates a [SpecialRequestImpl] in the guise of a [SpecialRequest]
-    with the inferred type `T` as payload.
+    with the implicit type `T` as payload.
 
     Params:
         T = Type to instantiate [SpecialRequestImpl] with.
@@ -3283,11 +3299,30 @@ public:
         fiber = [kameloso.thread.CarryingFiber|CarryingFiber] to embed into the request.
 
     Returns:
-        A new [SpecialRequest] that is in actualy a [SpecialRequestImpl].
+        A new [SpecialRequest] that is in actually a [SpecialRequestImpl].
  +/
 SpecialRequest specialRequest(T)(const string context, CarryingFiber!T fiber)
 {
     return new SpecialRequestImpl!T(context, fiber);
+}
+
+
+// specialRequest
+/++
+    Instantiates a [SpecialRequestImpl] in the guise of a [SpecialRequest]
+    with the explicit type `T` as payload.
+
+    Params:
+        T = Type to instantiate [SpecialRequestImpl] with.
+        context = String context of the request.
+        dg = Delegate to create a [kameloso.thread.CarryingFiber|CarryingFiber] from.
+
+    Returns:
+        A new [SpecialRequest] that is in actually a [SpecialRequestImpl].
+ +/
+SpecialRequest specialRequest(T)(const string context, void delegate() dg)
+{
+    return new SpecialRequestImpl!T(context, dg);
 }
 
 
