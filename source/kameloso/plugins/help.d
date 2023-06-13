@@ -122,8 +122,7 @@ void onCommandHelp(HelpPlugin plugin, const /*ref*/ IRCEvent event)
         }
     }
 
-    auto fiber = new CarryingFiber!Payload(&sendHelpDg, BufferSize.fiberStack);
-    plugin.state.specialRequests ~= specialRequest!Payload(string.init, fiber);
+    plugin.state.specialRequests ~= specialRequest!Payload(string.init, &sendHelpDg);
 }
 
 

@@ -862,8 +862,7 @@ void onCommandSet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
-    auto fiber = new CarryingFiber!Payload(&setSettingDg, BufferSize.fiberStack);
-    plugin.state.specialRequests ~= specialRequest!Payload(event.content, fiber);
+    plugin.state.specialRequests ~= specialRequest!Payload(event.content, &setSettingDg);
 }
 
 
@@ -935,8 +934,7 @@ void onCommandGet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         }
     }
 
-    auto fiber = new CarryingFiber!Payload(&getSettingDg, BufferSize.fiberStack);
-    plugin.state.specialRequests ~= specialRequest!Payload(event.content, fiber);
+    plugin.state.specialRequests ~= specialRequest!Payload(event.content, &getSettingDg);
 }
 
 
@@ -1439,8 +1437,7 @@ void onBusMessage(
             }
         }
 
-        auto fiber = new CarryingFiber!Payload(&setSettingBusDg, BufferSize.fiberStack);
-        plugin.state.specialRequests ~= specialRequest!Payload(slice, fiber);
+        plugin.state.specialRequests ~= specialRequest!Payload(slice, &setSettingBusDg);
         return;
 
     case "save":

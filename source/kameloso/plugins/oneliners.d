@@ -520,7 +520,7 @@ void handleNewOneliner(
         if (triggerConflicts(aa)) return;
 
         // Get channel AAs
-        plugin.state.specialRequests ~= specialRequest!Payload(event.channel, thisFiber);
+        plugin.state.specialRequests ~= specialRequest(event.channel, thisFiber);
         Fiber.yield();
 
         IRCPlugin.CommandMetadata[string][string] channelSpecificAA = thisFiber.payload[0];
@@ -541,8 +541,7 @@ void handleNewOneliner(
         chan(plugin.state, event.channel, message);
     }
 
-    auto fiber = new CarryingFiber!Payload(&addNewOnelinerDg, BufferSize.fiberStack);
-    plugin.state.specialRequests ~= specialRequest!Payload(string.init, fiber);
+    plugin.state.specialRequests ~= specialRequest!Payload(string.init, &addNewOnelinerDg);
 }
 
 
