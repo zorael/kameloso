@@ -1405,7 +1405,7 @@ in (channelName.length, "Tried to fetch a channel with an empty channel name str
                 }
             ]
         }
-        +/
+         +/
 
         Channel channel;
         channel.gameIDString = gameDataJSON["game_id"].str;
@@ -2152,7 +2152,7 @@ in (idString.length, "Tried to get BTTV emotes with an empty ID string")
                     }
                 ]
             }
-            +/
+             +/
 
             if (responseJSON.type != JSONType.object)
             {
@@ -2247,7 +2247,7 @@ in (Fiber.getThis, "Tried to call `getBTTVGlobalEmotes` from outside a Fiber")
                 "userId": "5561169bd6b9d206222a8c19"
             }
         ]
-        +/
+         +/
 
         foreach (immutable emoteJSON; responseJSON.array)
         {
@@ -2383,7 +2383,7 @@ in (idString.length, "Tried to get FFZ emotes with an empty ID string")
                     }
                 }
             }
-            +/
+             +/
 
             if (responseJSON.type == JSONType.object)
             {
@@ -2481,7 +2481,7 @@ in (idString.length, "Tried to get 7tv emotes with an empty ID string")
                     "userId": "5561169bd6b9d206222a8c19"
                 }
             ]
-            +/
+             +/
 
             if (responseJSON.type == JSONType.array)
             {
@@ -2567,7 +2567,7 @@ in (Fiber.getThis, "Tried to call `get7tvGlobalEmotes` from outside a Fiber")
             },
             [...]
         ]
-        +/
+         +/
 
         foreach (const emoteJSON; responseJSON.array)
         {

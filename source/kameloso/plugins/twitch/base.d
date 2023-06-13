@@ -1283,7 +1283,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     /+
         The minimum amount of time in seconds that must have passed between
         two song requests by one non-operator person.
-    +/
+     +/
     enum minimumTimeBetweenSongRequests = 60;
 
     void sendUsage()
@@ -3195,7 +3195,7 @@ void startSaver(TwitchPlugin plugin)
             /+
                 Only save watchtimes if there's at least one broadcast currently ongoing.
                 Since we save at broadcast stop there won't be anything new to save otherwise.
-            +/
+             +/
             if (plugin.twitchSettings.watchtime && plugin.viewerTimesDirty)
             {
                 saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);

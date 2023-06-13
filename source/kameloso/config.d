@@ -531,7 +531,7 @@ auto handleGetopt(ref Kameloso instance) @system
         [kameloso.configreader.readConfigInto] call. Then call getopt on the rest.
         Include "c|config" in the normal getopt to have it automatically
         included in the --help text.
-        +/
+     +/
 
     // Results can be const
     auto argsSlice = instance.args[];
@@ -582,7 +582,7 @@ auto handleGetopt(ref Kameloso instance) @system
     /++
         Call getopt in a nested function so we can call it both to merely
         parse for settings and to format the help listing.
-        +/
+     +/
     auto callGetopt(/*const*/ string[] theseArgs, const Flag!"quiet" quiet)
     {
         import kameloso.logger : LogLevel;
