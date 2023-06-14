@@ -3011,8 +3011,6 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                     {
                         import std.stdio : writeln;
 
-                        logger.warning("Re-executing to reconnect as per settings.");
-
                         if (instance.settings.exitSummary && instance.connectionHistory.length)
                         {
                             instance.printSummary();
@@ -3023,6 +3021,11 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                             import kameloso.common : printGCStats;
                             printGCStats();
                         }
+
+                        immutable message = instance.askedToReexec ?
+                            "Re-executing as requested." :
+                            "Re-executing to reconnect as per settings.";
+                        logger.warning(message);
 
                         writeln();
                     }
