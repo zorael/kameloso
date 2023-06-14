@@ -314,7 +314,19 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             case reconnect:
-                instance.askedToReconnect = true;
+                import kameloso.thread : Boxed;
+
+                if (auto boxedReexecFlag = cast(Boxed!bool)message.payload)
+                {
+                    // Re-exec explicitly requested
+                    instance.askedToReexec = boxedReexecFlag.payload;
+                }
+                else
+                {
+                    // Normal reconnect
+                    instance.askedToReconnect = true;
+                }
+
                 instance.priorityBuffer.put(OutgoingLine(
                     "QUIT :Reconnecting.",
                     No.quiet));
