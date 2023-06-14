@@ -3005,7 +3005,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
 
             version(Posix)
             {
-                if (!lastConnectAttemptFizzled && instance.settings.reexecToReconnect)
+                if ((!lastConnectAttemptFizzled && instance.settings.reexecToReconnect) || instance.askedToReexec)
                 {
                     if (!instance.settings.headless)
                     {
@@ -3028,6 +3028,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                     }
 
                     instance.execvp();
+                    instance.askedToReexec = false;  // In case of failure
                 }
             }
 
