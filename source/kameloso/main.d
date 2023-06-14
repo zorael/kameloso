@@ -314,16 +314,24 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             case reconnect:
-                import kameloso.thread : Boxed;
-
-                if (auto boxedReexecFlag = cast(Boxed!bool)message.payload)
+                version(Posix)
                 {
-                    // Re-exec explicitly requested
-                    instance.askedToReexec = boxedReexecFlag.payload;
+                    import kameloso.thread : Boxed;
+
+                    if (auto boxedReexecFlag = cast(Boxed!bool)message.payload)
+                    {
+                        // Re-exec explicitly requested
+                        instance.askedToReexec = boxedReexecFlag.payload;
+                    }
+                    else
+                    {
+                        // Normal reconnect
+                        instance.askedToReconnect = true;
+                    }
                 }
                 else
                 {
-                    // Normal reconnect
+                    // Only normal reconnect available
                     instance.askedToReconnect = true;
                 }
 
