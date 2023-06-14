@@ -327,8 +327,11 @@ void messageFiber(ref Kameloso instance)
                     instance.askedToReconnect = true;
                 }
 
+                immutable quitMessage = message.content.length ?
+                    message.content :
+                    "Reconnecting.";
                 instance.priorityBuffer.put(OutgoingLine(
-                    "QUIT :Reconnecting.",
+                    "QUIT :" ~ quitMessage,
                     No.quiet));
                 next = Next.retry;
                 break;
