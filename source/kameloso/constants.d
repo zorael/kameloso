@@ -340,12 +340,12 @@ enum Timeout
     /++
         The maximum amount of time to wait between connection attempts.
      +/
-    connectionDelayCap = 600,
+    connectionDelayCap = 300,
 
     /++
         The amount of seconds to wait before retrying after a failed connection attempt.
      +/
-    connectionRetry = 10,
+    connectionRetry = 5,
 
     /++
         The amount of seconds to wait before retrying to connect after an instant
