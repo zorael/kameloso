@@ -999,7 +999,7 @@ auto mainLoop(ref Kameloso instance)
         // Check concurrency messages to see if we should exit
         next = callMessenger();
         if (*instance.abort) return Next.returnFailure;
-        else if (next != Next.continue_) return next;
+        //else if (next != Next.continue_) return next;  // process buffers before passing on Next.retry
 
         bool bufferHasMessages = (
             !instance.outbuffer.empty |
