@@ -1291,6 +1291,62 @@ void listHostmaskDefinitions(AdminPlugin plugin, const ref IRCEvent event)
 }
 
 
+// onCommandReconnect
+/++
+    Disconnect from and immediately reconnects to the server.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .permissionsRequired(Permissions.admin)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("reconnect")
+            .policy(PrefixPolicy.nickname)
+            .description("Disconnects from and immediately reconnects to the server.")
+            .addSyntax("$command [optional quit message]")
+    )
+)
+void onCommandReconnect(AdminPlugin plugin, const ref IRCEvent event)
+{
+    import kameloso.thread : ThreadMessage, boxed;
+    import lu.string : stripped;
+    import std.concurrency : prioritySend;
+
+    logger.warning("Reconnecting upon administrator request.");
+    plugin.state.mainThread.send(ThreadMessage.reconnect(event.content.stripped, boxed(false)));
+}
+
+
+// onCommandReexec
+/++
+    Re-executes the program.
+ +/
+version(Posix)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .permissionsRequired(Permissions.admin)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("reexec")
+            .policy(PrefixPolicy.nickname)
+            .description("Re-executes the program.")
+            .addSyntax("$command [optional quit message]")
+    )
+)
+void onCommandReexec(AdminPlugin plugin, const ref IRCEvent event)
+{
+    import kameloso.thread : ThreadMessage, boxed;
+    import lu.string : stripped;
+    import std.concurrency : prioritySend;
+
+    plugin.state.mainThread.send(ThreadMessage.reconnect(event.content.stripped, boxed(true)));
+}
+
+
 // onCommandBus
 /++
     Sends an internal bus message to other plugins, much like how such can be
