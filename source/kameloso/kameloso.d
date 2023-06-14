@@ -800,6 +800,12 @@ public:
 
     version(Posix)
     {
+        // askedToReexec
+        /++
+            Set when the user explicitly asked to re-exec in the middle of a session.
+         +/
+        bool askedToReexec;
+
         // execvp
         /++
             Re-executes the program.
