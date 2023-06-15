@@ -115,45 +115,7 @@ auto retryDelegate(Dg)(TwitchPlugin plugin, Dg dg)
             }
             throw e;
         }
-        catch (UnexpectedJSONException e)
-        {
-            // Ditto
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-
-            version(PrintStacktraces)
-            {
-                if (!plugin.state.settings.headless)
-                {
-                    import kameloso.common : logger;
-                    import std.stdio : stdout, writeln;
-
-                    logger.trace(e);
-                    writeln(e.json.toPrettyString);
-                    stdout.flush();
-                }
-            }
-            throw e;
-        }
-        catch (ErrorJSONException e)
-        {
-            // Ditto
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-
-            version(PrintStacktraces)
-            {
-                if (!plugin.state.settings.headless)
-                {
-                    import kameloso.common : logger;
-                    import std.stdio : stdout, writeln;
-
-                    logger.trace(e);
-                    writeln(e.json.toPrettyString);
-                    stdout.flush();
-                }
-            }
-            throw e;
-        }
-        catch (EmptyDataJSONException e)
+        catch (EmptyDataJSONException e)  // Must be before TwitchJSONException below
         {
             // Ditto
             if (i < TwitchPlugin.delegateRetries-1) continue;
@@ -162,6 +124,25 @@ auto retryDelegate(Dg)(TwitchPlugin plugin, Dg dg)
             {
                 import kameloso.common : logger;
                 logger.trace(e);
+            }
+            throw e;
+        }
+        catch (TwitchJSONException e)  // UnexpectedJSONException and ErrorJSONException
+        {
+            // Ditto
+            if (i < TwitchPlugin.delegateRetries-1) continue;
+
+            version(PrintStacktraces)
+            {
+                if (!plugin.state.settings.headless)
+                {
+                    import kameloso.common : logger;
+                    import std.stdio : stdout, writeln;
+
+                    logger.trace(e);
+                    writeln(e.json.toPrettyString);
+                    stdout.flush();
+                }
             }
             throw e;
         }
