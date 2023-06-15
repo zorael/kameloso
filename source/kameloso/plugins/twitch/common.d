@@ -125,6 +125,31 @@ void printManualURL(const string url)
 }
 
 
+// TwitchJSONException
+/++
+    Abstract class for Twitch JSON exceptions, to deduplicate catching.
+ +/
+abstract class TwitchJSONException : Exception
+{
+    /++
+        Accessor to a [std.json.JSONValue|JSONValue] that this exception refers to.
+     +/
+    JSONValue json();
+
+    /++
+        Constructor.
+     +/
+    this(
+        const string message,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        super(message, file, line, nextInChain);
+    }
+}
+
+
 // UnexpectedJSONException
 /++
     A normal [object.Exception|Exception] but where its type conveys the specific
@@ -132,34 +157,42 @@ void printManualURL(const string url)
 
     It optionally embeds the JSON.
  +/
-final class UnexpectedJSONException : Exception
+final class UnexpectedJSONException : TwitchJSONException
 {
 private:
-    import std.json : JSONValue;
-
-public:
     /++
         [std.json.JSONValue|JSONValue] in question.
      +/
-    JSONValue json;
+    JSONValue _json;
+
+public:
+    /++
+        Accessor to [_json].
+     +/
+    override JSONValue json()
+    {
+        return _json;
+    }
 
     /++
         Create a new [UnexpectedJSONException], attaching a [std.json.JSONValue|JSONValue].
      +/
-    this(const string message,
-        const JSONValue json,
+    this(
+        const string message,
+        const JSONValue _json,
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
     {
-        this.json = json;
+        this._json = _json;
         super(message, file, line, nextInChain);
     }
 
     /++
         Constructor.
      +/
-    this(const string message,
+    this(
+        const string message,
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
@@ -176,30 +209,94 @@ public:
 
     It optionally embeds the JSON.
  +/
-final class ErrorJSONException : Exception
+final class ErrorJSONException : TwitchJSONException
 {
+private:
     /++
         [std.json.JSONValue|JSONValue] in question.
      +/
-    JSONValue json;
+    JSONValue _json;
+
+public:
+    /++
+        Accessor to [_json].
+     +/
+    override JSONValue json()
+    {
+        return _json;
+    }
 
     /++
         Create a new [ErrorJSONException], attaching a [std.json.JSONValue|JSONValue].
      +/
-    this(const string message,
-        const JSONValue json,
+    this(
+        const string message,
+        const JSONValue _json,
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
     {
-        this.json = json;
+        this._json = _json;
         super(message, file, line, nextInChain);
     }
 
     /++
         Constructor.
      +/
-    this(const string message,
+    this(
+        const string message,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        super(message, file, line, nextInChain);
+    }
+}
+
+
+// EmptyDataJSONException
+/++
+    Exception, to be thrown when an API query to the Twitch servers failed,
+    due to having received empty JSON data.
+
+    It is a normal [object.Exception|Exception] but with attached metadata.
+ +/
+final class EmptyDataJSONException : TwitchJSONException
+{
+private:
+    /++
+        The response body that was received.
+     +/
+    JSONValue _json;
+
+public:
+    /++
+        Accessor to [_json].
+     +/
+    override JSONValue json()
+    {
+        return _json;
+    }
+
+    /++
+        Create a new [EmptyDataException], attaching a response body.
+     +/
+    this(
+        const string message,
+        const JSONValue _json,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        this._json = _json;
+        super(message, file, line, nextInChain);
+    }
+
+    /++
+        Create a new [EmptyDataException], without attaching anything.
+     +/
+    this(
+        const string message,
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
@@ -232,7 +329,8 @@ final class TwitchQueryException : Exception
         Create a new [TwitchQueryException], attaching a response body, an error
         and an HTTP status code.
      +/
-    this(const string message,
+    this(
+        const string message,
         const string responseBody,
         const string error,
         const uint code,
@@ -249,46 +347,8 @@ final class TwitchQueryException : Exception
     /++
         Create a new [TwitchQueryException], without attaching anything.
      +/
-    this(const string message,
-        const string file = __FILE__,
-        const size_t line = __LINE__,
-        Throwable nextInChain = null) pure nothrow @nogc @safe
-    {
-        super(message, file, line, nextInChain);
-    }
-}
-
-
-// EmptyDataJSONException
-/++
-    Exception, to be thrown when an API query to the Twitch servers failed,
-    due to having received empty JSON data.
-
-    It is a normal [object.Exception|Exception] but with attached metadata.
- +/
-final class EmptyDataJSONException : Exception
-{
-@safe:
-    /// The response body that was received.
-    JSONValue json;
-
-    /++
-        Create a new [EmptyDataException], attaching a response body.
-     +/
-    this(const string message,
-        const JSONValue json,
-        const string file = __FILE__,
-        const size_t line = __LINE__,
-        Throwable nextInChain = null) pure nothrow @nogc @safe
-    {
-        this.json = json;
-        super(message, file, line, nextInChain);
-    }
-
-    /++
-        Create a new [EmptyDataException], without attaching anything.
-     +/
-    this(const string message,
+    this(
+        const string message,
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
@@ -312,7 +372,8 @@ final class MissingBroadcasterTokenException : Exception
     /++
         Create a new [MissingBroadcasterTokenException], attaching a channel name.
      +/
-    this(const string message,
+    this(
+        const string message,
         const string channelName,
         const string file = __FILE__,
         const size_t line = __LINE__,
@@ -325,7 +386,8 @@ final class MissingBroadcasterTokenException : Exception
     /++
         Create a new [MissingBroadcasterTokenException], without attaching anything.
      +/
-    this(const string message,
+    this(
+        const string message,
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
@@ -350,7 +412,8 @@ final class InvalidCredentialsException : Exception
     /++
         Create a new [InvalidCredentialsException], attaching a response body.
      +/
-    this(const string message,
+    this(
+        const string message,
         const JSONValue json,
         const string file = __FILE__,
         const size_t line = __LINE__,
@@ -363,7 +426,8 @@ final class InvalidCredentialsException : Exception
     /++
         Create a new [InvalidCredentialsException], without attaching anything.
      +/
-    this(const string message,
+    this(
+        const string message,
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
@@ -384,7 +448,8 @@ final class EmptyResponseException : Exception
     /++
         Create a new [EmptyResponseException].
      +/
-    this(const string message,
+    this(
+        const string message,
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
