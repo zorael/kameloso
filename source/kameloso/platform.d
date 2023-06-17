@@ -256,7 +256,8 @@ auto openInBrowser(const string url)
             // Assume XDG
             enum open = "xdg-open";
 
-            if (!environment.get("DISPLAY", string.init).length)
+            if (!environment.get("DISPLAY", string.init).length &&
+                !environment.get("WAYLAND_DISPLAY", string.init).length)
             {
                 throw new Exception("No graphical interface detected");
             }
