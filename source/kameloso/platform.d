@@ -303,3 +303,127 @@ auto openInBrowser(const string url)
         static assert(0, "Unsupported platform, please file a bug.");
     }
 }
+
+
+// execvp
+/++
+    Re-executes the program.
+
+    Filters out any captive `--set twitch.*` keygen settings from the
+    arguments originally passed to the program, then calls
+    [std.process.execvp|execvp].
+
+    On Windows, the behaviour is faked using [std.process.spawnProcess|spawnProcess].
+ +/
+void execvp(/*const*/ string[] args) @system
+{
+    import kameloso.common : logger;
+
+    if (args.length > 1)
+    {
+        size_t[] toRemove;
+
+        for (size_t i; i<args.length; ++i)
+        {
+            import lu.string : beginsWith, nom;
+            import std.algorithm.comparison : among;
+
+            if (i == 0) continue;
+
+            if (args[i] == "--set")
+            {
+                if (args.length <= i+1) continue;  // should never happen
+
+                string fullSetting = args[i+1];  // mutable
+
+                if (fullSetting.beginsWith("twitch."))
+                {
+                    import std.typecons : Flag, No, Yes;
+
+                    immutable setting = fullSetting.nom!(Yes.inherit)('=');
+
+                    if (setting.among!(
+                        "twitch.keygen",
+                        "twitch.superKeygen",
+                        "twitch.googleKeygen",
+                        "twitch.spotifyKeygen"))
+                    {
+                        toRemove ~= i;
+                        toRemove ~= i+1;
+                        ++i;  // Skip next entry
+                    }
+                }
+            }
+            else if (args[i] == "--setup-twitch")
+            {
+                toRemove ~= i;
+            }
+            else
+            {
+                version(Windows)
+                {
+                    if (args[i].among!(
+                    "--setup-twitch",
+                    "--get-cacert",
+                    "--get-openssl"))
+                    {
+                        toRemove ~= i;
+                    }
+                }
+            }
+        }
+
+        foreach_reverse (immutable i; toRemove)
+        {
+            import std.algorithm.mutation : SwapStrategy, remove;
+            args = args.remove!(SwapStrategy.stable)(i);
+        }
+    }
+
+    version(Posix)
+    {
+        import std.process : execvp;
+
+        immutable result = execvp(args[0], args);
+
+        // If we're here, the call failed
+        enum pattern = "Failed to <l>execvp</> with an error value of <l>%d</>.";
+        logger.errorf(pattern, result);
+    }
+    else version(Windows)
+    {
+        import std.process : ProcessException, spawnProcess;
+
+        immutable shell = this.reexecWithPowershell ?
+            [ "powershell.exe" ] :
+            [ "cmd.exe", "/c" ];
+
+        immutable commandLine =
+        [
+            "cmd.exe",
+            "/c",
+            "start",
+            "/min",
+        ] ~ shell ~ args[0] ~ args;
+
+        try
+        {
+            import core.stdc.stdlib : exit;
+
+            spawnProcess(commandLine);
+
+            // If we're here, the call succeeded
+            //resetConsoleModeAndCodepage(); // Don't, it will be called via atexit
+            exit(0);
+        }
+        catch (ProcessException e)
+        {
+            enum pattern = "Failed to spawn a new process: <t>%s</>.";
+            logger.errorf(pattern, e.msg);
+        }
+    }
+    else
+    {
+        static assert(0, "Unsupported platform, please file a bug.");
+    }
+}

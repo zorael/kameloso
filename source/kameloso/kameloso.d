@@ -798,103 +798,18 @@ public:
         bool sawWelcome;
     }
 
-    version(Posix)
+    // askedToReexec
+    /++
+        Set when the user explicitly asked to re-exec in the middle of a session.
+     +/
+    bool askedToReexec;
+
+    version(Windows)
     {
-        // askedToReexec
+        // reexecWithPowershell
         /++
-            Set when the user explicitly asked to re-exec in the middle of a session.
+            Re-execs with Powershell instead of with `cmd.exe`.
          +/
-        bool askedToReexec;
-
-        // execvp
-        /++
-            Re-executes the program.
-
-            Filters out any captive `--set twitch.*` keygen settings from the
-            arguments originally passed to the program, then calls
-            [std.process.execvp|execvp].
-         +/
-        void execvp()
-        {
-            import std.process : execvp;
-
-            if (args.length > 1)
-            {
-                size_t[] toRemove;
-
-                for (size_t i; i<args.length; ++i)
-                {
-                    import lu.string : beginsWith, nom;
-                    import std.algorithm.comparison : among;
-
-                    if (i == 0) continue;
-
-                    if (args[i] == "--set")
-                    {
-                        if (args.length <= i+1) continue;  // should never happen
-
-                        string fullSetting = args[i+1];  // mutable
-
-                        if (fullSetting.beginsWith("twitch."))
-                        {
-                            immutable setting = fullSetting.nom!(Yes.inherit)('=');
-
-                            if (setting.among!(
-                                "twitch.keygen",
-                                "twitch.superKeygen",
-                                "twitch.googleKeygen",
-                                "twitch.spotifyKeygen"))
-                            {
-                                toRemove ~= i;
-                                toRemove ~= i+1;
-                                ++i;  // Skip next entry
-                            }
-                        }
-                    }
-                    else if (args[i] == "--setup-twitch")
-                    {
-                        toRemove ~= i;
-                    }
-                    /*else if (args[i].among!(
-                        "--setup-twitch",
-                        "--get-cacert",
-                        "--get-openssl"))
-                    {
-                        toRemove ~= i;
-                    }*/
-                }
-
-                foreach_reverse (immutable i; toRemove)
-                {
-                    import std.algorithm.mutation : SwapStrategy, remove;
-                    args = args.remove!(SwapStrategy.stable)(i);
-                }
-            }
-
-            immutable result = execvp(args[0], args);
-
-            // If we're here, the call failed
-            enum pattern = "Failed to <l>execvp</> with an error value of <l>%d</>.";
-            logger.errorf(pattern, result);
-        }
+        bool reexecWithPowershell = true;
     }
-    /*else version(Windows)
-    {
-        // execvp
-        /++
-            Ditto
-         +/
-        void execvp()
-        {
-            import std.process : spawnProcess;
-            import core.stdc.stdlib : _exit;
-
-            spawnProcess(commandLine);
-            _exit(0);
-        }
-    }
-    else
-    {
-        static assert(0, "Unsupported platform, please file a bug.");
-    }*/
 }

@@ -3018,6 +3018,8 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             {
                 if ((!lastConnectAttemptFizzled && instance.settings.reexecToReconnect) || instance.askedToReexec)
                 {
+                    import kameloso.platform : execvp;
+
                     if (!instance.settings.headless)
                     {
                         import std.stdio : writeln;
@@ -3041,7 +3043,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                         writeln();
                     }
 
-                    instance.execvp();
+                    execvp(instance.args);
                     instance.askedToReexec = false;  // In case of failure
                 }
             }
