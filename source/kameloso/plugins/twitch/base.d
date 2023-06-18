@@ -2780,8 +2780,8 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
 in (channelName.length, "Tried to start room monitor fibers with an empty channel name string")
 {
     import kameloso.plugins.common.delayawait : delay;
-    import std.datetime.systime : Clock;
-    import core.time : seconds;
+    import std.datetime.systime : Clock, SysTime;
+    import core.time : hours, seconds;
 
     // How often to poll the servers for various information about a channel.
     static immutable monitorUpdatePeriodicity = 60.seconds;
@@ -2793,8 +2793,8 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
 
         immutable idSnapshot = room.uniqueID;
 
-        enum botUpdatePeriodicity = (6 * 3600);
-        long lastBotUpdateTimestamp;
+        static immutable botUpdatePeriodicity = 3.hours;
+        SysTime lastBotUpdateTime;
         string[] botBlacklist;
 
         while (true)
@@ -2810,13 +2810,13 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
 
             try
             {
-                immutable nowInUnix = Clock.currTime.toUnixTime;
-                immutable sinceBotUpdate = (nowInUnix - lastBotUpdateTimestamp);
+                immutable now = Clock.currTime;
+                immutable sinceLastBotUpdate = (now - lastBotUpdateTime);
 
-                if (sinceBotUpdate >= botUpdatePeriodicity)
+                if (sinceLastBotUpdate >= botUpdatePeriodicity)
                 {
                     botBlacklist = getBotList(plugin);
-                    lastBotUpdateTimestamp = nowInUnix;
+                    lastBotUpdateTime = now;
                 }
 
                 immutable chattersJSON = getChatters(plugin, room.broadcasterName);
