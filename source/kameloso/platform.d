@@ -405,7 +405,7 @@ void execvp(
             [ "powershell.exe" ] :
             [ "cmd.exe", "/c" ];
 
-        immutable commandLine =
+        const commandLine =
         [
             "cmd.exe",
             "/c",
