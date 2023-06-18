@@ -159,13 +159,19 @@ public:
          +/
         bool observerMode;
 
-        version(Posix)
+        // reexecToReconnect
+        /++
+            Re-executes the program instead of reconnecting hot.
+         +/
+        bool reexecToReconnect = false;
+
+        version(Windows)
         {
-            // reexecToReconnect
+            // reexecWithPowershell
             /++
-                Re-executes the program instead of reconnecting hot.
+                Re-executes with Powershell instead of with `cmd.exe`.
              +/
-            bool reexecToReconnect = false;
+            bool reexecWithPowershell = true;
         }
     }
 }

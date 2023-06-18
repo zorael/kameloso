@@ -314,8 +314,15 @@ auto openInBrowser(const string url)
     [std.process.execvp|execvp].
 
     On Windows, the behaviour is faked using [std.process.spawnProcess|spawnProcess].
+
+    Params:
+        args = Arguments passed to the program.
+        reexecWithPowershell = (Windows) Re-execute the program with Powershell
+            used as shell, as opposed to the conventional `cmd.exe`.
  +/
-void execvp(/*const*/ string[] args) @system
+void execvp(
+    /*const*/ string[] args,
+    const bool reexecWithPowershell = bool.init) @system
 {
     import kameloso.common : logger;
 
@@ -394,7 +401,7 @@ void execvp(/*const*/ string[] args) @system
     {
         import std.process : ProcessException, spawnProcess;
 
-        immutable shell = this.reexecWithPowershell ?
+        immutable shell = reexecWithPowershell ?
             [ "powershell.exe" ] :
             [ "cmd.exe", "/c" ];
 

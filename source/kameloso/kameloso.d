@@ -803,13 +803,4 @@ public:
         Set when the user explicitly asked to re-exec in the middle of a session.
      +/
     bool askedToReexec;
-
-    version(Windows)
-    {
-        // reexecWithPowershell
-        /++
-            Re-execs with Powershell instead of with `cmd.exe`.
-         +/
-        bool reexecWithPowershell = true;
-    }
 }
