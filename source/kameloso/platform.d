@@ -417,9 +417,12 @@ void execvp(
         {
             import core.stdc.stdlib : exit;
 
-            spawnProcess(commandLine);
+            auto pid = spawnProcess(commandLine);
 
             // If we're here, the call succeeded
+            enum pattern = "Forked into PID <l>%d</>.";
+            logger.infof(pattern, pid.processID);
+
             //resetConsoleModeAndCodepage(); // Don't, it will be called via atexit
             exit(0);
         }
