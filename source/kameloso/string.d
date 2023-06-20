@@ -396,3 +396,27 @@ auto doublyBackslashed(const string path)
         return path;
     }
 }
+
+///
+version(Windows)
+unittest
+{
+    {
+        enum path = r"c:\windows\system32";
+        enum expected = r"c:\\windows\\system32";
+        immutable actual = path.doublyBackslashed;
+        assert((actual == expected), actual);
+    }
+    {
+        enum path = r"c:\Users\blerp\AppData\Local\kameloso\server\irc.chat.twitch.tv";
+        enum expected = r"c:\\Users\\blerp\\AppData\\Local\\kameloso\\server\\irc.chat.twitch.tv";
+        immutable actual = path.doublyBackslashed;
+        assert((actual == expected), actual);
+    }
+    {
+        enum path = r"c:\\windows\\system32";
+        enum expected = r"c:\\windows\\system32";
+        immutable actual = path.doublyBackslashed;
+        assert((actual == expected), actual);
+    }
+}
