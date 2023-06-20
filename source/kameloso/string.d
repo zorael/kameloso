@@ -352,3 +352,47 @@ unittest
         assert((replaced == line), replaced);
     }
 }
+
+
+// doublyBackslashed
+/++
+    Returns the supplied string with any backslashes doubled. This is to make
+    paths on Windows display properly.
+
+    Merely returns the given string on Posix and other non-Windows platforms.
+
+    Example:
+    ---
+    string path = r"c:\Windows\system32";
+    assert(path.doublyBackslashed == r"c:\\Windows\\system32");
+    ---
+
+    Params:
+        path = The original path string with only single backslashes.
+
+    Returns:
+        The passed `path` but doubly backslashed.
+ +/
+auto doublyBackslashed(const string path)
+{
+    if (!path.length) return path;
+
+    version(Windows)
+    {
+        import std.array : replace;
+        import std.string : indexOf;
+
+        string slice = path.replace('\\', r"\\");
+
+        while (slice.indexOf(r"\\\\") != -1)
+        {
+            slice = slice.replace(r"\\\\", r"\\");
+        }
+
+        return slice;
+    }
+    else
+    {
+        return path;
+    }
+}
