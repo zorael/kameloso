@@ -635,6 +635,7 @@ void commitAllLogsImpl(PrinterPlugin plugin)
  +/
 void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
 {
+    import kameloso.string : doublyBackslashed;
     import std.exception : ErrnoException;
     import std.file : FileException;
     import std.utf : UTFException;
@@ -678,7 +679,7 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
     catch (FileException e)
     {
         enum pattern = "File exception caught when committing log <l>%s</>: <t>%s%s";
-        logger.warningf(pattern, buffer.file, e.msg, plugin.bell);
+        logger.warningf(pattern, buffer.file.doublyBackslashed, e.msg, plugin.bell);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (ErrnoException e)
@@ -687,12 +688,12 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
         {
             import kameloso.common : errnoStrings;
             enum pattern = "ErrnoException <l>%s</> caught when committing log to <l>%s</>: <t>%s%s";
-            logger.warningf(pattern, errnoStrings[e.errno], buffer.file, e.msg, plugin.bell);
+            logger.warningf(pattern, errnoStrings[e.errno], buffer.file.doublyBackslashed, e.msg, plugin.bell);
         }
         else version(Windows)
         {
             enum pattern = "ErrnoException <l>%d</> caught when committing log to <l>%s</>: <t>%s%s";
-            logger.warningf(pattern, e.errno, buffer.file, e.msg, plugin.bell);
+            logger.warningf(pattern, e.errno, buffer.file.doublyBackslashed, e.msg, plugin.bell);
         }
         else
         {
@@ -704,7 +705,7 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
     catch (Exception e)
     {
         enum pattern = "Unexpected exception caught when committing log <l>%s</>: <t>%s%s";
-        logger.warningf(pattern, buffer.file, e.msg, plugin.bell);
+        logger.warningf(pattern, buffer.file.doublyBackslashed, e.msg, plugin.bell);
         version(PrintStacktraces) logger.trace(e);
     }
 }

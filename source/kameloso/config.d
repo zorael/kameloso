@@ -135,9 +135,11 @@ void verboselyWriteConfig(
 
     if (!instance.settings.headless)
     {
+        import kameloso.string : doublyBackslashed;
+
         printObjects(client, instance.bot, server, instance.connSettings, instance.settings);
         enum pattern = "Configuration written to <i>%s";
-        logger.logf(pattern, instance.settings.configFile);
+        logger.logf(pattern, instance.settings.configFile.doublyBackslashed);
 
         if (!instance.bot.admins.length && !instance.bot.homeChannels.length && giveInstructions)
         {
@@ -205,6 +207,9 @@ void manageConfigFile(
     const Flag!"shouldOpenGraphicalEditor" shouldOpenGraphicalEditor,
     const Flag!"force" force) @system
 {
+    import kameloso.string : doublyBackslashed;
+    import std.file : exists;
+
     /++
         Opens up the configuration file in a terminal text editor.
      +/
@@ -232,12 +237,11 @@ void manageConfigFile(
                 static assert(0, "Unsupported platform, please file a bug.");
             }
 
-            logger.error(message);
-            return;
+            return logger.error(message);
         }
 
         enum pattern = "Attempting to open <i>%s</> with <i>%s</>...";
-        logger.logf(pattern, instance.settings.configFile, editor);
+        logger.logf(pattern, instance.settings.configFile.doublyBackslashed, editor.doublyBackslashed);
 
         immutable command = [ editor, instance.settings.configFile ];
         spawnProcess(command).wait;
@@ -268,9 +272,8 @@ void manageConfigFile(
 
             if (!isGraphicalEnvironment)
             {
-                logger.error("No graphical environment appears to be running; " ~
-                    "cannot open editor.");
-                return;
+                enum message = "No graphical environment appears to be running; cannot open editor.";
+                return logger.error(message);
             }
         }
         else version(Windows)
@@ -286,13 +289,11 @@ void manageConfigFile(
         // by [kameloso.main.tryGetopt].
 
         enum pattern = "Attempting to open <i>%s</> in a graphical text editor...";
-        logger.logf(pattern, instance.settings.configFile);
+        logger.logf(pattern, instance.settings.configFile.doublyBackslashed);
 
         immutable command = [ editor, instance.settings.configFile ];
         execute(command);
     }
-
-    import std.file : exists;
 
     /+
         Write config if...
@@ -1164,6 +1165,7 @@ void notifyAboutMissingSettings(const string[][string] missingEntries,
     const string binaryPath,
     const string configFile)
 {
+    import kameloso.string : doublyBackslashed;
     import std.conv : text;
     import std.path : baseName;
 
@@ -1178,7 +1180,7 @@ void notifyAboutMissingSettings(const string[][string] missingEntries,
     enum pattern = "Use <i>%s --save</> to regenerate the file, " ~
         "updating it with all available configuration. [<i>%s</>]";
     logger.trace();
-    logger.tracef(pattern, binaryPath.baseName, configFile);
+    logger.tracef(pattern, binaryPath.baseName, configFile.doublyBackslashed);
     logger.trace();
 }
 
@@ -1196,6 +1198,7 @@ void notifyAboutMissingSettings(const string[][string] missingEntries,
  +/
 void notifyAboutIncompleteConfiguration(const string configFile, const string binaryPath)
 {
+    import kameloso.string : doublyBackslashed;
     import std.file : exists;
     import std.path : baseName;
 
@@ -1205,7 +1208,7 @@ void notifyAboutIncompleteConfiguration(const string configFile, const string bi
     if (configFile.exists)
     {
         enum pattern = "Edit <i>%s</> and make sure it has at least one of the following:";
-        logger.logf(pattern, configFile);
+        logger.logf(pattern, configFile.doublyBackslashed);
         giveConfigurationMinimalInstructions();
     }
     else

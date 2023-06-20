@@ -653,6 +653,7 @@ void reloadHostmasksFromDisk(PersistenceService service)
 
     foreach (immutable hostmask, immutable account; accountByHostmask)
     {
+        import kameloso.string : doublyBackslashed;
         import dialect.common : isValidHostmask;
         import lu.string : contains;
 
@@ -668,13 +669,13 @@ void reloadHostmasksFromDisk(PersistenceService service)
         if (!hostmask.isValidHostmask(service.state.server))
         {
             enum pattern =`Malformed hostmask in <l>%s</>: "<l>%s</>"`;
-            logger.warningf(pattern, service.hostmasksFile, hostmask);
+            logger.warningf(pattern, service.hostmasksFile.doublyBackslashed, hostmask);
             continue;
         }
         else if (!account.length)
         {
             enum pattern =`Incomplete hostmask entry in <l>%s</>: "<l>%s</>" has empty account`;
-            logger.warningf(pattern, service.hostmasksFile, hostmask);
+            logger.warningf(pattern, service.hostmasksFile.doublyBackslashed, hostmask);
             continue;
         }
 
@@ -694,7 +695,7 @@ void reloadHostmasksFromDisk(PersistenceService service)
         catch (Exception e)
         {
             enum pattern =`Exception parsing hostmask in <l>%s</> ("<l>%s</>"): <l>%s`;
-            logger.warningf(pattern, service.hostmasksFile, hostmask, e.msg);
+            logger.warningf(pattern, service.hostmasksFile.doublyBackslashed, hostmask, e.msg);
             version(PrintStacktraces) logger.trace(e);
         }
     }

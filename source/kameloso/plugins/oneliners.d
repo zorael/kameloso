@@ -948,8 +948,9 @@ void reload(OnelinersPlugin plugin)
             }
             catch (JSONException _)
             {
+                import kameloso.string : doublyBackslashed;
                 enum pattern = "Failed to load oneliner \"<l>%s</>\"; <l>%s</> is outdated or corrupt.";
-                logger.errorf(pattern, trigger, plugin.onelinerFile);
+                logger.errorf(pattern, trigger, plugin.onelinerFile.doublyBackslashed);
             }
         }
     }

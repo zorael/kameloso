@@ -78,6 +78,7 @@ auto downloadWindowsSSL(
 
     if (shouldDownloadCacert)
     {
+        import kameloso.string : doublyBackslashed;
         import std.path : dirName;
 
         enum cacertURL = "http://curl.se/ca/cacert.pem";
@@ -91,14 +92,14 @@ auto downloadWindowsSSL(
             if (!instance.settings.force)
             {
                 enum cacertPattern = "File saved as <l>%s</>; configuration updated.";
-                logger.infof(cacertPattern, cacertFile);
+                logger.infof(cacertPattern, cacertFile.doublyBackslashed);
                 instance.connSettings.caBundleFile = "cacert.pem";  // cacertFile
                 retval = Yes.settingsTouched;
             }
             else
             {
                 enum cacertPattern = "File saved as <l>%s</>.";
-                logger.infof(cacertPattern, cacertFile);
+                logger.infof(cacertPattern, cacertFile.doublyBackslashed);
                 instance.connSettings.caBundleFile = cacertFile;  // absolute path
                 //retval = Yes.settingsTouched;  // let user supply --save
             }

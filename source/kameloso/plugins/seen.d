@@ -1003,6 +1003,7 @@ void updateAllObservedUsers(SeenPlugin plugin)
  +/
 auto loadSeen(const string filename)
 {
+    import kameloso.string : doublyBackslashed;
     import std.file : exists, isFile, readText;
     import std.json : JSONException, parseJSON;
 
@@ -1011,7 +1012,7 @@ auto loadSeen(const string filename)
     if (!filename.exists || !filename.isFile)
     {
         enum pattern = "<l>%s</> does not exist or is not a file";
-        logger.warningf(pattern, filename);
+        logger.warningf(pattern, filename.doublyBackslashed);
         return aa;
     }
 

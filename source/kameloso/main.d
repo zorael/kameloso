@@ -837,8 +837,10 @@ auto mainLoop(ref Kameloso instance)
         }
         catch (Exception e)
         {
+            import kameloso.string : doublyBackslashed;
+
             enum pattern = "Unhandled messenger exception: <l>%s</> (at <l>%s</>:<l>%d</>)";
-            logger.warningf(pattern, e.msg, e.file, e.line);
+            logger.warningf(pattern, e.msg, e.file.doublyBackslashed, e.line);
             version(PrintStacktraces) logger.trace(e);
             return Next.returnFailure;
         }
@@ -1268,6 +1270,7 @@ auto listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
  +/
 void processLineFromServer(ref Kameloso instance, const string raw, const long nowInUnix)
 {
+    import kameloso.string : doublyBackslashed;
     import dialect.common : IRCParseException;
     import lu.string : NomException;
     import std.typecons : Flag, No, Yes;
@@ -1529,14 +1532,14 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
     catch (IRCParseException e)
     {
         enum pattern = "IRCParseException: <l>%s</> (at <l>%s</>:<l>%d</>)";
-        logger.warningf(pattern, e.msg, e.file, e.line);
+        logger.warningf(pattern, e.msg, e.file.doublyBackslashed, e.line);
         printEventDebugDetails(event, raw);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (NomException e)
     {
         enum pattern = `NomException: tried to nom "<l>%s</>" with "<l>%s</>" (at <l>%s</>:<l>%d</>)`;
-        logger.warningf(pattern, e.haystack, e.needle, e.file, e.line);
+        logger.warningf(pattern, e.haystack, e.needle, e.file.doublyBackslashed, e.line);
         printEventDebugDetails(event, raw);
         version(PrintStacktraces) logger.trace(e.info);
     }
@@ -1555,7 +1558,7 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
     catch (Exception e)
     {
         enum pattern = "Unhandled exception: <l>%s</> (at <l>%s</>:<l>%d</>)";
-        logger.warningf(pattern, e.msg, e.file, e.line);
+        logger.warningf(pattern, e.msg, e.file.doublyBackslashed, e.line);
         printEventDebugDetails(event, raw);
         version(PrintStacktraces) logger.trace(e);
     }
@@ -2249,6 +2252,7 @@ auto tryGetopt(ref Kameloso instance)
     import kameloso.plugins.common.misc : IRCPluginSettingsException;
     import kameloso.config : handleGetopt;
     import kameloso.configreader : ConfigurationFileReadFailureException;
+    import kameloso.string : doublyBackslashed;
     import lu.common : FileTypeMismatchException;
     import lu.serialisation : DeserialisationException;
     import std.conv : ConvException;
@@ -2275,13 +2279,13 @@ auto tryGetopt(ref Kameloso instance)
     catch (FileTypeMismatchException e)
     {
         enum pattern = "Specified configuration file <l>%s</> is not a file!";
-        logger.errorf(pattern, e.filename);
+        logger.errorf(pattern, e.filename.doublyBackslashed);
         //version(PrintStacktraces) logger.trace(e.info);
     }
     catch (ConfigurationFileReadFailureException e)
     {
         enum pattern = "Error reading and decoding configuration file [<l>%s</>]: <l>%s";
-        logger.errorf(pattern, e.filename, e.msg);
+        logger.errorf(pattern, e.filename.doublyBackslashed, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (DeserialisationException e)
@@ -2293,7 +2297,7 @@ auto tryGetopt(ref Kameloso instance)
     catch (ProcessException e)
     {
         enum pattern = "Failed to open <l>%s</> in an editor: <l>%s";
-        logger.errorf(pattern, instance.settings.configFile, e.msg);
+        logger.errorf(pattern, instance.settings.configFile.doublyBackslashed, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (IRCPluginSettingsException e)
@@ -2926,11 +2930,12 @@ void resolvePaths(ref Kameloso instance)
 
     if (!instance.settings.resourceDirectory.exists)
     {
+        import kameloso.string : doublyBackslashed;
         import std.file : mkdirRecurse;
 
         mkdirRecurse(instance.settings.resourceDirectory);
         enum pattern = "Created resource directory <i>%s";
-        logger.logf(pattern, instance.settings.resourceDirectory);
+        logger.logf(pattern, instance.settings.resourceDirectory.doublyBackslashed);
     }
 
     instance.settings.configDirectory = instance.settings.configFile.dirName;
@@ -3887,9 +3892,10 @@ auto run(string[] args)
         }
         catch (Exception e)
         {
+            import kameloso.string : doublyBackslashed;
             enum pattern = "Caught Exception when saving settings: " ~
                 "<l>%s</> (at <l>%s</>:<l>%d</>)";
-            logger.warningf(pattern, e.msg, e.file, e.line);
+            logger.warningf(pattern, e.msg, e.file.doublyBackslashed, e.line);
             version(PrintStacktraces) logger.trace(e);
         }
     }
