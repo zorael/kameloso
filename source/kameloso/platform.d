@@ -402,7 +402,7 @@ void execvp(
         import std.process : ProcessException, spawnProcess;
 
         immutable shell = reexecWithPowershell ?
-            [ "powershell.exe" ] :
+            [ "powershell", "-c" ] :
             [ "cmd.exe", "/c" ];
 
         const commandLine =
