@@ -314,24 +314,16 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             case reconnect:
-                version(Posix)
-                {
-                    import kameloso.thread : Boxed;
+                import kameloso.thread : Boxed;
 
-                    if (auto boxedReexecFlag = cast(Boxed!bool)message.payload)
-                    {
-                        // Re-exec explicitly requested
-                        instance.askedToReexec = boxedReexecFlag.payload;
-                    }
-                    else
-                    {
-                        // Normal reconnect
-                        instance.askedToReconnect = true;
-                    }
+                if (auto boxedReexecFlag = cast(Boxed!bool)message.payload)
+                {
+                    // Re-exec explicitly requested
+                    instance.askedToReexec = boxedReexecFlag.payload;
                 }
                 else
                 {
-                    // Only normal reconnect available
+                    // Normal reconnect
                     instance.askedToReconnect = true;
                 }
 
@@ -3019,36 +3011,34 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                 enum lastConnectAttemptFizzled = false;
             }
 
-            version(Posix)
+            if ((!lastConnectAttemptFizzled && instance.settings.reexecToReconnect) || instance.askedToReexec)
             {
-                if ((!lastConnectAttemptFizzled && instance.settings.reexecToReconnect) || instance.askedToReexec)
+                import kameloso.platform : execvp;
+
+                if (!instance.settings.headless)
                 {
-                    if (!instance.settings.headless)
+                    import std.stdio : writeln;
+
+                    if (instance.settings.exitSummary && instance.connectionHistory.length)
                     {
-                        import std.stdio : writeln;
-
-                        if (instance.settings.exitSummary && instance.connectionHistory.length)
-                        {
-                            instance.printSummary();
-                        }
-
-                        version(GCStatsOnExit)
-                        {
-                            import kameloso.common : printGCStats;
-                            printGCStats();
-                        }
-
-                        immutable message = instance.askedToReexec ?
-                            "Re-executing as requested." :
-                            "Re-executing to reconnect as per settings.";
-                        logger.warning(message);
-
-                        writeln();
+                        instance.printSummary();
                     }
 
-                    instance.execvp();
-                    instance.askedToReexec = false;  // In case of failure
+                    version(GCStatsOnExit)
+                    {
+                        import kameloso.common : printGCStats;
+                        printGCStats();
+                    }
+
+                    immutable message = instance.askedToReexec ?
+                        "Re-executing as requested." :
+                        "Re-executing to reconnect as per settings.";
+                    logger.warning(message);
+                    writeln();
                 }
+
+                execvp(instance.args);
+                instance.askedToReexec = false;  // In case of failure
             }
 
             // Carry some values but otherwise restore the pristine client backup

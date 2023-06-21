@@ -159,14 +159,11 @@ public:
          +/
         bool observerMode;
 
-        version(Posix)
-        {
-            // reexecToReconnect
-            /++
-                Re-executes the program instead of reconnecting hot.
-             +/
-            bool reexecToReconnect = false;
-        }
+        // reexecToReconnect
+        /++
+            Re-executes the program instead of reconnecting hot.
+         +/
+        bool reexecToReconnect = false;
     }
 }
 

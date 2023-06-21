@@ -1476,13 +1476,10 @@ void onBusMessage(
             return;
     }
 
-    version(Posix)
-    {
-        case "reexec":
-            import kameloso.thread : ThreadMessage, boxed;
-            import std.concurrency : prioritySend;
-            return plugin.state.mainThread.prioritySend(ThreadMessage.reconnect(string.init, boxed(true)));
-    }
+    case "reexec":
+        import kameloso.thread : ThreadMessage, boxed;
+        import std.concurrency : prioritySend;
+        return plugin.state.mainThread.prioritySend(ThreadMessage.reconnect(string.init, boxed(true)));
 
     case "set":
         import kameloso.constants : BufferSize;
