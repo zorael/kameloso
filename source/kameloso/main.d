@@ -310,6 +310,7 @@ void messageFiber(ref Kameloso instance)
                 instance.priorityBuffer.put(OutgoingLine(
                     quitMessage,
                     cast(Flag!"quiet")message.quiet));
+                instance.quitMessageSent = true;
                 next = Next.returnSuccess;
                 break;
 
@@ -333,6 +334,7 @@ void messageFiber(ref Kameloso instance)
                 instance.priorityBuffer.put(OutgoingLine(
                     "QUIT :" ~ quitMessage,
                     No.quiet));
+                instance.quitMessageSent = true;
                 next = Next.retry;
                 break;
 
@@ -624,6 +626,7 @@ void messageFiber(ref Kameloso instance)
                     instance.bot.quitReason;
                 immutable reason = rawReason.replaceTokens(instance.parser.client);
                 line = "QUIT :" ~ reason;
+                instance.quitMessageSent = true;
                 next = Next.returnSuccess;
                 break;
 
@@ -3102,6 +3105,9 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             instance.parser.server.address = addressSnapshot;
             instance.parser.server.port = portSnapshot;
 
+            // Reset any previous quit flag
+            instance.quitMessageSent = false;
+
             version(TwitchSupport)
             {
                 instance.sawWelcome = false;
@@ -3847,9 +3853,9 @@ auto run(string[] args)
 
     // If we're here, we should exit. The only question is in what way.
 
-    if (instance.conn.connected)
+    if (instance.conn.connected && !instance.quitMessageSent)
     {
-        // Send a proper QUIT, optionally verbosely
+        // If not already sent, send a proper QUIT, optionally verbosely
         string reason;  // mutable
 
         if (!*instance.abort && !instance.settings.headless && !instance.settings.hideOutgoing)

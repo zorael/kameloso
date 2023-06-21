@@ -788,6 +788,12 @@ public:
      +/
     bool askedToReconnect;
 
+    // quitMessageSent
+    /++
+        Set when we have sent a QUIT message to the server.
+     +/
+    bool quitMessageSent;
+
     version(TwitchSupport)
     {
         // sawWelcome
