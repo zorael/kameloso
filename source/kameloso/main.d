@@ -3015,8 +3015,6 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
 
                 if (!instance.settings.headless)
                 {
-                    import std.stdio : stdout, writeln;
-
                     if (instance.settings.exitSummary && instance.connectionHistory.length)
                     {
                         instance.printSummary();
@@ -3032,8 +3030,17 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                         "Re-executing as requested." :
                         "Re-executing to reconnect as per settings.";
                     logger.info(message);
-                    writeln();
-                    stdout.flush();
+
+                    version(Windows)
+                    {
+                        // Don't writeln on Windows, leave room for "Forked into PID" message
+                    }
+                    else
+                    {
+                        import std.stdio : stdout, writeln;
+                        writeln();
+                        stdout.flush();
+                    }
                 }
 
                 execvp(instance.args);
