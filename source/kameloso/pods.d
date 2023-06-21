@@ -164,15 +164,6 @@ public:
             Re-executes the program instead of reconnecting hot.
          +/
         bool reexecToReconnect = false;
-
-        version(Windows)
-        {
-            // reexecWithPowershell
-            /++
-                Re-executes with Powershell instead of with `cmd.exe`.
-             +/
-            bool reexecWithPowershell = true;
-        }
     }
 }
 

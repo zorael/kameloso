@@ -3032,19 +3032,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                     writeln();
                 }
 
-                version(Posix)
-                {
-                    execvp(instance.args);
-                }
-                else version(Windows)
-                {
-                    execvp(instance.args, instance.settings.reexecWithPowershell);
-                }
-                else
-                {
-                    static assert(0, "Unsupported platform, please file a bug.");
-                }
-
+                execvp(instance.args);
                 instance.askedToReexec = false;  // In case of failure
             }
 

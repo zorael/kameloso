@@ -317,12 +317,8 @@ auto openInBrowser(const string url)
 
     Params:
         args = Arguments passed to the program.
-        reexecWithPowershell = (Windows) Re-execute the program with Powershell
-            used as shell, as opposed to the conventional `cmd.exe`.
  +/
-void execvp(
-    /*const*/ string[] args,
-    const bool reexecWithPowershell = bool.init) @system
+void execvp(/*const*/ string[] args) @system
 {
     import kameloso.common : logger;
 
@@ -399,11 +395,48 @@ void execvp(
     }
     else version(Windows)
     {
+        import lu.string : beginsWith;
+        import std.array : Appender;
         import std.process : ProcessException, spawnProcess;
 
-        immutable shell = reexecWithPowershell ?
-            [ "powershell", "-c" ] :
-            [ "cmd.exe", "/c" ];
+        Appender!(char[]) sink;
+        sink.reserve(128);
+
+        string arg0 = args[0];
+        args = (args.length > 1) ?
+            args[1..$] :
+            null;
+
+        if (!arg0.beginsWith('.') && !arg0.beginsWith('/') && (arg0[1] != ':'))
+        {
+            // Powershell won't call binaries in the working directory without ./
+            arg0 = "./" ~ arg0;
+        }
+
+        for (size_t i; i<args.length; ++i)
+        {
+            import std.algorithm.comparison : among;
+            import std.format : formattedWrite;
+
+            if (sink.data.length) sink.put(' ');
+
+            if ((args.length >= i+1) &&
+                args[i].among!(
+                    "-H",
+                    "-C",
+                    "--homeChannels",
+                    "--guestChannels",
+                    "--set"))
+            {
+                // Octothorpes must be encased in single quotes
+                sink.formattedWrite("%s '%s'", args[i], args[i+1]);
+                ++i;
+            }
+            else
+            {
+                sink.put(args[i]);
+            }
+        }
 
         const commandLine =
         [
@@ -411,7 +444,9 @@ void execvp(
             "/c",
             "start",
             "/min",
-        ] ~ shell ~ args[0] ~ args;
+            "powershell",
+            "-c"
+        ] ~ arg0 ~ sink.data.idup;
 
         try
         {
