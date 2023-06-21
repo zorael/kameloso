@@ -3015,7 +3015,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
 
                 if (!instance.settings.headless)
                 {
-                    import std.stdio : writeln;
+                    import std.stdio : stdout, writeln;
 
                     if (instance.settings.exitSummary && instance.connectionHistory.length)
                     {
@@ -3033,6 +3033,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                         "Re-executing to reconnect as per settings.";
                     logger.info(message);
                     writeln();
+                    stdout.flush();
                 }
 
                 execvp(instance.args);
