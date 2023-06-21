@@ -3011,7 +3011,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
 
             if ((!lastConnectAttemptFizzled && instance.settings.reexecToReconnect) || instance.flags.askedToReexec)
             {
-                import kameloso.platform : ExecvpException, execvp;
+                import kameloso.platform : ExecException, execvp;
                 import std.process : ProcessException;
 
                 if (!instance.settings.headless)
@@ -3062,7 +3062,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                     enum pattern = "Failed to spawn a new process: <t>%s</>.";
                     logger.errorf(pattern, e.msg);
                 }
-                catch (ExecvpException e)
+                catch (ExecException e)
                 {
                     enum pattern = "Failed to <l>execvp</> with an error value of <l>%d</>.";
                     logger.errorf(pattern, e.retval);

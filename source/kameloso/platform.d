@@ -327,7 +327,7 @@ auto openInBrowser(const string url)
         On Posix, it either exits the program or it throws.
 
     Throws:
-        On Posix, [ExecvpException] on failure.
+        On Posix, [ExecException] on failure.
         On Windows, [std.process.ProcessException|ProcessException] on failure.
  +/
 Pid execvp(/*const*/ string[] args) @system
@@ -396,7 +396,7 @@ Pid execvp(/*const*/ string[] args) @system
 
         // If we're here, the call failed
         enum message = "execvp failed";
-        throw new ExecvpException(message, retval);
+        throw new ExecException(message, retval);
     }
     else version(Windows)
     {
@@ -466,19 +466,20 @@ Pid execvp(/*const*/ string[] args) @system
 }
 
 
-// ExecvpException
+// ExecException
 /++
-    Exception thrown when an `execvp` call failed.
+    Exception thrown when an [std.process.execvp|execvp] action failed.
  +/
-final class ExecvpException : Exception
+final class ExecException : Exception
 {
     /++
-        `execvp` return value.
+        [std.process.execvp|execvp] return value.
      +/
     int retval;
 
     /// Constructor attaching a return value.
-    this(const string msg,
+    this(
+        const string msg,
         const int retval,
         const string file = __FILE__,
         const size_t line = __LINE__,
@@ -489,7 +490,8 @@ final class ExecvpException : Exception
     }
 
     /// Passthrough constructor.
-    this(const string msg,
+    this(
+        const string msg,
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
