@@ -366,9 +366,9 @@ void execvp(/*const*/ string[] args) @system
                 version(Windows)
                 {
                     if (args[i].among!(
-                    "--setup-twitch",
-                    "--get-cacert",
-                    "--get-openssl"))
+                        "--setup-twitch",
+                        "--get-cacert",
+                        "--get-openssl"))
                     {
                         toRemove ~= i;
                     }
