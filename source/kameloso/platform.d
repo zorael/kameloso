@@ -321,6 +321,7 @@ auto openInBrowser(const string url)
 void execvp(/*const*/ string[] args) @system
 {
     import kameloso.common : logger;
+    import std.algorithm.comparison : among;
 
     if (args.length > 1)
     {
@@ -329,7 +330,6 @@ void execvp(/*const*/ string[] args) @system
         for (size_t i=1; i<args.length; ++i)
         {
             import lu.string : beginsWith, nom;
-            import std.algorithm.comparison : among;
             import std.typecons : Flag, No, Yes;
 
             if (args[i] == "--set")
@@ -395,12 +395,18 @@ void execvp(/*const*/ string[] args) @system
         Appender!(char[]) sink;
         sink.reserve(128);
 
-        string arg0 = args[0];
-        args = (args.length > 1) ?
-            args[1..$] :
-            null;
+        string arg0 = args[0];  // mutable
+        args = args[1..$];  // pop it
 
-        if (!arg0.beginsWith('.') && !arg0.beginsWith('/') && (arg0[1] != ':'))
+        if (arg0.beginsWith('.') || arg0.beginsWith('/'))
+        {
+            // Seems to be a full path
+        }
+        else if ((arg0.length > 3) && (arg0[1] == ':'))
+        {
+            // May be C:\kameloso.exe and would as such be okay
+        }
+        else
         {
             // Powershell won't call binaries in the working directory without ./
             arg0 = "./" ~ arg0;
@@ -408,7 +414,6 @@ void execvp(/*const*/ string[] args) @system
 
         for (size_t i; i<args.length; ++i)
         {
-            import std.algorithm.comparison : among;
             import std.format : formattedWrite;
 
             if (sink.data.length) sink.put(' ');
