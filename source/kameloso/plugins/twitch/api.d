@@ -301,12 +301,13 @@ void persistentQuerier(
 
     Example:
     ---
-    immutable QueryResponse = sendHTTPRequest(plugin, "https://id.twitch.tv/oauth2/validate", "OAuth 30letteroauthstring");
+    immutable QueryResponse = sendHTTPRequest(plugin, "https://id.twitch.tv/oauth2/validate", __FUNCTION__, "OAuth 30letteroauthstring");
     ---
 
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         url = The URL to query.
+        caller = Name of the calling function.
         authorisationHeader = Authorisation HTTP header to pass.
         verb = What [arsd.http2.HttpVerb|HttpVerb] to use in the request.
         body_ = Request body to send in case of verbs like `POST` and `PATCH`.
@@ -325,6 +326,7 @@ void persistentQuerier(
 QueryResponse sendHTTPRequest(
     TwitchPlugin plugin,
     const string url,
+    const string caller = __FUNCTION__,
     const string authorisationHeader = string.init,
     /*const*/ HttpVerb verb = HttpVerb.GET,
     /*const*/ ubyte[] body_ = null,
@@ -343,8 +345,8 @@ in (url.length, "Tried to send an HTTP request without an URL")
     if (plugin.state.settings.trace)
     {
         import kameloso.common : logger;
-        enum pattern = "%s: <i>%s";
-        logger.tracef(pattern, verb, url);
+        enum pattern = "%s: <i>%s<t> (%s)";
+        logger.tracef(pattern, verb, url, caller);
     }
 
     plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout());
@@ -394,6 +396,7 @@ in (url.length, "Tried to send an HTTP request without an URL")
         return sendHTTPRequest(
             plugin,
             url,
+            caller,
             authorisationHeader,
             verb,
             body_,
@@ -588,6 +591,7 @@ auto sendHTTPRequestImpl(
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         url = The URL to follow.
+        caller = Name of the calling function.
 
     Returns:
         A singular user or channel regardless of how many were asked for in the URL.
@@ -600,13 +604,16 @@ auto sendHTTPRequestImpl(
 
         [TwitchQueryException] on other JSON errors.
  +/
-auto getTwitchData(TwitchPlugin plugin, const string url)
+auto getTwitchData(
+    TwitchPlugin plugin,
+    const string url,
+    const string caller = __FUNCTION__)
 in (Fiber.getThis, "Tried to call `getTwitchData` from outside a Fiber")
 {
     import std.json : JSONException, JSONType, parseJSON;
 
     // Request here outside try-catch to let exceptions fall through
-    immutable response = sendHTTPRequest(plugin, url, plugin.authorizationBearer);
+    immutable response = sendHTTPRequest(plugin, url, caller, plugin.authorizationBearer);
 
     try
     {
@@ -662,6 +669,7 @@ in (Fiber.getThis, "Tried to call `getTwitchData` from outside a Fiber")
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         broadcaster = The broadcaster to look up chatters for.
+        caller = Name of the calling function.
 
     Returns:
         A [std.json.JSONValue|JSONValue] with "`chatters`" and "`chatter_count`" keys.
@@ -670,7 +678,10 @@ in (Fiber.getThis, "Tried to call `getTwitchData` from outside a Fiber")
     Throws:
         [UnexpectedJSONException] on unexpected JSON.
  +/
-auto getChatters(TwitchPlugin plugin, const string broadcaster)
+auto getChatters(
+    TwitchPlugin plugin,
+    const string broadcaster,
+    const string caller = __FUNCTION__)
 in (Fiber.getThis, "Tried to call `getChatters` from outside a Fiber")
 in (broadcaster.length, "Tried to get chatters with an empty broadcaster string")
 {
@@ -681,7 +692,7 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
 
     auto getChattersDg()
     {
-        immutable response = sendHTTPRequest(plugin, chattersURL, plugin.authorizationBearer);
+        immutable response = sendHTTPRequest(plugin, chattersURL, caller, plugin.authorizationBearer);
         immutable responseJSON = parseJSON(response.str);
 
         /*
@@ -740,6 +751,7 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         authToken = Authorisation token to validate.
         async = Whether or not the validation should be done asynchronously, using Fibers.
+        caller = Name of the calling function.
 
     Returns:
         A [std.json.JSONValue|JSONValue] with the validation information JSON of the
@@ -753,7 +765,8 @@ in (broadcaster.length, "Tried to get chatters with an empty broadcaster string"
 auto getValidation(
     TwitchPlugin plugin,
     /*const*/ string authToken,
-    const Flag!"async" async)
+    const Flag!"async" async,
+    const string caller = __FUNCTION__)
 in ((!async || Fiber.getThis), "Tried to call asynchronous `getValidation` from outside a Fiber")
 in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 {
@@ -775,10 +788,17 @@ in (authToken.length, "Tried to validate an empty Twitch authorisation token")
 
         if (async)
         {
-            response = sendHTTPRequest(plugin, url, authorizationHeader);
+            response = sendHTTPRequest(plugin, url, caller, authorizationHeader);
         }
         else
         {
+            if (plugin.state.settings.trace)
+            {
+                import kameloso.common : logger;
+                enum pattern = "GET: <i>%s<t> (%s)";
+                logger.tracef(pattern, url, __FUNCTION__);
+            }
+
             response = sendHTTPRequestImpl(
                 url,
                 authorizationHeader,
@@ -905,12 +925,16 @@ in (id.length, "Tried to get follows with an empty ID string")
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         url = The URL to follow.
+        caller = Name of the calling function.
 
     Returns:
         A [std.json.JSONValue|JSONValue] of type `array` containing all returned
         entities, over all paginated queries.
  +/
-auto getMultipleTwitchData(TwitchPlugin plugin, const string url)
+auto getMultipleTwitchData(
+    TwitchPlugin plugin,
+    const string url,
+    const string caller = __FUNCTION__)
 in (Fiber.getThis, "Tried to call `getMultipleTwitchData` from outside a Fiber")
 {
     import std.json : JSONValue, parseJSON;
@@ -925,7 +949,7 @@ in (Fiber.getThis, "Tried to call `getMultipleTwitchData` from outside a Fiber")
         immutable paginatedURL = after.length ?
             (url ~ "&after=" ~ after) :
             url;
-        immutable response = sendHTTPRequest(plugin, paginatedURL, plugin.authorizationBearer);
+        immutable response = sendHTTPRequest(plugin, paginatedURL, caller, plugin.authorizationBearer);
         immutable responseJSON = parseJSON(response.str);
 
         immutable dataJSON = "data" in responseJSON;
@@ -1277,12 +1301,14 @@ auto getUniqueNumericalID(shared QueryResponse[int] bucket)
         channelName = Name of channel to modify.
         title = Optional channel title to set.
         gameID = Optional game ID to set the channel as playing.
+        caller = Name of the calling function.
  +/
 void modifyChannel(
     TwitchPlugin plugin,
     const string channelName,
     const string title,
-    const string gameID)
+    const string gameID,
+    const string caller = __FUNCTION__)
 in (Fiber.getThis, "Tried to call `modifyChannel` from outside a Fiber")
 in (channelName.length, "Tried to modify a channel with an empty channel name string")
 in ((title.length || gameID.length), "Tried to modify a channel with no title nor game ID supplied")
@@ -1322,6 +1348,7 @@ in ((title.length || gameID.length), "Tried to modify a channel with no title no
         cast(void)sendHTTPRequest(
             plugin,
             url,
+            caller,
             authorizationBearer,
             HttpVerb.PATCH,
             cast(ubyte[])sink.data,
@@ -1460,8 +1487,13 @@ in (channelName.length, "Tried to get broadcaster authorisation with an empty ch
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to run commercials for.
         lengthString = Length to play the commercial for, as a string.
+        caller = Name of the calling function.
  +/
-void startCommercial(TwitchPlugin plugin, const string channelName, const string lengthString)
+void startCommercial(
+    TwitchPlugin plugin,
+    const string channelName,
+    const string lengthString,
+    const string caller = __FUNCTION__)
 in (Fiber.getThis, "Tried to call `startCommercial` from outside a Fiber")
 in (channelName.length, "Tried to start a commercial with an empty channel name string")
 {
@@ -1485,6 +1517,7 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
         cast(void)sendHTTPRequest(
             plugin,
             url,
+            caller,
             authorizationBearer,
             HttpVerb.POST,
             cast(ubyte[])body_,
@@ -1507,6 +1540,7 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to fetch polls for.
         idString = ID of a specific poll to get.
+        caller = Name of the calling function.
 
     Returns:
         An arary of [std.json.JSONValue|JSONValue]s with all the matched polls.
@@ -1514,7 +1548,8 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
 auto getPolls(
     TwitchPlugin plugin,
     const string channelName,
-    const string idString = string.init)
+    const string idString = string.init,
+    const string caller = __FUNCTION__)
 in (Fiber.getThis, "Tried to call `getPolls` from outside a Fiber")
 in (channelName.length, "Tried to get polls with an empty channel name string")
 {
@@ -1547,6 +1582,7 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
             immutable response = sendHTTPRequest(
                 plugin,
                 paginatedURL,
+                caller,
                 authorizationBearer,
                 HttpVerb.GET,
                 cast(ubyte[])null,
@@ -1630,6 +1666,7 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
         title = Poll title.
         durationString = How long the poll should run for in seconds (as a string).
         choices = A string array of poll choices.
+        caller = Name of the calling function.
 
     Returns:
         An array of [std.json.JSONValue|JSONValue]s with
@@ -1644,7 +1681,8 @@ auto createPoll(
     const string channelName,
     const string title,
     const string durationString,
-    const string[] choices)
+    const string[] choices,
+    const string caller = __FUNCTION__)
 in (Fiber.getThis, "Tried to call `createPoll` from outside a Fiber")
 in (channelName.length, "Tried to create a poll with an empty channel name string")
 {
@@ -1686,6 +1724,7 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
         immutable response = sendHTTPRequest(
             plugin,
             url,
+            caller,
             authorizationBearer,
             HttpVerb.POST,
             cast(ubyte[])body_,
@@ -1755,6 +1794,7 @@ in (channelName.length, "Tried to create a poll with an empty channel name strin
         voteID = ID of the specific vote to end.
         terminate = If set, ends the poll by putting it in a `"TERMINATED"` state.
             If unset, ends it in an `"ARCHIVED"` way.
+        caller = Name of the calling function.
 
     Returns:
         The [std.json.JSONValue|JSONValue] of the first response returned when ending the poll.
@@ -1766,7 +1806,8 @@ auto endPoll(
     TwitchPlugin plugin,
     const string channelName,
     const string voteID,
-    const Flag!"terminate" terminate)
+    const Flag!"terminate" terminate,
+    const string caller = __FUNCTION__)
 in (Fiber.getThis, "Tried to call `endPoll` from outside a Fiber")
 in (channelName.length, "Tried to end a poll with an empty channel name string")
 {
@@ -1793,6 +1834,7 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
         immutable response = sendHTTPRequest(
             plugin,
             url,
+            caller,
             authorizationBearer,
             HttpVerb.PATCH,
             cast(ubyte[])body_,
@@ -1870,7 +1912,7 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
     See_Also:
         https://twitchinsights.net/bots
  +/
-auto getBotList(TwitchPlugin plugin)
+auto getBotList(TwitchPlugin plugin, const string caller = __FUNCTION__)
 {
     import std.algorithm.searching : endsWith;
     import std.array : Appender;
@@ -1879,7 +1921,7 @@ auto getBotList(TwitchPlugin plugin)
     auto getBotListDg()
     {
         enum url = "https://api.twitchinsights.net/v1/bots/online";
-        immutable response = sendHTTPRequest(plugin, url);
+        immutable response = sendHTTPRequest(plugin, url, caller);
         immutable responseJSON = parseJSON(response.str);
 
         /*
@@ -2057,6 +2099,7 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
         emoteMap = Reference to the `bool[dstring]` associative array to store
             the fetched emotes in.
         idString = Twitch user/channel ID in string form.
+        caller = Name of the calling function.
 
     See_Also:
         https://betterttv.com
@@ -2064,7 +2107,8 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
 void getBTTVEmotes(
     TwitchPlugin plugin,
     ref bool[dstring] emoteMap,
-    const string idString)
+    const string idString,
+    const string caller = __FUNCTION__)
 in (Fiber.getThis, "Tried to call `getBTTVEmotes` from outside a Fiber")
 in (idString.length, "Tried to get BTTV emotes with an empty ID string")
 {
@@ -2077,7 +2121,7 @@ in (idString.length, "Tried to get BTTV emotes with an empty ID string")
     {
         try
         {
-            immutable response = sendHTTPRequest(plugin, url);
+            immutable response = sendHTTPRequest(plugin, url, caller);
             immutable responseJSON = parseJSON(response.str);
 
             /+
@@ -2192,13 +2236,15 @@ in (idString.length, "Tried to get BTTV emotes with an empty ID string")
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         emoteMap = Reference to the `bool[dstring]` associative array to store
             the fetched emotes in.
+        caller = Name of the calling function.
 
     See_Also:
         https://betterttv.com/emotes/global
  +/
 void getBTTVGlobalEmotes(
     TwitchPlugin plugin,
-    ref bool[dstring] emoteMap)
+    ref bool[dstring] emoteMap,
+    const string caller = __FUNCTION__)
 in (Fiber.getThis, "Tried to call `getBTTVGlobalEmotes` from outside a Fiber")
 {
     import std.conv : to;
@@ -2208,7 +2254,7 @@ in (Fiber.getThis, "Tried to call `getBTTVGlobalEmotes` from outside a Fiber")
     {
         enum url = "https://api.betterttv.net/3/cached/emotes/global";
 
-        immutable response = sendHTTPRequest(plugin, url);
+        immutable response = sendHTTPRequest(plugin, url, caller);
         immutable responseJSON = parseJSON(response.str);
 
         /+
@@ -2252,6 +2298,7 @@ in (Fiber.getThis, "Tried to call `getBTTVGlobalEmotes` from outside a Fiber")
         emoteMap = Reference to the `bool[dstring]` associative array to store
             the fetched emotes in.
         idString = Twitch user/channel ID in string form.
+        caller = Name of the calling function.
 
     See_Also:
         https://www.frankerfacez.com
@@ -2259,7 +2306,8 @@ in (Fiber.getThis, "Tried to call `getBTTVGlobalEmotes` from outside a Fiber")
 void getFFZEmotes(
     TwitchPlugin plugin,
     ref bool[dstring] emoteMap,
-    const string idString)
+    const string idString,
+    const string caller = __FUNCTION__)
 in (Fiber.getThis, "Tried to call `getFFZEmotes` from outside a Fiber")
 in (idString.length, "Tried to get FFZ emotes with an empty ID string")
 {
@@ -2272,7 +2320,7 @@ in (idString.length, "Tried to get FFZ emotes with an empty ID string")
     {
         try
         {
-            immutable response = sendHTTPRequest(plugin, url);
+            immutable response = sendHTTPRequest(plugin, url, caller);
             immutable responseJSON = parseJSON(response.str);
 
             /+
@@ -2422,6 +2470,7 @@ in (idString.length, "Tried to get FFZ emotes with an empty ID string")
         emoteMap = Reference to the `bool[dstring]` associative array to store
             the fetched emotes in.
         idString = Twitch user/channel ID in string form.
+        caller = Name of the calling function.
 
     See_Also:
         https://7tv.app
@@ -2429,7 +2478,8 @@ in (idString.length, "Tried to get FFZ emotes with an empty ID string")
 void get7tvEmotes(
     TwitchPlugin plugin,
     ref bool[dstring] emoteMap,
-    const string idString)
+    const string idString,
+    const string caller = __FUNCTION__)
 in (Fiber.getThis, "Tried to call `get7tvEmotes` from outside a Fiber")
 in (idString.length, "Tried to get 7tv emotes with an empty ID string")
 {
@@ -2442,7 +2492,7 @@ in (idString.length, "Tried to get 7tv emotes with an empty ID string")
     {
         try
         {
-            immutable response = sendHTTPRequest(plugin, url);
+            immutable response = sendHTTPRequest(plugin, url, caller);
             immutable responseJSON = parseJSON(response.str);
 
             /+
@@ -2512,13 +2562,15 @@ in (idString.length, "Tried to get 7tv emotes with an empty ID string")
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         emoteMap = Reference to the `bool[dstring]` associative array to store
             the fetched emotes in.
+        caller = Name of the calling function.
 
     See_Also:
         https://7tv.app
  +/
 void get7tvGlobalEmotes(
     TwitchPlugin plugin,
-    ref bool[dstring] emoteMap)
+    ref bool[dstring] emoteMap,
+    const string caller = __FUNCTION__)
 in (Fiber.getThis, "Tried to call `get7tvGlobalEmotes` from outside a Fiber")
 {
     import std.conv : to;
@@ -2528,7 +2580,7 @@ in (Fiber.getThis, "Tried to call `get7tvGlobalEmotes` from outside a Fiber")
     {
         enum url = "https://api.7tv.app/v2/emotes/global";
 
-        immutable response = sendHTTPRequest(plugin, url);
+        immutable response = sendHTTPRequest(plugin, url, caller);
         immutable responseJSON = parseJSON(response.str);
 
         /+
@@ -2573,6 +2625,7 @@ in (Fiber.getThis, "Tried to call `get7tvGlobalEmotes` from outside a Fiber")
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         channelName = Name of channel to fetch subscribers of.
+        caller = Name of the calling function.
 
     Returns:
         An array of Voldemort subscribers.
@@ -2580,7 +2633,8 @@ in (Fiber.getThis, "Tried to call `get7tvGlobalEmotes` from outside a Fiber")
 version(none)
 auto getSubscribers(
     TwitchPlugin plugin,
-    const string channelName)
+    const string channelName,
+    const string caller = __FUNCTION__)
 in (Fiber.getThis, "Tried to call `getSubscribers` from outside a Fiber")
 in (channelName.length, "Tried to get subscribers with an empty channel name string")
 {
@@ -2635,6 +2689,7 @@ in (channelName.length, "Tried to get subscribers with an empty channel name str
             immutable response = sendHTTPRequest(
                 plugin,
                 url,
+                caller,
                 authorizationBearer,
                 HttpVerb.GET,
                 cast(ubyte[])body_,

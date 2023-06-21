@@ -2399,13 +2399,13 @@ in (idString.length, "Tried to import custom emotes with an empty ID string")
     auto customEmotes = channelName in plugin.customEmotesByChannel;
     (*customEmotes).remove(dstring.init);
 
-    alias GetEmoteFun = void function(TwitchPlugin, ref bool[dstring], const string);
+    alias GetEmoteFun = void function(TwitchPlugin, ref bool[dstring], const string, const string);
 
     void getEmoteSet(GetEmoteFun fun, const string setName)
     {
         try
         {
-            fun(plugin, *customEmotes, idString);
+            fun(plugin, *customEmotes, idString, __FUNCTION__);
         }
         catch (Exception e)
         {
@@ -2438,13 +2438,13 @@ in (Fiber.getThis, "Tried to call `importCustomGlobalEmotes` from outside a Fibe
     GC.disable();
     scope(exit) GC.enable();
 
-    alias GetGlobalEmoteFun = void function(TwitchPlugin, ref bool[dstring]);
+    alias GetGlobalEmoteFun = void function(TwitchPlugin, ref bool[dstring], const string);
 
     void getGlobalEmoteSet(GetGlobalEmoteFun fun, const string setName)
     {
         try
         {
-            fun(plugin, plugin.customGlobalEmotes);
+            fun(plugin, plugin.customGlobalEmotes, __FUNCTION__);
         }
         catch (Exception e)
         {
