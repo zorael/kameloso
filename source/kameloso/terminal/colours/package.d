@@ -907,7 +907,7 @@ in (word.length, "Tried to get colour by hash but no word was given")
     static immutable uint[basicForegroundMembers.length+(-2)] darkTableBasic =
         TerminalForeground.white ~ basicForegroundMembers[2..$-1];
 
-    enum brightTableExtended = ()
+    static immutable brightTableExtended = ()
     {
         uint[98] colourTable = ircANSIColourMap[1..$].dup;
 
@@ -922,7 +922,7 @@ in (word.length, "Tried to get colour by hash but no word was given")
         return colourTable;
     }();
 
-    enum darkTableExtended = ()
+    static immutable darkTableExtended = ()
     {
         uint[98] colourTable = ircANSIColourMap[1..$].dup;
 
@@ -943,12 +943,12 @@ in (word.length, "Tried to get colour by hash but no word was given")
 
     const table = settings.extendedColours ?
         settings.brightTerminal ?
-            brightTableExtended[] :
-            darkTableExtended []
+            brightTableExtended :
+            darkTableExtended
             :
         settings.brightTerminal ?
-            brightTableBasic[] :
-            darkTableBasic [];
+            brightTableBasic :
+            darkTableBasic;
 
     immutable colourIndex = (hashOf(word) % table.length);
     return table[colourIndex];
