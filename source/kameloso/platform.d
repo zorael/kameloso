@@ -3,6 +3,10 @@
  +/
 module kameloso.platform;
 
+private:
+
+import std.process : Pid;
+
 public:
 
 @safe:
@@ -317,8 +321,16 @@ auto openInBrowser(const string url)
 
     Params:
         args = Arguments passed to the program.
+
+    Returns:
+        On Windows, a [std.process.Pid|Pid] of the spawned process.
+        On Posix, it either exits the program or it throws.
+
+    Throws:
+        On Posix, [ExecvpException] on failure.
+        On Windows, [std.process.ProcessException|ProcessException] on failure.
  +/
-void execvp(/*const*/ string[] args) @system
+Pid execvp(/*const*/ string[] args) @system
 {
     import kameloso.common : logger;
     import std.algorithm.comparison : among;
@@ -380,11 +392,11 @@ void execvp(/*const*/ string[] args) @system
     {
         import std.process : execvp;
 
-        immutable result = execvp(args[0], args);
+        immutable retval = execvp(args[0], args);
 
         // If we're here, the call failed
-        enum pattern = "Failed to <l>execvp</> with an error value of <l>%d</>.";
-        logger.errorf(pattern, result);
+        enum message = "execvp failed";
+        throw new ExecvpException(message, retval);
     }
     else version(Windows)
     {
@@ -445,28 +457,43 @@ void execvp(/*const*/ string[] args) @system
             "powershell",
             "-c"
         ] ~ arg0 ~ sink.data.idup;
-
-        try
-        {
-            import core.stdc.stdlib : exit;
-
-            auto pid = spawnProcess(commandLine);
-
-            // If we're here, the call succeeded
-            enum pattern = "Forked into PID <l>%d</>.";
-            logger.infof(pattern, pid.processID);
-
-            //resetConsoleModeAndCodepage(); // Don't, it will be called via atexit
-            exit(0);
-        }
-        catch (ProcessException e)
-        {
-            enum pattern = "Failed to spawn a new process: <t>%s</>.";
-            logger.errorf(pattern, e.msg);
-        }
+        return spawnProcess(commandLine);
     }
     else
     {
         static assert(0, "Unsupported platform, please file a bug.");
+    }
+}
+
+
+// ExecvpException
+/++
+    Exception thrown when an `execvp` call failed.
+ +/
+final class ExecvpException : Exception
+{
+    /++
+        `execvp` return value.
+     +/
+    int retval;
+
+    /// Constructor attaching a return value.
+    this(const string msg,
+        const int retval,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        this.retval = retval;
+        super(msg, file, line, nextInChain);
+    }
+
+    /// Passthrough constructor.
+    this(const string msg,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        super(msg, file, line, nextInChain);
     }
 }

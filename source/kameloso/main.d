@@ -3011,7 +3011,8 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
 
             if ((!lastConnectAttemptFizzled && instance.settings.reexecToReconnect) || instance.flags.askedToReexec)
             {
-                import kameloso.platform : execvp;
+                import kameloso.platform : ExecvpException, execvp;
+                import std.process : ProcessException;
 
                 if (!instance.settings.headless)
                 {
@@ -3043,8 +3044,29 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                     }
                 }
 
-                execvp(instance.args);
-                //instance.flags.askedToReexec = false;  // Done below by resetting all flags
+                try
+                {
+                    import core.stdc.stdlib : exit;
+
+                    auto pid = execvp(instance.args);
+                    // On Windows, if we're here, the call succeeded
+                    // Posix should never be here; it will either exec or throw
+
+                    enum pattern = "Forked into PID <l>%d</>.";
+                    logger.infof(pattern, pid.processID);
+                    //resetConsoleModeAndCodepage(); // Don't, it will be called via atexit
+                    exit(0);
+                }
+                catch (ProcessException e)
+                {
+                    enum pattern = "Failed to spawn a new process: <t>%s</>.";
+                    logger.errorf(pattern, e.msg);
+                }
+                catch (ExecvpException e)
+                {
+                    enum pattern = "Failed to <l>execvp</> with an error value of <l>%d</>.";
+                    logger.errorf(pattern, e.retval);
+                }
             }
 
             // Carry some values but otherwise restore the pristine client backup
