@@ -877,6 +877,13 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         room = event.channel in plugin.rooms;
     }
 
+    /+
+        Only start a room monitor Fiber if the room doesn't seem initialised.
+        If it does, it should already have a monitor running. Since we're not
+        resetting the room unique ID, we'd get two duplicate monitors. So don't.
+     +/
+    immutable shouldStartRoomMonitor = !room.id.length;
+
     room.id = event.aux[0];
     immutable userURL = "https://api.twitch.tv/helix/users?id=" ~ room.id;
 
@@ -919,7 +926,7 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     room.follows = getFollows(plugin, room.id);
     room.followsLastCached = event.time;
-    startRoomMonitorFibers(plugin, event.channel);
+    if (shouldStartRoomMonitor) startRoomMonitorFibers(plugin, event.channel);
     importCustomEmotes(plugin, event.channel, room.id);
 }
 
