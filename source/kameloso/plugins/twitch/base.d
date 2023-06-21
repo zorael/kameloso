@@ -883,46 +883,33 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         resetting the room unique ID, we'd get two duplicate monitors. So don't.
      +/
     immutable shouldStartRoomMonitor = !room.id.length;
+    auto twitchUser = getTwitchUser(plugin, string.init, event.aux[0]);
 
-    room.id = event.aux[0];
-    immutable userURL = "https://api.twitch.tv/helix/users?id=" ~ room.id;
-
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    if (!twitchUser.nickname.length)
     {
-        try
-        {
-            immutable userJSON = getTwitchData(plugin, userURL);
-            room.broadcasterDisplayName = userJSON["display_name"].str;
-        }
-        catch (Exception e)
-        {
-            // Can be JSONException
-            // Retry until we reach the retry limit
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-
-            enum pattern = "Failed to fetch information for channel <l>%s</>: <t>%s";
-            logger.errorf(pattern, event.channel, e.msg);
-            version(PrintStacktraces) logger.trace(e);
-            //break;
-        }
+        // No such user?
+        return;
     }
 
-    immutable nickname = event.channel[1..$];
-    auto broadcasterUser = nickname in plugin.state.users;
+    room.id = event.aux[0];  // Assign this here after the nickname.length check
+    room.broadcasterDisplayName = twitchUser.displayName;
+    auto storedUser = twitchUser.nickname in plugin.state.users;
 
-    if (!broadcasterUser)
+    if (!storedUser)
     {
-        // Forge a new user
-        auto newUser = IRCUser(nickname, nickname, nickname ~ ".tmi.twitch.tv");
-        newUser.account = nickname;
+        // Forge a new IRCUser
+        auto newUser = IRCUser(
+            twitchUser.nickname,
+            twitchUser.nickname,
+            twitchUser.nickname ~ ".tmi.twitch.tv");
+        newUser.account = newUser.nickname;
         newUser.class_ = IRCUser.Class.anyone;
-        plugin.state.users[nickname] = newUser;
-        broadcasterUser = nickname in plugin.state.users;
+        plugin.state.users[newUser.nickname] = newUser;
+        storedUser = newUser.nickname in plugin.state.users;
     }
 
-    broadcasterUser.displayName = room.broadcasterDisplayName;
-    IRCUser user = *broadcasterUser;  // dereference and copy
-    plugin.state.mainThread.send(ThreadMessage.putUser(string.init, boxed(user)));
+    IRCUser userCopy = *storedUser;  // dereference and copy
+    plugin.state.mainThread.send(ThreadMessage.putUser(string.init, boxed(userCopy)));
 
     room.follows = getFollows(plugin, room.id);
     room.followsLastCached = event.time;
