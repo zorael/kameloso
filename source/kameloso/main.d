@@ -291,7 +291,7 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             case shortenReceiveTimeout:
-                instance.wantReceiveTimeoutShortened = true;
+                instance.flags.wantReceiveTimeoutShortened = true;
                 break;
 
             case busMessage:
@@ -310,7 +310,7 @@ void messageFiber(ref Kameloso instance)
                 instance.priorityBuffer.put(OutgoingLine(
                     quitMessage,
                     cast(Flag!"quiet")message.quiet));
-                instance.quitMessageSent = true;
+                instance.flags.quitMessageSent = true;
                 next = Next.returnSuccess;
                 break;
 
@@ -320,12 +320,12 @@ void messageFiber(ref Kameloso instance)
                 if (auto boxedReexecFlag = cast(Boxed!bool)message.payload)
                 {
                     // Re-exec explicitly requested
-                    instance.askedToReexec = boxedReexecFlag.payload;
+                    instance.flags.askedToReexec = boxedReexecFlag.payload;
                 }
                 else
                 {
                     // Normal reconnect
-                    instance.askedToReconnect = true;
+                    instance.flags.askedToReconnect = true;
                 }
 
                 immutable quitMessage = message.content.length ?
@@ -334,12 +334,12 @@ void messageFiber(ref Kameloso instance)
                 instance.priorityBuffer.put(OutgoingLine(
                     "QUIT :" ~ quitMessage,
                     No.quiet));
-                instance.quitMessageSent = true;
+                instance.flags.quitMessageSent = true;
                 next = Next.retry;
                 break;
 
             case wantLiveSummary:
-                instance.wantLiveSummary = true;
+                instance.flags.wantLiveSummary = true;
                 break;
 
             case abort:
@@ -626,7 +626,7 @@ void messageFiber(ref Kameloso instance)
                     instance.bot.quitReason;
                 immutable reason = rawReason.replaceTokens(instance.parser.client);
                 line = "QUIT :" ~ reason;
-                instance.quitMessageSent = true;
+                instance.flags.quitMessageSent = true;
                 next = Next.returnSuccess;
                 break;
 
@@ -878,11 +878,6 @@ auto mainLoop(ref Kameloso instance)
     /// UNIX timestamp of when the Socket receive timeout was shortened.
     long timeWhenReceiveWasShortened;
 
-    // Set wantLiveSummary to false just in case a change happened in the middle
-    // of the last connection. Otherwise the first thing to happen would be
-    // that a summary gets printed.
-    instance.wantLiveSummary = false;
-
     /// `Timeout.maxShortenDurationMsecs` in hecto-nanoseconds.
     enum maxShortenDurationHnsecs = Timeout.maxShortenDurationMsecs * 10_000;
 
@@ -890,11 +885,11 @@ auto mainLoop(ref Kameloso instance)
     {
         if (*instance.abort) return Next.returnFailure;
 
-        if (!instance.settings.headless && instance.wantLiveSummary)
+        if (!instance.settings.headless && instance.flags.wantLiveSummary)
         {
             // Live connection summary requested.
             instance.printSummary();
-            instance.wantLiveSummary = false;
+            instance.flags.wantLiveSummary = false;
         }
 
         if (listener.state == Fiber.State.TERM)
@@ -1055,10 +1050,10 @@ auto mainLoop(ref Kameloso instance)
             timeWhenReceiveWasShortened = 0L;
         }
 
-        if (instance.wantReceiveTimeoutShortened)
+        if (instance.flags.wantReceiveTimeoutShortened)
         {
             // Set the timestamp and unset the bool
-            instance.wantReceiveTimeoutShortened = false;
+            instance.flags.wantReceiveTimeoutShortened = false;
             timeWhenReceiveWasShortened = nowInHnsecs;
         }
 
@@ -1357,7 +1352,7 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
             // know we can't reconnect without waiting a bit.
             if (event.type == IRCEvent.Type.RPL_WELCOME)
             {
-                instance.sawWelcome = true;
+                instance.flags.sawWelcome = true;
             }
         }
 
@@ -3007,14 +3002,14 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                 import std.algorithm.searching : endsWith;
                 immutable lastConnectAttemptFizzled =
                     instance.parser.server.address.endsWith(".twitch.tv") &&
-                    !instance.sawWelcome;
+                    !instance.flags.sawWelcome;
             }
             else
             {
                 enum lastConnectAttemptFizzled = false;
             }
 
-            if ((!lastConnectAttemptFizzled && instance.settings.reexecToReconnect) || instance.askedToReexec)
+            if ((!lastConnectAttemptFizzled && instance.settings.reexecToReconnect) || instance.flags.askedToReexec)
             {
                 import kameloso.platform : execvp;
 
@@ -3033,7 +3028,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                         printGCStats();
                     }
 
-                    immutable message = instance.askedToReexec ?
+                    immutable message = instance.flags.askedToReexec ?
                         "Re-executing as requested." :
                         "Re-executing to reconnect as per settings.";
                     logger.info(message);
@@ -3041,7 +3036,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                 }
 
                 execvp(instance.args);
-                instance.askedToReexec = false;  // In case of failure
+                //instance.flags.askedToReexec = false;  // Done below by resetting all flags
             }
 
             // Carry some values but otherwise restore the pristine client backup
@@ -3066,7 +3061,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
 
             version(TwitchSupport)
             {
-                if (lastConnectAttemptFizzled || instance.askedToReconnect)
+                if (lastConnectAttemptFizzled || instance.flags.askedToReconnect)
                 {
                     import core.time : msecs;
 
@@ -3081,7 +3076,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                 }
             }
 
-            if (!lastConnectAttemptFizzled && !instance.askedToReconnect)
+            if (!lastConnectAttemptFizzled && !instance.flags.askedToReconnect)
             {
                 logger.log("One moment...");
             }
@@ -3105,13 +3100,8 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             instance.parser.server.address = addressSnapshot;
             instance.parser.server.port = portSnapshot;
 
-            // Reset any previous quit flag
-            instance.quitMessageSent = false;
-
-            version(TwitchSupport)
-            {
-                instance.sawWelcome = false;
-            }
+            // Reset transient state flags
+            instance.flags = typeof(instance.flags).init;
         }
 
         scope(exit)
@@ -3332,7 +3322,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         }
 
         // Start the main loop
-        instance.askedToReconnect = false;
+        instance.flags.askedToReconnect = false;
         attempt.next = instance.mainLoop();
         attempt.firstConnect = false;
     }
@@ -3853,7 +3843,7 @@ auto run(string[] args)
 
     // If we're here, we should exit. The only question is in what way.
 
-    if (instance.conn.connected && !instance.quitMessageSent)
+    if (instance.conn.connected && !instance.flags.quitMessageSent)
     {
         // If not already sent, send a proper QUIT, optionally verbosely
         string reason;  // mutable

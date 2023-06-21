@@ -70,6 +70,55 @@ private:
         }
     }
 
+    // State
+    /++
+        Transient state bool flags, aggregated in a struct.
+     +/
+    static struct StateFlags
+    {
+        // wantReceiveTimeoutShortened
+        /++
+            Set when the Socket read timeout was requested to be shortened.
+         +/
+        bool wantReceiveTimeoutShortened;
+
+        // wantLiveSummary
+        /++
+            When this is set, the main loop should print a connection summary upon
+            the next iteration.
+         +/
+        bool wantLiveSummary;
+
+        // askedToReconnect
+        /++
+            Set when the server asked us to reconnect (by way of a
+            [dialect.defs.IRCEvent.Type.RECONNECT|RECONNECT] event).
+         +/
+        bool askedToReconnect;
+
+        // quitMessageSent
+        /++
+            Set when we have sent a QUIT message to the server.
+         +/
+        bool quitMessageSent;
+
+        // askedToReexec
+        /++
+            Set when the user explicitly asked to re-exec in the middle of a session.
+         +/
+        bool askedToReexec;
+
+        version(TwitchSupport)
+        {
+            // sawWelcome
+            /++
+                Set when an [dialect.defs.IRCEvent.Type.RPL_WELCOME|RPL_WELCOME]
+                event was encountered.
+             +/
+            bool sawWelcome;
+        }
+    }
+
     // _connectionID
     /++
         Numeric ID of the current connection, to disambiguate between multiple
@@ -86,6 +135,12 @@ public:
     {
         this.args = args;
     }
+
+    // flags
+    /++
+        Transient state flags of this [Kameloso] instance.
+     +/
+    StateFlags flags;
 
     // args
     /++
@@ -151,13 +206,6 @@ public:
         parts of the program will be monitoring it.
      +/
     bool* abort;
-
-    // wantLiveSummary
-    /++
-        When this is set, the main loop should print a connection summary upon
-        the next iteration. It is transient.
-     +/
-    bool wantLiveSummary;
 
     // outbuffer
     /++
@@ -774,39 +822,4 @@ public:
         History records of established connections this execution run.
      +/
     ConnectionHistoryEntry[] connectionHistory;
-
-    // wantReceiveTimeoutShortened
-    /++
-        Set when the Socket read timeout was requested to be shortened.
-     +/
-    bool wantReceiveTimeoutShortened;
-
-    // askedToReconnect
-    /++
-        Set when the server asked us to reconnect (by way of a
-        [dialect.defs.IRCEvent.Type.RECONNECT|RECONNECT] event).
-     +/
-    bool askedToReconnect;
-
-    // quitMessageSent
-    /++
-        Set when we have sent a QUIT message to the server.
-     +/
-    bool quitMessageSent;
-
-    version(TwitchSupport)
-    {
-        // sawWelcome
-        /++
-            Set when an [dialect.defs.IRCEvent.Type.RPL_WELCOME|RPL_WELCOME]
-            event was encountered.
-         +/
-        bool sawWelcome;
-    }
-
-    // askedToReexec
-    /++
-        Set when the user explicitly asked to re-exec in the middle of a session.
-     +/
-    bool askedToReexec;
 }
