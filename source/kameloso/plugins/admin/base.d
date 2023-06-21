@@ -1440,14 +1440,22 @@ void onBusMessage(
             case "gc.collect":
                 import std.datetime.systime : Clock;
 
+                static void clobber()
+                {
+                    int[2048] _;
+                }
+
+                clobber();
+
                 immutable statsPre = GC.stats();
                 immutable timestampPre = Clock.currTime;
                 immutable memoryUsedPre = statsPre.usedSize;
+
                 GC.collect();
+
                 immutable statsPost = GC.stats();
                 immutable timestampPost = Clock.currTime;
                 immutable memoryUsedPost = statsPost.usedSize;
-
                 immutable memoryCollected = (memoryUsedPre - memoryUsedPost);
                 immutable duration = (timestampPost - timestampPre);
 
