@@ -951,9 +951,13 @@ in (Fiber.getThis, "Tried to call `getMultipleTwitchData` from outside a Fiber")
             url;
         immutable response = sendHTTPRequest(plugin, paginatedURL, caller, plugin.authorizationBearer);
         immutable responseJSON = parseJSON(response.str);
-
         immutable dataJSON = "data" in responseJSON;
-        if (!dataJSON) break;  // Invalid response
+
+        if (!dataJSON)
+        {
+            enum message = "No data in JSON response";
+            throw new UnexpectedJSONException(message, *dataJSON);
+        }
 
         foreach (thisResponseJSON; dataJSON.array)
         {
