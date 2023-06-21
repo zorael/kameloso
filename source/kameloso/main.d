@@ -3067,6 +3067,12 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                     enum pattern = "Failed to <l>execvp</> with an error value of <l>%d</>.";
                     logger.errorf(pattern, e.retval);
                 }
+                catch (Exception e)
+                {
+                    enum pattern = "Unexpected exception: <l>%s";
+                    logger.errorf(pattern, e.msg);
+                    version(PrintStacktraces) logger.trace(e);
+                }
             }
 
             // Carry some values but otherwise restore the pristine client backup
