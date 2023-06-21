@@ -326,24 +326,21 @@ void execvp(/*const*/ string[] args) @system
     {
         size_t[] toRemove;
 
-        for (size_t i; i<args.length; ++i)
+        for (size_t i=1; i<args.length; ++i)
         {
             import lu.string : beginsWith, nom;
             import std.algorithm.comparison : among;
-
-            if (i == 0) continue;
+            import std.typecons : Flag, No, Yes;
 
             if (args[i] == "--set")
             {
                 if (args.length <= i+1) continue;  // should never happen
 
-                string fullSetting = args[i+1];  // mutable
+                string slice = args[i+1];  // mutable
 
-                if (fullSetting.beginsWith("twitch."))
+                if (slice.beginsWith("twitch."))
                 {
-                    import std.typecons : Flag, No, Yes;
-
-                    immutable setting = fullSetting.nom!(Yes.inherit)('=');
+                    immutable setting = slice.nom!(Yes.inherit)('=');
 
                     if (setting.among!(
                         "twitch.keygen",
@@ -357,26 +354,22 @@ void execvp(/*const*/ string[] args) @system
                     }
                 }
             }
-            else if (args[i] == "--setup-twitch")
-            {
-                toRemove ~= i;
-            }
             else
             {
-                version(Windows)
+                string slice = args[i];  // mutable
+                immutable setting = slice.nom!(Yes.inherit)('=');
+
+                if (setting.among!(
+                    "--setup-twitch",
+                    "--get-cacert",
+                    "--get-openssl"))
                 {
-                    if (args[i].among!(
-                        "--setup-twitch",
-                        "--get-cacert",
-                        "--get-openssl"))
-                    {
-                        toRemove ~= i;
-                    }
+                    toRemove ~= i;
                 }
             }
         }
 
-        foreach_reverse (immutable i; toRemove)
+        foreach (immutable i; toRemove)
         {
             import std.algorithm.mutation : SwapStrategy, remove;
             args = args.remove!(SwapStrategy.stable)(i);
