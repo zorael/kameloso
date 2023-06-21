@@ -3489,8 +3489,10 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
         if (!isHomeChannel) return;
     }
 
-    static void postprocessImpl(const TwitchPlugin plugin,
-        const ref IRCEvent event, ref IRCUser user)
+    static void postprocessImpl(
+        const TwitchPlugin plugin,
+        const ref IRCEvent event,
+        ref IRCUser user)
     {
         import lu.string : contains;
 

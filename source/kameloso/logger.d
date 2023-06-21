@@ -133,7 +133,8 @@ public:
             headless = Headless setting.
             flush = Flush setting.
      +/
-    this(const Flag!"monochrome" monochrome,
+    this(
+        const Flag!"monochrome" monochrome,
         const Flag!"brightTerminal" brightTerminal,
         const Flag!"headless" headless,
         const Flag!"flush" flush) pure nothrow @safe
@@ -201,8 +202,13 @@ public:
         {
             import std.range : only;
 
-            foreach (immutable logLevel; only(LogLevel.all, LogLevel.info,
-                LogLevel.warning, LogLevel.fatal))
+            auto range = only(
+                LogLevel.all,
+                LogLevel.info,
+                LogLevel.warning,
+                LogLevel.fatal);
+
+            foreach (immutable logLevel; range)
             {
                 import std.format : format;
 

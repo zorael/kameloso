@@ -1030,7 +1030,8 @@ final class DurationStringException : Exception
     /++
         Constructor.
      +/
-    this(const string message,
+    this(
+        const string message,
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe

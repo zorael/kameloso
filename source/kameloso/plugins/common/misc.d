@@ -128,7 +128,8 @@ auto applyCustomSettings(
 
                 try
                 {
-                    immutable success = plugin.setSettingByName(setting,
+                    immutable success = plugin.setSettingByName(
+                        setting,
                         value.length ? value : "true");
 
                     if (!success)
@@ -230,7 +231,8 @@ unittest
 final class IRCPluginSettingsException : Exception
 {
     /// Wraps normal Exception constructors.
-    this(const string message,
+    this(
+        const string message,
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe

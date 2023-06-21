@@ -586,8 +586,11 @@ void reportTitle(TitleLookupRequest request)
 
         immutable maybePipe = request.results.description.length ? " | " : string.init;
         enum pattern = "[<b>%s<b>] %s%s%s";
-        line = pattern.format(request.results.domain, request.results.title,
-                maybePipe, request.results.description);
+        line = pattern.format(
+            request.results.domain,
+            request.results.title,
+            maybePipe,
+            request.results.description);
     }
     else
     {
@@ -757,7 +760,8 @@ final class TitleFetchException : Exception
     /++
         Create a new [TitleFetchException], attaching an URL and an HTTP status code.
      +/
-    this(const string message,
+    this(
+        const string message,
         const string url,
         const uint code,
         const string file = __FILE__,
@@ -771,7 +775,8 @@ final class TitleFetchException : Exception
     /++
         Create a new [TitleFetchException], without attaching anything.
      +/
-    this(const string message,
+    this(
+        const string message,
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe

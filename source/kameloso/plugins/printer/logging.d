@@ -313,15 +313,17 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                     {
                         import kameloso.printing : formatObjects;
 
-                        formatObjects!(Yes.all, No.coloured)(plugin.linebuffer,
-                            No.brightTerminal, event);
+                        formatObjects!(Yes.all, No.coloured)
+                            (plugin.linebuffer,
+                            No.brightTerminal,
+                            event);
                         errFile.writeln(plugin.linebuffer.data);
                         plugin.linebuffer.clear();
 
                         if (event.sender.nickname.length || event.sender.address.length)
                         {
-                            formatObjects!(Yes.all, No.coloured)(
-                                plugin.linebuffer,
+                            formatObjects!(Yes.all, No.coloured)
+                                (plugin.linebuffer,
                                 No.brightTerminal,
                                 event.sender);
                             errFile.writeln(plugin.linebuffer.data);
@@ -330,8 +332,8 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 
                         if (event.target.nickname.length || event.target.address.length)
                         {
-                            formatObjects!(Yes.all, No.coloured)(
-                                plugin.linebuffer,
+                            formatObjects!(Yes.all, No.coloured)
+                                (plugin.linebuffer,
                                 No.brightTerminal,
                                 event.target);
                             errFile.writeln(plugin.linebuffer.data);

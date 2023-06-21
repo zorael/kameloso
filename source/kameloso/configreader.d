@@ -161,7 +161,8 @@ final class ConfigurationFileReadFailureException : Exception
     /++
         Create a new [ConfigurationFileReadFailureException], without attaching a filename.
      +/
-    this(const string message,
+    this(
+        const string message,
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
@@ -172,7 +173,8 @@ final class ConfigurationFileReadFailureException : Exception
     /++
         Create a new [ConfigurationFileReadFailureException], attaching a filename.
      +/
-    this(const string message,
+    this(
+        const string message,
         const string filename,
         const string file = __FILE__,
         const size_t line = __LINE__,

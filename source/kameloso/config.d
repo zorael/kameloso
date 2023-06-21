@@ -173,8 +173,12 @@ void printSettings(ref Kameloso instance) @system
     printVersionInfo();
     writeln();
 
-    printObjects!(No.all)(instance.parser.client, instance.bot,
-        instance.parser.server, instance.connSettings, instance.settings);
+    printObjects!(No.all)
+        (instance.parser.client,
+        instance.bot,
+        instance.parser.server,
+        instance.connSettings,
+        instance.settings);
 
     instance.initPlugins();
 

@@ -687,8 +687,10 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
         if (conn.ssl)
         {
             import requests.ssl_adapter : openssl;
-            attempt.bytesReceived = openssl.SSL_read(conn.sslInstance,
-                cast(void*)buffer.ptr+start, cast(int)(buffer.length-start));
+            attempt.bytesReceived = openssl.SSL_read(
+                conn.sslInstance,
+                cast(void*)buffer.ptr+start,
+                cast(int)(buffer.length-start));
         }
         else
         {
@@ -723,9 +725,11 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
             {
                 attempt.state = State.timeout;
                 yield(attempt);
+
                 // Should never get here
-                assert(0, "Timed out `listenFiber` resumed after yield " ~
-                    "(received error, elapsed > timeout)");
+                enum message = "Timed out `listenFiber` resumed after yield " ~
+                    "(received error, elapsed > timeout)";
+                assert(0, message);
             }
 
             with (Errno)
@@ -1397,7 +1401,8 @@ final class SSLException : Exception
     int code;
 
     /// Constructor attaching an error code.
-    this(const string msg,
+    this(
+        const string msg,
         const int code,
         const string file = __FILE__,
         const size_t line = __LINE__,
@@ -1408,7 +1413,8 @@ final class SSLException : Exception
     }
 
     /// Passthrough constructor.
-    this(const string msg,
+    this(
+        const string msg,
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
@@ -1428,7 +1434,8 @@ final class SSLFileException : Exception
     string filename;
 
     /// Constructor attaching an error code.
-    this(const string msg,
+    this(
+        const string msg,
         const string filename,
         const string file = __FILE__,
         const size_t line = __LINE__,
@@ -1439,7 +1446,8 @@ final class SSLFileException : Exception
     }
 
     /// Passthrough constructor.
-    this(const string msg,
+    this(
+        const string msg,
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
@@ -1456,7 +1464,8 @@ final class SSLFileException : Exception
 final class SocketSendException : Exception
 {
     /// Passthrough constructor.
-    this(const string msg,
+    this(
+        const string msg,
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe

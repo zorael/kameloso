@@ -158,13 +158,20 @@ void onCommandWhoami(AdminPlugin plugin, const ref IRCEvent event)
     if (event.channel.length)
     {
         enum pattern = "You are <h>%s<h>@<b>%s<b> (%s), class:<b>%s<b> in the scope of <b>%s<b>.";
-        message = pattern.format(event.sender.nickname, account, event.sender.hostmask,
-            Enum!(IRCUser.Class).toString(event.sender.class_), event.channel);
+        message = pattern.format(
+            event.sender.nickname,
+            account,
+            event.sender.hostmask,
+            Enum!(IRCUser.Class).toString(event.sender.class_),
+            event.channel);
     }
     else
     {
         enum pattern = "You are <h>%s<h>@<b>%s<b> (%s), class:<b>%s<b> in a global scope.";
-        message = pattern.format(event.sender.nickname, account, event.sender.hostmask,
+        message = pattern.format(
+            event.sender.nickname,
+            account,
+            event.sender.hostmask,
             Enum!(IRCUser.Class).toString(event.sender.class_));
     }
 

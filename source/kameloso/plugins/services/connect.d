@@ -335,7 +335,9 @@ void tryAuth(ConnectService service)
         {
             enum pattern = "Cannot auth when you have changed your nickname. " ~
                 "(<l>%s</> != <l>%s</>)";
-            logger.warningf(pattern, service.state.client.nickname,
+            logger.warningf(
+                pattern,
+                service.state.client.nickname,
                 service.state.client.origNickname);
 
             service.authentication = Progress.finished;
@@ -1728,7 +1730,8 @@ void negotiateNick(ConnectService service)
          +/
         enum properties = Message.Property.quiet;
         enum pattern = "USER %s 8 * :%s";
-        immutable message = pattern.format(service.state.client.user,
+        immutable message = pattern.format(
+            service.state.client.user,
             service.state.client.realName.replaceTokens(service.state.client));
         immediate(service.state, message, properties);
     }
