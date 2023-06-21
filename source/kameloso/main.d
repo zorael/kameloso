@@ -3033,7 +3033,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                     immutable message = instance.askedToReexec ?
                         "Re-executing as requested." :
                         "Re-executing to reconnect as per settings.";
-                    logger.warning(message);
+                    logger.info(message);
                     writeln();
                 }
 
