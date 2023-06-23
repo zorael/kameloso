@@ -231,12 +231,11 @@ void lookupEnlist(
         }
     }
 
-    const user = specified in plugin.state.users;
-
-    if (user && user.account.length)
+    auto removeAndApply(const string name, /*const*/ string account = string.init)
     {
-        // user.nickname == specified
-        // Remove previous classification
+        if (!account.length) account = name;
+
+        // Remove previous classification from all but the requested class
         foreach (immutable thisClass; validClasses[])
         {
             if (thisClass == class_) continue;
@@ -245,18 +244,27 @@ void lookupEnlist(
                 plugin,
                 No.add,
                 thisClass,
-                user.account,
+                account,
                 channelName);
         }
 
+        // Make the class change and report
         immutable result = alterAccountClassifier(
             plugin,
             Yes.add,
             class_,
-            user.account,
+            account,
             channelName);
 
-        return report(result, nameOf(*user));
+        return report(result, name);
+    }
+
+    const user = specified in plugin.state.users;
+
+    if (user && user.account.length)
+    {
+        // Account known, skip ahead
+        return removeAndApply(user.account, nameOf(*user));
     }
     else if (!specified.length)
     {
@@ -304,27 +312,7 @@ void lookupEnlist(
 
                 if (const userInList = id in plugin.state.users)
                 {
-                    // Remove previous classification
-                    foreach (immutable thisClass; validClasses[])
-                    {
-                        if (thisClass == class_) continue;
-
-                        alterAccountClassifier(
-                            plugin,
-                            No.add,
-                            thisClass,
-                            id,
-                            channelName);
-                    }
-
-                    immutable result = alterAccountClassifier(
-                        plugin,
-                        Yes.add,
-                        class_,
-                        id,
-                        channelName);
-
-                    return report(result, nameOf(*userInList));
+                    return removeAndApply(nameOf(*userInList), id);
                 }
 
                 // If we're here, assume a display name was specified and look up the account
@@ -334,54 +322,14 @@ void lookupEnlist(
 
                 if (!usersWithThisDisplayName.empty)
                 {
-                    // Remove previous classification
-                    foreach (immutable thisClass; validClasses[])
-                    {
-                        if (thisClass == class_) continue;
-
-                        alterAccountClassifier(
-                            plugin,
-                            No.add,
-                            thisClass,
-                            usersWithThisDisplayName.front.account,
-                            channelName);
-                    }
-
-                    immutable result = alterAccountClassifier(
-                        plugin,
-                        Yes.add,
-                        class_,
-                        usersWithThisDisplayName.front.account,
-                        channelName);
-
-                    return report(result, id);
+                    return removeAndApply(id, usersWithThisDisplayName.front.account);
                 }
 
                 // Assume a valid account was specified even if we can't see it, and drop down
             }
         }
 
-        foreach (immutable thisClass; validClasses[])
-        {
-            // Remove previous classification
-            if (thisClass == class_) continue;
-
-            alterAccountClassifier(
-                plugin,
-                No.add,
-                thisClass,
-                id,
-                channelName);
-        }
-
-        immutable result = alterAccountClassifier(
-            plugin,
-            Yes.add,
-            class_,
-            id,
-            channelName);
-
-        report(result, id);
+        return removeAndApply(id);
     }
 
     void onFailure(const IRCUser failureUser)
@@ -394,6 +342,7 @@ void lookupEnlist(
     {
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
+            // Can't WHOIS on Twitch
             return onSuccess(specified);
         }
     }
