@@ -672,8 +672,12 @@ auto alterAccountClassifier(
 
     json.save(plugin.userFile);
 
-    // Force persistence to reload the file with the new changes
-    plugin.state.mainThread.send(ThreadMessage.reload());
+    version(WithPersistenceService)
+    {
+        // Force persistence to reload the file with the new changes
+        plugin.state.mainThread.send(ThreadMessage.reload("persistence"));
+    }
+
     return AlterationResult.success;
 }
 
@@ -812,6 +816,9 @@ in (mask.length, "Tried to add an empty hostmask definition")
     json = JSONValue(aa);
     json.save!(JSONStorage.KeyOrderStrategy.passthrough)(plugin.hostmasksFile);
 
-    // Force persistence to reload the file with the new changes
-    plugin.state.mainThread.send(ThreadMessage.reload());
+    version(WithPersistenceService)
+    {
+        // Force persistence to reload the file with the new changes
+        plugin.state.mainThread.send(ThreadMessage.reload("persistence"));
+    }
 }
