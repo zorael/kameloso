@@ -34,25 +34,23 @@ package:
     Params:
         plugin = The current [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin].
         event = The triggering [dialect.defs.IRCEvent|IRCEvent].
-        list = Which list to add/remove from; "staff", "whitelist", "elevated",
-            "operator" or "blacklist".
+        class_ = User class.
  +/
 void manageClassLists(
     AdminPlugin plugin,
     const ref IRCEvent event,
-    const string list)
-in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
-    list ~ " is not whitelist, elevated, operator, staff nor blacklist")
+    const IRCUser.Class class_)
 {
     import lu.string : beginsWith, nom, stripped;
     import std.typecons : Flag, No, Yes;
 
     void sendUsage()
     {
+        import lu.conv : Enum;
         import std.format : format;
 
         enum pattern = "Usage: <b>%s%s<b> [add|del|list]";
-        immutable message = pattern.format(plugin.state.settings.prefix, list);
+        immutable message = pattern.format(plugin.state.settings.prefix, Enum!(IRCUser.Class).toString(class_));
         privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
@@ -68,13 +66,13 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
     switch (verb)
     {
     case "add":
-        return lookupEnlist(plugin, slice, list, event.channel, event);
+        return lookupEnlist(plugin, slice, class_, event.channel, event);
 
     case "del":
-        return delist(plugin, slice, list, event.channel, event);
+        return delist(plugin, slice, class_, event.channel, event);
 
     case "list":
-        return listList(plugin, event.channel, list, event);
+        return listList(plugin, event.channel, class_, event);
 
     default:
         return sendUsage();
@@ -90,26 +88,21 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
     Params:
         plugin = The current [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin].
         channelName = The channel the list relates to.
-        list = Which list to list; "whitelist", "elevated", "operator", "staff" or "blacklist".
+        class_ = User class.
         event = Optional [dialect.defs.IRCEvent|IRCEvent] that instigated the listing.
  +/
 void listList(
     AdminPlugin plugin,
     const string channelName,
-    const string list,
+    const IRCUser.Class class_,
     const IRCEvent event = IRCEvent.init)
-in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
-    list ~ " is not whitelist, elevated, operator, staff nor blacklist")
 {
+    import lu.conv : Enum;
     import lu.json : JSONStorage;
     import std.format : format;
 
-    immutable asWhat =
-        (list == "operator") ? "operators" :
-        (list == "staff") ? "staff" :
-        (list == "elevated") ? "elevated users" :
-        (list == "whitelist") ? "whitelisted users" :
-        /*(list == "blacklist") ?*/ "blacklisted users";
+    immutable role = getNoun(NounForm.plural, class_);
+    immutable list = Enum!(IRCUser.Class).toString(class_);
 
     JSONStorage json;
     json.load(plugin.userFile);
@@ -124,13 +117,13 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
         if (event.sender.nickname.length)
         {
             enum pattern = "Current %s in <b>%s<b>: %-(<h>%s<h>, %)<h>";
-            immutable message = pattern.format(asWhat, channelName, userlist);
+            immutable message = pattern.format(role, channelName, userlist);
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
         else
         {
             enum pattern = "Current %s in <l>%s</>: %-(<h>%s</>, %)</>";
-            logger.infof(pattern, asWhat, channelName, userlist);
+            logger.infof(pattern, role, channelName, userlist);
         }
     }
     else
@@ -138,13 +131,13 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
         if (event.sender.nickname.length)
         {
             enum pattern = "There are no %s in <b>%s<b>.";
-            immutable message = pattern.format(asWhat, channelName);
+            immutable message = pattern.format(role, channelName);
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
         else
         {
             enum pattern = "There are no %s in <l>%s</>.";
-            logger.infof(pattern, asWhat, channelName);
+            logger.infof(pattern, role, channelName);
         }
     }
 }
@@ -167,30 +160,23 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
 void lookupEnlist(
     AdminPlugin plugin,
     const string specified,
-    const string list,
+    const IRCUser.Class class_,
     const string channelName,
     const IRCEvent event = IRCEvent.init)
-in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
-    list ~ " is not whitelist, operator, staff nor blacklist")
 {
     import dialect.common : isValidNickname;
     import lu.string : beginsWith, contains;
 
-    static immutable listTypes =
+    static immutable IRCUser.Class[5] validClasses =
     [
-        "staff",
-        "operator",
-        "elevated",
-        "whitelist",
-        "blacklist",
+        IRCUser.Class.staff,
+        IRCUser.Class.operator,
+        IRCUser.Class.elevated,
+        IRCUser.Class.whitelist,
+        IRCUser.Class.blacklist,
     ];
 
-    immutable asWhat =
-        (list == "operator") ? "an operator" :
-        (list == "staff") ? "staff" :
-        (list == "elevated") ? "elevated" :
-        (list == "whitelist") ? "a whitelisted user" :
-        /*(list == "blacklist") ?*/ "a blacklisted user";
+    immutable role = getNoun(NounForm.singular, class_);
 
     /// Report result, either to the local terminal or to the IRC channel/sender
     void report(const AlterationResult result, const string id)
@@ -206,7 +192,7 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
             {
             case success:
                 enum pattern = "Added <h>%s<h> as <b>%s<b> in %s.";
-                immutable message = pattern.format(id, asWhat, channelName);
+                immutable message = pattern.format(id, role, channelName);
                 privmsg(plugin.state, event.channel, event.sender.nickname, message);
                 break;
 
@@ -216,7 +202,7 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
 
             case alreadyInList:
                 enum pattern = "<h>%s<h> was already <b>%s<b> in %s.";
-                immutable message = pattern.format(id, asWhat, channelName);
+                immutable message = pattern.format(id, role, channelName);
                 privmsg(plugin.state, event.channel, event.sender.nickname, message);
                 break;
             }
@@ -230,7 +216,7 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
             {
             case success:
                 enum pattern = "Added <h>%s</> as %s in %s.";
-                logger.infof(pattern, id, asWhat, channelName);
+                logger.infof(pattern, id, role, channelName);
                 break;
 
             case noSuchAccount:
@@ -239,7 +225,7 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
 
             case alreadyInList:
                 enum pattern = "<h>%s</> is already %s in %s.";
-                logger.infof(pattern, id, asWhat, channelName);
+                logger.infof(pattern, id, role, channelName);
                 break;
             }
         }
@@ -250,14 +236,15 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
     if (user && user.account.length)
     {
         // user.nickname == specified
-        foreach (immutable thisList; listTypes)
+        // Remove previous classification
+        foreach (immutable thisClass; validClasses[])
         {
-            if (thisList == list) continue;
+            if (thisClass == class_) continue;
 
             alterAccountClassifier(
                 plugin,
                 No.add,
-                thisList,
+                thisClass,
                 user.account,
                 channelName);
         }
@@ -265,7 +252,7 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
         immutable result = alterAccountClassifier(
             plugin,
             Yes.add,
-            list,
+            class_,
             user.account,
             channelName);
 
@@ -317,14 +304,15 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
 
                 if (const userInList = id in plugin.state.users)
                 {
-                    foreach (immutable thisList; listTypes)
+                    // Remove previous classification
+                    foreach (immutable thisClass; validClasses[])
                     {
-                        if (thisList == list) continue;
+                        if (thisClass == class_) continue;
 
                         alterAccountClassifier(
                             plugin,
                             No.add,
-                            thisList,
+                            thisClass,
                             id,
                             channelName);
                     }
@@ -332,7 +320,7 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
                     immutable result = alterAccountClassifier(
                         plugin,
                         Yes.add,
-                        list,
+                        class_,
                         id,
                         channelName);
 
@@ -346,14 +334,15 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
 
                 if (!usersWithThisDisplayName.empty)
                 {
-                    foreach (immutable thisList; listTypes)
+                    // Remove previous classification
+                    foreach (immutable thisClass; validClasses[])
                     {
-                        if (thisList == list) continue;
+                        if (thisClass == class_) continue;
 
                         alterAccountClassifier(
                             plugin,
                             No.add,
-                            thisList,
+                            thisClass,
                             usersWithThisDisplayName.front.account,
                             channelName);
                     }
@@ -361,7 +350,7 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
                     immutable result = alterAccountClassifier(
                         plugin,
                         Yes.add,
-                        list,
+                        class_,
                         usersWithThisDisplayName.front.account,
                         channelName);
 
@@ -372,14 +361,15 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
             }
         }
 
-        foreach (immutable thisList; listTypes)
+        foreach (immutable thisClass; validClasses[])
         {
-            if (thisList == list) continue;
+            // Remove previous classification
+            if (thisClass == class_) continue;
 
             alterAccountClassifier(
                 plugin,
                 No.add,
-                thisList,
+                thisClass,
                 id,
                 channelName);
         }
@@ -387,7 +377,7 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
         immutable result = alterAccountClassifier(
             plugin,
             Yes.add,
-            list,
+            class_,
             id,
             channelName);
 
@@ -533,19 +523,18 @@ auto getNoun(const NounForm form, const string classString)
     Params:
         plugin = The current [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin].
         account = The account to delist.
-        list = Which of "whitelist", "elevated", "operator", "staff" or "blacklist" to remove from.
+        class_ = User class.
         channelName = Which channel the enlisting relates to.
         event = Optional instigating [dialect.defs.IRCEvent|IRCEvent].
  +/
 void delist(
     AdminPlugin plugin,
     const string account,
-    const string list,
+    const IRCUser.Class class_,
     const string channelName,
     const IRCEvent event = IRCEvent.init)
-in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
-    list ~ " is not whitelist, operator, staff nor blacklist")
 {
+    import lu.conv : Enum;
     import std.format : format;
 
     if (!account.length)
@@ -564,17 +553,12 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
         return;
     }
 
-    immutable asWhat =
-        (list == "operator") ? "an operator" :
-        (list == "staff") ? "staff" :
-        (list == "elevated") ? "elevated" :
-        (list == "whitelist") ? "a whitelisted user" :
-        /*(list == "blacklist") ?*/ "a blacklisted user";
+    immutable role = getNoun(NounForm.singular, class_);
 
     immutable result = alterAccountClassifier(
         plugin,
         No.add,
-        list,
+        class_,
         account,
         channelName);
 
@@ -591,13 +575,13 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
         case noSuchAccount:
         case noSuchChannel:
             enum pattern = "<h>%s<h> isn't <b>%s<b> in %s.";
-            immutable message = pattern.format(account, asWhat, channelName);
+            immutable message = pattern.format(account, role, channelName);
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
             break;
 
         case success:
             enum pattern = "Removed <h>%s<h> as <b>%s<b> in %s.";
-            immutable message = pattern.format(account, asWhat, channelName);
+            immutable message = pattern.format(account, role, channelName);
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
             break;
         }
@@ -614,17 +598,17 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
 
         case noSuchAccount:
             enum pattern = "No such account <h>%s</> was found as %s in %s.";
-            logger.infof(pattern, account, asWhat, channelName);
+            logger.infof(pattern, account, role, channelName);
             break;
 
         case noSuchChannel:
             enum pattern = "Account <h>%s</> isn't %s in %s.";
-            logger.infof(pattern, account, asWhat, channelName);
+            logger.infof(pattern, account, role, channelName);
             break;
 
         case success:
             enum pattern = "Removed <h>%s</> as %s in %s.";
-            logger.infof(pattern, account, asWhat, channelName);
+            logger.infof(pattern, account, role, channelName);
             break;
         }
     }
@@ -655,8 +639,7 @@ enum AlterationResult
     Params:
         plugin = The current [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin].
         add = Whether to add to or remove from lists.
-        list = Which list to add to or remove from; `whitelist`, `elevated`,
-            `operator`, `staff` or `blacklist`.
+        class_ = User class.
         account = Services account name to add or remove.
         channelName = Channel the account-class applies to.
 
@@ -672,19 +655,20 @@ enum AlterationResult
 auto alterAccountClassifier(
     AdminPlugin plugin,
     const Flag!"add" add,
-    const string list,
+    const IRCUser.Class class_,
     const string account,
     const string channelName)
-in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
-    list ~ " is not whitelist, elevated, operator, staff nor blacklist")
 {
     import kameloso.thread : ThreadMessage;
+    import lu.conv : Enum;
     import lu.json : JSONStorage;
     import std.concurrency : send;
     import std.json : JSONValue;
 
     JSONStorage json;
     json.load(plugin.userFile);
+
+    immutable list = Enum!(IRCUser.Class).toString(class_);
 
     if (add)
     {

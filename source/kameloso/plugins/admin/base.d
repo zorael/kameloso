@@ -566,7 +566,7 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
 )
 void onCommandWhitelist(AdminPlugin plugin, const ref IRCEvent event)
 {
-    manageClassLists(plugin, event, "whitelist");
+    manageClassLists(plugin, event, IRCUser.Class.whitelist);
 }
 
 
@@ -595,7 +595,7 @@ void onCommandWhitelist(AdminPlugin plugin, const ref IRCEvent event)
 )
 void onCommandElevated(AdminPlugin plugin, const ref IRCEvent event)
 {
-    manageClassLists(plugin, event, "elevated");
+    manageClassLists(plugin, event, IRCUser.Class.elevated);
 }
 
 
@@ -621,7 +621,7 @@ void onCommandElevated(AdminPlugin plugin, const ref IRCEvent event)
 )
 void onCommandOperator(AdminPlugin plugin, const ref IRCEvent event)
 {
-    manageClassLists(plugin, event, "operator");
+    manageClassLists(plugin, event, IRCUser.Class.operator);
 }
 
 
@@ -647,7 +647,7 @@ void onCommandOperator(AdminPlugin plugin, const ref IRCEvent event)
 )
 void onCommandStaff(AdminPlugin plugin, const ref IRCEvent event)
 {
-    return manageClassLists(plugin, event, "staff");
+    return manageClassLists(plugin, event, IRCUser.Class.staff);
 }
 
 
@@ -675,7 +675,7 @@ void onCommandStaff(AdminPlugin plugin, const ref IRCEvent event)
 )
 void onCommandBlacklist(AdminPlugin plugin, const ref IRCEvent event)
 {
-    manageClassLists(plugin, event, "blacklist");
+    manageClassLists(plugin, event, IRCUser.Class.blacklist);
 }
 
 
@@ -1541,6 +1541,7 @@ void onBusMessage(
     case "operator":
     case "staff":
     case "blacklist":
+        import lu.conv : Enum;
         import lu.string : SplitResults, splitInto;
 
         string subverb;
@@ -1554,6 +1555,8 @@ void onBusMessage(
                 "[verb] [channel] [nickname if add/del], got \"<l>%s</>\"";
             return logger.warningf(pattern, verb, message.payload.strippedRight);
         }
+
+        immutable class_ = Enum!(IRCUser.Class).fromString(verb);
 
         switch (subverb)
         {
@@ -1569,15 +1572,15 @@ void onBusMessage(
 
             if (subverb == "add")
             {
-                return lookupEnlist(plugin, user, verb, channelName);
+                return lookupEnlist(plugin, user, class_, channelName);
             }
             else /*if (subverb == "del")*/
             {
-                return delist(plugin, user, verb, channelName);
+                return delist(plugin, user, class_, channelName);
             }
 
         case "list":
-            return listList(plugin, channelName, verb);
+            return listList(plugin, channelName, class_);
 
         default:
             enum pattern = "Invalid bus message <l>%s</> subverb <l>%s";
