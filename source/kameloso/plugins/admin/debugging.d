@@ -142,6 +142,8 @@ void onCommandPrintRawImpl(AdminPlugin plugin, const ref IRCEvent event)
     import std.conv : text;
     import std.format : format;
 
+    if (plugin.state.settings.headless) return;
+
     plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;
 
     enum pattern = "Printing all: <b>%s<b>";
@@ -160,6 +162,8 @@ void onCommandPrintBytesImpl(AdminPlugin plugin, const ref IRCEvent event)
 {
     import std.conv : text;
     import std.format : format;
+
+    if (plugin.state.settings.headless) return;
 
     plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
 
@@ -248,5 +252,8 @@ void onCommandBusImpl(AdminPlugin plugin, const string input)
         plugin.state.mainThread.send(ThreadMessage.busMessage(header, boxed(slice)));
     }
 
-    if (plugin.state.settings.flush) stdout.flush();
+    if (!plugin.state.settings.headless && plugin.state.settings.flush)
+    {
+        stdout.flush();
+    }
 }
