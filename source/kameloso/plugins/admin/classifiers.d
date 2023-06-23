@@ -740,20 +740,20 @@ in (mask.length, "Tried to add an empty hostmask definition")
 
         if (!mask.isValidHostmask(plugin.state.server))
         {
-            if (event == IRCEvent.init)
-            {
-                enum pattern = `Invalid hostmask "<l>%s</>"; must be in the form ` ~
-                    `"<l>nickname!ident@address</>".`;
-                logger.warningf(pattern, mask);
-            }
-            else
+            if (event.sender.nickname.length)
             {
                 import std.format : format;
                 enum pattern = `Invalid hostmask: "<b>%s<b>"; must be in the form "<b>nickname!ident@address.tld<b>".`;
                 immutable message = pattern.format(mask);
                 privmsg(plugin.state, event.channel, event.sender.nickname, message);
             }
-            return;
+            else
+            {
+                enum pattern = `Invalid hostmask "<l>%s</>"; must be in the form ` ~
+                    `"<l>nickname!ident@address</>".`;
+                logger.warningf(pattern, mask);
+            }
+            return;  // Skip saving and updating below
         }
 
         aa[mask] = account;
@@ -761,18 +761,19 @@ in (mask.length, "Tried to add an empty hostmask definition")
         // Remove any placeholder example since there should now be at least one true entry
         aa.remove(examplePlaceholderKey);
 
-        if (event == IRCEvent.init)
-        {
-            immutable colouredAccount = colourByHash(account, plugin.state.settings);
-            enum pattern = `Added hostmask "<l>%s</>", mapped to account <h>%s</>.`;
-            logger.infof(pattern, mask, colouredAccount);
-        }
-        else
+        if (event.sender.nickname.length)
         {
             enum pattern = `Added hostmask "<b>%s<b>", mapped to account <h>%s<h>.`;
             immutable message = pattern.format(mask, account);
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
+        else
+        {
+            immutable colouredAccount = colourByHash(account, plugin.state.settings);
+            enum pattern = `Added hostmask "<l>%s</>", mapped to account <h>%s</>.`;
+            logger.infof(pattern, mask, colouredAccount);
+        }
+        // Drop down to save
     }
     else
     {
@@ -794,19 +795,20 @@ in (mask.length, "Tried to add an empty hostmask definition")
                 immutable message = pattern.format(mask);
                 privmsg(plugin.state, event.channel, event.sender.nickname, message);
             }
+            // Drop down to save
         }
         else
         {
-            if (event == IRCEvent.init)
-            {
-                enum pattern = `No such hostmask "<l>%s</>" on file.`;
-                logger.warningf(pattern, mask);
-            }
-            else
+            if (event.sender.nickname.length)
             {
                 enum pattern = `No such hostmask "<b>%s<b>" on file.`;
                 immutable message = format(pattern, mask);
                 privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            }
+            else
+            {
+                enum pattern = `No such hostmask "<l>%s</>" on file.`;
+                logger.warningf(pattern, mask);
             }
             return;  // Skip saving and updating below
         }
