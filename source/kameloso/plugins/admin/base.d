@@ -1451,12 +1451,6 @@ void onBusMessage(
                 immutable timestampPre = Clock.currTime;
                 immutable memoryUsedPre = statsPre.usedSize;
 
-                static void clobber()
-                {
-                    int[2048] _;
-                }
-
-                clobber();
                 GC.collect();
 
                 immutable statsPost = GC.stats();
