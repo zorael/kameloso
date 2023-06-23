@@ -417,6 +417,112 @@ in (list.among!("whitelist", "blacklist", "elevated", "operator", "staff"),
 }
 
 
+// NounForm
+/++
+    Forms in which [getNoun] should produce conjugated nouns.
+ +/
+enum NounForm
+{
+    /++
+        Indefinite form.
+     +/
+    indefinite,
+
+    /++
+        Singular form (definite).
+     +/
+    singular,
+
+    /++
+        Plural form.
+     +/
+    plural,
+}
+
+
+// getNoun
+/++
+    Returns the string of a [dialect.defs.IRCUser.Class|Class] noun conjugated
+    to the passed form.
+
+    Params:
+        form = Form to conjugate the noun to.
+        class_ = [dialect.defs.IRCUser.Class|IRCUser.Class] whose string to conjugate.
+
+    Returns:
+        The string name of `class_` conjugated to `form`.
+ +/
+auto getNoun(const NounForm form, const IRCUser.Class class_)
+{
+    with (NounForm)
+    with (IRCUser.Class)
+    final switch (form)
+    {
+    case indefinite:
+        final switch (class_)
+        {
+        case admin:      return "administrator";
+        case staff:      return "staff";
+        case operator:   return "operator";
+        case elevated:   return "elevated user";
+        case whitelist:  return "whitelisted user";
+        case registered: return "registered user";
+        case anyone:     return "anyone";
+        case blacklist:  return "blacklisted user";
+        case unset:      return "unset";
+        }
+
+    case singular:
+        final switch (class_)
+        {
+        case admin:      return "an administrator";
+        case staff:      return "staff";
+        case operator:   return "an operator";
+        case elevated:   return "an elevated user";
+        case whitelist:  return "a whitelisted user";
+        case registered: return "a registered user";
+        case anyone:     return "anyone";
+        case blacklist:  return "a blacklisted user";
+        case unset:      return "unset";
+        }
+
+    case plural:
+        final switch (class_)
+        {
+        case admin:      return "administrators";
+        case staff:      return "staff";
+        case operator:   return "operators";
+        case elevated:   return "elevated users";
+        case registered: return "registered users";
+        case whitelist:  return "whitelisted users";
+        case anyone:     return "anyone";
+        case blacklist:  return "blacklisted users";
+        case unset:      return "unset";
+        }
+    }
+}
+
+
+// getNoun
+/++
+    Returns the string of a noun conjugated to the passed form.
+
+    Overload that takes a string instead of an [dialect.defs.IRCUser.Class|IRCUser.Class].
+
+    Params:
+        form = Form to conjugate the noun to.
+        classString = Class string to conjugate.
+
+    Returns:
+        The string name of `class_` conjugated to `form`.
+ +/
+auto getNoun(const NounForm form, const string classString)
+{
+    import lu.conv : Enum;
+    return getNoun(form, Enum!(IRCUser.Class).fromString(classString));
+}
+
+
 // delist
 /++
     Removes a nickname from either the whitelist, operator list, list of elevated
