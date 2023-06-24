@@ -44,6 +44,7 @@ auto applyCustomSettings(
     const string[] customSettings,
     CoreSettings copyOfSettings)
 {
+    import lu.objmanip : SetMemberException;
     import lu.string : contains, nom;
     import std.conv : ConvException;
 
@@ -61,20 +62,20 @@ auto applyCustomSettings(
         }
 
         string slice = line;  // mutable
-        string pluginstring = slice.nom!(Yes.decode)(".");  // mutable
+        immutable pluginstring = slice.nom!(Yes.decode)(".");
         immutable setting = slice.nom!(Yes.inherit, Yes.decode)('=');
         immutable value = slice;
 
-        if (pluginstring == "core")
+        try
         {
-            import kameloso.common : logger;
-            import kameloso.logger : KamelosoLogger;
-            import lu.objmanip : SetMemberException, setMemberByName;
-            import std.algorithm.comparison : among;
-            static import kameloso.common;
-
-            try
+            if (pluginstring == "core")
             {
+                import kameloso.common : logger;
+                import kameloso.logger : KamelosoLogger;
+                import lu.objmanip : setMemberByName;
+                import std.algorithm.comparison : among;
+                static import kameloso.common;
+
                 immutable success = slice.length ?
                     copyOfSettings.setMemberByName(setting, value) :
                     copyOfSettings.setMemberByName(setting, true);
@@ -102,32 +103,14 @@ auto applyCustomSettings(
                         //plugin.state.updates |= typeof(plugin.state.updates).settings;
                     }
                 }
+                continue top;
             }
-            catch (SetMemberException e)
+            else
             {
-                enum pattern = "Failed to set <l>core</>.<l>%s</>: " ~
-                    "it requires a value and none was supplied.";
-                logger.warningf(pattern, setting);
-                version(PrintStacktraces) logger.trace(e.info);
-                noErrors = false;
-            }
-            catch (ConvException _)
-            {
-                enum pattern = `Invalid value for <l>core</>.<l>%s</>: "<l>%s</>"`;
-                logger.warningf(pattern, setting, value);
-                noErrors = false;
-            }
-
-            continue top;
-        }
-        else
-        {
-            foreach (plugin; plugins)
-            {
-                if (plugin.name != pluginstring) continue;
-
-                try
+                foreach (plugin; plugins)
                 {
+                    if (plugin.name != pluginstring) continue;
+
                     immutable success = plugin.setSettingByName(
                         setting,
                         value.length ? value : "true");
@@ -138,23 +121,33 @@ auto applyCustomSettings(
                         logger.warningf(pattern, pluginstring, setting);
                         noErrors = false;
                     }
+                    continue top;
                 }
-                catch (ConvException _)
-                {
-                    enum pattern = `Invalid value for <l>%s</>.<l>%s</>: "<l>%s</>"`;
-                    logger.warningf(pattern, pluginstring, setting, value);
-                    noErrors = false;
-
-                    //version(PrintStacktraces) logger.trace(e.info);
-                }
-
-                continue top;
             }
-        }
 
-        enum pattern = "Invalid plugin: <l>%s";
-        logger.warningf(pattern, pluginstring);
-        noErrors = false;
+            // If we're here, the loop was never continued --> unknown plugin
+            enum pattern = "Invalid plugin: <l>%s";
+            logger.warningf(pattern, pluginstring);
+            noErrors = false;
+            // Drop down, try next
+        }
+        catch (SetMemberException e)
+        {
+            enum pattern = "Failed to set <l>%s</>.<l>%s</>: " ~
+                "it requires a value and none was supplied.";
+            logger.warningf(pattern, pluginstring, setting);
+            version(PrintStacktraces) logger.trace(e.info);
+            noErrors = false;
+            // Drop down, try next
+        }
+        catch (ConvException e)
+        {
+            enum pattern = `Invalid value for <l>%s</>.<l>%s</>: "<l>%s</>" <t>(%s)`;
+            logger.warningf(pattern, pluginstring, setting, value, e.msg);
+            noErrors = false;
+            // Drop down, try next
+        }
+        continue top;
     }
 
     return noErrors;
