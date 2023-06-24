@@ -910,8 +910,12 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     IRCUser userCopy = *storedUser;  // dereference and copy
     plugin.state.mainThread.send(ThreadMessage.putUser(string.init, boxed(userCopy)));
-    if (shouldStartRoomMonitor) startRoomMonitorFibers(plugin, event.channel);
-    importCustomEmotes(plugin, event.channel, room.id);
+
+    if (shouldStartRoomMonitor)
+    {
+        startRoomMonitorFibers(plugin, event.channel);
+        importCustomEmotes(plugin, event.channel, room.id);  // also only do this once
+    }
 }
 
 
