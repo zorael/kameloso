@@ -55,7 +55,11 @@ void onAnyEventImpl(AdminPlugin plugin, const ref IRCEvent event)
 
         foreach (immutable i, immutable c; event.content.representation)
         {
-            writefln("[%d] %s : %03d", i, cast(char)c, c);
+            import std.encoding : isValidCodeUnit;
+            import std.utf : replacementDchar;
+
+            immutable dc = isValidCodeUnit(c) ? dchar(c) : replacementDchar;
+            writefln("[%3d] %s : %03d", i, dc, c);
         }
     }
 
