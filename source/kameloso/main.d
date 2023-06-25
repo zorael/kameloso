@@ -1356,17 +1356,19 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
             }
         }
 
-        if (instance.parser.clientUpdated)
+        alias ParserUpdates = typeof(instance.parser.updates);
+
+        if (instance.parser.updates & ParserUpdates.client)
         {
             // Parsing changed the client; propagate
-            instance.parser.clientUpdated = false;
+            instance.parser.updates &= ~ParserUpdates.client;
             instance.propagate(instance.parser.client);
         }
 
-        if (instance.parser.serverUpdated)
+        if (instance.parser.updates & ParserUpdates.server)
         {
             // Parsing changed the server; propagate
-            instance.parser.serverUpdated = false;
+            instance.parser.updates &= ~ParserUpdates.server;
             instance.propagate(instance.parser.server);
         }
 
