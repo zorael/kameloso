@@ -1323,6 +1323,9 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
 
         eventWasInitialised = true;
 
+        // Save timestamp in the event itself.
+        event.time = nowInUnix;
+
         version(TwitchSupport)
         {
             if (instance.parser.server.daemon == IRCServer.Daemon.twitch && event.content.length)
@@ -1371,9 +1374,6 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
             instance.parser.updates &= ~ParserUpdates.server;
             instance.propagate(instance.parser.server);
         }
-
-        // Save timestamp in the event itself.
-        event.time = nowInUnix;
 
         // Let each plugin postprocess the event
         foreach (plugin; instance.plugins)
