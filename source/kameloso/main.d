@@ -3643,6 +3643,49 @@ void echoQuitMessage(ref Kameloso instance, const string reason)
 }
 
 
+// propagateWhoisTimestamp
+/++
+    Propagates a single update to the the [previousWhoisTimestamps]
+    associative array to all plugins.
+
+    Params:
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        nickname = Nickname whose WHOIS timestamp to propagate.
+        now = UNIX WHOIS timestamp.
+ +/
+void propagateWhoisTimestamp(
+    ref Kameloso instance,
+    const string nickname,
+    const long now) pure
+{
+    foreach (plugin; instance.plugins)
+    {
+        plugin.state.previousWhoisTimestamps[nickname] = now;
+    }
+}
+
+
+// propagateWhoisTimestamps
+/++
+    Propagates the [previousWhoisTimestamps] associative array to all plugins.
+
+    Makes a copy of it before passing it onwards; this way, plugins cannot
+    modify the original.
+
+    Params:
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+ +/
+void propagateWhoisTimestamps(ref Kameloso instance) pure
+{
+    auto copy = instance.previousWhoisTimestamps.dup;  // mutable
+
+    foreach (plugin; instance.plugins)
+    {
+        plugin.state.previousWhoisTimestamps = copy;
+    }
+}
+
+
 public:
 
 

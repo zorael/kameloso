@@ -764,40 +764,6 @@ public:
         }
     }
 
-    // propagateWhoisTimestamp
-    /++
-        Propagates a single update to the the [previousWhoisTimestamps]
-        associative array to all plugins.
-
-        Params:
-            nickname = Nickname whose WHOIS timestamp to propagate.
-            now = UNIX WHOIS timestamp.
-     +/
-    void propagateWhoisTimestamp(const string nickname, const long now) pure
-    {
-        foreach (plugin; plugins)
-        {
-            plugin.state.previousWhoisTimestamps[nickname] = now;
-        }
-    }
-
-    // propagateWhoisTimestamps
-    /++
-        Propagates the [previousWhoisTimestamps] associative array to all plugins.
-
-        Makes a copy of it before passing it onwards; this way, plugins cannot
-        modify the original.
-     +/
-    void propagateWhoisTimestamps() pure
-    {
-        auto copy = previousWhoisTimestamps.dup;  // mutable
-
-        foreach (plugin; plugins)
-        {
-            plugin.state.previousWhoisTimestamps = copy;
-        }
-    }
-
     // ConnectionHistoryEntry
     /++
         A record of a successful connection.
