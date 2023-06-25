@@ -366,16 +366,16 @@ In the case of **hostmasks mode**, the above still applies but "accounts" are de
 
 Prebuilt binaries for Windows and Linux can be found under [Releases](https://github.com/zorael/kameloso/releases).
 
-If you're on **Windows**, you must first [install the **OpenSSL** library](#windows). Run this command to download and launch the installer for it, then opt to install to Windows system directories when asked:
+If you're on **Windows**, you must first [install the **OpenSSL** library](#windows). Run this command to download and launch the installer for it, then opt to install to Windows system directories when asked (here in Powershell syntax):
 
 ```shell
-kameloso --get-openssl
+./kameloso --get-openssl
 ```
 
 The rest is common for all platforms.
 
 ```shell
-kameloso --setup-twitch
+./kameloso --setup-twitch
 ```
 
 The `--setup-twitch` command creates a configuration file with the server address and port already set to connect to Twitch, then opens it up in a text editor.
@@ -390,7 +390,7 @@ The `--setup-twitch` command creates a configuration file with the server addres
 The program can then be run normally.
 
 ```shell
-kameloso
+./kameloso
 ```
 
 It will now connect to Twitch and start the guide to requesting a new *authorisation token* in your terminal, upon detecting it's missing one. See the ["long story"](#long-story) section below for details.
