@@ -153,7 +153,7 @@ void listList(
     Params:
         plugin = The current [kameloso.plugins.admin.base.AdminPlugin|AdminPlugin].
         specified = The nickname or account to white-/blacklist.
-        list = Which of "whitelist", "elevated", "operator", "staff" or "blacklist" to add to.
+        class_ = User class.
         channelName = Which channel the enlisting relates to.
         event = Optional instigating [dialect.defs.IRCEvent|IRCEvent].
  +/
