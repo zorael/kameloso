@@ -68,6 +68,12 @@ public:
      +/
     bool colouredOutgoing = true;
 
+    // reexecToReconnect
+    /++
+        Re-executes the program instead of reconnecting hot.
+     +/
+    bool reexecToReconnect = false;
+
     // saveOnExit
     /++
         Flag denoting that we should save configuration changes to file on exit.
@@ -158,12 +164,6 @@ public:
             (but process other events).
          +/
         bool observerMode;
-
-        // reexecToReconnect
-        /++
-            Re-executes the program instead of reconnecting hot.
-         +/
-        bool reexecToReconnect = false;
     }
 }
 
