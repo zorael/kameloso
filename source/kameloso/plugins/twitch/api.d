@@ -607,7 +607,7 @@ auto sendHTTPRequestImpl(
 auto getTwitchData(
     TwitchPlugin plugin,
     const string url,
-    const string caller = __FUNCTION__ ~ ".getTwitchData")
+    const string caller = __FUNCTION__)
 in (Fiber.getThis, "Tried to call `getTwitchData` from outside a Fiber")
 {
     import std.json : JSONException, JSONType, parseJSON;
@@ -934,7 +934,7 @@ in (id.length, "Tried to get follows with an empty ID string")
 auto getMultipleTwitchData(
     TwitchPlugin plugin,
     const string url,
-    const string caller = __FUNCTION__ ~ ".getMultipleTwitchData")
+    const string caller = __FUNCTION__)
 in (Fiber.getThis, "Tried to call `getMultipleTwitchData` from outside a Fiber")
 {
     import std.json : JSONValue, parseJSON;
