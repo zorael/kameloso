@@ -131,7 +131,7 @@ void verboselyWriteConfig(
         !instance.settings.brightTerminal &&
         !instance.settings.configFile.exists;
 
-    instance.writeConfigurationFile(instance.settings.configFile);
+    writeConfigurationFile(instance, instance.settings.configFile);
 
     if (!instance.settings.headless)
     {
@@ -486,7 +486,7 @@ public:
     Example:
     ---
     Kameloso instance;
-    Next next = instance.handleGetopt(args);
+    Next next = handleGetopt(instance);
 
     if (next == Next.returnSuccess) return 0;
     // ...
@@ -1054,7 +1054,7 @@ auto handleGetopt(ref Kameloso instance) @system
     Example:
     ---
     Kameloso instance;
-    instance.writeConfigurationFile(settings.configFile);
+    writeConfigurationFile(instance, instance.settings.configFile);
     ---
 
     Params:

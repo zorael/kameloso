@@ -369,8 +369,8 @@ void messageFiber(ref Kameloso instance)
 
             case save:
                 import kameloso.config : writeConfigurationFile;
-                instance.syncGuestChannels();
-                instance.writeConfigurationFile(instance.settings.configFile);
+                syncGuestChannels(instance);
+                writeConfigurationFile(instance, instance.settings.configFile);
                 break;
 
             case popCustomSetting:
@@ -604,7 +604,7 @@ void messageFiber(ref Kameloso instance)
 
                     line = "WHOIS " ~ m.event.target.nickname;
                     instance.previousWhoisTimestamps[m.event.target.nickname] = now;
-                    instance.propagateWhoisTimestamp(m.event.target.nickname, now);
+                    propagateWhoisTimestamp(instance, m.event.target.nickname, now);
                 }
                 else
                 {
@@ -888,7 +888,7 @@ auto mainLoop(ref Kameloso instance)
         if (!instance.settings.headless && instance.flags.wantLiveSummary)
         {
             // Live connection summary requested.
-            instance.printSummary();
+            printSummary(instance);
             instance.flags.wantLiveSummary = false;
         }
 
@@ -958,7 +958,7 @@ auto mainLoop(ref Kameloso instance)
         if ((nowInUnix % 86_400) == 0)
         {
             instance.previousWhoisTimestamps = null;
-            instance.propagateWhoisTimestamps();
+            propagateWhoisTimestamps(instance);
         }
 
         // Call the generator, query it for event lines
@@ -980,7 +980,7 @@ auto mainLoop(ref Kameloso instance)
                 historyEntry.bytesReceived += max(attempt.bytesReceived, 0);
                 historyEntry.stopTime = nowInUnix;
                 ++historyEntry.numEvents;
-                instance.processLineFromServer(attempt.line, nowInUnix);
+                processLineFromServer(instance, attempt.line, nowInUnix);
                 break;
 
             case retry:
@@ -1964,7 +1964,7 @@ void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
             /*instance.outbuffer.put(OutgoingLine("WHOIS " ~ nickname,
                 cast(Flag!"quiet")instance.settings.hideOutgoing));
             instance.previousWhoisTimestamps[nickname] = now;
-            instance.propagateWhoisTimestamp(nickname, now);*/
+            propagateWhoisTimestamp(instance, nickname, now);*/
 
             enum properties = (Message.Property.forced | Message.Property.quiet);
             whois(plugin.state, nickname, properties);
@@ -3020,7 +3020,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
                 {
                     if (instance.settings.exitSummary && instance.connectionHistory.length)
                     {
-                        instance.printSummary();
+                        printSummary(instance);
                     }
 
                     version(GCStatsOnExit)
@@ -3715,7 +3715,7 @@ auto run(string[] args)
 
     // Set up the Kameloso instance.
     auto instance = Kameloso(args);
-    instance.postInstanceSetup();
+    postInstanceSetup(instance);
 
     // Set pointers.
     kameloso.common.settings = &instance.settings;
@@ -3850,7 +3850,7 @@ auto run(string[] args)
     }
 
     // Verify that settings are as they should be (nickname exists and not too long, etc)
-    immutable actionAfterVerification = instance.verifySettings();
+    immutable actionAfterVerification = verifySettings(instance);
 
     with (Next)
     final switch (actionAfterVerification)
@@ -3872,7 +3872,7 @@ auto run(string[] args)
     }
 
     // Resolve resource and private key/certificate paths.
-    instance.resolvePaths();
+    resolvePaths(instance);
     instance.conn.certFile = instance.connSettings.certFile;
     instance.conn.privateKeyFile = instance.connSettings.privateKeyFile;
 
@@ -3920,7 +3920,7 @@ auto run(string[] args)
     instance.parser.client.origNickname = instance.parser.client.nickname;
 
     // Go!
-    instance.startBot(attempt);
+    startBot(instance, attempt);
 
     // If we're here, we should exit. The only question is in what way.
 
@@ -3931,13 +3931,12 @@ auto run(string[] args)
 
         if (!*instance.abort && !instance.settings.headless && !instance.settings.hideOutgoing)
         {
-            const message = instance.getQuitMessageInFlight();
+            const message = getQuitMessageInFlight(instance);
             reason = message.content.length ?
                 message.content :
                 instance.bot.quitReason;
             reason = reason.replaceTokens(instance.parser.client);
-
-            instance.echoQuitMessage(reason);
+            echoQuitMessage(instance, reason);
         }
 
         if (!reason.length)
@@ -3954,8 +3953,8 @@ auto run(string[] args)
         try
         {
             import kameloso.config : writeConfigurationFile;
-            instance.syncGuestChannels();
-            instance.writeConfigurationFile(instance.settings.configFile);
+            syncGuestChannels(instance);
+            writeConfigurationFile(instance, instance.settings.configFile);
         }
         catch (Exception e)
         {
@@ -3972,7 +3971,7 @@ auto run(string[] args)
     {
         if (instance.settings.exitSummary && instance.connectionHistory.length)
         {
-            instance.printSummary();
+            printSummary(instance);
         }
 
         version(GCStatsOnExit)
