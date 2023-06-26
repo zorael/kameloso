@@ -2968,9 +2968,9 @@ void resolvePaths(ref Kameloso instance)
 
     Params:
         instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
-        attempt = [AttemptState] aggregate of state variables used when connecting.
+        attempt = out-reference [AttemptState] aggregate of state variables used when connecting.
  +/
-void startBot(ref Kameloso instance, ref AttemptState attempt)
+void startBot(ref Kameloso instance, out AttemptState attempt)
 {
     import kameloso.plugins.common.misc : IRCPluginInitialisationException,
         pluginNameOfFilename, pluginFileBaseName;
