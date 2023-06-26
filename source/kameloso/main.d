@@ -2700,14 +2700,14 @@ auto tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
             return Next.continue_;
 
         case exception:
-            enum pattern = "Could not resolve server address: <l>%s</> (<l>%d</>)";
+            enum pattern = "Could not resolve server address: <l>%s</> <t>(%d)";
             logger.warningf(pattern, errorString, attempt.errno);
             delayOnNetworkDown();
             if (*instance.abort) return Next.returnFailure;
             continue;
 
         case error:
-            enum pattern = "Could not resolve server address: <l>%s</> (<l>%d</>)";
+            enum pattern = "Could not resolve server address: <l>%s</> <t>(%d)";
             logger.errorf(pattern, errorString, attempt.errno);
 
             if (firstConnect)
