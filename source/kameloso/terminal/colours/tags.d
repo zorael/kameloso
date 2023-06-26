@@ -1,5 +1,16 @@
 /++
     A collection of functions used to translate tags in messages into terminal colours.
+
+    See_Also:
+        [kameloso.terminal],
+        [kameloso.terminal.colours],
+        [kameloso.terminal.colours.defs]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.terminal.colours.tags;
 

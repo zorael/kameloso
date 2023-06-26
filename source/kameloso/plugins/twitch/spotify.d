@@ -2,8 +2,17 @@
     Bits and bobs to get Spotify API credentials for playlist management.
 
     See_Also:
-        [kameloso.plugins.twitch.base|twitch.base]
-        [kameloso.plugins.twitch.api|twitch.api]
+        [kameloso.plugins.twitch.base],
+        [kameloso.plugins.twitch.keygen],
+        [kameloso.plugins.twitch.api],
+        [kameloso.plugins.common.core],
+        [kameloso.plugins.common.misc]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.twitch.spotify;
 

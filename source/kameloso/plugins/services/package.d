@@ -4,10 +4,16 @@
     Removing or disabling any of these may yield adverse results.
 
     See_Also:
-        [kameloso.plugins.services.chanqueries|services.chanqueries]
-        [kameloso.plugins.services.connect|service.connect]
-        [kameloso.plugins.services.ctcp|services.ctcp]
-        [kameloso.plugins.services.persistence|services.persistence]
+        [kameloso.plugins.services.chanqueries]
+        [kameloso.plugins.services.connect]
+        [kameloso.plugins.services.ctcp]
+        [kameloso.plugins.services.persistence]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.services;
 

@@ -1,5 +1,14 @@
 /++
     POD structs, broken out of [kameloso.kameloso] to avoid cyclic dependencies.
+
+    See_Also:
+        [kameloso.kameloso]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.pods;
 

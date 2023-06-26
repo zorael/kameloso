@@ -1,5 +1,16 @@
 /++
     Enum definitions of ANSI codes.
+
+    See_Also:
+        [kameloso.terminal],
+        [kameloso.terminal.colours],
+        [kameloso.terminal.colours.tags]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 
 module kameloso.terminal.colours.defs;

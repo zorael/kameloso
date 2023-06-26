@@ -2,10 +2,16 @@
     Functions for accessing the Twitch API. For internal use.
 
     See_Also:
-        [kameloso.plugins.twitch.base|twitch.base]
-        [kameloso.plugins.twitch.keygen|twitch.keygen]
-        [kameloso.plugins.twitch.google|twitch.google]
-        [kameloso.plugins.twitch.spotify|twitch.spotify]
+        [kameloso.plugins.twitch.base],
+        [kameloso.plugins.twitch.keygen],
+        [kameloso.plugins.common.core],
+        [kameloso.plugins.common.misc]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.twitch.api;
 

@@ -1,7 +1,13 @@
 /++
     A collection of constants used throughout the program.
 
-    This acts as a compile-time configuration file.
+    This acts as a compile-time configuration file to reduce ad-hoc magic numbers.
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.constants;
 

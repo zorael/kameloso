@@ -47,11 +47,15 @@
     of strings generated.
 
     See_Also:
-        [kameloso.terminal.colours.defs]
-
-        [kameloso.terminal.colours.tags]
-
+        [kameloso.terminal.colours.defs],
+        [kameloso.terminal.colours.tags],
         [kameloso.terminal]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.terminal.colours;
 

@@ -4,7 +4,11 @@
 
     Example:
     ---
-    auto logger = new KamelosoLogger(No.monochrome, No.brigtTerminal);
+    auto logger = new KamelosoLogger(
+        No.monochrome,
+        No.brigtTerminal,
+        No.headless,
+        No.flush);
 
     logger.log("This is LogLevel.all");
     logger.info("LogLevel.info");
@@ -16,6 +20,12 @@
 
     See_Also:
         [kameloso.terminal.colours]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.logger;
 

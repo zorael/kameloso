@@ -9,6 +9,16 @@
     In the second approach (version `MatchWithRegex`), the function is only called
     if the incoming message matched its regular expression, so the body can safely
     assume it should always react and reply.
+
+    See_Also:
+        [kameloso.plugins.common.core],
+        [kameloso.plugins.common.misc]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.same;
 

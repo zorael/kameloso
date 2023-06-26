@@ -38,9 +38,16 @@
     ---
 
     See_Also:
-        [kameloso.plugins.common.misc|plugins.common.misc]
-        [kameloso.plugins.common.mixins|plugins.common.mixins]
-        [kameloso.plugins.common.delayawait|plugins.common.delayawait]
+        [kameloso.plugins.common.misc],
+        [kameloso.plugins.common.awareness],
+        [kameloso.plugins.common.delayawait],
+        [kameloso.plugins.common.mixins],
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.common.core;
 

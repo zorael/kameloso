@@ -2,8 +2,14 @@
     Functions for generating a Twitch API key.
 
     See_Also:
-        [kameloso.plugins.twitch.base|twitch.base]
-        [kameloso.plugins.twitch.api|twitch.api]
+        [kameloso.plugins.twitch.base],
+        [kameloso.plugins.twitch.api]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.twitch.keygen;
 
