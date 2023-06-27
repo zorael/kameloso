@@ -593,7 +593,6 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 
     if (!slice.length || (slice[0] == '?'))
     {
-        counter.resetEmptyPatterns();
         return sendCurrentCount(*counter);
     }
 
@@ -633,7 +632,6 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
         }
 
         counter.count += step;
-        counter.resetEmptyPatterns();
         saveCounters(plugin);
         return sendCounterModified(*counter, step);
 
@@ -658,7 +656,6 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 
         immutable step = (newCount - counter.count);
         counter.count = newCount;
-        counter.resetEmptyPatterns();
         saveCounters(plugin);
         return sendCounterAssigned(*counter, step);
 
@@ -768,6 +765,7 @@ void saveCounters(CounterPlugin plugin)
 
         foreach (immutable word, counter; channelCounters)
         {
+            counter.resetEmptyPatterns();
             json[channelName][word] = counter.toJSON();
         }
     }
