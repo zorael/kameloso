@@ -717,6 +717,7 @@ auto formatMessage(
 
     string toReturn = pattern
         .replace("$step", abs(step).to!string)
+        .replace("$signedstep", step.to!string)
         .replace("$count", counter.count.to!string)
         .replace("$word", counter.word)
         .replace("$channel", event.channel)
