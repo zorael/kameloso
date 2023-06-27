@@ -64,7 +64,7 @@ struct PluginRegistrationEntry
         Constructor.
 
         Params:
-            priority = [kameloso.plugins.common.core.Priority|Priority] at which
+            priority = [kameloso.plugins.Priority|Priority] at which
                 to instantiate the plugin. A lower priority value makes it get
                 instantiated before other plugins.
             ctor = Function pointer to a "constructor"/builder that instantiates

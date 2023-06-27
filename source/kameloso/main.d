@@ -1996,8 +1996,8 @@ void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
 
 // processSpecialRequests
 /++
-    Iterates through a plugin's array of [kameloso.plugins.core.SpecialRequest|SpecialRequest]s.
-    Depending on what their [kameloso.plugins.core.SpecialRequest.fiber|fiber] member
+    Iterates through a plugin's array of [kameloso.plugins.common.core.SpecialRequest|SpecialRequest]s.
+    Depending on what their [kameloso.plugins.common.core.SpecialRequest.fiber|fiber] member
     (which is in actualy a [kameloso.thread.CarryingFiber|CarryingFiber]) can be
     cast to, it prepares a payload, assigns it to the
     [kameloso.thread.CarryingFiber|CarryingFiber], and calls it.
@@ -3539,7 +3539,7 @@ struct AttemptState
     adding entries in the latter where the former is missing.
 
     We can't just check the first plugin at `instance.plugins[0]` since there's
-    no way to be certain it mixes in [kameloso.plugins.common.mixins.ChannelAwareness|ChannelAwareness].
+    no way to be certain it mixes in [kameloso.plugins.common.awareness.ChannelAwareness|ChannelAwareness].
 
     Used when saving to configuration file, to ensure the current state is saved.
 
@@ -3651,7 +3651,7 @@ void echoQuitMessage(ref Kameloso instance, const string reason)
 
 // propagateWhoisTimestamp
 /++
-    Propagates a single update to the the [previousWhoisTimestamps]
+    Propagates a single update to the the [kameloso.kameloso.Kameloso.previousWhoisTimestamps]
     associative array to all plugins.
 
     Params:
@@ -3673,7 +3673,8 @@ void propagateWhoisTimestamp(
 
 // propagateWhoisTimestamps
 /++
-    Propagates the [previousWhoisTimestamps] associative array to all plugins.
+    Propagates the [kameloso.kameloso.Kameloso.previousWhoisTimestamps]
+    associative array to all plugins.
 
     Makes a copy of it before passing it onwards; this way, plugins cannot
     modify the original.

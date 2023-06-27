@@ -2859,7 +2859,7 @@ enum Permissions
 
     /++
         Anyone not explicitly blacklisted (with a
-        [dialect.defs.IRCClient.Class.blacklist|IRCClient.Class.blacklist]
+        [dialect.defs.IRCUser.Class.blacklist|IRCUser.Class.blacklist]
         classifier) may trigger the annotated function. As such, to know if they're
         blacklisted, unknown users will first be looked up with a WHOIS query
         before allowing the function to trigger.

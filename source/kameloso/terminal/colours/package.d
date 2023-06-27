@@ -89,7 +89,7 @@ public:
     Params:
         sink = Output range sink to write to.
         code = ANSI code to apply.
-        overrideType = Force a specific [kameloso.terminal.colour.defs.ANSICodeType|ANSICodeType]
+        overrideType = Force a specific [kameloso.terminal.colours.defs.ANSICodeType|ANSICodeType]
             in cases where there is ambiguity.
  +/
 void applyANSI(Sink)
@@ -220,7 +220,7 @@ if (isOutputRange!(Sink, char[]))
     Params:
         text = Original string.
         code = ANSI code.
-        overrideType = Force a specific [kameloso.terminal.colour.defs.ANSICodeType|ANSICodeType]
+        overrideType = Force a specific [kameloso.terminal.colours.defs.ANSICodeType|ANSICodeType]
             in cases where there is ambiguity.
 
     Returns:

@@ -550,13 +550,13 @@ public:
     {
         /++
             For dark terminal backgrounds. Was
-            [kameloso.terminal.colours.TerminalForeground.white_|TerminalForeground.white_].
+            [kameloso.terminal.colours.defs.TerminalForeground.white_|TerminalForeground.white_].
          +/
         dark = TF.default_,
 
         /++
             For bright terminal backgrounds. Was
-            [kameloso.terminal.colours.TerminalForeground.black_|TerminalForeground.black_].
+            [kameloso.terminal.colours.defs.TerminalForeground.black_|TerminalForeground.black_].
          +/
         bright = TF.default_,
     }

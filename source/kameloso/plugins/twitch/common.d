@@ -291,7 +291,7 @@ public:
     }
 
     /++
-        Create a new [EmptyDataException], attaching a response body.
+        Create a new [EmptyDataJSONException], attaching a response body.
      +/
     this(
         const string message,
@@ -305,7 +305,7 @@ public:
     }
 
     /++
-        Create a new [EmptyDataException], without attaching anything.
+        Create a new [EmptyDataJSONException], without attaching anything.
      +/
     this(
         const string message,

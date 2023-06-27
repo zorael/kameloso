@@ -1287,7 +1287,7 @@ final class QuoteIndexOutOfRangeException : Exception
 }
 
 
-// NoQuoteSearchMatchException
+// NoQuotesSearchMatchException
 /++
     Exception, to be thrown when given search terms failed to match any stored quotes.
  +/
@@ -1297,7 +1297,7 @@ final class NoQuotesSearchMatchException : Exception
     string searchTerms;
 
     /++
-        Creates a new [NoQuoteSearchMatchException], attaching a search terms string.
+        Creates a new [NoQuotesSearchMatchException], attaching a search terms string.
      +/
     this(
         const string message,

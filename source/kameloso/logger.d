@@ -38,8 +38,7 @@ public:
 
 // LogLevel
 /++
-    Logging levels; copied straight from [std.experimental.logger], to save us
-    an import.
+    Logging levels; copied straight from [std.logger], to save us an import.
 
     There are eight usable logging level. These level are $(I all), $(I trace),
     $(I info), $(I warning), $(I error), $(I critical), $(I fatal), and $(I off).
@@ -180,7 +179,7 @@ public:
         // tint
         /++
             Returns the corresponding
-            [kameloso.terminal.colours.TerminalForeground|TerminalForeground] for the [LogLevel],
+            [kameloso.terminal.colours.defs.TerminalForeground|TerminalForeground] for the [LogLevel],
             taking into account whether the terminal is said to be bright or not.
 
             This is merely a convenient wrapping for [logcoloursBright] and
@@ -198,7 +197,7 @@ public:
                     background or a dark one.
 
             Returns:
-                A [kameloso.terminal.colours.TerminalForeground|TerminalForeground] of
+                A [kameloso.terminal.colours.defs.TerminalForeground|TerminalForeground] of
                 the right colour. Use with [kameloso.terminal.colours.asANSI|asANSI]
                 to get a string.
          +/
