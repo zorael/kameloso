@@ -75,7 +75,7 @@ public:
         See_Also:
             [formatMessage]
      +/
-    string patternQuery;
+    string patternQuery = "<b>$word<b> count so far: <b>$count<b>";
 
     /++
         The pattern to use when formatting confirmations of counter increments;
@@ -84,7 +84,7 @@ public:
         See_Also:
             [formatMessage]
      +/
-    string patternIncrement;
+    string patternIncrement = "<b>$word +$step<b>! Current count: <b>$count<b>";
 
     /++
         The pattern to use when formatting confirmations of counter decrements;
@@ -93,7 +93,7 @@ public:
         See_Also:
             [formatMessage]
      +/
-    string patternDecrement;
+    string patternDecrement = "<b>$word -$step<b>! Current count: <b>$count<b>";
 
     /++
         The pattern to use when formatting confirmations of counter assignments;
@@ -102,7 +102,7 @@ public:
         See_Also:
             [formatMessage]
      +/
-    string patternAssign;
+    string patternAssign = "<b>$word<b> count assigned to <b>$count<b>!";
 
     /++
         Constructor. Only kept as a compatibility measure to ensure [word] alawys
@@ -169,6 +169,18 @@ public:
         }
 
         return counter;
+    }
+
+    // resetEmptyPatterns
+    /++
+        Resets empty patterns with their default strings.
+     +/
+    void resetEmptyPatterns()
+    {
+        if (!patternQuery.length) patternQuery = typeof(this).init.patternQuery;
+        if (!patternIncrement.length) patternIncrement = typeof(this).init.patternIncrement;
+        if (!patternDecrement.length) patternDecrement = typeof(this).init.patternDecrement;
+        if (!patternAssign.length) patternAssign = typeof(this).init.patternAssign;
     }
 }
 
@@ -482,19 +494,34 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 
     void sendCurrentCount(const Counter counter)
     {
-        if (counter.patternQuery.length)
-        {
-            immutable message = formatMessage(
-                plugin,
-                counter.patternQuery,
-                event,
-                counter,
-                0);
-            return chan(plugin.state, event.channel, message);
-        }
+        immutable message = formatMessage(
+            plugin,
+            counter.patternQuery,
+            event,
+            counter);
+        chan(plugin.state, event.channel, message);
+    }
 
-        enum pattern = "<b>%s<b> count so far: <b>%d<b>";
-        immutable message = pattern.format(counter.word, counter.count);
+    void sendCounterModified(const Counter counter, const long step)
+    {
+        immutable pattern = (step >= 0) ? counter.patternIncrement : counter.patternDecrement;
+        immutable message = formatMessage(
+            plugin,
+            pattern,
+            event,
+            counter,
+            step);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendCounterAssigned(const Counter counter, const long step)
+    {
+        immutable message = formatMessage(
+            plugin,
+            counter.patternAssign,
+            event,
+            counter,
+            step);
         chan(plugin.state, event.channel, message);
     }
 
@@ -502,59 +529,6 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
     {
         enum pattern = "<b>%s<b> is not a number.";
         immutable message = pattern.format(input);
-        chan(plugin.state, event.channel, message);
-    }
-
-    void sendCounterModified(const Counter counter, const long step)
-    {
-        if (step >= 0)
-        {
-            if (counter.patternIncrement.length)
-            {
-                immutable message = formatMessage(
-                    plugin,
-                    counter.patternIncrement,
-                    event,
-                    counter,
-                    step);
-                return chan(plugin.state, event.channel, message);
-            }
-        }
-        else /*if (step < 0)*/
-        {
-            if (counter.patternDecrement.length)
-            {
-                immutable message = formatMessage(
-                    plugin,
-                    counter.patternDecrement,
-                    event,
-                    counter,
-                    step);
-                return chan(plugin.state, event.channel, message);
-            }
-        }
-
-        enum pattern = "<b>%s %s<b>! Current count: <b>%d<b>";
-        immutable stepText = (step >= 0) ? text('+', step) : step.to!string;
-        immutable message = pattern.format(counter.word, stepText, counter.count);
-        chan(plugin.state, event.channel, message);
-    }
-
-    void sendCounterAssigned(const Counter counter, const long step)
-    {
-        if (counter.patternAssign.length)
-        {
-            immutable message = formatMessage(
-                plugin,
-                counter.patternAssign,
-                event,
-                counter,
-                step);
-            return chan(plugin.state, event.channel, message);
-        }
-
-        enum pattern = "<b>%s<b> count assigned to <b>%d<b>!";
-        immutable message = pattern.format(counter.word, counter.count);
         chan(plugin.state, event.channel, message);
     }
 
@@ -619,6 +593,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 
     if (!slice.length || (slice[0] == '?'))
     {
+        counter.resetEmptyPatterns();
         return sendCurrentCount(*counter);
     }
 
@@ -659,6 +634,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 
         counter.count += step;
         saveCounters(plugin);
+        counter.resetEmptyPatterns();
         return sendCounterModified(*counter, step);
 
     case '=':
@@ -683,6 +659,7 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
         immutable step = (newCount - counter.count);
         counter.count = newCount;
         saveCounters(plugin);
+        counter.resetEmptyPatterns();
         return sendCounterAssigned(*counter, step);
 
     default:
@@ -731,7 +708,7 @@ auto formatMessage(
     const string pattern,
     const ref IRCEvent event,
     const Counter counter,
-    const long step)
+    const long step = long.init)
 {
     import kameloso.plugins.common.misc : nameOf;
     import std.conv : to;
