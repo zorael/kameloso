@@ -633,8 +633,8 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
         }
 
         counter.count += step;
-        saveCounters(plugin);
         counter.resetEmptyPatterns();
+        saveCounters(plugin);
         return sendCounterModified(*counter, step);
 
     case '=':
@@ -658,8 +658,8 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 
         immutable step = (newCount - counter.count);
         counter.count = newCount;
-        saveCounters(plugin);
         counter.resetEmptyPatterns();
+        saveCounters(plugin);
         return sendCounterAssigned(*counter, step);
 
     default:
