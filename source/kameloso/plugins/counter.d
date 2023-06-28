@@ -177,10 +177,11 @@ public:
      +/
     void resetEmptyPatterns()
     {
-        if (!patternQuery.length) patternQuery = typeof(this).init.patternQuery;
-        if (!patternIncrement.length) patternIncrement = typeof(this).init.patternIncrement;
-        if (!patternDecrement.length) patternDecrement = typeof(this).init.patternDecrement;
-        if (!patternAssign.length) patternAssign = typeof(this).init.patternAssign;
+        Counter counterInit;
+        if (!patternQuery.length) patternQuery = counterInit.patternQuery;
+        if (!patternIncrement.length) patternIncrement = counterInit.patternIncrement;
+        if (!patternDecrement.length) patternDecrement = counterInit.patternDecrement;
+        if (!patternAssign.length) patternAssign = counterInit.patternAssign;
     }
 }
 
