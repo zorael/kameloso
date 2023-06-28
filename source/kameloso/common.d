@@ -827,7 +827,7 @@ void printGCStats()
         logger.infof(pattern, stats.allocatedInCurrentThread);
     }
 
-    enum memoryUsedPattern = "Memory currently in use: <l>%,d</> bytes, " ~
+    enum memoryUsedPattern = "Memory currently in use: <l>%,d</> bytes; " ~
         "<l>%,d</> additional bytes reserved";
     logger.infof(memoryUsedPattern, stats.usedSize, stats.freeSize);
 }
