@@ -377,7 +377,7 @@ in (word.length, "Tried to apply IRC colours by hash to a string but no string w
     immutable colourInteger = (hashOf(word) % ircANSIColourMap.length);
 
     sink.put(cast(char)IRCControlCharacter.colour);
-    colourInteger.toAlphaInto!(3, 2)(sink);
+    colourInteger.toAlphaInto!(2, 2)(sink);
     sink.put(word);
     sink.put(cast(char)IRCControlCharacter.colour);
 
