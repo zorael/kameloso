@@ -289,15 +289,23 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
         }
     }
 
-    immutable line = oneliner.getResponse()
+    string line = oneliner.getResponse()  // mutable
         .replace("$channel", event.channel)
         .replace("$senderNickname", event.sender.nickname)
         .replace("$sender", nameOf(event.sender))
         .replace("$botNickname", plugin.state.client.nickname)
         .replace("$bot", nameOf(plugin, plugin.state.client.nickname)) // likewise
-        .replace("$streamerNickname", event.channel[1..$])  // Twitch
-        .replace("$streamer", nameOf(plugin, event.channel[1..$]))  // Twitch
         .replaceRandom();
+
+    version(TwitchSupport)
+    {
+        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+        {
+            line = line
+                .replace("$streamerNickname", event.channel[1..$])
+                .replace("$streamer", nameOf(plugin, event.channel[1..$]));
+        }
+    }
 
     immutable target = slice.beginsWith('@') ? slice[1..$] : slice;
     immutable message = target.length ?
