@@ -768,12 +768,12 @@ void saveCounters(CounterPlugin plugin)
 
     JSONStorage json;
 
-    foreach (immutable channelName, channelCounters; plugin.counters)
+    foreach (immutable channelName, ref channelCounters; plugin.counters)
     {
         json[channelName] = null;
         json[channelName].object = null;
 
-        foreach (immutable word, counter; channelCounters)
+        foreach (immutable word, ref counter; channelCounters)
         {
             counter.resetEmptyPatterns();
             json[channelName][word] = counter.toJSON();
