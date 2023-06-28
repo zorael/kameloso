@@ -1459,7 +1459,9 @@ T expandIRCTags(T)(const T line) @system
         immutable line = "Quote <h>zorael<h> #<b>5<b> saved.";
         immutable expanded = line.expandIRCTags;
         enum pattern = "Quote %s #%s saved.";
-        immutable expected = pattern.format("zorael".ircColourByHash(Yes.extendedOutgoingColours), "5".ircBold);
+        immutable expected = pattern.format(
+            "zorael".ircColourByHash(Yes.extendedOutgoingColours),
+            "5".ircBold);
         assert((expanded == expected), expanded);
     }
     {
@@ -1473,14 +1475,18 @@ T expandIRCTags(T)(const T line) @system
         immutable line = "<h>hirrsteff<h> was already <b>whitelist<b> in #garderoben.";
         immutable expanded = line.expandIRCTags;
         enum pattern = "%s was already %s in #garderoben.";
-        immutable expected = pattern.format("hirrsteff"
-            .ircColourByHash(Yes.extendedOutgoingColours), "whitelist".ircBold);
+        immutable expected = pattern.format(
+            "hirrsteff".ircColourByHash(Yes.extendedOutgoingColours),
+            "whitelist".ircBold);
         assert((expanded == expected), expanded);
     }
     {
         immutable line = `hello\<h>hello<h>hello<h>hello`;
         immutable expanded = line.expandIRCTags;
-        immutable expected = text("hello<h>hello", "hello".ircColourByHash(Yes.extendedOutgoingColours), "hello");
+        immutable expected = text(
+            "hello<h>hello",
+            "hello".ircColourByHash(Yes.extendedOutgoingColours),
+            "hello");
         assert((expanded == expected), expanded);
     }
 }
