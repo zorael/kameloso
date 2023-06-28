@@ -791,7 +791,7 @@ void handleDelFromOneliner(
     void sendResponseIndexOutOfBounds(const size_t pos, const size_t upperBounds)
     {
         enum pattern = "Oneliner response index <b>%d<b> is out of bounds. <b>[0..%d]<b>";
-        immutable message = pattern.format(upperBounds);
+        immutable message = pattern.format(pos, upperBounds);
         chan(plugin.state, event.channel, message);
     }
 
