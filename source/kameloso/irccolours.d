@@ -1344,7 +1344,7 @@ T expandIRCTags(T)(const T line) @system
         }
     }
 
-    immutable extendedColours = cast(Flag!"extendedColours")kameloso.common.settings.extendedColours;
+    immutable extendedColours = cast(Flag!"extendedColours")kameloso.common.settings.extendedOutgoingColours;
     immutable strip = cast(Flag!"strip")!kameloso.common.settings.colouredOutgoing;
     return expandIRCTags(line, extendedColours, strip);
 }
