@@ -173,7 +173,7 @@ void worker(
 
         if (!numBlock.length)
         {
-            return reportLayoutError();
+            return sendCouldNotFetchQuote(url, "No such quote found.");
         }
 
         auto p = numBlock[0].getElementsByTagName("p");
