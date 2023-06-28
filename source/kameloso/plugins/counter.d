@@ -712,9 +712,17 @@ auto formatMessage(
     import std.array : replace;
     import std.math : abs;
 
+    auto signedStep()
+    {
+        import std.conv : text;
+        return (step >= 0) ?
+            text('+', step) :
+            step.to!string;
+    }
+
     string toReturn = pattern
         .replace("$step", abs(step).to!string)
-        .replace("$signedstep", step.to!string)
+        .replace("$signedstep", signedStep())
         .replace("$count", counter.count.to!string)
         .replace("$word", counter.word)
         .replace("$channel", event.channel)
