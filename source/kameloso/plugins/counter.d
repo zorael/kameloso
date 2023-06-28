@@ -792,19 +792,27 @@ void loadCounters(CounterPlugin plugin)
 
     foreach (immutable channelName, channelCountersJSON; json.object)
     {
+        // Initialise the AA
+        plugin.counters[channelName][string.init] = Counter.init;
+        auto channelCounters = channelName in plugin.counters;
+        (*channelCounters).remove(string.init);
+
         foreach (immutable word, counterJSON; channelCountersJSON.object)
         {
-            plugin.counters[channelName][word] = Counter.fromJSON(counterJSON);
+            (*channelCounters)[word] = Counter.fromJSON(counterJSON);
+            auto counter = word in *channelCounters;
 
             // Backwards compatibility with old counters files
-            auto counter = word in plugin.counters[channelName];
             if (!counter.word.length)
             {
                 counter.word = word;
             }
 
-            plugin.counters[channelName].rehash();
+            // ditto
+            counter.resetEmptyPatterns();
         }
+
+        (*channelCounters).rehash();
     }
 
     plugin.counters.rehash();
