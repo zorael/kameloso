@@ -973,24 +973,6 @@ void reload(OnelinersPlugin plugin)
 }
 
 
-// onGlobalUserstate
-/++
-    On Twitch, catch the bot's display name on
-    [dialect.defs.IRCEvent.Type.GLOBALUSERSTATE|GLOBALUSERSTATE], early after connecting.
-
-    This lets us replace `$bot` in oneliners with our display name.
- +/
-version(TwitchSupport)
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.GLOBALUSERSTATE)
-)
-void onGlobalUserstate(OnelinersPlugin plugin, const ref IRCEvent event)
-{
-    import kameloso.plugins.common.misc : catchUser;
-    catchUser(plugin, event.target);
-}
-
-
 // sendOneliner
 /++
     Sends a oneliner reply.
