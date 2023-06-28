@@ -941,16 +941,22 @@ void reload(OnelinersPlugin plugin)
 
     JSONStorage allOnelinersJSON;
     allOnelinersJSON.load(plugin.onelinerFile);
+    plugin.onelinersByChannel.clear();
 
     foreach (immutable channelName, const channelOnelinersJSON; allOnelinersJSON.object)
     {
+        // Initialise the AA
+        plugin.onelinersByChannel[channelName][string.init] = Oneliner.init;
+        auto channelOneliners = channelName in plugin.onelinersByChannel;
+        (*channelOneliners).remove(string.init);
+
         foreach (immutable trigger, const onelinerJSON; channelOnelinersJSON.object)
         {
             import std.json : JSONException;
 
             try
             {
-                plugin.onelinersByChannel[channelName][trigger] = Oneliner.fromJSON(onelinerJSON);
+                (*channelOneliners)[trigger] = Oneliner.fromJSON(onelinerJSON);
             }
             catch (JSONException _)
             {
@@ -959,9 +965,11 @@ void reload(OnelinersPlugin plugin)
                 logger.errorf(pattern, trigger, plugin.onelinerFile.doublyBackslashed);
             }
         }
+
+        (*channelOneliners).rehash();
     }
 
-    plugin.onelinersByChannel = plugin.onelinersByChannel.rehash();
+    plugin.onelinersByChannel.rehash();
 }
 
 
