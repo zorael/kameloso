@@ -328,15 +328,15 @@ MrOffline joined #channel
  kameloso | Stopwatch stopped after 1 hour, 48 minutes and 10 seconds.
 
       you | !time
- kameloso | The time is currently 12:04 locally.
-      you | !time Europe/Stockholm
- kameloso | The time is currently 11:04 in Europe/Stockholm.
+ kameloso | The time is currently 11:04 locally.
+      you | !time Europe/London
+ kameloso | The time is currently 10:04 in Europe/London.
       you | !time Tokyo
- kameloso | The time is currently 20:05 in Tokyo.
+ kameloso | The time is currently 18:05 in Tokyo.
       you | !setzone Helsinki
  kameloso | Timezone changed to Europe/Helsinki.
       you | !time
- kameloso | The time is currently 12:04 in Europe/Helsinki.
+ kameloso | The time is currently 12:05 in Europe/Helsinki.
 ```
 
 ### Online help and commands
