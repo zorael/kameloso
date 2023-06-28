@@ -359,14 +359,14 @@ unittest
 
     Params:
         word = String to tint.
-        extendedColours = Whether or not to use extended colours (16-98).
+        extendedOutgoingColours = Whether or not to use extended colours (16-98).
 
     Returns:
         The passed string encased within IRC colour coding.
  +/
 string ircColourByHash(
     const string word,
-    const Flag!"extendedColours" extendedColours) pure
+    const Flag!"extendedOutgoingColours" extendedOutgoingColours) pure
 in (word.length, "Tried to apply IRC colours by hash to a string but no string was given")
 {
     import lu.conv : toAlphaInto;
@@ -377,7 +377,7 @@ in (word.length, "Tried to apply IRC colours by hash to a string but no string w
     Appender!(char[]) sink;
     sink.reserve(word.length + 4);  // colour, index, word, colour
 
-    immutable modulo = extendedColours ? ircANSIColourMap.length : 16;
+    immutable modulo = extendedOutgoingColours ? ircANSIColourMap.length : 16;
     immutable colourInteger = (hashOf(word) % modulo);
 
     sink.put(cast(char)IRCControlCharacter.colour);
@@ -396,22 +396,22 @@ unittest
     // Colour based on hash
 
     {
-        immutable actual = "kameloso".ircColourByHash(Yes.extendedColours);
+        immutable actual = "kameloso".ircColourByHash(Yes.extendedOutgoingColours);
         immutable expected = I.colour ~ "23kameloso" ~ I.colour;
         assert((actual == expected), actual);
     }
     {
-        immutable actual = "kameloso^".ircColourByHash(Yes.extendedColours);
+        immutable actual = "kameloso^".ircColourByHash(Yes.extendedOutgoingColours);
         immutable expected = I.colour ~ "56kameloso^" ~ I.colour;
         assert((actual == expected), actual);
     }
     {
-        immutable actual = "kameloso^11".ircColourByHash(Yes.extendedColours);
+        immutable actual = "kameloso^11".ircColourByHash(Yes.extendedOutgoingColours);
         immutable expected = I.colour ~ "91kameloso^11" ~ I.colour;
         assert((actual == expected), actual);
     }
     {
-        immutable actual = "flerrp".ircColourByHash(Yes.extendedColours);
+        immutable actual = "flerrp".ircColourByHash(Yes.extendedOutgoingColours);
         immutable expected = I.colour ~ "90flerrp" ~ I.colour;
         assert((actual == expected), actual);
     }
@@ -1221,7 +1221,7 @@ unittest
 
     Params:
         line = String line to expand IRC tags of.
-        extendedColours = Whether or not to use extended colours (16-99).
+        extendedOutgoingColours = Whether or not to use extended colours (16-99).
         strip = Whether to expand tags or strip them from the input line.
 
     Returns:
@@ -1229,7 +1229,7 @@ unittest
  +/
 T expandIRCTags(T)
     (const T line,
-    const Flag!"extendedColours" extendedColours,
+    const Flag!"extendedOutgoingColours" extendedOutgoingColours,
     const Flag!"strip" strip) @system
 {
     import std.encoding : sanitize;
@@ -1238,15 +1238,15 @@ T expandIRCTags(T)
 
     try
     {
-        return expandIRCTagsImpl(line, extendedColours, strip);
+        return expandIRCTagsImpl(line, extendedOutgoingColours, strip);
     }
     catch (UTFException _)
     {
-        return expandIRCTagsImpl(sanitize(line), extendedColours, strip);
+        return expandIRCTagsImpl(sanitize(line), extendedOutgoingColours, strip);
     }
     catch (UnicodeException _)
     {
-        return expandIRCTagsImpl(sanitize(line), extendedColours, strip);
+        return expandIRCTagsImpl(sanitize(line), extendedOutgoingColours, strip);
     }
 }
 
@@ -1259,25 +1259,25 @@ T expandIRCTags(T)
 
     {
         immutable line = "hello<b>hello<b>hello";
-        immutable expanded = line.expandIRCTags(Yes.extendedColours, Yes.strip);
+        immutable expanded = line.expandIRCTags(Yes.extendedOutgoingColours, Yes.strip);
         immutable expected = "hellohellohello";
         assert((expanded == expected), expanded);
     }
     {
         immutable line = "hello<99,99<b>hiho</>";
-        immutable expanded = line.expandIRCTags(Yes.extendedColours, Yes.strip);
+        immutable expanded = line.expandIRCTags(Yes.extendedOutgoingColours, Yes.strip);
         immutable expected = "hello<99,99hiho";
         assert((expanded == expected), expanded);
     }
     {
         immutable line = "hello<1>hellohello";
-        immutable expanded = line.expandIRCTags(Yes.extendedColours, Yes.strip);
+        immutable expanded = line.expandIRCTags(Yes.extendedOutgoingColours, Yes.strip);
         immutable expected = "hellohellohello";
         assert((expanded == expected), expanded);
     }
     {
         immutable line = `hello\<h>hello<h>hello<h>hello`;
-        immutable expanded = line.expandIRCTags(Yes.extendedColours, Yes.strip);
+        immutable expanded = line.expandIRCTags(Yes.extendedOutgoingColours, Yes.strip);
         immutable expected = "hello<h>hellohellohello";
         assert((expanded == expected), expanded);
     }
@@ -1309,7 +1309,7 @@ T expandIRCTags(T)
     // Old
     enum pattern = "Quote %s #%s saved.";
     immutable message = plugin.state.settings.colouredOutgoing ?
-        pattern.format(id.ircColourByHash(Yes.extendedColours), index.ircBold) :
+        pattern.format(id.ircColourByHash(Yes.extendedOutgoingColours), index.ircBold) :
         pattern.format(id, index);
     privmsg(plugin.state, event.channel, event.sender.nickname. message);
 
@@ -1344,9 +1344,10 @@ T expandIRCTags(T)(const T line) @system
         }
     }
 
-    immutable extendedColours = cast(Flag!"extendedColours")kameloso.common.settings.extendedOutgoingColours;
+    immutable extendedOutgoingColours =
+        cast(Flag!"extendedOutgoingColours")kameloso.common.settings.extendedOutgoingColours;
     immutable strip = cast(Flag!"strip")!kameloso.common.settings.colouredOutgoing;
-    return expandIRCTags(line, extendedColours, strip);
+    return expandIRCTags(line, extendedOutgoingColours, strip);
 }
 
 ///
@@ -1458,7 +1459,7 @@ T expandIRCTags(T)(const T line) @system
         immutable line = "Quote <h>zorael<h> #<b>5<b> saved.";
         immutable expanded = line.expandIRCTags;
         enum pattern = "Quote %s #%s saved.";
-        immutable expected = pattern.format("zorael".ircColourByHash(Yes.extendedColours), "5".ircBold);
+        immutable expected = pattern.format("zorael".ircColourByHash(Yes.extendedOutgoingColours), "5".ircBold);
         assert((expanded == expected), expanded);
     }
     {
@@ -1472,13 +1473,13 @@ T expandIRCTags(T)(const T line) @system
         immutable line = "<h>hirrsteff<h> was already <b>whitelist<b> in #garderoben.";
         immutable expanded = line.expandIRCTags;
         enum pattern = "%s was already %s in #garderoben.";
-        immutable expected = pattern.format("hirrsteff".ircColourByHash(Yes.extendedColours), "whitelist".ircBold);
+        immutable expected = pattern.format("hirrsteff".ircColourByHash(Yes.extendedOutgoingColours), "whitelist".ircBold);
         assert((expanded == expected), expanded);
     }
     {
         immutable line = `hello\<h>hello<h>hello<h>hello`;
         immutable expanded = line.expandIRCTags;
-        immutable expected = text("hello<h>hello", "hello".ircColourByHash(Yes.extendedColours), "hello");
+        immutable expected = text("hello<h>hello", "hello".ircColourByHash(Yes.extendedOutgoingColours), "hello");
         assert((expanded == expected), expanded);
     }
 }
@@ -1497,7 +1498,7 @@ T expandIRCTags(T)(const T line) @system
  +/
 T stripIRCTags(T)(const T line) @system
 {
-    return expandIRCTags(line, No.extendedColours, Yes.strip);
+    return expandIRCTags(line, No.extendedOutgoingColours, Yes.strip);
 }
 
 ///
@@ -1539,7 +1540,7 @@ T stripIRCTags(T)(const T line) @system
 
     Params:
         line = String line to expand IRC tags of.
-        extendedColours = Whether or not to use extended colours (16-99).
+        extendedOutgoingColours = Whether or not to use extended colours (16-99).
         strip = Whether to expand tags or strip them from the input line.
 
     Returns:
@@ -1551,7 +1552,7 @@ T stripIRCTags(T)(const T line) @system
  +/
 private T expandIRCTagsImpl(T)
     (const T line,
-    const Flag!"extendedColours" extendedColours,
+    const Flag!"extendedOutgoingColours" extendedOutgoingColours,
     const Flag!"strip" strip = No.strip) pure
 {
     import dialect.common : IRCControlCharacter;
@@ -1725,7 +1726,7 @@ private T expandIRCTagsImpl(T)
                                 {
                                     sink.put(ircColourByHash(
                                         cast(string)asBytes[i..i+closingHashMarkPos],
-                                        extendedColours));
+                                        extendedOutgoingColours));
                                 }
                                 else
                                 {
