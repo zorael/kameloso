@@ -374,8 +374,7 @@ in (word.length, "Tried to apply IRC colours by hash to a string but no string w
     Appender!(char[]) sink;
     sink.reserve(word.length + 4);  // colour, index, word, colour
 
-    immutable colourIndex = (hashOf(word) % ircANSIColourMap.length);
-    immutable colourInteger = ircANSIColourMap[colourIndex];
+    immutable colourInteger = (hashOf(word) % ircANSIColourMap.length);
 
     sink.put(cast(char)IRCControlCharacter.colour);
     colourInteger.toAlphaInto!(3, 2)(sink);
@@ -394,17 +393,22 @@ unittest
 
     {
         immutable actual = "kameloso".ircColourByHash;
-        immutable expected = I.colour ~ "24kameloso" ~ I.colour;
+        immutable expected = I.colour ~ "23kameloso" ~ I.colour;
         assert((actual == expected), actual);
     }
     {
         immutable actual = "kameloso^".ircColourByHash;
-        immutable expected = I.colour ~ "46kameloso^" ~ I.colour;
+        immutable expected = I.colour ~ "56kameloso^" ~ I.colour;
         assert((actual == expected), actual);
     }
     {
         immutable actual = "kameloso^11".ircColourByHash;
-        immutable expected = I.colour ~ "237kameloso^11" ~ I.colour;
+        immutable expected = I.colour ~ "91kameloso^11" ~ I.colour;
+        assert((actual == expected), actual);
+    }
+    {
+        immutable actual = "flerrp".ircColourByHash;
+        immutable expected = I.colour ~ "90flerrp" ~ I.colour;
         assert((actual == expected), actual);
     }
 }
@@ -1414,7 +1418,7 @@ T expandIRCTags(T)(const T line) @system
     {
         immutable line = "hello<h>kameloso<h>hello";
         immutable expanded = line.expandIRCTags;
-        immutable expected = "hello" ~ I.colour ~ "24kameloso" ~ I.colour ~ "hello";
+        immutable expected = "hello" ~ I.colour ~ "23kameloso" ~ I.colour ~ "hello";
         assert((expanded == expected), expanded);
     }
     {
