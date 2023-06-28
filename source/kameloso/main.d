@@ -994,14 +994,14 @@ auto mainLoop(ref Kameloso instance)
                 historyEntry.stopTime = nowInUnix;
                 break listenerloop;
 
-            case returnSuccess:
-                assert(0, "`listenAttemptToNext` returned `Next.returnSuccess`");
-
             case returnFailure:
                 return Next.retry;
 
-            case crash:
-                assert(0, "`listenAttemptToNext` returned `Next.crash`");
+            case returnSuccess:  // should never happen
+            case crash:  // ditto
+                import lu.conv : Enum;
+                import std.conv : text;
+                assert(0, text("`listenAttemptToNext` returned `", Enum!Next.toString(actionAfterListen), "`"));
             }
         }
 
@@ -1177,10 +1177,11 @@ auto listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
     with (ListenAttempt.State)
     final switch (attempt.state)
     {
-    case unset:
-    case prelisten:
-        // Should never happen
-        assert(0, "listener yielded invalid state");
+    case unset:  // should never happen
+    case prelisten:  // ditto
+        import lu.conv : Enum;
+        import std.conv : text;
+        assert(0, text("listener yielded `", Enum!(ListenAttempt.State).toString(attempt.state), "` state"));
 
     case isEmpty:
         // Empty line yielded means nothing received; break foreach and try again
@@ -2421,8 +2422,7 @@ auto tryConnect(ref Kameloso instance)
         with (ConnectionAttempt.State)
         final switch (attempt.state)
         {
-        case unset:
-            // Should never happen
+        case unset:  // should never happen
             assert(0, "connector yielded `unset` state");
 
         case preconnect:
@@ -3174,9 +3174,6 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
         case continue_:
             break;
 
-        case retry:  // should never happen
-            assert(0, "`tryResolve` returned `Next.retry`");
-
         case returnFailure:
             // No need to teardown; the scopeguard does it for us.
             attempt.retval = ShellReturnValue.resolutionFailure;
@@ -3187,8 +3184,11 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
             attempt.retval = ShellReturnValue.success;
             break outerloop;
 
-        case crash:
-            assert(0, "`tryResolve` returned `Next.crash`");
+        case retry:  // should never happen
+        case crash:  // ditto
+            import lu.conv : Enum;
+            import std.conv : text;
+            assert(0, text("`tryResolve` returned `", Enum!Next.toString(actionAfterResolve), "`"));
         }
 
         immutable actionAfterConnect = tryConnect(instance);
@@ -3200,19 +3200,17 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
         case continue_:
             break;
 
-        case returnSuccess:  // should never happen
-            assert(0, "`tryConnect` returned `Next.returnSuccess`");
-
-        case retry:  // should never happen
-            assert(0, "`tryConnect` returned `Next.retry`");
-
         case returnFailure:
             // No need to saveOnExit, the scopeguard takes care of that
             attempt.retval = ShellReturnValue.connectionFailure;
             break outerloop;
 
-        case crash:
-            assert(0, "`tryConnect` returned `Next.crash`");
+        case returnSuccess:  // should never happen
+        case retry:  // ditto
+        case crash:  // ditto
+            import lu.conv : Enum;
+            import std.conv : text;
+            assert(0, text("`tryConnect` returned `", Enum!Next.toString(actionAfterConnect), "`"));
         }
 
         // Ensure initialised resources after resolve so we know we have a
@@ -3765,17 +3763,17 @@ auto run(string[] args)
     case continue_:
         break;
 
-    case retry:  // should never happen
-        assert(0, "`tryGetopt` returned `Next.retry`");
-
     case returnSuccess:
         return ShellReturnValue.success;
 
     case returnFailure:
         return ShellReturnValue.getoptFailure;
 
-    case crash:  // as above
-        assert(0, "`tryGetopt` returned `Next.crash`");
+    case retry:  // should never happen
+    case crash:  // ditto
+        import lu.conv : Enum;
+        import std.conv : text;
+        assert(0, text("`tryGetopt` returned `", Enum!Next.toString(actionAfterGetopt), "`"));
     }
 
     if (!instance.settings.headless || instance.settings.force)
@@ -3865,17 +3863,15 @@ auto run(string[] args)
     case continue_:
         break;
 
-    case retry:  // should never happen
-        assert(0, "`verifySettings` returned `Next.retry`");
-
-    case returnSuccess:  // as above
-        assert(0, "`verifySettings` returned `Next.returnSuccess`");
-
     case returnFailure:
         return ShellReturnValue.settingsVerificationFailure;
 
-    case crash:  // as above
-        assert(0, "`verifySettings` returned `Next.crash`");
+    case retry:  // should never happen
+    case returnSuccess:  // ditto
+    case crash:  // ditto
+        import lu.conv : Enum;
+        import std.conv : text;
+        assert(0, text("`verifySettings` returned `", Enum!Next.toString(actionAfterVerification), "`"));
     }
 
     // Resolve resource and private key/certificate paths.
