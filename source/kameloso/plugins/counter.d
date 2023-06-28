@@ -448,14 +448,15 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
                 (mod == "+") ? "increment" :
                 (mod == "-") ? "decrement" :
                 (mod == "=") ? "assign" :
-                    "<<ERROR>>";
+                    string.init;
             immutable pattern =
                 (mod == "?") ? counter.patternQuery :
                 (mod == "+") ? counter.patternIncrement :
                 (mod == "-") ? counter.patternDecrement :
                 (mod == "=") ? counter.patternAssign :
-                    "<<ERROR>>";
+                    string.init;
 
+            if (!modverb.length || !pattern.length) assert(0, "Impossible case");
             return sendCurrentFormatPattern(modverb, pattern);
         }
 
