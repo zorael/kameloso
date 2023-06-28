@@ -177,7 +177,7 @@ public:
      +/
     void resetEmptyPatterns()
     {
-        Counter counterInit;
+        const Counter counterInit;
         if (!patternQuery.length) patternQuery = counterInit.patternQuery;
         if (!patternIncrement.length) patternIncrement = counterInit.patternIncrement;
         if (!patternDecrement.length) patternDecrement = counterInit.patternDecrement;
