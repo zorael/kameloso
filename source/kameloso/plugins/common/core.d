@@ -38,9 +38,16 @@
     ---
 
     See_Also:
-        [kameloso.plugins.common.misc|plugins.common.misc]
-        [kameloso.plugins.common.mixins|plugins.common.mixins]
-        [kameloso.plugins.common.delayawait|plugins.common.delayawait]
+        [kameloso.plugins.common.misc],
+        [kameloso.plugins.common.awareness],
+        [kameloso.plugins.common.delayawait],
+        [kameloso.plugins.common.mixins],
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.common.core;
 
@@ -315,8 +322,7 @@ mixin template IRCPluginImpl(
     private import kameloso.plugins.common.core : FilterResult, IRCEventHandler, IRCPluginState, Permissions;
     private import dialect.defs : IRCEvent, IRCServer, IRCUser;
     private import lu.traits : getSymbolsByUDA;
-    private import std.meta : Filter, templateNot, templateOr;
-    private import std.traits : getUDAs, isSomeFunction;
+    private import std.traits : getUDAs;
     private import core.thread : Fiber;
 
     static if (__traits(compiles, { alias _ = this.hasIRCPluginImpl; }))
@@ -1011,7 +1017,7 @@ mixin template IRCPluginImpl(
                             {
                                 import std.regex : matchFirst;
 
-                                const hits = event.content.matchFirst(regex._engine);
+                                const hits = event.content.matchFirst(regex.engine);
 
                                 if (!hits.empty)
                                 {
@@ -1547,18 +1553,42 @@ mixin template IRCPluginImpl(
             static if (isSerialisable!member)
             {
                 import kameloso.traits : udaIndexOf;
-                import std.path : buildNormalizedPath;
 
                 enum resourceUDAIndex = udaIndexOf!(this.tupleof[i], Resource);
                 enum configurationUDAIndex = udaIndexOf!(this.tupleof[i], Configuration);
+                alias attrs = __traits(getAttributes, this.tupleof[i]);
 
                 static if (resourceUDAIndex != -1)
                 {
-                    member = buildNormalizedPath(state.settings.resourceDirectory, member);
+                    import std.path : buildNormalizedPath;
+
+                    static if (is(typeof(attrs[resourceUDAIndex])))
+                    {
+                        member = buildNormalizedPath(
+                            state.settings.resourceDirectory,
+                            attrs[resourceUDAIndex].subdirectory,
+                            member);
+                    }
+                    else
+                    {
+                        member = buildNormalizedPath(state.settings.resourceDirectory, member);
+                    }
                 }
                 else static if (configurationUDAIndex != -1)
                 {
-                    member = buildNormalizedPath(state.settings.configDirectory, member);
+                    import std.path : buildNormalizedPath;
+
+                    static if (is(typeof(attrs[configurationUDAIndex])))
+                    {
+                        member = buildNormalizedPath(
+                            state.settings.configDirectory,
+                            attrs[configurationUDAIndex].subdirectory,
+                            member);
+                    }
+                    else
+                    {
+                        member = buildNormalizedPath(state.settings.configDirectory, member);
+                    }
                 }
             }
         }
@@ -2130,30 +2160,6 @@ mixin template IRCPluginImpl(
             }
         }
     }
-}
-
-@system
-unittest
-{
-    @Settings static struct TestSettings
-    {
-        @Enabler bool enuubled = false;
-    }
-
-    static final class TestPlugin : IRCPlugin
-    {
-        TestSettings testSettings;
-
-        mixin IRCPluginImpl;
-    }
-
-    IRCPluginState state;
-
-    TestPlugin p = new TestPlugin(state);
-    assert(!p.isEnabled);
-
-    p.testSettings.enuubled = true;
-    assert(p.isEnabled);
 }
 
 
@@ -2853,7 +2859,7 @@ enum Permissions
 
     /++
         Anyone not explicitly blacklisted (with a
-        [dialect.defs.IRCClient.Class.blacklist|IRCClient.Class.blacklist]
+        [dialect.defs.IRCUser.Class.blacklist|IRCUser.Class.blacklist]
         classifier) may trigger the annotated function. As such, to know if they're
         blacklisted, unknown users will first be looked up with a WHOIS query
         before allowing the function to trigger.
@@ -3118,11 +3124,11 @@ public:
          +/
         PrefixPolicy _policy = PrefixPolicy.direct;
 
-        // _engine
+        // engine
         /++
             Regex engine to match incoming messages with.
          +/
-        StdRegex!char _engine;
+        StdRegex!char engine;
 
         // _expression
         /++
@@ -3172,7 +3178,7 @@ public:
             import std.regex : regex;
 
             this._expression = expression;
-            this._engine = expression.regex;
+            this.engine = expression.regex;
             return this;
         }
 
@@ -3211,6 +3217,9 @@ public:
 
     The template parameter `T` defines that kind of
     [kameloso.thread.CarryingFiber|CarryingFiber] is embedded into it.
+
+    Params:
+        T = Type to instantiate the [kameloso.thread.CarryingFiber|CarryingFiber] with.
  +/
 final class SpecialRequestImpl(T) : SpecialRequest
 {
@@ -3243,9 +3252,28 @@ public:
         this._fiber = fiber;
     }
 
+    // this
+    /++
+        Constructor.
+
+        Params:
+            context = String context of the request.
+            dg = Delegate to create a [kameloso.thread.CarryingFiber|CarryingFiber] from.
+     +/
+    this(string context, void delegate() dg)
+    {
+        import kameloso.constants : BufferSize;
+
+        this._context = context;
+        this._fiber = new CarryingFiber!T(dg, BufferSize.fiberStack);
+    }
+
     // context
     /++
         String context of the request. May be anything; highly request-specific.
+
+        Returns:
+            A string.
      +/
     string context()
     {
@@ -3255,6 +3283,10 @@ public:
     // fiber
     /++
         [kameloso.thread.CarryingFiber|CarryingFiber] embedded into the request.
+
+        Returns:
+            A [kameloso.thread.CarryingFiber|CarryingFiber] in the guise of a
+            [core.thread.Fiber|Fiber].
      +/
     Fiber fiber()
     {
@@ -3266,18 +3298,38 @@ public:
 // specialRequest
 /++
     Instantiates a [SpecialRequestImpl] in the guise of a [SpecialRequest]
-    with the inferred type `T` as payload.
+    with the implicit type `T` as payload.
 
     Params:
+        T = Type to instantiate [SpecialRequestImpl] with.
         context = String context of the request.
         fiber = [kameloso.thread.CarryingFiber|CarryingFiber] to embed into the request.
 
     Returns:
-        A new [SpecialRequest] that is in actualy a [SpecialRequestImpl].
+        A new [SpecialRequest] that is in actually a [SpecialRequestImpl].
  +/
 SpecialRequest specialRequest(T)(const string context, CarryingFiber!T fiber)
 {
     return new SpecialRequestImpl!T(context, fiber);
+}
+
+
+// specialRequest
+/++
+    Instantiates a [SpecialRequestImpl] in the guise of a [SpecialRequest]
+    with the explicit type `T` as payload.
+
+    Params:
+        T = Type to instantiate [SpecialRequestImpl] with.
+        context = String context of the request.
+        dg = Delegate to create a [kameloso.thread.CarryingFiber|CarryingFiber] from.
+
+    Returns:
+        A new [SpecialRequest] that is in actually a [SpecialRequestImpl].
+ +/
+SpecialRequest specialRequest(T)(const string context, void delegate() dg)
+{
+    return new SpecialRequestImpl!T(context, dg);
 }
 
 
@@ -3294,7 +3346,13 @@ enum Settings;
 /++
     Annotation denoting that a variable is the basename of a resource file or directory.
  +/
-enum Resource;
+struct Resource
+{
+    /++
+        Subdirectory in which to put the annotated filename.
+     +/
+    string subdirectory;
+}
 
 
 // Configuration
@@ -3302,7 +3360,13 @@ enum Resource;
     Annotation denoting that a variable is the basename of a configuration
     file or directory.
  +/
-enum Configuration;
+struct Configuration
+{
+    /++
+        Subdirectory in which to put the annotated filename.
+     +/
+    string subdirectory;
+}
 
 
 // Enabler

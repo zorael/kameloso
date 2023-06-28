@@ -6,9 +6,15 @@
     and private query messages for things that look like links.
 
     See_Also:
-        https://github.com/zorael/kameloso/wiki/Current-plugins#webtitles
-        [kameloso.plugins.common.core|plugins.common.core]
-        [kameloso.plugins.common.misc|plugins.common.misc]
+        https://github.com/zorael/kameloso/wiki/Current-plugins#webtitles,
+        [kameloso.plugins.common.core],
+        [kameloso.plugins.common.misc]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.webtitles;
 
@@ -126,7 +132,7 @@ void onMessage(WebtitlesPlugin plugin, const ref IRCEvent event)
     string[] urls = findURLs(event.content);  // mutable so nom works
     if (!urls.length) return;
 
-    return plugin.lookupURLs(event, urls);
+    return lookupURLs(plugin, event, urls);
 }
 
 
@@ -140,7 +146,7 @@ void onMessage(WebtitlesPlugin plugin, const ref IRCEvent event)
 void lookupURLs(WebtitlesPlugin plugin, const /*ref*/ IRCEvent event, string[] urls)
 {
     import kameloso.common : logger;
-    import lu.string : beginsWith, contains, nom;
+    import lu.string : beginsWith, nom;
     import std.concurrency : spawn;
 
     bool[string] uniques;
@@ -480,7 +486,7 @@ auto lookupTitle(
     const string caBundleFile)
 {
     import kameloso.constants : KamelosoInfo, Timeout;
-    import lu.string : beginsWith, contains, nom;
+    import lu.string : beginsWith, nom;
     import arsd.dom : Document;
     import arsd.http2 : HttpClient, Uri;
     import std.algorithm.comparison : among;
@@ -586,8 +592,11 @@ void reportTitle(TitleLookupRequest request)
 
         immutable maybePipe = request.results.description.length ? " | " : string.init;
         enum pattern = "[<b>%s<b>] %s%s%s";
-        line = pattern.format(request.results.domain, request.results.title,
-                maybePipe, request.results.description);
+        line = pattern.format(
+            request.results.domain,
+            request.results.title,
+            maybePipe,
+            request.results.description);
     }
     else
     {
@@ -757,7 +766,8 @@ final class TitleFetchException : Exception
     /++
         Create a new [TitleFetchException], attaching an URL and an HTTP status code.
      +/
-    this(const string message,
+    this(
+        const string message,
         const string url,
         const uint code,
         const string file = __FILE__,
@@ -771,7 +781,8 @@ final class TitleFetchException : Exception
     /++
         Create a new [TitleFetchException], without attaching anything.
      +/
-    this(const string message,
+    this(
+        const string message,
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe

@@ -11,9 +11,15 @@
     Linux and macOS).
 
     See_Also:
-        https://github.com/zorael/kameloso/wiki/Current-plugins#pipeline
-        [kameloso.plugins.common.core|plugins.common.core]
-        [kameloso.plugins.common.misc|plugins.common.misc]
+        https://github.com/zorael/kameloso/wiki/Current-plugins#pipeline,
+        [kameloso.plugins.common.core],
+        [kameloso.plugins.common.misc]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.pipeline;
 
@@ -136,7 +142,6 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
         // and retaining the ability to break out of it.
         foreach (immutable line; fifo.byLineCopy)
         {
-            import kameloso.messaging : raw, quit;
             import std.algorithm.searching : startsWith;
             import std.uni : asLowerCase;
 
@@ -179,12 +184,11 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
             break;
         }
 
-        static immutable instant = Duration.zero;
         bool halt;
 
         void checkMessages()
         {
-            cast(void)receiveTimeout(instant,
+            cast(void)receiveTimeout(Duration.zero,
                 (ThreadMessage message)
                 {
                     if (message.type == ThreadMessage.Type.teardown)
@@ -282,7 +286,7 @@ in (filename.length, "Tried to create a FIFO with an empty filename")
     }
     else
     {
-        import std.file : getAttributes, isDir;
+        import std.file : getAttributes;
         import core.sys.posix.sys.stat : S_ISFIFO;
 
         immutable attrs = cast(ushort)getAttributes(filename);
@@ -320,7 +324,7 @@ in (filename.length, "Tried to create a FIFO with an empty filename")
 )
 void onWelcome(PipelinePlugin plugin)
 {
-    plugin.initPipe();
+    initPipe(plugin);
 }
 
 
@@ -334,7 +338,7 @@ void reload(PipelinePlugin plugin)
 {
     if (!plugin.workerRunning)
     {
-        plugin.initPipe();
+        initPipe(plugin);
     }
 }
 

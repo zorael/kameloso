@@ -1,7 +1,20 @@
 /++
     Functions that deal with OS- and/or platform-specifics.
+
+    See_Also:
+        [kameloso.terminal]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.platform;
+
+private:
+
+import std.process : Pid;
 
 public:
 
@@ -233,6 +246,11 @@ unittest
 
     Returns:
         A [std.process.Pid|Pid] of the spawned process. Remember to [std.process.wait|wait].
+
+    Throws:
+        [object.Exception|Exception] if there were no `DISPLAY` environment
+        variable on non-macOS Posix platforms, indicative of no X.org server or
+        Wayland compositor running.
  +/
 auto openInBrowser(const string url)
 {
@@ -250,6 +268,12 @@ auto openInBrowser(const string url)
         {
             // Assume XDG
             enum open = "xdg-open";
+
+            if (!environment.get("DISPLAY", string.init).length &&
+                !environment.get("WAYLAND_DISPLAY", string.init).length)
+            {
+                throw new Exception("No graphical interface detected");
+            }
         }
 
         immutable browserExecutable = environment.get("BROWSER", open);
@@ -290,5 +314,197 @@ auto openInBrowser(const string url)
     else
     {
         static assert(0, "Unsupported platform, please file a bug.");
+    }
+}
+
+
+// execvp
+/++
+    Re-executes the program.
+
+    Filters out any captive `--set twitch.*` keygen settings from the
+    arguments originally passed to the program, then calls
+    [std.process.execvp|execvp].
+
+    On Windows, the behaviour is faked using [std.process.spawnProcess|spawnProcess].
+
+    Params:
+        args = Arguments passed to the program.
+
+    Returns:
+        On Windows, a [std.process.Pid|Pid] of the spawned process.
+        On Posix, it either exits the program or it throws.
+
+    Throws:
+        On Posix, [ExecException] on failure.
+        On Windows, [std.process.ProcessException|ProcessException] on failure.
+ +/
+Pid execvp(/*const*/ string[] args) @system
+{
+    import kameloso.common : logger;
+    import std.algorithm.comparison : among;
+
+    if (args.length > 1)
+    {
+        size_t[] toRemove;
+
+        for (size_t i=1; i<args.length; ++i)
+        {
+            import lu.string : beginsWith, nom;
+            import std.typecons : Flag, No, Yes;
+
+            if (args[i] == "--set")
+            {
+                if (args.length <= i+1) continue;  // should never happen
+
+                string slice = args[i+1];  // mutable
+
+                if (slice.beginsWith("twitch."))
+                {
+                    immutable setting = slice.nom!(Yes.inherit)('=');
+
+                    if (setting.among!(
+                        "twitch.keygen",
+                        "twitch.superKeygen",
+                        "twitch.googleKeygen",
+                        "twitch.spotifyKeygen"))
+                    {
+                        toRemove ~= i;
+                        toRemove ~= i+1;
+                        ++i;  // Skip next entry
+                    }
+                }
+            }
+            else
+            {
+                string slice = args[i];  // mutable
+                immutable setting = slice.nom!(Yes.inherit)('=');
+
+                if (setting.among!(
+                    "--setup-twitch",
+                    "--get-cacert",
+                    "--get-openssl"))
+                {
+                    toRemove ~= i;
+                }
+            }
+        }
+
+        foreach (immutable i; toRemove)
+        {
+            import std.algorithm.mutation : SwapStrategy, remove;
+            args = args.remove!(SwapStrategy.stable)(i);
+        }
+    }
+
+    version(Posix)
+    {
+        import std.process : execvp;
+
+        immutable retval = execvp(args[0], args);
+
+        // If we're here, the call failed
+        enum message = "execvp failed";
+        throw new ExecException(message, retval);
+    }
+    else version(Windows)
+    {
+        import lu.string : beginsWith;
+        import std.array : Appender;
+        import std.process : ProcessException, spawnProcess;
+
+        Appender!(char[]) sink;
+        sink.reserve(128);
+
+        string arg0 = args[0];  // mutable
+        args = args[1..$];  // pop it
+
+        if (arg0.beginsWith('.') || arg0.beginsWith('/'))
+        {
+            // Seems to be a full path
+        }
+        else if ((arg0.length > 3) && (arg0[1] == ':'))
+        {
+            // May be C:\kameloso.exe and would as such be okay
+        }
+        else
+        {
+            // Powershell won't call binaries in the working directory without ./
+            arg0 = "./" ~ arg0;
+        }
+
+        for (size_t i; i<args.length; ++i)
+        {
+            import std.format : formattedWrite;
+
+            if (sink.data.length) sink.put(' ');
+
+            if ((args.length >= i+1) &&
+                args[i].among!(
+                    "-H",
+                    "-C",
+                    "--homeChannels",
+                    "--guestChannels",
+                    "--set"))
+            {
+                // Octothorpes must be encased in single quotes
+                sink.formattedWrite("%s '%s'", args[i], args[i+1]);
+                ++i;
+            }
+            else
+            {
+                sink.put(args[i]);
+            }
+        }
+
+        const commandLine =
+        [
+            "cmd.exe",
+            "/c",
+            "start",
+            "/min",
+            "powershell",
+            "-c"
+        ] ~ arg0 ~ sink.data.idup;
+        return spawnProcess(commandLine);
+    }
+    else
+    {
+        static assert(0, "Unsupported platform, please file a bug.");
+    }
+}
+
+
+// ExecException
+/++
+    Exception thrown when an [std.process.execvp|execvp] action failed.
+ +/
+final class ExecException : Exception
+{
+    /++
+        [std.process.execvp|execvp] return value.
+     +/
+    int retval;
+
+    /// Constructor attaching a return value.
+    this(
+        const string msg,
+        const int retval,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        this.retval = retval;
+        super(msg, file, line, nextInChain);
+    }
+
+    /// Passthrough constructor.
+    this(
+        const string msg,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        super(msg, file, line, nextInChain);
     }
 }

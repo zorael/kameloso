@@ -2,11 +2,17 @@
     Package for the common plugin modules all plugins need.
 
     See_Also:
-        [kameloso.plugins.common.core|plugins.common.core]
-        [kameloso.plugins.common.misc|plugins.common.misc]
-        [kameloso.plugins.common.delayawait|plugins.common.delayawait]
-        [kameloso.plugins.common.mixins|plugin.common.mixins]
-        [kameloso.plugins.common.awareness|plugins.common.awareness]
+        [kameloso.plugins.common.core],
+        [kameloso.plugins.common.misc],
+        [kameloso.plugins.common.delayawait],
+        [kameloso.plugins.common.mixins],
+        [kameloso.plugins.common.awareness]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.common;
 

@@ -25,6 +25,15 @@
     fiber2.payload = evenNewerIncomingIRCEvent;
     fiber2.call();
     ---
+
+    See_Also:
+        [kameloso.messaging]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.thread;
 

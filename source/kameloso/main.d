@@ -4,9 +4,15 @@
     No module (save [kameloso.entrypoint]) should be importing this.
 
     See_Also:
-        [kameloso.kameloso]
-        [kameloso.common]
+        [kameloso.kameloso],
+        [kameloso.common],
         [kameloso.config]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.main;
 
@@ -14,7 +20,8 @@ private:
 
 import kameloso.common : logger;
 import kameloso.kameloso : Kameloso;
-import kameloso.plugins.common.core : IRCPlugin, Replay;
+import kameloso.net : ListenAttempt;
+import kameloso.plugins.common.core : IRCPlugin;
 import kameloso.pods : CoreSettings;
 import dialect.defs;
 import lu.common : Next;
@@ -69,7 +76,7 @@ enum gcOptions = ()
     }
 
     // Tweak these numbers as we see fit
-    sink.put("initReserve:8 minPoolSize:8 incPoolSize:16");
+    sink.put("initReserve:8 minPoolSize:8"); // incPoolSize:16
 
     return sink.data;
 }().idup;
@@ -244,7 +251,7 @@ void messageFiber(ref Kameloso instance)
             Handle [kameloso.thread.ThreadMessage]s based on their
             [kameloso.thread.ThreadMessage.Type|Type]s.
          +/
-        void onMessage(ThreadMessage message) scope
+        void onThreadMessage(ThreadMessage message) scope
         {
             with (ThreadMessage.Type)
             switch (message.type)
@@ -266,26 +273,31 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             case ping:
+                // No need to micro-optimise here, PINGs should be very rare
                 immutable pingline = "PING :" ~ message.content;
                 instance.priorityBuffer.put(OutgoingLine(pingline, Yes.quiet));
                 break;
 
             case sendline:
-                instance.outbuffer.put(OutgoingLine(message.content,
+                instance.outbuffer.put(OutgoingLine(
+                    message.content,
                     cast(Flag!"quiet")instance.settings.hideOutgoing));
                 break;
 
             case quietline:
-                instance.outbuffer.put(OutgoingLine(message.content, Yes.quiet));
+                instance.outbuffer.put(OutgoingLine(
+                    message.content,
+                    Yes.quiet));
                 break;
 
             case immediateline:
-                instance.immediateBuffer.put(OutgoingLine(message.content,
+                instance.immediateBuffer.put(OutgoingLine(
+                    message.content,
                     cast(Flag!"quiet")instance.settings.hideOutgoing));
                 break;
 
             case shortenReceiveTimeout:
-                instance.wantReceiveTimeoutShortened = true;
+                instance.flags.wantReceiveTimeoutShortened = true;
                 break;
 
             case busMessage:
@@ -297,19 +309,43 @@ void messageFiber(ref Kameloso instance)
 
             case quit:
                 // This will automatically close the connection.
-                immutable reason = message.content.length ? message.content : instance.bot.quitReason;
-                instance.priorityBuffer.put(OutgoingLine("QUIT :" ~
-                    reason.replaceTokens(instance.parser.client), cast(Flag!"quiet")message.quiet));
+                immutable reason = message.content.length ?
+                    message.content :
+                    instance.bot.quitReason;
+                immutable quitMessage = "QUIT :" ~ reason.replaceTokens(instance.parser.client);
+                instance.priorityBuffer.put(OutgoingLine(
+                    quitMessage,
+                    cast(Flag!"quiet")message.quiet));
+                instance.flags.quitMessageSent = true;
                 next = Next.returnSuccess;
                 break;
 
             case reconnect:
-                instance.priorityBuffer.put(OutgoingLine("QUIT :Reconnecting.", No.quiet));
+                import kameloso.thread : Boxed;
+
+                if (auto boxedReexecFlag = cast(Boxed!bool)message.payload)
+                {
+                    // Re-exec explicitly requested
+                    instance.flags.askedToReexec = boxedReexecFlag.payload;
+                }
+                else
+                {
+                    // Normal reconnect
+                    instance.flags.askedToReconnect = true;
+                }
+
+                immutable quitMessage = message.content.length ?
+                    message.content :
+                    "Reconnecting.";
+                instance.priorityBuffer.put(OutgoingLine(
+                    "QUIT :" ~ quitMessage,
+                    No.quiet));
+                instance.flags.quitMessageSent = true;
                 next = Next.retry;
                 break;
 
             case wantLiveSummary:
-                instance.wantLiveSummary = true;
+                instance.flags.wantLiveSummary = true;
                 break;
 
             case abort:
@@ -339,8 +375,8 @@ void messageFiber(ref Kameloso instance)
 
             case save:
                 import kameloso.config : writeConfigurationFile;
-                instance.syncGuestChannels();
-                instance.writeConfigurationFile(instance.settings.configFile);
+                syncGuestChannels(instance);
+                writeConfigurationFile(instance, instance.settings.configFile);
                 break;
 
             case popCustomSetting:
@@ -387,7 +423,7 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             default:
-                enum pattern = "onMessage received unexpected message type: <l>%s";
+                enum pattern = "onThreadMessage received unexpected message type: <l>%s";
                 logger.errorf(pattern, message.type);
                 if (instance.settings.flush) stdout.flush();
                 break;
@@ -574,7 +610,7 @@ void messageFiber(ref Kameloso instance)
 
                     line = "WHOIS " ~ m.event.target.nickname;
                     instance.previousWhoisTimestamps[m.event.target.nickname] = now;
-                    instance.propagateWhoisTimestamp(m.event.target.nickname, now);
+                    propagateWhoisTimestamp(instance, m.event.target.nickname, now);
                 }
                 else
                 {
@@ -596,6 +632,7 @@ void messageFiber(ref Kameloso instance)
                     instance.bot.quitReason;
                 immutable reason = rawReason.replaceTokens(instance.parser.client);
                 line = "QUIT :" ~ reason;
+                instance.flags.quitMessageSent = true;
                 next = Next.returnSuccess;
                 break;
 
@@ -711,7 +748,6 @@ void messageFiber(ref Kameloso instance)
 
         /// Timestamp of when the loop started.
         immutable loopStartTime = Clock.currTime;
-        static immutable instant = Duration.zero;
         static immutable maxReceiveTime = Timeout.messageReadMsecs.msecs;
 
         while (!*instance.abort &&
@@ -721,8 +757,8 @@ void messageFiber(ref Kameloso instance)
             import std.concurrency : receiveTimeout;
             import std.variant : Variant;
 
-            immutable receivedSomething = receiveTimeout(instant,
-                &onMessage,
+            immutable receivedSomething = receiveTimeout(Duration.zero,
+                &onThreadMessage,
                 &eventToServer,
                 &proxyLoggerMessages,
                 (Variant v) scope
@@ -779,16 +815,16 @@ auto mainLoop(ref Kameloso instance)
 
     // Instantiate a Generator to read from the socket and yield lines
     auto listener = new Generator!ListenAttempt(() =>
-        listenFiber(instance.conn, *instance.abort, Timeout.connectionLost));
+        listenFiber(
+            instance.conn,
+            *instance.abort,
+            Timeout.connectionLost));
     auto messenger = new Generator!Next(() => messageFiber(instance));
 
     scope(exit)
     {
-        import core.memory : GC;
         destroy(listener);
-        GC.free(&listener);
         destroy(messenger);
-        GC.free(&messenger);
     }
 
     /++
@@ -802,8 +838,10 @@ auto mainLoop(ref Kameloso instance)
         }
         catch (Exception e)
         {
+            import kameloso.string : doublyBackslashed;
+
             enum pattern = "Unhandled messenger exception: <l>%s</> (at <l>%s</>:<l>%d</>)";
-            logger.warningf(pattern, e.msg, e.file, e.line);
+            logger.warningf(pattern, e.msg, e.file.doublyBackslashed, e.line);
             version(PrintStacktraces) logger.trace(e);
             return Next.returnFailure;
         }
@@ -846,11 +884,6 @@ auto mainLoop(ref Kameloso instance)
     /// UNIX timestamp of when the Socket receive timeout was shortened.
     long timeWhenReceiveWasShortened;
 
-    // Set wantLiveSummary to false just in case a change happened in the middle
-    // of the last connection. Otherwise the first thing to happen would be
-    // that a summary gets printed.
-    instance.wantLiveSummary = false;
-
     /// `Timeout.maxShortenDurationMsecs` in hecto-nanoseconds.
     enum maxShortenDurationHnsecs = Timeout.maxShortenDurationMsecs * 10_000;
 
@@ -858,11 +891,11 @@ auto mainLoop(ref Kameloso instance)
     {
         if (*instance.abort) return Next.returnFailure;
 
-        if (!instance.settings.headless && instance.wantLiveSummary)
+        if (!instance.settings.headless && instance.flags.wantLiveSummary)
         {
             // Live connection summary requested.
-            instance.printSummary();
-            instance.wantLiveSummary = false;
+            printSummary(instance);
+            instance.flags.wantLiveSummary = false;
         }
 
         if (listener.state == Fiber.State.TERM)
@@ -890,24 +923,25 @@ auto mainLoop(ref Kameloso instance)
                 processSpecialRequests(instance, plugin);
             }
 
-            if (!plugin.state.scheduledFibers.length &&
-                !plugin.state.scheduledDelegates.length) continue;
-
-            if (plugin.state.nextScheduledTimestamp <= nowInHnsecs)
+            if (plugin.state.scheduledFibers.length ||
+                plugin.state.scheduledDelegates.length)
             {
-                plugin.processScheduledDelegates(nowInHnsecs);
-                plugin.processScheduledFibers(nowInHnsecs);
-                plugin.state.updateSchedule();  // Something is always removed
-                instance.conn.socket.blocking = false;  // Instantly timeout read to check messages
-                socketBlockingDisabled = true;
+                if (plugin.state.nextScheduledTimestamp <= nowInHnsecs)
+                {
+                    processScheduledDelegates(plugin, nowInHnsecs);
+                    processScheduledFibers(plugin, nowInHnsecs);
+                    plugin.state.updateSchedule();  // Something is always removed
+                    instance.conn.socket.blocking = false;  // Instantly timeout read to check messages
+                    socketBlockingDisabled = true;
 
-                if (*instance.abort) return Next.returnFailure;
-            }
+                    if (*instance.abort) return Next.returnFailure;
+                }
 
-            if (!nextGlobalScheduledTimestamp ||
-                (plugin.state.nextScheduledTimestamp < nextGlobalScheduledTimestamp))
-            {
-                nextGlobalScheduledTimestamp = plugin.state.nextScheduledTimestamp;
+                if (!nextGlobalScheduledTimestamp ||
+                    (plugin.state.nextScheduledTimestamp < nextGlobalScheduledTimestamp))
+                {
+                    nextGlobalScheduledTimestamp = plugin.state.nextScheduledTimestamp;
+                }
             }
         }
 
@@ -920,7 +954,8 @@ auto mainLoop(ref Kameloso instance)
             if (delayToNextMsecs < instance.conn.receiveTimeout)
             {
                 instance.conn.receiveTimeout = (delayToNextMsecs > 0) ?
-                    delayToNextMsecs : 1;
+                    delayToNextMsecs :
+                    1;
             }
         }
 
@@ -929,7 +964,7 @@ auto mainLoop(ref Kameloso instance)
         if ((nowInUnix % 86_400) == 0)
         {
             instance.previousWhoisTimestamps = null;
-            instance.propagateWhoisTimestamps();
+            propagateWhoisTimestamps(instance);
         }
 
         // Call the generator, query it for event lines
@@ -951,7 +986,7 @@ auto mainLoop(ref Kameloso instance)
                 historyEntry.bytesReceived += max(attempt.bytesReceived, 0);
                 historyEntry.stopTime = nowInUnix;
                 ++historyEntry.numEvents;
-                instance.processLineFromServer(attempt.line, nowInUnix);
+                processLineFromServer(instance, attempt.line, nowInUnix);
                 break;
 
             case retry:
@@ -973,7 +1008,7 @@ auto mainLoop(ref Kameloso instance)
         // Check concurrency messages to see if we should exit
         next = callMessenger();
         if (*instance.abort) return Next.returnFailure;
-        else if (next != Next.continue_) return next;
+        //else if (next != Next.continue_) return next;  // process buffers before passing on Next.retry
 
         bool bufferHasMessages = (
             !instance.outbuffer.empty |
@@ -991,16 +1026,26 @@ auto mainLoop(ref Kameloso instance)
 
         if (bufferHasMessages)
         {
-            immutable untilNext = sendLines(instance);
+            import kameloso.net : SocketSendException;
 
-            if ((untilNext > 0.0) && (untilNext < instance.connSettings.messageBurst))
+            try
             {
-                immutable untilNextMsecs = cast(uint)(untilNext * 1000);
+                immutable untilNext = sendLines(instance);
 
-                if (untilNextMsecs < instance.conn.receiveTimeout)
+                if ((untilNext > 0.0) && (untilNext < instance.connSettings.messageBurst))
                 {
-                    timeoutFromMessages = untilNextMsecs;
+                    immutable untilNextMsecs = cast(uint)(untilNext * 1000);
+
+                    if (untilNextMsecs < instance.conn.receiveTimeout)
+                    {
+                        timeoutFromMessages = untilNextMsecs;
+                    }
                 }
+            }
+            catch (SocketSendException _)
+            {
+                logger.error("Failure sending data to server! Connection lost?");
+                return Next.retry;
             }
         }
 
@@ -1011,14 +1056,15 @@ auto mainLoop(ref Kameloso instance)
             timeWhenReceiveWasShortened = 0L;
         }
 
-        if (instance.wantReceiveTimeoutShortened)
+        if (instance.flags.wantReceiveTimeoutShortened)
         {
             // Set the timestamp and unset the bool
-            instance.wantReceiveTimeoutShortened = false;
+            instance.flags.wantReceiveTimeoutShortened = false;
             timeWhenReceiveWasShortened = nowInHnsecs;
         }
 
-        if ((timeoutFromMessages < uint.max) || nextGlobalScheduledTimestamp ||
+        if ((timeoutFromMessages < uint.max) ||
+            nextGlobalScheduledTimestamp ||
             timeWhenReceiveWasShortened)
         {
             import kameloso.constants : ConnectionDefaultFloats;
@@ -1038,7 +1084,8 @@ auto mainLoop(ref Kameloso instance)
             if (supposedNewTimeout != instance.conn.receiveTimeout)
             {
                 instance.conn.receiveTimeout = (supposedNewTimeout > 0) ?
-                    supposedNewTimeout : 1;
+                    supposedNewTimeout :
+                    1;
             }
         }
 
@@ -1070,7 +1117,11 @@ auto sendLines(ref Kameloso instance)
 {
     if (!instance.immediateBuffer.empty)
     {
-        cast(void)instance.throttleline(instance.immediateBuffer, No.dryRun, No.sendFaster, Yes.immediate);
+        cast(void)instance.throttleline(
+            instance.immediateBuffer,
+            No.dryRun,
+            No.sendFaster,
+            Yes.immediate);
     }
 
     if (!instance.priorityBuffer.empty)
@@ -1083,8 +1134,10 @@ auto sendLines(ref Kameloso instance)
     {
         if (!instance.fastbuffer.empty)
         {
-            immutable untilNext = instance.throttleline(instance.fastbuffer,
-                No.dryRun, Yes.sendFaster);
+            immutable untilNext = instance.throttleline(
+                instance.fastbuffer,
+                No.dryRun,
+                Yes.sendFaster);
             if (untilNext > 0.0) return untilNext;
         }
     }
@@ -1104,8 +1157,6 @@ auto sendLines(ref Kameloso instance)
     return 0.0;
 }
 
-
-import kameloso.net : ListenAttempt;
 
 // listenAttemptToNext
 /++
@@ -1142,7 +1193,7 @@ auto listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
     case warning:
         // Benign socket error; break foreach and try again
         import kameloso.constants : Timeout;
-        import core.thread : Thread;
+        import kameloso.thread : interruptibleSleep;
         import core.time : msecs;
 
         version(Posix)
@@ -1162,7 +1213,8 @@ auto listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
         }
 
         // Sleep briefly so it won't flood the screen on chains of errors
-        Thread.sleep(Timeout.readErrorGracePeriodMsecs.msecs);
+        static immutable readErrorGracePeriod = Timeout.readErrorGracePeriodMsecs.msecs;
+        interruptibleSleep(readErrorGracePeriod, *instance.abort);
         return Next.retry;
 
     case timeout:
@@ -1214,8 +1266,10 @@ auto listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
  +/
 void processLineFromServer(ref Kameloso instance, const string raw, const long nowInUnix)
 {
+    import kameloso.string : doublyBackslashed;
     import dialect.common : IRCParseException;
     import lu.string : NomException;
+    import std.typecons : Flag, No, Yes;
     import std.utf : UTFException;
     import core.exception : UnicodeException;
 
@@ -1275,32 +1329,57 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
 
         eventWasInitialised = true;
 
+        // Save timestamp in the event itself.
+        event.time = nowInUnix;
+
+        version(TwitchSupport)
+        {
+            if (instance.parser.server.daemon == IRCServer.Daemon.twitch && event.content.length)
+            {
+                import std.algorithm.searching : endsWith;
+
+                /+
+                    On Twitch, sometimes the content string ends with an invisible
+                    [ 243, 160, 128, 128 ], possibly because of a browser extension
+                    circumventing the duplicate message block.
+
+                    It wrecks things. So slice it away if detected.
+                 +/
+
+                static immutable ubyte[] badTail = [ 243, 160, 128, 128 ];
+
+                if ((cast(ubyte[])event.content).endsWith(badTail))
+                {
+                    event.content = cast(string)(cast(ubyte[])event.content[0..$-badTail.length]);
+                }
+            }
+        }
+
         version(TwitchSupport)
         {
             // If it's an RPL_WELCOME event, record it as having been seen so we
             // know we can't reconnect without waiting a bit.
             if (event.type == IRCEvent.Type.RPL_WELCOME)
             {
-                instance.sawWelcome = true;
+                instance.flags.sawWelcome = true;
             }
         }
 
-        if (instance.parser.clientUpdated)
+        alias ParserUpdates = typeof(instance.parser.updates);
+
+        if (instance.parser.updates & ParserUpdates.client)
         {
             // Parsing changed the client; propagate
-            instance.parser.clientUpdated = false;
+            instance.parser.updates &= ~ParserUpdates.client;
             instance.propagate(instance.parser.client);
         }
 
-        if (instance.parser.serverUpdated)
+        if (instance.parser.updates & ParserUpdates.server)
         {
             // Parsing changed the server; propagate
-            instance.parser.serverUpdated = false;
+            instance.parser.updates &= ~ParserUpdates.server;
             instance.propagate(instance.parser.server);
         }
-
-        // Save timestamp in the event itself.
-        event.time = nowInUnix;
 
         // Let each plugin postprocess the event
         foreach (plugin; instance.plugins)
@@ -1409,8 +1488,6 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
             // we're a moderator. For now, just assume we're moderator
             // in all our home channels.
 
-            import std.typecons : Flag, No, Yes;
-
             version(TwitchSupport)
             {
                 import std.algorithm.searching : canFind;
@@ -1453,14 +1530,14 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
     catch (IRCParseException e)
     {
         enum pattern = "IRCParseException: <l>%s</> (at <l>%s</>:<l>%d</>)";
-        logger.warningf(pattern, e.msg, e.file, e.line);
+        logger.warningf(pattern, e.msg, e.file.doublyBackslashed, e.line);
         printEventDebugDetails(event, raw);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (NomException e)
     {
         enum pattern = `NomException: tried to nom "<l>%s</>" with "<l>%s</>" (at <l>%s</>:<l>%d</>)`;
-        logger.warningf(pattern, e.haystack, e.needle, e.file, e.line);
+        logger.warningf(pattern, e.haystack, e.needle, e.file.doublyBackslashed, e.line);
         printEventDebugDetails(event, raw);
         version(PrintStacktraces) logger.trace(e.info);
     }
@@ -1479,7 +1556,7 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
     catch (Exception e)
     {
         enum pattern = "Unhandled exception: <l>%s</> (at <l>%s</>:<l>%d</>)";
-        logger.warningf(pattern, e.msg, e.file, e.line);
+        logger.warningf(pattern, e.msg, e.file.doublyBackslashed, e.line);
         printEventDebugDetails(event, raw);
         version(PrintStacktraces) logger.trace(e);
     }
@@ -1505,10 +1582,7 @@ void processAwaitingDelegates(IRCPlugin plugin, const ref IRCEvent event)
     /++
         Handle awaiting delegates of a specified type.
      +/
-    static void processImpl(
-        IRCPlugin plugin,
-        const ref IRCEvent event,
-        void delegate(IRCEvent)[] dgsForType)
+    void processImpl(void delegate(IRCEvent)[] dgsForType)
     {
         foreach (immutable i, dg; dgsForType)
         {
@@ -1528,12 +1602,12 @@ void processAwaitingDelegates(IRCPlugin plugin, const ref IRCEvent event)
 
     if (plugin.state.awaitingDelegates[event.type].length)
     {
-        processImpl(plugin, event, plugin.state.awaitingDelegates[event.type]);
+        processImpl(plugin.state.awaitingDelegates[event.type]);
     }
 
     if (plugin.state.awaitingDelegates[IRCEvent.Type.ANY].length)
     {
-        processImpl(plugin, event, plugin.state.awaitingDelegates[IRCEvent.Type.ANY]);
+        processImpl(plugin.state.awaitingDelegates[IRCEvent.Type.ANY]);
     }
 }
 
@@ -1558,9 +1632,7 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
     /++
         Handle awaiting Fibers of a specified type.
      +/
-    static void processAwaitingFibersImpl(
-        IRCPlugin plugin,
-        const ref IRCEvent event,
+    void processAwaitingFibersImpl(
         Fiber[] fibersForType,
         ref Fiber[] expiredFibers)
     {
@@ -1612,23 +1684,21 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
 
     if (plugin.state.awaitingFibers[event.type].length)
     {
-        processAwaitingFibersImpl(plugin, event,
-            plugin.state.awaitingFibers[event.type], expiredFibers);
+        processAwaitingFibersImpl(
+            plugin.state.awaitingFibers[event.type],
+            expiredFibers);
     }
 
     if (plugin.state.awaitingFibers[IRCEvent.Type.ANY].length)
     {
-        processAwaitingFibersImpl(plugin, event,
-            plugin.state.awaitingFibers[IRCEvent.Type.ANY], expiredFibers);
+        processAwaitingFibersImpl(
+            plugin.state.awaitingFibers[IRCEvent.Type.ANY],
+            expiredFibers);
     }
-
-    if (!expiredFibers.length) return;
 
     // Clean up processed Fibers
     foreach (expiredFiber; expiredFibers)
     {
-        import core.memory : GC;
-
         // Detect duplicates that were already destroyed and skip
         if (!expiredFiber) continue;
 
@@ -1646,7 +1716,6 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
         }
 
         destroy(expiredFiber);
-        GC.free(&expiredFiber);
     }
 }
 
@@ -1741,9 +1810,7 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
             // destroy the Fiber if it has ended
             if (scheduledFiber.fiber.state == Fiber.State.TERM)
             {
-                import core.memory : GC;
                 destroy(scheduledFiber.fiber);
-                GC.free(&scheduledFiber.fiber);
             }
         }
 
@@ -1839,6 +1906,10 @@ void processReadyReplays(ref Kameloso instance, IRCPlugin plugin)
             printEventDebugDetails(replay.event, replay.event.raw);
             version(PrintStacktraces) logger.trace(e);
         }
+        finally
+        {
+            destroy(replay.dg);
+        }
     }
 
     // All ready replays guaranteed exhausted
@@ -1899,7 +1970,7 @@ void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
             /*instance.outbuffer.put(OutgoingLine("WHOIS " ~ nickname,
                 cast(Flag!"quiet")instance.settings.hideOutgoing));
             instance.previousWhoisTimestamps[nickname] = now;
-            instance.propagateWhoisTimestamp(nickname, now);*/
+            propagateWhoisTimestamp(instance, nickname, now);*/
 
             enum properties = (Message.Property.forced | Message.Property.quiet);
             whois(plugin.state, nickname, properties);
@@ -1925,8 +1996,8 @@ void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
 
 // processSpecialRequests
 /++
-    Iterates through a plugin's array of [kameloso.plugins.core.SpecialRequest|SpecialRequest]s.
-    Depending on what their [kameloso.plugins.core.SpecialRequest.fiber|fiber] member
+    Iterates through a plugin's array of [kameloso.plugins.common.core.SpecialRequest|SpecialRequest]s.
+    Depending on what their [kameloso.plugins.common.core.SpecialRequest.fiber|fiber] member
     (which is in actualy a [kameloso.thread.CarryingFiber|CarryingFiber]) can be
     cast to, it prepares a payload, assigns it to the
     [kameloso.thread.CarryingFiber|CarryingFiber], and calls it.
@@ -1944,7 +2015,6 @@ void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
  +/
 void processSpecialRequests(ref Kameloso instance, IRCPlugin plugin)
 {
-    import kameloso.plugins.common.core;
     import kameloso.thread : CarryingFiber;
     import std.typecons : Tuple;
     import core.thread : Fiber;
@@ -1994,7 +2064,7 @@ void processSpecialRequests(ref Kameloso instance, IRCPlugin plugin)
         }
         else if (auto fiber = cast(CarryingFiber!(GetSettingPayload))(request.fiber))
         {
-            import lu.string : beginsWith, contains, nom;
+            import lu.string : beginsWith, nom;
             import std.array : Appender;
             import std.algorithm.iteration : splitter;
 
@@ -2171,16 +2241,16 @@ void resetSignals() nothrow @nogc
 
     Params:
         instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
-        args = The arguments passed to the program.
 
     Returns:
         [lu.common.Next|Next].* depending on what action the calling site should take.
  +/
-auto tryGetopt(ref Kameloso instance, string[] args)
+auto tryGetopt(ref Kameloso instance)
 {
     import kameloso.plugins.common.misc : IRCPluginSettingsException;
     import kameloso.config : handleGetopt;
     import kameloso.configreader : ConfigurationFileReadFailureException;
+    import kameloso.string : doublyBackslashed;
     import lu.common : FileTypeMismatchException;
     import lu.serialisation : DeserialisationException;
     import std.conv : ConvException;
@@ -2190,7 +2260,7 @@ auto tryGetopt(ref Kameloso instance, string[] args)
     try
     {
         // Act on arguments getopt, pass return value to main
-        return instance.handleGetopt(args);
+        return handleGetopt(instance);
     }
     catch (GetOptException e)
     {
@@ -2207,13 +2277,13 @@ auto tryGetopt(ref Kameloso instance, string[] args)
     catch (FileTypeMismatchException e)
     {
         enum pattern = "Specified configuration file <l>%s</> is not a file!";
-        logger.errorf(pattern, e.filename);
+        logger.errorf(pattern, e.filename.doublyBackslashed);
         //version(PrintStacktraces) logger.trace(e.info);
     }
     catch (ConfigurationFileReadFailureException e)
     {
         enum pattern = "Error reading and decoding configuration file [<l>%s</>]: <l>%s";
-        logger.errorf(pattern, e.filename, e.msg);
+        logger.errorf(pattern, e.filename.doublyBackslashed, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (DeserialisationException e)
@@ -2225,7 +2295,7 @@ auto tryGetopt(ref Kameloso instance, string[] args)
     catch (ProcessException e)
     {
         enum pattern = "Failed to open <l>%s</> in an editor: <l>%s";
-        logger.errorf(pattern, instance.settings.configFile, e.msg);
+        logger.errorf(pattern, instance.settings.configFile.doublyBackslashed, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (IRCPluginSettingsException e)
@@ -2272,12 +2342,7 @@ auto tryConnect(ref Kameloso instance)
     auto connector = new Generator!ConnectionAttempt(() =>
         connectFiber(instance.conn, ConnectionDefaultIntegers.retries, *instance.abort));
 
-    scope(exit)
-    {
-        import core.memory : GC;
-        destroy(connector);
-        GC.free(&connector);
-    }
+    scope(exit) destroy(connector);
 
     try
     {
@@ -2364,7 +2429,7 @@ auto tryConnect(ref Kameloso instance)
             import lu.common : sharedDomains;
             import std.socket : AddressException, AddressFamily;
 
-            string resolvedHost;
+            string resolvedHost;  // mutable
 
             if (!instance.settings.numericAddresses)
             {
@@ -2396,7 +2461,8 @@ auto tryConnect(ref Kameloso instance)
             immutable address = (!resolvedHost.length ||
                 (instance.parser.server.address == resolvedHost) ||
                 (sharedDomains(instance.parser.server.address, resolvedHost) < 2)) ?
-                attempt.ip.toAddrString : resolvedHost;
+                    attempt.ip.toAddrString :
+                    resolvedHost;
 
             logger.logf(rtPattern, address, attempt.ip.toPortString, ssl);
             continue;
@@ -2571,15 +2637,14 @@ auto tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
     import std.concurrency : Generator;
 
     auto resolver = new Generator!ResolveAttempt(() =>
-        resolveFiber(instance.conn, instance.parser.server.address,
-            instance.parser.server.port, instance.connSettings.ipv6, *instance.abort));
+        resolveFiber(
+            instance.conn,
+            instance.parser.server.address,
+            instance.parser.server.port,
+            instance.connSettings.ipv6,
+            *instance.abort));
 
-    scope(exit)
-    {
-        import core.memory : GC;
-        destroy(resolver);
-        GC.free(&resolver);
-    }
+    scope(exit) destroy(resolver);
 
     uint incrementedRetryDelay = Timeout.connectionRetry;
     enum incrementMultiplier = 1.2;
@@ -2627,20 +2692,22 @@ auto tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
         case success:
             import lu.string : plurality;
             enum pattern = "<i>%s</> resolved into <i>%d</> %s.";
-            logger.logf(pattern, instance.parser.server.address,
+            logger.logf(
+                pattern,
+                instance.parser.server.address,
                 instance.conn.ips.length,
                 instance.conn.ips.length.plurality("IP", "IPs"));
             return Next.continue_;
 
         case exception:
-            enum pattern = "Could not resolve server address: <l>%s</> (<l>%d</>)";
+            enum pattern = "Could not resolve server address: <l>%s</> <t>(%d)";
             logger.warningf(pattern, errorString, attempt.errno);
             delayOnNetworkDown();
             if (*instance.abort) return Next.returnFailure;
             continue;
 
         case error:
-            enum pattern = "Could not resolve server address: <l>%s</> (<l>%d</>)";
+            enum pattern = "Could not resolve server address: <l>%s</> <t>(%d)";
             logger.errorf(pattern, errorString, attempt.errno);
 
             if (firstConnect)
@@ -2861,11 +2928,12 @@ void resolvePaths(ref Kameloso instance)
 
     if (!instance.settings.resourceDirectory.exists)
     {
+        import kameloso.string : doublyBackslashed;
         import std.file : mkdirRecurse;
 
         mkdirRecurse(instance.settings.resourceDirectory);
         enum pattern = "Created resource directory <i>%s";
-        logger.logf(pattern, instance.settings.resourceDirectory);
+        logger.logf(pattern, instance.settings.resourceDirectory.doublyBackslashed);
     }
 
     instance.settings.configDirectory = instance.settings.configFile.dirName;
@@ -2906,12 +2974,15 @@ void resolvePaths(ref Kameloso instance)
 
     Params:
         instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
-        attempt = [AttemptState] aggregate of state variables used when connecting.
+        attempt = out-reference [AttemptState] aggregate of state variables used when connecting.
  +/
-void startBot(ref Kameloso instance, ref AttemptState attempt)
+void startBot(ref Kameloso instance, out AttemptState attempt)
 {
+    import kameloso.plugins.common.misc : IRCPluginInitialisationException,
+        pluginNameOfFilename, pluginFileBaseName;
     import kameloso.constants : ShellReturnValue;
     import kameloso.terminal : TerminalToken, isTerminal;
+    import dialect.parsing : IRCParser;
     import std.algorithm.comparison : among;
 
     // Save a backup snapshot of the client, for restoring upon reconnections
@@ -2934,6 +3005,84 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             import kameloso.thread : exhaustMessages, interruptibleSleep;
             import core.time : seconds;
 
+            version(TwitchSupport)
+            {
+                import std.algorithm.searching : endsWith;
+                immutable lastConnectAttemptFizzled =
+                    instance.parser.server.address.endsWith(".twitch.tv") &&
+                    !instance.flags.sawWelcome;
+            }
+            else
+            {
+                enum lastConnectAttemptFizzled = false;
+            }
+
+            if ((!lastConnectAttemptFizzled && instance.settings.reexecToReconnect) || instance.flags.askedToReexec)
+            {
+                import kameloso.platform : ExecException, execvp;
+                import std.process : ProcessException;
+
+                if (!instance.settings.headless)
+                {
+                    if (instance.settings.exitSummary && instance.connectionHistory.length)
+                    {
+                        printSummary(instance);
+                    }
+
+                    version(GCStatsOnExit)
+                    {
+                        import kameloso.common : printGCStats;
+                        printGCStats();
+                    }
+
+                    immutable message = instance.flags.askedToReexec ?
+                        "Re-executing as requested." :
+                        "Re-executing to reconnect as per settings.";
+                    logger.info(message);
+
+                    version(Windows)
+                    {
+                        // Don't writeln on Windows, leave room for "Forked into PID" message
+                    }
+                    else
+                    {
+                        import std.stdio : stdout, writeln;
+                        writeln();
+                        stdout.flush();
+                    }
+                }
+
+                try
+                {
+                    import core.stdc.stdlib : exit;
+
+                    auto pid = execvp(instance.args);
+                    // On Windows, if we're here, the call succeeded
+                    // Posix should never be here; it will either exec or throw
+
+                    enum pattern = "Forked into PID <l>%d</>.";
+                    logger.infof(pattern, pid.processID);
+                    //resetConsoleModeAndCodepage(); // Don't, it will be called via atexit
+                    exit(0);
+                }
+                catch (ProcessException e)
+                {
+                    enum pattern = "Failed to spawn a new process: <t>%s</>.";
+                    logger.errorf(pattern, e.msg);
+                }
+                catch (ExecException e)
+                {
+                    enum pattern = "Failed to <l>execvp</> with an error value of <l>%d</>.";
+                    logger.errorf(pattern, e.retval);
+                }
+                catch (Exception e)
+                {
+                    enum pattern = "Unexpected exception: <l>%s";
+                    logger.errorf(pattern, e.msg);
+                    version(PrintStacktraces) logger.trace(e);
+                }
+            }
+
             // Carry some values but otherwise restore the pristine client backup
             backupClient.nickname = instance.parser.client.nickname;
             //instance.parser.client = backupClient;  // Initialised below
@@ -2952,22 +3101,30 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                 instance.fastbuffer.clear();
             }
 
-            auto gracePeriodBeforeReconnect = Timeout.connectionRetry.seconds;
+            auto gracePeriodBeforeReconnect = Timeout.connectionRetry.seconds;  // mutable
 
             version(TwitchSupport)
             {
-                import std.algorithm.searching : endsWith;
-                import core.time : msecs;
-
-                if (instance.parser.server.address.endsWith(".twitch.tv") && !instance.sawWelcome)
+                if (lastConnectAttemptFizzled || instance.flags.askedToReconnect)
                 {
-                    // We probably saw an instant disconnect before even getting to RPL_WELCOME
-                    // Quickly attempt again
-                    gracePeriodBeforeReconnect = Timeout.twitchRegistrationFailConnectionRetryMsecs.msecs;
+                    import core.time : msecs;
+
+                    /+
+                        We either saw an instant disconnect before even getting
+                        to RPL_WELCOME, or we're reconnecting.
+                        Quickly attempt again.
+                     +/
+                    static immutable twitchRegistrationFailConnectionRetry =
+                        Timeout.twitchRegistrationFailConnectionRetryMsecs.msecs;
+                    gracePeriodBeforeReconnect = twitchRegistrationFailConnectionRetry;
                 }
             }
 
-            logger.log("One moment...");
+            if (!lastConnectAttemptFizzled && !instance.flags.askedToReconnect)
+            {
+                logger.log("One moment...");
+            }
+
             interruptibleSleep(gracePeriodBeforeReconnect, *instance.abort);
             if (*instance.abort) break outerloop;
 
@@ -2987,10 +3144,8 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             instance.parser.server.address = addressSnapshot;
             instance.parser.server.port = portSnapshot;
 
-            version(TwitchSupport)
-            {
-                instance.sawWelcome = false;
-            }
+            // Reset transient state flags
+            instance.flags = typeof(instance.flags).init;
         }
 
         scope(exit)
@@ -3008,7 +3163,9 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         // update it to any custom value after each reset() call.
         instance.conn.receiveTimeout = instance.connSettings.receiveTimeout;
 
-        immutable actionAfterResolve = tryResolve(instance, cast(Flag!"firstConnect")(attempt.firstConnect));
+        immutable actionAfterResolve = tryResolve(
+            instance,
+            cast(Flag!"firstConnect")(attempt.firstConnect));
         if (*instance.abort) break outerloop;  // tryResolve interruptibleSleep can abort
 
         with (Next)
@@ -3057,9 +3214,6 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         case crash:
             assert(0, "`tryConnect` returned `Next.crash`");
         }
-
-        import kameloso.plugins.common.misc :
-            IRCPluginInitialisationException, pluginNameOfFilename, pluginFileBaseName;
 
         // Ensure initialised resources after resolve so we know we have a
         // valid server to create a directory for.
@@ -3114,8 +3268,6 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             attempt.retval = ShellReturnValue.pluginResourceLoadException;
             break outerloop;
         }
-
-        import dialect.parsing : IRCParser;
 
         // Reinit with its own server.
         instance.parser = IRCParser(backupClient, instance.parser.server);
@@ -3186,7 +3338,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
             void dumpCallgrind()
             {
                 import lu.string : beginsWith;
-                import std.conv : text;
+                import std.conv : to;
                 import std.process : execute, thisProcessID;
                 import std.stdio : writeln;
                 import std.string : chomp;
@@ -3195,7 +3347,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
                 [
                     "callgrind_control",
                     "-d",
-                    thisProcessID.text,
+                    thisProcessID.to!string,
                 ];
 
                 logger.info("$ callgrind_control -d ", thisProcessID);
@@ -3214,6 +3366,7 @@ void startBot(ref Kameloso instance, ref AttemptState attempt)
         }
 
         // Start the main loop
+        instance.flags.askedToReconnect = false;
         attempt.next = instance.mainLoop();
         attempt.firstConnect = false;
     }
@@ -3296,7 +3449,7 @@ void printSummary(const ref Kameloso instance)
     ulong totalBytesReceived;
     uint i;
 
-    logger.info("-- Connection summary --");
+    logger.info("== Connection summary ==");
 
     foreach (const entry; instance.connectionHistory)
     {
@@ -3311,13 +3464,27 @@ void printSummary(const ref Kameloso instance)
         enum fullDatePattern = "%d-%02d-%02d " ~ onlyTimePattern;
 
         auto start = SysTime.fromUnixTime(entry.startTime);
-        immutable startString = fullDatePattern
-            .format(start.year, start.month, start.day, start.hour, start.minute, start.second);
+        immutable startString = fullDatePattern.format(
+            start.year,
+            start.month,
+            start.day,
+            start.hour,
+            start.minute,
+            start.second);
 
         auto stop = SysTime.fromUnixTime(entry.stopTime);
         immutable stopString = (start.dayOfGregorianCal == stop.dayOfGregorianCal) ?
-            onlyTimePattern.format(stop.hour, stop.minute, stop.second) :
-            fullDatePattern.format(stop.year, stop.month, stop.day, stop.hour, stop.minute, stop.second);
+            onlyTimePattern.format(
+                stop.hour,
+                stop.minute,
+                stop.second) :
+            fullDatePattern.format(
+                stop.year,
+                stop.month,
+                stop.day,
+                stop.hour,
+                stop.minute,
+                stop.second);
 
         start.fracSecs = 0.hnsecs;
         stop.fracSecs = 0.hnsecs;
@@ -3326,8 +3493,14 @@ void printSummary(const ref Kameloso instance)
         totalBytesReceived += entry.bytesReceived;
 
         enum pattern = "%2d: %s, %d events parsed in %,d bytes (%s to %s)";
-        writefln(pattern, ++i, duration.timeSince!(7, 0)(Yes.abbreviate),
-            entry.numEvents, entry.bytesReceived, startString, stopString);
+        writefln(
+            pattern,
+            ++i,
+            duration.timeSince!(7, 0)(Yes.abbreviate),
+            entry.numEvents,
+            entry.bytesReceived,
+            startString,
+            stopString);
     }
 
     enum timeConnectedPattern = "Total time connected: <l>%s";
@@ -3365,6 +3538,9 @@ struct AttemptState
     Syncs currently joined channels with [IRCBot.guestChannels|guestChannels],
     adding entries in the latter where the former is missing.
 
+    We can't just check the first plugin at `instance.plugins[0]` since there's
+    no way to be certain it mixes in [kameloso.plugins.common.awareness.ChannelAwareness|ChannelAwareness].
+
     Used when saving to configuration file, to ensure the current state is saved.
 
     Params:
@@ -3374,8 +3550,8 @@ void syncGuestChannels(ref Kameloso instance)
 {
     foreach (plugin; instance.plugins)
     {
-        // Find a plugin that seems to mixin channel awareness
-        if (plugin.state.channels.length) continue;
+        // Skip plugins that don't seem to mix in ChannelAwareness
+        if (!plugin.state.channels.length) continue;
 
         foreach (immutable channelName; plugin.state.channels.byKey)
         {
@@ -3453,8 +3629,6 @@ auto getQuitMessageInFlight(ref Kameloso instance)
  +/
 void echoQuitMessage(ref Kameloso instance, const string reason)
 {
-    import kameloso.string : replaceTokens;
-
     bool printed;
 
     version(Colours)
@@ -3462,7 +3636,6 @@ void echoQuitMessage(ref Kameloso instance, const string reason)
         if (!instance.settings.monochrome)
         {
             import kameloso.irccolours : mapEffects;
-
             logger.trace("--> QUIT :", reason.mapEffects);
             printed = true;
         }
@@ -3472,6 +3645,50 @@ void echoQuitMessage(ref Kameloso instance, const string reason)
     {
         import kameloso.irccolours : stripEffects;
         logger.trace("--> QUIT :", reason.stripEffects);
+    }
+}
+
+
+// propagateWhoisTimestamp
+/++
+    Propagates a single update to the the [kameloso.kameloso.Kameloso.previousWhoisTimestamps]
+    associative array to all plugins.
+
+    Params:
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+        nickname = Nickname whose WHOIS timestamp to propagate.
+        now = UNIX WHOIS timestamp.
+ +/
+void propagateWhoisTimestamp(
+    ref Kameloso instance,
+    const string nickname,
+    const long now) pure
+{
+    foreach (plugin; instance.plugins)
+    {
+        plugin.state.previousWhoisTimestamps[nickname] = now;
+    }
+}
+
+
+// propagateWhoisTimestamps
+/++
+    Propagates the [kameloso.kameloso.Kameloso.previousWhoisTimestamps]
+    associative array to all plugins.
+
+    Makes a copy of it before passing it onwards; this way, plugins cannot
+    modify the original.
+
+    Params:
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
+ +/
+void propagateWhoisTimestamps(ref Kameloso instance) pure
+{
+    auto copy = instance.previousWhoisTimestamps.dup;  // mutable
+
+    foreach (plugin; instance.plugins)
+    {
+        plugin.state.previousWhoisTimestamps = copy;
     }
 }
 
@@ -3494,16 +3711,18 @@ public:
  +/
 auto run(string[] args)
 {
-    static import kameloso.common;
+    import kameloso.plugins.common.misc : IRCPluginSettingsException;
     import kameloso.constants : ShellReturnValue;
     import kameloso.logger : KamelosoLogger;
     import kameloso.string : replaceTokens;
     import std.algorithm.comparison : among;
+    import std.conv : ConvException;
     import std.exception : ErrnoException;
+    static import kameloso.common;
 
     // Set up the Kameloso instance.
-    Kameloso instance;
-    instance.postInstanceSetup();
+    auto instance = Kameloso(args);
+    postInstanceSetup(instance);
 
     // Set pointers.
     kameloso.common.settings = &instance.settings;
@@ -3537,7 +3756,7 @@ auto run(string[] args)
         resetSignals();
     }
 
-    immutable actionAfterGetopt = instance.tryGetopt(args);
+    immutable actionAfterGetopt = tryGetopt(instance);
     globalHeadless = instance.settings.headless;
 
     with (Next)
@@ -3602,7 +3821,8 @@ auto run(string[] args)
 
     // Additionally if the port is an SSL-like port, assume SSL,
     // but only if the user isn't forcing settings
-    if (!instance.connSettings.ssl && !instance.settings.force &&
+    if (!instance.connSettings.ssl &&
+        !instance.settings.force &&
         instance.parser.server.port.among!(6697, 7000, 7001, 7029, 7070, 9999, 443))
     {
         instance.connSettings.ssl = true;
@@ -3637,7 +3857,7 @@ auto run(string[] args)
     }
 
     // Verify that settings are as they should be (nickname exists and not too long, etc)
-    immutable actionAfterVerification = instance.verifySettings();
+    immutable actionAfterVerification = verifySettings(instance);
 
     with (Next)
     final switch (actionAfterVerification)
@@ -3659,7 +3879,7 @@ auto run(string[] args)
     }
 
     // Resolve resource and private key/certificate paths.
-    instance.resolvePaths();
+    resolvePaths(instance);
     instance.conn.certFile = instance.connSettings.certFile;
     instance.conn.privateKeyFile = instance.connSettings.privateKeyFile;
 
@@ -3669,9 +3889,6 @@ auto run(string[] args)
     instance.parser.client.origNickname = instance.parser.client.nickname;
 
     // Initialise plugins outside the loop once, for the error messages
-    import kameloso.plugins.common.misc : IRCPluginSettingsException;
-    import std.conv : ConvException;
-
     try
     {
         import std.file : exists;
@@ -3683,8 +3900,11 @@ auto run(string[] args)
             instance.settings.configFile.exists)
         {
             import kameloso.config : notifyAboutMissingSettings;
-            notifyAboutMissingSettings(instance.missingConfigurationEntries,
-                args[0], instance.settings.configFile);
+
+            notifyAboutMissingSettings(
+                instance.missingConfigurationEntries,
+                args[0],
+                instance.settings.configFile);
         }
     }
     catch (ConvException e)
@@ -3707,24 +3927,23 @@ auto run(string[] args)
     instance.parser.client.origNickname = instance.parser.client.nickname;
 
     // Go!
-    instance.startBot(attempt);
+    startBot(instance, attempt);
 
     // If we're here, we should exit. The only question is in what way.
 
-    if (instance.conn.connected)
+    if (instance.conn.connected && !instance.flags.quitMessageSent)
     {
-        // Send a proper QUIT, optionally verbosely
+        // If not already sent, send a proper QUIT, optionally verbosely
         string reason;  // mutable
 
         if (!*instance.abort && !instance.settings.headless && !instance.settings.hideOutgoing)
         {
-            const message = instance.getQuitMessageInFlight();
+            const message = getQuitMessageInFlight(instance);
             reason = message.content.length ?
                 message.content :
                 instance.bot.quitReason;
             reason = reason.replaceTokens(instance.parser.client);
-
-            instance.echoQuitMessage(reason);
+            echoQuitMessage(instance, reason);
         }
 
         if (!reason.length)
@@ -3741,14 +3960,15 @@ auto run(string[] args)
         try
         {
             import kameloso.config : writeConfigurationFile;
-            instance.syncGuestChannels();
-            instance.writeConfigurationFile(instance.settings.configFile);
+            syncGuestChannels(instance);
+            writeConfigurationFile(instance, instance.settings.configFile);
         }
         catch (Exception e)
         {
+            import kameloso.string : doublyBackslashed;
             enum pattern = "Caught Exception when saving settings: " ~
                 "<l>%s</> (at <l>%s</>:<l>%d</>)";
-            logger.warningf(pattern, e.msg, e.file, e.line);
+            logger.warningf(pattern, e.msg, e.file.doublyBackslashed, e.line);
             version(PrintStacktraces) logger.trace(e);
         }
     }
@@ -3758,25 +3978,13 @@ auto run(string[] args)
     {
         if (instance.settings.exitSummary && instance.connectionHistory.length)
         {
-            instance.printSummary();
+            printSummary(instance);
         }
 
         version(GCStatsOnExit)
         {
-            import core.memory : GC;
-
-            immutable stats = GC.stats();
-
-            static if (__VERSION__ >= 2087L)
-            {
-                immutable allocated = stats.allocatedInCurrentThread;
-                enum pattern = "Allocated in current thread: <l>%,d</> bytes";
-                logger.infof(pattern, allocated);
-            }
-
-            enum memoryUsedPattern = "Memory used: <l>%,d</> bytes, free <l>%,d</> bytes";
-            logger.infof(memoryUsedPattern,
-                stats.usedSize, stats.freeSize);
+            import kameloso.common : printGCStats;
+            printGCStats();
         }
 
         if (*instance.abort)

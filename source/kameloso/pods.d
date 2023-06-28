@@ -1,5 +1,14 @@
 /++
     POD structs, broken out of [kameloso.kameloso] to avoid cyclic dependencies.
+
+    See_Also:
+        [kameloso.kameloso]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.pods;
 
@@ -38,13 +47,17 @@ public:
         bool monochrome = true;
     }
 
-
     // brightTerminal
     /++
         Flag denoting that the terminal has a bright background.
      +/
     bool brightTerminal = false;
 
+    // extendedColours
+    /++
+        Flag denoting that the bot should output text using extended ANSI sequences.
+     +/
+    bool extendedColours = true;
 
     // preferHostmasks
     /++
@@ -52,13 +65,11 @@ public:
      +/
     bool preferHostmasks = false;
 
-
     // hideOutgoing
     /++
         Whether or not to hide outgoing messages, not printing them to screen.
      +/
     bool hideOutgoing = false;
-
 
     // colouredOutgoing
     /++
@@ -66,6 +77,11 @@ public:
      +/
     bool colouredOutgoing = true;
 
+    // reexecToReconnect
+    /++
+        Re-executes the program instead of reconnecting hot.
+     +/
+    bool reexecToReconnect = false;
 
     // saveOnExit
     /++
@@ -73,13 +89,11 @@ public:
      +/
     bool saveOnExit = false;
 
-
     // exitSummary
     /++
         Whether or not to display a connection summary on program exit.
      +/
     bool exitSummary = false;
-
 
     @Hidden
     {
@@ -90,14 +104,12 @@ public:
          +/
         bool eagerLookups = false;
 
-
         // headless
         /++
             Whether or not to be "headless", disabling all terminal output.
          +/
         bool headless;
     }
-
 
     // resourceDirectory
     /++
@@ -106,7 +118,6 @@ public:
     @Hidden
     @CannotContainComments
     string resourceDirectory;
-
 
     // prefix
     /++
@@ -118,7 +129,6 @@ public:
      +/
     @Quoted string prefix = "!";
 
-
     @Unserialisable
     {
         // configFile
@@ -127,20 +137,17 @@ public:
          +/
         string configFile;
 
-
         // configDirectory
         /++
             Path to configuration directory.
          +/
         string configDirectory;
 
-
         // force
         /++
             Whether or not to force connecting, skipping some sanity checks.
          +/
         bool force;
-
 
         // flush
         /++
@@ -154,13 +161,11 @@ public:
          +/
         bool trace;
 
-
         // numericAddresses
         /++
             Whether to print addresses as IPs or as hostnames (where applicable).
          +/
         bool numericAddresses;
-
 
         // observerMode
         /++
@@ -189,7 +194,6 @@ public:
      +/
     bool ipv6 = true;
 
-
     @CannotContainComments
     @Hidden
     {
@@ -199,13 +203,11 @@ public:
          +/
         string privateKeyFile;
 
-
         // certFile
         /++
             Path to certificate (`.pem`) file.
          +/
         string certFile;
-
 
         // caBundleFile
         /++
@@ -220,7 +222,6 @@ public:
      +/
     bool ssl = false;
 
-
     @Hidden
     {
         // receiveTimeout
@@ -229,13 +230,11 @@ public:
          +/
         uint receiveTimeout = Timeout.receiveMsecs;
 
-
         // messageRate
         /++
             How many messages to send per second, maximum.
          +/
         double messageRate = ConnectionDefaultFloats.messageRate;
-
 
         // messageBurst
         /++
@@ -264,7 +263,6 @@ public:
      +/
     string account;
 
-
     @Hidden
     @CannotContainComments
     {
@@ -274,13 +272,11 @@ public:
          +/
         string password;
 
-
         // pass
         /++
             Login `PASS`, different from `SASL` and services.
          +/
         string pass;
-
 
         // quitReason
         /++
@@ -288,14 +284,12 @@ public:
          +/
         string quitReason;
 
-
         // partReason
         /++
             Default reason given when parting a channel and not specifying a reason text.
          +/
         string partReason;
     }
-
 
     @Separator(",")
     @Separator(" ")
@@ -306,14 +300,12 @@ public:
          +/
         string[] admins;
 
-
         // homeChannels
         /++
             List of home channels for the bot to operate in.
          +/
         @CannotContainComments
         string[] homeChannels;
-
 
         // guestChannels
         /++
@@ -322,7 +314,6 @@ public:
         @CannotContainComments
         string[] guestChannels;
     }
-
 
     @Unserialisable
     {

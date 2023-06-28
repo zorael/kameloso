@@ -10,8 +10,14 @@
     It has no commands.
 
     See_Also:
-        [kameloso.plugins.common.core|plugins.common.core]
-        [kameloso.plugins.common.misc|plugins.common.misc]
+        [kameloso.plugins.common.core],
+        [kameloso.plugins.common.misc]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.services.persistence;
 
@@ -52,13 +58,11 @@ void postprocess(PersistenceService service, ref IRCEvent event)
         // Clone the stored sender into a new stored target.
         // Don't delete the old user yet.
 
-        if (const stored = event.sender.nickname in service.state.users)
+        if (const stored = event.sender.nickname in service.users)
         {
-            service.state.users[event.target.nickname] = *stored;
-            ++service.usersAddedSinceLastRehash;
-            service.maybeRehash();
+            service.users[event.target.nickname] = *stored;
 
-            auto newUser = event.target.nickname in service.state.users;
+            auto newUser = event.target.nickname in service.users;
             newUser.nickname = event.target.nickname;
 
             if (service.state.settings.preferHostmasks)
@@ -191,7 +195,7 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
         // Save cache lookups so we don't do them more than once.
         string* cachedChannel;
 
-        auto stored = user.nickname in service.state.users;
+        auto stored = user.nickname in service.users;
         immutable persistentCacheMiss = stored is null;
 
         if (service.state.settings.preferHostmasks)
@@ -238,10 +242,8 @@ void postprocessCommon(PersistenceService service, ref IRCEvent event)
 
         if (persistentCacheMiss)
         {
-            service.state.users[user.nickname] = user;
-            ++service.usersAddedSinceLastRehash;
-            service.maybeRehash();
-            stored = user.nickname in service.state.users;
+            service.users[user.nickname] = user;
+            stored = user.nickname in service.users;
         }
         else
         {
@@ -424,7 +426,7 @@ void onQuit(PersistenceService service, const ref IRCEvent event)
         service.hostmaskNicknameAccountCache.remove(event.sender.nickname);
     }
 
-    service.state.users.remove(event.sender.nickname);
+    service.users.remove(event.sender.nickname);
     service.userClassChannelCache.remove(event.sender.nickname);
 }
 
@@ -451,8 +453,7 @@ void onNick(PersistenceService service, const ref IRCEvent event)
 
 // onWelcome
 /++
-    Reloads classifier definitions from disk. Additionally rehashes the user array,
-    allowing for optimised access.
+    Reloads classifier definitions from disk.
 
     This is normally done as part of user awareness, but we're not mixing that
     in so we have to reinvent it.
@@ -467,8 +468,8 @@ void onWelcome(PersistenceService service)
     import std.typecons : Flag, No, Yes;
     import core.thread : Fiber;
 
-    service.reloadAccountClassifiersFromDisk();
-    if (service.state.settings.preferHostmasks) service.reloadHostmasksFromDisk();
+    reloadAccountClassifiersFromDisk(service);
+    if (service.state.settings.preferHostmasks) reloadHostmasksFromDisk(service);
 }
 
 
@@ -524,7 +525,7 @@ void onNamesReply(PersistenceService service, const ref IRCEvent event)
             stripColours(slice) :
             slice;
 
-        service.catchUser(IRCUser(nickname, ident, address));  // this melds with the default conservative strategy
+        catchUser(service, IRCUser(nickname, ident, address));  // this melds with the default conservative strategy
     }
 }
 
@@ -542,38 +543,7 @@ void onNamesReply(PersistenceService service, const ref IRCEvent event)
 void onWhoReply(PersistenceService service, const ref IRCEvent event)
 {
     import kameloso.plugins.common.misc : catchUser;
-    service.catchUser(event.target);
-}
-
-
-// maybeRehash
-/++
-    Rehashes cache arrays if we deem enough new users have been added to them
-    since the last rehash to warrant it.
-
-    Params:
-        service = Current [PersistenceService].
- +/
-void maybeRehash(PersistenceService service)
-{
-    enum minimumAddedNeededForRehash = 128;
-    enum rehashThresholdMultiplier = 1.0;
-
-    if ((service.usersAddedSinceLastRehash > minimumAddedNeededForRehash) &&
-        (service.usersAddedSinceLastRehash > (service.state.users.length * rehashThresholdMultiplier)))
-    {
-        service.state.users = service.state.users.rehash();
-        service.userClassChannelCache = service.userClassChannelCache.rehash();
-        service.hostmaskNicknameAccountCache = service.hostmaskNicknameAccountCache.rehash();
-        service.channelUsers = service.channelUsers.rehash();
-
-        foreach (ref channelUsers; service.channelUsers)
-        {
-            channelUsers = channelUsers.rehash();
-        }
-
-        service.usersAddedSinceLastRehash = 0;
-    }
+    catchUser(service, event.target);
 }
 
 
@@ -584,9 +554,9 @@ void maybeRehash(PersistenceService service)
  +/
 void reload(PersistenceService service)
 {
-    service.state.users = service.state.users.rehash();
-    service.reloadAccountClassifiersFromDisk();
-    if (service.state.settings.preferHostmasks) service.reloadHostmasksFromDisk();
+    service.users = service.users.rehash();
+    reloadAccountClassifiersFromDisk(service);
+    if (service.state.settings.preferHostmasks) reloadHostmasksFromDisk(service);
 }
 
 
@@ -604,7 +574,6 @@ void reloadAccountClassifiersFromDisk(PersistenceService service)
     import std.json : JSONException;
 
     JSONStorage json;
-    //json.reset();
     json.load(service.userFile);
 
     service.channelUsers.clear();
@@ -690,6 +659,7 @@ void reloadHostmasksFromDisk(PersistenceService service)
 
     foreach (immutable hostmask, immutable account; accountByHostmask)
     {
+        import kameloso.string : doublyBackslashed;
         import dialect.common : isValidHostmask;
         import lu.string : contains;
 
@@ -705,13 +675,13 @@ void reloadHostmasksFromDisk(PersistenceService service)
         if (!hostmask.isValidHostmask(service.state.server))
         {
             enum pattern =`Malformed hostmask in <l>%s</>: "<l>%s</>"`;
-            logger.warningf(pattern, service.hostmasksFile, hostmask);
+            logger.warningf(pattern, service.hostmasksFile.doublyBackslashed, hostmask);
             continue;
         }
         else if (!account.length)
         {
             enum pattern =`Incomplete hostmask entry in <l>%s</>: "<l>%s</>" has empty account`;
-            logger.warningf(pattern, service.hostmasksFile, hostmask);
+            logger.warningf(pattern, service.hostmasksFile.doublyBackslashed, hostmask);
             continue;
         }
 
@@ -731,7 +701,7 @@ void reloadHostmasksFromDisk(PersistenceService service)
         catch (Exception e)
         {
             enum pattern =`Exception parsing hostmask in <l>%s</> ("<l>%s</>"): <l>%s`;
-            logger.warningf(pattern, service.hostmasksFile, hostmask, e.msg);
+            logger.warningf(pattern, service.hostmasksFile.doublyBackslashed, hostmask, e.msg);
             version(PrintStacktraces) logger.trace(e);
         }
     }
@@ -746,8 +716,8 @@ void reloadHostmasksFromDisk(PersistenceService service)
  +/
 void initResources(PersistenceService service)
 {
-    service.initAccountResources();
-    service.initHostmaskResources();
+    initAccountResources(service);
+    initHostmaskResources(service);
 }
 
 
@@ -772,7 +742,6 @@ void initAccountResources(PersistenceService service)
     import std.json : JSONException, JSONValue;
 
     JSONStorage json;
-    //json.reset();
 
     try
     {
@@ -813,10 +782,10 @@ void initAccountResources(PersistenceService service)
     unittest
     {
         auto users = JSONValue([ "foo", "bar", "baz", "bar", "foo" ]);
-        assert((users.array.length == 5), users.array.length.text);
+        assert((users.array.length == 5), users.array.length.to!string);
 
         users = deduplicated(users);
-        assert((users == JSONValue([ "bar", "baz", "foo" ])), users.array.text);
+        assert((users == JSONValue([ "bar", "baz", "foo" ])), users.array.to!string);
     }+/
 
     //import std.range : only;
@@ -892,10 +861,9 @@ void initAccountResources(PersistenceService service)
 void initHostmaskResources(PersistenceService service)
 {
     import lu.json : JSONStorage;
-    import std.json : JSONException, JSONValue;
+    import std.json : JSONException;
 
     JSONStorage json;
-    //json.reset();
 
     try
     {
@@ -967,9 +935,12 @@ public:
 final class PersistenceService : IRCPlugin
 {
 private:
+    import kameloso.common : RehashingAA;
     import kameloso.constants : KamelosoFilenames;
 
-    /// Placeholder values.
+    /++
+        Placeholder values.
+     +/
     enum Placeholder
     {
         /// Hostmask placeholder 1.
@@ -988,30 +959,41 @@ private:
         account2 = "<account2>",
     }
 
-    /// File with user definitions.
+    /++
+        File with user definitions.
+     +/
     @Resource string userFile = KamelosoFilenames.users;
 
-    /// File with user hostmasks.
+    /++
+        File with user hostmasks.
+     +/
     @Resource string hostmasksFile = KamelosoFilenames.hostmasks;
 
-    /// Associative array of permanent user classifications, per account and channel name.
-    IRCUser.Class[string][string] channelUsers;
-
-    /// Hostmask definitions as read from file. Should be considered read-only.
-    IRCUser[] hostmaskUsers;
-
-    /// Cached nicknames matched to defined hostmasks.
-    string[string] hostmaskNicknameAccountCache;
-
-    /// Associative array of which channel the latest class lookup for an account related to.
-    string[string] userClassChannelCache;
+    /++
+        Associative array of permanent user classifications, per account and channel name.
+     +/
+    RehashingAA!(string, IRCUser.Class)[string] channelUsers;
 
     /++
-        How many users have been added to the
-        [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users]
-        associative array since it was last rehashed.
+        Hostmask definitions as read from file. Should be considered read-only.
      +/
-    uint usersAddedSinceLastRehash;
+    IRCUser[] hostmaskUsers;
+
+    /++
+        Cached nicknames matched to defined hostmasks.
+     +/
+    RehashingAA!(string, string) hostmaskNicknameAccountCache;
+
+    /++
+        Associative array of which channel the latest class lookup for an account related to.
+     +/
+    RehashingAA!(string, string) userClassChannelCache;
+
+    /++
+        Associative array of users. Replaces
+        [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users].
+     +/
+    RehashingAA!(string, IRCUser) users;
 
     mixin IRCPluginImpl;
 }

@@ -33,6 +33,12 @@
 
     See_Also:
         [kameloso.terminal.colours]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.printing;
 
@@ -172,9 +178,12 @@ if ((Things.length > 0) && allSatisfy!(isAggregateType, Things))
 
             if (!kameloso.common.settings.monochrome)
             {
-                formatObjectImpl!(all, Yes.coloured)(outbuffer,
+                formatObjectImpl!(all, Yes.coloured)
+                    (outbuffer,
                     cast(Flag!"brightTerminal")kameloso.common.settings.brightTerminal,
-                    thing, widths.type+1, widths.name);
+                    thing,
+                    widths.type+1,
+                    widths.name);
                 put = true;
             }
         }
@@ -182,8 +191,12 @@ if ((Things.length > 0) && allSatisfy!(isAggregateType, Things))
         if (!put)
         {
             // Brightness setting is irrelevant; pass false
-            formatObjectImpl!(all, No.coloured)(outbuffer, No.brightTerminal,
-                thing, widths.type+1, widths.name);
+            formatObjectImpl!(all, No.coloured)
+                (outbuffer,
+                No.brightTerminal,
+                thing,
+                widths.type+1,
+                widths.name);
         }
 
         static if (i+1 < things.length)
@@ -246,7 +259,12 @@ if ((Things.length > 0) && allSatisfy!(isAggregateType, Things) && isOutputRange
 
     foreach (immutable i, ref thing; things)
     {
-        formatObjectImpl!(all, coloured)(sink, bright, thing, widths.type+1, widths.name);
+        formatObjectImpl!(all, coloured)
+            (sink,
+            bright,
+            thing,
+            widths.type+1,
+            widths.name);
 
         static if ((i+1 < things.length) || !__traits(hasMember, Sink, "data"))
         {
@@ -308,7 +326,8 @@ private void formatStringMemberImpl(Flag!"coloured" coloured, T, Sink)
 
     static if (coloured)
     {
-        import kameloso.terminal.colours : F = TerminalForeground, colour;
+        import kameloso.terminal.colours.defs : F = TerminalForeground;
+        import kameloso.terminal.colours : asANSI;
 
         if (args.truncate && (content.length > truncateAfter))
         {
@@ -318,12 +337,19 @@ private void formatStringMemberImpl(Flag!"coloured" coloured, T, Sink)
             immutable lengthCode = args.bright ? F.default_ : F.darkgrey;
             immutable typeCode   = args.bright ? F.lightcyan : F.cyan;
 
-            sink.formattedWrite(stringPattern,
-                typeCode.colour, args.typewidth, args.typestring,
-                memberCode.colour, args.namewidth, args.memberstring,
+            sink.formattedWrite(
+                stringPattern,
+                typeCode.asANSI,
+                args.typewidth,
+                args.typestring,
+                memberCode.asANSI,
+                args.namewidth,
+                args.memberstring,
                 //(content.length ? string.init : " "),
-                valueCode.colour, content[0..truncateAfter],
-                lengthCode.colour, content.length);
+                valueCode.asANSI,
+                content[0..truncateAfter],
+                lengthCode.asANSI,
+                content.length);
         }
         else
         {
@@ -333,12 +359,19 @@ private void formatStringMemberImpl(Flag!"coloured" coloured, T, Sink)
             immutable lengthCode = args.bright ? F.default_ : F.darkgrey;
             immutable typeCode   = args.bright ? F.lightcyan : F.cyan;
 
-            sink.formattedWrite(stringPattern,
-                typeCode.colour, args.typewidth, args.typestring,
-                memberCode.colour, args.namewidth, args.memberstring,
+            sink.formattedWrite(
+                stringPattern,
+                typeCode.asANSI,
+                args.typewidth,
+                args.typestring,
+                memberCode.asANSI,
+                args.namewidth,
+                args.memberstring,
                 (content.length ? string.init : " "),
-                valueCode.colour, content,
-                lengthCode.colour, content.length);
+                valueCode.asANSI,
+                content,
+                lengthCode.asANSI,
+                content.length);
         }
     }
     else
@@ -346,9 +379,12 @@ private void formatStringMemberImpl(Flag!"coloured" coloured, T, Sink)
         if (args.truncate && (content.length > truncateAfter))
         {
             enum stringPattern = `%*s %-*s "%s" ... (%d)` ~ '\n';
-            sink.formattedWrite(stringPattern,
-                args.typewidth, args.typestring,
-                args.namewidth, args.memberstring,
+            sink.formattedWrite(
+                stringPattern,
+                args.typewidth,
+                args.typestring,
+                args.namewidth,
+                args.memberstring,
                 //(content.length ? string.init : " "),
                 content[0..truncateAfter],
                 content.length);
@@ -356,9 +392,12 @@ private void formatStringMemberImpl(Flag!"coloured" coloured, T, Sink)
         else
         {
             enum stringPattern = `%*s %-*s %s"%s"(%d)` ~ '\n';
-            sink.formattedWrite(stringPattern,
-                args.typewidth, args.typestring,
-                args.namewidth, args.memberstring,
+            sink.formattedWrite(
+                stringPattern,
+                args.typewidth,
+                args.typestring,
+                args.namewidth,
+                args.memberstring,
                 (content.length ? string.init : " "),
                 content,
                 content.length);
@@ -449,7 +488,8 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
 
     static if (coloured)
     {
-        import kameloso.terminal.colours : F = TerminalForeground, colour;
+        import kameloso.terminal.colours.defs : F = TerminalForeground;
+        import kameloso.terminal.colours : asANSI;
 
         immutable memberCode = args.bright ? F.black : F.white;
         immutable valueCode  = args.bright ? F.green : F.lightgreen;
@@ -462,11 +502,18 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
                 "%s%*s %s%-*s %s[%(%s, %)]%s ... (%d)\n" :
                 "%s%*s %s%-*s %s%s%s ... (%d)\n";
 
-            sink.formattedWrite(rtArrayPattern,
-                typeCode.colour, args.typewidth, typestring,
-                memberCode.colour, args.namewidth, args.memberstring,
-                valueCode.colour, content[0..truncateAfter],
-                lengthCode.colour, length);
+            sink.formattedWrite(
+                rtArrayPattern,
+                typeCode.asANSI,
+                args.typewidth,
+                typestring,
+                memberCode.asANSI,
+                args.namewidth,
+                args.memberstring,
+                valueCode.asANSI,
+                content[0..truncateAfter],
+                lengthCode.asANSI,
+                length);
         }
         else
         {
@@ -474,12 +521,19 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
                 "%s%*s %s%-*s %s%s[%(%s, %)]%s(%d)\n" :
                 "%s%*s %s%-*s %s%s%s%s(%d)\n";
 
-            sink.formattedWrite(rtArrayPattern,
-                typeCode.colour, args.typewidth, typestring,
-                memberCode.colour, args.namewidth, args.memberstring,
+            sink.formattedWrite(
+                rtArrayPattern,
+                typeCode.asANSI,
+                args.typewidth,
+                typestring,
+                memberCode.asANSI,
+                args.namewidth,
+                args.memberstring,
                 (content.length ? string.init : " "),
-                valueCode.colour, content,
-                lengthCode.colour, length);
+                valueCode.asANSI,
+                content,
+                lengthCode.asANSI,
+                length);
         }
     }
     else
@@ -490,10 +544,14 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
                 "%*s %-*s [%(%s, %)] ... (%d)\n" :
                 "%*s %-*s %s ... (%d)\n";
 
-            sink.formattedWrite(rtArrayPattern,
-                args.typewidth, typestring,
-                args.namewidth, args.memberstring,
-                content[0..truncateAfter], length);
+            sink.formattedWrite(
+                rtArrayPattern,
+                args.typewidth,
+                typestring,
+                args.namewidth,
+                args.memberstring,
+                content[0..truncateAfter],
+                length);
         }
         else
         {
@@ -501,11 +559,15 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
                 "%*s %-*s %s[%(%s, %)](%d)\n" :
                 "%*s %-*s %s%s(%d)\n";
 
-            sink.formattedWrite(rtArrayPattern,
-                args.typewidth, typestring,
-                args.namewidth, args.memberstring,
+            sink.formattedWrite(
+                rtArrayPattern,
+                args.typewidth,
+                typestring,
+                args.namewidth,
+                args.memberstring,
                 (content.length ? string.init : " "),
-                content, length);
+                content,
+                length);
         }
     }
 }
@@ -533,7 +595,8 @@ private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
 
     static if (coloured)
     {
-        import kameloso.terminal.colours : F = TerminalForeground, colour;
+        import kameloso.terminal.colours.defs : F = TerminalForeground;
+        import kameloso.terminal.colours : asANSI;
 
         immutable memberCode = args.bright ? F.black : F.white;
         immutable valueCode  = args.bright ? F.green : F.lightgreen;
@@ -544,22 +607,36 @@ private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
         {
             enum aaPattern = "%s%*s %s%-*s %s%s%s ... (%d)\n";
 
-            sink.formattedWrite(aaPattern,
-                typeCode.colour, args.typewidth, args.typestring,
-                memberCode.colour, args.namewidth, args.memberstring,
-                valueCode.colour, content.keys[0..truncateAfter],
-                lengthCode.colour, content.length);
+            sink.formattedWrite(
+                aaPattern,
+                typeCode.asANSI,
+                args.typewidth,
+                args.typestring,
+                memberCode.asANSI,
+                args.namewidth,
+                args.memberstring,
+                valueCode.asANSI,
+                content.keys[0..truncateAfter],
+                lengthCode.asANSI,
+                content.length);
         }
         else
         {
             enum aaPattern = "%s%*s %s%-*s %s%s%s%s(%d)\n";
 
-            sink.formattedWrite(aaPattern,
-                typeCode.colour, args.typewidth, args.typestring,
-                memberCode.colour, args.namewidth, args.memberstring,
+            sink.formattedWrite(
+                aaPattern,
+                typeCode.asANSI,
+                args.typewidth,
+                args.typestring,
+                memberCode.asANSI,
+                args.namewidth,
+                args.memberstring,
                 (content.length ? string.init : " "),
-                valueCode.colour, content.keys,
-                lengthCode.colour, content.length);
+                valueCode.asANSI,
+                content.keys,
+                lengthCode.asANSI,
+                content.length);
         }
     }
     else
@@ -568,9 +645,12 @@ private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
         {
             enum aaPattern = "%*s %-*s %s ... (%d)\n";
 
-            sink.formattedWrite(aaPattern,
-                args.typewidth, args.typestring,
-                args.namewidth, args.memberstring,
+            sink.formattedWrite(
+                aaPattern,
+                args.typewidth,
+                args.typestring,
+                args.namewidth,
+                args.memberstring,
                 content.keys[0..truncateAfter],
                 content.length);
         }
@@ -578,9 +658,12 @@ private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
         {
             enum aaPattern = "%*s %-*s %s%s(%d)\n";
 
-            sink.formattedWrite(aaPattern,
-                args.typewidth, args.typestring,
-                args.namewidth, args.memberstring,
+            sink.formattedWrite(
+                aaPattern,
+                args.typewidth,
+                args.typestring,
+                args.namewidth,
+                args.memberstring,
                 (content.length ? string.init : " "),
                 content,
                 content.length);
@@ -636,23 +719,36 @@ private void formatAggregateMemberImpl(Flag!"coloured" coloured, Sink)
 
     static if (coloured)
     {
-        import kameloso.terminal.colours : F = TerminalForeground, colour;
+        import kameloso.terminal.colours.defs : F = TerminalForeground;
+        import kameloso.terminal.colours : asANSI;
 
         enum normalPattern = "%s%*s %s%-*s %s<%s>%s\n";
         immutable memberCode = args.bright ? F.black : F.white;
         immutable valueCode  = args.bright ? F.green : F.lightgreen;
         immutable typeCode   = args.bright ? F.lightcyan : F.cyan;
 
-        sink.formattedWrite(normalPattern,
-            typeCode.colour, args.typewidth, args.typestring,
-            memberCode.colour, args.namewidth, args.memberstring,
-            valueCode.colour, args.aggregateType, args.initText);
+        sink.formattedWrite(
+            normalPattern,
+            typeCode.asANSI,
+            args.typewidth,
+            args.typestring,
+            memberCode.asANSI,
+            args.namewidth,
+            args.memberstring,
+            valueCode.asANSI,
+            args.aggregateType,
+            args.initText);
     }
     else
     {
         enum normalPattern = "%*s %-*s <%s>%s\n";
-        sink.formattedWrite(normalPattern, args.typewidth, args.typestring,
-            args.namewidth, args.memberstring, args.aggregateType,args.initText);
+        sink.formattedWrite(
+            normalPattern,
+            args.typewidth,
+            args.typestring,
+            args.namewidth,
+            args.memberstring,
+            args.aggregateType,args.initText);
     }
 }
 
@@ -700,23 +796,35 @@ private void formatOtherMemberImpl(Flag!"coloured" coloured, T, Sink)
 
     static if (coloured)
     {
-        import kameloso.terminal.colours : F = TerminalForeground, colour;
+        import kameloso.terminal.colours.defs : F = TerminalForeground;
+        import kameloso.terminal.colours : asANSI;
 
         enum normalPattern = "%s%*s %s%-*s  %s%s\n";
         immutable memberCode = args.bright ? F.black : F.white;
         immutable valueCode  = args.bright ? F.green : F.lightgreen;
         immutable typeCode   = args.bright ? F.lightcyan : F.cyan;
 
-        sink.formattedWrite(normalPattern,
-            typeCode.colour, args.typewidth, args.typestring,
-            memberCode.colour, args.namewidth, args.memberstring,
-            valueCode.colour, content);
+        sink.formattedWrite(
+            normalPattern,
+            typeCode.asANSI,
+            args.typewidth,
+            args.typestring,
+            memberCode.asANSI,
+            args.namewidth,
+            args.memberstring,
+            valueCode.asANSI,
+            content);
     }
     else
     {
         enum normalPattern = "%*s %-*s  %s\n";
-        sink.formattedWrite(normalPattern, args.typewidth, args.typestring,
-            args.namewidth, args.memberstring, content);
+        sink.formattedWrite(
+            normalPattern,
+            args.typewidth,
+            args.typestring,
+            args.namewidth,
+            args.memberstring,
+            content);
     }
 }
 
@@ -750,7 +858,8 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 {
     static if (coloured)
     {
-        import kameloso.terminal.colours : F = TerminalForeground, colour, colourWith;
+        import kameloso.terminal.colours.defs : F = TerminalForeground;
+        import kameloso.terminal.colours : applyANSI;
     }
 
     import lu.string : stripSuffix;
@@ -762,8 +871,8 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
     static if (coloured)
     {
         immutable titleCode = bright ? F.black : F.white;
-        sink.colourWith(titleCode);
-        scope(exit) sink.colourWith(F.default_);
+        sink.applyANSI(titleCode);
+        scope(exit) sink.applyANSI(F.default_);
     }
 
     sink.formattedWrite("-- %s\n", Thing.stringof.stripSuffix("Settings"));
@@ -828,13 +937,17 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
                         is(ElemType == wchar);
 
                     args.elemIsCharacter = elemIsCharacter;
-                    formatArrayMemberImpl!(coloured, T)(sink, args,
+                    formatArrayMemberImpl!(coloured, T)
+                        (sink,
+                        args,
                         __traits(getMember, thing, memberstring));
                 }
                 else /*static if (isAssociativeArray!T)*/
                 {
                     // Can't pass T for some reason, nor UnqualArray
-                    formatAssociativeArrayMemberImpl!(coloured, T)(sink, args,
+                    formatAssociativeArrayMemberImpl!(coloured, T)
+                        (sink,
+                        args,
                         __traits(getMember, thing, memberstring));
                 }
             }
@@ -872,7 +985,6 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
                 args.typewidth = typewidth;
                 args.namewidth = namewidth + namePadding;
                 args.bright = bright;
-
                 formatAggregateMemberImpl!coloured(sink, args);
             }
             else
@@ -883,7 +995,6 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
                 args.typewidth = typewidth;
                 args.namewidth = namewidth + namePadding;
                 args.bright = bright;
-
                 formatOtherMemberImpl!(coloured, T)(sink, args, __traits(getMember, thing, memberstring));
             }
         }

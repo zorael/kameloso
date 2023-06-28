@@ -64,6 +64,12 @@
         // program logic goes here
     }
     ---
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.net;
 
@@ -177,7 +183,6 @@ public:
         return _sendTimeout;
     }
 
-
     // sendTimeout
     /++
         Mutator; sets the send timeout socket option to the passed duration.
@@ -218,7 +223,6 @@ public:
         _receiveTimeout = dur;
     }
 
-
     // reset
     /++
         (Re-)initialises the sockets and sets the IPv4 one as the active one.
@@ -232,7 +236,6 @@ public:
         connected = false;
     }
 
-
     // resetSSL
     /++
         Resets the SSL context and resources of this [Connection].
@@ -243,7 +246,6 @@ public:
         teardownSSL();
         setupSSL();
     }
-
 
     // getSSLErrorMessage
     /++
@@ -267,7 +269,6 @@ public:
             .idup;
     }
 
-
     // setDefaultOptions
     /++
         Sets up sockets with the [std.socket.SocketOption|SocketOption]s needed.
@@ -278,7 +279,6 @@ public:
      +/
     void setDefaultOptions(Socket socketToSetup)
     {
-        import kameloso.constants : BufferSize, Timeout;
         import std.socket : SocketOption, SocketOptionLevel;
         import core.time : msecs;
 
@@ -296,7 +296,6 @@ public:
             blocking = true;
         }
     }
-
 
     // setupSSL
     /++
@@ -365,7 +364,6 @@ public:
         if (code != 1) throw new SSLException("Failed to attach socket handle", code);
     }
 
-
     // teardownSSL
     /++
         Frees SSL context and resources.
@@ -376,7 +374,6 @@ public:
         if (sslInstance) openssl.SSL_free(sslInstance);
         if (sslContext) openssl.SSL_CTX_free(sslContext);
     }
-
 
     // teardown
     /++
@@ -396,14 +393,13 @@ public:
         }
     }
 
-
     // setup
     /++
         Initialises new [std.socket.Socket|Socket]s and sets their options.
      +/
     void setup()
     {
-        import std.socket : TcpSocket, AddressFamily, SocketShutdown, SocketType;
+        import std.socket : TcpSocket, AddressFamily, SocketType;
 
         socket4 = new TcpSocket;
         socket6 = new Socket(AddressFamily.INET6, SocketType.STREAM);
@@ -412,7 +408,6 @@ public:
         setDefaultOptions(socket4);
         setDefaultOptions(socket6);
     }
-
 
     // sendline
     /++
@@ -433,6 +428,10 @@ public:
                 characters. A final linebreak is added to the end of the send.
             maxLineLength = Maximum line length before the sent message will be truncated.
             linebreak = Characters to use as linebreak, marking the end of a line to send.
+
+        Throws:
+            [SocketSendException] if the call to send data through the socket
+            returns [std.socket.Socket.ERROR|Socket.ERROR].
      +/
     void sendline(
         const string rawline,
@@ -440,7 +439,6 @@ public:
         const string linebreak = "\r\n") @system
     in (connected, "Tried to send a line on an unconnected `Connection`")
     {
-        import std.algorithm.iteration : splitter;
         import std.string : indexOf;
 
         if (!rawline.length) return;
@@ -451,18 +449,32 @@ public:
         {
             import std.algorithm.comparison : min;
 
-            immutable length = min(line.length, maxAvailableLength);
+            immutable lineLength = min(line.length, maxAvailableLength);
+            size_t totalSent;
 
-            if (ssl)
+            auto sendSubstring(const string substring)
+            in (substring.length, "Tried to send empty substring to server")
             {
-                openssl.SSL_write(sslInstance, line.ptr, cast(int)length);
-                openssl.SSL_write(sslInstance, linebreak.ptr, cast(int)linebreak.length);
+                immutable bytesSent = ssl ?
+                    openssl.SSL_write(sslInstance, substring.ptr, cast(int)substring.length) :
+                    socket.send(substring);
+
+                if (bytesSent == Socket.ERROR)
+                {
+                    enum message = "Socket.ERROR returned when sending data to server";
+                    throw new SocketSendException(message);
+                }
+
+                return bytesSent;
             }
-            else
+
+            while (totalSent < lineLength)
             {
-                socket.send(line[0..length]);
-                socket.send(linebreak);
+                totalSent += sendSubstring(line[totalSent..lineLength]);
             }
+
+            // Always end the line with a linebreak
+            sendSubstring(linebreak);
         }
 
         auto newlinePos = rawline.indexOf('\n');  // mutable
@@ -681,8 +693,10 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
         if (conn.ssl)
         {
             import requests.ssl_adapter : openssl;
-            attempt.bytesReceived = openssl.SSL_read(conn.sslInstance,
-                cast(void*)buffer.ptr+start, cast(int)(buffer.length-start));
+            attempt.bytesReceived = openssl.SSL_read(
+                conn.sslInstance,
+                cast(void*)buffer.ptr+start,
+                cast(int)(buffer.length-start));
         }
         else
         {
@@ -717,9 +731,11 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
             {
                 attempt.state = State.timeout;
                 yield(attempt);
+
                 // Should never get here
-                assert(0, "Timed out `listenFiber` resumed after yield " ~
-                    "(received error, elapsed > timeout)");
+                enum message = "Timed out `listenFiber` resumed after yield " ~
+                    "(received error, elapsed > timeout)";
+                assert(0, message);
             }
 
             with (Errno)
@@ -945,7 +961,7 @@ in (!conn.connected, "Tried to set up a connecting fiber on an already live conn
 in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
 {
     import std.concurrency : yield;
-    import std.socket : AddressFamily, Socket, SocketException;
+    import std.socket : AddressFamily, SocketException;
 
     if (abort) return;
 
@@ -1391,7 +1407,8 @@ final class SSLException : Exception
     int code;
 
     /// Constructor attaching an error code.
-    this(const string msg,
+    this(
+        const string msg,
         const int code,
         const string file = __FILE__,
         const size_t line = __LINE__,
@@ -1402,7 +1419,8 @@ final class SSLException : Exception
     }
 
     /// Passthrough constructor.
-    this(const string msg,
+    this(
+        const string msg,
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
@@ -1422,7 +1440,8 @@ final class SSLFileException : Exception
     string filename;
 
     /// Constructor attaching an error code.
-    this(const string msg,
+    this(
+        const string msg,
         const string filename,
         const string file = __FILE__,
         const size_t line = __LINE__,
@@ -1433,7 +1452,26 @@ final class SSLFileException : Exception
     }
 
     /// Passthrough constructor.
-    this(const string msg,
+    this(
+        const string msg,
+        const string file = __FILE__,
+        const size_t line = __LINE__,
+        Throwable nextInChain = null) pure nothrow @nogc @safe
+    {
+        super(msg, file, line, nextInChain);
+    }
+}
+
+
+// SocketSendException
+/++
+    Exception thrown when a socket send action returned [std.socket.Socket.ERROR|Socket.ERROR].
+ +/
+final class SocketSendException : Exception
+{
+    /// Passthrough constructor.
+    this(
+        const string msg,
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe

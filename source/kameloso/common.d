@@ -3,7 +3,14 @@
     several places, not fitting into any specific one.
 
     See_Also:
-        [kameloso.kameloso]
+        [kameloso.kameloso],
+        [kameloso.main]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.common;
 
@@ -11,14 +18,12 @@ private:
 
 import kameloso.pods : CoreSettings;
 import kameloso.logger : KamelosoLogger;
-import dialect.defs : IRCClient, IRCServer;
+import dialect.defs : IRCClient;
 import std.range.primitives : isOutputRange;
 import std.stdio : stdout;
 import std.typecons : Flag, No, Yes;
 
 public:
-
-@safe:
 
 version(unittest)
 shared static this()
@@ -76,7 +81,7 @@ void initLogger(
     const Flag!"monochrome" monochrome,
     const Flag!"brightTerminal" bright,
     const Flag!"headless" headless,
-    const Flag!"flush" flush)
+    const Flag!"flush" flush) @safe
 out (; (logger !is null), "Failed to initialise logger")
 {
     import kameloso.logger : KamelosoLogger;
@@ -269,34 +274,34 @@ auto findURLs(const string line) @safe pure
 ///
 unittest
 {
-    import std.conv : text;
+    import std.conv : to;
 
     {
         const urls = findURLs("http://google.com");
-        assert((urls.length == 1), urls.text);
+        assert((urls.length == 1), urls.to!string);
         assert((urls[0] == "http://google.com"), urls[0]);
     }
     {
         const urls = findURLs("blah https://a.com http://b.com shttps://c https://d.asdf.asdf.asdf        ");
-        assert((urls.length == 3), urls.text);
-        assert((urls == [ "https://a.com", "http://b.com", "https://d.asdf.asdf.asdf" ]), urls.text);
+        assert((urls.length == 3), urls.to!string);
+        assert((urls == [ "https://a.com", "http://b.com", "https://d.asdf.asdf.asdf" ]), urls.to!string);
     }
     {
         const urls = findURLs("http:// http://asdf https:// asdfhttpasdf http://google.com");
-        assert((urls.length == 1), urls.text);
+        assert((urls.length == 1), urls.to!string);
     }
     {
         const urls = findURLs("http://a.sehttp://a.shttp://a.http://http:");
-        assert(!urls.length, urls.text);
+        assert(!urls.length, urls.to!string);
     }
     {
         const urls = findURLs("blahblah https://motorbörsen.se blhblah");
-        assert(urls.length, urls.text);
+        assert(urls.length, urls.to!string);
     }
     {
         // Let dlang-requests attempt complex URLs, don't validate more than necessary
         const urls = findURLs("blahblah https://高所恐怖症。co.jp blhblah");
-        assert(urls.length, urls.text);
+        assert(urls.length, urls.to!string);
     }
     {
         const urls = findURLs("nyaa is now at https://nyaa.si, https://nyaa.si? " ~
@@ -309,15 +314,15 @@ unittest
     }
     {
         const urls = findURLs("https://google.se httpx://google.se https://google.se");
-        assert((urls == [ "https://google.se", "https://google.se" ]), urls.text);
+        assert((urls == [ "https://google.se", "https://google.se" ]), urls.to!string);
     }
     {
         const urls = findURLs("https://               ");
-        assert(!urls.length, urls.text);
+        assert(!urls.length, urls.to!string);
     }
     {
         const urls = findURLs("http://               ");
-        assert(!urls.length, urls.text);
+        assert(!urls.length, urls.to!string);
     }
 }
 
@@ -495,3 +500,334 @@ static immutable string[134] errnoStrings =
     132 : "ERFKILL",
     133 : "EHWPOISON",
 ];
+
+
+// RehashingAA
+/++
+    A wrapper around a native associative array that you can controllably set to
+    automatically rehash as entries are added.
+
+    Params:
+        K = Key type.
+        V = Value type.
+ +/
+struct RehashingAA(K, V)
+{
+private:
+    /++
+        Internal associative array.
+     +/
+    V[K] aa;
+
+    /++
+        The number of times this instance has rehashed itself. Private value.
+     +/
+    uint _numRehashes;
+
+    /++
+        The number of new entries that has been added since the last rehash. Private value.
+     +/
+    uint _newKeysSinceLastRehash;
+
+    /++
+        The number of keys (and length of the array) when the last rehash took place.
+        Private value.
+     +/
+    size_t _lengthAtLastRehash;
+
+public:
+    /++
+        The minimum number of additions needed before the first rehash takes place.
+     +/
+    uint minimumNeededForRehash = 64;
+
+    /++
+        The modifier by how much more entries must be added before another rehash
+        takes place, with regards to the current [aa] length.
+
+        A multiplier of `2.0` means the associative array will be rehashed as
+        soon as its length doubles in size. Must be more than 1.
+     +/
+    double rehashThresholdMultiplier = 1.5;
+
+    // opIndexAssign
+    /++
+        Assigns a value into the internal associative array. If it created a new
+        entry, then call [maybeRehash] to bump the internal counter and maybe rehash.
+
+        Params:
+            value = Value.
+            key = Key.
+     +/
+    void opIndexAssign(V value, K key)
+    {
+        if (auto existing = key in aa)
+        {
+            *existing = value;
+        }
+        else
+        {
+            aa[key] = value;
+            maybeRehash();
+        }
+    }
+
+    // opAssign
+    /++
+        Inherit a native associative array into [aa].
+
+        Params:
+            aa = Other associative array.
+     +/
+    void opAssign(V[K] aa)
+    {
+        this.aa = aa;
+        this.rehash();
+        _numRehashes = 0;
+    }
+
+    // opCast
+    /++
+        Allows for casting this into the base associative array type.
+
+        Params:
+            T = Type to cast to, here the same as the type of [aa].
+
+        Returns:
+            The internal associative array.
+     +/
+    auto opCast(T : V[K])() inout
+    {
+        return aa;
+    }
+
+    // aaOf
+    /++
+        Returns the internal associative array, for when the wrapper is insufficient.
+
+        Returns:
+            The internal associative array.
+     +/
+    inout(V[K]) aaOf() inout
+    {
+        return aa;
+    }
+
+    // remove
+    /++
+        Removes a key from the [aa] associative array by merely invoking `.remove`.
+
+        Params:
+            key = The key to remove.
+
+        Returns:
+            Whatever `aa.remove(key)` returns.
+     +/
+    auto remove(K key)
+    {
+        //scope(exit) maybeRehash();
+        return aa.remove(key);
+    }
+
+    // maybeRehash
+    /++
+        Bumps the internal counter of new keys since the last rehash, and depending
+        on the resulting value of it, maybe rehashes.
+
+        Returns:
+            `true` if the associative array was rehashed; `false` if not.
+     +/
+    auto maybeRehash()
+    {
+        if (++_newKeysSinceLastRehash > minimumNeededForRehash)
+        {
+            if (aa.length > (_lengthAtLastRehash * rehashThresholdMultiplier))
+            {
+                this.rehash();
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // clear
+    /++
+        Clears the internal associative array and all counters.
+     +/
+    void clear()
+    {
+        aa.clear();
+        _newKeysSinceLastRehash = 0;
+        _lengthAtLastRehash = 0;
+        _numRehashes = 0;
+    }
+
+    // rehash
+    /++
+        Rehashes the internal associative array, bumping the rehash counter and
+        zeroing the keys-added counter. Additionally invokes the [onRehashDg] delegate.
+
+        Returns:
+            A reference to the rehashed internal array.
+     +/
+    ref auto rehash()
+    {
+        scope(exit) if (onRehashDg) onRehashDg();
+        _lengthAtLastRehash = aa.length;
+        _newKeysSinceLastRehash = 0;
+        ++_numRehashes;
+        aa.rehash();
+        return this;
+    }
+
+    // numRehashes
+    /++
+        The number of times this instance has rehashed itself. Accessor.
+
+        Returns:
+            The number of times this instance has rehashed itself.
+     +/
+    auto numRehashes() const
+    {
+        return _numRehashes;
+    }
+
+    // numKeysAddedSinceLastRehash
+    /++
+        The number of new entries that has been added since the last rehash. Accessor.
+
+        Returns:
+            The number of new entries that has been added since the last rehash.
+     +/
+    auto newKeysSinceLastRehash() const
+    {
+        return _newKeysSinceLastRehash;
+    }
+
+    // opBinaryRight
+    /++
+        Wraps `key in aa` to the internal associative array.
+
+        Params:
+            op = Operation, here "in".
+            key = Key.
+
+        Returns:
+            A pointer to the value of the key passed, or `null` if it isn't in
+            the associative array
+     +/
+    auto opBinaryRight(string op : "in")(K key) inout
+    {
+        return key in aa;
+    }
+
+    // length
+    /++
+        Returns the length of the internal associative array.
+
+        Returns:
+            The length of the internal associative array.
+     +/
+    auto length() const
+    {
+        return aa.length;
+    }
+
+    // dup
+    /++
+        Duplicates this. Explicitly copies the internal associative array.
+
+        Returns:
+            A duplicate of this object.
+     +/
+    auto dup()
+    {
+        auto copy = this;
+        copy.aa = copy.aa.dup;
+        return copy;
+    }
+
+    // this
+    /++
+        Constructor.
+
+        Params:
+            aa = Associative arary to inherit. Taken by reference for now.
+     +/
+    this(V[K] aa)
+    {
+        this.aa = aa;
+    }
+
+    // onRehashDg
+    /++
+        Delegate called when rehashing takes place.
+     +/
+    void delegate() onRehashDg;
+
+    /++
+        `alias this` with regards to [aa].
+     +/
+    version(none)
+    alias aa this;
+}
+
+///
+unittest
+{
+    import std.conv : to;
+
+    RehashingAA!(string, int) aa;
+    aa.minimumNeededForRehash = 2;
+
+    aa["abc"] = 123;
+    aa["def"] = 456;
+    assert((aa.newKeysSinceLastRehash == 2), aa.newKeysSinceLastRehash.to!string);
+    assert((aa.numRehashes == 0), aa.numRehashes.to!string);
+    aa["ghi"] = 789;
+    assert((aa.numRehashes == 1), aa.numRehashes.to!string);
+    assert((aa.newKeysSinceLastRehash == 0), aa.newKeysSinceLastRehash.to!string);
+    aa.rehash();
+    assert((aa.numRehashes == 2), aa.numRehashes.to!string);
+
+    auto realAA = cast(int[string])aa;
+    assert("abc" in realAA);
+    assert("def" in realAA);
+    assert("ghi" in realAA);
+    assert("jkl" !in realAA);
+
+    auto aa2 = aa.dup;
+    aa2["jkl"] = 123;
+    assert("jkl" in aa2);
+    assert("jkl" !in aa);
+}
+
+
+version(GCStatsOnExit) version = BuildPrintGCStats;
+else version(IncludeHeavyStuff) version = BuildPrintGCStats;
+
+
+// printGCStats
+/++
+    Prints garbage collector statistics to the local terminal.
+
+    Gated behind either version `GCStatsOnExit` *or* `IncludeHeavyStuff`.
+ +/
+version(BuildPrintGCStats)
+void printGCStats()
+{
+    import core.memory : GC;
+
+    immutable stats = GC.stats();
+
+    static if (__VERSION__ >= 2087L)
+    {
+        enum pattern = "Lifetime allocated in current thread: <l>%,d</> bytes";
+        logger.infof(pattern, stats.allocatedInCurrentThread);
+    }
+
+    enum memoryUsedPattern = "Memory currently in use: <l>%,d</> bytes, " ~
+        "<l>%,d</> additional bytes reserved";
+    logger.infof(memoryUsedPattern, stats.usedSize, stats.freeSize);
+}

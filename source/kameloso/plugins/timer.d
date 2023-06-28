@@ -3,9 +3,15 @@
     of text to a channel.
 
     See_Also:
-        https://github.com/zorael/kameloso/wiki/Current-plugins#timer
-        [kameloso.plugins.common.core|plugins.common.core]
-        [kameloso.plugins.common.misc|plugins.common.misc]
+        https://github.com/zorael/kameloso/wiki/Current-plugins#timer,
+        [kameloso.plugins.common.core],
+        [kameloso.plugins.common.misc]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.timer;
 
@@ -1184,8 +1190,9 @@ auto createTimerFiber(
         // Main loop
         while (true)
         {
+            import kameloso.string : replaceRandom;
             import std.array : replace;
-            import std.conv : text;
+            import std.conv : to;
             import std.random : uniform;
 
             if (timer.suspended)
@@ -1198,14 +1205,14 @@ auto createTimerFiber(
             string message = timer.getLine()  // mutable
                 .replace("$bot", plugin.state.client.nickname)
                 .replace("$channel", channelName[1..$])
-                .replace("$random", uniform!"(]"(0, 100).text);
+                .replaceRandom();
 
             version(TwitchSupport)
             {
                 if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
                 {
                     import kameloso.plugins.common.misc : nameOf;
-                    message = message.replace("$streamer", plugin.nameOf(channelName[1..$]));
+                    message = message.replace("$streamer", nameOf(plugin, channelName[1..$]));
                 }
             }
 

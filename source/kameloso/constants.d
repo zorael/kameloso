@@ -1,7 +1,13 @@
 /++
     A collection of constants used throughout the program.
 
-    This acts as a compile-time configuration file.
+    This acts as a compile-time configuration file to reduce ad-hoc magic numbers.
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.constants;
 
@@ -58,7 +64,7 @@ auto buildCompilerVersionString()
 
     major.toAlphaInto(sink);
     sink.put('.');
-    minor.toAlphaInto!(3,3)(sink);
+    minor.toAlphaInto!(3, 3)(sink);
 
     return sink.data.idup;
 }
@@ -340,12 +346,12 @@ enum Timeout
     /++
         The maximum amount of time to wait between connection attempts.
      +/
-    connectionDelayCap = 600,
+    connectionDelayCap = 300,
 
     /++
         The amount of seconds to wait before retrying after a failed connection attempt.
      +/
-    connectionRetry = 10,
+    connectionRetry = 5,
 
     /++
         The amount of seconds to wait before retrying to connect after an instant
@@ -532,7 +538,7 @@ struct DefaultColours
 {
 private:
     import kameloso.logger : LogLevel;
-    import kameloso.terminal.colours : TerminalForeground;
+    import kameloso.terminal.colours.defs : TerminalForeground;
 
     alias TF = TerminalForeground;
 
@@ -544,13 +550,13 @@ public:
     {
         /++
             For dark terminal backgrounds. Was
-            [kameloso.terminal.colours.TerminalForeground.white_|TerminalForeground.white_].
+            [kameloso.terminal.colours.defs.TerminalForeground.white_|TerminalForeground.white_].
          +/
         dark = TF.default_,
 
         /++
             For bright terminal backgrounds. Was
-            [kameloso.terminal.colours.TerminalForeground.black_|TerminalForeground.black_].
+            [kameloso.terminal.colours.defs.TerminalForeground.black_|TerminalForeground.black_].
          +/
         bright = TF.default_,
     }

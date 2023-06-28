@@ -12,9 +12,17 @@
     really "headless" environment.
 
     See_Also:
-        https://github.com/zorael/kameloso/wiki/Current-plugins#printer
-        [kameloso.plugins.common.core|plugins.common.core]
-        [kameloso.plugins.common.misc|plugins.common.misc]
+        https://github.com/zorael/kameloso/wiki/Current-plugins#printer,
+        [kameloso.plugins.printer.formatting],
+        [kameloso.plugins.printer.logging],
+        [kameloso.plugins.common.core],
+        [kameloso.plugins.common.misc]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.printer.base;
 
@@ -31,7 +39,7 @@ import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
-version(Colours) import kameloso.terminal.colours : TerminalForeground;
+version(Colours) import kameloso.terminal.colours.defs : TerminalForeground;
 
 
 // PrinterSettings
@@ -80,9 +88,6 @@ public:
 
             /// Whether or not emotes should be highlit in colours.
             bool colourfulEmotes = true;
-
-            /// Compatibility alias.
-            alias randomNickColours = colourfulNicknames;
         }
     }
 
@@ -169,7 +174,8 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         if the passed channel, sender or target nickname has a squelchstamp
         that demands it. Additionally updates the squelchstamp if so.
      +/
-    static bool updateSquelchstamp(PrinterPlugin plugin,
+    static bool updateSquelchstamp(
+        PrinterPlugin plugin,
         const long time,
         const string channel,
         const string sender,
@@ -265,8 +271,12 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
     case RPL_CHARSET:
     case RPL_STATSRLINE:
         immutable shouldSquelch = plugin.hasSquelches &&
-            updateSquelchstamp(plugin, event.time, event.channel,
-                event.sender.nickname, event.target.nickname);
+            updateSquelchstamp(
+                plugin,
+                event.time,
+                event.channel,
+                event.sender.nickname,
+                event.target.nickname);
 
         if (!shouldSquelch && !plugin.printerSettings.filterWhois)
         {
@@ -367,8 +377,12 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         // Error: switch skips declaration of variable shouldSquelch
         {
             immutable shouldSquelch = plugin.hasSquelches &&
-                updateSquelchstamp(plugin, event.time, event.channel,
-                    event.sender.nickname, event.target.nickname);
+                updateSquelchstamp(
+                    plugin,
+                    event.time,
+                    event.channel,
+                    event.sender.nickname,
+                    event.target.nickname);
 
             if (!shouldSquelch && !plugin.printerSettings.filterMost)
             {
@@ -421,7 +435,10 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
         {
             if (!plugin.state.settings.monochrome)
             {
-                plugin.formatMessageColoured(plugin.linebuffer, event,
+                formatMessageColoured(
+                    plugin,
+                    plugin.linebuffer,
+                    event,
                     cast(BellOnMention)plugin.printerSettings.bellOnMention,
                     cast(BellOnError)plugin.printerSettings.bellOnError);
                 put = true;
@@ -430,7 +447,10 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 
         if (!put)
         {
-            plugin.formatMessageMonochrome(plugin.linebuffer, event,
+            formatMessageMonochrome(
+                plugin,
+                plugin.linebuffer,
+                event,
                 cast(BellOnMention)plugin.printerSettings.bellOnMention,
                 cast(BellOnError)plugin.printerSettings.bellOnError);
         }
@@ -464,7 +484,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 )
 void onLoggableEvent(PrinterPlugin plugin, const ref IRCEvent event)
 {
-    return onLoggableEventImpl(plugin, event);
+    onLoggableEventImpl(plugin, event);
 }
 
 
@@ -485,7 +505,7 @@ void onLoggableEvent(PrinterPlugin plugin, const ref IRCEvent event)
 )
 void commitAllLogs(PrinterPlugin plugin)
 {
-    return commitAllLogsImpl(plugin);
+    commitAllLogsImpl(plugin);
 }
 
 
@@ -516,7 +536,7 @@ void onISUPPORT(PrinterPlugin plugin)
 
     idWhenPrintedISUPPORT = plugin.state.connectionID;
 
-    enum pattern = "Detected <i>%s</> running daemon <i>%s</> (<i>%s</>)";
+    enum pattern = "Detected <i>%s</> running daemon <i>%s</> (<t>%s</>)";
     logger.logf(
         pattern,
         plugin.state.server.network,
@@ -601,7 +621,7 @@ void start(PrinterPlugin plugin)
 
                 if (plugin.printerSettings.logs)
                 {
-                    plugin.commitAllLogs();
+                    commitAllLogs(plugin);
                     plugin.buffers.clear();  // Uncommitted lines will be LOST. Not trivial to work around.
                 }
             }
@@ -857,7 +877,7 @@ package:
     @Resource string logDirectory = "logs";
 
     /// [kameloso.terminal.TerminalToken.bell|TerminalToken.bell] as string, for use as bell.
-    private enum bellString = ("" ~ cast(char)(TerminalToken.bell));
+    private enum bellString = "" ~ cast(char)(TerminalToken.bell);
 
     /// Effective bell after [kameloso.terminal.isTerminal] checks.
     string bell = bellString;

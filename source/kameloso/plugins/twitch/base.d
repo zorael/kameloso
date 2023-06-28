@@ -18,9 +18,18 @@
     [kameloso.plugins.oneliners|Oneliners] plugin for oneliner commands, etc.
 
     See_Also:
-        https://github.com/zorael/kameloso/wiki/Current-plugins#twitch
-        [kameloso.plugins.common.core|plugins.common.core]
-        [kameloso.plugins.common.misc|plugins.common.misc]
+        https://github.com/zorael/kameloso/wiki/Current-plugins#twitch,
+        [kameloso.plugins.twitch.api],
+        [kameloso.plugins.twitch.common],
+        [kameloso.plugins.twitch.keygen],
+        [kameloso.plugins.common.core],
+        [kameloso.plugins.common.misc]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.twitch.base;
 
@@ -178,7 +187,7 @@ import dialect.postprocessors.twitch;  // To trigger the module ctor
 
 import kameloso.plugins;
 import kameloso.plugins.common.awareness : ChannelAwareness, TwitchAwareness, UserAwareness;
-import kameloso.common : logger;
+import kameloso.common : RehashingAA, logger;
 import kameloso.constants : BufferSize;
 import kameloso.messaging;
 import dialect.defs;
@@ -290,7 +299,7 @@ package struct Credentials
      +/
     static auto fromJSON(const JSONValue json)
     {
-        typeof(this) creds;
+        Credentials creds;
 
         creds.broadcasterKey = json["broadcasterKey"].str;
         creds.googleClientID = json["googleClientID"].str;
@@ -305,6 +314,67 @@ package struct Credentials
         creds.spotifyPlaylistID = json["spotifyPlaylistID"].str;
 
         return creds;
+    }
+}
+
+
+// Follow
+/++
+    Embodiment of the notion of someone following someone else on Twitch.
+
+    This cannot be a Voldemort type inside [kameloso.plugins.twitch.api.getFollows|getFollows]
+    since we need an array of them inside [TwitchPlugin.Room].
+ +/
+package struct Follow
+{
+private:
+    import std.datetime.systime : SysTime;
+
+public:
+    /++
+        Display name of follower.
+     +/
+    string displayName;
+
+    /++
+        Time when the follow action took place.
+     +/
+    SysTime when;
+
+    /++
+        Twitch ID of follower.
+     +/
+    uint followerID;
+
+    // fromJSON
+    /++
+        Constructs a [Follow] from a JSON representation.
+
+        Params:
+            json = JSON representation of a follow.
+
+        Returns:
+            A new [Follow] with values derived from the passed JSON.
+     +/
+    static auto fromJSON(const JSONValue json)
+    {
+        import std.conv : to;
+
+        /*{
+            "followed_at": "2019-09-13T13:07:43Z",
+            "from_id": "20739840",
+            "from_name": "mike_bison",
+            "to_id": "22216721",
+            "to_name": "Zorael"
+        }*/
+
+        Follow follow;
+
+        follow.displayName = json["from_name"].str;
+        follow.when = SysTime.fromISOExtString(json["followed_at"].str);
+        follow.followerID = json["from_id"].str.to!uint;
+
+        return follow;
     }
 }
 
@@ -417,31 +487,11 @@ in (channelName.length, "Tried to init Room with an empty channel string")
 )
 void onUserstate(TwitchPlugin plugin, const ref IRCEvent event)
 {
-    auto room = event.channel in plugin.rooms;
+    import lu.string : contains;
 
-    if (!room)
+    if (event.target.badges.contains("moderator/") ||
+        event.target.badges.contains("broadcaster/"))
     {
-        // Race...
-        initRoom(plugin, event.channel);
-        room = event.channel in plugin.rooms;
-    }
-
-    if (!room.sawUserstate)
-    {
-        import lu.string : contains;
-
-        // First USERSTATE; warn if applicable
-        room.sawUserstate = true;
-
-        if (!event.target.badges.contains("moderator/") &&
-            !event.target.badges.contains("broadcaster/"))
-        {
-            enum pattern = "The bot is not a moderator of home channel <l>%s</>. " ~
-                "Consider elevating it to such to avoid being as rate-limited.";
-            logger.warningf(pattern, event.channel);
-            return;
-        }
-
         if (auto channel = event.channel in plugin.state.channels)
         {
             if (auto ops = 'o' in channel.mods)
@@ -455,6 +505,26 @@ void onUserstate(TwitchPlugin plugin, const ref IRCEvent event)
             {
                 channel.mods['o'][plugin.state.client.nickname] = true;
             }
+        }
+    }
+    else
+    {
+        auto room = event.channel in plugin.rooms;
+
+        if (!room)
+        {
+            // Race...
+            initRoom(plugin, event.channel);
+            room = event.channel in plugin.rooms;
+        }
+
+        if (!room.sawUserstate)
+        {
+            // First USERSTATE; warn about not being mod
+            room.sawUserstate = true;
+            enum pattern = "The bot is not a moderator of home channel <l>%s</>. " ~
+                "Consider elevating it to such to avoid being as rate-limited.";
+            logger.warningf(pattern, event.channel);
         }
     }
 }
@@ -563,7 +633,7 @@ void reportStreamTime(
         auto now = Clock.currTime;
         now.fracSecs = 0.msecs;
         immutable delta = (now - room.stream.startTime);
-        immutable timestring = timeSince!(7,1)(delta);
+        immutable timestring = timeSince!(7, 1)(delta);
 
         if (room.stream.maxViewerCount > 0)
         {
@@ -601,7 +671,7 @@ void reportStreamTime(
 
     const previousStream = TwitchPlugin.Room.Stream.fromJSON(json.array[$-1]);
     immutable delta = (previousStream.stopTime - previousStream.startTime);
-    immutable timestring = timeSince!(7,1)(delta);
+    immutable timestring = timeSince!(7, 1)(delta);
     immutable gameName = previousStream.gameName.length ?
         previousStream.gameName :
         "something";
@@ -666,8 +736,6 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import lu.string : beginsWith, nom, stripped;
     import std.conv : to;
-    import std.json : JSONType, JSONValue;
-    import core.thread : Fiber;
 
     void sendNoSuchUser(const string givenName)
     {
@@ -697,7 +765,7 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         displayName = user.displayName;
     }
 
-    void reportFollowAge(const JSONValue followingUserJSON)
+    void reportFollowAge(const Follow follow)
     {
         import kameloso.time : timeSince;
         import std.datetime.systime : Clock, SysTime;
@@ -719,24 +787,17 @@ void onCommandFollowAge(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             "December",
         ];
 
-        /*{
-            "followed_at": "2019-09-13T13:07:43Z",
-            "from_id": "20739840",
-            "from_name": "mike_bison",
-            "to_id": "22216721",
-            "to_name": "Zorael"
-        }*/
-
         enum datestampPattern = "%s %d";
-        immutable when = SysTime.fromISOExtString(followingUserJSON["followed_at"].str);
-        immutable diff = Clock.currTime - when;
+        immutable diff = Clock.currTime - follow.when;
         immutable timeline = diff.timeSince!(7, 3);
-        immutable datestamp = datestampPattern.format(months[cast(int)when.month-1], when.year);
+        immutable datestamp = datestampPattern.format(
+            months[cast(int)follow.when.month-1],
+            follow.when.year);
 
         if (nameSpecified)
         {
             enum pattern = "%s has been a follower for %s, since %s.";
-            immutable message = pattern.format(displayName, timeline, datestamp);
+            immutable message = pattern.format(follow.displayName, timeline, datestamp);
             chan(plugin.state, event.channel, message);
         }
         else
@@ -825,52 +886,45 @@ void onRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         room = event.channel in plugin.rooms;
     }
 
-    room.id = event.aux[0];
-    immutable userURL = "https://api.twitch.tv/helix/users?id=" ~ event.aux[0];
+    /+
+        Only start a room monitor Fiber if the room doesn't seem initialised.
+        If it does, it should already have a monitor running. Since we're not
+        resetting the room unique ID, we'd get two duplicate monitors. So don't.
+     +/
+    immutable shouldStartRoomMonitor = !room.id.length;
+    auto twitchUser = getTwitchUser(plugin, string.init, event.aux[0]);
 
-    foreach (immutable i; 0..TwitchPlugin.delegateRetries)
+    if (!twitchUser.nickname.length)
     {
-        try
-        {
-            immutable userJSON = getTwitchData(plugin, userURL);
-            room.broadcasterDisplayName = userJSON["display_name"].str;
-        }
-        catch (Exception e)
-        {
-            import std.format : format;
-
-            // Can be JSONException
-            // Retry until we reach the retry limit
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-
-            enum pattern = "Failed to fetch information for channel <l>%s</>: <t>%s";
-            logger.errorf(pattern, event.channel, e.msg);
-            version(PrintStacktraces) logger.trace(e);
-            //break;
-        }
+        // No such user?
+        return;
     }
 
-    immutable nickname = event.channel[1..$];
-    auto broadcasterUser = nickname in plugin.state.users;
+    room.id = event.aux[0];  // Assign this here after the nickname.length check
+    room.broadcasterDisplayName = twitchUser.displayName;
+    auto storedUser = twitchUser.nickname in plugin.state.users;
 
-    if (!broadcasterUser)
+    if (!storedUser)
     {
-        // Forge a new user
-        auto newUser = IRCUser(nickname, nickname, nickname ~ ".tmi.twitch.tv");
-        newUser.account = nickname;
+        // Forge a new IRCUser
+        auto newUser = IRCUser(
+            twitchUser.nickname,
+            twitchUser.nickname,
+            twitchUser.nickname ~ ".tmi.twitch.tv");
+        newUser.account = newUser.nickname;
         newUser.class_ = IRCUser.Class.anyone;
-        plugin.state.users[nickname] = newUser;
-        broadcasterUser = nickname in plugin.state.users;
+        plugin.state.users[newUser.nickname] = newUser;
+        storedUser = newUser.nickname in plugin.state.users;
     }
 
-    broadcasterUser.displayName = room.broadcasterDisplayName;
-    IRCUser user = *broadcasterUser;  // dereference and copy
-    plugin.state.mainThread.send(ThreadMessage.putUser(string.init, boxed(user)));
+    IRCUser userCopy = *storedUser;  // dereference and copy
+    plugin.state.mainThread.send(ThreadMessage.putUser(string.init, boxed(userCopy)));
 
-    room.follows = getFollows(plugin, room.id);
-    room.followsLastCached = event.time;
-    startRoomMonitorFibers(plugin, event.channel);
-    importCustomEmotes(plugin, event.channel, room.id);
+    if (shouldStartRoomMonitor)
+    {
+        startRoomMonitorFibers(plugin, event.channel);
+        importCustomEmotes(plugin, event.channel, room.id);  // also only do this once
+    }
 }
 
 
@@ -888,6 +942,160 @@ version(TwitchCustomEmotesEverywhere)
 void onGuestRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     importCustomEmotes(plugin, event.channel, event.aux[0]);
+}
+
+
+// onCommandShoutout
+/++
+    Emits a shoutout to another streamer.
+
+    Merely gives a link to their channel and echoes what game they last streamed
+    (or are currently streaming).
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .permissionsRequired(Permissions.operator)
+    .channelPolicy(ChannelPolicy.home)
+    .fiber(true)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("shoutout")
+            .policy(PrefixPolicy.prefixed)
+            .description("Emits a shoutout to another streamer.")
+            .addSyntax("$command [name of streamer] [optional number of times to spam]")
+    )
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("so")
+            .policy(PrefixPolicy.prefixed)
+            .hidden(true)
+    )
+)
+void onCommandShoutout(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
+{
+    import kameloso.plugins.common.misc : idOf;
+    import lu.string : SplitResults, beginsWith, splitInto, stripped;
+    import std.format : format;
+    import std.json : JSONType, parseJSON;
+
+    void sendUsage()
+    {
+        enum pattern = "Usage: %s%s [name of streamer] [optional number of times to spam]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendCountNotANumber()
+    {
+        enum message = "The passed count is not a number.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendInvalidStreamerName()
+    {
+        enum message = "Invalid streamer name.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendNoSuchUser(const string target)
+    {
+        immutable message = "No such user: " ~ target;
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendUserHasNoChannel()
+    {
+        enum message = "Impossible error; user has no channel?";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendNoShoutoutOfCurrentChannel()
+    {
+        enum message = "Can't give a shoutout to the current channel...";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendOtherError()
+    {
+        enum message = "An error occured when preparing the shoutout.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    string slice = event.content.stripped;  // mutable
+    string target;  // ditto
+    string numTimesString;  // ditto
+
+    immutable results = slice.splitInto(target, numTimesString);
+
+    if (target.beginsWith('@')) target = target[1..$].stripped;
+
+    if (!target.length || (results == SplitResults.overrun))
+    {
+        return sendUsage();
+    }
+
+    immutable login = idOf(plugin, target);
+
+    if (login == event.channel[1..$])
+    {
+        return sendNoShoutoutOfCurrentChannel();
+    }
+
+    // Limit number of times to spam to an outrageous 10
+    enum numTimesCap = 10;
+    uint numTimes = 1;
+
+    if (numTimesString.length)
+    {
+        import std.conv : ConvException, to;
+
+        try
+        {
+            import std.algorithm.comparison : min;
+            numTimes = min(numTimesString.stripped.to!uint, numTimesCap);
+        }
+        catch (ConvException e)
+        {
+            return sendCountNotANumber();
+        }
+    }
+
+    immutable shoutout = createShoutout(plugin, login);
+
+    with (typeof(shoutout).State)
+    final switch (shoutout.state)
+    {
+    case success:
+        // Drop down
+        break;
+
+    case noSuchUser:
+        return sendNoSuchUser(login);
+
+    case noChannel:
+        return sendUserHasNoChannel();
+
+    case otherError:
+        return sendOtherError();
+    }
+
+    const stream = getStream(plugin, login);
+    string lastSeenPlayingPattern = "%s";  // mutable
+
+    if (shoutout.gameName.length)
+    {
+        lastSeenPlayingPattern = stream.live ?
+            " (currently playing %s)" :
+            " (last seen playing %s)";
+    }
+
+    immutable pattern = "Shoutout to %s! Visit them at https://twitch.tv/%s !" ~ lastSeenPlayingPattern;
+    immutable message = pattern.format(shoutout.displayName, login, shoutout.gameName);
+
+    foreach (immutable i; 0..numTimes)
+    {
+        chan(plugin.state, event.channel, message);
+    }
 }
 
 
@@ -1072,11 +1280,15 @@ void onCommandNuke(TwitchPlugin plugin, const ref IRCEvent event)
 )
 void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.constants : KamelosoInfo, Timeout;
-    import arsd.http2 : HttpClient, HttpVerb, Uri;
     import lu.string : contains, nom, stripped;
     import std.format : format;
     import core.time : seconds;
+
+    /+
+        The minimum amount of time in seconds that must have passed between
+        two song requests by one non-operator person.
+     +/
+    enum minimumTimeBetweenSongRequests = 60;
 
     void sendUsage()
     {
@@ -1110,7 +1322,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     void sendAtLastNSecondsMustPass()
     {
         enum pattern = "At least %d seconds must pass between song requests.";
-        immutable message = pattern.format(TwitchPlugin.Room.minimumTimeBetweenSongRequests);
+        immutable message = pattern.format(minimumTimeBetweenSongRequests);
         chan(plugin.state, event.channel, message);
     }
 
@@ -1149,19 +1361,20 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     }
 
     if (plugin.twitchSettings.songrequestMode == SongRequestMode.disabled) return;
-    else if (event.sender.class_ < plugin.twitchSettings.songrequestPermsNeeded)
+
+    if (event.sender.class_ < plugin.twitchSettings.songrequestPermsNeeded)
     {
         return sendInsufficientPermissions();
     }
 
+    auto room = event.channel in plugin.rooms;  // must be mutable for history
+    assert(room, "Tried to make a song request in a nonexistent room");
+
     if (event.sender.class_ < IRCUser.class_.operator)
     {
-        const room = event.channel in plugin.rooms;
-        assert(room, "Tried to make a song request in a nonexistent room");
-
         if (const lastRequestTimestamp = event.sender.nickname in room.songrequestHistory)
         {
-            if ((event.time - *lastRequestTimestamp) < TwitchPlugin.Room.minimumTimeBetweenSongRequests)
+            if ((event.time - *lastRequestTimestamp) < minimumTimeBetweenSongRequests)
             {
                 return sendAtLastNSecondsMustPass();
             }
@@ -1178,10 +1391,10 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         {
             // Probably a video ID
         }
-        else if (!url.length ||
+        else if (
+            !url.length ||
             url.contains(' ') ||
-            (!url.contains("youtube.com/") &&
-            !url.contains("youtu.be/")))
+            (!url.contains("youtube.com/") && !url.contains("youtu.be/")))
         {
             return sendUsage();
         }
@@ -1225,10 +1438,20 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         try
         {
             import kameloso.plugins.twitch.google : addVideoToYouTubePlaylist;
+            import std.json : JSONType;
 
             immutable json = addVideoToYouTubePlaylist(plugin, *creds, videoID);
+
+            if ((json.type != JSONType.object) || ("snippet" !in json))
+            {
+                logger.error("Unexpected JSON in YouTube response.");
+                logger.trace(json.toPrettyString);
+                return;
+            }
+
             immutable title = json["snippet"]["title"].str;
             //immutable position = json["snippet"]["position"].integer;
+            room.songrequestHistory[event.sender.nickname] = event.time;
             return sendAddedToYouTubePlaylist(title);
         }
         catch (InvalidCredentialsException _)
@@ -1251,7 +1474,8 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         {
             // Probably a track ID
         }
-        else if (!url.length ||
+        else if (
+            !url.length ||
             url.contains(' ') ||
             !url.contains("spotify.com/track/"))
         {
@@ -1259,7 +1483,6 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         }
 
         auto creds = event.channel in plugin.secretsByChannel;
-
         if (!creds || !creds.spotifyAccessToken.length || !creds.spotifyPlaylistID)
         {
             return sendMissingCredentials();
@@ -1282,7 +1505,6 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         }
         else
         {
-            //return logger.warning("Bad link parsing?");
             return sendInvalidURL();
         }
 
@@ -1293,15 +1515,17 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
             immutable json = addTrackToSpotifyPlaylist(plugin, *creds, trackID);
 
-            if ((json.type != JSONType.object)  || "snapshot_id" !in json)
+            if ((json.type != JSONType.object) || ("snapshot_id" !in json))
             {
-                return logger.error("An error occurred.\n", json.toPrettyString);
+                logger.error("Unexpected JSON in Spotify response.");
+                logger.trace(json.toPrettyString);
+                return;
             }
 
             const trackJSON = getSpotifyTrackByID(*creds, trackID);
             immutable artist = trackJSON["artists"].array[0].object["name"].str;
             immutable track = trackJSON["name"].str;
-
+            room.songrequestHistory[event.sender.nickname] = event.time;
             return sendAddedToSpotifyPlaylist(artist, track);
         }
         catch (ErrorJSONException _)
@@ -1332,7 +1556,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             .word("startpoll")
             .policy(PrefixPolicy.prefixed)
             .description("(Experimental) Starts a Twitch poll.")
-            .addSyntax(`$command "[poll title]" [duration] [choice1] [choice2] ...`)
+            .addSyntax(`$command "[poll title]" [duration] "[choice 1]" "[choice 2]" ...`)
     )
     .addCommand(
         IRCEventHandler.Command()
@@ -1350,7 +1574,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.time : DurationStringException, abbreviatedDuration;
-    import lu.string : splitInto;
+    import lu.string : splitWithQuotes;
     import std.conv : ConvException, to;
     import std.format : format;
     import std.json : JSONType;
@@ -1358,18 +1582,17 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     void sendUsage()
     {
         import std.format : format;
-        enum pattern = `Usage: %s%s "[poll title]" [duration] [choice1] [choice2] ...`;
+        enum pattern = `Usage: %s%s "[poll title]" [duration] "[choice 1]" "[choice 2]" ...`;
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel, message);
     }
 
-    // mutable
-    string title;
-    string durationString;
-    string[] choices;
+    immutable chunks = splitWithQuotes(event.content);
+    if (chunks.length < 4) return sendUsage();
 
-    event.content.splitInto(title, durationString, choices);
-    if (choices.length < 2) return sendUsage();
+    immutable title = chunks[0];
+    string durationString = chunks[1];  // mutable
+    immutable choices = chunks[2..$];
 
     try
     {
@@ -1414,7 +1637,7 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             (e.error == "Forbidden") &&
             e.msg.endsWith("is not a partner or affiliate"))
         {
-            version(WithVotesPlugin)
+            version(WithPollPlugin)
             {
                 enum message = "You must be an affiliate to create Twitch polls. " ~
                     "(Consider using the generic Poll plugin.)";
@@ -1469,7 +1692,6 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 void onCommandEndPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import std.json : JSONType;
-    import std.stdio : writeln;
 
     try
     {
@@ -1490,7 +1712,7 @@ void onCommandEndPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
         {
             // Invalid response in some way
             logger.error("Unexpected response from server when ending a poll");
-            writeln(endResponseJSON.toPrettyString);
+            logger.trace(endResponseJSON.toPrettyString);
             return;
         }
 
@@ -1536,7 +1758,8 @@ void onCommandEndPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     Bells on any message, if the [TwitchSettings.bellOnMessage] setting is set.
     Also counts emotes for `ecount` and records active viewers.
 
-    Belling is useful with small audiences, so you don't miss messages.
+    Belling is useful with small audiences so you don't miss messages, but
+    obviously only makes sense when run locally.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -1675,7 +1898,7 @@ void onEndOfMOTD(TwitchPlugin plugin)
 )
 void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : nom, stripped;
+    import lu.string : nom;
     import std.array : replace;
     import std.format : format;
     import std.conv  : to;
@@ -1697,7 +1920,7 @@ void onCommandEcount(TwitchPlugin plugin, const ref IRCEvent event)
 
     void sendResults(const long count)
     {
-        // 425618:3-5
+        // 425618:3-5,7-8/peepoLeave:9-18
         string slice = event.emotes;  // mutable
         slice.nom(':');
 
@@ -1784,10 +2007,8 @@ void onCommandWatchtime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.time : timeSince;
     import lu.string : beginsWith, nom, stripped;
-    import std.conv : to;
     import std.format : format;
-    import core.thread : Fiber;
-    import core.time : Duration, seconds;
+    import core.time : Duration;
 
     if (!plugin.twitchSettings.watchtime) return;
 
@@ -1870,6 +2091,8 @@ void onCommandWatchtime(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     {
         if (auto viewerTime = nickname in *channelViewerTimes)
         {
+            import core.time : seconds;
+
             return nameSpecified ?
                 reportViewerTime((*viewerTime).seconds) :
                 reportViewerTimeInvoker((*viewerTime).seconds);
@@ -1982,12 +2205,7 @@ void onCommandSetTitle(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
             .policy(PrefixPolicy.prefixed)
             .description("Sets the channel game.")
             .addSyntax("$command [game name]")
-    )
-    .addCommand(
-        IRCEventHandler.Command()
-            .word("game")
-            .policy(PrefixPolicy.prefixed)
-            .hidden(true)
+            .addSyntax("$command")
     )
 )
 void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
@@ -2002,8 +2220,13 @@ void onCommandSetGame(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     if (!unescapedGameName.length)
     {
-        enum pattern = "Usage: %s%s [game name]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        const channelInfo = getChannel(plugin, event.channel);
+
+        enum pattern = "Currently playing game: %s";
+        immutable gameName = channelInfo.gameName.length ?
+            channelInfo.gameName :
+            "(nothing)";
+        immutable message = pattern.format(gameName);
         return chan(plugin.state, event.channel, message);
     }
 
@@ -2186,26 +2409,25 @@ in (idString.length, "Tried to import custom emotes with an empty ID string")
     auto customEmotes = channelName in plugin.customEmotesByChannel;
     (*customEmotes).remove(dstring.init);
 
-    alias GetEmoteFun = void function(TwitchPlugin, ref bool[dstring], const string);
+    alias GetEmoteFun = void function(TwitchPlugin, ref bool[dstring], const string, const string);
 
     void getEmoteSet(GetEmoteFun fun, const string setName)
     {
         try
         {
-            fun(plugin, *customEmotes, idString);
+            fun(plugin, *customEmotes, idString, __FUNCTION__);
         }
         catch (Exception e)
         {
             enum pattern = "Failed to fetch custom <l>%s</> emotes for channel <l>%s</>: <t>%s";
             logger.warningf(pattern, setName, channelName, e.msg);
-            //version(PrintStacktraces) logger.trace(e.info);
+            version(PrintStacktraces) logger.trace(e);
             //throw e;
         }
     }
 
     getEmoteSet(&getBTTVEmotes, "BetterTTV");
     getEmoteSet(&getFFZEmotes, "FrankerFaceZ");
-    //getEmoteSet(&getFFZEmotesFromBTTVCache, "FrankerFaceZ (BTTV cache)");
     getEmoteSet(&get7tvEmotes, "7tv");
     customEmotes.rehash();
 }
@@ -2226,19 +2448,19 @@ in (Fiber.getThis, "Tried to call `importCustomGlobalEmotes` from outside a Fibe
     GC.disable();
     scope(exit) GC.enable();
 
-    alias GetGlobalEmoteFun = void function(TwitchPlugin, ref bool[dstring]);
+    alias GetGlobalEmoteFun = void function(TwitchPlugin, ref bool[dstring], const string);
 
     void getGlobalEmoteSet(GetGlobalEmoteFun fun, const string setName)
     {
         try
         {
-            fun(plugin, plugin.customGlobalEmotes);
+            fun(plugin, plugin.customGlobalEmotes, __FUNCTION__);
         }
         catch (Exception e)
         {
             enum pattern = "Failed to fetch global <l>%s</> emotes: <t>%s";
             logger.warningf(pattern, setName, e.msg);
-            //version(PrintStacktraces) logger.trace(e.info);
+            version(PrintStacktraces) logger.trace(e.msg);
             //throw e;
         }
     }
@@ -2448,7 +2670,7 @@ void start(TwitchPlugin plugin)
             logger.trace();
         }
 
-        // Not conncting to Twitch, return early
+        // Not connecting to Twitch, return early
         return;
     }
 
@@ -2456,6 +2678,13 @@ void start(TwitchPlugin plugin)
     {
         import kameloso.thread : ThreadMessage;
         import std.concurrency : prioritySend;
+
+        if (plugin.state.settings.headless)
+        {
+            // Headless mode is enabled, so a captive keygen session doesn't make sense
+            enum message = "Cannot start a Twitch keygen session when in headless mode";
+            return quit(plugin.state, message);
+        }
 
         // Some keygen, reload to load secrets so existing ones are read
         // Not strictly needed for normal keygen
@@ -2469,7 +2698,7 @@ void start(TwitchPlugin plugin)
             (!plugin.state.bot.pass.length && !plugin.state.settings.force))
         {
             import kameloso.plugins.twitch.keygen : requestTwitchKey;
-            plugin.requestTwitchKey();
+            requestTwitchKey(plugin);
             if (*plugin.state.abort) return;
             plugin.twitchSettings.keygen = false;
             needSeparator = true;
@@ -2479,7 +2708,7 @@ void start(TwitchPlugin plugin)
         {
             import kameloso.plugins.twitch.keygen : requestTwitchSuperKey;
             if (needSeparator) logger.trace(separator);
-            plugin.requestTwitchSuperKey();
+            requestTwitchSuperKey(plugin);
             if (*plugin.state.abort) return;
             plugin.twitchSettings.superKeygen = false;
             needSeparator = true;
@@ -2489,7 +2718,7 @@ void start(TwitchPlugin plugin)
         {
             import kameloso.plugins.twitch.google : requestGoogleKeys;
             if (needSeparator) logger.trace(separator);
-            plugin.requestGoogleKeys();
+            requestGoogleKeys(plugin);
             if (*plugin.state.abort) return;
             plugin.twitchSettings.googleKeygen = false;
             needSeparator = true;
@@ -2499,7 +2728,7 @@ void start(TwitchPlugin plugin)
         {
             import kameloso.plugins.twitch.spotify : requestSpotifyKeys;
             if (needSeparator) logger.trace(separator);
-            plugin.requestSpotifyKeys();
+            requestSpotifyKeys(plugin);
             if (*plugin.state.abort) return;
             plugin.twitchSettings.spotifyKeygen = false;
         }
@@ -2555,8 +2784,11 @@ void startRoomMonitorFibers(TwitchPlugin plugin, const string channelName)
 in (channelName.length, "Tried to start room monitor fibers with an empty channel name string")
 {
     import kameloso.plugins.common.delayawait : delay;
-    import kameloso.time : nextMidnight;
-    import std.datetime.systime : Clock;
+    import std.datetime.systime : Clock, SysTime;
+    import core.time : hours, seconds;
+
+    // How often to poll the servers for various information about a channel.
+    static immutable monitorUpdatePeriodicity = 60.seconds;
 
     void chatterMonitorDg()
     {
@@ -2564,7 +2796,10 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
         assert(room, "Tried to start chatter monitor delegate on non-existing room");
 
         immutable idSnapshot = room.uniqueID;
-        uint addedSinceLastRehash;
+
+        static immutable botUpdatePeriodicity = 3.hours;
+        SysTime lastBotUpdateTime;
+        string[] botBlacklist;
 
         while (true)
         {
@@ -2573,16 +2808,24 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
 
             if (!room.stream.live)
             {
-                delay(plugin, plugin.monitorUpdatePeriodicity, Yes.yield);
+                delay(plugin, monitorUpdatePeriodicity, Yes.yield);
                 continue;
             }
 
             try
             {
-                const botBlacklist = getBotList(plugin);
+                immutable now = Clock.currTime;
+                immutable sinceLastBotUpdate = (now - lastBotUpdateTime);
+
+                if (sinceLastBotUpdate >= botUpdatePeriodicity)
+                {
+                    botBlacklist = getBotList(plugin);
+                    lastBotUpdateTime = now;
+                }
+
                 immutable chattersJSON = getChatters(plugin, room.broadcasterName);
 
-                static immutable chatterTypes =
+                static immutable string[6] chatterTypes =
                 [
                     "admins",
                     //"broadcaster",
@@ -2593,7 +2836,7 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
                     "vips",
                 ];
 
-                foreach (immutable chatterType; chatterTypes)
+                foreach (immutable chatterType; chatterTypes[])
                 {
                     foreach (immutable viewerJSON; chattersJSON["chatters"][chatterType].array)
                     {
@@ -2619,7 +2862,7 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
                             if (viewer !in room.stream.activeViewers) continue;
                         }
 
-                        enum periodicitySeconds = plugin.monitorUpdatePeriodicity.total!"seconds";
+                        enum periodicitySeconds = monitorUpdatePeriodicity.total!"seconds";
 
                         if (auto channelViewerTimes = room.channelName in plugin.viewerTimesByChannel)
                         {
@@ -2630,22 +2873,14 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
                             else
                             {
                                 (*channelViewerTimes)[viewer] = periodicitySeconds;
-                                ++addedSinceLastRehash;
-
-                                if ((addedSinceLastRehash > 128) &&
-                                    (addedSinceLastRehash > channelViewerTimes.length))
-                                {
-                                    // channel-viewer times AA doubled in size; rehash
-                                    *channelViewerTimes = (*channelViewerTimes).rehash();
-                                    addedSinceLastRehash = 0;
-                                }
                             }
                         }
                         else
                         {
                             plugin.viewerTimesByChannel[room.channelName][viewer] = periodicitySeconds;
-                            ++addedSinceLastRehash;
                         }
+
+                        plugin.viewerTimesDirty = true;
                     }
                 }
             }
@@ -2654,7 +2889,7 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
                 // Just swallow the exception and retry next time
             }
 
-            delay(plugin, plugin.monitorUpdatePeriodicity, Yes.yield);
+            delay(plugin, monitorUpdatePeriodicity, Yes.yield);
         }
     }
 
@@ -2696,9 +2931,10 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
                         closeStream(room);
                         rotateStream(room);
 
-                        if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
+                        if (plugin.twitchSettings.watchtime && plugin.viewerTimesDirty)
                         {
                             saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
+                            plugin.viewerTimesDirty = false;
                         }
                     }
                 }
@@ -2710,10 +2946,11 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
                         // New stream!
                         room.stream = streamFromServer;
 
-                        if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
+                        /*if (plugin.twitchSettings.watchtime && plugin.viewerTimesDirty)
                         {
                             saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
-                        }
+                            plugin.viewerTimesDirty = false;
+                        }*/
                     }
                     else if (room.stream.idString == streamFromServer.idString)
                     {
@@ -2727,9 +2964,10 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
                         rotateStream(room);
                         room.stream = streamFromServer;
 
-                        if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
+                        if (plugin.twitchSettings.watchtime && plugin.viewerTimesDirty)
                         {
                             saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
+                            plugin.viewerTimesDirty = false;
                         }
                     }
                 }
@@ -2739,7 +2977,7 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
                 // Just swallow the exception and retry next time
             }
 
-            delay(plugin, plugin.monitorUpdatePeriodicity, Yes.yield);
+            delay(plugin, monitorUpdatePeriodicity, Yes.yield);
         }
     }
 
@@ -2753,6 +2991,8 @@ in (channelName.length, "Tried to start room monitor fibers with an empty channe
 
         while (true)
         {
+            import kameloso.time : nextMidnight;
+
             room = channelName in plugin.rooms;
             if (!room || (room.uniqueID != idSnapshot)) return;
 
@@ -2940,6 +3180,10 @@ void startSaver(TwitchPlugin plugin)
 {
     import kameloso.plugins.common.delayawait : delay;
     import core.thread : Fiber;
+    import core.time : hours;
+
+    // How often to save `ecount`s and viewer times, to ward against losing information to crashes.
+    static immutable savePeriodicity = 2.hours;
 
     void periodicallySaveDg()
     {
@@ -2955,26 +3199,19 @@ void startSaver(TwitchPlugin plugin)
             /+
                 Only save watchtimes if there's at least one broadcast currently ongoing.
                 Since we save at broadcast stop there won't be anything new to save otherwise.
-            +/
-            if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
+             +/
+            if (plugin.twitchSettings.watchtime && plugin.viewerTimesDirty)
             {
-                foreach (const room; plugin.rooms)
-                {
-                    if (room.stream.live)
-                    {
-                        // At least one broadcast active
-                        saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
-                        break;
-                    }
-                }
+                saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
+                plugin.viewerTimesDirty = false;
             }
 
-            delay(plugin, plugin.savePeriodicity, Yes.yield);
+            delay(plugin, savePeriodicity, Yes.yield);
         }
     }
 
     Fiber periodicallySaveFiber = new Fiber(&periodicallySaveDg, BufferSize.fiberStack);
-    delay(plugin, periodicallySaveFiber, plugin.savePeriodicity);
+    delay(plugin, periodicallySaveFiber, savePeriodicity);
 }
 
 
@@ -3155,10 +3392,6 @@ void appendToStreamHistory(TwitchPlugin plugin, const TwitchPlugin.Room.Stream s
 void initialise(TwitchPlugin plugin)
 {
     import kameloso.terminal : isTerminal;
-    import std.concurrency : thisTid;
-
-    // Register this thread as the main thread.
-    plugin.mainThread = cast(shared)thisTid;
 
     if (!isTerminal)
     {
@@ -3183,15 +3416,15 @@ void teardown(TwitchPlugin plugin)
         plugin.persistentWorkerTid.send(ThreadMessage.teardown());
     }
 
-    if (plugin.twitchSettings.ecount && /*plugin.ecountDirty &&*/ plugin.ecount.length)
+    if (plugin.twitchSettings.ecount && plugin.ecount.length)
     {
-        // Might as well always save on exit.
+        // Might as well always save on exit. Ignore dirty flag.
         saveResourceToDisk(plugin.ecount, plugin.ecountFile);
-        //plugin.ecountDirty = false;
     }
 
     if (plugin.twitchSettings.watchtime && plugin.viewerTimesByChannel.length)
     {
+        // As above
         saveResourceToDisk(plugin.viewerTimesByChannel, plugin.viewersFile);
     }
 }
@@ -3269,8 +3502,10 @@ void postprocess(TwitchPlugin plugin, ref IRCEvent event)
         if (!isHomeChannel) return;
     }
 
-    static void postprocessImpl(const TwitchPlugin plugin,
-        const ref IRCEvent event, ref IRCUser user)
+    static void postprocessImpl(
+        const TwitchPlugin plugin,
+        const ref IRCEvent event,
+        ref IRCUser user)
     {
         import lu.string : contains;
 
@@ -3394,12 +3629,19 @@ void initResources(TwitchPlugin plugin)
         aa = The associative array to convert into JSON and save.
         filename = Filename of the file to write to.
  +/
-void saveResourceToDisk(const long[string][string] aa, const string filename)
+void saveResourceToDisk(/*const*/ RehashingAA!(string, long)[string] aa, const string filename)
 {
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
-    const json = JSONValue(aa);
+    long[string][string] tempAA;
+
+    foreach (immutable channelName, rehashingAA; aa)
+    {
+        tempAA[channelName] = rehashingAA.aaOf;
+    }
+
+    immutable json = JSONValue(tempAA);
     File(filename, "w").writeln(json.toPrettyString);
 }
 
@@ -3415,7 +3657,7 @@ void saveResourceToDisk(const long[string][string] aa, const string filename)
 package void saveSecretsToDisk(const Credentials[string] aa, const string filename)
 {
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     JSONValue json;
     json = null;
@@ -3441,16 +3683,26 @@ void loadResources(TwitchPlugin plugin)
     import lu.json : JSONStorage, populateFromJSON;
 
     JSONStorage ecountJSON;
+    long[string][string] tempEcount;
     ecountJSON.load(plugin.ecountFile);
+    tempEcount.populateFromJSON(ecountJSON);
     plugin.ecount.clear();
-    plugin.ecount.populateFromJSON(ecountJSON);
-    plugin.ecount = plugin.ecount.rehash();
+
+    foreach (immutable channelName, channelCounts; tempEcount)
+    {
+        plugin.ecount[channelName] = RehashingAA!(string, long)(channelCounts);
+    }
 
     JSONStorage viewersJSON;
+    long[string][string] tempViewers;
     viewersJSON.load(plugin.viewersFile);
+    tempViewers.populateFromJSON(viewersJSON);
     plugin.viewerTimesByChannel.clear();
-    plugin.viewerTimesByChannel.populateFromJSON(viewersJSON);
-    plugin.viewerTimesByChannel = plugin.viewerTimesByChannel.rehash();
+
+    foreach (immutable channelName, channelViewers; tempViewers)
+    {
+        plugin.viewerTimesByChannel[channelName] = RehashingAA!(string, long)(channelViewers);
+    }
 
     JSONStorage secretsJSON;
     secretsJSON.load(plugin.secretsFile);
@@ -3508,7 +3760,6 @@ private:
     import lu.container : CircularBuffer;
     import std.concurrency : Tid;
     import std.datetime.systime : SysTime;
-    import core.time : hours, seconds;
 
 package:
     /++
@@ -3575,6 +3826,11 @@ package:
             string title;
 
             /++
+                Stream tags.
+             +/
+            string[] tags;
+
+            /++
                 When the stream started.
              +/
             SysTime startTime;
@@ -3598,12 +3854,12 @@ package:
             /++
                 Users seen in the channel.
              +/
-            bool[string] chattersSeen;
+            RehashingAA!(string, bool) chattersSeen;
 
             /++
                 Hashmap of active viewers (who have shown activity).
              +/
-            bool[string] activeViewers;
+            RehashingAA!(string, bool) activeViewers;
 
             /++
                 Accessor to [_idString].
@@ -3631,6 +3887,7 @@ package:
                 this.gameName = updated.gameName;
                 this.title = updated.title;
                 this.viewerCount = updated.viewerCount;
+                this.tags = updated.tags.dup;
 
                 if (this.viewerCount > this.maxViewerCount)
                 {
@@ -3661,12 +3918,14 @@ package:
                 json = null;
                 json.object = null;
 
+                json["idString"] = JSONValue(this._idString);
                 json["gameIDString"] = JSONValue(this.gameIDString);
                 json["gameName"] = JSONValue(this.gameName);
                 json["title"] = JSONValue(this.title);
                 json["startTimeUnix"] = JSONValue(this.startTime.toUnixTime());
                 json["stopTimeUnix"] = JSONValue(this.stopTime.toUnixTime());
                 json["maxViewerCount"] = JSONValue(this.maxViewerCount);
+                json["tags"] = JSONValue(this.tags);
                 return json;
             }
 
@@ -3681,22 +3940,26 @@ package:
              +/
             static auto fromJSON(const JSONValue json)
             {
-                import std.json : JSONType;
+                import std.algorithm.iteration : map;
+                import std.array : array;
 
-                typeof(this) stream;
-
-                if ("gameIDString" !in json.object)
+                if ("idString" !in json)
                 {
-                    // Empty file
-                    return stream;
+                    // Invalid entry
+                    enum message = "No `idString` key in Stream JSON representation";
+                    throw new UnexpectedJSONException(message);
                 }
 
+                auto stream = Stream(json["idString"].str);
                 stream.gameIDString = json["gameIDString"].str;
                 stream.gameName = json["gameName"].str;
                 stream.title = json["title"].str;
                 stream.startTime = SysTime.fromUnixTime(json["startTimeUnix"].integer);
                 stream.stopTime = SysTime.fromUnixTime(json["stopTimeUnix"].integer);
                 stream.maxViewerCount = json["maxViewerCount"].integer;
+                stream.tags = json["tags"].array
+                    .map!(tag => tag.str)
+                    .array;
                 return stream;
             }
         }
@@ -3757,7 +4020,7 @@ package:
         /++
             A JSON list of the followers of the channel.
          +/
-        JSONValue[string] follows;
+        Follow[string] follows;
 
         /++
             UNIX timestamp of when [follows] was last cached.
@@ -3773,15 +4036,6 @@ package:
             The last n messages sent in the channel, used by `nuke`.
          +/
         CircularBuffer!(IRCEvent, No.dynamic, messageMemory) lastNMessages;
-
-        /++
-            The minimum amount of time in seconds that must have passed between
-            two song requests by one person.
-
-            Users of class [dialect.defs.IRCUser.Class.operator|operator] or
-            higher are exempt.
-         +/
-        enum minimumTimeBetweenSongRequests = 60;
 
         /++
             Song request history; UNIX timestamps keyed by nickname.
@@ -3883,24 +4137,20 @@ package:
     }
 
     /++
-        How big a buffer to preallocate when doing HTTP API queries.
-     +/
-    enum queryBufferSize = 4096;
-
-    /++
-        How often to poll the servers for various information about a channel.
-     +/
-    static immutable monitorUpdatePeriodicity = 60.seconds;
-
-    /++
         How many times to retry a Twitch server query.
      +/
-    enum delegateRetries = 3;
+    enum delegateRetries = 10;
 
     /++
         Associative array of viewer times; seconds keyed by nickname keyed by channel.
      +/
-    long[string][string] viewerTimesByChannel;
+    RehashingAA!(string, long)[string] viewerTimesByChannel;
+
+    /++
+        Whether or not [viewerTimesByChannel] has been modified and there's a
+        point in saving it to disk.
+     +/
+    bool viewerTimesDirty;
 
     /++
         API keys and tokens, keyed by channel.
@@ -3913,74 +4163,42 @@ package:
     Tid persistentWorkerTid;
 
     /++
-        The thread ID of the main thread, for access from threads.
-     +/
-    shared static Tid mainThread;
-
-    /++
         Associative array of responses from async HTTP queries.
      +/
     shared QueryResponse[int] bucket;
 
-    @Resource
+    @Resource("twitch")
     {
-        version(Posix)
-        {
-            /++
-                File to save emote counters to.
-             +/
-            string ecountFile = "twitch/ecount.json";
+        /++
+            File to save emote counters to.
+         +/
+        string ecountFile = "ecount.json";
 
-            /++
-                File to save viewer times to.
-             +/
-            string viewersFile = "twitch/viewers.json";
+        /++
+            File to save viewer times to.
+         +/
+        string viewersFile = "viewers.json";
 
-            /++
-                File to save API keys and tokens to.
-             +/
-            string secretsFile = "twitch/secrets.json";
+        /++
+            File to save API keys and tokens to.
+         +/
+        string secretsFile = "secrets.json";
 
-            /++
-                File to save stream history to.
-             +/
-            string streamHistoryFile = "twitch/history.json";
-        }
-        else version(Windows)
-        {
-            // As above.
-            string ecountFile = "twitch\\ecount.json";
-
-            // ditto
-            string viewersFile = "twitch\\viewers.json";
-
-            // ditto
-            string secretsFile = "twitch\\secrets.json";
-
-            // ditto
-            string streamHistoryFile = "twitch\\history.json";
-        }
-        else
-        {
-            static assert(0, "Unsupported platform, please file a bug.");
-        }
+        /++
+            File to save stream history to.
+         +/
+        string streamHistoryFile = "history.json";
     }
 
     /++
         Emote counters associative array; counter longs keyed by emote ID string keyed by channel.
      +/
-    long[string][string] ecount;
+    RehashingAA!(string, long)[string] ecount;
 
     /++
         Whether or not [ecount] has been modified and there's a point in saving it to disk.
      +/
     bool ecountDirty;
-
-    /++
-        How often to save `ecount`s and viewer times, to ward against losing information to crashes.
-     +/
-    static immutable savePeriodicity = 2.hours;
-
 
     // isEnabled
     /++

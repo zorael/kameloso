@@ -5,9 +5,15 @@
     It's mostly legacy.
 
     See_Also:
-        https://github.com/zorael/kameloso/wiki/Current-plugins#chatbot
-        [kameloso.plugins.common.core|plugins.common.core]
-        [kameloso.plugins.common.misc|plugins.common.misc]
+        https://github.com/zorael/kameloso/wiki/Current-plugins#chatbot,
+        [kameloso.plugins.common.core],
+        [kameloso.plugins.common.misc]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.chatbot;
 
@@ -88,9 +94,7 @@ void onCommandSay(ChatbotPlugin plugin, const ref IRCEvent event)
 )
 void onDance(ChatbotPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.plugins.common.delayawait : delay;
     import kameloso.constants : BufferSize;
-    import kameloso.messaging : emote;
     import lu.string : strippedRight;
     import std.string : indexOf;
     import core.thread : Fiber;

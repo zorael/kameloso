@@ -1,5 +1,11 @@
 /++
-    Module for the main [Kameloso] instance struct and its settings structs.
+    Module for the main [Kameloso] instance struct.
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.kameloso;
 
@@ -41,13 +47,11 @@ private:
          +/
         SysTime t0;
 
-
         // m
         /++
             y at t0 (ergo y at x = 0, weight at last sent message).
          +/
         double m = 0.0;
-
 
         // increment
         /++
@@ -55,13 +59,11 @@ private:
          +/
         enum increment = 1.0;
 
-
         // this(this)
         /++
             Don't copy this, just keep one instance.
          +/
         @disable this(this);
-
 
         // reset
         /++
@@ -74,23 +76,90 @@ private:
         }
     }
 
+    // State
+    /++
+        Transient state bool flags, aggregated in a struct.
+     +/
+    static struct StateFlags
+    {
+        // wantReceiveTimeoutShortened
+        /++
+            Set when the Socket read timeout was requested to be shortened.
+         +/
+        bool wantReceiveTimeoutShortened;
+
+        // wantLiveSummary
+        /++
+            When this is set, the main loop should print a connection summary upon
+            the next iteration.
+         +/
+        bool wantLiveSummary;
+
+        // askedToReconnect
+        /++
+            Set when the server asked us to reconnect (by way of a
+            [dialect.defs.IRCEvent.Type.RECONNECT|RECONNECT] event).
+         +/
+        bool askedToReconnect;
+
+        // quitMessageSent
+        /++
+            Set when we have sent a QUIT message to the server.
+         +/
+        bool quitMessageSent;
+
+        // askedToReexec
+        /++
+            Set when the user explicitly asked to re-exec in the middle of a session.
+         +/
+        bool askedToReexec;
+
+        version(TwitchSupport)
+        {
+            // sawWelcome
+            /++
+                Set when an [dialect.defs.IRCEvent.Type.RPL_WELCOME|RPL_WELCOME]
+                event was encountered.
+             +/
+            bool sawWelcome;
+        }
+    }
 
     // _connectionID
     /++
         Numeric ID of the current connection, to disambiguate between multiple
         connections in one program run. Private value.
      +/
-    shared static uint _connectionID;
-
+    uint _connectionID;
 
 public:
+    // ctor
+    /++
+        Constructor taking an [args] string array.
+     +/
+    this(string[] args)
+    {
+        this.args = args;
+    }
+
+    // flags
+    /++
+        Transient state flags of this [Kameloso] instance.
+     +/
+    StateFlags flags;
+
+    // args
+    /++
+        Command-line arguments passed to the program.
+     +/
+    string[] args;
+
     // conn
     /++
         The [kameloso.net.Connection|Connection] that houses and wraps the socket
         we use to connect to, write to and read from the server.
      +/
     Connection conn;
-
 
     // plugins
     /++
@@ -100,20 +169,17 @@ public:
      +/
     IRCPlugin[] plugins;
 
-
     // settings
     /++
         The root copy of the program-wide settings.
      +/
     CoreSettings settings;
 
-
     // connSettings
     /++
         Settings relating to the connection between the bot and the IRC server.
      +/
     ConnectionSettings connSettings;
-
 
     // previousWhoisTimestamps
     /++
@@ -122,13 +188,11 @@ public:
      +/
     long[string] previousWhoisTimestamps;
 
-
     // parser
     /++
         Parser instance.
      +/
     IRCParser parser;
-
 
     // bot
     /++
@@ -136,13 +200,11 @@ public:
      +/
     IRCBot bot;
 
-
     // throttle
     /++
         Values and state needed to throttle sending messages.
      +/
     Throttle throttle;
-
 
     // abort
     /++
@@ -150,15 +212,6 @@ public:
         parts of the program will be monitoring it.
      +/
     bool* abort;
-
-
-    // wantLiveSummary
-    /++
-        When this is set, the main loop should print a connection summary upon
-        the next iteration. It is transient.
-     +/
-    bool wantLiveSummary;
-
 
     // outbuffer
     /++
@@ -169,7 +222,6 @@ public:
      +/
     Buffer!(OutgoingLine, No.dynamic, BufferSize.outbuffer) outbuffer;
 
-
     // backgroundBuffer
     /++
         Buffer of outgoing background message strings.
@@ -179,6 +231,7 @@ public:
      +/
     Buffer!(OutgoingLine, No.dynamic, BufferSize.outbuffer) backgroundBuffer;
 
+    // priorityBuffer
     /++
         Buffer of outgoing priority message strings.
 
@@ -186,7 +239,6 @@ public:
         we can comfortably keep it arbitrarily high.
      +/
     Buffer!(OutgoingLine, No.dynamic, BufferSize.priorityBuffer) priorityBuffer;
-
 
     // immediateBuffer
     /++
@@ -197,7 +249,6 @@ public:
      +/
     Buffer!(OutgoingLine, No.dynamic, BufferSize.priorityBuffer) immediateBuffer;
 
-
     version(TwitchSupport)
     {
         // fastbuffer
@@ -207,9 +258,8 @@ public:
             The buffer size is "how many string pointers", now how many bytes. So
             we can comfortably keep it arbitrarily high.
          +/
-        Buffer!(OutgoingLine, No.dynamic, BufferSize.outbuffer*2) fastbuffer;
+        Buffer!(OutgoingLine, No.dynamic, BufferSize.outbuffer) fastbuffer;
     }
-
 
     // missingConfigurationEntries
     /++
@@ -218,7 +268,6 @@ public:
      +/
     string[][string] missingConfigurationEntries;
 
-
     // invalidConfigurationEntries
     /++
         Associative array of string arrays of unexpected configuration entries
@@ -226,13 +275,11 @@ public:
      +/
     string[][string] invalidConfigurationEntries;
 
-
     // customSettings
     /++
         Custom settings specfied at the command line with the `--set` parameter.
      +/
     string[] customSettings;
-
 
     version(Callgrind)
     {
@@ -246,11 +293,9 @@ public:
         bool callgrindRunning = true;
     }
 
-
     // this(this)
     /// Never copy this.
     @disable this(this);
-
 
     // connectionID
     /++
@@ -261,11 +306,10 @@ public:
             The numeric ID of the current connection.
      +/
     pragma(inline, true)
-    static auto connectionID()
+    auto connectionID() const
     {
         return _connectionID;
     }
-
 
     // generateNewConnectionID
     /++
@@ -288,7 +332,6 @@ public:
             while (_connectionID == previous);
         }
     }
-
 
     // throttleline
     /++
@@ -333,8 +376,6 @@ public:
 
         version(TwitchSupport)
         {
-            import dialect.defs : IRCServer;
-
             if (parser.server.daemon == IRCServer.Daemon.twitch)
             {
                 import kameloso.constants : ConnectionDefaultFloats;
@@ -408,7 +449,6 @@ public:
         return 0.0;
     }
 
-
     // initPlugins
     /++
         Resets and *minimally* initialises all plugins.
@@ -422,10 +462,10 @@ public:
      +/
     void initPlugins() @system
     {
-        static import kameloso.plugins;
         import kameloso.plugins.common.core : IRCPluginState;
         import kameloso.plugins.common.misc : applyCustomSettings;
         import std.concurrency : thisTid;
+        static import kameloso.plugins;
 
         teardownPlugins();
 
@@ -448,8 +488,10 @@ public:
             string[][string] theseMissingEntries;
             string[][string] theseInvalidEntries;
 
-            plugin.deserialiseConfigFrom(settings.configFile,
-                theseMissingEntries, theseInvalidEntries);
+            plugin.deserialiseConfigFrom(
+                settings.configFile,
+                theseMissingEntries,
+                theseInvalidEntries);
 
             if (theseMissingEntries.length)
             {
@@ -470,7 +512,6 @@ public:
             throw new IRCPluginSettingsException("Some custom plugin settings could not be applied.");
         }
     }
-
 
     // issuePluginCallImpl
     /++
@@ -504,13 +545,11 @@ public:
         }
     }
 
-
     // setupPlugins
     /++
         Sets up all plugins, calling any module-level `setup` functions.
      +/
     alias setupPlugins = issuePluginCallImpl!"setup";
-
 
     // initPluginResources
     /++
@@ -522,7 +561,6 @@ public:
      +/
     alias initPluginResources = issuePluginCallImpl!"initResources";
 
-
     // startPlugins
     /++
         Starts all plugins by calling any module-level `start` functions.
@@ -533,7 +571,6 @@ public:
      +/
     alias startPlugins = issuePluginCallImpl!"start";
 
-
     // reloadPlugins
     /++
         Reloads all plugins by calling any module-level `reload` functions.
@@ -541,7 +578,6 @@ public:
         What this actually does is up to the plugins.
      +/
     alias reloadPlugins = issuePluginCallImpl!"reload";
-
 
     // teardownPlugins
     /++
@@ -559,7 +595,6 @@ public:
         foreach (plugin; plugins)
         {
             import std.exception : ErrnoException;
-            import core.memory : GC;
             import core.thread : Fiber;
 
             if (!plugin.isEnabled) continue;
@@ -635,13 +670,11 @@ public:
             }
 
             destroy(plugin);
-            GC.free(&plugin);
         }
 
         // Zero out old plugins array
         plugins = null;
     }
-
 
     // checkPluginForUpdates
     /++
@@ -693,7 +726,6 @@ public:
             "`IRCPluginState.updates` was not reset after checking and propagation");
     }
 
-
     // propagate
     /++
         Propgates an updated struct, to `this`, [parser], and to each plugins'
@@ -738,43 +770,6 @@ public:
         }
     }
 
-
-    // propagateWhoisTimestamp
-    /++
-        Propagates a single update to the the [previousWhoisTimestamps]
-        associative array to all plugins.
-
-        Params:
-            nickname = Nickname whose WHOIS timestamp to propagate.
-            now = UNIX WHOIS timestamp.
-     +/
-    void propagateWhoisTimestamp(const string nickname, const long now) pure
-    {
-        foreach (plugin; plugins)
-        {
-            plugin.state.previousWhoisTimestamps[nickname] = now;
-        }
-    }
-
-
-    // propagateWhoisTimestamps
-    /++
-        Propagates the [previousWhoisTimestamps] associative array to all plugins.
-
-        Makes a copy of it before passing it onwards; this way, plugins cannot
-        modify the original.
-     +/
-    void propagateWhoisTimestamps() pure
-    {
-        auto copy = previousWhoisTimestamps.dup;  // mutable
-
-        foreach (plugin; plugins)
-        {
-            plugin.state.previousWhoisTimestamps = copy;
-        }
-    }
-
-
     // ConnectionHistoryEntry
     /++
         A record of a successful connection.
@@ -794,28 +789,9 @@ public:
         ulong bytesReceived;
     }
 
-
     // connectionHistory
     /++
         History records of established connections this execution run.
      +/
     ConnectionHistoryEntry[] connectionHistory;
-
-
-    // wantReceiveTimeoutShortened
-    /++
-        Set when the Socket read timeout was requested to be shortened.
-     +/
-    bool wantReceiveTimeoutShortened;
-
-
-    version(TwitchSupport)
-    {
-        // sawWelcome
-        /++
-            Set when an [dialect.defs.IRCEvent.Type.RPL_WELCOME|RPL_WELCOME]
-            event was encountered.
-         +/
-        bool sawWelcome;
-    }
 }

@@ -6,9 +6,15 @@
     video games, for instance.
 
     See_Also:
-        https://github.com/zorael/kameloso/wiki/Current-plugins#counter
-        [kameloso.plugins.common.core|plugins.common.core]
-        [kameloso.plugins.common.misc|plugins.common.misc]
+        https://github.com/zorael/kameloso/wiki/Current-plugins#counter,
+        [kameloso.plugins.common.core],
+        [kameloso.plugins.common.misc]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.counter;
 
@@ -69,7 +75,7 @@ public:
         See_Also:
             [formatMessage]
      +/
-    string patternQuery;
+    string patternQuery = "<b>$word<b> count so far: <b>$count<b>";
 
     /++
         The pattern to use when formatting confirmations of counter increments;
@@ -78,7 +84,7 @@ public:
         See_Also:
             [formatMessage]
      +/
-    string patternIncrement;
+    string patternIncrement = "<b>$word +$step<b>! Current count: <b>$count<b>";
 
     /++
         The pattern to use when formatting confirmations of counter decrements;
@@ -87,7 +93,7 @@ public:
         See_Also:
             [formatMessage]
      +/
-    string patternDecrement;
+    string patternDecrement = "<b>$word -$step<b>! Current count: <b>$count<b>";
 
     /++
         The pattern to use when formatting confirmations of counter assignments;
@@ -96,7 +102,7 @@ public:
         See_Also:
             [formatMessage]
      +/
-    string patternAssign;
+    string patternAssign = "<b>$word<b> count assigned to <b>$count<b>!";
 
     /++
         Constructor. Only kept as a compatibility measure to ensure [word] alawys
@@ -163,6 +169,19 @@ public:
         }
 
         return counter;
+    }
+
+    // resetEmptyPatterns
+    /++
+        Resets empty patterns with their default strings.
+     +/
+    void resetEmptyPatterns()
+    {
+        Counter counterInit;
+        if (!patternQuery.length) patternQuery = counterInit.patternQuery;
+        if (!patternIncrement.length) patternIncrement = counterInit.patternIncrement;
+        if (!patternDecrement.length) patternDecrement = counterInit.patternDecrement;
+        if (!patternAssign.length) patternAssign = counterInit.patternAssign;
     }
 }
 
@@ -323,7 +342,7 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
 
         alias Payload = Tuple!(IRCPlugin.CommandMetadata[string][string]);
 
-        void dg()
+        void addCounterDg()
         {
             auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis;
             assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
@@ -332,7 +351,7 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
             if (triggerConflicts(aa)) return;
 
             // Get channel AAs
-            plugin.state.specialRequests ~= specialRequest!Payload(event.channel, thisFiber);
+            plugin.state.specialRequests ~= specialRequest(event.channel, thisFiber);
             Fiber.yield();
 
             IRCPlugin.CommandMetadata[string][string] channelSpecificAA = thisFiber.payload[0];
@@ -347,8 +366,7 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
             chan(plugin.state, event.channel, message);
         }
 
-        auto fiber = new CarryingFiber!Payload(&dg, BufferSize.fiberStack);
-        plugin.state.specialRequests ~= specialRequest!Payload(string.init, fiber);
+        plugin.state.specialRequests ~= specialRequest!Payload(string.init, &addCounterDg);
         break;
 
     case "remove":
@@ -430,14 +448,15 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
                 (mod == "+") ? "increment" :
                 (mod == "-") ? "decrement" :
                 (mod == "=") ? "assign" :
-                    "<<ERROR>>";
+                    string.init;
             immutable pattern =
                 (mod == "?") ? counter.patternQuery :
                 (mod == "+") ? counter.patternIncrement :
                 (mod == "-") ? counter.patternDecrement :
                 (mod == "=") ? counter.patternAssign :
-                    "<<ERROR>>";
+                    string.init;
 
+            if (!modverb.length || !pattern.length) assert(0, "Impossible case");
             return sendCurrentFormatPattern(modverb, pattern);
         }
 
@@ -477,19 +496,34 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
 
     void sendCurrentCount(const Counter counter)
     {
-        if (counter.patternQuery.length)
-        {
-            immutable message = formatMessage(
-                plugin,
-                counter.patternQuery,
-                event,
-                counter,
-                0);
-            return chan(plugin.state, event.channel, message);
-        }
+        immutable message = formatMessage(
+            plugin,
+            counter.patternQuery,
+            event,
+            counter);
+        chan(plugin.state, event.channel, message);
+    }
 
-        enum pattern = "<b>%s<b> count so far: <b>%d<b>";
-        immutable message = pattern.format(counter.word, counter.count);
+    void sendCounterModified(const Counter counter, const long step)
+    {
+        immutable pattern = (step >= 0) ? counter.patternIncrement : counter.patternDecrement;
+        immutable message = formatMessage(
+            plugin,
+            pattern,
+            event,
+            counter,
+            step);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendCounterAssigned(const Counter counter, const long step)
+    {
+        immutable message = formatMessage(
+            plugin,
+            counter.patternAssign,
+            event,
+            counter,
+            step);
         chan(plugin.state, event.channel, message);
     }
 
@@ -497,59 +531,6 @@ void onCounterWord(CounterPlugin plugin, const ref IRCEvent event)
     {
         enum pattern = "<b>%s<b> is not a number.";
         immutable message = pattern.format(input);
-        chan(plugin.state, event.channel, message);
-    }
-
-    void sendCounterModified(const Counter counter, const long step)
-    {
-        if (step >= 0)
-        {
-            if (counter.patternIncrement.length)
-            {
-                immutable message = formatMessage(
-                    plugin,
-                    counter.patternIncrement,
-                    event,
-                    counter,
-                    step);
-                return chan(plugin.state, event.channel, message);
-            }
-        }
-        else /*if (step < 0)*/
-        {
-            if (counter.patternDecrement.length)
-            {
-                immutable message = formatMessage(
-                    plugin,
-                    counter.patternDecrement,
-                    event,
-                    counter,
-                    step);
-                return chan(plugin.state, event.channel, message);
-            }
-        }
-
-        enum pattern = "<b>%s %s<b>! Current count: <b>%d<b>";
-        immutable stepText = (step >= 0) ? ('+' ~ step.text) : step.text;
-        immutable message = pattern.format(counter.word, stepText, counter.count);
-        chan(plugin.state, event.channel, message);
-    }
-
-    void sendCounterAssigned(const Counter counter, const long step)
-    {
-        if (counter.patternAssign.length)
-        {
-            immutable message = formatMessage(
-                plugin,
-                counter.patternAssign,
-                event,
-                counter,
-                step);
-            return chan(plugin.state, event.channel, message);
-        }
-
-        enum pattern = "<b>%s<b> count assigned to <b>%d<b>!";
-        immutable message = pattern.format(counter.word, counter.count);
         chan(plugin.state, event.channel, message);
     }
 
@@ -726,28 +707,42 @@ auto formatMessage(
     const string pattern,
     const ref IRCEvent event,
     const Counter counter,
-    const long step)
+    const long step = long.init)
 {
     import kameloso.plugins.common.misc : nameOf;
-    import std.conv : text;
+    import kameloso.string : replaceRandom;
+    import std.conv : to;
     import std.array : replace;
     import std.math : abs;
 
-    string toReturn = pattern
-        .replace("$step", abs(step).text)
-        .replace("$count", counter.count.text)
+    auto signedStep()
+    {
+        import std.conv : text;
+        return (step >= 0) ?
+            text('+', step) :
+            step.to!string;
+    }
+
+    string toReturn = pattern  // mutable
+        .replace("$step", abs(step).to!string)
+        .replace("$signedstep", signedStep())
+        .replace("$count", counter.count.to!string)
         .replace("$word", counter.word)
         .replace("$channel", event.channel)
         .replace("$senderNickname", event.sender.nickname)
         .replace("$sender", nameOf(event.sender))
         .replace("$botNickname", plugin.state.client.nickname)
-        .replace("$bot", nameOf(plugin, plugin.state.client.nickname));
+        .replace("$bot", nameOf(plugin, plugin.state.client.nickname))
+        .replaceRandom();
 
     version(TwitchSupport)
     {
-        toReturn = toReturn
-            .replace("$streamerNickname", event.channel[1..$])
-            .replace("$streamer", nameOf(plugin, event.channel[1..$]));
+        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+        {
+            toReturn = toReturn
+                .replace("$streamerNickname", event.channel[1..$])
+                .replace("$streamer", nameOf(plugin, event.channel[1..$]));
+        }
     }
 
     return toReturn;
@@ -778,13 +773,14 @@ void saveCounters(CounterPlugin plugin)
 
     JSONStorage json;
 
-    foreach (immutable channelName, channelCounters; plugin.counters)
+    foreach (immutable channelName, ref channelCounters; plugin.counters)
     {
         json[channelName] = null;
         json[channelName].object = null;
 
-        foreach (immutable word, counter; channelCounters)
+        foreach (immutable word, ref counter; channelCounters)
         {
+            counter.resetEmptyPatterns();
             json[channelName][word] = counter.toJSON();
         }
     }
@@ -811,19 +807,27 @@ void loadCounters(CounterPlugin plugin)
 
     foreach (immutable channelName, channelCountersJSON; json.object)
     {
+        // Initialise the AA
+        plugin.counters[channelName][string.init] = Counter.init;
+        auto channelCounters = channelName in plugin.counters;
+        (*channelCounters).remove(string.init);
+
         foreach (immutable word, counterJSON; channelCountersJSON.object)
         {
-            plugin.counters[channelName][word] = Counter.fromJSON(counterJSON);
+            (*channelCounters)[word] = Counter.fromJSON(counterJSON);
+            auto counter = word in *channelCounters;
 
             // Backwards compatibility with old counters files
-            auto counter = word in plugin.counters[channelName];
             if (!counter.word.length)
             {
                 counter.word = word;
             }
 
-            plugin.counters[channelName].rehash();
+            // ditto
+            counter.resetEmptyPatterns();
         }
+
+        (*channelCounters).rehash();
     }
 
     plugin.counters.rehash();

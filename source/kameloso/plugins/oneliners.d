@@ -6,9 +6,15 @@
     will have to be written separately.
 
     See_Also:
-        https://github.com/zorael/kameloso/wiki/Current-plugins#oneliners
-        [kameloso.plugins.common.core|plugins.common.core]
-        [kameloso.plugins.common.misc|plugins.common.misc]
+        https://github.com/zorael/kameloso/wiki/Current-plugins#oneliners,
+        [kameloso.plugins.common.core],
+        [kameloso.plugins.common.misc]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.oneliners;
 
@@ -29,6 +35,16 @@ import dialect.defs;
 {
     /// Toggle whether or not this plugin should do anything at all.
     @Enabler bool enabled = true;
+
+    version(TwitchSupport)
+    {
+        /++
+            Send oneliners as Twitch replies to the triggering message.
+
+            Only affects Twitch connections.
+         +/
+        bool onelinersAsReplies = false;
+    }
 }
 
 
@@ -226,9 +242,10 @@ public:
 void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.common.misc : nameOf;
-    import lu.string : beginsWith, contains, nom;
+    import kameloso.string : replaceRandom;
+    import lu.string : beginsWith, nom;
     import std.array : replace;
-    import std.conv : text;
+    import std.conv : text, to;
     import std.format : format;
     import std.random : uniform;
     import std.typecons : Flag, No, Yes;
@@ -242,7 +259,7 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 
         enum pattern = "(Empty oneliner; use <b>%soneliner add %s<b> to add lines.)";
         immutable message = pattern.format(plugin.state.settings.prefix, trigger);
-        chan(plugin.state, event.channel, message);
+        sendOneliner(plugin, event, message);
     }
 
     string slice = event.content[plugin.state.settings.prefix.length..$];  // mutable
@@ -272,22 +289,30 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
         }
     }
 
-    immutable line = oneliner.getResponse()
+    string line = oneliner.getResponse()  // mutable
         .replace("$channel", event.channel)
         .replace("$senderNickname", event.sender.nickname)
         .replace("$sender", nameOf(event.sender))
         .replace("$botNickname", plugin.state.client.nickname)
         .replace("$bot", nameOf(plugin, plugin.state.client.nickname)) // likewise
-        .replace("$streamerNickname", event.channel[1..$])  // Twitch
-        .replace("$streamer", nameOf(plugin, event.channel[1..$]))  // Twitch
-        .replace("$random", uniform(0, 100).text);
-    immutable target = slice.beginsWith('@') ? slice[1..$] : slice;
+        .replaceRandom();
 
-    enum atPattern = "@%s %s";
+    version(TwitchSupport)
+    {
+        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+        {
+            line = line
+                .replace("$streamerNickname", event.channel[1..$])
+                .replace("$streamer", nameOf(plugin, event.channel[1..$]));
+        }
+    }
+
+    immutable target = slice.beginsWith('@') ? slice[1..$] : slice;
     immutable message = target.length ?
-        atPattern.format(plugin.nameOf(target), line) :
+        text('@', nameOf(plugin, target), ' ', line) :
         line;
-    chan(plugin.state, event.channel, message);
+
+    sendOneliner(plugin, event, message);
 }
 
 
@@ -320,8 +345,7 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 )
 void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 {
-    import lu.string : SplitResults, contains, nom, splitInto, stripped;
-    import std.conv : ConvException, to;
+    import lu.string : nom, stripped;
     import std.format : format;
     import std.typecons : Flag, No, Yes;
     import std.uni : toLower;
@@ -353,7 +377,7 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
         return handleDelFromOneliner(plugin, event, slice);
 
     case "list":
-        return plugin.listCommands(event.channel);
+        return listCommands(plugin, event);
 
     default:
         return sendUsage();
@@ -482,7 +506,7 @@ void handleNewOneliner(
         {
             if (!pluginCommands.length || (pluginName == "oneliners")) continue;
 
-            foreach (/*mutable*/ word, command; pluginCommands)
+            foreach (/*mutable*/ word, const _; pluginCommands)
             {
                 word = word.toLower;
 
@@ -501,7 +525,7 @@ void handleNewOneliner(
 
     alias Payload = Tuple!(IRCPlugin.CommandMetadata[string][string]);
 
-    void dg()
+    void addNewOnelinerDg()
     {
         auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis;
         assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
@@ -510,14 +534,11 @@ void handleNewOneliner(
         if (triggerConflicts(aa)) return;
 
         // Get channel AAs
-        plugin.state.specialRequests ~= specialRequest!Payload(event.channel, thisFiber);
+        plugin.state.specialRequests ~= specialRequest(event.channel, thisFiber);
         Fiber.yield();
 
         IRCPlugin.CommandMetadata[string][string] channelSpecificAA = thisFiber.payload[0];
-        import std.stdio;
-        writeln(channelSpecificAA);
         if (triggerConflicts(channelSpecificAA)) return;
-
 
         // If we're here there were no conflicts
         Oneliner oneliner;
@@ -534,8 +555,7 @@ void handleNewOneliner(
         chan(plugin.state, event.channel, message);
     }
 
-    auto fiber = new CarryingFiber!Payload(&dg, BufferSize.fiberStack);
-    plugin.state.specialRequests ~= specialRequest!Payload(string.init, fiber);
+    plugin.state.specialRequests ~= specialRequest!Payload(string.init, &addNewOnelinerDg);
 }
 
 
@@ -584,6 +604,13 @@ void handleAddToOneliner(
         chan(plugin.state, event.channel, message);
     }
 
+    void sendResponseIndexOutOfBounds(const size_t pos, const size_t upperBounds)
+    {
+        enum pattern = "Oneliner response index <b>%d<b> is out of bounds. <b>[0..%d]<b>";
+        immutable message = pattern.format(pos, upperBounds);
+        chan(plugin.state, event.channel, message);
+    }
+
     void sendPositionNotPositive()
     {
         enum message = "Position passed is not a positive number.";
@@ -628,11 +655,7 @@ void handleAddToOneliner(
 
         if ((action != Action.appendToEnd) && (pos >= oneliner.responses.length))
         {
-            // Send the error message here so we can include the range
-            enum pattern = "Oneliner response index out of bounds. (0-<b>%d<b>)";
-            immutable message = pattern.format(pos);
-            chan(plugin.state, event.channel, message);
-            throw new Exception("Oneliner response index out of bounds.");
+            return sendResponseIndexOutOfBounds(pos, oneliner.responses.length);
         }
 
         with (Action)
@@ -695,22 +718,13 @@ void handleAddToOneliner(
             return sendPositionNaN();
         }
 
-        try
+        if (verb == "insert")
         {
-            if (verb == "insert")
-            {
-                insert(trigger, slice, Action.insertAtPosition, pos);
-            }
-            else /*if (verb == "edit")*/
-            {
-                insert(trigger, slice, Action.editExisting, pos);
-            }
+            insert(trigger, slice, Action.insertAtPosition, pos);
         }
-        catch (Exception _)
+        else /*if (verb == "edit")*/
         {
-            // Already sent error message
-            //chan(plugin.state, event.channel, e.msg);
-            return;
+            insert(trigger, slice, Action.editExisting, pos);
         }
     }
     else if (verb == "add")
@@ -723,16 +737,7 @@ void handleAddToOneliner(
             return sendAddUsage();
         }
 
-        try
-        {
-            return insert(trigger, slice, Action.appendToEnd);
-        }
-        catch (Exception _)
-        {
-            // Already sent error message
-            //chan(plugin.state, event.channel, e.msg);
-            return;
-        }
+        insert(trigger, slice, Action.appendToEnd);
     }
     else
     {
@@ -776,6 +781,20 @@ void handleDelFromOneliner(
         chan(plugin.state, event.channel, message);
     }
 
+    void sendOnelinerEmpty(const string trigger)
+    {
+        enum pattern = "Oneliner <b>%s<b> is empty and has no responses to remove.";
+        immutable message = pattern.format(trigger);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendResponseIndexOutOfBounds(const size_t pos, const size_t upperBounds)
+    {
+        enum pattern = "Oneliner response index <b>%d<b> is out of bounds. <b>[0..%d]<b>";
+        immutable message = pattern.format(upperBounds);
+        chan(plugin.state, event.channel, message);
+    }
+
     void sendLineRemoved(const string trigger, const size_t pos)
     {
         enum pattern = "Oneliner response <b>%s<b>#%d removed.";
@@ -811,12 +830,7 @@ void handleDelFromOneliner(
 
     if (slice.length)
     {
-        if (!oneliner.responses.length)
-        {
-            enum pattern = "Oneliner <b>%s<b> is empty and has no responses to remove.";
-            immutable message = pattern.format(trigger);
-            return chan(plugin.state, event.channel, message);
-        }
+        if (!oneliner.responses.length) return sendOnelinerEmpty(trigger);
 
         try
         {
@@ -826,9 +840,7 @@ void handleDelFromOneliner(
 
             if (pos >= oneliner.responses.length)
             {
-                enum pattern = "Oneliner response index out of bounds. (0-<b>%d<b>)";
-                immutable message = pattern.format(pos);
-                return chan(plugin.state, event.channel, message);
+                return sendResponseIndexOutOfBounds(pos, oneliner.responses.length);
             }
 
             oneliner.responses = oneliner.responses.remove!(SwapStrategy.stable)(pos);
@@ -874,7 +886,7 @@ void handleDelFromOneliner(
 )
 void onCommandCommands(OnelinersPlugin plugin, const ref IRCEvent event)
 {
-    return plugin.listCommands(event.channel);
+    return listCommands(plugin, event);
 }
 
 
@@ -884,24 +896,24 @@ void onCommandCommands(OnelinersPlugin plugin, const ref IRCEvent event)
 
     Params:
         plugin = The current [OnelinersPlugin].
-        channelName = Name of the channel to send the list to.
+        event = The querying [dialect.defs.IRCEvent|IRCEvent].
  +/
-void listCommands(OnelinersPlugin plugin, const string channelName)
+void listCommands(OnelinersPlugin plugin, const ref IRCEvent event)
 {
     import std.format : format;
 
-    auto channelOneliners = channelName in plugin.onelinersByChannel;
+    auto channelOneliners = event.channel in plugin.onelinersByChannel;
 
     if (channelOneliners && channelOneliners.length)
     {
         immutable rtPattern = "Available commands: %-(<b>" ~ plugin.state.settings.prefix ~ "%s<b>, %)<b>";
         immutable message = rtPattern.format(channelOneliners.byKey);
-        chan(plugin.state, channelName, message);
+        sendOneliner(plugin, event, message);
     }
     else
     {
         enum message = "There are no commands available right now.";
-        chan(plugin.state, channelName, message);
+        sendOneliner(plugin, event, message);
     }
 }
 
@@ -929,44 +941,66 @@ void reload(OnelinersPlugin plugin)
 
     JSONStorage allOnelinersJSON;
     allOnelinersJSON.load(plugin.onelinerFile);
+    plugin.onelinersByChannel.clear();
 
     foreach (immutable channelName, const channelOnelinersJSON; allOnelinersJSON.object)
     {
+        // Initialise the AA
+        plugin.onelinersByChannel[channelName][string.init] = Oneliner.init;
+        auto channelOneliners = channelName in plugin.onelinersByChannel;
+        (*channelOneliners).remove(string.init);
+
         foreach (immutable trigger, const onelinerJSON; channelOnelinersJSON.object)
         {
             import std.json : JSONException;
 
             try
             {
-                plugin.onelinersByChannel[channelName][trigger] = Oneliner.fromJSON(onelinerJSON);
+                (*channelOneliners)[trigger] = Oneliner.fromJSON(onelinerJSON);
             }
             catch (JSONException _)
             {
+                import kameloso.string : doublyBackslashed;
                 enum pattern = "Failed to load oneliner \"<l>%s</>\"; <l>%s</> is outdated or corrupt.";
-                logger.errorf(pattern, trigger, plugin.onelinerFile);
+                logger.errorf(pattern, trigger, plugin.onelinerFile.doublyBackslashed);
             }
         }
+
+        (*channelOneliners).rehash();
     }
 
-    plugin.onelinersByChannel = plugin.onelinersByChannel.rehash();
+    plugin.onelinersByChannel.rehash();
 }
 
 
-// onGlobalUserstate
+// sendOneliner
 /++
-    On Twitch, catch the bot's display name on
-    [dialect.defs.IRCEvent.Type.GLOBALUSERSTATE|GLOBALUSERSTATE], early after connecting.
+    Sends a oneliner reply.
 
-    This lets us replace `$bot` in oneliners with our display name.
+    If connected to a Twitch server and with version `TwitchSupport` set and
+    [OnelinersSettings.onelinersAsReplies] true, sends the message as a
+    Twitch [kameloso.messaging.reply|reply].
+
+    Params:
+        plugin = The current [OnelinersPlugin].
+        event = The querying [dialect.defs.IRCEvent|IRCEvent].
+        message = The message string to send.
  +/
-version(TwitchSupport)
-@(IRCEventHandler()
-    .onEvent(IRCEvent.Type.GLOBALUSERSTATE)
-)
-void onGlobalUserstate(OnelinersPlugin plugin, const ref IRCEvent event)
+void sendOneliner(
+    OnelinersPlugin plugin,
+    const ref IRCEvent event,
+    const string message)
 {
-    import kameloso.plugins.common.misc : catchUser;
-    plugin.catchUser(event.target);
+    version(TwitchSupport)
+    {
+        if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
+            (plugin.onelinersSettings.onelinersAsReplies))
+        {
+            return reply(plugin.state, event, message);
+        }
+    }
+
+    chan(plugin.state, event.channel, message);
 }
 
 
@@ -992,7 +1026,7 @@ void saveResourceToDisk(const Oneliner[string][string] aa, const string filename
 in (filename.length, "Tried to save resources to an empty filename string")
 {
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     JSONValue json;
     json = null;

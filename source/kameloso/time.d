@@ -1,5 +1,11 @@
 /++
     Various functions that deal with [core.time.Duration|Duration]s.
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.time;
 
@@ -946,7 +952,7 @@ auto abbreviatedDuration(const string line)
 ///
 unittest
 {
-    import std.conv : text;
+    import std.conv : to;
     import std.exception : assertThrown;
     import core.time : days, hours, minutes, seconds;
 
@@ -954,56 +960,56 @@ unittest
         enum line = "30";
         immutable actual = abbreviatedDuration(line);
         immutable expected = 30.seconds;
-        assert((actual == expected), actual.text);
+        assert((actual == expected), actual.to!string);
     }
     {
         enum line = "30s";
         immutable actual = abbreviatedDuration(line);
         immutable expected = 30.seconds;
-        assert((actual == expected), actual.text);
+        assert((actual == expected), actual.to!string);
     }
     {
         enum line = "1h30s";
         immutable actual = abbreviatedDuration(line);
         immutable expected = 1.hours + 30.seconds;
-        assert((actual == expected), actual.text);
+        assert((actual == expected), actual.to!string);
     }
     {
         enum line = "5h";
         immutable actual = abbreviatedDuration(line);
         immutable expected = 5.hours;
-        assert((actual == expected), actual.text);
+        assert((actual == expected), actual.to!string);
     }
     {
         enum line = "1d12h39m40s";
         immutable actual = abbreviatedDuration(line);
         immutable expected = 1.days + 12.hours + 39.minutes + 40.seconds;
-        assert((actual == expected), actual.text);
+        assert((actual == expected), actual.to!string);
     }
     {
         enum line = "1d4s";
         immutable actual = abbreviatedDuration(line);
         immutable expected = 1.days + 4.seconds;
-        assert((actual == expected), actual.text);
+        assert((actual == expected), actual.to!string);
     }
     {
         enum line = "30s";
         immutable actual = abbreviatedDuration(line);
         immutable expected = 30.seconds;
-        assert((actual == expected), actual.text);
+        assert((actual == expected), actual.to!string);
     }
     {
         enum line = "-30s";
         immutable actual = abbreviatedDuration(line);
         immutable expected = (-30).seconds;
-        assert((actual == expected), actual.text);
+        assert((actual == expected), actual.to!string);
     }
     {
         import core.time : Duration;
         enum line = string.init;
         immutable actual = abbreviatedDuration(line);
         immutable expected = Duration.zero;
-        assert((actual == expected), actual.text);
+        assert((actual == expected), actual.to!string);
     }
     {
         enum line = "s";
@@ -1030,7 +1036,8 @@ final class DurationStringException : Exception
     /++
         Constructor.
      +/
-    this(const string message,
+    this(
+        const string message,
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe

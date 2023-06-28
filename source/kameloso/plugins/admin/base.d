@@ -9,9 +9,15 @@
     names, adding/removing from the operator/staff lists, joining or leaving channels, and such.
 
     See_Also:
-        https://github.com/zorael/kameloso/wiki/Current-plugins#admin
-        [kameloso.plugins.common.core|plugins.common.core]
-        [kameloso.plugins.common.misc|plugins.common.misc]
+        https://github.com/zorael/kameloso/wiki/Current-plugins#admin,
+        [kameloso.plugins.common.core],
+        [kameloso.plugins.common.misc]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.admin.base;
 
@@ -158,13 +164,20 @@ void onCommandWhoami(AdminPlugin plugin, const ref IRCEvent event)
     if (event.channel.length)
     {
         enum pattern = "You are <h>%s<h>@<b>%s<b> (%s), class:<b>%s<b> in the scope of <b>%s<b>.";
-        message = pattern.format(event.sender.nickname, account, event.sender.hostmask,
-            Enum!(IRCUser.Class).toString(event.sender.class_), event.channel);
+        message = pattern.format(
+            event.sender.nickname,
+            account,
+            event.sender.hostmask,
+            Enum!(IRCUser.Class).toString(event.sender.class_),
+            event.channel);
     }
     else
     {
         enum pattern = "You are <h>%s<h>@<b>%s<b> (%s), class:<b>%s<b> in a global scope.";
-        message = pattern.format(event.sender.nickname, account, event.sender.hostmask,
+        message = pattern.format(
+            event.sender.nickname,
+            account,
+            event.sender.hostmask,
             Enum!(IRCUser.Class).toString(event.sender.class_));
     }
 
@@ -249,7 +262,7 @@ debug
 )
 void onCommandSudo(AdminPlugin plugin, const ref IRCEvent event)
 {
-    return onCommandSudoImpl(plugin, event);
+    onCommandSudoImpl(plugin, event);
 }
 
 
@@ -327,10 +340,10 @@ void onCommandHome(AdminPlugin plugin, const ref IRCEvent event)
     switch (verb)
     {
     case "add":
-        return plugin.addHome(event, slice);
+        return addHome(plugin, event, slice);
 
     case "del":
-        return plugin.delHome(event, slice);
+        return delHome(plugin, event, slice);
 
     case "list":
         enum pattern = "Current home channels: %-(<b>%s<b>, %)<b>";
@@ -361,6 +374,7 @@ void addHome(AdminPlugin plugin, const /*ref*/ IRCEvent event, const string rawC
 in (rawChannel.length, "Tried to add a home but the channel string was empty")
 {
     import kameloso.plugins.common.delayawait : await, unawait;
+    import kameloso.constants : BufferSize;
     import dialect.common : isValidChannel;
     import lu.string : stripped;
     import std.algorithm.searching : canFind, countUntil;
@@ -428,7 +442,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
         IRCEvent.Type.SELFJOIN,
     ];
 
-    void dg()
+    void joinHomeDg()
     {
         CarryingFiber!IRCEvent thisFiber;
 
@@ -487,9 +501,7 @@ in (rawChannel.length, "Tried to add a home but the channel string was empty")
         }*/
     }
 
-    import kameloso.constants : BufferSize;
-
-    Fiber fiber = new CarryingFiber!IRCEvent(&dg, BufferSize.fiberStack);
+    Fiber fiber = new CarryingFiber!IRCEvent(&joinHomeDg, BufferSize.fiberStack);
     await(plugin, fiber, joinTypes);
 }
 
@@ -560,7 +572,7 @@ in (rawChannel.length, "Tried to delete a home but the channel string was empty"
 )
 void onCommandWhitelist(AdminPlugin plugin, const ref IRCEvent event)
 {
-    return plugin.manageClassLists(event, "whitelist");
+    manageClassLists(plugin, event, IRCUser.Class.whitelist);
 }
 
 
@@ -589,7 +601,7 @@ void onCommandWhitelist(AdminPlugin plugin, const ref IRCEvent event)
 )
 void onCommandElevated(AdminPlugin plugin, const ref IRCEvent event)
 {
-    return plugin.manageClassLists(event, "elevated");
+    manageClassLists(plugin, event, IRCUser.Class.elevated);
 }
 
 
@@ -615,7 +627,7 @@ void onCommandElevated(AdminPlugin plugin, const ref IRCEvent event)
 )
 void onCommandOperator(AdminPlugin plugin, const ref IRCEvent event)
 {
-    return plugin.manageClassLists(event, "operator");
+    manageClassLists(plugin, event, IRCUser.Class.operator);
 }
 
 
@@ -641,7 +653,7 @@ void onCommandOperator(AdminPlugin plugin, const ref IRCEvent event)
 )
 void onCommandStaff(AdminPlugin plugin, const ref IRCEvent event)
 {
-    return plugin.manageClassLists(event, "staff");
+    return manageClassLists(plugin, event, IRCUser.Class.staff);
 }
 
 
@@ -669,7 +681,7 @@ void onCommandStaff(AdminPlugin plugin, const ref IRCEvent event)
 )
 void onCommandBlacklist(AdminPlugin plugin, const ref IRCEvent event)
 {
-    return plugin.manageClassLists(event, "blacklist");
+    manageClassLists(plugin, event, IRCUser.Class.blacklist);
 }
 
 
@@ -845,34 +857,25 @@ void onCommandPart(AdminPlugin plugin, const ref IRCEvent event)
 )
 void onCommandSet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.thread : CarryingFiber, ThreadMessage;
+    import kameloso.thread : CarryingFiber;
     import kameloso.constants : BufferSize;
     import std.typecons : Tuple;
     import core.thread : Fiber;
 
     alias Payload = Tuple!(bool);
 
-    void dg()
+    void setSettingDg()
     {
         auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis;
         assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
 
-        immutable success = thisFiber.payload[0];
-
-        if (success)
-        {
-            enum message = "Setting changed.";
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
-        }
-        else
-        {
-            enum message = "Invalid syntax or plugin/setting name.";
-            privmsg(plugin.state, event.channel, event.sender.nickname, message);
-        }
+        immutable message = thisFiber.payload[0] ?
+            "Setting changed." :
+            "Invalid syntax or plugin/setting name.";
+        privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
-    auto fiber = new CarryingFiber!Payload(&dg, BufferSize.fiberStack);
-    plugin.state.specialRequests ~= specialRequest!Payload(event.content, fiber);
+    plugin.state.specialRequests ~= specialRequest!Payload(event.content, &setSettingDg);
 }
 
 
@@ -902,13 +905,13 @@ void onCommandSet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 void onCommandGet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.constants : BufferSize;
-    import kameloso.thread : CarryingFiber, ThreadMessage;
+    import kameloso.thread : CarryingFiber;
     import std.typecons : Tuple;
     import core.thread : Fiber;
 
     alias Payload = Tuple!(string, string, string);
 
-    void dg()
+    void getSettingDg()
     {
         auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis;
         assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
@@ -917,38 +920,34 @@ void onCommandGet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         immutable setting = thisFiber.payload[1];
         immutable value = thisFiber.payload[2];
 
-        if (pluginName.length)
+        if (!pluginName.length)
         {
-            if (setting.length)
-            {
-                import lu.string : contains;
-                import std.format : format;
+            enum message = "Invalid plugin.";
+            return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        }
+        else if (setting.length)
+        {
+            import lu.string : contains;
+            import std.format : format;
 
-                immutable pattern = value.contains(' ') ?
-                    "%s.%s=\"%s\"" :
-                    "%s.%s=%s";
-                immutable message = pattern.format(pluginName, setting, value);
-                privmsg(plugin.state, event.channel, event.sender.nickname, message);
-            }
-            else if (value.length)
-            {
-                privmsg(plugin.state, event.channel, event.sender.nickname, value);
-            }
-            else
-            {
-                enum message = "Invalid setting.";
-                privmsg(plugin.state, event.channel, event.sender.nickname, message);
-            }
+            immutable pattern = value.contains(' ') ?
+                "%s.%s=\"%s\"" :
+                "%s.%s=%s";
+            immutable message = pattern.format(pluginName, setting, value);
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
+        }
+        else if (value.length)
+        {
+            privmsg(plugin.state, event.channel, event.sender.nickname, value);
         }
         else
         {
-            enum message = "Invalid plugin.";
+            enum message = "Invalid setting.";
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
     }
 
-    auto fiber = new CarryingFiber!Payload(&dg, BufferSize.fiberStack);
-    plugin.state.specialRequests ~= specialRequest!Payload(event.content, fiber);
+    plugin.state.specialRequests ~= specialRequest!Payload(event.content, &getSettingDg);
 }
 
 
@@ -973,13 +972,13 @@ version(WithConnectService)
 )
 void onCommandAuth(AdminPlugin plugin)
 {
+    import kameloso.thread : ThreadMessage, boxed;
+    import std.concurrency : send;
+
     version(TwitchSupport)
     {
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch) return;
     }
-
-    import kameloso.thread : ThreadMessage, boxed;
-    import std.concurrency : send;
 
     plugin.state.mainThread.send(ThreadMessage.busMessage("connect", boxed("auth")));
 }
@@ -1031,6 +1030,8 @@ void onCommandStatus(AdminPlugin plugin)
 void onCommandSummary(AdminPlugin plugin)
 {
     import kameloso.thread : ThreadMessage;
+
+    if (plugin.state.settings.headless) return;
     plugin.state.mainThread.send(ThreadMessage.wantLiveSummary());
 }
 
@@ -1056,7 +1057,7 @@ void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
     import kameloso.time : DurationStringException, abbreviatedDuration;
     import lu.string : nom, stripped;
-    import std.conv : ConvException, text, to;
+    import std.conv : ConvException;
 
     string slice = event.content.stripped;  // mutable
 
@@ -1116,11 +1117,12 @@ void cycle(
     const Duration delay_ = Duration.zero,
     const string key = string.init)
 {
-    import kameloso.plugins.common.delayawait : await, delay;
+    import kameloso.plugins.common.delayawait : await, delay, unawait;
+    import kameloso.constants : BufferSize;
     import kameloso.thread : CarryingFiber;
     import core.thread : Fiber;
 
-    void dg()
+    void cycleDg()
     {
         while (true)
         {
@@ -1137,15 +1139,11 @@ void cycle(
                     join(plugin.state, channelName, key);
                 }
 
-                if (delay_ == Duration.zero)
-                {
-                    return joinDg();
-                }
-                else
-                {
-                    import core.time : seconds;
-                    return delay(plugin, &joinDg, delay_);
-                }
+                unawait(plugin, Fiber.getThis, IRCEvent.Type.SELFPART);
+
+                return (delay_ == Duration.zero) ?
+                    joinDg() :
+                    delay(plugin, &joinDg, delay_);
             }
 
             // Wrong channel, wait for the next SELFPART
@@ -1153,9 +1151,7 @@ void cycle(
         }
     }
 
-    import kameloso.constants : BufferSize;
-
-    Fiber fiber = new CarryingFiber!IRCEvent(&dg, BufferSize.fiberStack);
+    Fiber fiber = new CarryingFiber!IRCEvent(&cycleDg, BufferSize.fiberStack);
     await(plugin, fiber, IRCEvent.Type.SELFPART);
     part(plugin.state, channelName, "Cycling");
 }
@@ -1223,7 +1219,7 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
             return privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
 
-        return plugin.modifyHostmaskDefinition(Yes.add, account, mask, event);
+        return modifyHostmaskDefinition(plugin, Yes.add, account, mask, event);
 
     case "del":
     case "remove":
@@ -1234,10 +1230,10 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
             return privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
 
-        return plugin.modifyHostmaskDefinition(No.add, string.init, slice, event);
+        return modifyHostmaskDefinition(plugin, No.add, string.init, slice, event);
 
     case "list":
-        return plugin.listHostmaskDefinitions(event);
+        return listHostmaskDefinitions(plugin, event);
 
     default:
         return sendUsage();
@@ -1257,8 +1253,9 @@ void listHostmaskDefinitions(AdminPlugin plugin, const ref IRCEvent event)
 {
     import lu.json : JSONStorage, populateFromJSON;
 
+    if (plugin.state.settings.headless) return;
+
     JSONStorage json;
-    //json.reset();
     json.load(plugin.hostmasksFile);
 
     string[string] aa;
@@ -1274,6 +1271,8 @@ void listHostmaskDefinitions(AdminPlugin plugin, const ref IRCEvent event)
         {
             import std.json : JSONValue;
             import std.stdio : stdout, writeln;
+
+            if (plugin.state.settings.headless) return;
 
             logger.log("Current hostmasks:");
             // json can contain the example placeholder, so make a new one out of aa
@@ -1302,6 +1301,62 @@ void listHostmaskDefinitions(AdminPlugin plugin, const ref IRCEvent event)
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
     }
+}
+
+
+// onCommandReconnect
+/++
+    Disconnect from and immediately reconnects to the server.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .permissionsRequired(Permissions.admin)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("reconnect")
+            .policy(PrefixPolicy.nickname)
+            .description("Disconnects from and immediately reconnects to the server.")
+            .addSyntax("$command [optional quit message]")
+    )
+)
+void onCommandReconnect(AdminPlugin plugin, const ref IRCEvent event)
+{
+    import kameloso.thread : ThreadMessage, boxed;
+    import lu.string : stripped;
+    import std.concurrency : prioritySend;
+
+    logger.warning("Reconnecting upon administrator request.");
+    plugin.state.mainThread.send(ThreadMessage.reconnect(event.content.stripped, boxed(false)));
+}
+
+
+// onCommandReexec
+/++
+    Re-executes the program.
+ +/
+version(Posix)
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.CHAN)
+    .onEvent(IRCEvent.Type.QUERY)
+    .permissionsRequired(Permissions.admin)
+    .channelPolicy(ChannelPolicy.home)
+    .addCommand(
+        IRCEventHandler.Command()
+            .word("reexec")
+            .policy(PrefixPolicy.nickname)
+            .description("Re-executes the program.")
+            .addSyntax("$command [optional quit message]")
+    )
+)
+void onCommandReexec(AdminPlugin plugin, const ref IRCEvent event)
+{
+    import kameloso.thread : ThreadMessage, boxed;
+    import lu.string : stripped;
+    import std.concurrency : prioritySend;
+
+    plugin.state.mainThread.send(ThreadMessage.reconnect(event.content.stripped, boxed(true)));
 }
 
 
@@ -1345,7 +1400,10 @@ import kameloso.thread : Sendable;
         header = String header describing the passed content payload.
         content = Message content.
  +/
-void onBusMessage(AdminPlugin plugin, const string header, shared Sendable content)
+void onBusMessage(
+    AdminPlugin plugin,
+    const string header,
+    shared Sendable content)
 {
     import kameloso.thread : Boxed;
     import lu.string : contains, nom, strippedRight;
@@ -1366,12 +1424,13 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         version(IncludeHeavyStuff)
         {
             import kameloso.printing : printObject;
+            import core.memory : GC;
 
             case "users":
-                return plugin.onCommandShowUsers();
+                return onCommandShowUsers(plugin);
 
             case "status":
-                return plugin.onCommandStatus();
+                return onCommandStatus(plugin);
 
             case "user":
                 if (const user = slice in plugin.state.users)
@@ -1385,8 +1444,33 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
                 break;
 
             case "state":
-                printObject(plugin.state);
-                break;
+                return printObject(plugin.state);
+
+            case "gc.stats":
+                import kameloso.common : printGCStats;
+                return printGCStats();
+
+            case "gc.collect":
+                import std.datetime.systime : Clock;
+
+                immutable statsPre = GC.stats();
+                immutable timestampPre = Clock.currTime;
+                immutable memoryUsedPre = statsPre.usedSize;
+
+                GC.collect();
+
+                immutable statsPost = GC.stats();
+                immutable timestampPost = Clock.currTime;
+                immutable memoryUsedPost = statsPost.usedSize;
+                immutable memoryCollected = (memoryUsedPre - memoryUsedPost);
+                immutable duration = (timestampPost - timestampPre);
+
+                enum pattern = "Collected <l>%,d</> bytes of garbage in <l>%s";
+                return logger.infof(pattern, memoryCollected, duration);
+
+            case "gc.minimize":
+                GC.minimize();
+                return logger.info("Memory minimised.");
         }
 
         case "printraw":
@@ -1398,6 +1482,11 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             return;
     }
 
+    case "reexec":
+        import kameloso.thread : ThreadMessage, boxed;
+        import std.concurrency : prioritySend;
+        return plugin.state.mainThread.prioritySend(ThreadMessage.reconnect(string.init, boxed(true)));
+
     case "set":
         import kameloso.constants : BufferSize;
         import kameloso.thread : CarryingFiber;
@@ -1406,7 +1495,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 
         alias Payload = Tuple!(bool);
 
-        void dg()
+        void setSettingBusDg()
         {
             auto thisFiber = cast(CarryingFiber!Payload)Fiber.getThis;
             assert(thisFiber, "Incorrectly cast Fiber: " ~ typeof(thisFiber).stringof);
@@ -1423,8 +1512,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
             }
         }
 
-        auto fiber = new CarryingFiber!Payload(&dg, BufferSize.fiberStack);
-        plugin.state.specialRequests ~= specialRequest!Payload(slice, fiber);
+        plugin.state.specialRequests ~= specialRequest!Payload(slice, &setSettingBusDg);
         return;
 
     case "save":
@@ -1453,6 +1541,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
     case "operator":
     case "staff":
     case "blacklist":
+        import lu.conv : Enum;
         import lu.string : SplitResults, splitInto;
 
         string subverb;
@@ -1466,6 +1555,8 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
                 "[verb] [channel] [nickname if add/del], got \"<l>%s</>\"";
             return logger.warningf(pattern, verb, message.payload.strippedRight);
         }
+
+        immutable class_ = Enum!(IRCUser.Class).fromString(verb);
 
         switch (subverb)
         {
@@ -1481,15 +1572,15 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
 
             if (subverb == "add")
             {
-                return plugin.lookupEnlist(user, verb, channelName);
+                return lookupEnlist(plugin, user, class_, channelName);
             }
             else /*if (subverb == "del")*/
             {
-                return plugin.delist(user, verb, channelName);
+                return delist(plugin, user, class_, channelName);
             }
 
         case "list":
-            return plugin.listList(channelName, verb);
+            return listList(plugin, channelName, class_);
 
         default:
             enum pattern = "Invalid bus message <l>%s</> subverb <l>%s";
@@ -1544,7 +1635,7 @@ void onBusMessage(AdminPlugin plugin, const string header, shared Sendable conte
         break;
 
     case "summary":
-        return plugin.onCommandSummary();
+        return onCommandSummary(plugin);
 
     default:
         enum pattern = "[admin] Unimplemented bus message verb: <l>%s";

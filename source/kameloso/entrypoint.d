@@ -3,42 +3,16 @@
 
     See_Also:
         [kameloso.main]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.entrypoint;
 
 public:
-
-
-/+
-    Unfortunately we get memory corruption and segfaults in certain situations
-    when the program was compiled with dmd in -release mode. These notably stem
-    in main.d messageFiber, nested peekGetSet delegate.
-
-    They also occur whenever a Fiber closure is created in a function that took
-    an argument by ref, and was then passed off and later called elsewhere.
-    Hopefully all of these cases have been caught and fixed, by taking said
-    argument by value.
-
-    They're all easy to reproduce in practice, but difficult to reduce into
-    something that can be filed as an issue.
-
-    They don't occur with dmd when compiled outside of -release mode, nor in any
-    mode when compiling with ldc or gdc. Using ldc or gdc is the sane choice if you
-    want optimisations anyway, so this is all unfortunate but also not a huge deal.
-
-    Warn about it.
- +/
-version(DigitalMars)
-{
-    version(D_Optimized)
-    {
-        pragma(msg, "WARNING: The program is prone to memory corruption and segfaults " ~
-            "in certain parts of the code when compiled with dmd in -release mode.");
-        pragma(msg, "See issue #159: https://github.com/zorael/kameloso/issues/159");
-        pragma(msg, "Use ldc or gdc for better results.");
-    }
-}
-
 
 version(unittest)
 {

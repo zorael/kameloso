@@ -2,8 +2,15 @@
     Bits and bobs to get Google API credentials for YouTube playlist management.
 
     See_Also:
-        [kameloso.plugins.twitch.base|twitch.base]
-        [kameloso.plugins.twitch.api|twitch.api]
+        [kameloso.plugins.twitch.base],
+        [kameloso.plugins.twitch.keygen],
+        [kameloso.plugins.twitch.api]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.twitch.google;
 
@@ -43,13 +50,13 @@ package void requestGoogleKeys(TwitchPlugin plugin)
     import std.conv : to;
     import std.format : format;
     import std.process : Pid, ProcessException, wait;
-    import std.stdio : File, readln, stdin, stdout, write, writefln, writeln;
+    import std.stdio : File, readln, stdin, stdout, write, writeln;
     import core.time : seconds;
 
     scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
     logger.trace();
-    logger.info("-- Google authorisation key generation mode --");
+    logger.info("== Google authorisation key generation mode ==");
     enum message = `
 To access the Google API you need a <i>client ID</> and a <i>client secret</>.
 
@@ -185,6 +192,12 @@ Be sure to <l>select a YouTube account</> if presented with several alternatives
             printManualURL(url);
             if (plugin.state.settings.flush) stdout.flush();
         }
+        catch (Exception _)
+        {
+            logger.warning("Error: no graphical environment detected");
+            printManualURL(url);
+            if (plugin.state.settings.flush) stdout.flush();
+        }
     }
 
     string code;
@@ -270,7 +283,7 @@ Be sure to <l>select a YouTube account</> if presented with several alternatives
     immutable expiresIn = validationJSON["expires_in"].str.to!uint;
 
     enum isValidPattern = "Your key is valid for another <l>%s</> but will be automatically refreshed.";
-    logger.infof(isValidPattern, expiresIn.seconds.timeSince!(3,1));
+    logger.infof(isValidPattern, expiresIn.seconds.timeSince!(3, 1));
     logger.trace();
 
     if (auto storedCreds = channel in plugin.secretsByChannel)

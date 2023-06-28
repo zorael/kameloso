@@ -7,7 +7,13 @@
     functions can be offloaded here to limit module size a bit.
 
     See_Also:
-        [kameloso.plugins.admin.base|admin.base]
+        [kameloso.plugins.admin.base]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.admin.debugging;
 
@@ -41,6 +47,8 @@ void onAnyEventImpl(AdminPlugin plugin, const ref IRCEvent event)
 {
     import std.stdio : write, writefln, writeln;
 
+    if (plugin.state.settings.headless) return;
+
     if (plugin.adminSettings.printRaw)
     {
         if (event.tags.length) write('@', event.tags, ' ');
@@ -53,7 +61,11 @@ void onAnyEventImpl(AdminPlugin plugin, const ref IRCEvent event)
 
         foreach (immutable i, immutable c; event.content.representation)
         {
-            writefln("[%d] %s : %03d", i, cast(char)c, c);
+            import std.encoding : isValidCodeUnit;
+            import std.utf : replacementDchar;
+
+            immutable dc = isValidCodeUnit(c) ? dchar(c) : replacementDchar;
+            writefln("[%3d] %s : %03d", i, dc, c);
         }
     }
 
@@ -72,6 +84,8 @@ void onCommandShowUserImpl(AdminPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.printing : printObject;
     import std.algorithm.iteration : splitter;
+
+    if (plugin.state.settings.headless) return;
 
     foreach (immutable username; event.content.splitter(' '))
     {
@@ -101,6 +115,8 @@ void onCommandShowUsersImpl(AdminPlugin plugin)
 {
     import kameloso.printing : printObject;
     import std.stdio : writeln;
+
+    if (plugin.state.settings.headless) return;
 
     foreach (immutable name, const user; plugin.state.users)
     {
@@ -136,6 +152,8 @@ void onCommandPrintRawImpl(AdminPlugin plugin, const ref IRCEvent event)
     import std.conv : text;
     import std.format : format;
 
+    if (plugin.state.settings.headless) return;
+
     plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;
 
     enum pattern = "Printing all: <b>%s<b>";
@@ -154,6 +172,8 @@ void onCommandPrintBytesImpl(AdminPlugin plugin, const ref IRCEvent event)
 {
     import std.conv : text;
     import std.format : format;
+
+    if (plugin.state.settings.headless) return;
 
     plugin.adminSettings.printBytes = !plugin.adminSettings.printBytes;
 
@@ -175,6 +195,8 @@ void onCommandStatusImpl(AdminPlugin plugin)
     import kameloso.common : logger;
     import kameloso.printing : printObjects;
     import std.stdio : writeln;
+
+    if (plugin.state.settings.headless) return;
 
     logger.log("Current state:");
     printObjects!(Yes.all)(plugin.state.client, plugin.state.server);
@@ -240,5 +262,8 @@ void onCommandBusImpl(AdminPlugin plugin, const string input)
         plugin.state.mainThread.send(ThreadMessage.busMessage(header, boxed(slice)));
     }
 
-    if (plugin.state.settings.flush) stdout.flush();
+    if (!plugin.state.settings.headless && plugin.state.settings.flush)
+    {
+        stdout.flush();
+    }
 }

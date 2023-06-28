@@ -7,8 +7,14 @@
     functions can be offloaded here to limit module size a bit.
 
     See_Also:
-        [kameloso.plugins.printer.base|printer.base]
-        [kameloso.plugins.printer.formatting|printer.formatting]
+        [kameloso.plugins.printer.base],
+        [kameloso.plugins.printer.formatting]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.printer.logging;
 
@@ -109,7 +115,8 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
     if (!plugin.printerSettings.logs) return;
 
     /// Write buffered lines.
-    static void writeEventToFile(PrinterPlugin plugin,
+    static void writeEventToFile(
+        PrinterPlugin plugin,
         const ref IRCEvent event,
         const string key,
         const string givenPath = string.init,
@@ -132,7 +139,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                     "Tried to add datestamp to uninitialised buffer");
 
                 import std.file : exists, isDir, mkdirRecurse;
-                import std.stdio : File, writeln;
+                import std.stdio : File;
 
                 if (!buffer.dir.exists)
                 {
@@ -183,8 +190,12 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                     if (plugin.printerSettings.bufferedWrites)
                     {
                         // Normal log
-                        plugin.formatMessageMonochrome(plugin.linebuffer, event,
-                            No.bellOnMention, No.bellOnError);
+                        formatMessageMonochrome(
+                            plugin,
+                            plugin.linebuffer,
+                            event,
+                            No.bellOnMention,
+                            No.bellOnError);
                         buffer.lines ~= plugin.linebuffer.data.idup;
                         plugin.linebuffer.clear();
                     }
@@ -203,8 +214,12 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                             return;
                         }
 
-                        plugin.formatMessageMonochrome(plugin.linebuffer, event,
-                            No.bellOnMention, No.bellOnError);
+                        formatMessageMonochrome(
+                            plugin,
+                            plugin.linebuffer,
+                            event,
+                            No.bellOnMention,
+                            No.bellOnError);
                         scope(exit) plugin.linebuffer.clear();
 
                         auto file = File(buffer.file, "a");
@@ -293,7 +308,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                 }
                 else
                 {
-                    import std.stdio : File, writeln;
+                    import std.stdio : File;
 
                     auto errFile = File(errBuffer.file, "a");
 
@@ -304,23 +319,29 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                     {
                         import kameloso.printing : formatObjects;
 
-                        formatObjects!(Yes.all, No.coloured)(plugin.linebuffer,
-                            No.brightTerminal, event);
+                        formatObjects!(Yes.all, No.coloured)
+                            (plugin.linebuffer,
+                            No.brightTerminal,
+                            event);
                         errFile.writeln(plugin.linebuffer.data);
                         plugin.linebuffer.clear();
 
                         if (event.sender.nickname.length || event.sender.address.length)
                         {
-                            formatObjects!(Yes.all, No.coloured)(plugin.linebuffer,
-                                No.brightTerminal, event.sender);
+                            formatObjects!(Yes.all, No.coloured)
+                                (plugin.linebuffer,
+                                No.brightTerminal,
+                                event.sender);
                             errFile.writeln(plugin.linebuffer.data);
                             plugin.linebuffer.clear();
                         }
 
                         if (event.target.nickname.length || event.target.address.length)
                         {
-                            formatObjects!(Yes.all, No.coloured)(plugin.linebuffer,
-                                No.brightTerminal, event.target);
+                            formatObjects!(Yes.all, No.coloured)
+                                (plugin.linebuffer,
+                                No.brightTerminal,
+                                event.target);
                             errFile.writeln(plugin.linebuffer.data);
                             plugin.linebuffer.clear();
                         }
@@ -361,7 +382,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
         }
         catch (FileException e)
         {
-            enum pattern = "File exception caught when writing to log: <l>%s";
+            enum pattern = "File exception caught when writing to log: <t>%s";
             logger.warningf(pattern, e.msg);
             version(PrintStacktraces) logger.trace(e.info);
         }
@@ -372,14 +393,14 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                 import kameloso.common : errnoStrings;
                 import core.stdc.errno : errno;
 
-                enum pattern = "ErrnoException (<l>%s</>) caught when writing to log: <l>%s";
+                enum pattern = "ErrnoException (<l>%s</>) caught when writing to log: <t>%s";
                 logger.warningf(pattern, errnoStrings[errno], e.msg);
             }
             else version(Windows)
             {
                 import core.stdc.errno : errno;
 
-                enum pattern = "ErrnoException (<l>%d</>) caught when writing to log: <l>%s";
+                enum pattern = "ErrnoException (<l>%d</>) caught when writing to log: <t>%s";
                 logger.warningf(pattern, errno, e.msg);
             }
             else
@@ -391,7 +412,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
         }
         catch (Exception e)
         {
-            enum pattern = "Unhandles exception caught when writing to log: <l>%s";
+            enum pattern = "Unhandles exception caught when writing to log: <t>%s";
             logger.warningf(pattern, e.msg);
             version(PrintStacktraces) logger.trace(e);
         }
@@ -400,19 +421,33 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
     // Write raw (if we should) before exiting early due to not a home (if we should)
     if (plugin.printerSettings.logRaw)
     {
-        writeEventToFile(plugin, event, "<raw>", "raw.log", No.extendPath, Yes.raw);
+        writeEventToFile(
+            plugin,
+            event,
+            "<raw>",
+            "raw.log",
+            No.extendPath,
+            Yes.raw);
     }
 
     if (event.errors.length && plugin.printerSettings.logErrors)
     {
         // This logs errors in guest channels. Consider making configurable.
-        writeEventToFile(plugin, event, "<error>", "error.log", No.extendPath, No.raw, Yes.errors);
+        writeEventToFile(
+            plugin,
+            event,
+            "<error>",
+            "error.log",
+            No.extendPath,
+            No.raw,
+            Yes.errors);
     }
 
     import std.algorithm.searching : canFind;
 
     if (!plugin.printerSettings.logGuestChannels &&
-        event.channel.length && !plugin.state.bot.homeChannels.canFind(event.channel))
+        event.channel.length &&
+        !plugin.state.bot.homeChannels.canFind(event.channel))
     {
         // Not logging all channels and this is not a home.
         return;
@@ -491,11 +526,17 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                 writeEventToFile(plugin, event, event.sender.nickname);
             }
         }
-        else if (plugin.printerSettings.logServer && !event.sender.nickname.length &&
+        else if (plugin.printerSettings.logServer &&
+            !event.sender.nickname.length &&
             event.sender.address.length)
         {
             // Server
-            writeEventToFile(plugin, event, plugin.state.server.address, "server.log", No.extendPath);
+            writeEventToFile(
+                plugin,
+                event,
+                plugin.state.server.address,
+                "server.log",
+                No.extendPath);
         }
         else
         {
@@ -518,7 +559,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
     Example:
     ---
     assert(!("~/logs".isDir));
-    bool locationIsOkay = plugin.establishLogLocation("~/logs");
+    bool locationIsOkay = establishLogLocation(plugin, "~/logs");
     assert("~/logs".isDir);
     ---
 
@@ -602,6 +643,7 @@ void commitAllLogsImpl(PrinterPlugin plugin)
  +/
 void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
 {
+    import kameloso.string : doublyBackslashed;
     import std.exception : ErrnoException;
     import std.file : FileException;
     import std.utf : UTFException;
@@ -614,7 +656,7 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
         import std.array : join;
         import std.encoding : sanitize;
         import std.file : exists, isDir, mkdirRecurse;
-        import std.stdio : File, writeln;
+        import std.stdio : File;
 
         if (!buffer.dir.exists)
         {
@@ -644,8 +686,8 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
     }
     catch (FileException e)
     {
-        enum pattern = "File exception caught when committing log <l>%s</>: <l>%s%s";
-        logger.warningf(pattern, buffer.file, e.msg, plugin.bell);
+        enum pattern = "File exception caught when committing log <l>%s</>: <t>%s%s";
+        logger.warningf(pattern, buffer.file.doublyBackslashed, e.msg, plugin.bell);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (ErrnoException e)
@@ -653,13 +695,13 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
         version(Posix)
         {
             import kameloso.common : errnoStrings;
-            enum pattern = "ErrnoException <l>%s</> caught when committing log to <l>%s</>: <l>%s%s";
-            logger.warningf(pattern, errnoStrings[e.errno], buffer.file, e.msg, plugin.bell);
+            enum pattern = "ErrnoException <l>%s</> caught when committing log to <l>%s</>: <t>%s%s";
+            logger.warningf(pattern, errnoStrings[e.errno], buffer.file.doublyBackslashed, e.msg, plugin.bell);
         }
         else version(Windows)
         {
-            enum pattern = "ErrnoException <l>%d</> caught when committing log to <l>%s</>: <l>%s%s";
-            logger.warningf(pattern, e.errno, buffer.file, e.msg, plugin.bell);
+            enum pattern = "ErrnoException <l>%d</> caught when committing log to <l>%s</>: <t>%s%s";
+            logger.warningf(pattern, e.errno, buffer.file.doublyBackslashed, e.msg, plugin.bell);
         }
         else
         {
@@ -670,8 +712,8 @@ void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
     }
     catch (Exception e)
     {
-        enum pattern = "Unexpected exception caught when committing log <l>%s</>: <l>%s%s";
-        logger.warningf(pattern, buffer.file, e.msg, plugin.bell);
+        enum pattern = "Unexpected exception caught when committing log <l>%s</>: <t>%s%s";
+        logger.warningf(pattern, buffer.file.doublyBackslashed, e.msg, plugin.bell);
         version(PrintStacktraces) logger.trace(e);
     }
 }
@@ -704,9 +746,9 @@ auto escapedPath(/*const*/ string path)
         enum replacementCharacter = '~';
         enum alternateReplacementCharacter = ')';
 
-        if (path.toUpper.among!("CON", "PRN", "AUX", "NUL", "COM1", "COM2",
-            "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1",
-            "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"))
+        if (path.toUpper.among!("CON", "PRN", "AUX", "NUL",
+            "COM0", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+            "LPT0", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"))
         {
             path ~= replacementCharacter;
         }

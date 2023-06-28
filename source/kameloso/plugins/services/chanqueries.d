@@ -10,8 +10,14 @@
     your plugins.
 
     See_Also:
-        [kameloso.plugins.common.core|plugins.common.core]
-        [kameloso.plugins.common.misc|plugins.common.misc]
+        [kameloso.plugins.common.core],
+        [kameloso.plugins.common.misc]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.services.chanqueries;
 
@@ -418,7 +424,7 @@ void onEndOfNames(ChanQueriesService service)
 {
     if (!service.querying && service.queriedAtLeastOnce)
     {
-        service.startChannelQueries();
+        startChannelQueries(service);
     }
 }
 
@@ -434,7 +440,7 @@ void onEndOfNames(ChanQueriesService service)
 void onMyInfo(ChanQueriesService service)
 {
     delay(service, service.timeBeforeInitialQueries, Yes.yield);
-    service.startChannelQueries();
+    startChannelQueries(service);
 }
 
 

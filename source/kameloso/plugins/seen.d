@@ -27,9 +27,15 @@
     high degree of precision.
 
     See_Also:
-        https://github.com/zorael/kameloso/wiki/Current-plugins#seen
-        [kameloso.plugins.common.core|plugins.common.core]
-        [kameloso.plugins.common.misc|plugins.common.misc]
+        https://github.com/zorael/kameloso/wiki/Current-plugins#seen,
+        [kameloso.plugins.common.core],
+        [kameloso.plugins.common.misc]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.seen;
 
@@ -48,8 +54,8 @@ private import kameloso.plugins.common.awareness : ChannelAwareness, UserAwarene
 // Likewise [dialect.defs], for the definitions of an IRC event.
 private import dialect.defs;
 
-// [kameloso.common] for the global logger instance.
-private import kameloso.common : logger;
+// [kameloso.common] for the global logger instance and the rehashing AA.
+private import kameloso.common : RehashingAA, logger;
 
 // [std.datetime.systime] for the [std.datetime.systime.Clock|Clock], to update times with.
 private import std.datetime.systime : Clock;
@@ -317,7 +323,7 @@ private:  // Module-level private.
         writeln("Seconds since we last saw joe: ", (now - seenUsers["joe"]));
         ---
      +/
-    long[string] seenUsers;
+    RehashingAA!(string, long) seenUsers;
 
 
     // seenFile
@@ -339,39 +345,6 @@ private:  // Module-level private.
         The amount of time after which seen users should be saved to disk.
      +/
     static immutable timeBetweenSaves = 1.hours;
-
-
-    // rehashThresholdMultiplier
-    /++
-        The multiplier to multiply the length of [seenUsers] with; if the number
-        of users added since the last rehash exceeds this value, rehash again.
-
-        ---
-        if (plugin.addedSinceLastRehash >
-            (plugin.seenUsers.length * plugin.rehashThresholdMultiplier))
-        {
-            plugin.seenUsers = plugin.seenUsers.rehash();
-            plugin.addedSinceLastRehash = 0;
-        }
-        ---
-
-        See_Also:
-            [addedSinceLastRehash]
-     +/
-    enum rehashThresholdMultiplier = 1.0;
-
-
-    // addedSinceLastRehash
-    /++
-        How many users have been added to [seenUsers] since the last rehash.
-
-        If this is below the number of entries in [seenUsers] multiplied by
-        [rehashThresholdMultiplier], don't rehash, since there's no need.
-
-        See_Also:
-            [rehashThresholdMultiplier]
-     +/
-    uint addedSinceLastRehash;
 
 
     // IRCPluginImpl
@@ -642,11 +615,11 @@ void onSomeAction(SeenPlugin plugin, const ref IRCEvent event)
     // This to stop it from updating seen time when someone is the target of e.g. a sub gift
     if (event.sender.nickname)
     {
-        plugin.updateUser(event.sender.nickname, event.time);
+        updateUser(plugin, event.sender.nickname, event.time);
     }
     else if (!skipTarget && event.target.nickname)
     {
-        plugin.updateUser(event.target.nickname, event.time);
+        updateUser(plugin, event.target.nickname, event.time);
     }
 }
 
@@ -716,7 +689,7 @@ void onNick(SeenPlugin plugin, const ref IRCEvent event)
 void onWHOReply(SeenPlugin plugin, const ref IRCEvent event)
 {
     // Update the user's entry
-    plugin.updateUser(event.target.nickname, event.time);
+    updateUser(plugin, event.target.nickname, event.time);
 }
 
 
@@ -753,7 +726,7 @@ void onNamesReply(SeenPlugin plugin, const ref IRCEvent event)
 
         string slice = entry;  // mutable
         slice = slice.nom!(Yes.inherit)('!'); // In case SpotChat-like, full nick!ident@address form
-        plugin.updateUser(slice, event.time);
+        updateUser(plugin, slice, event.time);
     }
 }
 
@@ -840,7 +813,7 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.time : timeSince;
     import dialect.common : isValidNickname;
-    import lu.string : beginsWith, contains;
+    import lu.string : beginsWith;
     import std.algorithm.searching : canFind;
     import std.datetime.systime : SysTime;
     import std.format : format;
@@ -955,7 +928,7 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
     ---
     string potentiallySignedNickname = "@kameloso";
     long now = Clock.currTime.toUnixTime;
-    plugin.updateUser(potentiallySignedNickname, now);
+    updateUser(plugin, potentiallySignedNickname, now);
     ---
 
     Params:
@@ -987,29 +960,6 @@ in (signed.length, "Tried to update a user with an empty (signed) nickname")
     {
         // New user; add an entry and bump the added counter
         plugin.seenUsers[nickname] = time;
-        ++plugin.addedSinceLastRehash;
-        plugin.maybeRehash();
-    }
-}
-
-
-// maybeRehash
-/++
-    Rehash the [SeenPlugin.seenUsers|seenUsers] associative array if we deem
-    enough new users have been added to it since the last rehash to warrant it.
-
-    Params:
-        plugin = Current [SeenPlugin].
- +/
-void maybeRehash(SeenPlugin plugin)
-{
-    enum minimumAddedNeededForRehash = 128;
-
-    if ((plugin.addedSinceLastRehash > minimumAddedNeededForRehash) &&
-        (plugin.addedSinceLastRehash > (plugin.seenUsers.length * plugin.rehashThresholdMultiplier)))
-    {
-        plugin.seenUsers = plugin.seenUsers.rehash();
-        plugin.addedSinceLastRehash = 0;
     }
 }
 
@@ -1040,7 +990,7 @@ void updateAllObservedUsers(SeenPlugin plugin)
 
     foreach (immutable nickname; uniqueUsers.byKey)
     {
-        plugin.updateUser(nickname, now, Yes.skipModesignStrip);
+        updateUser(plugin, nickname, now, Yes.skipModesignStrip);
     }
 }
 
@@ -1059,6 +1009,7 @@ void updateAllObservedUsers(SeenPlugin plugin)
  +/
 auto loadSeen(const string filename)
 {
+    import kameloso.string : doublyBackslashed;
     import std.file : exists, isFile, readText;
     import std.json : JSONException, parseJSON;
 
@@ -1067,7 +1018,7 @@ auto loadSeen(const string filename)
     if (!filename.exists || !filename.isFile)
     {
         enum pattern = "<l>%s</> does not exist or is not a file";
-        logger.warningf(pattern, filename);
+        logger.warningf(pattern, filename.doublyBackslashed);
         return aa;
     }
 
@@ -1088,8 +1039,8 @@ auto loadSeen(const string filename)
         version(PrintStacktraces) logger.trace(e.info);
     }
 
-    // Rehash the AA, since we potentially added a *lot* of users.
-    return aa.rehash();
+    // No need to rehash the AA; RehashingAA will do it on assignment
+    return aa;  //.rehash();
 }
 
 
@@ -1100,19 +1051,17 @@ auto loadSeen(const string filename)
     This is a convenient way to serialise the array.
 
     Params:
-        seenUsers = The associative array of seen users to save.
-        filename = Filename of the file to write to.
+        plugin = The current [SeenPlugin].
  +/
-void saveSeen(const long[string] seenUsers, const string filename)
-in (filename.length, "Tried to save seen users to an empty filename")
+void saveSeen(SeenPlugin plugin)
 {
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
-    if (!seenUsers.length) return;
+    if (!plugin.seenUsers.length) return;
 
-    auto file = File(filename, "w");
-    file.writeln(JSONValue(seenUsers).toPrettyString);
+    auto file = File(plugin.seenFile, "w");
+    file.writeln(JSONValue(plugin.seenUsers.aaOf).toPrettyString);
     //file.flush();
 }
 
@@ -1142,9 +1091,8 @@ void onWelcome(SeenPlugin plugin)
     {
         while (true)
         {
-            plugin.updateAllObservedUsers();
-            plugin.maybeRehash();
-            plugin.seenUsers.saveSeen(plugin.seenFile);
+            updateAllObservedUsers(plugin);
+            saveSeen(plugin);
             delay(plugin, plugin.timeBetweenSaves, Yes.yield);
         }
     }
@@ -1194,8 +1142,8 @@ void reload(SeenPlugin plugin)
  +/
 void teardown(SeenPlugin plugin)
 {
-    plugin.updateAllObservedUsers();
-    plugin.seenUsers.saveSeen(plugin.seenFile);
+    updateAllObservedUsers(plugin);
+    saveSeen(plugin);
 }
 
 
@@ -1298,8 +1246,8 @@ void onBusMessage(SeenPlugin plugin, const string header, shared Sendable conten
         return .reload(plugin);
 
     case "save":
-        plugin.updateAllObservedUsers();
-        plugin.seenUsers.saveSeen(plugin.seenFile);
+        updateAllObservedUsers(plugin);
+        saveSeen(plugin);
         logger.info("Seen users saved to disk.");
         break;
 

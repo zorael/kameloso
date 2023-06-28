@@ -1,5 +1,16 @@
 /++
     A collection of functions used to translate tags in messages into terminal colours.
+
+    See_Also:
+        [kameloso.terminal],
+        [kameloso.terminal.colours],
+        [kameloso.terminal.colours.defs]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.terminal.colours.tags;
 
@@ -98,7 +109,13 @@ if (isSomeString!T)
     bool dirty;
     bool escaping;
 
-    immutable asBytes = line.representation;
+    // Work around the immutability being lost with -dip1000
+    // The alternative is to use .idup, which is not really desireable here
+    immutable asBytes = () @trusted
+    {
+        return cast(immutable)line.representation;
+    }();
+
     immutable toReserve = (asBytes.length + 16);
 
     byteloop:
@@ -281,9 +298,7 @@ if (isSomeString!T)
                                 {
                                     import kameloso.terminal.colours : colourByHash;
 
-                                    immutable bright =
-                                        cast(Flag!"brightTerminal")kameloso.common.settings.brightTerminal;
-                                    sink.put(colourByHash(word, bright));
+                                    sink.put(colourByHash(word, *kameloso.common.settings));
 
                                     with (LogLevel)
                                     final switch (baseLevel)
@@ -480,18 +495,24 @@ unittest
     version(Colours)
     {
         import kameloso.terminal.colours : colourByHash;
+        import kameloso.pods : CoreSettings;
+
+        CoreSettings brightSettings;
+        CoreSettings darkSettings;
+        brightSettings.brightTerminal = true;
 
         {
             immutable line = "hello<h>kameloso</>hello";
             immutable replaced = line.expandTags(LogLevel.off, No.strip);
-            immutable expected = text("hello", colourByHash("kameloso", No.brightTerminal), logger.offtint, "hello");
+            immutable expected = text("hello", colourByHash("kameloso",
+                darkSettings), logger.offtint, "hello");
             assert((replaced == expected), replaced);
         }
         {
             immutable line = `hello\<harbl>kameloso<h>hello</>hi`;
             immutable replaced = line.expandTags(LogLevel.off, No.strip);
             immutable expected = text("hello<harbl>kameloso", colourByHash("hello",
-                No.brightTerminal), logger.offtint, "hi");
+                darkSettings), logger.offtint, "hi");
             assert((replaced == expected), replaced);
         }
         {
@@ -510,7 +531,7 @@ unittest
             immutable line = "Added <h>hirrsteff</> as a blacklisted user in #garderoben";
             immutable replaced = line.expandTags(LogLevel.off, No.strip);
             immutable expected = "Added " ~
-                colourByHash("hirrsteff", No.brightTerminal) ~
+                colourByHash("hirrsteff", brightSettings) ~
                 logger.offtint ~ " as a blacklisted user in #garderoben";
             assert((replaced == expected), replaced);
         }

@@ -4,8 +4,14 @@
     This was all in one `plugins/common.d` file that just grew too big.
 
     See_Also:
-        [kameloso.plugins.common.core]
-        [kameloso.plugins.common.misc]
+        [kameloso.plugins.common.core],
+        [kameloso.plugins.common.delayawait]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.common.mixins;
 
@@ -97,14 +103,12 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             "but its parent module does not mix in `UserAwareness`");
     }
 
-
     // _kamelosoCarriedNickname
     /++
         Nickname being looked up, stored outside of any separate function to make
         it available to all of them.
      +/
     string _kamelosoCarriedNickname;
-
 
     /++
         Event types that we may encounter as responses to WHOIS queries.
@@ -119,13 +123,13 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         IRCEvent.Type.ERR_UNKNOWNCOMMAND,
     ];
 
-
     // whoisFiberDelegate
     /++
         Reusable mixin that catches WHOIS results.
      +/
     void whoisFiberDelegate()
     {
+        import kameloso.plugins.common.delayawait : unawait;
         import kameloso.thread : CarryingFiber;
         import dialect.common : opEqualsCaseInsensitive;
         import dialect.defs : IRCEvent, IRCUser;
@@ -249,8 +253,6 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                 continue;
             }
 
-            import kameloso.plugins.common.delayawait : unawait;
-
             // Clean up awaiting fiber entries on exit, just to be neat.
             scope(exit) unawait(context, thisFiber, whoisEventTypes[]);
 
@@ -288,7 +290,6 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         }
     }
 
-
     // enqueueAndWHOIS
     /++
         Constructs a [kameloso.thread.CarryingFiber|CarryingFiber] carrying a
@@ -311,6 +312,8 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         const Flag!"issueWhois" issueWhois = Yes.issueWhois,
         const Flag!"background" background = No.background)
     {
+        import kameloso.plugins.common.delayawait : await;
+        import kameloso.constants : BufferSize;
         import kameloso.messaging : whois;
         import kameloso.thread : CarryingFiber;
         import lu.string : contains, nom;
@@ -368,7 +371,8 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                     }
                 }
 
-                static if (TakesParams!(onSuccess, IRCEvent) ||
+                static if (
+                    TakesParams!(onSuccess, IRCEvent) ||
                     TakesParams!(onSuccess, IRCUser))
                 {
                     // Can't WHOIS on Twitch
@@ -454,14 +458,10 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             }
         }
 
-        import kameloso.plugins.common.delayawait : await;
-        import kameloso.constants : BufferSize;
-
         Fiber fiber = new CarryingFiber!IRCEvent(&whoisFiberDelegate, BufferSize.fiberStack);
         await(context, fiber, whoisEventTypes[]);
 
-        string slice = nickname;
-
+        string slice = nickname;  // mutable
         immutable nicknamePart = slice.contains('!') ?
             slice.nom('!') :
             slice;
@@ -519,6 +519,7 @@ mixin template MessagingProxy(Flag!"debug_" debug_ = No.debug_)
 private:
     import kameloso.plugins.common.core : IRCPlugin;
     import kameloso.messaging : Message;
+    import std.meta : AliasSeq;
     import std.typecons : Flag, No, Yes;
     static import kameloso.messaging;
 
@@ -556,7 +557,6 @@ private:
             caller);
     }
 
-
     // reply
     /++
         Replies to a channel message.
@@ -575,7 +575,6 @@ private:
             caller);
     }
 
-
     // query
     /++
         Sends a private query message to a user.
@@ -593,7 +592,6 @@ private:
             properties,
             caller);
     }
-
 
     // privmsg
     /++
@@ -619,7 +617,6 @@ private:
             caller);
     }
 
-
     // emote
     /++
         Sends an `ACTION` "emote" to the supplied target (nickname or channel).
@@ -637,7 +634,6 @@ private:
             properties,
             caller);
     }
-
 
     // mode
     /++
@@ -661,7 +657,6 @@ private:
             caller);
     }
 
-
     // topic
     /++
         Sets the topic of a channel.
@@ -679,7 +674,6 @@ private:
             properties,
             caller);
     }
-
 
     // invite
     /++
@@ -699,7 +693,6 @@ private:
             caller);
     }
 
-
     // join
     /++
         Joins a channel.
@@ -717,7 +710,6 @@ private:
             properties,
             caller);
     }
-
 
     // kick
     /++
@@ -739,7 +731,6 @@ private:
             caller);
     }
 
-
     // part
     /++
         Leaves a channel.
@@ -758,7 +749,6 @@ private:
             caller);
     }
 
-
     // quit
     /++
         Disconnects from the server, optionally with a quit reason.
@@ -775,7 +765,6 @@ private:
             caller);
     }
 
-
     // whois
     /++
         Queries the server for WHOIS information about a user.
@@ -791,7 +780,6 @@ private:
             properties,
             caller);
     }
-
 
     // raw
     /++
@@ -812,7 +800,6 @@ private:
             caller);
     }
 
-
     // immediate
     /++
         Sends raw text to the server, verbatim, bypassing all queues and
@@ -830,11 +817,11 @@ private:
             caller);
     }
 
-    /// Merely an alias to [immediate], because we use both terms at different places.
+    // immediateline
+    /++
+        Merely an alias to [immediate], because we use both terms at different places.
+     +/
     alias immediateline = immediate;
-
-
-    import std.meta : AliasSeq;
 
     /+
         Generates the functions `askToWriteln`, `askToTrace`, `askToLog`,
@@ -885,7 +872,7 @@ unittest
         // Just generate the code so we know they compile.
         if (plugin !is null) return;
 
-        chan(string.init, string.init);
+        /*chan(string.init, string.init);
         query(string.init, string.init);
         privmsg(string.init, string.init, string.init);
         emote(string.init, string.init);
@@ -900,7 +887,7 @@ unittest
         whois(string.init, whoisProperties);
         raw(string.init);
         immediate(string.init);
-        immediateline(string.init);
+        immediateline(string.init);*/
         askToWriteln(string.init);
         askToTrace(string.init);
         askToLog(string.init);

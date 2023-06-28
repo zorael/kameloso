@@ -2,8 +2,14 @@
     Functions for generating a Twitch API key.
 
     See_Also:
-        [kameloso.plugins.twitch.base|twitch.base]
-        [kameloso.plugins.twitch.api|twitch.api]
+        [kameloso.plugins.twitch.base],
+        [kameloso.plugins.twitch.api]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.twitch.keygen;
 
@@ -36,12 +42,12 @@ void requestTwitchKey(TwitchPlugin plugin)
     import std.concurrency : prioritySend;
     import std.datetime.systime : Clock;
     import std.process : Pid, ProcessException, wait;
-    import std.stdio : stdout, writefln, writeln;
+    import std.stdio : stdout, writeln;
 
     scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
     logger.trace();
-    logger.info("-- Twitch authorisation key generation mode --");
+    logger.info("== Twitch authorisation key generation mode ==");
     enum attemptToOpenMessage = `
 Attempting to open a Twitch login page in your default web browser. Follow the
 instructions and log in to authorise the use of this program with your <w>BOT</> account.
@@ -159,6 +165,12 @@ instructions and log in to authorise the use of this program with your <w>BOT</>
             printManualURL(url);
             if (plugin.state.settings.flush) stdout.flush();
         }
+        catch (Exception _)
+        {
+            logger.warning("Error: no graphical environment detected");
+            printManualURL(url);
+            if (plugin.state.settings.flush) stdout.flush();
+        }
     }
 
     plugin.state.bot.pass = readURLAndParseKey(plugin, authNode);
@@ -193,13 +205,13 @@ instructions and log in to authorise the use of this program with your <w>BOT</>
 void requestTwitchSuperKey(TwitchPlugin plugin)
 {
     import std.process : Pid, ProcessException, wait;
-    import std.stdio : stdout, writefln, writeln;
+    import std.stdio : stdout, writeln;
     import std.datetime.systime : Clock;
 
     scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
     logger.trace();
-    logger.info("-- Twitch authorisation super key generation mode --");
+    logger.info("== Twitch authorisation super key generation mode ==");
     enum message = `
 To access certain Twitch functionality like changing channel settings
 (what game is currently being played, etc), the program needs an authorisation

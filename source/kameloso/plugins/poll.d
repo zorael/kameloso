@@ -5,9 +5,15 @@
     Cheating by changing nicknames is warded against.
 
     See_Also:
-        https://github.com/zorael/kameloso/wiki/Current-plugins#poll
-        [kameloso.plugins.common.core|plugins.common.core]
-        [kameloso.plugins.common.misc|plugins.common.misc]
+        https://github.com/zorael/kameloso/wiki/Current-plugins#poll,
+        [kameloso.plugins.common.core],
+        [kameloso.plugins.common.misc]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.poll;
 
@@ -63,6 +69,7 @@ import core.time : Duration;
 struct Poll
 {
 private:
+    import kameloso.common : RehashingAA;
     import std.datetime.systime : SysTime;
     import std.json : JSONValue;
 
@@ -90,7 +97,7 @@ public:
     /++
         Individual votes, keyed by nicknames of the people who placed them.
      +/
-    string[string] votes;
+    RehashingAA!(string, string) votes;
 
     /++
         Poll duration.
@@ -118,7 +125,7 @@ public:
         json["voteCounts"] = JSONValue(this.voteCounts);
         json["origChoiceNames"] = JSONValue(this.origChoiceNames);
         json["sortedChoices"] = JSONValue(this.sortedChoices);
-        json["votes"] = JSONValue(this.votes);
+        json["votes"] = JSONValue(this.votes.aaOf);
         json["duration"] = JSONValue(duration.total!"seconds");
         json["uniqueID"] = JSONValue(uniqueID);
         return json;
@@ -385,7 +392,7 @@ auto getPollChoices(
     const string channelName,
     const string slice)
 {
-    import std.algorithm.iteration : splitter;
+    import lu.string : splitWithQuotes;
     import std.format : format;
 
     void sendChoiceMustNotStartWithPrefix()
@@ -411,7 +418,7 @@ auto getPollChoices(
 
     PollChoices result;
 
-    foreach (immutable rawChoice; slice.splitter(' '))
+    foreach (immutable rawChoice; splitWithQuotes(slice))
     {
         import lu.string : beginsWith, strippedRight;
         import std.uni : toLower;
@@ -461,7 +468,7 @@ void generatePollFiber(
     const string channelName,
     Poll poll)
 {
-    import kameloso.plugins.common.delayawait : await, delay;
+    import kameloso.plugins.common.delayawait : await;
     import kameloso.constants : BufferSize;
     import kameloso.thread : CarryingFiber;
     import std.format : format;
@@ -483,6 +490,7 @@ void generatePollFiber(
         scope(exit)
         {
             import kameloso.plugins.common.delayawait : unawait;
+
             unawait(plugin, nonTwitchVoteEventTypes[]);
             unawait(plugin, IRCEvent.Type.CHAN);
 
@@ -531,37 +539,33 @@ void generatePollFiber(
                 if (auto previousVote = id in currentPoll.votes)
                 {
                     immutable newID = idOf(thisEvent.target);
-                    currentPoll.votes[newID] = *previousVote;
-                    currentPoll.votes.remove(id);
+
+                    if (id != newID)
+                    {
+                        currentPoll.votes[newID] = *previousVote;
+                        currentPoll.votes.remove(id);
+                    }
                 }
                 break;
 
             case CHAN:
-                import lu.string : contains, stripped;
+                import lu.string : stripped;
                 import std.uni : toLower;
 
                 if (thisEvent.channel != channelName) break;
 
-                immutable vote = thisEvent.content.stripped;
+                immutable vote = thisEvent.content.stripped.toLower;
 
-                if (!vote.length || vote.contains!(Yes.decode)(' '))
-                {
-                    // Not a vote; drop down to yield and await a new event
-                    break;
-                }
-
-                immutable lowerVote = vote.toLower;
-
-                if (auto ballot = lowerVote in currentPoll.voteCounts)
+                if (auto ballot = vote in currentPoll.voteCounts)
                 {
                     if (auto previousVote = id in currentPoll.votes)
                     {
-                        if (*previousVote != lowerVote)
+                        if (*previousVote != vote)
                         {
                             // User changed their mind
                             --currentPoll.voteCounts[*previousVote];
                             ++(*ballot);
-                            currentPoll.votes[id] = lowerVote;
+                            currentPoll.votes[id] = vote;
                         }
                         else
                         {
@@ -574,7 +578,7 @@ void generatePollFiber(
                         // Valid entry, increment vote count
                         // Record user as having voted
                         ++(*ballot);
-                        currentPoll.votes[id] = lowerVote;
+                        currentPoll.votes[id] = vote;
                     }
                 }
                 break;
@@ -583,7 +587,7 @@ void generatePollFiber(
                 if (!thisEvent.sender.account.length)
                 {
                     // User logged out
-                    // Old account is in aux; move vote to nickname if necessary
+                    // Old account is in aux[0]; move vote to nickname if necessary
                     if (thisEvent.aux[0] != thisEvent.sender.nickname)
                     {
                         if (const previousVote = thisEvent.aux[0] in currentPoll.votes)
@@ -655,7 +659,9 @@ void reportEndResults(
     import std.array : array;
     import std.format : format;
 
-    immutable total = cast(double)poll.voteCounts.byValue.sum;
+    immutable total = cast(double)poll.voteCounts
+        .byValue
+        .sum;
 
     if (total == 0)
     {
@@ -720,7 +726,7 @@ void reportStatus(
     immutable now = Clock.currTime;
     immutable end = (poll.start + poll.duration);
     immutable delta = (end - now);
-    immutable timeInWords = delta.timeSince!(7,0);
+    immutable timeInWords = delta.timeSince!(7, 0);
 
     enum pattern = "There is an ongoing poll! Place your vote for one of: %-(<b>%s<b>, %)<b> (%s)";
     immutable message = pattern.format(poll.sortedChoices, timeInWords);

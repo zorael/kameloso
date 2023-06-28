@@ -6,9 +6,15 @@
     The actual connection logic is in the [kameloso.net] module.
 
     See_Also:
-        [kameloso.net]
-        [kameloso.plugins.common.core|plugins.common.core]
-        [kameloso.plugins.common.misc|plugins.common.misc]
+        [kameloso.net],
+        [kameloso.plugins.common.core],
+        [kameloso.plugins.common.misc]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.services.connect;
 
@@ -60,8 +66,12 @@ public:
 
     /// Lines to send after successfully connecting and registering.
     //@Separator(";;")
-    @CannotContainComments
-    string sendAfterConnect;
+    @CannotContainComments string sendAfterConnect;
+
+    /++
+        How much time to allow between incoming PINGs before suspecting something is wrong.
+     +/
+    @Unserialisable int maxPingPeriodAllowed = 660;
 }
 
 
@@ -331,7 +341,9 @@ void tryAuth(ConnectService service)
         {
             enum pattern = "Cannot auth when you have changed your nickname. " ~
                 "(<l>%s</> != <l>%s</>)";
-            logger.warningf(pattern, service.state.client.nickname,
+            logger.warningf(
+                pattern,
+                service.state.client.nickname,
                 service.state.client.origNickname);
 
             service.authentication = Progress.finished;
@@ -432,7 +444,7 @@ void tryAuth(ConnectService service)
 
         if (!service.joinedChannels)
         {
-            service.joinChannels();
+            joinChannels(service);
         }
     }
 
@@ -459,7 +471,7 @@ void onAuthEnd(ConnectService service, const ref IRCEvent event)
     {
         if (!service.joinedChannels)
         {
-            service.joinChannels();
+            joinChannels(service);
         }
     }
 }
@@ -559,7 +571,7 @@ void onTwitchAuthFailure(ConnectService service, const ref IRCEvent event)
 )
 void onNickInUse(ConnectService service)
 {
-    import std.conv : text;
+    import std.conv : to;
     import std.random : uniform;
 
     if (service.registration == Progress.inProgress)
@@ -571,7 +583,7 @@ void onNickInUse(ConnectService service)
                 KamelosoDefaults.altNickSeparator;
         }
 
-        service.renameDuringRegistration ~= uniform(0, 10).text;
+        service.renameDuringRegistration ~= uniform(0, 10).to!string;
         immutable message = "NICK " ~ service.renameDuringRegistration;
         immediate(service.state, message);
     }
@@ -905,7 +917,7 @@ void onSASLAuthenticate(ConnectService service)
 
     if (!plainSuccess)
     {
-        service.onSASLFailure();
+        onSASLFailure(service);
     }
 }
 
@@ -1293,7 +1305,7 @@ void onEndOfMotd(ConnectService service)
         // `service.authentication` would be set much later.
         // Twitch servers can't auth so join immediately
         // but don't do anything if we already joined channels.
-        service.joinChannels();
+        joinChannels(service);
     }
 }
 
@@ -1387,13 +1399,9 @@ void onUnknownCommand(ConnectService service, const ref IRCEvent event)
     if we haven't received one from the server for a while. This is to ensure
     that dead connections are properly detected.
 
-    Requires version `WithPingMonitor`. It's not completely obvious whether or not
-    this is worth including, so make it opt-in for now.
-
     Params:
         service = The current [ConnectService].
  +/
-version(WithPingMonitor)
 void startPingMonitorFiber(ConnectService service)
 {
     import kameloso.plugins.common.delayawait : await, delay, removeDelayedFiber;
@@ -1402,11 +1410,12 @@ void startPingMonitorFiber(ConnectService service)
     import core.thread : Fiber;
     import core.time : seconds;
 
-    static immutable pingMonitorPeriodicity = 600.seconds;
+    if (service.connectSettings.maxPingPeriodAllowed <= 0) return;
+
+    immutable pingMonitorPeriodicity = service.connectSettings.maxPingPeriodAllowed.seconds;
 
     void pingMonitorDg()
     {
-        static immutable periodicitySeconds = pingMonitorPeriodicity.total!"seconds";
         static immutable timeToAllowForPingResponse = 30.seconds;
         static immutable briefWait = 1.seconds;
         long lastPongTimestamp;
@@ -1414,8 +1423,8 @@ void startPingMonitorFiber(ConnectService service)
 
         enum StrikeBreakpoints
         {
+            wait = 2,
             ping = 3,
-            reconnect = 5,
         }
 
         while (true)
@@ -1433,33 +1442,38 @@ void startPingMonitorFiber(ConnectService service)
                 // Triggered by timer
                 immutable nowInUnix = Clock.currTime.toUnixTime;
 
-                if ((nowInUnix - lastPongTimestamp) >= periodicitySeconds)
+                if ((nowInUnix - lastPongTimestamp) >= service.connectSettings.maxPingPeriodAllowed)
                 {
                     import kameloso.thread : ThreadMessage;
                     import std.concurrency : prioritySend;
 
                     /+
-                        Skip first 3 strikes, helps when resuming from suspend and similar,
-                        then allow for two PINGs with `timeToAllowForPingResponse` in between.
+                        Skip first two strikes; helps when resuming from suspend and similar,
+                        then allow for a PING with `timeToAllowForPingResponse` as timeout.
                         Finally, if all else failed, reconnect.
                      +/
                     ++strikes;
 
-                    if (strikes <= StrikeBreakpoints.ping)
+                    if (strikes <= StrikeBreakpoints.wait)
                     {
+                        if (service.state.settings.trace && (strikes > 1))
+                        {
+                            logger.warning("Server is suspiciously quiet.");
+                        }
                         delay(service, briefWait, Yes.yield);
                         continue;
                     }
-                    else if (strikes <= StrikeBreakpoints.reconnect)
+                    else if (strikes == StrikeBreakpoints.ping)
                     {
                         // Timeout. Send a preemptive ping
                         service.state.mainThread.prioritySend(ThreadMessage.ping(service.state.server.resolvedAddress));
                         delay(service, timeToAllowForPingResponse, Yes.yield);
                         continue;
                     }
-                    else /*if (strikes > StrikeBreakpoints.reconnect)*/
+                    else /*if (strikes > StrikeBreakpoints.ping)*/
                     {
                         // All failed, reconnect
+                        logger.warning("No response from server. Reconnecting.");
                         service.state.mainThread.prioritySend(ThreadMessage.reconnect);
                         return;
                     }
@@ -1470,7 +1484,7 @@ void startPingMonitorFiber(ConnectService service)
                     // Remove current delay and re-delay at when the next PING check should be
                     removeDelayedFiber(service);
                     immutable elapsed = (nowInUnix - lastPongTimestamp);
-                    immutable remaining = (periodicitySeconds - elapsed);
+                    immutable remaining = (service.connectSettings.maxPingPeriodAllowed - elapsed);
                     delay(service, remaining.seconds, Yes.yield);
                 }
                 continue;
@@ -1577,7 +1591,7 @@ void register(ConnectService service)
 
     version(TwitchSupport)
     {
-        import std.algorithm : endsWith;
+        import std.algorithm.searching : endsWith;
         immutable serverIsTwitch = service.state.server.address.endsWith(".twitch.tv");
     }
 
@@ -1722,7 +1736,8 @@ void negotiateNick(ConnectService service)
          +/
         enum properties = Message.Property.quiet;
         enum pattern = "USER %s 8 * :%s";
-        immutable message = pattern.format(service.state.client.user,
+        immutable message = pattern.format(
+            service.state.client.user,
             service.state.client.realName.replaceTokens(service.state.client));
         immediate(service.state, message, properties);
     }
@@ -1776,7 +1791,7 @@ void onBusMessage(ConnectService service, const string header, shared Sendable c
 
     if (message.payload == "auth")
     {
-        service.tryAuth();
+        tryAuth(service);
     }
     else
     {

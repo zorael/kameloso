@@ -2,8 +2,17 @@
     Bits and bobs to get Spotify API credentials for playlist management.
 
     See_Also:
-        [kameloso.plugins.twitch.base|twitch.base]
-        [kameloso.plugins.twitch.api|twitch.api]
+        [kameloso.plugins.twitch.base],
+        [kameloso.plugins.twitch.keygen],
+        [kameloso.plugins.twitch.api],
+        [kameloso.plugins.common.core],
+        [kameloso.plugins.common.misc]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.twitch.spotify;
 
@@ -44,12 +53,12 @@ package void requestSpotifyKeys(TwitchPlugin plugin)
     import lu.string : contains, nom, stripped;
     import std.format : format;
     import std.process : Pid, ProcessException, wait;
-    import std.stdio : File, readln, stdin, stdout, write, writefln, writeln;
+    import std.stdio : File, readln, stdin, stdout, write, writeln;
 
     scope(exit) if (plugin.state.settings.flush) stdout.flush();
 
     logger.trace();
-    logger.info("-- Spotify authorisation key generation mode --");
+    logger.info("== Spotify authorisation key generation mode ==");
     enum message = "
 To access the Spotify API you need a <i>client ID</> and a <i>client secret</>.
 
@@ -170,6 +179,12 @@ A normal URL to any playlist you can modify will work fine.
         {
             // Probably we got some platform wrong and command was not found
             logger.warning("Error: could not automatically open browser.");
+            printManualURL(url);
+            if (plugin.state.settings.flush) stdout.flush();
+        }
+        catch (Exception _)
+        {
+            logger.warning("Error: no graphical environment detected");
             printManualURL(url);
             if (plugin.state.settings.flush) stdout.flush();
         }

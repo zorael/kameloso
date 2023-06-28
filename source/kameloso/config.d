@@ -8,8 +8,15 @@
     and [kameloso.pods.IRCBot|IRCBot].
 
     See_Also:
-        [kameloso.kameloso]
+        [kameloso.kameloso],
+        [kameloso.main],
         [kameloso.common]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.config;
 
@@ -131,13 +138,15 @@ void verboselyWriteConfig(
         !instance.settings.brightTerminal &&
         !instance.settings.configFile.exists;
 
-    instance.writeConfigurationFile(instance.settings.configFile);
+    writeConfigurationFile(instance, instance.settings.configFile);
 
     if (!instance.settings.headless)
     {
+        import kameloso.string : doublyBackslashed;
+
         printObjects(client, instance.bot, server, instance.connSettings, instance.settings);
         enum pattern = "Configuration written to <i>%s";
-        logger.logf(pattern, instance.settings.configFile);
+        logger.logf(pattern, instance.settings.configFile.doublyBackslashed);
 
         if (!instance.bot.admins.length && !instance.bot.homeChannels.length && giveInstructions)
         {
@@ -171,8 +180,12 @@ void printSettings(ref Kameloso instance) @system
     printVersionInfo();
     writeln();
 
-    printObjects!(No.all)(instance.parser.client, instance.bot,
-        instance.parser.server, instance.connSettings, instance.settings);
+    printObjects!(No.all)
+        (instance.parser.client,
+        instance.bot,
+        instance.parser.server,
+        instance.connSettings,
+        instance.settings);
 
     instance.initPlugins();
 
@@ -205,6 +218,9 @@ void manageConfigFile(
     const Flag!"shouldOpenGraphicalEditor" shouldOpenGraphicalEditor,
     const Flag!"force" force) @system
 {
+    import kameloso.string : doublyBackslashed;
+    import std.file : exists;
+
     /++
         Opens up the configuration file in a terminal text editor.
      +/
@@ -232,12 +248,11 @@ void manageConfigFile(
                 static assert(0, "Unsupported platform, please file a bug.");
             }
 
-            logger.error(message);
-            return;
+            return logger.error(message);
         }
 
         enum pattern = "Attempting to open <i>%s</> with <i>%s</>...";
-        logger.logf(pattern, instance.settings.configFile, editor);
+        logger.logf(pattern, instance.settings.configFile.doublyBackslashed, editor.doublyBackslashed);
 
         immutable command = [ editor, instance.settings.configFile ];
         spawnProcess(command).wait;
@@ -268,9 +283,8 @@ void manageConfigFile(
 
             if (!isGraphicalEnvironment)
             {
-                logger.error("No graphical environment appears to be running; " ~
-                    "cannot open editor.");
-                return;
+                enum message = "No graphical environment appears to be running; cannot open editor.";
+                return logger.error(message);
             }
         }
         else version(Windows)
@@ -286,13 +300,11 @@ void manageConfigFile(
         // by [kameloso.main.tryGetopt].
 
         enum pattern = "Attempting to open <i>%s</> in a graphical text editor...";
-        logger.logf(pattern, instance.settings.configFile);
+        logger.logf(pattern, instance.settings.configFile.doublyBackslashed);
 
         immutable command = [ editor, instance.settings.configFile ];
         execute(command);
     }
-
-    import std.file : exists;
 
     /+
         Write config if...
@@ -357,7 +369,7 @@ void writeToDisk(
 {
     import std.file : mkdirRecurse;
     import std.path : dirName;
-    import std.stdio : File, writefln, writeln;
+    import std.stdio : File;
 
     immutable dir = filename.dirName;
     mkdirRecurse(dir);
@@ -443,27 +455,27 @@ auto flatten(string separator = " ", T)(const T[] arr)
 ///
 unittest
 {
-    import std.conv : text;
+    import std.conv : to;
 
     {
         auto arr = [ "a", "b", "c d e   ", "f" ];
         arr = flatten(arr);
-        assert((arr == [ "a", "b", "c", "d", "e", "f" ]), arr.text);
+        assert((arr == [ "a", "b", "c", "d", "e", "f" ]), arr.to!string);
     }
     {
         auto arr = [ "a", "b", "c,d,e,,,", "f" ];
         arr = flatten!","(arr);
-        assert((arr == [ "a", "b", "c", "d", "e", "f" ]), arr.text);
+        assert((arr == [ "a", "b", "c", "d", "e", "f" ]), arr.to!string);
     }
     {
         auto arr = [ "a", "b", "c dhonk  e ", "f" ];
         arr = flatten!"honk"(arr);
-        assert((arr == [ "a", "b", "c d", "e", "f" ]), arr.text);
+        assert((arr == [ "a", "b", "c d", "e", "f" ]), arr.to!string);
     }
     {
         auto arr = [ "a", "b", "c" ];
         arr = flatten(arr);
-        assert((arr == [ "a", "b", "c" ]), arr.text);
+        assert((arr == [ "a", "b", "c" ]), arr.to!string);
     }
 }
 
@@ -481,7 +493,7 @@ public:
     Example:
     ---
     Kameloso instance;
-    Next next = instance.handleGetopt(args);
+    Next next = handleGetopt(instance);
 
     if (next == Next.returnSuccess) return 0;
     // ...
@@ -489,7 +501,6 @@ public:
 
     Params:
         instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
-        args = The command-line arguments the program was called with.
 
     Returns:
         [lu.common.Next.continue_|Next.continue_] or
@@ -499,530 +510,542 @@ public:
     Throws:
         [std.getopt.GetOptException|GetOptException] if an unknown flag is passed.
  +/
-auto handleGetopt(ref Kameloso instance, string[] args) @system
+auto handleGetopt(ref Kameloso instance) @system
 {
-    with (instance)
+    import kameloso.common : printVersionInfo;
+    import kameloso.configreader : readConfigInto;
+    import std.getopt : arraySep, config, getopt;
+
+    bool shouldWriteConfig;
+    bool shouldOpenTerminalEditor;
+    bool shouldOpenGraphicalEditor;
+    bool shouldShowVersion;
+    bool shouldShowSettings;
+    bool shouldAppendToArrays;
+    bool noop;
+
+    // Windows-only but must be declared regardless of platform
+    bool shouldDownloadOpenSSL;
+    bool shouldDownloadCacert;
+
+    // Likewise but version `TwitchSupport`
+    bool shouldSetupTwitch;
+
+    string[] inputGuestChannels;
+    string[] inputHomeChannels;
+    string[] inputAdmins;
+
+    arraySep = ",";
+
+    /+
+        Call getopt on args once and look for any specified configuration files
+        so we know what to read. As such it has to be done before the
+        [kameloso.configreader.readConfigInto] call. Then call getopt on the rest.
+        Include "c|config" in the normal getopt to have it automatically
+        included in the --help text.
+     +/
+
+    // Results can be const
+    auto argsSlice = instance.args[];
+    const configFileResults = getopt(argsSlice,
+        config.caseSensitive,
+        config.bundling,
+        config.passThrough,
+        "c|config", &instance.settings.configFile,
+        "version", &shouldShowVersion,
+    );
+
+    if (shouldShowVersion)
     {
-        import kameloso.common : printVersionInfo;
-        import kameloso.configreader : readConfigInto;
-        import std.getopt : arraySep, config, getopt;
+        // --version was passed; show version info and quit
+        printVersionInfo(No.colours);
+        return Next.returnSuccess;
+    }
 
-        bool shouldWriteConfig;
-        bool shouldOpenTerminalEditor;
-        bool shouldOpenGraphicalEditor;
-        bool shouldShowVersion;
-        bool shouldShowSettings;
-        bool shouldAppendToArrays;
-        bool noop;
+    // Ignore invalid/missing entries here, report them when initialising plugins
+    instance.settings.configFile.readConfigInto(
+        instance.parser.client,
+        instance.bot,
+        instance.parser.server,
+        instance.connSettings,
+        instance.settings);
 
-        // Windows-only but must be declared regardless of platform
-        bool shouldDownloadOpenSSL;
-        bool shouldDownloadCacert;
+    applyDefaults(
+        instance.parser.client,
+        instance.parser.server,
+        instance.bot);
 
-        // Likewise but version `TwitchSupport`
-        bool shouldSetupTwitch;
+    import kameloso.terminal : applyMonochromeAndFlushOverrides;
 
-        string[] inputGuestChannels;
-        string[] inputHomeChannels;
-        string[] inputAdmins;
+    // Non-TTYs (eg. pagers) can't show colours.
+    // Apply overrides here after having read config file
+    applyMonochromeAndFlushOverrides(instance.settings.monochrome, instance.settings.flush);
 
-        arraySep = ",";
+    // Get `--monochrome` again; let it overwrite what applyMonochromeAndFlushOverrides
+    // and readConfigInto set it to
+    cast(void)getopt(argsSlice,
+        config.caseSensitive,
+        config.bundling,
+        config.passThrough,
+        "monochrome", &instance.settings.monochrome,
+        "setup-twitch", &shouldSetupTwitch,
+    );
 
-        /+
-            Call getopt on args once and look for any specified configuration files
-            so we know what to read. As such it has to be done before the
-            [kameloso.configreader.readConfigInto] call. Then call getopt on the rest.
-            Include "c|config" in the normal getopt to have it automatically
-            included in the --help text.
-         +/
+    /++
+        Call getopt in a nested function so we can call it both to merely
+        parse for settings and to format the help listing.
+     +/
+    auto callGetopt(/*const*/ string[] theseArgs, const Flag!"quiet" quiet)
+    {
+        import kameloso.logger : LogLevel;
+        import kameloso.terminal.colours.tags : expandTags;
+        import std.conv : text, to;
+        import std.format : format;
+        import std.path : extension;
+        import std.process : environment;
+        import std.random : uniform;
+        import std.range : repeat;
 
-        // Results can be const
-        auto argsSlice = args[];
-        const configFileResults = getopt(argsSlice,
-            config.caseSensitive,
-            config.bundling,
-            config.passThrough,
-            "c|config", &settings.configFile,
-            "version", &shouldShowVersion,
-        );
+        immutable setSyntax = quiet ? string.init :
+            "<i>--set plugin</>.<i>setting</>=<i>value</>".expandTags(LogLevel.off);
 
-        if (shouldShowVersion)
+        immutable nickname = quiet ? string.init :
+            instance.parser.client.nickname.length ? instance.parser.client.nickname : "<random>";
+
+        immutable sslText = quiet ? string.init :
+            instance.connSettings.ssl ? "true" :
+                instance.settings.force ? "false" : "inferred by port";
+
+        immutable passwordMask = quiet ? string.init :
+            instance.bot.password.length ? '*'.repeat(uniform(6, 10)).to!string : string.init;
+
+        immutable passMask = quiet ? string.init :
+            instance.bot.pass.length ? '*'.repeat(uniform(6, 10)).to!string : string.init;
+
+        immutable editorCommand = quiet ? string.init :
+            environment.get("EDITOR", string.init);
+
+        immutable editorVariableValue = quiet ? string.init :
+            editorCommand.length ?
+                " [<i>%s</>]".expandTags(LogLevel.trace).format(editorCommand) :
+                string.init;
+
+        string formatNum(const size_t num)
         {
-            // --version was passed; show version info and quit
-            printVersionInfo(No.colours);
-            return Next.returnSuccess;
+            return (quiet || (num == 0)) ? string.init :
+                " (<i>%d</>)".expandTags(LogLevel.trace).format(num);
         }
 
-        // Ignore invalid/missing entries here, report them when initialising plugins
-        settings.configFile.readConfigInto(parser.client, bot, parser.server, connSettings, settings);
-        applyDefaults(parser.client, parser.server, bot);
-
-        import kameloso.terminal : applyMonochromeAndFlushOverrides;
-
-        // Non-TTYs (eg. pagers) can't show colours.
-        // Apply overrides here after having read config file
-        applyMonochromeAndFlushOverrides(settings.monochrome, settings.flush);
-
-        // Get `--monochrome` again; let it overwrite what applyMonochromeAndFlushOverrides
-        // and readConfigInto set it to
-        cast(void)getopt(argsSlice,
-            config.caseSensitive,
-            config.bundling,
-            config.passThrough,
-            "monochrome", &settings.monochrome,
-            "setup-twitch", &shouldSetupTwitch,
-        );
-
-        /++
-            Call getopt in a nested function so we can call it both to merely
-            parse for settings and to format the help listing.
-         +/
-        auto callGetopt(/*const*/ string[] theseArgs, const Flag!"quiet" quiet)
+        void appendCustomSetting(const string _, const string setting)
         {
-            import kameloso.logger : LogLevel;
-            import kameloso.terminal.colours.tags : expandTags;
-            import std.conv : text, to;
-            import std.format : format;
-            import std.path : extension;
-            import std.process : environment;
-            import std.random : uniform;
-            import std.range : repeat;
-
-            immutable setSyntax = quiet ? string.init :
-                "<i>--set plugin</>.<i>setting</>=<i>value</>".expandTags(LogLevel.off);
-
-            immutable nickname = quiet ? string.init :
-                parser.client.nickname.length ? parser.client.nickname : "<random>";
-
-            immutable sslText = quiet ? string.init :
-                connSettings.ssl ? "true" :
-                    settings.force ? "false" : "inferred by port";
-
-            immutable passwordMask = quiet ? string.init :
-                bot.password.length ? '*'.repeat(uniform(6, 10)).to!string : string.init;
-
-            immutable passMask = quiet ? string.init :
-                bot.pass.length ? '*'.repeat(uniform(6, 10)).to!string : string.init;
-
-            immutable editorCommand = quiet ? string.init :
-                environment.get("EDITOR", string.init);
-
-            immutable editorVariableValue = quiet ? string.init :
-                editorCommand.length ?
-                    " [<i>%s</>]".expandTags(LogLevel.trace).format(editorCommand) :
-                    string.init;
-
-            string formatNum(const size_t num)
-            {
-                return (quiet || (num == 0)) ? string.init :
-                    " (<i>%d</>)".expandTags(LogLevel.trace).format(num);
-            }
-
-            void appendCustomSetting(const string _, const string setting)
-            {
-                customSettings ~= setting;
-            }
-
-            version(Windows)
-            {
-                enum getOpenSSLString = "Download OpenSSL for Windows";
-                enum getCacertString = "Download a <i>cacert.pem</> certificate " ~
-                    "bundle (implies <i>--save</>)";
-            }
-            else
-            {
-                enum getOpenSSLString = "(Windows only)";
-                enum getCacertString = getOpenSSLString;
-            }
-
-            immutable configFileExtension = settings.configFile.extension;
-            immutable defaultGeditProgramString =
-                "[<i>the default application used to open <l>*" ~
-                    configFileExtension ~ "<i> files on your system</>]";
-
-            version(Windows)
-            {
-                immutable geditProgramString = settings.force ?
-                    defaultGeditProgramString :
-                    "[<i>notepad.exe</>]";
-            }
-            else
-            {
-                alias geditProgramString = defaultGeditProgramString;
-            }
-
-            version(TwitchSupport)
-            {
-                enum setupTwitchString = "Set up a basic Twitch connection";
-            }
-            else
-            {
-                enum setupTwitchString = "(Requires Twitch support)";
-            }
-
-            return getopt(theseArgs,
-                config.caseSensitive,
-                config.bundling,
-                "n|nickname",
-                    quiet ? string.init :
-                        "Nickname [<i>%s</>]"
-                            .expandTags(LogLevel.trace)
-                            .format(nickname),
-                    &parser.client.nickname,
-                "s|server",
-                    quiet ? string.init :
-                        "Server address [<i>%s</>]"
-                            .expandTags(LogLevel.trace)
-                            .format(parser.server.address),
-                    &parser.server.address,
-                "P|port",
-                    quiet ? string.init :
-                        "Server port [<i>%d</>]"
-                            .expandTags(LogLevel.trace)
-                            .format(parser.server.port),
-                    &parser.server.port,
-                "6|ipv6",
-                    quiet ? string.init :
-                        "Use IPv6 where available [<i>%s</>]"
-                            .expandTags(LogLevel.trace)
-                            .format(connSettings.ipv6),
-                    &connSettings.ipv6,
-                "ssl",
-                    quiet ? string.init :
-                        "Attempt SSL connection [<i>%s</>]"
-                            .expandTags(LogLevel.trace)
-                            .format(sslText),
-                    &connSettings.ssl,
-                "A|account",
-                    quiet ? string.init :
-                        "Services account name" ~
-                            (bot.account.length ?
-                                " [<i>%s</>]"
-                                    .expandTags(LogLevel.trace)
-                                    .format(bot.account) :
-                                string.init),
-                    &bot.account,
-                "p|password",
-                    quiet ? string.init :
-                        "Services account password" ~
-                            (bot.password.length ?
-                                " [<i>%s</>]"
-                                    .expandTags(LogLevel.trace)
-                                    .format(passwordMask) :
-                                string.init),
-                    &bot.password,
-                "pass",
-                    quiet ? string.init :
-                        "Registration pass" ~
-                            (bot.pass.length ?
-                                " [<i>%s</>]"
-                                    .expandTags(LogLevel.trace)
-                                    .format(passMask) :
-                                string.init),
-                    &bot.pass,
-                "admins",
-                    quiet ? string.init :
-                        "Administrators' services accounts, comma-separated" ~
-                            formatNum(bot.admins.length),
-                    &inputAdmins,
-                "H|homeChannels",
-                    quiet ? string.init :
-                        text(("Home channels to operate in, comma-separated " ~
-                            "(escape or enquote any octothorpe <i>#</>s)").expandTags(LogLevel.trace),
-                            formatNum(bot.homeChannels.length)),
-                    &inputHomeChannels,
-                "C|guestChannels",
-                    quiet ? string.init :
-                        "Non-home channels to idle in, comma-separated (ditto)" ~
-                            formatNum(bot.guestChannels.length),
-                    &inputGuestChannels,
-                "a|append",
-                    quiet ? string.init :
-                        "Append input home channels, guest channels and " ~
-                            "admins instead of overriding",
-                    &shouldAppendToArrays,
-                "settings",
-                    quiet ? string.init :
-                        "Show all plugins' settings",
-                    &shouldShowSettings,
-                "bright",
-                    quiet ? string.init :
-                        "Adjust colours for bright terminal backgrounds [<i>%s</>]"
-                            .expandTags(LogLevel.trace)
-                            .format(settings.brightTerminal),
-                    &settings.brightTerminal,
-                "monochrome",
-                    quiet ? string.init :
-                        "Use monochrome output [<i>%s</>]"
-                            .expandTags(LogLevel.trace)
-                            .format(settings.monochrome),
-                    //&settings.monochrome,
-                    &noop,
-                "set",
-                    quiet ? string.init :
-                        text("Manually change a setting (syntax: ", setSyntax, ')'),
-                    &appendCustomSetting,
-                "c|config",
-                    quiet ? string.init :
-                        "Specify a different configuration file [<i>%s</>]"
-                            .expandTags(LogLevel.trace)
-                            .format(settings.configFile),
-                    //&settings.configFile,
-                    &noop,
-                "r|resourceDir",
-                    quiet ? string.init :
-                        "Specify a different resource directory [<i>%s</>]"
-                            .expandTags(LogLevel.trace)
-                            .format(settings.resourceDirectory),
-                    &settings.resourceDirectory,
-                /+"receiveTimeout",
-                    quiet ? string.init :
-                        ("Socket receive timeout in milliseconds; lower numbers " ~
-                            "improve worse-case responsiveness of outgoing messages [<i>%d</>]")
-                                .expandTags(LogLevel.trace)
-                                .format(connSettings.receiveTimeout),
-                    &connSettings.receiveTimeout,
-                "privateKey",
-                    quiet ? string.init :
-                        "Path to private key file, used to authenticate some SSL connections",
-                    &connSettings.privateKeyFile,
-                "cert",
-                    quiet ? string.init :
-                        "Path to certificate file, ditto",
-                    &connSettings.certFile,+/
-                "cacert",
-                    quiet ? string.init :
-                        "Path to <i>cacert.pem</> certificate bundle, or equivalent"
-                            .expandTags(LogLevel.trace),
-                    &connSettings.caBundleFile,
-                "get-openssl",
-                    quiet ? string.init :
-                        getOpenSSLString,
-                    &shouldDownloadOpenSSL,
-                "get-cacert",
-                    quiet ? string.init :
-                        getCacertString
-                            .expandTags(LogLevel.trace),
-                    &shouldDownloadCacert,
-                "setup-twitch",
-                    quiet ? string.init :
-                        setupTwitchString,
-                    //&shouldSetupTwitch,
-                    &noop,
-                "numeric",
-                    quiet ? string.init :
-                        "Use numeric output of addresses",
-                    &settings.numericAddresses,
-                "summary",
-                    quiet ? string.init :
-                        "Show a connection summary on program exit [<i>%s</>]"
-                            .expandTags(LogLevel.trace)
-                            .format(settings.exitSummary),
-                    &settings.exitSummary,
-                "force",
-                    quiet ? string.init :
-                        "Force connect (skips some checks)",
-                    &settings.force,
-                "flush",
-                    quiet ? string.init :
-                        "Set terminal mode to flush screen output after each line written to it. " ~
-                            "(Use this if the screen only occasionally updates)",
-                    &settings.flush,
-                "save",
-                    quiet ? string.init :
-                        "Write configuration to file",
-                    &shouldWriteConfig,
-                "edit",
-                    quiet ? string.init :
-                        ("Open the configuration file in a *terminal* text editor " ~
-                            "(or the application defined in the <i>$EDITOR</> " ~
-                            "environment variable)").expandTags(LogLevel.trace) ~ editorVariableValue,
-                    &shouldOpenTerminalEditor,
-                "gedit",
-                    quiet ? string.init :
-                        ("Open the configuration file in a *graphical* text editor " ~ geditProgramString)
-                            .expandTags(LogLevel.trace),
-                    &shouldOpenGraphicalEditor,
-                "headless",
-                    quiet ? string.init :
-                        "Headless mode, disabling all terminal output",
-                    &settings.headless,
-                "version",
-                    quiet ? string.init :
-                        "Show version information",
-                    &shouldShowVersion,
-            );
-        }
-
-        const backupClient = instance.parser.client;
-        auto backupServer = instance.parser.server;  // cannot opEqual const IRCServer with mutable
-        const backupBot = instance.bot;
-
-        version(TwitchSupport)
-        {
-            if (shouldSetupTwitch)
-            {
-                // Do this early to allow for manual overrides with --server etc
-                instance.parser.server.address = "irc.chat.twitch.tv";
-                instance.parser.server.port = 6697;
-                instance.parser.client.nickname = "doesntmatter";
-                instance.parser.client.user = "ignored";
-                instance.parser.client.realName = "likewise";
-                shouldWriteConfig = true;
-                shouldOpenGraphicalEditor = true;
-            }
-        }
-
-        // No need to catch the return value, only used for --help
-        cast(void)callGetopt(args, Yes.quiet);
-
-        // Save the user from themselves. (A receive timeout of 0 breaks all sorts of things.)
-        if (connSettings.receiveTimeout == 0)
-        {
-            import kameloso.constants : Timeout;
-            connSettings.receiveTimeout = Timeout.receiveMsecs;
-        }
-
-        // Reinitialise the logger with new settings
-        import kameloso.logger : KamelosoLogger;
-        static import kameloso.common;
-        kameloso.common.logger = new KamelosoLogger(settings);
-
-        // Support channels and admins being separated by spaces (mirror config file behaviour)
-        if (inputHomeChannels.length) inputHomeChannels = flatten(inputHomeChannels);
-        if (inputGuestChannels.length) inputGuestChannels = flatten(inputGuestChannels);
-        if (inputAdmins.length) inputAdmins = flatten(inputAdmins);
-
-        // Manually override or append channels, depending on `shouldAppendChannels`
-        if (shouldAppendToArrays)
-        {
-            if (inputHomeChannels.length) bot.homeChannels ~= inputHomeChannels;
-            if (inputGuestChannels.length) bot.guestChannels ~= inputGuestChannels;
-            if (inputAdmins.length) bot.admins ~= inputAdmins;
-        }
-        else
-        {
-            if (inputHomeChannels.length) bot.homeChannels = inputHomeChannels;
-            if (inputGuestChannels.length) bot.guestChannels = inputGuestChannels;
-            if (inputAdmins.length) bot.admins = inputAdmins;
-        }
-
-        /// Strip channel whitespace and make lowercase
-        static void stripAndLower(ref string[] channels)
-        {
-            import lu.string : stripped;
-            import std.algorithm.iteration : map, uniq;
-            import std.algorithm.sorting : sort;
-            import std.array : array;
-            import std.uni : toLower;
-
-            channels = channels
-                .map!(channelName => channelName.stripped.toLower)
-                .array
-                .sort
-                .uniq
-                .array;
-        }
-
-        stripAndLower(bot.homeChannels);
-        stripAndLower(bot.guestChannels);
-
-        // Remove duplicate channels (where a home is also featured as a normal channel)
-        size_t[] duplicates;
-
-        foreach (immutable channelName; bot.homeChannels)
-        {
-            import std.algorithm.searching : countUntil;
-            immutable chanIndex = bot.guestChannels.countUntil(channelName);
-            if (chanIndex != -1) duplicates ~= chanIndex;
-        }
-
-        foreach_reverse (immutable chanIndex; duplicates)
-        {
-            import std.algorithm.mutation : SwapStrategy, remove;
-            bot.guestChannels = bot.guestChannels.remove!(SwapStrategy.unstable)(chanIndex);
-        }
-
-        // Clear entries that are dashes
-        import lu.objmanip : replaceMembers;
-
-        parser.client.replaceMembers("-");
-        bot.replaceMembers("-");
-
-        // Handle showstopper arguments (that display something and then exits)
-
-        if (configFileResults.helpWanted)
-        {
-            // --help|-h was passed, show the help table and quit
-            // It's okay to reuse args, it's probably empty save for arg0
-            // and we just want the help listing
-
-            if (!settings.headless)
-            {
-                printVersionInfo();
-                printHelp(callGetopt(args, No.quiet));
-                if (settings.flush) stdout.flush();
-            }
-
-            return Next.returnSuccess;
+            instance.customSettings ~= setting;
         }
 
         version(Windows)
         {
-            if (shouldDownloadCacert || shouldDownloadOpenSSL)
+            enum getOpenSSLString = "Download OpenSSL for Windows";
+            enum getCacertString = "Download a <i>cacert.pem</> certificate " ~
+                "bundle (implies <i>--save</>)";
+        }
+        else
+        {
+            enum getOpenSSLString = "(Windows only)";
+            enum getCacertString = getOpenSSLString;
+        }
+
+        immutable configFileExtension = instance.settings.configFile.extension;
+        immutable defaultGeditProgramString =
+            "[<i>the default application used to open <l>*" ~
+                configFileExtension ~ "<i> files on your system</>]";
+
+        version(Windows)
+        {
+            immutable geditProgramString = instance.settings.force ?
+                defaultGeditProgramString :
+                "[<i>notepad.exe</>]";
+        }
+        else
+        {
+            alias geditProgramString = defaultGeditProgramString;
+        }
+
+        version(TwitchSupport)
+        {
+            enum setupTwitchString = "Set up a basic Twitch connection";
+        }
+        else
+        {
+            enum setupTwitchString = "(Requires Twitch support)";
+        }
+
+        return getopt(theseArgs,
+            config.caseSensitive,
+            config.bundling,
+            "n|nickname",
+                quiet ? string.init :
+                    "Nickname [<i>%s</>]"
+                        .expandTags(LogLevel.trace)
+                        .format(nickname),
+                &instance.parser.client.nickname,
+            "s|server",
+                quiet ? string.init :
+                    "Server address [<i>%s</>]"
+                        .expandTags(LogLevel.trace)
+                        .format(instance.parser.server.address),
+                &instance.parser.server.address,
+            "P|port",
+                quiet ? string.init :
+                    "Server port [<i>%d</>]"
+                        .expandTags(LogLevel.trace)
+                        .format(instance.parser.server.port),
+                &instance.parser.server.port,
+            "6|ipv6",
+                quiet ? string.init :
+                    "Use IPv6 where available [<i>%s</>]"
+                        .expandTags(LogLevel.trace)
+                        .format(instance.connSettings.ipv6),
+                &instance.connSettings.ipv6,
+            "ssl",
+                quiet ? string.init :
+                    "Attempt SSL connection [<i>%s</>]"
+                        .expandTags(LogLevel.trace)
+                        .format(sslText),
+                &instance.connSettings.ssl,
+            "A|account",
+                quiet ? string.init :
+                    "Services account name" ~
+                        (instance.bot.account.length ?
+                            " [<i>%s</>]"
+                                .expandTags(LogLevel.trace)
+                                .format(instance.bot.account) :
+                            string.init),
+                &instance.bot.account,
+            "p|password",
+                quiet ? string.init :
+                    "Services account password" ~
+                        (instance.bot.password.length ?
+                            " [<i>%s</>]"
+                                .expandTags(LogLevel.trace)
+                                .format(passwordMask) :
+                            string.init),
+                &instance.bot.password,
+            "pass",
+                quiet ? string.init :
+                    "Registration pass" ~
+                        (instance.bot.pass.length ?
+                            " [<i>%s</>]"
+                                .expandTags(LogLevel.trace)
+                                .format(passMask) :
+                            string.init),
+                &instance.bot.pass,
+            "admins",
+                quiet ? string.init :
+                    "Administrators' services accounts, comma-separated" ~
+                        formatNum(instance.bot.admins.length),
+                &inputAdmins,
+            "H|homeChannels",
+                quiet ? string.init :
+                    text(("Home channels to operate in, comma-separated " ~
+                        "(escape or enquote any octothorpe <i>#</>s)").expandTags(LogLevel.trace),
+                        formatNum(instance.bot.homeChannels.length)),
+                &inputHomeChannels,
+            "C|guestChannels",
+                quiet ? string.init :
+                    "Non-home channels to idle in, comma-separated (ditto)" ~
+                        formatNum(instance.bot.guestChannels.length),
+                &inputGuestChannels,
+            "a|append",
+                quiet ? string.init :
+                    "Append input home channels, guest channels and " ~
+                        "admins instead of overriding",
+                &shouldAppendToArrays,
+            "settings",
+                quiet ? string.init :
+                    "Show all plugins' settings",
+                &shouldShowSettings,
+            "bright",
+                quiet ? string.init :
+                    "Adjust colours for bright terminal backgrounds [<i>%s</>]"
+                        .expandTags(LogLevel.trace)
+                        .format(instance.settings.brightTerminal),
+                &instance.settings.brightTerminal,
+            "monochrome",
+                quiet ? string.init :
+                    "Use monochrome output [<i>%s</>]"
+                        .expandTags(LogLevel.trace)
+                        .format(instance.settings.monochrome),
+                //&settings.monochrome,
+                &noop,
+            "set",
+                quiet ? string.init :
+                    text("Manually change a setting (syntax: ", setSyntax, ')'),
+                &appendCustomSetting,
+            "c|config",
+                quiet ? string.init :
+                    "Specify a different configuration file [<i>%s</>]"
+                        .expandTags(LogLevel.trace)
+                        .format(instance.settings.configFile),
+                //&settings.configFile,
+                &noop,
+            "r|resourceDir",
+                quiet ? string.init :
+                    "Specify a different resource directory [<i>%s</>]"
+                        .expandTags(LogLevel.trace)
+                        .format(instance.settings.resourceDirectory),
+                &instance.settings.resourceDirectory,
+            /+"receiveTimeout",
+                quiet ? string.init :
+                    ("Socket receive timeout in milliseconds; lower numbers " ~
+                        "improve worse-case responsiveness of outgoing messages [<i>%d</>]")
+                            .expandTags(LogLevel.trace)
+                            .format(instance.connSettings.receiveTimeout),
+                &instance.connSettings.receiveTimeout,
+            "privateKey",
+                quiet ? string.init :
+                    "Path to private key file, used to authenticate some SSL connections",
+                &instance.connSettings.privateKeyFile,
+            "cert",
+                quiet ? string.init :
+                    "Path to certificate file, ditto",
+                &instance.connSettings.certFile,+/
+            "cacert",
+                quiet ? string.init :
+                    "Path to <i>cacert.pem</> certificate bundle, or equivalent"
+                        .expandTags(LogLevel.trace),
+                &instance.connSettings.caBundleFile,
+            "get-openssl",
+                quiet ? string.init :
+                    getOpenSSLString,
+                &shouldDownloadOpenSSL,
+            "get-cacert",
+                quiet ? string.init :
+                    getCacertString
+                        .expandTags(LogLevel.trace),
+                &shouldDownloadCacert,
+            "setup-twitch",
+                quiet ? string.init :
+                    setupTwitchString,
+                //&shouldSetupTwitch,
+                &noop,
+            "numeric",
+                quiet ? string.init :
+                    "Use numeric output of addresses",
+                &instance.settings.numericAddresses,
+            "summary",
+                quiet ? string.init :
+                    "Show a connection summary on program exit [<i>%s</>]"
+                        .expandTags(LogLevel.trace)
+                        .format(instance.settings.exitSummary),
+                &instance.settings.exitSummary,
+            "force",
+                quiet ? string.init :
+                    "Force connect (skips some checks)",
+                &instance.settings.force,
+            "flush",
+                quiet ? string.init :
+                    "Set terminal mode to flush screen output after each line written to it. " ~
+                        "(Use this if the screen only occasionally updates)",
+                &instance.settings.flush,
+            "save",
+                quiet ? string.init :
+                    "Write configuration to file",
+                &shouldWriteConfig,
+            "edit",
+                quiet ? string.init :
+                    ("Open the configuration file in a *terminal* text editor " ~
+                        "(or the application defined in the <i>$EDITOR</> " ~
+                        "environment variable)").expandTags(LogLevel.trace) ~ editorVariableValue,
+                &shouldOpenTerminalEditor,
+            "gedit",
+                quiet ? string.init :
+                    ("Open the configuration file in a *graphical* text editor " ~ geditProgramString)
+                        .expandTags(LogLevel.trace),
+                &shouldOpenGraphicalEditor,
+            "headless",
+                quiet ? string.init :
+                    "Headless mode, disabling all terminal output",
+                &instance.settings.headless,
+            "version",
+                quiet ? string.init :
+                    "Show version information",
+                &shouldShowVersion,
+        );
+    }
+
+    const backupClient = instance.parser.client;
+    auto backupServer = instance.parser.server;  // cannot opEqual const IRCServer with mutable
+    const backupBot = instance.bot;
+
+    version(TwitchSupport)
+    {
+        if (shouldSetupTwitch)
+        {
+            // Do this early to allow for manual overrides with --server etc
+            instance.parser.server.address = "irc.chat.twitch.tv";
+            instance.parser.server.port = 6697;
+            instance.parser.client.nickname = "doesntmatter";
+            instance.parser.client.user = "ignored";
+            instance.parser.client.realName = "likewise";
+            shouldWriteConfig = true;
+            shouldOpenGraphicalEditor = true;
+        }
+    }
+
+    // No need to catch the return value, only used for --help
+    cast(void)callGetopt(instance.args, Yes.quiet);
+
+    // Save the user from themselves. (A receive timeout of 0 breaks all sorts of things.)
+    if (instance.connSettings.receiveTimeout == 0)
+    {
+        import kameloso.constants : Timeout;
+        instance.connSettings.receiveTimeout = Timeout.receiveMsecs;
+    }
+
+    // Reinitialise the logger with new settings
+    import kameloso.logger : KamelosoLogger;
+    static import kameloso.common;
+    kameloso.common.logger = new KamelosoLogger(instance.settings);
+
+    // Support channels and admins being separated by spaces (mirror config file behaviour)
+    if (inputHomeChannels.length) inputHomeChannels = flatten(inputHomeChannels);
+    if (inputGuestChannels.length) inputGuestChannels = flatten(inputGuestChannels);
+    if (inputAdmins.length) inputAdmins = flatten(inputAdmins);
+
+    // Manually override or append channels, depending on `shouldAppendChannels`
+    if (shouldAppendToArrays)
+    {
+        if (inputHomeChannels.length) instance.bot.homeChannels ~= inputHomeChannels;
+        if (inputGuestChannels.length) instance.bot.guestChannels ~= inputGuestChannels;
+        if (inputAdmins.length) instance.bot.admins ~= inputAdmins;
+    }
+    else
+    {
+        if (inputHomeChannels.length) instance.bot.homeChannels = inputHomeChannels;
+        if (inputGuestChannels.length) instance.bot.guestChannels = inputGuestChannels;
+        if (inputAdmins.length) instance.bot.admins = inputAdmins;
+    }
+
+    /// Strip channel whitespace and make lowercase
+    static void stripAndLower(ref string[] channels)
+    {
+        import lu.string : stripped;
+        import std.algorithm.iteration : map, uniq;
+        import std.algorithm.sorting : sort;
+        import std.array : array;
+        import std.uni : toLower;
+
+        channels = channels
+            .map!(channelName => channelName.stripped.toLower)
+            .array
+            .sort
+            .uniq
+            .array;
+    }
+
+    stripAndLower(instance.bot.homeChannels);
+    stripAndLower(instance.bot.guestChannels);
+
+    // Remove duplicate channels (where a home is also featured as a normal channel)
+    size_t[] duplicates;
+
+    foreach (immutable channelName; instance.bot.homeChannels)
+    {
+        import std.algorithm.searching : countUntil;
+        immutable chanIndex = instance.bot.guestChannels.countUntil(channelName);
+        if (chanIndex != -1) duplicates ~= chanIndex;
+    }
+
+    foreach_reverse (immutable chanIndex; duplicates)
+    {
+        import std.algorithm.mutation : SwapStrategy, remove;
+        instance.bot.guestChannels = instance.bot.guestChannels.remove!(SwapStrategy.unstable)(chanIndex);
+    }
+
+    // Clear entries that are dashes
+    import lu.objmanip : replaceMembers;
+
+    instance.parser.client.replaceMembers("-");
+    instance.bot.replaceMembers("-");
+
+    // Handle showstopper arguments (that display something and then exits)
+
+    if (configFileResults.helpWanted)
+    {
+        // --help|-h was passed, show the help table and quit
+        // It's okay to reuse args, it's probably empty save for arg0
+        // and we just want the help listing
+
+        if (!instance.settings.headless)
+        {
+            printVersionInfo();
+            printHelp(callGetopt(instance.args, No.quiet));
+            if (instance.settings.flush) stdout.flush();
+        }
+
+        return Next.returnSuccess;
+    }
+
+    version(Windows)
+    {
+        if (shouldDownloadCacert || shouldDownloadOpenSSL)
+        {
+            import kameloso.ssldownloads : downloadWindowsSSL;
+
+            immutable settingsTouched = downloadWindowsSSL(
+                instance,
+                cast(Flag!"shouldDownloadCacert")shouldDownloadCacert,
+                cast(Flag!"shouldDownloadOpenSSL")shouldDownloadOpenSSL);
+
+            if (*instance.abort) return Next.returnFailure;
+
+            if (settingsTouched)
             {
-                import kameloso.ssldownloads : downloadWindowsSSL;
-
-                immutable settingsTouched = downloadWindowsSSL(
-                    instance,
-                    cast(Flag!"shouldDownloadCacert")shouldDownloadCacert,
-                    cast(Flag!"shouldDownloadOpenSSL")shouldDownloadOpenSSL);
-
-                if (*abort) return Next.returnFailure;
-
-                if (settingsTouched)
-                {
-                    import std.stdio : writeln;
-                    shouldWriteConfig = true;
-                    writeln();
-                }
-                else
-                {
-                    if (!shouldWriteConfig) return Next.returnSuccess;
-                }
+                import std.stdio : writeln;
+                shouldWriteConfig = true;
+                writeln();
+            }
+            else
+            {
+                if (!shouldWriteConfig) return Next.returnSuccess;
             }
         }
-
-        if (shouldWriteConfig || shouldOpenTerminalEditor || shouldOpenGraphicalEditor)
-        {
-            // --save and/or --edit was passed; defer to manageConfigFile
-
-            // Also pass Yes.shouldWriteConfig if something was changed via getopt
-            shouldWriteConfig =
-                shouldWriteConfig ||
-                customSettings.length ||
-                (instance.parser.client != backupClient) ||
-                (instance.parser.server != backupServer) ||
-                (instance.bot != backupBot);
-
-            manageConfigFile(
-                instance,
-                cast(Flag!"shouldWriteConfig")shouldWriteConfig,
-                cast(Flag!"shouldOpenTerminalEditor")shouldOpenTerminalEditor,
-                cast(Flag!"shouldOpenGraphicalEditor")shouldOpenGraphicalEditor,
-                cast(Flag!"force")settings.force);
-            return Next.returnSuccess;
-        }
-
-        if (shouldShowSettings)
-        {
-            // --settings was passed, show all options and quit
-            if (!settings.headless) printSettings(instance);
-            return Next.returnSuccess;
-        }
-
-        return Next.continue_;
     }
+
+    if (shouldWriteConfig || shouldOpenTerminalEditor || shouldOpenGraphicalEditor)
+    {
+        // --save and/or --edit was passed; defer to manageConfigFile
+
+        if (instance.settings.headless)
+        {
+            // Silently abort if we're in headless mode
+            return Next.returnFailure;
+        }
+
+        // Also pass Yes.shouldWriteConfig if something was changed via getopt
+        shouldWriteConfig =
+            shouldWriteConfig ||
+            instance.customSettings.length ||
+            (instance.parser.client != backupClient) ||
+            (instance.parser.server != backupServer) ||
+            (instance.bot != backupBot);
+
+        manageConfigFile(
+            instance,
+            cast(Flag!"shouldWriteConfig")shouldWriteConfig,
+            cast(Flag!"shouldOpenTerminalEditor")shouldOpenTerminalEditor,
+            cast(Flag!"shouldOpenGraphicalEditor")shouldOpenGraphicalEditor,
+            cast(Flag!"force")instance.settings.force);
+        return Next.returnSuccess;
+    }
+
+    if (shouldShowSettings)
+    {
+        // --settings was passed, show all options and quit
+        if (!instance.settings.headless) printSettings(instance);
+        return Next.returnSuccess;
+    }
+
+    return Next.continue_;
 }
 
 
@@ -1038,7 +1061,7 @@ auto handleGetopt(ref Kameloso instance, string[] args) @system
     Example:
     ---
     Kameloso instance;
-    instance.writeConfigurationFile(settings.configFile);
+    writeConfigurationFile(instance, instance.settings.configFile);
     ---
 
     Params:
@@ -1087,6 +1110,9 @@ void writeConfigurationFile(ref Kameloso instance, const string filename) @syste
             escapedServerDirName) :
         string.init;
 
+    // Snapshot resource dir in case we change it
+    immutable resourceDirSnapshot = settingsResourceDir;
+
     if ((settingsResourceDir == defaultResourceHomeDir) ||
         (settingsResourceDir == defaultFullServerResourceDir))
     {
@@ -1129,6 +1155,9 @@ void writeConfigurationFile(ref Kameloso instance, const string filename) @syste
 
     immutable justified = sink.data.idup.justifiedEntryValueText;
     writeToDisk(filename, justified, Yes.addBanner);
+
+    // Restore resource dir in case we aren't exiting
+    instance.settings.resourceDirectory = resourceDirSnapshot;
 }
 
 
@@ -1147,6 +1176,7 @@ void notifyAboutMissingSettings(const string[][string] missingEntries,
     const string binaryPath,
     const string configFile)
 {
+    import kameloso.string : doublyBackslashed;
     import std.conv : text;
     import std.path : baseName;
 
@@ -1161,7 +1191,7 @@ void notifyAboutMissingSettings(const string[][string] missingEntries,
     enum pattern = "Use <i>%s --save</> to regenerate the file, " ~
         "updating it with all available configuration. [<i>%s</>]";
     logger.trace();
-    logger.tracef(pattern, binaryPath.baseName, configFile);
+    logger.tracef(pattern, binaryPath.baseName, configFile.doublyBackslashed);
     logger.trace();
 }
 
@@ -1179,6 +1209,7 @@ void notifyAboutMissingSettings(const string[][string] missingEntries,
  +/
 void notifyAboutIncompleteConfiguration(const string configFile, const string binaryPath)
 {
+    import kameloso.string : doublyBackslashed;
     import std.file : exists;
     import std.path : baseName;
 
@@ -1188,7 +1219,7 @@ void notifyAboutIncompleteConfiguration(const string configFile, const string bi
     if (configFile.exists)
     {
         enum pattern = "Edit <i>%s</> and make sure it has at least one of the following:";
-        logger.logf(pattern, configFile);
+        logger.logf(pattern, configFile.doublyBackslashed);
         giveConfigurationMinimalInstructions();
     }
     else
@@ -1302,7 +1333,7 @@ out (; (bot.partReason.length), "Empty bot part reason")
 unittest
 {
     import kameloso.constants : KamelosoDefaults, KamelosoDefaultIntegers;
-    import std.conv : text;
+    import std.conv : to;
 
     IRCClient client;
     IRCServer server;
@@ -1313,7 +1344,7 @@ unittest
     assert(!client.ident.length, client.ident);
     assert(!client.realName.length, client.realName);
     assert(!server.address, server.address);
-    assert((server.port == 0), server.port.text);
+    assert((server.port == 0), server.port.to!string);
 
     applyDefaults(client, server, bot);
 
@@ -1322,7 +1353,7 @@ unittest
     assert(!client.ident.length, client.ident);
     assert((client.realName == KamelosoDefaults.realName), client.realName);
     assert((server.address == KamelosoDefaults.serverAddress), server.address);
-    assert((server.port == KamelosoDefaultIntegers.port), server.port.text);
+    assert((server.port == KamelosoDefaultIntegers.port), server.port.to!string);
     assert((bot.quitReason == KamelosoDefaults.quitReason), bot.quitReason);
     assert((bot.partReason == KamelosoDefaults.partReason), bot.partReason);
 

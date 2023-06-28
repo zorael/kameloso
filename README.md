@@ -1,14 +1,14 @@
-# kameloso [![Linux/macOS/Windows](https://img.shields.io/github/actions/workflow/status/zorael/kameloso/d.yml?branch=master)](https://github.com/zorael/kameloso/actions?query=workflow%3AD) [![Linux](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?logo=circleci&style=flat&maxAge=3600)](https://circleci.com/gh/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?logo=appveyor&style=flat&maxAge=3600)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v3.8.0.svg?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/compare/v3.8.0...master)
+# kameloso [![Linux/macOS/Windows](https://img.shields.io/github/actions/workflow/status/zorael/kameloso/d.yml?branch=master)](https://github.com/zorael/kameloso/actions?query=workflow%3AD) [![Linux](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?logo=circleci&style=flat&maxAge=3600)](https://circleci.com/gh/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?logo=appveyor&style=flat&maxAge=3600)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v3.9.0.svg?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/compare/v3.9.0...master)
 
-**kameloso** is an IRC bot with [Twitch support](#twitch).
+**kameloso** is an IRC bot with [Twitch support](#twitch). It is text-based and runs in your terminal or console.
 
-## Current functionality includes:
+### So what does it do
 
-* chat monitoring in your terminal
+* real-time chat monitoring
 * channel polls, user quotes, `!seen`, counters, oneliners, timed announcements, ...
-* reporting titles of pasted URLs, YouTube video information fetch
-* `sed`-replacement of messages (`s/this/that/` substitution)
 * saving notes to offline users that get played back when they come online
+* reporting titles of pasted URLs, displaying YouTube video information
+* `sed`-replacement of messages (`s/this/that/` substitution)
 * logs
 * bugs
 * some common [Twitch bot features](#twitch-bot)
@@ -40,7 +40,7 @@ Prebuilt binaries for Windows and Linux can be found under [**Releases**](https:
 
 To compile it yourself:
 
-```console
+```shell
 $ dub run kameloso -- --server irc.libera.chat --homeChannels "#mychannel" --guestChannels "#d"
 
 ## alternatively, guaranteed latest
@@ -50,7 +50,7 @@ $ dub build
 $ ./kameloso --server irc.libera.chat --homeChannels "#mychannel" --guestChannels "#d"
 ```
 
-If there's anyone talking it should show up on your screen.
+If there's anyone chatting it should show up on your screen.
 
 ---
 
@@ -81,6 +81,7 @@ If there's anyone talking it should show up on your screen.
   * [Further help](#further-help)
 * [Known issues](#known-issues)
   * [Windows](#windows)
+  * [Google/YouTube song request playlist integration](#googleyoutube-song-request-playlist-integration)
 * [Roadmap](#roadmap)
 * [Built with](#built-with)
 * [License](#license)
@@ -96,19 +97,19 @@ Grab a prebuilt binary from under [**Releases**](https://github.com/zorael/kamel
 
 **kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html), with the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases) and with the GCC-based [**gdc**](https://gdcproject.org/downloads). **dmd** compiles very fast, while **ldc** and **gdc** are slower at compiling but produce faster code. Additionally, the latter two support more target architectures than **dmd** does (e.g. ARM). See [here](https://wiki.dlang.org/Compilers) for an overview of the available compiler vendors.
 
-You need a compiler based on D version **2.085** or later (March 2019). For **ldc** this is version **1.15**, and for **gdc** this is release series **12**.
+You need a compiler based on D version **2.085** or later (March 2019). For **ldc** this is version **1.15**, and for **gdc** you need release series **12**.
 
 If your repositories (or other software sources) don't have compilers recent enough, you can use the official [`install.sh`](https://dlang.org/install.html) installation script to download current ones, or any version of choice. (**gdc** is not available via this script.)
 
-The package manager [**dub**](https://code.dlang.org) is used to facilitate compilation and dependency management. On Windows it comes bundled in the compiler archive, while on Linux it may need to be installed separately. Refer to your repositories.
+The package manager [**dub**](https://code.dlang.org) is used to facilitate compilation and dependency management. On Windows it is included in the compiler archive, while on Linux it may need to be installed separately. Refer to your repositories.
 
 ### SSL libraries on Windows
 
-See the [known issues](#known-issues) section on Windows for information on libraries needed to connect to SSL servers and to allow plugins secure access to the Internet.
+See the [known issues](#known-issues) section on Windows for information on libraries needed to make encrypted connections to IRC servers and to allow plugins secure access to the Internet.
 
 ## Downloading source
 
-```console
+```shell
 $ git clone https://github.com/zorael/kameloso.git
 ```
 
@@ -116,39 +117,37 @@ It can also be downloaded as a [`.zip` archive](https://github.com/zorael/kamelo
 
 ## Compiling
 
-```console
+```shell
 $ dub build
 ```
 
-This will compile the bot in the default **debug** build type, which adds some extra code and debugging symbols. You can omit these and perform some optimisations by building it in **release** mode with `dub build -b release`. Mind that build times will increase accordingly. Refer to the output of `dub build --print-builds` for more build types.
-
-It is not recommended to use **dmd** if you want a release mode build; partly due to **ldc** and **gdc** being the obvious choice by merit of simply being so much better at optimising code, but mostly because the program becomes prone to memory corruption and crashes in certain and distinct parts of it when compiled with **dmd**'s optimisations enabled. ([#159](https://github.com/zorael/kameloso/issues/159))
+This will compile the bot in the default **debug** build type, which adds some extra code and debugging symbols. You can omit these and perform some optimisations by building it in **release** mode with `dub build -b release`. Mind that build times will increase accordingly. Refer to the output of `dub --annotate --print-builds` for more build types.
 
 ### Build configurations
 
 There are two major configurations in which the bot may be built.
 
-* `application`: base configuration; everything needed for an IRC bot
+* `application`: default, base configuration; everything needed for an IRC bot
 * `twitch`: additionally includes Twitch chat support and the Twitch bot plugin
 
-Both configurations come in `-lowmem` variants (e.g. `application-lowmem` and `twitch-lowmem`) that lower compilation memory required at the cost of increasing compilation time, which may help on memory-constrained systems.
+Both configurations come in `-lowmem` variants (e.g. `application-lowmem` and `twitch-lowmem`) that lower compilation memory required at the cost of increasing compilation time, which may help on memory-constrained systems (such as the Raspberry Pi).
 
-List configurations with `dub build --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default `application` configuration.
+List configurations with `dub --annotate --print-configs`. You can specify which to compile with the `-c` switch. Not supplying one will make it build the default `application` configuration.
 
-```console
+```shell
 $ dub build -c twitch
 ```
 
-> If you want to slim down the program and customise your own build to only compile the plugins you want to use, see the larger `versions` lists in `dub.sdl`. Simply add a character to the line corresponding to the plugin(s) you want to omit, thus invalidating the version identifiers and effectively disabling the code they relate to. Mind that disabling any of the "**service**" plugins may/will break the bot in subtle ways.
+> If you want to slim down the program and customise your own build to only compile the plugins you want to use, see the larger `versions` lists in `dub.sdl`. Simply add a character to the lines corresponding to the plugins you want to omit, thus invalidating the version identifiers and effectively disabling the code they relate to. Mind that disabling any of the "**service**" plugins may/will break the bot in subtle ways.
 
 # How to use
 
 ## Configuration
 
-The bot ideally wants the account name of one or more administrators of the bot, and/or one or more home channels to operate in. Without either it's just a read-only log bot, which is a completely valid use-case. To define these you can either specify them on the command line, with flags listed by calling the program with `--help`, or generate a configuration file with `--save` and enter them there.
+The bot ideally wants the account name of one or more administrators of the bot, and/or one or more home channels to operate in. Without either it's just a read-only log bot, which is a completely valid use-case. To define these you can either supply them on the command line, with flags listed by calling the program with `--help`, or generate a configuration file with `--save` and enter them there.
 
-```console
-$ kameloso --save
+```shell
+$ ./kameloso --save
 ```
 
 A new `kameloso.conf` will be created in a directory dependent on your platform.
@@ -168,10 +167,10 @@ Open the file in a normal text editor.
 You can make changes to your configuration file in-place by specifying some at the command line and adding `--save`.
 
 ```shell
-$ kameloso \
+$ ./kameloso \
     --server irc.libera.chat \
-    --nickname "kameloso" \
-    --admins "you" \
+    --nickname "mybot" \
+    --admins "me" \
     --homeChannels "#mychannel" \
     --guestChannels "#d,##networking" \
     --monochrome
@@ -184,7 +183,7 @@ Settings not touched will keep their values.
 
 ### Display settings
 
-**kameloso**'s text colours are by default set to go well with dark terminal backgrounds. If you have a bright background, text may be difficult to read (e.g. white on white), depending on your terminal emulator. If so, pass the `--bright` argument, and/or modify the configuration file; `brightTerminal` under `[Core]`. The bot uses 7 colours out of [8-colour ANSI](https://en.wikipedia.org/wiki/ANSI_escape_code#3/4_bit), so if one or more colours are too dark or bright even with the right `brightTerminal` setting, please refer to your terminal appearance settings.
+The bot uses [terminal ANSI colouring](https://en.wikipedia.org/wiki/ANSI_escape_code#3-bit_and_4-bit), and text colours are by default set to go well with dark terminal backgrounds. If you instead have a bright background, text may be difficult to read (e.g. white on white), depending on your terminal emulator. If so, try passing the `--bright` argument, and/or modify the configuration file to enable `brightTerminal` under `[Core]`. If only some colours work, try limiting colouring to only those by disabling `extendedColours`, also under `[Core]`. If one or more colours are still too dark or too bright even with the right `brightTerminal` setting, please refer to your terminal appearance settings.
 
 An alternative is to disable colours entirely with `--monochrome`.
 
@@ -198,7 +197,7 @@ More server-specific resource files will be created the first time you connect t
 
 ## Example use
 
-See [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins) for more information on available plugins and their commands.
+Refer to [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins) for more information on available plugins and their commands.
 
 Additionally, see [this section about permissions](#except-nothing-happens) if nothing happens when you try to invoke commands.
 
@@ -248,7 +247,7 @@ MrOffline joined #channel
  kameloso sets mode +o ray
 
       you | !oneliner new
- kameloso | Usage: !oneliner new [trigger] [type]
+ kameloso | Usage: !oneliner new [trigger] [type] [optional cooldown]
       you | !oneliner new info random
  kameloso | Oneliner !info created! Use !oneliner add to add lines.
       you | !oneliner add info @$nickname: for more information just use Google
@@ -309,7 +308,7 @@ MrOffline joined #channel
 
 (context: playing a video game)
       you | !counter
- kameloso | Usage: !counter [add|del|list] [counter word]
+ kameloso | Usage: !counter [add|del|format|list] [counter word]
       you | !counter add deaths
  kameloso | Counter deaths added! Access it with !deaths.
       you | !deaths+
@@ -330,7 +329,7 @@ MrOffline joined #channel
 
       you | !time
  kameloso | The time is currently 12:04 locally.
-      you | !time Europe/London
+      you | !time Europe/Stockholm
  kameloso | The time is currently 11:04 in Europe/Stockholm.
       you | !time Tokyo
  kameloso | The time is currently 20:05 in Tokyo.
@@ -351,7 +350,7 @@ The command **prefix** (here "`!`") is configurable; refer to your configuration
 prefix                      "!"
 ```
 
-It can technically be any string and not just one character. It may include spaces if enclosed within quotes, like `"please "` (making it `please note`, `please quote`, ...). Additionally, prefixing commands with the bot's nickname also always works, as in `kameloso: seen MrOffline`. This is to be able to disambiguate between several bots in the same channel. Moreover, many administrative commands only work when called this way, notably everything that only outputs information to the local terminal.
+It can technically be any string and not just one character. It may include spaces if enclosed within quotes, like `"please "` (making it `please note`, `please quote`, ...). Additionally, prefixing commands with the bot's nickname also always works, as in `kameloso: seen MrOffline`. This is to be able to disambiguate between several bots in the same channel. Moreover, many administrative commands only work when called this way; notably everything that only outputs information to the local terminal.
 
 ### ***Except nothing happens***
 
@@ -365,18 +364,18 @@ In the case of **hostmasks mode**, the above still applies but "accounts" are de
 
 ### **Copy paste-friendly concrete setup from scratch**
 
-Pre-compiled binaries for Windows and Linux can be found under [Releases](https://github.com/zorael/kameloso/releases).
+Prebuilt binaries for Windows and Linux can be found under [Releases](https://github.com/zorael/kameloso/releases).
 
-If you're on Windows, you must first [install the **OpenSSL** library](#windows). Run this command to download and launch the installer for it, then opt to install to Windows system directories when asked:
+If you're on **Windows**, you must first [install the **OpenSSL** library](#windows). Run this command to download and launch the installer for it, then opt to install to Windows system directories when asked (here in Powershell syntax):
 
 ```shell
-kameloso --get-openssl
+./kameloso --get-openssl
 ```
 
 The rest is common for all platforms.
 
 ```shell
-kameloso --setup-twitch
+./kameloso --setup-twitch
 ```
 
 The `--setup-twitch` command creates a configuration file with the server address and port already set to connect to Twitch, then opens it up in a text editor.
@@ -391,10 +390,10 @@ The `--setup-twitch` command creates a configuration file with the server addres
 The program can then be run normally.
 
 ```shell
-kameloso
+./kameloso
 ```
 
-It will connect to Twitch and start the guide to requesting a new *authorisation token* in your terminal, upon detecting it's missing one. See the ["long story"](#long-story) section below for details.
+It will now connect to Twitch and start the guide to requesting a new *authorisation token* in your terminal, upon detecting it's missing one. See the ["long story"](#long-story) section below for details.
 
 **Note that it will request a token for the user you are currently logged in as in your browser**. If you want one for a different "bot user" instead, open up a private/incognito window, log into Twitch normally **with the bot account** there, copy [**this link**](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true), then paste it into that browser window instead. (Then follow the terminal instructions again.)
 
@@ -433,7 +432,7 @@ promoteModerators           true
 promoteVIPs                 true
 ```
 
-The secure port is **6697** (or **443**). For non-encrypted traffic, use the default port **6667**.
+The secure port is **6697** (alternatively **443**). For non-encrypted traffic, use the default port **6667**.
 
 ### **Long story**
 
@@ -468,6 +467,7 @@ Assuming a prefix of `!`, commands to test are:
 * `!settitle`
 * `!setgame`
 * `!commercial`
+* `!shoutout`
 * `!startpoll`/`!endpoll` (*highly* experimental, need help from affiliate)
 
 ...alongside `!oneliner`, `!counter`, `!timer`, `!poll` (chat poll), `!time`, `!stopwatch`, and other non-Twitch-specific commands. Try `!help` or [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins).
@@ -480,10 +480,10 @@ To get song requests to work, you need to register an *application* to interface
 
 #### Certain commands require higher permissions
 
-Some functionality, such as setting the channel title or currently played game, require elevated credentials with the permissions of the channel owner (broadcaster). As such, if you want to use such commands, you will need to generate an OAuth authorisation token for **your main account** separately, much as you generated one to be able to connect with the bot account. This will request a token from Twitch with more permissions, and the authorisation browser page should reflect this.
+Some functionality, such as setting the channel title or currently played game, require elevated credentials with the permissions of the channel owner (broadcaster), as opposed to those of any moderator. As such, if you want to use such commands, you will need to generate an OAuth authorisation token for **your main account** separately, much as you generated one to be able to connect with the bot account. This will request a token from Twitch with more permissions, and the authorisation browser page should reflect this.
 
 ```shell
-$ kameloso --set twitch.superKeygen
+$ ./kameloso --set twitch.superKeygen
 ```
 
 > Mind that you need to be logged into Twitch (in your browser) with your **main account** while doing this, or the token obtained will be with permissions for the wrong channel.
@@ -491,7 +491,7 @@ $ kameloso --set twitch.superKeygen
 All keygens can be triggered at the same time.
 
 ```shell
-$ kameloso \
+$ ./kameloso \
     --set twitch.keygen \
     --set twitch.superKeygen \
     --set twitch.googleKeygen \
@@ -511,7 +511,7 @@ If you still can't find what you're looking for, or if you have suggestions on h
 
 ## Windows
 
-**kameloso** uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard library for such in the Posix sphere (Linux, macOS, ...), but not so on Windows. If you run into errors about missing SSL libraries when attempting to connect on Windows, pass the `--get-openssl` flag to download and launch the installer for [**OpenSSL for Windows v1.1.\***](https://slproweb.com/products/Win32OpenSSL.html). Make sure to opt to install to Windows system directories when asked.
+The bot uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard library for such in the Posix sphere (Linux, macOS, ...), but not so on Windows. If you run into errors about missing SSL libraries when attempting to connect on Windows, pass the `--get-openssl` flag to download and launch the installer for [**OpenSSL for Windows v1.1.\***](https://slproweb.com/products/Win32OpenSSL.html). Make sure to opt to install to Windows system directories when asked.
 
 ## Google/YouTube song request playlist integration
 

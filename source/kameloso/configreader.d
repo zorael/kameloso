@@ -1,6 +1,15 @@
 /++
     Functions related to reading from a configuration file, broken out of
     [kameloso.config] to avoid cyclic dependencies.
+
+    See_Also:
+        [kameloso.config]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.configreader;
 
@@ -103,10 +112,7 @@ if (allSatisfy!(isStruct, T))
  +/
 auto configurationText(const string configFile)
 {
-    import lu.common : FileTypeMismatchException;
-    import std.array : replace;
     import std.file : exists, getAttributes, isFile, readText;
-    import std.string : chomp;
 
     if (!configFile.exists)
     {
@@ -114,6 +120,7 @@ auto configurationText(const string configFile)
     }
     else if (!configFile.isFile)
     {
+        import lu.common : FileTypeMismatchException;
         throw new FileTypeMismatchException(
             "Configuration file is not a file",
             configFile,
@@ -123,6 +130,9 @@ auto configurationText(const string configFile)
 
     try
     {
+        import std.array : replace;
+        import std.string : chomp;
+
         return configFile
             .readText
             .replace("[Votes]\n", "[Poll]\n")
@@ -160,7 +170,8 @@ final class ConfigurationFileReadFailureException : Exception
     /++
         Create a new [ConfigurationFileReadFailureException], without attaching a filename.
      +/
-    this(const string message,
+    this(
+        const string message,
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
@@ -171,7 +182,8 @@ final class ConfigurationFileReadFailureException : Exception
     /++
         Create a new [ConfigurationFileReadFailureException], attaching a filename.
      +/
-    this(const string message,
+    this(
+        const string message,
         const string filename,
         const string file = __FILE__,
         const size_t line = __LINE__,

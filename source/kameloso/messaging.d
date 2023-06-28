@@ -39,6 +39,12 @@
 
     See_Also:
         [kameloso.thread]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.messaging;
 
@@ -147,6 +153,7 @@ in (channelName.length, "Tried to send a channel message but no channel was give
             }
         }
     }
+
     if (properties & Message.Property.priority) state.mainThread.prioritySend(m);
     else state.mainThread.send(m);
 }
@@ -865,8 +872,6 @@ void quit(
     const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
 {
-    import kameloso.thread : ThreadMessage;
-
     Message m;
 
     m.event.type = IRCEvent.Type.QUIT;
@@ -881,8 +886,6 @@ void quit(
 ///
 unittest
 {
-    import kameloso.thread : ThreadMessage;
-
     IRCPluginState state;
     state.mainThread = thisTid;
 
@@ -1046,8 +1049,6 @@ void immediate(
     const Message.Property properties = Message.Property.none,
     const string caller = __FUNCTION__)
 {
-    import kameloso.thread : ThreadMessage;
-
     Message m;
 
     m.event.type = IRCEvent.Type.UNSET;
@@ -1096,7 +1097,7 @@ alias immediateline = immediate;
  +/
 void askToOutputImpl(string logLevel)(IRCPluginState state, const string line)
 {
-    import kameloso.thread : OutputRequest, ThreadMessage;
+    import kameloso.thread : OutputRequest;
     import std.concurrency : prioritySend;
 
     mixin("state.mainThread.prioritySend(OutputRequest(OutputRequest.Level.", logLevel, ", line));");
@@ -1153,7 +1154,7 @@ else
 
 unittest
 {
-    import kameloso.thread : OutputRequest, ThreadMessage;
+    import kameloso.thread : OutputRequest;
 
     IRCPluginState state;
     state.mainThread = thisTid;
@@ -1195,14 +1196,13 @@ unittest
     foreach (immutable i; 0..expectedMessages.length)
     {
         import std.concurrency : receiveTimeout;
-        import std.conv : text;
         import std.variant : Variant;
         import core.time : Duration;
 
-        receiveTimeout(Duration.zero,
+        cast(void)receiveTimeout(Duration.zero,
             (OutputRequest request)
             {
-                assert((request.logLevel == expectedLevels[i]), request.logLevel.text);
+                assert((request.logLevel == expectedLevels[i]), request.logLevel.to!string);
                 assert((request.line == expectedMessages[i]), request.line);
             },
             (Variant _)

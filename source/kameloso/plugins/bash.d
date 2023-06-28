@@ -1,11 +1,17 @@
 /++
-    The Bash plugin looks up `bash.org` quotes and reports them to the
-    appropriate nickname or channel.
+    The Bash plugin looks up [bash.org](http://bash.org) quotes and reports them
+    to the appropriate nickname or channel.
 
     See_Also:
-        https://github.com/zorael/kameloso/wiki/Current-plugins#bash
-        [kameloso.plugins.common.core|plugins.common.core]
-        [kameloso.plugins.common.misc|plugins.common.misc]
+        https://github.com/zorael/kameloso/wiki/Current-plugins#bash,
+        [kameloso.plugins.common.core],
+        [kameloso.plugins.common.misc]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.bash;
 
@@ -18,7 +24,6 @@ import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.messaging;
 import dialect.defs;
-import std.typecons : Flag, No, Yes;
 
 mixin MinimalAuthentication;
 mixin PluginRegistration!BashPlugin;

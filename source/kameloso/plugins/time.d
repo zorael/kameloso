@@ -2,9 +2,15 @@
     A simple plugin for querying the time in different timezones.
 
     See_Also:
-        https://github.com/zorael/kameloso/wiki/Current-plugins#time
-        [kameloso.plugins.common.core|plugins.common.core]
-        [kameloso.plugins.common.misc|plugins.common.misc]
+        https://github.com/zorael/kameloso/wiki/Current-plugins#time,
+        [kameloso.plugins.common.core],
+        [kameloso.plugins.common.misc]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.time;
 
@@ -135,7 +141,7 @@ shared static this()
             "West Asia Standard Time",
             "West Pacific Standard Time",
         ]
-        +/
+         +/
 
         zonestringAliases =
         [
@@ -501,7 +507,7 @@ void saveResourceToDisk(const string[string] aa, const string filename)
 in (filename.length, "Tried to save resources to an empty filename string")
 {
     import std.json : JSONValue;
-    import std.stdio : File, writeln;
+    import std.stdio : File;
 
     File(filename, "w").writeln(JSONValue(aa).toPrettyString);
 }

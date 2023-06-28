@@ -40,8 +40,14 @@
     ---
 
     See_Also:
-        [kameloso.plugins.common.core|plugins.common.core]
-        [kameloso.plugins.common.misc|plugins.common.misc]
+        [kameloso.plugins.common.core],
+        [kameloso.plugins.common.misc]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.common.awareness;
 
@@ -95,7 +101,6 @@ mixin template MinimalAuthentication(
      +/
     package enum hasMinimalAuthentication = true;
 
-
     // onMinimalAuthenticationAccountInfoTargetMixin
     /++
         Proxies to
@@ -115,7 +120,6 @@ mixin template MinimalAuthentication(
     {
         return kameloso.plugins.common.awareness.onMinimalAuthenticationAccountInfoTarget(plugin, event);
     }
-
 
     // onMinimalAuthenticationUnknownCommandWHOISMixin
     /++
@@ -158,7 +162,7 @@ void onMinimalAuthenticationAccountInfoTarget(IRCPlugin plugin, const ref IRCEve
     import kameloso.plugins.common.misc : catchUser;
 
     // Catch the user here, before replaying anything.
-    plugin.catchUser(event.target);
+    catchUser(plugin, event.target);
 
     // See if there are any queued replays to trigger
     auto replaysForNickname = event.target.nickname in plugin.state.pendingReplays;
@@ -260,7 +264,6 @@ mixin template UserAwareness(
         mixin kameloso.plugins.common.awareness.MinimalAuthentication!(debug_, module_);
     }
 
-
     // onUserAwarenessQuitMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onUserAwarenessQuit|onUserAwarenessQuit].
@@ -278,7 +281,6 @@ mixin template UserAwareness(
         return kameloso.plugins.common.awareness.onUserAwarenessQuit(plugin, event);
     }
 
-
     // onUserAwarenessNickMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onUserAwarenessNick|onUserAwarenessNick].
@@ -295,7 +297,6 @@ mixin template UserAwareness(
     {
         return kameloso.plugins.common.awareness.onUserAwarenessNick(plugin, event);
     }
-
 
     // onUserAwarenessCatchTargetMixin
     /++
@@ -318,7 +319,6 @@ mixin template UserAwareness(
     {
         return kameloso.plugins.common.awareness.onUserAwarenessCatchTarget(plugin, event);
     }
-
 
     // onUserAwarenessCatchSenderMixin
     /++
@@ -344,7 +344,6 @@ mixin template UserAwareness(
         return kameloso.plugins.common.awareness.onUserAwarenessCatchSender!channelPolicy(plugin, event);
     }
 
-
     // onUserAwarenessNamesReplyMixin
     /++
         Proxies to
@@ -363,7 +362,6 @@ mixin template UserAwareness(
     {
         return kameloso.plugins.common.awareness.onUserAwarenessNamesReply(plugin, event);
     }
-
 
     // onUserAwarenessEndOfListMixin
     /++
@@ -384,7 +382,6 @@ mixin template UserAwareness(
     {
         return kameloso.plugins.common.awareness.onUserAwarenessEndOfList(plugin, event);
     }
-
 
     // onUserAwarenessPingMixin
     /++
@@ -456,7 +453,7 @@ void onUserAwarenessNick(IRCPlugin plugin, const ref IRCEvent event)
 void onUserAwarenessCatchTarget(IRCPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.common.misc : catchUser;
-    plugin.catchUser(event.target);
+    catchUser(plugin, event.target);
 }
 
 
@@ -489,7 +486,7 @@ void onUserAwarenessCatchSender(ChannelPolicy channelPolicy)
 
             if (event.sender.nickname in plugin.state.users)
             {
-                plugin.catchUser(event.sender);
+                catchUser(plugin, event.sender);
                 break;
             }
 
@@ -502,7 +499,7 @@ void onUserAwarenessCatchSender(ChannelPolicy channelPolicy)
                     if (event.sender.nickname in channel.users)
                     {
                         // event is from a user that's in a relevant channel
-                        return plugin.catchUser(event.sender);
+                        return catchUser(plugin, event.sender);
                     }
                 }
             }
@@ -510,13 +507,13 @@ void onUserAwarenessCatchSender(ChannelPolicy channelPolicy)
         else /*static if (channelPolicy == ChannelPolicy.any)*/
         {
             // Catch everyone on ChannelPolicy.any
-            plugin.catchUser(event.sender);
+            catchUser(plugin, event.sender);
         }
         break;
 
     //case JOIN:
     default:
-        return plugin.catchUser(event.sender);
+        return catchUser(plugin, event.sender);
     }
 }
 
@@ -574,7 +571,7 @@ void onUserAwarenessNamesReply(IRCPlugin plugin, const ref IRCEvent event)
             user = IRCUser(nickname, ident, address);
         }
 
-        plugin.catchUser(user);  // this melds with the default conservative strategy
+        catchUser(plugin, user);  // this melds with the default conservative strategy
     }
 }
 
@@ -595,7 +592,7 @@ void onUserAwarenessEndOfList(IRCPlugin plugin, const ref IRCEvent event) @syste
     import kameloso.plugins.common.misc : rehashUsers;
 
     // Pass a channel name so only that channel is rehashed
-    plugin.rehashUsers(event.channel);
+    rehashUsers(plugin, event.channel);
 }
 
 
@@ -632,7 +629,7 @@ void onUserAwarenessPing(IRCPlugin plugin, const ref IRCEvent event) @system
         import kameloso.plugins.common.misc : rehashUsers;
 
         // Once every `userAARehashMinutes` minutes, rehash the `users` array.
-        plugin.rehashUsers();
+        rehashUsers(plugin);
         pingRehash = event.time + (Periodicals.userAARehashMinutes * 60);
     }
 }
@@ -684,7 +681,6 @@ mixin template ChannelAwareness(
         static assert(0, message);
     }
 
-
     // onChannelAwarenessSelfjoinMixin
     /++
         Proxies to
@@ -703,7 +699,6 @@ mixin template ChannelAwareness(
     {
         return kameloso.plugins.common.awareness.onChannelAwarenessSelfjoin(plugin, event);
     }
-
 
     // onChannelAwarenessSelfpartMixin
     /++
@@ -725,7 +720,6 @@ mixin template ChannelAwareness(
         return kameloso.plugins.common.awareness.onChannelAwarenessSelfpart(plugin, event);
     }
 
-
     // onChannelAwarenessJoinMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessJoin|onChannelAwarenessJoin].
@@ -743,7 +737,6 @@ mixin template ChannelAwareness(
     {
         return kameloso.plugins.common.awareness.onChannelAwarenessJoin(plugin, event);
     }
-
 
     // onChannelAwarenessPartMixin
     /++
@@ -763,7 +756,6 @@ mixin template ChannelAwareness(
         return kameloso.plugins.common.awareness.onChannelAwarenessPart(plugin, event);
     }
 
-
     // onChannelAwarenessNickMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessNick|onChannelAwarenessNick].
@@ -781,7 +773,6 @@ mixin template ChannelAwareness(
         return kameloso.plugins.common.awareness.onChannelAwarenessNick(plugin, event);
     }
 
-
     // onChannelAwarenessQuitMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessQuit|onChannelAwarenessQuit].
@@ -798,7 +789,6 @@ mixin template ChannelAwareness(
     {
         return kameloso.plugins.common.awareness.onChannelAwarenessQuit(plugin, event);
     }
-
 
     // onChannelAwarenessTopicMixin
     /++
@@ -819,7 +809,6 @@ mixin template ChannelAwareness(
         return kameloso.plugins.common.awareness.onChannelAwarenessTopic(plugin, event);
     }
 
-
     // onChannelAwarenessCreationTimeMixin
     /++
         Proxies to
@@ -839,7 +828,6 @@ mixin template ChannelAwareness(
         return kameloso.plugins.common.awareness.onChannelAwarenessCreationTime(plugin, event);
     }
 
-
     // onChannelAwarenessModeMixin
     /++
         Proxies to [kameloso.plugins.common.awareness.onChannelAwarenessMode|onChannelAwarenessMode].
@@ -857,7 +845,6 @@ mixin template ChannelAwareness(
     {
         return kameloso.plugins.common.awareness.onChannelAwarenessMode(plugin, event);
     }
-
 
     // onChannelAwarenessWhoReplyMixin
     /++
@@ -878,7 +865,6 @@ mixin template ChannelAwareness(
         return kameloso.plugins.common.awareness.onChannelAwarenessWhoReply(plugin, event);
     }
 
-
     // onChannelAwarenessNamesReplyMixin
     /++
         Proxies to
@@ -897,7 +883,6 @@ mixin template ChannelAwareness(
     {
         return kameloso.plugins.common.awareness.onChannelAwarenessNamesReply(plugin, event);
     }
-
 
     // onChannelAwarenessModeListsMixin
     /++
@@ -921,7 +906,6 @@ mixin template ChannelAwareness(
     {
         return kameloso.plugins.common.awareness.onChannelAwarenessModeLists(plugin, event);
     }
-
 
     // onChannelAwarenessChannelModeIsMixin
     /++
@@ -1382,7 +1366,6 @@ mixin template TwitchAwareness(
         static assert(0, message);
     }
 
-
     // onTwitchAwarenessSenderCarryingEventMixin
     /++
         Proxies to
@@ -1423,7 +1406,6 @@ mixin template TwitchAwareness(
     {
         return kameloso.plugins.common.awareness.onTwitchAwarenessSenderCarryingEvent(plugin, event);
     }
-
 
     // onTwitchAwarenessTargetCarryingEventMixin
     /++
@@ -1480,7 +1462,7 @@ void onTwitchAwarenessSenderCarryingEvent(IRCPlugin plugin, const ref IRCEvent e
     if (!event.sender.nickname) return;
 
     // Move the catchUser call here to populate the users array with users in guest channels
-    //plugin.catchUser(event.sender);
+    //catchUser(plugin, event.sender);
 
     auto channel = event.channel in plugin.state.channels;
     if (!channel) return;
@@ -1490,7 +1472,7 @@ void onTwitchAwarenessSenderCarryingEvent(IRCPlugin plugin, const ref IRCEvent e
         channel.users[event.sender.nickname] = true;
     }
 
-    plugin.catchUser(event.sender);  // <-- this one
+    catchUser(plugin, event.sender);  // <-- this one
 }
 
 
@@ -1516,7 +1498,7 @@ void onTwitchAwarenessTargetCarryingEvent(IRCPlugin plugin, const ref IRCEvent e
     if (!event.target.nickname) return;
 
     // Move the catchUser call here to populate the users array with users in guest channels
-    //plugin.catchUser(event.target);
+    //catchUser(plugin, event.target);
 
     auto channel = event.channel in plugin.state.channels;
     if (!channel) return;
@@ -1526,7 +1508,7 @@ void onTwitchAwarenessTargetCarryingEvent(IRCPlugin plugin, const ref IRCEvent e
         channel.users[event.target.nickname] = true;
     }
 
-    plugin.catchUser(event.target);   // <-- this one
+    catchUser(plugin, event.target);   // <-- this one
 }
 
 

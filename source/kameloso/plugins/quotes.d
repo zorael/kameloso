@@ -5,9 +5,15 @@
     the owner of the channel (the broadcaster) is assumed to be the target.
 
     See_Also:
-        https://github.com/zorael/kameloso/wiki/Current-plugins#quotes
-        [kameloso.plugins.common.core|plugins.common.core]
-        [kameloso.plugins.common.misc|plugins.common.misc]
+        https://github.com/zorael/kameloso/wiki/Current-plugins#quotes,
+        [kameloso.plugins.common.core],
+        [kameloso.plugins.common.misc]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.quotes;
 
@@ -661,7 +667,7 @@ void sendQuoteToChannel(
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
         {
             import kameloso.plugins.common.misc : nameOf;
-            possibleDisplayName = plugin.nameOf(nickname);
+            possibleDisplayName = nameOf(plugin, nickname);
         }
     }
 
@@ -761,7 +767,7 @@ private:
             if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
             {
                 import kameloso.plugins.common.misc : nameOf;
-                possibleDisplayName = plugin.nameOf(nickname);
+                possibleDisplayName = nameOf(plugin, nickname);
             }
         }
 
@@ -1134,7 +1140,7 @@ unittest
 auto loadQuotes(const string quotesFile)
 {
     import lu.json : JSONStorage;
-    import std.json : JSONException, JSONType;
+    import std.json : JSONException;
 
     JSONStorage json;
     Quote[][string][string] quotes;
@@ -1281,7 +1287,7 @@ final class QuoteIndexOutOfRangeException : Exception
 }
 
 
-// NoQuoteSearchMatchException
+// NoQuotesSearchMatchException
 /++
     Exception, to be thrown when given search terms failed to match any stored quotes.
  +/
@@ -1291,7 +1297,7 @@ final class NoQuotesSearchMatchException : Exception
     string searchTerms;
 
     /++
-        Creates a new [NoQuoteSearchMatchException], attaching a search terms string.
+        Creates a new [NoQuotesSearchMatchException], attaching a search terms string.
      +/
     this(
         const string message,
@@ -1314,7 +1320,7 @@ void initResources(QuotesPlugin plugin)
 {
     import lu.json : JSONStorage;
     import lu.string : beginsWith;
-    import std.json : JSONException, JSONType;
+    import std.json : JSONException;
 
     enum placeholderChannel = "#<lost+found>";
 

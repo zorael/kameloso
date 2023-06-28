@@ -3,7 +3,13 @@
     without which they will *not* function.
 
     See_Also:
-        [kameloso.plugins.common.core|plugins.common.core]
+        [kameloso.plugins.common.core]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.common.misc;
 
@@ -44,6 +50,7 @@ auto applyCustomSettings(
     const string[] customSettings,
     CoreSettings copyOfSettings)
 {
+    import lu.objmanip : SetMemberException;
     import lu.string : contains, nom;
     import std.conv : ConvException;
 
@@ -61,20 +68,20 @@ auto applyCustomSettings(
         }
 
         string slice = line;  // mutable
-        string pluginstring = slice.nom!(Yes.decode)(".");  // mutable
+        immutable pluginstring = slice.nom!(Yes.decode)(".");
         immutable setting = slice.nom!(Yes.inherit, Yes.decode)('=');
         immutable value = slice;
 
-        if (pluginstring == "core")
+        try
         {
-            import kameloso.common : logger;
-            import kameloso.logger : KamelosoLogger;
-            import lu.objmanip : SetMemberException, setMemberByName;
-            import std.algorithm.comparison : among;
-            static import kameloso.common;
-
-            try
+            if (pluginstring == "core")
             {
+                import kameloso.common : logger;
+                import kameloso.logger : KamelosoLogger;
+                import lu.objmanip : setMemberByName;
+                import std.algorithm.comparison : among;
+                static import kameloso.common;
+
                 immutable success = slice.length ?
                     copyOfSettings.setMemberByName(setting, value) :
                     copyOfSettings.setMemberByName(setting, true);
@@ -102,33 +109,16 @@ auto applyCustomSettings(
                         //plugin.state.updates |= typeof(plugin.state.updates).settings;
                     }
                 }
+                continue top;
             }
-            catch (SetMemberException e)
+            else
             {
-                enum pattern = "Failed to set <l>core</>.<l>%s</>: " ~
-                    "it requires a value and none was supplied.";
-                logger.warningf(pattern, setting);
-                version(PrintStacktraces) logger.trace(e.info);
-                noErrors = false;
-            }
-            catch (ConvException _)
-            {
-                enum pattern = `Invalid value for <l>core</>.<l>%s</>: "<l>%s</>"`;
-                logger.warningf(pattern, setting, value);
-                noErrors = false;
-            }
-
-            continue top;
-        }
-        else
-        {
-            foreach (plugin; plugins)
-            {
-                if (plugin.name != pluginstring) continue;
-
-                try
+                foreach (plugin; plugins)
                 {
-                    immutable success = plugin.setSettingByName(setting,
+                    if (plugin.name != pluginstring) continue;
+
+                    immutable success = plugin.setSettingByName(
+                        setting,
                         value.length ? value : "true");
 
                     if (!success)
@@ -137,23 +127,33 @@ auto applyCustomSettings(
                         logger.warningf(pattern, pluginstring, setting);
                         noErrors = false;
                     }
+                    continue top;
                 }
-                catch (ConvException _)
-                {
-                    enum pattern = `Invalid value for <l>%s</>.<l>%s</>: "<l>%s</>"`;
-                    logger.warningf(pattern, pluginstring, setting, value);
-                    noErrors = false;
-
-                    //version(PrintStacktraces) logger.trace(e.info);
-                }
-
-                continue top;
             }
-        }
 
-        enum pattern = "Invalid plugin: <l>%s";
-        logger.warningf(pattern, pluginstring);
-        noErrors = false;
+            // If we're here, the loop was never continued --> unknown plugin
+            enum pattern = "Invalid plugin: <l>%s";
+            logger.warningf(pattern, pluginstring);
+            noErrors = false;
+            // Drop down, try next
+        }
+        catch (SetMemberException e)
+        {
+            enum pattern = "Failed to set <l>%s</>.<l>%s</>: " ~
+                "it requires a value and none was supplied.";
+            logger.warningf(pattern, pluginstring, setting);
+            version(PrintStacktraces) logger.trace(e.info);
+            noErrors = false;
+            // Drop down, try next
+        }
+        catch (ConvException e)
+        {
+            enum pattern = `Invalid value for <l>%s</>.<l>%s</>: "<l>%s</>" <t>(%s)`;
+            logger.warningf(pattern, pluginstring, setting, value, e.msg);
+            noErrors = false;
+            // Drop down, try next
+        }
+        continue top;
     }
 
     return noErrors;
@@ -210,13 +210,13 @@ unittest
         import std.math : isClose = approxEqual;
     }
 
-    import std.conv : text;
+    import std.conv : to;
 
     assert((ps.s == "abc def ghi"), ps.s);
-    assert((ps.i == 42), ps.i.text);
-    assert(isClose(ps.f, 3.14f), ps.f.text);
+    assert((ps.i == 42), ps.i.to!string);
+    assert(isClose(ps.f, 3.14f), ps.f.to!string);
     assert(ps.b);
-    assert(isClose(ps.d, 99.99), ps.d.text);
+    assert(isClose(ps.d, 99.99), ps.d.to!string);
 }
 
 
@@ -230,7 +230,8 @@ unittest
 final class IRCPluginSettingsException : Exception
 {
     /// Wraps normal Exception constructors.
-    this(const string message,
+    this(
+        const string message,
         const string file = __FILE__,
         const size_t line = __LINE__,
         Throwable nextInChain = null) pure nothrow @nogc @safe
@@ -446,7 +447,7 @@ auto replay(Plugin, Fun)
     const bool inFiber,
     const string caller = __FUNCTION__)
 {
-    void dg(Replay replay)
+    void replayDg(Replay replay)
     {
         import lu.conv : Enum;
         import lu.string : beginsWith;
@@ -608,7 +609,7 @@ auto replay(Plugin, Fun)
         version(ExplainReplay) explainRefuse();
     }
 
-    return Replay(&dg, event, permissionsRequired, caller);
+    return Replay(&replayDg, event, permissionsRequired, caller);
 }
 
 
@@ -618,7 +619,7 @@ auto replay(Plugin, Fun)
     [kameloso.plugins.common.core.IRCPluginState.users|IRCPluginState.users]
     associative array and the ones in each [dialect.defs.IRCChannel.users] associative arrays.
 
-    This optimises lookup and should be done every so often,
+    This optimises lookup and should be done every so often.
 
     Params:
         plugin = The current [kameloso.plugins.common.core.IRCPlugin|IRCPlugin].

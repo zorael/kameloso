@@ -4,9 +4,15 @@
     (operator) when joining.
 
     See_Also:
-        https://github.com/zorael/kameloso/wiki/Current-plugins#automode
-        [kameloso.plugins.common.core|plugins.common.core]
-        [kameloso.plugins.common.misc|plugins.common.misc]
+        https://github.com/zorael/kameloso/wiki/Current-plugins#automode,
+        [kameloso.plugins.common.core],
+        [kameloso.plugins.common.misc]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.automode;
 
@@ -153,7 +159,7 @@ void onAccountInfo(AutomodePlugin plugin, const ref IRCEvent event)
         {
             if (nickname in channel.users)
             {
-                plugin.applyAutomodes(homeChannel, nickname, account);
+                applyAutomodes(plugin, homeChannel, nickname, account);
             }
         }
     }
@@ -177,7 +183,7 @@ void onJoin(AutomodePlugin plugin, const ref IRCEvent event)
 {
     if (event.sender.account.length)
     {
-        plugin.applyAutomodes(event.channel, event.sender.nickname, event.sender.account);
+        applyAutomodes(plugin, event.channel, event.sender.nickname, event.sender.account);
     }
 }
 
@@ -377,7 +383,7 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 
         if (!mode.length) return sendMustSupplyMode();
 
-        plugin.modifyAutomode(Yes.add, nickname, event.channel, mode);
+        modifyAutomode(plugin, Yes.add, nickname, event.channel, mode);
         return sendAutomodeModified(nickname, mode);
 
     case "clear":
@@ -389,7 +395,7 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
 
         if (!nickname.isValidNickname(plugin.state.server)) return sendInvalidNickname();
 
-        plugin.modifyAutomode(No.add, nickname, event.channel);
+        modifyAutomode(plugin, No.add, nickname, event.channel);
         return sendAutomodeCleared(nickname);
 
     case "list":
@@ -448,7 +454,7 @@ in ((!add || mode.length), "Tried to add an empty automode")
             }
         }
 
-        plugin.saveAutomodes();
+        saveAutomodes(plugin);
     }
 
     void onFailure(const IRCUser failureUser)
@@ -494,7 +500,7 @@ void onCommandOp(AutomodePlugin plugin, const ref IRCEvent event)
 {
     if (event.sender.account.length)
     {
-        plugin.applyAutomodes(event.channel, event.sender.nickname, event.sender.account);
+        applyAutomodes(plugin, event.channel, event.sender.nickname, event.sender.account);
     }
     else
     {
@@ -571,7 +577,7 @@ void onMode(AutomodePlugin plugin, const ref IRCEvent event)
         foreach (const user; usersWithThatAccount)
         {
             // There can technically be more than one
-            plugin.applyAutomodes(event.channel, user.nickname, user.account);
+            applyAutomodes(plugin, event.channel, user.nickname, user.account);
         }
     }
 }
