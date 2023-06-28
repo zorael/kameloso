@@ -1473,7 +1473,8 @@ T expandIRCTags(T)(const T line) @system
         immutable line = "<h>hirrsteff<h> was already <b>whitelist<b> in #garderoben.";
         immutable expanded = line.expandIRCTags;
         enum pattern = "%s was already %s in #garderoben.";
-        immutable expected = pattern.format("hirrsteff".ircColourByHash(Yes.extendedOutgoingColours), "whitelist".ircBold);
+        immutable expected = pattern.format("hirrsteff"
+            .ircColourByHash(Yes.extendedOutgoingColours), "whitelist".ircBold);
         assert((expanded == expected), expanded);
     }
     {
