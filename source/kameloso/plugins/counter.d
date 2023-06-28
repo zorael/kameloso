@@ -710,6 +710,7 @@ auto formatMessage(
     const long step = long.init)
 {
     import kameloso.plugins.common.misc : nameOf;
+    import kameloso.string : replaceRandom;
     import std.conv : to;
     import std.array : replace;
     import std.math : abs;
@@ -722,7 +723,7 @@ auto formatMessage(
             step.to!string;
     }
 
-    string toReturn = pattern
+    string toReturn = pattern  // mutable
         .replace("$step", abs(step).to!string)
         .replace("$signedstep", signedStep())
         .replace("$count", counter.count.to!string)
@@ -731,13 +732,17 @@ auto formatMessage(
         .replace("$senderNickname", event.sender.nickname)
         .replace("$sender", nameOf(event.sender))
         .replace("$botNickname", plugin.state.client.nickname)
-        .replace("$bot", nameOf(plugin, plugin.state.client.nickname));
+        .replace("$bot", nameOf(plugin, plugin.state.client.nickname))
+        .replaceRandom();
 
     version(TwitchSupport)
     {
-        toReturn = toReturn
-            .replace("$streamerNickname", event.channel[1..$])
-            .replace("$streamer", nameOf(plugin, event.channel[1..$]));
+        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+        {
+            toReturn = toReturn
+                .replace("$streamerNickname", event.channel[1..$])
+                .replace("$streamer", nameOf(plugin, event.channel[1..$]));
+        }
     }
 
     return toReturn;
