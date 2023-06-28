@@ -258,7 +258,7 @@ public:
             The buffer size is "how many string pointers", now how many bytes. So
             we can comfortably keep it arbitrarily high.
          +/
-        Buffer!(OutgoingLine, No.dynamic, BufferSize.outbuffer*2) fastbuffer;
+        Buffer!(OutgoingLine, No.dynamic, BufferSize.outbuffer) fastbuffer;
     }
 
     // missingConfigurationEntries
