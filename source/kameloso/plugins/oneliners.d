@@ -781,6 +781,20 @@ void handleDelFromOneliner(
         chan(plugin.state, event.channel, message);
     }
 
+    void sendOnelinerEmpty(const string trigger)
+    {
+        enum pattern = "Oneliner <b>%s<b> is empty and has no responses to remove.";
+        immutable message = pattern.format(trigger);
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendResponseIndexOutOfBounds(const size_t pos, const size_t upperBounds)
+    {
+        enum pattern = "Oneliner response index <b>%d<b> is out of bounds. <b>[0..%d]<b>";
+        immutable message = pattern.format(upperBounds);
+        chan(plugin.state, event.channel, message);
+    }
+
     void sendLineRemoved(const string trigger, const size_t pos)
     {
         enum pattern = "Oneliner response <b>%s<b>#%d removed.";
@@ -816,12 +830,7 @@ void handleDelFromOneliner(
 
     if (slice.length)
     {
-        if (!oneliner.responses.length)
-        {
-            enum pattern = "Oneliner <b>%s<b> is empty and has no responses to remove.";
-            immutable message = pattern.format(trigger);
-            return chan(plugin.state, event.channel, message);
-        }
+        if (!oneliner.responses.length) return sendOnelinerEmpty(trigger);
 
         try
         {
@@ -831,9 +840,7 @@ void handleDelFromOneliner(
 
             if (pos >= oneliner.responses.length)
             {
-                enum pattern = "Oneliner response index out of bounds. (0-<b>%d<b>)";
-                immutable message = pattern.format(pos);
-                return chan(plugin.state, event.channel, message);
+                return sendResponseIndexOutOfBounds(pos, oneliner.responses.length);
             }
 
             oneliner.responses = oneliner.responses.remove!(SwapStrategy.stable)(pos);
