@@ -506,7 +506,7 @@ void handleNewOneliner(
         {
             if (!pluginCommands.length || (pluginName == "oneliners")) continue;
 
-            foreach (/*mutable*/ word, command; pluginCommands)
+            foreach (/*mutable*/ word, const _; pluginCommands)
             {
                 word = word.toLower;
 
