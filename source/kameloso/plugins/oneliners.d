@@ -604,6 +604,13 @@ void handleAddToOneliner(
         chan(plugin.state, event.channel, message);
     }
 
+    void sendResponseIndexOutOfBounds(const size_t pos, const size_t upperBounds)
+    {
+        enum pattern = "Oneliner response index <b>%d<b> is out of bounds. <b>[0..%d]<b>";
+        immutable message = pattern.format(pos, upperBounds);
+        chan(plugin.state, event.channel, message);
+    }
+
     void sendPositionNotPositive()
     {
         enum message = "Position passed is not a positive number.";
@@ -648,11 +655,7 @@ void handleAddToOneliner(
 
         if ((action != Action.appendToEnd) && (pos >= oneliner.responses.length))
         {
-            // Send the error message here so we can include the range
-            enum pattern = "Oneliner response index out of bounds. (0-<b>%d<b>)";
-            immutable message = pattern.format(pos);
-            chan(plugin.state, event.channel, message);
-            throw new Exception("Oneliner response index out of bounds.");
+            return sendResponseIndexOutOfBounds(pos, oneliner.responses.length);
         }
 
         with (Action)
@@ -715,22 +718,13 @@ void handleAddToOneliner(
             return sendPositionNaN();
         }
 
-        try
+        if (verb == "insert")
         {
-            if (verb == "insert")
-            {
-                insert(trigger, slice, Action.insertAtPosition, pos);
-            }
-            else /*if (verb == "edit")*/
-            {
-                insert(trigger, slice, Action.editExisting, pos);
-            }
+            insert(trigger, slice, Action.insertAtPosition, pos);
         }
-        catch (Exception _)
+        else /*if (verb == "edit")*/
         {
-            // Already sent error message
-            //chan(plugin.state, event.channel, e.msg);
-            return;
+            insert(trigger, slice, Action.editExisting, pos);
         }
     }
     else if (verb == "add")
@@ -743,16 +737,7 @@ void handleAddToOneliner(
             return sendAddUsage();
         }
 
-        try
-        {
-            return insert(trigger, slice, Action.appendToEnd);
-        }
-        catch (Exception _)
-        {
-            // Already sent error message
-            //chan(plugin.state, event.channel, e.msg);
-            return;
-        }
+        insert(trigger, slice, Action.appendToEnd);
     }
     else
     {
