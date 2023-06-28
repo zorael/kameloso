@@ -77,6 +77,14 @@ public:
      +/
     bool colouredOutgoing = true;
 
+    // extendedOutgoingColours
+    /++
+        Whether or not to add extended colours to outgoing messages.
+
+        If false, only basic colours will be used.
+     +/
+    bool extendedOutgoingColours = true;
+
     // reexecToReconnect
     /++
         Re-executes the program instead of reconnecting hot.
