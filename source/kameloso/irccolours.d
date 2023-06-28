@@ -10,7 +10,7 @@
     Example:
     ---
     immutable nameInColour = "kameloso".ircColour(IRCColour.red);
-    immutable nameInHashedColour = "kameloso".ircColourByHash;
+    immutable nameInHashedColour = "kameloso".ircColourByHash(Yes.extendedOutgoingColours);
     immutable nameInBold = "kameloso".ircBold;
     ---
 
@@ -1091,7 +1091,7 @@ unittest
     Params:
         strip = Whether or not to strip effects or map them.
         mircToken = mIRC token for a particular text effect.
-        TerminalFormatCode = Terminal equivalent of the mircToken effect.
+        terminalFormatCode = Terminal equivalent of the mircToken effect.
         line = The mIRC-formatted string to translate.
 
     Returns:
