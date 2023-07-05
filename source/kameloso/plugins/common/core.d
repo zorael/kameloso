@@ -614,6 +614,17 @@ mixin template IRCPluginImpl(
                     enum message = pattern.format(fqn);
                     static assert(0, message);
                 }
+                else static if ((type == IRCEvent.Type.ANY) &&
+                    (uda.channelPolicy != ChannelPolicy.any))
+                {
+                    import std.format : format;
+
+                    enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
+                        "`IRCEvent.Type.ANY` and is at the same time not annotated " ~
+                        "`ChannelPolicy.any`, which is the only accepted combination";
+                    enum message = pattern.format(fqn);
+                    static assert(0, message);
+                }
 
                 static if (uda.commands.length || uda.regexes.length)
                 {
