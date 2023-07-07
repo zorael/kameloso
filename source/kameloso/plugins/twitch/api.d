@@ -164,8 +164,6 @@ void printRetryDelegateException(/*const*/ Exception e)
         logger.trace(e);
         //throw e;
     }
-
-    assert(0, "Unreachable");
 }
 
 
