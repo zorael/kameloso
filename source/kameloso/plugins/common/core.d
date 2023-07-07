@@ -2204,7 +2204,10 @@ auto filterSender(
     See_Also:
         [filterSender]
  +/
-auto allowImpl(IRCPlugin plugin, const ref IRCEvent event, const Permissions permissionsRequired) pure @safe
+auto allowImpl(
+    IRCPlugin plugin,
+    const ref IRCEvent event,
+    const Permissions permissionsRequired) pure @safe
 {
     version(TwitchSupport)
     {
