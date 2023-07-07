@@ -159,11 +159,11 @@ else
  +/
 bool isTerminal() @system
 {
-    import kameloso.platform : currentPlatform;
+    import kameloso.platform : currentEnvironment;
 
     if (isTTY) return true;
 
-    switch (currentPlatform)
+    switch (currentEnvironment)
     {
     case "Msys":
     case "Cygwin":
@@ -192,11 +192,11 @@ bool isTerminal() @system
  +/
 void applyMonochromeAndFlushOverrides(ref bool monochrome, ref bool flush) @system
 {
-    import kameloso.platform : currentPlatform;
+    import kameloso.platform : currentEnvironment;
 
     if (!isTTY)
     {
-        switch (currentPlatform)
+        switch (currentEnvironment)
         {
         case "Msys":
             // Requires manual flushing despite setvbuf
@@ -225,13 +225,13 @@ void applyMonochromeAndFlushOverrides(ref bool monochrome, ref bool flush) @syst
 void ensureAppropriateBuffering() @system
 {
     import kameloso.constants : BufferSize;
-    import kameloso.platform : currentPlatform;
+    import kameloso.platform : currentEnvironment;
     import std.stdio : stdout;
     import core.stdc.stdio : _IOLBF;
 
     if (!isTTY)
     {
-        switch (currentPlatform)
+        switch (currentEnvironment)
         {
         case "Msys":
         case "Cygwin":

@@ -21,15 +21,15 @@ public:
 @safe:
 
 
-// currentPlatform
+// currentEnvironment
 /++
-    Returns the string of the name of the current platform, adjusted to include
-    `cygwin` as an alternative next to `win32` and `win64`, as well as embedded
+    Returns the string of the name of the current terminal environment, adjusted to include
+    `Cygwin` as an alternative next to `win32` and `win64`, as well as embedded
     terminal consoles like in Visual Studio Code.
 
     Example:
     ---
-    switch (currentPlatform)
+    switch (currentEnvironment)
     {
     case "Cygwin":
     case "vscode":
@@ -46,7 +46,7 @@ public:
     Returns:
         String name of the current platform.
  +/
-auto currentPlatform()
+auto currentEnvironment()
 {
     import lu.conv : Enum;
     import std.process : environment;
