@@ -322,6 +322,8 @@ mixin template IRCPluginImpl(
     private import kameloso.plugins.common.core : FilterResult, IRCEventHandler, IRCPluginState, Permissions;
     private import dialect.defs : IRCEvent, IRCServer, IRCUser;
     private import lu.traits : getSymbolsByUDA;
+    private import std.array : Appender;
+    private import std.meta : AliasSeq;
     private import std.traits : getUDAs;
     private import core.thread : Fiber;
 
@@ -1822,8 +1824,6 @@ mixin template IRCPluginImpl(
         }
     }
 
-    private import std.array : Appender;
-
     // serialiseConfigInto
     /++
         Gathers the configuration text the plugin wants to contribute to the
@@ -1869,8 +1869,6 @@ mixin template IRCPluginImpl(
 
         return didSomething;
     }
-
-    private import std.meta : AliasSeq;
 
     // setup, start, reload, teardown
     /+
