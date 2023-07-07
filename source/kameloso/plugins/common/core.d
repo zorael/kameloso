@@ -373,7 +373,9 @@ mixin template IRCPluginImpl(
 
             foreach (immutable i, fun; allEventHandlerFunctionsInModule)
             {
+                enum fqn = module_ ~ '.'  ~ __traits(identifier, allEventHandlerFunctionsInModule[i]);
                 udas[i] = getUDAs!(fun, IRCEventHandler)[0];
+                udas[i].fqn = fqn;
                 udas[i].generateTypemap();
             }
 
@@ -3058,6 +3060,12 @@ public:
     }
 
     mixin UnderscoreOpDispatcher;
+
+    // fqn
+    /++
+        Fully qualified name of the function the annotated [IRCEventHandler] is attached to.
+     +/
+    string fqn;
 
     // Command
     /++
