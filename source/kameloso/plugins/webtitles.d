@@ -127,9 +127,23 @@ void onMessage(WebtitlesPlugin plugin, const ref IRCEvent event)
     import kameloso.common : findURLs;
     import lu.string : beginsWith, strippedLeft;
 
-    if (event.content.strippedLeft.beginsWith(plugin.state.settings.prefix)) return;
+    immutable content = event.content.strippedLeft;  // mutable
 
-    string[] urls = findURLs(event.content);  // mutable so nom works
+    if (content.beginsWith(plugin.state.settings.prefix)) return;
+
+    if (content.beginsWith(plugin.state.client.nickname))
+    {
+        import kameloso.string : stripSeparatedPrefix;
+
+        // If the message is a "nickname: command [url]" type of message,
+        // don't catch the URL.
+        immutable nicknameStripped = content.stripSeparatedPrefix(
+            plugin.state.client.nickname,
+            Yes.demandSeparatingChars);
+        if (nicknameStripped != content) return;
+    }
+
+    auto urls = findURLs(event.content);  // mutable so nom works
     if (!urls.length) return;
 
     return lookupURLs(plugin, event, urls);
