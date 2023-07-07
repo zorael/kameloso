@@ -55,6 +55,7 @@ private:
 
 import kameloso.thread : CarryingFiber;
 import dialect.defs;
+import std.traits : ParameterStorageClass;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 
@@ -555,48 +556,7 @@ mixin template IRCPluginImpl(
         void call(bool inFiber, Fun)(scope Fun fun, const ref IRCEvent event) scope
         {
             import lu.traits : TakesParams;
-            import std.traits : ParameterStorageClass, Parameters, arity;
-
-            /++
-                Statically asserts that a parameter storage class is not `ref`
-                if `inFiber`, and neither `ref` nor `out` if not `inFiber`.
-
-                Take the storage class as a template parameter and statically
-                assert inside this function, unlike how `udaSanityCheck` returns
-                false on failure, so we can format and print the error message
-                once here (instead of at all call sites upon receiving false).
-             +/
-            debug
-            static void assertSaneStorageClasses(ParameterStorageClass storageClass)()
-            {
-                static if (inFiber)
-                {
-                    static if (storageClass & ParameterStorageClass.ref_)
-                    {
-                        import std.format : format;
-
-                        enum pattern = "`%s` has a `%s` event handler annotated `.fiber(true)` " ~
-                            "that takes an `IRCEvent` by `ref`, which is prone to memory corruption";
-                        enum message = pattern.format(module_, Fun.stringof);
-                        static assert(0, message);
-                    }
-                }
-                else /*static if (!inFiber)*/
-                {
-                    static if (
-                        (storageClass & ParameterStorageClass.ref_) ||
-                        (storageClass & ParameterStorageClass.out_))
-                    {
-                        import std.format : format;
-
-                        enum pattern = "`%s` has a `%s` event handler that takes an " ~
-                            "`IRCEvent` of an unsupported storage class; " ~
-                            "may not be mutable `ref` or `out`";
-                        enum message = pattern.format(module_, Fun.stringof);
-                        static assert(0, message);
-                    }
-                }
-            }
+            import std.traits : ParameterStorageClass, ParameterStorageClassTuple, Parameters, arity;
 
             static if (
                 TakesParams!(fun, typeof(this), IRCEvent) ||
@@ -604,19 +564,12 @@ mixin template IRCPluginImpl(
             {
                 debug
                 {
-                    import std.traits : ParameterStorageClassTuple;
-
-                    static if (inFiber)
-                    {
-                        assertSaneStorageClasses!(ParameterStorageClassTuple!fun[1]);
-                    }
-                    else /*static if (!isFiber)*/
-                    {
-                        static if (!is(Parameters!fun[1] == const))
-                        {
-                            assertSaneStorageClasses!(ParameterStorageClassTuple!fun[1]);
-                        }
-                    }
+                    static assert(assertSaneStorageClasses(
+                        ParameterStorageClassTuple!fun[1],
+                        is(Parameters!fun[1] == const),
+                        inFiber,
+                        module_,
+                        Fun.stringof));
                 }
                 fun(this, event);
             }
@@ -630,19 +583,12 @@ mixin template IRCPluginImpl(
             {
                 debug
                 {
-                    import std.traits : ParameterStorageClassTuple;
-
-                    static if (inFiber)
-                    {
-                        assertSaneStorageClasses!(ParameterStorageClassTuple!fun[0]);
-                    }
-                    else /*static if (!isFiber)*/
-                    {
-                        static if (!is(Parameters!fun[0] == const))
-                        {
-                            assertSaneStorageClasses!(ParameterStorageClassTuple!fun[0]);
-                        }
-                    }
+                    static assert(assertSaneStorageClasses(
+                        ParameterStorageClassTuple!fun[0],
+                        is(Parameters!fun[0] == const),
+                        inFiber,
+                        module_,
+                        Fun.stringof));
                 }
                 fun(event);
             }
@@ -2484,6 +2430,80 @@ void udaSanityCheckCTFE(
         immutable message = pattern.format(module_);
         assert(0, message);
     }*/
+}
+
+
+// assertSaneStorageClasses
+/++
+    Statically asserts that a parameter storage class is not `ref`
+    if `inFiber`, and neither `ref` nor `out` if not `inFiber`.
+
+    Take the storage class as a template parameter and statically
+    assert inside this function, unlike how `udaSanityCheck` returns
+    false on failure, so we can format and print the error message
+    once here (instead of at all call sites upon receiving false).
+
+    Params:
+        storageClass = The storage class of the parameter.
+        paramIsConst = Whether or not the parameter is `const`.
+        inFiber = Whether or not the event handler is annotated `.fiber(true)`.
+        module_ = The module name of the plugin.
+        typestring = The signature string of the function.
+
+    Returns:
+        `true` if the storage class is valid; asserts `0` if not.
+ +/
+auto assertSaneStorageClasses(
+    const ParameterStorageClass storageClass,
+    const bool paramIsConst,
+    const bool inFiber,
+    const string module_,
+    const string typestring)
+{
+    import std.format : format;
+
+    static if (__VERSION__ <= 2104L)
+    {
+        /++
+            There's something wrong with how the assert message is printed from CTFE.
+            Work around it somewhat by prepending a backtick.
+
+            https://issues.dlang.org/show_bug.cgi?id=24036
+         +/
+        enum fix = "`";
+    }
+    else
+    {
+        // Hopefully no need past 2.104... Update when 2.105 is out.
+        enum fix = string.init;
+    }
+
+    if (inFiber)
+    {
+        if (storageClass & ParameterStorageClass.ref_)
+        {
+            enum pattern = fix ~ "`%s` has a `%s` event handler annotated `.fiber(true)` " ~
+                "that takes an `IRCEvent` by `ref`, which is a combination prone " ~
+                "to memory corruption. Pass by value instead";
+            immutable message = pattern.format(module_, typestring).idup;
+            assert(0, message);
+        }
+    }
+    else if (!paramIsConst)
+    {
+        if (
+            (storageClass & ParameterStorageClass.ref_) ||
+            (storageClass & ParameterStorageClass.out_))
+        {
+            enum pattern = fix ~ "`%s` has a `%s` event handler that takes an " ~
+                "`IRCEvent` of an unsupported storage class; " ~
+                "may not be mutable `ref` or `out`";
+            immutable message = pattern.format(module_, typestring).idup;
+            assert(0, message);
+        }
+    }
+
+    return true;
 }
 
 
