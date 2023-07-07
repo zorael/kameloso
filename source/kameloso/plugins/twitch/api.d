@@ -227,9 +227,10 @@ void persistentQuerier(
 
         version(BenchmarkHTTPRequests)
         {
-            import std.stdio : writefln;
+            import std.stdio : stdout, writefln;
             immutable post = Clock.currTime;
             writefln("%s (%s)", post-pre, url);
+            stdout.flush();
         }
     }
 
@@ -284,8 +285,9 @@ void persistentQuerier(
             &onOwnerTerminated,
             (Variant v) scope
             {
-                import std.stdio : writeln;
+                import std.stdio : stdout, writeln;
                 writeln("Twitch worker received unknown Variant: ", v);
+                stdout.flush();
             }
         );
     }
