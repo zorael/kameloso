@@ -229,7 +229,9 @@ unittest
  +/
 final class IRCPluginSettingsException : Exception
 {
-    /// Wraps normal Exception constructors.
+    /++
+        Wraps normal Exception constructors.
+     +/
     this(
         const string message,
         const string file = __FILE__,
@@ -250,10 +252,14 @@ final class IRCPluginSettingsException : Exception
  +/
 final class IRCPluginInitialisationException : Exception
 {
-    /// Name of throwing plugin.
+    /++
+        Name of throwing plugin.
+     +/
     string pluginName;
 
-    /// Optional name of a malformed file.
+    /++
+        Optional name of a malformed file.
+     +/
     string malformedFilename;
 
     /++
@@ -905,10 +911,14 @@ version(WithWebtitlesPlugin)
 version(WithTwitchPlugin)
 struct EventURLs
 {
-    /// The [dialect.defs.IRCEvent|IRCEvent] that should trigger a Webtitles lookup.
+    /++
+        The [dialect.defs.IRCEvent|IRCEvent] that should trigger a Webtitles lookup.
+     +/
     IRCEvent event;
 
-    /// The URLs discovered inside [dialect.defs.IRCEvent.content|IRCEvent.content].
+    /++
+        The URLs discovered inside [dialect.defs.IRCEvent.content|IRCEvent.content].
+     +/
     string[] urls;
 }
 

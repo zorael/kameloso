@@ -943,19 +943,29 @@ private:
      +/
     enum Placeholder
     {
-        /// Hostmask placeholder 1.
+        /++
+            Hostmask placeholder 1.
+         +/
         hostmask1 = "<nickname1>!<ident>@<address>",
 
-        /// Hostmask placeholder 2.
+        /++
+            Hostmask placeholder 2.
+         +/
         hostmask2 = "<nickname2>!<ident>@<address>",
 
-        /// Channel placeholder.
+        /++
+            Channel placeholder.
+         +/
         channel = "<#channel>",
 
-        /// Account placeholder 1.
+        /++
+            Account placeholder 1.
+         +/
         account1 = "<account1>",
 
-        /// Account placeholder 2.
+        /++
+            Account placeholder 2.
+         +/
         account2 = "<account2>",
     }
 

@@ -486,7 +486,9 @@ final class ExecException : Exception
      +/
     int retval;
 
-    /// Constructor attaching a return value.
+    /++
+        Constructor attaching a return value.
+     +/
     this(
         const string msg,
         const int retval,
@@ -498,7 +500,9 @@ final class ExecException : Exception
         super(msg, file, line, nextInChain);
     }
 
-    /// Passthrough constructor.
+    /++
+        Passthrough constructor.
+     +/
     this(
         const string msg,
         const string file = __FILE__,

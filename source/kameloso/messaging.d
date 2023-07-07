@@ -79,7 +79,7 @@ struct Message
      +/
     enum Property
     {
-        none       = 1 << 0,  /// Unset value.
+        none        = 1 << 0,  /// Unset value.
         fast        = 1 << 1,  /// Message should be sent faster than normal. (Twitch)
         quiet       = 1 << 2,  /// Message should be sent without echoing it to the terminal.
         background  = 1 << 3,  /// Message should be lazily sent in the background.
@@ -1080,7 +1080,9 @@ unittest
     );
 }
 
-/// Merely an alias to [immediate], because we use both terms at different places.
+/++
+    Merely an alias to [immediate], because we use both terms at different places.
+ +/
 alias immediateline = immediate;
 
 
@@ -1121,34 +1123,56 @@ static if (__VERSION__ >= 2099L)
     {
         mixin(
 `
-        /// Sends a concurrency message to the main thread to [KamelosoLogger.trace] text to the local terminal.
+        /++
+            Sends a concurrency message to the main thread to [KamelosoLogger.trace] text to the local terminal.
+         +/
         alias askTo` ~ __traits(identifier, member).capitalize ~ ` =
             askToOutputImpl!"` ~ __traits(identifier, member) ~ `";
 `);
     }
 
-    /// Simple alias to [askToWarn], because both spellings are right.
+    /++
+        Simple alias to [askToWarn], because both spellings are right.
+     +/
     alias askToWarn = askToWarning;
 }
 else
 {
-    /// Sends a concurrency message to the main thread asking to print text to the local terminal.
+    /++
+        Sends a concurrency message to the main thread asking to print text to the local terminal.
+     +/
     alias askToWriteln = askToOutputImpl!"writeln";
-    /// Sends a concurrency message to the main thread to [KamelosoLogger.trace] text to the local terminal.
+    /++
+        Sends a concurrency message to the main thread to [KamelosoLogger.trace] text to the local terminal.
+     +/
     alias askToTrace = askToOutputImpl!"trace";
-    /// Sends a concurrency message to the main thread to [KamelosoLogger.log] text to the local terminal.
+    /++
+        Sends a concurrency message to the main thread to [KamelosoLogger.log] text to the local terminal.
+     +/
     alias askToLog = askToOutputImpl!"log";
-    /// Sends a concurrency message to the main thread to [KamelosoLogger.info] text to the local terminal.
+    /++
+        Sends a concurrency message to the main thread to [KamelosoLogger.info] text to the local terminal.
+     +/
     alias askToInfo = askToOutputImpl!"info";
-    /// Sends a concurrency message to the main thread to [KamelosoLogger.warning] text to the local terminal.
+    /++
+        Sends a concurrency message to the main thread to [KamelosoLogger.warning] text to the local terminal.
+     +/
     alias askToWarn = askToOutputImpl!"warning";
-    /// Simple alias to [askToWarn], because both spellings are right.
+    /++
+        Simple alias to [askToWarn], because both spellings are right.
+     +/
     alias askToWarning = askToWarn;
-    /// Sends a concurrency message to the main thread to [KamelosoLogger.error] text to the local terminal.
+    /++
+        Sends a concurrency message to the main thread to [KamelosoLogger.error] text to the local terminal.
+     +/
     alias askToError = askToOutputImpl!"error";
-    /// Sends a concurrency message to the main thread to [KamelosoLogger.critical] text to the local terminal.
+    /++
+        Sends a concurrency message to the main thread to [KamelosoLogger.critical] text to the local terminal.
+     +/
     alias askToCritical = askToOutputImpl!"critical";
-    /// Sends a concurrency message to the main thread to [KamelosoLogger.fatal] text to the local terminal.
+    /++
+        Sends a concurrency message to the main thread to [KamelosoLogger.fatal] text to the local terminal.
+     +/
     alias askToFatal = askToOutputImpl!"fatal";
 }
 

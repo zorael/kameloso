@@ -95,23 +95,30 @@ private:
     import requests.ssl_adapter : SSL, SSL_CTX, openssl;
     import std.socket : Address, Socket, SocketOption;
 
-    /// Real IPv4 and IPv6 sockets to connect through.
+    /++
+        Real IPv4 and IPv6 sockets to connect through.
+     +/
     Socket socket4, socket6;
 
-    /// Private cached send timeout setting.
+    /++
+        Private cached send timeout setting.
+     +/
     uint _sendTimeout;
 
-    /// Private cached received timeout setting.
+    /++
+        Private cached received timeout setting.
+     +/
     uint _receiveTimeout;
 
-    /// Private SSL context.
+    /++
+        Private SSL context.
+     +/
     SSL_CTX* sslContext;
 
     /++
         OpenSSL [requests.ssl_adapter.SSL] instance, for use with SSL connections.
      +/
     SSL* sslInstance;
-
 
     // setTimemout
     /++
@@ -146,7 +153,9 @@ public:
      +/
     bool ssl;
 
-    /// IPs already resolved using [kameloso.net.resolveFiber|resolveFiber].
+    /++
+        IPs already resolved using [kameloso.net.resolveFiber|resolveFiber].
+     +/
     Address[] ips;
 
     /++
@@ -521,19 +530,29 @@ struct ListenAttempt
         error,      /// Unrecoverable exception thrown; abort.
     }
 
-    /// The current state of the attempt.
+    /++
+        The current state of the attempt.
+     +/
     State state;
 
-    /// The last read line of text sent by the server.
+    /++
+        The last read line of text sent by the server.
+     +/
     string line;
 
-    /// The [std.socket.lastSocketError|lastSocketError] at the last point of error.
+    /++
+        The [std.socket.lastSocketError|lastSocketError] at the last point of error.
+     +/
     string error;
 
-    /// [core.stdc.errno.errno|errno] at time of read.
+    /++
+        [core.stdc.errno.errno|errno] at time of read.
+     +/
     int errno;
 
-    /// The amount of bytes received this attempt.
+    /++
+        The amount of bytes received this attempt.
+     +/
     long bytesReceived;
 }
 
@@ -628,10 +647,12 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
 
     alias State = ListenAttempt.State;
 
-    // The Generator we use this function with popFronts the first thing it does
-    // after being instantiated. To work around our main loop popping too we
-    // yield an initial empty value; else the first thing to happen will be a
-    // double pop, and the first line is missed.
+    /+
+        The Generator we use this function with popFronts the first thing it does
+        after being instantiated. To work around our main loop popping too we
+        yield an initial empty value; else the first thing to happen will be a
+        double pop, and the first line is missed.
+     +/
     yield(ListenAttempt.init);
 
     /// How many consecutive warnings to allow before yielding an error.
@@ -878,19 +899,29 @@ public:
         error,                   /// Error connecting; should abort.
     }
 
-    /// The current state of the attempt.
+    /++
+        The current state of the attempt.
+     +/
     State state;
 
-    /// The IP that the attempt is trying to connect to.
+    /++
+        The IP that the attempt is trying to connect to.
+     +/
     Address ip;
 
-    /// The error message as thrown by an exception.
+    /++
+        The error message as thrown by an exception.
+     +/
     string error;
 
-    /// [core.stdc.errno.errno|errno] at time of connect.
+    /++
+        [core.stdc.errno.errno|errno] at time of connect.
+     +/
     int errno;
 
-    /// The number of retries so far towards this [ip].
+    /++
+        The number of retries so far towards this [ip].
+     +/
     uint retryNum;
 }
 
@@ -1180,16 +1211,24 @@ struct ResolveAttempt
         error,          /// Failure, unrecoverable exception thrown.
     }
 
-    /// The current state of the attempt.
+    /++
+        The current state of the attempt.
+     +/
     State state;
 
-    /// The error message as thrown by an exception.
+    /++
+        The error message as thrown by an exception.
+     +/
     string error;
 
-    /// [core.stdc.errno.errno|errno] at time of resolve.
+    /++
+        [core.stdc.errno.errno|errno] at time of resolve.
+     +/
     int errno;
 
-    /// The number of retries so far towards this address.
+    /++
+        The number of retries so far towards this address.
+     +/
     uint retryNum;
 }
 
@@ -1403,10 +1442,14 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
  +/
 final class SSLException : Exception
 {
-    /// SSL error code.
+    /++
+        SSL error code.
+     +/
     int code;
 
-    /// Constructor attaching an error code.
+    /++
+        Constructor attaching an error code.
+     +/
     this(
         const string msg,
         const int code,
@@ -1418,7 +1461,9 @@ final class SSLException : Exception
         super(msg, file, line, nextInChain);
     }
 
-    /// Passthrough constructor.
+    /++
+        Passthrough constructor.
+     +/
     this(
         const string msg,
         const string file = __FILE__,
@@ -1436,10 +1481,14 @@ final class SSLException : Exception
  +/
 final class SSLFileException : Exception
 {
-    /// Filename that doesn't exist.
+    /++
+        Filename that doesn't exist.
+     +/
     string filename;
 
-    /// Constructor attaching an error code.
+    /++
+        Constructor attaching an error code.
+     +/
     this(
         const string msg,
         const string filename,
@@ -1451,7 +1500,9 @@ final class SSLFileException : Exception
         super(msg, file, line, nextInChain);
     }
 
-    /// Passthrough constructor.
+    /++
+        Passthrough constructor.
+     +/
     this(
         const string msg,
         const string file = __FILE__,
@@ -1469,7 +1520,9 @@ final class SSLFileException : Exception
  +/
 final class SocketSendException : Exception
 {
-    /// Passthrough constructor.
+    /++
+        Passthrough constructor.
+     +/
     this(
         const string msg,
         const string file = __FILE__,

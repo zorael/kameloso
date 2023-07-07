@@ -49,10 +49,14 @@ static immutable descriptionExemptions =
  +/
 @Settings struct WebtitlesSettings
 {
-    /// Toggles whether or not the plugin should react to events at all.
+    /++
+        Toggles whether or not the plugin should react to events at all.
+     +/
     @Enabler bool enabled = true;
 
-    /// Toggles whether or not meta descriptions should be reported next to titles.
+    /++
+        Toggles whether or not meta descriptions should be reported next to titles.
+     +/
     bool descriptions = true;
 }
 
@@ -67,22 +71,34 @@ static immutable descriptionExemptions =
  +/
 struct TitleLookupResults
 {
-    /// Looked up web page title.
+    /++
+        Looked up web page title.
+     +/
     string title;
 
-    /// The content of the web page's `description` tag.
+    /++
+        The content of the web page's `description` tag.
+     +/
     string description;
 
-    /// Domain name of the looked up URL.
+    /++
+        Domain name of the looked up URL.
+     +/
     string domain;
 
-    /// YouTube video title, if such a YouTube link.
+    /++
+        YouTube video title, if such a YouTube link.
+     +/
     string youtubeTitle;
 
-    /// YouTube video author, if such a YouTube link.
+    /++
+        YouTube video author, if such a YouTube link.
+     +/
     string youtubeAuthor;
 
-    /// The UNIX timestamp of when the title was looked up.
+    /++
+        The UNIX timestamp of when the title was looked up.
+     +/
     long when;
 }
 
@@ -96,16 +112,24 @@ struct TitleLookupResults
  +/
 struct TitleLookupRequest
 {
-    /// The context state of the requesting plugin instance.
+    /++
+        The context state of the requesting plugin instance.
+     +/
     IRCPluginState state;
 
-    /// The [dialect.defs.IRCEvent|IRCEvent] that instigated the lookup.
+    /++
+        The [dialect.defs.IRCEvent|IRCEvent] that instigated the lookup.
+     +/
     IRCEvent event;
 
-    /// URL to look up.
+    /++
+        URL to look up.
+     +/
     string url;
 
-    /// Results of the title lookup.
+    /++
+        Results of the title lookup.
+     +/
     TitleLookupResults results;
 }
 
@@ -774,10 +798,14 @@ auto getYouTubeInfo(const string url, const string caBundleFile)
 final class TitleFetchException : Exception
 {
 @safe:
-    /// The URL that was attempted to fetch the title of.
+    /++
+        The URL that was attempted to fetch the title of.
+     +/
     string url;
 
-    /// The HTTP status code that was returned when attempting to fetch a title.
+    /++
+        The HTTP status code that was returned when attempting to fetch a title.
+     +/
     uint code;
 
     /++
@@ -913,10 +941,14 @@ public:
 final class WebtitlesPlugin : IRCPlugin
 {
 private:
-    /// All Webtitles options gathered.
+    /++
+        All Webtitles options gathered.
+     +/
     WebtitlesSettings webtitlesSettings;
 
-    /// Cache of recently looked-up web titles.
+    /++
+        Cache of recently looked-up web titles.
+     +/
     shared TitleLookupResults[string] cache;
 
     /++
@@ -925,7 +957,9 @@ private:
      +/
     enum expireSeconds = 600;
 
-    /// In the case of chained URL lookups, how many milliseconds to delay each lookup by.
+    /++
+        In the case of chained URL lookups, how many milliseconds to delay each lookup by.
+     +/
     enum delayMsecs = 100;
 
     /++

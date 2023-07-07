@@ -64,7 +64,9 @@ private:
     import lu.uda : Unserialisable;
 
 public:
-    /// Toggles whether or not the plugin should react to events at all.
+    /++
+        Toggles whether or not the plugin should react to events at all.
+     +/
     @Enabler bool enabled = true;
 
     @Unserialisable
@@ -1668,13 +1670,19 @@ final class AdminPlugin : IRCPlugin
 package:
     import kameloso.constants : KamelosoFilenames;
 
-    /// All Admin options gathered.
+    /++
+        All Admin options gathered.
+     +/
     AdminSettings adminSettings;
 
-    /// File with user definitions. Must be the same as in `persistence.d`.
+    /++
+        File with user definitions. Must be the same as in `persistence.d`.
+     +/
     @Resource string userFile = KamelosoFilenames.users;
 
-    /// File with hostmasks definitions. Must be the same as in `persistence.d`.
+    /++
+        File with hostmasks definitions. Must be the same as in `persistence.d`.
+     +/
     @Resource string hostmasksFile = KamelosoFilenames.hostmasks;
 
     mixin IRCPluginImpl;

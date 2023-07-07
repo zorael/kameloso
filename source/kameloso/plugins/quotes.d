@@ -1213,7 +1213,9 @@ void saveQuotes(QuotesPlugin plugin)
  +/
 final class NoQuotesFoundException : Exception
 {
-    /// Nickname whose quotes could not be found.
+    /++
+        Nickname whose quotes could not be found.
+     +/
     string nickname;
 
     /++
@@ -1250,10 +1252,14 @@ final class NoQuotesFoundException : Exception
  +/
 final class QuoteIndexOutOfRangeException : Exception
 {
-    /// Given index (that ended up being out of range).
+    /++
+        Given index (that ended up being out of range).
+     +/
     ptrdiff_t indexGiven;
 
-    /// Acutal upper bound.
+    /++
+        Acutal upper bound.
+     +/
     size_t upperBound;
 
     /++
@@ -1293,7 +1299,9 @@ final class QuoteIndexOutOfRangeException : Exception
  +/
 final class NoQuotesSearchMatchException : Exception
 {
-    /// Given search terms string.
+    /++
+        Given search terms string.
+     +/
     string searchTerms;
 
     /++
@@ -1401,7 +1409,9 @@ final class QuotesPlugin : IRCPlugin
 private:
     import lu.json : JSONStorage;
 
-    /// All Quotes plugin settings gathered.
+    /++
+        All Quotes plugin settings gathered.
+     +/
     QuotesSettings quotesSettings;
 
     /++
@@ -1412,7 +1422,9 @@ private:
      +/
     Quote[][string][string] quotes;
 
-    /// Filename of file to save the quotes to.
+    /++
+        Filename of file to save the quotes to.
+     +/
     @Resource string quotesFile = "quotes.json";
 
     mixin IRCPluginImpl;

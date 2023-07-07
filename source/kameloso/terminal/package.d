@@ -20,13 +20,19 @@ public:
 
 @safe:
 
-/// Special terminal control characters.
+/++
+    Special terminal control characters.
+ +/
 enum TerminalToken
 {
-    /// Character that preludes a terminal colouring code.
+    /++
+        Character that preludes a terminal colouring code.
+     +/
     format = '\033',
 
-    /// Terminal bell/beep.
+    /++
+        Terminal bell/beep.
+     +/
     bell = '\007',
 }
 
@@ -38,13 +44,19 @@ version(Windows)
 
     import core.sys.windows.wincon : SetConsoleCP, SetConsoleMode, SetConsoleOutputCP;
 
-    /// Original codepage at program start.
+    /++
+        Original codepage at program start.
+     +/
     private __gshared uint originalCP;
 
-    /// Original output codepage at program start.
+    /++
+        Original output codepage at program start.
+     +/
     private __gshared uint originalOutputCP;
 
-    /// Original console mode at program start.
+    /++
+        Original console mode at program start.
+     +/
     private __gshared uint originalConsoleMode;
 
     /++

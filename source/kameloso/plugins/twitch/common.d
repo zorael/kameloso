@@ -328,13 +328,19 @@ public:
 final class TwitchQueryException : Exception
 {
 @safe:
-    /// The response body that was received.
+    /++
+        The response body that was received.
+     +/
     string responseBody;
 
-    /// The message of any thrown exception, if the query failed.
+    /++
+        The message of any thrown exception, if the query failed.
+     +/
     string error;
 
-    /// The HTTP code that was received.
+    /++
+        The HTTP code that was received.
+     +/
     uint code;
 
     /++
@@ -378,7 +384,9 @@ final class TwitchQueryException : Exception
 final class MissingBroadcasterTokenException : Exception
 {
 @safe:
-    /// The channel name for which a broadcaster token was needed.
+    /++
+        The channel name for which a broadcaster token was needed.
+     +/
     string channelName;
 
     /++
@@ -418,7 +426,9 @@ final class MissingBroadcasterTokenException : Exception
 final class InvalidCredentialsException : Exception
 {
 @safe:
-    /// The response body that was received.
+    /++
+        The response body that was received.
+     +/
     JSONValue json;
 
     /++

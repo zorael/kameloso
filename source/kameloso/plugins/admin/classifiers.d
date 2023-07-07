@@ -184,7 +184,9 @@ void lookupEnlist(
 
     immutable role = getNoun(NounForm.singular, class_);
 
-    /// Report result, either to the local terminal or to the IRC channel/sender
+    /++
+        Report result, either to the local terminal or to the IRC channel/sender
+     +/
     void report(const AlterationResult result, const string id)
     {
         import std.format : format;

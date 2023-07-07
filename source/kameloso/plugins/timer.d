@@ -1144,7 +1144,7 @@ auto createTimerFiber(
     {
         import std.datetime.systime : Clock;
 
-        /// Channel pointer.
+        // Channel pointer.
         const channel = channelName in plugin.channels;
         assert(channel, channelName ~ " not in plugin.channels");
 

@@ -430,7 +430,9 @@ void messageFiber(ref Kameloso instance)
             }
         }
 
-        /// Reverse-formats an event and sends it to the server.
+        /++
+            Reverse-formats an event and sends it to the server.
+         +/
         void eventToServer(Message m) scope
         {
             import lu.string : splitLineAtPosition;
@@ -699,7 +701,9 @@ void messageFiber(ref Kameloso instance)
             }
         }
 
-        /// Proxies the passed message to the [kameloso.logger.logger].
+        /++
+            Proxies the passed message to the [kameloso.logger.logger].
+         +/
         void proxyLoggerMessages(OutputRequest request) scope
         {
             if (instance.settings.headless) return;
@@ -746,7 +750,9 @@ void messageFiber(ref Kameloso instance)
             }
         }
 
-        /// Timestamp of when the loop started.
+        /++
+            Timestamp of when the loop started.
+         +/
         immutable loopStartTime = Clock.currTime;
         static immutable maxReceiveTime = Timeout.messageReadMsecs.msecs;
 
@@ -3514,7 +3520,9 @@ void printSummary(const ref Kameloso instance)
  +/
 struct AttemptState
 {
-    /// Enum denoting what we should do next loop in an execution attempt.
+    /++
+        Enum denoting what we should do next loop in an execution attempt.
+     +/
     Next next;
 
     /++
@@ -3523,10 +3531,14 @@ struct AttemptState
      +/
     bool firstConnect = true;
 
-    /// Whether or not "Exiting..." should be printed at program exit.
+    /++
+        Whether or not "Exiting..." should be printed at program exit.
+     +/
     bool silentExit;
 
-    /// Shell return value to exit with.
+    /++
+        Shell return value to exit with.
+     +/
     int retval;
 }
 

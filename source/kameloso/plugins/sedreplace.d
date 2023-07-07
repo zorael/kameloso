@@ -69,7 +69,9 @@ alias DelimiterCharacters = AliasSeq!('/', '|', '#', '@', ' ', '_', ';');
  +/
 @Settings struct SedReplaceSettings
 {
-    /// Toggles whether or not the plugin should react to events at all.
+    /++
+        Toggles whether or not the plugin should react to events at all.
+     +/
     @Enabler bool enabled = true;
 
     /++
@@ -93,10 +95,14 @@ alias DelimiterCharacters = AliasSeq!('/', '|', '#', '@', ' ', '_', ';');
  +/
 struct Line
 {
-    /// Contents of last line uttered.
+    /++
+        Contents of last line uttered.
+     +/
     string content;
 
-    /// When the last line was spoken, in UNIX time.
+    /++
+        When the last line was spoken, in UNIX time.
+     +/
     long timestamp;
 }
 
@@ -594,20 +600,28 @@ final class SedReplacePlugin : IRCPlugin
 private:
     import core.time : seconds;
 
-    /// All sed-replace options gathered.
+    /++
+        All sed-replace options gathered.
+     +/
     SedReplaceSettings sedReplaceSettings;
 
-    /// Lifetime of a [Line] in [prevlines], in seconds.
+    /++
+        Lifetime of a [Line] in [prevlines], in seconds.
+     +/
     enum prevlineLifetime = 3600;
 
-    /// How often to purge the [prevlines] list of messages.
+    /++
+        How often to purge the [prevlines] list of messages.
+     +/
     static immutable timeBetweenPurges = (prevlineLifetime * 3).seconds;
 
-    /// What kind of container to use for sent lines.
+    /++
+        What kind of container to use for sent lines.
+     +/
     alias BufferType = CircularBuffer!(Line, Yes.dynamic);
 
     /++
-        An associative arary of  [BufferType]s of the previous line(s) every user said,
+        An associative arary of [BufferType]s of the previous line(s) every user said,
         keyed by nickname keyed by channel.
      +/
     BufferType[string][string] prevlines;

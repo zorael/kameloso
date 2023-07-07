@@ -35,7 +35,9 @@ import std.typecons : Flag, No, Yes;
  +/
 @Settings struct ChatbotSettings
 {
-    /// Whether or not the Chatbot plugin should react to events at all.
+    /++
+        Whether or not the Chatbot plugin should react to events at all.
+     +/
     @Enabler bool enabled = true;
 }
 
@@ -156,7 +158,9 @@ public:
 final class ChatbotPlugin : IRCPlugin
 {
 private:
-    /// All Chatbot plugin settings gathered.
+    /++
+        All Chatbot plugin settings gathered.
+     +/
     ChatbotSettings chatbotSettings;
 
     mixin IRCPluginImpl;

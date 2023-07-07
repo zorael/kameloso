@@ -65,10 +65,14 @@ public:
  +/
 struct ScheduledFiber
 {
-    /// Fiber to trigger at the point in time [timestamp].
+    /++
+        Fiber to trigger at the point in time [timestamp].
+     +/
     Fiber fiber;
 
-    /// When [fiber] is scheduled to be called, in hnsecs from midnight Jan 1st 1970.
+    /++
+        When [fiber] is scheduled to be called, in hnsecs from midnight Jan 1st 1970.
+     +/
     long timestamp;
 }
 
@@ -92,10 +96,14 @@ struct ScheduledFiber
  +/
 struct ScheduledDelegate
 {
-    /// Delegate to trigger at the point in time [timestamp].
+    /++
+        Delegate to trigger at the point in time [timestamp].
+     +/
     void delegate() dg;
 
-    /// When [dg] is scheduled to be called, in hnsecs from midnight Jan 1st 1970.
+    /++
+        When [dg] is scheduled to be called, in hnsecs from midnight Jan 1st 1970.
+     +/
     long timestamp;
 }
 
@@ -333,7 +341,9 @@ interface Sendable {}
  +/
 final class Boxed(T) : Sendable
 {
-    /// Payload value embedded in this message.
+    /++
+        Payload value embedded in this message.
+     +/
     T payload;
 
     /++

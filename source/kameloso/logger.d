@@ -111,26 +111,49 @@ private:
         import kameloso.terminal.colours.defs : TerminalForeground, TerminalReset;
         import kameloso.terminal.colours : applyANSI, asANSI;
 
-        /// Convenience alias.
+        /++
+            Convenience alias.
+         +/
         alias logcoloursBright = DefaultColours.logcoloursBright;
 
-        /// Ditto
+        /// ditto
         alias logcoloursDark = DefaultColours.logcoloursDark;
     }
 
-    /// Buffer to compose a line in before printing it to screen in one go.
+    /++
+        Buffer to compose a line in before printing it to screen in one go.
+     +/
     Appender!(char[]) linebuffer;
 
-    /// Sub-buffer to compose the message in.
+    /++
+        Sub-buffer to compose the message in.
+     +/
     Appender!(char[]) messagebuffer;
 
-    /// The initial size to allocate for buffers. It will grow if needed.
+    /++
+        The initial size to allocate for buffers. It will grow if needed.
+     +/
     enum bufferInitialSize = 4096;
 
-    bool monochrome;  /// Whether to use colours or not in logger output.
-    bool brightTerminal;  /// Whether or not to use colours for a bright background.
-    bool headless;  /// Whether or not to disable all terminal output.
-    bool flush;  /// Whether or not to flush standard out after writing to it.
+    /++
+        Whether to use colours or not in logger output.
+     +/
+    bool monochrome;
+
+    /++
+        Whether or not to use colours for a bright background.
+     +/
+    bool brightTerminal;
+
+    /++
+        Whether or not to disable all terminal output.
+     +/
+    bool headless;
+
+    /++
+        Whether or not to flush standard out after writing to it.
+     +/
+    bool flush;
 
 public:
     /++
@@ -536,7 +559,9 @@ public:
     }
 
 
-    /// Mixin to error out on `fatal` calls.
+    /++
+        Mixin to error out on `fatal` calls.
+     +/
     private enum fatalErrorMixin =
 `throw new Error("A fatal error message was logged");`;
 

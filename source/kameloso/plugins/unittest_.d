@@ -36,7 +36,9 @@ mixin PluginRegistration!(UnittestPlugin, 100.priority);
  +/
 @Settings struct UnittestSettings
 {
-    /// Enabler.
+    /++
+        Enabler.
+     +/
     @Enabler bool enabled = false;
 }
 

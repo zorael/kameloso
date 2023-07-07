@@ -52,20 +52,28 @@ private:
     import lu.uda : Unserialisable;
 
 public:
-    /// Toggles whether or not the plugin should react to events at all.
+    /++
+        Toggles whether or not the plugin should react to events at all.
+     +/
     @Enabler bool enabled = true;
 
-    /// Toggles whether or not the plugin should print to screen (as opposed to just log).
+    /++
+        Toggles whether or not the plugin should print to screen (as opposed to just log).
+     +/
     bool monitor = true;
 
     version(Colours)
     {
-        /// Whether or not to display nicks in a colour based on their nickname hash.
+        /++
+            Whether or not to display nicks in a colour based on their nickname hash.
+         +/
         bool colourfulNicknames = true;
 
         @Unserialisable
         {
-            /// Whether or not two users on the same account should be coloured identically.
+            /++
+                Whether or not two users on the same account should be coloured identically.
+             +/
             bool colourByAccount = true;
         }
     }
@@ -74,7 +82,9 @@ public:
     {
         @Unserialisable
         {
-            /// Whether or not to display Twitch badges next to sender/target names.
+            /++
+                Whether or not to display Twitch badges next to sender/target names.
+             +/
             bool twitchBadges = true;
 
             /++
@@ -83,10 +93,14 @@ public:
              +/
             bool truecolour = true;
 
-            /// Whether or not to normalise truecolours; make dark brighter and bright darker.
+            /++
+                Whether or not to normalise truecolours; make dark brighter and bright darker.
+             +/
             bool normaliseTruecolour = true;
 
-            /// Whether or not emotes should be highlit in colours.
+            /++
+                Whether or not emotes should be highlit in colours.
+             +/
             bool colourfulEmotes = true;
         }
     }
@@ -98,48 +112,76 @@ public:
      +/
     bool motd = false;
 
-    /// Whether or not to filter away most uninteresting events.
+    /++
+        Whether or not to filter away most uninteresting events.
+     +/
     bool filterMost = true;
 
-    /// Whether or not to filter WHOIS queries.
+    /++
+        Whether or not to filter WHOIS queries.
+     +/
     bool filterWhois = true;
 
-    /// Whether or not to hide events from blacklisted users.
+    /++
+        Whether or not to hide events from blacklisted users.
+     +/
     bool hideBlacklistedUsers = false;
 
-    /// Whether or not to log events.
+    /++
+        Whether or not to log events.
+     +/
     bool logs = false;
 
-    /// Whether or not to log non-home channels.
+    /++
+        Whether or not to log non-home channels.
+     +/
     bool logGuestChannels = false;
 
-    /// Whether or not to log private messages.
+    /++
+        Whether or not to log private messages.
+     +/
     bool logPrivateMessages = true;
 
     @Unserialisable
     {
-        /// Whether or not to send a terminal bell signal when the bot is mentioned in chat.
+        /++
+            Whether or not to send a terminal bell signal when the bot is mentioned in chat.
+         +/
         bool bellOnMention = false;
 
-        /// Whether or not to bell on parsing errors.
+        /++
+            Whether or not to bell on parsing errors.
+         +/
         bool bellOnError = false;
 
-        /// Whether or not to log server messages.
+        /++
+            Whether or not to log server messages.
+         +/
         bool logServer = false;
 
-        /// Whether or not to log errors.
+        /++
+            Whether or not to log errors.
+         +/
         bool logErrors = true;
 
-        /// Whether or not to log raw events.
+        /++
+            Whether or not to log raw events.
+         +/
         bool logRaw = false;
 
-        /// Whether or not to have the type names be in capital letters.
+        /++
+            Whether or not to have the type names be in capital letters.
+         +/
         bool uppercaseTypes = false;
 
-        /// Whether or not to print a banner to the terminal at midnights, when day changes.
+        /++
+            Whether or not to print a banner to the terminal at midnights, when day changes.
+         +/
         bool daybreaks = true;
 
-        /// Whether or not to buffer writes.
+        /++
+            Whether or not to buffer writes.
+         +/
         bool bufferedWrites = true;
     }
 }
@@ -849,13 +891,19 @@ private:
     import std.array : Appender;
 
 package:
-    /// All Printer plugin options gathered.
+    /++
+        All Printer plugin options gathered.
+     +/
     PrinterSettings printerSettings;
 
-    /// How many seconds before a request to squelch list events times out.
+    /++
+        How many seconds before a request to squelch list events times out.
+     +/
     enum squelchTimeout = 5;  // seconds
 
-    /// How many bytes to preallocate for the [linebuffer].
+    /++
+        How many bytes to preallocate for the [linebuffer].
+     +/
     enum linebufferInitialSize = 2048;
 
     /++
@@ -864,22 +912,34 @@ package:
      +/
     long[string] squelches;
 
-    /// Whether or not at least one squelch is active; whether [squelches] is non-empty.
+    /++
+        Whether or not at least one squelch is active; whether [squelches] is non-empty.
+     +/
     bool hasSquelches;
 
-    /// Buffers, to clump log file writes together.
+    /++
+        Buffers, to clump log file writes together.
+     +/
     LogLineBuffer[string] buffers;
 
-    /// Buffer to fill with the line to print to screen.
+    /++
+        Buffer to fill with the line to print to screen.
+     +/
     Appender!(char[]) linebuffer;
 
-    /// Where to save logs.
+    /++
+        Where to save logs.
+     +/
     @Resource string logDirectory = "logs";
 
-    /// [kameloso.terminal.TerminalToken.bell|TerminalToken.bell] as string, for use as bell.
+    /++
+        [kameloso.terminal.TerminalToken.bell|TerminalToken.bell] as string, for use as bell.
+     +/
     private enum bellString = "" ~ cast(char)(TerminalToken.bell);
 
-    /// Effective bell after [kameloso.terminal.isTerminal] checks.
+    /++
+        Effective bell after [kameloso.terminal.isTerminal] checks.
+     +/
     string bell = bellString;
 
     mixin IRCPluginImpl;

@@ -55,16 +55,24 @@ public:
      +/
     bool regainNickname = true;
 
-    /// Whether or not to join channels upon being invited to them.
+    /++
+        Whether or not to join channels upon being invited to them.
+     +/
     bool joinOnInvite = false;
 
-    /// Whether to use SASL authentication or not.
+    /++
+        Whether to use SASL authentication or not.
+     +/
     @Unserialisable bool sasl = true;
 
-    /// Whether or not to abort and exit if SASL authentication fails.
+    /++
+        Whether or not to abort and exit if SASL authentication fails.
+     +/
     bool exitOnSASLFailure = false;
 
-    /// Lines to send after successfully connecting and registering.
+    /++
+        Lines to send after successfully connecting and registering.
+     +/
     //@Separator(";;")
     @CannotContainComments string sendAfterConnect;
 
@@ -75,7 +83,9 @@ public:
 }
 
 
-/// Progress of a process.
+/++
+    Progress of a process.
+ +/
 enum Progress
 {
     notStarted, /// Process not yet started, init state.
@@ -1819,7 +1829,9 @@ final class ConnectService : IRCPlugin
 private:
     import core.time : seconds;
 
-    /// All Connect service settings gathered.
+    /++
+        All Connect service settings gathered.
+     +/
     ConnectSettings connectSettings;
 
     /++
@@ -1846,19 +1858,29 @@ private:
      +/
     static immutable channelCheckDelay = 15.seconds;
 
-    /// At what step we're currently at with regards to authentication.
+    /++
+        At what step we're currently at with regards to authentication.
+     +/
     Progress authentication;
 
-    /// At what step we're currently at with regards to SASL EXTERNAL authentication.
+    /++
+        At what step we're currently at with regards to SASL EXTERNAL authentication.
+     +/
     Progress saslExternal;
 
-    /// At what step we're currently at with regards to registration.
+    /++
+        At what step we're currently at with regards to registration.
+     +/
     Progress registration;
 
-    /// At what step we're currently at with regards to capabilities.
+    /++
+        At what step we're currently at with regards to capabilities.
+     +/
     Progress capabilityNegotiation;
 
-    /// Whether or not we have issued a NICK command during registration.
+    /++
+        Whether or not we have issued a NICK command during registration.
+     +/
     bool issuedNICK;
 
     /++
@@ -1871,7 +1893,9 @@ private:
      +/
     string renameDuringRegistration;
 
-    /// Whether or not the bot has joined its channels at least once.
+    /++
+        Whether or not the bot has joined its channels at least once.
+     +/
     bool joinedChannels;
 
     version(TwitchSupport)
@@ -1883,10 +1907,14 @@ private:
         bool[string] currentActualChannels;
     }
 
-    /// Whether or not the server seems to be supporting WHOIS queries.
+    /++
+        Whether or not the server seems to be supporting WHOIS queries.
+     +/
     bool serverSupportsWHOIS = true;
 
-    /// Number of capabilities requested but still not awarded.
+    /++
+        Number of capabilities requested but still not awarded.
+     +/
     uint requestedCapabilitiesRemaining;
 
     mixin IRCPluginImpl;

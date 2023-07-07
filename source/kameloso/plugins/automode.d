@@ -35,7 +35,9 @@ import std.typecons : Flag, No, Yes;
  +/
 @Settings struct AutomodeSettings
 {
-    /// Toggles whether or not the plugin should react to events at all.
+    /++
+        Toggles whether or not the plugin should react to events at all.
+     +/
     @Enabler bool enabled = true;
 }
 
@@ -614,15 +616,20 @@ public:
 final class AutomodePlugin : IRCPlugin
 {
 private:
-    /// All Automode options gathered.
+    /++
+        All Automode options gathered.
+     +/
     AutomodeSettings automodeSettings;
 
-    /// Associative array of automodes.
+    /++
+        Associative array of automodes.
+     +/
     string[string][string] automodes;
 
-    /// The file to read and save automode definitions from/to.
+    /++
+        The file to read and save automode definitions from/to.
+     +/
     @Resource string automodeFile = "automodes.json";
-
 
     // isEnabled
     /++

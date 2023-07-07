@@ -43,16 +43,24 @@ package:
  +/
 struct QueryResponse
 {
-    /// Response body, may be several lines.
+    /++
+        Response body, may be several lines.
+     +/
     string str;
 
-    /// How long the query took, from issue to response.
+    /++
+        How long the query took, from issue to response.
+     +/
     long msecs;
 
-    /// The HTTP response code received.
+    /++
+        The HTTP response code received.
+     +/
     uint code;
 
-    /// The message of any exception thrown while querying.
+    /++
+        The message of any exception thrown while querying.
+     +/
     string error;
 }
 

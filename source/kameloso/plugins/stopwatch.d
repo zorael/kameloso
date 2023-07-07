@@ -34,7 +34,9 @@ import std.typecons : Flag, No, Yes;
  +/
 @Settings struct StopwatchSettings
 {
-    /// Whether or not this plugin is enabled.
+    /++
+        Whether or not this plugin is enabled.
+     +/
     @Enabler bool enabled = true;
 }
 
@@ -224,10 +226,14 @@ public:
 final class StopwatchPlugin : IRCPlugin
 {
 private:
-    /// All Stopwatch plugin settings.
+    /++
+        All Stopwatch plugin settings.
+     +/
     StopwatchSettings stopwatchSettings;
 
-    /// Vote start timestamps by user by channel.
+    /++
+        Stopwatch start timestamps by user by channel.
+     +/
     long[string][string] stopwatches;
 
     mixin IRCPluginImpl;

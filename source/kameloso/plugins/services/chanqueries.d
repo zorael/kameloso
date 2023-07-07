@@ -132,7 +132,9 @@ void startChannelQueries(ChanQueriesService service)
             immutable squelchMessage = "squelch " ~ channelName;
         }
 
-        /// Common code to send a query, await the results and unlist the fiber.
+        /++
+            Common code to send a query, await the results and unlist the fiber.
+         +/
         void queryAwaitAndUnlist(Types)(const string command, const Types types)
         {
             import std.conv : text;
@@ -156,7 +158,9 @@ void startChannelQueries(ChanQueriesService service)
             delay(service, secondsBetween, Yes.yield);
         }
 
-        /// Event types that signal the end of a query response.
+        /++
+            Event types that signal the end of a query response.
+         +/
         static immutable topicTypes =
         [
             IRCEvent.Type.RPL_TOPIC,
@@ -237,7 +241,9 @@ void startChannelQueries(ChanQueriesService service)
 
     uniqueUsers = uniqueUsers.rehash();
 
-    /// Event types that signal the end of a WHOIS response.
+    /++
+        Event types that signal the end of a WHOIS response.
+     +/
     static immutable whoisTypes =
     [
         IRCEvent.Type.RPL_ENDOFWHOIS,
@@ -492,7 +498,9 @@ private:
      +/
     enum secondsBetween = 3;
 
-    /// Seconds after welcome event before the first round of channel-querying will start.
+    /++
+        Duration after welcome event before the first round of channel-querying will start.
+     +/
     static immutable timeBeforeInitialQueries = 60.seconds;
 
     /++
@@ -501,13 +509,19 @@ private:
      +/
     ubyte[string] channelStates;
 
-    /// Whether or not a channel query Fiber is running.
+    /++
+        Whether or not a channel query Fiber is running.
+     +/
     bool querying;
 
-    /// Whether or not at least one channel query has been made.
+    /++
+        Whether or not at least one channel query has been made.
+     +/
     bool queriedAtLeastOnce;
 
-    /// Whether or not the server is known to support WHOIS queries. (Default to true.)
+    /++
+        Whether or not the server is known to support WHOIS queries. (Defaults to true.)
+     +/
     bool serverSupportsWHOIS = true;
 
 

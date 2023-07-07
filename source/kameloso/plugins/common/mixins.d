@@ -93,7 +93,9 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     }
     else
     {
-        /// Flag denoting that [WHOISFiberDelegate] has been mixed in.
+        /++
+            Flag denoting that [WHOISFiberDelegate] has been mixed in.
+         +/
         enum hasWHOISFiber = true;
     }
 
@@ -533,7 +535,9 @@ private:
     }
     else
     {
-        /// Flag denoting that [MessagingProxy] has been mixed in.
+        /++
+            Flag denoting that [MessagingProxy] has been mixed in.
+         +/
         private enum hasMessagingProxy = true;
     }
 

@@ -285,22 +285,34 @@ alias formatObject = formatObjects;
  +/
 private struct FormatStringMemberArguments
 {
-    /// Type name.
+    /++
+        Type name.
+     +/
     string typestring;
 
-    /// Member name.
+    /++
+        Member name.
+     +/
     string memberstring;
 
-    /// Width (length) of longest type name.
+    /++
+        Width (length) of longest type name.
+     +/
     uint typewidth;
 
-    /// Width (length) of longest member name.
+    /++
+        Width (length) of longest member name.
+     +/
     uint namewidth;
 
-    /// Whether or not we should compensate for a bright terminal background.
+    /++
+        Whether or not we should compensate for a bright terminal background.
+     +/
     bool bright;
 
-    /// Whether or not to truncate long lines.
+    /++
+        Whether or not to truncate long lines.
+     +/
     bool truncate = true;
 }
 
@@ -412,28 +424,44 @@ private void formatStringMemberImpl(Flag!"coloured" coloured, T, Sink)
  +/
 private struct FormatArrayMemberArguments
 {
-    /// Type name.
+    /++
+        Type name.
+     +/
     string typestring;
 
-    /// Member name.
+    /++
+        Member name.
+     +/
     string memberstring;
 
-    /// Element type name.
+    /++
+        Element type name.
+     +/
     string elemstring;
 
-    /// Whether or not the element is a `char`.
+    /++
+        Whether or not the element is a `char`.
+     +/
     bool elemIsCharacter;
 
-    /// Width (length) of longest type name.
+    /++
+        Width (length) of longest type name.
+     +/
     uint typewidth;
 
-    /// Width (length) of longest member name.
+    /++
+        Width (length) of longest member name.
+     +/
     uint namewidth;
 
-    /// Whether or not we should compensate for a bright terminal background.
+    /++
+        Whether or not we should compensate for a bright terminal background.
+     +/
     bool bright;
 
-    /// Whether or not to truncate big arrays.
+    /++
+        Whether or not to truncate big arrays.
+     +/
     bool truncate = true;
 }
 
@@ -678,25 +706,39 @@ private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
  +/
 private struct FormatAggregateMemberArguments
 {
-    /// Type name.
+    /++
+        Type name.
+     +/
     string typestring;
 
-    /// Member name.
+    /++
+        Member name.
+     +/
     string memberstring;
 
-    /// Type of member aggregate; one of "struct", "class", "interface" and "union".
+    /++
+        Type of member aggregate; one of "struct", "class", "interface" and "union".
+     +/
     string aggregateType;
 
-    /// Text snippet indicating whether or not the aggregate is in an initial state.
+    /++
+        Text snippet indicating whether or not the aggregate is in an initial state.
+     +/
     string initText;
 
-    /// Width (length) of longest type name.
+    /++
+        Width (length) of longest type name.
+     +/
     uint typewidth;
 
-    /// Width (length) of longest member name.
+    /++
+        Width (length) of longest member name.
+     +/
     uint namewidth;
 
-    /// Whether or not we should compensate for a bright terminal background.
+    /++
+        Whether or not we should compensate for a bright terminal background.
+     +/
     bool bright;
 }
 
@@ -759,19 +801,29 @@ private void formatAggregateMemberImpl(Flag!"coloured" coloured, Sink)
  +/
 private struct FormatOtherMemberArguments
 {
-    /// Type name.
+    /++
+        Type name.
+     +/
     string typestring;
 
-    /// Member name.
+    /++
+        Member name.
+     +/
     string memberstring;
 
-    /// Width (length) of longest type name.
+    /++
+        Width (length) of longest type name.
+     +/
     uint typewidth;
 
-    /// Width (length) of longest member name.
+    /++
+        Width (length) of longest member name.
+     +/
     uint namewidth;
 
-    /// Whether or not we should compensate for a bright terminal background.
+    /++
+        Whether or not we should compensate for a bright terminal background.
+     +/
     bool bright;
 }
 

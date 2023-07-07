@@ -30,10 +30,15 @@ import kameloso.messaging;
 import dialect.defs;
 
 
-/// All Oneliner plugin runtime settings.
+// OnelinersSettings
+/++
+    All Oneliner plugin runtime settings.
+ +/
 @Settings struct OnelinersSettings
 {
-    /// Toggle whether or not this plugin should do anything at all.
+    /++
+        Toggle whether or not this plugin should do anything at all.
+     +/
     @Enabler bool enabled = true;
 
     version(TwitchSupport)
@@ -1104,13 +1109,19 @@ public:
 final class OnelinersPlugin : IRCPlugin
 {
 private:
-    /// All Oneliners plugin settings.
+    /++
+        All Oneliners plugin settings.
+     +/
     OnelinersSettings onelinersSettings;
 
-    /// Associative array of oneliners; [Oneliner] array, keyed by trigger, keyed by channel.
+    /++
+        Associative array of oneliners; [Oneliner] array, keyed by trigger, keyed by channel.
+     +/
     Oneliner[string][string] onelinersByChannel;
 
-    /// Filename of file with oneliners.
+    /++
+        Filename of file with oneliners.
+     +/
     @Resource string onelinerFile = "oneliners.json";
 
     // channelSpecificCommands

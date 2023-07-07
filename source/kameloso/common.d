@@ -169,13 +169,19 @@ void printStacktrace() @system
  +/
 struct OutgoingLine
 {
-    /// String line to send.
+    /++
+        String line to send.
+     +/
     string line;
 
-    /// Whether this message should be sent quietly or verbosely.
+    /++
+        Whether this message should be sent quietly or verbosely.
+     +/
     bool quiet;
 
-    /// Constructor.
+    /++
+        Constructor.
+     +/
     this(const string line, const Flag!"quiet" quiet = No.quiet) pure @safe nothrow @nogc
     {
         this.line = line;

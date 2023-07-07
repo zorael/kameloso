@@ -57,7 +57,9 @@ private:
     import lu.uda : Unserialisable;
 
 public:
-    /// Whether or not the Pipeline plugin should do anything at all.
+    /++
+        Whether or not the Pipeline plugin should do anything at all.
+     +/
     @Enabler bool enabled = true;
 
     /++
@@ -73,7 +75,9 @@ public:
      +/
     bool bumpFilenameIfItExists = true;
 
-    /// Custom, full path to use as FIFO filename, specified with --set pipeline.path.
+    /++
+        Custom, full path to use as FIFO filename, specified with --set pipeline.path.
+     +/
     @Unserialisable string path;
 }
 
@@ -534,16 +538,24 @@ final class PipelinePlugin : IRCPlugin
 private:
     import std.concurrency : Tid;
 
-    /// All Pipeline settings gathered.
+    /++
+        All Pipeline settings gathered.
+     +/
     PipelineSettings pipelineSettings;
 
-    /// Thread ID of the thread reading the named pipe.
+    /++
+        Thread ID of the thread reading the named pipe.
+     +/
     Tid fifoThread;
 
-    /// Filename of the created FIFO.
+    /++
+        Filename of the created FIFO.
+     +/
     string fifoFilename;
 
-    /// Whether or not the worker is running in the background.
+    /++
+        Whether or not the worker is running in the background.
+     +/
     bool workerRunning;
 
     mixin IRCPluginImpl;

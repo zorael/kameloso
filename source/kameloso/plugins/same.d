@@ -42,7 +42,9 @@ import dialect.defs;
  +/
 @Settings struct SameSettings
 {
-    /// Whether or not the Same plugin should react to events at all.
+    /++
+        Whether or not the Same plugin should react to events at all.
+     +/
     @Enabler bool enabled = true;
 }
 
@@ -147,7 +149,9 @@ public:
  +/
 final class SamePlugin : IRCPlugin
 {
-    /// All Same plugin settings gathered.
+    /++
+        All Same plugin settings gathered.
+     +/
     SameSettings sameSettings;
 
     mixin IRCPluginImpl;
