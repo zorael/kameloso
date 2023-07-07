@@ -1407,8 +1407,9 @@ mixin template IRCPluginImpl(
          +/
         auto funIndexByTiming(const Timing timing)
         {
+            assert(__ctfe, "funIndexByTiming called outside CTFE");
+
             size_t[] indexes;
-            if (!__ctfe) return indexes;
 
             static foreach (immutable i; 0..this.Introspection.allEventHandlerUDAsInModule.length)
             {
@@ -2013,8 +2014,9 @@ mixin template IRCPluginImpl(
             import kameloso.plugins.common.core : IRCEventHandler;
             import std.traits : getUDAs;
 
+            assert(__ctfe, "ctCommandsEnumLiteral called outside CTFE");
+
             IRCPlugin.CommandMetadata[string] commandAA;
-            if (!__ctfe) return commandAA;
 
             foreach (fun; this.Introspection.allEventHandlerFunctionsInModule)
             {
@@ -3046,7 +3048,7 @@ public:
      +/
     void generateTypemap() pure @safe nothrow
     {
-        if (!__ctfe) return;
+        assert(__ctfe, "generateTypemap called outside CTFE");
 
         foreach (immutable type; acceptedEventTypes)
         {
