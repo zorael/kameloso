@@ -236,9 +236,9 @@ unittest
         A [std.process.Pid|Pid] of the spawned process. Remember to [std.process.wait|wait].
 
     Throws:
-        [object.Exception|Exception] if there were no `DISPLAY` environment
-        variable on non-macOS Posix platforms, indicative of no X.org server or
-        Wayland compositor running.
+        [object.Exception|Exception] if there were no `DISPLAY` nor `WAYLAND_DISPLAY`
+        environment variable on non-macOS Posix platforms, indicative of no X.org
+        server or Wayland compositor running.
  +/
 auto openInBrowser(const string url)
 {
