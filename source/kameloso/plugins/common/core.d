@@ -1146,13 +1146,13 @@ mixin template IRCPluginImpl(
             that were annotated with an [IRCEventHandler] with a [Timing] matching
             the one supplied.
          +/
-        auto funIndexByTiming(const Timing timing)
+        auto funIndexByTiming(const Timing timing) scope
         {
             assert(__ctfe, "funIndexByTiming called outside CTFE");
 
             size_t[] indexes;
 
-            static foreach (immutable i; 0..this.Introspection.allEventHandlerUDAsInModule.length)
+            foreach (immutable i; 0..this.Introspection.allEventHandlerUDAsInModule.length)
             {
                 if (this.Introspection.allEventHandlerUDAsInModule[i]._when == timing) indexes ~= i;
             }
