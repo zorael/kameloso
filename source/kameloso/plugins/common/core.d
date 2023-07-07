@@ -569,7 +569,7 @@ mixin template IRCPluginImpl(
                         is(Parameters!fun[1] == const),
                         inFiber,
                         module_,
-                        Fun.stringof));
+                        Fun.stringof), "0");
                 }
                 fun(this, event);
             }
@@ -588,7 +588,7 @@ mixin template IRCPluginImpl(
                         is(Parameters!fun[0] == const),
                         inFiber,
                         module_,
-                        Fun.stringof));
+                        Fun.stringof), "0");
                 }
                 fun(event);
             }
@@ -992,7 +992,7 @@ mixin template IRCPluginImpl(
         {
             immutable uda = this.Introspection.allEventHandlerUDAsInModule[i];
             alias fun = this.Introspection.allEventHandlerFunctionsInModule[i];
-            debug static assert(udaSanityCheckMinimal!(fun, uda));
+            debug static assert(udaSanityCheckMinimal!(fun, uda), "0");
 
             enum verbose = (uda._verbose || debug_);
             enum funName = module_ ~ '.' ~ __traits(identifier, fun);
@@ -2192,6 +2192,7 @@ auto filterSender(
     handler in question. Implementation function.
 
     Params:
+        plugin = The [IRCPlugin] this relates to.
         event = [dialect.defs.IRCEvent|IRCEvent] to allow, or not.
         permissionsRequired = Required [kameloso.plugins.common.core.Permissions|Permissions]
             of the handler in question.
