@@ -729,17 +729,18 @@ mixin template IRCPluginImpl(
             import lu.traits : TakesParams;
             import std.traits : ParameterStorageClass, Parameters, arity;
 
-            static if (inFiber)
-            {
-                /++
-                    Statically asserts that a parameter storage class is not `ref`.
+            /++
+                Statically asserts that a parameter storage class is not `ref`
+                if `inFiber`, and neither `ref` nor `out` if not `inFiber`.
 
-                    Take the storage class as a template parameter and statically
-                    assert inside this function, unlike how `udaSanityCheck` returns
-                    false on failure, so we can format and print the error message
-                    once here (instead of at all call sites upon receiving false).
-                 +/
-                static void assertNotRef(ParameterStorageClass storageClass)()
+                Take the storage class as a template parameter and statically
+                assert inside this function, unlike how `udaSanityCheck` returns
+                false on failure, so we can format and print the error message
+                once here (instead of at all call sites upon receiving false).
+             +/
+            static void assertSaneStorageClasses(ParameterStorageClass storageClass)()
+            {
+                static if (inFiber)
                 {
                     static if (storageClass & ParameterStorageClass.ref_)
                     {
@@ -751,16 +752,7 @@ mixin template IRCPluginImpl(
                         static assert(0, message);
                     }
                 }
-            }
-
-            static if (!inFiber)
-            {
-                /++
-                    Statically asserts that a parameter storage class is neither `out` nor `ref`.
-
-                    See `assertNotRef` above.
-                 +/
-                static void assertNotRefNorOut(ParameterStorageClass storageClass)()
+                else /*static if (!inFiber)*/
                 {
                     static if (
                         (storageClass & ParameterStorageClass.ref_) ||
@@ -781,20 +773,19 @@ mixin template IRCPluginImpl(
                 TakesParams!(fun, typeof(this), IRCEvent) ||
                 TakesParams!(fun, IRCPlugin, IRCEvent))
             {
+                import std.traits : ParameterStorageClassTuple;
+
                 static if (inFiber)
                 {
-                    import std.traits : ParameterStorageClassTuple;
-                    assertNotRef!(ParameterStorageClassTuple!fun[1]);
+                    assertSaneStorageClasses!(ParameterStorageClassTuple!fun[1]);
                 }
-                else
+                else /*static if (!isFiber)*/
                 {
                     static if (!is(Parameters!fun[1] == const))
                     {
-                        import std.traits : ParameterStorageClassTuple;
-                        assertNotRefNorOut!(ParameterStorageClassTuple!fun[1]);
+                        assertSaneStorageClasses!(ParameterStorageClassTuple!fun[1]);
                     }
                 }
-
                 fun(this, event);
             }
             else static if (
@@ -805,20 +796,19 @@ mixin template IRCPluginImpl(
             }
             else static if (TakesParams!(fun, IRCEvent))
             {
+                import std.traits : ParameterStorageClassTuple;
+
                 static if (inFiber)
                 {
-                    import std.traits : ParameterStorageClassTuple;
-                    assertNotRef!(ParameterStorageClassTuple!fun[0]);
+                    assertSaneStorageClasses!(ParameterStorageClassTuple!fun[0]);
                 }
-                else
+                else /*static if (!isFiber)*/
                 {
                     static if (!is(Parameters!fun[0] == const))
                     {
-                        import std.traits : ParameterStorageClassTuple;
-                        assertNotRefNorOut!(ParameterStorageClassTuple!fun[0]);
+                        assertSaneStorageClasses!(ParameterStorageClassTuple!fun[0]);
                     }
                 }
-
                 fun(event);
             }
             else static if (arity!fun == 0)
