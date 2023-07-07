@@ -1440,7 +1440,7 @@ mixin template IRCPluginImpl(
 
                 enum pattern = "Module `%s` mixes in `MinimalAuthentication`, " ~
                     "yet no `Timing.early` functions were found during introspection. " ~
-                    "Try moving the mixin site to earlier in the module.";
+                    "Try moving the mixin site to earlier in the module";
                 immutable message = pattern.format(module_);
                 static assert(0, message);
             }
@@ -1454,7 +1454,7 @@ mixin template IRCPluginImpl(
 
                 enum pattern = "Module `%s` mixes in `UserAwareness`, " ~
                     "yet no `Timing.cleanup` functions were found during introspection. " ~
-                    "Try moving the mixin site to earlier in the module.";
+                    "Try moving the mixin site to earlier in the module";
                 immutable message = pattern.format(module_);
                 static assert(0, message);
             }
@@ -1468,7 +1468,7 @@ mixin template IRCPluginImpl(
 
                 enum pattern = "Module `%s` mixes in `ChannelAwareness`, " ~
                     "yet no `Timing.late` functions were found during introspection. " ~
-                    "Try moving the mixin site to earlier in the module.";
+                    "Try moving the mixin site to earlier in the module";
                 immutable message = pattern.format(module_);
                 static assert(0, message);
             }
@@ -2745,7 +2745,7 @@ struct Replay
         const Permissions permissionsRequired,
         const string caller)
     {
-        timestamp = event.time;
+        this.timestamp = event.time;
         this.dg = dg;
         this.event = event;
         this.permissionsRequired = permissionsRequired;
