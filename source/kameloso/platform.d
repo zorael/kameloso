@@ -56,33 +56,21 @@ auto currentPlatform()
 
     version(Windows)
     {
-        immutable term = environment.get("TERM", string.init);
-
-        if (term.length)
-        {
-            try
-            {
-                import std.process : execute;
-
-                // Get the uname and strip the newline
-                static immutable unameCommand = [ "uname", "-o" ];
-                immutable uname = execute(unameCommand).output;
-                return uname.length ? uname[0..$-1] : osName;
-            }
-            catch (Exception _)
-            {
-                return osName;
-            }
-        }
-        else
-        {
-            return osName;
-        }
+        // vscode and nested Powershell
+        immutable vscode = environment.get("VSCODE_INJECTION", string.init);
+        if (vscode.length) return "vscode";
     }
-    else
-    {
-        return environment.get("TERM_PROGRAM", osName);
-    }
+
+    // Basic Unix. On Windows; Cygwin, MinGW, Git Bash, etc
+    immutable termProgram = environment.get("TERM_PROGRAM", string.init);
+    if (termProgram.length) return termProgram;
+
+    // Some don't have TERM_PROGRAM, but most do have TERM
+    immutable term = environment.get("TERM", string.init);
+    if (term.length) return term;
+
+    // Fallback
+    return osName;
 }
 
 
