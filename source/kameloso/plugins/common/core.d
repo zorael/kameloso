@@ -841,7 +841,7 @@ mixin template IRCPluginImpl(
         /++
             Process a function.
          +/
-        NextStep process(bool verbose, bool inFiber, bool hasRegexes, Fun)
+        auto process(bool verbose, bool inFiber, bool hasRegexes, Fun)
             (scope Fun fun,
             const string funName,
             const IRCEventHandler uda,
@@ -1244,7 +1244,7 @@ mixin template IRCPluginImpl(
         /++
             Try a function.
          +/
-        NextStep tryProcess(size_t i)(ref IRCEvent event)
+        auto tryProcess(size_t i)(ref IRCEvent event)
         {
             immutable uda = this.Introspection.allEventHandlerUDAsInModule[i];
             alias fun = this.Introspection.allEventHandlerFunctionsInModule[i];
