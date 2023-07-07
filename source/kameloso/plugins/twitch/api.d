@@ -92,78 +92,77 @@ auto retryDelegate(Dg)(TwitchPlugin plugin, Dg dg)
             // This is never a transient error
             throw e;
         }
-        catch (TwitchQueryException e)
-        {
-            // Retry until we reach the retry limit, then rethrow after potentially printing details
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-
-            version(PrintStacktraces)
-            {
-                if (!plugin.state.settings.headless)
-                {
-                    import kameloso.common : logger;
-                    import std.json : JSONException, parseJSON;
-                    import std.stdio : stdout, writeln;
-
-                    logger.trace(e);
-
-                    try
-                    {
-                        writeln(parseJSON(e.responseBody).toPrettyString);
-                    }
-                    catch (JSONException _)
-                    {
-                        writeln(e.responseBody);
-                    }
-
-                    stdout.flush();
-                }
-            }
-            throw e;
-        }
-        catch (EmptyDataJSONException e)  // Must be before TwitchJSONException below
-        {
-            // Ditto
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-
-            version(PrintStacktraces)
-            {
-                import kameloso.common : logger;
-                logger.trace(e);
-            }
-            throw e;
-        }
-        catch (TwitchJSONException e)  // UnexpectedJSONException and ErrorJSONException
-        {
-            // Ditto
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-
-            version(PrintStacktraces)
-            {
-                if (!plugin.state.settings.headless)
-                {
-                    import kameloso.common : logger;
-                    import std.stdio : stdout, writeln;
-
-                    logger.trace(e);
-                    writeln(e.json.toPrettyString);
-                    stdout.flush();
-                }
-            }
-            throw e;
-        }
         catch (Exception e)
         {
-            // Ditto
+            // Retry until we reach the retry limit, then print if we should, before rethrowing
             if (i < TwitchPlugin.delegateRetries-1) continue;
 
             version(PrintStacktraces)
             {
-                import kameloso.common : logger;
-                logger.trace(e);
+                if (!plugin.state.settings.headless)
+                {
+                    printRetryDelegateException(e);
+                }
             }
             throw e;
         }
+    }
+
+    assert(0, "Unreachable");
+}
+
+
+// printRetryDelegateException
+/++
+    Prints out details about exceptions passed from [retryDelegate].
+    [retryDelegate] itself rethrows them when we return, so no need to do that here.
+
+    Gated behind version `PrintStacktraces`.
+
+    Params:
+        e = The exception to print.
+ +/
+version(PrintStacktraces)
+void printRetryDelegateException(/*const*/ Exception e)
+{
+    import kameloso.common : logger;
+    import std.json : JSONException, parseJSON;
+    import std.stdio : stdout, writeln;
+
+    if (auto twitchQueryException = cast(TwitchQueryException)e)
+    {
+        logger.trace(twitchQueryException);
+
+        try
+        {
+            writeln(parseJSON(twitchQueryException.responseBody).toPrettyString);
+        }
+        catch (JSONException _)
+        {
+            writeln(twitchQueryException.responseBody);
+        }
+
+        stdout.flush();
+        //throw twitchQueryException;
+    }
+    else if (auto emptyDataJSONException = cast(EmptyDataJSONException)e)
+    {
+        // Must be before TwitchJSONException below
+        logger.trace(emptyDataJSONException);
+        //throw emptyDataJSONException;
+    }
+    else if (auto twitchJSONException = cast(TwitchJSONException)e)
+    {
+        // UnexpectedJSONException and ErrorJSONException
+        logger.trace(twitchJSONException);
+        writeln(twitchJSONException.json.toPrettyString);
+        stdout.flush();
+        //throw twitchJSONException;
+    }
+    else /*if (auto plainException = cast(Exception)e)*/
+    {
+        logger.trace(e);
+        //throw e;
     }
 
     assert(0, "Unreachable");
