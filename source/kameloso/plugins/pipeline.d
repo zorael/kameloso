@@ -32,6 +32,7 @@ import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.common : logger;
 import kameloso.messaging;
+import kameloso.thread : Sendable;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
@@ -487,8 +488,6 @@ void teardown(PipelinePlugin plugin)
     }
 }
 
-
-import kameloso.thread : Sendable;
 
 // onBusMessage
 /++

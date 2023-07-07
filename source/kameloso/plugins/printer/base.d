@@ -36,6 +36,7 @@ import kameloso.plugins.printer.logging;
 import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
+import kameloso.thread : Sendable;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
@@ -714,8 +715,6 @@ void teardown(PrinterPlugin plugin)
     }
 }
 
-
-import kameloso.thread : Sendable;
 
 // onBusMessage
 /++

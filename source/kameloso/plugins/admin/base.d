@@ -33,6 +33,7 @@ import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness;
 import kameloso.common : logger;
 import kameloso.messaging;
+import kameloso.thread : Sendable;
 import dialect.defs;
 import std.concurrency : send;
 import std.typecons : Flag, No, Yes;
@@ -1386,8 +1387,6 @@ void onCommandBus(AdminPlugin plugin, const ref IRCEvent event)
     onCommandBusImpl(plugin, event.content);
 }
 
-
-import kameloso.thread : Sendable;
 
 // onBusMessage
 /++

@@ -26,6 +26,7 @@ import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.common : logger;
 import kameloso.messaging;
+import kameloso.thread : Sendable;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
@@ -1778,8 +1779,6 @@ void start(ConnectService service)
 }
 
 
-import kameloso.thread : Boxed, Sendable;
-
 // onBusMessage
 /++
     Receives a passed [kameloso.thread.Boxed|Boxed] instance with the "`connect`" header,
@@ -1794,6 +1793,8 @@ import kameloso.thread : Boxed, Sendable;
  +/
 void onBusMessage(ConnectService service, const string header, shared Sendable content)
 {
+    import kameloso.thread : Boxed;
+
     if (header != "connect") return;
 
     auto message = cast(Boxed!string)content;

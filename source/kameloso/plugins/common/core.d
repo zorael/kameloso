@@ -321,6 +321,7 @@ mixin template IRCPluginImpl(
     string module_ = __MODULE__)
 {
     private import kameloso.plugins.common.core : FilterResult, IRCEventHandler, IRCPluginState, Permissions;
+    private import kameloso.thread : Sendable;
     private import dialect.defs : IRCEvent, IRCServer, IRCUser;
     private import lu.traits : getSymbolsByUDA;
     private import std.array : Appender;
@@ -1866,8 +1867,6 @@ mixin template IRCPluginImpl(
         // So just let it allocate when it wants.
         return this.isEnabled ? ctCommandsEnumLiteral : null;
     }
-
-    private import kameloso.thread : Sendable;
 
     // onBusMessage
     /++
