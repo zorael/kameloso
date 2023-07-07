@@ -377,7 +377,7 @@ mixin template IRCPluginImpl(
                 enum fqn = module_ ~ '.'  ~ __traits(identifier, allEventHandlerFunctionsInModule[i]);
                 udas[i] = getUDAs!(fun, IRCEventHandler)[0];
                 udas[i].fqn = fqn;
-                debug udaSanityCheckCTFE(udas[i], fqn);
+                debug udaSanityCheckCTFE(udas[i]);
                 udas[i].generateTypemap();
             }
 
@@ -2279,15 +2279,12 @@ void sanitiseEvent(ref IRCEvent event)
 
     Params:
         uda = The [IRCEventHandler] UDA to check.
-        fqn = Fully qualified name of the function the UDA is attached to.
 
     Throws:
         Asserts `0` if the UDA is deemed malformed.
  +/
 debug
-void udaSanityCheckCTFE(
-    const IRCEventHandler uda,
-    const string fqn)
+void udaSanityCheckCTFE(const IRCEventHandler uda)
 {
     import std.format : format;
 
@@ -2313,7 +2310,7 @@ void udaSanityCheckCTFE(
     {
         enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
             "but it is not declared to accept any `IRCEvent.Type`s";
-        immutable message = pattern.format(fqn).idup;
+        immutable message = pattern.format(uda.fqn).idup;
         assert(0, message);
     }
 
@@ -2323,7 +2320,7 @@ void udaSanityCheckCTFE(
         {
             enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
                 "accepting `IRCEvent.Type.UNSET`, which is not a valid event type";
-            immutable message = pattern.format(fqn).idup;
+            immutable message = pattern.format(uda.fqn).idup;
             assert(0, message);
         }
         else if (type == IRCEvent.Type.PRIVMSG)
@@ -2331,7 +2328,7 @@ void udaSanityCheckCTFE(
             enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
                 "accepting `IRCEvent.Type.PRIVMSG`, which is not a valid event type. " ~
                 "Use `IRCEvent.Type.CHAN` and/or `IRCEvent.Type.QUERY` instead";
-            immutable message = pattern.format(fqn).idup;
+            immutable message = pattern.format(uda.fqn).idup;
             assert(0, message);
         }
         else if (type == IRCEvent.Type.WHISPER)
@@ -2339,16 +2336,15 @@ void udaSanityCheckCTFE(
             enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
                 "accepting `IRCEvent.Type.WHISPER`, which is not a valid event type. " ~
                 "Use `IRCEvent.Type.QUERY` instead";
-            immutable message = pattern.format(fqn).idup;
+            immutable message = pattern.format(uda.fqn).idup;
             assert(0, message);
         }
-        else if ((type == IRCEvent.Type.ANY) &&
-            (uda.channelPolicy != ChannelPolicy.any))
+        else if ((type == IRCEvent.Type.ANY) && (uda.channelPolicy != ChannelPolicy.any))
         {
             enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
                 "accepting `IRCEvent.Type.ANY` and is at the same time not annotated " ~
                 "`ChannelPolicy.any`, which is the only accepted combination";
-            immutable message = pattern.format(fqn).idup;
+            immutable message = pattern.format(uda.fqn).idup;
             assert(0, message);
         }
 
@@ -2366,7 +2362,7 @@ void udaSanityCheckCTFE(
                     "listening for a `Command` and/or `Regex`, but is at the " ~
                     "same time accepting non-message `IRCEvent.Type.%s events`";
                 immutable message = pattern.format(
-                    fqn,
+                    uda.fqn,
                     Enum!(IRCEvent.Type).toString(type)).idup;
                 assert(0, message);
             }
@@ -2383,7 +2379,7 @@ void udaSanityCheckCTFE(
             {
                 enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
                     "listening for a `Command` with an empty (or unspecified) trigger word";
-                immutable message = pattern.format(fqn).idup;
+                immutable message = pattern.format(uda.fqn).idup;
                 assert(0, message);
             }
             else if (command._word.contains(' '))
@@ -2391,7 +2387,7 @@ void udaSanityCheckCTFE(
                 enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
                     "listening for a `Command` whose trigger " ~
                     `word "%s" contains a space character`;
-                immutable message = pattern.format(fqn, command._word).idup;
+                immutable message = pattern.format(uda.fqn, command._word).idup;
                 assert(0, message);
             }
         }
@@ -2407,7 +2403,7 @@ void udaSanityCheckCTFE(
             {
                 enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
                     "listening for a `Regex` with an empty (or unspecified) expression";
-                immutable message = pattern.format(fqn).idup;
+                immutable message = pattern.format(uda.fqn).idup;
                 assert(0, message);
             }
             else if (
@@ -2417,7 +2413,7 @@ void udaSanityCheckCTFE(
                 enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
                     "listening for a non-`PrefixPolicy.direct`-annotated " ~
                     "`Regex` with an expression containing spaces";
-                immutable message = pattern.format(fqn).idup;
+                immutable message = pattern.format(uda.fqn).idup;
                 assert(0, message);
             }
         }
