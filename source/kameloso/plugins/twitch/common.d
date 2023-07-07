@@ -113,7 +113,7 @@ auto readNamedString(
 
 // printManualURL
 /++
-    Prints an URL for manual copy/pasting.
+    Prints a URL for manual copy/pasting.
 
     Params:
         url = URL string.

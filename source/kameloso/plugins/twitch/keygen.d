@@ -382,7 +382,7 @@ instructions and log in to authorise the use of this program with your <w>STREAM
 
 // readURLAndParseKey
 /++
-    Reads an URL from standard in and parses an OAuth key from it.
+    Reads a URL from standard in and parses an OAuth key from it.
 
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
@@ -472,7 +472,7 @@ private auto readURLAndParseKey(TwitchPlugin plugin, const string authNode)
         scopes = OAuth scope string array.
 
     Returns:
-        An URL string.
+        A URL string.
  +/
 private auto buildAuthNodeURL(const string authNode, const string[] scopes)
 {

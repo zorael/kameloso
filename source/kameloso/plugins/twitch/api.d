@@ -339,7 +339,7 @@ QueryResponse sendHTTPRequest(
     int id = -1,
     const Flag!"recursing" recursing = No.recursing)
 in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
-in (url.length, "Tried to send an HTTP request without an URL")
+in (url.length, "Tried to send an HTTP request without a URL")
 {
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.thread : ThreadMessage;

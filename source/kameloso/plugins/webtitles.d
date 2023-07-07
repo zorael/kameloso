@@ -764,7 +764,7 @@ final class TitleFetchException : Exception
     uint code;
 
     /++
-        Create a new [TitleFetchException], attaching an URL and an HTTP status code.
+        Create a new [TitleFetchException], attaching a URL and an HTTP status code.
      +/
     this(
         const string message,
