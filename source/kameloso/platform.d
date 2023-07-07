@@ -369,7 +369,7 @@ Pid execvp(/*const*/ string[] args) @system
                 immutable setting = slice.nom!(Yes.inherit)('=');
 
                 if (setting.among!(
-                    "--setup-twitch",
+                    //"--setup-twitch",  // this only does the keygen, then exits
                     "--get-cacert",
                     "--get-openssl"))
                 {
