@@ -445,7 +445,7 @@ Pid execvp(/*const*/ string[] args) @system
             }
         }
 
-        const string[6] commandLine =
+        const string[8] commandLine =
         [
             "cmd.exe",
             "/c",
