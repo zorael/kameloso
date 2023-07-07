@@ -520,10 +520,12 @@ void onWelcome(SedReplacePlugin plugin)
     import kameloso.plugins.common.delayawait : delay;
     import std.datetime.systime : Clock;
 
-    delay(plugin, plugin.timeBetweenPurges, Yes.yield);
-
     while (true)
     {
+        // delay immediately so the first purge only happens after the first
+        // timeBetweenPurges duration has passed
+        delay(plugin, plugin.timeBetweenPurges, Yes.yield);
+
         immutable now = Clock.currTime.toUnixTime;
 
         foreach (ref channelLines; plugin.prevlines)
@@ -539,8 +541,6 @@ void onWelcome(SedReplacePlugin plugin)
                 }
             }
         }
-
-        delay(plugin, plugin.timeBetweenPurges, Yes.yield);
     }
 }
 
