@@ -941,6 +941,12 @@ version(TwitchCustomEmotesEverywhere)
 )
 void onGuestRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
+    if (event.channel in plugin.customEmotesByChannel)
+    {
+        // Already done
+        return;
+    }
+
     importCustomEmotes(plugin, event.channel, event.aux[0]);
 }
 
