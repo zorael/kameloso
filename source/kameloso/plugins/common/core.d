@@ -1888,10 +1888,10 @@ mixin template IRCPluginImpl(
             {
                 .onBusMessage(this, header, content);
             }
-            else static if (TakesParams!(.onBusMessage, typeof(this), string))
+            /*else static if (TakesParams!(.onBusMessage, typeof(this), string))
             {
                 .onBusMessage(this, header);
-            }
+            }*/
             else
             {
                 import std.format : format;
