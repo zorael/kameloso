@@ -156,12 +156,18 @@ void onMessage(WebtitlesPlugin plugin, const ref IRCEvent event)
     thread to do all the work.
 
     It accesses the cache of already looked up addresses to speed things up.
+
+    Params:
+        plugin = The current [WebtitlesPlugin].
+        event = The [dialect.defs.IRCEvent|IRCEvent] that instigated the lookup.
+        urls = `string[]` of URLs to look up.
  +/
 void lookupURLs(WebtitlesPlugin plugin, const /*ref*/ IRCEvent event, string[] urls)
 {
     import kameloso.common : logger;
+    import kameloso.thread : ThreadMessage;
     import lu.string : beginsWith, nom;
-    import std.concurrency : spawn;
+    import std.concurrency : prioritySend, spawn;
 
     bool[string] uniques;
 
@@ -222,9 +228,6 @@ void lookupURLs(WebtitlesPlugin plugin, const /*ref*/ IRCEvent event, string[] u
             cast(Flag!"descriptions")plugin.webtitlesSettings.descriptions,
             plugin.state.connSettings.caBundleFile);
     }
-
-    import kameloso.thread : ThreadMessage;
-    import std.concurrency : prioritySend;
 
     plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout());
 }
