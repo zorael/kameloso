@@ -554,10 +554,10 @@ void onWelcome(SedReplacePlugin plugin)
 )
 void onPart(SedReplacePlugin plugin, const ref IRCEvent event)
 {
-    auto channelLines = event.channel in plugin.prevlines;
-    if (!channelLines) return;
-
-    (*channelLines).remove(event.sender.nickname);
+    if (auto channelLines = event.channel in plugin.prevlines)
+    {
+        (*channelLines).remove(event.sender.nickname);
+    }
 }
 
 
