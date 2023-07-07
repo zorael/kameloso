@@ -445,7 +445,7 @@ Pid execvp(/*const*/ string[] args) @system
             }
         }
 
-        const commandLine =
+        const string[6] commandLine =
         [
             "cmd.exe",
             "/c",
@@ -454,7 +454,7 @@ Pid execvp(/*const*/ string[] args) @system
             "powershell",
             "-c"
         ] ~ arg0 ~ sink.data.idup;
-        return spawnProcess(commandLine);
+        return spawnProcess(commandLine[]);
     }
     else
     {
