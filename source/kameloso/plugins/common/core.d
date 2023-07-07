@@ -566,6 +566,7 @@ mixin template IRCPluginImpl(
                 false on failure, so we can format and print the error message
                 once here (instead of at all call sites upon receiving false).
              +/
+            debug
             static void assertSaneStorageClasses(ParameterStorageClass storageClass)()
             {
                 static if (inFiber)
@@ -601,17 +602,20 @@ mixin template IRCPluginImpl(
                 TakesParams!(fun, typeof(this), IRCEvent) ||
                 TakesParams!(fun, IRCPlugin, IRCEvent))
             {
-                import std.traits : ParameterStorageClassTuple;
+                debug
+                {
+                    import std.traits : ParameterStorageClassTuple;
 
-                static if (inFiber)
-                {
-                    assertSaneStorageClasses!(ParameterStorageClassTuple!fun[1]);
-                }
-                else /*static if (!isFiber)*/
-                {
-                    static if (!is(Parameters!fun[1] == const))
+                    static if (inFiber)
                     {
                         assertSaneStorageClasses!(ParameterStorageClassTuple!fun[1]);
+                    }
+                    else /*static if (!isFiber)*/
+                    {
+                        static if (!is(Parameters!fun[1] == const))
+                        {
+                            assertSaneStorageClasses!(ParameterStorageClassTuple!fun[1]);
+                        }
                     }
                 }
                 fun(this, event);
@@ -624,17 +628,20 @@ mixin template IRCPluginImpl(
             }
             else static if (TakesParams!(fun, IRCEvent))
             {
-                import std.traits : ParameterStorageClassTuple;
+                debug
+                {
+                    import std.traits : ParameterStorageClassTuple;
 
-                static if (inFiber)
-                {
-                    assertSaneStorageClasses!(ParameterStorageClassTuple!fun[0]);
-                }
-                else /*static if (!isFiber)*/
-                {
-                    static if (!is(Parameters!fun[0] == const))
+                    static if (inFiber)
                     {
                         assertSaneStorageClasses!(ParameterStorageClassTuple!fun[0]);
+                    }
+                    else /*static if (!isFiber)*/
+                    {
+                        static if (!is(Parameters!fun[0] == const))
+                        {
+                            assertSaneStorageClasses!(ParameterStorageClassTuple!fun[0]);
+                        }
                     }
                 }
                 fun(event);
