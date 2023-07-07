@@ -26,6 +26,7 @@ import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.messaging;
+import kameloso.thread : Sendable;
 import dialect.defs;
 import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
@@ -909,6 +910,37 @@ void prune(shared TitleLookupResults[string] cache, const uint expireSeconds)
     {
         pruneAA!((entry) => (now - entry.when) > expireSeconds)(cache);
     }
+}
+
+
+// onBusMessage
+/++
+    Catch a bus message carrying a boxed [dialect.defs.IRCEvent|IRCEvent] and
+    treat it as if this plugin caught it itself.
+
+    Versioned out until we need it, such as for selective Twitch link blocks.
+
+    Params:
+        plugin = The current [WebtitlesPlugin].
+        header = String header describing the passed content payload.
+        content = The boxed content of the message.
+ +/
+version(none)
+void onBusMessage(
+    WebtitlesPlugin plugin,
+    const string header,
+    shared Sendable content)
+{
+    import kameloso.thread : Boxed;
+
+    // Don't return if disabled?
+    // Do we want to be able to serve other plugins anyway?
+    if (header != "webtitles") return;
+
+    auto message = cast(Boxed!IRCEvent)content;
+    assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
+
+    return onMessage(plugin, message.payload);
 }
 
 
