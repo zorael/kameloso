@@ -93,7 +93,6 @@ void initResources(AutomodePlugin plugin)
     }
 
     // Let other Exceptions pass.
-
     // Adjust saved JSON layout to be more easily edited
     json.save(plugin.automodeFile);
 }
@@ -125,8 +124,8 @@ void onAccountInfo(AutomodePlugin plugin, const ref IRCEvent event)
     if ((event.target.nickname == plugin.state.client.nickname) ||
         (event.sender.nickname == plugin.state.client.nickname)) return;
 
-    string account;
-    string nickname;
+    string account;  // mutable
+    string nickname;  // mutable
 
     with (IRCEvent.Type)
     switch (event.type)
@@ -212,7 +211,7 @@ in (account.length, "Tried to apply automodes to an empty account")
     import std.string : representation;
 
     auto accountmodes = channelName in plugin.automodes;
-    if (!accountmodes) return;
+    if (!accountmodes || !accountmodes.length) return;
 
     const wantedModes = account in *accountmodes;
     if (!wantedModes || !wantedModes.length) return;
@@ -368,21 +367,15 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
         // !automode add nickname mode
         string nickname;  // mutable
         string mode;  // mutable
-
         immutable result = line.splitInto(nickname, mode);
         if (result != SplitResults.match) goto default;
 
+        if (mode.beginsWith('-')) return sendCannotBeNegative();
         if (nickname.beginsWith('@')) nickname = nickname[1..$];
-
+        if (!nickname.length) goto default;
         if (!nickname.isValidNickname(plugin.state.server)) return sendInvalidNickname();
 
-        if (mode.beginsWith('-')) return sendCannotBeNegative();
-
-        while (mode.beginsWith('+'))
-        {
-            mode = mode[1..$];
-        }
-
+        while (mode.beginsWith('+')) mode = mode[1..$];
         if (!mode.length) return sendMustSupplyMode();
 
         modifyAutomode(plugin, Yes.add, nickname, event.channel, mode);
@@ -391,11 +384,10 @@ void onCommandAutomode(AutomodePlugin plugin, const /*ref*/ IRCEvent event)
     case "clear":
     case "del":
         string nickname = line;  // mutable
+
         if (nickname.beginsWith('@')) nickname = nickname[1..$];
-
         if (!nickname.length) goto default;
-
-        if (!nickname.isValidNickname(plugin.state.server)) return sendInvalidNickname();
+        //if (!nickname.isValidNickname(plugin.state.server)) return sendInvalidNickname();
 
         modifyAutomode(plugin, No.add, nickname, event.channel);
         return sendAutomodeCleared(nickname);
@@ -478,7 +470,6 @@ in ((!add || mode.length), "Tried to add an empty automode")
     // there is a match but the user isn't logged onto services.
 
     mixin WHOISFiberDelegate!(onSuccess, onFailure);
-
     enqueueAndWHOIS(nickname);
 }
 

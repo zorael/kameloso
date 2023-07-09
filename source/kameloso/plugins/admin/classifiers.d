@@ -113,11 +113,13 @@ void listList(
     JSONStorage json;
     json.load(plugin.userFile);
 
-    if ((channelName in json[list].object) && json[list][channelName].array.length)
+    auto channelUsersJSON = channelName in json[list];
+
+    if (channelUsersJSON && channelUsersJSON.array.length)
     {
         import std.algorithm.iteration : map;
 
-        auto userlist = json[list][channelName].array
+        auto userlist = channelUsersJSON.array
             .map!(jsonEntry => jsonEntry.str);
 
         if (event.sender.nickname.length)
@@ -170,6 +172,7 @@ void lookupEnlist(
     const string channelName,
     const IRCEvent event = IRCEvent.init)
 {
+    import kameloso.plugins.common.mixins : WHOISFiberDelegate;
     import dialect.common : isValidNickname;
     import lu.string : beginsWith, contains;
 
@@ -194,7 +197,6 @@ void lookupEnlist(
         if (event.sender.nickname.length)
         {
             // IRC report
-
             with (AlterationResult)
             final switch (result)
             {
@@ -218,7 +220,6 @@ void lookupEnlist(
         else
         {
             // Terminal report
-
             with (AlterationResult)
             final switch (result)
             {
@@ -296,7 +297,6 @@ void lookupEnlist(
             import std.format : format;
 
             // IRC report
-
             enum pattern = "Invalid nickname/account: <4>%s<c>";
             immutable message = pattern.format(specified);
             privmsg(plugin.state, event.channel, event.sender.nickname, message);
@@ -356,10 +356,7 @@ void lookupEnlist(
     }
 
     // User not on record or on record but no account; WHOIS and try based on results
-    import kameloso.plugins.common.mixins : WHOISFiberDelegate;
-
     mixin WHOISFiberDelegate!(onSuccess, onFailure);
-
     enqueueAndWHOIS(specified);
 }
 
@@ -511,7 +508,6 @@ void delist(
     }
 
     immutable role = getNoun(NounForm.singular, class_);
-
     immutable result = alterAccountClassifier(
         plugin,
         No.add,
@@ -633,15 +629,15 @@ auto alterAccountClassifier(
 
         immutable accountAsJSON = JSONValue(account);
 
-        if (channelName in json[list].object)
+        if (auto channelAccountsJSON = channelName in json[list])
         {
-            if (json[list][channelName].array.canFind(accountAsJSON))
+            if (channelAccountsJSON.array.canFind(accountAsJSON))
             {
                 return AlterationResult.alreadyInList;
             }
             else
             {
-                json[list][channelName].array ~= accountAsJSON;
+                channelAccountsJSON.array ~= accountAsJSON;
             }
         }
         else
@@ -660,16 +656,16 @@ auto alterAccountClassifier(
         import std.algorithm.mutation : SwapStrategy, remove;
         import std.algorithm.searching : countUntil;
 
-        if (channelName in json[list].object)
+        if (auto channelAccountsJSON = channelName in json[list])
         {
-            immutable index = json[list][channelName].array.countUntil(JSONValue(account));
+            immutable index = channelAccountsJSON.array.countUntil(JSONValue(account));
 
             if (index == -1)
             {
                 return AlterationResult.noSuchAccount;
             }
 
-            json[list][channelName] = json[list][channelName].array
+            *channelAccountsJSON = channelAccountsJSON.array
                 .remove!(SwapStrategy.unstable)(index);
         }
         else

@@ -323,7 +323,7 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
             for conflicts.
          +/
 
-        bool triggerConflicts(const IRCPlugin.CommandMetadata[string][string] aa)
+        auto triggerConflicts(const IRCPlugin.CommandMetadata[string][string] aa)
         {
             foreach (immutable pluginName, pluginCommands; aa)
             {
@@ -386,8 +386,8 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
         import lu.string : SplitResults, splitInto;
         import std.algorithm.comparison : among;
 
-        string word;
-        string mod;
+        string word;  // mutable
+        string mod;  // mutable
         immutable results = slice.splitInto(word, mod);
 
         with (SplitResults)
@@ -421,6 +421,7 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
 
         if (newPattern == "-")
         {
+            // Clear pattern
             if      (mod == "?") counter.patternQuery = string.init;
             else if (mod == "+") counter.patternIncrement = string.init;
             else if (mod == "-") counter.patternDecrement = string.init;
@@ -432,6 +433,7 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
         }
         else if (newPattern.length)
         {
+            // Set pattern
             if      (mod == "?") counter.patternQuery = newPattern;
             else if (mod == "+") counter.patternIncrement = newPattern;
             else if (mod == "-") counter.patternDecrement = newPattern;
@@ -443,6 +445,7 @@ void onCommandCounter(CounterPlugin plugin, const /*ref*/ IRCEvent event)
         }
         else
         {
+            // Query pattern
             immutable modverb =
                 (mod == "?") ? "query" :
                 (mod == "+") ? "increment" :
@@ -755,7 +758,7 @@ auto formatMessage(
  +/
 void reload(CounterPlugin plugin)
 {
-    return loadCounters(plugin);
+    loadCounters(plugin);
 }
 
 
@@ -865,7 +868,6 @@ void initResources(CounterPlugin plugin)
     }
 
     // Let other Exceptions pass.
-
     countersJSON.save(plugin.countersFile);
 }
 

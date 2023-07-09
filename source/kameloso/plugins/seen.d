@@ -51,7 +51,10 @@ private import kameloso.plugins.common.core;
 // Awareness mixins, for plumbing.
 private import kameloso.plugins.common.awareness : ChannelAwareness, UserAwareness;
 
-// Likewise [dialect.defs], for the definitions of an IRC event.
+// Some thread boxing helpers.
+private import kameloso.thread : Sendable;
+
+// [dialect.defs], for the definitions of an IRC event.
 private import dialect.defs;
 
 // [kameloso.common] for the global logger instance and the rehashing AA.
@@ -726,6 +729,7 @@ void onNamesReply(SeenPlugin plugin, const ref IRCEvent event)
 
         string slice = entry;  // mutable
         slice = slice.nom!(Yes.inherit)('!'); // In case SpotChat-like, full nick!ident@address form
+        slice = slice.stripModesign(plugin.state.server);
         updateUser(plugin, slice, event.time);
     }
 }
@@ -892,8 +896,6 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
             }
         }
 
-        // No matches
-
         if (const userTimestamp = requestedUser in seenUsers)
         {
             enum pattern =  "I last saw <h>%s<h> %s ago.";
@@ -907,7 +909,6 @@ void onCommandSeen(SeenPlugin plugin, const ref IRCEvent event)
         else
         {
             // No matches for nickname `event.content` in `plugin.seenUsers`.
-
             enum pattern = "I have never seen <h>%s<h>.";
             immutable message = pattern.format(requestedUser);
             privmsg(event.channel, event.sender.nickname, message);
@@ -997,39 +998,35 @@ void updateAllObservedUsers(SeenPlugin plugin)
 
 // loadSeen
 /++
-    Given a filename, read the contents and load it into a `long[string]`
+    Given a filename, read the contents and load it into a `RehashingAA!(string, long)`
     associative array, then returns it. If there was no file there to read,
     return an empty array for a fresh start.
 
     Params:
-        filename = Filename of the file to read from.
-
-    Returns:
-        `long[string]` associative array; UNIX timestamp longs keyed by nickname strings.
+        plugin = The current [SeenPlugin].
  +/
-auto loadSeen(const string filename)
+void loadSeen(SeenPlugin plugin)
 {
     import kameloso.string : doublyBackslashed;
     import std.file : exists, isFile, readText;
     import std.json : JSONException, parseJSON;
 
-    long[string] aa;
-
-    if (!filename.exists || !filename.isFile)
+    if (!plugin.seenFile.exists || !plugin.seenFile.isFile)
     {
         enum pattern = "<l>%s</> does not exist or is not a file";
-        logger.warningf(pattern, filename.doublyBackslashed);
-        return aa;
+        logger.warningf(pattern, plugin.seenFile.doublyBackslashed);
     }
+
+    plugin.seenUsers.clear();
 
     try
     {
-        const asJSON = parseJSON(filename.readText);
+        const asJSON = parseJSON(plugin.seenFile.readText);
 
         // Manually insert each entry from the JSON file into the long[string] AA.
         foreach (immutable user, const timeJSON; asJSON.object)
         {
-            aa[user] = timeJSON.integer;
+            plugin.seenUsers[user] = timeJSON.integer;
         }
     }
     catch (JSONException e)
@@ -1040,7 +1037,6 @@ auto loadSeen(const string filename)
     }
 
     // No need to rehash the AA; RehashingAA will do it on assignment
-    return aa;  //.rehash();
 }
 
 
@@ -1085,7 +1081,7 @@ void onWelcome(SeenPlugin plugin)
     import kameloso.constants : BufferSize;
     import core.thread : Fiber;
 
-    plugin.reload();
+    loadSeen(plugin);
 
     void saveDg()
     {
@@ -1131,7 +1127,7 @@ void onWelcome(SeenPlugin plugin)
  +/
 void reload(SeenPlugin plugin)
 {
-    plugin.seenUsers = loadSeen(plugin.seenFile);
+    loadSeen(plugin);
 }
 
 
@@ -1175,7 +1171,7 @@ void initResources(SeenPlugin plugin)
             __LINE__);
     }
 
-    // Let other Exceptions pass up the stack.
+    // Let other Exceptions pass.
 
     version(Callgrind) {}
     else
@@ -1184,8 +1180,6 @@ void initResources(SeenPlugin plugin)
     }
 }
 
-
-import kameloso.thread : Sendable;
 
 /+
     Only some plugins benefit from this one implementning `onBusMessage`, so omit
@@ -1209,6 +1203,7 @@ else
     enum shouldImplementOnBusMessage = false;
 }
 
+
 // onBusMessage
 /++
     Receive a passed [kameloso.thread.Boxed|Boxed] instance with the "`seen`" header,
@@ -1224,16 +1219,15 @@ else
         content = Boxed message content.
  +/
 debug
-version(Posix)
 //version(ShouldImplementOnBusMessage)
 static if (shouldImplementOnBusMessage)
 void onBusMessage(SeenPlugin plugin, const string header, shared Sendable content)
 {
-    if (!plugin.isEnabled) return;
-    if (header != "seen") return;
-
     import kameloso.thread : Boxed;
     import lu.string : strippedRight;
+
+    if (!plugin.isEnabled) return;
+    if (header != "seen") return;
 
     auto message = cast(Boxed!string)content;
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);

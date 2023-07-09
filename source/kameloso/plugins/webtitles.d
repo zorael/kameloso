@@ -170,8 +170,7 @@ void onMessage(WebtitlesPlugin plugin, const ref IRCEvent event)
 
     auto urls = findURLs(event.content);  // mutable so nom works
     if (!urls.length) return;
-
-    return lookupURLs(plugin, event, urls);
+    lookupURLs(plugin, event, urls);
 }
 
 
@@ -254,7 +253,7 @@ void lookupURLs(WebtitlesPlugin plugin, const /*ref*/ IRCEvent event, string[] u
             plugin.state.connSettings.caBundleFile);
     }
 
-    plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout());
+    plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout);
 }
 
 
@@ -332,16 +331,14 @@ void worker(
 
             try
             {
-                immutable info = getYouTubeInfo(request.url, caBundleFile);
+                immutable info = getYouTubeInfoJSON(request.url, caBundleFile);
 
                 // Let's assume all YouTube clips have titles and authors
                 // Should we decode the author too?
                 request.results.youtubeTitle = decodeEntities(info["title"].str);
                 request.results.youtubeAuthor = info["author_name"].str;
-
-                reportYouTubeTitle(request);
-
                 request.results.when = now;
+                reportYouTubeTitle(request);
 
                 synchronized //()
                 {
@@ -420,8 +417,8 @@ void worker(
             try
             {
                 request.results = lookupTitle(request.url, descriptions, caBundleFile);
-                reportTitle(request);
                 request.results.when = now;
+                reportTitle(request);
 
                 synchronized //()
                 {
@@ -723,7 +720,7 @@ unittest
 }
 
 
-// getYouTubeInfo
+// getYouTubeInfoJSON
 /++
     Fetches the JSON description of a YouTube video link, allowing us to report
     it the page's title without having to actually fetch the video page.
@@ -747,7 +744,7 @@ unittest
 
         [std.json.JSONException|JSONException] if the JSON response could not be parsed.
  +/
-auto getYouTubeInfo(const string url, const string caBundleFile)
+auto getYouTubeInfoJSON(const string url, const string caBundleFile)
 {
     import kameloso.constants : KamelosoInfo, Timeout;
     import arsd.http2 : HttpClient, Uri;
@@ -940,7 +937,7 @@ void onBusMessage(
     auto message = cast(Boxed!IRCEvent)content;
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
 
-    return onMessage(plugin, message.payload);
+    onMessage(plugin, message.payload);
 }
 
 

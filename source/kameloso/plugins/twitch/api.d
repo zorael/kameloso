@@ -362,7 +362,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
         logger.tracef(pattern, verb, url, caller);
     }
 
-    plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout());
+    plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout);
 
     immutable pre = Clock.currTime;
     if (id == -1) id = getUniqueNumericalID(plugin.bucket);
@@ -2439,7 +2439,7 @@ in (idString.length, "Tried to get FFZ emotes with an empty ID string")
                     {
                         if (immutable emoticonsArrayJSON = "emoticons" in setJSON)
                         {
-                            foreach (immutable emoteJSON; (*emoticonsArrayJSON).array)
+                            foreach (immutable emoteJSON; emoticonsArrayJSON.array)
                             {
                                 immutable emote = emoteJSON["name"].str.to!dstring;
                                 emoteMap[emote] = true;

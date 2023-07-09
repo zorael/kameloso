@@ -218,12 +218,11 @@ void sendFullPluginListing(
     foreach (immutable pluginName, pluginCommands; allPluginCommands)
     {
         const nonhiddenCommands = filterHiddenCommands(pluginCommands);
-
         if (!nonhiddenCommands.length) continue;
 
         enum width = 12;
         enum pattern = "* <b>%-*s<b> %-([%s]%| %)";
-        string[] keys = nonhiddenCommands.keys.sort.release();
+        auto keys = nonhiddenCommands.keys.sort.release();
 
         foreach (ref key; keys)
         {
@@ -280,7 +279,7 @@ void sendSpecificPluginListing(
 
         enum width = 12;
         enum pattern = "* <b>%-*s<b> %-([%s]%| %)";
-        string[] keys = nonhiddenCommands.keys.sort.release();
+        auto keys = nonhiddenCommands.keys.sort.release();
 
         foreach (ref key; keys)
         {

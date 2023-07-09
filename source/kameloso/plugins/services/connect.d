@@ -1379,7 +1379,7 @@ void onReconnect(ConnectService service)
     import std.concurrency : send;
 
     logger.info("Reconnecting upon server request.");
-    service.state.mainThread.send(ThreadMessage.reconnect());
+    service.state.mainThread.send(ThreadMessage.reconnect);
 }
 
 

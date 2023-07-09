@@ -526,8 +526,7 @@ in (Fiber.getThis, "Tried to call `addTrackToSpotifyPlaylist` from outside a Fib
     {
         try
         {
-            plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout());
-
+            plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout);
             plugin.persistentWorkerTid.send(
                 id,
                 url,
@@ -564,7 +563,7 @@ in (Fiber.getThis, "Tried to call `addTrackToSpotifyPlaylist` from outside a Fib
             const errorJSON = "error" in json;
             if (!errorJSON) return json;  // Success
 
-            if (const messageJSON = "message" in errorJSON.object)
+            if (const messageJSON = "message" in *errorJSON)
             {
                 if (messageJSON.str == "The access token expired")
                 {

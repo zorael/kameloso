@@ -190,7 +190,7 @@ instructions and log in to authorise the use of this program with your <w>BOT</>
     logger.trace();
 
     plugin.state.updates |= typeof(plugin.state.updates).bot;
-    plugin.state.mainThread.prioritySend(ThreadMessage.save());
+    plugin.state.mainThread.prioritySend(ThreadMessage.save);
 }
 
 

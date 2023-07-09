@@ -42,7 +42,6 @@ public:
     void onFailure(const IRCUser failureUser) { /* .. */ }
 
     mixin WHOISFiberDelegate!(onSuccess, onFailure);
-
     enqueueAndWHOIS(specifiedNickname);
     ---
 

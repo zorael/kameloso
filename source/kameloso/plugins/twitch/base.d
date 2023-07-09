@@ -1030,7 +1030,6 @@ void onCommandShoutout(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     string slice = event.content.stripped;  // mutable
     string target;  // ditto
     string numTimesString;  // ditto
-
     immutable results = slice.splitInto(target, numTimesString);
 
     if (target.beginsWith('@')) target = target[1..$].stripped;
@@ -3419,7 +3418,7 @@ void teardown(TwitchPlugin plugin)
     if (plugin.persistentWorkerTid != Tid.init)
     {
         // It may not have been started if we're aborting very early.
-        plugin.persistentWorkerTid.send(ThreadMessage.teardown());
+        plugin.persistentWorkerTid.send(ThreadMessage.teardown);
     }
 
     if (plugin.twitchSettings.ecount && plugin.ecount.length)

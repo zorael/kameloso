@@ -815,7 +815,7 @@ void initAccountResources(PersistenceService service)
         else
         {
             if ((json[liststring].object.length > 1) &&
-                (examplePlaceholderKey in json[liststring].object))
+                (examplePlaceholderKey in json[liststring]))
             {
                 json[liststring].object.remove(examplePlaceholderKey);
             }

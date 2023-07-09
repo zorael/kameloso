@@ -24,9 +24,13 @@ module kameloso.plugins.same;
 
 version(WithSamePlugin):
 
-// Pick *one*.
+
+/+
+    Pick *one*.
+ +/
 version = MatchByStringComparison;
 //version = MatchWithRegex;
+
 
 private:
 

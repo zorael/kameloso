@@ -26,8 +26,12 @@ import std.typecons : Flag, No, Yes;
 
 mixin UserAwareness!(ChannelPolicy.any, Yes.debug_);
 mixin ChannelAwareness!(ChannelPolicy.any, Yes.debug_);
-mixin TwitchAwareness!(ChannelPolicy.any, Yes.debug_);
 mixin PluginRegistration!(UnittestPlugin, 100.priority);
+
+version(TwitchSupport)
+{
+    mixin TwitchAwareness!(ChannelPolicy.any, Yes.debug_);
+}
 
 
 // UnittestSettings

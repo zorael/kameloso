@@ -213,7 +213,7 @@ void onCommandSave(AdminPlugin plugin, const ref IRCEvent event)
 
     enum message = "Saving configuration to disk.";
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
-    plugin.state.mainThread.send(ThreadMessage.save());
+    plugin.state.mainThread.send(ThreadMessage.save);
 }
 
 
@@ -656,7 +656,7 @@ void onCommandOperator(AdminPlugin plugin, const ref IRCEvent event)
 )
 void onCommandStaff(AdminPlugin plugin, const ref IRCEvent event)
 {
-    return manageClassLists(plugin, event, IRCUser.Class.staff);
+    manageClassLists(plugin, event, IRCUser.Class.staff);
 }
 
 
@@ -797,10 +797,10 @@ void onCommandJoin(AdminPlugin plugin, const ref IRCEvent event)
     }
 
     string slice = event.content.stripped;  // mutable
-    string channel;
-    string key;
-
+    string channel;  // ditto
+    string key;  // ditto
     cast(void)slice.splitInto(channel, key);
+
     join(plugin.state, channel, key);
 }
 
@@ -833,10 +833,10 @@ void onCommandPart(AdminPlugin plugin, const ref IRCEvent event)
     }
 
     string slice = event.content.stripped;  // mutable
-    string channel;
-    string reason;
-
+    string channel;  // ditto
+    string reason;  // ditto
     cast(void)slice.splitInto(channel, reason);
+
     part(plugin.state, channel, reason);
 }
 
@@ -1035,7 +1035,7 @@ void onCommandSummary(AdminPlugin plugin)
     import kameloso.thread : ThreadMessage;
 
     if (plugin.state.settings.headless) return;
-    plugin.state.mainThread.send(ThreadMessage.wantLiveSummary());
+    plugin.state.mainThread.send(ThreadMessage.wantLiveSummary);
 }
 
 
@@ -1210,9 +1210,8 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
     switch (verb)
     {
     case "add":
-        string account;
-        string mask;
-
+        string account;  // mutable
+        string mask;  // ditto
         immutable results = slice.splitInto(account, mask);
 
         if (results != SplitResults.match)
@@ -1520,7 +1519,7 @@ void onBusMessage(
         import kameloso.thread : ThreadMessage;
 
         logger.log("Saving configuration to disk.");
-        return plugin.state.mainThread.send(ThreadMessage.save());
+        return plugin.state.mainThread.send(ThreadMessage.save);
 
     case "reload":
         import kameloso.thread : ThreadMessage;
@@ -1545,10 +1544,10 @@ void onBusMessage(
         import lu.conv : Enum;
         import lu.string : SplitResults, splitInto;
 
-        string subverb;
-        string channelName;
-
+        string subverb;  // mutable
+        string channelName;  // ditto
         immutable results = slice.splitInto(subverb, channelName);
+
         if (results == SplitResults.underrun)
         {
             // verb_channel_nickname
@@ -1600,10 +1599,10 @@ void onBusMessage(
         case "add":
             import lu.string : SplitResults, splitInto;
 
-            string account;
-            string mask;
-
+            string account;  // mutable
+            string mask;  // ditto
             immutable results = slice.splitInto(account, mask);
+
             if (results != SplitResults.match)
             {
                 return logger.warning("Invalid bus message syntax; " ~
@@ -1666,9 +1665,10 @@ public:
  +/
 final class AdminPlugin : IRCPlugin
 {
-package:
+private:
     import kameloso.constants : KamelosoFilenames;
 
+package:
     /++
         All Admin options gathered.
      +/

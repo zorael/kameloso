@@ -101,11 +101,10 @@ void pipereader(shared IRCPluginState newState, const string filename)
 in (filename.length, "Tried to set up a pipereader with an empty filename")
 {
     import kameloso.thread : ThreadMessage, boxed, setThreadName;
-    import std.concurrency : OwnerTerminated, receiveTimeout, send;
+    import std.concurrency : send;
+    import std.exception : ErrnoException;
     import std.format : format;
     import std.stdio : File;
-    import std.variant : Variant;
-    import core.time : Duration;
     static import kameloso.common;
 
     // The whole module is version Posix, no need to encase here
@@ -157,55 +156,59 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
                 import kameloso.thread : boxed;
                 import lu.string : contains, nom;
 
-                if (line.contains(' '))
+                string slice = line[1..$];  // mutable
+
+                // Bus message
+                if (!slice.contains(' '))
                 {
-                    string slice = line[1..$];
-                    immutable header = slice.nom(' ');
-                    state.mainThread.send(ThreadMessage.busMessage(header, boxed(slice)));
+                    state.askToError("Bus message syntax: <l>:header [content...]");
+                    break;
                 }
-                else
-                {
-                    state.mainThread.send(ThreadMessage.busMessage(line[1..$]));
-                }
+
+                immutable header = slice.nom(' ');
+                state.mainThread.send(ThreadMessage.busMessage(header, boxed(slice)));
                 break;
             }
             else if (line.asLowerCase.startsWith("quit"))
             {
                 if ((line.length > 6) && (line[4..6] == " :"))
                 {
-                    quit(state, line[6..$]);
+                    return quit(state, line[6..$]);
                 }
                 else
                 {
-                    quit(state);
+                    return quit(state);
                 }
-                return;
             }
             else
             {
                 immutable slice = (line[0] == ' ') ? line[1..$] : line;
                 raw(state, slice);
             }
-            break;
+            //break;
         }
 
-        bool halt;
-
-        void checkMessages()
+        auto shouldHalt()
         {
+            import std.concurrency : OwnerTerminated, receiveTimeout;
+            import std.variant : Variant;
+            import core.time : Duration;
+
+            bool halt;
+
             cast(void)receiveTimeout(Duration.zero,
-                (ThreadMessage message)
+                (ThreadMessage message) scope
                 {
                     if (message.type == ThreadMessage.Type.teardown)
                     {
                         halt = true;
                     }
                 },
-                (OwnerTerminated _)
+                (OwnerTerminated _) scope
                 {
                     halt = true;
                 },
-                (Variant v)
+                (Variant v) scope
                 {
                     enum variantPattern = "Pipeline plugin received Variant: <l>%s";
                     state.askToError(variantPattern.format(v.toString));
@@ -213,12 +216,11 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
                     halt = true;
                 }
             );
+
+            return halt;
         }
 
-        checkMessages();
-        if (halt) return;
-
-        import std.exception : ErrnoException;
+        if (shouldHalt()) return;
 
         try
         {
@@ -226,8 +228,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
         }
         catch (ErrnoException e)
         {
-            checkMessages();
-            if (halt) return;
+            if (shouldHalt()) return;
 
             enum fifoPattern = "Pipeline plugin failed to reopen FIFO: <l>%s";
             state.askToError(fifoPattern.format(e.msg));
@@ -237,8 +238,7 @@ in (filename.length, "Tried to set up a pipereader with an empty filename")
         }
         catch (Exception e)
         {
-            checkMessages();
-            if (halt) return;
+            if (shouldHalt()) return;
 
             state.askToError("Pipeline plugin saw unexpected exception");
             version(PrintStacktraces) state.askToTrace(e.toString);
@@ -361,6 +361,9 @@ void reload(PipelinePlugin plugin)
 void initPipe(PipelinePlugin plugin)
 in (!plugin.workerRunning, "Tried to double-initialise the pipereader")
 {
+    import lu.common : FileExistsException, FileTypeMismatchException, ReturnValueException;
+    import std.file : exists;
+
     if (plugin.pipelineSettings.path.length)
     {
         // Custom filename specified with --set pipeline.path=xyz
@@ -369,6 +372,7 @@ in (!plugin.workerRunning, "Tried to double-initialise the pipereader")
     else
     {
         import std.conv : text;
+        import std.path : buildNormalizedPath;
 
         // Save the filename *once* so it persists across nick changes.
         // If !fifoInWorkingDir then in /tmp or $TMPDIR
@@ -403,12 +407,9 @@ in (!plugin.workerRunning, "Tried to double-initialise the pipereader")
                 enum tempdir = "/tmp";
             }
 
-            import std.path : buildNormalizedPath;
             plugin.fifoFilename = buildNormalizedPath(tempdir, plugin.fifoFilename);
         }
     }
-
-    import std.file : exists;
 
     if (plugin.pipelineSettings.bumpFilenameIfItExists && plugin.fifoFilename.exists)
     {
@@ -431,8 +432,6 @@ in (!plugin.workerRunning, "Tried to double-initialise the pipereader")
             }
         }
     }
-
-    import lu.common : FileExistsException, FileTypeMismatchException, ReturnValueException;
 
     try
     {
@@ -472,17 +471,17 @@ in (!plugin.workerRunning, "Tried to double-initialise the pipereader")
 void teardown(PipelinePlugin plugin)
 {
     import kameloso.thread : ThreadMessage;
-    import std.concurrency : send;
+    import std.concurrency : prioritySend;
     import std.file : exists, isDir;
     import std.stdio : File;
 
     if (!plugin.workerRunning) return;
 
-    plugin.fifoThread.send(ThreadMessage.teardown());
+    plugin.fifoThread.prioritySend(ThreadMessage.teardown);
 
     if (plugin.fifoFilename.exists && !plugin.fifoFilename.isDir)
     {
-        // Tell the reader of the pipe to exit
+        // Tell the reader of the pipe to break and check messages
         auto fifo = File(plugin.fifoFilename, "w");
         fifo.writeln();
     }
@@ -503,10 +502,10 @@ void teardown(PipelinePlugin plugin)
  +/
 void onBusMessage(PipelinePlugin plugin, const string header, shared Sendable content)
 {
+    import kameloso.thread : Boxed;
+
     if (!plugin.isEnabled) return;
     if (header != "pipeline") return;
-
-    import kameloso.thread : Boxed;
 
     auto message = cast(Boxed!string)content;
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);

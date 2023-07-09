@@ -78,7 +78,6 @@ void onCommandSay(ChatbotPlugin plugin, const ref IRCEvent event)
     immutable message = event.content.length ?
         event.content :
         "Say what?";
-
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
 }
 
@@ -87,7 +86,7 @@ void onCommandSay(ChatbotPlugin plugin, const ref IRCEvent event)
 /++
     Does the bash.org dance emotes.
 
-    - http://bash.org/?4281
+    See_Also: http://bash.org/?4281
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
