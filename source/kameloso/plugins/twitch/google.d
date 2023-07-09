@@ -275,7 +275,7 @@ Be sure to <l>select a YouTube account</> if presented with several alternatives
 
     if (const errorJSON = "error" in validationJSON)
     {
-        throw new ErrorJSONException(validationJSON["error_description"].str, validationJSON);
+        throw new ErrorJSONException(validationJSON["error_description"].str, *errorJSON);
     }
 
     // "expires_in" is a string
