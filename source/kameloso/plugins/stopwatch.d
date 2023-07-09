@@ -212,6 +212,83 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
 }
 
 
+// serialiseStopwatches
+/++
+    Serialises the stopwatches to a temporary file.
+
+    Params:
+        plugin = The current [StopwatchPlugin].
+ +/
+void serialiseStopwatches(StopwatchPlugin plugin)
+{
+    import std.json : JSONValue;
+    import std.stdio : File, writeln;
+
+    auto file = File(plugin.stopwatchTempFile, "w");
+    file.writeln(JSONValue(plugin.stopwatches).toPrettyString);
+}
+
+
+// deserialiseStopwatches
+/++
+    Deserialises the stopwatches from a temporary file.
+
+    Params:
+        plugin = The current [StopwatchPlugin].
+ +/
+void deserialiseStopwatches(StopwatchPlugin plugin)
+{
+    import lu.json : JSONStorage;
+
+    JSONStorage json;
+    json.load(plugin.stopwatchTempFile);
+
+    foreach (immutable channelName, const channelStopwatchesJSON; json.object)
+    {
+        auto channelStopwatches = channelName in plugin.stopwatches;
+
+        foreach (immutable nickname, const stopwatchJSON; channelStopwatchesJSON.object)
+        {
+            (*channelStopwatches)[nickname] = stopwatchJSON.integer;
+        }
+    }
+}
+
+
+// onWelcome
+/++
+    Deserialises stopwatches saved to disk upon successfully registering to the server,
+    restoring any ongoing watches.
+
+    The temporary file is removed immediately afterwards.
+ +/
+@(IRCEventHandler()
+    .onEvent(IRCEvent.Type.RPL_WELCOME)
+)
+void onWelcome(StopwatchPlugin plugin)
+{
+    import std.file : exists, remove;
+
+    if (plugin.stopwatchTempFile.exists)
+    {
+        deserialiseStopwatches(plugin);
+        remove(plugin.stopwatchTempFile);
+    }
+}
+
+
+// teardown
+/++
+    Tears down the [StopwatchPlugin], serialising any ongoing stopwatches to file,
+    so they aren't lost to the ether.
+ +/
+void teardown(StopwatchPlugin plugin)
+{
+    if (!plugin.stopwatches.length) return;
+    serialiseStopwatches(plugin);
+}
+
+
 mixin MinimalAuthentication;
 mixin PluginRegistration!StopwatchPlugin;
 
@@ -235,6 +312,12 @@ private:
         Stopwatch start timestamps by user by channel.
      +/
     long[string][string] stopwatches;
+
+    /++
+        Temporary file to store ongoing stopwatches to, between connections
+        (and executions of the program).
+     +/
+    @Resource string stopwatchTempFile = "stopwatches.json";
 
     mixin IRCPluginImpl;
 }
