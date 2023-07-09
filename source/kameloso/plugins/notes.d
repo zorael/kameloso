@@ -483,11 +483,12 @@ void saveNotes(NotesPlugin plugin)
         {
             json[channelName][nickname] = null;
             json[channelName][nickname].array = null;
-            auto nicknameNotesJSON = nickname in json[channelName];
+            //auto nicknameNotesJSON = nickname in json[channelName];
 
             foreach (note; notes)
             {
-                nicknameNotesJSON.array ~= note.toJSON();
+                //nicknameNotesJSON.array ~= note.toJSON();  // Doesn't work with older compilers
+                json[channelName][nickname].array ~= note.toJSON();
             }
         }
     }

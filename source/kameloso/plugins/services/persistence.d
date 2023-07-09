@@ -808,19 +808,26 @@ void initAccountResources(PersistenceService service)
         {
             json[liststring] = null;
             json[liststring].object = null;
-            listJSON = liststring in json;
-            (*listJSON)[examplePlaceholderKey] = null;
-            (*listJSON)[examplePlaceholderKey].array = null;
-            auto listPlaceholder = examplePlaceholderKey in *listJSON;
-            listPlaceholder.array ~= JSONValue("<nickname1>");
-            listPlaceholder.array ~= JSONValue("<nickname2>");
+
+            //listJSON = liststring in json;
+            //(*listJSON)[examplePlaceholderKey] = null;  // Doesn't work with older compilers
+            //(*listJSON)[examplePlaceholderKey].array = null;  // ditto
+            //auto listPlaceholder = examplePlaceholderKey in *listJSON;
+            //listPlaceholder.array ~= JSONValue("<nickname1>");  // ditto
+            //listPlaceholder.array ~= JSONValue("<nickname2>");  // ditto
+
+            json[liststring][examplePlaceholderKey] = null;
+            json[liststring][examplePlaceholderKey].array = null;
+            json[liststring][examplePlaceholderKey].array ~= JSONValue("<nickname1>");
+            json[liststring][examplePlaceholderKey].array ~= JSONValue("<nickname2>");
         }
         else /*if (listJSON)*/
         {
             if ((listJSON.object.length > 1) &&
                 (examplePlaceholderKey in *listJSON))
             {
-                listJSON.object.remove(examplePlaceholderKey);
+                //listJSON.object.remove(examplePlaceholderKey);  // ditto
+                json[liststring].object.remove(examplePlaceholderKey);
             }
 
             try
@@ -828,7 +835,8 @@ void initAccountResources(PersistenceService service)
                 foreach (immutable channelName, ref channelAccountsJSON; listJSON.object)
                 {
                     if (channelName == examplePlaceholderKey) continue;
-                    channelAccountsJSON = deduplicate((*listJSON)[channelName]);
+                    //channelAccountsJSON = deduplicate((*listJSON)[channelName]);  // ditto
+                    json[liststring][channelName] = deduplicate(json[liststring][channelName]);
                 }
             }
             catch (JSONException e)

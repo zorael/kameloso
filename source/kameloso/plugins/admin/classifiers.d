@@ -637,7 +637,8 @@ auto alterAccountClassifier(
             }
             else
             {
-                channelAccountsJSON.array ~= accountAsJSON;
+                //channelAccountsJSON.array ~= accountsAsJSON;  // Doesn't work with older compilers
+                json[list][channelName].array ~= accountAsJSON;
             }
         }
         else
@@ -665,7 +666,8 @@ auto alterAccountClassifier(
                 return AlterationResult.noSuchAccount;
             }
 
-            *channelAccountsJSON = channelAccountsJSON.array
+            //*channelAccountsJSON = channelAccountsJSON.array  // Doesn't work with older compilers
+            json[list][channelName] = json[list][channelName].array
                 .remove!(SwapStrategy.unstable)(index);
         }
         else

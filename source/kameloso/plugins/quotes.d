@@ -1174,17 +1174,20 @@ void saveQuotes(QuotesPlugin plugin)
     {
         json[channelName] = null;
         json[channelName].object = null;
-        auto channelQuotesJSON = channelName in json;  // mutable
+        //auto channelQuotesJSON = channelName in json;
 
         foreach (immutable nickname, quotes; channelQuotes)
         {
-            (*channelQuotesJSON)[nickname] = null;
-            (*channelQuotesJSON)[nickname].array = null;
-            auto nicknameQuotesJSON = nickname in *channelQuotesJSON;
+            //(*channelQuotesJSON)[nickname] = null;  // Doesn't work with older compilers
+            //(*channelQuotesJSON)[nickname].array = null;  // ditto
+            json[channelName][nickname] = null;
+            json[channelName][nickname].array = null;
+            //auto nicknameQuotesJSON = nickname in *channelQuotesJSON;
 
             foreach (quote; quotes)
             {
-                nicknameQuotesJSON.array ~= quote.toJSON();
+                //nicknameQuotesJSON.array ~= quote.toJSON();  // ditto
+                json[channelName][nickname].array ~= quote.toJSON();
             }
         }
     }
