@@ -226,44 +226,24 @@ void onCommandStatusImpl(AdminPlugin plugin)
     Sends an internal bus message to other plugins, much like how such can be
     sent with the Pipeline plugin.
  +/
-void onCommandBusImpl(AdminPlugin plugin, const string input)
+void onCommandBusImpl(
+    AdminPlugin plugin,
+    const string header,
+    const string content)
 {
     import kameloso.common : logger;
     import kameloso.thread : ThreadMessage, boxed;
-    import lu.string : contains, nom;
     import std.concurrency : send;
     import std.stdio : writeln;
 
-    if (!input.length) return;
-
-    if (!input.contains!(Yes.decode)(' '))
+    if (!plugin.state.settings.headless)
     {
-        if (!plugin.state.settings.headless)
-        {
-            logger.info("Sending bus message.");
-            writeln("Header: ", input);
-            writeln("Content: (empty)");
-        }
+        logger.info("Sending bus message.");
+        writeln("Header: ", header);
+        writeln("Content: ", content);
 
-        plugin.state.mainThread.send(ThreadMessage.busMessage(input));
-    }
-    else
-    {
-        string slice = input;  // mutable
-        immutable header = slice.nom(' ');
-
-        if (!plugin.state.settings.headless)
-        {
-            logger.info("Sending bus message.");
-            writeln("Header: ", header);
-            writeln("Content: ", slice);
-        }
-
-        plugin.state.mainThread.send(ThreadMessage.busMessage(header, boxed(slice)));
+        if (plugin.state.settings.flush) stdout.flush();
     }
 
-    if (!plugin.state.settings.headless && plugin.state.settings.flush)
-    {
-        stdout.flush();
-    }
+    plugin.state.mainThread.send(ThreadMessage.busMessage(header, boxed(content)));
 }

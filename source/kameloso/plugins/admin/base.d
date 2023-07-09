@@ -1383,7 +1383,22 @@ debug
 )
 void onCommandBus(AdminPlugin plugin, const ref IRCEvent event)
 {
-    onCommandBusImpl(plugin, event.content);
+    import lu.string : splitInto, stripped;
+
+    string slice = event.content.stripped;  // mutable
+    string header;  // ditto
+    cast(void)slice.splitInto(header);
+
+    if (!header.length)
+    {
+        import std.format : format;
+
+        enum pattern = "Usage: <b>%s%s<b> [header] [content...]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    }
+
+    onCommandBusImpl(plugin, header, slice);
 }
 
 
