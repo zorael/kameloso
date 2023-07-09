@@ -187,6 +187,11 @@ void onCommandStopwatch(StopwatchPlugin plugin, const ref IRCEvent event)
             }
 
             plugin.stopwatches[event.channel].remove(id);
+
+            if (!plugin.stopwatches[event.channel].length)
+            {
+                plugin.stopwatches.remove(event.channel);
+            }
             return sendStoppedAfter(diff);
 
         case "status":
