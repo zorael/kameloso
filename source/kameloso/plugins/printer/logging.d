@@ -118,8 +118,6 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
     import kameloso.plugins.printer.formatting : formatMessageMonochrome;
     import std.typecons : Flag, No, Yes;
 
-    if (!plugin.printerSettings.logs) return;
-
     /++
         Write buffered lines.
      +/
@@ -173,7 +171,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 
             if (!errors)
             {
-                LogLineBuffer* buffer = key in plugin.buffers;
+                auto buffer = key in plugin.buffers;
 
                 if (!buffer)
                 {
@@ -255,7 +253,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
             }
             else
             {
-                LogLineBuffer* errBuffer = key in plugin.buffers;
+                auto errBuffer = key in plugin.buffers;
 
                 if (!errBuffer)
                 {
@@ -328,6 +326,8 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                     version(IncludeHeavyStuff)
                     {
                         import kameloso.printing : formatObjects;
+
+                        scope(failure) plugin.linebuffer.clear();
 
                         formatObjects!(Yes.all, No.coloured)
                             (plugin.linebuffer,

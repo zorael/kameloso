@@ -2086,7 +2086,7 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
             stream.gameName = streamJSON["game_name"].str;
             stream.title = streamJSON["title"].str;
             stream.startTime = SysTime.fromISOExtString(streamJSON["started_at"].str);
-            stream.viewerCount = streamJSON["viewer_count"].integer;
+            stream.numViewers = streamJSON["viewer_count"].integer;
             stream.tags = streamJSON["tags"].array
                 .map!(tag => tag.str)
                 .array;

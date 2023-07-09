@@ -607,7 +607,7 @@ package auto datestamp()
 
     immutable now = Clock.currTime;
     enum pattern = "-- [%d-%02d-%02d]";
-    return format(pattern, now.year, cast(int)now.month, now.day);
+    return pattern.format(now.year, cast(int)now.month, now.day);
 }
 
 

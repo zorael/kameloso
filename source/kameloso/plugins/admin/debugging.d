@@ -49,10 +49,13 @@ void onAnyEventImpl(AdminPlugin plugin, const ref IRCEvent event)
 
     if (plugin.state.settings.headless) return;
 
+    bool wroteSomething;  // mutable
+
     if (plugin.adminSettings.printRaw)
     {
         if (event.tags.length) write('@', event.tags, ' ');
         writeln(event.raw, '$');
+        wroteSomething = true;
     }
 
     if (plugin.adminSettings.printBytes)
@@ -67,9 +70,10 @@ void onAnyEventImpl(AdminPlugin plugin, const ref IRCEvent event)
             immutable dc = isValidCodeUnit(c) ? dchar(c) : replacementDchar;
             writefln("[%3d] %s : %03d", i, dc, c);
         }
+        wroteSomething = true;
     }
 
-    if (plugin.state.settings.flush) stdout.flush();
+    if (plugin.state.settings.flush && wroteSomething) stdout.flush();
 }
 
 

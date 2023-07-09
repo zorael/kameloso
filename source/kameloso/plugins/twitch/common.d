@@ -78,7 +78,7 @@ auto readNamedString(
     import lu.string : stripped;
     import std.stdio : readln, stdin, stdout, write, writeln;
 
-    string string_;
+    string string_;  // mutable
 
     while (!string_.length)
     {

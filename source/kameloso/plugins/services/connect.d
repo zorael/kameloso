@@ -136,14 +136,6 @@ void onSelfpart(ConnectService service, const ref IRCEvent event)
  +/
 void joinChannels(ConnectService service)
 {
-    scope(exit) service.joinedChannels = true;
-
-    if (!service.state.bot.homeChannels.length && !service.state.bot.guestChannels.length)
-    {
-        logger.warning("No channels, no purpose...");
-        return;
-    }
-
     import kameloso.messaging : Message;
     import lu.string : plurality;
     import std.algorithm.iteration : filter, uniq;
@@ -151,6 +143,14 @@ void joinChannels(ConnectService service)
     import std.array : array, join;
     import std.range : walkLength;
     static import kameloso.messaging;
+
+    scope(exit) service.joinedChannels = true;
+
+    if (!service.state.bot.homeChannels.length && !service.state.bot.guestChannels.length)
+    {
+        logger.warning("No channels, no purpose...");
+        return;
+    }
 
     auto homelist = service.state.bot.homeChannels
         .filter!(channelName => (channelName != "-"))
@@ -205,7 +205,7 @@ void joinChannels(ConnectService service)
 
             // See if we actually managed to join all channels
             auto allChannels = chain(service.state.bot.homeChannels, service.state.bot.guestChannels);
-            string[] missingChannels;
+            string[] missingChannels;  // mutable
 
             foreach (immutable channel; allChannels)
             {
@@ -303,10 +303,10 @@ void onPing(ConnectService service, const ref IRCEvent event)
  +/
 void tryAuth(ConnectService service)
 {
-    string serviceNick = "NickServ";
-    string verb = "IDENTIFY";
-
     import lu.string : beginsWith, decode64;
+
+    string serviceNick = "NickServ";  // mutable, default value
+    string verb = "IDENTIFY";  // ditto
     immutable password = service.state.bot.password.beginsWith("base64:") ?
         decode64(service.state.bot.password[7..$]) : service.state.bot.password;
 
@@ -920,8 +920,7 @@ void onSASLAuthenticate(ConnectService service)
     {
         service.saslExternal = Progress.inProgress;
         enum message = "AUTHENTICATE +";
-        immediate(service.state, message);
-        return;
+        return immediate(service.state, message);
     }
 
     immutable plainSuccess = trySASLPlain(service);
@@ -1054,8 +1053,7 @@ void onSASLFailure(ConnectService service)
         service.saslExternal = Progress.finished;
         enum properties = Message.Property.quiet;
         enum message = "AUTHENTICATE PLAIN";
-        immediate(service.state, message, properties);
-        return;
+        return immediate(service.state, message, properties);
     }
 
     if (service.connectSettings.exitOnSASLFailure)

@@ -802,30 +802,33 @@ void initAccountResources(PersistenceService service)
     foreach (liststring; listTypes)
     {
         alias examplePlaceholderKey = PersistenceService.Placeholder.channel;
+        auto listJSON = liststring in json;
 
-        if (liststring !in json)
+        if (!listJSON)
         {
             json[liststring] = null;
             json[liststring].object = null;
-            json[liststring][examplePlaceholderKey] = null;
-            json[liststring][examplePlaceholderKey].array = null;
-            json[liststring][examplePlaceholderKey].array ~= JSONValue("<nickname1>");
-            json[liststring][examplePlaceholderKey].array ~= JSONValue("<nickname2>");
+            listJSON = liststring in json;
+            (*listJSON)[examplePlaceholderKey] = null;
+            (*listJSON)[examplePlaceholderKey].array = null;
+            auto listPlaceholder = examplePlaceholderKey in *listJSON;
+            listPlaceholder.array ~= JSONValue("<nickname1>");
+            listPlaceholder.array ~= JSONValue("<nickname2>");
         }
-        else
+        else /*if (listJSON)*/
         {
-            if ((json[liststring].object.length > 1) &&
-                (examplePlaceholderKey in json[liststring]))
+            if ((listJSON.object.length > 1) &&
+                (examplePlaceholderKey in *listJSON))
             {
-                json[liststring].object.remove(examplePlaceholderKey);
+                listJSON.object.remove(examplePlaceholderKey);
             }
 
             try
             {
-                foreach (immutable channelName, ref channelAccountsJSON; json[liststring].object)
+                foreach (immutable channelName, ref channelAccountsJSON; listJSON.object)
                 {
                     if (channelName == examplePlaceholderKey) continue;
-                    channelAccountsJSON = deduplicate(json[liststring][channelName]);
+                    channelAccountsJSON = deduplicate((*listJSON)[channelName]);
                 }
             }
             catch (JSONException e)
