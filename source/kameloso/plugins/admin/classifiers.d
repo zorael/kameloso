@@ -113,7 +113,7 @@ void listList(
     JSONStorage json;
     json.load(plugin.userFile);
 
-    auto channelUsersJSON = channelName in json[list];
+    const channelUsersJSON = channelName in json[list];
 
     if (channelUsersJSON && channelUsersJSON.array.length)
     {
