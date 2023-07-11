@@ -435,7 +435,7 @@ in (origEvent.channel.length, "Tried to test Automode with empty channel in orig
         thisFiber.payload.content, __FILE__, __LINE__);
 
     send("automode del $¡$¡");
-    expect("Invalid nickname.");
+    expect("Automode for $¡$¡ cleared.");
 
     send("automode del kameloso");
     expect("Automode for kameloso cleared.");
@@ -1490,7 +1490,7 @@ in (origEvent.channel.length, "Tried to test Bash with empty channel in original
     awaitReply();
     immutable honk = thisFiber.payload.content.stripEffects();
 
-    if (honk == "No such bash.org quote found.")
+    if (honk == "Could not fetch bash.org quote: No such quote found.")
     {
         // Ok
     }
