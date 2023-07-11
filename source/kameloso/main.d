@@ -3583,50 +3583,6 @@ void syncGuestChannels(ref Kameloso instance)
 }
 
 
-// getQuitMessageInFlight
-/++
-    Get any QUIT concurrency messages currently in the mailbox. Also catch Variants
-    so as not to throw an exception on missed priority messages.
-
-    Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
-
-    Returns:
-        A [kameloso.thread.ThreadMessage|ThreadMessage] with its `content` message
-        containing any quit reasons encountered.
- +/
-auto getQuitMessageInFlight(ref Kameloso instance)
-{
-    import kameloso.string : replaceTokens;
-    import kameloso.thread : ThreadMessage;
-    import std.concurrency : receiveTimeout;
-    import std.variant : Variant;
-    import core.time : Duration;
-
-    ThreadMessage returnMessage;
-    bool receivedSomething;
-    bool halt;
-
-    do
-    {
-        receivedSomething = receiveTimeout(Duration.zero,
-            (ThreadMessage message) scope
-            {
-                if (message.type == ThreadMessage.Type.quit)
-                {
-                    returnMessage = message;
-                    halt = true;
-                }
-            },
-            (Variant _) scope {},
-        );
-    }
-    while (!halt && receivedSomething);
-
-    return returnMessage;
-}
-
-
 // echoQuitMessage
 /++
     Echos the quit message to the local terminal, to fake it being sent verbosely
@@ -3946,9 +3902,11 @@ auto run(string[] args)
 
         if (!*instance.abort && !instance.settings.headless && !instance.settings.hideOutgoing)
         {
-            const message = getQuitMessageInFlight(instance);
-            reason = message.content.length ?
-                message.content :
+            import kameloso.thread : exhaustMessages;
+
+            immutable quitMessage = exhaustMessages();
+            reason = quitMessage.length ?
+                quitMessage :
                 instance.bot.quitReason;
             reason = reason.replaceTokens(instance.parser.client);
             echoQuitMessage(instance, reason);
