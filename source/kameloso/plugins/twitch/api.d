@@ -90,7 +90,7 @@ auto retryDelegate(Dg)(TwitchPlugin plugin, Dg dg)
                 import kameloso.plugins.common.delayawait : delay;
                 import core.time : seconds;
 
-                static immutable retryDelay = 3.seconds;
+                static immutable retryDelay = 1.seconds;
                 delay(plugin, retryDelay, Yes.yield);
             }
             return dg();
