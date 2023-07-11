@@ -26,6 +26,7 @@ import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness : MinimalAuthentication;
 import kameloso.messaging;
+import kameloso.thread : Sendable;
 import dialect.defs;
 import std.json : JSONValue;
 import std.typecons : Flag, No, Yes;
@@ -49,10 +50,14 @@ static immutable descriptionExemptions =
  +/
 @Settings struct WebtitlesSettings
 {
-    /// Toggles whether or not the plugin should react to events at all.
+    /++
+        Toggles whether or not the plugin should react to events at all.
+     +/
     @Enabler bool enabled = true;
 
-    /// Toggles whether or not meta descriptions should be reported next to titles.
+    /++
+        Toggles whether or not meta descriptions should be reported next to titles.
+     +/
     bool descriptions = true;
 }
 
@@ -67,22 +72,34 @@ static immutable descriptionExemptions =
  +/
 struct TitleLookupResults
 {
-    /// Looked up web page title.
+    /++
+        Looked up web page title.
+     +/
     string title;
 
-    /// The content of the web page's `description` tag.
+    /++
+        The content of the web page's `description` tag.
+     +/
     string description;
 
-    /// Domain name of the looked up URL.
+    /++
+        Domain name of the looked up URL.
+     +/
     string domain;
 
-    /// YouTube video title, if such a YouTube link.
+    /++
+        YouTube video title, if such a YouTube link.
+     +/
     string youtubeTitle;
 
-    /// YouTube video author, if such a YouTube link.
+    /++
+        YouTube video author, if such a YouTube link.
+     +/
     string youtubeAuthor;
 
-    /// The UNIX timestamp of when the title was looked up.
+    /++
+        The UNIX timestamp of when the title was looked up.
+     +/
     long when;
 }
 
@@ -96,16 +113,24 @@ struct TitleLookupResults
  +/
 struct TitleLookupRequest
 {
-    /// The context state of the requesting plugin instance.
+    /++
+        The context state of the requesting plugin instance.
+     +/
     IRCPluginState state;
 
-    /// The [dialect.defs.IRCEvent|IRCEvent] that instigated the lookup.
+    /++
+        The [dialect.defs.IRCEvent|IRCEvent] that instigated the lookup.
+     +/
     IRCEvent event;
 
-    /// URL to look up.
+    /++
+        URL to look up.
+     +/
     string url;
 
-    /// Results of the title lookup.
+    /++
+        Results of the title lookup.
+     +/
     TitleLookupResults results;
 }
 
@@ -127,12 +152,25 @@ void onMessage(WebtitlesPlugin plugin, const ref IRCEvent event)
     import kameloso.common : findURLs;
     import lu.string : beginsWith, strippedLeft;
 
-    if (event.content.strippedLeft.beginsWith(plugin.state.settings.prefix)) return;
+    immutable content = event.content.strippedLeft;  // mutable
 
-    string[] urls = findURLs(event.content);  // mutable so nom works
+    if (content.beginsWith(plugin.state.settings.prefix)) return;
+
+    if (content.beginsWith(plugin.state.client.nickname))
+    {
+        import kameloso.string : stripSeparatedPrefix;
+
+        // If the message is a "nickname: command [url]" type of message,
+        // don't catch the URL.
+        immutable nicknameStripped = content.stripSeparatedPrefix(
+            plugin.state.client.nickname,
+            Yes.demandSeparatingChars);
+        if (nicknameStripped != content) return;
+    }
+
+    auto urls = findURLs(event.content);  // mutable so nom works
     if (!urls.length) return;
-
-    return lookupURLs(plugin, event, urls);
+    lookupURLs(plugin, event, urls);
 }
 
 
@@ -142,12 +180,18 @@ void onMessage(WebtitlesPlugin plugin, const ref IRCEvent event)
     thread to do all the work.
 
     It accesses the cache of already looked up addresses to speed things up.
+
+    Params:
+        plugin = The current [WebtitlesPlugin].
+        event = The [dialect.defs.IRCEvent|IRCEvent] that instigated the lookup.
+        urls = `string[]` of URLs to look up.
  +/
 void lookupURLs(WebtitlesPlugin plugin, const /*ref*/ IRCEvent event, string[] urls)
 {
     import kameloso.common : logger;
+    import kameloso.thread : ThreadMessage;
     import lu.string : beginsWith, nom;
-    import std.concurrency : spawn;
+    import std.concurrency : prioritySend, spawn;
 
     bool[string] uniques;
 
@@ -209,10 +253,7 @@ void lookupURLs(WebtitlesPlugin plugin, const /*ref*/ IRCEvent event, string[] u
             plugin.state.connSettings.caBundleFile);
     }
 
-    import kameloso.thread : ThreadMessage;
-    import std.concurrency : prioritySend;
-
-    plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout());
+    plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout);
 }
 
 
@@ -290,16 +331,14 @@ void worker(
 
             try
             {
-                immutable info = getYouTubeInfo(request.url, caBundleFile);
+                immutable info = getYouTubeInfoJSON(request.url, caBundleFile);
 
                 // Let's assume all YouTube clips have titles and authors
                 // Should we decode the author too?
                 request.results.youtubeTitle = decodeEntities(info["title"].str);
                 request.results.youtubeAuthor = info["author_name"].str;
-
-                reportYouTubeTitle(request);
-
                 request.results.when = now;
+                reportYouTubeTitle(request);
 
                 synchronized //()
                 {
@@ -378,8 +417,8 @@ void worker(
             try
             {
                 request.results = lookupTitle(request.url, descriptions, caBundleFile);
-                reportTitle(request);
                 request.results.when = now;
+                reportTitle(request);
 
                 synchronized //()
                 {
@@ -681,7 +720,7 @@ unittest
 }
 
 
-// getYouTubeInfo
+// getYouTubeInfoJSON
 /++
     Fetches the JSON description of a YouTube video link, allowing us to report
     it the page's title without having to actually fetch the video page.
@@ -705,7 +744,7 @@ unittest
 
         [std.json.JSONException|JSONException] if the JSON response could not be parsed.
  +/
-auto getYouTubeInfo(const string url, const string caBundleFile)
+auto getYouTubeInfoJSON(const string url, const string caBundleFile)
 {
     import kameloso.constants : KamelosoInfo, Timeout;
     import arsd.http2 : HttpClient, Uri;
@@ -757,14 +796,18 @@ auto getYouTubeInfo(const string url, const string caBundleFile)
 final class TitleFetchException : Exception
 {
 @safe:
-    /// The URL that was attempted to fetch the title of.
+    /++
+        The URL that was attempted to fetch the title of.
+     +/
     string url;
 
-    /// The HTTP status code that was returned when attempting to fetch a title.
+    /++
+        The HTTP status code that was returned when attempting to fetch a title.
+     +/
     uint code;
 
     /++
-        Create a new [TitleFetchException], attaching an URL and an HTTP status code.
+        Create a new [TitleFetchException], attaching a URL and an HTTP status code.
      +/
     this(
         const string message,
@@ -867,6 +910,37 @@ void prune(shared TitleLookupResults[string] cache, const uint expireSeconds)
 }
 
 
+// onBusMessage
+/++
+    Catch a bus message carrying a boxed [dialect.defs.IRCEvent|IRCEvent] and
+    treat it as if this plugin caught it itself.
+
+    Versioned out until we need it, such as for selective Twitch link blocks.
+
+    Params:
+        plugin = The current [WebtitlesPlugin].
+        header = String header describing the passed content payload.
+        content = The boxed content of the message.
+ +/
+version(none)
+void onBusMessage(
+    WebtitlesPlugin plugin,
+    const string header,
+    shared Sendable content)
+{
+    import kameloso.thread : Boxed;
+
+    // Don't return if disabled?
+    // Do we want to be able to serve other plugins anyway?
+    if (header != "webtitles") return;
+
+    auto message = cast(Boxed!IRCEvent)content;
+    assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
+
+    onMessage(plugin, message.payload);
+}
+
+
 // initialise
 /++
     Initialises the shared cache, else it won't retain changes.
@@ -896,10 +970,14 @@ public:
 final class WebtitlesPlugin : IRCPlugin
 {
 private:
-    /// All Webtitles options gathered.
+    /++
+        All Webtitles options gathered.
+     +/
     WebtitlesSettings webtitlesSettings;
 
-    /// Cache of recently looked-up web titles.
+    /++
+        Cache of recently looked-up web titles.
+     +/
     shared TitleLookupResults[string] cache;
 
     /++
@@ -908,7 +986,9 @@ private:
      +/
     enum expireSeconds = 600;
 
-    /// In the case of chained URL lookups, how many milliseconds to delay each lookup by.
+    /++
+        In the case of chained URL lookups, how many milliseconds to delay each lookup by.
+     +/
     enum delayMsecs = 100;
 
     /++

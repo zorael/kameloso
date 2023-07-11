@@ -36,7 +36,9 @@ private:
     static import kameloso.plugins.twitch.base;
 
 public:
-    /// All Twitch plugin settings.
+    /++
+        All Twitch plugin settings.
+     +/
     kameloso.plugins.twitch.base.TwitchSettings twitchSettings;
 
     mixin IRCPluginImpl;

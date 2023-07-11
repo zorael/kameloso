@@ -30,10 +30,15 @@ import kameloso.messaging;
 import dialect.defs;
 
 
-/// All Oneliner plugin runtime settings.
+// OnelinersSettings
+/++
+    All Oneliner plugin runtime settings.
+ +/
 @Settings struct OnelinersSettings
 {
-    /// Toggle whether or not this plugin should do anything at all.
+    /++
+        Toggle whether or not this plugin should do anything at all.
+     +/
     @Enabler bool enabled = true;
 
     version(TwitchSupport)
@@ -123,7 +128,7 @@ public:
             A response string. If the [responses] array is empty, then an empty
             string is returned instead.
      +/
-    auto getResponse()
+    auto getResponse() /*const*/
     {
         return (type == Type.random) ?
             randomResponse() :
@@ -139,7 +144,7 @@ public:
             A response string. If the [responses] array is empty, then an empty
             string is returned instead.
      +/
-    auto nextOrderedResponse()
+    auto nextOrderedResponse() /*const*/
     in ((type == Type.ordered), "Tried to get an ordered reponse from a random Oneliner")
     {
         if (!responses.length) return string.init;
@@ -168,9 +173,9 @@ public:
     {
         import std.random : uniform;
 
-        if (!responses.length) return string.init;
-
-        return responses[uniform(0, responses.length)];
+        return responses.length ?
+            responses[uniform(0, responses.length)] :
+            string.init;
     }
 
     // toJSON
@@ -246,7 +251,6 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
     import lu.string : beginsWith, nom;
     import std.array : replace;
     import std.conv : text, to;
-    import std.format : format;
     import std.random : uniform;
     import std.typecons : Flag, No, Yes;
     import std.uni : toLower;
@@ -284,7 +288,7 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
         }
         else
         {
-            // Record time last fired
+            // Record time last fired and drop down
             oneliner.lastTriggered = event.time;
         }
     }
@@ -346,12 +350,13 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : nom, stripped;
-    import std.format : format;
     import std.typecons : Flag, No, Yes;
     import std.uni : toLower;
 
     void sendUsage()
     {
+        import std.format : format;
+
         enum pattern = "Usage: <b>%s%s<b> [new|insert|add|edit|del|list] ...";
         immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
         chan(plugin.state, event.channel, message);
@@ -408,7 +413,7 @@ void handleNewOneliner(
     import core.thread : Fiber;
 
     // copy/pasted
-    string stripPrefix(const string trigger)
+    auto stripPrefix(const string trigger)
     {
         import lu.string : beginsWith;
         return trigger.beginsWith(plugin.state.settings.prefix) ?
@@ -443,10 +448,11 @@ void handleNewOneliner(
         chan(plugin.state, event.channel, message);
     }
 
-    string trigger;
-    string typestring;
-    string cooldownString;
+    string trigger;  // mutable
+    string typestring;  // ditto
+    string cooldownString;  // ditto
     cast(void)slice.splitInto(trigger, typestring, cooldownString);
+
     if (!typestring.length) return sendNewUsage();
 
     Oneliner.Type type;
@@ -500,13 +506,13 @@ void handleNewOneliner(
         We need to check both hardcoded and soft channel-specific commands
         for conflicts.
      +/
-    bool triggerConflicts(const IRCPlugin.CommandMetadata[string][string] aa)
+    auto triggerConflicts(const IRCPlugin.CommandMetadata[string][string] aa)
     {
         foreach (immutable pluginName, pluginCommands; aa)
         {
             if (!pluginCommands.length || (pluginName == "oneliners")) continue;
 
-            foreach (/*mutable*/ word, const _; pluginCommands)
+            foreach (/*mutable*/ word; pluginCommands.byKey)
             {
                 word = word.toLower;
 
@@ -623,8 +629,26 @@ void handleAddToOneliner(
         chan(plugin.state, event.channel, message);
     }
 
+    void sendOnelinerInserted()
+    {
+        enum message = "Oneliner line inserted.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendOnelinerAdded()
+    {
+        enum message = "Oneliner line added.";
+        chan(plugin.state, event.channel, message);
+    }
+
+    void sendOnelinerModified()
+    {
+        enum message = "Oneliner line modified.";
+        chan(plugin.state, event.channel, message);
+    }
+
     // copy/pasted
-    string stripPrefix(const string trigger)
+    auto stripPrefix(const string trigger)
     {
         import lu.string : beginsWith;
         return trigger.beginsWith(plugin.state.settings.prefix) ?
@@ -672,20 +696,17 @@ void handleAddToOneliner(
                 oneliner.position = 0;
             }
 
-            enum message = "Oneliner line inserted.";
-            chan(plugin.state, event.channel, message);
+            sendOnelinerInserted();
             break;
 
         case appendToEnd:
             oneliner.responses ~= line;
-            enum message = "Oneliner line added.";
-            chan(plugin.state, event.channel, message);
+            sendOnelinerAdded();
             break;
 
         case editExisting:
             oneliner.responses[pos] = line;
-            enum message = "Oneliner line modified.";
-            chan(plugin.state, event.channel, message);
+            sendOnelinerModified();
             break;
         }
 
@@ -694,11 +715,11 @@ void handleAddToOneliner(
 
     if ((verb == "insert") || (verb == "edit"))
     {
-        string trigger;
-        string posString;
-        ptrdiff_t pos;
-
+        string trigger;  // mutable
+        string posString;  // ditto
+        ptrdiff_t pos;  // ditto
         immutable results = slice.splitInto(trigger, posString);
+
         if (results != SplitResults.overrun)
         {
             return sendInsertEditUsage(verb);
@@ -718,20 +739,17 @@ void handleAddToOneliner(
             return sendPositionNaN();
         }
 
-        if (verb == "insert")
-        {
-            insert(trigger, slice, Action.insertAtPosition, pos);
-        }
-        else /*if (verb == "edit")*/
-        {
-            insert(trigger, slice, Action.editExisting, pos);
-        }
+        immutable action = (verb == "insert") ?
+            Action.insertAtPosition :
+            Action.editExisting;  // verb == "edit"
+
+        insert(trigger, slice, action, pos);
     }
     else if (verb == "add")
     {
-        string trigger;
-
+        string trigger;  // mutable
         immutable results = slice.splitInto(trigger);
+
         if (results != SplitResults.overrun)
         {
             return sendAddUsage();
@@ -741,7 +759,7 @@ void handleAddToOneliner(
     }
     else
     {
-        assert(0, "impossible case in onCommandOneliner switch");
+        assert(0, "impossible case in `handleAddToOneliner` switch");
     }
 }
 
@@ -791,7 +809,7 @@ void handleDelFromOneliner(
     void sendResponseIndexOutOfBounds(const size_t pos, const size_t upperBounds)
     {
         enum pattern = "Oneliner response index <b>%d<b> is out of bounds. <b>[0..%d]<b>";
-        immutable message = pattern.format(upperBounds);
+        immutable message = pattern.format(pos, upperBounds);
         chan(plugin.state, event.channel, message);
     }
 
@@ -810,7 +828,7 @@ void handleDelFromOneliner(
     }
 
     // copy/pasted
-    string stripPrefix(const string trigger)
+    auto stripPrefix(const string trigger)
     {
         import lu.string : beginsWith;
         return trigger.beginsWith(plugin.state.settings.prefix) ?
@@ -886,7 +904,7 @@ void handleDelFromOneliner(
 )
 void onCommandCommands(OnelinersPlugin plugin, const ref IRCEvent event)
 {
-    return listCommands(plugin, event);
+    listCommands(plugin, event);
 }
 
 
@@ -1079,7 +1097,6 @@ void initResources(OnelinersPlugin plugin)
     }
 
     // Let other Exceptions pass.
-
     onelinerJSON.save(plugin.onelinerFile);
 }
 
@@ -1104,13 +1121,19 @@ public:
 final class OnelinersPlugin : IRCPlugin
 {
 private:
-    /// All Oneliners plugin settings.
+    /++
+        All Oneliners plugin settings.
+     +/
     OnelinersSettings onelinersSettings;
 
-    /// Associative array of oneliners; [Oneliner] array, keyed by trigger, keyed by channel.
+    /++
+        Associative array of oneliners; [Oneliner] array, keyed by trigger, keyed by channel.
+     +/
     Oneliner[string][string] onelinersByChannel;
 
-    /// Filename of file with oneliners.
+    /++
+        Filename of file with oneliners.
+     +/
     @Resource string onelinerFile = "oneliners.json";
 
     // channelSpecificCommands

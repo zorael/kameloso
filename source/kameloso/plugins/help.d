@@ -35,13 +35,19 @@ import std.typecons : Flag, No, Yes;
  +/
 @Settings struct HelpSettings
 {
-    /// Whether or not the Help plugin should react to events at all.
+    /++
+        Whether or not the Help plugin should react to events at all.
+     +/
     @Enabler bool enabled = true;
 
-    /// Whether or not replies are always sent in queries.
+    /++
+        Whether or not replies are always sent in queries.
+     +/
     bool repliesInQuery = true;
 
-    /// Whether or not to include prefix in command listing.
+    /++
+        Whether or not to include prefix in command listing.
+     +/
     bool includePrefix = true;
 }
 
@@ -212,12 +218,11 @@ void sendFullPluginListing(
     foreach (immutable pluginName, pluginCommands; allPluginCommands)
     {
         const nonhiddenCommands = filterHiddenCommands(pluginCommands);
-
         if (!nonhiddenCommands.length) continue;
 
         enum width = 12;
         enum pattern = "* <b>%-*s<b> %-([%s]%| %)";
-        string[] keys = nonhiddenCommands.keys.sort.release();
+        auto keys = nonhiddenCommands.keys.sort.release();
 
         foreach (ref key; keys)
         {
@@ -274,7 +279,7 @@ void sendSpecificPluginListing(
 
         enum width = 12;
         enum pattern = "* <b>%-*s<b> %-([%s]%| %)";
-        string[] keys = nonhiddenCommands.keys.sort.release();
+        auto keys = nonhiddenCommands.keys.sort.release();
 
         foreach (ref key; keys)
         {
@@ -530,7 +535,9 @@ public:
 final class HelpPlugin : IRCPlugin
 {
 private:
-    /// All Help plugin settings gathered.
+    /++
+        All Help plugin settings gathered.
+     +/
     HelpSettings helpSettings;
 
     mixin IRCPluginImpl;

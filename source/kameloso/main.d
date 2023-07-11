@@ -430,7 +430,9 @@ void messageFiber(ref Kameloso instance)
             }
         }
 
-        /// Reverse-formats an event and sends it to the server.
+        /++
+            Reverse-formats an event and sends it to the server.
+         +/
         void eventToServer(Message m) scope
         {
             import lu.string : splitLineAtPosition;
@@ -699,7 +701,9 @@ void messageFiber(ref Kameloso instance)
             }
         }
 
-        /// Proxies the passed message to the [kameloso.logger.logger].
+        /++
+            Proxies the passed message to the [kameloso.logger.logger].
+         +/
         void proxyLoggerMessages(OutputRequest request) scope
         {
             if (instance.settings.headless) return;
@@ -746,7 +750,9 @@ void messageFiber(ref Kameloso instance)
             }
         }
 
-        /// Timestamp of when the loop started.
+        /++
+            Timestamp of when the loop started.
+         +/
         immutable loopStartTime = Clock.currTime;
         static immutable maxReceiveTime = Timeout.messageReadMsecs.msecs;
 
@@ -994,14 +1000,14 @@ auto mainLoop(ref Kameloso instance)
                 historyEntry.stopTime = nowInUnix;
                 break listenerloop;
 
-            case returnSuccess:
-                assert(0, "`listenAttemptToNext` returned `Next.returnSuccess`");
-
             case returnFailure:
                 return Next.retry;
 
-            case crash:
-                assert(0, "`listenAttemptToNext` returned `Next.crash`");
+            case returnSuccess:  // should never happen
+            case crash:  // ditto
+                import lu.conv : Enum;
+                import std.conv : text;
+                assert(0, text("`listenAttemptToNext` returned `", Enum!Next.toString(actionAfterListen), "`"));
             }
         }
 
@@ -1177,10 +1183,11 @@ auto listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
     with (ListenAttempt.State)
     final switch (attempt.state)
     {
-    case unset:
-    case prelisten:
-        // Should never happen
-        assert(0, "listener yielded invalid state");
+    case unset:  // should never happen
+    case prelisten:  // ditto
+        import lu.conv : Enum;
+        import std.conv : text;
+        assert(0, text("listener yielded `", Enum!(ListenAttempt.State).toString(attempt.state), "` state"));
 
     case isEmpty:
         // Empty line yielded means nothing received; break foreach and try again
@@ -1199,12 +1206,12 @@ auto listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
         version(Posix)
         {
             import kameloso.common : errnoStrings;
-            enum pattern = "Connection error! (<l>%s</>) (<t>%s</>)";
+            enum pattern = "Connection error! (<l>%s</>) <t>(%s)";
             logger.warningf(pattern, attempt.error, errnoStrings[attempt.errno]);
         }
         else version(Windows)
         {
-            enum pattern = "Connection error! (<l>%s</>) (<t>%d</>)";
+            enum pattern = "Connection error! (<l>%s</>) <t>(%d)";
             logger.warningf(pattern, attempt.error, attempt.errno);
         }
         else
@@ -1234,12 +1241,12 @@ auto listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
             version(Posix)
             {
                 import kameloso.common : errnoStrings;
-                enum pattern = "Connection error: invalid server response! (<l>%s</>) (<t>%s</>)";
+                enum pattern = "Connection error: invalid server response! (<l>%s</>) <t>(%s)";
                 logger.errorf(pattern, attempt.error, errnoStrings[attempt.errno]);
             }
             else version(Windows)
             {
-                enum pattern = "Connection error: invalid server response! (<l>%s</>) (<t>%d</>)";
+                enum pattern = "Connection error: invalid server response! (<l>%s</>) <t>(%d)";
                 logger.errorf(pattern, attempt.error, attempt.errno);
             }
             else
@@ -2421,8 +2428,7 @@ auto tryConnect(ref Kameloso instance)
         with (ConnectionAttempt.State)
         final switch (attempt.state)
         {
-        case unset:
-            // Should never happen
+        case unset:  // should never happen
             assert(0, "connector yielded `unset` state");
 
         case preconnect:
@@ -3174,9 +3180,6 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
         case continue_:
             break;
 
-        case retry:  // should never happen
-            assert(0, "`tryResolve` returned `Next.retry`");
-
         case returnFailure:
             // No need to teardown; the scopeguard does it for us.
             attempt.retval = ShellReturnValue.resolutionFailure;
@@ -3187,8 +3190,11 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
             attempt.retval = ShellReturnValue.success;
             break outerloop;
 
-        case crash:
-            assert(0, "`tryResolve` returned `Next.crash`");
+        case retry:  // should never happen
+        case crash:  // ditto
+            import lu.conv : Enum;
+            import std.conv : text;
+            assert(0, text("`tryResolve` returned `", Enum!Next.toString(actionAfterResolve), "`"));
         }
 
         immutable actionAfterConnect = tryConnect(instance);
@@ -3200,19 +3206,17 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
         case continue_:
             break;
 
-        case returnSuccess:  // should never happen
-            assert(0, "`tryConnect` returned `Next.returnSuccess`");
-
-        case retry:  // should never happen
-            assert(0, "`tryConnect` returned `Next.retry`");
-
         case returnFailure:
             // No need to saveOnExit, the scopeguard takes care of that
             attempt.retval = ShellReturnValue.connectionFailure;
             break outerloop;
 
-        case crash:
-            assert(0, "`tryConnect` returned `Next.crash`");
+        case returnSuccess:  // should never happen
+        case retry:  // ditto
+        case crash:  // ditto
+            import lu.conv : Enum;
+            import std.conv : text;
+            assert(0, text("`tryConnect` returned `", Enum!Next.toString(actionAfterConnect), "`"));
         }
 
         // Ensure initialised resources after resolve so we know we have a
@@ -3516,7 +3520,9 @@ void printSummary(const ref Kameloso instance)
  +/
 struct AttemptState
 {
-    /// Enum denoting what we should do next loop in an execution attempt.
+    /++
+        Enum denoting what we should do next loop in an execution attempt.
+     +/
     Next next;
 
     /++
@@ -3525,10 +3531,14 @@ struct AttemptState
      +/
     bool firstConnect = true;
 
-    /// Whether or not "Exiting..." should be printed at program exit.
+    /++
+        Whether or not "Exiting..." should be printed at program exit.
+     +/
     bool silentExit;
 
-    /// Shell return value to exit with.
+    /++
+        Shell return value to exit with.
+     +/
     int retval;
 }
 
@@ -3570,50 +3580,6 @@ void syncGuestChannels(ref Kameloso instance)
         // every plugin that have channels have the same channels
         break;
     }
-}
-
-
-// getQuitMessageInFlight
-/++
-    Get any QUIT concurrency messages currently in the mailbox. Also catch Variants
-    so as not to throw an exception on missed priority messages.
-
-    Params:
-        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
-
-    Returns:
-        A [kameloso.thread.ThreadMessage|ThreadMessage] with its `content` message
-        containing any quit reasons encountered.
- +/
-auto getQuitMessageInFlight(ref Kameloso instance)
-{
-    import kameloso.string : replaceTokens;
-    import kameloso.thread : ThreadMessage;
-    import std.concurrency : receiveTimeout;
-    import std.variant : Variant;
-    import core.time : Duration;
-
-    ThreadMessage returnMessage;
-    bool receivedSomething;
-    bool halt;
-
-    do
-    {
-        receivedSomething = receiveTimeout(Duration.zero,
-            (ThreadMessage message) scope
-            {
-                if (message.type == ThreadMessage.Type.quit)
-                {
-                    returnMessage = message;
-                    halt = true;
-                }
-            },
-            (Variant _) scope {},
-        );
-    }
-    while (!halt && receivedSomething);
-
-    return returnMessage;
 }
 
 
@@ -3765,17 +3731,17 @@ auto run(string[] args)
     case continue_:
         break;
 
-    case retry:  // should never happen
-        assert(0, "`tryGetopt` returned `Next.retry`");
-
     case returnSuccess:
         return ShellReturnValue.success;
 
     case returnFailure:
         return ShellReturnValue.getoptFailure;
 
-    case crash:  // as above
-        assert(0, "`tryGetopt` returned `Next.crash`");
+    case retry:  // should never happen
+    case crash:  // ditto
+        import lu.conv : Enum;
+        import std.conv : text;
+        assert(0, text("`tryGetopt` returned `", Enum!Next.toString(actionAfterGetopt), "`"));
     }
 
     if (!instance.settings.headless || instance.settings.force)
@@ -3865,17 +3831,15 @@ auto run(string[] args)
     case continue_:
         break;
 
-    case retry:  // should never happen
-        assert(0, "`verifySettings` returned `Next.retry`");
-
-    case returnSuccess:  // as above
-        assert(0, "`verifySettings` returned `Next.returnSuccess`");
-
     case returnFailure:
         return ShellReturnValue.settingsVerificationFailure;
 
-    case crash:  // as above
-        assert(0, "`verifySettings` returned `Next.crash`");
+    case retry:  // should never happen
+    case returnSuccess:  // ditto
+    case crash:  // ditto
+        import lu.conv : Enum;
+        import std.conv : text;
+        assert(0, text("`verifySettings` returned `", Enum!Next.toString(actionAfterVerification), "`"));
     }
 
     // Resolve resource and private key/certificate paths.
@@ -3938,9 +3902,11 @@ auto run(string[] args)
 
         if (!*instance.abort && !instance.settings.headless && !instance.settings.hideOutgoing)
         {
-            const message = getQuitMessageInFlight(instance);
-            reason = message.content.length ?
-                message.content :
+            import kameloso.thread : exhaustMessages;
+
+            immutable quitMessage = exhaustMessages();
+            reason = quitMessage.length ?
+                quitMessage :
                 instance.bot.quitReason;
             reason = reason.replaceTokens(instance.parser.client);
             echoQuitMessage(instance, reason);

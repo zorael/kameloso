@@ -237,9 +237,11 @@ public:
         json["suspended"] = JSONValue(this.suspended);
         json["lines"] = null;
         json["lines"].array = null;
+        //auto linesJSON = "lines" in json;
 
         foreach (immutable line; this.lines)
         {
+            //linesJSON.array ~= JSONValue(line);  // Doesn't work with older compilers
             json["lines"].array ~= JSONValue(line);
         }
 
@@ -272,7 +274,7 @@ public:
             Condition.either;
 
         // Compatibility with older versions, remove later
-        if (const suspendedJSON = "suspended" in json.object)
+        if (const suspendedJSON = "suspended" in json)
         {
             timer.suspended = suspendedJSON.boolean;
         }
@@ -439,7 +441,6 @@ void handleNewTimer(
     string timeThreshold;
     string messageCountStagger;
     string timeStagger;
-
     immutable results = slice.splitInto(
         timer.name,
         type,
@@ -525,12 +526,11 @@ void handleNewTimer(
     }
 
     auto channel = event.channel in plugin.channels;
-    assert(channel, "Tried to create a timer in a channel with no Channel in plugin.channels");
+    assert(channel, "Tried to create a timer in a channel with no IRCChannel in plugin.channels");
 
     timer.lastMessageCount = channel.messageCount;
     timer.lastTimestamp = event.time;
     timer.fiber = createTimerFiber(plugin, event.channel, timer.name);
-
     plugin.timersByChannel[event.channel][timer.name] = timer;
     channel.timerPointers[timer.name] = &plugin.timersByChannel[event.channel][timer.name];
 
@@ -575,9 +575,8 @@ void handleDelTimer(
     auto channel = event.channel in plugin.channels;
     if (!channel) return sendNoSuchTimer();
 
-    string name;
-    string linePosString;
-
+    string name;  // mutable
+    string linePosString;  // mutable
     immutable results = slice.splitInto(name, linePosString);
 
     with (SplitResults)
@@ -597,7 +596,7 @@ void handleDelTimer(
         (*channelTimers).remove(name);
         if (!channelTimers.length) plugin.timersByChannel.remove(event.channel);
 
-        saveTimersToDisk(plugin);
+        saveTimers(plugin);
         enum message = "Timer removed.";
         return chan(plugin.state, event.channel, message);
 
@@ -617,7 +616,7 @@ void handleDelTimer(
 
             immutable linePos = linePosString.to!size_t;
             timer.lines = timer.lines.remove!(SwapStrategy.stable)(linePos);
-            saveTimersToDisk(plugin);
+            saveTimers(plugin);
 
             enum pattern = "Line removed from timer <b>%s<b>. Lines remaining: <b>%d<b>";
             immutable message = pattern.format(name, timer.lines.length);
@@ -685,9 +684,8 @@ void handleModifyTimerLines(
         chan(plugin.state, event.channel, message);
     }
 
-    string name;
-    string linePosString;
-
+    string name;  // mutable
+    string linePosString;  // mutable
     immutable results = slice.splitInto(name, linePosString);
     if (results != SplitResults.overrun) return sendInsertUsage();
 
@@ -704,7 +702,7 @@ void handleModifyTimerLines(
     {
         destroy(timer.fiber);
         timer.fiber = createTimerFiber(plugin, event.channel, timer.name);
-        saveTimersToDisk(plugin);
+        saveTimers(plugin);
     }
 
     try
@@ -788,7 +786,7 @@ void handleAddToTimer(
     {
         destroy(timer.fiber);
         timer.fiber = createTimerFiber(plugin, event.channel, timer.name);
-        saveTimersToDisk(plugin);
+        saveTimers(plugin);
     }
 
     timer.lines ~= slice;
@@ -903,8 +901,7 @@ void handleSuspendTimer(
         chan(plugin.state, event.channel, message);
     }
 
-    string name;
-
+    string name;  // mutable
     immutable results = slice.splitInto(name);
     if (results != SplitResults.match) return sendUsage();
 
@@ -918,7 +915,7 @@ void handleSuspendTimer(
     if (!timer) return sendNoSuchTimer();
 
     timer.suspended = suspend;
-    saveTimersToDisk(plugin);
+    saveTimers(plugin);
 
     if (suspend)
     {
@@ -977,32 +974,9 @@ void onWelcome(TimerPlugin plugin)
 {
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.constants : BufferSize;
-    import lu.json : JSONStorage;
     import core.thread : Fiber;
 
-    JSONStorage allTimersJSON;
-    allTimersJSON.load(plugin.timerFile);
-
-    foreach (immutable channelName, const timersJSON; allTimersJSON.object)
-    {
-        auto channelTimers = channelName in plugin.timersByChannel;
-
-        if (!channelTimers)
-        {
-            plugin.timersByChannel[channelName] = typeof(plugin.timersByChannel[channelName]).init;
-            channelTimers = channelName in plugin.timersByChannel;
-        }
-
-        foreach (const timerJSON; timersJSON.array)
-        {
-            auto timer = Timer.fromJSON(timerJSON);
-            (*channelTimers)[timer.name] = timer;
-        }
-
-        *channelTimers = channelTimers.rehash();
-    }
-
-    plugin.timersByChannel = plugin.timersByChannel.rehash();
+    loadTimers(plugin);
 
     void fiberTriggerDg()
     {
@@ -1070,7 +1044,7 @@ void onWelcome(TimerPlugin plugin)
 )
 void onSelfjoin(TimerPlugin plugin, const ref IRCEvent event)
 {
-    return handleSelfjoin(plugin, event.channel, No.force);
+    handleSelfjoin(plugin, event.channel, No.force);
 }
 
 
@@ -1144,7 +1118,7 @@ auto createTimerFiber(
     {
         import std.datetime.systime : Clock;
 
-        /// Channel pointer.
+        // Channel pointer.
         const channel = channelName in plugin.channels;
         assert(channel, channelName ~ " not in plugin.channels");
 
@@ -1192,8 +1166,6 @@ auto createTimerFiber(
         {
             import kameloso.string : replaceRandom;
             import std.array : replace;
-            import std.conv : to;
-            import std.random : uniform;
 
             if (timer.suspended)
             {
@@ -1227,14 +1199,14 @@ auto createTimerFiber(
 }
 
 
-// saveTimersToDisk
+// saveTimers
 /++
     Saves timers to disk in JSON format.
 
     Params:
         plugin = The current [TimerPlugin].
  +/
-void saveTimersToDisk(TimerPlugin plugin)
+void saveTimers(TimerPlugin plugin)
 {
     import lu.json : JSONStorage;
 
@@ -1244,9 +1216,11 @@ void saveTimersToDisk(TimerPlugin plugin)
     {
         json[channelName] = null;
         json[channelName].array = null;
+        //auto channelTimersJSON = channelName in json;
 
         foreach (const timer; timers)
         {
+            //channelTimersJSON.array ~= timer.toJSON();  // Doesn't work with older compilers
             json[channelName].array ~= timer.toJSON();
         }
     }
@@ -1285,8 +1259,37 @@ void initResources(TimerPlugin plugin)
     }
 
     // Let other Exceptions pass.
-
     timersJSON.save(plugin.timerFile);
+}
+
+
+// loadTimers
+/++
+    Loads timers from disk.
+ +/
+void loadTimers(TimerPlugin plugin)
+{
+    import lu.json : JSONStorage;
+
+    JSONStorage allTimersJSON;
+    allTimersJSON.load(plugin.timerFile);
+    plugin.timersByChannel.clear();
+
+    foreach (immutable channelName, const timersJSON; allTimersJSON.object)
+    {
+        plugin.timersByChannel[channelName] = typeof(plugin.timersByChannel[channelName]).init;
+        auto channelTimers = channelName in plugin.timersByChannel;
+
+        foreach (const timerJSON; timersJSON.array)
+        {
+            auto timer = Timer.fromJSON(timerJSON);
+            (*channelTimers)[timer.name] = timer;
+        }
+
+        channelTimers.rehash();
+    }
+
+    plugin.timersByChannel.rehash();
 }
 
 
@@ -1296,26 +1299,9 @@ void initResources(TimerPlugin plugin)
  +/
 void reload(TimerPlugin plugin)
 {
-    import lu.json : JSONStorage;
+    loadTimers(plugin);
 
-    JSONStorage allTimersJSON;
-    allTimersJSON.load(plugin.timerFile);
-
-    // Clear timerByChannel and reload from disk
-    plugin.timersByChannel = null;
-
-    foreach (immutable channelName, const timersJSON; allTimersJSON.object)
-    {
-        foreach (const timerJSON; timersJSON.array)
-        {
-            auto timer = Timer.fromJSON(timerJSON);
-            plugin.timersByChannel[channelName][timer.name] = timer;
-        }
-    }
-
-    plugin.timersByChannel = plugin.timersByChannel.rehash();
-
-    // Recreate timers from definitions
+    // Recreate timer Fibers from definitions
     foreach (immutable channelName, channel; plugin.channels)
     {
         // Just reuse the SELFJOIN routine, but be sure to force it

@@ -90,8 +90,8 @@ A normal URL to any playlist you can modify will work fine.
     string channel;
     while (!channel.length)
     {
-        immutable rawChannel = readNamedString("<l>Enter your <i>#channel<l>:</> ",
-            0L, *plugin.state.abort);
+        enum readChannelMessage = "<l>Enter your <i>#channel<l>:</> ";
+        immutable rawChannel = readNamedString(readChannelMessage, 0L, *plugin.state.abort);
         if (*plugin.state.abort) return;
 
         channel = rawChannel.stripped;
@@ -104,20 +104,19 @@ A normal URL to any playlist you can modify will work fine.
         }
     }
 
-    creds.googleClientID = readNamedString("<l>Copy and paste your <i>OAuth client ID<l>:</> ",
-        72L, *plugin.state.abort);
+    enum readOAuthIDMessage = "<l>Copy and paste your <i>OAuth client ID<l>:</> ";
+    creds.googleClientID = readNamedString(readOAuthIDMessage, 72L, *plugin.state.abort);
     if (*plugin.state.abort) return;
 
-    creds.googleClientSecret = readNamedString("<l>Copy and paste your <i>OAuth client secret<l>:</> ",
-        35L, *plugin.state.abort);
+    enum readOAuthSecretMessage = "<l>Copy and paste your <i>OAuth client secret<l>:</> ";
+    creds.googleClientSecret = readNamedString(readOAuthSecretMessage, 35L, *plugin.state.abort);
     if (*plugin.state.abort) return;
 
     while (!creds.youtubePlaylistID.length)
     {
         enum playlistIDLength = 34;
-
-        immutable playlistURL = readNamedString("<l>Copy and paste your <i>YouTube playlist URL<l>:</> ",
-            0L, *plugin.state.abort);
+        enum readPlaylistMessage = "<l>Copy and paste your <i>YouTube playlist URL<l>:</> ";
+        immutable playlistURL = readNamedString(readPlaylistMessage, 0L, *plugin.state.abort);
         if (*plugin.state.abort) return;
 
         if (playlistURL.length == playlistIDLength)
@@ -276,7 +275,7 @@ Be sure to <l>select a YouTube account</> if presented with several alternatives
 
     if (const errorJSON = "error" in validationJSON)
     {
-        throw new ErrorJSONException(validationJSON["error_description"].str, validationJSON);
+        throw new ErrorJSONException(validationJSON["error_description"].str, *errorJSON);
     }
 
     // "expires_in" is a string
@@ -374,8 +373,7 @@ in (Fiber.getThis, "Tried to call `addVideoToYouTubePlaylist` from outside a Fib
     {
         try
         {
-            plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout());
-
+            plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout);
             plugin.persistentWorkerTid.send(
                 id,
                 url,
@@ -448,7 +446,7 @@ in (Fiber.getThis, "Tried to call `addVideoToYouTubePlaylist` from outside a Fib
             const errorJSON = "error" in json;
             if (!errorJSON) return json;  // Success
 
-            if (const statusJSON = "status" in errorJSON.object)
+            if (const statusJSON = "status" in *errorJSON)
             {
                 if (statusJSON.str == "UNAUTHENTICATED")
                 {

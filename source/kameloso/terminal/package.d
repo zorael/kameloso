@@ -20,13 +20,19 @@ public:
 
 @safe:
 
-/// Special terminal control characters.
+/++
+    Special terminal control characters.
+ +/
 enum TerminalToken
 {
-    /// Character that preludes a terminal colouring code.
+    /++
+        Character that preludes a terminal colouring code.
+     +/
     format = '\033',
 
-    /// Terminal bell/beep.
+    /++
+        Terminal bell/beep.
+     +/
     bell = '\007',
 }
 
@@ -38,13 +44,19 @@ version(Windows)
 
     import core.sys.windows.wincon : SetConsoleCP, SetConsoleMode, SetConsoleOutputCP;
 
-    /// Original codepage at program start.
+    /++
+        Original codepage at program start.
+     +/
     private __gshared uint originalCP;
 
-    /// Original output codepage at program start.
+    /++
+        Original output codepage at program start.
+     +/
     private __gshared uint originalOutputCP;
 
-    /// Original console mode at program start.
+    /++
+        Original console mode at program start.
+     +/
     private __gshared uint originalConsoleMode;
 
     /++
@@ -147,11 +159,11 @@ else
  +/
 bool isTerminal() @system
 {
-    import kameloso.platform : currentPlatform;
+    import kameloso.platform : currentEnvironment;
 
     if (isTTY) return true;
 
-    switch (currentPlatform)
+    switch (currentEnvironment)
     {
     case "Msys":
     case "Cygwin":
@@ -180,11 +192,11 @@ bool isTerminal() @system
  +/
 void applyMonochromeAndFlushOverrides(ref bool monochrome, ref bool flush) @system
 {
-    import kameloso.platform : currentPlatform;
+    import kameloso.platform : currentEnvironment;
 
     if (!isTTY)
     {
-        switch (currentPlatform)
+        switch (currentEnvironment)
         {
         case "Msys":
             // Requires manual flushing despite setvbuf
@@ -213,13 +225,13 @@ void applyMonochromeAndFlushOverrides(ref bool monochrome, ref bool flush) @syst
 void ensureAppropriateBuffering() @system
 {
     import kameloso.constants : BufferSize;
-    import kameloso.platform : currentPlatform;
+    import kameloso.platform : currentEnvironment;
     import std.stdio : stdout;
     import core.stdc.stdio : _IOLBF;
 
     if (!isTTY)
     {
-        switch (currentPlatform)
+        switch (currentEnvironment)
         {
         case "Msys":
         case "Cygwin":

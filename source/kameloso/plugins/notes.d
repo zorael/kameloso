@@ -247,7 +247,6 @@ void onTwitchChannelEvent(NotesPlugin plugin, const ref IRCEvent event)
 void onWhoReply(NotesPlugin plugin, const ref IRCEvent event)
 {
     if (plugin.state.settings.eagerLookups) return;
-
     playbackNotes(plugin, event, Yes.background);
 }
 
@@ -283,19 +282,12 @@ void playbackNotes(
 
     if (event.channel.length)
     {
-        import std.range : only;
+        // Try channel notes first, then drop down to private notes
+        playbackNotesImpl(plugin, event.channel, user, background);
+    }
 
-        // Try both channel and private message notes
-        foreach (immutable wouldBeChannel; only(event.channel, string.init))
-        {
-            playbackNotesImpl(plugin, wouldBeChannel, user, background);
-        }
-    }
-    else
-    {
-        // Only private message relevant
-        playbackNotesImpl(plugin, string.init, user, background);
-    }
+    // Private notes
+    playbackNotesImpl(plugin, string.init, user, background);
 }
 
 
@@ -324,41 +316,41 @@ void playbackNotesImpl(
 
     void onSuccess(const IRCUser user)
     {
+        import std.datetime.systime : Clock;
         import std.range : only;
+
+        immutable now = Clock.currTime;
 
         foreach (immutable id; only(user.nickname, user.account))
         {
             import kameloso.plugins.common.misc : nameOf;
             import kameloso.time : timeSince;
-            import std.datetime.systime : Clock, SysTime;
+            import std.datetime.systime : SysTime;
 
             auto notes = id in *channelNotes;
             if (!notes || !notes.length) continue;
-
-            immutable maybeDisplayName = nameOf(user);
-            immutable nowInUnix = Clock.currTime;
 
             if (notes.length == 1)
             {
                 auto note = (*notes)[0];  // mutable
                 immutable timestampAsSysTime = SysTime.fromUnixTime(note.timestamp);
-                immutable duration = (nowInUnix - timestampAsSysTime).timeSince!(7, 1)(No.abbreviate);
+                immutable duration = (now - timestampAsSysTime).timeSince!(7, 1)(No.abbreviate);
 
                 note.decrypt();
                 enum pattern = "<h>%s<h>! <h>%s<h> left note <b>%s<b> ago: %s";
-                immutable message = pattern.format(maybeDisplayName, note.sender, duration, note.line);
+                immutable message = pattern.format(nameOf(user), note.sender, duration, note.line);
                 privmsg(plugin.state, channelName, user.nickname, message);
             }
             else /*if (notes.length > 1)*/
             {
                 enum pattern = "<h>%s<h>! You have <b>%d<b> notes.";
-                immutable message = pattern.format(maybeDisplayName, notes.length);
+                immutable message = pattern.format(nameOf(user), notes.length);
                 privmsg(plugin.state, channelName, user.nickname, message);
 
                 foreach (/*const*/ note; *notes)
                 {
                     immutable timestampAsSysTime = SysTime.fromUnixTime(note.timestamp);
-                    immutable duration = (nowInUnix - timestampAsSysTime).timeSince!(7, 1)(Yes.abbreviate);
+                    immutable duration = (now - timestampAsSysTime).timeSince!(7, 1)(Yes.abbreviate);
 
                     note.decrypt();
                     enum entryPattern = "<h>%s<h> %s ago: %s";
@@ -389,7 +381,6 @@ void playbackNotesImpl(
     }
 
     mixin WHOISFiberDelegate!(onSuccess, onFailure, Yes.alwaysLookup);
-
     enqueueAndWHOIS(user.nickname, Yes.issueWhois, background);
 }
 
@@ -420,7 +411,6 @@ void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.common.misc : nameOf;
     import lu.string : SplitResults, beginsWith, splitInto, stripped;
-    import std.datetime.systime : Clock;
 
     void sendUsage()
     {
@@ -439,17 +429,16 @@ void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
     }
 
     string slice = event.content.stripped;  // mutable
-    string target; // mutable
-
+    string target; // ditto
     immutable results = slice.splitInto(target);
-    if (target.beginsWith('@')) target = target[1..$];
 
+    if (target.beginsWith('@')) target = target[1..$];
     if ((results != SplitResults.overrun) || !target.length) return sendUsage();
     if (target == plugin.state.client.nickname) return sendNoBotMessages();
 
     Note note;
     note.sender = nameOf(event.sender);
-    note.timestamp = Clock.currTime.toUnixTime;
+    note.timestamp = event.time;
     note.line = slice;
     note.encrypt();
 
@@ -470,7 +459,7 @@ void onCommandAddNote(NotesPlugin plugin, const ref IRCEvent event)
 )
 void onWelcome(NotesPlugin plugin)
 {
-    plugin.reload();
+    loadNotes(plugin);
 }
 
 
@@ -494,9 +483,11 @@ void saveNotes(NotesPlugin plugin)
         {
             json[channelName][nickname] = null;
             json[channelName][nickname].array = null;
+            //auto nicknameNotesJSON = nickname in json[channelName];
 
             foreach (note; notes)
             {
+                //nicknameNotesJSON.array ~= note.toJSON();  // Doesn't work with older compilers
                 json[channelName][nickname].array ~= note.toJSON();
             }
         }
@@ -542,7 +533,7 @@ void loadNotes(NotesPlugin plugin)
  +/
 void reload(NotesPlugin plugin)
 {
-    return loadNotes(plugin);
+    loadNotes(plugin);
 }
 
 
@@ -575,7 +566,6 @@ void initResources(NotesPlugin plugin)
     }
 
     // Let other Exceptions pass.
-
     json.save(plugin.notesFile);
 }
 

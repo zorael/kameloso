@@ -35,7 +35,9 @@ import std.typecons : Flag, No, Yes;
  +/
 @Settings struct ChatbotSettings
 {
-    /// Whether or not the Chatbot plugin should react to events at all.
+    /++
+        Whether or not the Chatbot plugin should react to events at all.
+     +/
     @Enabler bool enabled = true;
 }
 
@@ -76,7 +78,6 @@ void onCommandSay(ChatbotPlugin plugin, const ref IRCEvent event)
     immutable message = event.content.length ?
         event.content :
         "Say what?";
-
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
 }
 
@@ -85,7 +86,7 @@ void onCommandSay(ChatbotPlugin plugin, const ref IRCEvent event)
 /++
     Does the bash.org dance emotes.
 
-    - http://bash.org/?4281
+    See_Also: http://bash.org/?4281
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -156,7 +157,9 @@ public:
 final class ChatbotPlugin : IRCPlugin
 {
 private:
-    /// All Chatbot plugin settings gathered.
+    /++
+        All Chatbot plugin settings gathered.
+     +/
     ChatbotSettings chatbotSettings;
 
     mixin IRCPluginImpl;

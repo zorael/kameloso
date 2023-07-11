@@ -294,7 +294,9 @@ public:
     }
 
     // this(this)
-    /// Never copy this.
+    /++
+        Never copy this.
+     +/
     @disable this(this);
 
     // connectionID
@@ -776,16 +778,24 @@ public:
      +/
     static struct ConnectionHistoryEntry
     {
-        /// UNIX time when this connection was established.
+        /++
+            UNIX time when this connection was established.
+         +/
         long startTime;
 
-        /// UNIX time when this connection was lost.
+        /++
+            UNIX time when this connection was lost.
+         +/
         long stopTime;
 
-        /// How many events fired during this connection.
+        /++
+            How many events fired during this connection.
+         +/
         long numEvents;
 
-        /// How many bytses were read during this connection.
+        /++
+            How many bytses were read during this connection.
+         +/
         ulong bytesReceived;
     }
 

@@ -635,7 +635,7 @@ void reportStreamTime(
         immutable delta = (now - room.stream.startTime);
         immutable timestring = timeSince!(7, 1)(delta);
 
-        if (room.stream.maxViewerCount > 0)
+        if (room.stream.numViewersMax > 0)
         {
             enum pattern = "%s has been live streaming %s for %s, currently with %d viewers. " ~
                 "(Maximum this stream has so far been %d concurrent viewers.)";
@@ -643,8 +643,8 @@ void reportStreamTime(
                 room.broadcasterDisplayName,
                 room.stream.gameName,
                 timestring,
-                room.stream.viewerCount,
-                room.stream.maxViewerCount);
+                room.stream.numViewers,
+                room.stream.numViewersMax);
             return chan(plugin.state, room.channelName, message);
         }
         else
@@ -676,7 +676,7 @@ void reportStreamTime(
         previousStream.gameName :
         "something";
 
-    if (previousStream.maxViewerCount > 0)
+    if (previousStream.numViewersMax > 0)
     {
         enum pattern = "%s is currently not streaming. " ~
             "Last streamed %s on %4d-%02d-%02d for %s, " ~
@@ -688,7 +688,7 @@ void reportStreamTime(
             cast(int)previousStream.stopTime.month,
             previousStream.stopTime.day,
             timestring,
-            previousStream.maxViewerCount);
+            previousStream.numViewersMax);
         return chan(plugin.state, room.channelName, message);
     }
     else
@@ -941,6 +941,12 @@ version(TwitchCustomEmotesEverywhere)
 )
 void onGuestRoomState(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
+    if (event.channel in plugin.customEmotesByChannel)
+    {
+        // Already done
+        return;
+    }
+
     importCustomEmotes(plugin, event.channel, event.aux[0]);
 }
 
@@ -1024,7 +1030,6 @@ void onCommandShoutout(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     string slice = event.content.stripped;  // mutable
     string target;  // ditto
     string numTimesString;  // ditto
-
     immutable results = slice.splitInto(target, numTimesString);
 
     if (target.beginsWith('@')) target = target[1..$].stripped;
@@ -3042,7 +3047,7 @@ void startValidator(TwitchPlugin plugin)
         import kameloso.plugins.common.delayawait : delay;
         import core.time : minutes;
 
-        while (!plugin.userID.length)
+        while (!plugin.botUserIDString.length)
         {
             static immutable retryDelay = 1.minutes;
 
@@ -3054,7 +3059,7 @@ void startValidator(TwitchPlugin plugin)
                     import std.datetime.systime : Clock, SysTime;
 
                     immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
-                    plugin.userID = validationJSON["user_id"].str;
+                    plugin.botUserIDString = validationJSON["user_id"].str;
                     immutable expiresIn = validationJSON["expires_in"].integer;
                     immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
                     immutable now = Clock.currTime;
@@ -3103,7 +3108,7 @@ void startValidator(TwitchPlugin plugin)
                 */
 
                 immutable validationJSON = getValidation(plugin, plugin.state.bot.pass, Yes.async);
-                plugin.userID = validationJSON["user_id"].str;
+                plugin.botUserIDString = validationJSON["user_id"].str;
                 immutable expiresIn = validationJSON["expires_in"].integer;
                 immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
                 generateExpiryReminders(plugin, expiresWhen);
@@ -3135,14 +3140,14 @@ void startValidator(TwitchPlugin plugin)
                     }
                     else
                     {
-                        enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
+                        enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) <t>(%d)";
                         logger.errorf(pattern, e.msg, e.error, e.code);
                         logger.error(wikiMessage);
                     }
                 }
                 else
                 {
-                    enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
+                    enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) <t>(%d)";
                     logger.errorf(pattern, e.msg, e.error, e.code);
                 }
 
@@ -3413,7 +3418,7 @@ void teardown(TwitchPlugin plugin)
     if (plugin.persistentWorkerTid != Tid.init)
     {
         // It may not have been started if we're aborting very early.
-        plugin.persistentWorkerTid.send(ThreadMessage.teardown());
+        plugin.persistentWorkerTid.send(ThreadMessage.teardown);
     }
 
     if (plugin.twitchSettings.ecount && plugin.ecount.length)
@@ -3844,12 +3849,12 @@ package:
                 How many people were viewing the stream the last time the monitor
                 [core.thread.fiber.Fiber|Fiber] checked.
              +/
-            long viewerCount;
+            long numViewers;
 
             /++
                 The maximum number of people seen watching this stream.
              +/
-            long maxViewerCount;
+            long numViewersMax;
 
             /++
                 Users seen in the channel.
@@ -3886,12 +3891,12 @@ package:
                 this.gameIDString = updated.gameIDString;
                 this.gameName = updated.gameName;
                 this.title = updated.title;
-                this.viewerCount = updated.viewerCount;
+                this.numViewers = updated.numViewers;
                 this.tags = updated.tags.dup;
 
-                if (this.viewerCount > this.maxViewerCount)
+                if (this.numViewers > this.numViewersMax)
                 {
-                    this.maxViewerCount = this.viewerCount;
+                    this.numViewersMax = this.numViewers;
                 }
             }
 
@@ -3924,7 +3929,7 @@ package:
                 json["title"] = JSONValue(this.title);
                 json["startTimeUnix"] = JSONValue(this.startTime.toUnixTime());
                 json["stopTimeUnix"] = JSONValue(this.stopTime.toUnixTime());
-                json["maxViewerCount"] = JSONValue(this.maxViewerCount);
+                json["numViewersMax"] = JSONValue(this.numViewersMax);
                 json["tags"] = JSONValue(this.tags);
                 return json;
             }
@@ -3956,10 +3961,20 @@ package:
                 stream.title = json["title"].str;
                 stream.startTime = SysTime.fromUnixTime(json["startTimeUnix"].integer);
                 stream.stopTime = SysTime.fromUnixTime(json["stopTimeUnix"].integer);
-                stream.maxViewerCount = json["maxViewerCount"].integer;
                 stream.tags = json["tags"].array
                     .map!(tag => tag.str)
                     .array;
+
+                if (const numViewersMaxJSON = "numViewersMax" in json)
+                {
+                    stream.numViewersMax = numViewersMaxJSON.integer;
+                }
+                else
+                {
+                    // Legacy
+                    stream.numViewersMax = json["maxViewerCount"].integer;
+                }
+
                 return stream;
             }
         }
@@ -4082,7 +4097,7 @@ package:
     string bell = bellString;
 
     /++
-        The Twitch application ID for kameloso.
+        The Twitch application ID for the kameloso bot.
      +/
     enum clientID = "tjyryd2ojnqr8a51ml19kn1yi2n0v1";
 
@@ -4094,7 +4109,7 @@ package:
     /++
         The bot's numeric account/ID.
      +/
-    string userID;
+    string botUserIDString;
 
     /++
         How long a Twitch HTTP query usually takes.

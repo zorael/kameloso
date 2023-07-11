@@ -18,22 +18,30 @@ import kameloso.semver : KamelosoSemVer, KamelosoSemVerPrerelease;
 
 version(DigitalMars)
 {
-    /// String of the compiler that was used to compile this binary with. Here: `dmd`.
+    /++
+        String of the compiler that was used to compile this binary with. Here: `dmd`.
+     +/
     enum compiler = "dmd";
 }
 else version(LDC)
 {
-    /// String of the compiler that was used to compile this binary with. Here: `ldc`.
+    /++
+        String of the compiler that was used to compile this binary with. Here: `ldc`.
+     +/
     enum compiler = "ldc";
 }
 else version(GNU)
 {
-    /// String of the compiler that was used to compile this binary with. Here: `gdc`.
+    /++
+        String of the compiler that was used to compile this binary with. Here: `gdc`.
+     +/
     enum compiler = "gdc";
 }
 else
 {
-    /// String of the compiler that was used to compile this binary with. Here: no idea.
+    /++
+        String of the compiler that was used to compile this binary with. Here: no idea.
+     +/
     enum compiler = "<unknown>";
 }
 
@@ -126,11 +134,30 @@ public:
  +/
 enum KamelosoInfo
 {
-    version_ = .buildVersionString(), /// Version as a string.
-    built = __TIMESTAMP__, /// Timestamp of when the binary was built.
-    compiler = .compiler,  /// Compiler used to build this binary.
-    compilerVersion = .buildCompilerVersionString(),  /// Compiler version used to build this binary.
-    source = "https://github.com/zorael/kameloso",  /// GitHub source link.
+    /++
+        Version as a string.
+     +/
+    version_ = .buildVersionString(),
+
+    /++
+        Timestamp of when the binary was built.
+     +/
+    built = __TIMESTAMP__,
+
+    /++
+        Compiler used to build this binary.
+     +/
+    compiler = .compiler,
+
+    /++
+        Compiler version used to build this binary.
+     +/
+    compilerVersion = .buildCompilerVersionString(),
+
+    /++
+        GitHub source link.
+     +/
+    source = "https://github.com/zorael/kameloso",
 }
 
 
@@ -147,16 +174,24 @@ enum KamelosoDefaults
      +/
     user = "kameloso",
 
-    /// Default server address.
+    /++
+        Default server address.
+     +/
     serverAddress = "irc.libera.chat",
 
-    /// The default GEOC/"real name" string.
+    /++
+        The default GEOC/"real name" string.
+     +/
     realName = "kameloso IRC bot v$version",
 
-    /// The default quit reason, when the bot exits. Supports some string replacements.
+    /++
+        The default quit reason, when the bot exits. Supports some string replacements.
+     +/
     quitReason = "kameloso IRC bot v$version @ $source",
 
-    /// The default part reason, when the bot is asked to part a channel.
+    /++
+        The default part reason, when the bot is asked to part a channel.
+     +/
     partReason = quitReason,
 
     /++
@@ -176,7 +211,9 @@ enum KamelosoDefaults
  +/
 enum KamelosoDefaultIntegers
 {
-    /// Default server port.
+    /++
+        Default server port.
+     +/
     port = 6667,
 }
 
@@ -212,7 +249,9 @@ enum KamelosoFilenames
  +/
 enum ConnectionDefaultIntegers
 {
-    /// How many times to attempt to connect to an IP before moving on to the next one.
+    /++
+        How many times to attempt to connect to an IP before moving on to the next one.
+     +/
     retries = 4,
 }
 
@@ -223,16 +262,24 @@ enum ConnectionDefaultIntegers
  +/
 enum ConnectionDefaultFloats : double
 {
-    /// By what to multiply the connect timeout after failing an attempt.
+    /++
+        By what to multiply the connect timeout after failing an attempt.
+     +/
     delayIncrementMultiplier = 1.5,
 
-    /// By what to multiply [Timeout.receiveMsecs] with to shorten reads.
+    /++
+        By what to multiply [Timeout.receiveMsecs] with to shorten reads.
+     +/
     receiveShorteningMultiplier = 0.25,
 
-    /// How many messages to send per second, maximum.
+    /++
+        How many messages to send per second, maximum.
+     +/
     messageRate = 1.2,
 
-    /// How many messages to immediately send in one go, before throttling kicks in.
+    /++
+        How many messages to immediately send in one go, before throttling kicks in.
+     +/
     messageBurst = 3.0,
 
     /++
@@ -561,7 +608,9 @@ public:
         bright = TF.default_,
     }
 
-    /// Logger colours to use with a dark terminal background.
+    /++
+        Logger colours to use with a dark terminal background.
+     +/
     static immutable TerminalForeground[256] logcoloursDark  =
     [
         LogLevel.all      : TF.white,        /// LogLevel.all, or just `log`
@@ -574,7 +623,9 @@ public:
         LogLevel.off      : TF.default_,     /// `off`
     ];
 
-    /// Logger colours to use with a bright terminal background.
+    /++
+        Logger colours to use with a bright terminal background.
+     +/
     static immutable TerminalForeground[256] logcoloursBright  =
     [
         LogLevel.all      : TF.black,        /// LogLevel.all, or just `log`

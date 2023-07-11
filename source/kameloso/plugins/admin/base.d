@@ -33,6 +33,7 @@ import kameloso.plugins.common.core;
 import kameloso.plugins.common.awareness;
 import kameloso.common : logger;
 import kameloso.messaging;
+import kameloso.thread : Sendable;
 import dialect.defs;
 import std.concurrency : send;
 import std.typecons : Flag, No, Yes;
@@ -64,7 +65,9 @@ private:
     import lu.uda : Unserialisable;
 
 public:
-    /// Toggles whether or not the plugin should react to events at all.
+    /++
+        Toggles whether or not the plugin should react to events at all.
+     +/
     @Enabler bool enabled = true;
 
     @Unserialisable
@@ -210,7 +213,7 @@ void onCommandSave(AdminPlugin plugin, const ref IRCEvent event)
 
     enum message = "Saving configuration to disk.";
     privmsg(plugin.state, event.channel, event.sender.nickname, message);
-    plugin.state.mainThread.send(ThreadMessage.save());
+    plugin.state.mainThread.send(ThreadMessage.save);
 }
 
 
@@ -653,7 +656,7 @@ void onCommandOperator(AdminPlugin plugin, const ref IRCEvent event)
 )
 void onCommandStaff(AdminPlugin plugin, const ref IRCEvent event)
 {
-    return manageClassLists(plugin, event, IRCUser.Class.staff);
+    manageClassLists(plugin, event, IRCUser.Class.staff);
 }
 
 
@@ -794,10 +797,10 @@ void onCommandJoin(AdminPlugin plugin, const ref IRCEvent event)
     }
 
     string slice = event.content.stripped;  // mutable
-    string channel;
-    string key;
-
+    string channel;  // ditto
+    string key;  // ditto
     cast(void)slice.splitInto(channel, key);
+
     join(plugin.state, channel, key);
 }
 
@@ -830,10 +833,10 @@ void onCommandPart(AdminPlugin plugin, const ref IRCEvent event)
     }
 
     string slice = event.content.stripped;  // mutable
-    string channel;
-    string reason;
-
+    string channel;  // ditto
+    string reason;  // ditto
     cast(void)slice.splitInto(channel, reason);
+
     part(plugin.state, channel, reason);
 }
 
@@ -923,7 +926,7 @@ void onCommandGet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         if (!pluginName.length)
         {
             enum message = "Invalid plugin.";
-            return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
         else if (setting.length)
         {
@@ -1032,7 +1035,7 @@ void onCommandSummary(AdminPlugin plugin)
     import kameloso.thread : ThreadMessage;
 
     if (plugin.state.settings.headless) return;
-    plugin.state.mainThread.send(ThreadMessage.wantLiveSummary());
+    plugin.state.mainThread.send(ThreadMessage.wantLiveSummary);
 }
 
 
@@ -1207,9 +1210,8 @@ void onCommandMask(AdminPlugin plugin, const ref IRCEvent event)
     switch (verb)
     {
     case "add":
-        string account;
-        string mask;
-
+        string account;  // mutable
+        string mask;  // ditto
         immutable results = slice.splitInto(account, mask);
 
         if (results != SplitResults.match)
@@ -1381,11 +1383,24 @@ debug
 )
 void onCommandBus(AdminPlugin plugin, const ref IRCEvent event)
 {
-    onCommandBusImpl(plugin, event.content);
+    import lu.string : splitInto, stripped;
+
+    string slice = event.content.stripped;  // mutable
+    string header;  // ditto
+    cast(void)slice.splitInto(header);
+
+    if (!header.length)
+    {
+        import std.format : format;
+
+        enum pattern = "Usage: <b>%s%s<b> [header] [content...]";
+        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+    }
+
+    onCommandBusImpl(plugin, header, slice);
 }
 
-
-import kameloso.thread : Sendable;
 
 // onBusMessage
 /++
@@ -1519,7 +1534,7 @@ void onBusMessage(
         import kameloso.thread : ThreadMessage;
 
         logger.log("Saving configuration to disk.");
-        return plugin.state.mainThread.send(ThreadMessage.save());
+        return plugin.state.mainThread.send(ThreadMessage.save);
 
     case "reload":
         import kameloso.thread : ThreadMessage;
@@ -1544,10 +1559,10 @@ void onBusMessage(
         import lu.conv : Enum;
         import lu.string : SplitResults, splitInto;
 
-        string subverb;
-        string channelName;
-
+        string subverb;  // mutable
+        string channelName;  // ditto
         immutable results = slice.splitInto(subverb, channelName);
+
         if (results == SplitResults.underrun)
         {
             // verb_channel_nickname
@@ -1599,10 +1614,10 @@ void onBusMessage(
         case "add":
             import lu.string : SplitResults, splitInto;
 
-            string account;
-            string mask;
-
+            string account;  // mutable
+            string mask;  // ditto
             immutable results = slice.splitInto(account, mask);
+
             if (results != SplitResults.match)
             {
                 return logger.warning("Invalid bus message syntax; " ~
@@ -1665,16 +1680,23 @@ public:
  +/
 final class AdminPlugin : IRCPlugin
 {
-package:
+private:
     import kameloso.constants : KamelosoFilenames;
 
-    /// All Admin options gathered.
+package:
+    /++
+        All Admin options gathered.
+     +/
     AdminSettings adminSettings;
 
-    /// File with user definitions. Must be the same as in `persistence.d`.
+    /++
+        File with user definitions. Must be the same as in `persistence.d`.
+     +/
     @Resource string userFile = KamelosoFilenames.users;
 
-    /// File with hostmasks definitions. Must be the same as in `persistence.d`.
+    /++
+        File with hostmasks definitions. Must be the same as in `persistence.d`.
+     +/
     @Resource string hostmasksFile = KamelosoFilenames.hostmasks;
 
     mixin IRCPluginImpl;

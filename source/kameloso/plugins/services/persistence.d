@@ -447,7 +447,8 @@ void onQuit(PersistenceService service, const ref IRCEvent event)
 void onNick(PersistenceService service, const ref IRCEvent event)
 {
     // onQuit already doees everything this function wants to do.
-    return onQuit(service, event);
+    // Do not move the old user to the new one, as this is done in postprocess.
+    onQuit(service, event);
 }
 
 
@@ -463,11 +464,6 @@ void onNick(PersistenceService service, const ref IRCEvent event)
 )
 void onWelcome(PersistenceService service)
 {
-    import kameloso.plugins.common.delayawait : delay;
-    import kameloso.constants : BufferSize;
-    import std.typecons : Flag, No, Yes;
-    import core.thread : Fiber;
-
     reloadAccountClassifiersFromDisk(service);
     if (service.state.settings.preferHostmasks) reloadHostmasksFromDisk(service);
 }
@@ -802,30 +798,41 @@ void initAccountResources(PersistenceService service)
     foreach (liststring; listTypes)
     {
         alias examplePlaceholderKey = PersistenceService.Placeholder.channel;
+        auto listJSON = liststring in json;
 
-        if (liststring !in json)
+        if (!listJSON)
         {
             json[liststring] = null;
             json[liststring].object = null;
+
+            //listJSON = liststring in json;
+            //(*listJSON)[examplePlaceholderKey] = null;  // Doesn't work with older compilers
+            //(*listJSON)[examplePlaceholderKey].array = null;  // ditto
+            //auto listPlaceholder = examplePlaceholderKey in *listJSON;
+            //listPlaceholder.array ~= JSONValue("<nickname1>");  // ditto
+            //listPlaceholder.array ~= JSONValue("<nickname2>");  // ditto
+
             json[liststring][examplePlaceholderKey] = null;
             json[liststring][examplePlaceholderKey].array = null;
             json[liststring][examplePlaceholderKey].array ~= JSONValue("<nickname1>");
             json[liststring][examplePlaceholderKey].array ~= JSONValue("<nickname2>");
         }
-        else
+        else /*if (listJSON)*/
         {
-            if ((json[liststring].object.length > 1) &&
-                (examplePlaceholderKey in json[liststring].object))
+            if ((listJSON.object.length > 1) &&
+                (examplePlaceholderKey in *listJSON))
             {
+                //listJSON.object.remove(examplePlaceholderKey);  // ditto
                 json[liststring].object.remove(examplePlaceholderKey);
             }
 
             try
             {
-                foreach (immutable channelName, ref channelAccountsJSON; json[liststring].object)
+                foreach (immutable channelName, ref channelAccountsJSON; listJSON.object)
                 {
                     if (channelName == examplePlaceholderKey) continue;
-                    channelAccountsJSON = deduplicate(json[liststring][channelName]);
+                    //channelAccountsJSON = deduplicate((*listJSON)[channelName]);  // ditto
+                    json[liststring][channelName] = deduplicate(json[liststring][channelName]);
                 }
             }
             catch (JSONException e)
@@ -943,19 +950,29 @@ private:
      +/
     enum Placeholder
     {
-        /// Hostmask placeholder 1.
+        /++
+            Hostmask placeholder 1.
+         +/
         hostmask1 = "<nickname1>!<ident>@<address>",
 
-        /// Hostmask placeholder 2.
+        /++
+            Hostmask placeholder 2.
+         +/
         hostmask2 = "<nickname2>!<ident>@<address>",
 
-        /// Channel placeholder.
+        /++
+            Channel placeholder.
+         +/
         channel = "<#channel>",
 
-        /// Account placeholder 1.
+        /++
+            Account placeholder 1.
+         +/
         account1 = "<account1>",
 
-        /// Account placeholder 2.
+        /++
+            Account placeholder 2.
+         +/
         account2 = "<account2>",
     }
 

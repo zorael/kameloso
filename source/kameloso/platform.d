@@ -21,15 +21,15 @@ public:
 @safe:
 
 
-// currentPlatform
+// currentEnvironment
 /++
-    Returns the string of the name of the current platform, adjusted to include
-    `cygwin` as an alternative next to `win32` and `win64`, as well as embedded
+    Returns the string of the name of the current terminal environment, adjusted to include
+    `Cygwin` as an alternative next to `win32` and `win64`, as well as embedded
     terminal consoles like in Visual Studio Code.
 
     Example:
     ---
-    switch (currentPlatform)
+    switch (currentEnvironment)
     {
     case "Cygwin":
     case "vscode":
@@ -46,7 +46,7 @@ public:
     Returns:
         String name of the current platform.
  +/
-auto currentPlatform()
+auto currentEnvironment()
 {
     import lu.conv : Enum;
     import std.process : environment;
@@ -56,33 +56,21 @@ auto currentPlatform()
 
     version(Windows)
     {
-        immutable term = environment.get("TERM", string.init);
-
-        if (term.length)
-        {
-            try
-            {
-                import std.process : execute;
-
-                // Get the uname and strip the newline
-                static immutable unameCommand = [ "uname", "-o" ];
-                immutable uname = execute(unameCommand).output;
-                return uname.length ? uname[0..$-1] : osName;
-            }
-            catch (Exception _)
-            {
-                return osName;
-            }
-        }
-        else
-        {
-            return osName;
-        }
+        // vscode and nested Powershell
+        immutable vscode = environment.get("VSCODE_INJECTION", string.init);
+        if (vscode.length) return "vscode";
     }
-    else
-    {
-        return environment.get("TERM_PROGRAM", osName);
-    }
+
+    // Basic Unix. On Windows; Cygwin, MinGW, Git Bash, etc
+    immutable termProgram = environment.get("TERM_PROGRAM", string.init);
+    if (termProgram.length) return termProgram;
+
+    // Some don't have TERM_PROGRAM, but most do have TERM
+    immutable term = environment.get("TERM", string.init);
+    if (term.length) return term;
+
+    // Fallback
+    return osName;
 }
 
 
@@ -248,9 +236,9 @@ unittest
         A [std.process.Pid|Pid] of the spawned process. Remember to [std.process.wait|wait].
 
     Throws:
-        [object.Exception|Exception] if there were no `DISPLAY` environment
-        variable on non-macOS Posix platforms, indicative of no X.org server or
-        Wayland compositor running.
+        [object.Exception|Exception] if there were no `DISPLAY` nor `WAYLAND_DISPLAY`
+        environment variable on non-macOS Posix platforms, indicative of no X.org
+        server or Wayland compositor running.
  +/
 auto openInBrowser(const string url)
 {
@@ -381,7 +369,7 @@ Pid execvp(/*const*/ string[] args) @system
                 immutable setting = slice.nom!(Yes.inherit)('=');
 
                 if (setting.among!(
-                    "--setup-twitch",
+                    //"--setup-twitch",  // this only does the keygen, then exits
                     "--get-cacert",
                     "--get-openssl"))
                 {
@@ -457,7 +445,7 @@ Pid execvp(/*const*/ string[] args) @system
             }
         }
 
-        const commandLine =
+        const string[8] commandLine =
         [
             "cmd.exe",
             "/c",
@@ -466,7 +454,7 @@ Pid execvp(/*const*/ string[] args) @system
             "powershell",
             "-c"
         ] ~ arg0 ~ sink.data.idup;
-        return spawnProcess(commandLine);
+        return spawnProcess(commandLine[]);
     }
     else
     {
@@ -486,7 +474,9 @@ final class ExecException : Exception
      +/
     int retval;
 
-    /// Constructor attaching a return value.
+    /++
+        Constructor attaching a return value.
+     +/
     this(
         const string msg,
         const int retval,
@@ -498,7 +488,9 @@ final class ExecException : Exception
         super(msg, file, line, nextInChain);
     }
 
-    /// Passthrough constructor.
+    /++
+        Passthrough constructor.
+     +/
     this(
         const string msg,
         const string file = __FILE__,

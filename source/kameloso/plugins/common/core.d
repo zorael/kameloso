@@ -55,6 +55,7 @@ private:
 
 import kameloso.thread : CarryingFiber;
 import dialect.defs;
+import std.traits : ParameterStorageClass;
 import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 
@@ -320,8 +321,11 @@ mixin template IRCPluginImpl(
     string module_ = __MODULE__)
 {
     private import kameloso.plugins.common.core : FilterResult, IRCEventHandler, IRCPluginState, Permissions;
+    private import kameloso.thread : Sendable;
     private import dialect.defs : IRCEvent, IRCServer, IRCUser;
     private import lu.traits : getSymbolsByUDA;
+    private import std.array : Appender;
+    private import std.meta : AliasSeq;
     private import std.traits : getUDAs;
     private import core.thread : Fiber;
 
@@ -371,7 +375,10 @@ mixin template IRCPluginImpl(
 
             foreach (immutable i, fun; allEventHandlerFunctionsInModule)
             {
+                enum fqn = module_ ~ '.'  ~ __traits(identifier, allEventHandlerFunctionsInModule[i]);
                 udas[i] = getUDAs!(fun, IRCEventHandler)[0];
+                udas[i].fqn = fqn;
+                debug udaSanityCheckCTFE(udas[i]);
                 udas[i].generateTypemap();
             }
 
@@ -448,7 +455,7 @@ mixin template IRCPluginImpl(
         Judges whether an event may be triggered, based on the event itself and
         the annotated required [kameloso.plugins.common.core.Permissions|Permissions] of the
         handler in question. Wrapper function that merely calls
-        [kameloso.plugins.common.core.IRCPluginImpl.allowImpl|IRCPluginImpl.allowImpl].
+        [kameloso.plugins.common.core.allowImpl].
         The point behind it is to make something that can be overridden and still
         allow it to call the original logic (below).
 
@@ -463,50 +470,8 @@ mixin template IRCPluginImpl(
     pragma(inline, true)
     private FilterResult allow(const ref IRCEvent event, const Permissions permissionsRequired)
     {
-        return allowImpl(event, permissionsRequired);
-    }
-
-    // allowImpl
-    /++
-        Judges whether an event may be triggered, based on the event itself and
-        the annotated [kameloso.plugins.common.core.Permissions|Permissions] of the
-        handler in question. Implementation function.
-
-        Params:
-            event = [dialect.defs.IRCEvent|IRCEvent] to allow, or not.
-            permissionsRequired = Required [kameloso.plugins.common.core.Permissions|Permissions]
-                of the handler in question.
-
-        Returns:
-            `true` if the event should be allowed to trigger, `false` if not.
-
-        See_Also:
-            [kameloso.plugins.common.core.filterSender|filterSender]
-     +/
-    private FilterResult allowImpl(const ref IRCEvent event, const Permissions permissionsRequired)
-    {
-        import kameloso.plugins.common.core : filterSender;
-
-        version(TwitchSupport)
-        {
-            if (state.server.daemon == IRCServer.Daemon.twitch)
-            {
-                if (((permissionsRequired == Permissions.anyone) ||
-                    (permissionsRequired == Permissions.registered)) &&
-                    (event.sender.class_ != IRCUser.Class.blacklist))
-                {
-                    // We can't WHOIS on Twitch, and Permissions.anyone is just
-                    // Permissions.ignore with an extra WHOIS for good measure.
-                    // Also everyone is registered on Twitch, by definition.
-                    return FilterResult.pass;
-                }
-            }
-        }
-
-        // Permissions.ignore always passes, even for Class.blacklist.
-        return (permissionsRequired == Permissions.ignore) ?
-            FilterResult.pass :
-            filterSender(event, permissionsRequired, state.settings.preferHostmasks);
+        import kameloso.plugins.common.core : allowImpl;
+        return allowImpl(this, event, permissionsRequired);
     }
 
     // onEvent
@@ -562,139 +527,15 @@ mixin template IRCPluginImpl(
     {
         import kameloso.plugins.common.core : Timing;
 
-        // udaSanityCheck
+        // udaSanityCheckMinimal
         /++
-            Verifies that annotations are as expected.
+            Verifies that some annotations are as expected.
+            Most of the verification is done in
+            [kameloso.plugins.common.core.udaSanityCheckCTFE|udaSanityCheckCTFE].
          +/
-        static bool udaSanityCheck(alias fun, IRCEventHandler uda)()
+        debug
+        static bool udaSanityCheckMinimal(alias fun, IRCEventHandler uda)()
         {
-            import kameloso.plugins.common.core : IRCEventHandler;
-
-            // Concatenate our own fully qualified name
-            enum fqn = module_ ~ '.' ~ __traits(identifier, fun);
-
-            static if (!uda.acceptedEventTypes.length)
-            {
-                import std.format : format;
-
-                enum pattern = "`%s` is annotated with an `IRCEventHandler` but it is " ~
-                    "not declared to accept any `IRCEvent.Type`s";
-                enum message = pattern.format(fqn);
-                static assert(0, message);
-            }
-
-            static foreach (immutable type; uda.acceptedEventTypes)
-            {
-                static if (type == IRCEvent.Type.UNSET)
-                {
-                    import std.format : format;
-
-                    enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
-                        "`IRCEvent.Type.UNSET`, which is not a valid event type";
-                    enum message = pattern.format(fqn);
-                    static assert(0, message);
-                }
-                else static if (type == IRCEvent.Type.PRIVMSG)
-                {
-                    import std.format : format;
-
-                    enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
-                        "`IRCEvent.Type.PRIVMSG`, which is not a valid event type. " ~
-                        "Use `IRCEvent.Type.CHAN` and/or `IRCEvent.Type.QUERY` instead";
-                    enum message = pattern.format(fqn);
-                    static assert(0, message);
-                }
-                else static if (type == IRCEvent.Type.WHISPER)
-                {
-                    import std.format : format;
-
-                    enum pattern = "`%s` is annotated with an `IRCEventHandler` accepting " ~
-                        "`IRCEvent.Type.WHISPER`, which is not a valid event type. " ~
-                        "Use `IRCEvent.Type.QUERY` instead";
-                    enum message = pattern.format(fqn);
-                    static assert(0, message);
-                }
-
-                static if (uda.commands.length || uda.regexes.length)
-                {
-                    static if (
-                        (type != IRCEvent.Type.CHAN) &&
-                        (type != IRCEvent.Type.QUERY) &&
-                        (type != IRCEvent.Type.SELFCHAN) &&
-                        (type != IRCEvent.Type.SELFQUERY))
-                    {
-                        import lu.conv : Enum;
-                        import std.format : format;
-
-                        enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
-                            "listening for a `Command` and/or `Regex`, but is at the " ~
-                            "same time accepting non-message `IRCEvent.Type.%s events`";
-                        enum message = pattern.format(
-                            fqn,
-                            Enum!(IRCEvent.Type).toString(type));
-                        static assert(0, message);
-                    }
-                }
-            }
-
-            static if (uda.commands.length)
-            {
-                import lu.string : contains;
-
-                static foreach (immutable command; uda.commands)
-                {
-                    static if (!command._word.length)
-                    {
-                        import std.format : format;
-
-                        enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
-                            "listening for a `Command` with an empty (or unspecified) trigger word";
-                        enum message = pattern.format(fqn);
-                        static assert(0, message);
-                    }
-                    else static if (command._word.contains(' '))
-                    {
-                        import std.format : format;
-
-                        enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
-                            "listening for a `Command` whose trigger " ~
-                            `word "%s" contains a space character`;
-                        enum message = pattern.format(fqn, command._word);
-                        static assert(0, message);
-                    }
-                }
-            }
-
-            static if (uda.regexes.length)
-            {
-                static foreach (immutable regex; uda.regexes)
-                {
-                    import lu.string : contains;
-
-                    static if (!regex._expression.length)
-                    {
-                        import std.format : format;
-
-                        enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
-                            "listening for a `Regex` with an empty (or unspecified) expression";
-                        enum message = pattern.format(fqn);
-                        static assert(0, message);
-                    }
-                    else static if (
-                        (regex._policy != PrefixPolicy.direct) &&
-                        regex._expression.contains(' '))
-                    {
-                        import std.format : format;
-
-                        enum pattern = "`%s` is annotated with an `IRCEventHandler` " ~
-                            "listening for a non-`PrefixPolicy.direct`-annotated " ~
-                            "`Regex` with an expression containing spaces";
-                        enum message = pattern.format(fqn);
-                        static assert(0, message);
-                    }
-                }
-            }
-
             static if ((uda._permissionsRequired != Permissions.ignore) &&
                 !__traits(compiles, { alias _ = .hasMinimalAuthentication; }))
             {
@@ -716,74 +557,21 @@ mixin template IRCPluginImpl(
         void call(bool inFiber, Fun)(scope Fun fun, const ref IRCEvent event) scope
         {
             import lu.traits : TakesParams;
-            import std.traits : ParameterStorageClass, Parameters, arity;
-
-            static if (inFiber)
-            {
-                /++
-                    Statically asserts that a parameter storage class is not `ref`.
-
-                    Take the storage class as a template parameter and statically
-                    assert inside this function, unlike how `udaSanityCheck` returns
-                    false on failure, so we can format and print the error message
-                    once here (instead of at all call sites upon receiving false).
-                 +/
-                static void assertNotRef(ParameterStorageClass storageClass)()
-                {
-                    static if (storageClass & ParameterStorageClass.ref_)
-                    {
-                        import std.format : format;
-
-                        enum pattern = "`%s` has a `%s` event handler annotated `.fiber(true)` " ~
-                            "that takes an `IRCEvent` by `ref`, which is prone to memory corruption";
-                        enum message = pattern.format(module_, Fun.stringof);
-                        static assert(0, message);
-                    }
-                }
-            }
-
-            static if (!inFiber)
-            {
-                /++
-                    Statically asserts that a parameter storage class is neither `out` nor `ref`.
-
-                    See `assertNotRef` above.
-                 +/
-                static void assertNotRefNorOut(ParameterStorageClass storageClass)()
-                {
-                    static if (
-                        (storageClass & ParameterStorageClass.ref_) ||
-                        (storageClass & ParameterStorageClass.out_))
-                    {
-                        import std.format : format;
-
-                        enum pattern = "`%s` has a `%s` event handler that takes an " ~
-                            "`IRCEvent` of an unsupported storage class; " ~
-                            "may not be mutable `ref` or `out`";
-                        enum message = pattern.format(module_, Fun.stringof);
-                        static assert(0, message);
-                    }
-                }
-            }
+            import std.traits : ParameterStorageClass, ParameterStorageClassTuple, Parameters, arity;
 
             static if (
                 TakesParams!(fun, typeof(this), IRCEvent) ||
                 TakesParams!(fun, IRCPlugin, IRCEvent))
             {
-                static if (inFiber)
+                debug
                 {
-                    import std.traits : ParameterStorageClassTuple;
-                    assertNotRef!(ParameterStorageClassTuple!fun[1]);
+                    static assert(assertSaneStorageClasses(
+                        ParameterStorageClassTuple!fun[1],
+                        is(Parameters!fun[1] == const),
+                        inFiber,
+                        module_,
+                        Fun.stringof), "0");
                 }
-                else
-                {
-                    static if (!is(Parameters!fun[1] == const))
-                    {
-                        import std.traits : ParameterStorageClassTuple;
-                        assertNotRefNorOut!(ParameterStorageClassTuple!fun[1]);
-                    }
-                }
-
                 fun(this, event);
             }
             else static if (
@@ -794,20 +582,15 @@ mixin template IRCPluginImpl(
             }
             else static if (TakesParams!(fun, IRCEvent))
             {
-                static if (inFiber)
+                debug
                 {
-                    import std.traits : ParameterStorageClassTuple;
-                    assertNotRef!(ParameterStorageClassTuple!fun[0]);
+                    static assert(assertSaneStorageClasses(
+                        ParameterStorageClassTuple!fun[0],
+                        is(Parameters!fun[0] == const),
+                        inFiber,
+                        module_,
+                        Fun.stringof), "0");
                 }
-                else
-                {
-                    static if (!is(Parameters!fun[0] == const))
-                    {
-                        import std.traits : ParameterStorageClassTuple;
-                        assertNotRefNorOut!(ParameterStorageClassTuple!fun[0]);
-                    }
-                }
-
                 fun(event);
             }
             else static if (arity!fun == 0)
@@ -840,7 +623,7 @@ mixin template IRCPluginImpl(
         /++
             Process a function.
          +/
-        NextStep process(bool verbose, bool inFiber, bool hasRegexes, Fun)
+        auto process(bool verbose, bool inFiber, bool hasRegexes, Fun)
             (scope Fun fun,
             const string funName,
             const IRCEventHandler uda,
@@ -1202,57 +985,18 @@ mixin template IRCPluginImpl(
             }
         }
 
-        // sanitiseEvent
-        /++
-            Sanitise event, used upon UTF/Unicode exceptions.
-         +/
-        static void sanitiseEvent(ref IRCEvent event)
-        {
-            import std.encoding : sanitize;
-            import std.range : only;
-
-            event.raw = sanitize(event.raw);
-            event.channel = sanitize(event.channel);
-            event.content = sanitize(event.content);
-            event.tags = sanitize(event.tags);
-            event.errors = sanitize(event.errors);
-            event.errors ~= event.errors.length ? " | Sanitised" : "Sanitised";
-
-            foreach (immutable i, ref aux; event.aux)
-            {
-                aux = sanitize(aux);
-            }
-
-            foreach (user; only(&event.sender, &event.target))
-            {
-                user.nickname = sanitize(user.nickname);
-                user.ident = sanitize(user.ident);
-                user.address = sanitize(user.address);
-                user.account = sanitize(user.account);
-
-                version(TwitchSupport)
-                {
-                    user.displayName = sanitize(user.displayName);
-                    user.badges = sanitize(user.badges);
-                    user.colour = sanitize(user.colour);
-                }
-            }
-        }
-
         // tryProcess
         /++
             Try a function.
          +/
-        NextStep tryProcess(size_t i)(ref IRCEvent event)
+        auto tryProcess(size_t i)(ref IRCEvent event)
         {
             immutable uda = this.Introspection.allEventHandlerUDAsInModule[i];
             alias fun = this.Introspection.allEventHandlerFunctionsInModule[i];
+            debug static assert(udaSanityCheckMinimal!(fun, uda), "0");
 
             enum verbose = (uda._verbose || debug_);
             enum funName = module_ ~ '.' ~ __traits(identifier, fun);
-
-            debug static assert(udaSanityCheck!(fun, uda),
-                "`" ~ funName ~ "` UDA sanity check failed.");
 
             /+
                 Return if the event handler does not accept this type of event.
@@ -1315,11 +1059,12 @@ mixin template IRCPluginImpl(
             }
             catch (Exception e)
             {
-                /*enum pattern = "tryProcess some exception on <l>%s</>: <l>%s";
-                logger.warningf(pattern, funName, e);*/
-
+                import kameloso.plugins.common.core : sanitiseEvent;
                 import std.utf : UTFException;
                 import core.exception : UnicodeException;
+
+                /*enum pattern = "tryProcess some exception on <l>%s</>: <l>%s";
+                logger.warningf(pattern, funName, e);*/
 
                 immutable isRecoverableException =
                     (cast(UnicodeException)e !is null) ||
@@ -1402,12 +1147,13 @@ mixin template IRCPluginImpl(
             that were annotated with an [IRCEventHandler] with a [Timing] matching
             the one supplied.
          +/
-        auto funIndexByTiming(const Timing timing)
+        auto funIndexByTiming(const Timing timing) scope
         {
-            size_t[] indexes;
-            if (!__ctfe) return indexes;
+            assert(__ctfe, "funIndexByTiming called outside CTFE");
 
-            static foreach (immutable i; 0..this.Introspection.allEventHandlerUDAsInModule.length)
+            size_t[] indexes;
+
+            foreach (immutable i; 0..this.Introspection.allEventHandlerUDAsInModule.length)
             {
                 if (this.Introspection.allEventHandlerUDAsInModule[i]._when == timing) indexes ~= i;
             }
@@ -1437,7 +1183,7 @@ mixin template IRCPluginImpl(
 
                 enum pattern = "Module `%s` mixes in `MinimalAuthentication`, " ~
                     "yet no `Timing.early` functions were found during introspection. " ~
-                    "Try moving the mixin site to earlier in the module.";
+                    "Try moving the mixin site to earlier in the module";
                 immutable message = pattern.format(module_);
                 static assert(0, message);
             }
@@ -1451,7 +1197,7 @@ mixin template IRCPluginImpl(
 
                 enum pattern = "Module `%s` mixes in `UserAwareness`, " ~
                     "yet no `Timing.cleanup` functions were found during introspection. " ~
-                    "Try moving the mixin site to earlier in the module.";
+                    "Try moving the mixin site to earlier in the module";
                 immutable message = pattern.format(module_);
                 static assert(0, message);
             }
@@ -1465,7 +1211,7 @@ mixin template IRCPluginImpl(
 
                 enum pattern = "Module `%s` mixes in `ChannelAwareness`, " ~
                     "yet no `Timing.late` functions were found during introspection. " ~
-                    "Try moving the mixin site to earlier in the module.";
+                    "Try moving the mixin site to earlier in the module";
                 immutable message = pattern.format(module_);
                 static assert(0, message);
             }
@@ -1821,8 +1567,6 @@ mixin template IRCPluginImpl(
         }
     }
 
-    private import std.array : Appender;
-
     // serialiseConfigInto
     /++
         Gathers the configuration text the plugin wants to contribute to the
@@ -1868,8 +1612,6 @@ mixin template IRCPluginImpl(
 
         return didSomething;
     }
-
-    private import std.meta : AliasSeq;
 
     // setup, start, reload, teardown
     /+
@@ -2014,8 +1756,9 @@ mixin template IRCPluginImpl(
             import kameloso.plugins.common.core : IRCEventHandler;
             import std.traits : getUDAs;
 
+            assert(__ctfe, "ctCommandsEnumLiteral called outside CTFE");
+
             IRCPlugin.CommandMetadata[string] commandAA;
-            if (!__ctfe) return commandAA;
 
             foreach (fun; this.Introspection.allEventHandlerFunctionsInModule)
             {
@@ -2125,8 +1868,6 @@ mixin template IRCPluginImpl(
         return this.isEnabled ? ctCommandsEnumLiteral : null;
     }
 
-    private import kameloso.thread : Sendable;
-
     // onBusMessage
     /++
         Proxies a bus message to the plugin, to let it handle it (or not).
@@ -2146,10 +1887,10 @@ mixin template IRCPluginImpl(
             {
                 .onBusMessage(this, header, content);
             }
-            else static if (TakesParams!(.onBusMessage, typeof(this), string))
+            /*else static if (TakesParams!(.onBusMessage, typeof(this), string))
             {
                 .onBusMessage(this, header);
-            }
+            }*/
             else
             {
                 import std.format : format;
@@ -2440,6 +2181,328 @@ auto filterSender(
             return FilterResult.pass;
         }
     }
+}
+
+
+// allowImpl
+/++
+    Judges whether an event may be triggered, based on the event itself and
+    the annotated [kameloso.plugins.common.core.Permissions|Permissions] of the
+    handler in question. Implementation function.
+
+    Params:
+        plugin = The [IRCPlugin] this relates to.
+        event = [dialect.defs.IRCEvent|IRCEvent] to allow, or not.
+        permissionsRequired = Required [kameloso.plugins.common.core.Permissions|Permissions]
+            of the handler in question.
+
+    Returns:
+        [FilterResult.pass] if the event should be allowed to trigger,
+        [FilterResult.whois] if not.
+
+    See_Also:
+        [filterSender]
+ +/
+auto allowImpl(
+    IRCPlugin plugin,
+    const ref IRCEvent event,
+    const Permissions permissionsRequired) pure @safe
+{
+    version(TwitchSupport)
+    {
+        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+        {
+            if (((permissionsRequired == Permissions.anyone) ||
+                (permissionsRequired == Permissions.registered)) &&
+                (event.sender.class_ != IRCUser.Class.blacklist))
+            {
+                // We can't WHOIS on Twitch, and Permissions.anyone is just
+                // Permissions.ignore with an extra WHOIS for good measure.
+                // Also everyone is registered on Twitch, by definition.
+                return FilterResult.pass;
+            }
+        }
+    }
+
+    // Permissions.ignore always passes, even for Class.blacklist.
+    return (permissionsRequired == Permissions.ignore) ?
+        FilterResult.pass :
+        filterSender(event, permissionsRequired, plugin.state.settings.preferHostmasks);
+}
+
+
+// sanitiseEvent
+/++
+    Sanitise event, used upon UTF/Unicode exceptions.
+
+    Params:
+        event = Reference to the mutable [dialect.defs.IRCEvent|IRCEvent] to sanitise.
+ +/
+void sanitiseEvent(ref IRCEvent event)
+{
+    import std.encoding : sanitize;
+    import std.range : only;
+
+    event.raw = sanitize(event.raw);
+    event.channel = sanitize(event.channel);
+    event.content = sanitize(event.content);
+    event.tags = sanitize(event.tags);
+    event.errors = sanitize(event.errors);
+    event.errors ~= event.errors.length ? " | Sanitised" : "Sanitised";
+
+    foreach (immutable i, ref aux; event.aux)
+    {
+        aux = sanitize(aux);
+    }
+
+    foreach (user; only(&event.sender, &event.target))
+    {
+        user.nickname = sanitize(user.nickname);
+        user.ident = sanitize(user.ident);
+        user.address = sanitize(user.address);
+        user.account = sanitize(user.account);
+
+        version(TwitchSupport)
+        {
+            user.displayName = sanitize(user.displayName);
+            user.badges = sanitize(user.badges);
+            user.colour = sanitize(user.colour);
+        }
+    }
+}
+
+
+// udaSanityCheckCTFE
+/++
+    Sanity-checks a plugin's [IRCEventHandler]s at compile time.
+
+    Params:
+        uda = The [IRCEventHandler] UDA to check.
+
+    Throws:
+        Asserts `0` if the UDA is deemed malformed.
+ +/
+debug
+void udaSanityCheckCTFE(const IRCEventHandler uda)
+{
+    import std.format : format;
+
+    assert(__ctfe, "udaSanityCheckCTFE called outside CTFE");
+
+    static if (__VERSION__ <= 2104L)
+    {
+        /++
+            There's something wrong with how the assert message is printed from CTFE.
+            Work around it somewhat by prepending a backtick.
+
+            https://issues.dlang.org/show_bug.cgi?id=24036
+         +/
+        enum fix = "`";
+    }
+    else
+    {
+        // Hopefully no need past 2.104... Update when 2.105 is out.
+        enum fix = string.init;
+    }
+
+    if (!uda.acceptedEventTypes.length)
+    {
+        enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
+            "but it is not declared to accept any `IRCEvent.Type`s";
+        immutable message = pattern.format(uda.fqn).idup;
+        assert(0, message);
+    }
+
+    foreach (immutable type; uda.acceptedEventTypes)
+    {
+        if (type == IRCEvent.Type.UNSET)
+        {
+            enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
+                "accepting `IRCEvent.Type.UNSET`, which is not a valid event type";
+            immutable message = pattern.format(uda.fqn).idup;
+            assert(0, message);
+        }
+        else if (type == IRCEvent.Type.PRIVMSG)
+        {
+            enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
+                "accepting `IRCEvent.Type.PRIVMSG`, which is not a valid event type. " ~
+                "Use `IRCEvent.Type.CHAN` and/or `IRCEvent.Type.QUERY` instead";
+            immutable message = pattern.format(uda.fqn).idup;
+            assert(0, message);
+        }
+        else if (type == IRCEvent.Type.WHISPER)
+        {
+            enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
+                "accepting `IRCEvent.Type.WHISPER`, which is not a valid event type. " ~
+                "Use `IRCEvent.Type.QUERY` instead";
+            immutable message = pattern.format(uda.fqn).idup;
+            assert(0, message);
+        }
+        else if ((type == IRCEvent.Type.ANY) && (uda.channelPolicy != ChannelPolicy.any))
+        {
+            enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
+                "accepting `IRCEvent.Type.ANY` and is at the same time not annotated " ~
+                "`ChannelPolicy.any`, which is the only accepted combination";
+            immutable message = pattern.format(uda.fqn).idup;
+            assert(0, message);
+        }
+
+        if (uda.commands.length || uda.regexes.length)
+        {
+            if (
+                (type != IRCEvent.Type.CHAN) &&
+                (type != IRCEvent.Type.QUERY) &&
+                (type != IRCEvent.Type.SELFCHAN) &&
+                (type != IRCEvent.Type.SELFQUERY))
+            {
+                import lu.conv : Enum;
+
+                enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
+                    "listening for a `Command` and/or `Regex`, but is at the " ~
+                    "same time accepting non-message `IRCEvent.Type.%s events`";
+                immutable message = pattern.format(
+                    uda.fqn,
+                    Enum!(IRCEvent.Type).toString(type)).idup;
+                assert(0, message);
+            }
+        }
+    }
+
+    if (uda.commands.length)
+    {
+        import lu.string : contains;
+
+        foreach (const command; uda.commands)
+        {
+            if (!command._word.length)
+            {
+                enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
+                    "listening for a `Command` with an empty (or unspecified) trigger word";
+                immutable message = pattern.format(uda.fqn).idup;
+                assert(0, message);
+            }
+            else if (command._word.contains(' '))
+            {
+                enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
+                    "listening for a `Command` whose trigger " ~
+                    `word "%s" contains a space character`;
+                immutable message = pattern.format(uda.fqn, command._word).idup;
+                assert(0, message);
+            }
+        }
+    }
+
+    if (uda.regexes.length)
+    {
+        foreach (const regex; uda.regexes)
+        {
+            import lu.string : contains;
+
+            if (!regex._expression.length)
+            {
+                enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
+                    "listening for a `Regex` with an empty (or unspecified) expression";
+                immutable message = pattern.format(uda.fqn).idup;
+                assert(0, message);
+            }
+            else if (
+                (regex._policy != PrefixPolicy.direct) &&
+                regex._expression.contains(' '))
+            {
+                enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
+                    "listening for a non-`PrefixPolicy.direct`-annotated " ~
+                    "`Regex` with an expression containing spaces";
+                immutable message = pattern.format(uda.fqn).idup;
+                assert(0, message);
+            }
+        }
+    }
+
+    // The below is done inside onEventImpl as it needs template access to the module
+    /*if ((uda._permissionsRequired != Permissions.ignore) &&
+        !__traits(compiles, { alias _ = .hasMinimalAuthentication; }))
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` is missing a `MinimalAuthentication` " ~
+            "mixin (needed for `Permissions` checks)";
+        immutable message = pattern.format(module_);
+        assert(0, message);
+    }*/
+}
+
+
+// assertSaneStorageClasses
+/++
+    Statically asserts that a parameter storage class is not `ref`
+    if `inFiber`, and neither `ref` nor `out` if not `inFiber`.
+
+    Take the storage class as a template parameter and statically
+    assert inside this function, unlike how `udaSanityCheck` returns
+    false on failure, so we can format and print the error message
+    once here (instead of at all call sites upon receiving false).
+
+    Params:
+        storageClass = The storage class of the parameter.
+        paramIsConst = Whether or not the parameter is `const`.
+        inFiber = Whether or not the event handler is annotated `.fiber(true)`.
+        module_ = The module name of the plugin.
+        typestring = The signature string of the function.
+
+    Returns:
+        `true` if the storage class is valid; asserts `0` if not.
+ +/
+auto assertSaneStorageClasses(
+    const ParameterStorageClass storageClass,
+    const bool paramIsConst,
+    const bool inFiber,
+    const string module_,
+    const string typestring)
+{
+    import std.format : format;
+
+    static if (__VERSION__ <= 2104L)
+    {
+        /++
+            There's something wrong with how the assert message is printed from CTFE.
+            Work around it somewhat by prepending a backtick.
+
+            https://issues.dlang.org/show_bug.cgi?id=24036
+         +/
+        enum fix = "`";
+    }
+    else
+    {
+        // Hopefully no need past 2.104... Update when 2.105 is out.
+        enum fix = string.init;
+    }
+
+    if (inFiber)
+    {
+        if (storageClass & ParameterStorageClass.ref_)
+        {
+            enum pattern = fix ~ "`%s` has a `%s` event handler annotated `.fiber(true)` " ~
+                "that takes an `IRCEvent` by `ref`, which is a combination prone " ~
+                "to memory corruption. Pass by value instead";
+            immutable message = pattern.format(module_, typestring).idup;
+            assert(0, message);
+        }
+    }
+    else if (!paramIsConst)
+    {
+        if (
+            (storageClass & ParameterStorageClass.ref_) ||
+            (storageClass & ParameterStorageClass.out_))
+        {
+            enum pattern = fix ~ "`%s` has a `%s` event handler that takes an " ~
+                "`IRCEvent` of an unsupported storage class; " ~
+                "may not be mutable `ref` or `out`";
+            immutable message = pattern.format(module_, typestring).idup;
+            assert(0, message);
+        }
+    }
+
+    return true;
 }
 
 
@@ -2746,7 +2809,7 @@ struct Replay
         const Permissions permissionsRequired,
         const string caller)
     {
-        timestamp = event.time;
+        this.timestamp = event.time;
         this.dg = dg;
         this.event = event;
         this.permissionsRequired = permissionsRequired;
@@ -3047,7 +3110,7 @@ public:
      +/
     void generateTypemap() pure @safe nothrow
     {
-        if (!__ctfe) return;
+        assert(__ctfe, "generateTypemap called outside CTFE");
 
         foreach (immutable type; acceptedEventTypes)
         {
@@ -3057,6 +3120,12 @@ public:
     }
 
     mixin UnderscoreOpDispatcher;
+
+    // fqn
+    /++
+        Fully qualified name of the function the annotated [IRCEventHandler] is attached to.
+     +/
+    string fqn;
 
     // Command
     /++

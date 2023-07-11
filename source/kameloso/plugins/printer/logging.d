@@ -50,13 +50,19 @@ private:
     import std.datetime.systime : SysTime;
 
 public:
-    /// Basename directory this buffer will be saved to.
+    /++
+        Basename directory this buffer will be saved to.
+     +/
     string dir;
 
-    /// Fully qualified filename this buffer will be saved to.
+    /++
+        Fully qualified filename this buffer will be saved to.
+     +/
     string file;
 
-    /// Buffered lines that will be saved to [file], in [dir].
+    /++
+        Buffered lines that will be saved to [file], in [dir].
+     +/
     Appender!(string[]) lines;
 
     /++
@@ -112,9 +118,9 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
     import kameloso.plugins.printer.formatting : formatMessageMonochrome;
     import std.typecons : Flag, No, Yes;
 
-    if (!plugin.printerSettings.logs) return;
-
-    /// Write buffered lines.
+    /++
+        Write buffered lines.
+     +/
     static void writeEventToFile(
         PrinterPlugin plugin,
         const ref IRCEvent event,
@@ -131,7 +137,9 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 
         try
         {
-            /// Write datestamp to file immediately, bypassing any buffers.
+            /++
+                Write datestamp to file immediately, bypassing any buffers.
+             +/
             static void insertDatestamp(const LogLineBuffer* buffer)
             {
                 assert(buffer, "Tried to add datestamp to null buffer");
@@ -163,7 +171,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
 
             if (!errors)
             {
-                LogLineBuffer* buffer = key in plugin.buffers;
+                auto buffer = key in plugin.buffers;
 
                 if (!buffer)
                 {
@@ -245,7 +253,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
             }
             else
             {
-                LogLineBuffer* errBuffer = key in plugin.buffers;
+                auto errBuffer = key in plugin.buffers;
 
                 if (!errBuffer)
                 {
@@ -318,6 +326,8 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                     version(IncludeHeavyStuff)
                     {
                         import kameloso.printing : formatObjects;
+
+                        scope(failure) plugin.linebuffer.clear();
 
                         formatObjects!(Yes.all, No.coloured)
                             (plugin.linebuffer,

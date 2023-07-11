@@ -43,16 +43,24 @@ package:
  +/
 struct QueryResponse
 {
-    /// Response body, may be several lines.
+    /++
+        Response body, may be several lines.
+     +/
     string str;
 
-    /// How long the query took, from issue to response.
+    /++
+        How long the query took, from issue to response.
+     +/
     long msecs;
 
-    /// The HTTP response code received.
+    /++
+        The HTTP response code received.
+     +/
     uint code;
 
-    /// The message of any exception thrown while querying.
+    /++
+        The message of any exception thrown while querying.
+     +/
     string error;
 }
 
@@ -92,81 +100,78 @@ auto retryDelegate(Dg)(TwitchPlugin plugin, Dg dg)
             // This is never a transient error
             throw e;
         }
-        catch (TwitchQueryException e)
-        {
-            // Retry until we reach the retry limit, then rethrow after potentially printing details
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-
-            version(PrintStacktraces)
-            {
-                if (!plugin.state.settings.headless)
-                {
-                    import kameloso.common : logger;
-                    import std.json : JSONException, parseJSON;
-                    import std.stdio : stdout, writeln;
-
-                    logger.trace(e);
-
-                    try
-                    {
-                        writeln(parseJSON(e.responseBody).toPrettyString);
-                    }
-                    catch (JSONException _)
-                    {
-                        writeln(e.responseBody);
-                    }
-
-                    stdout.flush();
-                }
-            }
-            throw e;
-        }
-        catch (EmptyDataJSONException e)  // Must be before TwitchJSONException below
-        {
-            // Ditto
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-
-            version(PrintStacktraces)
-            {
-                import kameloso.common : logger;
-                logger.trace(e);
-            }
-            throw e;
-        }
-        catch (TwitchJSONException e)  // UnexpectedJSONException and ErrorJSONException
-        {
-            // Ditto
-            if (i < TwitchPlugin.delegateRetries-1) continue;
-
-            version(PrintStacktraces)
-            {
-                if (!plugin.state.settings.headless)
-                {
-                    import kameloso.common : logger;
-                    import std.stdio : stdout, writeln;
-
-                    logger.trace(e);
-                    writeln(e.json.toPrettyString);
-                    stdout.flush();
-                }
-            }
-            throw e;
-        }
         catch (Exception e)
         {
-            // Ditto
+            // Retry until we reach the retry limit, then print if we should, before rethrowing
             if (i < TwitchPlugin.delegateRetries-1) continue;
 
             version(PrintStacktraces)
             {
-                import kameloso.common : logger;
-                logger.trace(e);
+                if (!plugin.state.settings.headless)
+                {
+                    printRetryDelegateException(e);
+                }
             }
             throw e;
         }
     }
 
     assert(0, "Unreachable");
+}
+
+
+// printRetryDelegateException
+/++
+    Prints out details about exceptions passed from [retryDelegate].
+    [retryDelegate] itself rethrows them when we return, so no need to do that here.
+
+    Gated behind version `PrintStacktraces`.
+
+    Params:
+        e = The exception to print.
+ +/
+version(PrintStacktraces)
+void printRetryDelegateException(/*const*/ Exception e)
+{
+    import kameloso.common : logger;
+    import std.json : JSONException, parseJSON;
+    import std.stdio : stdout, writeln;
+
+    if (auto twitchQueryException = cast(TwitchQueryException)e)
+    {
+        logger.trace(twitchQueryException);
+
+        try
+        {
+            writeln(parseJSON(twitchQueryException.responseBody).toPrettyString);
+        }
+        catch (JSONException _)
+        {
+            writeln(twitchQueryException.responseBody);
+        }
+
+        stdout.flush();
+        //throw twitchQueryException;
+    }
+    else if (auto emptyDataJSONException = cast(EmptyDataJSONException)e)
+    {
+        // Must be before TwitchJSONException below
+        logger.trace(emptyDataJSONException);
+        //throw emptyDataJSONException;
+    }
+    else if (auto twitchJSONException = cast(TwitchJSONException)e)
+    {
+        // UnexpectedJSONException and ErrorJSONException
+        logger.trace(twitchJSONException);
+        writeln(twitchJSONException.json.toPrettyString);
+        stdout.flush();
+        //throw twitchJSONException;
+    }
+    else /*if (auto plainException = cast(Exception)e)*/
+    {
+        logger.trace(e);
+        //throw e;
+    }
 }
 
 
@@ -230,9 +235,10 @@ void persistentQuerier(
 
         version(BenchmarkHTTPRequests)
         {
-            import std.stdio : writefln;
+            import std.stdio : stdout, writefln;
             immutable post = Clock.currTime;
             writefln("%s (%s)", post-pre, url);
+            stdout.flush();
         }
     }
 
@@ -287,8 +293,9 @@ void persistentQuerier(
             &onOwnerTerminated,
             (Variant v) scope
             {
-                import std.stdio : writeln;
+                import std.stdio : stdout, writeln;
                 writeln("Twitch worker received unknown Variant: ", v);
+                stdout.flush();
             }
         );
     }
@@ -340,7 +347,7 @@ QueryResponse sendHTTPRequest(
     int id = -1,
     const Flag!"recursing" recursing = No.recursing)
 in (Fiber.getThis, "Tried to call `sendHTTPRequest` from outside a Fiber")
-in (url.length, "Tried to send an HTTP request without an URL")
+in (url.length, "Tried to send an HTTP request without a URL")
 {
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.thread : ThreadMessage;
@@ -355,7 +362,7 @@ in (url.length, "Tried to send an HTTP request without an URL")
         logger.tracef(pattern, verb, url, caller);
     }
 
-    plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout());
+    plugin.state.mainThread.prioritySend(ThreadMessage.shortenReceiveTimeout);
 
     immutable pre = Clock.currTime;
     if (id == -1) id = getUniqueNumericalID(plugin.bucket);
@@ -2079,7 +2086,7 @@ in (loginName.length, "Tried to get a stream with an empty login name string")
             stream.gameName = streamJSON["game_name"].str;
             stream.title = streamJSON["title"].str;
             stream.startTime = SysTime.fromISOExtString(streamJSON["started_at"].str);
-            stream.viewerCount = streamJSON["viewer_count"].integer;
+            stream.numViewers = streamJSON["viewer_count"].integer;
             stream.tags = streamJSON["tags"].array
                 .map!(tag => tag.str)
                 .array;
@@ -2432,7 +2439,7 @@ in (idString.length, "Tried to get FFZ emotes with an empty ID string")
                     {
                         if (immutable emoticonsArrayJSON = "emoticons" in setJSON)
                         {
-                            foreach (immutable emoteJSON; (*emoticonsArrayJSON).array)
+                            foreach (immutable emoteJSON; emoticonsArrayJSON.array)
                             {
                                 immutable emote = emoteJSON["name"].str.to!dstring;
                                 emoteMap[emote] = true;

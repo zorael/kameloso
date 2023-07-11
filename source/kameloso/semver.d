@@ -13,14 +13,29 @@
 module kameloso.semver;
 
 
-/// SemVer versioning of this build.
+/++
+    SemVer versioning of this build.
+ +/
 enum KamelosoSemVer
 {
-    majorVersion = 3,  /// SemVer major version of the program.
-    minorVersion = 9,  /// SemVer minor version of the program.
-    patchVersion = 0,  /// SemVer patch version of the program.
+    /++
+        SemVer major version of the program.
+     +/
+    majorVersion = 3,
+
+    /++
+        SemVer minor version of the program.
+     +/
+    minorVersion = 10,
+
+    /++
+        SemVer patch version of the program.
+     +/
+    patchVersion = 0,
 }
 
 
-/// Pre-release SemVer subversion of this build.
+/++
+    Pre-release SemVer subversion of this build.
+ +/
 enum KamelosoSemVerPrerelease = string.init;

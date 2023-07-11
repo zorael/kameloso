@@ -925,7 +925,9 @@ auto handleGetopt(ref Kameloso instance) @system
         if (inputAdmins.length) instance.bot.admins = inputAdmins;
     }
 
-    /// Strip channel whitespace and make lowercase
+    /++
+        Strip channel whitespace and make lowercase.
+     +/
     static void stripAndLower(ref string[] channels)
     {
         import lu.string : stripped;

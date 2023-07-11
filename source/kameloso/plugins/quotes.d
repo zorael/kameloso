@@ -226,7 +226,7 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
 
             case underrun:
                 // Handled above
-                assert(0, "Impossible case");
+                assert(0, "Impossible case hit in `onCommandQuote`");
             }
         }
     }
@@ -499,8 +499,8 @@ void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
     string slice = event.content.stripped;  // mutable
     string source;  // mutable
     string target;  // mutable
-
     immutable results = slice.splitInto(source, target);
+
     if (results != SplitResults.match) return sendUsage();
 
     if (!target.isValidNickname(plugin.state.server))
@@ -521,15 +521,14 @@ void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
     }
 
     plugin.quotes[event.channel][target] ~= *quotes;
+    plugin.quotes[event.channel].remove(source);
+    saveQuotes(plugin);
 
     enum pattern = "<b>%d<b> %s merged.";
     immutable message = pattern.format(
         quotes.length,
         quotes.length.plurality("quote", "quotes"));
     chan(plugin.state, event.channel, message);
-
-    plugin.quotes[event.channel].remove(source);
-    saveQuotes(plugin);
 }
 
 
@@ -553,6 +552,8 @@ void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
 void onCommandDelQuote(QuotesPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : SplitResults, splitInto, stripped;
+    import std.algorithm.mutation : SwapStrategy, remove;
+    import std.conv : ConvException, to;
     import std.format : format;
 
     immutable isTwitch = (plugin.state.server.daemon == IRCServer.Daemon.twitch);
@@ -593,49 +594,42 @@ void onCommandDelQuote(QuotesPlugin plugin, const ref IRCEvent event)
     if (indexString == "*")
     {
         (*channelQuotes).remove(nickname);
+        saveQuotes(plugin);
 
         enum pattern = "All quotes for <h>%s<h> removed.";
         immutable message = pattern.format(nickname);
-        chan(plugin.state, event.channel, message);
-        // Drop down
+        return chan(plugin.state, event.channel, message);
     }
-    else
+
+    auto quotes = nickname in *channelQuotes;  // mutable
+    if (!quotes || !quotes.length)
     {
-        import std.algorithm.mutation : SwapStrategy, remove;
-        import std.conv : ConvException, to;
-
-        auto quotes = nickname in *channelQuotes;  // mutable
-        if (!quotes || !quotes.length)
-        {
-            return Senders.sendNoQuotesForNickname(plugin, event, nickname);
-        }
-
-        ptrdiff_t index;
-
-        try
-        {
-            import lu.string : beginsWith;
-            if (indexString.beginsWith('#')) indexString = indexString[1..$];
-            index = indexString.to!ptrdiff_t;
-        }
-        catch (ConvException _)
-        {
-            return Senders.sendIndexMustBePositiveNumber(plugin, event);
-        }
-
-        if ((index < 0) || (index >= quotes.length))
-        {
-            return Senders.sendIndexOutOfRange(plugin, event, index, quotes.length);
-        }
-
-        *quotes = (*quotes).remove!(SwapStrategy.stable)(index);
-
-        enum message = "Quote removed, indexes updated.";
-        chan(plugin.state, event.channel, message);
-        // Drop down
+        return Senders.sendNoQuotesForNickname(plugin, event, nickname);
     }
 
+    ptrdiff_t index;
+
+    try
+    {
+        import lu.string : beginsWith;
+        if (indexString.beginsWith('#')) indexString = indexString[1..$];
+        index = indexString.to!ptrdiff_t;
+    }
+    catch (ConvException _)
+    {
+        return Senders.sendIndexMustBePositiveNumber(plugin, event);
+    }
+
+    if ((index < 0) || (index >= quotes.length))
+    {
+        return Senders.sendIndexOutOfRange(plugin, event, index, quotes.length);
+    }
+
+    *quotes = (*quotes).remove!(SwapStrategy.stable)(index);
     saveQuotes(plugin);
+
+    enum message = "Quote removed, indexes updated.";
+    chan(plugin.state, event.channel, message);
 }
 
 
@@ -672,7 +666,7 @@ void sendQuoteToChannel(
     }
 
     const when = SysTime.fromUnixTime(quote.timestamp);
-    enum pattern = "%s (<h>%s<h> #%d %02d-%02d-%02d)";
+    enum pattern = "%s (<h>%s<h> #%d %d-%02d-%02d)";
     immutable message = pattern.format(
         quote.line,
         possibleDisplayName,
@@ -693,7 +687,7 @@ void sendQuoteToChannel(
 )
 void onWelcome(QuotesPlugin plugin)
 {
-    plugin.reload();
+    loadQuotes(plugin);
 }
 
 
@@ -833,7 +827,7 @@ auto getRandomQuote(
 
     Params:
         quotes = Array of [Quote]s to get a random one from.
-        indexStringWithPotentialHash = The index of the [Quote] to fetch,
+        indexString = The index of the [Quote] to fetch,
             as a string, potentially with a leading octothorpe.
         index = `out` reference index of the quote selected, in the local storage.
 
@@ -842,16 +836,16 @@ auto getRandomQuote(
  +/
 auto getQuoteByIndexString(
     const Quote[] quotes,
-    const string indexStringWithPotentialHash,
+    /*const*/ string indexString,
     out size_t index)
 {
     import lu.string : beginsWith;
     import std.conv : to;
     import std.random : uniform;
 
-    immutable indexString = indexStringWithPotentialHash.beginsWith('#') ?
-        indexStringWithPotentialHash[1..$] :
-        indexStringWithPotentialHash;
+    indexString = indexString.beginsWith('#') ?
+        indexString[1..$] :
+        indexString;
     index = indexString.to!size_t;
 
     if (index >= quotes.length)
@@ -1137,16 +1131,16 @@ unittest
 /++
     Loads quotes from disk into an associative array of [Quote]s.
  +/
-auto loadQuotes(const string quotesFile)
+void loadQuotes(QuotesPlugin plugin)
 {
     import lu.json : JSONStorage;
     import std.json : JSONException;
 
     JSONStorage json;
-    Quote[][string][string] quotes;
 
     // No need to try-catch loading the JSON; trust in initResources
-    json.load(quotesFile);
+    json.load(plugin.quotesFile);
+    plugin.quotes.clear();
 
     foreach (immutable channelName, channelQuotes; json.object)
     {
@@ -1154,17 +1148,13 @@ auto loadQuotes(const string quotesFile)
         {
             foreach (quoteJSON; nicknameQuotesJSON.array)
             {
-                quotes[channelName][nickname] ~= Quote.fromJSON(quoteJSON);
+                plugin.quotes[channelName][nickname] ~= Quote.fromJSON(quoteJSON);
             }
         }
+        plugin.quotes[channelName].rehash();
     }
 
-    foreach (ref channelQuotes; quotes)
-    {
-        channelQuotes = channelQuotes.rehash();
-    }
-
-    return quotes.rehash();
+    plugin.quotes.rehash();
 }
 
 
@@ -1184,20 +1174,19 @@ void saveQuotes(QuotesPlugin plugin)
     {
         json[channelName] = null;
         json[channelName].object = null;
-        //auto channelQuotesJSON = channelName in json;  // mutable
+        //auto channelQuotesJSON = channelName in json;
 
         foreach (immutable nickname, quotes; channelQuotes)
         {
-            //(*channelQuotesJSON)[nickname] = null;
-            //(*channelQuotesJSON)[nickname].array = null;
-            //auto quotesJSON = nickname in *channelQuotesJSON;  // mutable
-
+            //(*channelQuotesJSON)[nickname] = null;  // Doesn't work with older compilers
+            //(*channelQuotesJSON)[nickname].array = null;  // ditto
             json[channelName][nickname] = null;
             json[channelName][nickname].array = null;
+            //auto nicknameQuotesJSON = nickname in *channelQuotesJSON;
 
             foreach (quote; quotes)
             {
-                //quotesJSON.array ~= quote.toJSON();
+                //nicknameQuotesJSON.array ~= quote.toJSON();  // ditto
                 json[channelName][nickname].array ~= quote.toJSON();
             }
         }
@@ -1213,7 +1202,9 @@ void saveQuotes(QuotesPlugin plugin)
  +/
 final class NoQuotesFoundException : Exception
 {
-    /// Nickname whose quotes could not be found.
+    /++
+        Nickname whose quotes could not be found.
+     +/
     string nickname;
 
     /++
@@ -1250,10 +1241,14 @@ final class NoQuotesFoundException : Exception
  +/
 final class QuoteIndexOutOfRangeException : Exception
 {
-    /// Given index (that ended up being out of range).
+    /++
+        Given index (that ended up being out of range).
+     +/
     ptrdiff_t indexGiven;
 
-    /// Acutal upper bound.
+    /++
+        Acutal upper bound.
+     +/
     size_t upperBound;
 
     /++
@@ -1293,7 +1288,9 @@ final class QuoteIndexOutOfRangeException : Exception
  +/
 final class NoQuotesSearchMatchException : Exception
 {
-    /// Given search terms string.
+    /++
+        Given search terms string.
+     +/
     string searchTerms;
 
     /++
@@ -1369,7 +1366,6 @@ void initResources(QuotesPlugin plugin)
     }
 
     // Let other Exceptions pass.
-
     json.save(plugin.quotesFile);
 }
 
@@ -1380,7 +1376,7 @@ void initResources(QuotesPlugin plugin)
  +/
 void reload(QuotesPlugin plugin)
 {
-    plugin.quotes = loadQuotes(plugin.quotesFile);
+    loadQuotes(plugin);
 }
 
 
@@ -1401,7 +1397,9 @@ final class QuotesPlugin : IRCPlugin
 private:
     import lu.json : JSONStorage;
 
-    /// All Quotes plugin settings gathered.
+    /++
+        All Quotes plugin settings gathered.
+     +/
     QuotesSettings quotesSettings;
 
     /++
@@ -1412,7 +1410,9 @@ private:
      +/
     Quote[][string][string] quotes;
 
-    /// Filename of file to save the quotes to.
+    /++
+        Filename of file to save the quotes to.
+     +/
     @Resource string quotesFile = "quotes.json";
 
     mixin IRCPluginImpl;

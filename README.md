@@ -1,4 +1,4 @@
-# kameloso [![Linux/macOS/Windows](https://img.shields.io/github/actions/workflow/status/zorael/kameloso/d.yml?branch=master)](https://github.com/zorael/kameloso/actions?query=workflow%3AD) [![Linux](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?logo=circleci&style=flat&maxAge=3600)](https://circleci.com/gh/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?logo=appveyor&style=flat&maxAge=3600)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v3.9.0.svg?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/compare/v3.9.0...master)
+# kameloso [![Linux/macOS/Windows](https://img.shields.io/github/actions/workflow/status/zorael/kameloso/d.yml?branch=master)](https://github.com/zorael/kameloso/actions?query=workflow%3AD) [![Linux](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?logo=circleci&style=flat&maxAge=3600)](https://circleci.com/gh/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?logo=appveyor&style=flat&maxAge=3600)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v3.10.0.svg?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/compare/v3.10.0...master)
 
 **kameloso** is an IRC bot with [Twitch support](#twitch). It is text-based and runs in your terminal or console.
 
@@ -328,15 +328,15 @@ MrOffline joined #channel
  kameloso | Stopwatch stopped after 1 hour, 48 minutes and 10 seconds.
 
       you | !time
- kameloso | The time is currently 12:04 locally.
-      you | !time Europe/Stockholm
- kameloso | The time is currently 11:04 in Europe/Stockholm.
+ kameloso | The time is currently 11:04 locally.
+      you | !time Europe/London
+ kameloso | The time is currently 10:04 in Europe/London.
       you | !time Tokyo
- kameloso | The time is currently 20:05 in Tokyo.
+ kameloso | The time is currently 18:05 in Tokyo.
       you | !setzone Helsinki
  kameloso | Timezone changed to Europe/Helsinki.
       you | !time
- kameloso | The time is currently 12:04 in Europe/Helsinki.
+ kameloso | The time is currently 12:05 in Europe/Helsinki.
 ```
 
 ### Online help and commands

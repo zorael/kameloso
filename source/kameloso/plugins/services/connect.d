@@ -26,6 +26,7 @@ import kameloso.plugins;
 import kameloso.plugins.common.core;
 import kameloso.common : logger;
 import kameloso.messaging;
+import kameloso.thread : Sendable;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
 
@@ -55,16 +56,24 @@ public:
      +/
     bool regainNickname = true;
 
-    /// Whether or not to join channels upon being invited to them.
+    /++
+        Whether or not to join channels upon being invited to them.
+     +/
     bool joinOnInvite = false;
 
-    /// Whether to use SASL authentication or not.
+    /++
+        Whether to use SASL authentication or not.
+     +/
     @Unserialisable bool sasl = true;
 
-    /// Whether or not to abort and exit if SASL authentication fails.
+    /++
+        Whether or not to abort and exit if SASL authentication fails.
+     +/
     bool exitOnSASLFailure = false;
 
-    /// Lines to send after successfully connecting and registering.
+    /++
+        Lines to send after successfully connecting and registering.
+     +/
     //@Separator(";;")
     @CannotContainComments string sendAfterConnect;
 
@@ -75,7 +84,9 @@ public:
 }
 
 
-/// Progress of a process.
+/++
+    Progress of a process.
+ +/
 enum Progress
 {
     notStarted, /// Process not yet started, init state.
@@ -125,14 +136,6 @@ void onSelfpart(ConnectService service, const ref IRCEvent event)
  +/
 void joinChannels(ConnectService service)
 {
-    scope(exit) service.joinedChannels = true;
-
-    if (!service.state.bot.homeChannels.length && !service.state.bot.guestChannels.length)
-    {
-        logger.warning("No channels, no purpose...");
-        return;
-    }
-
     import kameloso.messaging : Message;
     import lu.string : plurality;
     import std.algorithm.iteration : filter, uniq;
@@ -140,6 +143,14 @@ void joinChannels(ConnectService service)
     import std.array : array, join;
     import std.range : walkLength;
     static import kameloso.messaging;
+
+    scope(exit) service.joinedChannels = true;
+
+    if (!service.state.bot.homeChannels.length && !service.state.bot.guestChannels.length)
+    {
+        logger.warning("No channels, no purpose...");
+        return;
+    }
 
     auto homelist = service.state.bot.homeChannels
         .filter!(channelName => (channelName != "-"))
@@ -194,7 +205,7 @@ void joinChannels(ConnectService service)
 
             // See if we actually managed to join all channels
             auto allChannels = chain(service.state.bot.homeChannels, service.state.bot.guestChannels);
-            string[] missingChannels;
+            string[] missingChannels;  // mutable
 
             foreach (immutable channel; allChannels)
             {
@@ -292,10 +303,10 @@ void onPing(ConnectService service, const ref IRCEvent event)
  +/
 void tryAuth(ConnectService service)
 {
-    string serviceNick = "NickServ";
-    string verb = "IDENTIFY";
-
     import lu.string : beginsWith, decode64;
+
+    string serviceNick = "NickServ";  // mutable, default value
+    string verb = "IDENTIFY";  // ditto
     immutable password = service.state.bot.password.beginsWith("base64:") ?
         decode64(service.state.bot.password[7..$]) : service.state.bot.password;
 
@@ -909,8 +920,7 @@ void onSASLAuthenticate(ConnectService service)
     {
         service.saslExternal = Progress.inProgress;
         enum message = "AUTHENTICATE +";
-        immediate(service.state, message);
-        return;
+        return immediate(service.state, message);
     }
 
     immutable plainSuccess = trySASLPlain(service);
@@ -1043,8 +1053,7 @@ void onSASLFailure(ConnectService service)
         service.saslExternal = Progress.finished;
         enum properties = Message.Property.quiet;
         enum message = "AUTHENTICATE PLAIN";
-        immediate(service.state, message, properties);
-        return;
+        return immediate(service.state, message, properties);
     }
 
     if (service.connectSettings.exitOnSASLFailure)
@@ -1368,7 +1377,7 @@ void onReconnect(ConnectService service)
     import std.concurrency : send;
 
     logger.info("Reconnecting upon server request.");
-    service.state.mainThread.send(ThreadMessage.reconnect());
+    service.state.mainThread.send(ThreadMessage.reconnect);
 }
 
 
@@ -1768,8 +1777,6 @@ void start(ConnectService service)
 }
 
 
-import kameloso.thread : Boxed, Sendable;
-
 // onBusMessage
 /++
     Receives a passed [kameloso.thread.Boxed|Boxed] instance with the "`connect`" header,
@@ -1784,6 +1791,8 @@ import kameloso.thread : Boxed, Sendable;
  +/
 void onBusMessage(ConnectService service, const string header, shared Sendable content)
 {
+    import kameloso.thread : Boxed;
+
     if (header != "connect") return;
 
     auto message = cast(Boxed!string)content;
@@ -1819,7 +1828,9 @@ final class ConnectService : IRCPlugin
 private:
     import core.time : seconds;
 
-    /// All Connect service settings gathered.
+    /++
+        All Connect service settings gathered.
+     +/
     ConnectSettings connectSettings;
 
     /++
@@ -1846,19 +1857,29 @@ private:
      +/
     static immutable channelCheckDelay = 15.seconds;
 
-    /// At what step we're currently at with regards to authentication.
+    /++
+        At what step we're currently at with regards to authentication.
+     +/
     Progress authentication;
 
-    /// At what step we're currently at with regards to SASL EXTERNAL authentication.
+    /++
+        At what step we're currently at with regards to SASL EXTERNAL authentication.
+     +/
     Progress saslExternal;
 
-    /// At what step we're currently at with regards to registration.
+    /++
+        At what step we're currently at with regards to registration.
+     +/
     Progress registration;
 
-    /// At what step we're currently at with regards to capabilities.
+    /++
+        At what step we're currently at with regards to capabilities.
+     +/
     Progress capabilityNegotiation;
 
-    /// Whether or not we have issued a NICK command during registration.
+    /++
+        Whether or not we have issued a NICK command during registration.
+     +/
     bool issuedNICK;
 
     /++
@@ -1871,7 +1892,9 @@ private:
      +/
     string renameDuringRegistration;
 
-    /// Whether or not the bot has joined its channels at least once.
+    /++
+        Whether or not the bot has joined its channels at least once.
+     +/
     bool joinedChannels;
 
     version(TwitchSupport)
@@ -1883,10 +1906,14 @@ private:
         bool[string] currentActualChannels;
     }
 
-    /// Whether or not the server seems to be supporting WHOIS queries.
+    /++
+        Whether or not the server seems to be supporting WHOIS queries.
+     +/
     bool serverSupportsWHOIS = true;
 
-    /// Number of capabilities requested but still not awarded.
+    /++
+        Number of capabilities requested but still not awarded.
+     +/
     uint requestedCapabilitiesRemaining;
 
     mixin IRCPluginImpl;

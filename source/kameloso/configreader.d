@@ -164,7 +164,9 @@ auto configurationText(const string configFile)
 final class ConfigurationFileReadFailureException : Exception
 {
 @safe:
-    /// The name of the configuration file the exception refers to.
+    /++
+        The name of the configuration file the exception refers to.
+     +/
     string filename;
 
     /++

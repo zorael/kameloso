@@ -169,13 +169,19 @@ void printStacktrace() @system
  +/
 struct OutgoingLine
 {
-    /// String line to send.
+    /++
+        String line to send.
+     +/
     string line;
 
-    /// Whether this message should be sent quietly or verbosely.
+    /++
+        Whether this message should be sent quietly or verbosely.
+     +/
     bool quiet;
 
-    /// Constructor.
+    /++
+        Constructor.
+     +/
     this(const string line, const Flag!"quiet" quiet = No.quiet) pure @safe nothrow @nogc
     {
         this.line = line;
@@ -543,7 +549,7 @@ public:
 
     /++
         The modifier by how much more entries must be added before another rehash
-        takes place, with regards to the current [aa] length.
+        takes place, with regards to the current [RehashingAA.aa|aa] length.
 
         A multiplier of `2.0` means the associative array will be rehashed as
         soon as its length doubles in size. Must be more than 1.
@@ -574,7 +580,7 @@ public:
 
     // opAssign
     /++
-        Inherit a native associative array into [aa].
+        Inherit a native associative array into [RehashingAA.aa|aa].
 
         Params:
             aa = Other associative array.
@@ -591,7 +597,7 @@ public:
         Allows for casting this into the base associative array type.
 
         Params:
-            T = Type to cast to, here the same as the type of [aa].
+            T = Type to cast to, here the same as the type of [RehashingAA.aa|aa].
 
         Returns:
             The internal associative array.
@@ -615,7 +621,8 @@ public:
 
     // remove
     /++
-        Removes a key from the [aa] associative array by merely invoking `.remove`.
+        Removes a key from the [RehashingAA.aa|aa] associative array by merely
+        invoking `.remove`.
 
         Params:
             key = The key to remove.
@@ -767,7 +774,7 @@ public:
     void delegate() onRehashDg;
 
     /++
-        `alias this` with regards to [aa].
+        `alias this` with regards to [RehashingAA.aa|aa].
      +/
     version(none)
     alias aa this;
@@ -827,7 +834,7 @@ void printGCStats()
         logger.infof(pattern, stats.allocatedInCurrentThread);
     }
 
-    enum memoryUsedPattern = "Memory currently in use: <l>%,d</> bytes, " ~
+    enum memoryUsedPattern = "Memory currently in use: <l>%,d</> bytes; " ~
         "<l>%,d</> additional bytes reserved";
     logger.infof(memoryUsedPattern, stats.usedSize, stats.freeSize);
 }

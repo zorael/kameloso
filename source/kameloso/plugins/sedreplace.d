@@ -69,7 +69,9 @@ alias DelimiterCharacters = AliasSeq!('/', '|', '#', '@', ' ', '_', ';');
  +/
 @Settings struct SedReplaceSettings
 {
-    /// Toggles whether or not the plugin should react to events at all.
+    /++
+        Toggles whether or not the plugin should react to events at all.
+     +/
     @Enabler bool enabled = true;
 
     /++
@@ -93,10 +95,14 @@ alias DelimiterCharacters = AliasSeq!('/', '|', '#', '@', ' ', '_', ';');
  +/
 struct Line
 {
-    /// Contents of last line uttered.
+    /++
+        Contents of last line uttered.
+     +/
     string content;
 
-    /// When the last line was spoken, in UNIX time.
+    /++
+        When the last line was spoken, in UNIX time.
+     +/
     long timestamp;
 }
 
@@ -520,10 +526,12 @@ void onWelcome(SedReplacePlugin plugin)
     import kameloso.plugins.common.delayawait : delay;
     import std.datetime.systime : Clock;
 
-    delay(plugin, plugin.timeBetweenPurges, Yes.yield);
-
     while (true)
     {
+        // delay immediately so the first purge only happens after the first
+        // timeBetweenPurges duration has passed
+        delay(plugin, plugin.timeBetweenPurges, Yes.yield);
+
         immutable now = Clock.currTime.toUnixTime;
 
         foreach (ref channelLines; plugin.prevlines)
@@ -539,8 +547,6 @@ void onWelcome(SedReplacePlugin plugin)
                 }
             }
         }
-
-        delay(plugin, plugin.timeBetweenPurges, Yes.yield);
     }
 }
 
@@ -554,10 +560,10 @@ void onWelcome(SedReplacePlugin plugin)
 )
 void onPart(SedReplacePlugin plugin, const ref IRCEvent event)
 {
-    auto channelLines = event.channel in plugin.prevlines;
-    if (!channelLines) return;
-
-    (*channelLines).remove(event.sender.nickname);
+    if (auto channelLines = event.channel in plugin.prevlines)
+    {
+        (*channelLines).remove(event.sender.nickname);
+    }
 }
 
 
@@ -594,20 +600,28 @@ final class SedReplacePlugin : IRCPlugin
 private:
     import core.time : seconds;
 
-    /// All sed-replace options gathered.
+    /++
+        All sed-replace options gathered.
+     +/
     SedReplaceSettings sedReplaceSettings;
 
-    /// Lifetime of a [Line] in [prevlines], in seconds.
+    /++
+        Lifetime of a [Line] in [prevlines], in seconds.
+     +/
     enum prevlineLifetime = 3600;
 
-    /// How often to purge the [prevlines] list of messages.
+    /++
+        How often to purge the [prevlines] list of messages.
+     +/
     static immutable timeBetweenPurges = (prevlineLifetime * 3).seconds;
 
-    /// What kind of container to use for sent lines.
+    /++
+        What kind of container to use for sent lines.
+     +/
     alias BufferType = CircularBuffer!(Line, Yes.dynamic);
 
     /++
-        An associative arary of  [BufferType]s of the previous line(s) every user said,
+        An associative arary of [BufferType]s of the previous line(s) every user said,
         keyed by nickname keyed by channel.
      +/
     BufferType[string][string] prevlines;

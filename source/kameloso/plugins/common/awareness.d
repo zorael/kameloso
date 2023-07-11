@@ -534,18 +534,21 @@ void onUserAwarenessNamesReply(IRCPlugin plugin, const ref IRCEvent event)
     import lu.string : contains, nom;
     import std.algorithm.iteration : splitter;
 
-    if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+    version(TwitchSupport)
     {
-        // Do nothing actually. Twitch NAMES is unreliable noise.
-        return;
+        if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
+        {
+            // Do nothing actually. Twitch NAMES is unreliable noise.
+            return;
+        }
     }
 
-    auto names = event.content.splitter(' ');
+    auto namesRange = event.content.splitter(' ');
 
-    foreach (immutable userstring; names)
+    foreach (immutable userstring; namesRange)
     {
         string slice = userstring;  // mutable
-        IRCUser user;
+        IRCUser user;  // ditto
 
         if (!slice.contains('!'))
         {
@@ -1018,15 +1021,12 @@ void onChannelAwarenessPart(IRCPlugin plugin, const ref IRCEvent event)
     // Remove entries in the mods AA (ops, halfops, voice, ...)
     foreach (/*immutable prefixChar,*/ ref prefixMods; channel.mods)
     {
-        foreach (immutable modNickname, _; prefixMods)
-        {
-            prefixMods.remove(event.sender.nickname);
-        }
+        prefixMods.remove(event.sender.nickname);
     }
 
-    foreach (const foreachChannel; plugin.state.channels)
+    foreach (const otherChannel; plugin.state.channels)
     {
-        if (event.sender.nickname in foreachChannel.users) return;
+        if (event.sender.nickname in otherChannel.users) return;
     }
 
     // event.sender is not in any of our tracked channels; remove
@@ -1085,10 +1085,10 @@ void onChannelAwarenessQuit(IRCPlugin plugin, const ref IRCEvent event)
  +/
 void onChannelAwarenessTopic(IRCPlugin plugin, const ref IRCEvent event)
 {
-    auto channel = event.channel in plugin.state.channels;
-    if (!channel) return;
-
-    channel.topic = event.content;  // don't strip
+    if (auto channel = event.channel in plugin.state.channels)
+    {
+        channel.topic = event.content;  // don't strip
+    }
 }
 
 
@@ -1098,10 +1098,10 @@ void onChannelAwarenessTopic(IRCPlugin plugin, const ref IRCEvent event)
  +/
 void onChannelAwarenessCreationTime(IRCPlugin plugin, const ref IRCEvent event)
 {
-    auto channel = event.channel in plugin.state.channels;
-    if (!channel) return;
-
-    channel.created = event.count[0].get;
+    if (auto channel = event.channel in plugin.state.channels)
+    {
+        channel.created = event.count[0].get;
+    }
 }
 
 
@@ -1114,6 +1114,8 @@ void onChannelAwarenessCreationTime(IRCPlugin plugin, const ref IRCEvent event)
  +/
 void onChannelAwarenessMode(IRCPlugin plugin, const ref IRCEvent event)
 {
+    import dialect.common : setMode;
+
     version(TwitchSupport)
     {
         if (plugin.state.server.daemon == IRCServer.Daemon.twitch)
@@ -1123,11 +1125,10 @@ void onChannelAwarenessMode(IRCPlugin plugin, const ref IRCEvent event)
         }
     }
 
-    auto channel = event.channel in plugin.state.channels;
-    if (!channel) return;
-
-    import dialect.common : setMode;
-    (*channel).setMode(event.aux[0], event.content, plugin.state.server);
+    if (auto channel = event.channel in plugin.state.channels)
+    {
+        (*channel).setMode(event.aux[0], event.content, plugin.state.server);
+    }
 }
 
 
@@ -1197,12 +1198,12 @@ void onChannelAwarenessNamesReply(IRCPlugin plugin, const ref IRCEvent event)
     auto channel = event.channel in plugin.state.channels;
     if (!channel) return;
 
-    auto names = event.content.splitter(' ');
+    auto namesRange = event.content.splitter(' ');
 
-    foreach (immutable userstring; names)
+    foreach (immutable userstring; namesRange)
     {
-        string slice = userstring;
-        string nickname;
+        string slice = userstring;  // mutable
+        string nickname;  // ditto
 
         if (userstring.contains('!'))// && userstring.contains('@'))  // No need to check both
         {
@@ -1263,7 +1264,7 @@ void onChannelAwarenessModeLists(IRCPlugin plugin, const ref IRCEvent event)
 
     with (IRCEvent.Type)
     {
-        string modestring;
+        string modestring;  // mutable
 
         switch (event.type)
         {
@@ -1305,12 +1306,13 @@ void onChannelAwarenessModeLists(IRCPlugin plugin, const ref IRCEvent event)
  +/
 void onChannelAwarenessChannelModeIs(IRCPlugin plugin, const ref IRCEvent event)
 {
-    auto channel = event.channel in plugin.state.channels;
-    if (!channel) return;
-
     import dialect.common : setMode;
-    // :niven.freenode.net 324 kameloso^ ##linux +CLPcnprtf ##linux-overflow
-    (*channel).setMode(event.aux[0], event.content, plugin.state.server);
+
+    if (auto channel = event.channel in plugin.state.channels)
+    {
+        // :niven.freenode.net 324 kameloso^ ##linux +CLPcnprtf ##linux-overflow
+        (*channel).setMode(event.aux[0], event.content, plugin.state.server);
+    }
 }
 
 

@@ -559,7 +559,6 @@ void initResources(TimePlugin plugin)
     }
 
     // Let other Exceptions pass.
-
     timezonesJSON.save(plugin.timezonesFile);
 }
 
