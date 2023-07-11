@@ -540,8 +540,15 @@ void interruptibleSleep(const Duration dur, const ref bool abort) @system
     Exhausts the concurrency message mailbox.
 
     This is done between connection attempts to get a fresh start.
+
+    If a [kameloso.thread.ThreadMessage.Type.quit|quit] message is received,
+    its content is returned.
+
+    Returns:
+        The content of a [kameloso.thread.ThreadMessage.Type.quit|quit] message,
+        if one was received, otherwise an empty string.
  +/
-void exhaustMessages()
+auto exhaustMessages()
 {
     import std.concurrency : receiveTimeout, thisTid;
     import std.variant : Variant;
@@ -551,21 +558,32 @@ void exhaustMessages()
     // until a thread was spawned or thisTid was passed to a running thread.
     cast(void)thisTid;
 
-    bool receivedSomething;
     static immutable almostInstant = 10.msecs;
+    bool receivedSomething;  // mutable
+    string quitMessage;  // ditto
 
     do
     {
         receivedSomething = receiveTimeout(almostInstant,
-            (Variant _) scope {}
+            (ThreadMessage message) scope
+            {
+                if (message.type == ThreadMessage.Type.quit)
+                {
+                    quitMessage = message.content;
+                }
+            },
+            (Variant _) scope {},
         );
     }
     while (receivedSomething);
+
+    return quitMessage;
 }
 
 ///
 unittest
 {
+    import kameloso.thread : ThreadMessage;
     import std.concurrency : receiveTimeout, send, thisTid;
     import std.variant : Variant;
     import core.time : Duration;
@@ -575,11 +593,13 @@ unittest
         thisTid.send(i);
     }
 
-    exhaustMessages();
+    thisTid.send(ThreadMessage.quit("hello"));
+    immutable quitMessage = exhaustMessages();
 
     immutable receivedSomething = receiveTimeout(Duration.zero,
         (Variant _) {},
     );
 
     assert(!receivedSomething);
+    assert((quitMessage == "hello"), quitMessage);
 }
