@@ -527,6 +527,7 @@ void onPrintableEvent(PrinterPlugin plugin, /*const*/ IRCEvent event)
 )
 void onLoggableEvent(PrinterPlugin plugin, const ref IRCEvent event)
 {
+    if (!plugin.printerSettings.logs) return;
     onLoggableEventImpl(plugin, event);
 }
 
