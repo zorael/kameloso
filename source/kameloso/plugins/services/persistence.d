@@ -447,7 +447,8 @@ void onQuit(PersistenceService service, const ref IRCEvent event)
 void onNick(PersistenceService service, const ref IRCEvent event)
 {
     // onQuit already doees everything this function wants to do.
-    return onQuit(service, event);
+    // Do not move the old user to the new one, as this is done in postprocess.
+    onQuit(service, event);
 }
 
 
@@ -463,11 +464,6 @@ void onNick(PersistenceService service, const ref IRCEvent event)
 )
 void onWelcome(PersistenceService service)
 {
-    import kameloso.plugins.common.delayawait : delay;
-    import kameloso.constants : BufferSize;
-    import std.typecons : Flag, No, Yes;
-    import core.thread : Fiber;
-
     reloadAccountClassifiersFromDisk(service);
     if (service.state.settings.preferHostmasks) reloadHostmasksFromDisk(service);
 }

@@ -926,7 +926,7 @@ void onCommandGet(AdminPlugin plugin, const /*ref*/ IRCEvent event)
         if (!pluginName.length)
         {
             enum message = "Invalid plugin.";
-            return privmsg(plugin.state, event.channel, event.sender.nickname, message);
+            privmsg(plugin.state, event.channel, event.sender.nickname, message);
         }
         else if (setting.length)
         {
