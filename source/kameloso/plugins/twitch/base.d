@@ -2412,7 +2412,6 @@ in (idString.length, "Tried to import custom emotes with an empty ID string")
     // Initialise the AA so we can get a pointer to it.
     plugin.customEmotesByChannel[channelName][dstring.init] = false;
     auto customEmotes = channelName in plugin.customEmotesByChannel;
-    (*customEmotes).remove(dstring.init);
 
     alias GetEmoteFun = void function(TwitchPlugin, ref bool[dstring], const string, const string);
 
@@ -2431,6 +2430,8 @@ in (idString.length, "Tried to import custom emotes with an empty ID string")
         }
     }
 
+    //(*customEmotes).remove(dstring.init);
+    customEmotes.clear();  // In case we're reimporting definitions
     getEmoteSet(&getBTTVEmotes, "BetterTTV");
     getEmoteSet(&getFFZEmotes, "FrankerFaceZ");
     getEmoteSet(&get7tvEmotes, "7tv");
@@ -2453,6 +2454,7 @@ in (Fiber.getThis, "Tried to call `importCustomGlobalEmotes` from outside a Fibe
     GC.disable();
     scope(exit) GC.enable();
 
+
     alias GetGlobalEmoteFun = void function(TwitchPlugin, ref bool[dstring], const string);
 
     void getGlobalEmoteSet(GetGlobalEmoteFun fun, const string setName)
@@ -2470,6 +2472,7 @@ in (Fiber.getThis, "Tried to call `importCustomGlobalEmotes` from outside a Fibe
         }
     }
 
+    plugin.customGlobalEmotes.clear();  // In case we're reimporting definitions
     getGlobalEmoteSet(&getBTTVGlobalEmotes, "BetterTTV");
     getGlobalEmoteSet(&get7tvGlobalEmotes, "7tv");
     plugin.customGlobalEmotes.rehash();
