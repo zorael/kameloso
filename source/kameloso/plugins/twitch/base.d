@@ -3140,14 +3140,14 @@ void startValidator(TwitchPlugin plugin)
                     }
                     else
                     {
-                        enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
+                        enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) <t>(%d)";
                         logger.errorf(pattern, e.msg, e.error, e.code);
                         logger.error(wikiMessage);
                     }
                 }
                 else
                 {
-                    enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) (<t>%d</>)";
+                    enum pattern = "Failed to validate Twitch API keys: <l>%s</> (<l>%s</>) <t>(%d)";
                     logger.errorf(pattern, e.msg, e.error, e.code);
                 }
 

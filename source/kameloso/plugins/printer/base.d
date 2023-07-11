@@ -579,7 +579,7 @@ void onISUPPORT(PrinterPlugin plugin)
 
     idWhenPrintedISUPPORT = plugin.state.connectionID;
 
-    enum pattern = "Detected <i>%s</> running daemon <i>%s</> (<t>%s</>)";
+    enum pattern = "Detected <i>%s</> running daemon <i>%s</> <t>(%s)";
     logger.logf(
         pattern,
         plugin.state.server.network,

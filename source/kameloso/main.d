@@ -1206,12 +1206,12 @@ auto listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
         version(Posix)
         {
             import kameloso.common : errnoStrings;
-            enum pattern = "Connection error! (<l>%s</>) (<t>%s</>)";
+            enum pattern = "Connection error! (<l>%s</>) <t>(%s)";
             logger.warningf(pattern, attempt.error, errnoStrings[attempt.errno]);
         }
         else version(Windows)
         {
-            enum pattern = "Connection error! (<l>%s</>) (<t>%d</>)";
+            enum pattern = "Connection error! (<l>%s</>) <t>(%d)";
             logger.warningf(pattern, attempt.error, attempt.errno);
         }
         else
@@ -1241,12 +1241,12 @@ auto listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
             version(Posix)
             {
                 import kameloso.common : errnoStrings;
-                enum pattern = "Connection error: invalid server response! (<l>%s</>) (<t>%s</>)";
+                enum pattern = "Connection error: invalid server response! (<l>%s</>) <t>(%s)";
                 logger.errorf(pattern, attempt.error, errnoStrings[attempt.errno]);
             }
             else version(Windows)
             {
-                enum pattern = "Connection error: invalid server response! (<l>%s</>) (<t>%d</>)";
+                enum pattern = "Connection error: invalid server response! (<l>%s</>) <t>(%d)";
                 logger.errorf(pattern, attempt.error, attempt.errno);
             }
             else
