@@ -137,9 +137,11 @@ void printRetryDelegateException(/*const*/ Exception e)
     import std.json : JSONException, parseJSON;
     import std.stdio : stdout, writeln;
 
+    logger.trace(e);
+
     if (auto twitchQueryException = cast(TwitchQueryException)e)
     {
-        logger.trace(twitchQueryException);
+        //logger.trace(twitchQueryException);
 
         try
         {
@@ -151,26 +153,22 @@ void printRetryDelegateException(/*const*/ Exception e)
         }
 
         stdout.flush();
-        //throw twitchQueryException;
     }
     else if (auto emptyDataJSONException = cast(EmptyDataJSONException)e)
     {
         // Must be before TwitchJSONException below
-        logger.trace(emptyDataJSONException);
-        //throw emptyDataJSONException;
+        //logger.trace(emptyDataJSONException);
     }
     else if (auto twitchJSONException = cast(TwitchJSONException)e)
     {
-        // UnexpectedJSONException and ErrorJSONException
-        logger.trace(twitchJSONException);
+        // UnexpectedJSONException or ErrorJSONException
+        //logger.trace(twitchJSONException);
         writeln(twitchJSONException.json.toPrettyString);
         stdout.flush();
-        //throw twitchJSONException;
     }
     else /*if (auto plainException = cast(Exception)e)*/
     {
-        logger.trace(e);
-        //throw e;
+        //logger.trace(e);
     }
 }
 
