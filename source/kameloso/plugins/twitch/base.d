@@ -3735,7 +3735,7 @@ void reload(TwitchPlugin plugin)
 
     void importDg()
     {
-        plugin.customGlobalEmotes = null;
+        plugin.customGlobalEmotes.clear();
         importCustomGlobalEmotes(plugin);
 
         foreach (immutable channelName, const room; plugin.rooms)
