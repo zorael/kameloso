@@ -429,7 +429,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
             import std.string : chomp;
 
             // {"error":"Unauthorized","status":401,"message":"Must provide a valid Client-ID or OAuth token"}
-            /*
+            /+
             {
                 "error": "Unauthorized",
                 "message": "Client ID and OAuth token do not match",
@@ -444,7 +444,8 @@ in (url.length, "Tried to send an HTTP request without a URL")
             {
                 "message": "user not found"
             }
-            */
+             +/
+
             immutable json = parseJSON(response.str);
             long code = response.code;
             string status;
