@@ -191,12 +191,17 @@ void onCommandTest(TesterPlugin plugin, const /*ref*/ IRCEvent event)
             //awaitReply();  // advance past current message ("test [nickname] [plugin]")
 
             static immutable timeInBetween = 10.seconds;
+            string[] failedTestNames;
             uint successes;
 
             foreach (immutable i, test; tests)
             {
                 immutable success = runTestAndReport!test();
                 if (success) ++successes;
+                else
+                {
+                    failedTestNames ~= __traits(identifier, tests[i]);
+                }
 
                 if (i+1 != tests.length)
                 {
@@ -210,8 +215,9 @@ void onCommandTest(TesterPlugin plugin, const /*ref*/ IRCEvent event)
                 }
             }
 
-            enum pattern = "%d/%d tests finished successfully.";
-            immutable message = pattern.format(successes, tests.length);
+
+            enum pattern = "%d/%d tests finished successfully. failed: %-(%s, %)";
+            immutable message = pattern.format(successes, tests.length, failedTestNames);
             logger.info(message);
             send(message);
         }
