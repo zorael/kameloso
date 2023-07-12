@@ -445,13 +445,13 @@ in (url.length, "Tried to send an HTTP request without a URL")
              +/
 
             immutable json = parseJSON(response.str);
-            long code = response.code;
+            uint code = response.code;
             string status;
             string message;
 
             if (immutable statusCodeJSON = "status_code" in json)
             {
-                code = (*statusCodeJSON).integer;
+                code = cast(uint)(*statusCodeJSON).integer;
                 status = json["status"].str;
                 message = json["error"].str;
             }
@@ -461,7 +461,7 @@ in (url.length, "Tried to send an HTTP request without a URL")
 
                 try
                 {
-                    code = (*statusJSON).integer;
+                    code = cast(uint)(*statusJSON).integer;
                     status = json["error"].str;
                     message = json["message"].str;
                 }
