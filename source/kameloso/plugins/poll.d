@@ -905,6 +905,8 @@ void serialisePolls(PollPlugin plugin)
 {
     import lu.json : JSONStorage;
 
+    if (!plugin.channelPolls.length) return;
+
     JSONStorage json;
     json.reset();
 

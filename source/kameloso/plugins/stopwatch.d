@@ -229,6 +229,8 @@ void serialiseStopwatches(StopwatchPlugin plugin)
     import std.json : JSONValue;
     import std.stdio : File, writeln;
 
+    if (!plugin.stopwatches.length) return;
+
     auto file = File(plugin.stopwatchTempFile, "w");
     file.writeln(JSONValue(plugin.stopwatches).toPrettyString);
 }
