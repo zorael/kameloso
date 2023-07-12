@@ -480,16 +480,15 @@ in (url.length, "Tried to send an HTTP request without a URL")
             {
                 status = "Error";
                 message = "An unspecified error occured";
+            }
 
-                version(PrintStacktraces)
+            version(PrintStacktraces)
+            {
+                if (!plugin.state.settings.headless)
                 {
-                    if (!plugin.state.settings.headless)
-                    {
-                        import std.stdio : stdout, writeln;
-
-                        writeln(json.toPrettyString);
-                        stdout.flush();
-                    }
+                    import std.stdio : stdout, writeln;
+                    writeln(json.toPrettyString);
+                    stdout.flush();
                 }
             }
 
@@ -498,7 +497,6 @@ in (url.length, "Tried to send an HTTP request without a URL")
                 code,
                 status.chomp.unquoted,
                 message.chomp.unquoted);
-
             throw new ErrorJSONException(exceptionMessage, json);
         }
         catch (JSONException e)
