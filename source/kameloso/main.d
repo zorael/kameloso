@@ -618,7 +618,8 @@ void messageFiber(ref Kameloso instance)
                 {
                     version(TraceWhois)
                     {
-                        writefln(" ...but already issued %d seconds ago.", (now - then));
+                        enum pattern = " ...but already issued %d seconds ago.";
+                        writefln(pattern, (now - then));
                     }
                 }
 
@@ -1304,7 +1305,8 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
 
                 foreach (immutable c; raw.representation)
                 {
-                    writefln("%3d: '%c'", c, cast(char)c);
+                    enum pattern = "%3d: '%c'";
+                    writefln(pattern, c, cast(char)c);
                 }
             }
 
@@ -1988,7 +1990,8 @@ void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
             {
                 if (!instance.settings.headless)
                 {
-                    writefln(" ...but already issued %d seconds ago.", (now - lastWhois));
+                    enum pattern = " ...but already issued %d seconds ago.";
+                    writefln(pattern, (now - lastWhois));
                 }
             }
         }

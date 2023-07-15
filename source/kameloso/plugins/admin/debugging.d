@@ -68,7 +68,8 @@ void onAnyEventImpl(AdminPlugin plugin, const ref IRCEvent event)
             import std.utf : replacementDchar;
 
             immutable dc = isValidCodeUnit(c) ? dchar(c) : replacementDchar;
-            writefln("[%3d] %s : %03d", i, dc, c);
+            enum pattern = "[%3d] %s : %03d";
+            writefln(pattern, i, dc, c);
         }
         wroteSomething = true;
     }

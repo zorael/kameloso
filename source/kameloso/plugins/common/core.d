@@ -718,7 +718,8 @@ mixin template IRCPluginImpl(
                 {
                     static if (verbose)
                     {
-                        writefln(`   ...Command "%s"`, command._word);
+                        enum pattern = `   ...Command "%s"`;
+                        writefln(pattern, command._word);
                         if (state.settings.flush) stdout.flush();
                     }
 
@@ -779,7 +780,8 @@ mixin template IRCPluginImpl(
                     {
                         static if (verbose)
                         {
-                            writefln(`   ...Regex r"%s"`, regex._expression);
+                            enum pattern = `   ...Regex r"%s"`;
+                            writefln(pattern, regex._expression);
                             if (state.settings.flush) stdout.flush();
                         }
 
@@ -824,8 +826,8 @@ mixin template IRCPluginImpl(
                                 {
                                     static if (verbose)
                                     {
-                                        enum pattern = `   ...matching "%s" against expression "%s" failed.`;
-                                        writefln(pattern, event.content, regex._expression);
+                                        enum matchPattern = `   ...matching "%s" against expression "%s" failed.`;
+                                        writefln(matchPattern, event.content, regex._expression);
                                         if (state.settings.flush) stdout.flush();
                                     }
                                 }
@@ -888,7 +890,8 @@ mixin template IRCPluginImpl(
 
                     static if (verbose)
                     {
-                        writefln("   ...%s WHOIS", typeof(this).stringof);
+                        enum pattern = "   ...%s WHOIS";
+                        writefln(pattern, typeof(this).stringof);
                         if (state.settings.flush) stdout.flush();
                     }
 
@@ -1954,7 +1957,8 @@ auto prefixPolicyMatches(bool verbose)
         {
             static if (verbose)
             {
-                writefln("starts with prefix (%s)", state.settings.prefix);
+                enum pattern = "starts with prefix (%s)";
+                writefln(pattern, state.settings.prefix);
             }
 
             event.content = event.content[state.settings.prefix.length..$];
@@ -2001,7 +2005,8 @@ auto prefixPolicyMatches(bool verbose)
                 {
                     static if (verbose)
                     {
-                        writefln("further starts with prefix (%s)", state.settings.prefix);
+                        enum pattern = "further starts with prefix (%s)";
+                        writefln(pattern, state.settings.prefix);
                     }
 
                     event.content = event.content[state.settings.prefix.length..$];
@@ -2030,7 +2035,8 @@ auto prefixPolicyMatches(bool verbose)
             {
                 static if (verbose)
                 {
-                    writefln("further starts with prefix (%s)", state.settings.prefix);
+                    enum pattern = "further starts with prefix (%s)";
+                    writefln(pattern, state.settings.prefix);
                 }
 
                 event.content = event.content[state.settings.prefix.length..$];

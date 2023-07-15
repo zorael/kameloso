@@ -1333,12 +1333,12 @@ T expandIRCTags(T)(const T line) @system
     {
         if (kameloso.common.settings is null)
         {
-            import std.stdio : stdout, writefln;
+            import std.stdio : stdout, writeln;
 
             // We're likely threading and forgot to initialise global settings
             kameloso.common.settings = new typeof(*kameloso.common.settings);
 
-            writefln("-- Warning: attempted to expand IRC tags by relying on " ~
+            writeln("-- Warning: attempted to expand IRC tags by relying on " ~
                 "global `kameloso.common.settings`, and it was null");
             stdout.flush();
         }

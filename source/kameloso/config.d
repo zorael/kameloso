@@ -385,8 +385,8 @@ void writeToDisk(
         auto timestamp = Clock.currTime;
         timestamp.fracSecs = 0.msecs;
 
-        file.writefln("# kameloso v%s configuration file (%s)\n",
-            cast(string)KamelosoInfo.version_, timestamp);
+        enum pattern = "# kameloso v%s configuration file (%s)\n";
+        file.writefln(pattern, cast(string)KamelosoInfo.version_, timestamp);
     }
 
     file.writeln(configurationText);

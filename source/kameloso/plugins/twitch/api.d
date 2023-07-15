@@ -235,7 +235,8 @@ void persistentQuerier(
         {
             import std.stdio : stdout, writefln;
             immutable post = Clock.currTime;
-            writefln("%s (%s)", post-pre, url);
+            enum pattern = "%s (%s)";
+            writefln(pattern, post-pre, url);
             stdout.flush();
         }
     }
