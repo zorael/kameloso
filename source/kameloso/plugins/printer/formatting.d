@@ -460,7 +460,7 @@ if (isOutputRange!(Sink, char[]))
         ((event.type == IRCEvent.Type.QUERY) && bellOnMention) ||
         (event.errors.length && bellOnError);
 
-    if (shouldBell) sink.put(plugin.bell);
+    if (shouldBell) sink.put(PrinterPlugin.bell);
 }
 
 ///
@@ -1084,7 +1084,7 @@ if (isOutputRange!(Sink, char[]))
         ((event.type == IRCEvent.Type.QUERY) && bellOnMention) ||
         (event.errors.length && bellOnError);
 
-    if (shouldBell) sink.put(plugin.bell);
+    if (shouldBell) sink.put(PrinterPlugin.bell);
 }
 
 

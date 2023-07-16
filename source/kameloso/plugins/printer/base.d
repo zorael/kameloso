@@ -625,7 +625,7 @@ void initialise(PrinterPlugin plugin)
     if (!isTerminal)
     {
         // Not a TTY so replace our bell string with an empty one
-        plugin.bell = string.init;
+        PrinterPlugin.bell = string.init;
     }
 }
 
@@ -933,14 +933,9 @@ package:
     @Resource string logDirectory = "logs";
 
     /++
-        [kameloso.terminal.TerminalToken.bell|TerminalToken.bell] as string, for use as bell.
-     +/
-    private enum bellString = "" ~ cast(char)(TerminalToken.bell);
-
-    /++
         Effective bell after [kameloso.terminal.isTerminal] checks.
      +/
-    string bell = bellString;
+    static string bell = "" ~ cast(char)(TerminalToken.bell);
 
     mixin IRCPluginImpl;
 }

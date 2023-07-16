@@ -429,7 +429,7 @@ void onImportant(TwitchPlugin plugin, const ref IRCEvent event)
 
     if (plugin.twitchSettings.bellOnImportant)
     {
-        write(plugin.bell);
+        write(TwitchPlugin.bell);
         stdout.flush();
     }
 }
@@ -1781,7 +1781,7 @@ void onAnyMessage(TwitchPlugin plugin, const ref IRCEvent event)
         import kameloso.terminal : TerminalToken;
         import std.stdio : stdout, write;
 
-        write(plugin.bell);
+        write(TwitchPlugin.bell);
         stdout.flush();
     }
 
@@ -3403,14 +3403,14 @@ void appendToStreamHistory(TwitchPlugin plugin, const TwitchPlugin.Room.Stream s
 /++
     Initialises the Twitch plugin.
  +/
-void initialise(TwitchPlugin plugin)
+void initialise(TwitchPlugin _)
 {
     import kameloso.terminal : isTerminal;
 
     if (!isTerminal)
     {
         // Not a TTY so replace our bell string with an empty one
-        plugin.bell = string.init;
+        TwitchPlugin.bell = string.init;
     }
 }
 
@@ -4095,15 +4095,9 @@ package:
     bool[dstring] customGlobalEmotes;
 
     /++
-        [kameloso.terminal.TerminalToken.bell|TerminalToken.bell] as string,
-        for use as bell.
-     +/
-    private enum bellString = "" ~ cast(char)(TerminalToken.bell);
-
-    /++
         Effective bell after [kameloso.terminal.isTerminal] checks.
      +/
-    string bell = bellString;
+    static string bell = "" ~ cast(char)(TerminalToken.bell);
 
     /++
         The Twitch application ID for the kameloso bot.
