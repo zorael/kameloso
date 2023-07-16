@@ -139,6 +139,8 @@ auto configurationText(const string configFile)
             .replace("[Votes]\r\n", "[Poll]\r\n")
             .replace("[TwitchBot]\n", "[Twitch]\n")
             .replace("[TwitchBot]\r\n", "[Twitch]\r\n")
+            .replace("[Oneliners]\n", "[Oneliner]\n")
+            .replace("[Oneliners]\r\n", "[Oneliner]\r\n")
             .chomp;
     }
     catch (Exception e)

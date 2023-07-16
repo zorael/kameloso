@@ -34,7 +34,7 @@ versions \
     "WithCounterPlugin" \
     "WithHelpPlugin" \
     "WithNotesPlugin" \
-    "WithOnelinersPlugin" \
+    "WithOnelinerPlugin" \
     "WithPipelinePlugin" \
     "WithPrinterPlugin" \
     "WithQuotesPlugin" \

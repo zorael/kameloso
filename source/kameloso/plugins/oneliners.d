@@ -1,5 +1,5 @@
 /++
-    The Oneliners plugin serves to provide custom commands, like `!vods`, `!youtube`,
+    The Oneliner plugin serves to provide custom commands, like `!vods`, `!youtube`,
     and any other static-reply `!command` (provided a prefix of "`!`").
 
     More advanced commands that do more than just repeat the preset lines of text
@@ -18,7 +18,7 @@
  +/
 module kameloso.plugins.oneliners;
 
-version(WithOnelinersPlugin):
+version(WithOnelinerPlugin):
 
 private:
 
@@ -30,11 +30,11 @@ import kameloso.messaging;
 import dialect.defs;
 
 
-// OnelinersSettings
+// OnelinerSettings
 /++
     All Oneliner plugin runtime settings.
  +/
-@Settings struct OnelinersSettings
+@Settings struct OnelinerSettings
 {
     /++
         Toggle whether or not this plugin should do anything at all.
@@ -236,7 +236,7 @@ public:
 /++
     Responds to oneliners.
 
-    Responses are stored in [OnelinersPlugin.onelinersByChannel].
+    Responses are stored in [OnelinerPlugin.onelinersByChannel].
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
@@ -244,7 +244,7 @@ public:
     .channelPolicy(ChannelPolicy.home)
     .chainable(true)
 )
-void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
+void onOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
 {
     import kameloso.plugins.common.misc : nameOf;
     import kameloso.string : replaceRandom;
@@ -347,7 +347,7 @@ void onOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
             .hidden(true)
     )
 )
-void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
+void onCommandModifyOneliner(OnelinerPlugin plugin, const ref IRCEvent event)
 {
     import lu.string : nom, stripped;
     import std.typecons : Flag, No, Yes;
@@ -395,12 +395,12 @@ void onCommandModifyOneliner(OnelinersPlugin plugin, const ref IRCEvent event)
     Creates a new and empty oneliner.
 
     Params:
-        plugin = The current [OnelinersPlugin].
+        plugin = The current [OnelinerPlugin].
         event = The [dialect.defs.IRCEvent|IRCEvent] that requested the creation.
         slice = Relevant slice of the original request string.
  +/
 void handleNewOneliner(
-    OnelinersPlugin plugin,
+    OnelinerPlugin plugin,
     const /*ref*/ IRCEvent event,
     /*const*/ string slice)
 {
@@ -510,7 +510,12 @@ void handleNewOneliner(
     {
         foreach (immutable pluginName, pluginCommands; aa)
         {
-            if (!pluginCommands.length || (pluginName == "oneliners")) continue;
+            if (!pluginCommands.length ||
+                (pluginName == "oneliner") ||
+                (pluginName == "oneliners"))
+            {
+                continue;
+            }
 
             foreach (/*mutable*/ word; pluginCommands.byKey)
             {
@@ -570,13 +575,13 @@ void handleNewOneliner(
     Adds or inserts a line into a oneliner, or modifies an existing line.
 
     Params:
-        plugin = The current [OnelinersPlugin].
+        plugin = The current [OnelinerPlugin].
         event = The [dialect.defs.IRCEvent|IRCEvent] that requested the addition (or modification).
         slice = Relevant slice of the original request string.
         verb = The string verb of what action was requested; "add", "insert" or "edit".
  +/
 void handleAddToOneliner(
-    OnelinersPlugin plugin,
+    OnelinerPlugin plugin,
     const ref IRCEvent event,
     /*const*/ string slice,
     const string verb)
@@ -769,12 +774,12 @@ void handleAddToOneliner(
     Deletes a oneliner entirely, alternatively a line from one.
 
     Params:
-        plugin = The current [OnelinersPlugin].
+        plugin = The current [OnelinerPlugin].
         event = The [dialect.defs.IRCEvent|IRCEvent] that requested the deletion.
         slice = Relevant slice of the original request string.
  +/
 void handleDelFromOneliner(
-    OnelinersPlugin plugin,
+    OnelinerPlugin plugin,
     const ref IRCEvent event,
     /*const*/ string slice)
 {
@@ -902,7 +907,7 @@ void handleDelFromOneliner(
             .description("Lists all available oneliners.")
     )
 )
-void onCommandCommands(OnelinersPlugin plugin, const ref IRCEvent event)
+void onCommandCommands(OnelinerPlugin plugin, const ref IRCEvent event)
 {
     listCommands(plugin, event);
 }
@@ -913,10 +918,10 @@ void onCommandCommands(OnelinersPlugin plugin, const ref IRCEvent event)
     Lists the current commands to the passed channel.
 
     Params:
-        plugin = The current [OnelinersPlugin].
+        plugin = The current [OnelinerPlugin].
         event = The querying [dialect.defs.IRCEvent|IRCEvent].
  +/
-void listCommands(OnelinersPlugin plugin, const ref IRCEvent event)
+void listCommands(OnelinerPlugin plugin, const ref IRCEvent event)
 {
     import std.format : format;
 
@@ -943,7 +948,7 @@ void listCommands(OnelinersPlugin plugin, const ref IRCEvent event)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
 )
-void onWelcome(OnelinersPlugin plugin)
+void onWelcome(OnelinerPlugin plugin)
 {
     plugin.reload();
 }
@@ -953,7 +958,7 @@ void onWelcome(OnelinersPlugin plugin)
 /++
     Reloads oneliners from disk.
  +/
-void reload(OnelinersPlugin plugin)
+void reload(OnelinerPlugin plugin)
 {
     import lu.json : JSONStorage;
 
@@ -996,23 +1001,23 @@ void reload(OnelinersPlugin plugin)
     Sends a oneliner reply.
 
     If connected to a Twitch server and with version `TwitchSupport` set and
-    [OnelinersSettings.onelinersAsReplies] true, sends the message as a
+    [OnelinerSettings.onelinersAsReplies] true, sends the message as a
     Twitch [kameloso.messaging.reply|reply].
 
     Params:
-        plugin = The current [OnelinersPlugin].
+        plugin = The current [OnelinerPlugin].
         event = The querying [dialect.defs.IRCEvent|IRCEvent].
         message = The message string to send.
  +/
 void sendOneliner(
-    OnelinersPlugin plugin,
+    OnelinerPlugin plugin,
     const ref IRCEvent event,
     const string message)
 {
     version(TwitchSupport)
     {
         if ((plugin.state.server.daemon == IRCServer.Daemon.twitch) &&
-            (plugin.onelinersSettings.onelinersAsReplies))
+            (plugin.onelinerSettings.onelinersAsReplies))
         {
             return reply(plugin.state, event, message);
         }
@@ -1072,7 +1077,7 @@ in (filename.length, "Tried to save resources to an empty filename string")
     Reads and writes the file of oneliners and administrators to disk, ensuring
     that they're there and properly formatted.
  +/
-void initResources(OnelinersPlugin plugin)
+void initResources(OnelinerPlugin plugin)
 {
     import lu.json : JSONStorage;
     import std.json : JSONException;
@@ -1103,7 +1108,7 @@ void initResources(OnelinersPlugin plugin)
 
 mixin UserAwareness;
 mixin ChannelAwareness;
-mixin PluginRegistration!OnelinersPlugin;
+mixin PluginRegistration!OnelinerPlugin;
 
 version(TwitchSupport)
 {
@@ -1113,18 +1118,18 @@ version(TwitchSupport)
 public:
 
 
-// OnelinersPlugin
+// OnelinerPlugin
 /++
-    The Oneliners plugin serves to listen to custom commands that can be added,
-    modified and removed at runtime. Think `!info`.
+    The Oneliner plugin serves to listen to custom commands that can be added,
+    modified and removed at runtime. Think `!info`, `!vods` and `!socials`.
  +/
-final class OnelinersPlugin : IRCPlugin
+final class OnelinerPlugin : IRCPlugin
 {
 private:
     /++
-        All Oneliners plugin settings.
+        All Oneliner plugin settings.
      +/
-    OnelinersSettings onelinersSettings;
+    OnelinerSettings onelinerSettings;
 
     /++
         Associative array of oneliners; [Oneliner] array, keyed by trigger, keyed by channel.
