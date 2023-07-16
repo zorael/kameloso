@@ -530,20 +530,16 @@ public:
     private void issuePluginCallImpl(string call)()
     if (call.among!("setup", "start", "reload", "initResources"))
     {
-        foreach (plugin; plugins)
+        foreach (plugin; this.plugins)
         {
-            static if (call == "initResources")
+            static if (call != "initResources")
             {
                 // Always init resources, even if the plugin is disabled
-                mixin("plugin." ~ call ~ "();");
-            }
-            else
-            {
                 if (!plugin.isEnabled) continue;
-
-                mixin("plugin." ~ call ~ "();");
-                checkPluginForUpdates(plugin);
             }
+
+            mixin("plugin." ~ call ~ "();");
+            checkPluginForUpdates(plugin);
         }
     }
 
