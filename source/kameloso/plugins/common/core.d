@@ -468,7 +468,7 @@ mixin template IRCPluginImpl(
             `true` if the event should be allowed to trigger, `false` if not.
      +/
     pragma(inline, true)
-    private FilterResult allow(const ref IRCEvent event, const Permissions permissionsRequired)
+    private auto allow(const ref IRCEvent event, const Permissions permissionsRequired)
     {
         import kameloso.plugins.common.core : allowImpl;
         return allowImpl(this, event, permissionsRequired);
@@ -1769,7 +1769,7 @@ mixin template IRCPluginImpl(
             [kameloso.plugins.common.core.IRCEventHandler.Command.word|IRCEventHandler.Command.word]s
             and [kameloso.plugins.common.core.IRCEventHandler.Regex.expression|IRCEventHandler.Regex.expression]s.
      +/
-    private IRCPlugin.CommandMetadata[string] commandsImpl() pure nothrow @property const
+    private auto commandsImpl() pure nothrow @property const
     {
         enum ctCommandsEnumLiteral =
         {
