@@ -10,7 +10,7 @@
     minutes.
 
     We will rely on the
-    [kameloso.plugins.services.chanqueries.ChanQueriesService|ChanQueriesService] to query
+    [kameloso.plugins.services.chanquery.ChanQueryService|ChanQueryService] to query
     channels for full lists of users upon joining new ones, including the
     ones we join upon connecting. Elsewise, a completely silent user will never
     be recorded as having been seen, as they would never be triggering any of
@@ -682,7 +682,7 @@ void onNick(SeenPlugin plugin, const ref IRCEvent event)
 
     A WHO request enumerates all members in a channel. It returns several
     replies, one event per each user in the channel. The
-    [kameloso.plugins.services.chanqueries.ChanQueriesService|ChanQueriesService] services
+    [kameloso.plugins.services.chanquery.ChanQueryService|ChanQueryService] services
     instigates this shortly after having joined one, as a service to other plugins.
  +/
 @(IRCEventHandler()

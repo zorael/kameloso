@@ -1,5 +1,5 @@
 /++
-    The Channel Queries service queries channels for information about them (in
+    The Channel Query service queries channels for information about them (in
     terms of topic and modes) as well as their lists of participants. It does this
     shortly after having joined a channel, as a service to all other plugins,
     so they don't each have to independently do it themselves.
@@ -19,9 +19,9 @@
     Authors:
         [JR](https://github.com/zorael)
  +/
-module kameloso.plugins.services.chanqueries;
+module kameloso.plugins.services.chanquery;
 
-version(WithChanQueriesService):
+version(WithChanQueryService):
 
 private:
 
@@ -76,7 +76,7 @@ enum ChannelState : ubyte
     .onEvent(IRCEvent.Type.PING)
     .fiber(true)
 )
-void startChannelQueries(ChanQueriesService service)
+void startChannelQueries(ChanQueryService service)
 {
     import kameloso.thread : CarryingFiber, ThreadMessage, boxed;
     import kameloso.messaging : Message, mode, raw;
@@ -114,7 +114,7 @@ void startChannelQueries(ChanQueriesService service)
         service.querying = false;  // "Unlock"
     }
 
-    static immutable secondsBetween = ChanQueriesService.secondsBetween.seconds;
+    static immutable secondsBetween = ChanQueryService.secondsBetween.seconds;
 
     chanloop:
     foreach (immutable i, immutable channelName; querylist)
@@ -370,14 +370,14 @@ void startChannelQueries(ChanQueriesService service)
 
 // onSelfjoin
 /++
-    Adds a channel we join to the internal [ChanQueriesService.channels] list of
+    Adds a channel we join to the internal [ChanQueryService.channels] list of
     channel states.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.SELFJOIN)
     .channelPolicy(omniscientChannelPolicy)
 )
-void onSelfjoin(ChanQueriesService service, const ref IRCEvent event)
+void onSelfjoin(ChanQueryService service, const ref IRCEvent event)
 {
     service.channelStates[event.channel] = ChannelState.unset;
 }
@@ -385,7 +385,7 @@ void onSelfjoin(ChanQueriesService service, const ref IRCEvent event)
 
 // onSelfpart
 /++
-    Removes a channel we part from the internal [ChanQueriesService.channels]
+    Removes a channel we part from the internal [ChanQueryService.channels]
     list of channel states.
  +/
 @(IRCEventHandler()
@@ -393,7 +393,7 @@ void onSelfjoin(ChanQueriesService service, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.SELFKICK)
     .channelPolicy(omniscientChannelPolicy)
 )
-void onSelfpart(ChanQueriesService service, const ref IRCEvent event)
+void onSelfpart(ChanQueryService service, const ref IRCEvent event)
 {
     service.channelStates.remove(event.channel);
 }
@@ -409,7 +409,7 @@ void onSelfpart(ChanQueriesService service, const ref IRCEvent event)
     .onEvent(IRCEvent.Type.RPL_TOPIC)
     .channelPolicy(omniscientChannelPolicy)
 )
-void onTopic(ChanQueriesService service, const ref IRCEvent event)
+void onTopic(ChanQueryService service, const ref IRCEvent event)
 {
     service.channelStates[event.channel] |= ChannelState.topicKnown;
 }
@@ -426,7 +426,7 @@ void onTopic(ChanQueriesService service, const ref IRCEvent event)
     .channelPolicy(omniscientChannelPolicy)
     .fiber(true)
 )
-void onEndOfNames(ChanQueriesService service)
+void onEndOfNames(ChanQueryService service)
 {
     if (!service.querying && service.queriedAtLeastOnce)
     {
@@ -443,7 +443,7 @@ void onEndOfNames(ChanQueriesService service)
     .onEvent(IRCEvent.Type.RPL_MYINFO)
     .fiber(true)
 )
-void onMyInfo(ChanQueriesService service)
+void onMyInfo(ChanQueryService service)
 {
     delay(service, service.timeBeforeInitialQueries, Yes.yield);
     startChannelQueries(service);
@@ -453,13 +453,13 @@ void onMyInfo(ChanQueriesService service)
 // onNoSuchChannel
 /++
     If we get an error that a channel doesn't exist, remove it from
-    [ChanQueriesService.channelStates|channelStates]. This stops it from being
+    [ChanQueryService.channelStates|channelStates]. This stops it from being
     queried in [startChannelQueries].
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.ERR_NOSUCHCHANNEL)
 )
-void onNoSuchChannel(ChanQueriesService service, const ref IRCEvent event)
+void onNoSuchChannel(ChanQueryService service, const ref IRCEvent event)
 {
     service.channelStates.remove(event.channel);
 }
@@ -477,17 +477,17 @@ else
 
 mixin UserAwareness!channelPolicy;
 mixin ChannelAwareness!channelPolicy;
-mixin PluginRegistration!(ChanQueriesService, -10.priority);
+mixin PluginRegistration!(ChanQueryService, -10.priority);
 
 public:
 
 
-// ChanQueriesService
+// ChanQueryService
 /++
-    The Channel Queries service queries channels for information about them (in
+    The Channel Query service queries channels for information about them (in
     terms of topic and modes) as well as its list of participants.
  +/
-final class ChanQueriesService : IRCPlugin
+final class ChanQueryService : IRCPlugin
 {
 private:
     import core.time : seconds;

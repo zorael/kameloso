@@ -33,17 +33,17 @@ versions \
     "WithChatbotPlugin" \
     "WithCounterPlugin" \
     "WithHelpPlugin" \
-    "WithNotesPlugin" \
+    "WithNotePlugin" \
     "WithOnelinerPlugin" \
     "WithPipelinePlugin" \
     "WithPrinterPlugin" \
-    "WithQuotesPlugin" \
+    "WithQuotePlugin" \
     "WithSedReplacePlugin" \
     "WithSeenPlugin" \
     "WithStopwatchPlugin" \
     "WithPollPlugin" \
     "WithTimerPlugin" \
-    "WithWebtitlesPlugin" \
+    "WithWebtitlePlugin" \
     "WithTimePlugin" \
     "WithBashPlugin"
     //"WithSamePlugin"
@@ -55,7 +55,7 @@ versions \
  */
 versions \
     "WithCTCPService" \
-    "WithChanQueriesService" \
+    "WithChanQueryService" \
     "WithConnectService" \
     "WithPersistenceService"
 

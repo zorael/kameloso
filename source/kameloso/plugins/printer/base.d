@@ -721,7 +721,7 @@ void teardown(PrinterPlugin plugin)
 /++
     Receives a passed [kameloso.thread.Boxed|Boxed] instance with the "`printer`" header,
     listening for cues to ignore the next events caused by the
-    [kameloso.plugins.services.chanqueries.ChanQueriesService|ChanQueriesService]
+    [kameloso.plugins.services.chanquery.ChanQueryService|ChanQueryService]
     querying current channel for information on the channels and their users.
 
     Params:

@@ -133,15 +133,37 @@ auto configurationText(const string configFile)
         import std.array : replace;
         import std.string : chomp;
 
+        // Ideally we'd do this, but it increases compilation memory by ~15 Mb
+        /*return configFile
+            .readText
+            .substitute(
+                "[Notes]\n", "[Note]\n",
+                "[Notes]\r\n", "[Note]\r\n",
+                "[Votes]\n", "[Poll]\n",
+                "[Votes]\r\n", "[Poll]\r\n",
+                "[Quotes]\n", "[Quote]\n",
+                "[Quotes]\r\n", "[Quote]\r\n",
+                "[TwitchBot]\n", "[Twitch]\n",
+                "[TwitchBot]\r\n", "[Twitch]\r\n",
+                "[Oneliners]\n", "[Oneliner]\n",
+                "[Oneliners]\r\n", "[Oneliner]\r\n")
+            .to!string
+            .chomp;*/
+
         return configFile
             .readText
+            .replace("[Notes]\n", "[Note]\n")
+            .replace("[Notes]\r\n", "[Note]\r\n")
             .replace("[Votes]\n", "[Poll]\n")
             .replace("[Votes]\r\n", "[Poll]\r\n")
+            .replace("[Quotes]\n", "[Quote]\n")
+            .replace("[Quotes]\r\n", "[Quote]\r\n")
             .replace("[TwitchBot]\n", "[Twitch]\n")
             .replace("[TwitchBot]\r\n", "[Twitch]\r\n")
             .replace("[Oneliners]\n", "[Oneliner]\n")
             .replace("[Oneliners]\r\n", "[Oneliner]\r\n")
             .chomp;
+
     }
     catch (Exception e)
     {

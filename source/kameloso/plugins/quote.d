@@ -1,11 +1,11 @@
 /++
-    The Quotes plugin allows for saving and replaying user quotes.
+    The Quote plugin allows for saving and replaying user quotes.
 
     On Twitch, the commands do not take a nickname parameter; instead
     the owner of the channel (the broadcaster) is assumed to be the target.
 
     See_Also:
-        https://github.com/zorael/kameloso/wiki/Current-plugins#quotes,
+        https://github.com/zorael/kameloso/wiki/Current-plugins#quote,
         [kameloso.plugins.common.core],
         [kameloso.plugins.common.misc]
 
@@ -15,9 +15,9 @@
     Authors:
         [JR](https://github.com/zorael)
  +/
-module kameloso.plugins.quotes;
+module kameloso.plugins.quote;
 
-version(WithQuotesPlugin):
+version(WithQuotePlugin):
 
 private:
 
@@ -29,17 +29,17 @@ import kameloso.messaging;
 import dialect.defs;
 
 mixin UserAwareness;
-mixin PluginRegistration!QuotesPlugin;
+mixin PluginRegistration!QuotePlugin;
 
 
-// QuotesSettings
+// QuoteSettings
 /++
-    All settings for a Quotes plugin, gathered in a struct.
+    All settings for a Quote plugin, gathered in a struct.
  +/
-@Settings struct QuotesSettings
+@Settings struct QuoteSettings
 {
     /++
-        Whether or not the Quotes plugin should react to events at all.
+        Whether or not the Quote plugin should react to events at all.
      +/
     @Enabler bool enabled = true;
 
@@ -128,7 +128,7 @@ public:
             .addSyntax("Elsewhere: $command [nickname] [#index]")
     )
 )
-void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
+void onCommandQuote(QuotePlugin plugin, const ref IRCEvent event)
 {
     import dialect.common : isValidNickname;
     import lu.string : stripped;
@@ -268,7 +268,7 @@ void onCommandQuote(QuotesPlugin plugin, const ref IRCEvent event)
             .addSyntax("Elsewhere: $command [nickname] [new quote]")
     )
 )
-void onCommandAddQuote(QuotesPlugin plugin, const ref IRCEvent event)
+void onCommandAddQuote(QuotePlugin plugin, const ref IRCEvent event)
 {
     import lu.string : stripped, strippedRight, unquoted;
     import std.format : format;
@@ -357,7 +357,7 @@ void onCommandAddQuote(QuotesPlugin plugin, const ref IRCEvent event)
             .addSyntax("Elsewhere: $command [nickname] [index] [new quote text]")
     )
 )
-void onCommandModQuote(QuotesPlugin plugin, const ref IRCEvent event)
+void onCommandModQuote(QuotePlugin plugin, const ref IRCEvent event)
 {
     import lu.string : SplitResults, splitInto, stripped, strippedRight, unquoted;
     import std.conv : ConvException, to;
@@ -474,7 +474,7 @@ void onCommandModQuote(QuotesPlugin plugin, const ref IRCEvent event)
             .addSyntax("$command [source nickname] [target nickname]")
     )
 )
-void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
+void onCommandMergeQuotes(QuotePlugin plugin, const ref IRCEvent event)
 {
     import dialect.common : isValidNickname;
     import lu.string : SplitResults, plurality, splitInto, stripped;
@@ -549,7 +549,7 @@ void onCommandMergeQuotes(QuotesPlugin plugin, const ref IRCEvent event)
             .addSyntax("Elsewhere: $command [nickname] [index]")
     )
 )
-void onCommandDelQuote(QuotesPlugin plugin, const ref IRCEvent event)
+void onCommandDelQuote(QuotePlugin plugin, const ref IRCEvent event)
 {
     import lu.string : SplitResults, splitInto, stripped;
     import std.algorithm.mutation : SwapStrategy, remove;
@@ -638,14 +638,14 @@ void onCommandDelQuote(QuotesPlugin plugin, const ref IRCEvent event)
     Sends a [Quote] to a channel.
 
     Params:
-        plugin = The current [QuotesPlugin].
+        plugin = The current [QuotePlugin].
         quote = The [Quote] to report.
         channelName = Name of the channel to send to.
         nickname = Nickname whose quote it is.
         index = Index of the quote in the local storage.
  +/
 void sendQuoteToChannel(
-    QuotesPlugin plugin,
+    QuotePlugin plugin,
     const Quote quote,
     const string channelName,
     const string nickname,
@@ -680,12 +680,12 @@ void sendQuoteToChannel(
 
 // onWelcome
 /++
-    Initialises the passed [QuotesPlugin]. Loads the quotes from disk.
+    Initialises the passed [QuotePlugin]. Loads the quotes from disk.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
 )
-void onWelcome(QuotesPlugin plugin)
+void onWelcome(QuotePlugin plugin)
 {
     loadQuotes(plugin);
 }
@@ -705,13 +705,13 @@ private:
         Called when a supplied quote index was out of range.
 
         Params:
-            plugin = The current [QuotesPlugin].
+            plugin = The current [QuotePlugin].
             event = The original triggering [dialect.defs.IRCEvent|IRCEvent].
             indexGiven = The index given by the triggering user.
             upperBound = The actual upper bounds that `indexGiven` failed to fall within.
      +/
     static void sendIndexOutOfRange(
-        QuotesPlugin plugin,
+        QuotePlugin plugin,
         const ref IRCEvent event,
         const ptrdiff_t indexGiven,
         const size_t upperBound)
@@ -726,12 +726,12 @@ private:
         Called when a passed nickname contained invalid characters (or similar).
 
         Params:
-            plugin = The current [QuotesPlugin].
+            plugin = The current [QuotePlugin].
             event = The original triggering [dialect.defs.IRCEvent|IRCEvent].
             nickname = The would-be nickname given by the triggering user.
      +/
     static void sendInvalidNickname(
-        QuotesPlugin plugin,
+        QuotePlugin plugin,
         const ref IRCEvent event,
         const string nickname)
     {
@@ -745,12 +745,12 @@ private:
         Called when there were no quotes to be found for a given nickname.
 
         Params:
-            plugin = The current [QuotesPlugin].
+            plugin = The current [QuotePlugin].
             event = The original triggering [dialect.defs.IRCEvent|IRCEvent].
             nickname = The nickname given by the triggering user.
      +/
     static void sendNoQuotesForNickname(
-        QuotesPlugin plugin,
+        QuotePlugin plugin,
         const ref IRCEvent event,
         const string nickname)
     {
@@ -775,11 +775,11 @@ private:
         Called when a non-integer or negative integer was given as index.
 
         Params:
-            plugin = The current [QuotesPlugin].
+            plugin = The current [QuotePlugin].
             event = The original triggering [dialect.defs.IRCEvent|IRCEvent].
      +/
     static void sendIndexMustBePositiveNumber(
-        QuotesPlugin plugin,
+        QuotePlugin plugin,
         const ref IRCEvent event)
     {
         enum message = "Index must be a positive number.";
@@ -867,7 +867,7 @@ auto getQuoteByIndexString(
     Fetches a [Quote] whose line matches the passed search terms.
 
     Params:
-        plugin = The current [QuotesPlugin].
+        plugin = The current [QuotePlugin].
         quotes = Array of [Quote]s to get a specific one from based on search terms.
         searchTermsCased = Search terms to apply to the `quotes` array, with letters
             in original casing.
@@ -877,7 +877,7 @@ auto getQuoteByIndexString(
         A [Quote] whose line matches the passed search terms.
  +/
 Quote getQuoteBySearchTerms(
-    QuotesPlugin plugin,
+    QuotePlugin plugin,
     const Quote[] quotes,
     const string searchTermsCased,
     out size_t index)
@@ -951,7 +951,7 @@ Quote getQuoteBySearchTerms(
     {
         if (!flattenedQuote.contains(searchTerms)) continue;
 
-        if (plugin.quotesSettings.alwaysPickFirstMatch)
+        if (plugin.quoteSettings.alwaysPickFirstMatch)
         {
             index = i;
             return quotes[index];
@@ -977,7 +977,7 @@ Quote getQuoteBySearchTerms(
     {
         if (!stripBoth(flattenedQuote).contains(strippedSearchTerms)) continue;
 
-        if (plugin.quotesSettings.alwaysPickFirstMatch)
+        if (plugin.quoteSettings.alwaysPickFirstMatch)
         {
             index = i;
             return quotes[index];
@@ -1131,7 +1131,7 @@ unittest
 /++
     Loads quotes from disk into an associative array of [Quote]s.
  +/
-void loadQuotes(QuotesPlugin plugin)
+void loadQuotes(QuotePlugin plugin)
 {
     import lu.json : JSONStorage;
     import std.json : JSONException;
@@ -1162,7 +1162,7 @@ void loadQuotes(QuotesPlugin plugin)
 /++
     Saves quotes to disk in JSON file format.
  +/
-void saveQuotes(QuotesPlugin plugin)
+void saveQuotes(QuotePlugin plugin)
 {
     import lu.json : JSONStorage;
 
@@ -1313,7 +1313,7 @@ final class NoQuotesSearchMatchException : Exception
 /++
     Reads and writes the file of quotes to disk, ensuring that it's there.
  +/
-void initResources(QuotesPlugin plugin)
+void initResources(QuotePlugin plugin)
 {
     import lu.json : JSONStorage;
     import lu.string : beginsWith;
@@ -1374,7 +1374,7 @@ void initResources(QuotesPlugin plugin)
 /++
     Reloads the JSON quotes from disk.
  +/
-void reload(QuotesPlugin plugin)
+void reload(QuotePlugin plugin)
 {
     loadQuotes(plugin);
 }
@@ -1383,24 +1383,24 @@ void reload(QuotesPlugin plugin)
 public:
 
 
-// QuotesPlugin
+// QuotePlugin
 /++
-    The Quotes plugin provides the ability to save and replay user quotes.
+    The Quote plugin provides the ability to save and replay user quotes.
 
     These are not currently automatically replayed, such as when a user joins,
     but can rather be actively queried by use of the `quote` verb.
 
     It was historically part of [kameloso.plugins.chatbot.ChatbotPlugin|ChatbotPlugin].
  +/
-final class QuotesPlugin : IRCPlugin
+final class QuotePlugin : IRCPlugin
 {
 private:
     import lu.json : JSONStorage;
 
     /++
-        All Quotes plugin settings gathered.
+        All Quote plugin settings gathered.
      +/
-    QuotesSettings quotesSettings;
+    QuoteSettings quoteSettings;
 
     /++
         The in-memory JSON storage of all user quotes.

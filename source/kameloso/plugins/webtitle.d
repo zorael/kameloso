@@ -1,12 +1,12 @@
 /++
-    The Webtitles plugin catches URLs pasted in a channel, follows them and
+    The Webtitle plugin catches URLs pasted in a channel, follows them and
     reports back the title of the web page that was linked to.
 
     It has no bot commands; everything is done by automatically scanning channel
     and private query messages for things that look like links.
 
     See_Also:
-        https://github.com/zorael/kameloso/wiki/Current-plugins#webtitles,
+        https://github.com/zorael/kameloso/wiki/Current-plugins#webtitle,
         [kameloso.plugins.common.core],
         [kameloso.plugins.common.misc]
 
@@ -16,9 +16,9 @@
     Authors:
         [JR](https://github.com/zorael)
  +/
-module kameloso.plugins.webtitles;
+module kameloso.plugins.webtitle;
 
-version(WithWebtitlesPlugin):
+version(WithWebtitlePlugin):
 
 private:
 
@@ -44,11 +44,11 @@ static immutable descriptionExemptions =
 ];
 
 
-// WebtitlesSettings
+// WebtitleSettings
 /++
     All Webtitles settings, gathered in a struct.
  +/
-@Settings struct WebtitlesSettings
+@Settings struct WebtitleSettings
 {
     /++
         Toggles whether or not the plugin should react to events at all.
@@ -147,7 +147,7 @@ struct TitleLookupRequest
     .permissionsRequired(Permissions.ignore)
     .channelPolicy(ChannelPolicy.home)
 )
-void onMessage(WebtitlesPlugin plugin, const ref IRCEvent event)
+void onMessage(WebtitlePlugin plugin, const ref IRCEvent event)
 {
     import kameloso.common : findURLs;
     import lu.string : beginsWith, strippedLeft;
@@ -182,11 +182,11 @@ void onMessage(WebtitlesPlugin plugin, const ref IRCEvent event)
     It accesses the cache of already looked up addresses to speed things up.
 
     Params:
-        plugin = The current [WebtitlesPlugin].
+        plugin = The current [WebtitlePlugin].
         event = The [dialect.defs.IRCEvent|IRCEvent] that instigated the lookup.
         urls = `string[]` of URLs to look up.
  +/
-void lookupURLs(WebtitlesPlugin plugin, const /*ref*/ IRCEvent event, string[] urls)
+void lookupURLs(WebtitlePlugin plugin, const /*ref*/ IRCEvent event, string[] urls)
 {
     import kameloso.common : logger;
     import kameloso.thread : ThreadMessage;
@@ -249,7 +249,7 @@ void lookupURLs(WebtitlesPlugin plugin, const /*ref*/ IRCEvent event, string[] u
 
         cast(void)spawn(&worker, cast(shared)request, plugin.cache,
             (i * plugin.delayMsecs),
-            cast(Flag!"descriptions")plugin.webtitlesSettings.descriptions,
+            cast(Flag!"descriptions")plugin.webtitleSettings.descriptions,
             plugin.state.connSettings.caBundleFile);
     }
 
@@ -290,7 +290,7 @@ void worker(
     version(Posix)
     {
         import kameloso.thread : setThreadName;
-        setThreadName("webtitles");
+        setThreadName("webtitle");
     }
 
     // Set the global settings so messaging functions don't segfault us
@@ -918,13 +918,13 @@ void prune(shared TitleLookupResults[string] cache, const uint expireSeconds)
     Versioned out until we need it, such as for selective Twitch link blocks.
 
     Params:
-        plugin = The current [WebtitlesPlugin].
+        plugin = The current [WebtitlePlugin].
         header = String header describing the passed content payload.
         content = The boxed content of the message.
  +/
 version(none)
 void onBusMessage(
-    WebtitlesPlugin plugin,
+    WebtitlePlugin plugin,
     const string header,
     shared Sendable content)
 {
@@ -932,7 +932,7 @@ void onBusMessage(
 
     // Don't return if disabled?
     // Do we want to be able to serve other plugins anyway?
-    if (header != "webtitles") return;
+    if (header != "webtitle") return;
 
     auto message = cast(Boxed!IRCEvent)content;
     assert(message, "Incorrectly cast message: " ~ typeof(message).stringof);
@@ -947,7 +947,7 @@ void onBusMessage(
 
     Just assign an entry and remove it.
  +/
-void initialise(WebtitlesPlugin plugin)
+void initialise(WebtitlePlugin plugin)
 {
     // No need to synchronise this; no worker threads are running
     plugin.cache[string.init] = TitleLookupResults.init;
@@ -956,24 +956,24 @@ void initialise(WebtitlesPlugin plugin)
 
 
 mixin MinimalAuthentication;
-mixin PluginRegistration!WebtitlesPlugin;
+mixin PluginRegistration!WebtitlePlugin;
 
 public:
 
 
-// WebtitlesPlugin
+// WebtitlePlugin
 /++
-    The Webtitles plugin catches HTTP URL links in messages, connects to
+    The Webtitle plugin catches HTTP URL links in messages, connects to
     their servers and and streams the web page itself, looking for the web page's
     title. This is then reported to the originating channel or personal query.
  +/
-final class WebtitlesPlugin : IRCPlugin
+final class WebtitlePlugin : IRCPlugin
 {
 private:
     /++
         All Webtitles options gathered.
      +/
-    WebtitlesSettings webtitlesSettings;
+    WebtitleSettings webtitleSettings;
 
     /++
         Cache of recently looked-up web titles.
