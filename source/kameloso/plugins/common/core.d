@@ -1020,10 +1020,14 @@ mixin template IRCPluginImpl(
             }
             else
             {
+                // In bounds but not an accepted type
                 return NextStep.continue_;
             }
 
-            try
+            /++
+                Call `process` on the function, and return what it tells us to do next.
+             +/
+            auto callProcess()
             {
                 immutable next = process!
                     (verbose,
@@ -1041,7 +1045,7 @@ mixin template IRCPluginImpl(
                 else if (next == NextStep.repeat)
                 {
                     // only repeat once so we don't endlessly loop
-                    immutable newNext = process!
+                    return process!
                         (verbose,
                         cast(bool)uda._fiber,
                         cast(bool)uda.regexes.length)
@@ -1049,7 +1053,6 @@ mixin template IRCPluginImpl(
                         funName,
                         uda,
                         event);
-                    return newNext;
                 }
                 else if (next == NextStep.return_)
                 {
@@ -1059,6 +1062,11 @@ mixin template IRCPluginImpl(
                 {
                     assert(0, "`IRCPluginImpl.onEventImpl.process` returned `Next.unset`");
                 }
+            }
+
+            try
+            {
+                return callProcess();
             }
             catch (Exception e)
             {
@@ -1076,43 +1084,10 @@ mixin template IRCPluginImpl(
                 if (!isRecoverableException) throw e;
 
                 sanitiseEvent(event);
-
-                // Copy-paste, not much we can do otherwise
-                immutable next = process!
-                    (verbose,
-                    cast(bool)uda._fiber,
-                    cast(bool)uda.regexes.length)
-                    (&fun,
-                    funName,
-                    uda,
-                    event);
-
-                if (next == NextStep.continue_)
-                {
-                    return NextStep.continue_;
-                }
-                else if (next == NextStep.repeat)
-                {
-                    // only repeat once so we don't endlessly loop
-                    immutable newNext = process!
-                        (verbose,
-                        cast(bool)uda._fiber,
-                        cast(bool)uda.regexes.length)
-                        (&fun,
-                        funName,
-                        uda,
-                        event);
-                    return newNext;
-                }
-                else if (next == NextStep.return_)
-                {
-                    return NextStep.return_;
-                }
-                else /*if (next == NextStep.unset)*/
-                {
-                    assert(0, "`IRCPluginImpl.onEventImpl.process` returned `Next.unset`");
-                }
+                return callProcess();
             }
+
+            assert(0, "Unreachable");
         }
 
         /+
