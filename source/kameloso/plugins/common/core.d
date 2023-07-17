@@ -2319,21 +2319,15 @@ void udaSanityCheckCTFE(const IRCEventHandler uda)
 
     assert(__ctfe, "udaSanityCheckCTFE called outside CTFE");
 
-    static if (__VERSION__ <= 2104L)
-    {
-        /++
-            There's something wrong with how the assert message is printed from CTFE.
-            Work around it somewhat by prepending a backtick.
+    /++
+        There's something wrong with how the assert message is printed from CTFE.
+        Work around it somewhat by prepending a backtick.
 
-            https://issues.dlang.org/show_bug.cgi?id=24036
-         +/
-        enum fix = "`";
-    }
-    else
-    {
-        // Hopefully no need past 2.104... Update when 2.105 is out.
-        enum fix = string.init;
-    }
+        https://issues.dlang.org/show_bug.cgi?id=24036
+
+        Add a `static if` on the compiler version when this is fixed.
+     +/
+    enum fix = "`";
 
     if (!uda.acceptedEventTypes.length)
     {
