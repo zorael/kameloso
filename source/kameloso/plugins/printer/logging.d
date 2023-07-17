@@ -631,7 +631,7 @@ void commitAllLogsImpl(PrinterPlugin plugin)
 
     foreach (ref buffer; plugin.buffers)
     {
-        commitLog(plugin, buffer);
+        commitLog(buffer);
     }
 }
 
@@ -645,13 +645,12 @@ void commitAllLogsImpl(PrinterPlugin plugin)
     losing uncommitted lines in a catastrophical crash.
 
     Params:
-        plugin = The current [kameloso.plugins.printer.base.PrinterPlugin|PrinterPlugin].
         buffer = [LogLineBuffer] whose lines to commit to disk.
 
     See_Also:
         [commitAllLogsImpl]
  +/
-void commitLog(PrinterPlugin plugin, ref LogLineBuffer buffer)
+void commitLog(ref LogLineBuffer buffer)
 {
     import kameloso.string : doublyBackslashed;
     import std.exception : ErrnoException;
