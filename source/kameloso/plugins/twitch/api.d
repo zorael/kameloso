@@ -479,18 +479,18 @@ in (url.length, "Tried to send an HTTP request without a URL")
             }
             else
             {
+                version(PrintStacktraces)
+                {
+                    if (!plugin.state.settings.headless)
+                    {
+                        import std.stdio : stdout, writeln;
+                        writeln(json.toPrettyString);
+                        stdout.flush();
+                    }
+                }
+
                 status = "Error";
                 message = "An unspecified error occured";
-            }
-
-            version(PrintStacktraces)
-            {
-                if (!plugin.state.settings.headless)
-                {
-                    import std.stdio : stdout, writeln;
-                    writeln(json.toPrettyString);
-                    stdout.flush();
-                }
             }
 
             enum pattern = "%3d %s: %s";
