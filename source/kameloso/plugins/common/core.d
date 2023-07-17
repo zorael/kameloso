@@ -1346,16 +1346,20 @@ mixin template IRCPluginImpl(
         {
             import lu.traits : TakesParams;
 
-            static if (TakesParams!(.initialise, typeof(this)))
+            static if (
+                is(typeof(.initialise)) &&
+                is(typeof(.initialise) == function) &&
+                TakesParams!(.initialise, typeof(this)))
             {
                 .initialise(this);
             }
             else
             {
+                import kameloso.traits : stringOfTypeOf;
                 import std.format : format;
 
                 enum pattern = "`%s.initialise` has an unsupported function signature: `%s`";
-                enum message = pattern.format(module_, typeof(.initialise).stringof);
+                enum message = pattern.format(module_, stringOfTypeOf!(.initialise));
                 static assert(0, message);
             }
         }
@@ -1377,7 +1381,10 @@ mixin template IRCPluginImpl(
 
             if (!this.isEnabled) return;
 
-            static if (TakesParams!(.postprocess, typeof(this), IRCEvent))
+            static if (
+                is(typeof(.postprocess)) &&
+                is(typeof(.postprocess) == function) &&
+                TakesParams!(.postprocess, typeof(this), IRCEvent))
             {
                 import std.traits : ParameterStorageClass, ParameterStorageClassTuple;
 
@@ -1394,16 +1401,17 @@ mixin template IRCPluginImpl(
 
                     enum pattern = "`%s.postprocess` does not take its " ~
                         "`IRCEvent` parameter by `ref`";
-                    enum message = pattern.format(module_,);
+                    enum message = pattern.format(module_);
                     static assert(0, message);
                 }
             }
             else
             {
+                import kameloso.traits : stringOfTypeOf;
                 import std.format : format;
 
                 enum pattern = "`%s.postprocess` has an unsupported function signature: `%s`";
-                enum message = pattern.format(module_, typeof(.postprocess).stringof);
+                enum message = pattern.format(module_, stringOfTypeOf!(.postprocess));
                 static assert(0, message);
             }
         }
@@ -1421,16 +1429,20 @@ mixin template IRCPluginImpl(
 
             if (!this.isEnabled) return;
 
-            static if (TakesParams!(.initResources, typeof(this)))
+            static if (
+                is(typeof(.initResources)) &&
+                is(typeof(.initResources) == function) &&
+                TakesParams!(.initResources, typeof(this)))
             {
                 .initResources(this);
             }
             else
             {
+                import kameloso.traits : stringOfTypeOf;
                 import std.format : format;
 
                 enum pattern = "`%s.initResources` has an unsupported function signature: `%s`";
-                enum message = pattern.format(module_, typeof(.initResources).stringof);
+                enum message = pattern.format(module_, stringOfTypeOf!(.initResources));
                 static assert(0, message);
             }
         }
@@ -1646,15 +1658,20 @@ mixin template IRCPluginImpl(
 
                 if (!this.isEnabled) return;
 
-                static if (TakesParams!(.` ~ funName ~ `, typeof(this)))
+                static if (
+                    is(typeof(.` ~ funName ~ `)) &&
+                    is(typeof(.` ~ funName ~ `) == function) &&
+                    TakesParams!(.` ~ funName ~ `, typeof(this)))
                 {
                     .` ~ funName ~ `(this);
                 }
                 else
                 {
+                    import kameloso.traits : stringOfTypeOf;
                     import std.format : format;
+
                     ` ~ "enum pattern = \"`%s.%s` has an unsupported function signature: `%s`\";
-                    enum message = pattern.format(module_, \"" ~ funName ~ `", typeof(.` ~ funName ~ `).stringof);
+                    enum message = pattern.format(module_, \"" ~ funName ~ `", stringOfTypeOf!(.` ~ funName ~ `));
                     static assert(0, message);
                 }
             }
@@ -1886,20 +1903,27 @@ mixin template IRCPluginImpl(
         {
             import lu.traits : TakesParams;
 
-            static if (TakesParams!(.onBusMessage, typeof(this), string, Sendable))
+            static if (
+                is(typeof(.onBusMessage)) &&
+                is(typeof(.onBusMessage) == function) &&
+                TakesParams!(.onBusMessage, typeof(this), string, Sendable))
             {
                 .onBusMessage(this, header, content);
             }
-            /*else static if (TakesParams!(.onBusMessage, typeof(this), string))
+            /*else static if (
+                is(typeof(.onBusMessage)) &&
+                is(typeof(.onBusMessage) == function) &&
+                TakesParams!(.onBusMessage, typeof(this), string))
             {
                 .onBusMessage(this, header);
             }*/
             else
             {
+                import kameloso.traits : stringOfTypeOf;
                 import std.format : format;
 
                 enum pattern = "`%s.onBusMessage` has an unsupported function signature: `%s`";
-                enum message = pattern.format(module_, typeof(.onBusMessage).stringof);
+                enum message = pattern.format(module_, stringOfTypeOf!(.onBusMessage));
                 static assert(0, message);
             }
         }
