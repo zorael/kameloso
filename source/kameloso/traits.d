@@ -613,3 +613,13 @@ enum stringOfTypeOf(T) = T.stringof;
         The string representation of the type.
  +/
 enum stringOfTypeOf(alias T) = typeof(T).stringof;
+
+///
+unittest
+{
+    int foo;
+    alias baz = int;
+
+    static assert(stringOfTypeOf!foo == "int");
+    static assert(stringOfTypeOf!baz == "int");
+}
