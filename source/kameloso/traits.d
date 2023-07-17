@@ -587,3 +587,29 @@ enum udaIndexOf(alias symbol, T) = ()
 
     return index;
 }();
+
+
+// stringOfTypeOf
+/++
+    The string representation of a type. Non-alias parameter overload.
+
+    Params:
+        T = Type to get the string representation of.
+
+    Returns:
+        The string representation of the type.
+ +/
+enum stringOfTypeOf(T) = T.stringof;
+
+
+// stringOfTypeOf
+/++
+    The string representation of the type of something. Alias parameter overload.
+
+    Params:
+        T = Symbol whose type to get the string representation of.
+
+    Returns:
+        The string representation of the type.
+ +/
+enum stringOfTypeOf(alias T) = typeof(T).stringof;
