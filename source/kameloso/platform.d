@@ -355,6 +355,7 @@ Pid execvp(/*const*/ string[] args) @system
                         "twitch.keygen",
                         "twitch.superKeygen",
                         "twitch.googleKeygen",
+                        "twitch.youtubeKeygen",
                         "twitch.spotifyKeygen"))
                     {
                         toRemove ~= i;

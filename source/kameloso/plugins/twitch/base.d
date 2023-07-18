@@ -137,6 +137,11 @@ public:
         bool googleKeygen = false;
 
         /++
+            Runtime "alias" to [googleKeygen].
+         +/
+        bool youtubeKeygen = false;
+
+        /++
             Whether or not to start a captive session for requesting Spotify
             access tokens.
          +/
@@ -2671,6 +2676,7 @@ void start(TwitchPlugin plugin)
         plugin.twitchSettings.keygen ||
         plugin.twitchSettings.superKeygen ||
         plugin.twitchSettings.googleKeygen ||
+        plugin.twitchSettings.youtubeKeygen ||
         plugin.twitchSettings.spotifyKeygen;
 
     if (!plugin.state.server.address.endsWith(".twitch.tv"))
@@ -2728,13 +2734,15 @@ void start(TwitchPlugin plugin)
             needSeparator = true;
         }
 
-        if (plugin.twitchSettings.googleKeygen)
+        if (plugin.twitchSettings.googleKeygen ||
+            plugin.twitchSettings.youtubeKeygen)
         {
             import kameloso.plugins.twitch.google : requestGoogleKeys;
             if (needSeparator) logger.trace(separator);
             requestGoogleKeys(plugin);
             if (*plugin.state.abort) return;
             plugin.twitchSettings.googleKeygen = false;
+            plugin.twitchSettings.youtubeKeygen = false;
             needSeparator = true;
         }
 
@@ -2749,11 +2757,12 @@ void start(TwitchPlugin plugin)
 
         // Remove custom Twitch settings so we can reconnect without jumping
         // back into keygens.
-        static immutable string[4] settingsToPop =
+        static immutable string[5] settingsToPop =
         [
             "twitch.keygen",
             "twitch.superKeygen",
             "twitch.googleKeygen",
+            "twitch.youtubeKeygen",
             "twitch.spotifyKeygen",
         ];
 
@@ -4238,6 +4247,7 @@ package:
                 twitchSettings.keygen ||
                 twitchSettings.superKeygen ||
                 twitchSettings.googleKeygen ||
+                twitchSettings.youtubeKeygen ||
                 twitchSettings.spotifyKeygen);
     }
 
