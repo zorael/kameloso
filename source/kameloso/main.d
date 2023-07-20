@@ -927,7 +927,16 @@ auto mainLoop(ref Kameloso instance)
 
             if (plugin.state.specialRequests.length)
             {
-                processSpecialRequests(instance, plugin);
+                try
+                {
+                    processSpecialRequests(instance, plugin);
+                }
+                catch (Exception e)
+                {
+                    enum pattern = "Exception processing %s special requests: <l>%s";
+                    logger.warningf(pattern, plugin.name, e.msg);
+                    version(PrintStacktraces) logger.trace(e);
+                }
             }
 
             if (plugin.state.scheduledFibers.length ||
