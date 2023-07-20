@@ -162,6 +162,8 @@ auto configurationText(const string configFile)
             .replace("[TwitchBot]\r\n", "[Twitch]\r\n")
             .replace("[Oneliners]\n", "[Oneliner]\n")
             .replace("[Oneliners]\r\n", "[Oneliner]\r\n")
+            .replace("[Webtitles]\n", "[Webtitle]\n")
+            .replace("[Webtitles]\r\n", "[Webtitle]\r\n")
             .chomp;
 
     }
