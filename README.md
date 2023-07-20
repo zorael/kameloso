@@ -173,7 +173,7 @@ $ ./kameloso \
     --admins "me" \
     --homeChannels "#mychannel" \
     --guestChannels "#d,##networking" \
-    --monochrome
+    --monochrome \
     --save
 
 [12:34:56] Configuration written to /home/user/.config/kameloso/kameloso.conf
@@ -205,138 +205,138 @@ Additionally, see [this section about permissions](#except-nothing-happens) if n
       you joined #channel
  kameloso sets mode +o you
 
-      you | I am a fish
-      you | s/fish/snek/
- kameloso | you | I am a snek
+      <you> I am a fish
+      <you> s/fish/snek/
+ <kameloso> you | I am a snek
 
-    blarf | I am a snek too
-      you | !addquote blarf I am a snek too
- kameloso | Quote added at index #4.
-      you | !quote blarf
- kameloso | I am a snek too (blarf #4 2022-04-04)
-      you | !quote blarf #3
- kameloso | A Møøse once bit my sister (blarf #3 2022-02-01)
-      you | !quote blarf barnes and noble
- kameloso | i got kicked out of barnes and noble once for moving all the bibles into the fiction section (blarf #0 2019-08-21)
+    <blarf> I am a snek too
+      <you> !addquote blarf I am a snek too
+ <kameloso> Quote added at index #4.
+      <you> !quote blarf
+ <kameloso> I am a snek too (blarf #4 2022-04-04)
+      <you> !quote blarf #3
+ <kameloso> A Møøse once bit my sister (blarf #3 2022-02-01)
+      <you> !quote blarf barnes and noble
+ <kameloso> i got kicked out of barnes and noble once for moving all the bibles into the fiction section (blarf #0 2019-08-21)
 
-      you | !seen
- kameloso | Usage: !seen [nickname]
-      you | !seen MrOffline
- kameloso | I last saw MrOffline 1 hour and 34 minutes ago.
+      <you> !seen
+ <kameloso> Usage: !seen [nickname]
+      <you> !seen MrOffline
+ <kameloso> I last saw MrOffline 1 hour and 34 minutes ago.
 
- MrOnline | !note
- kameloso | Usage: !note [nickname] [note text]
- MrOnline | !note MrOffline About the thing you mentioned, yeah no
- kameloso | Note added.
+ <MrOnline> !note
+ <kameloso> Usage: !note [nickname] [note text]
+ <MrOnline> !note MrOffline About the thing you mentioned, yeah no
+ <kameloso> Note added.
  MrOnline left #channel
 MrOffline joined #channel
- kameloso | MrOffline! MrOnline left note 4 hours and 28 minutes ago: About the thing you mentioned, yeah no
+ <kameloso> MrOffline! MrOnline left note 4 hours and 28 minutes ago: About the thing you mentioned, yeah no
 
-      you | !operator add bob
- kameloso | Added BOB as an operator in #channel.
-      you | !whitelist add alice
- kameloso | Added Alice as a whitelisted user in #channel.
-      you | !blacklist del steve
- kameloso | Removed steve as a blacklisted user in #channel.
+      <you> !operator add bob
+ <kameloso> Added BOB as an operator in #channel.
+      <you> !whitelist add alice
+ <kameloso> Added Alice as a whitelisted user in #channel.
+      <you> !blacklist del steve
+ <kameloso> Removed steve as a blacklisted user in #channel.
 
-      you | !automode
- kameloso | Usage: !automode [add|clear|list] [nickname/account] [mode]
-      you | !automode add ray +o
- kameloso | Automode modified! ray on #channel: +o
+      <you> !automode
+ <kameloso> Usage: !automode [add|clear|list] [nickname/account] [mode]
+      <you> !automode add ray +o
+ <kameloso> Automode modified! ray on #channel: +o
       ray joined #channel
  kameloso sets mode +o ray
 
-      you | !oneliner new
- kameloso | Usage: !oneliner new [trigger] [type] [optional cooldown]
-      you | !oneliner new info random
- kameloso | Oneliner !info created! Use !oneliner add to add lines.
-      you | !oneliner add info @$nickname: for more information just use Google
- kameloso | Oneliner line added.
-      you | !oneliner add info @$nickname: for more information just use Bing
- kameloso | Oneliner line added.
-      you | !oneliner new vods ordered
- kameloso | Oneliner !vods created! Use !oneliner add to add lines.
-      you | !oneliner add vods See https://twitch.tv/zorael/videos for $streamer's on-demand videos (stored temporarily)
- kameloso | Oneliner line added.
-      you | !oneliner new source ordered
- kameloso | Oneliner !source created! Use !oneliner add to add lines.
-      you | !oneliner add source I am $bot. Peruse my source at https://github.com/zorael/kameloso
- kameloso | Oneliner line added.
-      you | !info
- kameloso | @you: for more information just use Google
-      you | !info
- kameloso | @you: for more information just use Bing
-      you | !vods
- kameloso | See https://twitch.tv/zorael/videos for Channel's on-demand videos (stored temporarily)
-      you | !commands
- kameloso | Available commands: !info, !vods, !source
-      you | !oneliner del vods
- kameloso | Oneliner !vods removed.
+      <you> !oneliner new
+ <kameloso> Usage: !oneliner new [trigger] [type] [optional cooldown]
+      <you> !oneliner new info random
+ <kameloso> Oneliner !info created! Use !oneliner add to add lines.
+      <you> !oneliner add info @$nickname: for more information just use Google
+ <kameloso> Oneliner line added.
+      <you> !oneliner add info @$nickname: for more information just use Bing
+ <kameloso> Oneliner line added.
+      <you> !oneliner new vods ordered
+ <kameloso> Oneliner !vods created! Use !oneliner add to add lines.
+      <you> !oneliner add vods See https://twitch.tv/zorael/videos for $streamer's on-demand videos (stored temporarily)
+ <kameloso> Oneliner line added.
+      <you> !oneliner new source ordered
+ <kameloso> Oneliner !source created! Use !oneliner add to add lines.
+      <you> !oneliner add source I am $bot. Peruse my source at https://github.com/zorael/kameloso
+ <kameloso> Oneliner line added.
+      <you> !info
+ <kameloso> @you: for more information just use Google
+      <you> !info
+ <kameloso> @you: for more information just use Bing
+      <you> !vods
+ <kameloso> See https://twitch.tv/zorael/videos for Channel's on-demand videos (stored temporarily)
+      <you> !commands
+ <kameloso> Available commands: !info, !vods, !source
+      <you> !oneliner del vods
+ <kameloso> Oneliner !vods removed.
 
-      you | !timer new
- kameloso | Usage: !timer new [name] [type] [condition] [message threshold] [time threshold] [stagger message count] [stagger time]
-      you | !timer new mytimer ordered both 100 600 0 0
- kameloso | New timer added! Use !timer add to add lines.
-      you | !timer add mytimer This is an announcement on a timer
- kameloso | Line added to timer mytimer.
-      you | !timer add mytimer It is sent after 100 messages have been seen and 600 seconds have passed
- kameloso | Line added to timer mytimer.
+      <you> !timer new
+ <kameloso> Usage: !timer new [name] [type] [condition] [message threshold] [time threshold] [stagger message count] [stagger time]
+      <you> !timer new mytimer ordered both 100 600 0 0
+ <kameloso> New timer added! Use !timer add to add lines.
+      <you> !timer add mytimer This is an announcement on a timer
+ <kameloso> Line added to timer mytimer.
+      <you> !timer add mytimer It is sent after 100 messages have been seen and (600 seconds have passed)
+ <kameloso> Line added to timer mytimer.
 (...time passes, messages get sent...)
- kameloso | This is an announcement on a timer
+ <kameloso> This is an announcement on a timer
 (...time passes, messages get sent...)
- kameloso | It is sent after 100 messages have been seen and 600 seconds have passed
-      you | !timer suspend mytimer
- kameloso | Timer suspended. Use !timer resume mytimer to resume it.
-      you | !timer resume mytimer
- kameloso | Timer resumed!
+ <kameloso> It is sent after 100 messages have been seen and 600 seconds have passed
+      <you> !timer suspend mytimer
+ <kameloso> Timer suspended. Use !timer resume mytimer to resume it.
+      <you> !timer resume mytimer
+ <kameloso> Timer resumed!
 
-      you | !poll
- kameloso | Usage: !poll [seconds] [choice1] [choice2] ...
-      you | !poll 2m snik snek
- kameloso | Voting commenced! Please place your vote for one of: snek, snik (2 minutes)
-      BOB | snek
-    Alice | snek
-      ray | snik
- kameloso | Voting complete, results:
- kameloso | snek : 2 (66.6%)
- kameloso | snik : 1 (33.3%)
+      <you> !poll
+ <kameloso> Usage: !poll [seconds] [choice1] [choice2] ...
+      <you> !poll 2m snik snek
+ <kameloso> Voting commenced! Please place your vote for one of: snek, snik (2 minutes)
+      <BOB> snek
+    <Alice> snek
+      <ray> snik
+ <kameloso> Voting complete, results:
+ <kameloso> snek : 2 (66.6%)
+ <kameloso> snik : 1 (33.3%)
 
-      you | https://github.com/zorael/kameloso
- kameloso | [github.com] GitHub - zorael/kameloso: IRC bot
-      you | https://youtu.be/ykj3Kpm3O0g
- kameloso | [youtube.com] Uti Vår Hage - Kamelåså (HD) (uploaded by Prebstaroni)
+      <you> https://github.com/zorael/kameloso
+ <kameloso> [github.com] GitHub - zorael/kameloso: IRC bot
+      <you> https://youtu.be/ykj3Kpm3O0g
+ <kameloso> [youtube.com] Uti Vår Hage - Kamelåså (HD) (uploaded by Prebstaroni)
 
 (context: playing a video game)
-      you | !counter
- kameloso | Usage: !counter [add|del|format|list] [counter word]
-      you | !counter add deaths
- kameloso | Counter deaths added! Access it with !deaths.
-      you | !deaths+
- kameloso | deaths +1! Current count: 1
-      you | !deaths+3
- kameloso | deaths +3! Current count: 4
-      you | !deaths
- kameloso | Current deaths count: 4
-      you | !deaths=0
- kameloso | deaths count assigned to 0!
+      <you> !counter
+ <kameloso> Usage: !counter [add|del|format|list] [counter word]
+      <you> !counter add deaths
+ <kameloso> Counter deaths added! Access it with !deaths.
+      <you> !deaths+
+ <kameloso> deaths +1! Current count: 1
+      <you> !deaths+3
+ <kameloso> deaths +3! Current count: 4
+      <you> !deaths
+ <kameloso> Current deaths count: 4
+      <you> !deaths=0
+ <kameloso> deaths count assigned to 0!
 
-      you | !stopwatch start
- kameloso | Stopwatch started!
-      you | !stopwatch
- kameloso | Elapsed time: 18 minutes and 42 seconds
-      you | !stopwatch stop
- kameloso | Stopwatch stopped after 1 hour, 48 minutes and 10 seconds.
+      <you> !stopwatch start
+ <kameloso> Stopwatch started!
+      <you> !stopwatch
+ <kameloso> Elapsed time: 18 minutes and 42 seconds
+      <you> !stopwatch stop
+ <kameloso> Stopwatch stopped after 1 hour, 48 minutes and 10 seconds.
 
-      you | !time
- kameloso | The time is currently 11:04 locally.
-      you | !time Europe/London
- kameloso | The time is currently 10:04 in Europe/London.
-      you | !time Tokyo
- kameloso | The time is currently 18:05 in Tokyo.
-      you | !setzone Helsinki
- kameloso | Timezone changed to Europe/Helsinki.
-      you | !time
- kameloso | The time is currently 12:05 in Europe/Helsinki.
+      <you> !time
+ <kameloso> The time is currently 11:04 locally.
+      <you> !time Europe/London
+ <kameloso> The time is currently 10:04 in Europe/London.
+      <you> !time Tokyo
+ <kameloso> The time is currently 18:05 in Tokyo.
+      <you> !setzone Helsinki
+ <kameloso> Timezone changed to Europe/Helsinki.
+      <you> !time
+ <kameloso> The time is currently 12:05 in Europe/Helsinki.
 ```
 
 ### Online help and commands
@@ -356,17 +356,17 @@ It can technically be any string and not just one character. It may include spac
 
 Before allowing *anyone* to trigger any restricted functionality, the bot will try to identify the accessing user by querying the server for what **services account** that user is logged onto, if not already known. For full and global administrative privileges you will need to be logged into services with an account listed in the `admins` field in the configuration file, while other users may be defined with other per-channel permissions in your [`users.json`](#other-files) file. If a user is not logged onto services it is considered as not being uniquely identifiable and cannot be resolved to an account.
 
-In the case of **hostmasks mode**, the above still applies but "accounts" are derived from user hostmasks. See the **Admin** plugin `!hostmask` command (and the [`hostmasks.json`](#other-files) file) for how to map hostmasks to would-be accounts. Hostmasks are a weaker solution to user identification, but not all servers offer services. More information can be found in [the wiki entry on hostmasks](https://github.com/zorael/kameloso/wiki/On-servers-without-services-(e.g.-no-NickServ)).
+In the case of [**hostmasks mode**](https://github.com/zorael/kameloso/wiki/On-servers-without-services-(e.g.-no-NickServ)), the above still applies but "accounts" are derived from user hostmasks. See the **Admin** plugin `!hostmask` command (and the [`hostmasks.json`](#other-files) file) for how to map hostmasks to would-be accounts. Hostmasks are a weaker solution to user identification, but not all servers offer services..
 
 ## **Twitch**
 
-> **If you're interested in trying the bot but don't want to run it yourself, [contact me](mailto:zorael@gmail.com?subject=kameloso) and I'll host an instance on a headless server.**
+> **If you're interested in trying the bot but don't want to run it yourself, [contact me](mailto:zorael@gmail.com?subject=Hosting+a+kameloso+instance) and I will host an instance on a headless server.**
 
 ### **Copy paste-friendly concrete setup from scratch**
 
 Prebuilt binaries for Windows and Linux can be found under [Releases](https://github.com/zorael/kameloso/releases).
 
-If you're on **Windows**, you must first [install the **OpenSSL** library](#windows). Run this command to download and launch the installer for it, then opt to install to Windows system directories when asked (here in Powershell syntax):
+If you're on **Windows**, you must first [install the **OpenSSL** library](#windows). Navigate to where you downloaded the file, then run the following command to download and launch the installer for it. Make sure to **opt to install to Windows system directories** when asked. Here in Powershell syntax:
 
 ```shell
 ./kameloso --get-openssl
@@ -411,7 +411,7 @@ realName                    likewise
 
 [IRCBot]
 #account
-#password                   <do not enter your Twitch account password!>
+#password                   <do NOT enter your Twitch account password!>
 pass                        <twitch.keygen authorisation token for bot account>
 admins                      mainaccount
 homeChannels                #mainaccount,#botaccount
@@ -486,7 +486,7 @@ Some functionality, such as setting the channel title or currently played game, 
 $ ./kameloso --set twitch.superKeygen
 ```
 
-> Mind that you need to be logged into Twitch (in your browser) with your **main account** while doing this, or the token obtained will be with permissions for the wrong channel.
+> Mind that you need to be logged into Twitch (in your browser) with your **main (broadcaster) account** while doing this, or the token obtained will be with permissions for the wrong channel.
 
 All keygens can be triggered at the same time.
 
