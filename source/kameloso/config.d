@@ -1289,9 +1289,7 @@ void giveBrightTerminalHint(
     (and [kameloso.constants.KamelosoDefaultIntegers|KamelosoDefaultIntegers]).
 
     Params:
-        client = Reference to the [dialect.defs.IRCClient|IRCClient] to complete.
-        server = Reference to the [dialect.defs.IRCServer|IRCServer] to complete.
-        bot = Reference to the [kameloso.pods.IRCBot|IRCBot] to complete.
+        instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
  +/
 void applyDefaults(ref Kameloso instance)
 out (; (instance.parser.client.nickname.length), "Empty client nickname")
