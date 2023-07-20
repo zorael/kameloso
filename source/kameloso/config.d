@@ -1360,30 +1360,31 @@ unittest
     import kameloso.constants : KamelosoDefaults, KamelosoDefaultIntegers;
     import std.conv : to;
 
-    IRCClient client;
-    IRCServer server;
-    IRCBot bot;
+    Kameloso instance;
 
-    assert(!client.nickname.length, client.nickname);
-    assert(!client.user.length, client.user);
-    assert(!client.ident.length, client.ident);
-    assert(!client.realName.length, client.realName);
-    assert(!server.address, server.address);
-    assert((server.port == 0), server.port.to!string);
+    with (instance.parser)
+    {
+        assert(!client.nickname.length, client.nickname);
+        assert(!client.user.length, client.user);
+        assert(!client.ident.length, client.ident);
+        assert(!client.realName.length, client.realName);
+        assert(!server.address, server.address);
+        assert((server.port == 0), server.port.to!string);
 
-    applyDefaults(client, server, bot);
+        applyDefaults(instance);
 
-    assert(client.nickname.length);
-    assert((client.user == KamelosoDefaults.user), client.user);
-    assert(!client.ident.length, client.ident);
-    assert((client.realName == KamelosoDefaults.realName), client.realName);
-    assert((server.address == KamelosoDefaults.serverAddress), server.address);
-    assert((server.port == KamelosoDefaultIntegers.port), server.port.to!string);
-    assert((bot.quitReason == KamelosoDefaults.quitReason), bot.quitReason);
-    assert((bot.partReason == KamelosoDefaults.partReason), bot.partReason);
+        assert(client.nickname.length);
+        assert((client.user == KamelosoDefaults.user), client.user);
+        assert(!client.ident.length, client.ident);
+        assert((client.realName == KamelosoDefaults.realName), client.realName);
+        assert((server.address == KamelosoDefaults.serverAddress), server.address);
+        assert((server.port == KamelosoDefaultIntegers.port), server.port.to!string);
+        assert((instance.bot.quitReason == KamelosoDefaults.quitReason), instance.bot.quitReason);
+        assert((instance.bot.partReason == KamelosoDefaults.partReason), instance.bot.partReason);
 
-    client.nickname = string.init;
-    applyDefaults(client, server, bot);
+        client.nickname = string.init;
+        applyDefaults(instance);
 
-    assert(client.nickname.length, client.nickname);
+        assert(client.nickname.length, client.nickname);
+    }
 }
