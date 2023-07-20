@@ -1068,7 +1068,9 @@ auto handleGetopt(ref Kameloso instance) @system
             with all its plugins and settings.
         filename = String filename of the file to write to.
  +/
-void writeConfigurationFile(ref Kameloso instance, const string filename) @system
+void writeConfigurationFile(
+    ref Kameloso instance,
+    const string filename) @system
 {
     import lu.serialisation : justifiedEntryValueText, serialise;
     import lu.string : beginsWith, encode64;
@@ -1188,7 +1190,8 @@ void writeConfigurationFile(ref Kameloso instance, const string filename) @syste
         binaryPath = The program's `args[0]`.
         configFile = (Relative) path of the configuration file.
  +/
-void notifyAboutMissingSettings(const string[][string] missingEntries,
+void notifyAboutMissingSettings(
+    const string[][string] missingEntries,
     const string binaryPath,
     const string configFile)
 {
@@ -1223,7 +1226,9 @@ void notifyAboutMissingSettings(const string[][string] missingEntries,
         configFile = Full path to the configuration file.
         binaryPath = Full path to the current binary.
  +/
-void notifyAboutIncompleteConfiguration(const string configFile, const string binaryPath)
+void notifyAboutIncompleteConfiguration(
+    const string configFile,
+    const string binaryPath)
 {
     import kameloso.string : doublyBackslashed;
     import std.file : exists;
