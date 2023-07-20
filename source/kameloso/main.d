@@ -2835,11 +2835,11 @@ auto verifySettings(ref Kameloso instance)
             return Next.returnFailure;
         }
 
-        if (!instance.settings.prefix.length)
+        /*if (!instance.settings.prefix.length)
         {
             logger.error("No prefix configured!");
             return Next.returnFailure;
-        }
+        }*/
     }
 
     // No point having these checks be bypassable with --force
@@ -3785,7 +3785,7 @@ auto run(string[] args)
     if (!instance.settings.force)
     {
         import kameloso.config : applyDefaults;
-        applyDefaults(instance.parser.client, instance.parser.server, instance.bot);
+        applyDefaults(instance);
     }
 
     // Additionally if the port is an SSL-like port, assume SSL,

@@ -570,10 +570,7 @@ auto handleGetopt(ref Kameloso instance) @system
         instance.connSettings,
         instance.settings);
 
-    applyDefaults(
-        instance.parser.client,
-        instance.parser.server,
-        instance.bot);
+    applyDefaults(instance);
 
     import kameloso.terminal : applyMonochromeAndFlushOverrides;
 
@@ -1073,54 +1070,71 @@ auto handleGetopt(ref Kameloso instance) @system
  +/
 void writeConfigurationFile(ref Kameloso instance, const string filename) @system
 {
-    import kameloso.constants : KamelosoDefaults;
-    import kameloso.platform : rbd = resourceBaseDirectory;
     import lu.serialisation : justifiedEntryValueText, serialise;
     import lu.string : beginsWith, encode64;
     import std.array : Appender;
-    import std.path : buildNormalizedPath, expandTilde;
+    import std.file : exists;
+    import std.path : expandTilde;
 
     Appender!(char[]) sink;
     sink.reserve(4096);  // ~2234
 
-    // Take the opportunity to set a default quit reason. We can't do this in
-    // applyDefaults because it's a perfectly valid use-case not to have a quit
-    // string, and having it there would enforce the default string if none present.
-    if (!instance.bot.quitReason.length) instance.bot.quitReason = KamelosoDefaults.quitReason;
-
-    // Copied from kameloso.main.resolvePaths
-    version(Windows)
-    {
-        import std.string : replace;
-        immutable escapedServerDirName = instance.parser.server.address.replace(':', '_');
-    }
-    else version(Posix)
-    {
-        immutable escapedServerDirName = instance.parser.server.address;
-    }
-    else
-    {
-        static assert(0, "Unsupported platform, please file a bug.");
-    }
-
-    immutable defaultResourceHomeDir = buildNormalizedPath(rbd, "kameloso");
     immutable settingsResourceDir = instance.settings.resourceDirectory.expandTilde();
-    immutable defaultFullServerResourceDir = escapedServerDirName.length ?
-        buildNormalizedPath(
-            defaultResourceHomeDir,
-            "server",
-            escapedServerDirName) :
-        string.init;
 
     // Snapshot resource dir in case we change it
     immutable resourceDirSnapshot = settingsResourceDir;
 
-    if ((settingsResourceDir == defaultResourceHomeDir) ||
-        (settingsResourceDir == defaultFullServerResourceDir))
+    // Only make some changes if we're creating a new file
+    immutable newFile = !filename.exists;
+
+    if (newFile)
     {
-        // If the resource directory is the default (unset),
-        // or if it is what would be automatically inferred, write it out as empty
-        instance.settings.resourceDirectory = string.init;
+        import kameloso.constants : KamelosoDefaults;
+        import kameloso.platform : rbd = resourceBaseDirectory;
+        import std.path : buildNormalizedPath;
+
+        if (!instance.bot.quitReason.length)
+        {
+            // Set a the quit reason here and nowhere else.
+            instance.bot.quitReason = KamelosoDefaults.quitReason;
+        }
+
+        // Copied from kameloso.main.resolvePaths
+        version(Windows)
+        {
+            import std.string : replace;
+            immutable escapedServerDirName = instance.parser.server.address.replace(':', '_');
+        }
+        else version(Posix)
+        {
+            immutable escapedServerDirName = instance.parser.server.address;
+        }
+        else
+        {
+            static assert(0, "Unsupported platform, please file a bug.");
+        }
+
+        immutable defaultResourceHomeDir = buildNormalizedPath(rbd, "kameloso");
+        immutable defaultFullServerResourceDir = escapedServerDirName.length ?
+            buildNormalizedPath(
+                defaultResourceHomeDir,
+                "server",
+                escapedServerDirName) :
+            string.init;
+
+        if ((settingsResourceDir == defaultResourceHomeDir) ||
+            (settingsResourceDir == defaultFullServerResourceDir))
+        {
+            // If the resource directory is the default (unset),
+            // or if it is what would be automatically inferred, write it out as empty
+            instance.settings.resourceDirectory = string.init;
+        }
+
+        if (!instance.settings.prefix.length)
+        {
+            // Only set the prefix if we're creating a new file, to allow for empty prefixes
+            instance.settings.prefix = KamelosoDefaults.prefix;
+        }
     }
 
     if (!instance.settings.force &&
@@ -1274,61 +1288,67 @@ void giveBrightTerminalHint(
         server = Reference to the [dialect.defs.IRCServer|IRCServer] to complete.
         bot = Reference to the [kameloso.pods.IRCBot|IRCBot] to complete.
  +/
-void applyDefaults(ref IRCClient client, ref IRCServer server, ref IRCBot bot)
-out (; (client.nickname.length), "Empty client nickname")
-out (; (client.user.length), "Empty client username")
-out (; (client.realName.length), "Empty client GECOS/real name")
-out (; (server.address.length), "Empty server address")
-out (; (server.port != 0), "Server port of 0")
-out (; (bot.quitReason.length), "Empty bot quit reason")
-out (; (bot.partReason.length), "Empty bot part reason")
+void applyDefaults(ref Kameloso instance)
+out (; (instance.parser.client.nickname.length), "Empty client nickname")
+out (; (instance.parser.client.user.length), "Empty client username")
+out (; (instance.parser.client.realName.length), "Empty client GECOS/real name")
+out (; (instance.parser.server.address.length), "Empty server address")
+out (; (instance.parser.server.port != 0), "Server port of 0")
+out (; (instance.bot.quitReason.length), "Empty bot quit reason")
+out (; (instance.bot.partReason.length), "Empty bot part reason")
+//out (; (instance.settings.prefix.length), "Empty prefix")
 {
     import kameloso.constants : KamelosoDefaults, KamelosoDefaultIntegers;
 
     // If no client.nickname set, generate a random guest name.
-    if (!client.nickname.length)
+    if (!instance.parser.client.nickname.length)
     {
         import std.format : format;
         import std.random : uniform;
 
         enum pattern = "guest%03d";
-        client.nickname = pattern.format(uniform(0, 1000));
-        bot.hasGuestNickname = true;
+        instance.parser.client.nickname = pattern.format(uniform(0, 1000));
+        instance.bot.hasGuestNickname = true;
     }
 
     // If no client.user set, inherit from [kameloso.constants.KamelosoDefaults|KamelosoDefaults].
-    if (!client.user.length)
+    if (!instance.parser.client.user.length)
     {
-        client.user = KamelosoDefaults.user;
+        instance.parser.client.user = KamelosoDefaults.user;
     }
 
     // If no client.realName set, inherit.
-    if (!client.realName.length)
+    if (!instance.parser.client.realName.length)
     {
-        client.realName = KamelosoDefaults.realName;
+        instance.parser.client.realName = KamelosoDefaults.realName;
     }
 
     // If no server.address set, inherit.
-    if (!server.address.length)
+    if (!instance.parser.server.address.length)
     {
-        server.address = KamelosoDefaults.serverAddress;
+        instance.parser.server.address = KamelosoDefaults.serverAddress;
     }
 
     // Ditto but [kameloso.constants.KamelosoDefaultIntegers|KamelosoDefaultIntegers].
-    if (server.port == 0)
+    if (instance.parser.server.port == 0)
     {
-        server.port = KamelosoDefaultIntegers.port;
+        instance.parser.server.port = KamelosoDefaultIntegers.port;
     }
 
-    if (!bot.quitReason.length)
+    if (!instance.bot.quitReason.length)
     {
-        bot.quitReason = KamelosoDefaults.quitReason;
+        instance.bot.quitReason = KamelosoDefaults.quitReason;
     }
 
-    if (!bot.partReason.length)
+    if (!instance.bot.partReason.length)
     {
-        bot.partReason = KamelosoDefaults.partReason;
+        instance.bot.partReason = KamelosoDefaults.partReason;
     }
+
+    /*if (!instance.settings.prefix.length)
+    {
+        instance.settings.prefix = KamelosoDefaults.prefix;
+    }*/
 }
 
 ///

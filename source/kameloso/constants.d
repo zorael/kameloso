@@ -202,6 +202,11 @@ enum KamelosoDefaults
         A separator of "^" gives nicknames like "guest^2".
      +/
     altNickSeparator = "|",
+
+    /++
+        The default prefix to use for commands.
+     +/
+    prefix = "!",
 }
 
 

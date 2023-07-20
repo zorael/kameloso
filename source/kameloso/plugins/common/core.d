@@ -1770,44 +1770,13 @@ mixin template IRCPluginImpl(
                     }
                     else static if (command._description.length)
                     {
-                        static if (command._policy == PrefixPolicy.nickname)
+                        static if (command.syntaxes.length)
                         {
-                            import lu.string : beginsWith;
-
-                            static if (command.syntaxes.length)
-                            {
-                                foreach (immutable syntax; command.syntaxes)
-                                {
-                                    if (syntax.beginsWith("$bot"))
-                                    {
-                                        // Syntax is already prefixed
-                                        commandAA[key].syntaxes ~= syntax;
-                                    }
-                                    else
-                                    {
-                                        // Prefix the command with the bot's nickname,
-                                        // as that's how it's actually used.
-                                        commandAA[key].syntaxes ~= "$bot: " ~ syntax;
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                // Define an empty nickname: command syntax
-                                // to give hint about the nickname prefix
-                                commandAA[key].syntaxes ~= "$bot: $command";
-                            }
+                            commandAA[key].syntaxes ~= command.syntaxes.dup;
                         }
                         else
                         {
-                            static if (command.syntaxes.length)
-                            {
-                                commandAA[key].syntaxes ~= command.syntaxes.dup;
-                            }
-                            else
-                            {
-                                commandAA[key].syntaxes ~= "$command";
-                            }
+                            commandAA[key].syntaxes ~= "$command";
                         }
                     }
                     else /*static if (!command._hidden && !command._description.length)*/
@@ -1828,18 +1797,7 @@ mixin template IRCPluginImpl(
 
                     static if (regex._description.length)
                     {
-                        static if (regex._policy == PrefixPolicy.direct)
-                        {
-                            commandAA[key].syntaxes ~= regex._expression;
-                        }
-                        else static if (regex._policy == PrefixPolicy.prefixed)
-                        {
-                            commandAA[key].syntaxes ~= "$prefix" ~ regex._expression;
-                        }
-                        else static if (regex._policy == PrefixPolicy.nickname)
-                        {
-                            commandAA[key].syntaxes ~= "$nickname: " ~ regex._expression;
-                        }
+                        commandAA[key].syntaxes ~= regex._expression;
                     }
                     else static if (!regex._hidden)
                     {
@@ -1952,7 +1910,16 @@ auto prefixPolicyMatches(bool verbose)
         return true;
 
     case prefixed:
-        if (state.settings.prefix.length && event.content.beginsWith(state.settings.prefix))
+        if (!state.settings.prefix.length)
+        {
+            static if (verbose)
+            {
+                writeln("no prefix set, so defer to nickname case.");
+            }
+
+            goto case nickname;
+        }
+        else if (event.content.beginsWith(state.settings.prefix))
         {
             static if (verbose)
             {
