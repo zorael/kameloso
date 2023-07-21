@@ -843,7 +843,7 @@ in ((connectionLost > 0), "Tried to set up a listening fiber with connection tim
         ptrdiff_t newline = (cast(char[])buffer[0..end]).indexOf('\n');
         size_t pos;
 
-        while (newline != -1)
+        while (newline > 0)  // != -1 but we'd get a RangeError if it starts with a '\n'
         {
             attempt.state = State.hasString;
             attempt.line = (cast(char[])buffer[pos..pos+newline-1]).idup;  // eat \r before \n
