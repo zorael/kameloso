@@ -31,7 +31,7 @@ enum KamelosoSemVer
     /++
         SemVer patch version of the program.
      +/
-    patchVersion = 0,
+    patchVersion = 1,
 }
 
 
