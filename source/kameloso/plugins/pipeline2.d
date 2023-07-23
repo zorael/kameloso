@@ -1,5 +1,25 @@
 /++
-    FIXME
+    The Pipeline plugin opens a Posix named pipe in a temporary directory or
+    the current directory, to which you can pipe text and have it be sent
+    verbatim to the server. There is also syntax to manually send bus messages
+    to plugins.
+
+    It has no commands; it doesn't listen to [dialect.defs.IRCEvent|IRCEvent]s
+    at all, only to what is sent to it via the named FIFO pipe.
+
+    This requires version `Posix`, which is true for UNIX-like systems (like
+    Linux and macOS).
+
+    See_Also:
+        https://github.com/zorael/kameloso/wiki/Current-plugins#pipeline,
+        [kameloso.plugins.common.core],
+        [kameloso.plugins.common.misc]
+
+    Copyright: [JR](https://github.com/zorael)
+    License: [Boost Software License 1.0](https://www.boost.org/users/license.html)
+
+    Authors:
+        [JR](https://github.com/zorael)
  +/
 module kameloso.plugins.pipeline2;
 
@@ -12,10 +32,23 @@ import kameloso.plugins.common.core;
 import kameloso.plugins;
 import kameloso.common : logger;
 import dialect.defs;
+import std.typecons : Flag, No, Yes;
+
+
+/+
+    For storage location of the FIFO it makes sense to default to /tmp;
+    Posix defines a variable `$TMPDIR`, which should take precedence.
+    However, this supposedly makes the file really difficult to access on macOS
+    where it translates to some really long, programmatically generated path.
+    macOS naturally does support /tmp though. So shrug and version it to
+    default-ignore `$TMPDIR` on macOS but obey it on other platforms.
+ +/
+//version = OSXTMPDIR;
 
 
 // Pipeline2Settings
 /++
+    All settings for a [Pipeline2Plugin], aggregated.
  +/
 @Settings struct Pipeline2Settings
 {
@@ -24,17 +57,19 @@ private:
 
 public:
     /++
-        FIXME
+        Whether or not the Pipeline plugin should do anything at all.
      +/
     @Enabler bool enabled = true;
 
     /++
-        FIXME
+        Whether or not to place the FIFO in the working directory. If false, it
+        will be saved in `/tmp` or wherever `$TMPDIR` points. If macOS, then there
+        only if version `OSXTMPDIR`.
      +/
-    bool fifoInWorkingDir = false;
+    bool fifoInWorkingDir = true;
 
     /++
-        FIXME
+        Custom path to use as FIFO filename, specified with `--set pipeline.path`.
      +/
     @Unserialisable string path;
 }
@@ -42,143 +77,49 @@ public:
 
 // onWelcome
 /++
-    FIXME
+    Prints the usage text on connect. Merely leverages [printUsageText].
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
 )
 void onWelcome(PipelinePlugin2 plugin)
 {
-    enum pattern = "Pipe text to the <i>%s</> file to send raw commands to the server.";
-    logger.logf(pattern, plugin.fifoFilename);
+    printUsageText(plugin, No.reinit);
 }
 
 
-// initialise
+// printUsageText
 /++
-    FIXME
+    Prints the usage text to screen.
+
+    Params:
+        plugin = The current [Pipeline2Plugin].
+        reinit = Whether or not the FIFO disappeared and was recreated.
  +/
-void initialise(PipelinePlugin2 plugin)
+void printUsageText(PipelinePlugin2 plugin, const Flag!"reinit" reinit)
 {
-    plugin.fifoFilename = initFIFO(plugin);
-    plugin.fd = openFIFO(plugin.fifoFilename);
-}
-
-
-// postprocess
-/++
-    FIXME
- +/
-void postprocess(PipelinePlugin2 plugin, ref IRCEvent event)
-{
-    import std.file : exists;
-    import core.sys.posix.unistd : read;
-
-    if (plugin.fd == -1) return;   // ?
-
-    if (!plugin.fifoFilename.exists)
+    if (reinit)
     {
-        plugin.fifoFilename = initFIFO(plugin);
+        enum message = "Pipeline FIFO disappeared, recreating.";
+        logger.warning(message);
     }
-    else if (!plugin.fifoFilename.isFIFO)
-    {
-        import std.file : getAttributes;
-        import lu.common : FileTypeMismatchException;
-
-        enum message = "A file or directory exists with the same name as the FIFO we want to create";
-        throw new FileTypeMismatchException(
-            message,
-            plugin.fifoFilename,
-            cast(ushort)getAttributes(plugin.fifoFilename),
-            __FILE__,
-            __LINE__);
-    }
-
-    // FIFO exists, read from the file descriptor
-    enum bufferSize = 1024;  // Should be enough?
-    ubyte[bufferSize] buf;
-    immutable ptrdiff_t bytesRead = read(plugin.fd, buf.ptr, buf.length);
-
-    if (bytesRead > 0)
-    {
-        import kameloso.thread : ThreadMessage, boxed;
-        import lu.string : splitInto;
-        import std.algorithm.iteration : splitter;
-        import std.concurrency : send;
-
-        string slice = cast(string)buf[0..bytesRead].idup;  // mutable
-
-        foreach (/*immutable*/ line; slice.splitter("\n"))
-        {
-            string header;  // ditto
-            line.splitInto(header);
-            if (!header.length) return;
-            plugin.state.mainThread.send(ThreadMessage.busMessage(header, boxed(line)));
-        }
-    }
-}
-
-
-// teardown
-/++
-    FIXME
- +/
-void teardown(PipelinePlugin2 plugin)
-{
-    import std.file : exists;
-    import std.file : remove;
-
-    if (plugin.fd == -1)  return;  // teardown before initialisation?
-
-    closeFD(plugin.fd);
-
-    if (plugin.fifoFilename.exists && plugin.fifoFilename.isFIFO)
-    {
-        try
-        {
-            remove(plugin.fifoFilename);
-        }
-        catch (Exception _)
-        {
-            // Gag errors
-        }
-    }
-}
-
-
-// reload
-/++
-    FIXME
- +/
-void reload(PipelinePlugin2 plugin)
-{
-    import std.file : exists;
-
-    if (plugin.fifoFilename.exists && plugin.fifoFilename.isFIFO)
-    {
-        // Should still be okay.
-    }
-
-    // File doesn't exist!
-    if (plugin.fd != -1)
-    {
-        // ...yet there's an old file descriptor
-        closeFD(plugin.fd);
-    }
-
-    plugin.fifoFilename = initFIFO(plugin);
-    plugin.fd = openFIFO(plugin.fifoFilename);
 
     enum pattern = "Pipe text to the <i>%s</> file to send raw commands to the server.";
     logger.logf(pattern, plugin.fifoFilename);
 }
 
 
-// initFIFO
+// resolvePath
 /++
-    FIXME
+    Resolves the filename of the FIFO to use.
+
+    Returns:
+        A filename to use for the FIFO.
+
+    Throws:
+        [object.Exception|Exception] if a suitable filename could not be found.
  +/
-auto initFIFO(PipelinePlugin2 plugin)
+auto resolvePath(PipelinePlugin2 plugin)
 {
     import lu.common : FileExistsException, FileTypeMismatchException, ReturnValueException;
     import std.file : exists;
@@ -252,12 +193,26 @@ auto initFIFO(PipelinePlugin2 plugin)
         }
     }
 
-    createFIFO(filename);
     return filename;
 }
 
 
-// createFIFO
+// initialiseFIFO
+/++
+    Initialises the FIFO.
+
+    Returns:
+        Filename of the newly-created FIFO pipe.
+ +/
+auto initialiseFIFO(PipelinePlugin2 plugin)
+{
+    immutable filename = resolvePath(plugin);
+    createFIFOFile(filename);
+    return filename;
+}
+
+
+// createFIFOFile
 /++
     Creates a FIFO (named pipe) in the filesystem.
 
@@ -277,7 +232,7 @@ auto initFIFO(PipelinePlugin2 plugin)
         [lu.common.FileTypeMismatchException|FileTypeMismatchException] if a file or directory
         exists with the same name as the FIFO we want to create.
  +/
-void createFIFO(const string filename)
+void createFIFOFile(const string filename)
 in (filename.length, "Tried to create a FIFO with an empty filename")
 {
     import lu.common : FileExistsException, FileTypeMismatchException, ReturnValueException;
@@ -328,7 +283,7 @@ in (filename.length, "Tried to create a FIFO with an empty filename")
 
 // openFIFO
 /++
-    FIXME
+    Opens a FIFO for reading. The file descriptor is set to non-blocking.
  +/
 auto openFIFO(const string filename)
 {
@@ -342,7 +297,7 @@ auto openFIFO(const string filename)
 
 // closeFD
 /++
-    FIXME
+    Closes a file descriptor.
  +/
 auto closeFD(const int fd)
 {
@@ -352,6 +307,9 @@ auto closeFD(const int fd)
 
 
 // isFIFO
+/++
+    Checks if a file is a FIFO.
+ +/
 auto isFIFO(const string filename)
 {
     import std.file : getAttributes;
@@ -362,34 +320,188 @@ auto isFIFO(const string filename)
 }
 
 
+// initialise
+/++
+    Initialises the [Pipeline2Plugin] by creating and opening a FIFO pipe.
+ +/
+void initialise(PipelinePlugin2 plugin)
+{
+    plugin.fifoFilename = initialiseFIFO(plugin);
+    plugin.fd = openFIFO(plugin.fifoFilename);
+}
+
+
+// tick
+/++
+    Plugin tick function. Reads from the FIFO and sends the text to the server.
+
+    This is executed once per main loop iteration.
+
+    Params:
+        plugin = The current [Pipeline2Plugin].
+
+    Returns:
+        Whether or not the main loop should check concurrency messages, to catch
+        messages sent to the server.
+ +/
+bool tick(PipelinePlugin2 plugin) @system
+{
+    import std.algorithm.iteration : splitter;
+    import std.file : exists;
+    import core.sys.posix.unistd : read;
+
+    if (plugin.fd == -1) return false;   // ?
+
+    if (!plugin.fifoFilename.exists || !plugin.fifoFilename.isFIFO)
+    {
+        closeFD(plugin.fd);
+        plugin.fifoFilename = initialiseFIFO(plugin);
+        plugin.fd = openFIFO(plugin.fifoFilename);
+        printUsageText(plugin, Yes.reinit);
+    }
+
+    // FIFO exists, read from the file descriptor
+    enum bufferSize = 1024;  // Should be enough?
+    ubyte[bufferSize] buf;
+    immutable ptrdiff_t bytesRead = read(plugin.fd, buf.ptr, buf.length);
+
+    if (bytesRead <= 0) return false;
+
+    string slice = cast(string)buf[0..bytesRead].idup;  // mutable
+    bool sentSomething;
+
+    foreach (/*immutable*/ line; slice.splitter("\n"))
+    {
+        import kameloso.messaging : raw, quit;
+        import kameloso.thread : ThreadMessage, boxed;
+        import lu.string : splitInto, strippedLeft;
+        import std.algorithm.searching : startsWith;
+        import std.concurrency : send;
+        import std.uni : asLowerCase;
+
+        line = line.strippedLeft;
+
+        if (line.length == 0) continue;  // skip empty lines
+
+        if (line[0] == ':')
+        {
+            line = line[1..$];  // skip the colon
+            string header;  // mutable
+            line.splitInto(header);
+
+            if (!header.length) continue;
+            plugin.state.mainThread.send(ThreadMessage.busMessage(header, boxed(line)));
+        }
+        else if (line.asLowerCase.startsWith("quit"))
+        {
+            if ((line.length > 6) && (line[4..6] == " :"))
+            {
+                quit(plugin.state, line[6..$]);
+            }
+            else
+            {
+                quit(plugin.state);  // Default reason
+            }
+        }
+        else
+        {
+            raw(plugin.state, line.strippedLeft);
+        }
+
+        sentSomething = true;
+    }
+
+    return sentSomething;
+}
+
+
+// teardown
+/++
+    Tears down the [Pipeline2Plugin] by closing the FIFO file descriptor and
+    removing the FIFO file.
+ +/
+void teardown(PipelinePlugin2 plugin)
+{
+    import std.file : exists;
+    import std.file : remove;
+
+    if (plugin.fd == -1)  return;  // teardown before initialisation?
+
+    closeFD(plugin.fd);
+
+    if (plugin.fifoFilename.exists && plugin.fifoFilename.isFIFO)
+    {
+        try
+        {
+            remove(plugin.fifoFilename);
+        }
+        catch (Exception _)
+        {
+            // Gag errors
+        }
+    }
+}
+
+
+// reload
+/++
+    Reloads the [Pipeline2Plugin].
+
+    If the FIFO seems to be in place, nothing is done, but if it has disappeared
+    or is not a FIFO, it is verbosely recreated.
+ +/
+void reload(PipelinePlugin2 plugin)
+{
+    import std.file : exists;
+
+    if (plugin.fifoFilename.exists && plugin.fifoFilename.isFIFO)
+    {
+        // Should still be okay.
+        return;
+    }
+
+    // File doesn't exist!
+    if (plugin.fd != -1)
+    {
+        // ...yet there's an old file descriptor
+        closeFD(plugin.fd);
+    }
+
+    plugin.fifoFilename = initialiseFIFO(plugin);
+    plugin.fd = openFIFO(plugin.fifoFilename);
+    printUsageText(plugin, Yes.reinit);
+}
+
+
+mixin PluginRegistration!PipelinePlugin2;
+
 public:
 
 
 // PipelinePlugin2
 /++
-    FIXME
+    The Pipeline plugin reads from a local named pipe (FIFO) for messages to
+    send to the server, as well as to live-control the bot to a certain degree.
  +/
 final class PipelinePlugin2 : IRCPlugin
 {
     // pipelineSettings
     /++
-        FIXME
+        All Pipeline settings gathered.
      +/
     Pipeline2Settings pipeline2Settings;
 
     // fifoFilename
     /++
-        FIXME
+        Filename of the created FIFO.
      +/
     string fifoFilename;
 
     // fd
     /++
-        FIXME
+        File descriptor of the open FIFO.
      +/
     int fd = -1;
 
     mixin IRCPluginImpl;
 }
-
-mixin PluginRegistration!PipelinePlugin2;
