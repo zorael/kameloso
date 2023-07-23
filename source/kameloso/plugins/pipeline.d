@@ -23,6 +23,7 @@
  +/
 module kameloso.plugins.pipeline;
 
+version(none):
 version(Posix):
 version(WithPipelinePlugin):
 
