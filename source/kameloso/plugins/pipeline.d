@@ -77,13 +77,42 @@ public:
 
 // onWelcome
 /++
-    Prints the usage text on connect. Merely leverages [printUsageText].
+    Prints the usage text on connect. Furthermore, sets up a [core.thread.fiber.Fiber|Fiber]
+    that checks once per hour if the FIFO has disappeared and recreates it if so.
+    This is to allow for recovery from the FIFO being deleted.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
 )
 void onWelcome(PipelinePlugin plugin)
 {
+    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.constants : BufferSize;
+    import core.thread : Fiber;
+    import core.time : hours;
+
+    static immutable discoveryPeriod = 1.hours;
+
+    void discoverFIFODg()
+    {
+        while (true)
+        {
+            import std.file : exists;
+
+            if (!plugin.fifoFilename.exists || !plugin.fifoFilename.isFIFO)
+            {
+                closeFD(plugin.fd);
+                plugin.fifoFilename = initialiseFIFO(plugin);
+                plugin.fd = openFIFO(plugin.fifoFilename);
+                printUsageText(plugin, Yes.reinit);
+            }
+
+            delay(plugin, discoveryPeriod, Yes.yield);
+        }
+    }
+
+    Fiber discoverFIFOFiber = new Fiber(&discoverFIFODg, BufferSize.fiberStack);
+    delay(plugin, discoverFIFOFiber, discoveryPeriod);
     printUsageText(plugin, No.reinit);
 }
 
