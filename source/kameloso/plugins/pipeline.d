@@ -352,6 +352,8 @@ bool tick(PipelinePlugin plugin) @system
 
     if (plugin.fd == -1) return false;   // ?
 
+    // This is just too much to be doing several times a second (in the pathological case)
+    version(none)
     debug
     {
         if (!plugin.fifoFilename.exists || !plugin.fifoFilename.isFIFO)
@@ -363,7 +365,7 @@ bool tick(PipelinePlugin plugin) @system
         }
     }
 
-    // FIFO exists, read from the file descriptor
+    // Assume FIFO exists, read from the file descriptor
     enum bufferSize = 1024;  // Should be enough?
     ubyte[bufferSize] buf;
     immutable ptrdiff_t bytesRead = read(plugin.fd, buf.ptr, buf.length);
