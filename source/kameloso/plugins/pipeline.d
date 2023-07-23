@@ -352,12 +352,15 @@ bool tick(PipelinePlugin plugin) @system
 
     if (plugin.fd == -1) return false;   // ?
 
-    if (!plugin.fifoFilename.exists || !plugin.fifoFilename.isFIFO)
+    debug
     {
-        closeFD(plugin.fd);
-        plugin.fifoFilename = initialiseFIFO(plugin);
-        plugin.fd = openFIFO(plugin.fifoFilename);
-        printUsageText(plugin, Yes.reinit);
+        if (!plugin.fifoFilename.exists || !plugin.fifoFilename.isFIFO)
+        {
+            closeFD(plugin.fd);
+            plugin.fifoFilename = initialiseFIFO(plugin);
+            plugin.fd = openFIFO(plugin.fifoFilename);
+            printUsageText(plugin, Yes.reinit);
+        }
     }
 
     // FIFO exists, read from the file descriptor
