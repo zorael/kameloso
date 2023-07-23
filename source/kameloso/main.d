@@ -810,7 +810,7 @@ void messageFiber(ref Kameloso instance)
 auto mainLoop(ref Kameloso instance)
 {
     import kameloso.constants : Timeout;
-    import kameloso.net : ListenAttempt, listenFiber;
+    import kameloso.net : ListenAttempt, SocketSendException, listenFiber;
     import std.concurrency : Generator;
     import std.datetime.systime : Clock;
     import core.thread : Fiber;
@@ -864,12 +864,44 @@ auto mainLoop(ref Kameloso instance)
         }
     }
 
+    /++
+        Processes buffers and sends queued messages to the server.
+     +/
+    void processBuffers(ref uint timeoutFromMessages)
+    {
+        import kameloso.net : SocketSendException;
+
+        bool bufferHasMessages = (
+            !instance.outbuffer.empty |
+            !instance.backgroundBuffer.empty |
+            !instance.immediateBuffer.empty |
+            !instance.priorityBuffer.empty);
+
+        version(TwitchSupport)
+        {
+            bufferHasMessages |= !instance.fastbuffer.empty;
+        }
+
+        if (bufferHasMessages)
+        {
+            immutable untilNext = sendLines(instance);
+
+            if ((untilNext > 0.0) && (untilNext < instance.connSettings.messageBurst))
+            {
+                immutable untilNextMsecs = cast(uint)(untilNext * 1000);
+
+                if (untilNextMsecs < instance.conn.receiveTimeout)
+                {
+                    timeoutFromMessages = untilNextMsecs;
+                }
+            }
+        }
+    }
+
     // Start plugins before the loop starts and immediately read messages sent.
     try
     {
         instance.startPlugins();
-        immutable messengerNext = callMessenger();
-        if (messengerNext != Next.continue_) return messengerNext;
     }
     catch (Exception e)
     {
@@ -878,6 +910,9 @@ auto mainLoop(ref Kameloso instance)
         logger.trace(e.info);
         return Next.returnFailure;
     }
+
+    next = callMessenger();
+    if (next != Next.continue_) return next;
 
     /// The history entry for the current connection.
     Kameloso.ConnectionHistoryEntry* historyEntry;
@@ -921,9 +956,17 @@ auto mainLoop(ref Kameloso instance)
         /// Whether or not blocking was disabled on the socket to force an instant read timeout.
         bool socketBlockingDisabled;
 
+        /// Whether or not to check messages after doing the pre-onEvent routines
+        bool shouldCheckMessages;
+
+        /// Adjusted receive timeout based on outgoing message buffers.
+        uint timeoutFromMessages = uint.max;
+
         foreach (plugin; instance.plugins)
         {
             if (!plugin.isEnabled) continue;
+
+            shouldCheckMessages |= plugin.tick();
 
             if (plugin.state.specialRequests.length)
             {
@@ -959,6 +1002,13 @@ auto mainLoop(ref Kameloso instance)
                     nextGlobalScheduledTimestamp = plugin.state.nextScheduledTimestamp;
                 }
             }
+        }
+
+        if (shouldCheckMessages)
+        {
+            next = callMessenger();
+            if (*instance.abort) return Next.returnFailure;
+            processBuffers(timeoutFromMessages);
         }
 
         // Set timeout *before* the receive, else we'll just be applying the delay too late
@@ -1026,43 +1076,14 @@ auto mainLoop(ref Kameloso instance)
         if (*instance.abort) return Next.returnFailure;
         //else if (next != Next.continue_) return next;  // process buffers before passing on Next.retry
 
-        bool bufferHasMessages = (
-            !instance.outbuffer.empty |
-            !instance.backgroundBuffer.empty |
-            !instance.immediateBuffer.empty |
-            !instance.priorityBuffer.empty);
-
-        version(TwitchSupport)
+        try
         {
-            bufferHasMessages |= !instance.fastbuffer.empty;
+            processBuffers(timeoutFromMessages);
         }
-
-        /// Adjusted receive timeout based on outgoing message buffers.
-        uint timeoutFromMessages = uint.max;
-
-        if (bufferHasMessages)
+        catch (SocketSendException _)
         {
-            import kameloso.net : SocketSendException;
-
-            try
-            {
-                immutable untilNext = sendLines(instance);
-
-                if ((untilNext > 0.0) && (untilNext < instance.connSettings.messageBurst))
-                {
-                    immutable untilNextMsecs = cast(uint)(untilNext * 1000);
-
-                    if (untilNextMsecs < instance.conn.receiveTimeout)
-                    {
-                        timeoutFromMessages = untilNextMsecs;
-                    }
-                }
-            }
-            catch (SocketSendException _)
-            {
-                logger.error("Failure sending data to server! Connection lost?");
-                return Next.retry;
-            }
+            logger.error("Failure sending data to server! Connection lost?");
+            return Next.retry;
         }
 
         if (timeWhenReceiveWasShortened &&

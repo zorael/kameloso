@@ -284,6 +284,16 @@ public:
             `true` if the plugin should listen to events, `false` if not.
      +/
     bool isEnabled() const @property pure nothrow @nogc;
+
+    // tick
+    /++
+        Called on each iteration of the main loop.
+
+        Returns:
+            `true` if the plugin did something that warrants checking concurrency
+            messages; `false` if not.
+     +/
+    bool tick() @system;
 }
 
 
@@ -1651,6 +1661,41 @@ mixin template IRCPluginImpl(
                 }
             }
         }`);
+    }
+
+    // tick
+    /++
+        Tick function. Called once every main loop iteration.
+     +/
+    override public bool tick() @system
+    {
+        static if (__traits(compiles, { alias _ = .tick; }))
+        {
+            import lu.traits : TakesParams;
+
+            if (!this.isEnabled) return false;
+
+            static if (
+                is(typeof(.tick)) &&
+                is(typeof(.tick) == function) &&
+                TakesParams!(.tick, typeof(this)))
+            {
+                return .tick(this);
+            }
+            else
+            {
+                import kameloso.traits : stringOfTypeOf;
+                import std.format : format;
+
+                enum pattern = "`%s.tick` has an unsupported function signature: `%s`";
+                enum message = pattern.format(module_, stringOfTypeOf!(.tick));
+                static assert(0, message);
+            }
+        }
+        else
+        {
+            return false;
+        }
     }
 
     // name
