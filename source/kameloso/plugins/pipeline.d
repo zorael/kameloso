@@ -21,7 +21,7 @@
     Authors:
         [JR](https://github.com/zorael)
  +/
-module kameloso.plugins.pipeline2;
+module kameloso.plugins.pipeline;
 
 version(Posix):
 version(WithPipelinePlugin):
@@ -46,11 +46,11 @@ import std.typecons : Flag, No, Yes;
 //version = OSXTMPDIR;
 
 
-// Pipeline2Settings
+// PipelineSettings
 /++
-    All settings for a [Pipeline2Plugin], aggregated.
+    All settings for a [PipelinePlugin], aggregated.
  +/
-@Settings struct Pipeline2Settings
+@Settings struct PipelineSettings
 {
 private:
     import lu.uda : Unserialisable;
@@ -82,7 +82,7 @@ public:
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
 )
-void onWelcome(PipelinePlugin2 plugin)
+void onWelcome(PipelinePlugin plugin)
 {
     printUsageText(plugin, No.reinit);
 }
@@ -93,10 +93,10 @@ void onWelcome(PipelinePlugin2 plugin)
     Prints the usage text to screen.
 
     Params:
-        plugin = The current [Pipeline2Plugin].
+        plugin = The current [PipelinePlugin].
         reinit = Whether or not the FIFO disappeared and was recreated.
  +/
-void printUsageText(PipelinePlugin2 plugin, const Flag!"reinit" reinit)
+void printUsageText(PipelinePlugin plugin, const Flag!"reinit" reinit)
 {
     if (reinit)
     {
@@ -119,16 +119,16 @@ void printUsageText(PipelinePlugin2 plugin, const Flag!"reinit" reinit)
     Throws:
         [object.Exception|Exception] if a suitable filename could not be found.
  +/
-auto resolvePath(PipelinePlugin2 plugin)
+auto resolvePath(PipelinePlugin plugin)
 {
     import lu.common : FileExistsException, FileTypeMismatchException, ReturnValueException;
     import std.file : exists;
 
     string filename;  // mutable
 
-    if (plugin.pipeline2Settings.path.length)
+    if (plugin.pipelineSettings.path.length)
     {
-        filename = plugin.pipeline2Settings.path;
+        filename = plugin.pipelineSettings.path;
     }
     else
     {
@@ -137,7 +137,7 @@ auto resolvePath(PipelinePlugin2 plugin)
 
         filename = text(plugin.state.client.nickname, '@', plugin.state.server.address);
 
-        if (!plugin.pipeline2Settings.fifoInWorkingDir)
+        if (!plugin.pipelineSettings.fifoInWorkingDir)
         {
             // See notes at the top of module.
             version(OSX)
@@ -204,7 +204,7 @@ auto resolvePath(PipelinePlugin2 plugin)
     Returns:
         Filename of the newly-created FIFO pipe.
  +/
-auto initialiseFIFO(PipelinePlugin2 plugin)
+auto initialiseFIFO(PipelinePlugin plugin)
 {
     immutable filename = resolvePath(plugin);
     createFIFOFile(filename);
@@ -322,9 +322,9 @@ auto isFIFO(const string filename)
 
 // initialise
 /++
-    Initialises the [Pipeline2Plugin] by creating and opening a FIFO pipe.
+    Initialises the [PipelinePlugin] by creating and opening a FIFO pipe.
  +/
-void initialise(PipelinePlugin2 plugin)
+void initialise(PipelinePlugin plugin)
 {
     plugin.fifoFilename = initialiseFIFO(plugin);
     plugin.fd = openFIFO(plugin.fifoFilename);
@@ -338,13 +338,13 @@ void initialise(PipelinePlugin2 plugin)
     This is executed once per main loop iteration.
 
     Params:
-        plugin = The current [Pipeline2Plugin].
+        plugin = The current [PipelinePlugin].
 
     Returns:
         Whether or not the main loop should check concurrency messages, to catch
         messages sent to the server.
  +/
-bool tick(PipelinePlugin2 plugin) @system
+bool tick(PipelinePlugin plugin) @system
 {
     import std.algorithm.iteration : splitter;
     import std.file : exists;
@@ -417,10 +417,10 @@ bool tick(PipelinePlugin2 plugin) @system
 
 // teardown
 /++
-    Tears down the [Pipeline2Plugin] by closing the FIFO file descriptor and
+    Tears down the [PipelinePlugin] by closing the FIFO file descriptor and
     removing the FIFO file.
  +/
-void teardown(PipelinePlugin2 plugin)
+void teardown(PipelinePlugin plugin)
 {
     import std.file : exists;
     import std.file : remove;
@@ -445,12 +445,12 @@ void teardown(PipelinePlugin2 plugin)
 
 // reload
 /++
-    Reloads the [Pipeline2Plugin].
+    Reloads the [PipelinePlugin].
 
     If the FIFO seems to be in place, nothing is done, but if it has disappeared
     or is not a FIFO, it is verbosely recreated.
  +/
-void reload(PipelinePlugin2 plugin)
+void reload(PipelinePlugin plugin)
 {
     import std.file : exists;
 
@@ -473,23 +473,23 @@ void reload(PipelinePlugin2 plugin)
 }
 
 
-mixin PluginRegistration!PipelinePlugin2;
+mixin PluginRegistration!PipelinePlugin;
 
 public:
 
 
-// PipelinePlugin2
+// PipelinePlugin
 /++
     The Pipeline plugin reads from a local named pipe (FIFO) for messages to
     send to the server, as well as to live-control the bot to a certain degree.
  +/
-final class PipelinePlugin2 : IRCPlugin
+final class PipelinePlugin : IRCPlugin
 {
     // pipelineSettings
     /++
         All Pipeline settings gathered.
      +/
-    Pipeline2Settings pipeline2Settings;
+    PipelineSettings pipelineSettings;
 
     // fifoFilename
     /++
