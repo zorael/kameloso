@@ -89,9 +89,9 @@ void onWelcome(PipelinePlugin plugin)
     import kameloso.plugins.common.delayawait : delay;
     import kameloso.constants : BufferSize;
     import core.thread : Fiber;
-    import core.time : hours;
+    import core.time : minutes;
 
-    static immutable discoveryPeriod = 1.hours;
+    static immutable discoveryPeriod = 1.minutes;
 
     void discoverFIFODg()
     {
