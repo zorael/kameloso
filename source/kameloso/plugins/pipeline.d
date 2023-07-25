@@ -142,6 +142,9 @@ void printUsageText(PipelinePlugin plugin, const Flag!"reinit" reinit)
 /++
     Resolves the filename of the FIFO to use.
 
+    Params:
+        plugin = The current [PipelinePlugin].
+
     Returns:
         A filename to use for the FIFO.
 
@@ -257,6 +260,9 @@ auto resolvePath(PipelinePlugin plugin)
 /++
     Initialises the FIFO.
 
+    Params:
+        plugin = The current [PipelinePlugin].
+
     Returns:
         Filename of the newly-created FIFO pipe.
  +/
@@ -304,6 +310,9 @@ in (filename.length, "Tried to create a FIFO with an empty filename")
 /++
     Opens a FIFO for reading. The file descriptor is set to non-blocking.
 
+    Params:
+        filename = The filename of the FIFO to open.
+
     Returns:
         The file descriptor of the opened FIFO.
  +/
@@ -333,6 +342,9 @@ auto closeFD(const int fd)
 // isFIFO
 /++
     Checks if a file is a FIFO.
+
+    Params:
+        filename = The filename to check.
 
     Returns:
         `true` if it is; `false` otherwise.
