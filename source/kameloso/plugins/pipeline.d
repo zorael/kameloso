@@ -307,8 +307,7 @@ in (filename.length, "Tried to create a FIFO with an empty filename")
 auto openFIFO(const string filename)
 {
     import std.string : toStringz;
-    import core.sys.posix.fcntl;
-    import core.sys.posix.unistd;
+    import core.sys.posix.fcntl : O_RDONLY, O_NONBLOCK, open;
 
     return open(filename.toStringz, (O_RDONLY | O_NONBLOCK));
 }
