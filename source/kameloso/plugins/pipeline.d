@@ -157,7 +157,6 @@ void printUsageText(PipelinePlugin plugin, const Flag!"reinit" reinit)
  +/
 auto resolvePath(PipelinePlugin plugin)
 {
-    import lu.common : FileExistsException, FileTypeMismatchException, ReturnValueException;
     import std.file : exists;
 
     string filename;  // mutable
@@ -222,6 +221,7 @@ auto resolvePath(PipelinePlugin plugin)
             }
             else if (filename[$-3..$] == "-00")  // beyond -99
             {
+                import lu.common : FileExistsException, FileTypeMismatchException;
                 import core.sys.posix.sys.stat : S_ISFIFO;
 
                 // Don't infinitely loop, should realistically never happen though
@@ -303,6 +303,9 @@ in (filename.length, "Tried to create a FIFO with an empty filename")
 // openFIFO
 /++
     Opens a FIFO for reading. The file descriptor is set to non-blocking.
+
+    Returns:
+        The file descriptor of the opened FIFO.
  +/
 auto openFIFO(const string filename)
 {
@@ -316,6 +319,9 @@ auto openFIFO(const string filename)
 // closeFD
 /++
     Closes a file descriptor.
+
+    Returns:
+        The return value of the close() system call.
  +/
 auto closeFD(const int fd)
 {
@@ -327,6 +333,9 @@ auto closeFD(const int fd)
 // isFIFO
 /++
     Checks if a file is a FIFO.
+
+    Returns:
+        `true` if it is; `false` otherwise.
  +/
 auto isFIFO(const string filename)
 {
@@ -371,11 +380,11 @@ bool tick(PipelinePlugin plugin) @system
     if (plugin.fd == -1) return false;   // ?
 
     // Assume FIFO exists, read from the file descriptor
-    enum bufferSize = 1024;  // Should be enough?
+    enum bufferSize = 1024;  // Should be enough? An IRC line is 512 bytes
     static ubyte[bufferSize] buf;
     immutable ptrdiff_t bytesRead = read(plugin.fd, buf.ptr, buf.length);
 
-    if (bytesRead <= 0) return false;
+    if (bytesRead <= 0) return false;   // 0 or -1
 
     string slice = cast(string)buf[0..bytesRead].idup;  // mutable
     bool sentSomething;
