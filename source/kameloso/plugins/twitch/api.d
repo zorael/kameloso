@@ -1058,8 +1058,6 @@ void averageApproximateQueryTime(TwitchPlugin plugin, const long responseMsecs)
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
         id = Numerical ID to use as key when storing the response in the bucket AA.
-        leaveTimingAlone = Whether or not to adjust the approximate query time.
-            Enabled by default but can be disabled if the caller wants to do it.
 
     Returns:
         A [QueryResponse] as constructed by other parts of the program.
@@ -1917,6 +1915,7 @@ in (channelName.length, "Tried to end a poll with an empty channel name string")
 
     Params:
         plugin = The current [kameloso.plugins.twitch.base.TwitchPlugin|TwitchPlugin].
+        caller = String name of calling function.
 
     Returns:
         A `string[]` array of online bot account names.

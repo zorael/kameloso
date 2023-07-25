@@ -1172,8 +1172,7 @@ unittest
     Params:
         event = [dialect.defs.IRCEvent|IRCEvent] whose content text to highlight.
         colourful = Whether or not emotes should be highlit in colours.
-        brightTerminal = Whether or not the terminal has a bright background
-            and colours should be adapted to suit.
+        settings = Current [kameloso.pods.CoreSettings|settings].
 
     Returns:
         A new string of the passed [dialect.defs.IRCEvent|IRCEvent]'s `content` member
@@ -1271,8 +1270,7 @@ auto highlightEmotes(
         pre = Terminal foreground tint to colour the emotes with.
         post = Terminal foreground tint to reset to after colouring an emote.
         colourful = Whether or not emotes should be highlit in colours.
-        brightTerminal = Whether or not the terminal has a bright background
-            and colours should be adapted to suit.
+        settings = Current [kameloso.pods.CoreSettings|settings].
  +/
 version(Colours)
 version(TwitchSupport)

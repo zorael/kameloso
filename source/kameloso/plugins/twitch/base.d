@@ -3899,7 +3899,7 @@ package:
                 Takes a second [Stream] and updates this one with values from it.
 
                 Params:
-                    A second [Stream] from which to inherit values.
+                    updated =  A second [Stream] from which to inherit values.
              +/
             void update(const Stream updated)
             {
