@@ -371,7 +371,7 @@ void initialise(PipelinePlugin plugin)
         Whether or not the main loop should check concurrency messages, to catch
         messages sent to the server.
  +/
-bool tick(PipelinePlugin plugin) @system
+auto tick(PipelinePlugin plugin)
 {
     import std.algorithm.iteration : splitter;
     import std.file : exists;
