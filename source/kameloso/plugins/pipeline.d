@@ -215,9 +215,29 @@ auto resolvePath(PipelinePlugin plugin)
             }
             else if (filename[$-3..$] == "-00")  // beyond -99
             {
+                import core.sys.posix.sys.stat : S_ISFIFO;
+
                 // Don't infinitely loop, should realistically never happen though
                 enum message = "Failed to find a suitable FIFO filename";
-                throw new Exception(message);
+
+                if (filename.isFIFO)
+                {
+                    throw new FileExistsException(
+                        message,
+                        filename,
+                        __FILE__,
+                        __LINE__);
+                }
+                else
+                {
+                    import std.file : getAttributes;
+                    throw new FileTypeMismatchException(
+                        message,
+                        filename,
+                        cast(ushort)getAttributes(filename),
+                        __FILE__,
+                        __LINE__);
+                }
             }
         }
     }
@@ -264,38 +284,8 @@ auto initialiseFIFO(PipelinePlugin plugin)
 void createFIFOFile(const string filename)
 in (filename.length, "Tried to create a FIFO with an empty filename")
 {
-    import lu.common : FileExistsException, FileTypeMismatchException, ReturnValueException;
-    import std.file : exists;
+    import lu.common : ReturnValueException;
     import std.process : execute;
-
-    if (filename.exists)
-    {
-        import std.file : getAttributes;
-        import core.sys.posix.sys.stat : S_ISFIFO;
-
-        if (filename.isFIFO)
-        {
-            enum message = "A FIFO with that name already exists";
-            throw new FileExistsException(
-                message,
-                filename,
-                __FILE__,
-                __LINE__);
-        }
-        else
-        {
-            import std.file : getAttributes;
-
-            enum message = "Wanted to create a FIFO but a file or directory " ~
-                "with the desired name already exists";
-            throw new FileTypeMismatchException(
-                message,
-                filename,
-                cast(ushort)getAttributes(filename),
-                __FILE__,
-                __LINE__);
-        }
-    }
 
     immutable mkfifo = execute([ "mkfifo", filename ]);
 
