@@ -372,7 +372,7 @@ bool tick(PipelinePlugin plugin) @system
 
     // Assume FIFO exists, read from the file descriptor
     enum bufferSize = 1024;  // Should be enough?
-    ubyte[bufferSize] buf;
+    static ubyte[bufferSize] buf;
     immutable ptrdiff_t bytesRead = read(plugin.fd, buf.ptr, buf.length);
 
     if (bytesRead <= 0) return false;
