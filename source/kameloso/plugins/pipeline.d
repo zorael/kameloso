@@ -69,7 +69,7 @@ public:
     bool fifoInWorkingDir = false;
 
     /++
-        Custom path to use as FIFO filename, specified with `--set pipeline.path`.
+        Custom path to use as FIFO filename, specified with `--set pipeline.path=[...]`.
      +/
     @Unserialisable string path;
 }
@@ -77,9 +77,9 @@ public:
 
 // onWelcome
 /++
-    Does three things;
+    Does three things upon [dialect.defs.IRCEvent.Type.RPL_WELCOME|RPL_WELCOME];
 
-    1. Sets up the FIFO pipe.
+    1. Sets up the FIFO pipe, resolving the filename and creating it.
     2. Prints the usage text.
     3. Lastly, sets up a [core.thread.fiber.Fiber|Fiber] that checks once per
        hour if the FIFO has disappeared and recreates it if so. This is to allow
@@ -186,7 +186,7 @@ auto resolvePath(PipelinePlugin plugin)
 
         if (!plugin.pipelineSettings.fifoInWorkingDir)
         {
-            // See notes at the top of module.
+            // See notes at the top of the module.
             version(OSX)
             {
                 version(OSXTMPDIR)
@@ -326,11 +326,12 @@ in (filename.length, "Tried to create a FIFO with an empty filename")
         The file descriptor of the opened FIFO.
  +/
 auto openFIFO(const string filename)
+in (filename.length, "Tried to open a FIFO with an empty filename")
 {
     import std.string : toStringz;
-    import core.sys.posix.fcntl : O_RDONLY, O_NONBLOCK, open;
+    import core.sys.posix.fcntl : O_NONBLOCK, O_RDONLY, open;
 
-    return open(filename.toStringz, (O_RDONLY | O_NONBLOCK));
+    return open(filename.toStringz, (O_NONBLOCK | O_RDONLY));
 }
 
 
@@ -345,6 +346,7 @@ auto openFIFO(const string filename)
         The return value of the close() system call.
  +/
 auto closeFD(ref int fd)
+in ((fd != -1), "Tried to close an invalid file descriptor")
 {
     import core.sys.posix.unistd;
 
