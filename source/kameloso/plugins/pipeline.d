@@ -77,9 +77,13 @@ public:
 
 // onWelcome
 /++
-    Prints the usage text on connect. Furthermore, sets up a [core.thread.fiber.Fiber|Fiber]
-    that checks once per hour if the FIFO has disappeared and recreates it if so.
-    This is to allow for recovery from the FIFO being deleted.
+    Does three things;
+
+    1. Sets up the FIFO pipe.
+    2. Prints the usage text.
+    3. Lastly, sets up a [core.thread.fiber.Fiber|Fiber] that checks once per
+       hour if the FIFO has disappeared and recreates it if so. This is to allow
+       for recovery from the FIFO being deleted.
  +/
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.RPL_WELCOME)
@@ -111,9 +115,14 @@ void onWelcome(PipelinePlugin plugin)
         }
     }
 
+    // Initialise the FIFO *here*, where we know our nickname
+    // (we don't in .initialise)
+    plugin.fifoFilename = initialiseFIFO(plugin);
+    plugin.fd = openFIFO(plugin.fifoFilename);
+    printUsageText(plugin, No.reinit);
+
     Fiber discoverFIFOFiber = new Fiber(&discoverFIFODg, BufferSize.fiberStack);
     delay(plugin, discoverFIFOFiber, discoveryPeriod);
-    printUsageText(plugin, No.reinit);
 }
 
 
@@ -361,17 +370,6 @@ auto isFIFO(const string filename)
 
     immutable attrs = cast(ushort)getAttributes(filename);
     return S_ISFIFO(attrs);
-}
-
-
-// initialise
-/++
-    Initialises the [PipelinePlugin] by creating and opening a FIFO pipe.
- +/
-void initialise(PipelinePlugin plugin)
-{
-    plugin.fifoFilename = initialiseFIFO(plugin);
-    plugin.fd = openFIFO(plugin.fifoFilename);
 }
 
 
