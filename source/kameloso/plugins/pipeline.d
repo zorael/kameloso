@@ -370,19 +370,6 @@ bool tick(PipelinePlugin plugin) @system
 
     if (plugin.fd == -1) return false;   // ?
 
-    // This is just too much to be doing several times a second (in the pathological case)
-    version(none)
-    debug
-    {
-        if (!plugin.fifoFilename.exists || !plugin.fifoFilename.isFIFO)
-        {
-            closeFD(plugin.fd);
-            plugin.fifoFilename = initialiseFIFO(plugin);
-            plugin.fd = openFIFO(plugin.fifoFilename);
-            printUsageText(plugin, Yes.reinit);
-        }
-    }
-
     // Assume FIFO exists, read from the file descriptor
     enum bufferSize = 1024;  // Should be enough?
     ubyte[bufferSize] buf;
