@@ -329,12 +329,17 @@ auto openFIFO(const string filename)
 /++
     Closes a file descriptor.
 
+    Params:
+        fd = The file descriptor to close. Taken by `ref` and set to -1 afterwards.
+
     Returns:
         The return value of the close() system call.
  +/
-auto closeFD(const int fd)
+auto closeFD(ref int fd)
 {
     import core.sys.posix.unistd;
+
+    scope(exit) fd = -1;
     return close(fd);
 }
 
