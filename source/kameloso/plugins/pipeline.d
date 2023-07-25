@@ -66,7 +66,7 @@ public:
         will be saved in `/tmp` or wherever `$TMPDIR` points. If macOS, then there
         only if version `OSXTMPDIR`.
      +/
-    bool fifoInWorkingDir = true;
+    bool fifoInWorkingDir = false;
 
     /++
         Custom path to use as FIFO filename, specified with `--set pipeline.path`.
