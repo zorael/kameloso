@@ -146,7 +146,14 @@ void printUsageText(PipelinePlugin plugin, const Flag!"reinit" reinit)
         A filename to use for the FIFO.
 
     Throws:
-        [object.Exception|Exception] if a suitable filename could not be found.
+        [lu.common.FileExistsException|FileExistsException] if a FIFO with
+        the same filename already exists, suggesting concurrent conflicting
+        instances of the program (or merely a zombie FIFO after a crash),
+        and a new filename could not be invented.
+
+        [lu.common.FileTypeMismatchException|FileTypeMismatchException] if a file or directory
+        exists with the same name as the FIFO we want to create, and a new
+        filename could not be invented.
  +/
 auto resolvePath(PipelinePlugin plugin)
 {
@@ -273,13 +280,6 @@ auto initialiseFIFO(PipelinePlugin plugin)
     Throws:
         [lu.common.ReturnValueException|ReturnValueException] if the FIFO
         could not be created.
-
-        [lu.common.FileExistsException|FileExistsException] if a FIFO with
-        the same filename already exists, suggesting concurrent conflicting
-        instances of the program (or merely a zombie FIFO after a crash).
-
-        [lu.common.FileTypeMismatchException|FileTypeMismatchException] if a file or directory
-        exists with the same name as the FIFO we want to create.
  +/
 void createFIFOFile(const string filename)
 in (filename.length, "Tried to create a FIFO with an empty filename")
