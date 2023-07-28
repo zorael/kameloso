@@ -2447,6 +2447,7 @@ void udaSanityCheckCTFE(const IRCEventHandler uda)
     Returns:
         `true` if the storage class is valid; asserts `0` if not.
  +/
+debug
 auto assertSaneStorageClasses(
     const ParameterStorageClass storageClass,
     const bool paramIsConst,
