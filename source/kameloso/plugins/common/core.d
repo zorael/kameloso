@@ -2429,8 +2429,8 @@ void udaSanityCheckCTFE(const IRCEventHandler uda)
 
 // assertSaneStorageClasses
 /++
-    Statically asserts that a parameter storage class is not `ref`
-    if `inFiber`, and neither `ref` nor `out` if not `inFiber`.
+    Asserts that a parameter storage class is not `ref` if `inFiber`, and neither
+    `ref` nor `out` if not `inFiber`. To be run during CTFE.
 
     Take the storage class as a template parameter and statically
     assert inside this function, unlike how `udaSanityCheck` returns
@@ -2456,6 +2456,8 @@ auto assertSaneStorageClasses(
     const string typestring)
 {
     import std.format : format;
+
+    assert(__ctfe, "`assertSaneStorageClasses` called outside CTFE");
 
     static if (__VERSION__ <= 2104L)
     {
