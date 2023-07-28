@@ -693,16 +693,19 @@ mixin template IRCPluginImpl(
             {
                 import lu.string : strippedLeft;
 
+                immutable origContent = event.content;
+                auto origAux = event.aux;  // copy
                 bool auxDirty;
-                event.content = origEvent.content.strippedLeft;
 
                 scope(exit)
                 {
                     // Restore aux if it has been altered
                     // Unconditionally restore content
-                    event.content = origEvent.content;
-                    if (auxDirty) event.aux = origEvent.aux;  // copy by value
+                    event.content = origContent;
+                    if (auxDirty) event.aux = origAux;  // copy back
                 }
+
+                event.content = event.content.strippedLeft;
 
                 if (!event.content.length)
                 {
