@@ -639,8 +639,6 @@ mixin template IRCPluginImpl(
             const IRCEventHandler uda,
             ref IRCEvent event) scope
         {
-            import std.algorithm.searching : canFind;
-
             static if (verbose)
             {
                 import lu.conv : Enum;
@@ -653,6 +651,8 @@ mixin template IRCPluginImpl(
 
             if (event.channel.length)
             {
+                import std.algorithm.searching : canFind;
+
                 bool channelMatch;
 
                 if (uda._channelPolicy == ChannelPolicy.home)
@@ -681,33 +681,25 @@ mixin template IRCPluginImpl(
                 }
             }
 
-            // Snapshot content and aux for later restoration
-            immutable origContent = event.content;  // don't strip
-            typeof(IRCEvent.aux) origAux;
-            bool auxDirty;
-
-            scope(exit)
-            {
-                // Restore content and aux as they may have been altered
-                event.content = origContent;
-
-                if (auxDirty)
-                {
-                    event.aux = origAux;
-                }
-            }
-
-            if (uda.commands.length || uda.regexes.length)
+            // Ignore all commands when in observer mode
+            if ((uda.commands.length || hasRegexes) && !state.settings.observerMode)
             {
                 import lu.string : strippedLeft;
 
-                if (state.settings.observerMode)
-                {
-                    // Skip all commands
-                    return NextStep.continue_;
-                }
+                // Snapshot content and aux for later restoration
+                immutable origContent = event.content;  // don't strip
+                typeof(IRCEvent.aux) origAux;
+                bool auxDirty;
 
                 event.content = event.content.strippedLeft;
+
+                scope(exit)
+                {
+                    // Restore aux if it has been altered
+                    // Unconditionally restore content
+                    event.content = origContent;
+                    if (auxDirty) event.aux = origAux;  // copy by value
+                }
 
                 if (!event.content.length)
                 {
@@ -715,49 +707,55 @@ mixin template IRCPluginImpl(
                     // `event.content` is empty; cannot possibly be of interest.
                     return NextStep.continue_;  // next function
                 }
-            }
 
-            /// Whether or not a Command or Regex matched.
-            bool commandMatch;
+                /// Whether or not a Command or Regex matched.
+                bool commandMatch;
 
-            // Evaluate each Command UDAs with the current event
-            if (uda.commands.length)
-            {
-                commandForeach:
-                foreach (const command; uda.commands)
+                // Evaluate each Command UDAs with the current event
+                if (uda.commands.length)
                 {
-                    static if (verbose)
-                    {
-                        enum pattern = `   ...Command "%s"`;
-                        writefln(pattern, command._word);
-                        if (state.settings.flush) stdout.flush();
-                    }
+                    immutable preNomContent = event.content;
+                    string word;  // cached value set inside the command loop
+                    string wordLower;  // ditto
 
-                    if (!event.prefixPolicyMatches!verbose(command._policy, state))
-                    {
-                        static if (verbose)
-                        {
-                            writeln("   ...policy doesn't match; continue next Command");
-                            if (state.settings.flush) stdout.flush();
-                        }
-
-                        // Do nothing, proceed to next command
-                        continue commandForeach;
-                    }
-                    else
+                    commandForeach:
+                    foreach (const command; uda.commands)
                     {
                         import lu.string : nom;
                         import std.typecons : No, Yes;
                         import std.uni : toLower;
 
-                        immutable thisCommand = event.content
-                            .nom!(Yes.inherit, Yes.decode)(' ');
+                        static if (verbose)
+                        {
+                            enum pattern = `   ...Command "%s"`;
+                            writefln(pattern, command._word);
+                            if (state.settings.flush) stdout.flush();
+                        }
 
-                        if (thisCommand.toLower == command._word.toLower)
+                        if (!event.prefixPolicyMatches!verbose(command._policy, state))
                         {
                             static if (verbose)
                             {
-                                writeln("   ...command matches!");
+                                writeln("   ...policy doesn't match; continue next Command");
+                                if (state.settings.flush) stdout.flush();
+                            }
+
+                            // Do nothing, proceed to next command
+                            continue commandForeach;
+                        }
+
+                        if (!word.length)
+                        {
+                            word = event.content
+                                .nom!(Yes.inherit, Yes.decode)(' ');
+                            wordLower = word.toLower;
+                        }
+
+                        if (wordLower == command._word/*.toLower*/)
+                        {
+                            static if (verbose)
+                            {
+                                writeln("   ...command word matches!");
                                 if (state.settings.flush) stdout.flush();
                             }
 
@@ -767,51 +765,47 @@ mixin template IRCPluginImpl(
                                 auxDirty = true;
                             }
 
-                            event.aux[$-1] = thisCommand;
+                            event.aux[$-1] = word;
                             commandMatch = true;
                             break commandForeach;
                         }
-                        else
-                        {
-                            // Restore content to pre-nom state
-                            event.content = origContent;
-                        }
                     }
+
+                    // Restore content to pre-nom state
+                    event.content = preNomContent;
                 }
-            }
 
-            // Iff no match from Commands, evaluate Regexes
-            static if (hasRegexes)
-            {
-                if (/*uda.regexes.length &&*/ !commandMatch)
+                static if (hasRegexes)
                 {
-                    regexForeach:
-                    foreach (const regex; uda.regexes)
+                    // iff no match from Commands, evaluate Regexes
+                    if (/*uda.regexes.length &&*/ !commandMatch)
                     {
-                        static if (verbose)
+                        regexForeach:
+                        foreach (const regex; uda.regexes)
                         {
-                            enum pattern = `   ...Regex r"%s"`;
-                            writefln(pattern, regex._expression);
-                            if (state.settings.flush) stdout.flush();
-                        }
+                            import std.regex : matchFirst;
 
-                        if (!event.prefixPolicyMatches!verbose(regex._policy, state))
-                        {
                             static if (verbose)
                             {
-                                writeln("   ...policy doesn't match; continue next Regex");
+                                enum pattern = `   ...Regex r"%s"`;
+                                writefln(pattern, regex._expression);
                                 if (state.settings.flush) stdout.flush();
                             }
 
-                            // Do nothing, proceed to next regex
-                            continue regexForeach;
-                        }
-                        else
-                        {
+                            if (!event.prefixPolicyMatches!verbose(regex._policy, state))
+                            {
+                                static if (verbose)
+                                {
+                                    writeln("   ...policy doesn't match; continue next Regex");
+                                    if (state.settings.flush) stdout.flush();
+                                }
+
+                                // Do nothing, proceed to next regex
+                                continue regexForeach;
+                            }
+
                             try
                             {
-                                import std.regex : matchFirst;
-
                                 const hits = event.content.matchFirst(regex.engine);
 
                                 if (!hits.empty)
@@ -854,13 +848,10 @@ mixin template IRCPluginImpl(
                         }
                     }
                 }
-            }
 
-            if (uda.commands.length || uda.regexes.length)
-            {
                 if (!commandMatch)
                 {
-                    // {Command,Regex} exist but neither matched; skip
+                    // {Command,Regex} exist implicitly but neither matched; skip
                     static if (verbose)
                     {
                         writeln("   ...no Command nor Regex match; continue funloop");
