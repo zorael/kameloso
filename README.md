@@ -20,7 +20,7 @@ Testing is primarily done on [**Libera.Chat**](https://libera.chat) and on [**Tw
 
 **Please report bugs. Unreported bugs can only be fixed by accident.**
 
-# tl;dr
+## tl;dr
 
 ```
 -n       --nickname Nickname
@@ -54,11 +54,11 @@ If there's anyone chatting it should show up on your screen.
 
 ---
 
-# Table of contents
+## Table of contents
 
 * [Getting started](#getting-started)
   * [Prerequisites](#prerequisites)
-     * [SSL libraries on Windows](#ssl-libraries-on-windows)
+    * [SSL libraries on Windows](#ssl-libraries-on-windows)
   * [Downloading source](#downloading-source)
   * [Compiling](#compiling)
     * [Build configurations](#build-configurations)
@@ -89,11 +89,11 @@ If there's anyone chatting it should show up on your screen.
 
 ---
 
-# Getting started
+## Getting started
 
 Grab a prebuilt binary from under [**Releases**](https://github.com/zorael/kameloso/releases); alternatively, download the source and compile it yourself.
 
-## Prerequisites
+### Prerequisites
 
 **kameloso** can be built using the reference compiler [**dmd**](https://dlang.org/download.html), with the LLVM-based [**ldc**](https://github.com/ldc-developers/ldc/releases) and with the GCC-based [**gdc**](https://gdcproject.org/downloads). **dmd** compiles very fast, while **ldc** and **gdc** are slower at compiling but produce faster code. Additionally, the latter two support more target architectures than **dmd** does (e.g. ARM). See [here](https://wiki.dlang.org/Compilers) for an overview of the available compiler vendors.
 
@@ -103,11 +103,11 @@ If your repositories (or other software sources) don't have compilers recent eno
 
 The package manager [**dub**](https://code.dlang.org) is used to facilitate compilation and dependency management. On Windows it is included in the compiler archive, while on Linux it may need to be installed separately. Refer to your repositories.
 
-### SSL libraries on Windows
+#### SSL libraries on Windows
 
 See the [known issues](#known-issues) section on Windows for information on libraries needed to make encrypted connections to IRC servers and to allow plugins secure access to the Internet.
 
-## Downloading source
+### Downloading source
 
 ```shell
 $ git clone https://github.com/zorael/kameloso.git
@@ -115,7 +115,7 @@ $ git clone https://github.com/zorael/kameloso.git
 
 It can also be downloaded as a [`.zip` archive](https://github.com/zorael/kameloso/archive/master.zip).
 
-## Compiling
+### Compiling
 
 ```shell
 $ dub build
@@ -123,7 +123,7 @@ $ dub build
 
 This will compile the bot in the default **debug** build type, which adds some extra code and debugging symbols. You can omit these and perform some optimisations by building it in **release** mode with `dub build -b release`. Mind that build times will increase accordingly. Refer to the output of `dub --annotate --print-builds` for more build types.
 
-### Build configurations
+#### Build configurations
 
 There are two major configurations in which the bot may be built.
 
@@ -140,9 +140,9 @@ $ dub build -c twitch
 
 > If you want to slim down the program and customise your own build to only compile the plugins you want to use, see the larger `versions` lists in `dub.sdl`. Simply add a character to the lines corresponding to the plugins you want to omit, thus invalidating the version identifiers and effectively disabling the code they relate to. Mind that disabling any of the "**service**" plugins may/will break the bot in subtle ways.
 
-# How to use
+## How to use
 
-## Configuration
+### Configuration
 
 The bot ideally wants the account name of one or more administrators of the bot, and/or one or more home channels to operate in. Without either it's just a read-only log bot, which is a completely valid use-case. To define these you can either supply them on the command line, with flags listed by calling the program with `--help`, or generate a configuration file with `--save` and enter them there.
 
@@ -152,7 +152,7 @@ $ ./kameloso --save
 
 A new `kameloso.conf` will be created in a directory dependent on your platform.
 
-### Configuration file
+#### Configuration file
 
 * **Linux** and other Posix: `$HOME/.config/kameloso` (overridden by `$XDG_CONFIG_HOME`)
 * **Windows**: `%APPDATA%\kameloso`
@@ -162,7 +162,7 @@ Open the file in a normal text editor.
 
 > As a shortcut you can pass `--gedit` to attempt to open it in a **g**raphical **edit**or, or `--edit` to open it in your default terminal one, as defined in the `$EDITOR` environment variable.
 
-### Command-line arguments
+#### Command-line arguments
 
 You can make changes to your configuration file in-place by specifying some at the command line and adding `--save`.
 
@@ -181,13 +181,13 @@ $ ./kameloso \
 
 Settings not touched will keep their values.
 
-### Display settings
+#### Display settings
 
 The bot uses [terminal ANSI colouring](https://en.wikipedia.org/wiki/ANSI_escape_code#3-bit_and_4-bit), and text colours are by default set to go well with dark terminal backgrounds. If you instead have a bright background, text may be difficult to read (e.g. white on white), depending on your terminal emulator. If so, try passing the `--bright` argument, and/or modify the configuration file to enable `brightTerminal` under `[Core]`. If only some colours work, try limiting colouring to only those by disabling `extendedColours`, also under `[Core]`. If one or more colours are still too dark or too bright even with the right `brightTerminal` setting, please refer to your terminal appearance settings.
 
 An alternative is to disable colours entirely with `--monochrome`.
 
-### Other files
+#### Other files
 
 More server-specific resource files will be created the first time you connect to a server. These include `users.json`, in which you whitelist which accounts are allowed to access the bot's features on a per-channel basis. Where these are placed is platform-dependent.
 
@@ -195,7 +195,7 @@ More server-specific resource files will be created the first time you connect t
 * **Windows**: `%LOCALAPPDATA%\kameloso`
 * **macOS**: `$HOME/Library/Application Support/kameloso`
 
-## Example use
+### Example use
 
 Refer to [the wiki](https://github.com/zorael/kameloso/wiki/Current-plugins) for more information on available plugins and their commands.
 
@@ -339,7 +339,7 @@ MrOffline joined #channel
  <kameloso> The time is currently 12:05 in Europe/Helsinki.
 ```
 
-### Online help and commands
+#### Online help and commands
 
 Use the `!help` command for a summary of available bot commands, and `!help [plugin] [command]` for a brief description of a specific one. The shorthand `!help !command` also works.
 
@@ -352,17 +352,17 @@ prefix                      "!"
 
 It can technically be any string and not just one character. It may include spaces if enclosed within quotes, like `"please "` (making it `please note`, `please quote`, ...). Additionally, prefixing commands with the bot's nickname also always works, as in `kameloso: seen MrOffline`. This is to be able to disambiguate between several bots in the same channel. Moreover, many administrative commands only work when called this way; notably everything that only outputs information to the local terminal.
 
-### ***Except nothing happens***
+#### ***Except nothing happens***
 
 Before allowing *anyone* to trigger any restricted functionality, the bot will try to identify the accessing user by querying the server for what **services account** that user is logged onto, if not already known. For full and global administrative privileges you will need to be logged into services with an account listed in the `admins` field in the configuration file, while other users may be defined with other per-channel permissions in your [`users.json`](#other-files) file. If a user is not logged onto services it is considered as not being uniquely identifiable and cannot be resolved to an account.
 
 In the case of [**hostmasks mode**](https://github.com/zorael/kameloso/wiki/On-servers-without-services-(e.g.-no-NickServ)), the above still applies but "accounts" are derived from user hostmasks. See the **Admin** plugin `!hostmask` command (and the [`hostmasks.json`](#other-files) file) for how to map hostmasks to would-be accounts. Hostmasks are a weaker solution to user identification, but not all servers offer services..
 
-## **Twitch**
+### **Twitch**
 
 > **If you're interested in trying the bot but don't want to run it yourself, [contact me](mailto:zorael@gmail.com?subject=Hosting+a+kameloso+instance) and I will host an instance on a headless server.**
 
-### **Copy paste-friendly concrete setup from scratch**
+#### **Copy paste-friendly concrete setup from scratch**
 
 Prebuilt binaries for Windows and Linux can be found under [Releases](https://github.com/zorael/kameloso/releases).
 
@@ -401,7 +401,7 @@ After obtaining a token it will save it to your configuration file and reconnect
 
 > If you don't like the terminal colouring, `--monochrome` disables it.
 
-### Example configuration
+#### Example configuration
 
 ```ini
 [IRCClient]
@@ -434,7 +434,7 @@ promoteVIPs                 true
 
 The secure port is **6697** (alternatively **443**). For non-encrypted traffic, use the default port **6667**.
 
-### **Long story**
+#### **Long story**
 
 To connect to Twitch servers, you must first compile the `twitch` build configuration to include Twitch support. **All pre-compiled binaries available from under [Releases](https://github.com/zorael/kameloso/releases) are already built this way.**
 
@@ -450,7 +450,7 @@ If you prefer to generate the token manually, [**here is the URL you need to fol
 
 > Mind that the authorisation token should be kept secret. It's not possible to derive your Twitch account password from it, but anyone with access to the token can chat as if they were you.
 
-### Twitch bot
+#### Twitch bot
 
 **Please make the bot a moderator to prevent its messages from being as aggressively rate-limited.**
 
@@ -474,11 +474,11 @@ Assuming a prefix of `!`, commands to test are:
 
 > Note: `.` (dot) and `/` (slash) prefixes will not work on Twitch.
 
-#### Song requests
+##### Song requests
 
 To get song requests to work, you need to register an *application* to interface with [Google (YouTube)](https://console.cloud.google.com/projectcreate) and/or [Spotify](https://developer.spotify.com/dashboard) servers individually. To initiate the guides for this, pass `--set twitch.googleKeygen` for YouTube and `--set twitch.spotifyKeygen` for Spotify, then simply follow the on-screen instructions. (They behave much like `--set twitch.keygen`.)
 
-#### Certain commands require higher permissions
+##### Certain commands require higher permissions
 
 Some functionality, such as setting the channel title or currently played game, require elevated credentials with the permissions of the channel owner (broadcaster), as opposed to those of any moderator. As such, if you want to use such commands, you will need to generate an OAuth authorisation token for **your main account** separately, much as you generated one to be able to connect with the bot account. This will request a token from Twitch with more permissions, and the authorisation browser page should reflect this.
 
@@ -498,7 +498,7 @@ $ ./kameloso \
     --set twitch.spotifyKeygen
 ```
 
-## Further help
+### Further help
 
 For more information and help, first refer to [the wiki](https://github.com/zorael/kameloso/wiki).
 
@@ -507,23 +507,23 @@ If you still can't find what you're looking for, or if you have suggestions on h
 * ...start a thread under [Discussions](https://github.com/zorael/kameloso/discussions)
 * ...file a [GitHub issue](https://github.com/zorael/kameloso/issues/new)
 
-# Known issues
+## Known issues
 
-## Windows
+### Windows
 
 The bot uses [**OpenSSL**](https://www.openssl.org) to establish secure connections. It is the de facto standard library for such in the Posix sphere (Linux, macOS, ...), but not so on Windows. If you run into errors about missing SSL libraries when attempting to connect on Windows, pass the `--get-openssl` flag to download and launch the installer for [**OpenSSL for Windows v1.1.\***](https://slproweb.com/products/Win32OpenSSL.html). Make sure to opt to install to Windows system directories when asked.
 
-## Google/YouTube song request playlist integration
+### Google/YouTube song request playlist integration
 
 If you're doing everything right and you still get permissions errors when attempting to add a YouTube video clip to a playlist, make sure that you pick a **YouTube account** during the keygen process when you're asked to select one of your accounts, as opposed to an overarching **Google account**. It should say **YouTube** underneath the option.
 
-# Roadmap
+## Roadmap
 
 * pipedream zero: **no compiler segfaults** ([#18026](https://issues.dlang.org/show_bug.cgi?id=18026), [#20562](https://issues.dlang.org/show_bug.cgi?id=20562))
 * please send help: Windows Secure Channel SSL
 * **more pairs of eyes** (if you don't test it, it's broken)
 
-# Built with
+## Built with
 
 * [**D**](https://dlang.org)
 * [`dub`](https://code.dlang.org)
@@ -532,11 +532,11 @@ If you're doing everything right and you still get permissions errors when attem
 * [`requests`](https://github.com/ikod/dlang-requests) ([dub](https://code.dlang.org/packages/requests))
 * [`arsd`](https://github.com/adamdruppe/arsd) ([dub](https://code.dlang.org/packages/arsd-official))
 
-# License
+## License
 
 This project is licensed under the **Boost Software License 1.0** - see the [LICENSE_1_0.txt](LICENSE_1_0.txt) file for details.
 
-# Acknowledgements
+## Acknowledgements
 
 * [Kamelåså](https://youtu.be/ykj3Kpm3O0g)
 * [ikod](https://github.com/ikod) for [`dlang-requests`](https://github.com/ikod/dlang-requests)
