@@ -629,6 +629,13 @@ mixin template IRCPluginImpl(
             return_,
         }
 
+        /++
+            Cached value set inside the Command loop.
+         +/
+        string commandWordInEvent;
+        string commandWordInEventLower;  /// ditto
+        string contentSanscommandWordInEvent;  /// ditto
+
         // process
         /++
             Process a function.
@@ -686,19 +693,15 @@ mixin template IRCPluginImpl(
             {
                 import lu.string : strippedLeft;
 
-                // Snapshot content and aux for later restoration
-                immutable origContent = event.content;  // don't strip
-                typeof(IRCEvent.aux) origAux;
                 bool auxDirty;
-
-                event.content = event.content.strippedLeft;
+                event.content = origEvent.content.strippedLeft;
 
                 scope(exit)
                 {
                     // Restore aux if it has been altered
                     // Unconditionally restore content
-                    event.content = origContent;
-                    if (auxDirty) event.aux = origAux;  // copy by value
+                    event.content = origEvent.content;
+                    if (auxDirty) event.aux = origEvent.aux;  // copy by value
                 }
 
                 if (!event.content.length)
@@ -711,20 +714,21 @@ mixin template IRCPluginImpl(
                 /// Whether or not a Command or Regex matched.
                 bool commandMatch;
 
-                // Evaluate each Command UDAs with the current event
+                /+
+                    Evaluate each Command UDAs with the current event.
+
+                    This is a little complicated, but cache the command word
+                    and its lowercase version, and the content without the
+                    command word, so we don't have to do it for each Command
+                    UDA. This is more than a little hacky, but it's a hot path.
+                 +/
                 if (uda.commands.length)
                 {
-                    immutable preNomContent = event.content;
-                    string word;  // cached value set inside the command loop
-                    string wordLower;  // ditto
+                    immutable preLoopContent = event.content;
 
                     commandForeach:
                     foreach (const command; uda.commands)
                     {
-                        import lu.string : nom;
-                        import std.typecons : No, Yes;
-                        import std.uni : toLower;
-
                         static if (verbose)
                         {
                             enum pattern = `   ...Command "%s"`;
@@ -732,6 +736,7 @@ mixin template IRCPluginImpl(
                             if (state.settings.flush) stdout.flush();
                         }
 
+                        // The call to .prefixPolicyMatches modifies event.content
                         if (!event.prefixPolicyMatches!verbose(command._policy, state))
                         {
                             static if (verbose)
@@ -740,18 +745,24 @@ mixin template IRCPluginImpl(
                                 if (state.settings.flush) stdout.flush();
                             }
 
-                            // Do nothing, proceed to next command
+                            // Do nothing, proceed to next command but restore content first
+                            event.content = preLoopContent;
                             continue commandForeach;
                         }
 
-                        if (!word.length)
+                        if (!commandWordInEvent.length)
                         {
-                            word = event.content
-                                .nom!(Yes.inherit, Yes.decode)(' ');
-                            wordLower = word.toLower;
+                            import lu.string : nom;
+                            import std.typecons : No, Yes;
+                            import std.uni : toLower;
+
+                            // Cache it
+                            commandWordInEvent = event.content.nom!(Yes.inherit, Yes.decode)(' ');
+                            commandWordInEventLower = commandWordInEvent.toLower();
+                            contentSanscommandWordInEvent = event.content;
                         }
 
-                        if (wordLower == command._word/*.toLower*/)
+                        if (commandWordInEventLower == command._word/*.toLower()*/)
                         {
                             static if (verbose)
                             {
@@ -759,20 +770,17 @@ mixin template IRCPluginImpl(
                                 if (state.settings.flush) stdout.flush();
                             }
 
-                            if (!auxDirty)
-                            {
-                                origAux = event.aux;  // copies
-                                auxDirty = true;
-                            }
-
-                            event.aux[$-1] = word;
+                            event.aux[$-1] = commandWordInEvent;
+                            auxDirty = true;
                             commandMatch = true;
+                            event.content = contentSanscommandWordInEvent;
                             break commandForeach;
                         }
+                        else
+                        {
+                            event.content = preLoopContent;
+                        }
                     }
-
-                    // Restore content to pre-nom state
-                    event.content = preNomContent;
                 }
 
                 static if (hasRegexes)
@@ -816,13 +824,8 @@ mixin template IRCPluginImpl(
                                         if (state.settings.flush) stdout.flush();
                                     }
 
-                                    if (!auxDirty)
-                                    {
-                                        origAux = event.aux;  // copies
-                                        auxDirty = true;
-                                    }
-
                                     event.aux[$-1] = hits[0];
+                                    auxDirty = true;
                                     commandMatch = true;
                                     break regexForeach;
                                 }
