@@ -2263,9 +2263,9 @@ void sanitiseEvent(ref IRCEvent event)
     event.errors = sanitize(event.errors);
     event.errors ~= event.errors.length ? " | Sanitised" : "Sanitised";
 
-    foreach (immutable i, ref aux; event.aux)
+    foreach (ref auxN; event.aux)
     {
-        aux = sanitize(aux);
+        auxN = sanitize(auxN);
     }
 
     foreach (user; only(&event.sender, &event.target))
