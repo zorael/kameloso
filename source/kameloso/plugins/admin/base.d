@@ -1393,8 +1393,8 @@ void onCommandBus(AdminPlugin plugin, const ref IRCEvent event)
     {
         import std.format : format;
 
-        enum pattern = "Usage: <b>%s%s<b> [header] [content...]";
-        immutable message = pattern.format(plugin.state.settings.prefix, event.aux[$-1]);
+        enum pattern = "Usage: <b>%s<b> [header] [content...]";
+        immutable message = pattern.format(event.aux[$-1]);
         return privmsg(plugin.state, event.channel, event.sender.nickname, message);
     }
 
