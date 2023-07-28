@@ -634,7 +634,7 @@ mixin template IRCPluginImpl(
          +/
         string commandWordInEvent;
         string commandWordInEventLower;  /// ditto
-        string contentSanscommandWordInEvent;  /// ditto
+        string contentSansCommandWordInEvent;  /// ditto
 
         // process
         /++
@@ -762,7 +762,7 @@ mixin template IRCPluginImpl(
                             // Cache it
                             commandWordInEvent = event.content.nom!(Yes.inherit, Yes.decode)(' ');
                             commandWordInEventLower = commandWordInEvent.toLower();
-                            contentSanscommandWordInEvent = event.content;
+                            contentSansCommandWordInEvent = event.content;
                         }
 
                         if (commandWordInEventLower == command._word/*.toLower()*/)
@@ -776,7 +776,7 @@ mixin template IRCPluginImpl(
                             event.aux[$-1] = commandWordInEvent;
                             auxDirty = true;
                             commandMatch = true;
-                            event.content = contentSanscommandWordInEvent;
+                            event.content = contentSansCommandWordInEvent;
                             break commandForeach;
                         }
                         else
