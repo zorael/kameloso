@@ -1140,13 +1140,15 @@ mixin template IRCPluginImpl(
             assert(__ctfe, "funIndexByTiming called outside CTFE");
 
             size_t[] indexes;
+            indexes.length = this.Introspection.allEventHandlerUDAsInModule.length;
+            size_t n;
 
             foreach (immutable i; 0..this.Introspection.allEventHandlerUDAsInModule.length)
             {
-                if (this.Introspection.allEventHandlerUDAsInModule[i]._when == timing) indexes ~= i;
+                if (this.Introspection.allEventHandlerUDAsInModule[i]._when == timing) indexes[n++] = i;
             }
 
-            return indexes;
+            return indexes[0..n].idup;
         }
 
         /+
