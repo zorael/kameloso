@@ -635,7 +635,7 @@ mixin template IRCPluginImpl(
          +/
         auto process(bool verbose, bool inFiber, bool hasRegexes, Fun)
             (scope Fun fun,
-            const string funName,
+            const string fqn,
             const IRCEventHandler uda,
             ref IRCEvent event) scope
         {
@@ -644,7 +644,7 @@ mixin template IRCPluginImpl(
                 import lu.conv : Enum;
                 import std.stdio : stdout, writeln, writefln;
 
-                writeln("-- ", funName, " @ ", Enum!(IRCEvent.Type).toString(event.type));
+                writeln("-- ", fqn, " @ ", Enum!(IRCEvent.Type).toString(event.type));
                 writeln("   ...", Enum!ChannelPolicy.toString(uda._channelPolicy));
                 if (state.settings.flush) stdout.flush();
             }
@@ -906,7 +906,7 @@ mixin template IRCPluginImpl(
                     {
                         // Unsure why we need to specifically specify IRCPlugin
                         // now despite typeof(this) being a subclass...
-                        enqueue(this, event, uda._permissionsRequired, uda._fiber, fun, funName);
+                        enqueue(this, event, uda._permissionsRequired, uda._fiber, fun, fqn);
                         return uda._chainable ? NextStep.continue_ : NextStep.return_;
                     }
                     else
@@ -1000,7 +1000,7 @@ mixin template IRCPluginImpl(
             debug static assert(udaSanityCheckMinimal!(fun, uda), "0");
 
             enum verbose = (uda._verbose || debug_);
-            enum funName = module_ ~ '.' ~ __traits(identifier, fun);
+            enum fqn = module_ ~ '.' ~ __traits(identifier, fun);
 
             /+
                 Return if the event handler does not accept this type of event.
@@ -1035,7 +1035,7 @@ mixin template IRCPluginImpl(
                     cast(bool)uda._fiber,
                     cast(bool)uda.regexes.length)
                     (&fun,
-                    funName,
+                    fqn,
                     uda,
                     event);
 
@@ -1051,7 +1051,7 @@ mixin template IRCPluginImpl(
                         cast(bool)uda._fiber,
                         cast(bool)uda.regexes.length)
                         (&fun,
-                        funName,
+                        fqn,
                         uda,
                         event);
                 }
@@ -1076,7 +1076,7 @@ mixin template IRCPluginImpl(
                 import core.exception : UnicodeException;
 
                 /*enum pattern = "tryProcess some exception on <l>%s</>: <l>%s";
-                logger.warningf(pattern, funName, e);*/
+                logger.warningf(pattern, fqn, e);*/
 
                 immutable isRecoverableException =
                     (cast(UnicodeException)e !is null) ||
