@@ -2412,22 +2412,10 @@ void udaSanityCheckCTFE(const IRCEventHandler uda)
     {
         foreach (const regex; uda.regexes)
         {
-            import lu.string : contains;
-
             if (!regex._expression.length)
             {
                 enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
                     "listening for a `Regex` with an empty (or unspecified) expression";
-                immutable message = pattern.format(uda.fqn).idup;
-                assert(0, message);
-            }
-            else if (
-                (regex._policy != PrefixPolicy.direct) &&
-                regex._expression.contains(' '))
-            {
-                enum pattern = fix ~ "`%s` is annotated with an `IRCEventHandler` " ~
-                    "listening for a non-`PrefixPolicy.direct`-annotated " ~
-                    "`Regex` with an expression containing spaces";
                 immutable message = pattern.format(uda.fqn).idup;
                 assert(0, message);
             }
