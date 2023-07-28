@@ -3156,6 +3156,27 @@ public:
          +/
         string _word;
 
+        // word
+        /++
+            The command word, without spaces. Mutator.
+
+            Upon setting this the word is also converted to lowercase.
+            Because we define this explicit function we need not rely on
+            [kameloso.traits.UnderscoreOpDispatcher|UnderscoreOpDispatcher].
+
+            Params:
+                word = New command word.
+
+            Returns:
+                A `this` reference to the current struct instance.
+         +/
+        ref auto word(const string word)
+        {
+            import std.uni : toLower;
+            this._word = word.toLower;
+            return this;
+        }
+
         // _description
         /++
             Describes the functionality of the event handler function the parent
