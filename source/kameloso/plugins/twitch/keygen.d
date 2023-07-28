@@ -512,6 +512,8 @@ auto getTokenExpiry(TwitchPlugin plugin, const string authToken)
         try
         {
             immutable validationJSON = getValidation(plugin, authToken, No.async);
+            plugin.state.client.nickname = validationJSON["login"].str;
+            plugin.state.updates |= typeof(plugin.state.updates).client;
             immutable expiresIn = validationJSON["expires_in"].integer;
             immutable expiresWhen = SysTime.fromUnixTime(Clock.currTime.toUnixTime + expiresIn);
             return expiresWhen;
