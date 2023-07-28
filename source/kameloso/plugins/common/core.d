@@ -1635,6 +1635,7 @@ mixin template IRCPluginImpl(
         /++
             Automatically generated function.
          +/
+        pragma(inline, true)
         override public void ` ~ funName ~ `() @system
         {
             static if (__traits(compiles, { alias _ = .` ~ funName ~ `; }))
@@ -1667,6 +1668,7 @@ mixin template IRCPluginImpl(
     /++
         Tick function. Called once every main loop iteration.
      +/
+    pragma(inline, true)
     override public bool tick() @system
     {
         static if (__traits(compiles, { alias _ = .tick; }))
@@ -1875,6 +1877,7 @@ mixin template IRCPluginImpl(
                 message was meant for them.
             content = Wildcard content, to be cast to concrete types if the header matches.
      +/
+    pragma(inline, true)
     override public void onBusMessage(const string header, shared Sendable content) @system
     {
         static if (__traits(compiles, { alias _ = .onBusMessage; }))
