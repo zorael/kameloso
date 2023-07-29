@@ -7,7 +7,7 @@ license "BSL-1.0"
 
 targetType "executable"
 mainSourceFile "source/kameloso/entrypoint.d"
-dflags "-dip25" "-dip1008"
+dflags "-dip1000" "-dip1008"
 #dflags "-fall-instantiations" platform="gdc"
 dflags "-linkonce-templates" "-disable-verify" platform="ldc"
 #dflags "-link-defaultlib-shared=false" platform="ldc"
@@ -24,33 +24,32 @@ sourcePaths "source"
 importPaths "source"
 
 /**
-    Plugins; add or remove a letter to the strings to disable that plugin.
+    Plugins; add a letter to a string to disable that plugin.
     (Or remove the line entirely.)
  */
 versions \
     "WithAdminPlugin" \
     "WithAutomodePlugin" \
+    "WithBashPlugin" \
     "WithChatbotPlugin" \
     "WithCounterPlugin" \
     "WithHelpPlugin" \
     "WithNotePlugin" \
     "WithOnelinerPlugin" \
     "WithPipelinePlugin" \
+    "WithPollPlugin" \
     "WithPrinterPlugin" \
     "WithQuotePlugin" \
     "WithSedReplacePlugin" \
     "WithSeenPlugin" \
     "WithStopwatchPlugin" \
-    "WithPollPlugin" \
-    "WithTimerPlugin" \
-    "WithWebtitlePlugin" \
     "WithTimePlugin" \
-    "WithBashPlugin"
+    "WithTimerPlugin" \
+    "WithWebtitlePlugin"
     //"WithSamePlugin"
 
 /**
     Services; needed for everything to work right.
-
     Program exhibits undefined behaviour (read: breaks) when any of these are disabled.
  */
 versions \
@@ -70,7 +69,6 @@ versions \
 
 /**
     Non-default features.
-
     May be enabled in some configurations.
  */
 /*
