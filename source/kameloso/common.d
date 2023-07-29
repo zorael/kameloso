@@ -126,11 +126,23 @@ void printVersionInfo(const Flag!"colours" colours = Yes.colours) @safe
     version(TwitchSupport) enum twitchSupport = " (+twitch)";
     else enum twitchSupport = string.init;
 
-    immutable versionPattern = colours ?
-        "<l>kameloso IRC bot v%s%s, built with %s (%s) on %s</>".expandTags(LogLevel.off) :
-        "kameloso IRC bot v%s%s, built with %s (%s) on %s";
+    version(DigitalMars)
+    {
+        enum colouredVersionPattern = "<l>kameloso IRC bot v%s%s, built with %s (%s) on %s</>";
+        enum uncolouredVersionPattern = "kameloso IRC bot v%s%s, built with %s (%s) on %s";
+    }
+    else
+    {
+        // ldc or gdc
+        enum colouredVersionPattern = "<l>kameloso IRC bot v%s%s, built with %s (based on dmd %s) on %s</>";
+        enum uncolouredVersionPattern = "kameloso IRC bot v%s%s, built with %s (based on dmd %s) on %s";
+    }
 
-    writefln(versionPattern,
+    immutable finalVersionPattern = colours ?
+        colouredVersionPattern.expandTags(LogLevel.off) :
+        uncolouredVersionPattern;
+
+    writefln(finalVersionPattern,
         cast(string)KamelosoInfo.version_,
         twitchSupport,
         cast(string)KamelosoInfo.compiler,
