@@ -3383,31 +3383,6 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
             break outerloop;
         }
 
-        /+
-            Start all plugins.
-         +/
-        try
-        {
-            instance.startPlugins();
-            if (*instance.abort) break outerloop;
-        }
-        catch (Exception e)
-        {
-            enum pattern = "An unexpected error occurred while starting the <l>%s</> plugin: " ~
-                "<l>%s</> (at <l>%s</>:<l>%d</>)%s";
-            logger.errorf(
-                pattern,
-                e.file.pluginNameOfFilename,
-                e.msg,
-                e.file,
-                e.line,
-                bell);
-
-            version(PrintStacktraces) logger.trace(e);
-            attempt.retval = ShellReturnValue.pluginStartException;
-            break outerloop;
-        }
-
         // Do verbose exits if mainLoop causes a return
         attempt.silentExit = false;
 

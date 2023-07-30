@@ -213,12 +213,6 @@ public:
      +/
     void setup() @system;
 
-    // start
-    /++
-        Called when connection has been established.
-     +/
-    void start() @system;
-
     // printSettings
     /++
         Called when we want a plugin to print its [Settings]-annotated struct of settings.
@@ -1613,15 +1607,13 @@ mixin template IRCPluginImpl(
         return didSomething;
     }
 
-    // setup, start, reload, teardown
+    // setup, reload, teardown
     /+
-        Generates functions `setup`, `start`, `reload` and `teardown`. These
-        merely pass on calls to module-level `.setup`, `.start`, `.reload` and
+        Generates functions `setup`, `reload` and `teardown`. These
+        merely pass on calls to module-level `.setup`, `.reload` and
         `.teardown`, where such is available.
 
-        `setup` runs early pre-connect routines.
-
-        `start` runs early post-connect routines, immediately after connection
+        `setup` runs early post-connect routines, immediately after connection
         has been established.
 
         `reload` Reloads the plugin, where such makes sense. What this means is
@@ -1629,7 +1621,7 @@ mixin template IRCPluginImpl(
 
         `teardown` de-initialises the plugin.
      +/
-    static foreach (immutable funName; AliasSeq!("setup", "start", "reload", "teardown"))
+    static foreach (immutable funName; AliasSeq!("setup", "reload", "teardown"))
     {
         mixin(`
         /++
