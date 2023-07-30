@@ -830,6 +830,8 @@ auto mainLoop(ref Kameloso instance)
             instance.conn,
             *instance.abort,
             Timeout.connectionLost));
+
+    // Likewise a Generator to handle concurrency messages
     auto messenger = new Generator!Next(() => messageFiber(instance));
 
     scope(exit)
@@ -841,7 +843,7 @@ auto mainLoop(ref Kameloso instance)
     }
 
     /++
-        Invokes the messenger generator.
+        Invokes the messenger Generator.
      +/
     Next callMessenger()
     {
@@ -987,6 +989,7 @@ auto mainLoop(ref Kameloso instance)
             {
                 if (plugin.state.nextScheduledTimestamp <= nowInHnsecs)
                 {
+                    // These handle exceptions internally
                     processScheduledDelegates(plugin, nowInHnsecs);
                     processScheduledFibers(plugin, nowInHnsecs);
                     plugin.state.updateSchedule();  // Something is always removed
@@ -3194,7 +3197,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
 
         scope(exit)
         {
-            // Always teardown when exiting this loop (for whatever reason)
+            // Always teardown when exiting this loop (for any reason)
             instance.teardownPlugins();
         }
 
@@ -3207,6 +3210,9 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
         // update it to any custom value after each reset() call.
         instance.conn.receiveTimeout = instance.connSettings.receiveTimeout;
 
+        /+
+            Resolve.
+         +/
         immutable actionAfterResolve = tryResolve(
             instance,
             cast(Flag!"firstConnect")(attempt.firstConnect));

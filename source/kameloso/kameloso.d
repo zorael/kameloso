@@ -546,6 +546,13 @@ public:
     // setupPlugins
     /++
         Sets up all plugins, calling any module-level `setup` functions.
+        This happens after connection has been established.
+
+        This merely calls
+        [kameloso.plugins.common.core.IRCPlugin.setupIRCPlugin.setup]
+        on each plugin.
+
+        Don't setup disabled plugins.
      +/
     alias setupPlugins = issuePluginCallImpl!"setup";
 
@@ -562,6 +569,10 @@ public:
     // reloadPlugins
     /++
         Reloads all plugins by calling any module-level `reload` functions.
+
+        This merely calls
+        [kameloso.plugins.common.core.IRCPlugin.reload|IRCPlugin.reload]
+        on each plugin.
 
         What this actually does is up to the plugins.
      +/
