@@ -3272,7 +3272,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
             {
                 enum pattern = "The <l>%s</> plugin failed to load its resources; " ~
                     "<l>%s</> is malformed. (at <l>%s</>:<l>%d</>)%s";
-                logger.warningf(
+                logger.errorf(
                     pattern,
                     e.pluginName,
                     e.malformedFilename,
@@ -3284,7 +3284,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
             {
                 enum pattern = "The <l>%s</> plugin failed to load its resources; " ~
                     "<l>%s</> (at <l>%s</>:<l>%d</>)%s";
-                logger.warningf(
+                logger.errorf(
                     pattern,
                     e.pluginName,
                     e.msg,
@@ -3301,7 +3301,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
         {
             enum pattern = "An unexpected error occurred while initialising " ~
                 "plugin resources: <l>%s</> (at <l>%s</>:<l>%d</>)%s";
-            logger.warningf(
+            logger.errorf(
                 pattern,
                 e.msg,
                 e.file.pluginFileBaseName,
@@ -3330,7 +3330,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
             {
                 enum pattern = "The <l>%s</> plugin failed to setup; " ~
                     "<l>%s</> is malformed. (at <l>%s</>:<l>%d</>)%s";
-                logger.warningf(
+                logger.errorf(
                     pattern,
                     e.pluginName,
                     e.malformedFilename,
@@ -3342,7 +3342,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
             {
                 enum pattern = "The <l>%s</> plugin failed to setup; " ~
                     "<l>%s</> (at <l>%s</>:<l>%d</>)%s";
-                logger.warningf(
+                logger.errorf(
                     pattern,
                     e.pluginName,
                     e.msg,
@@ -3359,7 +3359,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
         {
             enum pattern = "An unexpected error occurred while setting up the <l>%s</> plugin: " ~
                 "<l>%s</> (at <l>%s</>:<l>%d</>)%s";
-            logger.warningf(
+            logger.errorf(
                 pattern,
                 e.file.pluginNameOfFilename,
                 e.msg,
@@ -3384,7 +3384,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
         {
             enum pattern = "An unexpected error occurred while starting the <l>%s</> plugin: " ~
                 "<l>%s</> (at <l>%s</>:<l>%d</>)%s";
-            logger.warningf(
+            logger.errorf(
                 pattern,
                 e.file.pluginNameOfFilename,
                 e.msg,
