@@ -3452,8 +3452,16 @@ void printEventDebugDetails(
 
     if (onlyPrintRaw || !eventWasInitialised || !event.raw.length) // == IRCEvent.init
     {
-        enum pattern = `Offending line: "<l>%s</>"`;
-        logger.warningf(pattern, raw);
+        if (event.tags.length)
+        {
+            enum pattern = `Offending line: "<t>%s</>"`;
+            logger.warningf(pattern, raw);
+        }
+        else
+        {
+            enum pattern = `Offending line: "<l>@%s %s</>"`;
+            logger.warningf(pattern, event.tags, raw);
+        }
     }
     else
     {
