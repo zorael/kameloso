@@ -612,11 +612,11 @@ package auto datestamp()
 }
 
 
-// initialise
+// setup
 /++
     Initialises the Printer plugin by allocating a slice of memory for the linebuffer.
  +/
-void initialise(PrinterPlugin plugin)
+void setup(PrinterPlugin plugin)
 {
     import kameloso.terminal : isTerminal;
 

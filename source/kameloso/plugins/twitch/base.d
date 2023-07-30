@@ -3408,11 +3408,11 @@ void appendToStreamHistory(TwitchPlugin plugin, const TwitchPlugin.Room.Stream s
 }
 
 
-// initialise
+// setup
 /++
     Initialises the Twitch plugin.
  +/
-void initialise(TwitchPlugin _)
+void setup(TwitchPlugin _)
 {
     import kameloso.terminal : isTerminal;
 

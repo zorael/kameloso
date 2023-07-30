@@ -941,13 +941,13 @@ void onBusMessage(
 }
 
 
-// initialise
+// setup
 /++
     Initialises the shared cache, else it won't retain changes.
 
     Just assign an entry and remove it.
  +/
-void initialise(WebtitlePlugin plugin)
+void setup(WebtitlePlugin plugin)
 {
     // No need to synchronise this; no worker threads are running
     plugin.cache[string.init] = TitleLookupResults.init;
