@@ -528,7 +528,7 @@ public:
             call = String name of call to issue to all plugins.
      +/
     private void issuePluginCallImpl(string call)()
-    if (call.among!("setup", "start", "reload", "initResources"))
+    if (call.among!("setup", "reload", "initResources"))
     {
         foreach (plugin; this.plugins)
         {
@@ -558,16 +558,6 @@ public:
         on each plugin.
      +/
     alias initPluginResources = issuePluginCallImpl!"initResources";
-
-    // startPlugins
-    /++
-        Starts all plugins by calling any module-level `start` functions.
-
-        This happens after connection has been established.
-
-        Don't start disabled plugins.
-     +/
-    alias startPlugins = issuePluginCallImpl!"start";
 
     // reloadPlugins
     /++
