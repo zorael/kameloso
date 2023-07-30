@@ -3006,7 +3006,7 @@ enum Timing
 struct IRCEventHandler
 {
 private:
-    import kameloso.traits : UnderscoreOpDispatcher;
+    import kameloso.typecons : UnderscoreOpDispatcher;
 
 public:
     // acceptedEventTypes
@@ -3018,7 +3018,7 @@ public:
 
     // _onEvent
     /++
-        Alias to make [kameloso.traits.UnderscoreOpDispatcher] redirect calls to
+        Alias to make [kameloso.typecons.UnderscoreOpDispatcher] redirect calls to
         [acceptedEventTypes] but by the name `onEvent`.
      +/
     alias _onEvent = acceptedEventTypes;
@@ -3045,7 +3045,7 @@ public:
 
     // _addCommand
     /++
-        Alias to make [kameloso.traits.UnderscoreOpDispatcher] redirect calls to
+        Alias to make [kameloso.typecons.UnderscoreOpDispatcher] redirect calls to
         [commands] but by the name `addCommand`.
      +/
     alias _addCommand = commands;
@@ -3058,7 +3058,7 @@ public:
 
     // _addRegex
     /++
-        Alias to make [kameloso.traits.UnderscoreOpDispatcher] redirect calls to
+        Alias to make [kameloso.typecons.UnderscoreOpDispatcher] redirect calls to
         [regexes] but by the name `addRegex`.
      +/
     alias _addRegex = regexes;
@@ -3145,7 +3145,7 @@ public:
 
             Upon setting this the word is also converted to lowercase.
             Because we define this explicit function we need not rely on
-            [kameloso.traits.UnderscoreOpDispatcher|UnderscoreOpDispatcher].
+            [kameloso.typecons.UnderscoreOpDispatcher|UnderscoreOpDispatcher].
 
             Params:
                 word = New command word.
@@ -3184,7 +3184,7 @@ public:
 
         // _addSyntax
         /++
-            Alias to make [kameloso.traits.UnderscoreOpDispatcher] redirect calls to
+            Alias to make [kameloso.typecons.UnderscoreOpDispatcher] redirect calls to
             [syntaxes] but by the name `addSyntax`.
          +/
         alias _addSyntax = syntaxes;
@@ -3241,7 +3241,7 @@ public:
             The regular expression this [IRCEventHandler.Regex] embodies, in string form.
 
             Upon setting this a regex engine is also created. Because of this extra step we
-            cannot rely on [kameloso.traits.UnderscoreOpDispatcher|UnderscoreOpDispatcher]
+            cannot rely on [kameloso.typecons.UnderscoreOpDispatcher|UnderscoreOpDispatcher]
             to redirect calls.
 
             Example:
