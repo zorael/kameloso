@@ -1842,7 +1842,7 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
 
     size_t[] toRemove;
 
-    foreach (immutable i, scheduledFiber; plugin.state.scheduledFibers)
+    foreach (immutable i, ref scheduledFiber; plugin.state.scheduledFibers)
     {
         if (scheduledFiber.timestamp > nowInHnsecs) continue;
 
