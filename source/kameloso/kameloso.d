@@ -683,6 +683,8 @@ public:
     {
         alias Update = typeof(plugin.state.updates);
 
+        if (plugin.state.updates == Update.nothing) return;
+
         if (plugin.state.updates & Update.bot)
         {
             // Something changed the bot; propagate
