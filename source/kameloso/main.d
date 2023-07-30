@@ -3241,28 +3241,6 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
             assert(0, text("`tryResolve` returned `", Enum!Next.toString(actionAfterResolve), "`"));
         }
 
-        immutable actionAfterConnect = tryConnect(instance);
-        if (*instance.abort) break outerloop;  // tryConnect interruptibleSleep can abort
-
-        with (Next)
-        final switch (actionAfterConnect)
-        {
-        case continue_:
-            break;
-
-        case returnFailure:
-            // No need to saveOnExit, the scopeguard takes care of that
-            attempt.retval = ShellReturnValue.connectionFailure;
-            break outerloop;
-
-        case returnSuccess:  // should never happen
-        case retry:  // ditto
-        case crash:  // ditto
-            import lu.conv : Enum;
-            import std.conv : text;
-            assert(0, text("`tryConnect` returned `", Enum!Next.toString(actionAfterConnect), "`"));
-        }
-
         /+
             Initialise all plugins' resources.
 
@@ -3319,6 +3297,31 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
             version(PrintStacktraces) logger.trace(e);
             attempt.retval = ShellReturnValue.pluginResourceLoadException;
             break outerloop;
+        }
+
+        /+
+            Connect.
+         +/
+        immutable actionAfterConnect = tryConnect(instance);
+        if (*instance.abort) break outerloop;  // tryConnect interruptibleSleep can abort
+
+        with (Next)
+        final switch (actionAfterConnect)
+        {
+        case continue_:
+            break;
+
+        case returnFailure:
+            // No need to saveOnExit, the scopeguard takes care of that
+            attempt.retval = ShellReturnValue.connectionFailure;
+            break outerloop;
+
+        case returnSuccess:  // should never happen
+        case retry:  // ditto
+        case crash:  // ditto
+            import lu.conv : Enum;
+            import std.conv : text;
+            assert(0, text("`tryConnect` returned `", Enum!Next.toString(actionAfterConnect), "`"));
         }
 
         // Reinit with its own server.
