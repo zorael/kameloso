@@ -366,7 +366,7 @@ void messageFiber(ref Kameloso instance)
                     }
                     catch (Exception e)
                     {
-                        enum pattern = "The <l>%s</> plugin threw an exception when reloading: <l>%s";
+                        enum pattern = "The <l>%s</> plugin threw an exception when reloading: <t>%s";
                         logger.errorf(pattern, plugin.name, e.msg);
                         version(PrintStacktraces) logger.trace(e);
                     }
@@ -425,7 +425,7 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             default:
-                enum pattern = "onThreadMessage received unexpected message type: <l>%s";
+                enum pattern = "onThreadMessage received unexpected message type: <t>%s";
                 logger.errorf(pattern, message.type);
                 if (instance.settings.flush) stdout.flush();
                 break;
@@ -853,7 +853,7 @@ auto mainLoop(ref Kameloso instance)
         {
             import kameloso.string : doublyBackslashed;
 
-            enum pattern = "Unhandled messenger exception: <l>%s</> (at <l>%s</>:<l>%d</>)";
+            enum pattern = "Unhandled messenger exception: <t>%s</> (at <l>%s</>:<l>%d</>)";
             logger.warningf(pattern, e.msg, e.file.doublyBackslashed, e.line);
             version(PrintStacktraces) logger.trace(e);
             return Next.returnFailure;
@@ -865,7 +865,7 @@ auto mainLoop(ref Kameloso instance)
         }
         else
         {
-            logger.error("Internal error, thread messenger Fiber ended abruptly.");
+            logger.error("Internal error, thread messenger Fiber ended unexpectedly.");
             return Next.returnFailure;
         }
     }
@@ -1562,7 +1562,7 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
     }
     catch (IRCParseException e)
     {
-        enum pattern = "IRCParseException: <l>%s</> (at <l>%s</>:<l>%d</>)";
+        enum pattern = "IRCParseException: <t>%s</> (at <l>%s</>:<l>%d</>)";
         logger.warningf(pattern, e.msg, e.file.doublyBackslashed, e.line);
         printEventDebugDetails(event, raw);
         version(PrintStacktraces) logger.trace(e.info);
@@ -1576,19 +1576,19 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
     }
     catch (UTFException e)
     {
-        enum pattern = "UTFException: <l>%s";
+        enum pattern = "UTFException: <t>%s";
         logger.warningf(pattern, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (UnicodeException e)
     {
-        enum pattern = "UnicodeException: <l>%s";
+        enum pattern = "UnicodeException: <t>%s";
         logger.warningf(pattern, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (Exception e)
     {
-        enum pattern = "Unhandled exception: <l>%s</> (at <l>%s</>:<l>%d</>)";
+        enum pattern = "Unhandled exception: <t>%s</> (at <l>%s</>:<l>%d</>)";
         logger.warningf(pattern, e.msg, e.file.doublyBackslashed, e.line);
         printEventDebugDetails(event, raw);
         version(PrintStacktraces) logger.trace(e);
@@ -1625,7 +1625,7 @@ void processAwaitingDelegates(IRCPlugin plugin, const ref IRCEvent event)
             }
             catch (Exception e)
             {
-                enum pattern = "Exception %s.awaitingDelegates[%d]: <l>%s";
+                enum pattern = "Exception %s.awaitingDelegates[%d]: <t>%s";
                 logger.warningf(pattern, plugin.name, i, e.msg);
                 printEventDebugDetails(event, event.raw);
                 version(PrintStacktraces) logger.trace(e);
@@ -1704,7 +1704,7 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
             }
             catch (Exception e)
             {
-                enum pattern = "Exception %s.awaitingFibers[%d]: <l>%s";
+                enum pattern = "Exception %s.awaitingFibers[%d]: <t>%s";
                 logger.warningf(pattern, plugin.name, i, e.msg);
                 printEventDebugDetails(event, event.raw);
                 version(PrintStacktraces) logger.trace(e);
@@ -1783,7 +1783,7 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledDelegate`s with an uns
         }
         catch (Exception e)
         {
-            enum pattern = "Exception %s.scheduledDelegates[%d]: <l>%s";
+            enum pattern = "Exception %s.scheduledDelegates[%d]: <t>%s";
             logger.warningf(pattern, plugin.name, i, e.msg);
             version(PrintStacktraces) logger.trace(e);
         }
@@ -1840,7 +1840,7 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
         }
         catch (Exception e)
         {
-            enum pattern = "Exception %s.scheduledFibers[%d]: <l>%s";
+            enum pattern = "Exception %s.scheduledFibers[%d]: <t>%s";
             logger.warningf(pattern, plugin.name, i, e.msg);
             version(PrintStacktraces) logger.trace(e);
         }
@@ -2310,13 +2310,13 @@ auto tryGetopt(ref Kameloso instance)
     }
     catch (GetOptException e)
     {
-        enum pattern = "Error parsing command-line arguments: <l>%s";
+        enum pattern = "Error parsing command-line arguments: <t>%s";
         logger.errorf(pattern, e.msg);
         //version(PrintStacktraces) logger.trace(e.info);
     }
     catch (ConvException e)
     {
-        enum pattern = "Error converting command-line arguments: <l>%s";
+        enum pattern = "Error converting command-line arguments: <t>%s";
         logger.errorf(pattern, e.msg);
         //version(PrintStacktraces) logger.trace(e.info);
     }
@@ -2334,13 +2334,13 @@ auto tryGetopt(ref Kameloso instance)
     }
     catch (DeserialisationException e)
     {
-        enum pattern = "Error parsing configuration file: <l>%s";
+        enum pattern = "Error parsing configuration file: <t>%s";
         logger.errorf(pattern, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
     catch (ProcessException e)
     {
-        enum pattern = "Failed to open <l>%s</> in an editor: <l>%s";
+        enum pattern = "Failed to open <l>%s</> in an editor: <t>%s";
         logger.errorf(pattern, instance.settings.configFile.doublyBackslashed, e.msg);
         version(PrintStacktraces) logger.trace(e.info);
     }
@@ -2352,7 +2352,7 @@ auto tryGetopt(ref Kameloso instance)
     }
     catch (Exception e)
     {
-        enum pattern = "Unexpected exception: <l>%s";
+        enum pattern = "Unexpected exception: <t>%s";
         logger.errorf(pattern, e.msg);
         version(PrintStacktraces) logger.trace(e);
     }
@@ -2634,12 +2634,12 @@ auto tryConnect(ref Kameloso instance)
             version(Posix)
             {
                 import kameloso.common : errnoStrings;
-                enum pattern = "Failed to connect: <l>%s</> (<l>%s</>)";
+                enum pattern = "Failed to connect: <l>%s</> (<t>%s</>)";
                 logger.errorf(pattern, errorString, errnoStrings[attempt.errno]);
             }
             else version(Windows)
             {
-                enum pattern = "Failed to connect: <l>%s</> (<l>%d</>)";
+                enum pattern = "Failed to connect: <l>%s</> (<t>%d</>)";
                 logger.errorf(pattern, errorString, attempt.errno);
             }
             else
@@ -3130,7 +3130,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
                 }
                 catch (Exception e)
                 {
-                    enum pattern = "Unexpected exception: <l>%s";
+                    enum pattern = "Unexpected exception: <t>%s";
                     logger.errorf(pattern, e.msg);
                     version(PrintStacktraces) logger.trace(e);
                 }
@@ -3311,7 +3311,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
         catch (Exception e)
         {
             enum pattern = "An unexpected error occurred while initialising " ~
-                "plugin resources: <l>%s</> (at <l>%s</>:<l>%d</>)%s";
+                "plugin resources: <t>%s</> (at <l>%s</>:<l>%d</>)%s";
             logger.errorf(
                 pattern,
                 e.msg,
@@ -3369,7 +3369,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
         catch (Exception e)
         {
             enum pattern = "An unexpected error occurred while setting up the <l>%s</> plugin: " ~
-                "<l>%s</> (at <l>%s</>:<l>%d</>)%s";
+                "<t>%s</> (at <l>%s</>:<l>%d</>)%s";
             logger.errorf(
                 pattern,
                 e.file.pluginNameOfFilename,
@@ -3987,7 +3987,7 @@ auto run(string[] args)
         {
             import kameloso.string : doublyBackslashed;
             enum pattern = "Caught Exception when saving settings: " ~
-                "<l>%s</> (at <l>%s</>:<l>%d</>)";
+                "<t>%s</> (at <l>%s</>:<l>%d</>)";
             logger.warningf(pattern, e.msg, e.file.doublyBackslashed, e.line);
             version(PrintStacktraces) logger.trace(e);
         }
