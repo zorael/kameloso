@@ -1170,11 +1170,12 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
                 }
                 catch (SSLFileException e)
                 {
+                    import kameloso.string : doublyBackslashed;
                     import std.format : format;
 
                     enum pattern = "%s: %s";
                     attempt.state = State.fatalSSLFailure;
-                    attempt.error = pattern.format(e.msg, e.filename);
+                    attempt.error = pattern.format(e.msg, e.filename.doublyBackslashed);
                     yield(attempt);
                     continue attemptloop;
                 }

@@ -3024,6 +3024,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
     import kameloso.plugins.common.misc : IRCPluginInitialisationException,
         pluginNameOfFilename, pluginFileBaseName;
     import kameloso.constants : ShellReturnValue;
+    import kameloso.string : doublyBackslashed;
     import kameloso.terminal : TerminalToken, isTerminal;
     import dialect.parsing : IRCParser;
     import std.algorithm.comparison : among;
@@ -3276,8 +3277,8 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
                 logger.errorf(
                     pattern,
                     e.pluginName,
-                    e.malformedFilename,
-                    e.file.pluginFileBaseName,
+                    e.malformedFilename.doublyBackslashed,
+                    e.file.pluginFileBaseName.doublyBackslashed,
                     e.line,
                     bell);
             }
@@ -3289,7 +3290,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
                     pattern,
                     e.pluginName,
                     e.msg,
-                    e.file.pluginFileBaseName,
+                    e.file.pluginFileBaseName.doublyBackslashed,
                     e.line,
                     bell);
             }
@@ -3305,7 +3306,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
             logger.errorf(
                 pattern,
                 e.msg,
-                e.file.pluginFileBaseName,
+                e.file.pluginFileBaseName.doublyBackslashed,
                 e.line,
                 bell);
 
@@ -3334,8 +3335,8 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
                 logger.errorf(
                     pattern,
                     e.pluginName,
-                    e.malformedFilename,
-                    e.file.pluginFileBaseName,
+                    e.malformedFilename.doublyBackslashed,
+                    e.file.pluginFileBaseName.doublyBackslashed,
                     e.line,
                     bell);
             }
@@ -3347,7 +3348,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
                     pattern,
                     e.pluginName,
                     e.msg,
-                    e.file.pluginFileBaseName,
+                    e.file.pluginFileBaseName.doublyBackslashed,
                     e.line,
                     bell);
             }
@@ -3362,9 +3363,9 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
                 "<t>%s</> (at <l>%s</>:<l>%d</>)%s";
             logger.errorf(
                 pattern,
-                e.file.pluginNameOfFilename,
+                e.file.pluginNameOfFilename.doublyBackslashed,
                 e.msg,
-                e.file,
+                e.file.doublyBackslashed,
                 e.line,
                 bell);
 

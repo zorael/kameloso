@@ -502,12 +502,14 @@ in (url.length, "Tried to send an HTTP request without a URL")
         }
         catch (JSONException e)
         {
+            import kameloso.string : doublyBackslashed;
+
             throw new TwitchQueryException(
                 e.msg,
                 response.str,
                 response.error,
                 response.code,
-                e.file,
+                e.file.doublyBackslashed,
                 e.line);
         }
     }
@@ -660,12 +662,14 @@ in (Fiber.getThis, "Tried to call `getTwitchData` from outside a Fiber")
     }
     catch (JSONException e)
     {
+        import kameloso.string : doublyBackslashed;
+
         throw new TwitchQueryException(
             e.msg,
             response.str,
             response.error,
             response.code,
-            e.file,
+            e.file.doublyBackslashed,
             e.line);
     }
 }
