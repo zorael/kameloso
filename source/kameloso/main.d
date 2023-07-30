@@ -964,16 +964,22 @@ auto mainLoop(ref Kameloso instance)
 
             if (plugin.state.specialRequests.length)
             {
+                scope(exit) instance.checkPluginForUpdates(plugin);
+
                 try
                 {
                     processSpecialRequests(instance, plugin);
                 }
                 catch (Exception e)
                 {
-                    enum pattern = "Exception processing %s special requests: <l>%s";
-                    logger.warningf(pattern, plugin.name, e.msg);
-                    version(PrintStacktraces) logger.trace(e);
+                    logPluginActionException(
+                        e,
+                        plugin,
+                        IRCEvent.init,
+                        "specialRequests");
                 }
+
+                if (*instance.abort) return Next.returnFailure;
             }
 
             if (plugin.state.scheduledFibers.length ||
@@ -1286,6 +1292,55 @@ auto listenAttemptToNext(ref Kameloso instance, const ListenAttempt attempt)
 }
 
 
+// logPluginActionException
+/++
+    Logs an exception thrown by a plugin action.
+
+    Params:
+        base = The exception thrown.
+        plugin = The plugin that threw the exception.
+        event = The event that triggered the plugin action.
+        fun = The name of the plugin action that threw the exception.
+ +/
+void logPluginActionException(
+    Exception base,
+    const IRCPlugin plugin,
+    const IRCEvent event,
+    const string fun)
+{
+    import lu.string : NomException;
+    import std.utf : UTFException;
+    import core.exception : UnicodeException;
+
+    if (auto e = cast(NomException)base)
+    {
+        enum pattern = `NomException %s.%s: tried to nom "<t>%s</>" with "<l>%s</>"`;
+        logger.warningf(pattern, plugin.name, fun, e.haystack, e.needle);
+        if (event.raw.length) printEventDebugDetails(event, event.raw);
+        version(PrintStacktraces) logger.trace(e.info);
+    }
+    else if (auto e = cast(UTFException)base)
+    {
+        enum pattern = "UTFException %s.%s: <t>%s";
+        logger.warningf(pattern, plugin.name, fun, e.msg);
+        version(PrintStacktraces) logger.trace(e.info);
+    }
+    else if (auto e = cast(UnicodeException)base)
+    {
+        enum pattern = "UnicodeException %s.%s: <t>%s";
+        logger.warningf(pattern, plugin.name, fun, e.msg);
+        version(PrintStacktraces) logger.trace(e.info);
+    }
+    else
+    {
+        enum pattern = "Exception %s.%s: <t>%s";
+        logger.warningf(pattern, plugin.name, fun, base.msg);
+        if (event.raw.length) printEventDebugDetails(event, event.raw);
+        version(PrintStacktraces) logger.trace(base);
+    }
+}
+
+
 // processLineFromServer
 /++
     Processes a line read from the server, constructing an
@@ -1419,43 +1474,22 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
         {
             if (!plugin.isEnabled) continue;
 
+            scope(exit) instance.checkPluginForUpdates(plugin);
+
             try
             {
                 plugin.postprocess(event);
             }
-            catch (NomException e)
-            {
-                enum pattern = `NomException %s.postprocess: tried to nom "<l>%s</>" with "<l>%s</>"`;
-                logger.warningf(pattern, plugin.name, e.haystack, e.needle);
-                printEventDebugDetails(event, raw);
-                version(PrintStacktraces) logger.trace(e.info);
-            }
-            catch (UTFException e)
-            {
-                enum pattern = "UTFException %s.postprocess: <l>%s";
-                logger.warningf(pattern, plugin.name, e.msg);
-                version(PrintStacktraces) logger.trace(e.info);
-            }
-            catch (UnicodeException e)
-            {
-                enum pattern = "UnicodeException %s.postprocess: <l>%s";
-                logger.warningf(pattern, plugin.name, e.msg);
-                version(PrintStacktraces) logger.trace(e.info);
-            }
             catch (Exception e)
             {
-                enum pattern = "Exception %s.postprocess: <l>%s";
-                logger.warningf(pattern, plugin.name, e.msg);
-                printEventDebugDetails(event, raw);
-                version(PrintStacktraces) logger.trace(e);
+                logPluginActionException(
+                    e,
+                    plugin,
+                    event,
+                    "postprocess");
             }
-            finally
-            {
-                if (plugin.state.updates != typeof(plugin.state.updates).nothing)
-                {
-                    instance.checkPluginForUpdates(plugin);
-                }
-            }
+
+            if (*instance.abort) return;  // handled in mainLoop listenerloop
         }
 
         // Let each plugin process the event
@@ -1463,48 +1497,29 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
         {
             if (!plugin.isEnabled) continue;
 
+            scope(exit) instance.checkPluginForUpdates(plugin);
+
             try
             {
                 plugin.onEvent(event);
-                if (plugin.state.hasPendingReplays) processPendingReplays(instance, plugin);
-                if (plugin.state.readyReplays.length) processReadyReplays(instance, plugin);
-                processAwaitingDelegates(plugin, event);
-                processAwaitingFibers(plugin, event);
-                if (*instance.abort) return;  // handled in mainLoop listenerloop
-            }
-            catch (NomException e)
-            {
-                enum pattern = `NomException %s: tried to nom "<l>%s</>" with "<l>%s</>"`;
-                logger.warningf(pattern, plugin.name, e.haystack, e.needle);
-                printEventDebugDetails(event, raw);
-                version(PrintStacktraces) logger.trace(e.info);
-            }
-            catch (UTFException e)
-            {
-                enum pattern = "UTFException %s: <l>%s";
-                logger.warningf(pattern, plugin.name, e.msg);
-                version(PrintStacktraces) logger.trace(e.info);
-            }
-            catch (UnicodeException e)
-            {
-                enum pattern = "UnicodeException %s: <l>%s";
-                logger.warningf(pattern, plugin.name, e.msg);
-                version(PrintStacktraces) logger.trace(e.info);
             }
             catch (Exception e)
             {
-                enum pattern = "Exception %s: <l>%s";
-                logger.warningf(pattern, plugin.name, e.msg);
-                printEventDebugDetails(event, raw);
-                version(PrintStacktraces) logger.trace(e);
+                logPluginActionException(
+                    e,
+                    plugin,
+                    event,
+                    "onEvent");
             }
-            finally
-            {
-                if (plugin.state.updates != typeof(plugin.state.updates).nothing)
-                {
-                    instance.checkPluginForUpdates(plugin);
-                }
-            }
+
+            // These handle exceptions internally
+            if (*instance.abort) return;
+            if (plugin.state.hasPendingReplays) processPendingReplays(instance, plugin);
+            if (plugin.state.readyReplays.length) processReadyReplays(instance, plugin);
+            if (*instance.abort) return;
+            processAwaitingDelegates(plugin, event);
+            processAwaitingFibers(plugin, event);
+            if (*instance.abort) return;
         }
 
         // Take some special actions on select event types
@@ -1881,9 +1896,6 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
  +/
 void processReadyReplays(ref Kameloso instance, IRCPlugin plugin)
 {
-    import lu.string : NomException;
-    import std.utf : UTFException;
-    import core.exception : UnicodeException;
     import core.thread : Fiber;
 
     foreach (immutable i, replay; plugin.state.readyReplays)
@@ -1896,43 +1908,20 @@ void processReadyReplays(ref Kameloso instance, IRCPlugin plugin)
             replay.event.target.class_ = IRCUser.Class.unset;
         }
 
-        try
+        foreach (postprocessor; instance.plugins)
         {
-            foreach (postprocessor; instance.plugins)
+            try
             {
                 postprocessor.postprocess(replay.event);
             }
-        }
-        catch (NomException e)
-        {
-            enum pattern = "NomException postprocessing %s.state.readyReplays[%d]: " ~
-                `tried to nom "<l>%s</>" with "<l>%s</>"`;
-            logger.warningf(pattern, plugin.name, i, e.haystack, e.needle);
-            printEventDebugDetails(replay.event, replay.event.raw);
-            version(PrintStacktraces) logger.trace(e.info);
-            continue;
-        }
-        catch (UTFException e)
-        {
-            enum pattern = "UTFException postprocessing %s.state.readyReplace[%d]: <l>%s";
-            logger.warningf(pattern, plugin.name, i, e.msg);
-            version(PrintStacktraces) logger.trace(e.info);
-            continue;
-        }
-        catch (UnicodeException e)
-        {
-            enum pattern = "UnicodeException postprocessing %s.state.readyReplace[%d]: <l>%s";
-            logger.warningf(pattern, plugin.name, i, e.msg);
-            version(PrintStacktraces) logger.trace(e.info);
-            continue;
-        }
-        catch (Exception e)
-        {
-            enum pattern = "Exception postprocessing %s.state.readyReplace[%d]: <l>%s";
-            logger.warningf(pattern, plugin.name, i, e.msg);
-            printEventDebugDetails(replay.event, replay.event.raw);
-            version(PrintStacktraces) logger.trace(e);
-            continue;
+            catch (Exception e)
+            {
+                logPluginActionException(
+                    e,
+                    postprocessor,
+                    replay.event,
+                    "postprocessReadyReplay");
+            }
         }
 
         // If we're here no exceptions were thrown
@@ -1943,10 +1932,11 @@ void processReadyReplays(ref Kameloso instance, IRCPlugin plugin)
         }
         catch (Exception e)
         {
-            enum pattern = "Exception %s.state.readyReplays[%d].dg(): <l>%s";
-            logger.warningf(pattern, plugin.name, i, e.msg);
-            printEventDebugDetails(replay.event, replay.event.raw);
-            version(PrintStacktraces) logger.trace(e);
+            logPluginActionException(
+                e,
+                plugin,
+                replay.event,
+                "readyReplay");
         }
         finally
         {
