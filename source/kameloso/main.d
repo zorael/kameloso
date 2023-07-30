@@ -832,6 +832,8 @@ auto mainLoop(ref Kameloso instance)
     {
         destroy(listener);
         destroy(messenger);
+        listener = null;
+        messenger = null;
     }
 
     /++
@@ -1755,6 +1757,7 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
         }
 
         destroy(expiredFiber);
+        expiredFiber = null;
     }
 }
 
@@ -1793,6 +1796,7 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledDelegate`s with an uns
         finally
         {
             destroy(scheduledDg.dg);
+            scheduledDg.dg = null;
         }
 
         toRemove ~= i;  // Always removed a scheduled delegate after processing
@@ -1850,6 +1854,7 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
             if (scheduledFiber.fiber.state == Fiber.State.TERM)
             {
                 destroy(scheduledFiber.fiber);
+                scheduledFiber.fiber = null;
             }
         }
 
@@ -1948,6 +1953,7 @@ void processReadyReplays(ref Kameloso instance, IRCPlugin plugin)
         finally
         {
             destroy(replay.dg);
+            replay.dg = null;
         }
     }
 
@@ -2074,6 +2080,7 @@ void processSpecialRequests(ref Kameloso instance, IRCPlugin plugin)
             }
 
             destroy(request);
+            request = null;
         }
 
         alias PeekCommandsPayload = Tuple!(IRCPlugin.CommandMetadata[string][string]);
@@ -2382,7 +2389,11 @@ auto tryConnect(ref Kameloso instance)
     auto connector = new Generator!ConnectionAttempt(() =>
         connectFiber(instance.conn, ConnectionDefaultIntegers.retries, *instance.abort));
 
-    scope(exit) destroy(connector);
+    scope(exit)
+    {
+        destroy(connector);
+        connector = null;
+    }
 
     try
     {
@@ -2683,7 +2694,11 @@ auto tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
             instance.connSettings.ipv6,
             *instance.abort));
 
-    scope(exit) destroy(resolver);
+    scope(exit)
+    {
+        destroy(resolver);
+        resolver = null;
+    }
 
     uint incrementedRetryDelay = Timeout.connectionRetry;
     enum incrementMultiplier = 1.2;

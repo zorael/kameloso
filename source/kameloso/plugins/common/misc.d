@@ -602,6 +602,7 @@ auto replay(Plugin, Fun)
                 {
                     // Ended immediately, so just destroy
                     destroy(fiber);
+                    fiber = null;
                 }
             }
             else

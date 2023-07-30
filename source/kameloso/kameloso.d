@@ -607,6 +607,7 @@ public:
                     if (scheduledFiber.fiber.state != Fiber.State.EXEC)
                     {
                         destroy(scheduledFiber.fiber);
+                        scheduledFiber.fiber = null;
                     }
                 }
 
@@ -615,6 +616,7 @@ public:
                 foreach (scheduledDelegate; plugin.state.scheduledDelegates)
                 {
                     destroy(scheduledDelegate.dg);
+                    scheduledDelegate.dg = null;
                 }
 
                 plugin.state.scheduledDelegates = null;
@@ -627,6 +629,7 @@ public:
                         if (fiber.state != Fiber.State.EXEC)
                         {
                             destroy(fiber);
+                            fiber = null;
                         }
                     }
                 }
@@ -638,6 +641,7 @@ public:
                     foreach (ref dg; dgsForType)
                     {
                         destroy(dg);
+                        dg = null;
                     }
                 }
 
@@ -668,6 +672,7 @@ public:
             }
 
             destroy(plugin);
+            plugin = null;
         }
 
         // Zero out old plugins array

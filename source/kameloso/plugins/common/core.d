@@ -974,6 +974,7 @@ mixin template IRCPluginImpl(
                 {
                     // Ended immediately, so just destroy
                     destroy(fiber);
+                    fiber = null;
                 }
             }
             else
