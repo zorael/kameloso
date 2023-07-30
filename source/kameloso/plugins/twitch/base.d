@@ -2663,14 +2663,21 @@ unittest
 }
 
 
-// start
+// setup
 /++
     Start the captive key generation routine immediately after connection has
     been established.
  +/
-void start(TwitchPlugin plugin)
+void setup(TwitchPlugin plugin)
 {
+    import kameloso.terminal : isTerminal;
     import std.algorithm.searching : endsWith;
+
+    if (!isTerminal)
+    {
+        // Not a TTY so replace our bell string with an empty one
+        TwitchPlugin.bell = string.init;
+    }
 
     immutable someKeygenWanted =
         plugin.twitchSettings.keygen ||
@@ -3405,22 +3412,6 @@ void appendToStreamHistory(TwitchPlugin plugin, const TwitchPlugin.Room.Stream s
     json.load(plugin.streamHistoryFile);
     json.array ~= stream.toJSON();
     json.save(plugin.streamHistoryFile);
-}
-
-
-// setup
-/++
-    Initialises the Twitch plugin.
- +/
-void setup(TwitchPlugin _)
-{
-    import kameloso.terminal : isTerminal;
-
-    if (!isTerminal)
-    {
-        // Not a TTY so replace our bell string with an empty one
-        TwitchPlugin.bell = string.init;
-    }
 }
 
 

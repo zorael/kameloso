@@ -1760,7 +1760,7 @@ void negotiateNick(ConnectService service)
 }
 
 
-// start
+// setup
 /++
     Registers with the server.
 
@@ -1771,7 +1771,7 @@ void negotiateNick(ConnectService service)
 
     It seems to work.
  +/
-void start(ConnectService service)
+void setup(ConnectService service)
 {
     register(service);
 }

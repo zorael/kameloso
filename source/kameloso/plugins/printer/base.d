@@ -615,10 +615,16 @@ package auto datestamp()
 // setup
 /++
     Initialises the Printer plugin by allocating a slice of memory for the linebuffer.
+    Sets up a Fiber to print the date in `YYYY-MM-DD` format to the screen and
+    to any active log files upon day change.
  +/
 void setup(PrinterPlugin plugin)
 {
+    import kameloso.plugins.common.delayawait : delay;
+    import kameloso.constants : BufferSize;
     import kameloso.terminal : isTerminal;
+    import core.thread : Fiber;
+    import core.time : Duration;
 
     plugin.linebuffer.reserve(PrinterPlugin.linebufferInitialSize);
 
@@ -627,20 +633,6 @@ void setup(PrinterPlugin plugin)
         // Not a TTY so replace our bell string with an empty one
         PrinterPlugin.bell = string.init;
     }
-}
-
-
-// start
-/++
-    Sets up a Fiber to print the date in `YYYY-MM-DD` format to the screen and
-    to any active log files upon day change.
- +/
-void start(PrinterPlugin plugin)
-{
-    import kameloso.plugins.common.delayawait : delay;
-    import kameloso.constants : BufferSize;
-    import core.thread : Fiber;
-    import core.time : Duration;
 
     static Duration untilNextMidnight()
     {
