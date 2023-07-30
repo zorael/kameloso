@@ -900,19 +900,7 @@ auto mainLoop(ref Kameloso instance)
         }
     }
 
-    // Start plugins before the loop starts and immediately read messages sent.
-    try
-    {
-        instance.startPlugins();
-    }
-    catch (Exception e)
-    {
-        enum pattern = "Exception thrown when starting plugins: <l>%s";
-        logger.errorf(pattern, e.msg);
-        logger.trace(e.info);
-        return Next.returnFailure;
-    }
-
+    // Immediately check for messages, in case starting plugins left some
     next = callMessenger();
     if (next != Next.continue_) return next;
 
@@ -3267,8 +3255,12 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
             assert(0, text("`tryConnect` returned `", Enum!Next.toString(actionAfterConnect), "`"));
         }
 
-        // Ensure initialised resources after resolve so we know we have a
-        // valid server to create a directory for.
+        /+
+            Initialise all plugins' resources.
+
+            Ensure initialised resources after resolve so we know we have a
+            valid server to create a directory for.
+         +/
         try
         {
             instance.initPluginResources();
@@ -3324,6 +3316,9 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
         // Reinit with its own server.
         instance.parser = IRCParser(backupClient, instance.parser.server);
 
+        /+
+            Set up all plugins.
+         +/
         try
         {
             instance.setupPlugins();
@@ -3374,6 +3369,31 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
 
             version(PrintStacktraces) logger.trace(e);
             attempt.retval = ShellReturnValue.pluginSetupException;
+            break outerloop;
+        }
+
+        /+
+            Start all plugins.
+         +/
+        try
+        {
+            instance.startPlugins();
+            if (*instance.abort) break outerloop;
+        }
+        catch (Exception e)
+        {
+            enum pattern = "An unexpected error occurred while starting the <l>%s</> plugin: " ~
+                "<l>%s</> (at <l>%s</>:<l>%d</>)%s";
+            logger.warningf(
+                pattern,
+                e.file.pluginNameOfFilename,
+                e.msg,
+                e.file,
+                e.line,
+                bell);
+
+            version(PrintStacktraces) logger.trace(e);
+            attempt.retval = ShellReturnValue.pluginStartException;
             break outerloop;
         }
 
