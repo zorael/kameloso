@@ -1379,9 +1379,9 @@ void processLineFromServer(ref Kameloso instance, const string raw, const long n
                     It wrecks things. So slice it away if detected.
                  +/
 
-                static immutable ubyte[] badTail = [ 243, 160, 128, 128 ];
+                static immutable ubyte[4] badTail = [ 243, 160, 128, 128 ];
 
-                if ((cast(ubyte[])event.content).endsWith(badTail))
+                if ((cast(ubyte[])event.content).endsWith(badTail[]))
                 {
                     event.content = cast(string)(cast(ubyte[])event.content[0..$-badTail.length]);
                 }
