@@ -397,6 +397,8 @@ void messageFiber(ref Kameloso instance)
                     instance.customSettings = instance.customSettings
                         .remove!(SwapStrategy.unstable)(i);
                 }
+
+                toRemove = null;
                 break;
 
             case putUser:
@@ -700,6 +702,8 @@ void messageFiber(ref Kameloso instance)
                 if (m.event.tags.length) line = text('@', m.event.tags, ' ', line);
                 appropriateline(line);
             }
+
+            lines = null;
         }
 
         /++
@@ -1726,7 +1730,7 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
     }
 
     // Clean up processed Fibers
-    foreach (expiredFiber; expiredFibers)
+    foreach (ref expiredFiber; expiredFibers)
     {
         // Detect duplicates that were already destroyed and skip
         if (!expiredFiber) continue;
@@ -1747,6 +1751,8 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
         destroy(expiredFiber);
         expiredFiber = null;
     }
+
+    expiredFibers = null;
 }
 
 
@@ -1797,6 +1803,8 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledDelegate`s with an uns
         plugin.state.scheduledDelegates = plugin.state.scheduledDelegates
             .remove!(SwapStrategy.unstable)(i);
     }
+
+    toRemove = null;
 }
 
 
@@ -1857,6 +1865,8 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
         plugin.state.scheduledFibers = plugin.state.scheduledFibers
             .remove!(SwapStrategy.unstable)(i);
     }
+
+    toRemove = null;
 }
 
 
@@ -2149,6 +2159,7 @@ void processSpecialRequests(ref Kameloso instance, IRCPlugin plugin)
                     //fiber.payload[1] = string.init;
                     fiber.payload[2] = allSettings.to!string;
                     fiber.call();
+                    allSettings = null;
                     return;
                 }
 
