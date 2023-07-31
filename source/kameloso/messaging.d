@@ -943,10 +943,10 @@ in (nickname.length, caller ~ " tried to WHOIS but no nickname was given")
             pattern,
             nickname,
             caller,
-            cast(bool)priority,
-            force,
-            quiet,
-            background);
+            cast(bool)(properties & Message.Property.priority),
+            cast(bool)(properties & Message.Property.forced),
+            cast(bool)(properties & Message.Property.quiet),
+            cast(bool)(properties & Message.Property.background));
         if (state.settings.flush) stdout.flush();
     }
 
