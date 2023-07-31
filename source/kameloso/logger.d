@@ -385,13 +385,13 @@ public:
      +/
     private void finishLogMsg() @trusted  // writeln trusts stdout.flush, so we should be able to too
     {
-        import kameloso.terminal.colours : applyANSI;
         import std.stdio : stdout, writeln;
 
         version(Colours)
         {
             if (!monochrome)
             {
+                import kameloso.terminal.colours : applyANSI;
                 // Reset.blink in case a fatal message was thrown
                 linebuffer.applyANSI(TerminalReset.all);
             }
