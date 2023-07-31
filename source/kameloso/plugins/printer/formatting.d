@@ -482,52 +482,75 @@ if (isOutputRange!(Sink, char[]))
         nickname = "nickname";
         address = "127.0.0.1";
         version(TwitchSupport) displayName = "Nickname";
-        //account = "n1ckn4m3";
+        account = "n1ckn4m3";
         class_ = IRCUser.Class.whitelist;
     }
 
     event.type = IRCEvent.Type.JOIN;
     event.channel = "#channel";
 
-    formatMessageMonochrome(plugin, sink, event, No.bellOnMention, No.bellOnError);
-    immutable joinLine = sink.data[11..$].idup;
-    version(TwitchSupport) assert((joinLine == "[join] [#channel] Nickname"), joinLine);
-    else assert((joinLine == "[join] [#channel] nickname"), joinLine);
-    sink.clear();
+    {
+        formatMessageMonochrome(plugin, sink, event, No.bellOnMention, No.bellOnError);
+        immutable joinLine = sink.data[11..$].idup;
+        version(TwitchSupport) string nickstring = "Nickname";
+        else string nickstring = "nickname";
+        version(PrintClassNamesToo) nickstring ~= ":whitelist";
+        immutable expected = "[join] [#channel] " ~ nickstring;
+        assert((joinLine == expected), joinLine);
+        sink.clear();
+    }
 
     event.type = IRCEvent.Type.CHAN;
     event.content = "Harbl snarbl";
 
-    formatMessageMonochrome(plugin, sink, event, No.bellOnMention, No.bellOnError);
-    immutable chanLine = sink.data[11..$].idup;
-    version(TwitchSupport) assert((chanLine == `[chan] [#channel] Nickname: "Harbl snarbl"`), chanLine);
-    else assert((chanLine == `[chan] [#channel] nickname: "Harbl snarbl"`), chanLine);
-    sink.clear();
-
-    version(TwitchSupport)
     {
-        event.sender.badges = "broadcaster/0,moderator/1,subscriber/9";
-        //colour = "#3c507d";
-
         formatMessageMonochrome(plugin, sink, event, No.bellOnMention, No.bellOnError);
-        immutable twitchLine = sink.data[11..$].idup;
-        assert((twitchLine == `[chan] [#channel] Nickname [broadcaster/0,moderator/1,subscriber/9]: "Harbl snarbl"`),
-            twitchLine);
+        immutable chanLine = sink.data[11..$].idup;
+        version(TwitchSupport) string nickstring = "Nickname";
+        else string nickstring = "nickname";
+        version(PrintClassNamesToo) nickstring ~= ":whitelist";
+        immutable expected = "[chan] [#channel] " ~ nickstring ~ `: "Harbl snarbl"`;
+        assert((chanLine == expected), chanLine);
         sink.clear();
-        event.sender.badges = string.init;
     }
 
+    event.sender.badges = "broadcaster/0,moderator/1,subscriber/9";
+    event.sender.class_ = IRCUser.Class.staff;
+    //colour = "#3c507d";
+
+    version(TwitchSupport)
+    {{
+        formatMessageMonochrome(plugin, sink, event, No.bellOnMention, No.bellOnError);
+        immutable twitchLine = sink.data[11..$].idup;
+        version(TwitchSupport) string nickstring = "Nickname";
+        else string nickstring = "nickname";
+        version(PrintClassNamesToo) nickstring ~= ":staff";
+        immutable expected = "[chan] [#channel] " ~ nickstring ~
+            ` [broadcaster/0,moderator/1,subscriber/9]: "Harbl snarbl"`;
+        assert((twitchLine == expected), twitchLine);
+        sink.clear();
+        event.sender.badges = string.init;
+    }}
+
+    plugin.state.server.daemon = IRCServer.Daemon.inspircd;
+    event.sender.class_ = IRCUser.Class.anyone;
     event.type = IRCEvent.Type.ACCOUNT;
     event.channel = string.init;
     event.content = string.init;
-    event.sender.account = "n1ckn4m3";
+    //event.sender.account = "n1ckn4m3";
     event.aux[0] = "n1ckn4m3";
 
-    formatMessageMonochrome(plugin, sink, event, No.bellOnMention, No.bellOnError);
-    immutable accountLine = sink.data[11..$].idup;
-    version(TwitchSupport) assert((accountLine == "[account] Nickname (n1ckn4m3)"), accountLine);
-    else assert((accountLine == "[account] nickname (n1ckn4m3)"), accountLine);
-    sink.clear();
+    {
+        formatMessageMonochrome(plugin, sink, event, No.bellOnMention, No.bellOnError);
+        immutable accountLine = sink.data[11..$].idup;
+        version(TwitchSupport) string nickstring = "Nickname";
+        else string nickstring = "nickname";
+        version(PrintClassNamesToo) nickstring ~= ":anyone";
+        version(PrintAccountNamesToo) nickstring ~= "(n1ckn4m3)";
+        immutable expected = "[account] " ~ nickstring ~ " (n1ckn4m3)";
+        assert((accountLine == expected), accountLine);
+        sink.clear();
+    }
 
     event.errors = "DANGER WILL ROBINSON";
     event.content = "Blah balah";
@@ -540,21 +563,37 @@ if (isOutputRange!(Sink, char[]))
     event.aux[4] = "aux5";
     event.type = IRCEvent.Type.ERROR;
 
-    formatMessageMonochrome(plugin, sink, event, No.bellOnMention, No.bellOnError);
-    immutable errorLine = sink.data[11..$].idup;
-    version(TwitchSupport)
     {
-        enum expected = `[error] Nickname: "Blah balah" (aux1) (aux5) ` ~
+        formatMessageMonochrome(plugin, sink, event, No.bellOnMention, No.bellOnError);
+        immutable errorLine = sink.data[11..$].idup;
+        version(TwitchSupport) string nickstring = "Nickname";
+        else string nickstring = "nickname";
+        version(PrintClassNamesToo) nickstring ~= ":anyone";
+        version(PrintAccountNamesToo) nickstring ~= "(n1ckn4m3)";
+        immutable expected = "[error] " ~ nickstring ~ `: "Blah balah" (aux1) (aux5) ` ~
             "{-42} {123} {420} [#666] ! DANGER WILL ROBINSON !";
         assert((errorLine == expected), errorLine);
+        sink.clear();
     }
-    else
+
+    event.type = IRCEvent.Type.CHAN;
+    event.channel = "#nickname";
+    event.num = 0;
+    event.count = typeof(IRCEvent.count).init;
+    event.aux = typeof(IRCEvent.aux).init;
+    event.errors = string.init;
+
     {
-        enum expected = `[error] nickname: "Blah balah" (aux1) (aux5) ` ~
-            "{-42} {123} {420} [#666] ! DANGER WILL ROBINSON !";
-        assert((errorLine == expected), errorLine);
+        formatMessageMonochrome(plugin, sink, event, No.bellOnMention, No.bellOnError);
+        immutable queryLine = sink.data[11..$].idup;
+        version(TwitchSupport) string nickstring = "Nickname";
+        else string nickstring = "nickname";
+        version(PrintClassNamesToo) nickstring ~= ":anyone";
+        version(PrintAccountNamesToo) nickstring ~= "(n1ckn4m3)";
+        immutable expected = "[chan] [#nickname] " ~ nickstring ~ `: "Blah balah"`;
+        assert((queryLine == expected), queryLine);
+        //sink.clear();
     }
-    //sink.clear();
 }
 
 
