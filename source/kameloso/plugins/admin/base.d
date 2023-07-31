@@ -118,7 +118,6 @@ void onAnyEvent(AdminPlugin plugin, const ref IRCEvent event)
     It basically prints the matching [dialect.defs.IRCUser|IRCUsers].
  +/
 debug
-version(IncludeHeavyStuff)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
@@ -223,7 +222,6 @@ void onCommandSave(AdminPlugin plugin, const ref IRCEvent event)
     [kameloso.plugins.common.core.IRCPluginState|IRCPluginState] to the local terminal.
  +/
 debug
-version(IncludeHeavyStuff)
 @(IRCEventHandler()
     .onEvent(IRCEvent.Type.CHAN)
     .onEvent(IRCEvent.Type.QUERY)
@@ -1438,36 +1436,22 @@ void onBusMessage(
     {
         version(IncludeHeavyStuff)
         {
-            import kameloso.printing : printObject;
             import core.memory : GC;
 
-            case "users":
-                return onCommandShowUsers(plugin);
-
             case "status":
-                return onCommandStatus(plugin);
-
-            case "user":
-                if (const user = slice in plugin.state.users)
-                {
-                    printObject(*user);
-                }
-                else
-                {
-                    logger.error("No such user: <l>", slice);
-                }
-                break;
+                return onCommandStatusImpl(plugin);
 
             case "state":
+                import kameloso.printing : printObject;
+                // Adds 350 mb to compilation memory usage
+                if (plugin.state.settings.headless) return;
                 return printObject(plugin.state);
-
-            case "gc.stats":
-                import kameloso.common : printGCStats;
-                return printGCStats();
 
             case "gc.collect":
                 import std.datetime.systime : Clock;
 
+                // Only adds some 10 mb to compilation memory usage but it's
+                // very rarely needed, so keep it behind IncludeHeavyStuff
                 immutable statsPre = GC.stats();
                 immutable timestampPre = Clock.currTime;
                 immutable memoryUsedPre = statsPre.usedSize;
@@ -1487,6 +1471,28 @@ void onBusMessage(
                 GC.minimize();
                 return logger.info("Memory minimised.");
         }
+
+        case "gc.stats":
+            import kameloso.common : printGCStats;
+            if (plugin.state.settings.headless) return;
+            return printGCStats();
+
+        case "user":
+            if (plugin.state.settings.headless) return;
+
+            if (const user = slice in plugin.state.users)
+            {
+                import kameloso.printing : printObject;
+                printObject(*user);
+            }
+            else
+            {
+                logger.error("No such user: <l>", slice);
+            }
+            break;
+
+        case "users":
+            return onCommandShowUsersImpl(plugin);
 
         case "printraw":
             plugin.adminSettings.printRaw = !plugin.adminSettings.printRaw;

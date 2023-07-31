@@ -824,7 +824,7 @@ unittest
 
 
 version(GCStatsOnExit) version = BuildPrintGCStats;
-else version(IncludeHeavyStuff) version = BuildPrintGCStats;
+else debug version = BuildPrintGCStats;
 
 
 // printGCStats

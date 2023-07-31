@@ -268,6 +268,7 @@ void onLoggableEventImpl(PrinterPlugin plugin, const ref IRCEvent event)
                     {
                         import kameloso.printing : formatObjects;
 
+                        // Adds some 220 mb to compilation memory usage
                         errBuffer.lines ~= formatObjects!(Yes.all, No.coloured)
                             (No.brightTerminal, event);
 
