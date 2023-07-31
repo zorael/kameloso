@@ -835,7 +835,7 @@ if (isOutputRange!(Sink, char[]))
                 event.target.account.length)
             {
                 sink.applyANSI(TerminalReset.all);
-                sink.put('(', event.target.account, ')');
+                .put(sink, '(', event.target.account, ')');
             }
         }
 
