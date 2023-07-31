@@ -382,7 +382,7 @@ mixin template IRCPluginImpl(
                 enum fqn = module_ ~ '.'  ~ __traits(identifier, allEventHandlerFunctionsInModule[i]);
                 udas[i] = getUDAs!(fun, IRCEventHandler)[0];
                 udas[i].fqn = fqn;
-                debug udaSanityCheckCTFE(udas[i]);
+                version(unittest) udaSanityCheckCTFE(udas[i]);
                 udas[i].generateTypemap();
             }
 
@@ -537,7 +537,7 @@ mixin template IRCPluginImpl(
             Most of the verification is done in
             [kameloso.plugins.common.core.udaSanityCheckCTFE|udaSanityCheckCTFE].
          +/
-        debug
+        version(unittest)
         static bool udaSanityCheckMinimal(alias fun, IRCEventHandler uda)()
         {
             static if ((uda._permissionsRequired != Permissions.ignore) &&
@@ -567,7 +567,7 @@ mixin template IRCPluginImpl(
                 TakesParams!(fun, typeof(this), IRCEvent) ||
                 TakesParams!(fun, IRCPlugin, IRCEvent))
             {
-                debug
+                version(unittest)
                 {
                     static assert(assertSaneStorageClasses(
                         ParameterStorageClassTuple!fun[1],
@@ -586,7 +586,7 @@ mixin template IRCPluginImpl(
             }
             else static if (TakesParams!(fun, IRCEvent))
             {
-                debug
+                version(unittest)
                 {
                     static assert(assertSaneStorageClasses(
                         ParameterStorageClassTuple!fun[0],
@@ -998,7 +998,7 @@ mixin template IRCPluginImpl(
         {
             immutable uda = this.Introspection.allEventHandlerUDAsInModule[i];
             alias fun = this.Introspection.allEventHandlerFunctionsInModule[i];
-            debug static assert(udaSanityCheckMinimal!(fun, uda), "0");
+            version(unittest) static assert(udaSanityCheckMinimal!(fun, uda), "0");
 
             enum verbose = (uda._verbose || debug_);
             enum fqn = module_ ~ '.' ~ __traits(identifier, fun);
@@ -2291,7 +2291,7 @@ void sanitiseEvent(ref IRCEvent event)
     Throws:
         Asserts `0` if the UDA is deemed malformed.
  +/
-debug
+version(unittest)
 void udaSanityCheckCTFE(const IRCEventHandler uda)
 {
     import std.format : format;
@@ -2443,7 +2443,7 @@ void udaSanityCheckCTFE(const IRCEventHandler uda)
     Returns:
         `true` if the storage class is valid; asserts `0` if not.
  +/
-debug
+version(unittest)
 auto assertSaneStorageClasses(
     const ParameterStorageClass storageClass,
     const bool paramIsConst,
