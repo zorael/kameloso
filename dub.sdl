@@ -135,6 +135,7 @@ configuration "dev" {
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
+        "Callgrind" \
         "IncludeHeavyStuff"
         //"TwitchPromoteEverywhere" \
         //"TwitchCustomEmotesEverywhere" \
@@ -159,6 +160,7 @@ configuration "dev-lowmem" {
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
+        "Callgrind" \
         "IncludeHeavyStuff"
         //"TwitchPromoteEverywhere" \
         //"TwitchCustomEmotesEverywhere" \
@@ -178,20 +180,17 @@ configuration "unittest" {
         "TwitchSupport" \
         "WithTwitchPlugin" \
         "TwitchWarnings" \
-        "OmniscientAdmin" \
-        "OmniscientQueries" \
-        "OmniscientSeen" \
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
         "IncludeHeavyStuff" \
+        "TraceWhois" \
+        "TwitchPromoteEverywhere" \
+        "TwitchCustomEmotesEverywhere" \
+        "PrintAccountNamesToo" \
+        "PrintClassNamesToo" \
+        "BenchmarkHTTPRequests" \
         "OSXTMPDIR"
-        //"TraceWhois" \
-        //"TwitchPromoteEverywhere" \
-        //"TwitchCustomEmotesEverywhere" \
-        //"PrintAccountNamesToo" \
-        //"PrintClassNamesToo" \
-        //"BenchmarkHTTPRequests" \
 }
 
 configuration "unittest-lowmem" {
@@ -202,18 +201,15 @@ configuration "unittest-lowmem" {
         "TwitchSupport" \
         "WithTwitchPlugin" \
         "TwitchWarnings" \
-        "OmniscientAdmin" \
-        "OmniscientQueries" \
-        "OmniscientSeen" \
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
         "IncludeHeavyStuff" \
+        "TraceWhois" \
+        "TwitchPromoteEverywhere" \
+        "TwitchCustomEmotesEverywhere" \
+        "PrintAccountNamesToo" \
+        "PrintClassNamesToo" \
+        "BenchmarkHTTPRequests" \
         "OSXTMPDIR"
-        //"TraceWhois" \
-        //"TwitchPromoteEverywhere" \
-        //"TwitchCustomEmotesEverywhere" \
-        //"PrintAccountNamesToo" \
-        //"PrintClassNamesToo" \
-        //"BenchmarkHTTPRequests" \
 }
