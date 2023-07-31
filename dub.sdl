@@ -184,6 +184,7 @@ configuration "unittest" {
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
+        "IncludeHeavyStuff" \
         "OSXTMPDIR"
         //"TraceWhois" \
         //"TwitchPromoteEverywhere" \
@@ -207,6 +208,7 @@ configuration "unittest-lowmem" {
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
+        "IncludeHeavyStuff" \
         "OSXTMPDIR"
         //"TraceWhois" \
         //"TwitchPromoteEverywhere" \
