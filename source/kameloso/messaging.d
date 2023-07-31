@@ -933,7 +933,8 @@ in (nickname.length, caller ~ " tried to WHOIS but no nickname was given")
     m.properties = properties;
     m.caller = caller;
 
-    version(TraceWhois)
+    version(unittest) {}
+    else version(TraceWhois)
     {
         import std.stdio : stdout, writefln;
         enum pattern = "[TraceWhois] messaging.whois caught request to WHOIS \"%s\" " ~

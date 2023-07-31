@@ -593,23 +593,31 @@ void messageFiber(ref Kameloso instance)
 
                 version(TraceWhois)
                 {
-                    import std.stdio : writef, writefln, writeln;
+                    version(unittest) {}
+                    else
+                    {
+                        import std.stdio : writef, writefln, writeln;
 
-                    enum pattern = "[TraceWhois] messageFiber caught request to " ~
-                        "WHOIS \"%s\" from %s (quiet:%s, background:%s)";
-                    writef(
-                        pattern,
-                        m.event.target.nickname,
-                        m.caller,
-                        cast(bool)quietFlag,
-                        cast(bool)background);
+                        enum pattern = "[TraceWhois] messageFiber caught request to " ~
+                            "WHOIS \"%s\" from %s (quiet:%s, background:%s)";
+                        writef(
+                            pattern,
+                            m.event.target.nickname,
+                            m.caller,
+                            cast(bool)quietFlag,
+                            cast(bool)background);
+                    }
                 }
 
                 if ((now - then) > hysteresis)
                 {
                     version(TraceWhois)
                     {
-                        writeln(" ...and actually issuing.");
+                        version(unittest) {}
+                        else
+                        {
+                            writeln(" ...and actually issuing.");
+                        }
                     }
 
                     line = "WHOIS " ~ m.event.target.nickname;
@@ -620,8 +628,12 @@ void messageFiber(ref Kameloso instance)
                 {
                     version(TraceWhois)
                     {
-                        enum pattern = " ...but already issued %d seconds ago.";
-                        writefln(pattern, (now - then));
+                        version(unittest) {}
+                        else
+                        {
+                            enum alreadyIssuedPattern = " ...but already issued %d seconds ago.";
+                            writefln(alreadyIssuedPattern, (now - then));
+                        }
                     }
                 }
 
