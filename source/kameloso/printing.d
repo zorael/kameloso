@@ -337,8 +337,6 @@ private void formatStringMemberImpl(Flag!"coloured" coloured, Sink)
 {
     import std.format : formattedWrite;
 
-    pragma(msg, "string:string");
-
     static if (coloured)
     {
         import kameloso.terminal.colours.defs : F = TerminalForeground;
@@ -496,8 +494,6 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
     const FormatArrayMemberArguments args,
     const auto ref T content)
 {
-    pragma(msg, "array:", T.stringof);
-
     import std.format : formattedWrite;
     import std.range.primitives : ElementEncodingType;
     import std.traits : TemplateOf;
@@ -611,8 +607,6 @@ private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
     const FormatArrayMemberArguments args,
     const auto ref T content)
 {
-    pragma(msg, "aa:", T.stringof);
-
     import std.format : formattedWrite;
 
     /// Quote character to enclose keys in
@@ -774,7 +768,6 @@ private void formatAggregateMemberImpl(Flag!"coloured" coloured, Sink)
     (auto ref Sink sink, const FormatAggregateMemberArguments args)
 {
     import std.format : formattedWrite;
-    pragma(msg, "aggregate");
 
     static if (coloured)
     {
@@ -864,7 +857,6 @@ private void formatOtherMemberImpl(Flag!"coloured" coloured, T, Sink)
     const auto ref T content)
 {
     import std.format : formattedWrite;
-    pragma(msg, "other:", T.stringof);
 
     static if (coloured)
     {
