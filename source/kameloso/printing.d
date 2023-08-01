@@ -344,14 +344,14 @@ private void formatStringMemberImpl(Flag!"coloured" coloured, Sink)
 
         if (content.length > args.truncateAfter)
         {
-            enum stringPattern = `%s%*s %s%-*s %s"%s"%s ... (%d)` ~ '\n';
+            enum pattern = `%s%*s %s%-*s %s"%s"%s ... (%d)` ~ '\n';
             immutable memberCode = args.bright ? F.black : F.white;
             immutable valueCode  = args.bright ? F.green : F.lightgreen;
             immutable lengthCode = args.bright ? F.default_ : F.darkgrey;
             immutable typeCode   = args.bright ? F.lightcyan : F.cyan;
 
             sink.formattedWrite(
-                stringPattern,
+                pattern,
                 typeCode.asANSI,
                 args.typewidth,
                 args.typestring,
@@ -366,14 +366,14 @@ private void formatStringMemberImpl(Flag!"coloured" coloured, Sink)
         }
         else
         {
-            enum stringPattern = `%s%*s %s%-*s %s%s"%s"%s(%d)` ~ '\n';
+            enum pattern = `%s%*s %s%-*s %s%s"%s"%s(%d)` ~ '\n';
             immutable memberCode = args.bright ? F.black : F.white;
             immutable valueCode  = args.bright ? F.green : F.lightgreen;
             immutable lengthCode = args.bright ? F.default_ : F.darkgrey;
             immutable typeCode   = args.bright ? F.lightcyan : F.cyan;
 
             sink.formattedWrite(
-                stringPattern,
+                pattern,
                 typeCode.asANSI,
                 args.typewidth,
                 args.typestring,
@@ -391,9 +391,9 @@ private void formatStringMemberImpl(Flag!"coloured" coloured, Sink)
     {
         if (content.length > args.truncateAfter)
         {
-            enum stringPattern = `%*s %-*s "%s" ... (%d)` ~ '\n';
+            enum pattern = `%*s %-*s "%s" ... (%d)` ~ '\n';
             sink.formattedWrite(
-                stringPattern,
+                pattern,
                 args.typewidth,
                 args.typestring,
                 args.namewidth,
@@ -404,9 +404,9 @@ private void formatStringMemberImpl(Flag!"coloured" coloured, Sink)
         }
         else
         {
-            enum stringPattern = `%*s %-*s %s"%s"(%d)` ~ '\n';
+            enum pattern = `%*s %-*s %s"%s"(%d)` ~ '\n';
             sink.formattedWrite(
-                stringPattern,
+                pattern,
                 args.typewidth,
                 args.typestring,
                 args.namewidth,
@@ -518,11 +518,11 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
 
         if (args.truncated)
         {
-            immutable rtArrayPattern = "%s%*s %s%-*s %s[%-(" ~
+            immutable rtPattern = "%s%*s %s%-*s %s[%-(" ~
                 elemQuote ~ "%s" ~ elemQuote ~ ", %)" ~ elemQuote ~ "]%s ... (%d)\n";
 
             sink.formattedWrite(
-                rtArrayPattern,
+                rtPattern,
                 typeCode.asANSI,
                 args.typewidth,
                 args.typestring,
@@ -536,11 +536,11 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
         }
         else
         {
-            immutable rtArrayPattern = "%s%*s %s%-*s %s%s[%-(" ~
+            immutable rtPattern = "%s%*s %s%-*s %s%s[%-(" ~
                 elemQuote ~ "%s" ~ elemQuote ~ ", %)" ~ elemQuote ~ "]%s(%d)\n";
 
             sink.formattedWrite(
-                rtArrayPattern,
+                rtPattern,
                 typeCode.asANSI,
                 args.typewidth,
                 args.typestring,
@@ -558,11 +558,11 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
     {
         if (args.truncated)
         {
-            immutable rtArrayPattern = "%*s %-*s [%-(" ~
+            immutable rtPattern = "%*s %-*s [%-(" ~
                 elemQuote ~ "%s" ~ elemQuote ~ ", %)" ~ elemQuote ~ "] ... (%d)\n";
 
             sink.formattedWrite(
-                rtArrayPattern,
+                rtPattern,
                 args.typewidth,
                 args.typestring,
                 args.namewidth,
@@ -572,11 +572,11 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
         }
         else
         {
-            immutable rtArrayPattern = "%*s %-*s %s[%-(" ~
+            immutable rtPattern = "%*s %-*s %s[%-(" ~
                 elemQuote ~ "%s" ~ elemQuote ~ ", %)" ~ elemQuote ~ "](%d)\n";
 
             sink.formattedWrite(
-                rtArrayPattern,
+                rtPattern,
                 args.typewidth,
                 args.typestring,
                 args.namewidth,
@@ -635,12 +635,12 @@ private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
 
         if (args.truncated)
         {
-            immutable rtAAPattern = "%s%*s %s%-*s %s[%-(" ~
+            immutable rtPattern = "%s%*s %s%-*s %s[%-(" ~
                 keyQuote ~ "%s" ~ keyQuote ~ ":" ~
                 valueQuote ~ "%s" ~ valueQuote~  ", %)" ~ valueQuote ~ "]%s ... (%d)\n";
 
             sink.formattedWrite(
-                rtAAPattern,
+                rtPattern,
                 typeCode.asANSI,
                 args.typewidth,
                 args.typestring,
@@ -654,12 +654,12 @@ private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
         }
         else
         {
-            immutable rtAAPattern = "%s%*s %s%-*s %s%s[%-(" ~
+            immutable rtPattern = "%s%*s %s%-*s %s%s[%-(" ~
                 keyQuote ~ "%s" ~ keyQuote ~ ":" ~
                 valueQuote ~ "%s" ~ valueQuote ~ ", %)" ~ valueQuote ~ "]%s(%d)\n";
 
             sink.formattedWrite(
-                rtAAPattern,
+                rtPattern,
                 typeCode.asANSI,
                 args.typewidth,
                 args.typestring,
@@ -677,12 +677,12 @@ private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
     {
         if (args.truncated)
         {
-            immutable rtAAPattern = "%*s %-*s [%-(" ~
+            immutable rtPattern = "%*s %-*s [%-(" ~
                 keyQuote ~ "%s" ~ keyQuote  ~ ":" ~
                 valueQuote ~ "%s" ~ valueQuote ~ ", %)" ~ valueQuote ~ "] ... (%d)\n";
 
             sink.formattedWrite(
-                rtAAPattern,
+                rtPattern,
                 args.typewidth,
                 args.typestring,
                 args.namewidth,
@@ -692,12 +692,12 @@ private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
         }
         else
         {
-            immutable rtAAPattern = "%*s %-*s %s[%-(" ~
+            immutable rtPattern = "%*s %-*s %s[%-(" ~
                 keyQuote ~ "%s" ~ keyQuote  ~ ":" ~
                 valueQuote ~ "%s" ~ valueQuote ~ ", %)" ~ valueQuote ~ "](%d)\n";
 
             sink.formattedWrite(
-                rtAAPattern,
+                rtPattern,
                 args.typewidth,
                 args.typestring,
                 args.namewidth,
@@ -863,13 +863,13 @@ private void formatOtherMemberImpl(Flag!"coloured" coloured, T, Sink)
         import kameloso.terminal.colours.defs : F = TerminalForeground;
         import kameloso.terminal.colours : asANSI;
 
-        enum normalPattern = "%s%*s %s%-*s  %s%s\n";
+        enum pattern = "%s%*s %s%-*s  %s%s\n";
         immutable memberCode = args.bright ? F.black : F.white;
         immutable valueCode  = args.bright ? F.green : F.lightgreen;
         immutable typeCode   = args.bright ? F.lightcyan : F.cyan;
 
         sink.formattedWrite(
-            normalPattern,
+            pattern,
             typeCode.asANSI,
             args.typewidth,
             args.typestring,
@@ -881,9 +881,9 @@ private void formatOtherMemberImpl(Flag!"coloured" coloured, T, Sink)
     }
     else
     {
-        enum normalPattern = "%*s %-*s  %s\n";
+        enum pattern = "%*s %-*s  %s\n";
         sink.formattedWrite(
-            normalPattern,
+            pattern,
             args.typewidth,
             args.typestring,
             args.namewidth,
@@ -981,6 +981,8 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
             else static if (isArray!T || isAssociativeArray!T)
             {
                 import lu.traits : UnqualArray;
+                import std.conv : to;
+                import std.range : take;
                 import std.range.primitives : ElementEncodingType;
 
                 enum ClassString(Type) =
@@ -1005,8 +1007,6 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
                 {
                     import std.algorithm.iteration : map;
                     import std.array : array;
-                    import std.conv : to;
-                    import std.range : take;
                     import std.traits : TemplateOf;
                     import std.typecons : Nullable;
 
@@ -1038,8 +1038,6 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
                 }
                 else /*static if (isAssociativeArray!T)*/
                 {
-                    import std.conv : to;
-                    import std.range : take;
                     import std.traits : KeyType, ValueType;
 
                     alias AAKeyType = Unqual!(KeyType!T);
