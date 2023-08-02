@@ -75,7 +75,6 @@ public:
 abstract class IRCPlugin
 {
 @safe:
-
 private:
     import kameloso.thread : Sendable;
     import std.array : Appender;

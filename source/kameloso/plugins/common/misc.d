@@ -351,7 +351,7 @@ in ((fun !is null), "Tried to `enqueue` with a null function pointer")
 {
     import std.traits : isSomeFunction;
 
-    static assert (isSomeFunction!Fun, "Tried to `enqueue` with a non-function function");
+    static assert (isSomeFunction!Fun, "Tried to `enqueue` with a non-function function parameter");
 
     version(TwitchSupport)
     {
@@ -549,14 +549,13 @@ auto replay(Plugin, Fun)
             break;
 
         case ignore:
-
-            import lu.traits : TakesParams;
-            import std.traits : arity;
-
             version(ExplainReplay) explainReplay();
 
             void call()
             {
+                import lu.traits : TakesParams;
+                import std.traits : arity;
+
                 static if (
                     TakesParams!(fun, Plugin, IRCEvent) ||
                     TakesParams!(fun, IRCPlugin, IRCEvent))

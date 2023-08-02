@@ -945,7 +945,7 @@ unittest
             {
                 import std.format : format;
 
-                enum pattern = "`MessageProxy` is missing a wrapper for `kameloso.messaging.%s`";
+                enum pattern = "`MessagingProxy` is missing a wrapper for `kameloso.messaging.%s`";
                 enum message = pattern.format(funstring);
                 static assert(0, message);
             }
