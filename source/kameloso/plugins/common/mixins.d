@@ -104,12 +104,12 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             "but its parent module does not mix in `UserAwareness`");
     }
 
-    // _kamelosoCarriedNickname
+    // _carriedNickname
     /++
         Nickname being looked up, stored outside of any separate function to make
         it available to all of them.
      +/
-    string _kamelosoCarriedNickname;
+    string _carriedNickname;
 
     /++
         Event types that we may encounter as responses to WHOIS queries.
@@ -247,7 +247,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
             immutable m = _context.state.server.caseMapping;
 
-            if (!whoisEvent.target.nickname.opEqualsCaseInsensitive(_kamelosoCarriedNickname, m))
+            if (!whoisEvent.target.nickname.opEqualsCaseInsensitive(_carriedNickname, m))
             {
                 // Wrong WHOIS; await a new one
                 Fiber.yield();
@@ -498,7 +498,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             }
         }
 
-        _kamelosoCarriedNickname = nicknamePart;
+        _carriedNickname = nicknamePart;
     }
 }
 
