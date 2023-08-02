@@ -79,7 +79,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         //alias context = mixin(paramNames[0]);  // Only works on 2.088 and later
         // The mixin must be a concatenated string for 2.083 and earlier,
         // but we only support 2.085+
-        mixin("alias context = ", paramNames[0], ";");
+        mixin("alias _context = ", paramNames[0], ";");
     }
 
     static if (__traits(compiles, { alias _ = hasWHOISFiber; }))
@@ -245,7 +245,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                 }
             }
 
-            immutable m = context.state.server.caseMapping;
+            immutable m = _context.state.server.caseMapping;
 
             if (!whoisEvent.target.nickname.opEqualsCaseInsensitive(_kamelosoCarriedNickname, m))
             {
@@ -255,7 +255,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
             }
 
             // Clean up awaiting fiber entries on exit, just to be neat.
-            scope(exit) unawait(context, thisFiber, whoisEventTypes[]);
+            scope(exit) unawait(_context, thisFiber, whoisEventTypes[]);
 
             with (IRCEvent.Type)
             switch (whoisEvent.type)
@@ -265,7 +265,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                 return callOnSuccess();
 
             case RPL_WHOISUSER:
-                if (context.state.settings.preferHostmasks)
+                if (_context.state.settings.preferHostmasks)
                 {
                     return callOnSuccess();
                 }
@@ -325,13 +325,14 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
         version(TwitchSupport)
         {
-            if (context.state.server.daemon == IRCServer.Daemon.twitch)
+            if (_context.state.server.daemon == IRCServer.Daemon.twitch)
             {
                 // Define Twitch queries as always succeeding, since WHOIS isn't applicable
 
                 version(TwitchWarnings)
                 {
                     import kameloso.common : logger;
+
                     logger.warning("Tried to enqueue and WHOIS on Twitch");
 
                     version(PrintStacktraces)
@@ -343,7 +344,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
                 static if (__traits(compiles, { alias _ = .hasUserAwareness; }))
                 {
-                    if (const user = nickname in context.state.users)
+                    if (const user = nickname in _context.state.users)
                     {
                         static if (TakesParams!(onSuccess, IRCEvent))
                         {
@@ -399,7 +400,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
 
         static if (!alwaysLookup && __traits(compiles, { alias _ = .hasUserAwareness; }))
         {
-            if (const user = nickname in context.state.users)
+            if (const user = nickname in _context.state.users)
             {
                 if (user.account.length)
                 {
@@ -460,7 +461,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
         }
 
         Fiber fiber = new CarryingFiber!IRCEvent(&whoisFiberDelegate, BufferSize.fiberStack);
-        await(context, fiber, whoisEventTypes[]);
+        await(_context, fiber, whoisEventTypes[]);
 
         string slice = nickname;  // mutable
         immutable nicknamePart = slice.contains('!') ?
@@ -484,7 +485,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                     Message.Property.forced |
                     Message.Property.quiet |
                     Message.Property.background;
-                whois(context.state, nicknamePart, properties);
+                whois(_context.state, nicknamePart, properties);
             }
             else
             {
@@ -493,7 +494,7 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
                     Message.Property.forced |
                     Message.Property.quiet |
                     Message.Property.priority;
-                whois(context.state, nicknamePart, properties);
+                whois(_context.state, nicknamePart, properties);
             }
         }
 
