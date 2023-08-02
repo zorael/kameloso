@@ -540,12 +540,11 @@ private:
         private enum hasMessagingProxy = true;
     }
 
-    pragma(inline, true);
-
     // chan
     /++
         Sends a channel message.
      +/
+    pragma(inline, true)
     void chan(
         const string channelName,
         const string content,
@@ -564,6 +563,7 @@ private:
     /++
         Replies to a channel message.
      +/
+    pragma(inline, true)
     void reply(
         const ref IRCEvent event,
         const string content,
@@ -582,6 +582,7 @@ private:
     /++
         Sends a private query message to a user.
      +/
+    pragma(inline, true)
     void query(
         const string nickname,
         const string content,
@@ -604,6 +605,7 @@ private:
         This reflects how channel messages and private messages are both the
         underlying same type; [dialect.defs.IRCEvent.Type.PRIVMSG].
      +/
+    pragma(inline, true)
     void privmsg(
         const string channel,
         const string nickname,
@@ -624,6 +626,7 @@ private:
     /++
         Sends an `ACTION` "emote" to the supplied target (nickname or channel).
      +/
+    pragma(inline, true)
     void emote(
         const string emoteTarget,
         const string content,
@@ -644,6 +647,7 @@ private:
 
         This includes modes that pertain to a user in the context of a channel, like bans.
      +/
+    pragma(inline, true)
     void mode(
         const string channel,
         const const(char)[] modes,
@@ -664,6 +668,7 @@ private:
     /++
         Sets the topic of a channel.
      +/
+    pragma(inline, true)
     void topic(
         const string channel,
         const string content,
@@ -682,6 +687,7 @@ private:
     /++
         Invites a user to a channel.
      +/
+    pragma(inline, true)
     void invite(
         const string channel,
         const string nickname,
@@ -700,6 +706,7 @@ private:
     /++
         Joins a channel.
      +/
+    pragma(inline, true)
     void join(
         const string channel,
         const string key = string.init,
@@ -718,6 +725,7 @@ private:
     /++
         Kicks a user from a channel.
      +/
+    pragma(inline, true)
     void kick(
         const string channel,
         const string nickname,
@@ -738,6 +746,7 @@ private:
     /++
         Leaves a channel.
      +/
+    pragma(inline, true)
     void part(
         const string channel,
         const string reason = string.init,
@@ -756,6 +765,7 @@ private:
     /++
         Disconnects from the server, optionally with a quit reason.
      +/
+    pragma(inline, true)
     void quit(
         const string reason = string.init,
         const Message.Property properties = Message.Property.none,
@@ -772,6 +782,7 @@ private:
     /++
         Queries the server for WHOIS information about a user.
      +/
+    pragma(inline, true)
     void whois(
         const string nickname,
         const Message.Property properties = Message.Property.none,
@@ -791,6 +802,7 @@ private:
         This is used to send messages of types for which there exist no helper
         functions.
      +/
+    pragma(inline, true)
     void raw(
         const string line,
         const Message.Property properties = Message.Property.none,
@@ -808,6 +820,7 @@ private:
         Sends raw text to the server, verbatim, bypassing all queues and
         throttling delays.
      +/
+    pragma(inline, true)
     void immediate(
         const string line,
         const Message.Property properties = Message.Property.none,
@@ -848,6 +861,7 @@ private:
             `@system` and nothing else.
          +/
         mixin("
+pragma(inline, true)
 void askTo" ~ verb ~ "(const string line)
 {
     return kameloso.messaging.askTo" ~ verb ~ "(state, line);
