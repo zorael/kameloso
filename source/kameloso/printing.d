@@ -1132,50 +1132,46 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 ///
 @system unittest
 {
+    import kameloso.common : assertStringBlockEquals;
     import lu.string : contains;
     import std.array : Appender;
 
     Appender!(char[]) sink;
     sink.reserve(512);  // ~323
 
-    struct Struct
     {
-        string members;
-        int asdf;
-    }
+        struct Struct
+        {
+            string members;
+            int asdf;
+        }
 
-    // Monochrome
+        struct StructName
+        {
+            Struct struct_;
+            int i = 12_345;
+            string s = "the moon; the sign of hope! it appeared when we left the pain " ~
+                "of the ice desert behind. we faced up to the curse and endured " ~
+                "misery. condemned we are! we brought hope but also lies, and treachery...";
+            string p = "!";
+            string p2;
+            bool b = true;
+            float f = 3.14f;
+            double d = 99.9;
+            const(char)[] c = [ 'a', 'b', 'c' ];
+            const(char)[] emptyC;
+            string[] dynA = [ "foo", "bar", "baz" ];
+            int[] iA = [ 1, 2, 3, 4 ];
+            const(char)[char] cC;
+        }
 
-    struct StructName
-    {
-        Struct struct_;
-        int i = 12_345;
-        string s = "the moon; the sign of hope! it appeared when we left the pain " ~
-            "of the ice desert behind. we faced up to the curse and endured " ~
-            "misery. condemned we are! we brought hope but also lies, and treachery...";
-        string p = "!";
-        string p2;
-        bool b = true;
-        float f = 3.14f;
-        double d = 99.9;
-        const(char)[] c = [ 'a', 'b', 'c' ];
-        const(char)[] emptyC;
-        string[] dynA = [ "foo", "bar", "baz" ];
-        int[] iA = [ 1, 2, 3, 4 ];
-        const(char)[char] cC;
-    }
+        StructName s;
+        s.cC = [ 'k':'v', 'K':'V' ];
 
-    StructName s;
-    s.cC = [ 'k':'v', 'K':'V' ];
-    assert('k' in s.cC);
-    assert('K' in s.cC);
+        enum theMoon = `"the moon; the sign of hope! it appeared when we left the ` ~
+            `pain of the ice desert behind. we faced up to the curse and endured mis"`;
 
-    sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, s);
-
-    enum theMoon = `"the moon; the sign of hope! it appeared when we left the ` ~
-        `pain of the ice desert behind. we faced up to the curse and endured mis"`;
-
-    enum structNameSerialised =
+        enum structNameSerialised =
 `-- StructName
      Struct struct_                    <struct> (init)
         int i                           12345
@@ -1191,86 +1187,83 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
       int[] iA                         [1, 2, 3, 4](4)
  char[char] cC                         ['k':'v', 'K':'V'](2)
 `;
-    assert((sink.data == structNameSerialised), "\n" ~ sink.data);
 
-    // Adding Settings does nothing
-    alias StructNameSettings = StructName;
-    StructNameSettings so = s;
-    sink.clear();
-    sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, so);
+        sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, s);
+        assertStringBlockEquals(sink.data, structNameSerialised);
+        sink.clear();
 
-    assert((sink.data == structNameSerialised), "\n" ~ sink.data);
+        // Class copy
+        class ClassName
+        {
+            Struct struct_;
+            int i = 12_345;
+            string s = "foo";
+            string p = "!";
+            string p2;
+            bool b = true;
+            float f = 3.14f;
+            double d = 99.9;
+            const(char)[] c = [ 'a', 'b', 'c' ];
+            const(char)[] emptyC;
+            string[] dynA = [ "foo", "bar", "baz" ];
+            int[] iA = [ 1, 2, 3, 4 ];
+            int[] iA2 = [ 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+            const(char)[char] cC;
+            bool[int] aa;
+            string[string] aa2;
+        }
 
-    // Class copy
-    class ClassName
-    {
-        Struct struct_;
-        int i = 12_345;
-        string s = "foo";
-        string p = "!";
-        string p2;
-        bool b = true;
-        float f = 3.14f;
-        double d = 99.9;
-        const(char)[] c = [ 'a', 'b', 'c' ];
-        const(char)[] emptyC;
-        string[] dynA = [ "foo", "bar", "baz" ];
-        int[] iA = [ 1, 2, 3, 4 ];
-        int[] iA2 = [ 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
-        const(char)[char] cC;
-        bool[int] aa;
-    }
+        auto c1 = new ClassName;
+        c1.aa = [ 1 : true, 2 : false, 3 : true, 4 : false, 5: true, 6 : false];
+        c1.aa2 = [ "harbl" : "snarbl", "foo" : "bar"];
 
-    auto c1 = new ClassName;
-    c1.aa = [ 1 : true, 2 : false, 3 : true, 4 : false, 5: true, 6 : false];
-    sink.clear();
-    sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, c1);
-
-    enum classNameSerialised =
+        enum classNameSerialised =
 `-- ClassName
-     Struct struct_                    <struct>
-        int i                           12345
-     string s                          "foo"(3)
-     string p                          "!"(1)
-     string p2                          ""(0)
-       bool b                           true
-      float f                           3.14
-     double d                           99.9
-     char[] c                          ['a', 'b', 'c'](3)
-     char[] emptyC                      [](0)
-   string[] dynA                       ["foo", "bar", "baz"](3)
-      int[] iA                         [1, 2, 3, 4](4)
-      int[] iA2                        [5, 6, 7, 8, 9] ... (11)
- char[char] cC                          [](0)
-  bool[int] aa                         [6:false, 4:false, 1:true, 3:true, 5:true] ... (6)
+         Struct struct_                    <struct>
+            int i                           12345
+         string s                          "foo"(3)
+         string p                          "!"(1)
+         string p2                          ""(0)
+           bool b                           true
+          float f                           3.14
+         double d                           99.9
+         char[] c                          ['a', 'b', 'c'](3)
+         char[] emptyC                      [](0)
+       string[] dynA                       ["foo", "bar", "baz"](3)
+          int[] iA                         [1, 2, 3, 4](4)
+          int[] iA2                        [5, 6, 7, 8, 9] ... (11)
+     char[char] cC                          [](0)
+      bool[int] aa                         [6:false, 4:false, 1:true, 3:true, 5:true] ... (6)
+ string[string] aa2                        ["foo":"bar", "harbl":"snarbl"](2)
 `;
 
-    assert((sink.data == classNameSerialised), '\n' ~ sink.data);
-
-    // Two at a time
-    struct Struct1
-    {
-        string members;
-        int asdf;
+        sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, c1);
+        assertStringBlockEquals(sink.data, classNameSerialised);
+        sink.clear();
     }
-
-    struct Struct2
     {
-        string mumburs;
-        int fdsa;
-    }
+        // Two at a time
+        struct Struct1
+        {
+            string members;
+            int asdf;
+        }
 
-    Struct1 st1;
-    Struct2 st2;
+        struct Struct2
+        {
+            string mumburs;
+            int fdsa;
+        }
 
-    st1.members = "harbl";
-    st1.asdf = 42;
-    st2.mumburs = "hirrs";
-    st2.fdsa = -1;
+        Struct1 st1;
+        Struct2 st2;
 
-    sink.clear();
-    sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, st1, st2);
-    enum st1st2Formatted =
+        st1.members = "harbl";
+        st1.asdf = 42;
+        st2.mumburs = "hirrs";
+        st2.fdsa = -1;
+
+        enum st1st2Formatted =
 `-- Struct1
    string members                    "harbl"(5)
       int asdf                        42
@@ -1279,100 +1272,96 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
    string mumburs                    "hirrs"(5)
       int fdsa                        -1
 `;
-    assert((sink.data == st1st2Formatted), '\n' ~ sink.data);
 
-    // Colour
-    struct StructName2
-    {
-        int int_ = 12_345;
-        string string_ = "foo";
-        bool bool_ = true;
-        float float_ = 3.14f;
-        double double_ = 99.9;
-    }
-
-    version(Colours)
-    {
-        StructName2 s2;
-
+        sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, st1, st2);
+        assertStringBlockEquals(sink.data, st1st2Formatted);
         sink.clear();
-        sink.reserve(256);  // ~239
-        sink.formatObjects!(No.all, Yes.coloured)(No.brightTerminal, s2);
-
-        assert((sink.data.length > 12), "Empty sink after coloured fill");
-
-        assert(sink.data.contains("-- StructName"));
-        assert(sink.data.contains("int_"));
-        assert(sink.data.contains("12345"));
-
-        assert(sink.data.contains("string_"));
-        assert(sink.data.contains(`"foo"`));
-
-        assert(sink.data.contains("bool_"));
-        assert(sink.data.contains("true"));
-
-        assert(sink.data.contains("float_"));
-        assert(sink.data.contains("3.14"));
-
-        assert(sink.data.contains("double_"));
-        assert(sink.data.contains("99.9"));
-
-        // Adding Settings does nothing
-        alias StructName2Settings = StructName2;
-        immutable sinkCopy = sink.data.idup;
-        StructName2Settings s2o;
-
-        sink.clear();
-        sink.formatObjects!(No.all, Yes.coloured)(No.brightTerminal, s2o);
-        assert((sink.data == sinkCopy), sink.data);
     }
-
-    class C
     {
-        string a = "abc";
-        bool b = true;
-        int i = 42;
+        version(Colours)
+        {
+            // Colour
+            struct StructName2Settings
+            {
+                int int_ = 12_345;
+                string string_ = "foo";
+                bool bool_ = true;
+                float float_ = 3.14f;
+                double double_ = 99.9;
+            }
+            StructName2Settings s2;
+
+            sink.clear();
+            sink.reserve(256);  // ~239
+            sink.formatObjects!(No.all, Yes.coloured)(No.brightTerminal, s2);
+
+            assert((sink.data.length > 12), "Empty sink after coloured fill");
+
+            assert(sink.data.contains("-- StructName2\n"));  // Settings stripped
+            assert(sink.data.contains("int_"));
+            assert(sink.data.contains("12345"));
+
+            assert(sink.data.contains("string_"));
+            assert(sink.data.contains(`"foo"`));
+
+            assert(sink.data.contains("bool_"));
+            assert(sink.data.contains("true"));
+
+            assert(sink.data.contains("float_"));
+            assert(sink.data.contains("3.14"));
+
+            assert(sink.data.contains("double_"));
+            assert(sink.data.contains("99.9"));
+
+            sink.clear();
+        }
     }
+    {
+        class C
+        {
+            string a = "abc";
+            bool b = true;
+            int i = 42;
+        }
 
-    C c2 = new C;
+        C c2 = new C;
 
-    sink.clear();
-    sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, c2);
-    enum cFormatted =
+        enum cFormatted =
 `-- C
    string a                          "abc"(3)
      bool b                           true
       int i                           42
 `;
-    assert((sink.data == cFormatted), '\n' ~ sink.data);
 
-    sink.clear();
-
-    interface I3
-    {
-        void foo();
+        sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, c2);
+        assertStringBlockEquals(sink.data, cFormatted);
+        sink.clear();
     }
-
-    class C3 : I3
     {
-        void foo() {}
-        int i;
-    }
+        interface I3
+        {
+            void foo();
+        }
 
-    class C4
-    {
-        I3 i3;
-        C3 c3;
-        int i = 42;
-    }
+        class C3 : I3
+        {
+            void foo() {}
+            int i;
+        }
 
-    C4 c4 = new C4;
-    //c4.i3 = new C3;
-    c4.c3 = new C3;
-    c4.c3.i = -1;
+        class C4
+        {
+            I3 i3;
+            C3 c3;
+            int i = 42;
+        }
 
-    sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, c4, c4.i3, c4.c3);
-    enum c4Formatted =
+        C4 c4 = new C4;
+        //c4.i3 = new C3;
+        c4.c3 = new C3;
+        c4.c3.i = -1;
+
+        enum c4Formatted =
 `-- C4
        I3 i3                         <interface> (null)
        C3 c3                         <class>
@@ -1383,7 +1372,11 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 -- C3
       int i                           -1
 `;
-    assert((sink.data == c4Formatted), '\n' ~ sink.data);
+
+        sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, c4, c4.i3, c4.c3);
+        assertStringBlockEquals(sink.data, c4Formatted);
+        //sink.clear();
+    }
 }
 
 
@@ -1441,84 +1434,97 @@ if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))
 ///
 unittest
 {
+    import kameloso.common : assertStringBlockEquals;
+
     // Rely on the main unit tests of the output range version of formatObjects
-
-    struct Struct
     {
-        string members;
-        int asdf;
-    }
+        struct Struct
+        {
+            string members;
+            int asdf;
+        }
 
-    Struct s;
-    s.members = "foo";
-    s.asdf = 42;
+        Struct s;
+        s.members = "foo";
+        s.asdf = 42;
 
-    immutable formatted = formatObjects!(No.all, No.coloured)(No.brightTerminal, s);
-    assert((formatted ==
+        enum expected =
 `-- Struct
    string members                    "foo"(3)
       int asdf                        42
-`), '\n' ~ formatted);
+`;
 
-    class Nested
-    {
-        int harbl;
-        string snarbl;
+        immutable actual = formatObjects!(No.all, No.coloured)(No.brightTerminal, s);
+        assertStringBlockEquals(expected, actual);
     }
-
-    class ClassSettings
     {
-        string s = "arb";
-        int i;
-        string someLongConfiguration = "acdc adcadcad acacdadc";
-        int[] arrMatey = [ 1, 2, 3, 42 ];
-        Nested nest;
-    }
+        class Nested
+        {
+            int harbl;
+            string snarbl;
+        }
 
-    auto c = new ClassSettings;
-    c.i = 2;
+        class ClassSettings
+        {
+            string s = "arb";
+            int i;
+            string someLongConfiguration = "acdc adcadcad acacdadc";
+            int[] arrMatey = [ 1, 2, 3, 42 ];
+            Nested nest;
+        }
 
-    immutable formattedClass = formatObjects!(No.all, No.coloured)(No.brightTerminal, c);
-    assert((formattedClass ==
+        auto c = new ClassSettings;
+        c.i = 2;
+
+        enum expected =
 `-- Class
    string s                          "arb"(3)
       int i                           2
    string someLongConfiguration      "acdc adcadcad acacdadc"(22)
     int[] arrMatey                   [1, 2, 3, 42](4)
    Nested nest                       <class> (null)
-`), '\n' ~ formattedClass);
+`;
 
-    c.nest = new Nested;
-    immutable formattedClass2 = formatObjects!(No.all, No.coloured)(No.brightTerminal, c);
-    assert((formattedClass2 ==
+        immutable actual = formatObjects!(No.all, No.coloured)(No.brightTerminal, c);
+        assertStringBlockEquals(expected, actual);
+
+        c.nest = new Nested;
+        enum expected2 =
 `-- Class
    string s                          "arb"(3)
       int i                           2
    string someLongConfiguration      "acdc adcadcad acacdadc"(22)
     int[] arrMatey                   [1, 2, 3, 42](4)
    Nested nest                       <class>
-`), '\n' ~ formattedClass2);
+`;
 
-    struct Reparse {}
-    struct Client {}
-    struct Server {}
-
-    struct State
-    {
-        Client client;
-        Server server;
-        Reparse[] reparses;
-        bool hasReplays;
+        immutable actual2 = formatObjects!(No.all, No.coloured)(No.brightTerminal, c);
+        assertStringBlockEquals(expected2, actual2);
     }
+    {
+        struct Reparse {}
+        struct Client {}
+        struct Server {}
 
-    State state;
+        struct State
+        {
+            Client client;
+            Server server;
+            Reparse[] reparses;
+            bool hasReplays;
+        }
 
-    immutable formattedState = formatObjects!(No.all, No.coloured)(No.brightTerminal, state);
-    assert((formattedState ==
+        State state;
+
+        enum expected =
 `-- State
     Client client                     <struct> (init)
     Server server                     <struct> (init)
  Reparse[] reparses                    [](0)
       bool hasReplays                  false
-`), '\n' ~ formattedState);
+`;
+
+        immutable actual = formatObjects!(No.all, No.coloured)(No.brightTerminal, state);
+        assertStringBlockEquals(expected, actual);
+    }
 }
