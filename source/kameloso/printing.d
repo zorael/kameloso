@@ -428,7 +428,7 @@ private struct FormatArrayMemberArguments
     /++
         Refers to different kinds of quotation signs (e.g. ´"´ or ´'´).
      +/
-    enum QuoteClass
+    enum QuoteSign
     {
         string_, /// ´"´
         char_,   /// ´'´
@@ -438,17 +438,17 @@ private struct FormatArrayMemberArguments
     /++
         What sign (e.g. ´"´ or ´'´) to use when quoting the key.
      +/
-    QuoteClass keyClass;
+    QuoteSign keyQuoteSign;
 
     /++
         What sign (e.g. ´"´ or ´'´) to use when quoting the value.
      +/
-    QuoteClass valueClass;
+    QuoteSign valueQuoteSign;
 
     /++
-        Alias to [valueClass] for consistency.
+        Alias to [valueQuoteSign] for consistency.
      +/
-    alias elemClass = valueClass;
+    alias elemQuoteSign = valueQuoteSign;
 
     /++
         Type name.
@@ -512,8 +512,8 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
     /// Quote character to enclose elements in
     immutable elemQuote =
         !content.length ? string.init :
-        (args.elemClass == FormatArrayMemberArguments.QuoteClass.string_) ? `"` :
-        (args.elemClass == FormatArrayMemberArguments.QuoteClass.char_) ? "'" :
+        (args.elemQuoteSign == FormatArrayMemberArguments.QuoteSign.string_) ? `"` :
+        (args.elemQuoteSign == FormatArrayMemberArguments.QuoteSign.char_) ? "'" :
         string.init;
 
     static if (coloured)
@@ -612,25 +612,25 @@ private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
         args = Argument aggregate for easier passing.
         content = The associative array we're describing.
  +/
-private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
+private void formatAssociativeArrayMemberImpl(Flag!"coloured" coloured, Sink)
     (auto ref Sink sink,
     const FormatArrayMemberArguments args,
-    const auto ref T content)
+    const string[string] content)
 {
     import std.format : formattedWrite;
 
     /// Quote character to enclose keys in
     immutable keyQuote =
         !content.length ? string.init :
-        (args.keyClass == FormatArrayMemberArguments.QuoteClass.string_) ? `"` :
-        (args.keyClass == FormatArrayMemberArguments.QuoteClass.char_) ? "'" :
+        (args.keyQuoteSign == FormatArrayMemberArguments.QuoteSign.string_) ? `"` :
+        (args.keyQuoteSign == FormatArrayMemberArguments.QuoteSign.char_) ? "'" :
         string.init;
 
     /// Quote character to enclose values in
     immutable valueQuote =
         !content.length ? string.init :
-        (args.valueClass == FormatArrayMemberArguments.QuoteClass.string_) ? `"` :
-        (args.valueClass == FormatArrayMemberArguments.QuoteClass.char_) ? "'" :
+        (args.valueQuoteSign == FormatArrayMemberArguments.QuoteSign.string_) ? `"` :
+        (args.valueQuoteSign == FormatArrayMemberArguments.QuoteSign.char_) ? "'" :
         string.init;
 
     static if (coloured)
@@ -996,14 +996,14 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
                 import std.range : take;
                 import std.range.primitives : ElementEncodingType;
 
-                enum quoteClass(Type) =
+                enum quoteSign(Type) =
                     (is(Type == char) ||
                      is(Type == dchar) ||
-                     is(Type == wchar)) ? FormatArrayMemberArguments.QuoteClass.char_ :
+                     is(Type == wchar)) ? FormatArrayMemberArguments.QuoteSign.char_ :
                     (is(Type == string) ||
                      is(Type == dstring) ||
-                     is(Type == wstring)) ? FormatArrayMemberArguments.QuoteClass.string_ :
-                    FormatArrayMemberArguments.QuoteClass.none;
+                     is(Type == wstring)) ? FormatArrayMemberArguments.QuoteSign.string_ :
+                    FormatArrayMemberArguments.QuoteSign.none;
 
                 FormatArrayMemberArguments args;
                 auto content = __traits(getMember, thing, memberstring);
@@ -1034,7 +1034,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
                     }
 
                     enum truncateAfter = all ? uint.max : arrayTruncation;
-                    args.elemClass = quoteClass!ElemType;
+                    args.elemQuoteSign = quoteSign!ElemType;
                     args.length = content.length;
 
                     auto asStringArray = content[]
@@ -1055,8 +1055,8 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
                     alias AAValueType = Unqual!(ValueType!T);
 
                     enum truncateAfter = all ? uint.max : aaTruncation;
-                    args.keyClass = quoteClass!(AAKeyType);
-                    args.valueClass = quoteClass!(AAValueType);
+                    args.keyQuoteSign = quoteSign!(AAKeyType);
+                    args.valueQuoteSign = quoteSign!(AAValueType);
                     args.length = content.length;
 
                     string[string] asStringAA;
