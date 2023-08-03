@@ -1059,14 +1059,22 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
                     args.valueQuoteSign = quoteSign!(AAValueType);
                     args.length = content.length;
 
-                    string[string] asStringAA;
-                    auto range = content
-                        .byKeyValue
-                        .take(truncateAfter);
-
-                    foreach (kv; range)
+                    static if (!is(T : string[string]))
                     {
-                        asStringAA[kv.key.to!string] = kv.value.to!string;
+                        //pragma(msg, T);
+                        string[string] asStringAA;
+                        auto range = content
+                            .byKeyValue
+                            .take(truncateAfter);
+
+                        foreach (kv; range)
+                        {
+                            asStringAA[kv.key.to!string] = kv.value.to!string;
+                        }
+                    }
+                    else
+                    {
+                        alias asStringAA = content;
                     }
 
                     formatAssociativeArrayMemberImpl!coloured(sink, args, asStringAA);
