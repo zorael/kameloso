@@ -499,10 +499,10 @@ private struct FormatArrayMemberArguments
         args = Argument aggregate for easier passing.
         content = The array we're describing.
  +/
-private void formatArrayMemberImpl(Flag!"coloured" coloured, T, Sink)
+private void formatArrayMemberImpl(Flag!"coloured" coloured, Sink)
     (auto ref Sink sink,
     const FormatArrayMemberArguments args,
-    const auto ref T content)
+    const string[] content)
 {
     import std.format : formattedWrite;
     import std.range.primitives : ElementEncodingType;
