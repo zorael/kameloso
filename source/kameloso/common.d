@@ -850,3 +850,84 @@ void printGCStats()
         "<l>%,d</> additional bytes reserved";
     logger.infof(memoryUsedPattern, stats.usedSize, stats.freeSize);
 }
+
+
+// assertStringBlockEquals
+/++
+    Asserts that two strings are equal, with a more detailed error message than
+    the default `assert`.
+
+    Params:
+        expected = Expected string.
+        actual = Actual string.
+ +/
+version(unittest)
+void assertStringBlockEquals(
+    const(char[]) expected,
+    const(char[]) actual,
+    const string file = __FILE__,
+    const uint line = __LINE__) pure @safe
+{
+    import std.algorithm.iteration : splitter;
+    import std.conv : text;
+    import std.format : format;
+    import std.range : StoppingPolicy, repeat, zip;
+    import std.utf : replacementDchar;
+
+    if (actual == expected) return;
+
+    auto expectedRange = expected.splitter("\n");
+    auto actualRange = actual.splitter("\n");
+    auto lineRange = zip(StoppingPolicy.longest, expectedRange, actualRange);
+    uint lineNumber;
+
+    foreach (const expectedLine, const actualLine; lineRange)
+    {
+        ++lineNumber;
+
+        auto charRange = zip(StoppingPolicy.longest, expectedLine, actualLine);
+        uint linePos;
+
+        foreach (const expectedChar, const actualChar; charRange)
+        {
+            ++linePos;
+
+            if (actualChar == expectedChar) continue;
+
+            enum EOL = 65_535;
+            immutable expectedCharString = (expectedChar != EOL) ?
+                text('\'', expectedChar, '\'') :
+                "EOL";
+            immutable expectedCharValueString = (expectedChar != EOL) ?
+                text('(', cast(uint)expectedChar, ')') :
+                string.init;
+            immutable actualCharString = (actualChar != EOL) ?
+                text('\'', actualChar, '\'') :
+                "EOL";
+            immutable actualCharValueString = (actualChar != EOL) ?
+                text('(', cast(uint)actualChar, ')') :
+                string.init;
+            immutable arrow = text(' '.repeat(linePos-1), '^');
+
+            enum pattern =
+`Line mismatch at %s:%d, block %d:%d; expected %s%s was %s%s
+expected:"%s"
+  actual:"%s"
+          %s`;
+            immutable message = pattern
+                .format(
+                    file,
+                    line,
+                    lineNumber,
+                    linePos,
+                    expectedCharString,
+                    expectedCharValueString,
+                    actualCharString,
+                    actualCharValueString,
+                    expectedLine,
+                    actualLine,
+                    arrow);
+            assert(0, message);
+        }
+    }
+}
