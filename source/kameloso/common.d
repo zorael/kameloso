@@ -852,19 +852,19 @@ void printGCStats()
 }
 
 
-// assertStringBlockEquals
+// assertMultilineOpEquals
 /++
-    Asserts that two strings are equal, with a more detailed error message than
-    the default `assert`.
+    Asserts that two multiline strings are equal, with a more detailed error
+    message than the default `assert`.
 
     Params:
-        expected = Expected string.
         actual = Actual string.
+        expected = Expected string.
  +/
 version(unittest)
-void assertStringBlockEquals(
-    const(char[]) expected,
+void assertMultilineOpEquals(
     const(char[]) actual,
+    const(char[]) expected,
     const string file = __FILE__,
     const uint line = __LINE__) pure @safe
 {

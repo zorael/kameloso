@@ -1132,7 +1132,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 ///
 @system unittest
 {
-    import kameloso.common : assertStringBlockEquals;
+    import kameloso.common : assertMultilineOpEquals;
     import lu.string : contains;
     import std.array : Appender;
 
@@ -1189,7 +1189,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 `;
 
         sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, s);
-        assertStringBlockEquals(sink.data, structNameSerialised);
+        sink.data.assertMultilineOpEquals(structNameSerialised);
         sink.clear();
 
         // Class copy
@@ -1238,7 +1238,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 `;
 
         sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, c1);
-        assertStringBlockEquals(sink.data, classNameSerialised);
+        sink.data.assertMultilineOpEquals(classNameSerialised);
         sink.clear();
     }
     {
@@ -1274,7 +1274,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 `;
 
         sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, st1, st2);
-        assertStringBlockEquals(sink.data, st1st2Formatted);
+        sink.data.assertMultilineOpEquals(st1st2Formatted);
         sink.clear();
     }
     {
@@ -1334,7 +1334,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 `;
 
         sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, c2);
-        assertStringBlockEquals(sink.data, cFormatted);
+        sink.data.assertMultilineOpEquals(cFormatted);
         sink.clear();
     }
     {
@@ -1374,7 +1374,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 `;
 
         sink.formatObjects!(No.all, No.coloured)(No.brightTerminal, c4, c4.i3, c4.c3);
-        assertStringBlockEquals(sink.data, c4Formatted);
+        sink.data.assertMultilineOpEquals(c4Formatted);
         //sink.clear();
     }
 }
@@ -1434,7 +1434,7 @@ if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))
 ///
 unittest
 {
-    import kameloso.common : assertStringBlockEquals;
+    import kameloso.common : assertMultilineOpEquals;
 
     // Rely on the main unit tests of the output range version of formatObjects
     {
@@ -1455,7 +1455,7 @@ unittest
 `;
 
         immutable actual = formatObjects!(No.all, No.coloured)(No.brightTerminal, s);
-        assertStringBlockEquals(expected, actual);
+        actual.assertMultilineOpEquals(expected);
     }
     {
         class Nested
@@ -1486,7 +1486,7 @@ unittest
 `;
 
         immutable actual = formatObjects!(No.all, No.coloured)(No.brightTerminal, c);
-        assertStringBlockEquals(expected, actual);
+        actual.assertMultilineOpEquals(expected);
 
         c.nest = new Nested;
         enum expected2 =
@@ -1499,7 +1499,7 @@ unittest
 `;
 
         immutable actual2 = formatObjects!(No.all, No.coloured)(No.brightTerminal, c);
-        assertStringBlockEquals(expected2, actual2);
+        actual2.assertMultilineOpEquals(expected2);
     }
     {
         struct Reparse {}
@@ -1525,6 +1525,6 @@ unittest
 `;
 
         immutable actual = formatObjects!(No.all, No.coloured)(No.brightTerminal, state);
-        assertStringBlockEquals(expected, actual);
+        actual.assertMultilineOpEquals(expected);
     }
 }
