@@ -145,7 +145,7 @@ public:
             string is returned instead.
      +/
     auto nextOrderedResponse() /*const*/
-    in ((type == Type.ordered), "Tried to get an ordered reponse from a random Oneliner")
+    in ((type == Type.ordered), "Tried to get an ordered response from a random Oneliner")
     {
         if (!responses.length) return string.init;
 
@@ -169,7 +169,7 @@ public:
             string is returned instead.
      +/
     auto randomResponse() const
-    //in ((type == Type.random), "Tried to get an random reponse from an ordered Oneliner")
+    //in ((type == Type.random), "Tried to get an random response from an ordered Oneliner")
     {
         import std.random : uniform;
 

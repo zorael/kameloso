@@ -110,7 +110,7 @@ if (isSomeString!T)
     bool escaping;
 
     // Work around the immutability being lost with -dip1000
-    // The alternative is to use .idup, which is not really desireable here
+    // The alternative is to use .idup, which is not really desirable here
     immutable asBytes = () @trusted
     {
         return cast(immutable)line.representation;

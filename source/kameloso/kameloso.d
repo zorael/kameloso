@@ -277,7 +277,7 @@ public:
 
     // customSettings
     /++
-        Custom settings specfied at the command line with the `--set` parameter.
+        Custom settings specified at the command line with the `--set` parameter.
      +/
     string[] customSettings;
 

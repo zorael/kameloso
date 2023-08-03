@@ -198,7 +198,7 @@ auto replaceTokens(const string line) @safe pure nothrow
         defaultUpperBound = Default upper bound when no range given.
 
     Returns:
-        A new string with occurences of `$random` and `$random(i..n)` replaced,
+        A new string with occurrences of `$random` and `$random(i..n)` replaced,
         or the original string if there were no changes made.
  +/
 auto replaceRandom(

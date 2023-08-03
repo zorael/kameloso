@@ -298,7 +298,7 @@ A normal URL to any playlist you can modify will work fine.
     Params:
         client = [arsd.http2.HttpClient|HttpClient] to use.
         creds = [Credentials] aggregate.
-        code = Spotify authorization code.
+        code = Spotify authorisation code.
 
     Throws:
         [kameloso.plugins.twitch.common.UnexpectedJSONException|UnexpectedJSONException]

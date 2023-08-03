@@ -1028,7 +1028,7 @@ void onCommandShoutout(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 
     void sendOtherError()
     {
-        enum message = "An error occured when preparing the shoutout.";
+        enum message = "An error occurred when preparing the shoutout.";
         chan(plugin.state, event.channel, message);
     }
 

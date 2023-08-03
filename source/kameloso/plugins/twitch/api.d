@@ -1517,7 +1517,7 @@ in (channelName.length, "Tried to start a commercial with an empty channel name 
     import std.format : format;
 
     const room = channelName in plugin.rooms;
-    assert(room, "Tried to look up start commerical in a channel for which there existed no room");
+    assert(room, "Tried to look up start commercial in a channel for which there existed no room");
 
     enum url = "https://api.twitch.tv/helix/channels/commercial";
     enum pattern = `

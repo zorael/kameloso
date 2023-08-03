@@ -51,7 +51,7 @@ import dialect.defs;
     Module-level since we can't have static immutable associative arrays, and as
     such populated in a module constructor.
 
-    The alternative is to put it in [TimePlugin] and have a modul-level `setup`
+    The alternative is to put it in [TimePlugin] and have a module-level `setup`
     that populates it, but since it never changes during the program's run time,
     it may as well be here.
  +/

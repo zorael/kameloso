@@ -1123,7 +1123,7 @@ auto createTimerFiber(
         assert(channel, channelName ~ " not in plugin.channels");
 
         auto channelTimers = channelName in plugin.timersByChannel;
-        assert(channelTimers, channelName ~ " not in plugin.timersByChanel");
+        assert(channelTimers, channelName ~ " not in plugin.timersByChannel");
 
         auto timer = name in *channelTimers;
         assert(timer, name ~ " not in *channelTimers");

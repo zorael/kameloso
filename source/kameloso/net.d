@@ -120,7 +120,7 @@ private:
      +/
     SSL* sslInstance;
 
-    // setTimemout
+    // setTimeout
     /++
         Sets the [std.socket.SocketOption.RCVTIMEO|SocketOption.RCVTIMEO] of the
         *current* [std.socket.Socket|Socket] [socket] to the specified duration.

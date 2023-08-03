@@ -1247,7 +1247,7 @@ final class QuoteIndexOutOfRangeException : Exception
     ptrdiff_t indexGiven;
 
     /++
-        Acutal upper bound.
+        Actual upper bound.
      +/
     size_t upperBound;
 

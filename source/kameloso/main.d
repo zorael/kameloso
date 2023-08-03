@@ -2047,7 +2047,7 @@ void processPendingReplays(ref Kameloso instance, IRCPlugin plugin)
 /++
     Iterates through a plugin's array of [kameloso.plugins.common.core.SpecialRequest|SpecialRequest]s.
     Depending on what their [kameloso.plugins.common.core.SpecialRequest.fiber|fiber] member
-    (which is in actualy a [kameloso.thread.CarryingFiber|CarryingFiber]) can be
+    (which is in actually a [kameloso.thread.CarryingFiber|CarryingFiber]) can be
     cast to, it prepares a payload, assigns it to the
     [kameloso.thread.CarryingFiber|CarryingFiber], and calls it.
 

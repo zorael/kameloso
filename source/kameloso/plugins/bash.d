@@ -121,7 +121,7 @@ void worker(
 
     void sendNoResponseseReceived()
     {
-        enum message = "No reponse received from <b>bash.org<b>; is it down?";
+        enum message = "No response received from <b>bash.org<b>; is it down?";
         privmsg(state, event.channel, event.sender.nickname, message);
     }
 

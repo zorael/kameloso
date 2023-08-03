@@ -503,7 +503,7 @@ in (Fiber.getThis, "Tried to call `addVideoToYouTubePlaylist` from outside a Fib
     Params:
         client = [arsd.http2.HttpClient|HttpClient] to use.
         creds = [Credentials] aggregate.
-        code = Google authorization code.
+        code = Google authorisation code.
 
     Throws:
         [kameloso.plugins.twitch.common.UnexpectedJSONException|UnexpectedJSONException]
