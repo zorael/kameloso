@@ -1,4 +1,3 @@
-
 # ![kameloso](kD.png) [![Linux/macOS/Windows](https://img.shields.io/github/actions/workflow/status/zorael/kameloso/d.yml?branch=master)](https://github.com/zorael/kameloso/actions?query=workflow%3AD) [![Linux](https://img.shields.io/circleci/project/github/zorael/kameloso/master.svg?logo=circleci&style=flat&maxAge=3600)](https://circleci.com/gh/zorael/kameloso) [![Windows](https://img.shields.io/appveyor/ci/zorael/kameloso/master.svg?logo=appveyor&style=flat&maxAge=3600)](https://ci.appveyor.com/project/zorael/kameloso) [![Commits since last release](https://img.shields.io/github/commits-since/zorael/kameloso/v3.11.1.svg?logo=github&style=flat&maxAge=3600)](https://github.com/zorael/kameloso/compare/v3.11.1...master)
 
 **kameloso** is an IRC bot with [Twitch support](#twitch). It is text-based and runs in your terminal or console.
@@ -280,12 +279,12 @@ MrOffline joined #channel
  <kameloso> New timer added! Use !timer add to add lines.
       <you> !timer add mytimer This is an announcement on a timer
  <kameloso> Line added to timer mytimer.
-      <you> !timer add mytimer It is sent after 100 messages have been seen and (600 seconds have passed)
+      <you> !timer add mytimer It is sent after 100 messages have been seen *AND* 600 seconds have passed
  <kameloso> Line added to timer mytimer.
-(...time passes, messages get sent...)
+(...time passes with activity in chat...)
  <kameloso> This is an announcement on a timer
-(...time passes, messages get sent...)
- <kameloso> It is sent after 100 messages have been seen and 600 seconds have passed
+(...time passes with activity in chat...)
+ <kameloso> It is sent after 100 messages have been seen *AND* 600 seconds have passed
       <you> !timer suspend mytimer
  <kameloso> Timer suspended. Use !timer resume mytimer to resume it.
       <you> !timer resume mytimer
@@ -367,7 +366,7 @@ In the case of [**hostmasks mode**](https://github.com/zorael/kameloso/wiki/On-s
 
 Prebuilt binaries for Windows and Linux can be found under [Releases](https://github.com/zorael/kameloso/releases).
 
-If you're on **Windows**, you must first [install the **OpenSSL** library](#windows). Navigate to where you downloaded the file, then run the following command to download and launch the installer for it. Make sure to **opt to install to Windows system directories** when asked. Here in Powershell syntax:
+If you're on **Windows**, you must first [install the **OpenSSL** library](#windows). Navigate to where you downloaded the **kameloso** executable, then run the following command to download and launch the installer for it. When asked, make sure to opt to *install to Windows system directories*. Here in Powershell syntax:
 
 ```shell
 ./kameloso --get-openssl
@@ -383,7 +382,7 @@ The `--setup-twitch` command creates a configuration file with the server addres
 
 **A line with a leading `#` is disabled, so remove any `#`s from the heads of entries you want to enable.**
 
-* Add your channel to `homeChannels`. Channel names are account names (which are always lowercase) with a `#` in front, so the Twitch user `Streamer123` would have the channel `#streamer123`.
+* Add your channel to `homeChannels`. Channel names are account names (which are always lowercase) with a `#` in front, so the Twitch user `streamer123` would have the channel `#streamer123`.
 * Optionally add an account name to `admins` to give them global low-level control of the bot. Owners of channels (broadcasters) automatically have high privileges in the scope of their own channels, so it's not strictly needed.
 * You can ignore `nickname`, `user`, `realName`, `account` and `password`, as they're not applicable on Twitch. Do not enter your Twitch password anywhere.
 * Peruse the file for other settings if you want; you can always get back to it by passing `--gedit` (short for **g**raphical **edit**or).
@@ -394,7 +393,7 @@ The program can then be run normally.
 ./kameloso
 ```
 
-It will now connect to Twitch and start the guide to requesting a new *authorisation token* in your terminal, upon detecting it's missing one. See the ["long story"](#long-story) section below for details.
+It should now connect to Twitch and start the guide to requesting a new *authorisation token* in your terminal, upon detecting it's missing one. See the ["long story"](#long-story) section below for details.
 
 **Note that it will request a token for the user you are currently logged in as in your browser**. If you want one for a different "bot user" instead, open up a private/incognito window, log into Twitch normally **with the bot account** there, copy [**this link**](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true), then paste it into that browser window instead. (Then follow the terminal instructions again.)
 
@@ -447,7 +446,7 @@ It will open a browser window in which you are asked to log onto Twitch *on Twit
 
 After entering your login and password and clicking **Authorize**, you will be redirected to an empty "`this site can't be reached`" or "`unable to connect`" page. **Copy the URL address of it** and **paste** it into the terminal, when prompted to. It will parse the address, extract your authorisation token, and save it to your configuration file.
 
-If you prefer to generate the token manually, [**here is the URL you need to follow**](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true). The only thing the generation process does is open it for you, as well as automating saving the end token to your configuration file (as `pass` under `[IRCBot]`).
+If you prefer to generate the token manually, [**here is the URL you need to follow**](https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=tjyryd2ojnqr8a51ml19kn1yi2n0v1&redirect_uri=http://localhost&scope=channel:moderate+chat:edit+chat:read+whispers:edit+whispers:read&force_verify=true). The only thing the generation process does is open it for you, as well as automating saving the resulting token to your configuration file (as `pass` under `[IRCBot]`).
 
 > Mind that the authorisation token should be kept secret. It's not possible to derive your Twitch account password from it, but anyone with access to the token can chat as if they were you.
 
@@ -481,7 +480,7 @@ To get song requests to work, you need to register an *application* to interface
 
 ##### Certain commands require higher permissions
 
-Some functionality, such as setting the channel title or currently played game, require elevated credentials with the permissions of the channel owner (broadcaster), as opposed to those of any moderator. As such, if you want to use such commands, you will need to generate an OAuth authorisation token for **your main account** separately, much as you generated one to be able to connect with the bot account. This will request a token from Twitch with more permissions, and the authorisation browser page should reflect this.
+Some functionality, such as setting the channel title or currently played game, require elevated credentials with the permissions of the channel owner (broadcaster), as opposed to those of any moderator. As such, if you want to use such commands, you will need to generate an OAuth authorisation token for **your main account** separately, much as you generated one to be able to connect with the (presumably) bot account. This will request a token from Twitch with more permissions, and the authorisation browser page should reflect this.
 
 ```shell
 $ ./kameloso --set twitch.superKeygen
