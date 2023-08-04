@@ -21,17 +21,35 @@ enum KamelosoSemVer
     /++
         SemVer major version of the program.
      +/
-    majorVersion = 3,
+    major = 3,
 
     /++
         SemVer minor version of the program.
      +/
-    minorVersion = 11,
+    minor = 11,
 
     /++
         SemVer patch version of the program.
      +/
-    patchVersion = 1,
+    patch = 1,
+
+    /++
+        SemVer version of the program. Deprecated; use `KamelosoSemVer.major` instead.
+     +/
+    deprecated("Use `KamelosoSemVer.major` instead. This symbol will be removed in a future release.")
+    majorVersion = major,
+
+    /++
+        SemVer version of the program. Deprecated; use `KamelosoSemVer.minor` instead.
+     +/
+    deprecated("Use `KamelosoSemVer.minor` instead. This symbol will be removed in a future release.")
+    minorVersion = minor,
+
+    /++
+        SemVer version of the program. Deprecated; use `KamelosoSemVer.patch` instead.
+     +/
+    deprecated("Use `KamelosoSemVer.patch` instead. This symbol will be removed in a future release.")
+    patchVersion = patch,
 }
 
 
