@@ -587,7 +587,6 @@ void messageFiber(ref Kameloso instance)
                 import kameloso.constants : Timeout;
                 import std.datetime.systime : Clock;
 
-                immutable now = Clock.currTime.toUnixTime;
                 immutable then = instance.previousWhoisTimestamps.get(m.event.target.nickname, 0);
                 immutable hysteresis = force ? 1 : Timeout.whoisRetry;
 
@@ -609,7 +608,7 @@ void messageFiber(ref Kameloso instance)
                     }
                 }
 
-                if ((now - then) > hysteresis)
+                if ((m.event.time - then) > hysteresis)
                 {
                     version(TraceWhois)
                     {
@@ -621,8 +620,8 @@ void messageFiber(ref Kameloso instance)
                     }
 
                     line = "WHOIS " ~ m.event.target.nickname;
-                    instance.previousWhoisTimestamps[m.event.target.nickname] = now;
-                    propagateWhoisTimestamp(instance, m.event.target.nickname, now);
+                    instance.previousWhoisTimestamps[m.event.target.nickname] = m.event.time;
+                    propagateWhoisTimestamp(instance, m.event.target.nickname, m.event.time);
                 }
                 else
                 {
@@ -632,7 +631,7 @@ void messageFiber(ref Kameloso instance)
                         else
                         {
                             enum alreadyIssuedPattern = " ...but already issued %d seconds ago.";
-                            writefln(alreadyIssuedPattern, (now - then));
+                            writefln(alreadyIssuedPattern, (m.event.time - then));
                         }
                     }
                 }
