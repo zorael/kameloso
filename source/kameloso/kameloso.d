@@ -693,6 +693,8 @@ public:
     {
         alias Update = typeof(plugin.state.updates);
 
+        if (*this.abort) return;
+
         if (plugin.state.updates == Update.nothing) return;
 
         if (plugin.state.updates & Update.bot)
