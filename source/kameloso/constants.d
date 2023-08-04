@@ -86,9 +86,9 @@ auto buildCompilerVersionString()
     ---
     enum version_ = "%d.%d.%d%s%s"
         .format(
-            KamelosoSemVer.majorVersion,
-            KamelosoSemVer.minorVersion,
-            KamelosoSemVer.patchVersion,
+            KamelosoSemVer.major,
+            KamelosoSemVer.minor,
+            KamelosoSemVer.patch,
             KamelosoSemVerPrerelease.length ? "-" : string.init,
             KamelosoSemVerPrerelease);
     ---
@@ -108,11 +108,11 @@ auto buildVersionString()
 
     with (KamelosoSemVer)
     {
-        majorVersion.toAlphaInto(sink);
+        major.toAlphaInto(sink);
         sink.put('.');
-        minorVersion.toAlphaInto(sink);
+        minor.toAlphaInto(sink);
         sink.put('.');
-        patchVersion.toAlphaInto(sink);
+        patch.toAlphaInto(sink);
 
         if (KamelosoSemVerPrerelease.length)
         {
