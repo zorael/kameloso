@@ -58,7 +58,7 @@ import std.typecons : Flag, No, Yes;
 /++
     Characters to support as delimiters in the replace expression.
 
-    More can be added but if any are removed unittests will need to be updated.
+    More can be added but if any are removed unit tests will need to be updated.
  +/
 alias DelimiterCharacters = AliasSeq!('/', '|', '#', '@', ' ', '_', ';');
 

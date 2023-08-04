@@ -514,7 +514,11 @@ auto handleGetopt(ref Kameloso instance) @system
 {
     import kameloso.common : printVersionInfo;
     import kameloso.configreader : readConfigInto;
+    import kameloso.logger : KamelosoLogger;
+    import kameloso.terminal : applyMonochromeAndFlushOverrides;
+    import lu.objmanip : replaceMembers;
     import std.getopt : arraySep, config, getopt;
+    static import kameloso.common;
 
     bool shouldWriteConfig;
     bool shouldOpenTerminalEditor;
@@ -571,8 +575,6 @@ auto handleGetopt(ref Kameloso instance) @system
         instance.settings);
 
     applyDefaults(instance);
-
-    import kameloso.terminal : applyMonochromeAndFlushOverrides;
 
     // Non-TTYs (eg. pagers) can't show colours.
     // Apply overrides here after having read config file
@@ -899,8 +901,6 @@ auto handleGetopt(ref Kameloso instance) @system
     }
 
     // Reinitialise the logger with new settings
-    import kameloso.logger : KamelosoLogger;
-    static import kameloso.common;
     kameloso.common.logger = new KamelosoLogger(instance.settings);
 
     // Support channels and admins being separated by spaces (mirror config file behaviour)
@@ -961,13 +961,10 @@ auto handleGetopt(ref Kameloso instance) @system
     }
 
     // Clear entries that are dashes
-    import lu.objmanip : replaceMembers;
-
     instance.parser.client.replaceMembers("-");
     instance.bot.replaceMembers("-");
 
     // Handle showstopper arguments (that display something and then exits)
-
     if (configFileResults.helpWanted)
     {
         // --help|-h was passed, show the help table and quit

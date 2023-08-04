@@ -66,9 +66,15 @@ version(Windows)
     void setConsoleModeAndCodepage() @system
     {
         import core.stdc.stdlib : atexit;
-        import core.sys.windows.winbase : GetStdHandle, INVALID_HANDLE_VALUE, STD_OUTPUT_HANDLE;
-        import core.sys.windows.wincon : ENABLE_VIRTUAL_TERMINAL_PROCESSING,
-            GetConsoleCP, GetConsoleMode, GetConsoleOutputCP;
+        import core.sys.windows.winbase :
+            GetStdHandle,
+            INVALID_HANDLE_VALUE,
+            STD_OUTPUT_HANDLE;
+        import core.sys.windows.wincon :
+            ENABLE_VIRTUAL_TERMINAL_PROCESSING,
+            GetConsoleCP,
+            GetConsoleMode,
+            GetConsoleOutputCP;
         import core.sys.windows.winnls : CP_UTF8;
 
         originalCP = GetConsoleCP();

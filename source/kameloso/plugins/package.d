@@ -1,7 +1,5 @@
 /++
-    Bits and bobs to register plugins to be instantiated on program startup/connect.
-
-    This should really only have to be used internally.
+    Package module for plugins.
 
     Example:
     ---
@@ -13,7 +11,7 @@
         mixin IRCPluginImpl;
     }
 
-    mixin ModuleRegistration;
+    mixin PluginRegistration!MyPlugin;
     ---
 
     Example:

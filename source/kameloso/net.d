@@ -1066,8 +1066,12 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
                 {
                     version(Posix)
                     {
-                        import core.stdc.errno : EAFNOSUPPORT, ECONNREFUSED,
-                            EHOSTUNREACH, ENETUNREACH, errno;
+                        import core.stdc.errno :
+                            EAFNOSUPPORT,
+                            ECONNREFUSED,
+                            EHOSTUNREACH,
+                            ENETUNREACH,
+                            errno;
 
                         // https://www-numi.fnal.gov/offline_software/srt_public_context/WebDocs/Errors/unix_system_errors.html
 
@@ -1083,8 +1087,12 @@ in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
                     }
                     else version(Windows)
                     {
-                        import core.sys.windows.winsock2 : WSAEAFNOSUPPORT, WSAECONNREFUSED,
-                            WSAEHOSTUNREACH, WSAENETUNREACH, WSAGetLastError;
+                        import core.sys.windows.winsock2 :
+                            WSAEAFNOSUPPORT,
+                            WSAECONNREFUSED,
+                            WSAEHOSTUNREACH,
+                            WSAENETUNREACH,
+                            WSAGetLastError;
 
                         enum Errno
                         {
@@ -1341,8 +1349,13 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
 
             version(Posix)
             {
-                import core.sys.posix.netdb : EAI_AGAIN, EAI_FAIL, EAI_FAMILY,
-                    EAI_NONAME, EAI_SOCKTYPE, EAI_SYSTEM;
+                import core.sys.posix.netdb :
+                    EAI_AGAIN,
+                    EAI_FAIL,
+                    EAI_FAMILY,
+                    EAI_NONAME,
+                    EAI_SOCKTYPE,
+                    EAI_SYSTEM;
 
                 enum EAI_NODATA = -5;
 
@@ -1366,8 +1379,13 @@ in (address.length, "Tried to set up a resolving fiber on an empty address")
             }
             else version(Windows)
             {
-                import core.sys.windows.winsock2 : WSAEAFNOSUPPORT, WSAESOCKTNOSUPPORT,
-                    WSAHOST_NOT_FOUND, WSANO_DATA, WSANO_RECOVERY, WSATRY_AGAIN;
+                import core.sys.windows.winsock2 :
+                    WSAEAFNOSUPPORT,
+                    WSAESOCKTNOSUPPORT,
+                    WSAHOST_NOT_FOUND,
+                    WSANO_DATA,
+                    WSANO_RECOVERY,
+                    WSATRY_AGAIN;
 
                 // https://docs.microsoft.com/en-us/windows/win32/api/ws2tcpip/nf-ws2tcpip-getaddrinfo
 

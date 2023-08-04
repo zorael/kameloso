@@ -128,45 +128,45 @@ auto retryDelegate(Dg)(TwitchPlugin plugin, Dg dg)
     Gated behind version `PrintStacktraces`.
 
     Params:
-        e = The exception to print.
+        base = The exception to print.
  +/
 version(PrintStacktraces)
-void printRetryDelegateException(/*const*/ Exception e)
+void printRetryDelegateException(/*const*/ Exception base)
 {
     import kameloso.common : logger;
     import std.json : JSONException, parseJSON;
     import std.stdio : stdout, writeln;
 
-    logger.trace(e);
+    logger.trace(base);
 
-    if (auto twitchQueryException = cast(TwitchQueryException)e)
+    if (auto e = cast(TwitchQueryException)base)
     {
-        //logger.trace(twitchQueryException);
+        //logger.trace(e);
 
         try
         {
-            writeln(parseJSON(twitchQueryException.responseBody).toPrettyString);
+            writeln(parseJSON(e.responseBody).toPrettyString);
         }
         catch (JSONException _)
         {
-            writeln(twitchQueryException.responseBody);
+            writeln(e.responseBody);
         }
 
         stdout.flush();
     }
-    else if (auto emptyDataJSONException = cast(EmptyDataJSONException)e)
+    else if (auto e = cast(EmptyDataJSONException)base)
     {
         // Must be before TwitchJSONException below
-        //logger.trace(emptyDataJSONException);
+        //logger.trace(e);
     }
-    else if (auto twitchJSONException = cast(TwitchJSONException)e)
+    else if (auto e = cast(TwitchJSONException)base)
     {
         // UnexpectedJSONException or ErrorJSONException
-        //logger.trace(twitchJSONException);
-        writeln(twitchJSONException.json.toPrettyString);
+        //logger.trace(e);
+        writeln(e.json.toPrettyString);
         stdout.flush();
     }
-    else /*if (auto plainException = cast(Exception)e)*/
+    else /*if (auto e = cast(Exception)base)*/
     {
         //logger.trace(e);
     }

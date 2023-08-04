@@ -217,7 +217,7 @@ public:
     /++
         Buffer of outgoing message strings.
 
-        The buffer size is "how many string pointers", now how many bytes. So
+        The buffer size is "how many string pointers", not how many bytes. So
         we can comfortably keep it arbitrarily high.
      +/
     Buffer!(OutgoingLine, No.dynamic, BufferSize.outbuffer) outbuffer;
@@ -226,7 +226,7 @@ public:
     /++
         Buffer of outgoing background message strings.
 
-        The buffer size is "how many string pointers", now how many bytes. So
+        The buffer size is "how many string pointers", not how many bytes. So
         we can comfortably keep it arbitrarily high.
      +/
     Buffer!(OutgoingLine, No.dynamic, BufferSize.outbuffer) backgroundBuffer;
@@ -235,7 +235,7 @@ public:
     /++
         Buffer of outgoing priority message strings.
 
-        The buffer size is "how many string pointers", now how many bytes. So
+        The buffer size is "how many string pointers", not how many bytes. So
         we can comfortably keep it arbitrarily high.
      +/
     Buffer!(OutgoingLine, No.dynamic, BufferSize.priorityBuffer) priorityBuffer;
@@ -244,7 +244,7 @@ public:
     /++
         Buffer of outgoing message strings to be sent immediately.
 
-        The buffer size is "how many string pointers", now how many bytes. So
+        The buffer size is "how many string pointers", not how many bytes. So
         we can comfortably keep it arbitrarily high.
      +/
     Buffer!(OutgoingLine, No.dynamic, BufferSize.priorityBuffer) immediateBuffer;
@@ -255,7 +255,7 @@ public:
         /++
             Buffer of outgoing fast message strings, used on Twitch servers.
 
-            The buffer size is "how many string pointers", now how many bytes. So
+            The buffer size is "how many string pointers", not how many bytes. So
             we can comfortably keep it arbitrarily high.
          +/
         Buffer!(OutgoingLine, No.dynamic, BufferSize.outbuffer) fastbuffer;
@@ -346,7 +346,6 @@ public:
         lines are to be sent at once.
 
         Params:
-            Buffer = Buffer type, generally [lu.container.Buffer].
             buffer = Buffer instance.
             dryRun = Whether or not to send anything or just do a dry run,
                 incrementing the graph by [Throttle.increment].
@@ -729,7 +728,7 @@ public:
         }
 
         assert((plugin.state.updates == Update.nothing),
-            "`IRCPluginState.updates` was not reset after checking and propagation");
+            "`IRCPluginState.updates` was not reset after checking and propagating");
     }
 
     // propagate

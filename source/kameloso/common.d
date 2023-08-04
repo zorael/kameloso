@@ -29,7 +29,7 @@ version(unittest)
 shared static this()
 {
     // This is technically before settings have been read.
-    // We need this for unittests.
+    // We need this for unit tests.
     logger = new KamelosoLogger(
         No.monochrome,
         No.brightTerminal,
@@ -784,12 +784,6 @@ public:
         Delegate called when rehashing takes place.
      +/
     void delegate() onRehashDg;
-
-    /++
-        `alias this` with regards to [RehashingAA.aa|aa].
-     +/
-    version(none)
-    alias aa this;
 }
 
 ///

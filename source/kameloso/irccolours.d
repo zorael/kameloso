@@ -27,8 +27,11 @@ module kameloso.irccolours;
 
 private:
 
-import kameloso.terminal.colours.defs : TerminalBackground, TerminalForeground,
-    TerminalFormat, TerminalReset;
+import kameloso.terminal.colours.defs :
+    TerminalBackground,
+    TerminalForeground,
+    TerminalFormat,
+    TerminalReset;
 import dialect.common : IRCControlCharacter;
 import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;
@@ -1255,7 +1258,7 @@ T expandIRCTags(T)
 {
     import std.typecons : Flag, No, Yes;
 
-    // See unittests of other overloads for more No.strip tests
+    // See unit tests of other overloads for more No.strip tests
 
     {
         immutable line = "hello<b>hello<b>hello";

@@ -323,7 +323,11 @@ mixin template IRCPluginImpl(
     Flag!"debug_" debug_ = No.debug_,
     string module_ = __MODULE__)
 {
-    private import kameloso.plugins.common.core : FilterResult, IRCEventHandler, IRCPluginState, Permissions;
+    private import kameloso.plugins.common.core :
+        FilterResult,
+        IRCEventHandler,
+        IRCPluginState,
+        Permissions;
     private import kameloso.thread : Sendable;
     private import dialect.defs : IRCEvent, IRCServer, IRCUser;
     private import lu.traits : getSymbolsByUDA;
@@ -1099,7 +1103,7 @@ mixin template IRCPluginImpl(
             version(unittest)
             {
                 // Skip event handler checks when unittesting, as it triggers
-                // unittests in common/core.d
+                // unit tests in common/core.d
             }
             else
             {

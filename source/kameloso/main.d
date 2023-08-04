@@ -512,7 +512,7 @@ void messageFiber(ref Kameloso instance)
                 {
                     import dialect.common : IRCControlCharacter;
                     enum pattern = "PRIVMSG %s :%cACTION %s%2$c";
-                    line = format(pattern, emoteTarget, cast(char)IRCControlCharacter.ctcp, m.event.content);
+                    line = pattern.format(emoteTarget, cast(char)IRCControlCharacter.ctcp, m.event.content);
                 }
                 break;
 
@@ -520,7 +520,7 @@ void messageFiber(ref Kameloso instance)
                 import lu.string : strippedRight;
 
                 enum pattern = "MODE %s %s %s";
-                line = format(pattern, m.event.channel, m.event.aux[0], m.event.content.strippedRight);
+                line = pattern.format(m.event.channel, m.event.aux[0], m.event.content.strippedRight);
                 break;
 
             case TOPIC:
@@ -551,7 +551,7 @@ void messageFiber(ref Kameloso instance)
                     " :" ~ m.event.content :
                     string.init;
                 enum pattern = "KICK %s %s%s";
-                line = format(pattern, m.event.channel, m.event.target.nickname, reason);
+                line = pattern.format(m.event.channel, m.event.target.nickname, reason);
                 break;
 
             case PART:
@@ -658,7 +658,7 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             default:
-                logger.error("No outgoing event case for type <l>", m.event.type);
+                logger.error("messageFiber.eventToServer missing case for outgoing event type <l>", m.event.type);
                 break;
             }
 
@@ -666,8 +666,7 @@ void messageFiber(ref Kameloso instance)
             {
                 if (immediate)
                 {
-                    instance.immediateBuffer.put(OutgoingLine(finalLine, quietFlag));
-                    return;
+                    return instance.immediateBuffer.put(OutgoingLine(finalLine, quietFlag));
                 }
 
                 version(TwitchSupport)
@@ -675,8 +674,7 @@ void messageFiber(ref Kameloso instance)
                     if (/*(instance.parser.server.daemon == IRCServer.Daemon.twitch) &&*/ fast)
                     {
                         // Send a line via the fastbuffer, faster than normal sends.
-                        instance.fastbuffer.put(OutgoingLine(finalLine, quietFlag));
-                        return;
+                        return instance.fastbuffer.put(OutgoingLine(finalLine, quietFlag));
                     }
                 }
 
@@ -889,9 +887,7 @@ auto mainLoop(ref Kameloso instance)
      +/
     void processBuffers(ref uint timeoutFromMessages)
     {
-        import kameloso.net : SocketSendException;
-
-        bool bufferHasMessages = (
+        bool buffersHaveMessages = (
             !instance.outbuffer.empty |
             !instance.backgroundBuffer.empty |
             !instance.immediateBuffer.empty |
@@ -899,10 +895,10 @@ auto mainLoop(ref Kameloso instance)
 
         version(TwitchSupport)
         {
-            bufferHasMessages |= !instance.fastbuffer.empty;
+            buffersHaveMessages |= !instance.fastbuffer.empty;
         }
 
-        if (bufferHasMessages)
+        if (buffersHaveMessages)
         {
             immutable untilNext = sendLines(instance);
 
@@ -1082,7 +1078,12 @@ auto mainLoop(ref Kameloso instance)
             case crash:  // ditto
                 import lu.conv : Enum;
                 import std.conv : text;
-                assert(0, text("`listenAttemptToNext` returned `", Enum!Next.toString(actionAfterListen), "`"));
+
+                immutable message = text(
+                    "`listenAttemptToNext` returned `",
+                    Enum!Next.toString(actionAfterListen),
+                    "`");
+                assert(0, message);
             }
         }
 
@@ -1779,7 +1780,7 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
         }
 
         destroy(expiredFiber);
-        expiredFiber = null;
+        expiredFiber = null;  // needs ref
     }
 
     expiredFibers = null;
@@ -1880,11 +1881,11 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
             if (scheduledFiber.fiber.state == Fiber.State.TERM)
             {
                 destroy(scheduledFiber.fiber);
-                scheduledFiber.fiber = null;
+                scheduledFiber.fiber = null;  // needs ref
             }
         }
 
-        // Always removed a scheduled Fiber after processing
+        // Always remove a scheduled Fiber after processing
         toRemove ~= i;
     }
 
@@ -2384,14 +2385,20 @@ auto tryGetopt(ref Kameloso instance)
  +/
 auto tryConnect(ref Kameloso instance)
 {
-    import kameloso.constants : ConnectionDefaultFloats,
-        ConnectionDefaultIntegers, MagicErrorStrings, Timeout;
+    import kameloso.constants :
+        ConnectionDefaultFloats,
+        ConnectionDefaultIntegers,
+        MagicErrorStrings,
+        Timeout;
     import kameloso.net : ConnectionAttempt, connectFiber;
     import kameloso.thread : interruptibleSleep;
     import std.concurrency : Generator;
 
     auto connector = new Generator!ConnectionAttempt(() =>
-        connectFiber(instance.conn, ConnectionDefaultIntegers.retries, *instance.abort));
+        connectFiber(
+            instance.conn,
+            ConnectionDefaultIntegers.retries,
+            *instance.abort));
 
     scope(exit)
     {
@@ -3036,8 +3043,10 @@ void resolvePaths(ref Kameloso instance)
  +/
 void startBot(ref Kameloso instance, out AttemptState attempt)
 {
-    import kameloso.plugins.common.misc : IRCPluginInitialisationException,
-        pluginNameOfFilename, pluginFileBaseName;
+    import kameloso.plugins.common.misc :
+        IRCPluginInitialisationException,
+        pluginNameOfFilename,
+        pluginFileBaseName;
     import kameloso.constants : ShellReturnValue;
     import kameloso.string : doublyBackslashed;
     import kameloso.terminal : TerminalToken, isTerminal;
