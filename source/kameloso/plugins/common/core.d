@@ -388,7 +388,7 @@ mixin template IRCPluginImpl(
 
             foreach (immutable i, fun; allEventHandlerFunctionsInModule)
             {
-                enum fqn = module_ ~ '.'  ~ __traits(identifier, allEventHandlerFunctionsInModule[i]);
+                enum fqn = module_ ~ '.' ~ __traits(identifier, allEventHandlerFunctionsInModule[i]);
                 udas[i] = getUDAs!(fun, IRCEventHandler)[0];
                 udas[i].fqn = fqn;
                 version(unittest) udaSanityCheckCTFE(udas[i]);

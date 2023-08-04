@@ -206,7 +206,7 @@ void signalHandler(int sig) nothrow @nogc @system
     }
 
     if (globalAbort) resetSignals();
-    globalAbort = true;
+    else globalAbort = true;
 
     version(Posix)
     {
