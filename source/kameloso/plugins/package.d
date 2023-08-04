@@ -174,6 +174,12 @@ mixin template PluginRegistration(
     Priority priority = 0.priority,
     string module_ = __MODULE__)
 {
+    version(unittest)
+    {
+        import lu.traits : MixinConstraints, MixinScope;
+        mixin MixinConstraints!(MixinScope.module_, "PluginRegistration");
+    }
+
     // module constructor
     /++
         Mixed-in module constructor that registers the passed [Plugin] class

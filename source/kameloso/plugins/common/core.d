@@ -336,6 +336,12 @@ mixin template IRCPluginImpl(
     private import std.traits : getUDAs;
     private import core.thread : Fiber;
 
+    version(unittest)
+    {
+        import lu.traits : MixinConstraints, MixinScope;
+        mixin MixinConstraints!(MixinScope.class_, "IRCPluginImpl");
+    }
+
     static if (__traits(compiles, { alias _ = this.hasIRCPluginImpl; }))
     {
         import std.format : format;

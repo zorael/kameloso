@@ -63,6 +63,12 @@ if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSome
     import std.traits : ParameterIdentifierTuple;
     import std.typecons : Flag, No, Yes;
 
+    version(unittest)
+    {
+        import lu.traits : MixinConstraints, MixinScope;
+        mixin MixinConstraints!(MixinScope.function_, "WHOISFiberDelegate");
+    }
+
     alias paramNames = ParameterIdentifierTuple!(mixin(__FUNCTION__));
 
     static if ((paramNames.length == 0) || !is(typeof(mixin(paramNames[0])) : IRCPlugin))
@@ -524,6 +530,12 @@ private:
     import std.meta : AliasSeq;
     import std.typecons : Flag, No, Yes;
     static import kameloso.messaging;
+
+    version(unittest)
+    {
+        import lu.traits : MixinConstraints, MixinScope;
+        mixin MixinConstraints!(MixinScope.class_, "MessagingProxy");
+    }
 
     static if (__traits(compiles, { alias _ = this.hasMessagingProxy; }))
     {

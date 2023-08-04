@@ -94,6 +94,12 @@ mixin template MinimalAuthentication(
     private import dialect.defs : IRCEvent;
     private static import kameloso.plugins.common.awareness;
 
+    version(unittest)
+    {
+        import lu.traits : MixinConstraints, MixinScope;
+        mixin MixinConstraints!(MixinScope.module_, "MinimalAuthentication");
+    }
+
     /++
         Flag denoting that
         [kameloso.plugins.common.awareness.MinimalAuthentication|MinimalAuthentication]
@@ -251,6 +257,12 @@ mixin template UserAwareness(
 {
     private import dialect.defs : IRCEvent;
     private static import kameloso.plugins.common.awareness;
+
+    version(unittest)
+    {
+        import lu.traits : MixinConstraints, MixinScope;
+        mixin MixinConstraints!(MixinScope.module_, "UserAwareness");
+    }
 
     /++
         Flag denoting that
@@ -667,6 +679,12 @@ mixin template ChannelAwareness(
 {
     private import dialect.defs : IRCEvent;
     private static import kameloso.plugins.common.awareness;
+
+    version(unittest)
+    {
+        import lu.traits : MixinConstraints, MixinScope;
+        mixin MixinConstraints!(MixinScope.module_, "ChannelAwareness");
+    }
 
     /++
         Flag denoting that [kameloso.plugins.common.awareness.ChannelAwareness|ChannelAwareness]
@@ -1352,6 +1370,12 @@ mixin template TwitchAwareness(
     private import dialect.defs : IRCEvent;
     private static import kameloso.plugins.common.awareness;
 
+    version(unittest)
+    {
+        import lu.traits : MixinConstraints, MixinScope;
+        mixin MixinConstraints!(MixinScope.module_, "TwitchAwareness");
+    }
+
     /++
         Flag denoting that [kameloso.plugins.common.awareness.TwitchAwareness|TwitchAwareness]
         has been mixed in.
@@ -1524,6 +1548,12 @@ mixin template TwitchAwareness(
     Flag!"debug_" debug_ = No.debug_,
     string module_ = __MODULE__)
 {
+    version(unittest)
+    {
+        import lu.traits : MixinConstraints, MixinScope;
+        mixin MixinConstraints!(MixinScope.module_, "TwitchAwareness (stub)");
+    }
+
     /++
         Flag denoting that [kameloso.plugins.common.awareness.TwitchAwareness|TwitchAwareness]
         has been mixed in.
