@@ -1018,7 +1018,16 @@ auto mainLoop(ref Kameloso instance)
         {
             next = callMessenger();
             if (*instance.abort) return Next.returnFailure;
-            processBuffers(timeoutFromMessages);
+
+            try
+            {
+                processBuffers(timeoutFromMessages);
+            }
+            catch (SocketSendException _)
+            {
+                logger.error("Failure sending data to server! Connection lost?");
+                return Next.retry;
+            }
         }
 
         // Set timeout *before* the receive, else we'll just be applying the delay too late
