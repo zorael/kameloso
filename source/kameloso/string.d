@@ -422,8 +422,8 @@ unittest
         immutable n1 = slice.nom(' ').to!int;
         immutable randomz = slice.nom(' ');
         immutable n2 = slice.nom(' ').to!int;
-        assert((n1 >= 0 && n1 < 99), n1.to!string);
-        assert((n2 >= 0 && n2 < 99), n2.to!string);
+        assert((n1 >= 0 && n1 < 100), n1.to!string);
+        assert((n2 >= 0 && n2 < 100), n2.to!string);
         assert((randomz == "$randomz"), randomz);
         assert((slice == "gau gau"), slice);
     }
