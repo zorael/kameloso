@@ -590,7 +590,7 @@ public:
     {
         if (!plugins.length) return;
 
-        foreach (plugin; plugins)
+        foreach (ref plugin; plugins)
         {
             import std.exception : ErrnoException;
             import core.thread : Fiber;
@@ -672,7 +672,7 @@ public:
             }
 
             destroy(plugin);
-            plugin = null;
+            plugin = null;   // needs ref
         }
 
         // Zero out old plugins array
