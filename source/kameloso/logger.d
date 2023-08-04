@@ -189,12 +189,11 @@ public:
      +/
     this(const CoreSettings settings) pure nothrow @safe
     {
-        linebuffer.reserve(bufferInitialSize);
-        messagebuffer.reserve(bufferInitialSize);
-        this.monochrome = settings.monochrome;
-        this.brightTerminal = settings.brightTerminal;
-        this.headless = settings.headless;
-        this.flush = settings.flush;
+        this(
+            cast(Flag!"monochrome")settings.monochrome,
+            cast(Flag!"brightTerminal")settings.brightTerminal,
+            cast(Flag!"headless")settings.headless,
+            cast(Flag!"flush")settings.flush);
     }
 
     version(Colours)
