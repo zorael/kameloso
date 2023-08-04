@@ -834,11 +834,8 @@ void printGCStats()
 
     immutable stats = GC.stats();
 
-    static if (__VERSION__ >= 2087L)
-    {
-        enum pattern = "Lifetime allocated in current thread: <l>%,d</> bytes";
-        logger.infof(pattern, stats.allocatedInCurrentThread);
-    }
+    enum pattern = "Lifetime allocated in current thread: <l>%,d</> bytes";
+    logger.infof(pattern, stats.allocatedInCurrentThread);
 
     enum memoryUsedPattern = "Memory currently in use: <l>%,d</> bytes; " ~
         "<l>%,d</> additional bytes reserved";
