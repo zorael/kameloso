@@ -206,61 +206,84 @@ auto replaceRandom(
     const long defaultLowerBound = 0,
     const long defaultUpperBound = 100) @safe
 {
-    import std.conv : text;
+    import std.array : Appender;
+    import std.conv : to;
     import std.random : uniform;
     import std.string : indexOf;
 
-    immutable randomPos = line.indexOf("$random");
+    Appender!(char[]) sink;
+    sink.reserve(line.length);  // overshoots but that's fine
+    ptrdiff_t randomPos = line.indexOf("$random");
+    size_t prevEnd;
 
-    if (randomPos == -1)
+    while (randomPos != -1)
     {
-        // No $random token
-        return line;
-    }
+        immutable trailingCharPos = randomPos + "$random".length;
+        size_t thisEnd;
 
-    if (line.length > randomPos)
-    {
-        immutable openParen = randomPos + "$random".length;
-
-        if (line.length == openParen)
+        if (line.length == trailingCharPos)
         {
+            // Line ends with "$random"
             immutable randomNumber = uniform(defaultLowerBound, defaultUpperBound);
-            return text(line[0..randomPos], randomNumber);
+            sink.put(line[prevEnd..randomPos]);
+            sink.put(randomNumber.to!string);
+            break;
         }
-        else if (line[openParen] == '(')
+        else if (line[trailingCharPos] == '(')
         {
-            immutable dots = line.indexOf("..", openParen);
+            // "$random("
+            immutable dotsPos = line.indexOf("..", trailingCharPos);
 
-            if (dots != -1)
+            if (dotsPos != -1)
             {
-                immutable endParen = line.indexOf(')', dots);
+                // "$random(*.."
+                immutable endParenPos = line.indexOf(')', dotsPos);
 
-                if (endParen != -1)
+                if (endParenPos != -1)
                 {
+                    // "$random(*..*)"
                     try
                     {
                         import std.conv : to;
 
-                        immutable lowerBound = line[openParen+1..dots].to!long;
-                        immutable upperBound = line[dots+2..endParen].to!long;
+                        immutable lowerBound = line[trailingCharPos+1..dotsPos].to!long;
+                        immutable upperBound = line[dotsPos+2..endParenPos].to!long;
                         immutable randomNumber = uniform(lowerBound, upperBound);
-                        return text(line[0..randomPos], randomNumber, line[endParen+1..$]);
+                        sink.put(line[prevEnd..randomPos]);
+                        sink.put(randomNumber.to!string);
+                        thisEnd = endParenPos+1;
                     }
                     catch (Exception _)
                     {
-                        return line;
+                        // syntax error, but proceed with the loop
+                        sink.put(line[prevEnd..trailingCharPos]);
+                        thisEnd = trailingCharPos;
                     }
                 }
             }
         }
-        else if (line[openParen] == ' ')
+        else if (line[trailingCharPos] == ' ')
         {
+            // "$random "
+            thisEnd = trailingCharPos;
             immutable randomNumber = uniform(defaultLowerBound, defaultUpperBound);
-            return text(line[0..randomPos], randomNumber, line[openParen..$]);
+            sink.put(line[prevEnd..randomPos]);
+            sink.put(randomNumber.to!string);
         }
+        else
+        {
+            // Run-on letter, not a $random token
+            sink.put(line[prevEnd..trailingCharPos]);
+            thisEnd = trailingCharPos;
+        }
+
+        prevEnd = thisEnd;
+        randomPos = line.indexOf("$random", prevEnd+1);
     }
 
-    return line;
+    // Add any trailing text iff the loop iterated at least once
+    if ((randomPos == -1) && (prevEnd != 0)) sink.put(line[prevEnd..$]);
+    return sink.data.length ? sink.data.idup : line;
 }
 
 ///
@@ -316,8 +339,14 @@ unittest
         assert((replaced == line), replaced);
     }
     {
-        // syntax error, no boudns given
+        // syntax error, no bounds given
         enum line = "$random(..) bottles of beer on the wall";
+        immutable replaced = line.replaceRandom();
+        assert((replaced == line), replaced);
+    }
+    {
+        // syntax error, invalid bounds
+        enum line = "$random(X.....Y) bottles of beer on the wall";
         immutable replaced = line.replaceRandom();
         assert((replaced == line), replaced);
     }
@@ -346,6 +375,22 @@ unittest
         assert((replaced == line), replaced);
     }
     {
+        // partly syntax error
+        enum line = "blerp $random(50..55) $random(2..1) $random blarp";
+        immutable replaced = line.replaceRandom();
+        string slice = replaced;  // mutable
+        immutable blerp = slice.nom(' ');
+        immutable n1 = slice.nom(' ').to!int;
+        immutable syntaxError = slice.nom(' ');
+        immutable n2 = slice.nom(' ').to!int;
+        alias blarp = slice;
+        assert((blerp == "blerp"), blerp);
+        assert((n1 >= 50 && n1 < 55), n1.to!string);
+        assert((syntaxError == "$random(2..1)"), syntaxError);
+        assert((n2 >= 0 && n2 < 100), n2.to!string);
+        assert((blarp == "blarp"), blarp);
+    }
+    {
         // empty string
         enum line = string.init;
         string replaced = line.replaceRandom();
@@ -356,6 +401,31 @@ unittest
         enum line = "99 bottles of beer on the wall";
         immutable replaced = line.replaceRandom();
         assert((replaced == line), replaced);
+    }
+    {
+        // multiple tokens
+        enum line = "$random(1..100) $random(101..200) $random(201..300)";
+        immutable replaced = line.replaceRandom();
+        string slice = replaced;  // mutable
+        immutable n1 = slice.nom(' ').to!int;
+        immutable n2 = slice.nom(' ').to!int;
+        immutable n3 = slice.to!int;
+        assert((n1 >= 1 && n1 < 100), n1.to!string);
+        assert((n2 >= 101 && n2 < 200), n2.to!string);
+        assert((n3 >= 201 && n3 < 300), n3.to!string);
+    }
+    {
+        // multiple tokens with other text
+        enum line = "$random $randomz $random gau gau";
+        immutable replaced = line.replaceRandom();
+        string slice = replaced;  // mutable
+        immutable n1 = slice.nom(' ').to!int;
+        immutable randomz = slice.nom(' ');
+        immutable n2 = slice.nom(' ').to!int;
+        assert((n1 >= 0 && n1 < 99), n1.to!string);
+        assert((n2 >= 0 && n2 < 99), n2.to!string);
+        assert((randomz == "$randomz"), randomz);
+        assert((slice == "gau gau"), slice);
     }
 }
 
