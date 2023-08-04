@@ -1743,10 +1743,11 @@ void processAwaitingFibers(IRCPlugin plugin, const ref IRCEvent event)
             }
             catch (Exception e)
             {
-                enum pattern = "Exception %s.awaitingFibers[%d]: <t>%s";
-                logger.warningf(pattern, plugin.name, i, e.msg);
-                printEventDebugDetails(event, event.raw);
-                version(PrintStacktraces) logger.trace(e);
+                logPluginActionException(
+                    e,
+                    plugin,
+                    event,
+                    "awaitingFibers");
                 expiredFibers ~= fiber;
             }
         }
@@ -1822,9 +1823,11 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledDelegate`s with an uns
         }
         catch (Exception e)
         {
-            enum pattern = "Exception %s.scheduledDelegates[%d]: <t>%s";
-            logger.warningf(pattern, plugin.name, i, e.msg);
-            version(PrintStacktraces) logger.trace(e);
+            logPluginActionException(
+                e,
+                plugin,
+                IRCEvent.init,
+                "scheduledDelegates");
         }
         finally
         {
@@ -1879,9 +1882,11 @@ in ((nowInHnsecs > 0), "Tried to process queued `ScheduledFiber`s with an unset 
         }
         catch (Exception e)
         {
-            enum pattern = "Exception %s.scheduledFibers[%d]: <t>%s";
-            logger.warningf(pattern, plugin.name, i, e.msg);
-            version(PrintStacktraces) logger.trace(e);
+            logPluginActionException(
+                e,
+                plugin,
+                IRCEvent.init,
+                "scheduledFibers");
         }
         finally
         {
