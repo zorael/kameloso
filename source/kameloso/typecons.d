@@ -61,14 +61,37 @@ static if (
      +/
     mixin template UnderscoreOpDispatcher()
     {
+        version(unittest)
+        {
+            import lu.traits : MixinConstraints, MixinScope;
+            mixin MixinConstraints!(
+                (MixinScope.struct_ | MixinScope.class_ | MixinScope.union_),
+                typeof(this).stringof);
+        }
+
+        /++
+            Mutator.
+
+            Params:
+                var = The variable name to set.
+                value = The value to set the variable to.
+
+            Returns:
+                A reference to the object which this is mixed into.
+         +/
         ref auto opDispatch(string var, T)(T value)
         {
-            import std.traits : isArray, isSomeString;
+            import std.traits : isArray, isAssociativeArray, isSomeString;
 
             enum realVar = '_' ~ var;
             alias V = typeof(mixin(realVar));
 
-            static if (isArray!V && !isSomeString!V)
+            static if (isAssociativeArray!V)
+            {
+                import lu.meld : MeldingStrategy, meldInto;
+                value.meldInto!(MeldingStrategy.overwriting)(mixin(realVar));
+            }
+            else static if (isArray!V && !isSomeString!V)
             {
                 mixin(realVar) ~= value;
             }
@@ -80,7 +103,16 @@ static if (
             return this;
         }
 
-        auto opDispatch(string var)() const
+        /++
+            Accessor.
+
+            Params:
+                var = The variable name to get.
+
+            Returns:
+                The value of the variable.
+         +/
+        auto opDispatch(string var)() inout
         {
             enum realVar = '_' ~ var;
             return mixin(realVar);
