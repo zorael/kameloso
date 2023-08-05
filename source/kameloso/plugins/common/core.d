@@ -160,18 +160,33 @@ public:
     // postprocess
     /++
         Allows a plugin to modify an event post-parsing.
+
+        Params:
+            event = The [dialect.defs.IRCEvent|IRCEvent] in flight.
+
+        See_Also:
+            [kameloso.plugins.common.core.IRCPluginImpl.postprocess]
      +/
     void postprocess(ref IRCEvent event) @system;
 
     // onEvent
     /++
         Called to let the plugin react to a new event, parsed from the server.
+
+        Params:
+            origEvent = Parsed [dialect.defs.IRCEvent|IRCEvent] to dispatch to event handlers.
+
+        See_Also:
+            [kameloso.plugins.common.core.IRCPluginImpl.onEvent]
      +/
     void onEvent(const ref IRCEvent event) @system;
 
     // initResources
     /++
         Called when the plugin is requested to initialise its disk resources.
+
+        See_Also:
+            [kameloso.plugins.common.core.IRCPluginImpl.initResources]
      +/
     void initResources() @system;
 
@@ -182,6 +197,16 @@ public:
         Stores an associative array of `string[]`s of missing entries in its
         first `out string[][string]` parameter, and the invalid encountered
         entries in the second.
+
+        Params:
+            configFile = String of the configuration file to read.
+            missingEntries = Out reference of an associative array of string arrays
+                of expected configuration entries that were missing.
+            invalidEntries = Out reference of an associative array of string arrays
+                of unexpected configuration entries that did not belong.
+
+        See_Also:
+            [kameloso.plugins.common.core.IRCPluginImpl.deserialiseConfigFrom]
      +/
     void deserialiseConfigFrom(
         const string configFile,
@@ -192,8 +217,14 @@ public:
     /++
         Called to let the plugin contribute settings when writing the configuration file.
 
+        Params:
+            sink = Reference [std.array.Appender|Appender] to fill with plugin-specific settings text.
+
         Returns:
             Boolean of whether something was added.
+
+        See_Also:
+            [kameloso.plugins.common.core.IRCPluginImpl.serialiseConfigInto]
      +/
     bool serialiseConfigInto(ref Appender!(char[]) sink) const;
 
@@ -201,26 +232,43 @@ public:
     /++
         Called when we want to change a setting by its string name.
 
+        Params:
+            setting = String name of the struct member to set.
+            value = String value to set it to (after converting it to the
+                correct type).
+
         Returns:
-            Boolean of whether the set succeeded or not.
+            `true` if something was serialised into the passed sink; `false` if not.
+
+        See_Also:
+            [kameloso.plugins.common.core.IRCPluginImpl.setSettingByName]
      +/
     bool setSettingByName(const string setting, const string value);
 
     // setup
     /++
         Called at program start but before connection has been established.
+
+        See_Also:
+            [kameloso.plugins.common.core.IRCPluginImpl.setup]
      +/
     void setup() @system;
 
     // printSettings
     /++
         Called when we want a plugin to print its [Settings]-annotated struct of settings.
+
+        See_Also:
+            [kameloso.plugins.common.core.IRCPluginImpl.printSettings]
      +/
     void printSettings() @system const;
 
     // teardown
     /++
         Called during shutdown of a connection; a plugin's would-be destructor.
+
+        See_Also:
+            [kameloso.plugins.common.core.IRCPluginImpl.teardown]
      +/
     void teardown() @system;
 
@@ -230,6 +278,9 @@ public:
 
         Returns:
             The string name of the plugin.
+
+        See_Also:
+            [kameloso.plugins.common.core.IRCPluginImpl.name]
      +/
     string name() @property const pure nothrow @nogc;
 
@@ -238,7 +289,13 @@ public:
         Returns an array of the descriptions of the commands a plugin offers.
 
         Returns:
-            An associative [IRCPlugin.CommandMetadata] array keyed by string.
+            Associative array of tuples of all command metadata (descriptions,
+            syntaxes, and whether they are hidden), keyed by
+            [kameloso.plugins.common.core.IRCEventHandler.Command.word|IRCEventHandler.Command.word]s
+            and [kameloso.plugins.common.core.IRCEventHandler.Regex.expression|IRCEventHandler.Regex.expression]s.
+
+        See_Also:
+            [kameloso.plugins.common.core.IRCPluginImpl.commands]
      +/
     CommandMetadata[string] commands() pure nothrow @property const;
 
@@ -247,8 +304,16 @@ public:
         Returns an array of the descriptions of the channel-specific commands a
         plugin offers.
 
+        Params:
+            channelName = Name of channel whose commands we want to summarise.
+
         Returns:
-            An associative [IRCPlugin.CommandMetadata] array keyed by string.
+            An associative array of
+            [kameloso.plugins.common.core.IRCPlugin.CommandMetadata|IRCPlugin.CommandMetadata]s,
+            one for each soft command active in the passed channel.
+
+        See_Also:
+            [kameloso.plugins.common.core.IRCPluginImpl.channelSpecificCommands]
      +/
     CommandMetadata[string] channelSpecificCommands(const string) @system;
 
@@ -257,6 +322,9 @@ public:
         Reloads the plugin, where such is applicable.
 
         Whatever this does is implementation-defined.
+
+        See_Also:
+            [kameloso.plugins.common.core.IRCPluginImpl.reload]
      +/
     void reload() @system;
 
@@ -266,6 +334,14 @@ public:
 
         It is passed to all plugins and it is up to the receiving plugin to
         discard those not meant for it by examining the value of the `header` argument.
+
+        Params:
+            header = String header for plugins to examine and decide if the
+                message was meant for them.
+            content = Wildcard content, to be cast to concrete types if the header matches.
+
+        See_Also:
+            [kameloso.plugins.common.core.IRCPluginImpl.onBusMessage]
      +/
     void onBusMessage(const string header, shared Sendable content) @system;
 
@@ -274,7 +350,10 @@ public:
         Returns whether or not the plugin is enabled in its settings.
 
         Returns:
-            `true` if the plugin should listen to events, `false` if not.
+            `true` if the plugin is deemed enabled (or cannot be disabled), `false` if not.
+
+        See_Also:
+            [kameloso.plugins.common.core.IRCPluginImpl.isEnabled]
      +/
     bool isEnabled() const @property pure nothrow @nogc;
 
