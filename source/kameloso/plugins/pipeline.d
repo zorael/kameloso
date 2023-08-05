@@ -402,10 +402,19 @@ auto tick(PipelinePlugin plugin, const Duration elapsed)
 
     static immutable minimumTimeBetweenReads = 250.msecs;
     static Duration timeSinceLast;
-    timeSinceLast += elapsed;
 
-    if (timeSinceLast < minimumTimeBetweenReads) return false;
-    timeSinceLast = 0.msecs;
+    if (elapsed >= minimumTimeBetweenReads)
+    {
+        // Skip adding the two durations together if the elapsed time alone is
+        // already more than the required minimum time between reads
+    }
+    else
+    {
+        timeSinceLast += elapsed;
+        if (timeSinceLast < minimumTimeBetweenReads) return false;
+    }
+
+    timeSinceLast = Duration.zero;
 
     // Assume FIFO exists, read from the file descriptor
     enum bufferSize = 1024;  // Should be enough? An IRC line is 512 bytes
