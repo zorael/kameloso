@@ -137,7 +137,7 @@ public:
     /++
         Constructor taking an [args] string array.
      +/
-    this(string[] args)
+    this(string[] args) pure @safe nothrow @nogc
     {
         this.args = args;
     }

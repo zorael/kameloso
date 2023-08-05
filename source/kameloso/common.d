@@ -774,7 +774,7 @@ public:
         Params:
             aa = Associative arary to inherit. Taken by reference for now.
      +/
-    this(V[K] aa)
+    this(V[K] aa) pure @safe nothrow @nogc
     {
         this.aa = aa;
     }

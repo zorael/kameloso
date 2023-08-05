@@ -108,7 +108,7 @@ public:
         Constructor. Only kept as a compatibility measure to ensure [word] alawys
         has a value. Remove later.
      +/
-    this(const string word)
+    this(const string word) pure @safe nothrow @nogc
     {
         this.word = word;
     }

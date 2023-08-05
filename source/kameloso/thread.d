@@ -350,7 +350,7 @@ final class Boxed(T) : Sendable
         Constructor that adds a passed payload to the internal stored [payload],
         creating a *shared* `Boxed`.
      +/
-    auto this(T payload) shared
+    this(T payload) shared pure @safe nothrow @nogc
     {
         this.payload = cast(shared)payload;
     }
@@ -447,7 +447,7 @@ final class CarryingFiber(T) : Fiber
         Constructor function merely taking a function/delegate pointer, to call
         when invoking this Fiber (via `.call()`).
      +/
-    this(Fn, Args...)(Fn fn, Args args)
+    this(Fn, Args...)(Fn fn, Args args)  // attributes inferred
     {
         // fn is a pointer
         super(fn, args);
@@ -458,7 +458,7 @@ final class CarryingFiber(T) : Fiber
         internal `this.payload`, as well as a function/delegate pointer to call
         when invoking this Fiber (via `.call()`).
      +/
-    this(Fn, Args...)(T payload, Fn fn, Args args)
+    this(Fn, Args...)(T payload, Fn fn, Args args)  // as above
     {
         this.payload = payload;
         // fn is a pointer

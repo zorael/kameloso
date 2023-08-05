@@ -2837,7 +2837,7 @@ public:
     /++
         Constructor taking a connection ID `uint`.
      +/
-    this(const uint connectionID)
+    this(const uint connectionID) pure @safe nothrow @nogc
     {
         this._connectionID = connectionID;
     }
@@ -2894,7 +2894,7 @@ struct Replay
         void delegate(Replay) dg,
         const ref IRCEvent event,
         const Permissions permissionsRequired,
-        const string caller)
+        const string caller) pure @safe nothrow @nogc
     {
         this.timestamp = event.time;
         this.dg = dg;
@@ -3423,7 +3423,7 @@ public:
             context = String context of the request.
             fiber = [kameloso.thread.CarryingFiber|CarryingFiber] to embed into the request.
      +/
-    this(string context, CarryingFiber!T fiber)
+    this(string context, CarryingFiber!T fiber) pure @safe nothrow @nogc
     {
         this._context = context;
         this._fiber = fiber;
@@ -3437,7 +3437,7 @@ public:
             context = String context of the request.
             dg = Delegate to create a [kameloso.thread.CarryingFiber|CarryingFiber] from.
      +/
-    this(string context, void delegate() dg)
+    this(string context, void delegate() dg) /*pure @safe @nogc*/ nothrow
     {
         import kameloso.constants : BufferSize;
 

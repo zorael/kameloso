@@ -3915,7 +3915,7 @@ package:
                 Params:
                     idString = This stream's ID, as reported by Twitch, in string form.
              +/
-            this(const string idString)
+            this(const string idString) pure @safe nothrow @nogc
             {
                 this._idString = idString;
             }
@@ -3994,7 +3994,7 @@ package:
             Params:
                 channelName = Name of the channel.
          +/
-        this(const string channelName)
+        this(const string channelName) /*pure nothrow @nogc*/ @safe
         {
             import std.random : uniform;
 

@@ -69,7 +69,7 @@ public:
         Constructor taking a [std.datetime.systime.SysTime|SysTime], to save as the date
         the buffer was created.
      +/
-    this(const string dir, const SysTime now)
+    this(const string dir, const SysTime now) /*pure @nogc*/ @safe nothrow
     {
         import std.datetime.date : Date;
         import std.path : buildNormalizedPath;
@@ -88,7 +88,7 @@ public:
         Constructor not taking a [std.datetime.systime.SysTime|SysTime], for use with
         buffers that should not be dated, such as the error log and the raw log.
      +/
-    this(const string dir, const string filename)
+    this(const string dir, const string filename) pure @safe nothrow /*@nogc*/
     {
         import std.path : buildNormalizedPath;
 
