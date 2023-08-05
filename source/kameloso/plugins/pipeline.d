@@ -33,6 +33,7 @@ import kameloso.plugins;
 import kameloso.common : logger;
 import dialect.defs;
 import std.typecons : Flag, No, Yes;
+import core.time : Duration;
 
 
 /+
@@ -383,18 +384,27 @@ auto isFIFO(const string filename)
 
     Params:
         plugin = The current [PipelinePlugin].
+        delta = How much time has passed since the last tick.
 
     Returns:
         Whether or not the main loop should check concurrency messages, to catch
         messages sent to the server.
  +/
-auto tick(PipelinePlugin plugin)
+auto tick(PipelinePlugin plugin, const Duration delta)
 {
     import std.algorithm.iteration : splitter;
     import std.file : exists;
     import core.sys.posix.unistd : read;
+    import core.time : msecs;
 
     if (plugin.fd == -1) return false;   // ?
+
+    static immutable minimumTimeBetweenReads = 250.msecs;
+    static Duration timeSinceLast;
+    timeSinceLast += delta;
+
+    if (timeSinceLast < minimumTimeBetweenReads) return false;
+    timeSinceLast = 0.msecs;
 
     // Assume FIFO exists, read from the file descriptor
     enum bufferSize = 1024;  // Should be enough? An IRC line is 512 bytes
