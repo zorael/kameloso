@@ -175,7 +175,7 @@ public:
         Called to let the plugin react to a new event, parsed from the server.
 
         Params:
-            origEvent = Parsed [dialect.defs.IRCEvent|IRCEvent] to dispatch to event handlers.
+            event = Parsed [dialect.defs.IRCEvent|IRCEvent] to dispatch to event handlers.
 
         See_Also:
             [kameloso.plugins.common.core.IRCPluginImpl.onEvent]
@@ -316,7 +316,7 @@ public:
         See_Also:
             [kameloso.plugins.common.core.IRCPluginImpl.channelSpecificCommands]
      +/
-    CommandMetadata[string] channelSpecificCommands(const string) @system;
+    CommandMetadata[string] channelSpecificCommands(const string channelName) @system;
 
     // reload
     /++
@@ -372,7 +372,7 @@ public:
         See_Also:
             [kameloso.plugins.common.core.IRCPluginImpl.tick]
      +/
-    bool tick(const Duration) @system;
+    bool tick(const Duration elapsed) @system;
 }
 
 
