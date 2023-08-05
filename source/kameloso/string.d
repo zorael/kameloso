@@ -262,18 +262,12 @@ auto replaceRandom(
                 }
             }
         }
-        else if (line[trailingCharPos] == ' ')
+        else
         {
-            // "$random "
-            thisEnd = trailingCharPos;
+            // "$random" followed by any other trailing character
             immutable randomNumber = uniform(defaultLowerBound, defaultUpperBound);
             sink.put(line[prevEnd..randomPos]);
             sink.put(randomNumber.to!string);
-        }
-        else
-        {
-            // Run-on letter, not a $random token
-            sink.put(line[prevEnd..trailingCharPos]);
             thisEnd = trailingCharPos;
         }
 
@@ -420,12 +414,36 @@ unittest
         immutable replaced = line.replaceRandom();
         string slice = replaced;  // mutable
         immutable n1 = slice.nom(' ').to!int;
-        immutable randomz = slice.nom(' ');
-        immutable n2 = slice.nom(' ').to!int;
+        immutable n2z = slice.nom(' ');
+        immutable z = n2z[$-1..$];
+        immutable n2 = n2z[0..$-1].to!int;
+        immutable n3 = slice.nom(' ').to!int;
         assert((n1 >= 0 && n1 < 100), n1.to!string);
-        assert((n2 >= 0 && n2 < 100), n2.to!string);
-        assert((randomz == "$randomz"), randomz);
+        assert((n2 >= 0 && n2 < 100), n1.to!string);
+        assert((n3 >= 0 && n3 < 100), n3.to!string);
+        assert((z == "z"), z);
         assert((slice == "gau gau"), slice);
+    }
+    {
+        // multiple tokens with other text again
+        enum line = "$random, $random! $random?";
+        immutable replaced = line.replaceRandom();
+        string slice = replaced;  // mutable
+        immutable n1comma = slice.nom(' ');
+        immutable n1 = n1comma[0..$-1].to!int;
+        immutable comma = n1comma[$-1..$];
+        immutable n2excl = slice.nom(' ');
+        immutable n2 = n2excl[0..$-1].to!int;
+        immutable excl = n2excl[$-1..$];
+        alias n3question = slice;
+        immutable n3 = n3question[0..$-1].to!int;
+        immutable question = n3question[$-1..$];
+        assert((n1 >= 0 && n1 < 100), n1.to!string);
+        assert((n2 >= 0 && n2 < 100), n1.to!string);
+        assert((n3 >= 0 && n3 < 100), n3.to!string);
+        assert((comma == ","), comma);
+        assert((excl == "!"), excl);
+        assert((question == "?"), question);
     }
 }
 
