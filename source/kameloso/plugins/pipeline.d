@@ -376,71 +376,47 @@ auto isFIFO(const string filename)
 }
 
 
-// tick
+// readFIFO
 /++
-    Plugin tick function. Reads from the pipe and either issues bus messages based
-    on what was read or sends the piped text to the server verbatim.
-
-    This is executed once per main loop iteration.
+    Reads from the FIFO and sends concurrency messages based upon what was read.
+    If something was indeed read, `true` is returned to signal to the caller that
+    it should check for new messages.
 
     Params:
         plugin = The current [PipelinePlugin].
-        elapsed = How much time has passed since the last tick.
 
     Returns:
-        Whether or not the main loop should check concurrency messages, to catch
-        messages sent to it.
+        `true` if something was read and concurrency messages were sent; `false` if not.
  +/
-auto tick(PipelinePlugin plugin, const Duration elapsed)
+auto readFIFO(PipelinePlugin plugin)
 {
     import std.algorithm.iteration : splitter;
-    import std.file : exists;
     import core.sys.posix.unistd : read;
-    import core.time : msecs;
 
-    if (plugin.fd == -1) return false;   // ?
-
-    static immutable minimumTimeBetweenReads = 250.msecs;
-    static Duration timeSinceLast;
-
-    if (elapsed >= minimumTimeBetweenReads)
-    {
-        // Skip adding the two durations together if the elapsed time alone is
-        // already more than the required minimum time between reads
-    }
-    else
-    {
-        timeSinceLast += elapsed;
-        if (timeSinceLast < minimumTimeBetweenReads) return false;
-    }
-
-    timeSinceLast = Duration.zero;
-
-    // Assume FIFO exists, read from the file descriptor
     enum bufferSize = 1024;  // Should be enough? An IRC line is 512 bytes
     static ubyte[bufferSize] buf;
-    immutable ptrdiff_t bytesRead = read(plugin.fd, buf.ptr, buf.length);
 
+    immutable ptrdiff_t bytesRead = read(plugin.fd, buf.ptr, buf.length);
     if (bytesRead <= 0) return false;   // 0 or -1
 
-    string slice = cast(string)buf[0..bytesRead].idup;  // mutable
+    string slice = cast(string)buf[0..bytesRead].idup;  // mutable immutable
     bool sentSomething;
 
     foreach (/*immutable*/ line; slice.splitter("\n"))
     {
         import kameloso.messaging : raw, quit;
-        import kameloso.thread : ThreadMessage, boxed;
         import lu.string : splitInto, strippedLeft;
         import std.algorithm.searching : startsWith;
-        import std.concurrency : send;
         import std.uni : asLowerCase;
 
         line = line.strippedLeft;
-
-        if (line.length == 0) continue;  // skip empty lines
+        if (!line.length) continue;  // skip empty lines
 
         if (line[0] == ':')
         {
+            import kameloso.thread : ThreadMessage, boxed;
+            import std.concurrency : send;
+
             line = line[1..$];  // skip the colon
             string header;  // mutable
             line.splitInto(header);
@@ -468,6 +444,46 @@ auto tick(PipelinePlugin plugin, const Duration elapsed)
     }
 
     return sentSomething;
+}
+
+
+// tick
+/++
+    Plugin tick function. Reads from the pipe and either issues bus messages based
+    on what was read or sends the piped text to the server verbatim.
+
+    This is executed once per main loop iteration.
+
+    Params:
+        plugin = The current [PipelinePlugin].
+        elapsed = How much time has passed since the last tick.
+
+    Returns:
+        Whether or not the main loop should check concurrency messages, to catch
+        messages sent to it.
+ +/
+auto tick(PipelinePlugin plugin, const Duration elapsed)
+{
+    import core.time : msecs;
+
+    if (plugin.fd == -1) return false;  // ?
+
+    static immutable minimumTimeBetweenReads = 250.msecs;
+    static Duration timeSinceLast;
+
+    if (elapsed >= minimumTimeBetweenReads)
+    {
+        // Skip adding the two durations together if the elapsed time alone is
+        // already more than the required minimum time between reads
+    }
+    else
+    {
+        timeSinceLast += elapsed;
+        if (timeSinceLast < minimumTimeBetweenReads) return false;
+    }
+
+    timeSinceLast = Duration.zero;
+    return readFIFO(plugin);
 }
 
 
