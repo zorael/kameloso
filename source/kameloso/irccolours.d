@@ -756,7 +756,8 @@ private string mapColoursImpl(Flag!"strip" strip = No.strip)
     {
         static if (!strip)
         {
-            static assert(0, "Tried to `mapColoursImpl!(No.strip)` outside of version `Colours`");
+            enum message = "Tried to `mapColoursImpl!(No.strip)` outside of version `Colours`";
+            static assert(0, message);
         }
     }
 
@@ -1113,7 +1114,8 @@ private string mapEffectsImpl(Flag!"strip" strip, IRCControlCharacter mircToken,
     {
         static if (!strip)
         {
-            static assert(0, "Tried to call `mapEffectsImpl!(No.strip)` outside of version `Colours`");
+            enum message = "Tried to call `mapEffectsImpl!(No.strip)` outside of version `Colours`";
+            static assert(0, message);
         }
     }
 
