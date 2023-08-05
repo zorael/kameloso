@@ -40,6 +40,7 @@ module kameloso.thread;
 private:
 
 import core.thread : Fiber;
+import core.time : Duration;
 
 public:
 
@@ -474,8 +475,6 @@ final class CarryingFiber(T) : Fiber
     }
 }
 
-
-private import core.time : Duration;
 
 // interruptibleSleep
 /++

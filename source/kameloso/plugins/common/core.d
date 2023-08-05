@@ -7,6 +7,7 @@
 
     Example:
     ---
+    import kameloso.plugins;
     import kameloso.plugins.common.core;
     import kameloso.plugins.common.awareness;
 
@@ -1378,6 +1379,7 @@ mixin template IRCPluginImpl(
 
                     static if (is(typeof(attrs[resourceUDAIndex])))
                     {
+                        // Instance of Resource, e.g. @Resource("subdir") annotation
                         member = buildNormalizedPath(
                             state.settings.resourceDirectory,
                             attrs[resourceUDAIndex].subdirectory,
@@ -1385,6 +1387,7 @@ mixin template IRCPluginImpl(
                     }
                     else
                     {
+                        // Resource as a type, e.g. @Resource annotation
                         member = buildNormalizedPath(state.settings.resourceDirectory, member);
                     }
                 }
@@ -1394,6 +1397,7 @@ mixin template IRCPluginImpl(
 
                     static if (is(typeof(attrs[configurationUDAIndex])))
                     {
+                        // Instance of Configuration, e.g. @Configuration("subdir") annotation
                         member = buildNormalizedPath(
                             state.settings.configDirectory,
                             attrs[configurationUDAIndex].subdirectory,
@@ -1401,6 +1405,7 @@ mixin template IRCPluginImpl(
                     }
                     else
                     {
+                        // Configuration as a type, e.g. @Configuration annotation
                         member = buildNormalizedPath(state.settings.configDirectory, member);
                     }
                 }
@@ -1558,7 +1563,6 @@ mixin template IRCPluginImpl(
                     string[][string] theseInvalidEntries;
 
                     configFile.readConfigInto(theseMissingEntries, theseInvalidEntries, symbol);
-
                     theseMissingEntries.meldInto(missingEntries);
                     theseInvalidEntries.meldInto(invalidEntries);
                     break;
@@ -2200,7 +2204,6 @@ auto filterSender(
     }
 
     immutable class_ = event.sender.class_;
-
     if (class_ == IRCUser.Class.blacklist) return FilterResult.fail;
 
     immutable timediff = (event.time - event.sender.updated);
