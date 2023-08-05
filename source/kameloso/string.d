@@ -283,7 +283,7 @@ auto replaceRandom(
 ///
 unittest
 {
-    import lu.string : nom;
+    import lu.string : nom, splitInto;
     import std.conv : to;
 
     {
@@ -373,11 +373,10 @@ unittest
         enum line = "blerp $random(50..55) $random(2..1) $random blarp";
         immutable replaced = line.replaceRandom();
         string slice = replaced;  // mutable
-        immutable blerp = slice.nom(' ');
-        immutable n1 = slice.nom(' ').to!int;
-        immutable syntaxError = slice.nom(' ');
-        immutable n2 = slice.nom(' ').to!int;
-        alias blarp = slice;
+        string blerp, n1s, syntaxError, n2s, blarp;
+        slice.splitInto(blerp, n1s, syntaxError, n2s, blarp);
+        immutable n1 = n1s.to!int;
+        immutable n2 = n2s.to!int;
         assert((blerp == "blerp"), blerp);
         assert((n1 >= 50 && n1 < 55), n1.to!string);
         assert((syntaxError == "$random(2..1)"), syntaxError);
@@ -401,9 +400,11 @@ unittest
         enum line = "$random(1..100) $random(101..200) $random(201..300)";
         immutable replaced = line.replaceRandom();
         string slice = replaced;  // mutable
-        immutable n1 = slice.nom(' ').to!int;
-        immutable n2 = slice.nom(' ').to!int;
-        immutable n3 = slice.to!int;
+        string n1s, n2s, n3s;
+        slice.splitInto(n1s, n2s, n3s);
+        immutable n1 = n1s.to!int;
+        immutable n2 = n2s.to!int;
+        immutable n3 = n3s.to!int;
         assert((n1 >= 1 && n1 < 100), n1.to!string);
         assert((n2 >= 101 && n2 < 200), n2.to!string);
         assert((n3 >= 201 && n3 < 300), n3.to!string);
@@ -413,11 +414,12 @@ unittest
         enum line = "$random $randomz $random gau gau";
         immutable replaced = line.replaceRandom();
         string slice = replaced;  // mutable
-        immutable n1 = slice.nom(' ').to!int;
-        immutable n2z = slice.nom(' ');
-        immutable z = n2z[$-1..$];
+        string n1s, n2z, n3s;
+        slice.splitInto(n1s, n2z, n3s);
+        immutable n1 = n1s.to!int;
         immutable n2 = n2z[0..$-1].to!int;
-        immutable n3 = slice.nom(' ').to!int;
+        immutable n3 = n3s.to!int;
+        immutable z = n2z[$-1..$];
         assert((n1 >= 0 && n1 < 100), n1.to!string);
         assert((n2 >= 0 && n2 < 100), n1.to!string);
         assert((n3 >= 0 && n3 < 100), n3.to!string);
@@ -429,13 +431,12 @@ unittest
         enum line = "$random, $random! $random?";
         immutable replaced = line.replaceRandom();
         string slice = replaced;  // mutable
-        immutable n1comma = slice.nom(' ');
+        string n1comma, n2excl, n3question;
+        slice.splitInto(n1comma, n2excl, n3question);
         immutable n1 = n1comma[0..$-1].to!int;
         immutable comma = n1comma[$-1..$];
-        immutable n2excl = slice.nom(' ');
         immutable n2 = n2excl[0..$-1].to!int;
         immutable excl = n2excl[$-1..$];
-        alias n3question = slice;
         immutable n3 = n3question[0..$-1].to!int;
         immutable question = n3question[$-1..$];
         assert((n1 >= 0 && n1 < 100), n1.to!string);
