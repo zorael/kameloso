@@ -884,7 +884,7 @@ unittest
 }
 
 
-// abbreviatedDuration
+// asAbbreviatedDuration
 /++
     Constructs a [core.time.Duration|Duration] from a string, assumed to be in a
     `*d*h*m*s` pattern.
@@ -898,7 +898,7 @@ unittest
     Throws:
         [DurationStringException] if individually negative values were passed.
  +/
-auto abbreviatedDuration(const string line)
+auto asAbbreviatedDuration(const string line)
 {
     import lu.string : contains, nom;
     import std.conv : to;
@@ -958,70 +958,70 @@ unittest
 
     {
         enum line = "30";
-        immutable actual = abbreviatedDuration(line);
+        immutable actual = line.asAbbreviatedDuration;
         immutable expected = 30.seconds;
         assert((actual == expected), actual.to!string);
     }
     {
         enum line = "30s";
-        immutable actual = abbreviatedDuration(line);
+        immutable actual = line.asAbbreviatedDuration;
         immutable expected = 30.seconds;
         assert((actual == expected), actual.to!string);
     }
     {
         enum line = "1h30s";
-        immutable actual = abbreviatedDuration(line);
+        immutable actual = line.asAbbreviatedDuration;
         immutable expected = 1.hours + 30.seconds;
         assert((actual == expected), actual.to!string);
     }
     {
         enum line = "5h";
-        immutable actual = abbreviatedDuration(line);
+        immutable actual = line.asAbbreviatedDuration;
         immutable expected = 5.hours;
         assert((actual == expected), actual.to!string);
     }
     {
         enum line = "1d12h39m40s";
-        immutable actual = abbreviatedDuration(line);
+        immutable actual = line.asAbbreviatedDuration;
         immutable expected = 1.days + 12.hours + 39.minutes + 40.seconds;
         assert((actual == expected), actual.to!string);
     }
     {
         enum line = "1d4s";
-        immutable actual = abbreviatedDuration(line);
+        immutable actual = line.asAbbreviatedDuration;
         immutable expected = 1.days + 4.seconds;
         assert((actual == expected), actual.to!string);
     }
     {
         enum line = "30s";
-        immutable actual = abbreviatedDuration(line);
+        immutable actual = line.asAbbreviatedDuration;
         immutable expected = 30.seconds;
         assert((actual == expected), actual.to!string);
     }
     {
         enum line = "-30s";
-        immutable actual = abbreviatedDuration(line);
+        immutable actual = line.asAbbreviatedDuration;
         immutable expected = (-30).seconds;
         assert((actual == expected), actual.to!string);
     }
     {
         import core.time : Duration;
         enum line = string.init;
-        immutable actual = abbreviatedDuration(line);
+        immutable actual = line.asAbbreviatedDuration;
         immutable expected = Duration.zero;
         assert((actual == expected), actual.to!string);
     }
     {
         enum line = "s";
-        assertThrown(abbreviatedDuration(line));
+        assertThrown(line.asAbbreviatedDuration);
     }
     {
         enum line = "1d1h1m1z";
-        assertThrown(abbreviatedDuration(line));
+        assertThrown(line.asAbbreviatedDuration);
     }
     {
         enum line = "2h-30m";
-        assertThrown(abbreviatedDuration(line));
+        assertThrown(line.asAbbreviatedDuration);
     }
 }
 

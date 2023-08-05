@@ -204,7 +204,7 @@ public:
 )
 void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
 {
-    import kameloso.time : DurationStringException, abbreviatedDuration, timeSince;
+    import kameloso.time : DurationStringException, asAbbreviatedDuration, timeSince;
     import lu.string : stripped;
     import std.algorithm.searching : count;
     import std.algorithm.sorting : sort;
@@ -322,7 +322,7 @@ void onCommandPoll(PollPlugin plugin, const ref IRCEvent event)
     try
     {
         import lu.string : nom;
-        poll.duration = abbreviatedDuration(slice.nom!(Yes.decode)(' '));
+        poll.duration = slice.nom!(Yes.decode)(' ').asAbbreviatedDuration;
     }
     catch (ConvException _)
     {

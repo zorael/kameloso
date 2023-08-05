@@ -1056,7 +1056,7 @@ void onCommandSummary(AdminPlugin plugin)
 )
 void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.time : DurationStringException, abbreviatedDuration;
+    import kameloso.time : DurationStringException, asAbbreviatedDuration;
     import lu.string : nom, stripped;
     import std.conv : ConvException;
 
@@ -1084,7 +1084,7 @@ void onCommandCycle(AdminPlugin plugin, const /*ref*/ IRCEvent event)
 
     try
     {
-        immutable delay = abbreviatedDuration(delaystring);
+        immutable delay = delaystring.asAbbreviatedDuration;
         cycle(plugin, channelName, delay, slice);
     }
     catch (ConvException _)

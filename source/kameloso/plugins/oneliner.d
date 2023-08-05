@@ -489,11 +489,11 @@ void handleNewOneliner(
 
     if (cooldownString.length)
     {
-        import kameloso.time : DurationStringException, abbreviatedDuration;
+        import kameloso.time : DurationStringException, asAbbreviatedDuration;
 
         try
         {
-            cooldownSeconds = cast(int)abbreviatedDuration(cooldownString).total!"seconds";
+            cooldownSeconds = cast(int)cooldownString.asAbbreviatedDuration.total!"seconds";
             if (cooldownSeconds < 0) return sendCooldownMustBeValidPositiveDurationString();
         }
         catch (DurationStringException _)

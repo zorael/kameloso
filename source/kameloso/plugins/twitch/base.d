@@ -1583,7 +1583,7 @@ void onCommandSongRequest(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 )
 void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
 {
-    import kameloso.time : DurationStringException, abbreviatedDuration;
+    import kameloso.time : DurationStringException, asAbbreviatedDuration;
     import lu.string : splitWithQuotes;
     import std.conv : ConvException, to;
     import std.format : format;
@@ -1607,7 +1607,7 @@ void onCommandStartPoll(TwitchPlugin plugin, const /*ref*/ IRCEvent event)
     try
     {
         durationString = durationString
-            .abbreviatedDuration
+            .asAbbreviatedDuration
             .total!"seconds"
             .to!string;
     }

@@ -408,7 +408,7 @@ void handleNewTimer(
     const /*ref*/ IRCEvent event,
     /*const*/ string slice)
 {
-    import kameloso.time : DurationStringException, abbreviatedDuration;
+    import kameloso.time : DurationStringException, asAbbreviatedDuration;
     import lu.string : SplitResults, splitInto;
     import std.conv : ConvException, to;
     import std.format : format;
@@ -500,9 +500,9 @@ void handleNewTimer(
     try
     {
         timer.messageCountThreshold = messageCountThreshold.to!long;
-        timer.timeThreshold = abbreviatedDuration(timeThreshold).total!"seconds";
+        timer.timeThreshold = timeThreshold.asAbbreviatedDuration.total!"seconds";
         if (messageCountStagger.length) timer.messageCountStagger = messageCountStagger.to!long;
-        if (timeStagger.length) timer.timeStagger = abbreviatedDuration(timeStagger).total!"seconds";
+        if (timeStagger.length) timer.timeStagger = timeStagger.asAbbreviatedDuration.total!"seconds";
     }
     catch (ConvException _)
     {
