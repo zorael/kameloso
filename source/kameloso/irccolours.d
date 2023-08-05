@@ -194,10 +194,19 @@ void ircColourInto(Sink)
     auto ref Sink sink,
     const int fg,
     const int bg = IRCColour.unset)
-if (isOutputRange!(Sink, char[]))
 in (line.length, "Tried to apply IRC colours to a string but no string was given")
 {
     import lu.conv : toAlphaInto;
+    import std.range.primitives : isOutputRange;
+
+    static if (!isOutputRange!(Sink, char[]))
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` must be passed an output range of `char[]`";
+        immutable message = pattern.format(__FUNCTION__);
+        static assert(0, message);
+    }
 
     sink.put(cast(char)IRCControlCharacter.colour);
     (cast(int)fg).toAlphaInto!(2, 2)(sink);  // So far the highest colour seems to be 99; two digits

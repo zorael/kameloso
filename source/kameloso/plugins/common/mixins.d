@@ -18,7 +18,6 @@ module kameloso.plugins.common.mixins;
 private:
 
 import dialect.defs;
-import std.traits : isSomeFunction;
 import std.typecons : Flag, No, Yes;
 
 public:
@@ -57,11 +56,27 @@ mixin template WHOISFiberDelegate(
     alias onSuccess,
     alias onFailure = null,
     Flag!"alwaysLookup" alwaysLookup = No.alwaysLookup)
-if (isSomeFunction!onSuccess && (is(typeof(onFailure) == typeof(null)) || isSomeFunction!onFailure))
 {
     import kameloso.plugins.common.core : IRCPlugin;
-    import std.traits : ParameterIdentifierTuple;
+    import std.traits : ParameterIdentifierTuple, isSomeFunction;
     import std.typecons : Flag, No, Yes;
+
+    static if (!isSomeFunction!onSuccess)
+    {
+        import std.format : format;
+
+        enum pattern = "First parameter of `%s` is not a success function";
+        enum message = pattern.format(__FUNCTION__);
+        static assert(0, message);
+    }
+    else static if (!isSomeFunction!onFailure && !is(typeof(onFailure) == typeof(null)))
+    {
+        import std.format : format;
+
+        enum pattern = "Second parameter of `%s` is not a failure function";
+        enum message = pattern.format(__FUNCTION__);
+        static assert(0, message);
+    }
 
     version(unittest)
     {

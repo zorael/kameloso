@@ -66,7 +66,6 @@ private:
 import kameloso.terminal : TerminalToken;
 import kameloso.terminal.colours.defs : ANSICodeType;
 import kameloso.pods : CoreSettings;
-import std.range : isOutputRange;
 import std.typecons : Flag, No, Yes;
 
 public:
@@ -96,9 +95,18 @@ void applyANSI(Sink)
     (auto ref Sink sink,
     const uint code,
     const ANSICodeType overrideType = ANSICodeType.unset)
-if (isOutputRange!(Sink, char[]))
 {
     import lu.conv : toAlphaInto;
+    import std.range.primitives : isOutputRange;
+
+    static if (!isOutputRange!(Sink, char[]))
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` must be passed an output range of `char[]`";
+        immutable message = pattern.format(__FUNCTION__);
+        static assert(0, message);
+    }
 
     void putBasic()
     {
@@ -514,9 +522,18 @@ void applyTruecolour(Sink)
     uint b,
     const Flag!"brightTerminal" bright = No.brightTerminal,
     const Flag!"normalise" normalise = Yes.normalise)
-if (isOutputRange!(Sink, char[]))
 {
     import lu.conv : toAlphaInto;
+    import std.range.primitives : isOutputRange;
+
+    static if (!isOutputRange!(Sink, char[]))
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` must be passed an output range of `char[]`";
+        immutable message = pattern.format(__FUNCTION__);
+        static assert(0, message);
+    }
 
     // \033[
     // 38 foreground

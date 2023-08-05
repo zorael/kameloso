@@ -58,13 +58,22 @@ void timeSinceInto(uint numUnits = 7, uint truncateUnits = 0, Sink)
     auto ref Sink sink,
     const Flag!"abbreviate" abbreviate = No.abbreviate,
     const Flag!"roundUp" roundUp = Yes.roundUp) pure
-if (isOutputRange!(Sink, char[]))
 {
     import lu.conv : toAlphaInto;
     import lu.string : plurality;
     import std.algorithm.comparison : min;
     import std.format : formattedWrite;
     import std.meta : AliasSeq;
+    import std.range.primitives : isOutputRange;
+
+    static if (!isOutputRange!(Sink, char[]))
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` must be passed an output range of `char[]`";
+        immutable message = pattern.format(__FUNCTION__);
+        static assert(0, message);
+    }
 
     static if ((numUnits < 1) || (numUnits > 7))
     {

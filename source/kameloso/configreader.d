@@ -54,7 +54,7 @@ void readConfigInto(T...)
     ref string[][string] missingEntries,
     ref string[][string] invalidEntries,
     ref T things)
-if (allSatisfy!(isStruct, T))
+if (allSatisfy!(isStruct, T))  // must be a constraint
 {
     import lu.serialisation : deserialise;
     import std.algorithm.iteration : splitter;
@@ -78,7 +78,7 @@ if (allSatisfy!(isStruct, T))
             to the text in the configuration file.
  +/
 void readConfigInto(T...)(const string configFile, ref T things)
-if (allSatisfy!(isStruct, T))
+if (allSatisfy!(isStruct, T))  // must be a constraint
 {
     // Use two variables to satisfy -preview=dip1021
     string[][string] ignore1;

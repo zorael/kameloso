@@ -26,7 +26,6 @@ import kameloso.plugins.printer.base;
 
 import kameloso.pods : CoreSettings;
 import dialect.defs;
-import std.range.primitives : isOutputRange;
 import std.typecons : Flag, No, Yes;
 
 version(Colours) import kameloso.terminal.colours.defs : TerminalForeground;
@@ -93,8 +92,18 @@ version(Colours)
  +/
 void put(Flag!"colours" colours = No.colours, Sink, Args...)
     (auto ref Sink sink, Args args)
-if (isOutputRange!(Sink, char[]))
 {
+    import std.range.primitives : isOutputRange;
+
+    static if (!isOutputRange!(Sink, char[]))
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` must be passed an output range of `char[]`";
+        immutable message = pattern.format(__FUNCTION__);
+        static assert(0, message);
+    }
+
     foreach (arg; args)
     {
         alias T = typeof(arg);
@@ -160,7 +169,6 @@ void formatMessageMonochrome(Sink)
     const ref IRCEvent event,
     const Flag!"bellOnMention" bellOnMention,
     const Flag!"bellOnError" bellOnError)
-if (isOutputRange!(Sink, char[]))
 {
     import kameloso.irccolours : stripEffects;
     import lu.conv : Enum;
@@ -169,7 +177,17 @@ if (isOutputRange!(Sink, char[]))
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
     import std.format : formattedWrite;
+    import std.range.primitives : isOutputRange;
     import std.uni : asLowerCase;
+
+    static if (!isOutputRange!(Sink, char[]))
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` must be passed an output range of `char[]`";
+        immutable message = pattern.format(__FUNCTION__);
+        static assert(0, message);
+    }
 
     immutable typestring = Enum!(IRCEvent.Type).toString(event.type).withoutTypePrefix;
     string content = stripEffects(event.content);  // mutable
@@ -620,7 +638,6 @@ void formatMessageColoured(Sink)
     const ref IRCEvent event,
     const Flag!"bellOnMention" bellOnMention,
     const Flag!"bellOnError" bellOnError)
-if (isOutputRange!(Sink, char[]))
 {
     import kameloso.constants : DefaultColours;
     import kameloso.terminal.colours.defs : ANSICodeType, TerminalReset;
@@ -630,7 +647,17 @@ if (isOutputRange!(Sink, char[]))
     import std.datetime : DateTime;
     import std.datetime.systime : SysTime;
     import std.format : formattedWrite;
+    import std.range.primitives : isOutputRange;
     import std.uni : asLowerCase;
+
+    static if (!isOutputRange!(Sink, char[]))
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` must be passed an output range of `char[]`";
+        immutable message = pattern.format(__FUNCTION__);
+        static assert(0, message);
+    }
 
     alias Bright = EventPrintingBright;
     alias Dark = EventPrintingDark;
@@ -1321,12 +1348,21 @@ void highlightEmotesImpl(Sink)
     const TerminalForeground post,
     const Flag!"colourful" colourful,
     const CoreSettings settings)
-if (isOutputRange!(Sink, char[]))
 {
     import std.algorithm.iteration : splitter, uniq;
     import std.algorithm.sorting : sort;
     import std.array : Appender;
     import std.conv : to;
+    import std.range.primitives : isOutputRange;
+
+    static if (!isOutputRange!(Sink, char[]))
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` must be passed an output range of `char[]`";
+        immutable message = pattern.format(__FUNCTION__);
+        static assert(0, message);
+    }
 
     static struct Highlight
     {

@@ -17,7 +17,6 @@ module kameloso.terminal.colours.tags;
 private:
 
 import kameloso.logger : LogLevel;
-import std.traits : isSomeString;
 import std.typecons : Flag, No, Yes;
 
 public:
@@ -73,14 +72,22 @@ public:
         The original string is passed back if there was nothing to replace.
  +/
 auto expandTags(T)(const T line, const LogLevel baseLevel, const Flag!"strip" strip) @safe
-if (isSomeString!T)
 {
     import kameloso.common : logger;
     import lu.string : contains;
     import std.array : Appender;
     import std.range : ElementEncodingType;
     import std.string : representation;
-    import std.traits : Unqual;
+    import std.traits : Unqual, isSomeString;
+
+    static if (!isSomeString!T)
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` only works on string types, not `%s`";
+        immutable message = pattern.format(__FUNCTION__, T.stringof);
+        static assert(0, message);
+    }
 
     static import kameloso.common;
 
@@ -555,9 +562,19 @@ unittest
         The original string is passed back if there was nothing to replace.
  +/
 auto expandTags(T)(const T line, const LogLevel baseLevel) @safe
-if (isSomeString!T)
 {
+    import std.traits : isSomeString;
     static import kameloso.common;
+
+    static if (!isSomeString!T)
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` only works on string types, not `%s`";
+        immutable message = pattern.format(__FUNCTION__, T.stringof);
+        static assert(0, message);
+    }
+
     immutable strip = cast(Flag!"strip")kameloso.common.settings.monochrome;
     return expandTags(line, baseLevel, strip);
 }
@@ -605,8 +622,18 @@ unittest
         The original string is passed back if there was nothing to remove.
  +/
 auto stripTags(T)(const T line) @safe
-if (isSomeString!T)
 {
+    import std.traits : isSomeString;
+
+    static if (!isSomeString!T)
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` only works on string types, not `%s`";
+        immutable message = pattern.format(__FUNCTION__, T.stringof);
+        static assert(0, message);
+    }
+
     return expandTags(line, LogLevel.off, Yes.strip);
 }
 

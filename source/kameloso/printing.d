@@ -44,9 +44,7 @@ module kameloso.printing;
 
 private:
 
-import std.range.primitives : isOutputRange;
-import std.meta : allSatisfy;
-import std.traits : isAggregateType;
+import std.range : isOutputRange;
 import std.typecons : Flag, No, Yes;
 
 public:
@@ -150,12 +148,30 @@ unittest
         things = Variadic list of aggregate objects to enumerate.
  +/
 void printObjects(Flag!"all" all = No.all, Things...)(auto ref Things things) @trusted // for stdout.flush()
-if ((Things.length > 0) && allSatisfy!(isAggregateType, Things))
 {
-    static import kameloso.common;
     import kameloso.constants : BufferSize;
     import std.array : Appender;
+    import std.meta : allSatisfy;
     import std.stdio : stdout, writeln;
+    import std.traits : isAggregateType;
+    static import kameloso.common;
+
+    static if (!Things.length)
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` was not passed anything to print";
+        immutable message = pattern.format(__FUNCTION__);
+        static assert(0, message);
+    }
+    else static if (!allSatisfy!(isAggregateType, Things))
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` was passed one or more non-aggregate types";
+        immutable message = pattern.format(__FUNCTION__);
+        static assert(0, message);
+    }
 
     alias widths = Widths!(all, Things);
 
@@ -253,8 +269,36 @@ void formatObjects(Flag!"all" all = No.all,
     (auto ref Sink sink,
     const Flag!"brightTerminal" bright,
     auto ref Things things)
-if ((Things.length > 0) && allSatisfy!(isAggregateType, Things) && isOutputRange!(Sink, char[]))
 {
+    import std.meta : allSatisfy;
+    import std.traits : isAggregateType;
+    import std.range.primitives : isOutputRange;
+
+    static if (!Things.length)
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` was not passed anything to print";
+        immutable message = pattern.format(__FUNCTION__);
+        static assert(0, message);
+    }
+    else static if (!allSatisfy!(isAggregateType, Things))
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` was passed one or more non-aggregate types";
+        immutable message = pattern.format(__FUNCTION__);
+        static assert(0, message);
+    }
+    else static if (!isOutputRange!(Sink, char[]))
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` must be passed an output range of `char[]`";
+        immutable message = pattern.format(__FUNCTION__);
+        static assert(0, message);
+    }
+
     alias widths = Widths!(all, Things);
 
     foreach (immutable i, ref thing; things)
@@ -929,11 +973,29 @@ private void formatObjectImpl(Flag!"all" all = No.all,
     auto ref Thing thing,
     const uint typewidth,
     const uint namewidth)
-if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 {
     import lu.string : stripSuffix;
     import std.format : formattedWrite;
-    import std.traits : Unqual;
+    import std.meta : allSatisfy;
+    import std.range.primitives : isOutputRange;
+    import std.traits : Unqual, isAggregateType;
+
+    static if (!isAggregateType!Thing)
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` was passed a non-aggregate type `%s`";
+        immutable message = pattern.format(__FUNCTION__, T.stringof);
+        static assert(0, message);
+    }
+    else static if (!isOutputRange!(Sink, char[]))
+    {
+        import std.format : format;
+
+        enum pattern = "`%s` must be passed an output range of `char[]`";
+        immutable message = pattern.format(__FUNCTION__);
+        static assert(0, message);
+    }
 
     static if (coloured)
     {
@@ -1422,7 +1484,7 @@ if (isOutputRange!(Sink, char[]) && isAggregateType!Thing)
 string formatObjects(Flag!"all" all = No.all,
     Flag!"coloured" coloured = Yes.coloured, Things...)
     (const Flag!"brightTerminal" bright, auto ref Things things) pure
-if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))
+if ((Things.length > 0) && !isOutputRange!(Things[0], char[]))  // must be a constraint
 {
     import kameloso.constants : BufferSize;
     import std.array : Appender;
