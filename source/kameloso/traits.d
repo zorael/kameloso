@@ -278,7 +278,7 @@ unittest
     Params:
         Things = Types to introspect.
  +/
-alias longestMemberNames(Things...) = longestMemberNamesImpl!(No.unserialisable, Things);
+enum longestMemberNames(Things...) = longestMemberNamesImpl!(No.unserialisable, Things)();
 
 ///
 unittest
@@ -335,8 +335,8 @@ unittest
     Params:
         Things = Types to introspect.
  +/
-alias longestUnserialisableMemberNames(Things...) =
-    longestMemberNamesImpl!(Yes.unserialisable, Things);
+enum longestUnserialisableMemberNames(Things...) =
+    longestMemberNamesImpl!(Yes.unserialisable, Things)();
 
 ///
 unittest
@@ -396,76 +396,73 @@ unittest
             [lu.uda.Unserialisable|Unserialisable].
         Things = Types to introspect.
  +/
-private template longestMemberNamesImpl(Flag!"unserialisable" unserialisable, Things...)
+private auto longestMemberNamesImpl(Flag!"unserialisable" unserialisable, Things...)()
 if (Things.length > 0)
 {
-    enum longestMemberNamesImpl = ()
-    {
-        import lu.traits : isSerialisable;
-        import lu.uda : Hidden, Unserialisable;
-        import std.traits : hasUDA, isAggregateType;
+    import lu.traits : isSerialisable;
+    import lu.uda : Hidden, Unserialisable;
+    import std.traits : hasUDA, isAggregateType;
 
-        static struct Results
+    static struct Results
+    {
+        string member;
+        string type;
+    }
+
+    Results results;
+    if (!__ctfe) return results;
+
+    foreach (Thing; Things)
+    {
+        static if (!isAggregateType!Thing)
         {
-            string member;
-            string type;
+            import std.format : format;
+
+            enum pattern = "Non-aggregate type `%s` passed to `longestNamesImpl`";
+            enum message = pattern.format(Thing.stringof);
+            static assert(0, message);
         }
 
-        Results results;
-        if (!__ctfe) return results;
-
-        foreach (Thing; Things)
+        foreach (immutable memberstring; __traits(derivedMembers, Thing))
         {
-            static if (!isAggregateType!Thing)
+            static if (
+                !memberstringIsThisCtorOrDtor(memberstring) &&
+                memberIsVisibleAndNotDeprecated!(Thing, memberstring) &&
+                memberIsValue!(Thing, memberstring) &&
+                isSerialisable!(__traits(getMember, Thing, memberstring)) &&
+                !hasUDA!(__traits(getMember, Thing, memberstring), Hidden) &&
+                (unserialisable || !hasUDA!(__traits(getMember, Thing, memberstring), Unserialisable)))
             {
-                import std.format : format;
+                import lu.traits : isTrulyString;
+                import std.traits : isArray, isAssociativeArray;
 
-                enum pattern = "Non-aggregate type `%s` passed to `longestNamesImpl`";
-                enum message = pattern.format(Thing.stringof);
-                static assert(0, message);
-            }
+                alias T = typeof(__traits(getMember, Thing, memberstring));
 
-            foreach (immutable memberstring; __traits(derivedMembers, Thing))
-            {
-                static if (
-                    !memberstringIsThisCtorOrDtor(memberstring) &&
-                    memberIsVisibleAndNotDeprecated!(Thing, memberstring) &&
-                    memberIsValue!(Thing, memberstring) &&
-                    isSerialisable!(__traits(getMember, Thing, memberstring)) &&
-                    !hasUDA!(__traits(getMember, Thing, memberstring), Hidden) &&
-                    (unserialisable || !hasUDA!(__traits(getMember, Thing, memberstring), Unserialisable)))
+                static if (!isTrulyString!T && (isArray!T || isAssociativeArray!T))
                 {
-                    import lu.traits : isTrulyString;
-                    import std.traits : isArray, isAssociativeArray;
+                    import lu.traits : UnqualArray;
+                    enum typestring = UnqualArray!T.stringof;
+                }
+                else
+                {
+                    import std.traits : Unqual;
+                    enum typestring = Unqual!T.stringof;
+                }
 
-                    alias T = typeof(__traits(getMember, Thing, memberstring));
+                if (typestring.length > results.type.length)
+                {
+                    results.type = typestring;
+                }
 
-                    static if (!isTrulyString!T && (isArray!T || isAssociativeArray!T))
-                    {
-                        import lu.traits : UnqualArray;
-                        enum typestring = UnqualArray!T.stringof;
-                    }
-                    else
-                    {
-                        import std.traits : Unqual;
-                        enum typestring = Unqual!T.stringof;
-                    }
-
-                    if (typestring.length > results.type.length)
-                    {
-                        results.type = typestring;
-                    }
-
-                    if (memberstring.length > results.member.length)
-                    {
-                        results.member = memberstring;
-                    }
+                if (memberstring.length > results.member.length)
+                {
+                    results.member = memberstring;
                 }
             }
         }
+    }
 
-        return results;
-    }();
+    return results;
 }
 
 
