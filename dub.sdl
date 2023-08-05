@@ -135,8 +135,8 @@ configuration "dev" {
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
-        "Callgrind" \
         "IncludeHeavyStuff"
+        //"Callgrind" \
         //"TwitchPromoteEverywhere" \
         //"TwitchCustomEmotesEverywhere" \
         //"OmniscientSeen" \
@@ -160,8 +160,8 @@ configuration "dev-lowmem" {
         "PrintStacktraces" \
         "ExplainReplay" \
         "GCStatsOnExit" \
-        "Callgrind" \
         "IncludeHeavyStuff"
+        //"Callgrind" \
         //"TwitchPromoteEverywhere" \
         //"TwitchCustomEmotesEverywhere" \
         //"OmniscientSeen" \
