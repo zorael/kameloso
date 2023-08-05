@@ -211,19 +211,21 @@ auto replaceRandom(
     import std.random : uniform;
     import std.string : indexOf;
 
+    enum token = "$random";
+
     Appender!(char[]) sink;
     sink.reserve(line.length);  // overshoots but that's fine
-    ptrdiff_t randomPos = line.indexOf("$random");
+    ptrdiff_t randomPos = line.indexOf(token);
     size_t prevEnd;
 
     while (randomPos != -1)
     {
-        immutable trailingCharPos = randomPos + "$random".length;
+        immutable trailingCharPos = randomPos + token.length;
         size_t thisEnd;
 
         if (line.length == trailingCharPos)
         {
-            // Line ends with "$random"
+            // Line ends with token
             immutable randomNumber = uniform(defaultLowerBound, defaultUpperBound);
             sink.put(line[prevEnd..randomPos]);
             sink.put(randomNumber.to!string);
@@ -231,17 +233,17 @@ auto replaceRandom(
         }
         else if (line[trailingCharPos] == '(')
         {
-            // "$random("
+            // "token("
             immutable dotsPos = line.indexOf("..", trailingCharPos);
 
             if (dotsPos != -1)
             {
-                // "$random(*.."
+                // "token(*.."
                 immutable endParenPos = line.indexOf(')', dotsPos);
 
                 if (endParenPos != -1)
                 {
-                    // "$random(*..*)"
+                    // "token(*..*)"
                     try
                     {
                         import std.conv : to;
@@ -264,7 +266,7 @@ auto replaceRandom(
         }
         else
         {
-            // "$random" followed by any other trailing character
+            // token followed by any other trailing character
             immutable randomNumber = uniform(defaultLowerBound, defaultUpperBound);
             sink.put(line[prevEnd..randomPos]);
             sink.put(randomNumber.to!string);
@@ -272,7 +274,7 @@ auto replaceRandom(
         }
 
         prevEnd = thisEnd;
-        randomPos = line.indexOf("$random", prevEnd+1);
+        randomPos = line.indexOf(token, prevEnd+1);
     }
 
     // Add any trailing text iff the loop iterated at least once
