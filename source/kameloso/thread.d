@@ -357,14 +357,6 @@ final class Boxed(T) : Sendable
 }
 
 
-// BusMessage
-/++
-    Deprecated alias to [Boxed].
- +/
-deprecated("Use `Boxed!T` instead")
-alias BusMessage = Boxed;
-
-
 // boxed
 /++
     Constructor function to create a `shared` [Boxed] with an unqualified
@@ -390,14 +382,6 @@ shared(Sendable) boxed(T)(T payload)
     import std.traits : Unqual;
     return new shared Boxed!(Unqual!T)(payload);
 }
-
-
-// sendable
-/++
-    Deprecated alias to [boxed].
- +/
-deprecated("Use `boxed` instead")
-alias sendable = boxed;
 
 ///
 unittest
