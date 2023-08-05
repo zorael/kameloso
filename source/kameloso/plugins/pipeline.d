@@ -378,7 +378,8 @@ auto isFIFO(const string filename)
 
 // tick
 /++
-    Plugin tick function. Reads from the FIFO and sends the text to the server.
+    Plugin tick function. Reads from the pipe and either issues bus messages based
+    on what was read or sends the piped text to the server verbatim.
 
     This is executed once per main loop iteration.
 
@@ -388,7 +389,7 @@ auto isFIFO(const string filename)
 
     Returns:
         Whether or not the main loop should check concurrency messages, to catch
-        messages sent to the server.
+        messages sent to it.
  +/
 auto tick(PipelinePlugin plugin, const Duration elapsed)
 {

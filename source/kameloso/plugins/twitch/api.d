@@ -952,6 +952,7 @@ auto getMultipleTwitchData(
     const string caller = __FUNCTION__)
 in (Fiber.getThis, "Tried to call `getMultipleTwitchData` from outside a Fiber")
 {
+    import std.conv : text;
     import std.json : JSONValue, parseJSON;
 
     JSONValue allEntitiesJSON;
@@ -962,7 +963,7 @@ in (Fiber.getThis, "Tried to call `getMultipleTwitchData` from outside a Fiber")
     do
     {
         immutable paginatedURL = after.length ?
-            (url ~ "&after=" ~ after) :
+            text(url, "&after=", after) :
             url;
         immutable response = sendHTTPRequest(plugin, paginatedURL, caller, plugin.authorizationBearer);
         immutable responseJSON = parseJSON(response.str);
@@ -1205,8 +1206,8 @@ in ((givenName.length || givenIDString.length),
 
     // None on record, look up
     immutable userURL = givenName ?
-        ("https://api.twitch.tv/helix/users?login=" ~ givenName) :
-        ("https://api.twitch.tv/helix/users?id=" ~ givenIDString);
+        "https://api.twitch.tv/helix/users?login=" ~ givenName :
+        "https://api.twitch.tv/helix/users?id=" ~ givenIDString;
 
     auto getTwitchUserDg()
     {
@@ -1255,8 +1256,8 @@ in ((name.length || id.length), "Tried to call `getTwitchGame` with no game name
     }
 
     immutable gameURL = id.length ?
-        ("https://api.twitch.tv/helix/games?id=" ~ id) :
-        ("https://api.twitch.tv/helix/games?name=" ~ name);
+        "https://api.twitch.tv/helix/games?id=" ~ id :
+        "https://api.twitch.tv/helix/games?name=" ~ name;
 
     auto getTwitchGameDg()
     {
@@ -1570,6 +1571,7 @@ auto getPolls(
 in (Fiber.getThis, "Tried to call `getPolls` from outside a Fiber")
 in (channelName.length, "Tried to get polls with an empty channel name string")
 {
+    import std.conv : text;
     import std.json : JSONType, JSONValue, parseJSON;
 
     const room = channelName in plugin.rooms;
@@ -1594,7 +1596,7 @@ in (channelName.length, "Tried to get polls with an empty channel name string")
         do
         {
             immutable paginatedURL = after.length ?
-                (url ~ "&after=" ~ after) :
+                text(url, "&after=", after) :
                 url;
             immutable response = sendHTTPRequest(
                 plugin,
@@ -2501,10 +2503,10 @@ void get7tvEmotes(
 in (Fiber.getThis, "Tried to call `get7tvEmotes` from outside a Fiber")
 in (idString.length, "Tried to get 7tv emotes with an empty ID string")
 {
-    import std.conv : to;
+    import std.conv : text, to;
     import std.json : JSONType, parseJSON;
 
-    immutable url = "https://api.7tv.app/v2/users/" ~ idString ~ "/emotes";
+    immutable url = text("https://api.7tv.app/v2/users/", idString, "/emotes");
 
     auto get7tvEmotesDg()
     {
