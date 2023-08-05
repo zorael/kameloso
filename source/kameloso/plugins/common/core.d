@@ -363,7 +363,7 @@ public:
         Called on each iteration of the main loop.
 
         Params:
-            delta = Time since last tick.
+            elapsed = Time since last tick.
 
         Returns:
             `true` to signal the main loop to check for new concurrency messages;
@@ -1756,13 +1756,13 @@ mixin template IRCPluginImpl(
         Tick function. Called once every main loop iteration.
 
         Params:
-            delta = Time since last tick.
+            elapsed = Time since last tick.
 
         Returns:
             `true` to signal the main loop to check for new concurrency messages;
             `false` if not.
      +/
-    override public bool tick(const Duration delta) @system
+    override public bool tick(const Duration elapsed) @system
     {
         static if (__traits(compiles, { alias _ = .tick; }))
         {
@@ -1775,7 +1775,7 @@ mixin template IRCPluginImpl(
                 is(typeof(.tick) == function) &&
                 TakesParams!(.tick, typeof(this), Duration))
             {
-                return .tick(this, delta);
+                return .tick(this, elapsed);
             }
             else
             {

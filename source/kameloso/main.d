@@ -958,7 +958,7 @@ auto mainLoop(ref Kameloso instance)
         immutable now = Clock.currTime;
         immutable nowInUnix = now.toUnixTime;
         immutable nowInHnsecs = now.stdTime;
-        immutable delta = (now - previousLoop);
+        immutable elapsed = (now - previousLoop);
 
         /// The timestamp of the next scheduled delegate or fiber across all plugins.
         long nextGlobalScheduledTimestamp;
@@ -977,7 +977,7 @@ auto mainLoop(ref Kameloso instance)
             if (!plugin.isEnabled) continue;
 
             // Tick the plugin, and flag to check for messages if it returns true
-            shouldCheckMessages |= plugin.tick(delta);
+            shouldCheckMessages |= plugin.tick(elapsed);
 
             if (plugin.state.specialRequests.length)
             {

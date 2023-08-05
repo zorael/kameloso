@@ -384,13 +384,13 @@ auto isFIFO(const string filename)
 
     Params:
         plugin = The current [PipelinePlugin].
-        delta = How much time has passed since the last tick.
+        elapsed = How much time has passed since the last tick.
 
     Returns:
         Whether or not the main loop should check concurrency messages, to catch
         messages sent to the server.
  +/
-auto tick(PipelinePlugin plugin, const Duration delta)
+auto tick(PipelinePlugin plugin, const Duration elapsed)
 {
     import std.algorithm.iteration : splitter;
     import std.file : exists;
@@ -401,7 +401,7 @@ auto tick(PipelinePlugin plugin, const Duration delta)
 
     static immutable minimumTimeBetweenReads = 250.msecs;
     static Duration timeSinceLast;
-    timeSinceLast += delta;
+    timeSinceLast += elapsed;
 
     if (timeSinceLast < minimumTimeBetweenReads) return false;
     timeSinceLast = 0.msecs;
