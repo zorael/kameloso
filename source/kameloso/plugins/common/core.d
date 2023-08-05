@@ -78,6 +78,7 @@ abstract class IRCPlugin
 private:
     import kameloso.thread : Sendable;
     import std.array : Appender;
+    import core.time : Duration;
 
 public:
     // CommandMetadata
@@ -361,11 +362,17 @@ public:
     /++
         Called on each iteration of the main loop.
 
+        Params:
+            delta = Time since last tick.
+
         Returns:
-            `true` if the plugin did something that warrants checking concurrency
-            messages; `false` if not.
+            `true` to signal the main loop to check for new concurrency messages;
+            `false` if not.
+
+        See_Also:
+            [kameloso.plugins.common.core.IRCPluginImpl.tick]
      +/
-    bool tick() @system;
+    bool tick(const Duration) @system;
 }
 
 
@@ -414,6 +421,7 @@ mixin template IRCPluginImpl(
     private import std.meta : AliasSeq;
     private import std.traits : getUDAs;
     private import core.thread : Fiber;
+    private import core.time : Duration;
 
     version(unittest)
     {
@@ -1746,8 +1754,15 @@ mixin template IRCPluginImpl(
     // tick
     /++
         Tick function. Called once every main loop iteration.
+
+        Params:
+            delta = Time since last tick.
+
+        Returns:
+            `true` to signal the main loop to check for new concurrency messages;
+            `false` if not.
      +/
-    override public bool tick() @system
+    override public bool tick(const Duration delta) @system
     {
         static if (__traits(compiles, { alias _ = .tick; }))
         {
@@ -1758,9 +1773,9 @@ mixin template IRCPluginImpl(
             static if (
                 is(typeof(.tick)) &&
                 is(typeof(.tick) == function) &&
-                TakesParams!(.tick, typeof(this)))
+                TakesParams!(.tick, typeof(this), Duration))
             {
-                return .tick(this);
+                return .tick(this, delta);
             }
             else
             {

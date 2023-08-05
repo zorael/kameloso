@@ -825,7 +825,7 @@ auto mainLoop(ref Kameloso instance)
     import kameloso.constants : Timeout;
     import kameloso.net : ListenAttempt, SocketSendException, listenFiber;
     import std.concurrency : Generator;
-    import std.datetime.systime : Clock;
+    import std.datetime.systime : Clock, SysTime;
     import core.thread : Fiber;
 
     /// Variable denoting what we should do next loop.
@@ -932,6 +932,12 @@ auto mainLoop(ref Kameloso instance)
     /// `Timeout.maxShortenDurationMsecs` in hecto-nanoseconds.
     enum maxShortenDurationHnsecs = Timeout.maxShortenDurationMsecs * 10_000;
 
+    /++
+        The timestamp of when the previous loop started.
+        Start at `SysTime.init` so the first tick always runs.
+     +/
+    SysTime previousLoop; // = Clock.currTime;
+
     do
     {
         if (*instance.abort) return Next.returnFailure;
@@ -952,6 +958,7 @@ auto mainLoop(ref Kameloso instance)
         immutable now = Clock.currTime;
         immutable nowInUnix = now.toUnixTime;
         immutable nowInHnsecs = now.stdTime;
+        immutable delta = (now - previousLoop);
 
         /// The timestamp of the next scheduled delegate or fiber across all plugins.
         long nextGlobalScheduledTimestamp;
@@ -969,7 +976,8 @@ auto mainLoop(ref Kameloso instance)
         {
             if (!plugin.isEnabled) continue;
 
-            shouldCheckMessages |= plugin.tick();
+            // Tick the plugin, and flag to check for messages if it returns true
+            shouldCheckMessages |= plugin.tick(delta);
 
             if (plugin.state.specialRequests.length)
             {
@@ -1155,6 +1163,8 @@ auto mainLoop(ref Kameloso instance)
             // Restore blocking behaviour.
             instance.conn.socket.blocking = true;
         }
+
+        previousLoop = now;
     }
     while (next == Next.continue_);
 
