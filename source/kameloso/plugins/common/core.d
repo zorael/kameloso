@@ -626,6 +626,7 @@ mixin template IRCPluginImpl(
     private void onEventImpl(/*const ref*/ IRCEvent origEvent) @system
     {
         import kameloso.plugins.common.core : Timing;
+        import std.algorithm.searching : canFind;
 
         // udaSanityCheckMinimal
         /++
@@ -719,12 +720,13 @@ mixin template IRCPluginImpl(
             return_,
         }
 
-        /++
-            Cached value set inside the Command loop.
+        /+
+            Cached values for use in the `process` function.
          +/
         string commandWordInEvent;
-        string commandWordInEventLower;  /// ditto
-        string contentSansCommandWordInEvent;  /// ditto
+        string commandWordInEventLower;
+        string contentSansCommandWordInEvent;
+        immutable channelIsAHome = state.bot.homeChannels.canFind(origEvent.channel);
 
         // process
         /++
@@ -748,22 +750,10 @@ mixin template IRCPluginImpl(
 
             if (event.channel.length)
             {
-                import std.algorithm.searching : canFind;
-
-                bool channelMatch;
-
-                if (uda._channelPolicy == ChannelPolicy.home)
-                {
-                    channelMatch = state.bot.homeChannels.canFind(event.channel);
-                }
-                else if (uda._channelPolicy == ChannelPolicy.guest)
-                {
-                    channelMatch = !state.bot.homeChannels.canFind(event.channel);
-                }
-                else /*if (channelPolicy == ChannelPolicy.any)*/
-                {
-                    channelMatch = true;
-                }
+                immutable channelMatch =
+                    (uda._channelPolicy == ChannelPolicy.home) ? channelIsAHome :
+                    (uda._channelPolicy == ChannelPolicy.guest) ? !channelIsAHome :
+                    /*(channelPolicy == ChannelPolicy.any) ?*/ true;
 
                 if (!channelMatch)
                 {
