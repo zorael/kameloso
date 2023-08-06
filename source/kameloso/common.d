@@ -101,6 +101,15 @@ out (; (logger !is null), "Failed to initialise logger")
 CoreSettings* settings;
 
 
+// globalHeadless
+/++
+    Headless flag.
+
+    If this is true the program should not output anything to the terminal.
+ +/
+__gshared bool* globalHeadless;
+
+
 // printVersionInfo
 /++
     Prints out the bot banner with the version number and GitHub URL, with the

@@ -173,6 +173,12 @@ void printObjects(Flag!"all" all = No.all, Things...)(auto ref Things things) @t
         static assert(0, message);
     }
 
+    if (kameloso.common.globalHeadless && *kameloso.common.globalHeadless)
+    {
+        // Don't print anything if we're headless
+        return;
+    }
+
     alias widths = Widths!(all, Things);
 
     static Appender!(char[]) outbuffer;

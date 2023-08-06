@@ -119,15 +119,6 @@ public __gshared const string[] rt_options =
 public __gshared Flag!"abort" globalAbort;
 
 
-// globalHeadless
-/++
-    Headless flag.
-
-    If this is true the program should not output anything to the terminal.
- +/
-public __gshared bool globalHeadless;
-
-
 version(Posix)
 {
     // signalRaised
@@ -152,6 +143,7 @@ version(Posix)
 extern (C)
 void signalHandler(int sig) nothrow @nogc @system
 {
+    import kameloso.common : globalHeadless;
     import core.stdc.stdio : printf;
 
     // $ kill -l
@@ -192,7 +184,7 @@ void signalHandler(int sig) nothrow @nogc @system
         31 : "SYS",   /// Bad system call. (SVr4)
     ];
 
-    if (!globalHeadless && (sig < signalNames.length))
+    if (globalHeadless && !*globalHeadless && (sig < signalNames.length))
     {
         if (!globalAbort)
         {
@@ -3496,7 +3488,9 @@ void printEventDebugDetails(
     const string raw,
     const Flag!"eventWasInitialised" eventWasInitialised = Yes.eventWasInitialised)
 {
-    if (globalHeadless || !raw.length) return;
+    import kameloso.common : globalHeadless;
+
+    if (*globalHeadless || !raw.length) return;
 
     version(IncludeHeavyStuff)
     {
@@ -3832,7 +3826,7 @@ auto run(string[] args)
     }
 
     immutable actionAfterGetopt = tryGetopt(instance);
-    globalHeadless = instance.settings.headless;
+    kameloso.common.globalHeadless = &instance.settings.headless;
 
     with (Next)
     final switch (actionAfterGetopt)
