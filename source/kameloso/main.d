@@ -1503,8 +1503,6 @@ void processLineFromServer(
         {
             if (!plugin.isEnabled) continue;
 
-            scope(exit) instance.checkPluginForUpdates(plugin);
-
             try
             {
                 plugin.postprocess(event);
@@ -1519,14 +1517,13 @@ void processLineFromServer(
             }
 
             if (*instance.abort) return;  // handled in mainLoop listenerloop
+            instance.checkPluginForUpdates(plugin);
         }
 
         // Let each plugin process the event
         foreach (plugin; instance.plugins)
         {
             if (!plugin.isEnabled) continue;
-
-            scope(exit) instance.checkPluginForUpdates(plugin);
 
             try
             {
@@ -1549,6 +1546,7 @@ void processLineFromServer(
             processAwaitingDelegates(plugin, event);
             processAwaitingFibers(plugin, event);
             if (*instance.abort) return;
+            instance.checkPluginForUpdates(plugin);
         }
 
         // Take some special actions on select event types
