@@ -15,14 +15,17 @@
 
     Connection conn;
     bool abort;  // Set to true if something goes wrong
+    bool useIPv6 = false;
 
     conn.reset();
 
-    bool useIPv6 = false;
-    enum resolveAttempts = 10;
-
     auto resolver = new Generator!ResolveAttempt(() =>
-        resolveFiber(conn, "irc.libera.chat", 6667, useIPv6, resolveAttempts, abort));
+        resolveFiber(
+            conn,
+            "irc.libera.chat",
+            6667,
+            useIPv6,
+            abort));
 
     resolver.call();
 
@@ -38,7 +41,10 @@
     enum connectionRetries = 10;
 
     auto connector = new Generator!ConnectionAttempt(() =>
-        connectFiber(conn, false, connectionRetries, abort));
+        connectFiber(
+            conn,
+            connectionRetries,
+            abort));
 
     connector.call();
 
@@ -51,9 +57,13 @@
 
     // Connection established
 
-    enum timeoutSeconds = 600;
+    enum connectionLostSectons = 600;
 
-    auto listener = new Generator!ListenAttempt(() => listenFiber(conn, abort, timeoutSecond));
+    auto listener = new Generator!ListenAttempt(() =>
+        listenFiber(
+            conn,
+            abort,
+            connectionLostSeconds));
 
     listener.call();
 
@@ -573,9 +583,12 @@ struct ListenAttempt
     ---
     //Connection conn;  // Address previously connected established with
 
-    enum timeoutSeconds = 600;
+    enum connectionLostSeconds = 600;
 
-    auto listener = new Generator!ListenAttempt(() => listenFiber(conn, abort, timeoutSeconds));
+    auto listener = new Generator!ListenAttempt(() =>
+        listenFiber(conn,
+        abort,
+        connectionLostSeconds));
 
     listener.call();
 
@@ -937,7 +950,10 @@ public:
     //Connection conn;  // Address previously resolved with `resolveFiber`
 
     auto connector = new Generator!ConnectionAttempt(() =>
-        connectFiber(conn, false, 10, abort));
+        connectFiber(
+            conn,
+            10,
+            abort));
 
     connector.call();
 
@@ -1255,7 +1271,12 @@ struct ResolveAttempt
     conn.reset();
 
     auto resolver = new Generator!ResolveAttempt(() =>
-        resolveFiber(conn, "irc.libera.chat", 6667, false, 10, abort));
+        resolveFiber(
+            conn,
+            "irc.libera.chat",
+            6667,
+            false,
+            abort));
 
     resolver.call();
 

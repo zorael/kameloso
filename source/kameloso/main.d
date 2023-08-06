@@ -1385,7 +1385,10 @@ void logPluginActionException(
         raw = A raw line as read from the server.
         nowInUnix = Current timestamp in UNIX time.
  +/
-void processLineFromServer(ref Kameloso instance, const string raw, const long nowInUnix)
+void processLineFromServer(
+    ref Kameloso instance,
+    const string raw,
+    const long nowInUnix)
 {
     import kameloso.string : doublyBackslashed;
     import dialect.common : IRCParseException;
@@ -2873,7 +2876,7 @@ void postInstanceSetup(ref Kameloso instance)
     Params:
         settings = A reference to some [kameloso.pods.CoreSettings|CoreSettings].
  +/
-void setDefaultDirectories(ref CoreSettings settings)
+void setDefaultDirectories(ref CoreSettings settings) @safe
 {
     import kameloso.constants : KamelosoFilenames;
     import kameloso.platform : cbd = configurationBaseDirectory, rbd = resourceBaseDirectory;
@@ -2975,7 +2978,7 @@ auto verifySettings(ref Kameloso instance)
     Params:
         instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
  +/
-void resolvePaths(ref Kameloso instance)
+void resolvePaths(ref Kameloso instance) @safe
 {
     import kameloso.platform : rbd = resourceBaseDirectory;
     import std.file : exists;
@@ -3550,7 +3553,7 @@ void printEventDebugDetails(
     Params:
         instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
  +/
-void printSummary(const ref Kameloso instance)
+void printSummary(const ref Kameloso instance) @safe
 {
     import kameloso.time : timeSince;
     import core.time : Duration;
@@ -3662,7 +3665,7 @@ struct AttemptState
     Params:
         instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
  +/
-void syncGuestChannels(ref Kameloso instance)
+void syncGuestChannels(ref Kameloso instance) pure @safe nothrow
 {
     foreach (plugin; instance.plugins)
     {
@@ -3699,7 +3702,7 @@ void syncGuestChannels(ref Kameloso instance)
         instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
         reason = Quit reason.
  +/
-void echoQuitMessage(ref Kameloso instance, const string reason)
+void echoQuitMessage(ref Kameloso instance, const string reason) @safe
 {
     bool printed;
 
@@ -3734,7 +3737,7 @@ void echoQuitMessage(ref Kameloso instance, const string reason)
 void propagateWhoisTimestamp(
     ref Kameloso instance,
     const string nickname,
-    const long now) pure
+    const long now) pure @safe nothrow
 {
     foreach (plugin; instance.plugins)
     {
@@ -3754,7 +3757,7 @@ void propagateWhoisTimestamp(
     Params:
         instance = Reference to the current [kameloso.kameloso.Kameloso|Kameloso].
  +/
-void propagateWhoisTimestamps(ref Kameloso instance) pure
+void propagateWhoisTimestamps(ref Kameloso instance) pure @safe
 {
     auto copy = instance.previousWhoisTimestamps.dup;  // mutable
 
