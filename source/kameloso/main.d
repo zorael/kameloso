@@ -2728,7 +2728,7 @@ auto tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
             instance.conn,
             instance.parser.server.address,
             instance.parser.server.port,
-            instance.connSettings.ipv6,
+            cast(Flag!"useIPv6")instance.connSettings.ipv6,
             *instance.abort));
 
     scope(exit)

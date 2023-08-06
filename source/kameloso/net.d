@@ -15,7 +15,6 @@
 
     Connection conn;
     bool abort;  // Set to true if something goes wrong
-    bool useIPv6 = false;
 
     conn.reset();
 
@@ -24,7 +23,7 @@
             conn,
             "irc.libera.chat",
             6667,
-            useIPv6,
+            No.useIPv6,
             abort));
 
     resolver.call();
@@ -86,6 +85,7 @@ module kameloso.net;
 private:
 
 import kameloso.constants : BufferSize, Timeout;
+import std.typecons : Flag, No, Yes;
 
 public:
 
@@ -1327,7 +1327,7 @@ void resolveFiber(
     ref Connection conn,
     const string address,
     const ushort port,
-    const bool useIPv6,
+    const Flag!"useIPv6" useIPv6,
     ref bool abort) @system
 in (!conn.connected, "Tried to set up a resolving fiber on an already live connection")
 in (address.length, "Tried to set up a resolving fiber on an empty address")
