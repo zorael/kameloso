@@ -416,7 +416,7 @@ private auto readURLAndParseKey(TwitchPlugin plugin, const string authNode)
             writeln();
             logger.warning("Aborting.");
             logger.trace();
-            *plugin.state.abort = true;
+            *plugin.state.abort = Yes.abort;
             return string.init;
         }
 

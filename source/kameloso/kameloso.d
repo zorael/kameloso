@@ -211,7 +211,7 @@ public:
         When this is set by signal handlers, the program should exit. Other
         parts of the program will be monitoring it.
      +/
-    bool* abort;
+    Flag!"abort"* abort;
 
     // outbuffer
     /++

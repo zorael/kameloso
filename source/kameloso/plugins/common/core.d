@@ -2820,7 +2820,7 @@ public:
     /++
         Pointer to the global abort flag.
      +/
-    bool* abort;
+    Flag!"abort"* abort;
 
     // connectionID
     /++

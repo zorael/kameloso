@@ -116,7 +116,7 @@ public __gshared const string[] rt_options =
 
     Must be `__gshared` or it doesn't seem to work on Windows.
  +/
-public __gshared bool globalAbort;
+public __gshared Flag!"abort" globalAbort;
 
 
 // globalHeadless
@@ -206,7 +206,7 @@ void signalHandler(int sig) nothrow @nogc @system
     }
 
     if (globalAbort) resetSignals();
-    else globalAbort = true;
+    else globalAbort = Yes.abort;
 
     version(Posix)
     {
@@ -349,7 +349,7 @@ void messageFiber(ref Kameloso instance)
                 break;
 
             case abort:
-                *instance.abort = true;
+                *instance.abort = Yes.abort;
                 break;
 
             case reload:
@@ -3827,7 +3827,7 @@ auto run(string[] args)
             logger.error("We just crashed!", bell);
         }
 
-        *instance.abort = true;
+        *instance.abort = Yes.abort;
         resetSignals();
     }
 

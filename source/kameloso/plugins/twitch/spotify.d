@@ -209,7 +209,7 @@ A normal URL to any playlist you can modify will work fine.
             writeln();
             logger.warning("Aborting.");
             logger.trace();
-            *plugin.state.abort = true;
+            *plugin.state.abort = Yes.abort;
             return;
         }
 

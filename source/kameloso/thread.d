@@ -39,6 +39,7 @@ module kameloso.thread;
 
 private:
 
+import std.typecons : Flag, No, Yes;
 import core.thread : Fiber;
 import core.time : Duration;
 
@@ -495,7 +496,7 @@ final class CarryingFiber(T) : Fiber
         abort = Reference to the bool flag which, if set, means we should
             interrupt and return early.
  +/
-void interruptibleSleep(const Duration dur, const ref bool abort) @system
+void interruptibleSleep(const Duration dur, const ref Flag!"abort" abort) @system
 {
     import core.thread : Thread, msecs;
 

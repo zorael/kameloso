@@ -219,7 +219,7 @@ Be sure to <l>select a YouTube account</> if presented with several alternatives
             writeln();
             logger.warning("Aborting.");
             logger.trace();
-            *plugin.state.abort = true;
+            *plugin.state.abort = Yes.abort;
             return;
         }
 

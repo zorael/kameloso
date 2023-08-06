@@ -14,7 +14,7 @@
     import std.concurrency : Generator;
 
     Connection conn;
-    bool abort;  // Set to true if something goes wrong
+    Flag!"abort" abort;  // Set to Yes.abort if something goes wrong
 
     conn.reset();
 
@@ -641,7 +641,7 @@ struct ListenAttempt
  +/
 void listenFiber(size_t bufferSize = BufferSize.socketReceive*2)
     (Connection conn,
-    ref bool abort,
+    ref Flag!"abort" abort,
     const int connectionLost = Timeout.connectionLost) @system
 in ((conn.connected), "Tried to set up a listening fiber on a dead connection")
 in ((connectionLost > 0), "Tried to set up a listening fiber with connection timeout of <= 0")
@@ -1003,7 +1003,7 @@ public:
 void connectFiber(
     ref Connection conn,
     const uint connectionRetries,
-    ref bool abort) @system
+    ref Flag!"abort" abort) @system
 in (!conn.connected, "Tried to set up a connecting fiber on an already live connection")
 in ((conn.ips.length > 0), "Tried to connect to an unresolved connection")
 {
@@ -1328,7 +1328,7 @@ void resolveFiber(
     const string address,
     const ushort port,
     const Flag!"useIPv6" useIPv6,
-    ref bool abort) @system
+    ref Flag!"abort" abort) @system
 in (!conn.connected, "Tried to set up a resolving fiber on an already live connection")
 in (address.length, "Tried to set up a resolving fiber on an empty address")
 {
