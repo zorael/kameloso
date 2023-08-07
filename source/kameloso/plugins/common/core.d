@@ -629,29 +629,6 @@ mixin template IRCPluginImpl(
         import kameloso.plugins.common.core : Timing;
         import std.algorithm.searching : canFind;
 
-        // udaSanityCheckMinimal
-        /++
-            Verifies that some annotations are as expected.
-            Most of the verification is done in
-            [kameloso.plugins.common.core.udaSanityCheckCTFE|udaSanityCheckCTFE].
-         +/
-        version(unittest)
-        static bool udaSanityCheckMinimal(alias fun, IRCEventHandler uda)()
-        {
-            static if ((uda._permissionsRequired != Permissions.ignore) &&
-                !__traits(compiles, { alias _ = .hasMinimalAuthentication; }))
-            {
-                import std.format : format;
-
-                enum pattern = "`%s` is missing a `MinimalAuthentication` " ~
-                    "mixin (needed for `Permissions` checks)";
-                enum message = pattern.format(module_);
-                static assert(0, message);
-            }
-
-            return true;
-        }
-
         // call
         /++
             Calls the passed function pointer, appropriately.
@@ -1085,10 +1062,27 @@ mixin template IRCPluginImpl(
         {
             immutable uda = this.Introspection.allEventHandlerUDAsInModule[i];
             alias fun = this.Introspection.allEventHandlerFunctionsInModule[i];
-            version(unittest) static assert(udaSanityCheckMinimal!(fun, uda), "0");
-
             enum verbose = (uda._verbose || debug_);
             enum fqn = module_ ~ '.' ~ __traits(identifier, fun);
+
+            version(unittest)
+            {
+                /++
+                    Verify that MinimalAuthentication is mixed in if it needs to be.
+                    Most of other verification is done in udaSanityCheckCTFE, invoked elsewhere.
+                 +/
+                static if (
+                    (uda._permissionsRequired != Permissions.ignore) &&
+                    !__traits(compiles, { alias _ = .hasMinimalAuthentication; }))
+                {
+                    import std.format : format;
+
+                    enum pattern = "`%s` is missing a module-level `MinimalAuthentication` " ~
+                        "mixin, needed for `Permissions` checks on behalf of `.%s`";
+                    enum message = pattern.format(module_, __traits(identifier, fun));
+                    static assert(0, message);
+                }
+            }
 
             /+
                 Return if the event handler does not accept this type of event.
