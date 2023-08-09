@@ -428,24 +428,23 @@ mixin template IRCPluginImpl(
     {
         import lu.traits : MixinConstraints, MixinScope;
         mixin MixinConstraints!(MixinScope.class_, "IRCPluginImpl");
+
+        static if (!is(typeof(this) : IRCPlugin))
+        {
+            import std.format : format;
+
+            enum wrongThisPattern = "`%s` mixes in `IRCPluginImpl` but is " ~
+                "itself not an `IRCPlugin` subclass";
+            enum wrongThisMessage = wrongThisPattern.format(typeof(this).stringof);
+            static assert(0, wrongThisMessage);
+        }
     }
 
-    static if (__traits(compiles, { alias _ = this.hasIRCPluginImpl; }))
-    {
-        import std.format : format;
-
-        enum pattern = "Double mixin of `%s` in `%s`";
-        enum message = pattern.format("IRCPluginImpl", typeof(this).stringof);
-        static assert(0, message);
-    }
-    else
-    {
-        /++
-            Marker declaring that [kameloso.plugins.common.core.IRCPluginImpl|IRCPluginImpl]
-            has been mixed in.
-         +/
-        private enum hasIRCPluginImpl = true;
-    }
+    /++
+        Flag denoting that [kameloso.plugins.common.core.IRCPluginImpl|IRCPluginImpl]
+        has been mixed in.
+     +/
+    private enum hasIRCPluginImpl = true;
 
     mixin("private static import thisModule = ", module_, ";");
 

@@ -103,21 +103,10 @@ mixin template WHOISFiberDelegate(
         mixin("alias _context = ", paramNames[0], ";");
     }
 
-    static if (__traits(compiles, { alias _ = hasWHOISFiber; }))
-    {
-        import std.format : format;
-
-        enum pattern = "Double mixin of `%s` in `%s`";
-        enum message = pattern.format("WHOISFiberDelegate", __FUNCTION__);
-        static assert(0, message);
-    }
-    else
-    {
-        /++
-            Flag denoting that [WHOISFiberDelegate] has been mixed in.
-         +/
-        enum hasWHOISFiber = true;
-    }
+    /++
+        Flag denoting that [WHOISFiberDelegate] has been mixed in.
+     +/
+    enum hasWHOISFiber = true;
 
     static if (!alwaysLookup && !__traits(compiles, { alias _ = .hasUserAwareness; }))
     {
@@ -550,23 +539,22 @@ private:
     {
         import lu.traits : MixinConstraints, MixinScope;
         mixin MixinConstraints!(MixinScope.class_, "MessagingProxy");
+
+        static if (!is(typeof(this) : IRCPlugin))
+        {
+            import std.format : format;
+
+            enum wrongThisPattern = "`%s` mixes in `MessagingProxy` but is " ~
+                "itself not an `IRCPlugin` subclass";
+            enum wrongThisMessage = wrongThisPattern.format(typeof(this).stringof);
+            static assert(0, wrongThisMessage);
+        }
     }
 
-    static if (__traits(compiles, { alias _ = this.hasMessagingProxy; }))
-    {
-        import std.format : format;
-
-        enum pattern = "Double mixin of `%s` in `%s`";
-        enum message = pattern.format("MessagingProxy", typeof(this).stringof);
-        static assert(0, message);
-    }
-    else
-    {
-        /++
-            Flag denoting that [MessagingProxy] has been mixed in.
-         +/
-        private enum hasMessagingProxy = true;
-    }
+    /++
+        Flag denoting that [MessagingProxy] has been mixed in.
+     +/
+    enum hasMessagingProxy = true;
 
     // chan
     /++
