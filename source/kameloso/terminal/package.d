@@ -14,7 +14,10 @@ module kameloso.terminal;
 
 private:
 
+import kameloso.constants : KamelosoInfo;
 import std.typecons : Flag, No, Yes;
+
+enum defaultTerminalTitle = "kameloso v" ~ cast(string)KamelosoInfo.version_;
 
 public:
 
@@ -259,7 +262,7 @@ void ensureAppropriateBuffering() @system
 }
 
 
-// setTitle
+// setTerminalTitle
 /++
     Sets the terminal title to a given string. Supposedly.
 
@@ -269,9 +272,10 @@ void ensureAppropriateBuffering() @system
     ---
 
     Params:
-        title = String to set the title to.
+        title = Optional custom string to set the title to. If unset, the
+            title will be set to the program name and version.
  +/
-void setTitle(const string title) @system
+void setTerminalTitle(const string title = defaultTerminalTitle) @system
 {
     version(Posix)
     {

@@ -2832,7 +2832,7 @@ auto tryResolve(ref Kameloso instance, const Flag!"firstConnect" firstConnect)
 void postInstanceSetup(ref Kameloso instance)
 {
     import kameloso.constants : KamelosoInfo;
-    import kameloso.terminal : isTerminal, setTitle;
+    import kameloso.terminal : isTerminal, setTerminalTitle;
 
     version(Windows)
     {
@@ -2851,8 +2851,7 @@ void postInstanceSetup(ref Kameloso instance)
     if (isTerminal)
     {
         // TTY or whitelisted pseudo-TTY
-        enum terminalTitle = "kameloso v" ~ cast(string)KamelosoInfo.version_;
-        setTitle(terminalTitle);
+        setTerminalTitle();
     }
 }
 
