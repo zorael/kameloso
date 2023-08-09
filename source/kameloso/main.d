@@ -3103,6 +3103,7 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
             if ((!lastConnectAttemptFizzled && instance.settings.reexecToReconnect) || instance.flags.askedToReexec)
             {
                 import kameloso.platform : ExecException, execvp;
+                import kameloso.terminal : isTerminal, resetTerminalTitle, setTerminalTitle;
                 import std.process : ProcessException;
 
                 if (!instance.settings.headless)
@@ -3139,6 +3140,9 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
                 {
                     import core.stdc.stdlib : exit;
 
+                    // Clear the terminal title if we're in a terminal
+                    if (isTerminal) resetTerminalTitle();
+
                     auto pid = execvp(instance.args);
                     // On Windows, if we're here, the call succeeded
                     // Posix should never be here; it will either exec or throw
@@ -3164,6 +3168,9 @@ void startBot(ref Kameloso instance, out AttemptState attempt)
                     logger.errorf(pattern, e.msg);
                     version(PrintStacktraces) logger.trace(e);
                 }
+
+                // Reset the terminal title after a failed execvp/fork
+                if (isTerminal) setTerminalTitle();
             }
 
             // Carry some values but otherwise restore the pristine client backup
@@ -3789,6 +3796,12 @@ auto run(string[] args)
     // Set up the Kameloso instance.
     auto instance = Kameloso(args);
     postInstanceSetup(instance);
+
+    scope(exit)
+    {
+        import kameloso.terminal : isTerminal, resetTerminalTitle;
+        if (isTerminal) resetTerminalTitle();
+    }
 
     // Set pointers.
     kameloso.common.settings = &instance.settings;

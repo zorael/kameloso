@@ -297,3 +297,13 @@ void setTerminalTitle(const string title = defaultTerminalTitle) @system
         static assert(0, "Unsupported platform, please file a bug.");
     }
 }
+
+
+// resetTerminalTitle
+/++
+    Resets the terminal title to an empty string.
+ +/
+void resetTerminalTitle() @system
+{
+    setTerminalTitle(string.init);
+}
