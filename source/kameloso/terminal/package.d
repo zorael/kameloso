@@ -282,6 +282,7 @@ void setTerminalTitle(const string title = defaultTerminalTitle) @system
         import std.stdio : stdout, write;
 
         write("\033]0;", title, "\007");
+        write("\033]30;", title, "\007");  // Konsole tab name
         stdout.flush();
     }
     else version(Windows)
