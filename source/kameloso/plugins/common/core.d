@@ -75,7 +75,6 @@ public:
  +/
 abstract class IRCPlugin
 {
-@safe:
 private:
     import kameloso.thread : Sendable;
     import std.array : Appender;
@@ -213,7 +212,7 @@ public:
     void deserialiseConfigFrom(
         const string configFile,
         out string[][string] missingEntries,
-        out string[][string] invalidEntries);
+        out string[][string] invalidEntries) @safe;
 
     // serialiseConfigInto
     /++
@@ -228,7 +227,7 @@ public:
         See_Also:
             [kameloso.plugins.common.core.IRCPluginImpl.serialiseConfigInto]
      +/
-    bool serialiseConfigInto(ref Appender!(char[]) sink) const;
+    bool serialiseConfigInto(ref Appender!(char[]) sink) const @safe;
 
     // setSettingByName
     /++
@@ -245,7 +244,7 @@ public:
         See_Also:
             [kameloso.plugins.common.core.IRCPluginImpl.setSettingByName]
      +/
-    bool setSettingByName(const string setting, const string value);
+    bool setSettingByName(const string setting, const string value) @safe;
 
     // setup
     /++
