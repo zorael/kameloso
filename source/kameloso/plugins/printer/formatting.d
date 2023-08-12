@@ -1179,7 +1179,7 @@ void formatMessageColoured(Sink)
     Returns:
         A slice of the passed `typestring`, excluding any prefixes if present.
  +/
-auto withoutTypePrefix(const string typestring) @safe pure nothrow @nogc @property
+auto withoutTypePrefix(const string typestring) pure @safe nothrow @nogc
 {
     import lu.string : beginsWith;
 

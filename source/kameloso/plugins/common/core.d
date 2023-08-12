@@ -284,7 +284,7 @@ public:
         See_Also:
             [kameloso.plugins.common.core.IRCPluginImpl.name]
      +/
-    string name() @property const pure nothrow @nogc;
+    string name() const pure @safe nothrow @nogc;
 
     // commands
     /++
@@ -299,7 +299,7 @@ public:
         See_Also:
             [kameloso.plugins.common.core.IRCPluginImpl.commands]
      +/
-    CommandMetadata[string] commands() pure nothrow @property const;
+    CommandMetadata[string] commands() const pure @safe nothrow;
 
     // channelSpecificCommands
     /++
@@ -357,7 +357,7 @@ public:
         See_Also:
             [kameloso.plugins.common.core.IRCPluginImpl.isEnabled]
      +/
-    bool isEnabled() const @property pure nothrow @nogc;
+    bool isEnabled() const pure @safe nothrow @nogc;
 
     // tick
     /++
@@ -501,7 +501,7 @@ mixin template IRCPluginImpl(
             `true` if the plugin is deemed enabled (or cannot be disabled),
             `false` if not.
      +/
-    override public bool isEnabled() const @property pure nothrow @nogc
+    override public bool isEnabled() const pure nothrow @nogc
     {
         import kameloso.traits : udaIndexOf;
 
@@ -1788,7 +1788,7 @@ mixin template IRCPluginImpl(
             The module name of the mixing-in class.
      +/
     pragma(inline, true)
-    override public string name() @property const pure nothrow @nogc
+    override public string name() const pure nothrow @nogc
     {
         import lu.string : beginsWith;
 
@@ -1846,7 +1846,7 @@ mixin template IRCPluginImpl(
             and [kameloso.plugins.common.core.IRCEventHandler.Regex.expression|IRCEventHandler.Regex.expression]s.
      +/
     pragma(inline, true)
-    override public IRCPlugin.CommandMetadata[string] commands() pure nothrow @property const
+    override public IRCPlugin.CommandMetadata[string] commands() const pure nothrow
     {
         return commandsImpl();
     }
@@ -1871,7 +1871,7 @@ mixin template IRCPluginImpl(
             [kameloso.plugins.common.core.IRCEventHandler.Command.word|IRCEventHandler.Command.word]s
             and [kameloso.plugins.common.core.IRCEventHandler.Regex.expression|IRCEventHandler.Regex.expression]s.
      +/
-    private auto commandsImpl() pure nothrow @property const
+    private auto commandsImpl() const pure nothrow
     {
         enum ctCommandsEnumLiteral =
         {

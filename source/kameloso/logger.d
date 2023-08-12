@@ -270,7 +270,7 @@ public:
             Returns:
                 A tint string.
          +/
-        private auto tintImpl(LogLevel level)() const @property pure nothrow @nogc @safe
+        private auto tintImpl(LogLevel level)() const pure @safe nothrow @nogc
         {
             if (headless || monochrome)
             {
@@ -295,7 +295,7 @@ public:
         static foreach (const lv; EnumMembers!LogLevel)
         {
             mixin(
-"auto " ~ Enum!LogLevel.toString(lv) ~ "tint() const @property pure nothrow @nogc @safe
+"auto " ~ Enum!LogLevel.toString(lv) ~ "tint() const pure @safe nothrow @nogc
 {
     return tintImpl!(LogLevel." ~ Enum!LogLevel.toString(lv) ~ ");
 }");

@@ -536,7 +536,7 @@ private:
             `true` if this service should react to events; `false` if not.
      +/
     version(TwitchSupport)
-    override public bool isEnabled() const @property pure nothrow @nogc
+    override public bool isEnabled() const pure nothrow @nogc
     {
         return (state.server.daemon != IRCServer.Daemon.twitch);
     }

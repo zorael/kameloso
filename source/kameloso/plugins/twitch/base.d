@@ -4229,7 +4229,7 @@ package:
         Returns:
             `true` if this plugin should react to events; `false` if not.
      +/
-    override public bool isEnabled() const @property pure nothrow @nogc
+    override public bool isEnabled() const pure nothrow @nogc
     {
         return (
             (state.server.daemon == IRCServer.Daemon.twitch) ||

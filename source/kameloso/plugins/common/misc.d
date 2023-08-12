@@ -177,7 +177,7 @@ unittest
     {
         MyPluginSettings myPluginSettings;
 
-        override string name() @property const
+        override string name() const
         {
             return "myplugin";
         }

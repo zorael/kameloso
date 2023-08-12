@@ -197,7 +197,7 @@ public:
             A copy of [_sendTimeout].
      +/
     pragma(inline, true)
-    auto sendTimeout() const @property pure @nogc nothrow
+    auto sendTimeout() const pure nothrow @nogc
     {
         return _sendTimeout;
     }
@@ -210,7 +210,7 @@ public:
             dur = The duration to assign as send timeout, in number of milliseconds.
      +/
     pragma(inline, true)
-    void sendTimeout(const uint dur) @property
+    void sendTimeout(const uint dur)
     {
         setTimeout(SocketOption.SNDTIMEO, dur);
         _sendTimeout = dur;
@@ -224,7 +224,7 @@ public:
             A copy of [_receiveTimeout].
      +/
     pragma(inline, true)
-    auto receiveTimeout() const @property pure @nogc nothrow
+    auto receiveTimeout() const pure nothrow @nogc
     {
         return _receiveTimeout;
     }
@@ -236,7 +236,7 @@ public:
         Params:
             dur = The duration to assign as receive timeout, in number of milliseconds.
      +/
-    void receiveTimeout(const uint dur) @property
+    void receiveTimeout(const uint dur)
     {
         setTimeout(SocketOption.RCVTIMEO, dur);
         _receiveTimeout = dur;
