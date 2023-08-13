@@ -2663,12 +2663,11 @@ unittest
 }
 
 
-// setup
+// initialise
 /++
-    Start the captive key generation routine immediately after connection has
-    been established.
+    Start the captive key generation routine(s) before connecting to the server.
  +/
-void setup(TwitchPlugin plugin)
+auto initialise(TwitchPlugin plugin)
 {
     import kameloso.terminal : isTerminal;
     import std.algorithm.searching : endsWith;
@@ -2697,25 +2696,31 @@ void setup(TwitchPlugin plugin)
             logger.trace();
         }
 
-        // Not connecting to Twitch, return early
-        return;
+        // Not connecting to Twitch yet keygens requested, return false
+        return false;
     }
 
     if (someKeygenWanted || (!plugin.state.bot.pass.length && !plugin.state.settings.force))
     {
         import kameloso.thread : ThreadMessage;
-        import std.concurrency : prioritySend;
+        import lu.json : JSONStorage;
+        import std.concurrency : send;
 
         if (plugin.state.settings.headless)
         {
             // Headless mode is enabled, so a captive keygen session doesn't make sense
-            enum message = "Cannot start a Twitch keygen session when in headless mode";
-            return quit(plugin.state, message);
+            return false;
         }
 
         // Some keygen, reload to load secrets so existing ones are read
-        // Not strictly needed for normal keygen
-        loadResources(plugin);
+        // Not strictly needed for normal keygen but for everything else
+        JSONStorage secretsJSON;
+        secretsJSON.load(plugin.secretsFile);
+
+        foreach (immutable channelName, credsJSON; secretsJSON.storage.object)
+        {
+            plugin.secretsByChannel[channelName] = Credentials.fromJSON(credsJSON);
+        }
 
         bool needSeparator;
         enum separator = "---------------------------------------------------------------------";
@@ -2726,8 +2731,9 @@ void setup(TwitchPlugin plugin)
         {
             import kameloso.plugins.twitch.keygen : requestTwitchKey;
             requestTwitchKey(plugin);
-            if (*plugin.state.abort) return;
+            if (*plugin.state.abort) return false;
             plugin.twitchSettings.keygen = false;
+            plugin.state.mainThread.send(ThreadMessage.popCustomSetting("twitch.keygen"));
             needSeparator = true;
         }
 
@@ -2736,8 +2742,9 @@ void setup(TwitchPlugin plugin)
             import kameloso.plugins.twitch.keygen : requestTwitchSuperKey;
             if (needSeparator) logger.trace(separator);
             requestTwitchSuperKey(plugin);
-            if (*plugin.state.abort) return;
+            if (*plugin.state.abort) return false;
             plugin.twitchSettings.superKeygen = false;
+            plugin.state.mainThread.send(ThreadMessage.popCustomSetting("twitch.superKeygen"));
             needSeparator = true;
         }
 
@@ -2747,9 +2754,11 @@ void setup(TwitchPlugin plugin)
             import kameloso.plugins.twitch.google : requestGoogleKeys;
             if (needSeparator) logger.trace(separator);
             requestGoogleKeys(plugin);
-            if (*plugin.state.abort) return;
+            if (*plugin.state.abort) return false;
             plugin.twitchSettings.googleKeygen = false;
             plugin.twitchSettings.youtubeKeygen = false;
+            plugin.state.mainThread.send(ThreadMessage.popCustomSetting("twitch.googleKeygen"));
+            plugin.state.mainThread.send(ThreadMessage.popCustomSetting("twitch.youtubeKeygen"));
             needSeparator = true;
         }
 
@@ -2758,28 +2767,13 @@ void setup(TwitchPlugin plugin)
             import kameloso.plugins.twitch.spotify : requestSpotifyKeys;
             if (needSeparator) logger.trace(separator);
             requestSpotifyKeys(plugin);
-            if (*plugin.state.abort) return;
+            if (*plugin.state.abort) return false;
+            plugin.state.mainThread.send(ThreadMessage.popCustomSetting("twitch.spotifyKeygen"));
             plugin.twitchSettings.spotifyKeygen = false;
         }
-
-        // Remove custom Twitch settings so we can reconnect without jumping
-        // back into keygens.
-        static immutable string[5] settingsToPop =
-        [
-            "twitch.keygen",
-            "twitch.superKeygen",
-            "twitch.googleKeygen",
-            "twitch.youtubeKeygen",
-            "twitch.spotifyKeygen",
-        ];
-
-        foreach (immutable setting; settingsToPop[])
-        {
-            plugin.state.mainThread.prioritySend(ThreadMessage.popCustomSetting(setting));
-        }
-
-        plugin.state.mainThread.prioritySend(ThreadMessage.reconnect);
     }
+
+    return true;
 }
 
 
