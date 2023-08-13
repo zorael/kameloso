@@ -373,6 +373,15 @@ public:
             [kameloso.plugins.common.core.IRCPluginImpl.tick]
      +/
     bool tick(const Duration elapsed) @system;
+
+    // initialise
+    /++
+        Called when the plugin is first loaded.
+
+        See_Also:
+            [kameloso.plugins.common.core.IRCPluginImpl.initialise]
+     +/
+    bool initialise() @system;
 }
 
 
@@ -1403,28 +1412,6 @@ mixin template IRCPluginImpl(
                 }
             }
         }
-
-        static if (__traits(compiles, { alias _ = .initialise; }))
-        {
-            import lu.traits : TakesParams;
-
-            static if (
-                is(typeof(.initialise)) &&
-                is(typeof(.initialise) == function) &&
-                TakesParams!(.initialise, typeof(this)))
-            {
-                .initialise(this);
-            }
-            else
-            {
-                import kameloso.traits : stringOfTypeOf;
-                import std.format : format;
-
-                enum pattern = "`%s.initialise` has an unsupported function signature: `%s`";
-                enum message = pattern.format(module_, stringOfTypeOf!(.initialise));
-                static assert(0, message);
-            }
-        }
     }
 
     // postprocess
@@ -1776,6 +1763,39 @@ mixin template IRCPluginImpl(
         else
         {
             return false;
+        }
+    }
+
+    // initialise
+    /++
+        Initialises the plugin.
+     +/
+    override public bool initialise() @system
+    {
+        static if (__traits(compiles, { alias _ = .initialise; }))
+        {
+            import lu.traits : TakesParams;
+
+            static if (
+                is(typeof(.initialise)) &&
+                is(typeof(.initialise) == function) &&
+                TakesParams!(.initialise, typeof(this)))
+            {
+                return .initialise(this);
+            }
+            else
+            {
+                import kameloso.traits : stringOfTypeOf;
+                import std.format : format;
+
+                enum pattern = "`%s.initialise` has an unsupported function signature: `%s`";
+                enum message = pattern.format(module_, stringOfTypeOf!(.initialise));
+                static assert(0, message);
+            }
+        }
+        else
+        {
+            return true;
         }
     }
 
