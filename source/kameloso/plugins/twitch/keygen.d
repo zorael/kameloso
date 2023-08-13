@@ -39,7 +39,7 @@ package:
 void requestTwitchKey(TwitchPlugin plugin)
 {
     import kameloso.thread : ThreadMessage;
-    import std.concurrency : prioritySend;
+    import std.concurrency : send;
     import std.datetime.systime : Clock;
     import std.process : Pid, ProcessException, wait;
     import std.stdio : stdout, writeln;
@@ -190,7 +190,7 @@ instructions and log in to authorise the use of this program with your <w>BOT</>
     logger.trace();
 
     plugin.state.updates |= typeof(plugin.state.updates).bot;
-    plugin.state.mainThread.prioritySend(ThreadMessage.save);
+    plugin.state.mainThread.send(ThreadMessage.save);
 }
 
 
