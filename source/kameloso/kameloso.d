@@ -462,6 +462,7 @@ public:
             on failure to apply custom settings.
      +/
     void instantiatePlugins() @system
+    in (!this.plugins.length, "Tried to instantiate plugins but the array was not empty")
     {
         import kameloso.plugins.common.core : IRCPluginState;
         import kameloso.plugins.common.misc : applyCustomSettings;
@@ -681,7 +682,7 @@ public:
 
     // initialisePlugins
     /++
-        Initialises all plugins, calling any module-level `initialise` functions.
+        Initialises all plugins, calling any module-level `.initialise` functions.
 
         This merely calls
         [kameloso.plugins.common.core.IRCPlugin.initialise|IRCPlugin.initialise]
@@ -690,11 +691,14 @@ public:
         If any plugin fails to initialise, this function returns false and
         the bot will not start.
 
+        Don't use an in-contract to enforce `plugins.length`, as not having any
+        plugins is technically a valid use-case (even if it's a fairly pointless one).
+
         Returns:
             `true` if all plugins initialised successfully, `false` otherwise.
      +/
     auto initialisePlugins() @system
-    in (!this.plugins.length, "Tried to initialise plugins but they were already initialised")
+    //in (this.plugins.length, "Tried to initialise plugins but there were no plugins instantiated")
     {
         import kameloso.plugins.common.misc : IRCPluginInitialisationException;
 
