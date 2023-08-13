@@ -679,6 +679,62 @@ public:
         plugins = null;
     }
 
+    // initialisePlugins
+    /++
+        Initialises all plugins, calling any module-level `initialise` functions.
+
+        This merely calls
+        [kameloso.plugins.common.core.IRCPlugin.initialise|IRCPlugin.initialise]
+        on each plugin.
+
+        If any plugin fails to initialise, this function returns false and
+        the bot will not start.
+
+        Returns:
+            `true` if all plugins initialised successfully, `false` otherwise.
+     +/
+    auto initialisePlugins() @system
+    in (!this.plugins.length, "Tried to initialise plugins but they were already initialised")
+    {
+        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
+
+        string[] failedPlugins;
+
+        foreach (plugin; this.plugins)
+        {
+            try
+            {
+                immutable success = plugin.initialise();
+                if (*this.abort) return false;
+                if (!success) failedPlugins ~= plugin.name;
+            }
+            catch (IRCPluginInitialisationException e)
+            {
+                enum pattern = "Exception when initialising <l>%s</>: <l>%s";
+                logger.warningf(pattern, plugin.name, e.msg);
+                version(PrintStacktraces) logger.trace(e.info);
+                if (!this.settings.force) return false;
+                failedPlugins ~= plugin.name;
+            }
+            catch (Exception e)
+            {
+                enum pattern = "General exception when initialising <l>%s</>: <l>%s";
+                logger.warningf(pattern, plugin.name, e.msg);
+                version(PrintStacktraces) logger.trace(e.info);
+                if (!this.settings.force) throw e;
+            }
+        }
+
+        if (failedPlugins.length)
+        {
+            enum pattern = "Failed to initialise plugin(s): <l>%-(%s, %)";
+            logger.errorf(pattern, failedPlugins);
+            return false;
+        }
+
+        return true;
+    }
+
     // checkPluginForUpdates
     /++
         Propagates updated bots, clients, servers and/or settings, to `this`,

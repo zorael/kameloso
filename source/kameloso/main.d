@@ -4010,49 +4010,13 @@ auto run(string[] args)
     // It will change later and knowing this is useful when authenticating
     instance.parser.client.origNickname = instance.parser.client.nickname;
 
-    // Initialise plugins and read concurrency messages sent by them
-    string[] failedPlugins;
+    // Plugins were instantiated but not initialised, so do that here
+    // initialisePlugins internally handles exceptions so let any unhandled ones fall through
+    immutable success = instance.initialisePlugins();
+    if (*instance.abort) return ShellReturnValue.failure;
+    if (!success) return ShellReturnValue.pluginInitialisationFailure;
 
-    foreach (plugin; instance.plugins)
-    {
-        import kameloso.plugins.common.misc : IRCPluginInitialisationException;
-
-        try
-        {
-            // Call .initialise here instead of in the constructors
-            immutable success = plugin.initialise();
-            if (*instance.abort) return ShellReturnValue.failure;
-            if (!success) failedPlugins ~= plugin.name;
-        }
-        catch (IRCPluginInitialisationException e)
-        {
-            logger.error(e.msg);
-            version(PrintStacktraces) logger.trace(e.info);
-            if (!instance.settings.force) return ShellReturnValue.pluginInitialisationFailure;
-            failedPlugins ~= plugin.name;
-        }
-        catch (Exception e)
-        {
-            if (instance.settings.force)
-            {
-                // Ignore the error and continue
-                logger.error(e.msg);
-                version(PrintStacktraces) logger.trace(e.info);
-            }
-            else
-            {
-                throw e;
-            }
-        }
-    }
-
-    if (failedPlugins.length)
-    {
-        enum pattern = "Failed to run plugin initialisation routine: <l>%-(%s, %)";
-        logger.errorf(pattern, failedPlugins);
-        return ShellReturnValue.pluginInitialisationFailure;
-    }
-
+    // Check for concurrency messages in case any were sent during plugin initialisation
     while (true)
     {
         import kameloso.thread : ThreadMessage;
